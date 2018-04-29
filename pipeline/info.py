@@ -6,14 +6,14 @@
 Base module variables
 """
 
-__version__ = "0.0.1-dev"
+__version__ = "0.0.2-dev"
 
 __author__ = ""
 __copyright__ = ""
 __credits__ = [""]
 __license__ = ""
-__maintainer__ = ""
-__email__ = ""
+__maintainer__ = "Lea Waller"
+__email__ = "lea.waller@charite."
 __status__ = ""
 __url__ = "https://github.com/mindandbrain/pipeline"
 __packagename__ = "pipeline"
@@ -32,6 +32,8 @@ REQUIRES = [
     "mriqc",
     "numpy",
     "scipy",
+    "nibabel",
+    "pydicom",
 ]
 
 LINKS_REQUIRES = [

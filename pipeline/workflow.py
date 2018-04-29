@@ -7,6 +7,8 @@ from nipype.interfaces.base import Bunch
 import nipype.interfaces.fsl as fsl
 import nipype.algorithms.modelgen as model
 
+from fmriprep.interfaces.bids import DerivativesDataSink
+
 from niworkflows.nipype.pipeline import engine as pe
 from niworkflows.nipype.interfaces import utility as niu
 
@@ -16,7 +18,10 @@ from fmriprep.workflows.bold import init_func_preproc_wf
 from mriqc.workflows.anatomical import anat_qc_workflow
 from mriqc.workflows.functional import fmri_qc_workflow
 
-from .fake import FakeBIDSLayout
+from .fake import (
+    FakeBIDSLayout,
+    FakeDerivativesDataSink
+)
 
 def transpose(d):
     out = dict()
@@ -24,6 +29,8 @@ def transpose(d):
         for key1, value1 in value0.items():
             if key1 not in out:
                 out[key1] = dict()
+            while isinstance(value1, dict) and len(value1) == 1 and "" in value1:
+                value1 = value1[""]
             out[key1][key0] = value1
     return out
 
@@ -68,7 +75,7 @@ def init_workflow(workdir):
     use_syn = True
     force_syn = False
     template_out_grid = "2mm"
-    use_aroma = False
+    use_aroma = True
     ignore_aroma_err = False
     
     images = transpose(data["images"])
@@ -113,7 +120,7 @@ def init_workflow(workdir):
         
         for name, value1 in value0.items():
             if name not in anat_field_names:
-                for run, bold_file in value1.items():
+                def add(bold_file):
                     layout = FakeBIDSLayout(bold_file, data["metadata"][name])
                     
                     func_preproc_wf = init_func_preproc_wf(
@@ -158,14 +165,32 @@ def init_workflow(workdir):
                             ('outputnode.t1_2_fsnative_reverse_transform', 'inputnode.t1_2_fsnative_reverse_transform')
                         ])
                     ])
+                
+                if isinstance(value1, dict):
+                    for run, bold_file in value1.items():
+                        add(bold_file)
+                else:
+                    add(value1)
         
         for node in subject_wf._get_all_nodes():
+            if type(node._interface) is DerivativesDataSink:
+                base_directory = node._interface.inputs.base_directory
+                in_file = node._interface.inputs.in_file
+                source_file = node._interface.inputs.source_file
+                suffix = node._interface.inputs.suffix
+                extra_values = node._interface.inputs.extra_values
+                node._interface = FakeDerivativesDataSink(images, 
+                    base_directory = base_directory,
+                    source_file = source_file,
+                    in_file = in_file,
+                    suffix = suffix,
+                    extra_values = extra_values)
+            
             node.config = deepcopy(subject_wf.config)
         
         workflow.add_nodes([subject_wf])
     
-    # import pdb; pdb.set_trace()
-    workflow.run()              
+    return workflow             
               
     # wf = init_single_subject_wf(
     #     subject_id="test",

@@ -3,10 +3,9 @@
 
 from glob import glob
 from os import path as op
-from os import (
-    listdir,
-    mkdir
-)
+import os
+
+from multiprocessing import cpu_count
 
 import nibabel as nib
 
@@ -23,13 +22,6 @@ from .workflow import init_workflow
 
 EXT_PATH = "/ext"
 
-KNOWN_TASKS = {"FACES": ["FACES", "SHAPES"], \
-    "MID": ["REWARD", "NEUTRAL"],
-    "NBACK": ["2BACK", "0BACK"]}
-CONTRASTS = {"FACES": [1, -1], \
-    "MID": [1, -1],
-    "NBACK": [1, -1]}
-
 def main():
     c = cli()
     
@@ -40,16 +32,7 @@ def main():
     # tests
     #
     
-    import termios
-    try:
-        import sys, tty
-        tty.setraw(sys.stdin)
-        tty.setcbreak(sys.stdin)
-    except termios.error:
-        c.error("Did you forget the docker arguments \"--interactive --tty\"?")
-        raise
-    
-    if not (op.isdir(EXT_PATH) and len(listdir(EXT_PATH)) > 0):
+    if not (op.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
         c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
         
     def get_path(path):
@@ -76,8 +59,7 @@ def main():
     
     workdir = get_path(c.read("Specify the working directory"))
     
-    if not op.isdir(workdir):
-        mkdir(workdir)
+    os.makedirs(workdir, exist_ok = True)
     
     c.info("")
     
@@ -124,28 +106,24 @@ def main():
                 
                 run = ""
                 if runs and "run" in d:
-                    run = str(int(d["run"]))                    
-                
+                    run = str(int(d["run"]))   
+                    
+                condition = ""
+                if conditions and "condition" in d:
+                    condition = d["condition"]
+                                     
                 if subject not in files:
                     files[subject] = dict()
+                if run not in files[subject]:
+                    files[subject][run] = dict()
                     
-                if conditions:
-                    condition = ""
-                    if "condition" in d:
-                        condition = d["condition"]
-                    if run not in files[subject]:
-                        files[subject][run] = dict()
-                    files[subject][run][condition] = g
-                elif runs:
-                    files[subject][run] = g
-                else:
-                    files[subject] = g
+                files[subject][run][condition] = g
                 
         if len(files) == 0:
             response = c.select("Try again?", ["Yes", "No"])
             
             if response == "Yes":
-                return getFiles(description)
+                return get_files(description)
             
         return files
     
@@ -196,35 +174,24 @@ def main():
         #
         
         description = "functional/task data"
-        field_names = ["FACES", "MID", "NBACK", "Other"]
-        field_descriptions = ["faces task image", "monetary incentive delay task image", "n-back task image", "task image"]
+        field_description = "task image"
         
         c.info("Please specify %s" % description)
         response0 = "Yes"
         
         while response0 == "Yes":
-            response1 = c.select("Choose task to specify", field_names)
-            
-            if response1 is None:
-                break
-                
-            i = field_names.index(response1)
-            
-            field_name = field_names[i]
-            field_description = field_descriptions[i]
-            
-            if field_name not in KNOWN_TASKS:
-                field_name = c.read("Specify the name of the task")
+            field_name = c.read("Specify the task name")
             
             metadata[field_name] = dict()
             images[field_name] = get_files(field_description, runs = True)
             
-            image = next(iter(next(iter(images[field_name].values())).values()))
-            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", o = \
-                str(nib.load(image).header.get_zooms()[3])))
+            image = next(iter(next(iter(images[field_name].values())).values()))[""]
+            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", 
+                o = str(nib.load(image).header.get_zooms()[3])))
             
             description2 = "condition/explanatory variable"
-            response2 = c.select("Specify the format of the %s files" % description2, ["FSL 3-column", "SPM multiple conditions"])
+            response2 = c.select("Specify the format of the %s files" % description2, \
+                ["FSL 3-column", "SPM multiple conditions"])
             
             conditions = None
             if response2 == "SPM multiple conditions":
@@ -235,30 +202,26 @@ def main():
             conditions = parse_condition_files(conditions, format = response2)
             condition = next(iter(next(iter(conditions.values())).values()))
             
-            contrast = None
-            if field_name in KNOWN_TASKS:
-                known_conditions = KNOWN_TASKS[field_name]
-                contrast = dict()
-                for i, known_condition in enumerate(known_conditions):
-                    match = c.select("Select the specified %s that refers to the %s condition" % (description2, known_condition), list(condition))
-                    contrast[match] = CONTRASTS[field_name][i]
-            else:
-                c.error("Not implemented")
+            c.info("Specify contrasts")
+            
+            contrasts = dict()
+            
+            response3 = "Yes"
+            while response3 == "Yes":
+                contrast_name = c.read("Specify the contrast name")
+                contrast_values = c.fields("Specify the contrast values", list(condition))
+                
+                contrasts[contrast_name] = {k:float(v) for k, v in zip(list(condition), contrast_values)}
+                
+                response3 = c.select("Add another contrast?", ["Yes", "No"])
             
             metadata[field_name]["conditions"] = conditions
-            metadata[field_name]["contrast"] = contrast
+            metadata[field_name]["contrasts"] = contrasts
             
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             # 
             # if response3 == "Yes":
             #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
-                        
-            if len(images[field_name]) > 0:
-                del field_names[i]
-                del field_descriptions[i]
-                
-            if len(field_names) == 0:
-                break
             
             response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
         
@@ -271,9 +234,23 @@ def main():
         
         c.info("")
     
-    init_workflow(workdir)
-    
     c.info("")
+    
+    workflow = init_workflow(workdir)
+    
+    plugin_settings = {}
+    
+    plugin_settings = {
+        'plugin': 'MultiProc',
+        'plugin_args': {
+            'n_procs': cpu_count(),
+            'raise_insufficient': False,
+            'maxtasksperchild': 1,
+        }
+    }
+    
+    workflow.run(**plugin_settings)
+    
 
 """
 
