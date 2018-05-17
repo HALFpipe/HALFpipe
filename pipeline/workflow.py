@@ -11,6 +11,7 @@ from fmriprep.interfaces.bids import DerivativesDataSink
 
 from niworkflows.nipype.pipeline import engine as pe
 from niworkflows.nipype.interfaces import utility as niu
+from niworkflows.nipype.interfaces import fsl
 
 from fmriprep.workflows.anatomical import init_anat_preproc_wf
 from fmriprep.workflows.bold import init_func_preproc_wf
@@ -50,7 +51,8 @@ def init_workflow(workdir):
     #
     
     reportlets_dir = op.join(workdir, "reportlets")
-    output_dir = op.join(workdir, "output")
+    output_dir = op.join(workdir, "derivatives")
+    real_output_dir = op.join(workdir, "output")
     bids_dir = "."
     
     subject_id = "test"
@@ -146,26 +148,48 @@ def init_workflow(workdir):
                         template_out_grid = template_out_grid,
                         use_aroma = use_aroma,
                         ignore_aroma_err = ignore_aroma_err)
+                        
+                    for node in subject_wf._get_all_nodes():
+                        if type(node._interface) is fsl.SUSAN:
+                            node._interface.inputs.fwhm = float(data["metadata"]["SmoothingFWHM"])
+                    
+                    temporalfilter_wf = init_temporalfilter_wf(
+                        data["metadata"]["TemporalFilter"], 
+                        data["metadata"][name]["RepetitionTime"]
+                    )
+                    
+                    ds_temporalfilter = pe.Node(
+                        DerivativesDataSink(
+                            base_directory = real_output_dir, 
+                            source_file = bold_file,
+                            suffix = "preproc"),
+                    name = "ds_temporalfilter", run_without_submitting = True)
                     
                     subject_wf.connect([
                         (anat_preproc_wf, func_preproc_wf, [
-                            ('outputnode.t1_preproc', 'inputnode.t1_preproc'),
-                            ('outputnode.t1_brain', 'inputnode.t1_brain'),
-                            ('outputnode.t1_mask', 'inputnode.t1_mask'),
-                            ('outputnode.t1_seg', 'inputnode.t1_seg'),
-                            ('outputnode.t1_aseg', 'inputnode.t1_aseg'),
-                            ('outputnode.t1_aparc', 'inputnode.t1_aparc'),
-                            ('outputnode.t1_tpms', 'inputnode.t1_tpms'),
-                            ('outputnode.t1_2_mni_forward_transform', 'inputnode.t1_2_mni_forward_transform'),
-                            ('outputnode.t1_2_mni_reverse_transform', 'inputnode.t1_2_mni_reverse_transform'),
+                            ("outputnode.t1_preproc", "inputnode.t1_preproc"),
+                            ("outputnode.t1_brain", "inputnode.t1_brain"),
+                            ("outputnode.t1_mask", "inputnode.t1_mask"),
+                            ("outputnode.t1_seg", "inputnode.t1_seg"),
+                            ("outputnode.t1_aseg", "inputnode.t1_aseg"),
+                            ("outputnode.t1_aparc", "inputnode.t1_aparc"),
+                            ("outputnode.t1_tpms", "inputnode.t1_tpms"),
+                            ("outputnode.t1_2_mni_forward_transform", "inputnode.t1_2_mni_forward_transform"),
+                            ("outputnode.t1_2_mni_reverse_transform", "inputnode.t1_2_mni_reverse_transform"),
                             # Undefined if --no-freesurfer, but this is safe
-                            ('outputnode.subjects_dir', 'inputnode.subjects_dir'),
-                            ('outputnode.subject_id', 'inputnode.subject_id'),
-                            ('outputnode.t1_2_fsnative_forward_transform', 'inputnode.t1_2_fsnative_forward_transform'),
-                            ('outputnode.t1_2_fsnative_reverse_transform', 'inputnode.t1_2_fsnative_reverse_transform')
+                            ("outputnode.subjects_dir", "inputnode.subjects_dir"),
+                            ("outputnode.subject_id", "inputnode.subject_id"),
+                            ("outputnode.t1_2_fsnative_forward_transform", "inputnode.t1_2_fsnative_forward_transform"),
+                            ("outputnode.t1_2_fsnative_reverse_transform", "inputnode.t1_2_fsnative_reverse_transform")
+                        ]),
+                        (func_preproc_wf, temporalfilter_wf, [
+                            ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
+                        ]),
+                        (temporalfilter_wf, ds_temporalfilter, [
+                            ("outputnode.filtered_file", "in_file")
                         ])
                     ])
-                
+                    
                 if isinstance(value1, dict):
                     for run, bold_file in value1.items():
                         add(bold_file)
@@ -185,44 +209,69 @@ def init_workflow(workdir):
                     in_file = in_file,
                     suffix = suffix,
                     extra_values = extra_values)
-            
-            node.config = deepcopy(subject_wf.config)
         
+        for node in subject_wf._get_all_nodes():
+            node.config = deepcopy(subject_wf.config)
+    
         workflow.add_nodes([subject_wf])
     
     return workflow             
-              
-    # wf = init_single_subject_wf(
-    #     subject_id="test",
-    #     name = "single_subject_wf",
-    #     task_id = "",
-    #     longitudinal = False,
-    #     t2s_coreg = False,
-    #     omp_nthreads = 1,
-    #     freesurfer = True,
-    #     reportlets_dir = ".",
-    #     output_dir = ".",
-    #     bids_dir = ".",
-    #     skull_strip_template = "OASIS",
-    #     template = "MNI152NLin2009cAsym",
-    #     output_spaces = ["template"],
-    #     medial_surface_nan = False,
-    #     ignore = [],
-    #     debug = False,
-    #     low_mem = False,
-    #     anat_only = False,
-    #     hires = True,
-    #     use_bbr = True,
-    #     bold2t1w_dof = 9,
-    #     fmap_bspline = False,
-    #     fmap_demean = True,
-    #     use_syn = True,
-    #     force_syn = False,
-    #     template_out_grid = "2mm",
-    #     use_aroma = True,
-    #     ignore_aroma_err = True)
-
-
+    
+def init_temporalfilter_wf(temporal_filter_width, repetition_time, name = "temporalfilter_wf"):
+    workflow = pe.Workflow(name=name)
+    
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields = ["bold_file"]), 
+        name = "inputnode"
+    )
+    
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields = ["filtered_file"]), 
+        name = "outputnode"
+    )
+    
+    highpass_operand = "-bptf %.10f -1" % \
+        (temporal_filter_width / (2.0 * repetition_time))
+    
+    highpass = pe.Node(
+        interface=fsl.ImageMaths(
+            op_string = highpass_operand, suffix = "_tempfilt"),
+        name="highpass"
+    )
+    
+    meanfunc = pe.Node(
+        interface = fsl.ImageMaths(
+            op_string = "-Tmean", suffix = "_mean"),
+        name = "meanfunc"
+    )
+    
+    addmean = pe.Node(
+        interface = 
+            fsl.BinaryMaths(operation = "add"), 
+        name = "addmean"
+    )
+    
+    workflow.connect([
+        (inputnode, highpass, [
+            ("bold_file", "in_file")
+        ]),
+        (inputnode, meanfunc, [
+            ("bold_file", "in_file")
+        ]),
+        (highpass, addmean, [
+            ("out_file", "in_file")
+        ]),
+        (meanfunc, addmean, [
+            ("out_file", "operand_file")
+        ]),
+        (addmean, outputnode, [
+            ("out_file", "filtered_file")
+        ])
+    ])
+    
+    return workflow
+    
+          
 # def init_modelfit_workflow():
 #     modelfit = pe.Workflow(name = "modelfit")
 # 

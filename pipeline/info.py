@@ -33,7 +33,7 @@ REQUIRES = [
     "numpy",
     "scipy",
     "nibabel",
-    "pydicom",
+    # "pydicom",
 ]
 
 LINKS_REQUIRES = [

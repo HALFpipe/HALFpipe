@@ -143,8 +143,9 @@ def main():
         
         response0 = c.select("Is %s available?" % description, ["Yes", "No"])
         
-        field_names = ["T1w", "T2w", "FLAIR"]
-        field_descriptions = ["T1-weighted image", "T2-weighted image", "FLAIR image"]
+        field_names = ["T1w"]
+        field_descriptions = ["T1-weighted image"]
+        
         while response0 == "Yes":
             response1 = c.select("Choose data type to specify", field_names)
             
@@ -225,10 +226,15 @@ def main():
             
             response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
         
+        metadata["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds", 
+            o = str(200.0)))
+        metadata["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm", 
+            o = str(6.0)))
+        
         c.info("")
         
         with open(save, "w+") as f:
-            json.dump({"images": images, "metadata": metadata}, f)
+            json.dump({"images": images, "metadata": metadata}, f, indent = 4)
             
         c.info("Saved configuration")
         
