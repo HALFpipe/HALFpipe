@@ -79,8 +79,10 @@ def init_workflow(workdir):
     force_syn = False
     template_out_grid = op.join(os.getenv("FSLDIR"), 
         "data", "standard", "MNI152_T1_2mm.nii.gz")
+    cifti_output = False
     use_aroma = True
     ignore_aroma_err = False
+    aroma_melodic_dim = None
     
     images = transpose(data["images"])
     anat_field_names = ["T1w", "T2w", "FLAIR"]
@@ -121,7 +123,7 @@ def init_workflow(workdir):
                 ("subject_id", "inputnode.subject_id")
             ])
         ])
-        
+                
         for name, value1 in value0.items():
             if name not in anat_field_names:
                 def add(bold_file):
@@ -139,6 +141,7 @@ def init_workflow(workdir):
                         output_spaces = output_spaces,
                         template = template,
                         medial_surface_nan = medial_surface_nan,
+                        cifti_output = cifti_output,
                         output_dir = output_dir,
                         omp_nthreads = omp_nthreads,
                         low_mem = low_mem,
@@ -149,6 +152,7 @@ def init_workflow(workdir):
                         debug = debug,
                         template_out_grid = template_out_grid,
                         use_aroma = use_aroma,
+                        aroma_melodic_dim = aroma_melodic_dim,
                         ignore_aroma_err = ignore_aroma_err)
                         
                     for node in subject_wf._get_all_nodes():
@@ -197,6 +201,24 @@ def init_workflow(workdir):
                         add(bold_file)
                 else:
                     add(value1)
+        
+        # Patch workflows
+        
+        def _get_all_workflows(wf):
+            workflows = [wf]
+            for node in wf._graph.nodes():
+                if isinstance(node, pe.Workflow):
+                    workflows.extend(_get_all_workflows(node))
+            return workflows
+                        
+        workflows = _get_all_workflows(subject_wf)       
+
+        for wf in workflows:
+            for _, _, d in wf._graph.edges(data = True):
+                for i, (src, dest) in enumerate(d["connect"]):
+                    if isinstance(src, tuple) and len(src) > 1:
+                        if "fix_multi_T1w_source_name" in src[1]:
+                            d["connect"][i] = (src[0], dest)
         
         for node in subject_wf._get_all_nodes():
             if type(node._interface) is DerivativesDataSink:
