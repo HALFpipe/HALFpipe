@@ -1,4 +1,5 @@
 import json
+import os
 from os import path as op
 from copy import deepcopy
 
@@ -76,7 +77,8 @@ def init_workflow(workdir):
     fmap_demean = True
     use_syn = True
     force_syn = False
-    template_out_grid = "2mm"
+    template_out_grid = op.join(os.getenv("FSLDIR"), 
+        "data", "standard", "MNI152_T1_2mm.nii.gz")
     use_aroma = True
     ignore_aroma_err = False
     
