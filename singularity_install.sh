@@ -32,7 +32,7 @@ runCmd make install
 cd ${WD}
 
 export PYTHONPATH=""
-export PATH=${PATH}:$(pwd)/singularity/bin
+export PATH=$(pwd)/singularity/bin:${PATH}
 
 runCmd singularity build --sandbox pipeline docker://mindandbrain/pipeline
  

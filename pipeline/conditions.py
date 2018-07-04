@@ -1,6 +1,11 @@
 import numpy as np
 from scipy.io import loadmat
 
+def _flatten(x):
+    if isinstance(x, np.ndarray):
+        return _flatten(x[0])
+    return x
+
 def parse_condition_files(files, format = "FSL 3-column"):
     conditions = dict()
     for subject, value0 in files.items():
@@ -16,9 +21,11 @@ def parse_condition_files(files, format = "FSL 3-column"):
                         pass
                 
                     if data is not None:
+                        durations_ = np.squeeze(data["durations"])
+                        onsets_ = np.squeeze(data["onsets"])
                         for i, name in enumerate(data["names"]):
-                            conditions[subject][run][name] = {"onsets": data["onsets"], \
-                                "durations": data["durations"]}
+                            name_ = _flatten(name)
+                            conditions[subject][run][name_] = {"onsets": np.ravel(onsets_[i]).tolist(), "durations": np.ravel(durations_[i]).tolist()}
                     
                 if format == "FSL 3-column":
                     data = np.loadtxt(value2)

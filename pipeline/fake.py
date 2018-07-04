@@ -42,13 +42,21 @@ def _find(target, d):
     return None
 
 class FakeDerivativesDataSink(DerivativesDataSink):
-    def __init__(self, images, **inputs):
+    def __init__(self, images, fake_output_dir, **inputs):
         super(FakeDerivativesDataSink, self).__init__(**inputs)
         
+        self.fake_output_dir = fake_output_dir
         self.images = images
 
     def _run_interface(self, runtime):
         out_path = _find(self.inputs.source_file, self.images)
+        
+        if out_path is None:
+            for k in self.images.keys():
+                if k in self.inputs.in_file[0]:
+                    out_path = k
+            if "anat" in self.inputs.in_file[0]:
+                out_path = out_path + "/" + "T1w"
         
         _, ext = _splitext(self.inputs.in_file[0])
         compress = ext == '.nii'
@@ -58,7 +66,13 @@ class FakeDerivativesDataSink(DerivativesDataSink):
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
             base_directory = op.abspath(self.inputs.base_directory)
-
+        
+        if base_directory == self.fake_output_dir:
+            return runtime
+        
+        if out_path is None:
+            out_path = ""
+            
         out_path = op.join(base_directory, out_path)
 
         os.makedirs(out_path, exist_ok = True)
@@ -76,7 +90,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             
             if isdefined(self.inputs.extra_values):
                 out_file = out_file.format(
-                    extra_value=self.inputs.extra_values[i]
+                    extra_value = self.inputs.extra_values[i]
                 )
                 
             out_file = op.join(out_path, out_file)

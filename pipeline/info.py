@@ -6,7 +6,7 @@
 Base module variables
 """
 
-__version__ = "0.0.3-dev"
+__version__ = "0.0.6-dev"
 
 __author__ = ""
 __copyright__ = ""
