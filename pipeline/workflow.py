@@ -266,6 +266,14 @@ def init_subject_wf(item, workdir, images, data):
                     name = "ds_varcopes_%s" % name, run_without_submitting = True)
                     ds_varcopes.inputs.extra_values = connames
                     
+                    ds_zstats = pe.Node(
+                        DerivativesDataSink(
+                            base_directory = real_output_dir, 
+                            source_file = bold_file,
+                            suffix = "{extra_value}_zstat"),
+                    name = "ds_zstat_%s" % name, run_without_submitting = True)
+                    ds_zstats.inputs.extra_values = connames
+                    
                     ds_dof_file = pe.Node(
                         DerivativesDataSink(
                             base_directory = real_output_dir, 
@@ -274,6 +282,9 @@ def init_subject_wf(item, workdir, images, data):
                     name = "ds_dof_file_%s" % name, run_without_submitting = True)
                     
                     subject_wf.connect([
+                        (func_preproc_wf, firstlevel_wf, [
+                            ("outputnode.bold_mask_mni", "inputnode.bold_file")
+                        ]),
                         (temporalfilter_wf, firstlevel_wf, [
                             ("outputnode.filtered_file", "inputnode.bold_file")
                         ]),
@@ -282,6 +293,9 @@ def init_subject_wf(item, workdir, images, data):
                         ]),
                         (firstlevel_wf, ds_varcopes, [
                             ("outputnode.varcopes", "in_file")
+                        ]),
+                        (firstlevel_wf, ds_zstats, [
+                            ("outputnode.zstats", "in_file")
                         ]),
                         (firstlevel_wf, ds_dof_file, [
                             ("outputnode.dof_file", "in_file")
@@ -309,14 +323,18 @@ def init_subject_wf(item, workdir, images, data):
                     name = "ds_varcopes_%s" % name, run_without_submitting = True)
                     ds_varcopes.inputs.extra_values = seednames
                     
-                    ds_zstat = pe.Node(
+                    ds_zstats = pe.Node(
                         DerivativesDataSink(
                             base_directory = real_output_dir, 
                             source_file = bold_file,
                             suffix = "{extra_value}_zstat"),
                     name = "ds_zstat_%s" % name, run_without_submitting = True)
+                    ds_zstats.inputs.extra_values = seednames
                     
                     subject_wf.connect([
+                        (func_preproc_wf, firstlevel_wf, [
+                            ("outputnode.bold_mask_mni", "inputnode.bold_file")
+                        ]),
                         (temporalfilter_wf, firstlevel_wf, [
                             ("outputnode.filtered_file", "inputnode.bold_file")
                         ]),
@@ -326,11 +344,10 @@ def init_subject_wf(item, workdir, images, data):
                         (firstlevel_wf, ds_varcopes, [
                             ("outputnode.varcopes", "in_file")
                         ]),
-                        (firstlevel_wf, ds_zstat, [
+                        (firstlevel_wf, ds_zstats, [
                             ("outputnode.zstats", "in_file")
                         ])
                     ])
-                    
                 
             if isinstance(value1, dict):
                 for run, bold_file in value1.items():
@@ -437,7 +454,7 @@ def init_firstlevel_seed_connectivity_wf(seeds, name = "firstlevel"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields = ["bold_file"]), 
+        fields = ["bold_file", "mask"]), 
         name = "inputnode"
     )
     
@@ -458,20 +475,24 @@ def init_firstlevel_seed_connectivity_wf(seeds, name = "firstlevel"):
     meants.inputs.mask = seed_paths
         
     glm = pe.MapNode(
-        interface = fsl.GLM(), 
+        interface = fsl.GLM(
+            out_file = "beta.nii.gz",
+            out_cope = "cope.nii.gz",
+            out_varcb_name = "varcope.nii.gz",
+            out_z_name = "zstat.nii.gz",
+            demean = True
+        ), 
         name = "glm",
-        iterfield = ["design"])
-    glm.inputs.out_file = "beta.nii.gz"
-    glm.inputs.out_cope = "cope.nii.gz"
-    glm.inputs.out_varcb_name = "varcope.nii.gz"
-    glm.inputs.out_z_name = "zstat.nii.gz"
+        iterfield = ["design"]
+    )
     
     workflow.connect([
         (inputnode, meants, [
             ("bold_file", "in_file")
         ]),
         (inputnode, glm, [
-            ("bold_file", "in_file")
+            ("bold_file", "in_file"),
+            ("mask_file", "mask")
         ]),
         (meants, glm, [
             ("out_file", "design")
@@ -479,7 +500,7 @@ def init_firstlevel_seed_connectivity_wf(seeds, name = "firstlevel"):
         (glm, outputnode, [
             ("out_cope", "copes"), 
             ("out_varcb", "varcopes"),
-            ("out_z", "dof_file")
+            ("out_z", "zstats")
         ]),
     ])
     
@@ -489,12 +510,12 @@ def init_firstlevel_wf(conditions, contrasts, repetition_time, name = "firstleve
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields = ["bold_file"]), 
+        fields = ["bold_file", "mask"]), 
         name = "inputnode"
     )
     
     outputnode = pe.Node(niu.IdentityInterface(
-        fields = ["names", "copes", "varcopes", "dof_file"]), 
+        fields = ["names", "copes", "varcopes", "zstats", "dof_file"]), 
         name = "outputnode"
     )
 
@@ -540,6 +561,22 @@ def init_firstlevel_wf(conditions, contrasts, repetition_time, name = "firstleve
         iterfield=["design_file", "in_file", "tcon_file"]
     )
     
+    maskcopes = pe.MapNode(
+        interface = fsl.ApplyMask(),
+        name = "maskcopes",
+        iterfield = ["in_file"]
+    )
+    maskvarcopes = pe.MapNode(
+        interface = fsl.ApplyMask(),
+        name = "maskvarcopes",
+        iterfield = ["in_file"]
+    )
+    maskzstats = pe.MapNode(
+        interface = fsl.ApplyMask(),
+        name = "maskzstats",
+        iterfield = ["in_file"]
+    )
+    
     workflow.connect([
         (inputnode, modelspec, [
             ("bold_file", "functional_runs")
@@ -558,9 +595,34 @@ def init_firstlevel_wf(conditions, contrasts, repetition_time, name = "firstleve
             ("design_file", "design_file"),
             ("con_file", "tcon_file")
         ]),
+        (inputnode, maskcopes, [
+            ("mask", "mask_file")
+        ]),
+        (inputnode, maskvarcopes, [
+            ("mask", "mask_file")
+        ]),
+        (inputnode, maskzstats, [
+            ("mask", "mask_file")
+        ]),
+        (modelestimate, maskcopes, [
+            ("copes", "in_file"), 
+        ]),
+        (modelestimate, maskvarcopes, [
+            ("varcopes", "in_file"), 
+        ]),
+        (modelestimate, maskzstats, [
+            ("zstats", "in_file"), 
+        ]),
+        (maskcopes, outputnode, [
+            ("out_file", "copes"), 
+        ]),
+        (maskvarcopes, outputnode, [
+            ("out_file", "varcopes"), 
+        ]),
+        (maskzstats, outputnode, [
+            ("out_file", "zstats"), 
+        ]),
         (modelestimate, outputnode, [
-            ("copes", "copes"), 
-            ("varcopes", "varcopes"),
             ("dof_file", "dof_file")
         ]),
     ])

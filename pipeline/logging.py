@@ -24,7 +24,7 @@ def init_logging(workdir):
 
     images = transpose(data["images"])
     
-    real_output_dir = op.join(workdir, "output")
+    real_output_dir = op.join(workdir, "results")
     
     hdlr = WfHandler(real_output_dir, images)
     

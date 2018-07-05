@@ -335,7 +335,7 @@ def main():
                 conditions = get_files(description2, runs = True, conditions = True)
             
             conditions = parse_condition_files(conditions, format = response2)
-            condition = next(iter(next(iter(conditions.values())).values()))
+            condition = list(next(iter(next(iter(conditions.values())).values())))
 
             c.info("Specify contrasts")
             
@@ -344,9 +344,9 @@ def main():
             response3 = "Yes"
             while response3 == "Yes":
                 contrast_name = c.read("Specify the contrast name")
-                contrast_values = c.fields("Specify the contrast values", list(condition))
+                contrast_values = c.fields("Specify the contrast values", condition)
                 
-                contrasts[contrast_name] = {k:float(v) for k, v in zip(list(condition), contrast_values)}
+                contrasts[contrast_name] = {k:float(v) for k, v in zip(condition, contrast_values)}
                 
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
             
