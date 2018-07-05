@@ -204,12 +204,17 @@ def init_subject_wf(item, workdir, images, data):
                     name = "temporalfilter_wf_%s" % name
                 )
                 
-                ds_temporalfilter = pe.Node(
+                maskpreproc = pe.Node(
+                    interface = fsl.ApplyMask(),
+                    name = "mask_preproc_%s" % name
+                )
+                
+                ds_preproc = pe.Node(
                     DerivativesDataSink(
                         base_directory = real_output_dir, 
                         source_file = bold_file,
                         suffix = "preproc"),
-                name = "ds_temporalfilter_%s" % name, run_without_submitting = True)
+                name = "ds_preproc_%s" % name, run_without_submitting = True)
                 
                 subject_wf.connect([
                     (anat_preproc_wf, func_preproc_wf, [
@@ -231,8 +236,14 @@ def init_subject_wf(item, workdir, images, data):
                     (func_preproc_wf, temporalfilter_wf, [
                         ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                     ]),
-                    (temporalfilter_wf, ds_temporalfilter, [
+                    (temporalfilter_wf, maskpreproc, [
                         ("outputnode.filtered_file", "in_file")
+                    ]),
+                    (func_preproc_wf, maskpreproc, [
+                        ("outputnode.bold_mask_mni", "mask_file")
+                    ]),
+                    (maskpreproc, ds_preproc, [
+                        ("out_file", "in_file")
                     ])
                 ])
                 
@@ -283,7 +294,7 @@ def init_subject_wf(item, workdir, images, data):
                     
                     subject_wf.connect([
                         (func_preproc_wf, firstlevel_wf, [
-                            ("outputnode.bold_mask_mni", "inputnode.bold_file")
+                            ("outputnode.bold_mask_mni", "inputnode.mask")
                         ]),
                         (temporalfilter_wf, firstlevel_wf, [
                             ("outputnode.filtered_file", "inputnode.bold_file")
@@ -333,7 +344,7 @@ def init_subject_wf(item, workdir, images, data):
                     
                     subject_wf.connect([
                         (func_preproc_wf, firstlevel_wf, [
-                            ("outputnode.bold_mask_mni", "inputnode.bold_file")
+                            ("outputnode.bold_mask_mni", "inputnode.mask")
                         ]),
                         (temporalfilter_wf, firstlevel_wf, [
                             ("outputnode.filtered_file", "inputnode.bold_file")
@@ -492,7 +503,7 @@ def init_firstlevel_seed_connectivity_wf(seeds, name = "firstlevel"):
         ]),
         (inputnode, glm, [
             ("bold_file", "in_file"),
-            ("mask_file", "mask")
+            ("mask", "mask")
         ]),
         (meants, glm, [
             ("out_file", "design")

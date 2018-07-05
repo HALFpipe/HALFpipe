@@ -335,7 +335,9 @@ def main():
                 conditions = get_files(description2, runs = True, conditions = True)
             
             conditions = parse_condition_files(conditions, format = response2)
+            
             condition = list(next(iter(next(iter(conditions.values())).values())))
+            condition = sorted(condition)
 
             c.info("Specify contrasts")
             
