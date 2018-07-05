@@ -34,6 +34,9 @@ cd ${WD}
 export PYTHONPATH=""
 export PATH=$(pwd)/singularity/bin:${PATH}
 
+mkdir -p cache
+export SINGULARITY_CACHEDIR=$(pwd)/cache
+
 runCmd singularity build --sandbox pipeline docker://mindandbrain/pipeline
  
  
