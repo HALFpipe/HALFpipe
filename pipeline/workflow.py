@@ -40,36 +40,34 @@ from .utils import (
 def init_workflow(workdir):
     workflow_file = op.join(workdir, "workflow.pklz")
     
-    workflow = None
-    if op.isfile(workflow_file):
-        with gzip.open(workflow_file, "rb") as f:
-            workflow = pickle.load(f)
-    else:
-        fp = op.join(workdir, "pipeline.json")
+    # workflow = None
+    # if op.isfile(workflow_file):
+    #     with gzip.open(workflow_file, "rb") as f:
+    #         workflow = pickle.load(f)
+    # else:
+    fp = op.join(workdir, "pipeline.json")
+    
+    data = None
+    with open(fp, "r") as f:
+        data = json.load(f)
         
-        data = None
-        with open(fp, "r") as f:
-            data = json.load(f)
-            
-        name = "intermediates"
-        workflow = pe.Workflow(name = name, base_dir = workdir)
+    name = "intermediates"
+    workflow = pe.Workflow(name = name, base_dir = workdir)
+    
+    images = transpose(data["images"])
+    
+    # for subject, value0 in images.items():
+    #     subject_wf = init_subject_wf((subject, value0), workdir, images, data)
+    #     workflow.add_nodes([subject_wf])
         
-        images = transpose(data["images"])
-        
-        # for subject, value0 in images.items():
-        #     subject_wf = init_subject_wf((subject, value0), workdir, images, data)
-        #     workflow.add_nodes([subject_wf])
-            
-        subject_wfs = Pool().map(
-            partial(init_subject_wf, workdir = workdir, images = images, data = data), 
-            list(images.items())
-        )
-        workflow.add_nodes(subject_wfs)
-        
-        # import pdb; pdb.set_trace()
-        
-        with gzip.open(workflow_file, "wb") as f:
-            pickle.dump(workflow, f)
+    subject_wfs = Pool().map(
+        partial(init_subject_wf, workdir = workdir, images = images, data = data), 
+        list(images.items())
+    )
+    workflow.add_nodes(subject_wfs)
+    
+    with gzip.open(workflow_file, "wb") as f:
+        pickle.dump(workflow, f)
     
     return workflow             
 
@@ -461,6 +459,15 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time, name = "tempo
     
     return workflow
 
+def _flatten(l):
+    if isinstance(l, str):
+        return [l]
+    else:
+        o = []
+        for k in l:
+            o += _flatten(k)
+        return o
+
 def init_firstlevel_seed_connectivity_wf(seeds, name = "firstlevel"):
     workflow = pe.Workflow(name=name)
 
@@ -559,13 +566,13 @@ def init_firstlevel_wf(conditions, contrasts, repetition_time, name = "firstleve
         name = "level1design"
     )
 
-    modelgen = pe.MapNode(
+    modelgen = pe.Node(
         interface = fsl.FEATModel(),
         name = "modelgen",
         iterfield = ["fsf_file", "ev_files"]
     )
 
-    modelestimate = pe.MapNode(
+    modelestimate = pe.Node(
         interface = fsl.FILMGLS(smooth_autocorr = True, 
             mask_size = 5, threshold = 0.000002),
         name = "modelestimate",
@@ -616,13 +623,13 @@ def init_firstlevel_wf(conditions, contrasts, repetition_time, name = "firstleve
             ("mask", "mask_file")
         ]),
         (modelestimate, maskcopes, [
-            ("copes", "in_file"), 
+            (("copes", _flatten), "in_file"), 
         ]),
         (modelestimate, maskvarcopes, [
-            ("varcopes", "in_file"), 
+            (("varcopes", _flatten), "in_file"), 
         ]),
         (modelestimate, maskzstats, [
-            ("zstats", "in_file"), 
+            (("zstats", _flatten), "in_file"), 
         ]),
         (maskcopes, outputnode, [
             ("out_file", "copes"), 
