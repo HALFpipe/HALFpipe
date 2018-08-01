@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+    
+    <style type="text/css">
+      body {
+        position: relative;
+      }
+      
+      .top {
+        position: relative;
+        overflow-y: auto;
+        max-height: calc(100vh - 4rem);
+      }
+    
+      .navbar {
+        position: relative;
+        top: 0;
+        z-index: 1071;
+        min-height: 4rem;
+      }
+      
+      .sidebar {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        height: calc(100vh - 4rem);
+        
+        order: 2;
+        -ms-flex-order: 2;
+      }
+      @media (min-width:768px) {
+        .sidebar {
+          display: block !important;
+        }
+      }
+      
+      .sidebar-content.active {
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        display: block;
+      }
+      .sidebar-content {
+        display:none;
+      }
+      
+      .content {
+        padding: 0;
+    
+        -ms-flex-order: 1;
+        order: 1;
+      }
+      .content > :first-child > :first-child {
+        margin-top: 0 !important;
+      }
+      .content > :first-child > :last-child {
+        margin-bottom: 0 !important;
+      }
+      
+      .img-100 {
+        max-height:calc(100vh - 10rem);
+        width:100%;
+      }
+    </style>
+    
+    <title>mindandbrain/pipeline/qc</title>
+  </head>
+  <body>
+    <header class="navbar navbar-expand flex-column flex-md-row navbar-light bg-light" data-spy="affix">
+      <a class="navbar-brand" href="#">mindandbrain/pipeline/qc</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+          <input class="form-control mr-sm-2" type="search" placeholder="Subject id" aria-label="Search">
+          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Go to subject</button>
+        </form> 
+      </div>
+    </header>
+    
+    <div class="top container-fluid">
+      <div class="row flex-xl-nowrap">
+        <main class="content col-12 col-md-8 col-xl-9 bd-content">
+          
+        </main>
+        <div class="sidebar col-12 col-md-4 col-xl-3 bd-sidebar p-0 border-left collapse">
+          
+        </div>
+      </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js" integrity="sha384-5DWzr9S4agqS3WKvPrhFKJagpYyHOBsf3/DxuDKORyqCv2sYer9c/ExdhPOL8CGh" crossorigin="anonymous"></script> 
+       
+    <script type="application/json" id="data">
+      [
+        {
+          "id": "segmentation",
+          "name": "Segmentation",
+          "description": "Imaging genetics refers to the use of anatomical or physiological imaging technologies as phenotypic assays to evaluate genetic variation. Scientists that first used the term imaging genetics were interested in how genes influence psychopathology and used functional neuroimaging to investigate genes that are expressed in the brain (neuroimaging genetics).",
+          "items": [
+            {
+              "id": "ILYA",
+              "path": "sub-01_task-mixedgamblestask_run-01_bold_carpetplot.svg",
+              "isGood": true
+            },
+            {
+              "id": "LEA",
+              "path": "sub-01_task-mixedgamblestask_run-01_bold_carpetplot.svg",
+              "isGood": false
+            }
+          ]
+        },
+        {
+          "id": "registration",
+          "name": "Registration",
+          "description": "Rock and roll is a genre of popular music that originated and evolved in the United States during the late 1940s and early 1950s from African American musical styles such as gospel.",
+          "items": [
+            {
+              "id": "ILYA",
+              "path": "sub-01_task-mixedgamblestask_run-01_bold_carpetplot.svg",
+              "isGood": true
+            },
+            {
+              "id": "LEA",
+              "path": "sub-01_task-mixedgamblestask_run-01_bold_carpetplot.svg",
+              "isGood": true
+            }
+          ]
+        }
+      ]
+    </script>   
+    
+    <script type="text/x-underscore" id="nav-item-template">
+      <li class="nav-item">
+        <a class="nav-link" href="#<%- href %>"><%- name %></a>
+      </li>
+    </script>
+    
+    <script type="text/x-underscore" id="item-group-template">
+      <div id="<%- href %>">
+      </div>
+    </script>
+       
+    <script type="text/x-underscore" id="item-template">
+      <div class="content-element container-fluid <% if (isGood) { %> bg-success <% } else { %> bg-danger <% } %> p-3 my-2">
+        <span class="h4 mx-3 text-white align-middle"><%- id %></span>
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label class="btn btn-success <% if (isGood) { %> active <% } %>">
+            <input type="radio" name="options" autocomplete="off"> Good
+          </label>
+          <label class="btn btn-danger <% if (!isGood) { %> active <% } %>">
+            <input type="radio" name="options" autocomplete="off"> Bad
+          </label>
+        </div>
+        <div class="m-3">
+          <img src="<%- path %>" class="img-100">
+        </div>
+      </div> 
+    </script>
+       
+    <script type="text/x-underscore" id="description-template">
+      <div class="sidebar-content text-justify p-3" id="<%- href %>-sidebar-content">
+        <h3><%- name %></h3>
+        <p><%- description %></p>
+      </div>
+    </script>
+       
+    <script>
+      $(document).ready(function () {
+        var navItemTemplate = _.template($("#nav-item-template").html());
+        var descriptionTemplate = _.template($("#description-template").html());
+        var itemGroupTemplate = _.template($("#item-group-template").html());
+        var itemTemplate = _.template($("#item-template").html());
+      
+        var data = JSON.parse($("#data").html());
+        
+        _.each(data, function(x) {
+          x.href = x.id;
+          var html = navItemTemplate(x);
+          $(".navbar-nav").append(html);
+        });
+        
+        _.each(data, function(x) {
+          var html = descriptionTemplate(x);
+          $(".sidebar").append(html);
+        });
+        
+        _.each(data, function(x) {
+          x.href = x.id;
+          var html = itemGroupTemplate(x);
+          $(".content").append(html);
+          _.each(x.items, function(y) {
+            var html = itemTemplate(y);
+            $("#" + x.id).append(html);
+          });
+        });
+        
+        $(".top").scrollspy({
+          target: ".navbar-nav"
+        });
+        
+        var update = function () {
+          $(".sidebar-content").removeClass("active");
+          $($(".nav-link.active").attr("href") + "-sidebar-content").addClass("active");
+        };
+        $(window).on("activate.bs.scrollspy", update);
+        update();
+      });
+    </script>
+  </body>
+</html>

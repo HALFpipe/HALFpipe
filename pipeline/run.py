@@ -1,83 +1,92 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from multiprocessing import set_start_method, cpu_count
+set_start_method("forkserver", force = True)
+
+from glob import glob
+from os import path as op
+import os
+
+from argparse import ArgumentParser
+
+import nibabel as nib
+
+import re
+import json
+
+from .cli import cli
+
+from .conditions import parse_condition_files
+
+from .info import __version__
+
+from .workflow import init_workflow
+
+from .logging import init_logging
+
+from .patterns import ambiguous_match
+
+EXT_PATH = "/ext"
+    
+def get_path(path):
+    path = path.strip()
+
+    if path.startswith("/"):
+        path = path[1:]
+
+    path = op.join(EXT_PATH, path)
+
+    return path
+    
 def main():
-    from multiprocessing import set_start_method, cpu_count
-    set_start_method("forkserver", force = True)
+    ap = ArgumentParser(description = "")
+    ap.add_argument("-w", "--workdir")
+    ap.add_argument("-d", "--do-not-run", action = "store_true")
+    ap.add_argument("-k", "--keep-intermediates", action = "store_true")
+    args = ap.parse_args()
     
-    from glob import glob
-    from os import path as op
-    import os
-
-    from argparse import ArgumentParser
-
-    import nibabel as nib
-
-    import re
-    import json
-
-    from .cli import cli
-
-    from .conditions import parse_condition_files
-
-    from .info import __version__
-
-    from .workflow import init_workflow
-
-    from .logging import init_logging
-    
-    from .patterns import ambiguous_match
-
-    EXT_PATH = "/ext"
-    
-    c = cli()
-    
-    c.info("mindandbrain pipeline %s" % __version__)
-    c.info("")
-    
+    workdir = None
+    if args.workdir is not None:
+        workdir = get_path(args.workdir)
+        
     #
     # tests
     #
     
     if not (op.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
         c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
-        
-    def get_path(path):
-        path = path.strip()
-        
-        if path.startswith("/"):
-            path = path[1:]
-        
-        path = op.join(EXT_PATH, path)
-        
-        return path
     
     #
     # data structures
     #
     
+    c = None
     images = dict()
     metadata = dict()
     field_maps = dict()
     
     subject_ids = []
-    
-    #
-    # working dir
-    #
-    
-    workdir = get_path(c.read("Specify the working directory"))
-    
+        
+    if workdir is None:
+        if c is None:
+            c = cli()
+            c.info("mindandbrain pipeline %s" % __version__)
+            c.info("")
+        
+        workdir = get_path(c.read("Specify the working directory"))
+        c.info("")
+        
     os.makedirs(workdir, exist_ok = True)
     
-    c.info("")
-    
+    save = op.join(workdir, "pipeline.json")
+
     #
     # helper functions
     #
     
     def get_file(description):
-        path = get_path(c.read("Specify the path to the %s file" % description))
+        path = get_path(c.read("Specify the path of the %s file" % description))
         if not op.isfile(path):
             return get_file(description)
         return path
@@ -85,7 +94,7 @@ def main():
     def get_files(description, runs = False, conditions = False):
         files = dict()
         
-        c.info("Specify the path to the %s files" % description)
+        c.info("Specify the path of the %s files" % description)
         
         wildcards = []
         
@@ -102,9 +111,14 @@ def main():
         
         wildcard_descriptions = {"*": "subject name", "$": "condition name", "?": "run name"}
         
-        glob_path = path.replace("?", "*")
-        glob_path = glob_path.replace("$", "*")
+        glob_path = path
+        if runs:
+            glob_path = glob_path.replace("?", "*")
+        if conditions:
+            glob_path = glob_path.replace("$", "*")
         glob_result = glob(glob_path)
+        
+        glob_result = [g for g in glob_result if op.isfile(g)]
         
         c.info("Found %i %s files" % (len(glob_result), description))
         
@@ -193,15 +207,17 @@ def main():
                 return get_files(description)
             
         return files
-    
-    #
-    #
-    #
-    
-    save = op.join(workdir, "pipeline.json")
-    if op.isfile(save):
-        c.info("Loading saved configuration")
-    else:
+        
+        #
+        #
+        #
+            
+    if not op.isfile(save):
+        if c is None:
+            c = cli()
+            c.info("mindandbrain pipeline %s" % __version__)
+            c.info("")
+        
         #
         # anatomical/structural data
         #
@@ -355,7 +371,8 @@ def main():
             metadata[field_name]["Conditions"] = conditions
             metadata[field_name]["Contrasts"] = contrasts
             
-            # response3 = c.select("Is field map data available?", ["Yes", "No"])
+            response3 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+            metadata[field_name]["UseMovPar"] = response3 == "Yes"
             # 
             # if response3 == "Yes":
             #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
@@ -380,22 +397,23 @@ def main():
     
     c.info("")
     
-    workflow = init_workflow(workdir)
-    
-    plugin_settings = {}
-    init_logging(workdir)
-    
-    plugin_settings = {
-        "plugin": "MultiProc",
-        "plugin_args": {
-            "n_procs": cpu_count(),
-            "raise_insufficient": False,
-            "maxtasksperchild": 1,
+    if not args.do_not_run:
+        workflow = init_workflow(workdir, keep_intermediates = args.keep_intermediates)
+        
+        plugin_settings = {}
+        init_logging(workdir)
+        
+        plugin_settings = {
+            "plugin": "MultiProc",
+            "plugin_args": {
+                "n_procs": cpu_count(),
+                "raise_insufficient": False,
+                "maxtasksperchild": 1,
+            }
         }
-    }
-    
-    import gc
-    gc.collect()
-    
-    workflow.run(**plugin_settings)
+        
+        import gc
+        gc.collect()
+        
+        workflow.run(**plugin_settings)
     

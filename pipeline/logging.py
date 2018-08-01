@@ -28,8 +28,8 @@ def init_logging(workdir):
     
     hdlr = WfHandler(real_output_dir, images)
     
-    from niworkflows.nipype import logging as nlogging
-    from niworkflows.nipype import config
+    from nipype import logging as nlogging
+    from nipype import config
 
     formatter = Formatter(fmt = nlogging.fmt, datefmt = nlogging.datefmt)
     hdlr.setFormatter(formatter)

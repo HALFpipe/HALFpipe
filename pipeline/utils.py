@@ -1,3 +1,14 @@
+
+
+def flatten(l):
+    if isinstance(l, str):
+        return [l]
+    else:
+        o = []
+        for k in l:
+            o += flatten(k)
+        return o
+
 def transpose(d):
     out = dict()
     for key0, value0 in d.items():

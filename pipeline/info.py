@@ -6,7 +6,7 @@
 Base module variables
 """
 
-__version__ = "0.0.6-dev"
+__version__ = "0.1.0-dev"
 
 __author__ = ""
 __copyright__ = ""
@@ -33,7 +33,8 @@ REQUIRES = [
     "numpy",
     "scipy",
     "nibabel",
-    # "pydicom",
+    "jinja2",
+    "fasteners",
 ]
 
 LINKS_REQUIRES = [
@@ -53,3 +54,4 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
 ]
+
