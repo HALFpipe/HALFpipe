@@ -352,22 +352,23 @@ def init_subject_wf(item, workdir, images, data):
             ])
             
             if isinstance(value1, dict):
-                for run, bold_file in value1.items():
-                    run_wf = pe.Workflow(name = run)
-                    
-                    run_inputnode = pe.Node(niu.IdentityInterface(
-                        fields = _func_inputnode_fields,
-                    ), name = "inputnode")
-                    run_wf.add_nodes((inputnode,))
+                for run, bold_array in value1.items():
+                    for _, bold_file in bold_array.items():
+                        run_wf = pe.Workflow(name = run)
                         
-                    scan_wf.connect([
-                        (inputnode, run_wf, [
-                            (f, "inputnode.%s" % f) 
-                                for f in _func_inputnode_fields
+                        run_inputnode = pe.Node(niu.IdentityInterface(
+                            fields = _func_inputnode_fields,
+                        ), name = "inputnode")
+                        run_wf.add_nodes((inputnode,))
+                            
+                        scan_wf.connect([
+                            (inputnode, run_wf, [
+                                (f, "inputnode.%s" % f) 
+                                    for f in _func_inputnode_fields
+                            ])
                         ])
-                    ])
-                    
-                    add(run_wf, run_inputnode, bold_file, run = run)
+                        
+                        add(run_wf, run_inputnode, bold_file, run = run)
             else:
                 add(scan_wf, inputnode, value1)
 

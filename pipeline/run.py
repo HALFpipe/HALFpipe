@@ -395,7 +395,7 @@ def main():
         
         c.info("")
     
-    c.info("")
+        c.info("")
     
     if not args.do_not_run:
         workflow = init_workflow(workdir, keep_intermediates = args.keep_intermediates)
