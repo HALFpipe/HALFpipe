@@ -49,15 +49,15 @@ def init_workflow(workdir, keep_intermediates = True):
 
     images = transpose(data["images"])
 
-    for subject, value0 in images.items():
-        subject_wf = init_subject_wf((subject, value0), workdir, images, data)
-        workflow.add_nodes([subject_wf])
+    # for subject, value0 in images.items():
+    #     subject_wf = init_subject_wf((subject, value0), workdir, images, data)
+    #     workflow.add_nodes([subject_wf])
         
-    # subject_wfs = Pool().map(
-    #     partial(init_subject_wf, workdir = workdir, images = images, data = data), 
-    #     list(images.items())
-    # )
-    # workflow.add_nodes(subject_wfs)
+    subject_wfs = Pool().map(
+        partial(init_subject_wf, workdir = workdir, images = images, data = data), 
+        list(images.items())
+    )
+    workflow.add_nodes(subject_wfs)
 
     return workflow  
 
@@ -83,7 +83,7 @@ def init_subject_wf(item, workdir, images, data):
     
     longitudinal = False
     t2s_coreg = False
-    omp_nthreads = 1000000000
+    omp_nthreads = 1
     freesurfer = False
     skull_strip_template = "OASIS"
     template = "MNI152NLin2009cAsym"
