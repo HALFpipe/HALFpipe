@@ -24,7 +24,7 @@ def init_logging(workdir):
 
     images = transpose(data["images"])
     
-    real_output_dir = op.join(workdir, "results")
+    real_output_dir = op.join(workdir, "log")
     
     hdlr = WfHandler(real_output_dir, images)
     
@@ -50,7 +50,7 @@ class WfHandler(StreamHandler):
         self.output_dir = output_dir
         self.images = images
         
-        self.files = {k:op.join(output_dir, k, "log.txt") for k in images.keys()}
+        self.files = {k:op.join(output_dir, "%s.txt" % k) for k in images.keys()}
         self.handles = {k:None for k in images.keys()}
         
         os.makedirs(self.output_dir, exist_ok = True)
@@ -70,7 +70,6 @@ class WfHandler(StreamHandler):
                             for k, stream in self.handles.items():
                                 if k in hierarchy:
                                     if stream is None:
-                                        os.makedirs(op.join(self.output_dir, k), exist_ok = True)
                                         self.handles[k] = open(self.files[k], "a")
                                         stream = self.handles[k]
                                     self.stream = stream

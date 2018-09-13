@@ -42,8 +42,7 @@ def get_path(path):
 def main():
     ap = ArgumentParser(description = "")
     ap.add_argument("-w", "--workdir")
-    ap.add_argument("-d", "--do-not-run", action = "store_true")
-    ap.add_argument("-k", "--keep-intermediates", action = "store_true")
+    ap.add_argument("-s", "--setup-only", action = "store_true", default = False)
     args = ap.parse_args()
     
     workdir = None
@@ -287,9 +286,11 @@ def main():
             metadata[field_name]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
             
+            """
             response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
                 metadata[field_name]["BrainAtlasImage"] = get_file("brain atlas image")
+            """
             
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
             if response3 == "Yes":
@@ -301,7 +302,7 @@ def main():
                 
             response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ICAMaps"] = get_file("seed")
+                metadata[field_name]["ICAMaps"] = get_file("ICA component maps image")
             
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             # 
@@ -394,11 +395,10 @@ def main():
         c.info("Saved configuration")
         
         c.info("")
+        c.info("")
     
-    c.info("")
-    
-    if not args.do_not_run:
-        workflow = init_workflow(workdir, keep_intermediates = args.keep_intermediates)
+    if not args.setup_only:
+        workflow = init_workflow(workdir)
         
         plugin_settings = {}
         init_logging(workdir)

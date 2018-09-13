@@ -63,7 +63,7 @@ def _rank_collapse(graph):
     return ranks
     
 def patch_wf(workflow, images, 
-        fmriprep_reportlets_dir, fmriprep_output_dir):
+        output_dir, fmriprep_reportlets_dir, fmriprep_output_dir):
     workflow._graph = workflow._create_flat_graph()
         
     # workflows = _get_all_workflows(workflow)       
@@ -83,6 +83,7 @@ def patch_wf(workflow, images,
             suffix = node._interface.inputs.suffix
             extra_values = node._interface.inputs.extra_values
             node._interface = FakeDerivativesDataSink(images = images, 
+                    output_dir = output_dir, 
                     fmriprep_reportlets_dir = fmriprep_reportlets_dir, 
                     fmriprep_output_dir = fmriprep_output_dir,
                     node_id = "%s.%s" % (node._hierarchy, node.name), depends = None,

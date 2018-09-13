@@ -9,6 +9,17 @@ def flatten(l):
             o += flatten(k)
         return o
 
+def get_float(input):
+    def flatten(l):
+        if isinstance(l, str):
+            return [l]
+        else:
+            o = []
+            for k in l:
+                o += flatten(k)
+            return o
+    return float(flatten(input)[0])
+
 def transpose(d):
     out = dict()
     for key0, value0 in d.items():
@@ -31,7 +42,7 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
     
     if not key0[0] in d:
         return None
-
+        
     e = d[key0[0]]
     
     key1 = []
@@ -44,7 +55,7 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
         
     if not key1[0] in e:
         return None
-
+        
     f = e[key1[0]]
     
     key2 = []

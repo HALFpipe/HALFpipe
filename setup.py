@@ -42,7 +42,11 @@ def main():
         tests_require=ldict['TESTS_REQUIRES'],
         extras_require=ldict['EXTRA_REQUIRES'],
         dependency_links=ldict['LINKS_REQUIRES'],
-        package_data={},
+        package_data={
+            'pipeline': [
+                "index.html"
+            ]
+        },
         entry_points={'console_scripts': [
             'pipeline=pipeline.run:main'
         ]},

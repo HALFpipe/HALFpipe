@@ -9,10 +9,10 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ..utils import flatten
-
-def get_thr(input):
-    return float(flatten(input)[0])
+from ..utils import (
+    flatten,
+    get_float
+)
 
 def init_firstlevel_wf(conditions, 
         contrasts, repetition_time, 
@@ -22,11 +22,6 @@ def init_firstlevel_wf(conditions,
     inputnode = pe.Node(niu.IdentityInterface(
         fields = ["bold_file", "mask_file", "confounds_file"]), 
         name = "inputnode"
-    )
-    
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields = ["names", "copes", "varcopes", "zstats", "dof_file"]), 
-        name = "outputnode"
     )
 
     names = list(conditions.keys())
@@ -92,6 +87,26 @@ def init_firstlevel_wf(conditions,
         iterfield = ["in_file"]
     )
     
+    splitcopes = pe.Node(
+        interface = niu.Split(splits = [1 for conname in connames]),
+        name = "splitcopes"
+    )
+    splitvarcopes = pe.Node(
+        interface = niu.Split(splits = [1 for conname in connames]),
+        name = "splitvarcopes"
+    )
+    splitzstats = pe.Node(
+        interface = niu.Split(splits = [1 for conname in connames]),
+        name = "splitzstats"
+    )
+
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields = sum([["%s_cope" % conname, 
+                "%s_varcope" % conname, "%s_zstat" % conname] 
+            for conname in connames], []) + ["dof_file"]), 
+        name = "outputnode"
+    )
+    
     c = [("bold_file", "functional_runs")]
     if use_mov_pars:
         c.append(
@@ -114,7 +129,7 @@ def init_firstlevel_wf(conditions,
             ("bold_file", "in_file")
         ]),
         (stats, modelestimate, [
-            (("out_stat", get_thr), "threshold")
+            (("out_stat", get_float), "threshold")
         ]),
         (modelgen, modelestimate, [
             ("design_file", "design_file"),
@@ -138,18 +153,24 @@ def init_firstlevel_wf(conditions,
         (modelestimate, maskzstats, [
             (("zstats", flatten), "in_file"), 
         ]),
-        (maskcopes, outputnode, [
-            ("out_file", "copes"), 
-        ]),
-        (maskvarcopes, outputnode, [
-            ("out_file", "varcopes"), 
-        ]),
-        (maskzstats, outputnode, [
-            ("out_file", "zstats"), 
-        ]),
         (modelestimate, outputnode, [
             ("dof_file", "dof_file")
         ]),
+        
+        (maskcopes, splitcopes, [
+            ("out_file", "inlist"), 
+        ]),
+        (maskvarcopes, splitvarcopes, [
+            ("out_file", "inlist"), 
+        ]),
+        (maskzstats, splitzstats, [
+            ("out_file", "inlist"), 
+        ]),
     ])
+    
+    for i, conname in enumerate(connames):
+        workflow.connect(splitcopes, "out%i" % (i+1), outputnode, "%s_cope" % conname)
+        workflow.connect(splitvarcopes, "out%i" % (i+1), outputnode, "%s_varcope" % conname)
+        workflow.connect(splitzstats, "out%i" % (i+1), outputnode, "%s_zstat" % conname)
     
     return workflow, connames

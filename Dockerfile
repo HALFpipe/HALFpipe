@@ -1,5 +1,5 @@
-ARG FMRIPREP_VERSION=1.1.2
-ARG MRIQC_VERSION=0.10.4
+ARG FMRIPREP_VERSION=1.1.6
+ARG MRIQC_VERSION=0.14.2
 
 FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 
@@ -18,8 +18,18 @@ RUN mkdir -p /root/src/mriqc && \
 
 RUN mkdir /ext
 
+COPY ./qualitycheck /root/src/qualitycheck
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash && \
+  apt-get install -y nodejs &&  \
+  cd /root/src/qualitycheck && \
+  npm install && npm run build && \
+  cp -r dist/index.html /root/src && \
+  cd .. && rm -rf qualitycheck && \
+  apt-get purge -y nodejs
+  
 COPY . /root/src/pipeline
 RUN cd /root/src/pipeline && \
+    cp ../index.html pipeline && \
     pip install .[all] && \
     rm -rf ~/.cache/pip
 
