@@ -21,9 +21,14 @@ from .patch import patch_wf
 
 from .fake import FakeBIDSLayout
 
-from .func import init_temporalfilter_wf
-from .func import init_tsnr_wf
-from .rest import init_seedconnectivity_wf
+from .func import (
+    init_temporalfilter_wf,
+    init_tsnr_wf
+)
+from .rest import (
+    init_seedconnectivity_wf,
+    init_dualregression_wf
+)
 from .task import init_firstlevel_wf
 from .stats import init_higherlevel_wf
 
@@ -340,14 +345,14 @@ def init_subject_wf(item, workdir, images, data):
 
 def create_ds(wf, firstlevel_wf, outnames,
         func_preproc_wf, temporalfilter_wf,
-        bold_file, output_dir):
+        bold_file, output_dir, name = "firstlevel"):
         
     ds_dof_file = pe.Node(
         DerivativesDataSink(
             base_directory = output_dir, 
             source_file = bold_file,
             suffix = "dof"),
-        name = "ds_dof_file", run_without_submitting = True)
+        name = "ds_%s_dof_file" % name, run_without_submitting = True)
 
     wf.connect([
         (func_preproc_wf, firstlevel_wf, [
@@ -368,19 +373,19 @@ def create_ds(wf, firstlevel_wf, outnames,
                 base_directory = output_dir, 
                 source_file = bold_file,
                 suffix = "%s_cope" % outname),
-            name = "ds_%s_cope" % outname, run_without_submitting = True)
+            name = "ds_%s_%s_cope" % (name, outname), run_without_submitting = True)
         ds_varcope = pe.Node(
             DerivativesDataSink(
                 base_directory = output_dir, 
                 source_file = bold_file,
                 suffix = "%s_varcope" % outname),
-            name = "ds_%s_varcope" % outname, run_without_submitting = True)
+            name = "ds_%s_%s_varcope" % (name, outname), run_without_submitting = True)
         ds_zstat = pe.Node(
             DerivativesDataSink(
                 base_directory = output_dir, 
                 source_file = bold_file,
                 suffix = "%s_zstat" % outname),
-            name = "ds_%s_zstat" % outname, run_without_submitting = True)
+            name = "ds_%s_%s_zstat" % (name, outname), run_without_submitting = True)
         
         wf.connect([
             (firstlevel_wf, ds_cope, [
@@ -502,7 +507,7 @@ def create_func_wf(wf, inputnode, bold_file, metadata,
             name = "firstlevel_wf"
         )
         create_ds(wf, firstlevel_wf, connames, func_preproc_wf, temporalfilter_wf, 
-            bold_file, output_dir)
+            bold_file, output_dir, name = "firstlevel")
         wfbywf["firstlevel_wf"] = firstlevel_wf
         outnamesbywf["firstlevel_wf"] = connames
     if "ConnectivitySeeds" in metadata:
@@ -512,7 +517,7 @@ def create_func_wf(wf, inputnode, bold_file, metadata,
             name = "seedconnectivity_wf"
         )
         create_ds(wf, firstlevel_wf, seednames, func_preproc_wf, temporalfilter_wf, 
-            bold_file, output_dir)
+            bold_file, output_dir, name = "seedconnectivity")
         wfbywf["seedconnectivity_wf"] = firstlevel_wf
         outnamesbywf["seedconnectivity_wf"] = seednames
     if "ICAMaps" in metadata:
@@ -522,7 +527,7 @@ def create_func_wf(wf, inputnode, bold_file, metadata,
             name = "dualregression_wf"
         )
         create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf, 
-            bold_file, output_dir)
+            bold_file, output_dir, name = "dualregression")
         wfbywf["dualregression_wf"] = firstlevel_wf
         outnamesbywf["dualregression_wf"] = componentnames
     

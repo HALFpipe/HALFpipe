@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from os import path as op
 from fmriprep.interfaces.bids import _splitext
 
 from ..interface import Dof
