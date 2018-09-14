@@ -27,6 +27,8 @@ from .rest import init_seedconnectivity_wf
 from .task import init_firstlevel_wf
 from .stats import init_higherlevel_wf
 
+from .qualitycheck import get_qualitycheck_exclude
+
 from ..utils import (
     transpose,
     lookup,
@@ -86,7 +88,7 @@ def init_workflow(workdir):
         partial(init_subject_wf, workdir = workdir, images = images, data = data), 
         list(images.items())
     )
-    subject_wfs, outnameslists = zip(*result)
+    subjects, subject_wfs, outnameslists = zip(*result)
     workflow.add_nodes(subject_wfs)
     
     outnamessets = {}
@@ -95,6 +97,8 @@ def init_workflow(workdir):
             if k not in outnamessets:
                 outnamessets[k] = set()
             outnamessets[k].update(v)
+    
+    exclude = get_qualitycheck_exclude(workdir)
     
     stats_dir = op.join(workdir, "stats")
     
@@ -113,41 +117,46 @@ def init_workflow(workdir):
                 interface = niu.Merge(len(subject_wfs)),
                 name = "%s_mergedoffiles" % outname)
             
-            for i, wf in enumerate(subject_wfs):
-                nodename = "task-%s.outputnode" % task
-                outputnode = [
-                    node for node in wf._graph.nodes()
-                    if str(node).endswith('.' + nodename)
-                ]
-                if len(outputnode) > 0:
-                    outputnode = outputnode[0]
-                    workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i+1))
-                    workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i+1))
-                    workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i+1))
+            for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
+                excludethis = False
+                if subject in exclude:
+                    if task in exclude[subject]:
+                        excludethis = exclude[subject][task]
+                if not excludethis:
+                    nodename = "task-%s.outputnode" % task
+                    outputnode = [
+                        node for node in wf._graph.nodes()
+                        if str(node).endswith('.' + nodename)
+                    ]
+                    if len(outputnode) > 0:
+                        outputnode = outputnode[0]
+                        workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i+1))
+                        workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i+1))
+                        workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i+1))
         
             ds_cope = pe.Node(
                 DerivativesDataSink(
-                    base_directory = stats_dir, 
+                    base_directory = op.join(stats_dir, task), 
                     source_file = "",
-                    suffix = "%s/%s_cope" % (task, outname)),
+                    suffix = "%s_cope" % task),
                 name = "ds_%s_cope" % outname, run_without_submitting = True)
             ds_varcope = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
-                    suffix = "%s/%s_cope" % (task, outname)),
+                    suffix = "%s_cope" % task),
                 name = "ds_%s_varcope" % outname, run_without_submitting = True)
             ds_zstat = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
-                    suffix = "%s/%s_cope" % (task, outname)),
+                    suffix = "%s_varcope" % task),
                 name = "ds_%s_zstat" % outname, run_without_submitting = True)
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
-                    suffix = "%s/%s_dof.txt" % (task, outname)),
+                    suffix = "%s_dof" % task),
                 name = "ds_%s_dof_file" % outname, run_without_submitting = True)
     
             workflow.connect([
@@ -280,7 +289,7 @@ def init_subject_wf(item, workdir, images, data):
                 outputnode = pe.Node(niu.IdentityInterface(
                     fields = sum([["%s_cope" % outname, 
                             "%s_varcope" % outname, "%s_dof_file" % outname] 
-                        for outname in outnames[name]], []) + ["dof_file"]), 
+                        for outname in outnames[name]], [])), 
                     name = "outputnode"
                 )
             
@@ -327,7 +336,7 @@ def init_subject_wf(item, workdir, images, data):
     subject_wf = patch_wf(subject_wf, 
         images, output_dir, fmriprep_reportlets_dir, fmriprep_output_dir)
 
-    return subject_wf, outnames
+    return subject, subject_wf, outnames
 
 def create_ds(wf, firstlevel_wf, outnames,
         func_preproc_wf, temporalfilter_wf,
@@ -337,7 +346,7 @@ def create_ds(wf, firstlevel_wf, outnames,
         DerivativesDataSink(
             base_directory = output_dir, 
             source_file = bold_file,
-            suffix = "dof.txt"),
+            suffix = "dof"),
         name = "ds_dof_file", run_without_submitting = True)
 
     wf.connect([
