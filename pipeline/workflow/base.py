@@ -105,17 +105,17 @@ def init_workflow(workdir):
     for task, outnamesset in outnamessets.items():
         for outname in outnamesset:
             higherlevel_wf = init_higherlevel_wf(run_mode = "flame1", 
-                name = "%s_higherlevel" % outname)
+                name = "%s_%s_higherlevel" % (task, outname))
         
             mergecopes = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
-                name = "%s_mergecopes" % outname)
+                name = "%s_%s_mergecopes" % (task, outname))
             mergevarcopes = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
-                name = "%s_mergevarcopes" % outname)
+                name = "%s_%s_mergevarcopes" % (task, outname))
             mergedoffiles = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
-                name = "%s_mergedoffiles" % outname)
+                name = "%s_%s_mergedoffiles" % (task, outname))
             
             for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
                 excludethis = False
@@ -139,25 +139,25 @@ def init_workflow(workdir):
                     base_directory = op.join(stats_dir, task), 
                     source_file = "",
                     suffix = "%s_cope" % task),
-                name = "ds_%s_cope" % outname, run_without_submitting = True)
+                name = "ds_%s_%s_cope" % (task, outname), run_without_submitting = True)
             ds_varcope = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
                     suffix = "%s_cope" % task),
-                name = "ds_%s_varcope" % outname, run_without_submitting = True)
+                name = "ds_%s_%s_varcope" % (task, outname), run_without_submitting = True)
             ds_zstat = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
                     suffix = "%s_varcope" % task),
-                name = "ds_%s_zstat" % outname, run_without_submitting = True)
+                name = "ds_%s_%s_zstat" % (task, outname), run_without_submitting = True)
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory = stats_dir, 
                     source_file = "",
                     suffix = "%s_dof" % task),
-                name = "ds_%s_dof_file" % outname, run_without_submitting = True)
+                name = "ds_%s_%s_dof_file" % (task, outname), run_without_submitting = True)
     
             workflow.connect([
                 (mergecopes, higherlevel_wf, [
