@@ -27,5 +27,9 @@ export default [
   {
     tag: "func_preproc_wf.ica_aroma_wf.ds_report_ica_aroma.ica_aroma",
     type: "ICA-AROMA"
+  },
+  {
+    tag: "ds_tsnr.tsnr",
+    type: "tSNR"
   }
 ];

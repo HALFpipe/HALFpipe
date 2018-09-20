@@ -9,6 +9,7 @@ def gen_merge_op_str(files):
         with open(file) as f:
             text = f.read()
         out.append("-abs -bin -mul %f" % float(text))
+    return out
 
 def get_first(l):
     if isinstance(l, str):
@@ -24,16 +25,27 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
 
     inputnode = pe.Node(
         interface = niu.IdentityInterface(
-            fields = ["copes", "varcopes", "dof_files"]
+            fields = ["copes", "varcopes", "dof_files", "mask_files"]
         ), 
         name = "inputnode"
     )
 
     outputnode = pe.Node(
         interface = niu.IdentityInterface(
-            fields = ["cope", "varcope", "zstat", "dof_file"]
+            fields = ["cope", "varcope", "zstat", "dof_file", "mask_file"]
         ), 
         name = "outputnode"
+    )
+    
+    maskmerge = pe.Node(
+        interface = fsl.Merge(dimension = "t"),
+        name = "maskmerge"
+    )
+    maskagg = pe.Node(
+        interface = fsl.ImageMaths(
+            op_string = "-Tmean -thr 1 -bin"
+        ),
+        name = "maskagg"
     )
     
     gendofimage = pe.MapNode(
@@ -78,6 +90,13 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
             ("varcopes", "in_files")
         ]),
         
+        (inputnode, maskmerge, [
+            ("mask_files", "in_files")
+        ]),
+        (maskmerge, maskagg, [
+            ("merged_file", "in_file")
+        ]),
+        
         (inputnode, gendofimage, [
             ("copes", "in_file"),
             (("dof_files", gen_merge_op_str), "op_string")
@@ -95,6 +114,9 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
         (dofmerge, flameo, [
             ("merged_file", "dof_var_cope_file")
         ]),
+        (maskagg, flameo, [
+            ("out_file", "mask_file")
+        ]),
         (inputnode, level2model, [
             (("copes", get_len), "num_copes")
         ]),
@@ -110,6 +132,9 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
             (("zstats", get_first), "zstat"),
             (("tdof", get_first), "dof_file")
         ]),
+        (maskagg, outputnode, [
+            ("out_file", "mask_file")
+        ])
     ])
     
     return workflow

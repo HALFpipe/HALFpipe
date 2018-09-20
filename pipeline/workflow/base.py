@@ -11,6 +11,7 @@ from multiprocessing import Pool
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
+from nipype.interfaces import io as nio
 from nipype.interfaces import fsl
 
 from fmriprep.workflows.anatomical import init_anat_preproc_wf
@@ -118,6 +119,9 @@ def init_workflow(workdir):
             mergevarcopes = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
                 name = "%s_%s_mergevarcopes" % (task, outname))
+            mergemasks = pe.Node(
+                interface = niu.Merge(len(subject_wfs)),
+                name = "%s_%s_mergemasks" % (task, outname))
             mergedoffiles = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
                 name = "%s_%s_mergedoffiles" % (task, outname))
@@ -138,30 +142,37 @@ def init_workflow(workdir):
                         workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i+1))
                         workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i+1))
                         workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i+1))
+                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i+1))
         
             ds_cope = pe.Node(
-                DerivativesDataSink(
-                    base_directory = op.join(stats_dir, task), 
-                    source_file = "",
-                    suffix = "%s_cope" % task),
+                nio.DataSink(
+                    base_directory = stats_dir,
+                    container = task,
+                    parameterization = False),
                 name = "ds_%s_%s_cope" % (task, outname), run_without_submitting = True)
             ds_varcope = pe.Node(
-                DerivativesDataSink(
+                nio.DataSink(
                     base_directory = stats_dir, 
-                    source_file = "",
-                    suffix = "%s_cope" % task),
+                    container = task,
+                    parameterization = False),
                 name = "ds_%s_%s_varcope" % (task, outname), run_without_submitting = True)
             ds_zstat = pe.Node(
-                DerivativesDataSink(
+                nio.DataSink(
                     base_directory = stats_dir, 
-                    source_file = "",
-                    suffix = "%s_varcope" % task),
+                    container = task,
+                    parameterization = False),
                 name = "ds_%s_%s_zstat" % (task, outname), run_without_submitting = True)
-            ds_dof_file = pe.Node(
-                DerivativesDataSink(
+            ds_mask = pe.Node(
+                nio.DataSink(
                     base_directory = stats_dir, 
-                    source_file = "",
-                    suffix = "%s_dof" % task),
+                    container = task,
+                    parameterization = False),
+                name = "ds_%s_%s_mask" % (task, outname), run_without_submitting = True)
+            ds_dof_file = pe.Node(
+                nio.DataSink(
+                    base_directory = stats_dir, 
+                    container = task,
+                    parameterization = False),
                 name = "ds_%s_%s_dof_file" % (task, outname), run_without_submitting = True)
     
             workflow.connect([
@@ -171,21 +182,27 @@ def init_workflow(workdir):
                 (mergevarcopes, higherlevel_wf, [
                     ("out", "inputnode.varcopes")
                 ]),
+                (mergemasks, higherlevel_wf, [
+                    ("out", "inputnode.mask_files")
+                ]),
                 (mergedoffiles, higherlevel_wf, [
                     ("out", "inputnode.dof_files")
                 ]),
                 
                 (higherlevel_wf, ds_cope, [
-                    ("outputnode.cope", "in_file")
+                    ("outputnode.cope", "%s_cope" % outname)
                 ]),
                 (higherlevel_wf, ds_varcope, [
-                    ("outputnode.varcope", "in_file")
+                    ("outputnode.varcope", "%s_varcope" % outname)
                 ]),
                 (higherlevel_wf, ds_zstat, [
-                    ("outputnode.zstat", "in_file")
+                    ("outputnode.zstat", "%s_mask" % outname)
+                ]),
+                (higherlevel_wf, ds_zstat, [
+                    ("outputnode.zstat", "%s_zstat" % outname)
                 ]),
                 (higherlevel_wf, ds_dof_file, [
-                    ("outputnode.dof_file", "in_file")
+                    ("outputnode.dof_file", "%s_dof" % outname)
                 ])
             ])
         
@@ -534,7 +551,7 @@ def create_func_wf(wf, inputnode, bold_file, metadata,
     outputnode = pe.Node(
         interface = niu.IdentityInterface(
             fields = flatten([[["%s_cope" % w, 
-                "%s_varcope" % w, "%s_dof_file" % w] for w in v] for v in outnamesbywf.values()])
+                "%s_varcope" % w, "%s_mask_file" % w, "%s_dof_file" % w] for w in v] for v in outnamesbywf.values()])
         ),
         name = "outputnode")
 
@@ -542,6 +559,7 @@ def create_func_wf(wf, inputnode, bold_file, metadata,
         for w in v:
             wf.connect(wfbywf[k], "outputnode.%s_cope" % w, outputnode, "%s_cope" % w)
             wf.connect(wfbywf[k], "outputnode.%s_varcope" % w, outputnode, "%s_varcope" % w)
+            wf.connect(func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % w)
             wf.connect(wfbywf[k], "outputnode.dof_file", outputnode, "%s_dof_file" % w)
     
     outnames = sum(outnamesbywf.values(), [])

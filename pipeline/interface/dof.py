@@ -28,7 +28,8 @@ class Dof(BaseInterface):
     
     def _run_interface(self, runtime):
         im = nib.load(self.inputs.in_file)
-        dof = im.shape[3] - this.inputs.num_regressors
+        print(im)
+        dof = im.shape[3] - self.inputs.num_regressors
         with open(op.abspath(self.inputs.out_file), "w") as f:
             f.write("%i" % dof)
             f.write("\n")
