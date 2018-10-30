@@ -277,10 +277,10 @@ def main():
             images[field_name] = get_files(field_description, runs = True)
             
             image = next(iter(next(iter(images[field_name].values())).values()))[""]
-            # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", 
-            #     o = str(nib.load(image).header.get_zooms()[3])))
+            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", 
+                o = str(nib.load(image).header.get_zooms()[3])))
             
-            metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
+            # metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
             
             ped = c.select("Specify the phase encoding direction", \
                 ["AP", "PA", "LR", "RL", "SI", "IS"])
