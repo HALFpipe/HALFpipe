@@ -44,6 +44,7 @@ def get_path(path):
 def main():
     ap = ArgumentParser(description = "")
     ap.add_argument("-w", "--workdir")
+    ap.add_argument("-p", "--nipype-plugin")
     ap.add_argument("-s", "--setup-only", action = "store_true", default = False)
     args = ap.parse_args()
     
@@ -405,14 +406,19 @@ def main():
         plugin_settings = {}
         init_logging(workdir)
         
-        plugin_settings = {
-            "plugin": "MultiProc",
-            "plugin_args": {
-                "n_procs": cpu_count(),
-                "raise_insufficient": False,
-                "maxtasksperchild": 1,
+        if args.nipype_plugin is None:
+            plugin_settings = {
+                "plugin": "MultiProc",
+                "plugin_args": {
+                    "n_procs": cpu_count(),
+                    "raise_insufficient": False,
+                    "maxtasksperchild": 1,
+                }
             }
-        }
+        else:
+            plugin_settings = {
+                "plugin": args.nipype_plugin
+            }
         
         import gc
         gc.collect()
