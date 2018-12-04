@@ -1,6 +1,15 @@
-
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
 
 def flatten(l):
+    """
+    Flatten a list
+    Always returns a list even if the input is not
+
+    :param l: Input list
+
+    """
     if isinstance(l, str):
         return [l]
     else:
@@ -21,6 +30,12 @@ def get_float(input):
     return float(flatten(input)[0])
 
 def transpose(d):
+    """
+    Transpose a dictionary
+
+    :param d: Input dictionary
+
+    """
     out = dict()
     for key0, value0 in d.items():
         for key1, value1 in value0.items():
@@ -32,6 +47,15 @@ def transpose(d):
     return out
 
 def lookup(d, subject_id = None, run_id = None, condition_id = None):
+    """
+    Look up value in three-level dictionary based on three keys
+
+    :param d: Input dictionary
+    :param subject_id: Outer key (Default value = None)
+    :param run_id: Middle key (Default value = None)
+    :param condition_id: Inner key (Default value = None)
+
+    """
     key0 = []
     if isinstance(d, dict) and len(d) == 1 and "" in d:
         key0.append("")
@@ -75,6 +99,12 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
                 o[i][j][k] = d[i][j][k]
                 
     def flatten(dd):
+        """
+        Flatten a dictionary
+
+        :param dd: Input dictionary
+
+        """
         if isinstance(dd, dict):
             if len(dd) == 1:
                 return flatten(next(iter(dd.values())))

@@ -3,12 +3,25 @@
 import numpy as np
 from scipy.io import loadmat
 
-def _flatten(x):
+def extract(x):
+    """
+    Extract single value from n-dimensional array
+
+    :param x: Array 
+
+    """
     if isinstance(x, np.ndarray):
-        return _flatten(x[0])
+        return extract(x[0])
     return x
 
 def parse_condition_files(files, format = "FSL 3-column"):
+    """
+    Parse condition files into a dictionary data structure
+
+    :param files: Input path
+    :param format: Either "SPM multiple conditions" or "FSL 3-column" (Default value = "FSL 3-column")
+
+    """
     conditions = dict()
     for subject, value0 in files.items():
         conditions[subject] = dict()
@@ -26,7 +39,7 @@ def parse_condition_files(files, format = "FSL 3-column"):
                         durations_ = np.squeeze(data["durations"])
                         onsets_ = np.squeeze(data["onsets"])
                         for i, name in enumerate(data["names"]):
-                            name_ = _flatten(name)
+                            name_ = extract(name)
                             conditions[subject][run][name_] = {"onsets": np.ravel(onsets_[i]).tolist(), "durations": np.ravel(durations_[i]).tolist()}
                     
                 if format == "FSL 3-column":

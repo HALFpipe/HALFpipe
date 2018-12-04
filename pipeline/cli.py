@@ -16,6 +16,7 @@ CLEAR_SCREEN     = ESC + u"2J"
 RESET            = ESC + u"0m"
 
 class cli:
+    """ """
     def __init__(self):
         self.clear()
         
@@ -32,11 +33,18 @@ class cli:
         self.defaults = dict()
 
     def clear(self):
+        """ Clear the screen """
         sys.stdout.write(CLEAR_SCREEN)
         sys.stdout.write(ESC + u"0;0H")
         sys.stdout.flush()
 
     def info(self, q):
+        """
+        Render text in regular color
+
+        :param q: Text
+
+        """
         sys.stdout.write(CURSOR_MOVE_LEFT)
         sys.stdout.write(COLOR_NORMAL)
         sys.stdout.write("%s" % q)
@@ -45,6 +53,12 @@ class cli:
         sys.stdout.flush()
 
     def error(self, q):
+        """
+        Render text in error color
+        
+        :param q: Text
+
+        """
         sys.stdout.write(CURSOR_MOVE_LEFT)
         sys.stdout.write(RESET)
         sys.stdout.write("\n")
@@ -52,13 +66,17 @@ class cli:
         
         raise RuntimeError(COLOR_ERROR + "%s" % q + RESET)
 
-    def read(self, q, o = "", tag = None):
+    def read(self, q, o = ""):
+        """
+        Text prompt
+
+        :param q: Prompt text
+        :param o: Initial value (Default value = "")
+
+        """
         tty.setraw(sys.stdin)
         
         selected = 0
-        
-        if tag is not None and tag in self.defaults:
-            o = self.defaults[tag]
         
         sys.stdout.write(CURSOR_MOVE_LEFT)
         sys.stdout.write(COLOR_NORMAL)
@@ -67,6 +85,7 @@ class cli:
         sys.stdout.write("\n")
         
         def refresh():
+            """ render prompt """
             sys.stdout.write(CURSOR_MOVE_LEFT)
             sys.stdout.write(COLOR_EMPHASIS)
             sys.stdout.write("[%s] " % o)
@@ -78,7 +97,7 @@ class cli:
         while True:
             character = ord(sys.stdin.read(1))
             
-            if character == 3:
+            if character == 3: # ctrl-c
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 
@@ -89,51 +108,53 @@ class cli:
                 
                 return None
                 
-            if character in {10, 13}:
+            if character in {10, 13}: # enter
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 sys.stdout.flush()
                 
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
                 
-                if tag is not None:
-                    self.defaults[tag] = o
-                
                 return o
                 
-            if character == 27:
+            if character == 27: # arrow kets
                 next1, next2 = ord(sys.stdin.read(1)), ord(sys.stdin.read(1))
                 if next1 == 91:
-                    if next2 == 68: 
+                    if next2 == 68: # left
                         selected = max(0, selected-1)
-                    elif next2 == 67: 
+                    elif next2 == 67:  # right
                         selected = min(len(o), selected+1)
                         
                     refresh()
                 
-            if 32 <= character <= 126:
+            if 32 <= character <= 126: # text
                 o = o[:selected] + chr(character) + o[selected:]
                 selected += 1
                 refresh()
                 
-            if character == 127:
+            if character == 127: # backspace
                 if selected > 0:
                     o = o[:selected-1] + o[selected:]
                     selected -= 1
                     refresh()
                 
 
-    def select(self, q, o, tag = None):
+    def select(self, q, o):
+        """
+        Single choice prompt with multiple possible answers
+
+        :param q: Prompt text
+        :param o: List of possible answers
+
+        """
         tty.setraw(sys.stdin)
         
         sys.stdout.write(CURSOR_HIDE)
         
         selected = 0
         
-        if tag is not None and tag in self.defaults:
-            selected = self.defaults[tag]
-        
         def refresh():
+            """ renders the prompt """
             sys.stdout.write(CURSOR_MOVE_LEFT)
             sys.stdout.write(COLOR_NORMAL)
             sys.stdout.write("%s " % q)
@@ -151,7 +172,7 @@ class cli:
         while True:
             character = ord(sys.stdin.read(1))
             
-            if character == 3: 
+            if character == 3: # ctrl-c
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 
@@ -162,7 +183,7 @@ class cli:
                 
                 return None
                 
-            if character in {10, 13}:
+            if character in {10, 13}: # enter
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 
@@ -176,18 +197,27 @@ class cli:
                 
                 return o[selected]
                 
-            if character == 27:
+            if character == 27: # arrow keys
                 next1, next2 = ord(sys.stdin.read(1)), ord(sys.stdin.read(1))
                 if next1 == 91:
-                    if next2 == 68: 
+                    if next2 == 68: # left
                         selected = max(0, selected-1)
-                    elif next2 == 67: 
+                    elif next2 == 67: # right
                         selected = min(len(o)-1, selected+1)
                         
                     refresh()
         
     #  from pipeline.cli import cli; c = cli(); c.fields("How are you?", ["Today", "Yesterday"])
-    def fields(self, q, o, tag = None, max_length = 6):
+    def fields(self, q, o, max_length = 6):
+        """
+        Text prompt with multiple fixed-width fields, used for example to
+        input contrast vector for first level fMRI analysis.
+        
+        :param q: Prompt text
+        :param o: Initial value
+        :param max_length: Maximum length of each text input (Default value = 6)
+
+        """
         tty.setraw(sys.stdin)
         
         selected0 = 0
@@ -214,6 +244,7 @@ class cli:
         v = ["" for f in o]
         
         def refresh():
+            """ renders the prompt """
             sys.stdout.write(CURSOR_MOVE_LEFT)
             sys.stdout.write(COLOR_NORMAL)
             
@@ -244,7 +275,7 @@ class cli:
         while True:
             character = ord(sys.stdin.read(1))
             
-            if character == 3: 
+            if character == 3: # ctrl-c
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 
@@ -255,7 +286,7 @@ class cli:
                 
                 return None
                 
-            if character in {10, 13}:
+            if character in {10, 13}: # enter
                 sys.stdout.write(RESET)
                 sys.stdout.write("\n")
                 
@@ -266,10 +297,10 @@ class cli:
                 
                 return v
                 
-            if character == 27:
+            if character == 27: # arrow keys
                 next1, next2 = ord(sys.stdin.read(1)), ord(sys.stdin.read(1))
                 if next1 == 91:
-                    if next2 == 68: 
+                    if next2 == 68: # left
                         if selected1 == 0:
                             s = selected0
                             selected0 = max(0, selected0-1)
@@ -277,7 +308,7 @@ class cli:
                                 selected1 = len(v[selected0])
                         else:
                             selected1 = max(0, selected1-1)
-                    elif next2 == 67: 
+                    elif next2 == 67: # right
                         if selected1 == len(v[selected0]):
                             s = selected0
                             selected0 = min(len(o)-1, selected0+1)
@@ -288,13 +319,13 @@ class cli:
                         
                     refresh()
             
-            if 32 <= character <= 126:
+            if 32 <= character <= 126: # text input
                 if len(v[selected0]) < len(o[selected0])-2:
                     v[selected0] = v[selected0][:selected1] + chr(character) + v[selected0][selected1:]
                     selected1 += 1
                     refresh()
             
-            if character == 127:
+            if character == 127: # backspace
                 if selected1 > 0:
                     v[selected0] = v[selected0][:selected1-1] + v[selected0][selected1:]
                     selected1 -= 1

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from multiprocessing import set_start_method, cpu_count
 set_start_method("forkserver", force = True)
@@ -276,10 +278,10 @@ def main():
             images[field_name] = get_files(field_description, runs = True)
             
             image = next(iter(next(iter(images[field_name].values())).values()))[""]
-            # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", 
-            #     o = str(nib.load(image).header.get_zooms()[3])))
+            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time", 
+                o = str(nib.load(image).header.get_zooms()[3])))
             
-            metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
+            # metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
             
             ped = c.select("Specify the phase encoding direction", \
                 ["AP", "PA", "LR", "RL", "SI", "IS"])

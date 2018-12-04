@@ -1,4 +1,21 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
 def ambiguous_match(string, pattern, wildcards):
+    """
+    Match strings via a custom, regular-expression-like syntax based on  
+    wildcard characters (e.g., * and ? and # etc.) that expand.
+    In contrast to regular expressions, the wildcards are not greedy, leading
+    to the possibility of multiple correct solutions for string matching. This 
+    function returns all possible solutions in a list, so that the user can 
+    choose the suitable one. 
+
+    :param string: String to be matched
+    :param pattern: Pattern string with wildcard characters
+    :param wildcards: List of wildcard characters
+
+    """
     for k in wildcards:
         assert len(k) == 1
         
@@ -15,10 +32,24 @@ def ambiguous_match(string, pattern, wildcards):
     return o
 
 def _ambiguous_match(string, pattern, wildcards):
+    """
+    Inner recursion
+
+    :param string: 
+    :param pattern: 
+    :param wildcards: 
+
+    """
     o = [{k : "" for k in wildcards}]
     u = ""
     
     def _append(a, b):
+        """
+
+        :param a: 
+        :param b: 
+
+        """
         o = dict()
         
         for k in wildcards:
