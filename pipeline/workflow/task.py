@@ -14,9 +14,9 @@ from ..utils import (
     get_float
 )
 
-def init_firstlevel_wf(conditions, 
+def init_glm_wf(conditions, 
         contrasts, repetition_time, 
-        use_mov_pars, name = "firstlevel"):
+        use_mov_pars, name = "glm"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
