@@ -48,7 +48,7 @@ def transpose(d):
 
 def lookup(d, subject_id = None, run_id = None, condition_id = None):
     """
-    Look up value in three-level dictionary based on three keys
+    Look up value in a three-level dictionary based on three keys
 
     :param d: Input dictionary
     :param subject_id: Outer key (Default value = None)

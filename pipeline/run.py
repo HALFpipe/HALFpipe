@@ -66,7 +66,7 @@ def main():
     c = None
     images = dict()
     metadata = dict()
-    field_maps = dict()
+    # field_maps = dict()
     
     subject_ids = []
         
@@ -81,7 +81,7 @@ def main():
         
     os.makedirs(workdir, exist_ok = True)
     
-    save = op.join(workdir, "pipeline.json")
+    path_to_pipeline_json = op.join(workdir, "pipeline.json")
 
     #
     # helper functions
@@ -89,11 +89,12 @@ def main():
     
     def get_file(description):
         path = get_path(c.read("Specify the path of the %s file" % description))
-        if not op.isfile(path):
-            return get_file(description)
+        if not op.isfile(path): # does file exist
+            return get_file(description) # repeat if doesn't exist
         return path
         
     def get_files(description, runs = False, conditions = False):
+        """ Match files by wildcards """
         files = dict()
         
         c.info("Specify the path of the %s files" % description)
@@ -210,11 +211,11 @@ def main():
             
         return files
         
-        #
-        #
-        #
+    #
+    # interface code that asks user questions
+    #
             
-    if not op.isfile(save):
+    if not op.isfile(path_to_pipeline_json):
         if c is None:
             c = cli()
             c.info("mindandbrain pipeline %s" % __version__)
@@ -225,39 +226,14 @@ def main():
         #
         
         description = "anatomical/structural data"
-        
-        # response0 = c.select("Is %s available?" % description, ["Yes", "No"])
-        
         c.info("Please specify %s" % description)
-        response0 = "Yes"
         
-        field_names = ["T1w"]
-        field_descriptions = ["T1-weighted image"]
+        field_name = "T1w"
+        field_description = "T1-weighted image"
+    
+        images[field_name] = get_files(field_description)
         
-        while response0 == "Yes":
-            # response1 = c.select("Choose data type to specify", field_names)
-            # 
-            # if response1 is None:
-            #     break
-            # 
-            # i = field_names.index(response1)
-            i = 0
-        
-            field_name = field_names[i]
-            field_description = field_descriptions[i]
-        
-            images[field_name] = get_files(field_description)
-            
-            subject_ids = list(images[field_name].keys())
-        
-            if len(images[field_name]) > 0:
-                del field_names[i]
-                del field_descriptions[i]
-        
-            if len(field_names) == 0:
-                break
-        
-            # response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
+        subject_ids = list(images[field_name].keys())
         
         c.info("")
         
@@ -392,7 +368,7 @@ def main():
         
         c.info("")
         
-        with open(save, "w+") as f:
+        with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": metadata}, f, indent = 4)
             
         c.info("Saved configuration")
