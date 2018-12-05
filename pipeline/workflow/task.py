@@ -41,6 +41,14 @@ def init_glm_wf(conditions,
     contrasts_ = [[k, "T"] + [list(i) for i in zip(*[(n, val) for n, val in v.items()])] for k, v in contrasts.items()]
 
     connames = [k[0] for k in contrasts_]
+
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=sum([["%s_cope" % conname,
+                     "%s_varcope" % conname, "%s_zstat" % conname]
+                    for conname in connames], []) + ["dof_file"]),
+        name="outputnode"
+    )
+    
     outputnode._interface.names = connames
 
     level1design = pe.Node(
@@ -98,13 +106,6 @@ def init_glm_wf(conditions,
     splitzstats = pe.Node(
         interface = niu.Split(splits = [1 for conname in connames]),
         name = "splitzstats"
-    )
-
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields = sum([["%s_cope" % conname, 
-                "%s_varcope" % conname, "%s_zstat" % conname] 
-            for conname in connames], []) + ["dof_file"]), 
-        name = "outputnode"
     )
     
     c = [("bold_file", "functional_runs")]

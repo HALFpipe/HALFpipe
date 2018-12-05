@@ -35,6 +35,7 @@ REQUIRES = [
     "nibabel",
     "jinja2",
     "fasteners",
+    "pandas"
 ]
 
 LINKS_REQUIRES = [

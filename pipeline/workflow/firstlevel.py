@@ -150,7 +150,7 @@ def init_subject_wf(item, workdir, images, data):
                         ])
                     ])
                     run_outnames = init_func_wf(run_wf, run_inputnode, bold_file, metadata, 
-                        fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, run = run)
+                        fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, run = run, subject=subject)
                     outnamesset.update(run_outnames)
                 
                 outnames[name] = outnamesset
@@ -202,7 +202,7 @@ def init_subject_wf(item, workdir, images, data):
                     ])
             else:
                 outnames[name] = init_func_wf(task_wf, inputnode, value1, metadata,
-                    fmriprep_reportlets_dir, fmriprep_output_dir, output_dir)
+                    fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject=subject)
             
     subject_wf = patch_wf(subject_wf, 
         images, output_dir, fmriprep_reportlets_dir, fmriprep_output_dir)
@@ -211,7 +211,7 @@ def init_subject_wf(item, workdir, images, data):
 
 
 def init_func_wf(wf, inputnode, bold_file, metadata,
-        fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, run = None):
+        fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject, run = None):
     """
     Initialize workflow for single functional scan
 

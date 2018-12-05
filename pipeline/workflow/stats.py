@@ -3,6 +3,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+
 def gen_merge_op_str(files):
     out = []
     for file in files:
@@ -11,14 +12,17 @@ def gen_merge_op_str(files):
         out.append("-abs -bin -mul %f" % float(text))
     return out
 
+
 def get_first(l):
     if isinstance(l, str):
         return l
     else:
         return get_first(l[0])
 
+
 def get_len(x):
     return len(x)
+
 
 def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
     workflow = pe.Workflow(name=name)
@@ -138,4 +142,3 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
     ])
     
     return workflow
-        
