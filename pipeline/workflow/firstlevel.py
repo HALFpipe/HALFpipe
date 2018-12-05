@@ -209,6 +209,7 @@ def init_subject_wf(item, workdir, images, data):
 
     return subject, subject_wf, outnames
 
+
 def init_func_wf(wf, inputnode, bold_file, metadata,
         fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, run = None):
     """
@@ -311,7 +312,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ("outputnode.report_file", "in_file")
         ])
     ])
-    
+
     conditions = None
     if "Conditions" in metadata:
         conditions = lookup(metadata["Conditions"],

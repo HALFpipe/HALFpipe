@@ -207,7 +207,7 @@ def main():
             response = c.select("Try again?", ["Yes", "No"])
             
             if response == "Yes":
-                return get_files(description)
+                return get_files(description, runs=runs, conditions=conditions)
             
         return files
         
