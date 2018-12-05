@@ -19,6 +19,9 @@ from .stats import init_higherlevel_wf
 
 from .qualitycheck import get_qualitycheck_exclude
 
+from ..utils import transpose
+
+
 def init_workflow(workdir):
     """
     Initialize nipype workflow for a workdir containing a pipeline.json file.
