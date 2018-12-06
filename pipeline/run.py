@@ -31,10 +31,9 @@ from .logging import init_logging
 
 from .patterns import ambiguous_match
 
+from .utils import transpose
+
 EXT_PATH = "/ext"
-
-
-
     
 def get_path(path):
     path = path.strip()
@@ -95,7 +94,7 @@ def main():
     def get_file(description):
         path = get_path(c.read("Specify the path of the %s file" % description))
         if not op.isfile(path): # does file exist
-            return get_file(description) # repeat if doesn't exist
+            return get_file(description) # repeat if doesn"t exist
         return path
 
     def get_files(description, runs = False, conditions = False):
@@ -373,37 +372,37 @@ def main():
 
         c.info("")
 
-        metadata["CovariatesFile"] = get_file("covariates")
-
-        c.info("")
-
-        response0 = c.select("Are there multiple groups?", ["Yes", "No"])
-
-
-
+        spreadsheet_file = get_file("covariates/group data spreadsheet")
+        spreadsheet = pd.read_csv(spreadsheet_file)
+        
+        id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
+        
+        covariates = spreadsheet.set_index(id_column).to_dict()
+        
+        response0 = c.select("Specify a group design?", ["Yes", "No"])
         if response0 == "Yes":
-            file0 = pd.read_csv(metadata["CovariatesFile"])
+            group_column = c.select("Specify the column containing group names", spreadsheet.columns)
+            groups = covariates[group_column]
+            del covariates[group_column]
 
-            response1 = c.select("Specify the group column", file0.columns)
-
-            unique_groups = file0[response1].unique()
-
-
+            unique_groups = set(groups.values())
+            
             group_contrasts = {}
             response3 = "Yes"
             while response3 == "Yes":
-
                 contrast_name = c.read("Specify the contrast name")
-
                 contrast_values = c.fields("Specify the contrast values", unique_groups)
-
                 group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
-
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
 
-        metadata['GroupContrasts'] = group_contrasts
+            metadata["SubjectGroups"] = groups
+            metadata["GroupContrasts"] = group_contrasts
+        
+        metadata["Covariates"] = covariates
+        
+        c.info("")
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": metadata}, f, indent = 4)

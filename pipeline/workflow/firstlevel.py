@@ -43,6 +43,12 @@ _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
     'subjects_dir', 'subject_id',
     't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform']
 
+def get_first(l):
+    if isinstance(l, str):
+        return l
+    else:
+        return get_first(l[0])
+
 def init_subject_wf(item, workdir, images, data):
     """
     Initialize workflow for all scans of a single subject
@@ -180,7 +186,7 @@ def init_subject_wf(item, workdir, images, data):
                 
                     # aggregate stats from multiple runs in fixed-effects
                     # model
-                    fe_wf = init_higherlevel_wf(run_mode = "fe", 
+                    fe_wf, _ = init_higherlevel_wf(run_mode = "fe", 
                         name = "%s_fe" % outname)
                         
                     task_wf.connect([
@@ -195,9 +201,9 @@ def init_subject_wf(item, workdir, images, data):
                         ]),
                         
                         (fe_wf, outputnode, [
-                            ("outputnode.cope", "%s_cope" % outname),
-                            ("outputnode.varcope", "%s_varcope" % outname),
-                            ("outputnode.dof_file", "%s_dof_file" % outname)
+                            (("outputnode.copes", get_first), "%s_cope" % outname),
+                            (("outputnode.varcopes", get_first), "%s_varcope" % outname),
+                            (("outputnode.dof_files", get_first), "%s_dof_file" % outname)
                         ])
                     ])
             else:

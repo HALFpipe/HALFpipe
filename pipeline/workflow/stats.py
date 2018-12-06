@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
+import pandas as pd
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
-
 
 def gen_merge_op_str(files):
     out = []
@@ -12,19 +16,12 @@ def gen_merge_op_str(files):
         out.append("-abs -bin -mul %f" % float(text))
     return out
 
-
-def get_first(l):
-    if isinstance(l, str):
-        return l
-    else:
-        return get_first(l[0])
-
-
 def get_len(x):
     return len(x)
 
 
-def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
+def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel", covariates = None,
+        subjects = None, subject_groups = None, group_contrasts = None):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -36,7 +33,7 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
 
     outputnode = pe.Node(
         interface = niu.IdentityInterface(
-            fields = ["cope", "varcope", "zstat", "dof_file", "mask_file"]
+            fields = ["copes", "varcopes", "zstats", "dof_files", "mask_file"]
         ), 
         name = "outputnode"
     )
@@ -73,11 +70,46 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
         name = "dofmerge"
     )
     
+    # one-sample t-test
+    contrasts = [["mean", "T", ["intercept"], [1]]]
     level2model = pe.Node(
-        interface = fsl.L2Model(), 
+        interface = fsl.MultipleRegressDesign(
+            regressors = {"intercept": [1.0 for s in subjects]},
+            contrasts = contrasts
+        ),
         name = "l2model"
     )
-
+            
+    if covariates is not None:
+        regressors = {k:[float(v[s]) for s in subjects] for k, v in covariates.items()}
+        if subject_groups is None:
+            # one-sample t-test with covariates
+            regressors["intercept"] = [1.0 for s in subjects]
+            level2model = pe.Node(
+                interface = fsl.MultipleRegressDesign(
+                    regressors = regressors,
+                    contrasts = contrasts
+                ),
+                name = "l2model"
+            )
+        else: 
+            # two-sample t-tests with covariates
+            dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
+            dummies = {k:[float(v[s]) for s in subjects] for k, v in dummies.items()}
+            regressors.update(dummies)
+            
+            contrasts = [[k, "T"] + list(zip(*v.items())) for k, v in group_contrasts.items()]
+            
+            level2model = pe.Node(
+                interface = fsl.MultipleRegressDesign(
+                    regressors = regressors,
+                    contrasts = contrasts
+                ),
+                name = "l2model"
+            )
+    
+    contrast_names = [c[0] for c in contrasts]
+    
     flameo = pe.MapNode(
         interface=fsl.FLAMEO(
             run_mode = run_mode
@@ -131,14 +163,14 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel"):
         ]),
         
         (flameo, outputnode, [
-            (("copes", get_first), "cope"),
-            (("var_copes", get_first), "varcope"), 
-            (("zstats", get_first), "zstat"),
-            (("tdof", get_first), "dof_file")
+            ("copes", "copes"),
+            ("var_copes", "varcopes"), 
+            ("zstats", "zstats"),
+            ("tdof", "dof_files")
         ]),
         (maskagg, outputnode, [
             ("out_file", "mask_file")
         ])
     ])
     
-    return workflow
+    return workflow, contrast_names

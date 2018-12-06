@@ -70,8 +70,8 @@ def init_workflow(workdir):
     
     for task, outnamesset in outnamessets.items():
         for outname in outnamesset:
-            higherlevel_wf = init_higherlevel_wf(run_mode = "flame1", 
-                name = "%s_%s_higherlevel" % (task, outname))
+            higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode = "flame1", 
+                name = "%s_%s_higherlevel" % (task, outname), subjects = subjects)
         
             mergecopes = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
@@ -150,19 +150,19 @@ def init_workflow(workdir):
                 ]),
                 
                 (higherlevel_wf, ds_cope, [
-                    ("outputnode.cope", "%s_cope" % outname)
+                    ("outputnode.copes", "%s_cope" % outname)
                 ]),
                 (higherlevel_wf, ds_varcope, [
-                    ("outputnode.varcope", "%s_varcope" % outname)
+                    ("outputnode.varcopes", "%s_varcope" % outname)
                 ]),
                 (higherlevel_wf, ds_zstat, [
-                    ("outputnode.zstat", "%s_mask" % outname)
+                    ("outputnode.zstats", "%s_zstat" % outname)
                 ]),
-                (higherlevel_wf, ds_zstat, [
-                    ("outputnode.zstat", "%s_zstat" % outname)
+                (higherlevel_wf, ds_mask, [
+                    ("outputnode.mask_file", "%s_mask" % outname)
                 ]),
                 (higherlevel_wf, ds_dof_file, [
-                    ("outputnode.dof_file", "%s_dof" % outname)
+                    ("outputnode.dof_files", "%s_dof" % outname)
                 ])
             ])
         
