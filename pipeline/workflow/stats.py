@@ -20,8 +20,9 @@ def get_len(x):
     return len(x)
 
 
-def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel", covariates = None,
-        subjects = None, subject_groups = None, group_contrasts = None):
+def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel", 
+        subjects = None, covariates = None,
+        subject_groups = None, group_contrasts = None):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -73,10 +74,7 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel", covariates = 
     # one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
     level2model = pe.Node(
-        interface = fsl.MultipleRegressDesign(
-            regressors = {"intercept": [1.0 for s in subjects]},
-            contrasts = contrasts
-        ),
+        interface = fsl.L2Model(), 
         name = "l2model"
     )
             

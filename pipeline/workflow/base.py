@@ -66,12 +66,22 @@ def init_workflow(workdir):
     
     exclude = get_qualitycheck_exclude(workdir)
     
+    metadata = data["metadata"]
+    subject_groups = None
+    if "SubjectGroups" in metadata:
+        subject_groups = metadata["SubjectGroups"]
+    group_contrasts = None
+    if "GroupContrasts" in metadata:
+        group_contrasts = metadata["GroupContrasts"]
+    
     stats_dir = op.join(workdir, "stats")
     
     for task, outnamesset in outnamessets.items():
         for outname in outnamesset:
             higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode = "flame1", 
-                name = "%s_%s_higherlevel" % (task, outname), subjects = subjects)
+                name = "%s_%s_higherlevel" % (task, outname), 
+                subjects = subjects, covariates = metadata["Covariates"], 
+                subject_groups = subject_groups, group_contrasts = group_contrasts)
         
             mergecopes = pe.Node(
                 interface = niu.Merge(len(subject_wfs)),
