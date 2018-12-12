@@ -96,7 +96,7 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
             dummies = {k:[float(v[s]) for s in subjects] for k, v in dummies.items()}
             regressors.update(dummies)
             
-            contrasts = [[k, "T"] + list(zip(*v.items())) for k, v in group_contrasts.items()]
+            contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
             
             level2model = pe.Node(
                 interface = fsl.MultipleRegressDesign(
