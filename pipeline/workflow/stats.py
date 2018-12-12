@@ -74,7 +74,10 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
     # one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
     level2model = pe.Node(
-        interface = fsl.L2Model(), 
+        interface = fsl.MultipleRegressDesign(
+            regressors = {"intercept": [1.0 for s in subjects]},
+            contrasts = contrasts
+        ),
         name = "l2model"
     )
             
@@ -150,9 +153,6 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
         ]),
         (maskagg, flameo, [
             ("out_file", "mask_file")
-        ]),
-        (inputnode, level2model, [
-            (("copes", get_len), "num_copes")
         ]),
         (level2model, flameo, [
             ("design_mat", "design_file"),
