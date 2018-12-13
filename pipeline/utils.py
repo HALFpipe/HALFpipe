@@ -20,7 +20,7 @@ def flatten(l):
 
 def get_float(input):
     def flatten(l):
-        if isinstance(l, str):
+        if isinstance(l, str) or isinstance(l, float):
             return [l]
         else:
             o = []

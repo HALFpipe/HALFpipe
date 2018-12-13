@@ -21,7 +21,6 @@ from .qualitycheck import get_qualitycheck_exclude
 
 from ..utils import transpose
 
-
 def init_workflow(workdir):
     """
     Initialize nipype workflow for a workdir containing a pipeline.json file.
@@ -114,37 +113,21 @@ def init_workflow(workdir):
                         workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i+1))
                         workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i+1))
         
-            ds_cope = pe.Node(
+            ds_stats = pe.MapNode(
                 nio.DataSink(
-                    base_directory = stats_dir,
-                    container = task,
+                    base_directory = op.join(stats_dir, task, outname),
                     parameterization = False),
-                name = "ds_%s_%s_cope" % (task, outname), run_without_submitting = True)
-            ds_varcope = pe.Node(
-                nio.DataSink(
-                    base_directory = stats_dir, 
-                    container = task,
-                    parameterization = False),
-                name = "ds_%s_%s_varcope" % (task, outname), run_without_submitting = True)
-            ds_zstat = pe.Node(
-                nio.DataSink(
-                    base_directory = stats_dir, 
-                    container = task,
-                    parameterization = False),
-                name = "ds_%s_%s_zstat" % (task, outname), run_without_submitting = True)
+		iterfield = ["container", "cope", "varcope", "zstat", "dof"],
+                name = "ds_%s_%s_stats" % (task, outname), run_without_submitting = True)
+            ds_stats.inputs.container = contrast_names
+    
             ds_mask = pe.Node(
                 nio.DataSink(
-                    base_directory = stats_dir, 
-                    container = task,
+                    base_directory = op.join(stats_dir, task),
+                    container = outname,
                     parameterization = False),
                 name = "ds_%s_%s_mask" % (task, outname), run_without_submitting = True)
-            ds_dof_file = pe.Node(
-                nio.DataSink(
-                    base_directory = stats_dir, 
-                    container = task,
-                    parameterization = False),
-                name = "ds_%s_%s_dof_file" % (task, outname), run_without_submitting = True)
-    
+
             workflow.connect([
                 (mergecopes, higherlevel_wf, [
                     ("out", "inputnode.copes")
@@ -158,21 +141,22 @@ def init_workflow(workdir):
                 (mergedoffiles, higherlevel_wf, [
                     ("out", "inputnode.dof_files")
                 ]),
-                
-                (higherlevel_wf, ds_cope, [
-                    ("outputnode.copes", "%s_cope" % outname)
+
+                (higherlevel_wf, ds_stats, [
+                    ("outputnode.copes", "cope")
                 ]),
-                (higherlevel_wf, ds_varcope, [
-                    ("outputnode.varcopes", "%s_varcope" % outname)
+                (higherlevel_wf, ds_stats, [
+                    ("outputnode.varcopes", "varcope")
                 ]),
-                (higherlevel_wf, ds_zstat, [
-                    ("outputnode.zstats", "%s_zstat" % outname)
+                (higherlevel_wf, ds_stats, [
+                    ("outputnode.zstats", "zstat")
                 ]),
+                (higherlevel_wf, ds_stats, [
+                    ("outputnode.dof_files", "dof")
+                ]),
+
                 (higherlevel_wf, ds_mask, [
-                    ("outputnode.mask_file", "%s_mask" % outname)
-                ]),
-                (higherlevel_wf, ds_dof_file, [
-                    ("outputnode.dof_files", "%s_dof" % outname)
+                    ("outputnode.mask_file", "mask")
                 ])
             ])
         

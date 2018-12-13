@@ -8,6 +8,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from ..utils import flatten
+
 def gen_merge_op_str(files):
     out = []
     for file in files:
@@ -161,10 +163,10 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
         ]),
         
         (flameo, outputnode, [
-            ("copes", "copes"),
-            ("var_copes", "varcopes"), 
-            ("zstats", "zstats"),
-            ("tdof", "dof_files")
+            (("copes", flatten), "copes"),
+            (("var_copes", flatten), "varcopes"), 
+            (("zstats", flatten), "zstats"),
+            (("tdof", flatten), "dof_files")
         ]),
         (maskagg, outputnode, [
             ("out_file", "mask_file")
