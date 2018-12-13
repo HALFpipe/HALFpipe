@@ -115,7 +115,9 @@ def init_workflow(workdir):
         
             ds_stats = pe.MapNode(
                 nio.DataSink(
+                    infields = ["cope", "varcope", "zstat", "dof"],
                     base_directory = op.join(stats_dir, task, outname),
+                    regexp_substitutions = [(r"(/.+)/\w+.nii.gz", r"\1.nii.gz")],
                     parameterization = False),
 		iterfield = ["container", "cope", "varcope", "zstat", "dof"],
                 name = "ds_%s_%s_stats" % (task, outname), run_without_submitting = True)
