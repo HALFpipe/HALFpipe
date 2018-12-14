@@ -41,10 +41,12 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
         name = "outputnode"
     )
     
+    # merge all input nii image files to one big nii file
     maskmerge = pe.Node(
         interface = fsl.Merge(dimension = "t"),
         name = "maskmerge"
     )
+    # calculate the intersection of all masks
     maskagg = pe.Node(
         interface = fsl.ImageMaths(
             op_string = "-Tmean -thr 1 -bin"
@@ -52,28 +54,34 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
         name = "maskagg"
     )
     
+    # we get a text dof_file, but need to transform it to an nii image
     gendofimage = pe.MapNode(
         interface = fsl.ImageMaths(),
         iterfield = ["in_file", "op_string"],
         name = "gendofimage"
     )
 
+    # merge all input nii image files to one big nii file
     copemerge = pe.Node(
         interface = fsl.Merge(dimension = "t"),
         name = "copemerge"
     )
 
+    # merge all input nii image files to one big nii file
     varcopemerge = pe.Node(
         interface = fsl.Merge(dimension = "t"),
         name = "varcopemerge"
     )
     
+    # merge all generated nii image files to one big nii file
     dofmerge = pe.Node(
         interface = fsl.Merge(dimension = "t"),
         name = "dofmerge"
     )
     
-    # one-sample t-test
+    # specify statistical analysis
+
+    # option 1: one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
     level2model = pe.Node(
         interface = fsl.MultipleRegressDesign(
@@ -84,6 +92,7 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
     )
             
     if covariates is not None:
+        # transform to dictionary of lists
         regressors = {k:[float(v[s]) for s in subjects] for k, v in covariates.items()}
         if subject_groups is None:
             # one-sample t-test with covariates
@@ -97,10 +106,15 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
             )
         else: 
             # two-sample t-tests with covariates
+
+            # dummy coding of variables: group names --> numbers in the matrix
+            # see fsl feat documentation https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
             dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
+            # transform to dictionary of lists
             dummies = {k:[float(v[s]) for s in subjects] for k, v in dummies.items()}
             regressors.update(dummies)
             
+            # transform to dictionary of lists
             contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
             
             level2model = pe.Node(
