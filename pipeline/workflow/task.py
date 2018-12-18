@@ -17,17 +17,33 @@ from ..utils import (
 def init_glm_wf(conditions, 
         contrasts, repetition_time, 
         use_mov_pars, name = "glm"):
-    workflow = pe.Workflow(name=name)
+    """
+    create workflow to calculate a first level glm for task functional data
 
+    :param conditions: dictionary of conditions with onsets and durations 
+        by condition names
+    :param contrasts: dictionary of contrasts by names
+    :param repetition_time: repetition time
+    :param use_mov_pars: if true, regress out movement parameters when 
+        calculating the glm
+    :param name: workflow name (Default value = "glm")
+
+    """
+    workflow = pe.Workflow(name=name)
+    
+    # inputs are the bold file, the mask file and the confounds file 
+    # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
         fields = ["bold_file", "mask_file", "confounds_file"]), 
         name = "inputnode"
     )
-
+    
+    # transform (unordered) conditions dictionary into three (ordered) lists
     names = list(conditions.keys())
     onsets = [conditions[k]["onsets"] for k in names]
     durations = [conditions[k]["durations"] for k in names]
 
+    # first level model specification
     modelspec = pe.Node(
         interface = model.SpecifyModel(
             input_units = "secs",
@@ -38,10 +54,12 @@ def init_glm_wf(conditions,
         name = "modelspec"
     )
     
+    # transform contrasts dictionary to nipype list data structure
     contrasts_ = [[k, "T"] + [list(i) for i in zip(*[(n, val) for n, val in v.items()])] for k, v in contrasts.items()]
-
+    
     connames = [k[0] for k in contrasts_]
-
+    
+    # outputs are cope, varcope and zstat for each contrast and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
         fields=sum([["%s_cope" % conname,
                      "%s_varcope" % conname, "%s_zstat" % conname]
@@ -50,7 +68,8 @@ def init_glm_wf(conditions,
     )
     
     outputnode._interface.names = connames
-
+    
+    # generate design from first level specification
     level1design = pe.Node(
         interface = fsl.Level1Design(
             contrasts = contrasts_,
@@ -61,17 +80,21 @@ def init_glm_wf(conditions,
         name = "level1design"
     )
 
+    # generate required input files for FILMGLS from design
     modelgen = pe.Node(
         interface = fsl.FEATModel(),
         name = "modelgen",
         iterfield = ["fsf_file", "ev_files"]
     )
     
+    # calculate range of image values to determine cutoff value
+    # for FILMGLS
     stats = pe.Node(
         interface = fsl.ImageStats(op_string = "-R"),
         name = "stats"
     )
 
+    # actuallt estimate the firsy level model
     modelestimate = pe.Node(
         interface = fsl.FILMGLS(smooth_autocorr = True, 
             mask_size = 5),
@@ -79,6 +102,7 @@ def init_glm_wf(conditions,
         iterfield=["design_file", "in_file", "tcon_file"]
     )
     
+    # mask regression outputs 
     maskcopes = pe.MapNode(
         interface = fsl.ApplyMask(),
         name = "maskcopes",
@@ -95,6 +119,7 @@ def init_glm_wf(conditions,
         iterfield = ["in_file"]
     )
     
+    # split regression outputs by name
     splitcopes = pe.Node(
         interface = niu.Split(splits = [1 for conname in connames]),
         name = "splitcopes"
@@ -108,6 +133,7 @@ def init_glm_wf(conditions,
         name = "splitzstats"
     )
     
+    # pass movement parameters to glm model specification if requested
     c = [("bold_file", "functional_runs")]
     if use_mov_pars:
         c.append(
@@ -169,6 +195,7 @@ def init_glm_wf(conditions,
         ]),
     ])
     
+    # connect outputs named for the contrasts
     for i, conname in enumerate(connames):
         workflow.connect(splitcopes, "out%i" % (i+1), outputnode, "%s_cope" % conname)
         workflow.connect(splitvarcopes, "out%i" % (i+1), outputnode, "%s_varcope" % conname)

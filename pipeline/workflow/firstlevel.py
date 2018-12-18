@@ -44,6 +44,13 @@ _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
     't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform']
 
 def get_first(l):
+    """
+    get first element from list
+    doesn't fail is input is not a list
+
+    :param l: 
+
+    """
     if isinstance(l, str):
         return l
     else:
@@ -51,12 +58,12 @@ def get_first(l):
 
 def init_subject_wf(item, workdir, images, data):
     """
-    Initialize workflow for all scans of a single subject
+    initialize workflow for all scans of a single subject
 
-    :param item: 
-    :param workdir: 
-    :param images: 
-    :param data: 
+    :param item: input item (key/value tuple) from dictionary 
+    :param workdir: the working directory 
+    :param images: the images data structure from pipeline.json
+    :param data: the entire pipeline.json
 
     """
     subject, value0 = item
@@ -218,16 +225,16 @@ def init_subject_wf(item, workdir, images, data):
 
 def init_func_wf(wf, inputnode, bold_file, metadata,
         fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject, run = None):
-    """
-    Initialize workflow for single functional scan
+    """Initialize workflow for single functional scan
 
     :param wf: 
-    :param inputnode: 
+    :param inputnode:
     :param bold_file: 
-    :param metadata: 
+    :param metadata:
     :param fmriprep_reportlets_dir: 
-    :param fmriprep_output_dir: 
+    :param fmriprep_output_dir:
     :param output_dir: 
+    :param subject: 
     :param run:  (Default value = None)
 
     """
@@ -334,17 +341,16 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     def create_ds(wf, firstlevel_wf, outnames,
             func_preproc_wf, temporalfilter_wf,
             bold_file, output_dir, name = "firstlevel"):
-        """
-        Create data sink for functional first level workflow 
+        """Create data sink for functional first level workflow
         (e.g., GLM or seed connectivity etc.)
 
-        :param wf: 
+        :param wf: param firstlevel_wf:
+        :param outnames: param func_preproc_wf:
+        :param temporalfilter_wf: param bold_file:
+        :param output_dir: param name:  (Default value = "firstlevel")
         :param firstlevel_wf: 
-        :param outnames: 
         :param func_preproc_wf: 
-        :param temporalfilter_wf: 
         :param bold_file: 
-        :param output_dir: 
         :param name:  (Default value = "firstlevel")
 
         """

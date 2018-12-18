@@ -23,9 +23,9 @@ from ..utils import transpose
 
 def init_workflow(workdir):
     """
-    Initialize nipype workflow for a workdir containing a pipeline.json file.
+    initialize nipype workflow for a workdir containing a pipeline.json file.
 
-    :param workdir: Path to workdir
+    :param workdir: path to workdir
 
     """
     workflow_file = op.join(workdir, "workflow.pklz")

@@ -11,6 +11,13 @@ from nipype.interfaces import fsl
 from ..utils import flatten
 
 def gen_merge_op_str(files):
+    """
+    generate string argument to FSLMATHS that creates a dof image
+    file from a dof text file
+
+    :param files: dof text file
+
+    """
     out = []
     for file in files:
         with open(file) as f:
@@ -19,12 +26,28 @@ def gen_merge_op_str(files):
     return out
 
 def get_len(x):
+    """
+    wrapper around len
+
+    :param x: x
+
+    """
     return len(x)
 
 
 def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel", 
         subjects = None, covariates = None,
         subject_groups = None, group_contrasts = None):
+    """
+
+    :param run_mode: mode argument passed to FSL FLAMEO (Default value = "flame1")
+    :param name: workflow name (Default value = "higherlevel")
+    :param subjects: list of subject names (Default value = None)
+    :param covariates: two-level dictionary of covariates by name and subject (Default value = None)
+    :param subject_groups: dictionary of subjects by group (Default value = None)
+    :param group_contrasts: two-level dictionary of contrasts by contrast name and values by group (Default value = None)
+
+    """
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -127,6 +150,7 @@ def init_higherlevel_wf(run_mode = "flame1", name = "higherlevel",
     
     contrast_names = [c[0] for c in contrasts]
     
+    # actuallt run FSL FLAME
     flameo = pe.MapNode(
         interface=fsl.FLAMEO(
             run_mode = run_mode

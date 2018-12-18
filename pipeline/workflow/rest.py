@@ -16,23 +16,40 @@ import pathlib
 
 def init_seedconnectivity_wf(seeds, 
         use_mov_pars, name = "firstlevel"):
+    """
+    create workflow to calculate seed connectivity maps
+    for resting state functional scans
+
+    :param seeds: dictionary of filenames by user-defined names 
+        of binary masks that define the seed regions
+    :param use_mov_pars: if true, regress out movement parameters when 
+        calculating seed connectivity
+    :param name: workflow name (Default value = "firstlevel")
+
+    """
     workflow = pe.Workflow(name=name)
 
+    # inputs are the bold file, the mask file and the confounds file 
+    # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
         fields = ["bold_file", "mask_file", "confounds_file"]), 
         name = "inputnode"
     )
     
-    seednames = list(seeds.keys())
-    seed_paths = [seeds[k] for k in seednames]
+    # make two (ordered) lists from (unordered) dictionary of seeds
+    seednames = list(seeds.keys()) # contains the keys (seed names)
+    seed_paths = [seeds[k] for k in seednames] # contains the values (filenames)
     
+    # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
         interface = fsl.ImageMeants(),
         name = "meants",
         iterfield = ["mask"]
     )
     meants.inputs.mask = seed_paths
-        
+    
+    # calculate the regression of the mean time series onto the functional image
+    # the result is the seed connectivity map
     glm = pe.MapNode(
         interface = fsl.GLM(
             out_file = "beta.nii.gz",
@@ -45,11 +62,13 @@ def init_seedconnectivity_wf(seeds,
         iterfield = ["design"]
     )
     
+    # generate dof text file
     gendoffile = pe.Node(
         interface = Dof(num_regressors = 1),
         name = "gendoffile"
     )
-
+    
+    # split regression outputs by name
     splitcopes = pe.Node(
         interface = niu.Split(splits = [1 for seedname in seednames]),
         name = "splitcopes"
@@ -63,6 +82,7 @@ def init_seedconnectivity_wf(seeds,
         name = "splitzstats"
     )
     
+    # outputs are cope, varcope and zstat for each seed region and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
         fields = sum([["%s_cope" % seedname, 
                 "%s_varcope" % seedname, "%s_zstat" % seedname] 
@@ -100,6 +120,7 @@ def init_seedconnectivity_wf(seeds,
         ]),
     ])
     
+    # connect outputs named for the seeds
     for i, seedname in enumerate(seednames):
         workflow.connect(splitcopes, "out%i" % (i+1), outputnode, "%s_cope" % seedname)
         workflow.connect(splitvarcopes, "out%i" % (i+1), outputnode, "%s_varcope" % seedname)
@@ -110,17 +131,31 @@ def init_seedconnectivity_wf(seeds,
 
 def init_dualregression_wf(componentsfile, 
         use_mov_pars, name = "firstlevel"):
+    """
+    create a workflow to calculate dual regression for ICA seeds
+
+    :param componentsfile: 4d image file with ica components
+    :param use_mov_pars: if true, regress out movement parameters when 
+        calculating dual regression
+    :param name: workflow name (Default value = "firstlevel")
+
+    """
     workflow = pe.Workflow(name=name)
 
+    # inputs are the bold file, the mask file and the confounds file 
+    # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
         fields = ["bold_file", "mask_file", "confounds_file"]), 
         name = "inputnode"
     )
     
+    # extract number of ICA components from 4d image and name them
     ncomponents = nib.load(componentsfile).shape[3];
     fname, _ = _splitext(op.basename(componentsfile))
     componentnames = ["%s_%d" % (fname, i) for i in range(ncomponents)]
     
+    # first step, calculate spatial regression of ICA components on to the
+    # bold file
     glm0 = pe.Node(
         interface = fsl.GLM(
             out_file = "beta",
@@ -129,7 +164,9 @@ def init_dualregression_wf(componentsfile,
         name = "glm0"
     )
     glm0.inputs.design = componentsfile
-        
+    
+    # second step, calculate the temporal regression of the time series 
+    # from the first step on to the bold file
     glm1 = pe.Node(
         interface = fsl.GLM(
             out_file = "beta.nii.gz",
@@ -141,6 +178,7 @@ def init_dualregression_wf(componentsfile,
         name = "glm1"
     )
     
+    # split regression outputs into individual images
     splitcopesimage = pe.Node(
         interface = fsl.Split(dimension = "t"),
         name = "splitcopesimage"
@@ -154,11 +192,13 @@ def init_dualregression_wf(componentsfile,
         name = "splitzstatsimage"
     )
     
+    # generate dof text file
     gendoffile = pe.Node(
         interface = Dof(num_regressors = 1),
         name = "gendoffile"
     )
     
+    # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
         fields = sum([["%s_cope" % componentname, 
                 "%s_varcope" % componentname, "%s_zstat" % componentname] 
@@ -166,6 +206,7 @@ def init_dualregression_wf(componentsfile,
         name = "outputnode"
     )
 
+    # split regression outputs by name
     splitcopes = pe.Node(
         interface = niu.Split(splits = [1 for componentname in componentnames]),
         name = "splitcopes"
@@ -219,6 +260,7 @@ def init_dualregression_wf(componentsfile,
         ]),
     ])
     
+    # connect outputs named for the ICA components
     for i, componentname in enumerate(componentnames):
         workflow.connect(splitcopes, "out%i" % (i+1), outputnode, "%s_cope" % componentname)
         workflow.connect(splitvarcopes, "out%i" % (i+1), outputnode, "%s_varcope" % componentname)

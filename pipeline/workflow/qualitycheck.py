@@ -3,14 +3,24 @@ import os
 
 import json
 
-
 def get_qualitycheck_exclude(base_directory):
+    """
+    return dictionary of functional scans by subject to exclude from
+    higher level analyses based on qualitycheck results
+
+    :param base_directory: working directory where qcresult.json is located
+
+    """
+    
+    # load qcresult.json
     qc_result = {}
     qc_result_fname = op.join(base_directory, "qcresult.json")
     if op.isfile(qc_result_fname):
         with open(qc_result_fname) as qc_result_file:    
             qc_result = json.load(qc_result_file)
     
+    # if there are issues with the functional preprocessing, then
+    # exclude the specific scan
     exclude = {}
     for sub, value0 in qc_result.items():
         if sub not in exclude:
@@ -26,6 +36,8 @@ def get_qualitycheck_exclude(base_directory):
                         if v == "bad": 
                             exclude[sub][task] = True
     
+    # if there are issues with anatomical/structural preprocessing,
+    # then exclude the entire subject
     for sub, value0 in qc_result.items():
         if sub not in exclude:
             exclude[sub] = {}

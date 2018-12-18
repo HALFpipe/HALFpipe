@@ -36,6 +36,12 @@ G.add_edge("F","I")
 G.add_edge("I","J")
 
 def _rank_collapse(graph):
+    """
+    currently unused, ranks nodes of graph by order of execution
+
+    :param graph: the graph
+
+    """
     indegree_map = {v: d for v, d in graph.in_degree() if d > 0}
     # These nodes have zero indegree and ready to be returned.
     zero_indegree = [v for v, d in graph.in_degree() if d == 0]
@@ -64,11 +70,24 @@ def _rank_collapse(graph):
     
 def patch_wf(workflow, images, 
         output_dir, fmriprep_reportlets_dir, fmriprep_output_dir):
+    """
+    patches/edits the FMRIPREP-generated workflow so that BIDS-specific
+    nodes are replaced with generic nodes
+
+    :param workflow: workflow to patch
+    :param images: the images data structure as specified in pipeline.json
+    :param output_dir: the output dir used for custom pipeline outputs
+    :param fmriprep_reportlets_dir: the reportlets dir passed to FMRIPREP
+    :param fmriprep_output_dir: the output dir passed to FMRIPREP
+
+    """
     workflow._graph = workflow._create_flat_graph()
         
-    # workflows = _get_all_workflows(workflow)       
-
-    # for wf in workflows:
+    # fmriprep includes a bugfix for when multiple T1w images are passed, so 
+    # that only one is used for functional preprocessing. This can be the
+    # the case in longitudinal studies.
+    # However, as this function depends on BIDS, and because we don't support
+    # longitudinal data in the first place, we attempt to remove this bugfix.
     for _, _, d in workflow._graph.edges(data = True):
         for i, (src, dest) in enumerate(d["connect"]):
             if isinstance(src, tuple) and len(src) > 1:
@@ -77,6 +96,9 @@ def patch_wf(workflow, images,
 
     for node in workflow._get_all_nodes():
         if type(node._interface) is DerivativesDataSink:
+            # the DerivativesDataSink class of fmriprep depends on the BIDS
+            # data structure to determine output file names. We replace it with a
+            # custom version that does not, this class is called FakeDerivativesDataSink.
             base_directory = node._interface.inputs.base_directory
             in_file = node._interface.inputs.in_file
             source_file = node._interface.inputs.source_file
@@ -94,8 +116,10 @@ def patch_wf(workflow, images,
                 extra_values = extra_values)
         elif type(node._interface) is niu.Function and \
             "fix_multi_T1w_source_name" in node._interface.inputs.function_str:
+            # Second line of defence against fix_multi_T1w_source_name
             node._interface.inputs.function_str = "def fix_multi_T1w_source_name(in_files):\n    if isinstance(in_files, str):\n        return in_files\n    else:\n        return in_files[0]"
-                
+    
+    # copy run configuration of root workflow to nodes
     for node in workflow._get_all_nodes():
         node.config = deepcopy(workflow.config)
     
