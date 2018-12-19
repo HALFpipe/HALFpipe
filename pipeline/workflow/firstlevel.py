@@ -21,8 +21,12 @@ from .func import (
 )
 from .rest import (
     init_seedconnectivity_wf,
-    init_dualregression_wf
+    init_dualregression_wf,
+    init_reho_wf,
 )
+
+from .alff import create_alff
+
 from .task import init_glm_wf
 
 from .patch import patch_wf
@@ -440,6 +444,26 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             bold_file, output_dir, name = "dualregression")
         wfbywf["dualregression_wf"] = firstlevel_wf
         outnamesbywf["dualregression_wf"] = componentnames
+
+    # ReHo
+    # if True:
+    #     firstlevel_wf = init_reho_wf(
+    #         name = "reho_wf"
+    #     )
+    #     create_ds(wf, firstlevel_wf, ['reho'], func_preproc_wf, temporalfilter_wf,
+    #               bold_file, output_dir, name = "reho")
+    #     wfbywf["reho_wf"] = firstlevel_wf
+    #     outnamesbywf["reho_wf"] = ["reho"]
+
+    # ALFF
+    if True:
+        firstlevel_wf = create_alff(
+            name = "alff_wf"
+        )
+        create_ds(wf, firstlevel_wf, ["alff"], func_preproc_wf, temporalfilter_wf,
+                  bold_file, output_dir, name = "alff")
+        wfbywf["alff_wf"] = firstlevel_wf
+        outnamesbywf["alff_wf"] = ["alff"]
     
     outputnode = pe.Node(
         interface = niu.IdentityInterface(
@@ -457,4 +481,4 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     
     outnames = sum(outnamesbywf.values(), [])
     return outnames
-    
+

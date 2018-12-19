@@ -21,6 +21,7 @@ from .qualitycheck import get_qualitycheck_exclude
 
 from ..utils import transpose
 
+
 def init_workflow(workdir):
     """
     initialize nipype workflow for a workdir containing a pipeline.json file.
@@ -72,6 +73,9 @@ def init_workflow(workdir):
     group_contrasts = None
     if "GroupContrasts" in metadata:
         group_contrasts = metadata["GroupContrasts"]
+    covariates = None
+    if "Covariates" in metadata:
+        covariates = metadata["Covariates"]
     
     stats_dir = op.join(workdir, "stats")
     
@@ -79,7 +83,7 @@ def init_workflow(workdir):
         for outname in outnamesset:
             higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode = "flame1", 
                 name = "%s_%s_higherlevel" % (task, outname), 
-                subjects = subjects, covariates = metadata["Covariates"], 
+                subjects = subjects, covariates = covariates,
                 subject_groups = subject_groups, group_contrasts = group_contrasts)
         
             mergecopes = pe.Node(
@@ -163,6 +167,3 @@ def init_workflow(workdir):
             ])
         
     return workflow  
-
-    
-    

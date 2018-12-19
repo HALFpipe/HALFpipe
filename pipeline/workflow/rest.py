@@ -11,10 +11,13 @@ from fmriprep.interfaces.bids import _splitext
 
 from ..interface import Dof
 
+from .utils import compute_reho
+
 import nibabel as nib
 import pathlib
 
-def init_seedconnectivity_wf(seeds, 
+
+def init_seedconnectivity_wf(seeds,
         use_mov_pars, name = "firstlevel"):
     """
     create workflow to calculate seed connectivity maps
@@ -267,4 +270,59 @@ def init_dualregression_wf(componentsfile,
         workflow.connect(splitzstats, "out%i" % (i+1), outputnode, "%s_zstat" % componentname)
     
     return workflow, componentnames
+
+
+def init_reho_wf(name="firstlevel"):
+    """
+    create a workflow to do ReHo and ALFF
+
+    """
+    workflow = pe.Workflow(name=name)
+
+    # inputs are the bold file, the mask file and the cluster size
+    # that contains the movement parameters
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=["bold_file", "mask_file", "confounds_file"]),
+        name="inputnode"
+    )
+
+    reho_imports = ['import os', 'import sys', 'import nibabel as nb',
+                    'import numpy as np',
+                    'from pipeline.workflow.utils import f_kendall']
+    raw_reho_map = pe.Node(niu.Function(input_names=['in_file', 'mask_file',
+                                                      'cluster_size'],
+                                         output_names=['out_file'],
+                                         function=compute_reho,
+                                         imports=reho_imports),
+                           name='reho_map')
+
+    raw_reho_map.inputs.cluster_size = 27
+
+    # outputs are cope, varcope and zstat for each ICA component and a dof_file
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=sum([["reho_cope", "reho_varcope", "reho_zstat"]], []) + ["dof_file"]),
+        name="outputnode"
+    )
+
+    # generate dof text file
+    gendoffile = pe.Node(
+        interface = Dof(num_regressors = 1),
+        name = "gendoffile"
+    )
+    workflow.connect([
+        (inputnode, gendoffile, [
+            ("bold_file", "in_file"),
+        ]),
+        (gendoffile, outputnode, [
+            ("out_file", "dof_file"),
+        ])
+    ])
+
+    workflow.connect(inputnode, 'bold_file', raw_reho_map, 'in_file')
+    workflow.connect(inputnode, 'mask_file', raw_reho_map, 'mask_file')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_cope')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_varcope')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_zstat')
+
+    return workflow
 
