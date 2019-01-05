@@ -1,40 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
-# vi: set ft=python sts=4 ts=4 sw=4 et:
-
-from multiprocessing import set_start_method, cpu_count
-set_start_method("forkserver", force = True)
-
-from glob import glob
-from os import path as op
 import os
 import pandas as pd
-import numpy as np
-
-from argparse import ArgumentParser
-
 import nibabel as nib
-
-import re
 import json
-
-from .cli import cli
-
+from multiprocessing import set_start_method, cpu_count
+from glob import glob
+from os import path as op
+from argparse import ArgumentParser
+from .cli import Cli
 from .conditions import parse_condition_files
-
 from .info import __version__
-
 from .workflow import init_workflow
-
 from .logging import init_logging
-
 from .patterns import ambiguous_match
 
-from .utils import transpose
-
 EXT_PATH = "/ext"
-    
+
+set_start_method("forkserver", force=True)
+
+
 def get_path(path):
     path = path.strip()
 
@@ -44,46 +27,48 @@ def get_path(path):
     path = op.join(EXT_PATH, path)
 
     return path
-    
+
+
 def main():
-    ap = ArgumentParser(description = "")
+    ap = ArgumentParser(description="")
     ap.add_argument("-w", "--workdir")
     ap.add_argument("-p", "--nipype-plugin")
-    ap.add_argument("-s", "--setup-only", action = "store_true", default = False)
+    ap.add_argument("-s", "--setup-only", action="store_true", default=False)
     args = ap.parse_args()
-    
+
     workdir = None
     if args.workdir is not None:
         workdir = get_path(args.workdir)
-        
+
     #
     # tests
     #
-    
+
+    c = None
+
     if not (op.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
         c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
-    
+
     #
     # data structures
     #
-    
-    c = None
+
     images = dict()
     metadata = dict()
     # field_maps = dict()
-    
+
     subject_ids = []
 
     if workdir is None:
         if c is None:
-            c = cli()
+            c = Cli()
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
 
         workdir = get_path(c.read("Specify the working directory"))
         c.info("")
 
-    os.makedirs(workdir, exist_ok = True)
+    os.makedirs(workdir, exist_ok=True)
 
     path_to_pipeline_json = op.join(workdir, "pipeline.json")
 
@@ -93,11 +78,11 @@ def main():
 
     def get_file(description):
         path = get_path(c.read("Specify the path of the %s file" % description))
-        if not op.isfile(path): # does file exist
-            return get_file(description) # repeat if doesn"t exist
+        if not op.isfile(path):  # does file exist
+            return get_file(description)  # repeat if doesn"t exist
         return path
 
-    def get_files(description, runs = False, conditions = False):
+    def get_files(description, runs=False, conditions=False):
         """ Match files by wildcards """
         files = dict()
 
@@ -137,8 +122,6 @@ def main():
             if len(m) > 1:
                 m_ = []
 
-                possibilities = {}
-
                 wildcard_descriptions_ = {k: v for k, v in wildcard_descriptions.items() if k in wildcards}
 
                 is_good = set()
@@ -164,14 +147,13 @@ def main():
                                     c.info("Detected ambiguous filenames!")
                                     messagedisplayed = True
                                 y = ["\"" + x + "\"" for x in w[field]]
-                                response0 = c.select("Does %s contain %s?" % (wildcard_descriptions_[k], " and ".join(y)), ["Yes", "No"])
+                                response0 = c.select(
+                                    "Does %s contain %s?" % (wildcard_descriptions_[k], " and ".join(y)), ["Yes", "No"])
                                 if response0 == "Yes":
-                                    contains[field] = n[field]
+                                    # contains[field] = n[field]
                                     break
                     if field not in contains:
                         contains[field] = None
-
-                # import pdb; pdb.set_trace()
 
                 for n in m:
                     is_good = True
@@ -198,8 +180,6 @@ def main():
             if "$" in m:
                 condition = m["$"]
 
-            # import pdb; pdb.set_trace()
-
             if subject not in files:
                 files[subject] = dict()
             if run not in files[subject]:
@@ -221,7 +201,7 @@ def main():
 
     if not op.isfile(path_to_pipeline_json):
         if c is None:
-            c = cli()
+            c = Cli()
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
 
@@ -256,16 +236,14 @@ def main():
             field_name = c.read("Specify the paradigm name", "rest")
 
             metadata[field_name] = dict()
-            images[field_name] = get_files(field_description, runs = True)
+            images[field_name] = get_files(field_description, runs=True)
 
             image = next(iter(next(iter(images[field_name].values())).values()))[""]
             metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
-                o = str(nib.load(image).header.get_zooms()[3])))
+                                                                  o=str(nib.load(image).header.get_zooms()[3])))
 
-            # metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
-
-            ped = c.select("Specify the phase encoding direction", \
-                ["AP", "PA", "LR", "RL", "SI", "IS"])
+            ped = c.select("Specify the phase encoding direction",
+                           ["AP", "PA", "LR", "RL", "SI", "IS"])
             metadata[field_name]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
@@ -311,7 +289,7 @@ def main():
             field_name = c.read("Specify the paradigm name")
 
             metadata[field_name] = dict()
-            images[field_name] = get_files(field_description, runs = True)
+            images[field_name] = get_files(field_description, runs=True)
 
             image = next(iter(next(iter(images[field_name].values())).values()))[""]
             # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
@@ -319,22 +297,22 @@ def main():
 
             metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
 
-            ped = c.select("Specify the phase encoding direction", \
-                ["AP", "PA", "LR", "RL", "SI", "IS"])
+            ped = c.select("Specify the phase encoding direction",
+                           ["AP", "PA", "LR", "RL", "SI", "IS"])
             metadata[field_name]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
             description2 = "condition/explanatory variable"
-            response2 = c.select("Specify the format of the %s files" % description2, \
-                ["FSL 3-column", "SPM multiple conditions"])
+            response2 = c.select("Specify the format of the %s files" % description2,
+                                 ["FSL 3-column", "SPM multiple conditions"])
 
             conditions = None
             if response2 == "SPM multiple conditions":
-                conditions = get_files(description2, runs = True)
+                conditions = get_files(description2, runs=True)
             elif response2 == "FSL 3-column":
-                conditions = get_files(description2, runs = True, conditions = True)
+                conditions = get_files(description2, runs=True, conditions=True)
 
-            conditions = parse_condition_files(conditions, format = response2)
+            conditions = parse_condition_files(conditions, form=response2)
 
             condition = list(next(iter(next(iter(conditions.values())).values())))
             condition = sorted(condition)
@@ -348,7 +326,7 @@ def main():
                 contrast_name = c.read("Specify the contrast name")
                 contrast_values = c.fields("Specify the contrast values", condition)
 
-                contrasts[contrast_name] = {k:float(v) for k, v in zip(condition, contrast_values)}
+                contrasts[contrast_name] = {k: float(v) for k, v in zip(condition, contrast_values)}
 
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
 
@@ -366,19 +344,19 @@ def main():
         c.info("")
 
         metadata["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
-            o = str(125.0)))
+                                                  o=str(125.0)))
         metadata["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
-            o = str(5.0)))
+                                                 o=str(5.0)))
 
         c.info("")
 
         spreadsheet_file = get_file("covariates/group data spreadsheet")
         spreadsheet = pd.read_csv(spreadsheet_file)
-        
+
         id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
-        
+
         covariates = spreadsheet.set_index(id_column).to_dict()
-        
+
         response0 = c.select("Specify a group design?", ["Yes", "No"])
         if response0 == "Yes":
             group_column = c.select("Specify the column containing group names", spreadsheet.columns)
@@ -386,7 +364,7 @@ def main():
             del covariates[group_column]
 
             unique_groups = set(groups.values())
-            
+
             group_contrasts = {}
             response3 = "Yes"
             while response3 == "Yes":
@@ -397,27 +375,24 @@ def main():
 
             metadata["SubjectGroups"] = groups
             metadata["GroupContrasts"] = group_contrasts
-        
+
         metadata["Covariates"] = covariates
-        
+
         c.info("")
 
-        # import pdb; pdb.set_trace()
-        
         with open(path_to_pipeline_json, "w+") as f:
-            json.dump({"images": images, "metadata": metadata}, f, indent = 4)
-            
+            json.dump({"images": images, "metadata": metadata}, f, indent=4)
+
         c.info("Saved configuration")
-        
+
         c.info("")
         c.info("")
-    
+
     if not args.setup_only:
         workflow = init_workflow(workdir)
-        
-        plugin_settings = {}
+
         init_logging(workdir)
-        
+
         if args.nipype_plugin is None:
             plugin_settings = {
                 "plugin": "MultiProc",
@@ -431,9 +406,8 @@ def main():
             plugin_settings = {
                 "plugin": args.nipype_plugin
             }
-        
+
         import gc
         gc.collect()
-        
+
         workflow.run(**plugin_settings)
-    

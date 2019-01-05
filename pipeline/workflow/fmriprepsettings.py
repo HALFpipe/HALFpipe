@@ -60,8 +60,8 @@ use_syn = True
 force_syn = False
 
 # Custom reference image for normalization
-template_out_grid = op.join(os.getenv("FSLDIR"), 
-    "data", "standard", "MNI152_T1_2mm.nii.gz")
+template_out_grid = op.join(os.getenv("FSLDIR"),
+                            "data", "standard", "MNI152_T1_2mm.nii.gz")
 
 # Generate bold CIFTI file in output spaces
 cifti_output = False

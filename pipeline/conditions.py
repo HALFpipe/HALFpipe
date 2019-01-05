@@ -1,7 +1,6 @@
-
-
 import numpy as np
 from scipy.io import loadmat
+
 
 def extract(x):
     """
@@ -14,12 +13,13 @@ def extract(x):
         return extract(x[0])
     return x
 
-def parse_condition_files(files, format = "FSL 3-column"):
+
+def parse_condition_files(files, form="FSL 3-column"):
     """
     Parse condition files into a dictionary data structure
 
     :param files: Input path
-    :param format: Either "SPM multiple conditions" or "FSL 3-column" (Default value = "FSL 3-column")
+    :param form: Either "SPM multiple conditions" or "FSL 3-column" (Default value = "FSL 3-column")
 
     """
     conditions = dict()
@@ -28,23 +28,27 @@ def parse_condition_files(files, format = "FSL 3-column"):
         for run, value1 in value0.items():
             conditions[subject][run] = dict()
             for condition, value2 in value1.items():
-                if format == "SPM multiple conditions":
+                if form == "SPM multiple conditions":
                     data = None
                     try:
                         data = loadmat(value2)
                     except:
                         pass
-                
+
                     if data is not None:
                         durations_ = np.squeeze(data["durations"])
                         onsets_ = np.squeeze(data["onsets"])
                         for i, name in enumerate(data["names"]):
                             name_ = extract(name)
-                            conditions[subject][run][name_] = {"onsets": np.ravel(onsets_[i]).tolist(), "durations": np.ravel(durations_[i]).tolist()}
-                    
-                if format == "FSL 3-column":
+                            conditions[subject][run][name_] = {"onsets"   : np.ravel(onsets_[i]).tolist(),
+                                                               "durations": np.ravel(durations_[i]).tolist()
+                            }
+
+                if form == "FSL 3-column":
                     data = np.loadtxt(value2)
-                    conditions[subject][run][condition] = {"onsets": data[:, 0].tolist(), \
-                        "durations": data[:, 1].tolist()}
-    
+                    conditions[subject][run][condition] = {
+                        "onsets"   : data[:, 0].tolist(), \
+                        "durations": data[:, 1].tolist()
+                    }
+
     return conditions

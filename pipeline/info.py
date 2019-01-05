@@ -17,10 +17,10 @@ __email__ = "lea.waller@charite."
 __status__ = ""
 __url__ = "https://github.com/mindandbrain/pipeline"
 __packagename__ = "pipeline"
-__description__ = ("")
-__longdesc__ = ("")
+__description__ = ""
+__longdesc__ = ""
 
-DOWNLOAD_URL = ("")
+DOWNLOAD_URL = ""
 
 SETUP_REQUIRES = [
     "setuptools>=18.0",
@@ -55,4 +55,3 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
 ]
-

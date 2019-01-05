@@ -38,7 +38,6 @@ def f_kendall(timeseries_matrix):
 
 
 def compute_reho(in_file, mask_file, cluster_size):
-
     """
     Computes the ReHo Map, by computing tied ranks of the timepoints,
     followed by computing Kendall's coefficient concordance(KCC) of a
@@ -66,11 +65,9 @@ def compute_reho(in_file, mask_file, cluster_size):
 
     """
 
-    out_file = None
-
-    res_fname = (in_file)
-    res_mask_fname = (mask_file)
-    CUTNUMBER = 10
+    res_fname = in_file
+    res_mask_fname = mask_file
+    cutnumber = 10
 
     if not (cluster_size == 27 or cluster_size == 19 or cluster_size == 7):
         cluster_size = 27
@@ -88,7 +85,7 @@ def compute_reho(in_file, mask_file, cluster_size):
 
     # "flatten" each volume of the timeseries into one big array instead of
     # x,y,z - produces (timepoints, N voxels) shaped data array
-    res_data = np.reshape(res_data, (n_x*n_y*n_z, n_t), order='F').T
+    res_data = np.reshape(res_data, (n_x * n_y * n_z, n_t), order='F').T
 
     # create a blank array of zeroes of size n_voxels, one for each time point
     Ranks_res_data = np.tile((np.zeros((1, (res_data.shape)[1]))),
@@ -97,17 +94,17 @@ def compute_reho(in_file, mask_file, cluster_size):
     # divide the number of total voxels by the cutnumber (set to 10)
     # ex. end up with a number in the thousands if there are tens of thousands
     # of voxels
-    segment_length = np.ceil(float((res_data.shape)[1])/float(CUTNUMBER))
+    segment_length = np.ceil(float((res_data.shape)[1]) / float(cutnumber))
 
-    for icut in range(0, CUTNUMBER):
+    for icut in range(0, cutnumber):
 
         segment = None
 
         # create a Numpy array of evenly spaced values from the segment
         # starting point up until the segment_length integer
-        if not (icut == (CUTNUMBER - 1)):
+        if not (icut == (cutnumber - 1)):
             segment = np.array(np.arange(icut * segment_length,
-                                         (icut+1) * segment_length))
+                                         (icut + 1) * segment_length))
         else:
             segment = np.array(np.arange(icut * segment_length,
                                          (res_data.shape[1])))
@@ -153,14 +150,15 @@ def compute_reho(in_file, mask_file, cluster_size):
                 maxties = len(tieloc)
                 tiecount = 0
 
-                while(tiecount < maxties -1):
+                while (tiecount < maxties - 1):
                     tiestart = tieloc[tiecount]
                     ntied = 2
-                    while(tieloc[tiecount + 1] == (tieloc[tiecount] + 1)):
+                    while (tieloc[tiecount + 1] == (tieloc[tiecount] + 1)):
                         tiecount += 1
                         ntied += 1
 
-                    ranks[tiestart:tiestart + ntied] = np.ceil(np.float32(np.sum(ranks[tiestart:tiestart + ntied ]))/np.float32(ntied))
+                    ranks[tiestart:tiestart + ntied] = np.ceil(
+                        np.float32(np.sum(ranks[tiestart:tiestart + ntied])) / np.float32(ntied))
                     tiecount += 1
 
                 sorted_ranks[:, tie_adjust_index[i]] = ranks
@@ -226,13 +224,13 @@ def compute_reho(in_file, mask_file, cluster_size):
         mask_cluster[2, 2, 2] = 0
 
     for i in range(1, n_x - 1):
-        for j in range(1, n_y -1):
-            for k in range(1, n_z -1):
+        for j in range(1, n_y - 1):
+            for k in range(1, n_z - 1):
 
-                block = Ranks_res_data[:, i-1:i+2, j-1:j+2, k-1:k+2]
-                mask_block = res_mask_data[i-1:i+2, j-1:j+2, k-1:k+2]
+                block = Ranks_res_data[:, i - 1:i + 2, j - 1:j + 2, k - 1:k + 2]
+                mask_block = res_mask_data[i - 1:i + 2, j - 1:j + 2, k - 1:k + 2]
 
-                if not(int(mask_block[1, 1, 1]) == 0):
+                if not (int(mask_block[1, 1, 1]) == 0):
 
                     if nvoxel == 19 or nvoxel == 7:
                         mask_block = np.multiply(mask_block, mask_cluster)

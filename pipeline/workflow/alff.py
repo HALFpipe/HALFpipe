@@ -5,8 +5,7 @@ from .utils import get_operand_string, get_opt_string
 from nipype.interfaces.afni import TStat, Calc, Bandpass
 
 
-def create_alff(name = 'alff_workflow'):
-
+def create_alff(name='alff_workflow'):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and fractional ALFF maps
 
@@ -45,7 +44,8 @@ def create_alff(name = 'alff_workflow'):
             outputs image containing the sum of the amplitudes in the low frequency band
 
         outputspec.falff_img : string (nifti file)
-            outputs image containing the sum of the amplitudes in the low frequency band divided by the amplitude of the total frequency
+            outputs image containing the sum of the amplitudes in the low frequency band divided by the
+            amplitude of the total frequency
 
         outputspec.alff_Z_img : string (nifti file)
             outputs image containing Normalized ALFF Z scores across full brain in native space
@@ -128,7 +128,9 @@ def create_alff(name = 'alff_workflow'):
     References
     ----------
 
-    .. [1] Zou, Q.-H., Zhu, C.-Z., Yang, Y., Zuo, X.-N., Long, X.-Y., Cao, Q.-J., Wang, Y.-F., et al. (2008). An improved approach to detection of amplitude of low-frequency fluctuation (ALFF) for resting-state fMRI: fractional ALFF. Journal of neuroscience methods, 172(1), 137-41. doi:10.10
+    .. [1] Zou, Q.-H., Zhu, C.-Z., Yang, Y., Zuo, X.-N., Long, X.-Y., Cao, Q.-J., Wang, Y.-F., et al. (2008).
+    An improved approach to detection of amplitude of low-frequency fluctuation (ALFF) for resting-state fMRI:
+    fractional ALFF. Journal of neuroscience methods, 172(1), 137-41. doi:10.10
 
     Examples
     --------
@@ -145,45 +147,45 @@ def create_alff(name = 'alff_workflow'):
 
     """
 
-    wf = pe.Workflow(name= name)
-    inputNode = pe.Node(util.IdentityInterface(
+    wf = pe.Workflow(name=name)
+    input_node = pe.Node(util.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds_file"]),
         name="inputnode"
     )
 
     inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
-                             name='hp_input')
+                           name='hp_input')
 
     inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
-                             name='lp_input')
+                           name='lp_input')
 
-    outputNode = pe.Node(util.IdentityInterface(
+    output_node = pe.Node(util.IdentityInterface(
         fields=sum([["alff_cope", "alff_varcope", "alff_zstat"]], []) + ["dof_file"]),
         name="outputnode"
     )
 
-    #filtering
-    bandpass = pe.Node(interface= Bandpass(),
-                       name = 'bandpass_filtering')
+    # filtering
+    bandpass = pe.Node(interface=Bandpass(),
+                       name='bandpass_filtering')
     bandpass.inputs.outputtype = 'NIFTI_GZ'
     bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
     wf.connect(inputnode_hp, 'hp',
-                 bandpass, 'highpass')
+               bandpass, 'highpass')
     wf.connect(inputnode_lp, 'lp',
-                 bandpass, 'lowpass')
-    wf.connect(inputNode, 'bold_file',
-                 bandpass, 'in_file')
+               bandpass, 'lowpass')
+    wf.connect(input_node, 'bold_file',
+               bandpass, 'in_file')
 
-    get_option_string = pe.Node(util.Function(input_names = ['mask'],
-                                              output_names = ['option_string'],
-                                              function = get_opt_string),
-                                name = 'get_option_string')
-    wf.connect(inputNode, 'mask_file',
-                 get_option_string, 'mask')
+    get_option_string = pe.Node(util.Function(input_names=['mask'],
+                                              output_names=['option_string'],
+                                              function=get_opt_string),
+                                name='get_option_string')
+    wf.connect(input_node, 'mask_file',
+               get_option_string, 'mask')
 
-    #standard deviation over frequency
-    stddev_fltrd = pe.Node(interface = TStat(),
-                            name = 'stddev_fltrd')
+    # standard deviation over frequency
+    stddev_fltrd = pe.Node(interface=TStat(),
+                           name='stddev_fltrd')
     stddev_fltrd.inputs.outputtype = 'NIFTI_GZ'
     stddev_fltrd.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered_3dT.nii.gz')
     wf.connect(bandpass, 'out_file',
@@ -192,25 +194,25 @@ def create_alff(name = 'alff_workflow'):
                stddev_fltrd, 'options')
 
     wf.connect(stddev_fltrd, 'out_file',
-                 outputNode, 'alff_img')
+               output_node, 'alff_img')
 
-    #standard deviation of the unfiltered nuisance corrected image
-    stddev_unfltrd = pe.Node(interface = TStat(),
-                            name = 'stddev_unfltrd')
+    # standard deviation of the unfiltered nuisance corrected image
+    stddev_unfltrd = pe.Node(interface=TStat(),
+                             name='stddev_unfltrd')
     stddev_unfltrd.inputs.outputtype = 'NIFTI_GZ'
     stddev_unfltrd.inputs.out_file = os.path.join(os.path.curdir, 'residual_3dT.nii.gz')
-    wf.connect(inputNode, 'bold_file',
-                 stddev_unfltrd, 'in_file')
+    wf.connect(input_node, 'bold_file',
+               stddev_unfltrd, 'in_file')
     wf.connect(get_option_string, 'option_string',
-                 stddev_unfltrd, 'options')
+               stddev_unfltrd, 'options')
 
-    #falff calculations
-    falff = pe.Node(interface = Calc(),
-                    name = 'falff')
+    # falff calculations
+    falff = pe.Node(interface=Calc(),
+                    name='falff')
     falff.inputs.args = '-float'
     falff.inputs.expr = '(1.0*bool(a))*((1.0*b)/(1.0*c))'
     falff.inputs.outputtype = 'NIFTI_GZ'
-    wf.connect(inputNode, 'mask_file',
+    wf.connect(input_node, 'mask_file',
                falff, 'in_file_a')
     wf.connect(stddev_fltrd, 'out_file',
                falff, 'in_file_b')
@@ -218,7 +220,6 @@ def create_alff(name = 'alff_workflow'):
                falff, 'in_file_c')
 
     wf.connect(falff, 'out_file',
-               outputNode, 'falff_img')
+               output_node, 'falff_img')
 
     return wf
-

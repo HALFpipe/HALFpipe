@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+
 def flatten(l):
     """
     Flatten a list
@@ -18,7 +19,8 @@ def flatten(l):
             o += flatten(k)
         return o
 
-def get_float(input):
+
+def get_float():
     def flatten(l):
         if isinstance(l, str) or isinstance(l, float):
             return [l]
@@ -27,7 +29,9 @@ def get_float(input):
             for k in l:
                 o += flatten(k)
             return o
+
     return float(flatten(input)[0])
+
 
 def transpose(d):
     """
@@ -46,7 +50,8 @@ def transpose(d):
             out[key1][key0] = value1
     return out
 
-def lookup(d, subject_id = None, run_id = None, condition_id = None):
+
+def lookup(d, subject_id=None, run_id=None, condition_id=None):
     """
     Look up value in a three-level dictionary based on three keys
 
@@ -63,12 +68,12 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
         key0 += list(d.keys())
     else:
         key0.append(subject_id)
-    
+
     if not key0[0] in d:
         return None
-        
+
     e = d[key0[0]]
-    
+
     key1 = []
     if isinstance(e, dict) and len(e) == 1 and "" in e:
         key1.append("")
@@ -76,12 +81,12 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
         key1 += list(e.keys())
     else:
         key1.append(run_id)
-        
+
     if not key1[0] in e:
         return None
-        
+
     f = e[key1[0]]
-    
+
     key2 = []
     if isinstance(f, dict) and len(f) == 1 and "" in f:
         key2.append("")
@@ -89,7 +94,7 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
         key2 += list(f.keys())
     else:
         key2.append(condition_id)
-    
+
     o = dict()
     for i in key0:
         o[i] = dict()
@@ -97,7 +102,7 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
             o[i][j] = dict()
             for k in key2:
                 o[i][j][k] = d[i][j][k]
-                
+
     def flatten(dd):
         """
         Flatten a dictionary
@@ -108,8 +113,7 @@ def lookup(d, subject_id = None, run_id = None, condition_id = None):
         if isinstance(dd, dict):
             if len(dd) == 1:
                 return flatten(next(iter(dd.values())))
-            return {k:flatten(v) for k, v in dd.items()}
+            return {k: flatten(v) for k, v in dd.items()}
         return dd
-        
-    return flatten(o)
 
+    return flatten(o)

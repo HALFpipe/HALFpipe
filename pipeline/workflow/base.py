@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-import os
 from os import path as op
 
 from functools import partial
@@ -36,36 +35,36 @@ def init_workflow(workdir):
     data = None
     with open(fp, "r") as f:
         data = json.load(f)
-        
-    name = "nipype"    
-    workflow = pe.Workflow(name = name, base_dir = workdir)
+
+    name = "nipype"
+    workflow = pe.Workflow(name=name, base_dir=workdir)
 
     images = transpose(data["images"])
-    
+
     #
     # first level
     #
-    
+
     result = Pool().map(
-        partial(init_subject_wf, workdir = workdir, images = images, data = data), 
+        partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
     )
     subjects, subject_wfs, outnameslists = zip(*result)
     workflow.add_nodes(subject_wfs)
-    
+
     #
     # second level
     #
-    
+
     outnamessets = {}
     for outnameslist in outnameslists:
         for k, v in outnameslist.items():
             if k not in outnamessets:
                 outnamessets[k] = set()
             outnamessets[k].update(v)
-    
+
     exclude = get_qualitycheck_exclude(workdir)
-    
+
     metadata = data["metadata"]
     subject_groups = None
     if "SubjectGroups" in metadata:
@@ -76,29 +75,30 @@ def init_workflow(workdir):
     covariates = None
     if "Covariates" in metadata:
         covariates = metadata["Covariates"]
-    
+
     stats_dir = op.join(workdir, "stats")
-    
+
     for task, outnamesset in outnamessets.items():
         for outname in outnamesset:
-            higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode = "flame1", 
-                name = "%s_%s_higherlevel" % (task, outname), 
-                subjects = subjects, covariates = covariates,
-                subject_groups = subject_groups, group_contrasts = group_contrasts)
-        
+            higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode="flame1",
+                                                                 name="%s_%s_higherlevel" % (task, outname),
+                                                                 subjects=subjects, covariates=covariates,
+                                                                 subject_groups=subject_groups,
+                                                                 group_contrasts=group_contrasts)
+
             mergecopes = pe.Node(
-                interface = niu.Merge(len(subject_wfs)),
-                name = "%s_%s_mergecopes" % (task, outname))
+                interface=niu.Merge(len(subject_wfs)),
+                name="%s_%s_mergecopes" % (task, outname))
             mergevarcopes = pe.Node(
-                interface = niu.Merge(len(subject_wfs)),
-                name = "%s_%s_mergevarcopes" % (task, outname))
+                interface=niu.Merge(len(subject_wfs)),
+                name="%s_%s_mergevarcopes" % (task, outname))
             mergemasks = pe.Node(
-                interface = niu.Merge(len(subject_wfs)),
-                name = "%s_%s_mergemasks" % (task, outname))
+                interface=niu.Merge(len(subject_wfs)),
+                name="%s_%s_mergemasks" % (task, outname))
             mergedoffiles = pe.Node(
-                interface = niu.Merge(len(subject_wfs)),
-                name = "%s_%s_mergedoffiles" % (task, outname))
-            
+                interface=niu.Merge(len(subject_wfs)),
+                name="%s_%s_mergedoffiles" % (task, outname))
+
             for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
                 excludethis = False
                 if subject in exclude:
@@ -112,27 +112,27 @@ def init_workflow(workdir):
                     ]
                     if len(outputnode) > 0:
                         outputnode = outputnode[0]
-                        workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i+1))
-                        workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i+1))
-                        workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i+1))
-                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i+1))
-        
+                        workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+
             ds_stats = pe.MapNode(
                 nio.DataSink(
-                    infields = ["cope", "varcope", "zstat", "dof"],
-                    base_directory = op.join(stats_dir, task, outname),
-                    regexp_substitutions = [(r"(/.+)/\w+.nii.gz", r"\1.nii.gz")],
-                    parameterization = False),
-		iterfield = ["container", "cope", "varcope", "zstat", "dof"],
-                name = "ds_%s_%s_stats" % (task, outname), run_without_submitting = True)
+                    infields=["cope", "varcope", "zstat", "dof"],
+                    base_directory=op.join(stats_dir, task, outname),
+                    regexp_substitutions=[(r"(/.+)/\w+.nii.gz", r"\1.nii.gz")],
+                    parameterization=False),
+                iterfield=["container", "cope", "varcope", "zstat", "dof"],
+                name="ds_%s_%s_stats" % (task, outname), run_without_submitting=True)
             ds_stats.inputs.container = contrast_names
-    
+
             ds_mask = pe.Node(
                 nio.DataSink(
-                    base_directory = op.join(stats_dir, task),
-                    container = outname,
-                    parameterization = False),
-                name = "ds_%s_%s_mask" % (task, outname), run_without_submitting = True)
+                    base_directory=op.join(stats_dir, task),
+                    container=outname,
+                    parameterization=False),
+                name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)
 
             workflow.connect([
                 (mergecopes, higherlevel_wf, [
@@ -165,5 +165,5 @@ def init_workflow(workdir):
                     ("outputnode.mask_file", "mask")
                 ])
             ])
-        
-    return workflow  
+
+    return workflow
