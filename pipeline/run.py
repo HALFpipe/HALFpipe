@@ -87,10 +87,11 @@ def main():
             c.info("Put \"$\" in place of condition names")
             wildcards += ["$"]
 
-        if description == "T1-weighted image":
-            c.info("/path/to/your/data/*_t1.nii.gz")
-
         c.info("Put \"*\" in place of the subject names")
+
+        if description == "T1-weighted image":
+            c.info("(e.g: /path/to/your/data/*_t1.nii.gz)")
+
         path = get_path(c.read(q=None), EXT_PATH)
 
         wildcards += ["*"]
