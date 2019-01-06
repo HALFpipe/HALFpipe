@@ -92,9 +92,10 @@ class Cli(object):
 
         sys.stdout.write(CURSOR_MOVE_LEFT)
         sys.stdout.write(COLOR_NORMAL)
-        sys.stdout.write("%s" % q)
-        sys.stdout.write(RESET)
-        sys.stdout.write("\n")
+        if q:
+            sys.stdout.write("%s" % q)
+            sys.stdout.write(RESET)
+            sys.stdout.write("\n")
 
         def refresh():
             """ render prompt """

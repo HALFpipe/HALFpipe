@@ -88,10 +88,10 @@ def main():
             wildcards += ["$"]
 
         if description == "T1-weighted image":
-            c.info("/home/marc/mindandbrain/data_marc/*_t1.nii.gz")
+            c.info("/path/to/your/data/*_t1.nii.gz")
 
-        path = get_path(c.read("Put \"*\" in place of the subject names"), EXT_PATH)
-        print(description)
+        c.info("Put \"*\" in place of the subject names")
+        path = get_path(c.read(q=None), EXT_PATH)
 
         wildcards += ["*"]
 
