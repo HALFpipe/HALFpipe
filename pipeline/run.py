@@ -4,7 +4,6 @@ import nibabel as nib
 import json
 from multiprocessing import set_start_method, cpu_count
 from glob import glob
-from os import path as op
 from argparse import ArgumentParser
 from .cli import Cli
 from .conditions import parse_condition_files
@@ -12,21 +11,11 @@ from .info import __version__
 from .workflow import init_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
+from .utils import get_path
 
 EXT_PATH = "/ext"
 
 set_start_method("forkserver", force=True)
-
-
-def get_path(path):
-    path = path.strip()
-
-    if path.startswith("/"):
-        path = path[1:]
-
-    path = op.join(EXT_PATH, path)
-
-    return path
 
 
 def main():
@@ -38,7 +27,7 @@ def main():
 
     workdir = None
     if args.workdir is not None:
-        workdir = get_path(args.workdir)
+        workdir = get_path(args.workdir, EXT_PATH)
 
     #
     # tests
@@ -46,7 +35,7 @@ def main():
 
     c = None
 
-    if not (op.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
+    if not (os.path.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
         c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
 
     #
@@ -65,20 +54,20 @@ def main():
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
 
-        workdir = get_path(c.read("Specify the working directory"))
+        workdir = get_path(c.read("Specify the working directory"), EXT_PATH)
         c.info("")
 
     os.makedirs(workdir, exist_ok=True)
 
-    path_to_pipeline_json = op.join(workdir, "pipeline.json")
+    path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
 
     #
     # helper functions
     #
 
     def get_file(description):
-        path = get_path(c.read("Specify the path of the %s file" % description))
-        if not op.isfile(path):  # does file exist
+        path = get_path(c.read("Specify the path of the %s file" % description), EXT_PATH)
+        if not os.path.isfile(path):  # does file exist
             return get_file(description)  # repeat if doesn"t exist
         return path
 
@@ -98,7 +87,12 @@ def main():
             c.info("Put \"$\" in place of condition names")
             wildcards += ["$"]
 
-        path = get_path(c.read("Put \"*\" in place of the subject names"))
+        if description == "T1-weighted image":
+            c.info("/home/marc/mindandbrain/data_marc/*_t1.nii.gz")
+
+        path = get_path(c.read("Put \"*\" in place of the subject names"), EXT_PATH)
+        print(description)
+
         wildcards += ["*"]
 
         wildcard_descriptions = {"*": "subject name", "$": "condition name", "?": "run name"}
@@ -110,7 +104,7 @@ def main():
             glob_path = glob_path.replace("$", "*")
         glob_result = glob(glob_path)
 
-        glob_result = [g for g in glob_result if op.isfile(g)]
+        glob_result = [g for g in glob_result if os.path.isfile(g)]
 
         c.info("Found %i %s files" % (len(glob_result), description))
 
@@ -199,7 +193,7 @@ def main():
     # interface code that asks user questions
     #
 
-    if not op.isfile(path_to_pipeline_json):
+    if not os.path.isfile(path_to_pipeline_json):
         if c is None:
             c = Cli()
             c.info("mindandbrain pipeline %s" % __version__)
