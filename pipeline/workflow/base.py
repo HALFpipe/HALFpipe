@@ -2,8 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
 import json
-from os import path as op
 
 from functools import partial
 from multiprocessing import Pool
@@ -28,9 +28,9 @@ def init_workflow(workdir):
     :param workdir: path to workdir
 
     """
-    workflow_file = op.join(workdir, "workflow.pklz")
+    workflow_file = os.path.join(workdir, "workflow.pklz")
 
-    fp = op.join(workdir, "pipeline.json")
+    fp = os.path.join(workdir, "pipeline.json")
 
     data = None
     with open(fp, "r") as f:
@@ -76,7 +76,7 @@ def init_workflow(workdir):
     if "Covariates" in metadata:
         covariates = metadata["Covariates"]
 
-    stats_dir = op.join(workdir, "stats")
+    stats_dir = os.path.join(workdir, "stats")
 
     for task, outnamesset in outnamessets.items():
         for outname in outnamesset:
@@ -120,7 +120,7 @@ def init_workflow(workdir):
             ds_stats = pe.MapNode(
                 nio.DataSink(
                     infields=["cope", "varcope", "zstat", "dof"],
-                    base_directory=op.join(stats_dir, task, outname),
+                    base_directory=os.path.join(stats_dir, task, outname),
                     regexp_substitutions=[(r"(/.+)/\w+.nii.gz", r"\1.nii.gz")],
                     parameterization=False),
                 iterfield=["container", "cope", "varcope", "zstat", "dof"],
@@ -129,7 +129,7 @@ def init_workflow(workdir):
 
             ds_mask = pe.Node(
                 nio.DataSink(
-                    base_directory=op.join(stats_dir, task),
+                    base_directory=os.path.join(stats_dir, task),
                     container=outname,
                     parameterization=False),
                 name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)

@@ -1,8 +1,8 @@
-from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, File
-
+import os
 
 import nibabel as nib
-from os import path as op
+
+from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, File
 
 
 class DofInputSpec(TraitedSpec):
@@ -36,7 +36,7 @@ class Dof(BaseInterface):
         im = nib.load(self.inputs.in_file)
         print(im)
         dof = im.shape[3] - self.inputs.num_regressors
-        with open(op.abspath(self.inputs.out_file), "w") as f:
+        with open(os.path.abspath(self.inputs.out_file), "w") as f:
             f.write("%i" % dof)
             f.write("\n")
         return runtime
@@ -44,5 +44,5 @@ class Dof(BaseInterface):
     def _list_outputs(self):
         """ """
         outputs = self._outputs().get()
-        outputs["out_file"] = op.abspath(self.inputs.out_file)
+        outputs["out_file"] = os.path.abspath(self.inputs.out_file)
         return outputs

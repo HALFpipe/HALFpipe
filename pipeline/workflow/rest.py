@@ -2,9 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
 import nibabel as nib
-
-from os import path as op
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -154,7 +153,7 @@ def init_dualregression_wf(componentsfile,
 
     # extract number of ICA components from 4d image and name them
     ncomponents = nib.load(componentsfile).shape[3]
-    fname, _ = _splitext(op.basename(componentsfile))
+    fname, _ = _splitext(os.path.basename(componentsfile))
     componentnames = ["%s_%d" % (fname, i) for i in range(ncomponents)]
 
     # first step, calculate spatial regression of ICA components on to the

@@ -5,7 +5,7 @@
 import json
 import os
 import inspect
-from os import path as op
+
 from logging import Handler, StreamHandler, Formatter
 from .utils import transpose
 
@@ -17,14 +17,14 @@ def init_logging(workdir):
     :param workdir: Log directory
 
     """
-    fp = op.join(workdir, "pipeline.json")
+    fp = os.path.join(workdir, "pipeline.json")
 
     with open(fp, "r") as f:
         data = json.load(f)
 
     images = transpose(data["images"])
 
-    real_output_dir = op.join(workdir, "log")
+    real_output_dir = os.path.join(workdir, "log")
 
     hdlr = WfHandler(real_output_dir, images)
 
@@ -53,11 +53,11 @@ class WfHandler(StreamHandler):
         self.output_dir = output_dir
         self.images = images
 
-        self.files = {k: op.join(output_dir, "%s.txt" % k) for k in images.keys()}
+        self.files = {k: os.path.join(output_dir, "%s.txt" % k) for k in images.keys()}
         self.handles = {k: None for k in images.keys()}
 
         os.makedirs(self.output_dir, exist_ok=True)
-        self.catch_all = open(op.join(output_dir, "log.txt"), "a")
+        self.catch_all = open(os.path.join(output_dir, "log.txt"), "a")
 
         Handler.__init__(self)
 

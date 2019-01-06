@@ -1,5 +1,4 @@
-from os import path as op
-
+import os
 import json
 
 
@@ -14,8 +13,8 @@ def get_qualitycheck_exclude(base_directory):
 
     # load qcresult.json
     qc_result = {}
-    qc_result_fname = op.join(base_directory, "qcresult.json")
-    if op.isfile(qc_result_fname):
+    qc_result_fname = os.path.join(base_directory, "qcresult.json")
+    if os.path.isfile(qc_result_fname):
         with open(qc_result_fname) as qc_result_file:
             qc_result = json.load(qc_result_file)
 

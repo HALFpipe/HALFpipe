@@ -1,4 +1,3 @@
-from os import path as op
 import os
 
 import gzip
@@ -85,32 +84,32 @@ class FakeDerivativesDataSink(DerivativesDataSink):
 
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
-            base_directory = op.abspath(self.inputs.base_directory)
+            base_directory = os.path.abspath(self.inputs.base_directory)
 
         if base_directory == self.fmriprep_output_dir:
             # don't copy file
             return runtime
         elif base_directory == self.fmriprep_reportlets_dir:
             # write to json
-            work_dir = op.dirname(base_directory)
+            work_dir = os.path.dirname(base_directory)
             json_id = "%s.%s" % (self.node_id, self.inputs.suffix)
             json_id = re.sub(r'func_preproc_[^.]*', "func_preproc_wf", json_id)
             json_data = {"id": json_id}
 
-            out_path = op.join(out_path, "qualitycheck")
-            os.makedirs(op.join(self.output_dir, out_path), exist_ok=True)
+            out_path = os.path.join(out_path, "qualitycheck")
+            os.makedirs(os.path.join(self.output_dir, out_path), exist_ok=True)
 
-            touch_fname = op.join(out_path, json_data["id"] + ext)
-            touch_path = op.join(self.output_dir, touch_fname)
+            touch_fname = os.path.join(out_path, json_data["id"] + ext)
+            touch_path = os.path.join(self.output_dir, touch_fname)
 
-            if not op.isfile(touch_path):
+            if not os.path.isfile(touch_path):
                 for i, fname in enumerate(self.inputs.in_file):
                     copy(fname, touch_path)
                     # with open(fname, "r") as f:
                     #     json_data["html"] += f.read()
-                json_data["fname"] = op.join(op.basename(self.output_dir), touch_fname)
-                with fasteners.InterProcessLock(op.join(work_dir, "qc.lock")):
-                    json_file = op.join(work_dir, "qc.json")
+                json_data["fname"] = os.path.join(os.path.basename(self.output_dir), touch_fname)
+                with fasteners.InterProcessLock(os.path.join(work_dir, "qc.lock")):
+                    json_file = os.path.join(work_dir, "qc.json")
                     with open(json_file, "ab+") as f:
                         f.seek(0, 2)
 
@@ -123,12 +122,12 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                             f.write(json.dumps(json_data).encode())
                             f.write(']'.encode())
                 Path(touch_path).touch()
-            html_path = op.join(op.dirname(self.output_dir), "index.html")
-            if not op.isfile(html_path):
+            html_path = os.path.join(os.path.dirname(self.output_dir), "index.html")
+            if not os.path.isfile(html_path):
                 copy(pkgr('pipeline', 'index.html'), html_path)
         else:
             # copy file to out_path
-            out_path = op.join(base_directory, out_path)
+            out_path = os.path.join(base_directory, out_path)
 
             os.makedirs(out_path, exist_ok=True)
 
@@ -148,7 +147,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                         extra_value=self.inputs.extra_values[i]
                     )
 
-                out_file = op.join(out_path, out_file)
+                out_file = os.path.join(out_path, out_file)
 
                 self._results['out_file'].append(out_file)
 
