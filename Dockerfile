@@ -4,8 +4,8 @@ ARG CPAC_VERSION=v1.3.0
 
 FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 
-ENV HTTP_PROXY http://141.42.1.215:8080
-ENV HTTPS_PROXY http://141.42.1.215:8080
+#ENV HTTP_PROXY http://141.42.1.215:8080
+#ENV HTTPS_PROXY http://141.42.1.215:8080
 
 ARG MRIQC_VERSION
 
@@ -44,7 +44,7 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash && \
 COPY . /root/src/pipeline
 RUN cd /root/src/pipeline && \
     cp ../index.html pipeline && \
-    pip install .[all] && \
+    python setup.py install && \
     rm -rf ~/.cache/pip
 
 ENTRYPOINT ["/usr/local/miniconda/bin/pipeline"]
