@@ -57,6 +57,7 @@ def init_workflow(workdir):
     # second level
     #
 
+    # Remove duplicates from outnameslists
     outnamessets = {}
     for outnameslist in outnameslists:
         for k, v in outnameslist.items():
@@ -65,7 +66,6 @@ def init_workflow(workdir):
             outnamessets[k].update(v)
 
     exclude = get_qualitycheck_exclude(workdir)
-
     metadata = data["metadata"]
     subject_groups = None
     if "SubjectGroups" in metadata:
@@ -85,11 +85,12 @@ def init_workflow(workdir):
                                                                  name="%s_%s_higherlevel" % (task, outname),
                                                                  subjects=subjects, covariates=covariates,
                                                                  subject_groups=subject_groups,
-                                                                 group_contrasts=group_contrasts)
+                                                                 group_contrasts=group_contrasts,
+                                                                 outname=outname)
 
-            mergecopes = pe.Node(
+            mergeimgs = pe.Node(
                 interface=niu.Merge(len(subject_wfs)),
-                name="%s_%s_mergecopes" % (task, outname))
+                name="%s_%s_mergeimgs" % (task, outname))
             mergevarcopes = pe.Node(
                 interface=niu.Merge(len(subject_wfs)),
                 name="%s_%s_mergevarcopes" % (task, outname))
@@ -113,10 +114,11 @@ def init_workflow(workdir):
                     ]
                     if len(outputnode) > 0:
                         outputnode = outputnode[0]
-                        workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
-                        workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
-                        workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
-                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                        if outname not in ["reho", "alff"]:
+                            workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
 
             ds_stats = pe.MapNode(
                 nio.DataSink(
@@ -136,34 +138,35 @@ def init_workflow(workdir):
                 name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)
 
             workflow.connect([
-                (mergecopes, higherlevel_wf, [
-                    ("out", "inputnode.copes")
-                ]),
-                (mergevarcopes, higherlevel_wf, [
-                    ("out", "inputnode.varcopes")
-                ]),
-                (mergemasks, higherlevel_wf, [
-                    ("out", "inputnode.mask_files")
-                ]),
-                (mergedoffiles, higherlevel_wf, [
-                    ("out", "inputnode.dof_files")
-                ]),
-
-                (higherlevel_wf, ds_stats, [
-                    ("outputnode.copes", "cope")
-                ]),
-                (higherlevel_wf, ds_stats, [
-                    ("outputnode.varcopes", "varcope")
-                ]),
-                (higherlevel_wf, ds_stats, [
-                    ("outputnode.zstats", "zstat")
-                ]),
-                (higherlevel_wf, ds_stats, [
-                    ("outputnode.dof_files", "dof")
-                ]),
-
-                (higherlevel_wf, ds_mask, [
-                    ("outputnode.mask_file", "mask")
-                ])
+                (mergeimgs, higherlevel_wf, [
+                    ("out", "inputnode.imgs")
+                ])])
+            if outname not in ["reho", "alff"]:
+                workflow.connect([
+                    (mergevarcopes, higherlevel_wf, [
+                        ("out", "inputnode.varcopes")
+                    ]),
+                    (mergemasks, higherlevel_wf, [
+                        ("out", "inputnode.mask_files")
+                    ]),
+                    (mergedoffiles, higherlevel_wf, [
+                        ("out", "inputnode.dof_files")
+                    ])])
+            workflow.connect([
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.imgs", "cope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.varcopes", "varcope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.zstats", "zstat")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.dof_files", "dof")
+                    ]),
+                    (higherlevel_wf, ds_mask, [
+                        ("outputnode.mask_file", "mask")
+                    ])
             ])
     return workflow

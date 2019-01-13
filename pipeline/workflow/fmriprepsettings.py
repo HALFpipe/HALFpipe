@@ -22,7 +22,7 @@ omp_nthreads = cpu_count()
 freesurfer = False
 # Replace medial wall values with NaNs on functional GIFTI files
 medial_surface_nan = False
-# Enable sub-millimeter preprocessing in FreeSurfer
+# Enable sub_millimeter preprocessing in FreeSurfer
 hires = True
 
 # Name of ANTs skull-stripping template ('OASIS' or 'NKI')

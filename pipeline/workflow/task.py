@@ -62,7 +62,7 @@ def init_glm_wf(conditions,
 
     # outputs are cope, varcope and zstat for each contrast and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["%s_cope" % conname,
+        fields=sum([["%s_img" % conname,
                      "%s_varcope" % conname, "%s_zstat" % conname]
                     for conname in connames], []) + ["dof_file"]),
         name="outputnode"
@@ -104,9 +104,9 @@ def init_glm_wf(conditions,
     )
 
     # mask regression outputs 
-    maskcopes = pe.MapNode(
+    maskimgs = pe.MapNode(
         interface=fsl.ApplyMask(),
-        name="maskcopes",
+        name="maskimgs",
         iterfield=["in_file"]
     )
     maskvarcopes = pe.MapNode(
@@ -121,9 +121,9 @@ def init_glm_wf(conditions,
     )
 
     # split regression outputs by name
-    splitcopes = pe.Node(
+    splitimgs = pe.Node(
         interface=niu.Split(splits=[1 for conname in connames]),
-        name="splitcopes"
+        name="splitimgs"
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for conname in connames]),
@@ -163,7 +163,7 @@ def init_glm_wf(conditions,
             ("design_file", "design_file"),
             ("con_file", "tcon_file")
         ]),
-        (inputnode, maskcopes, [
+        (inputnode, maskimgs, [
             ("mask_file", "mask_file")
         ]),
         (inputnode, maskvarcopes, [
@@ -172,7 +172,7 @@ def init_glm_wf(conditions,
         (inputnode, maskzstats, [
             ("mask_file", "mask_file")
         ]),
-        (modelestimate, maskcopes, [
+        (modelestimate, maskimgs, [
             (("copes", flatten), "in_file"),
         ]),
         (modelestimate, maskvarcopes, [
@@ -185,7 +185,7 @@ def init_glm_wf(conditions,
             ("dof_file", "dof_file")
         ]),
 
-        (maskcopes, splitcopes, [
+        (maskimgs, splitimgs, [
             ("out_file", "inlist"),
         ]),
         (maskvarcopes, splitvarcopes, [
@@ -198,7 +198,7 @@ def init_glm_wf(conditions,
 
     # connect outputs named for the contrasts
     for i, conname in enumerate(connames):
-        workflow.connect(splitcopes, "out%i" % (i + 1), outputnode, "%s_cope" % conname)
+        workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % conname)
         workflow.connect(splitvarcopes, "out%i" % (i + 1), outputnode, "%s_varcope" % conname)
         workflow.connect(splitzstats, "out%i" % (i + 1), outputnode, "%s_zstat" % conname)
 

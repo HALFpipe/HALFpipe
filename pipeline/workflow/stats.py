@@ -39,7 +39,8 @@ def get_len(x):
 
 def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                         subjects=None, covariates=None,
-                        subject_groups=None, group_contrasts=None):
+                        subject_groups=None, group_contrasts=None,
+                        outname=None):
     """
 
     :param run_mode: mode argument passed to FSL FLAMEO (Default value = "flame1")
@@ -48,20 +49,21 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     :param covariates: two-level dictionary of covariates by name and subject (Default value = None)
     :param subject_groups: dictionary of subjects by group (Default value = None)
     :param group_contrasts: two-level dictionary of contrasts by contrast name and values by group (Default = None)
+    :param outname: names of inputs for higherlevel workflow, names of outputs from firstlevel workflow
 
     """
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["copes", "varcopes", "dof_files", "mask_files"]
+            fields=["imgs", "varcopes", "dof_files", "mask_files"]
         ),
         name="inputnode"
     )
 
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["copes", "varcopes", "zstats", "dof_files", "mask_file"]
+            fields=["imgs", "varcopes", "zstats", "dof_files", "mask_file"]
         ),
         name="outputnode"
     )
@@ -79,17 +81,17 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="maskagg"
     )
 
+    # merge all input nii image files to one big nii file
+    imgmerge = pe.Node(
+        interface=fsl.Merge(dimension="t"),
+        name="imgmerge"
+    )
+
     # we get a text dof_file, but need to transform it to an nii image
     gendofimage = pe.MapNode(
         interface=fsl.ImageMaths(),
         iterfield=["in_file", "op_string"],
         name="gendofimage"
-    )
-
-    # merge all input nii image files to one big nii file
-    copemerge = pe.Node(
-        interface=fsl.Merge(dimension="t"),
-        name="copemerge"
     )
 
     # merge all input nii image files to one big nii file
@@ -163,11 +165,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     )
 
     workflow.connect([
-        (inputnode, copemerge, [
-            ("copes", "in_files")
-        ]),
-        (inputnode, varcopemerge, [
-            ("varcopes", "in_files")
+        (inputnode, imgmerge, [
+            ("imgs", "in_files")
         ]),
 
         (inputnode, maskmerge, [
@@ -177,23 +176,33 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ("merged_file", "in_file")
         ]),
 
-        (inputnode, gendofimage, [
-            ("copes", "in_file"),
-            (("dof_files", gen_merge_op_str), "op_string")
-        ]),
-        (gendofimage, dofmerge, [
-            ("out_file", "in_files")
-        ]),
+        (inputnode, varcopemerge, [
+            ("varcopes", "in_files")
+        ])])
+    if outname not in ["reho", "alff"]:
+        workflow.connect([
+            (inputnode, gendofimage, [
+                ("imgs", "in_file"),
+                (("dof_files", gen_merge_op_str), "op_string")
+            ]),
 
-        (copemerge, flameo, [
+            (gendofimage, dofmerge, [
+                ("out_file", "in_files")
+            ])])
+
+    workflow.connect([
+        (imgmerge, flameo, [
             ("merged_file", "cope_file")
-        ]),
+        ])])
+    if outname not in ["reho", "alff"]:
+        workflow.connect([
         (varcopemerge, flameo, [
             ("merged_file", "var_cope_file")
         ]),
         (dofmerge, flameo, [
             ("merged_file", "dof_var_cope_file")
-        ]),
+        ])])
+    workflow.connect([
         (maskagg, flameo, [
             ("out_file", "mask_file")
         ]),
@@ -204,7 +213,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         ]),
 
         (flameo, outputnode, [
-            (("copes", flatten), "copes"),
+            (("copes", flatten), "imgs"),
             (("var_copes", flatten), "varcopes"),
             (("zstats", flatten), "zstats"),
             (("tdof", flatten), "dof_files")

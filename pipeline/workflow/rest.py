@@ -71,9 +71,9 @@ def init_seedconnectivity_wf(seeds,
     )
 
     # split regression outputs by name
-    splitcopes = pe.Node(
+    splitimgs = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
-        name="splitcopes"
+        name="splitimgs"
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
@@ -86,7 +86,7 @@ def init_seedconnectivity_wf(seeds,
 
     # outputs are cope, varcope and zstat for each seed region and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["%s_cope" % seedname,
+        fields=sum([["%s_img" % seedname,
                      "%s_varcope" % seedname, "%s_zstat" % seedname]
                     for seedname in seednames], []) + ["dof_file"]),
         name="outputnode"
@@ -104,7 +104,7 @@ def init_seedconnectivity_wf(seeds,
             ("out_file", "design")
         ]),
 
-        (glm, splitcopes, [
+        (glm, splitimgs, [
             ("out_cope", "inlist"),
         ]),
         (glm, splitvarcopes, [
@@ -124,7 +124,7 @@ def init_seedconnectivity_wf(seeds,
 
     # connect outputs named for the seeds
     for i, seedname in enumerate(seednames):
-        workflow.connect(splitcopes, "out%i" % (i + 1), outputnode, "%s_cope" % seedname)
+        workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % seedname)
         workflow.connect(splitvarcopes, "out%i" % (i + 1), outputnode, "%s_varcope" % seedname)
         workflow.connect(splitzstats, "out%i" % (i + 1), outputnode, "%s_zstat" % seedname)
 
@@ -181,9 +181,9 @@ def init_dualregression_wf(componentsfile,
     )
 
     # split regression outputs into individual images
-    splitcopesimage = pe.Node(
+    splitimgsimage = pe.Node(
         interface=fsl.Split(dimension="t"),
-        name="splitcopesimage"
+        name="splitimgsimage"
     )
     splitvarcopesimage = pe.Node(
         interface=fsl.Split(dimension="t"),
@@ -202,16 +202,16 @@ def init_dualregression_wf(componentsfile,
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["%s_cope" % componentname,
+        fields=sum([["%s_img" % componentname,
                      "%s_varcope" % componentname, "%s_zstat" % componentname]
                     for componentname in componentnames], []) + ["dof_file"]),
         name="outputnode"
     )
 
     # split regression outputs by name
-    splitcopes = pe.Node(
+    splitimgs = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
-        name="splitcopes"
+        name="splitimgs"
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
@@ -235,7 +235,7 @@ def init_dualregression_wf(componentsfile,
             ("out_file", "design")
         ]),
 
-        (glm1, splitcopesimage, [
+        (glm1, splitimgsimage, [
             ("out_cope", "in_file"),
         ]),
         (glm1, splitvarcopesimage, [
@@ -244,7 +244,7 @@ def init_dualregression_wf(componentsfile,
         (glm1, splitzstatsimage, [
             ("out_z", "in_file"),
         ]),
-        (splitcopesimage, splitcopes, [
+        (splitimgsimage, splitimgs, [
             ("out_files", "inlist"),
         ]),
         (splitvarcopesimage, splitvarcopes, [
@@ -264,7 +264,7 @@ def init_dualregression_wf(componentsfile,
 
     # connect outputs named for the ICA components
     for i, componentname in enumerate(componentnames):
-        workflow.connect(splitcopes, "out%i" % (i + 1), outputnode, "%s_cope" % componentname)
+        workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % componentname)
         workflow.connect(splitvarcopes, "out%i" % (i + 1), outputnode, "%s_varcope" % componentname)
         workflow.connect(splitzstats, "out%i" % (i + 1), outputnode, "%s_zstat" % componentname)
 
@@ -299,7 +299,7 @@ def init_reho_wf(name="firstlevel"):
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["reho_map", "reho_z_score"]], [])),
+        fields=["reho_img"]),
         name="outputnode"
     )
 
