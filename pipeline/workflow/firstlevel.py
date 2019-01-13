@@ -65,7 +65,7 @@ def init_subject_wf(item, workdir, images, data):
     fmriprep_reportlets_dir = os.path.join(workdir, "fmriprep_reportlets")
     output_dir = os.path.join(workdir, "intermediates")
 
-    subject_wf = pe.Workflow(name="sub-" + subject)
+    subject_wf = pe.Workflow(name="sub_" + subject)
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["t1w", "t2w", "flair", "subject_id", "subjects_dir"]),
@@ -110,7 +110,7 @@ def init_subject_wf(item, workdir, images, data):
 
     for i, (name, value1) in enumerate(value0.items()):
         if name not in anat_field_names:
-            task_wf = pe.Workflow(name="task-" + name)
+            task_wf = pe.Workflow(name="task_" + name)
 
             inputnode = pe.Node(niu.IdentityInterface(
                 fields=_func_inputnode_fields,

@@ -35,7 +35,10 @@ REQUIRES = [
     "nibabel",
     "jinja2",
     "fasteners",
-    "pandas"
+    "pandas",
+    "pygraphviz",
+    "graphviz",
+    "ipdb"
 ]
 
 LINKS_REQUIRES = [

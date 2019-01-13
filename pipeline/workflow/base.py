@@ -106,7 +106,7 @@ def init_workflow(workdir):
                     if task in exclude[subject]:
                         excludethis = exclude[subject][task]
                 if not excludethis:
-                    nodename = "task-%s.outputnode" % task
+                    nodename = "task_%s.outputnode" % task
                     outputnode = [
                         node for node in wf._graph.nodes()
                         if str(node).endswith('.' + nodename)
@@ -166,5 +166,5 @@ def init_workflow(workdir):
                     ("outputnode.mask_file", "mask")
                 ])
             ])
-
+    import ipdb; ipdb.set_trace()
     return workflow
