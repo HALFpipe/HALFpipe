@@ -52,12 +52,10 @@ def get_first(l):
 def init_subject_wf(item, workdir, images, data):
     """
     initialize workflow for all scans of a single subject
-
-    :param item: input item (key/value tuple) from dictionary 
-    :param workdir: the working directory 
+    :param item: input item (key/value tuple) from dictionary
+    :param workdir: the working directory
     :param images: the images data structure from pipeline.json
     :param data: the entire pipeline.json
-
     """
     subject, value0 = item
 
@@ -71,10 +69,9 @@ def init_subject_wf(item, workdir, images, data):
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["t1w", "t2w", "flair", "subject_id", "subjects_dir"]),
-        name="inputnode"
-    )
+        name="inputnode")
 
-    if value0 not in "T1w":
+    if "T1w" not in value0:
         return subject_wf
 
     inputnode.inputs.t1w = value0["T1w"]
