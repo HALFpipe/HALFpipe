@@ -45,11 +45,12 @@ def init_workflow(workdir):
     # first level
     #
 
-    result = Pool().map(
+    result = map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
     )
     subjects, subject_wfs, outnameslists = zip(*result)
+
     workflow.add_nodes(subject_wfs)
 
     #

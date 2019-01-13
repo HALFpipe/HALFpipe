@@ -11,7 +11,7 @@ from nipype.interfaces import fsl
 
 from fmriprep.interfaces.bids import _splitext
 
-from .utils import compute_reho
+from .reho import compute_reho
 
 from ..interface import Dof
 
@@ -319,8 +319,8 @@ def init_reho_wf(name="firstlevel"):
 
     workflow.connect(inputnode, 'bold_file', raw_reho_map, 'in_file')
     workflow.connect(inputnode, 'mask_file', raw_reho_map, 'mask_file')
-    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_cope')
-    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_varcope')
-    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_zstat')
+    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_cope')
+    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_varcope')
+    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_zstat')
 
     return workflow

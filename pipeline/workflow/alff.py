@@ -1,7 +1,7 @@
 import os
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
-from .utils import get_operand_string, get_opt_string
+from .reho import get_operand_string, get_opt_string
 from nipype.interfaces.afni import TStat, Calc, Bandpass
 
 

@@ -159,7 +159,6 @@ def init_subject_wf(item, workdir, images, data):
                     outnamesset.update(run_outnames)
 
                 outnames[name] = outnamesset
-
                 outputnode = pe.Node(niu.IdentityInterface(
                     fields=sum([["%s_cope" % outname,
                                  "%s_varcope" % outname, "%s_dof_file" % outname]
@@ -241,7 +240,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         ignore=ignore,
         reportlets_dir=fmriprep_reportlets_dir,
         output_dir=fmriprep_output_dir,
-
         freesurfer=freesurfer,
         use_bbr=use_bbr,
         t2s_coreg=t2s_coreg,
@@ -438,7 +436,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         firstlevel_wf = init_reho_wf(
             name="reho_wf"
         )
-        create_ds(wf, firstlevel_wf, ['reho'], func_preproc_wf, temporalfilter_wf,
+        create_ds(wf, firstlevel_wf, ["reho"], func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="reho")
         wfbywf["reho_wf"] = firstlevel_wf
         outnamesbywf["reho_wf"] = ["reho"]

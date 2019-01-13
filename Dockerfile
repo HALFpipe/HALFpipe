@@ -17,9 +17,9 @@ RUN mkdir -p /root/src/mriqc && \
     pip install .[all] && \
     rm -rf ~/.cache/pip 
     
-# RUN apt-get update && \
-#     apt-get install -y graphviz \
-#       graphviz-dev
+ RUN apt-get update && \
+     apt-get install -y graphviz \
+       graphviz-dev
 # 
 # RUN mkdir -p /root/src/cpac && \
 #     curl -sSL "https://api.github.com/repos/FCP-INDI/C-PAC/tarball/${CPAC_VERSION}" \
