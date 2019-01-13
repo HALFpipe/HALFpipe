@@ -63,9 +63,9 @@ def init_subject_wf(item, workdir, images, data):
 
     anat_field_names = ["T1w", "T2w", "FLAIR"]
 
-    fmriprep_output_dir = op.join(workdir, "fmriprep_output")
-    fmriprep_reportlets_dir = op.join(workdir, "fmriprep_reportlets")
-    output_dir = op.join(workdir, "intermediates")
+    fmriprep_output_dir = os.path.join(workdir, "fmriprep_output")
+    fmriprep_reportlets_dir = os.path.join(workdir, "fmriprep_reportlets")
+    output_dir = os.path.join(workdir, "intermediates")
 
     subject_wf = pe.Workflow(name="sub-" + subject)
 
