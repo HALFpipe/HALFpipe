@@ -465,18 +465,55 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=flatten([[["%s_cope" % w,
-                              "%s_varcope" % w, "%s_mask_file" % w, "%s_dof_file" % w] for w in v] for v in
-                            outnamesbywf.values()])
+            fields=flatten([[
+                ["%s_cope" % outname,
+                 "%s_varcope" % outname,
+                 "%s_mask_file" % outname,
+                 "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]]
+                for outnames in outnamesbywf.values()] +
+                           ["reho_map", "reho_z_score", "alff_img", "falff_img", "alff_z_img", "falff_z_img"]
+            )
         ),
         name="outputnode")
 
-    for k, v in outnamesbywf.items():
-        for w in v:
-            wf.connect(wfbywf[k], "outputnode.%s_cope" % w, outputnode, "%s_cope" % w)
-            wf.connect(wfbywf[k], "outputnode.%s_varcope" % w, outputnode, "%s_varcope" % w)
-            wf.connect(func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % w)
-            wf.connect(wfbywf[k], "outputnode.dof_file", outputnode, "%s_dof_file" % w)
+    for workflow_name, outnames in outnamesbywf.items():
+        if workflow_name not in ["reho_wf", "alff_wf"]:
+            for outname in outnames:
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.%s_cope" % outname, outputnode, "%s_cope" % outname
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.%s_varcope" % outname, outputnode, "%s_varcope" % outname
+                )
+                wf.connect(
+                    func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.dof_file", outputnode, "%s_dof_file" % outname
+                )
+        elif workflow_name == "reho_wf":
+            wf.connect(
+                wfbywf[workflow_name], "outputnode.reho_map", outputnode, "reho_map"
+            )
+            wf.connect(
+                wfbywf[workflow_name], "outputnode.reho_z_score", outputnode, "reho_z_score"
+            )
+        elif workflow_name == "alff_wf":
+            wf.connect(
+                wfbywf[workflow_name], "outputnode.alff_img", outputnode, "alff_img"
+            )
+            wf.connect(
+                wfbywf[workflow_name], "outputnode.falff_img", outputnode, "falff_img"
+            )
+            # wf.connect(
+            #     wfbywf[workflow_name], "outputnode.alff_z_img", outputnode, "alff_z_img"
+            # )
+            # wf.connect(
+            #     wfbywf[workflow_name], "outputnode.falff_z_img", outputnode, "falff_z_img"
+            # )
 
+    import ipdb;
+    ipdb.set_trace()
     outnames = sum(outnamesbywf.values(), [])
+
     return outnames

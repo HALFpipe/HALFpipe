@@ -159,10 +159,9 @@ def create_alff(name='alff_workflow'):
     inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
                            name='lp_input')
 
-    output_node = pe.Node(util.IdentityInterface(
-        fields=sum([["alff_cope", "alff_varcope", "alff_zstat"]], []) + ["dof_file"]),
-        name="outputnode"
-    )
+    outputnode = pe.Node(util.IdentityInterface(fields=['alff_img',
+                                                         'falff_img']),
+                          name='outputnode')
 
     # filtering
     bandpass = pe.Node(interface=Bandpass(),
@@ -194,7 +193,7 @@ def create_alff(name='alff_workflow'):
                stddev_fltrd, 'options')
 
     wf.connect(stddev_fltrd, 'out_file',
-               output_node, 'alff_img')
+               outputnode, 'alff_img')
 
     # standard deviation of the unfiltered nuisance corrected image
     stddev_unfltrd = pe.Node(interface=TStat(),
@@ -220,6 +219,6 @@ def create_alff(name='alff_workflow'):
                falff, 'in_file_c')
 
     wf.connect(falff, 'out_file',
-               output_node, 'falff_img')
+               outputnode, 'falff_img')
 
     return wf

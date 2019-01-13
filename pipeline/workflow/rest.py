@@ -299,28 +299,27 @@ def init_reho_wf(name="firstlevel"):
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["reho_cope", "reho_varcope", "reho_zstat"]], []) + ["dof_file"]),
+        fields=sum([["reho_map", "reho_z_score"]], [])),
         name="outputnode"
     )
 
-    # generate dof text file
-    gendoffile = pe.Node(
-        interface=Dof(num_regressors=1),
-        name="gendoffile"
-    )
-    workflow.connect([
-        (inputnode, gendoffile, [
-            ("bold_file", "in_file"),
-        ]),
-        (gendoffile, outputnode, [
-            ("out_file", "dof_file"),
-        ])
-    ])
+    # # generate dof text file
+    # gendoffile = pe.Node(
+    #     interface=Dof(num_regressors=1),
+    #     name="gendoffile"
+    # )
+    # workflow.connect([
+    #     (inputnode, gendoffile, [
+    #         ("bold_file", "in_file"),
+    #     ]),
+    #     (gendoffile, outputnode, [
+    #         ("out_file", "dof_file"),
+    #     ])
+    # ])
 
     workflow.connect(inputnode, 'bold_file', raw_reho_map, 'in_file')
     workflow.connect(inputnode, 'mask_file', raw_reho_map, 'mask_file')
-    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_cope')
-    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_varcope')
-    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_zstat')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_map')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_z_score')
 
     return workflow
