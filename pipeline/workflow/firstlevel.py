@@ -14,7 +14,7 @@ from .fmriprepsettings import *
 
 from .func import init_temporalfilter_wf, init_tsnr_wf
 
-from .rest import init_seedconnectivity_wf, init_dualregression_wf
+from .rest import init_seedconnectivity_wf, init_dualregression_wf, init_reho_wf
 
 from .alff import create_alff
 
@@ -437,14 +437,14 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["dualregression_wf"] = componentnames
 
     # ReHo
-    # if True:
-    #     firstlevel_wf = init_reho_wf(
-    #         name = "reho_wf"
-    #     )
-    #     create_ds(wf, firstlevel_wf, ['reho'], func_preproc_wf, temporalfilter_wf,
-    #               bold_file, output_dir, name = "reho")
-    #     wfbywf["reho_wf"] = firstlevel_wf
-    #     outnamesbywf["reho_wf"] = ["reho"]
+    if True:
+        firstlevel_wf = init_reho_wf(
+            name="reho_wf"
+        )
+        create_ds(wf, firstlevel_wf, ['reho'], func_preproc_wf, temporalfilter_wf,
+                  bold_file, output_dir, name="reho")
+        wfbywf["reho_wf"] = firstlevel_wf
+        outnamesbywf["reho_wf"] = ["reho"]
 
     # ALFF
     if True:
