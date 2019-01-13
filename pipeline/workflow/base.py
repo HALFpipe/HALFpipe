@@ -166,5 +166,4 @@ def init_workflow(workdir):
                     ("outputnode.mask_file", "mask")
                 ])
             ])
-    import ipdb; ipdb.set_trace()
     return workflow
