@@ -41,8 +41,8 @@ def init_glm_wf(conditions,
 
     # transform (unordered) conditions dictionary into three (ordered) lists
     names = list(conditions.keys())
-    onsets = [conditions[k]["onsets"] for k in names]
-    durations = [conditions[k]["durations"] for k in names]
+    onsets = [conditions["onsets"]]
+    durations = [conditions["durations"]]
 
     # first level model specification
     modelspec = pe.Node(

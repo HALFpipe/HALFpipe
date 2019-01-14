@@ -281,7 +281,7 @@ def init_reho_wf(name="firstlevel"):
     # inputs are the bold file, the mask file and the cluster size
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "cluster_size"]),
         name="inputnode"
     )
 
@@ -293,7 +293,7 @@ def init_reho_wf(name="firstlevel"):
                                         output_names=['out_file'],
                                         function=compute_reho,
                                         imports=reho_imports),
-                           name='reho_map')
+                           name='reho_img')
 
     raw_reho_map.inputs.cluster_size = 27
 
@@ -319,7 +319,7 @@ def init_reho_wf(name="firstlevel"):
 
     workflow.connect(inputnode, 'bold_file', raw_reho_map, 'in_file')
     workflow.connect(inputnode, 'mask_file', raw_reho_map, 'mask_file')
-    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_map')
-    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_z_score')
+    workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_img')
+    # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_z_score')
 
     return workflow
