@@ -62,15 +62,18 @@ different.
 
 First comes resting state. Although only one anatomical scan is allowed for each 
 subject, multiple functional scans are allowed. In our example, the participants 
-were scanned on two days, resulting in the scans ``subject_01_day_1.nii.gz`` 
-and ``subject_01_day_2.nii.gz``. Here, we not only replace the subject name with 
-a ``*``, but also the day/run name with a ``?``:
+were scanned for two runs, resulting in the scans ``subject_01_run_1.nii.gz`` 
+and ``subject_01_runs_2.nii.gz``. Here, we not only replace the subject name with 
+a ``*``, but also the run name with a ``?``:
 
 ::
 
   /home/mindandbrain/data/rest/*_rest_?.nii.gz
 
-The container handles the rest.
+If there is only one run, then the ``?`` should be omitted. 
+
+Now, the container handles the rest. Multiple runs are combined using a 
+fixed-effects model.
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_functionaldata.png
 
@@ -108,10 +111,15 @@ need to be set:
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_preprocessingparams.png
 
-Finally, the statistical analyses across subjects needs to be specified. 
-For this, a CSV-file needs to be prepared. In one column the container 
-expects the same subject names as contained in the file names (i.e., the ``*`` wildcard part). If multiple groups should be 
+Finally, the statistical analyses across subjects needs to be specified. These are
+done with a general linear model. If nothing is specified, a one-sample t-test is 
+performed. To further specify the model, a CSV-file should be passed.
+This is called ``covariates.csv`` in the example.
+In this file, one column should contain subject names. These should be the same as 
+in the file names (i.e., the ``*`` wildcard part). If multiple groups should be 
 compared, another column is expected to contain the group names for each subject. 
+The remaining columns are used as covariates and are regressed out. Commonly, variables
+such as age, sex or left/right-handedness are used. 
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_groupstats.png
 
