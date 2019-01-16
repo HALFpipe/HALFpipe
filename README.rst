@@ -110,7 +110,7 @@ need to be set:
 
 Finally, the statistical analyses across subjects needs to be specified. 
 For this, a CSV-file needs to be prepared. In one column the container 
-expects the same subject names as in the file. If multiple groups should be 
+expects the same subject names as contained in the file names (i.e., the ``*`` wildcard part). If multiple groups should be 
 compared, another column is expected to contain the group names for each subject. 
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_groupstats.png
