@@ -52,7 +52,7 @@ pattern of
 
   /home/mindandbrain/data/t1/*_t1.nii.gz
 
-Where * can be anything.
+Where ``*`` can be anything.
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_anatomical.png
 
@@ -82,9 +82,11 @@ For task, you will need to specify the experimental conditions/explanatory
 variables. These can be in 
 `FSL 3-column format <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/FAQ>`_, 
 or in `SPM multiple conditions <http://elden.ua.edu/blog/generating-onset-and-duration-mat-file-for-spm-for-fmri-analysis>`_
-format. The former is one text file for each condition, each with three columns, 
-onset, duration and strength. The third column is ignored. In the SPM format, 
-at MATLAB MAT-file with three fields, onsets, durations and names is passed. 
+format. FSL 3-column format means that one text file for each condition, 
+each with three columns: ``onset``, ``duration`` and ``strength``. 
+The third column is ignored. 
+In the SPM format, a MATLAB MAT-file with three fields: ``onsets``, 
+``durations`` and ``names`` is expected. 
 
 As the names of the conditions are not in the file itself for the FSL 3-column 
 format, these need to be inferred from the filenames. The input prompt allows 
