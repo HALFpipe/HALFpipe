@@ -7,22 +7,22 @@ reproducible analysis of functional magnetic imaging data.
 It uses `fmriprep <https://fmriprep.readthedocs.io/>`_ for preprocessing, 
 and `FSL <http://fsl.fmrib.ox.ac.uk/>`_ for statistics. 
 
-You can install it by running
+You can install it by running:
 
 ::
 
   docker pull mindandbrain/pipeline
 
-It should be run from the terminal with the following command
+Then, it can be run from the terminal with the following command:
 
 ::
 
   docker run -it -v /:/ext mindandbrain/pipeline
 
 Unpacking this command, docker run tells the docker engine to start the 
-container, -it means that the container can get input/output from the terminal, 
-and -v /:/ext tells the docker engine to make your file system / available to 
-the container at the path /ext. 
+container, ``-it`` means that the container can get input/output from the terminal, 
+and ``-v /:/ext`` tells the docker engine to make your file system ``/`` available to 
+the container at the path ``/ext``. 
 This is necessary so that image data on your computer can be accessed. 
 
 Shortly after starting the container, the command line interface appears. 
