@@ -192,9 +192,6 @@ class cli:
                 
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
                 
-                if tag is not None:
-                    self.defaults[tag] = selected
-                
                 return o[selected]
                 
             if character == 27: # arrow keys
