@@ -461,6 +461,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         firstlevel_wf = create_alff(
             name="alff_wf"
         )
+        firstlevel_wf.get_node('hp_input').iterables = ('hp', [0.009])
+        firstlevel_wf.get_node('lp_input').iterables = ('lp', [0.08])
         create_ds(wf, firstlevel_wf, ["alff"], func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="alff")
         wfbywf["alff_wf"] = firstlevel_wf

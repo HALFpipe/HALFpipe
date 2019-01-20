@@ -194,14 +194,17 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         (imgmerge, flameo, [
             ("merged_file", "cope_file")
         ])])
+
     if outname not in ["reho", "alff"]:
         workflow.connect([
-        (varcopemerge, flameo, [
-            ("merged_file", "var_cope_file")
-        ]),
-        (dofmerge, flameo, [
-            ("merged_file", "dof_var_cope_file")
-        ])])
+            (varcopemerge, flameo, [
+                ("merged_file", "var_cope_file")
+            ]),
+            (dofmerge, flameo, [
+                ("merged_file", "dof_var_cope_file")
+            ])])
+    if outname == 'alff':
+        import ipdb; ipdb.set_trace()
     workflow.connect([
         (maskagg, flameo, [
             ("out_file", "mask_file")
