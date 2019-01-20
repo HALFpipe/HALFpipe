@@ -281,7 +281,7 @@ def init_reho_wf(name="firstlevel"):
     # inputs are the bold file, the mask file and the cluster size
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "cluster_size"]),
+        fields=["bold_file", "mask_file", "confounds_file"]),
         name="inputnode"
     )
 

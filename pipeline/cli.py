@@ -203,11 +203,6 @@ class Cli(object):
                 sys.stdout.flush()
 
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
-<<<<<<< HEAD
-                
-=======
-
->>>>>>> dev
                 return o[selected]
 
             if character == 27:  # arrow keys
