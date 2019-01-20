@@ -128,5 +128,4 @@ def lookup(d, subject_id=None, run_id=None, condition_id=None):
                 return flatten(next(iter(dd.values())))
             return {k: flatten(v) for k, v in dd.items()}
         return dd
-
     return flatten(o)

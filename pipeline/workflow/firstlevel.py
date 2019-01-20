@@ -496,25 +496,33 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     wfbywf[workflow_name], "outputnode.dof_file", outputnode, "%s_dof_file" % outname
                 )
         elif workflow_name == "reho_wf":
-            wf.connect(
-                wfbywf[workflow_name], "outputnode.reho_img", outputnode, "reho_img"
-            )
-            # wf.connect(
-            #     wfbywf[workflow_name], "outputnode.reho_z_score", outputnode, "reho_z_score"
-            # )
+            for outname in outnames:
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.reho_img", outputnode, "reho_img"
+                )
+                wf.connect(
+                    func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
+                )
+                # wf.connect(
+                #     wfbywf[workflow_name], "outputnode.reho_z_score", outputnode, "reho_z_score"
+                # )
         elif workflow_name == "alff_wf":
-            wf.connect(
-                wfbywf[workflow_name], "outputnode.alff_img", outputnode, "alff_img"
-            )
-            wf.connect(
-                wfbywf[workflow_name], "outputnode.falff_img", outputnode, "falff_img"
-            )
-            # wf.connect(
-            #     wfbywf[workflow_name], "outputnode.alff_z_img", outputnode, "alff_z_img"
-            # )
-            # wf.connect(
-            #     wfbywf[workflow_name], "outputnode.falff_z_img", outputnode, "falff_z_img"
-            # )
+            for outname in outnames:
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.alff_img", outputnode, "alff_img"
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.falff_img", outputnode, "falff_img"
+                )
+                wf.connect(
+                    func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
+                )
+                # wf.connect(
+                #     wfbywf[workflow_name], "outputnode.alff_z_img", outputnode, "alff_z_img"
+                # )
+                # wf.connect(
+                #     wfbywf[workflow_name], "outputnode.falff_z_img", outputnode, "falff_z_img"
+                # )
 
     outnames = sum(outnamesbywf.values(), [])
 

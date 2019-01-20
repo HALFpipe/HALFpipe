@@ -115,10 +115,10 @@ def init_workflow(workdir):
                     if len(outputnode) > 0:
                         outputnode = outputnode[0]
                         workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                         if outname not in ["reho", "alff"]:
                             workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
                             workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
 
             ds_stats = pe.MapNode(
                 nio.DataSink(

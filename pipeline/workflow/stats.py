@@ -185,7 +185,6 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         (maskmerge, maskagg, [
             ("merged_file", "in_file")
         ]),
-
         ])
     if outname not in ["reho", "alff"]:
         workflow.connect([
