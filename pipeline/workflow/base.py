@@ -140,18 +140,21 @@ def init_workflow(workdir):
             workflow.connect([
                 (mergeimgs, higherlevel_wf, [
                     ("out", "inputnode.imgs")
-                ])])
+                ]),
+                (mergemasks, higherlevel_wf, [
+                    ("out", "inputnode.mask_files")
+                ]),
+            ])
+
             if outname not in ["reho", "alff"]:
                 workflow.connect([
                     (mergevarcopes, higherlevel_wf, [
                         ("out", "inputnode.varcopes")
                     ]),
-                    (mergemasks, higherlevel_wf, [
-                        ("out", "inputnode.mask_files")
-                    ]),
                     (mergedoffiles, higherlevel_wf, [
                         ("out", "inputnode.dof_files")
                     ])])
+
             workflow.connect([
                     (higherlevel_wf, ds_stats, [
                         ("outputnode.imgs", "cope")

@@ -156,13 +156,23 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     contrast_names = [c[0] for c in contrasts]
 
     # actuallt run FSL FLAME
-    flameo = pe.MapNode(
-        interface=fsl.FLAMEO(
-            run_mode=run_mode
-        ),
-        name="flameo",
-        iterfield=["cope_file", "var_cope_file"]
-    )
+
+    if outname not in ["reho", "alff"]:
+        flameo = pe.MapNode(
+            interface=fsl.FLAMEO(
+                run_mode=run_mode
+            ),
+            name="flameo",
+            iterfield=["cope_file", "var_cope_file"]
+        )
+    else:
+        flameo = pe.MapNode(
+            interface=fsl.FLAMEO(
+                run_mode=run_mode
+            ),
+            name="flameo",
+            iterfield=["cope_file"]
+        )
 
     workflow.connect([
         (inputnode, imgmerge, [
@@ -176,14 +186,16 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ("merged_file", "in_file")
         ]),
 
-        (inputnode, varcopemerge, [
-            ("varcopes", "in_files")
-        ])])
+        ])
     if outname not in ["reho", "alff"]:
         workflow.connect([
             (inputnode, gendofimage, [
                 ("imgs", "in_file"),
                 (("dof_files", gen_merge_op_str), "op_string")
+            ]),
+
+            (inputnode, varcopemerge, [
+                ("varcopes", "in_files")
             ]),
 
             (gendofimage, dofmerge, [
@@ -203,12 +215,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             (dofmerge, flameo, [
                 ("merged_file", "dof_var_cope_file")
             ])])
-    if outname == 'alff':
-        import ipdb; ipdb.set_trace()
-    workflow.connect([
-        (maskagg, flameo, [
-            ("out_file", "mask_file")
-        ]),
+
+    workflow.connect(([
         (level2model, flameo, [
             ("design_mat", "design_file"),
             ("design_con", "t_con_file"),
@@ -221,9 +229,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             (("zstats", flatten), "zstats"),
             (("tdof", flatten), "dof_files")
         ]),
+        (maskagg, flameo, [
+            ("out_file", "mask_file")
+        ]),
         (maskagg, outputnode, [
             ("out_file", "mask_file")
-        ])
-    ])
+        ]),
+    ]))
 
     return workflow, contrast_names

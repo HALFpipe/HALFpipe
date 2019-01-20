@@ -13,6 +13,12 @@ from .logging import init_logging
 from .patterns import ambiguous_match
 from .utils import get_path
 
+
+# Debug config for stop on first crash
+# from nipype import config
+# cfg = dict(execution={'stop_on_first_crash': True})
+# config.update_config(cfg)
+
 EXT_PATH = "/ext"
 
 set_start_method("forkserver", force=True)
