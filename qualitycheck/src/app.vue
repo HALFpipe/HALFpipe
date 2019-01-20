@@ -39,21 +39,21 @@ export default {
       .then(response => {
         this.items = response.data.map(item => {
           const parts = item.id.split(".");
-          item.sub = parts.find(part => part.startsWith("sub-"));
+          item.sub = parts.find(part => part.startsWith("sub_"));
           if (item.sub !== undefined) {
-            item.sub = item.sub.substring("sub-".length);
+            item.sub = item.sub.substring("sub_".length);
           }
-          item.task = parts.find(part => part.startsWith("task-"));
+          item.task = parts.find(part => part.startsWith("task_"));
           if (item.task !== undefined) {
-            item.task = item.task.substring("task-".length);
+            item.task = item.task.substring("task_".length);
           }
           item.run = parts.find(part => part.startsWith("run-"));
           if (item.run !== undefined) {
             item.run = item.run.substring("run-".length);
           }
 
-          item.tag = parts.filter(part => !part.startsWith("sub-") && 
-            !part.startsWith("task-") && !part.startsWith("run-")).join(".");
+          item.tag = parts.filter(part => !part.startsWith("sub_") &&
+            !part.startsWith("task_") && !part.startsWith("run-")).join(".");
           if (item.task === undefined && item.tag.startsWith("T1w")) {
             item.task = "T1w";
           }
