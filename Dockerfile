@@ -5,7 +5,7 @@ ARG CPAC_VERSION=v1.3.0
 FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 
 #ENV HTTP_PROXY http://141.42.1.215:8080
-#ENV HTTPS_PROXY http://141.42.1.215:8080
+#ENV HTTPS_PROXY https://141.42.1.215:8080
 
 ARG MRIQC_VERSION
 
@@ -15,12 +15,12 @@ RUN mkdir -p /root/src/mriqc && \
     cd /root/src/mriqc && \
     pip install -r requirements.txt && \
     pip install .[all] && \
-    rm -rf ~/.cache/pip 
-    
+    rm -rf ~/.cache/pip
+
  RUN apt-get update && \
      apt-get install -y graphviz \
        graphviz-dev
-# 
+
 # RUN mkdir -p /root/src/cpac && \
 #     curl -sSL "https://api.github.com/repos/FCP-INDI/C-PAC/tarball/${CPAC_VERSION}" \
 #     | tar -xzC /root/src/cpac --strip-components 1 && \
@@ -28,7 +28,7 @@ RUN mkdir -p /root/src/mriqc && \
 #     cd /root/src/cpac && \
 #     pip install -r requirements.txt && \
 #     pip install .[all] --no-compile && \
-#     rm -rf ~/.cache/pip 
+#     rm -rf ~/.cache/pip
 
 RUN mkdir /ext
 
@@ -40,7 +40,7 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash && \
   cp -r dist/index.html /root/src && \
   cd .. && rm -rf qualitycheck && \
   apt-get purge -y nodejs
-  
+
 COPY . /root/src/pipeline
 RUN cd /root/src/pipeline && \
     cp ../index.html pipeline && \

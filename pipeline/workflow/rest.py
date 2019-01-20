@@ -287,7 +287,7 @@ def init_reho_wf(name="firstlevel"):
 
     reho_imports = ['import os', 'import sys', 'import nibabel as nb',
                     'import numpy as np',
-                    'from pipeline.workflow.utils import f_kendall']
+                    'from pipeline.workflow.reho import f_kendall']
     raw_reho_map = pe.Node(niu.Function(input_names=['in_file', 'mask_file',
                                                      'cluster_size'],
                                         output_names=['out_file'],
