@@ -414,6 +414,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
     if not (conditions is None or len(conditions) == 0):
         contrasts = metadata["Contrasts"]
+
         firstlevel_wf, connames = init_glm_wf(
             conditions,
             contrasts,

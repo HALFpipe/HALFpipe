@@ -33,7 +33,7 @@ def flatten(l):
         return o
 
 
-def get_float():
+def get_float(input):
     def flatten(l):
         if isinstance(l, str) or isinstance(l, float):
             return [l]
@@ -42,7 +42,6 @@ def get_float():
             for k in l:
                 o += flatten(k)
             return o
-
     return float(flatten(input)[0])
 
 
