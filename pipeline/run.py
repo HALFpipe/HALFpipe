@@ -376,7 +376,7 @@ def main():
 
             metadata["SubjectGroups"] = groups
             metadata["GroupContrasts"] = group_contrasts
-
+        #import pdb; pdb.set_trace()
         metadata["Covariates"] = covariates
 
         c.info("")
