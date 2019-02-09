@@ -9,6 +9,7 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ..utils import flatten
+from .qualitycheck import get_qualitycheck_exclude
 
 
 def gen_merge_op_str(files):
@@ -40,7 +41,7 @@ def get_len(x):
 def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                         subjects=None, covariates=None,
                         subject_groups=None, group_contrasts=None,
-                        outname=None):
+                        outname=None, workdir=None, task=None):
     """
 
     :param run_mode: mode argument passed to FSL FLAMEO (Default value = "flame1")
@@ -108,31 +109,46 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # specify statistical analysis
 
+    # Read qcresults.json and exclude bad subjects from statistics
+    excluded_overview = get_qualitycheck_exclude(workdir)
+    df_exclude = pd.DataFrame(excluded_overview).transpose()
+    excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
+    trimmed_subjects = list(subjects)
+    for excluded_subject in excluded_subjects:
+        trimmed_subjects.remove(excluded_subject)
+
     # option 1: one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
     level2model = pe.Node(
         interface=fsl.MultipleRegressDesign(
-            regressors={"intercept": [1.0 for s in subjects]},
+            regressors={"intercept": [1.0 for s in trimmed_subjects]},
             contrasts=contrasts
         ),
         name="l2model"
     )
 
     if covariates is not None:
-        # Demean covariates for flameo
+
         # Transform covariates dict to pandas dataframe
         df_covariates = pd.DataFrame(covariates)
+
+        # Read qcresults.json and exclude bad subjects from covariates and subject_groups
+        df_covariates = df_covariates.drop(excluded_subjects)
+
+        for excluded_subject in excluded_subjects:
+            subject_groups.pop(excluded_subject, None)
+
         for covariate in df_covariates:
-            # demean covariates
+            # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
         # transform back to dict
         covariates = df_covariates.to_dict()
 
         # transform to dictionary of lists
-        regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}
-        if subject_groups is None:
+        regressors = {k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()}
+        if (subject_groups is None) or (bool(subject_groups) is False):
             # one-sample t-test with covariates
-            regressors["intercept"] = [1.0 for s in subjects]
+            regressors["intercept"] = [1.0 for s in trimmed_subjects]
             level2model = pe.Node(
                 interface=fsl.MultipleRegressDesign(
                     regressors=regressors,
@@ -148,7 +164,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
             dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
             # transform to dictionary of lists
-            dummies = {k: [float(v[s]) for s in subjects] for k, v in dummies.items()}
+            dummies = {k: [float(v[s]) for s in trimmed_subjects] for k, v in dummies.items()}
             regressors.update(dummies)
 
             # transform to dictionary of lists
@@ -194,7 +210,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         (maskmerge, maskagg, [
             ("merged_file", "in_file")
         ]),
-        ])
+    ])
     if outname not in ["reho", "alff"]:
         workflow.connect([
             (inputnode, gendofimage, [

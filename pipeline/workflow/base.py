@@ -86,7 +86,7 @@ def init_workflow(workdir):
                                                                  subjects=subjects, covariates=covariates,
                                                                  subject_groups=subject_groups,
                                                                  group_contrasts=group_contrasts,
-                                                                 outname=outname)
+                                                                 outname=outname, workdir=workdir, task=task)
 
             mergeimgs = pe.Node(
                 interface=niu.Merge(len(subject_wfs)),
