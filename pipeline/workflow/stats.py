@@ -118,9 +118,16 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="l2model"
     )
 
-    import ipdb; ipdb.set_trace()
-
     if covariates is not None:
+        # Demean covariates for flameo
+        # Transform covariates dict to pandas dataframe
+        df_covariates = pd.DataFrame(covariates)
+        for covariate in df_covariates:
+            # demean covariates
+            df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
+        # transform back to dict
+        covariates = df_covariates.to_dict()
+
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}
         if subject_groups is None:
