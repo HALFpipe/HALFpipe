@@ -118,6 +118,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="l2model"
     )
 
+    import ipdb; ipdb.set_trace()
+
     if covariates is not None:
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}

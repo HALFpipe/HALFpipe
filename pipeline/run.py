@@ -4,6 +4,7 @@ import nibabel as nib
 import json
 from multiprocessing import set_start_method, cpu_count
 from glob import glob
+from shutil import copyfile
 from argparse import ArgumentParser
 from .cli import Cli
 from .conditions import parse_condition_files
@@ -11,7 +12,7 @@ from .info import __version__
 from .workflow import init_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
-from .utils import get_path
+from .utils import get_path, transpose
 
 
 # Debug config for stop on first crash
@@ -376,7 +377,7 @@ def main():
 
             metadata["SubjectGroups"] = groups
             metadata["GroupContrasts"] = group_contrasts
-        #import pdb; pdb.set_trace()
+
         metadata["Covariates"] = covariates
 
         c.info("")
@@ -412,3 +413,28 @@ def main():
         gc.collect()
 
         workflow.run(**plugin_settings)
+
+        # copy confounds.tsv from task to intermediates/subject
+        # access pipeline.json to get subjects and tasks for path
+        with open(path_to_pipeline_json, "r") as f:
+            metadata = json.load(f)
+
+        flattened_metadata = transpose(metadata['images'])
+
+        for subject in flattened_metadata:
+            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
+            for key in flattened_metadata[subject]:
+                if key not in ["T1w", "T2w", "FLAIR"]:
+                    # Taskdata exists
+                    task = key
+                    # use glob for wildcard as path has truncated subject_id in fmriprep
+                    source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*_' + task +
+                                  '/bold_confounds_wf/concat/confounds.tsv')[0]
+                    destination = workdir + '/intermediates/' + subject + '/confounds.tsv'
+                    copyfile(src=source, dst=destination)
+                else:
+                    # Taskdata doesn't exist
+                    pass
+
+
+
