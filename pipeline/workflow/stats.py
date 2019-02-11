@@ -11,6 +11,8 @@ from nipype.interfaces import fsl
 from ..utils import flatten
 from .qualitycheck import get_qualitycheck_exclude
 
+import json
+
 
 def gen_merge_op_str(files):
     """
@@ -111,11 +113,27 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # Read qcresults.json and exclude bad subjects from statistics
     excluded_overview = get_qualitycheck_exclude(workdir)
-    df_exclude = pd.DataFrame(excluded_overview).transpose()
-    excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
-    trimmed_subjects = list(subjects)
-    for excluded_subject in excluded_subjects:
-        trimmed_subjects.remove(excluded_subject)
+    excluded_subjects = []
+    if excluded_overview:
+        df_exclude = pd.DataFrame(excluded_overview).transpose()
+        excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
+        trimmed_subjects = list(subjects)
+        for excluded_subject in excluded_subjects:
+            trimmed_subjects.remove(excluded_subject)
+
+        # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
+        # use of sets here for easy substraction of subjects
+        included_subjects = list(set(subjects) - set(excluded_subjects))
+        df_included_subjects = pd.DataFrame(included_subjects, columns=['Subjects'])
+        df_included_subjects = df_included_subjects.sort_values(by=['Subjects'])  # sort by name
+        df_included_subjects = df_included_subjects.reset_index(drop=True)  # reindex for ascending numbers
+        json_path = workdir + '/included_subjects.json'
+        df_included_subjects.to_json(json_path)
+        with open(json_path, 'w') as json_file:
+            # json is loaded from pandas to json and then dumped to get indent in file
+            json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4)
+    else:
+        trimmed_subjects = subjects # in case there are no excluded subjects
 
     # option 1: one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
@@ -131,12 +149,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
         # Transform covariates dict to pandas dataframe
         df_covariates = pd.DataFrame(covariates)
+        if list(excluded_subjects):
+            # Read qcresults.json and exclude bad subjects from covariates and subject_groups
+            df_covariates = df_covariates.drop(excluded_subjects)
 
-        # Read qcresults.json and exclude bad subjects from covariates and subject_groups
-        df_covariates = df_covariates.drop(excluded_subjects)
-
-        for excluded_subject in excluded_subjects:
-            subject_groups.pop(excluded_subject, None)
+            for excluded_subject in excluded_subjects:
+                subject_groups.pop(excluded_subject, None)
 
         for covariate in df_covariates:
             # Demean covariates for flameo
