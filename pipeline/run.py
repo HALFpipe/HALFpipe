@@ -249,11 +249,13 @@ def main():
             metadata[field_name]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
-            """
             response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["BrainAtlasImage"] = get_file("brain atlas image")
-            """
+                metadata[field_name]["BrainAtlasImage"] = {}
+                while response3 == "Yes":
+                    name = c.read("Specify Atlas name")
+                    metadata[field_name]["BrainAtlasImage"][name] = get_file("brain atlas image")
+                    response3 = c.select("Add another Atlas?", ["Yes", "No"])
 
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
             if response3 == "Yes":

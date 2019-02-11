@@ -323,3 +323,56 @@ def init_reho_wf(name="firstlevel"):
     # workflow.connect(raw_reho_map, 'out_file', outputnode, 'reho_z_score')
 
     return workflow
+
+
+def init_brain_atlas_wf(atlases, name="firstlevel"):
+    """
+    create workflow to calculate seed connectivity maps
+    for resting state functional scans
+
+    :param atlases: dictionary of filenames by user-defined names
+        of atlases
+    :param name: workflow name (Default value = "firstlevel")
+
+    """
+    workflow = pe.Workflow(name=name)
+
+    # inputs are the bold file, the mask file and the confounds file
+    # that contains the movement parameters
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=["bold_file", "mask_file", "confounds_file"]),
+        name="inputnode"
+    )
+
+    # make two (ordered) lists from (unordered) dictionary of seeds
+    atlasnames = list(atlases.keys())  # contains the keys (seed names)
+    atlas_args = ['--label=' + atlases[k] for k in atlasnames]  # contains the values (filenames)
+
+    # calculate the mean time series of the region defined by each mask
+    meants = pe.MapNode(
+        interface=fsl.ImageMeants(),
+        name="meants",
+        iterfield=["args"]
+    )
+    meants.inputs.args = atlas_args
+
+    # outputs are cope, varcope and zstat for each seed region and a dof_file
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=["brainatlas_matrix_file"]),
+        name="outputnode"
+    )
+
+    workflow.connect([
+        (inputnode, meants, [
+            ("bold_file", "in_file")
+        ]),
+        (meants, outputnode, [
+            ("out_file", "brainatlas_matrix_file"),
+        ]),
+    ])
+
+    # # connect outputs named for the seeds
+    # for i, atlasname in enumerate(atlasnames):
+    #     workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % atlasname)
+
+    return workflow, atlasnames
