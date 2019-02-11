@@ -159,6 +159,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         for covariate in df_covariates:
             # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
+        # save demeaned covariates to csv
+        df_covariates.to_csv(workdir + '/demeaned_covariates.csv')
         # transform back to dict
         covariates = df_covariates.to_dict()
 
