@@ -352,12 +352,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     source_file=bold_file,
                     suffix="brainatlas_matrix"),
                 name="ds_%s_matrix_file" % name, run_without_submitting=True)
-
-            wf.connect([
-                (firstlevel_wf, ds_matrix_file, [
-                    ("outputnode.brainatlas_matrix_file", "in_file")
-                ])
-            ])
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
@@ -367,6 +361,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.filtered_file", "inputnode.bold_file")
                 ]),
             ])
+            wf.connect([
+                (firstlevel_wf, ds_matrix_file, [
+                    ("outputnode.brainatlas_matrix_file", "in_file")
+                ])
+            ])
+
         else:
             if name not in ["reho", "alff"]:
                 ds_dof_file = pe.Node(

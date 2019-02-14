@@ -159,10 +159,17 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         for covariate in df_covariates:
             # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
+        # transform reduced covariates back to dict for later purposes
+        covariates = df_covariates.to_dict()
+
+        # add SubjectGroups and ID to header
+        df_subject_group = pd.DataFrame.from_dict(subject_groups, orient='index', columns=['SubjectGroup'])
+        df_covariates = pd.concat([df_subject_group, df_covariates], axis=1, sort=True)
+        df_covariates = df_covariates.reset_index()  # add id column
+        df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
+
         # save demeaned covariates to csv
         df_covariates.to_csv(workdir + '/demeaned_covariates.csv')
-        # transform back to dict
-        covariates = df_covariates.to_dict()
 
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()}
