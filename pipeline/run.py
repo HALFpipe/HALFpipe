@@ -14,7 +14,6 @@ from .logging import init_logging
 from .patterns import ambiguous_match
 from .utils import get_path, transpose
 
-
 # Debug config for stop on first crash
 # from nipype import config
 # cfg = dict(execution={'stop_on_first_crash': True})
@@ -430,13 +429,16 @@ def main():
                     # Taskdata exists
                     task = key
                     # use glob for wildcard as path has truncated subject_id in fmriprep
-                    source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*_' + task +
-                                  '/bold_confounds_wf/concat/confounds.tsv')[0]
-                    destination = workdir + '/intermediates/' + subject + '/confounds.tsv'
-                    copyfile(src=source, dst=destination)
+                    try:
+                        source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*' +
+                                      '/bold_confounds_wf/concat/confounds.tsv')[0]
+                        destination = workdir + '/intermediates/' + subject + '/confounds.tsv'
+                        copyfile(src=source, dst=destination)
+                    except IndexError:
+                        print(
+                            'Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...')
                 else:
                     # Taskdata doesn't exist
                     pass
-
-
-
+        import ipdb;
+        ipdb.set_trace()
