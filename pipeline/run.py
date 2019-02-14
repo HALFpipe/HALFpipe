@@ -432,7 +432,7 @@ def main():
                     try:
                         source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*' +
                                       '/bold_confounds_wf/concat/confounds.tsv')[0]
-                        destination = workdir + '/intermediates/' + subject + '/confounds.tsv'
+                        destination = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
                         copyfile(src=source, dst=destination)
                     except IndexError:
                         print(
