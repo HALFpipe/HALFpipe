@@ -1,8 +1,10 @@
+from multiprocessing import set_start_method, cpu_count
+set_start_method("forkserver", force=True)
+
 import os
 import pandas as pd
 import nibabel as nib
 import json
-from multiprocessing import set_start_method, cpu_count
 from glob import glob
 from shutil import copyfile
 from argparse import ArgumentParser
@@ -21,7 +23,7 @@ from .utils import get_path, transpose
 
 EXT_PATH = "/ext"
 
-set_start_method("forkserver", force=True)
+
 
 
 def main():
