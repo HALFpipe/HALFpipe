@@ -15,8 +15,12 @@ longitudinal = False
 # For multi-echo EPI, use the calculated T2*-map for T2*-driven coregistration
 t2s_coreg = False
 
+# Maximum number of threads across all processes
+nthreads = int(cpu_count()/2)
+
 # Maximum number of threads an individual process may use
-omp_nthreads = cpu_count()
+# omp_nthreads = cpu_count()
+omp_nthreads = 1
 
 # Enable FreeSurfer surface reconstruction (may increase runtime)
 freesurfer = False
