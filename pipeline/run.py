@@ -461,7 +461,7 @@ def main():
                         try:
                             corr_matrix.to_csv(destination, index=False, header=False)
                             shutil.move(source,
-                                        workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix_' +
+                                        workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_timeseries_' +
                                         list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
                         except OSError as e:
                             print('Warning: atlas_matrix was not found. Correlation matrix could not be computed')
