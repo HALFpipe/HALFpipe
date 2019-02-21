@@ -5,8 +5,8 @@ import os
 import pandas as pd
 import nibabel as nib
 import json
+import shutil
 from glob import glob
-from shutil import copyfile
 from argparse import ArgumentParser
 from .cli import Cli
 from .conditions import parse_condition_files
@@ -435,7 +435,7 @@ def main():
                         source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*' +
                                       '/bold_confounds_wf/concat/confounds.tsv')[0]
                         destination = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
-                        copyfile(src=source, dst=destination)
+                        shutil.copyfile(src=source, dst=destination)
                     except IndexError:
                         print(
                             'Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...')
@@ -460,6 +460,9 @@ def main():
                         corr_matrix = atlas_matrix.corr(method='pearson')
                         try:
                             corr_matrix.to_csv(destination, index=False, header=False)
+                            shutil.move(source,
+                                        workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix_' +
+                                        list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
                         except OSError as e:
                             print('Warning: atlas_matrix was not found. Correlation matrix could not be computed')
                             print(e)
