@@ -449,11 +449,11 @@ def main():
                 if key not in ["T1w", "T2w", "FLAIR"]:
                     task = key
                     for idx, atlas_idx in enumerate(
-                            ["%04d" % x for x in range(len(metadata['metadata']['faces']['BrainAtlasImage']))]):
+                            ["%04d" % x for x in range(len(metadata['metadata'][task]['BrainAtlasImage']))]):
                         source = workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix' + \
                                  str(atlas_idx) + '.txt'
                         destination = workdir + '/intermediates/' + subject + '/' + task + '/corr_matrix_' + \
-                                      list(metadata['metadata']['faces']['BrainAtlasImage'].keys())[0] + '.csv'
+                                      list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
                         atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
                         # drop last column as there is only NaN in there due to delimiting issues
                         atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1, inplace=True)
