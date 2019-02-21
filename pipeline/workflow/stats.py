@@ -79,7 +79,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     # calculate the intersection of all masks
     maskagg = pe.Node(
         interface=fsl.ImageMaths(
-            op_string="-Tmean -thr 1 -bin"
+            op_string="-Tmin -thr 1 -bin"
         ),
         name="maskagg"
     )
