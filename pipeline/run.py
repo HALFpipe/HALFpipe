@@ -1,4 +1,5 @@
 from multiprocessing import set_start_method, cpu_count
+
 set_start_method("forkserver", force=True)
 
 import os
@@ -22,8 +23,6 @@ from .utils import get_path, transpose
 # config.update_config(cfg)
 
 EXT_PATH = "/ext"
-
-
 
 
 def main():
@@ -448,22 +447,51 @@ def main():
             for key in flattened_metadata[subject]:
                 if key not in ["T1w", "T2w", "FLAIR"]:
                     task = key
-                    for idx, atlas_idx in enumerate(
-                            ["%04d" % x for x in range(len(metadata['metadata'][task]['BrainAtlasImage']))]):
-                        source = workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix' + \
-                                 str(atlas_idx) + '.txt'
-                        destination = workdir + '/intermediates/' + subject + '/' + task + '/corr_matrix_' + \
-                                      list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
-                        atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-                        # drop last column as there is only NaN in there due to delimiting issues
-                        atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1, inplace=True)
-                        corr_matrix = atlas_matrix.corr(method='pearson')
-                        try:
-                            corr_matrix.to_csv(destination, index=False, header=False)
-                            shutil.move(source,
-                                        workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_timeseries_' +
-                                        list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
-                        except OSError as e:
-                            print('Warning: atlas_matrix was not found. Correlation matrix could not be computed')
-                            print(e)
+                    try:
+                        for idx, atlas_idx in enumerate(
+                                ["%04d" % x for x in range(len(metadata['metadata'][task]['BrainAtlasImage']))]):
+                            if len(metadata['metadata'][task]['BrainAtlasImage']) >= 2:
+                                try:
+                                    source = workdir + '/intermediates/' + subject + '/' + task + \
+                                             '/brainatlas_matrix' + str(atlas_idx) + '.txt'
+                                    destination = workdir + '/intermediates/' + subject + '/' + task + \
+                                                  '/corr_matrix_' + \
+                                                  list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                    atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
+                                    # drop last column as there is only NaN in there due to delimiting issues
+                                    atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
+                                                      inplace=True)
+                                    corr_matrix = atlas_matrix.corr(method='pearson')
+                                    corr_matrix.to_csv(destination, index=False, header=False)
+                                    shutil.move(source,
+                                                workdir + '/intermediates/' + subject + '/' + task +
+                                                '/brainatlas_timeseries_' +
+                                                list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                except OSError as e:
+                                    print(
+                                        'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
+                                    print(e)
+                            else:
+                                try:
+                                    source = workdir + '/intermediates/' + subject + '/' + task + \
+                                             '/brainatlas_matrix.txt'
+                                    destination = workdir + '/intermediates/' + subject + '/' + task + \
+                                                  '/corr_matrix_' + \
+                                                  list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                    atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
+                                    # drop last column as there is only NaN in there due to delimiting issues
+                                    atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
+                                                      inplace=True)
+                                    corr_matrix = atlas_matrix.corr(method='pearson')
+                                    corr_matrix.to_csv(destination, index=False, header=False)
+                                    shutil.move(source,
+                                                workdir + '/intermediates/' + subject + '/' + task +
+                                                '/brainatlas_timeseries_' +
+                                                list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                except OSError as e:
+                                    print(
+                                        'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
+                                    print(e)
 
+                    except KeyError:
+                        pass
