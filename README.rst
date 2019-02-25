@@ -31,7 +31,7 @@ This interface will ask you a series of questions that will determine how
 data processing will be performed. First it asks you for the working directory (needs to already exist), where 
 all intermediate and output files of the pipeline will be saved.
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_workdir.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_workdir.png
 
 For the preprocessing of functional data, high-resolution anatomical/structural 
 scans are required by `fmriprep <https://fmriprep.readthedocs.io/>`_. 
@@ -55,7 +55,7 @@ pattern of
 
 Where ``*`` can be anything.
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_anatomical.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_anatomical.png
 
 Note that one can use multiple wildcards in the path when individual data is stored in separate folders. For example
 
@@ -88,7 +88,7 @@ If there is only one run, then the ``?`` should be omitted.
 Now, the container handles the rest. Multiple runs are combined using a 
 fixed-effects model.
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_functionaldata.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_functionaldata.png
 
 Once resting state data is specified, the pipeline will ask some additional 
 questions about the analyses that can be performed on the data. For resting state, 
@@ -112,7 +112,7 @@ filenames should contain the names of the experimental conditions. Then, by
 replacing the condition name with the ``$``-wildcard, the container can infer the 
 condition names.
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_fsl3column.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_fsl3column.png
 
 Taken together, here is the entire procedure to specify the functional imaging 
 data:
@@ -122,7 +122,7 @@ data:
 After specifying the functional scans, some general parameters for preprocessing 
 need to be set:  
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_preprocessingparams.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_preprocessingparams.png
 
 Finally, the statistical analyses across subjects needs to be specified. These are
 done with a general linear model. If nothing is specified, a one-sample t-test is 
