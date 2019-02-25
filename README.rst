@@ -17,8 +17,10 @@ Then, it can be run from the terminal with the following command:
 ::
 
   docker run -it -v /:/ext mindandbrain/pipeline
+  
+Alternatively, one can use singularity to build and run the container, for which we provide two shell scripts (singularity_install.sh and singularity_run.sh). 
 
-Unpacking this command, docker run tells the docker engine to start the 
+Looking at this command in more detail, docker run tells the docker engine to start the 
 container, ``-it`` means that the container can get input/output from the terminal, 
 and ``-v /:/ext`` tells the docker engine to make your file system ``/`` available to 
 the container at the path ``/ext``. 
@@ -26,7 +28,7 @@ This is necessary so that image data on your computer can be accessed.
 
 Shortly after starting the container, the command line interface appears. 
 This interface will ask you a series of questions that will determine how 
-data processing will be performed. First comes the working directory, where 
+data processing will be performed. First it asks you for the working directory (needs to already exist), where 
 all intermediate and output files of the pipeline will be saved.
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_workdir.png
@@ -55,12 +57,24 @@ Where ``*`` can be anything.
 
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_anatomical.png
 
+Note that one can use multiple wildcards in the path when individual data is stored in separate folders. For example
+
+::
+
+  /home/mindandbrain/data/t1/subject_01/subject_01_t1.nii.gz
+  
+will need to be entered as
+
+::
+
+  /home/mindandbrain/data/t1/*/*_t1.nii.gz
+
 Next, the the functional scans are specified. The pipeline separates the input 
-for resting state data and task data, because the statistical analyses are 
-different. 
+for resting state data and task data, because the analyses options are 
+different.
 
 First comes resting state. Although only one anatomical scan is allowed for each 
-subject, multiple functional scans are allowed. In our example, the participants 
+subject, multiple functional scans are allowed. In the example below, the participants 
 were scanned for two runs, resulting in the scans ``subject_01_run_1.nii.gz`` 
 and ``subject_01_runs_2.nii.gz``. Here, we not only replace the subject name with 
 a ``*``, but also the run name with a ``?``:
@@ -77,8 +91,8 @@ fixed-effects model.
 .. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_functionaldata.png
 
 Once resting state data is specified, the pipeline will ask some additional 
-questions about the analyses that will be performed. For resting state, 
-these are seed connectivity and dual regression. 
+questions about the analyses that can be performed on the data. For resting state, 
+the options are seed connectivity, dual regression using ICA network templates, and correlation matrices constructed from a parcellation template of your choice. ALFF and ReHo are currently calculated automatically.
 
 For task, you will need to specify the experimental conditions/explanatory 
 variables. These can be in 
