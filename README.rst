@@ -1,8 +1,7 @@
 Welcome to the mindandbrain/pipeline!
 =====================================
 
-``mindandbrain/pipeline`` is a Docker container for fast, accurate, and 
-reproducible analysis of functional magnetic imaging data.
+``mindandbrain/pipeline`` is a Docker container that facilitates reproducible analysis of fMRI data, including preprocessing, single-subject, and group analysis.
  
 It uses `fmriprep <https://fmriprep.readthedocs.io/>`_ for preprocessing, 
 and `FSL <http://fsl.fmrib.ox.ac.uk/>`_ for statistics. 
