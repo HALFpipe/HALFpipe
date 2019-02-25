@@ -139,3 +139,5 @@ the working directory specified previously. Then, the processing and analysis of
 data will begin.
 
 
+Running the pipeline on a cluster
+=====================================
