@@ -164,3 +164,27 @@ Next, you can submit the pipeline command to any available node using your local
   docker run -it -v /:/ext mindandbrain/pipeline --workdir=<your workdir that contains pipeline.json>
   
 or by changing the flag in the singularity_run.sh script and submit this to the scheduler.
+
+
+
+
+Output
+=====================================
+
+In the work directory specified 
+
+
+
+QC
+=====================================
+
+The pipeline generates an interactive QC html page in the working directory called ``index.html``. 
+
+
+Contact
+=====================================
+
+For questions or support, please contact
+
+Dr. Ilya Veer
+ilya.veer [at] charite.de
