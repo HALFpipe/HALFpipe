@@ -139,5 +139,28 @@ the working directory specified previously. Then, the processing and analysis of
 data will begin.
 
 
+
 Running the pipeline on a cluster
 =====================================
+
+Currently, distributed processing across multiple nodes is not supported. However, the pipeline will process subjects in parallel using all available cores of the single node.
+
+As it is not advised (or permitted) to run the pipeline on the head node of a cluster, there is an option to create the pipeline.json file interactively on the head node without directly starting processing. This is done with following command
+
+::
+
+  docker run -it -v /:/ext mindandbrain/pipeline --setup-only
+  
+or change the singularity_run.sh script to
+
+::
+
+  runCmd singularity run -B /:/ext pipeline --setup-only
+  
+Next, you can submit the pipeline command to any available node using your local scheduler (e.g., slurm, condor, ...), changing the --setup-only flag 
+
+::
+
+  docker run -it -v /:/ext mindandbrain/pipeline --workdir=<your workdir that contains pipeline.json>
+  
+or by changing the flag in the singularity_run.sh script and submit this to the scheduler.
