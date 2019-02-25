@@ -117,7 +117,7 @@ condition names.
 Taken together, here is the entire procedure to specify the functional imaging 
 data:
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_functional.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_functional.png
 
 After specifying the functional scans, some general parameters for preprocessing 
 need to be set:  
@@ -134,7 +134,7 @@ compared, another column is expected to contain the group names for each subject
 The remaining columns are used as covariates and are regressed out. Commonly, variables
 such as age, sex or left/right-handedness are used. 
 
-.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/7c62b15091fb4fee5771d7ca7b76632d278785bb/static/image_groupstats.png
+.. image:: https://raw.githubusercontent.com/mindandbrain/pipeline/master/static/image_groupstats.png
 
 After specifying all this, your inputs are saved to the file ``pipeline.json`` in
 the working directory specified previously. Then, the processing and analysis of
