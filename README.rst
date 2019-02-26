@@ -181,9 +181,9 @@ The ``stats`` folder contains uncorrected group level results (cope/varcope/zsta
 
 An interactive QC html page is created, called ``index.html``.
 
-All verbosing of the pipeline is stored for each participant in the ``log`` folder
+All verbosing of the pipeline is stored for each participant in the ``log`` folder.
 
-A datasheet with demeaned covariates is stored as ``demeaned_covariates.csv``   
+A datasheet with demeaned covariates is stored as ``demeaned_covariates.csv``.   
 
 
 
@@ -199,6 +199,6 @@ Next, run the pipeline again. The nipype folder will automatically be scanned to
 Contact
 =====================================
 
-For questions or support, please contact
+For questions or support, please contact:
 
 ilya.veer [at] charite.de
