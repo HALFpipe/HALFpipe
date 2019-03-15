@@ -30,6 +30,7 @@ def main():
     ap.add_argument("-w", "--workdir")
     ap.add_argument("-p", "--nipype-plugin")
     ap.add_argument("-s", "--setup-only", action="store_true", default=False)
+    ap.add_argument("-j", "--jsonfile")
     args = ap.parse_args()
 
     workdir = None
@@ -66,7 +67,12 @@ def main():
 
     os.makedirs(workdir, exist_ok=True)
 
-    path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
+    json_dir = os.path.join(workdir, 'json_files')
+    path_to_pipeline_json = None
+    if args.jsonfile is not None:
+        path_to_pipeline_json = os.path.join(json_dir, args.jsonfile)
+    else:
+        path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
 
     #
     # helper functions
@@ -354,6 +360,7 @@ def main():
 
         c.info("")
 
+        '''
         spreadsheet_file = get_file("covariates/group data spreadsheet")
         spreadsheet = pd.read_csv(spreadsheet_file)
 
@@ -383,6 +390,7 @@ def main():
         metadata["Covariates"] = covariates
 
         c.info("")
+        '''
 
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": metadata}, f, indent=4)
@@ -495,3 +503,37 @@ def main():
 
                     except KeyError:
                         pass
+    else:
+        os.makedirs(json_dir, exist_ok=True)
+
+        with open(path_to_pipeline_json, "r") as f:
+            metadata = json.load(f)
+
+        flattened_metadata = transpose(metadata['images'])
+
+        # Selecting metadata to be shared among subjects
+        # To remove if group metadata is not initially included
+        subject_metadata = dict()
+        subject_keys = ["rest", "TemporalFilter", "SmoothingFWHM"]
+        for key in subject_keys:
+            subject_metadata[key] = metadata['metadata'][key]
+
+        file = open(os.path.join(workdir, "execute.txt"), "w")
+        command = "docker run -it -v /:/ext mindandbrain/pipeline --workdir=" + workdir + " --jsonfile="
+
+        # Selecting images info per subject and saving respective json file
+        for subject in flattened_metadata:
+            file_name = subject + '_pipeline.json'
+            path_to_new_pipeline_json = os.path.join(json_dir, file_name)
+            subject_images = dict()
+            # key is called field_name in run.py (could change name)
+            for key in flattened_metadata[subject]:
+                key_dict = dict()
+                key_dict[subject] = metadata['images'][key][subject]
+                subject_images[key] = key_dict
+            with open(path_to_new_pipeline_json, "w+") as f:
+                json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
+
+            file.write(command + file_name + '\n')
+
+        file.close()
