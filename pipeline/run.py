@@ -401,9 +401,9 @@ def main():
         c.info("")
 
     if not args.setup_only:
-        workflow = init_workflow(workdir)
+        workflow = init_workflow(workdir, path_to_pipeline_json)
 
-        init_logging(workdir)
+        init_logging(workdir, path_to_pipeline_json)
 
         if args.nipype_plugin is None:
             plugin_settings = {
