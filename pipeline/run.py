@@ -344,6 +344,8 @@ def main():
             metadata[field_name]["Contrasts"] = contrasts
 
             response3 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+            # add confound regressors? to the model
+            # if yes ask for csf, whitematter, ..... as individual regressors to statistical models for both rest and task
             metadata[field_name]["UseMovPar"] = response3 == "Yes"
             #
             # if response3 == "Yes":
