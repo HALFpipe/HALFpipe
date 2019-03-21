@@ -121,7 +121,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                             f.write(json.dumps(json_data).encode())
                             f.write(']'.encode())
                 Path(touch_path).touch()
-            html_path = os.path.join(os.path.dirname(work_dir), "index.html")
+            html_path = os.path.join(work_dir, "index.html")
             if not os.path.isfile(html_path):
                 copy(pkgr('pipeline', 'index.html'), html_path)
         else:
