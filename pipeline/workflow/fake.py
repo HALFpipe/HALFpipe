@@ -91,7 +91,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             return runtime
         elif base_directory == self.fmriprep_reportlets_dir:
             # write to json
-            work_dir = os.path.dirname(base_directory)
+            work_dir = base_directory
             json_id = "%s.%s" % (self.node_id, self.inputs.suffix)
             json_id = re.sub(r'func_preproc_[^.]*', "func_preproc_wf", json_id)
             json_data = {"id": json_id}
