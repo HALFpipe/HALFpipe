@@ -10,14 +10,14 @@ from logging import Handler, StreamHandler, Formatter
 from .utils import transpose
 
 
-def init_logging(workdir):
+def init_logging(workdir, jsonfile):
     """
     Add new logging handler to nipype to output to log directory
 
     :param workdir: Log directory
 
     """
-    fp = os.path.join(workdir, "pipeline.json")
+    fp = os.path.join(workdir, jsonfile)
 
     with open(fp, "r") as f:
         data = json.load(f)

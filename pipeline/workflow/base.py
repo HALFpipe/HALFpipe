@@ -21,7 +21,7 @@ from .qualitycheck import get_qualitycheck_exclude
 from ..utils import transpose
 
 
-def init_workflow(workdir):
+def init_workflow(workdir, jsonfile):
     """
     initialize nipype workflow for a workdir containing a pipeline.json file.
 
@@ -30,7 +30,7 @@ def init_workflow(workdir):
     """
     workflow_file = os.path.join(workdir, "workflow.pklz")
 
-    fp = os.path.join(workdir, "pipeline.json")
+    fp = os.path.join(workdir, jsonfile)
 
     data = None
     with open(fp, "r") as f:
@@ -53,6 +53,8 @@ def init_workflow(workdir):
 
     workflow.add_nodes(subject_wfs)
 
+    '''Commenting second level analysis, to run a single subject analysis test
+    
     #
     # second level
     #
@@ -172,4 +174,5 @@ def init_workflow(workdir):
                         ("outputnode.mask_file", "mask")
                     ])
             ])
+    '''
     return workflow
