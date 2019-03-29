@@ -133,7 +133,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             # json is loaded from pandas to json and then dumped to get indent in file
             json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4)
     else:
-        trimmed_subjects = subjects # in case there are no excluded subjects
+        trimmed_subjects = subjects  # in case there are no excluded subjects
 
     # option 1: one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
@@ -207,7 +207,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     contrast_names = [c[0] for c in contrasts]
 
-    # actuallt run FSL FLAME
+    # actually run FSL FLAME
 
     if outname not in ["reho", "alff"]:
         flameo = pe.MapNode(

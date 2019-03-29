@@ -337,9 +337,25 @@ def main():
             metadata[field_name]["Conditions"] = conditions
             metadata[field_name]["Contrasts"] = contrasts
 
-            response3 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-            metadata[field_name]["UseMovPar"] = response3 == "Yes"
-            #
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            if response3:
+                metadata[field_name]["UseMovPar"] = False
+                metadata[field_name]["CSF"] = False
+                metadata[field_name]["Whitematter"] = False
+                metadata[field_name]["GlobalSignal"] = False
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["CSF"] = True
+                response4 = c.select("Add Whitematter to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["Whitematter"] = True
+                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["GlobalSignal"] = True
+
             # if response3 == "Yes":
             #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
 
