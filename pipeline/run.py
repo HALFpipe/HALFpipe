@@ -235,39 +235,37 @@ def main():
         # response0 = "Yes"
 
         if response0 == "Yes":
-            field_name = c.read("Specify the paradigm name", "rest")
+            metadata["rest"] = dict()
+            images["rest"] = get_files(field_description, runs=True)
 
-            metadata[field_name] = dict()
-            images[field_name] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
-            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
+            image = next(iter(next(iter(images["rest"].values())).values()))[""]
+            metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
                                                                   o=str(nib.load(image).header.get_zooms()[3])))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
-            metadata[field_name]["PhaseEncodingDirection"] = \
+            metadata["rest"]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
             response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["BrainAtlasImage"] = {}
+                metadata["rest"]["BrainAtlasImage"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify Atlas name")
-                    metadata[field_name]["BrainAtlasImage"][name] = get_file("brain atlas image")
+                    metadata["rest"]["BrainAtlasImage"][name] = get_file("brain atlas image")
                     response3 = c.select("Add another Atlas?", ["Yes", "No"])
 
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ConnectivitySeeds"] = {}
+                metadata["rest"]["ConnectivitySeeds"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify seed name")
-                    metadata[field_name]["ConnectivitySeeds"][name] = get_file("seed mask image")
+                    metadata["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
             response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ICAMaps"] = get_file("ICA component maps image")
+                metadata["rest"]["ICAMaps"] = get_file("ICA component maps image")
 
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             #
