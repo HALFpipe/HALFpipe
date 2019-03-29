@@ -53,6 +53,8 @@ def init_workflow(workdir, jsonfile):
 
     workflow.add_nodes(subject_wfs)
 
+    '''Commenting second level analysis, to run a single subject analysis test
+    
     #
     # second level
     #
@@ -172,4 +174,5 @@ def init_workflow(workdir, jsonfile):
                         ("outputnode.mask_file", "mask")
                     ])
             ])
+    '''
     return workflow
