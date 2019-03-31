@@ -149,7 +149,7 @@ def create_alff(name='alff_workflow'):
 
     wf = pe.Workflow(name=name)
     input_node = pe.Node(util.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file"]),
         name="inputnode"
     )
 

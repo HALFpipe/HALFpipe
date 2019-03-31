@@ -281,7 +281,7 @@ def init_reho_wf(name="firstlevel"):
     # inputs are the bold file, the mask file and the cluster size
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file"]),
         name="inputnode"
     )
 
@@ -340,7 +340,7 @@ def init_brain_atlas_wf(atlases, name="firstlevel"):
     # inputs are the bold file, the mask file and the confounds file
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file"]),
         name="inputnode"
     )
 

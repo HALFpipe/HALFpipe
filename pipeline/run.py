@@ -412,14 +412,15 @@ def main():
         init_logging(workdir)
 
         if args.nipype_plugin is None:
-            plugin_settings = {
-                "plugin": "MultiProc",
-                "plugin_args": {
-                    "n_procs": cpu_count(),
-                    "raise_insufficient": False,
-                    "maxtasksperchild": 1,
-                }
-            }
+            plugin_settings = {"plugin": "Linear"}
+            # plugin_settings = {
+            #     "plugin": "MultiProc",
+            #     "plugin_args": {
+            #         "n_procs": cpu_count(),
+            #         "raise_insufficient": False,
+            #         "maxtasksperchild": 1,
+            #     }
+            # }
         else:
             plugin_settings = {
                 "plugin": args.nipype_plugin

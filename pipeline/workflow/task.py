@@ -4,6 +4,7 @@
 
 import nipype.algorithms.modelgen as model
 from nipype.interfaces.base import Bunch
+from nipype import Node, SelectFiles
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -41,7 +42,7 @@ def init_glm_wf(conditions,
     # inputs are the bold file, the mask file and the confounds file 
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file"]),
         name="inputnode"
     )
 
@@ -57,7 +58,6 @@ def init_glm_wf(conditions,
         regressor_names.append("white_matter")
     if use_global_signal:
         regressor_names.append("globalsignal")
-
 
     # first level model specification
     modelspec = pe.Node(

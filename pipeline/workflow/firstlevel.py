@@ -355,7 +355,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file")
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_confounds_wf.outputnode.confounds_file", "inputnode.add_confounds_file")
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -370,7 +371,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file")
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_confounds_wf.outputnode.confounds_file", "inputnode.add_confounds_file")
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -403,7 +405,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file")
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_confounds_wf.outputnode.confounds_file", "inputnode.add_confounds_file")
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
