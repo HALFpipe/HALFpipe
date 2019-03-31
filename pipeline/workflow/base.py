@@ -114,9 +114,12 @@ def init_workflow(workdir):
                     ]
                     if len(outputnode) > 0:
                         outputnode = outputnode[0]
-                        workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
-                        workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
-                        if outname not in ["reho", "alff"]:
+                        if outname in ["reho", "alff"]:
+                            workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+                        else:
+                            workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                             workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
                             workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
 
@@ -137,25 +140,17 @@ def init_workflow(workdir):
                     parameterization=False),
                 name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)
 
-            workflow.connect([
-                (mergeimgs, higherlevel_wf, [
-                    ("out", "inputnode.imgs")
-                ]),
-                (mergemasks, higherlevel_wf, [
-                    ("out", "inputnode.mask_files")
-                ]),
-            ])
-
-            if outname not in ["reho", "alff"]:
+            if outname in ["reho", "alff"]:
                 workflow.connect([
-                    (mergevarcopes, higherlevel_wf, [
-                        ("out", "inputnode.varcopes")
+                    (mergeimgs, higherlevel_wf, [
+                        ("out", "inputnode.imgs")
                     ]),
-                    (mergedoffiles, higherlevel_wf, [
-                        ("out", "inputnode.dof_files")
-                    ])])
+                    (mergemasks, higherlevel_wf, [
+                        ("out", "inputnode.mask_files")
+                    ]),
+                ])
 
-            workflow.connect([
+                workflow.connect([
                     (higherlevel_wf, ds_stats, [
                         ("outputnode.imgs", "cope")
                     ]),
@@ -171,5 +166,43 @@ def init_workflow(workdir):
                     (higherlevel_wf, ds_mask, [
                         ("outputnode.mask_file", "mask")
                     ])
-            ])
+                ])
+
+            else:
+                workflow.connect([
+                    (mergeimgs, higherlevel_wf, [
+                        ("out", "inputnode.imgs")
+                    ]),
+                    (mergemasks, higherlevel_wf, [
+                        ("out", "inputnode.mask_files")
+                    ]),
+                ])
+
+                workflow.connect([
+                    (mergevarcopes, higherlevel_wf, [
+                        ("out", "inputnode.varcopes")
+                    ]),
+                    (mergedoffiles, higherlevel_wf, [
+                        ("out", "inputnode.dof_files")
+                    ])
+                ])
+
+                workflow.connect([
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.imgs", "cope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.varcopes", "varcope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.zstats", "zstat")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.dof_files", "dof")
+                    ]),
+                    (higherlevel_wf, ds_mask, [
+                        ("outputnode.mask_file", "mask")
+                    ])
+                ])
+
     return workflow
