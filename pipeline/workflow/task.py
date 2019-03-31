@@ -4,11 +4,12 @@
 
 import nipype.algorithms.modelgen as model
 from nipype.interfaces.base import Bunch
-from nipype import Node, SelectFiles
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
+
+import pandas as pd
 
 from ..utils import (
     flatten,
@@ -55,17 +56,35 @@ def init_glm_wf(conditions,
     if use_csf:
         regressor_names.append("CSF")
     if use_white_matter:
-        regressor_names.append("white_matter")
+        regressor_names.append("WhiteMatter")
     if use_global_signal:
-        regressor_names.append("globalsignal")
+        regressor_names.append("GlobalSignal")
+
+    def create_subject_info(names, onsets, durations, regressor_names, add_confounds_file):
+        import pandas as pd
+        from nipype.interfaces.base import Bunch
+        confounds_df = pd.read_csv(add_confounds_file, sep='\t')
+        df = confounds_df[regressor_names].copy()
+        regressors = df.transpose().values.tolist()
+        subject_info = Bunch(conditions=names, onsets=onsets, durations=durations, regressor_names=regressor_names,
+                             regressors=regressors)
+        return subject_info
+
+    subject_info_node = pe.Node(niu.Function(
+        input_names=["names", "onsets", "durations", "regressor_names", "add_confounds_file"],
+        output_names=["subject_info"],
+        function=create_subject_info), name="subject_info"
+    )
+    subject_info_node.inputs.names = names
+    subject_info_node.inputs.onsets = onsets
+    subject_info_node.inputs.durations = durations
+    subject_info_node.inputs.regressor_names = regressor_names
 
     # first level model specification
     modelspec = pe.Node(
         interface=model.SpecifyModel(
             input_units="secs",
             high_pass_filter_cutoff=128., time_repetition=repetition_time,
-            subject_info=Bunch(conditions=names,
-                               onsets=onsets, durations=durations, regressor_names=regressor_names, regressors=[[0,1,2]]),
         ),
         name="modelspec"
     )
@@ -157,6 +176,8 @@ def init_glm_wf(conditions,
         )
 
     workflow.connect([
+        (inputnode, subject_info_node, [("add_confounds_file", "add_confounds_file")]),
+        (subject_info_node, modelspec, [("subject_info", "subject_info")]),
         (inputnode, modelspec, c),
         (inputnode, modelestimate, [
             ("bold_file", "in_file")
