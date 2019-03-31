@@ -17,7 +17,7 @@ from ..utils import (
 
 def init_glm_wf(conditions,
                 contrasts, repetition_time,
-                use_mov_pars, name="glm"):
+                use_mov_pars, use_csf, use_white_matter, use_global_signal, name="glm"):
     """
     create workflow to calculate a first level glm for task functional data
 
@@ -26,6 +26,12 @@ def init_glm_wf(conditions,
     :param contrasts: dictionary of contrasts by names
     :param repetition_time: repetition time
     :param use_mov_pars: if true, regress out movement parameters when 
+        calculating the glm
+    :param use_csf: if true, regress out csf parameters when
+        calculating the glm
+    :param use_white_matter: if true, regress out white matter parameters when
+        calculating the glm
+    :param use_global_signal: if true, regress out global signal parameters when
         calculating the glm
     :param name: workflow name (Default value = "glm")
 
@@ -44,6 +50,14 @@ def init_glm_wf(conditions,
     names = list(conditions.keys())
     onsets = [conditions[k]["onsets"] for k in names]
     durations = [conditions[k]["durations"] for k in names]
+    regressor_names = []
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("white_matter")
+    if use_global_signal:
+        regressor_names.append("globalsignal")
+
 
     # first level model specification
     modelspec = pe.Node(
@@ -51,7 +65,7 @@ def init_glm_wf(conditions,
             input_units="secs",
             high_pass_filter_cutoff=128., time_repetition=repetition_time,
             subject_info=Bunch(conditions=names,
-                               onsets=onsets, durations=durations)
+                               onsets=onsets, durations=durations, regressor_names=regressor_names, regressors=[[0,1,2]]),
         ),
         name="modelspec"
     )

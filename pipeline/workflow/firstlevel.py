@@ -450,6 +450,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             contrasts,
             repetition_time,
             metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
             name="glm_wf"
         )
         create_ds(wf, firstlevel_wf, connames, func_preproc_wf, temporalfilter_wf,
