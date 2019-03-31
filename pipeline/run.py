@@ -267,6 +267,25 @@ def main():
             if response3 == "Yes":
                 metadata["rest"]["ICAMaps"] = get_file("ICA component maps image")
 
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            if response3:
+                metadata[field_name]["UseMovPar"] = False
+                metadata[field_name]["CSF"] = False
+                metadata[field_name]["Whitematter"] = False
+                metadata[field_name]["GlobalSignal"] = False
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["CSF"] = True
+                response4 = c.select("Add Whitematter to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["Whitematter"] = True
+                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["GlobalSignal"] = True
+
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             #
             # if response3 == "Yes":
@@ -412,15 +431,14 @@ def main():
         init_logging(workdir)
 
         if args.nipype_plugin is None:
-            plugin_settings = {"plugin": "Linear"}
-            # plugin_settings = {
-            #     "plugin": "MultiProc",
-            #     "plugin_args": {
-            #         "n_procs": cpu_count(),
-            #         "raise_insufficient": False,
-            #         "maxtasksperchild": 1,
-            #     }
-            # }
+            plugin_settings = {
+                "plugin": "MultiProc",
+                "plugin_args": {
+                    "n_procs": cpu_count(),
+                    "raise_insufficient": False,
+                    "maxtasksperchild": 1,
+                }
+            }
         else:
             plugin_settings = {
                 "plugin": args.nipype_plugin

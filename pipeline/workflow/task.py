@@ -52,6 +52,8 @@ def init_glm_wf(conditions,
     names = list(conditions.keys())
     onsets = [conditions[k]["onsets"] for k in names]
     durations = [conditions[k]["durations"] for k in names]
+
+    # include regressors
     regressor_names = []
     if use_csf:
         regressor_names.append("CSF")
@@ -61,15 +63,17 @@ def init_glm_wf(conditions,
         regressor_names.append("GlobalSignal")
 
     def create_subject_info(names, onsets, durations, regressor_names, add_confounds_file):
-        import pandas as pd
+        """Creates subject_info as input for the GLM Model"""
+        import pandas as pd  # in-function import necessary for nipype-function
         from nipype.interfaces.base import Bunch
-        confounds_df = pd.read_csv(add_confounds_file, sep='\t')
-        df = confounds_df[regressor_names].copy()
+        confounds_df = pd.read_csv(add_confounds_file, sep='\t')  # read confounds file into dataframe
+        df = confounds_df[regressor_names].copy()  # get regressor columns
         regressors = df.transpose().values.tolist()
         subject_info = Bunch(conditions=names, onsets=onsets, durations=durations, regressor_names=regressor_names,
                              regressors=regressors)
         return subject_info
 
+    # Create node for providing subject_info to the GLM model via nypipe
     subject_info_node = pe.Node(niu.Function(
         input_names=["names", "onsets", "durations", "regressor_names", "add_confounds_file"],
         output_names=["subject_info"],
