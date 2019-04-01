@@ -237,9 +237,11 @@ def main():
         if response0 == "Yes":
             metadata["rest"] = dict()
             images["rest"] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images["rest"].values())).values()))[""]
-            metadata["rest"]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
+            metadata["rest"]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                metadata["rest"]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images["rest"])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
             # metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
             #                                                       o=str(nib.load(image).header.get_zooms()[3])))
 
@@ -269,23 +271,23 @@ def main():
                 metadata["rest"]["ICAMaps"] = get_file("ICA component maps image")
 
             response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
-            metadata[field_name]["UseMovPar"] = False
-            metadata[field_name]["CSF"] = False
-            metadata[field_name]["Whitematter"] = False
-            metadata[field_name]["GlobalSignal"] = False
+            metadata["rest"]["UseMovPar"] = False
+            metadata["rest"]["CSF"] = False
+            metadata["rest"]["Whitematter"] = False
+            metadata["rest"]["GlobalSignal"] = False
             if response3 == "Yes":
                 response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
                 if response4:
-                    metadata[field_name]["UseMovPar"] = True
+                    metadata["rest"]["UseMovPar"] = True
                 response4 = c.select("Add CSF to model?", ["Yes", "No"])
                 if response4:
-                    metadata[field_name]["CSF"] = True
+                    metadata["rest"]["CSF"] = True
                 response4 = c.select("Add White Matter to model?", ["Yes", "No"])
                 if response4:
-                    metadata[field_name]["Whitematter"] = True
+                    metadata["rest"]["Whitematter"] = True
                 response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
                 if response4:
-                    metadata[field_name]["GlobalSignal"] = True
+                    metadata["rest"]["GlobalSignal"] = True
 
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             #
@@ -312,11 +314,13 @@ def main():
 
             metadata[field_name] = dict()
             images[field_name] = get_files(field_description, runs=True)
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
+            metadata[field_name]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                metadata[field_name]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images[field_name])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
             # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
             #     o = str(nib.load(image).header.get_zooms()[3])))
-
-            metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])

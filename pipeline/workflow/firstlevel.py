@@ -125,6 +125,7 @@ def init_subject_wf(item, workdir, images, data):
             ])
 
             metadata = data["metadata"][name]
+            metadata["RepetitionTime"] = metadata["RepetitionTime"][subject]  # TR for one subject only
             metadata["SmoothingFWHM"] = data["metadata"]["SmoothingFWHM"]
             metadata["TemporalFilter"] = data["metadata"]["TemporalFilter"]
             if "UseMovPar" not in metadata:
