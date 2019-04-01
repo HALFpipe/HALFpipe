@@ -43,7 +43,7 @@ def init_glm_wf(conditions,
     # inputs are the bold file, the mask file and the confounds file 
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file", "gs_meants_file", "csf_wm_meants_file"]),
         name="inputnode"
     )
 
@@ -62,7 +62,7 @@ def init_glm_wf(conditions,
     if use_global_signal:
         regressor_names.append("GlobalSignal")
 
-    def create_subject_info(names, onsets, durations, regressor_names, add_confounds_file):
+    def create_subject_info(names, onsets, durations, regressor_names, add_confounds_file, gs_meants_file, csf_wm_meants_file):
         """Creates subject_info as input for the GLM Model"""
         import pandas as pd  # in-function import necessary for nipype-function
         from nipype.interfaces.base import Bunch
@@ -75,7 +75,7 @@ def init_glm_wf(conditions,
 
     # Create node for providing subject_info to the GLM model via nypipe
     subject_info_node = pe.Node(niu.Function(
-        input_names=["names", "onsets", "durations", "regressor_names", "add_confounds_file"],
+        input_names=["names", "onsets", "durations", "regressor_names", "add_confounds_file", "gs_meants_file", "csf_wm_meants_file"],
         output_names=["subject_info"],
         function=create_subject_info), name="subject_info"
     )
@@ -181,6 +181,8 @@ def init_glm_wf(conditions,
 
     workflow.connect([
         (inputnode, subject_info_node, [("add_confounds_file", "add_confounds_file")]),
+        (inputnode, subject_info_node, [("gs_meants_file", "gs_meants_file")]),
+        (inputnode, subject_info_node, [("csf_wm_meants_file", "csf_wm_meants_file")]),
         (subject_info_node, modelspec, [("subject_info", "subject_info")]),
         (inputnode, modelspec, c),
         (inputnode, modelestimate, [
