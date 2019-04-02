@@ -283,7 +283,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         interface=fsl.ImageMeants(),
         name="csf_wm_meants",
     )
-    # meants.inputs.args =  // for label option
+    csf_wm_meants.inputs.args = "--label=/root/src/pipeline/static/templates/fmriPrepSeg_to_FSL.nii.gz"
 
     # Calculates the regression time series for global signal
     gs_meants = pe.Node(
