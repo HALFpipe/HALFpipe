@@ -362,7 +362,7 @@ def main():
 
         c.info("")
 
-        '''
+
         spreadsheet_file = get_file("covariates/group data spreadsheet")
         spreadsheet = pd.read_csv(spreadsheet_file)
 
@@ -392,7 +392,7 @@ def main():
         metadata["Covariates"] = covariates
 
         c.info("")
-        '''
+        
 
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": metadata}, f, indent=4)
