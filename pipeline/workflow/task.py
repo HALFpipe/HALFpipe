@@ -43,7 +43,7 @@ def init_glm_wf(conditions,
     # inputs are the bold file, the mask file and the confounds file 
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "add_confounds_file", "gs_meants_file", "csf_wm_meants_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "gs_meants_file", "csf_wm_meants_file"]),
         name="inputnode"
     )
 
@@ -58,16 +58,27 @@ def init_glm_wf(conditions,
     if use_csf:
         regressor_names.append("CSF")
     if use_white_matter:
-        regressor_names.append("WhiteMatter")
+        regressor_names.append("WM")
     if use_global_signal:
-        regressor_names.append("GlobalSignal")
+        regressor_names.append("GS")
 
-    def create_subject_info(names, onsets, durations, regressor_names, add_confounds_file, gs_meants_file, csf_wm_meants_file):
+    def create_subject_info(names, onsets, durations, regressor_names, gs_meants_file, csf_wm_meants_file):
         """Creates subject_info as input for the GLM Model"""
         import pandas as pd  # in-function import necessary for nipype-function
         from nipype.interfaces.base import Bunch
-        confounds_df = pd.read_csv(add_confounds_file, sep='\t')  # read confounds file into dataframe
-        df = confounds_df[regressor_names].copy()  # get regressor columns
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([csf_df, wm_df, gs_df], axis=1)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
         regressors = df.transpose().values.tolist()
         subject_info = Bunch(conditions=names, onsets=onsets, durations=durations, regressor_names=regressor_names,
                              regressors=regressors)
@@ -75,7 +86,7 @@ def init_glm_wf(conditions,
 
     # Create node for providing subject_info to the GLM model via nypipe
     subject_info_node = pe.Node(niu.Function(
-        input_names=["names", "onsets", "durations", "regressor_names", "add_confounds_file", "gs_meants_file", "csf_wm_meants_file"],
+        input_names=["names", "onsets", "durations", "regressor_names","gs_meants_file", "csf_wm_meants_file"],
         output_names=["subject_info"],
         function=create_subject_info), name="subject_info"
     )
@@ -180,9 +191,10 @@ def init_glm_wf(conditions,
         )
 
     workflow.connect([
-        (inputnode, subject_info_node, [("add_confounds_file", "add_confounds_file")]),
-        (inputnode, subject_info_node, [("gs_meants_file", "gs_meants_file")]),
-        (inputnode, subject_info_node, [("csf_wm_meants_file", "csf_wm_meants_file")]),
+        (inputnode, subject_info_node, [
+            ("gs_meants_file", "gs_meants_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file")
+        ]),
         (subject_info_node, modelspec, [("subject_info", "subject_info")]),
         (inputnode, modelspec, c),
         (inputnode, modelestimate, [
