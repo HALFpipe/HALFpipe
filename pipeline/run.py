@@ -392,7 +392,7 @@ def main():
         metadata["Covariates"] = covariates
 
         c.info("")
-        
+
 
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": metadata}, f, indent=4)
@@ -514,9 +514,11 @@ def main():
         flattened_metadata = transpose(metadata['images'])
 
         # Selecting metadata to be shared among subjects
-        # To remove if group metadata is not initially included
+        # Using the keys in images, get names of workflows (rest, task, etc)
+        subject_keys = list(metadata['images'])
+        subject_keys.remove('T1w')
+        subject_keys = subject_keys + ["TemporalFilter", "SmoothingFWHM"]
         subject_metadata = dict()
-        subject_keys = ["rest", "TemporalFilter", "SmoothingFWHM"]
         for key in subject_keys:
             subject_metadata[key] = metadata['metadata'][key]
 
