@@ -523,7 +523,7 @@ def main():
             subject_metadata[key] = metadata['metadata'][key]
 
         file = open(os.path.join(workdir, "execute.txt"), "w")
-        command = "docker run -it -v /:/ext mindandbrain/pipeline --workdir=" + workdir + " --jsonfile="
+        command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir + " -j "
 
         # Selecting images info per subject and saving respective json file
         for subject in flattened_metadata:
