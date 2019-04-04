@@ -91,23 +91,22 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             return runtime
         elif base_directory == self.fmriprep_reportlets_dir:
             # write to json
-            work_dir = os.path.dirname(base_directory)
+            work_dir = base_directory
             json_id = "%s.%s" % (self.node_id, self.inputs.suffix)
             json_id = re.sub(r'func_preproc_[^.]*', "func_preproc_wf", json_id)
             json_data = {"id": json_id}
 
-            out_path = os.path.join(out_path, "qualitycheck")
-            os.makedirs(os.path.join(self.output_dir, out_path), exist_ok=True)
+            os.makedirs(os.path.join(work_dir, out_path), exist_ok=True)
 
             touch_fname = os.path.join(out_path, json_data["id"] + ext)
-            touch_path = os.path.join(self.output_dir, touch_fname)
+            touch_path = os.path.join(work_dir, touch_fname)
 
             if not os.path.isfile(touch_path):
                 for i, fname in enumerate(self.inputs.in_file):
                     copy(fname, touch_path)
                     # with open(fname, "r") as f:
                     #     json_data["html"] += f.read()
-                json_data["fname"] = os.path.join(os.path.basename(self.output_dir), touch_fname)
+                json_data["fname"] = os.path.join(os.path.basename(work_dir), touch_fname)
                 with fasteners.InterProcessLock(os.path.join(work_dir, "qc.lock")):
                     json_file = os.path.join(work_dir, "qc.json")
                     with open(json_file, "ab+") as f:
@@ -122,7 +121,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                             f.write(json.dumps(json_data).encode())
                             f.write(']'.encode())
                 Path(touch_path).touch()
-            html_path = os.path.join(os.path.dirname(self.output_dir), "index.html")
+            html_path = os.path.join(work_dir, "index.html")
             if not os.path.isfile(html_path):
                 copy(pkgr('pipeline', 'index.html'), html_path)
         else:

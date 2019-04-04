@@ -241,39 +241,59 @@ def main():
         # response0 = "Yes"
 
         if response0 == "Yes":
-            field_name = c.read("Specify the paradigm name", "rest")
-
-            metadata[field_name] = dict()
-            images[field_name] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
-            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
-                                                                  o=str(nib.load(image).header.get_zooms()[3])))
+            metadata["rest"] = dict()
+            images["rest"] = get_files(field_description, runs=True)
+            metadata["rest"]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                metadata["rest"]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images["rest"])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
+            # metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
+            #                                                       o=str(nib.load(image).header.get_zooms()[3])))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
-            metadata[field_name]["PhaseEncodingDirection"] = \
+            metadata["rest"]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
             response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["BrainAtlasImage"] = {}
+                metadata["rest"]["BrainAtlasImage"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify Atlas name")
-                    metadata[field_name]["BrainAtlasImage"][name] = get_file("brain atlas image")
+                    metadata["rest"]["BrainAtlasImage"][name] = get_file("brain atlas image")
                     response3 = c.select("Add another Atlas?", ["Yes", "No"])
 
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ConnectivitySeeds"] = {}
+                metadata["rest"]["ConnectivitySeeds"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify seed name")
-                    metadata[field_name]["ConnectivitySeeds"][name] = get_file("seed mask image")
+                    metadata["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
             response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ICAMaps"] = get_file("ICA component maps image")
+                metadata["rest"]["ICAMaps"] = get_file("ICA component maps image")
+
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            metadata["rest"]["UseMovPar"] = False
+            metadata["rest"]["CSF"] = False
+            metadata["rest"]["Whitematter"] = False
+            metadata["rest"]["GlobalSignal"] = False
+            if response3 == "Yes":
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4:
+                    metadata["rest"]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4:
+                    metadata["rest"]["CSF"] = True
+                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
+                if response4:
+                    metadata["rest"]["Whitematter"] = True
+                response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
+                if response4:
+                    metadata["rest"]["GlobalSignal"] = True
 
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             #
@@ -300,12 +320,13 @@ def main():
 
             metadata[field_name] = dict()
             images[field_name] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
+            metadata[field_name]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                metadata[field_name]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images[field_name])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
             # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
             #     o = str(nib.load(image).header.get_zooms()[3])))
-
-            metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
@@ -343,11 +364,25 @@ def main():
             metadata[field_name]["Conditions"] = conditions
             metadata[field_name]["Contrasts"] = contrasts
 
-            response3 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-            # add confound regressors? to the model
-            # if yes ask for csf, whitematter, ..... as individual regressors to statistical models for both rest and task
-            metadata[field_name]["UseMovPar"] = response3 == "Yes"
-            #
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            metadata[field_name]["UseMovPar"] = False
+            metadata[field_name]["CSF"] = False
+            metadata[field_name]["Whitematter"] = False
+            metadata[field_name]["GlobalSignal"] = False
+            if response3 == "Yes":
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["CSF"] = True
+                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["Whitematter"] = True
+                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
+                if response4:
+                    metadata[field_name]["GlobalSignal"] = True
+
             # if response3 == "Yes":
             #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
 

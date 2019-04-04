@@ -93,18 +93,27 @@ def init_workflow(workdir, jsonfile):
                                                                      group_contrasts=group_contrasts,
                                                                      outname=outname, workdir=workdir, task=task)
 
-                mergeimgs = pe.Node(
-                    interface=niu.Merge(len(subject_wfs)),
-                    name="%s_%s_mergeimgs" % (task, outname))
-                mergevarcopes = pe.Node(
-                    interface=niu.Merge(len(subject_wfs)),
-                    name="%s_%s_mergevarcopes" % (task, outname))
-                mergemasks = pe.Node(
-                    interface=niu.Merge(len(subject_wfs)),
-                    name="%s_%s_mergemasks" % (task, outname))
-                mergedoffiles = pe.Node(
-                    interface=niu.Merge(len(subject_wfs)),
-                    name="%s_%s_mergedoffiles" % (task, outname))
+            for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
+                excludethis = False
+                if subject in exclude:
+                    if task in exclude[subject]:
+                        excludethis = exclude[subject][task]
+                if not excludethis:
+                    nodename = "task_%s.outputnode" % task
+                    outputnode = [
+                        node for node in wf._graph.nodes()
+                        if str(node).endswith('.' + nodename)
+                    ]
+                    if len(outputnode) > 0:
+                        outputnode = outputnode[0]
+                        if outname in ["reho", "alff"]:
+                            workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+                        else:
+                            workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
+                            workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
 
                 for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
                     excludethis = False
@@ -135,13 +144,7 @@ def init_workflow(workdir, jsonfile):
                     name="ds_%s_%s_stats" % (task, outname), run_without_submitting=True)
                 ds_stats.inputs.container = contrast_names
 
-                ds_mask = pe.Node(
-                    nio.DataSink(
-                        base_directory=os.path.join(stats_dir, task),
-                        container=outname,
-                        parameterization=False),
-                    name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)
-
+            if outname in ["reho", "alff"]:
                 workflow.connect([
                     (mergeimgs, higherlevel_wf, [
                         ("out", "inputnode.imgs")
@@ -151,31 +154,59 @@ def init_workflow(workdir, jsonfile):
                     ]),
                 ])
 
-                if outname not in ["reho", "alff"]:
-                    workflow.connect([
-                        (mergevarcopes, higherlevel_wf, [
-                            ("out", "inputnode.varcopes")
-                        ]),
-                        (mergedoffiles, higherlevel_wf, [
-                            ("out", "inputnode.dof_files")
-                        ])])
+                workflow.connect([
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.imgs", "cope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.varcopes", "varcope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.zstats", "zstat")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.dof_files", "dof")
+                    ]),
+                    (higherlevel_wf, ds_mask, [
+                        ("outputnode.mask_file", "mask")
+                    ])
+                ])
+
+            else:
+                workflow.connect([
+                    (mergeimgs, higherlevel_wf, [
+                        ("out", "inputnode.imgs")
+                    ]),
+                    (mergemasks, higherlevel_wf, [
+                        ("out", "inputnode.mask_files")
+                    ]),
+                ])
 
                 workflow.connect([
-                        (higherlevel_wf, ds_stats, [
-                            ("outputnode.imgs", "cope")
-                        ]),
-                        (higherlevel_wf, ds_stats, [
-                            ("outputnode.varcopes", "varcope")
-                        ]),
-                        (higherlevel_wf, ds_stats, [
-                            ("outputnode.zstats", "zstat")
-                        ]),
-                        (higherlevel_wf, ds_stats, [
-                            ("outputnode.dof_files", "dof")
-                        ]),
-                        (higherlevel_wf, ds_mask, [
-                            ("outputnode.mask_file", "mask")
-                        ])
+                    (mergevarcopes, higherlevel_wf, [
+                        ("out", "inputnode.varcopes")
+                    ]),
+                    (mergedoffiles, higherlevel_wf, [
+                        ("out", "inputnode.dof_files")
+                    ])
+                ])
+
+                workflow.connect([
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.imgs", "cope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.varcopes", "varcope")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.zstats", "zstat")
+                    ]),
+                    (higherlevel_wf, ds_stats, [
+                        ("outputnode.dof_files", "dof")
+                    ]),
+                    (higherlevel_wf, ds_mask, [
+                        ("outputnode.mask_file", "mask")
+                    ])
                 ])
 
     return workflow
