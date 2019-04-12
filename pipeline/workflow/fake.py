@@ -106,7 +106,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                     copy(fname, touch_path)
                     # with open(fname, "r") as f:
                     #     json_data["html"] += f.read()
-                json_data["fname"] = os.path.join(os.path.basename(work_dir), touch_fname)
+                json_data["fname"] = os.path.join(touch_fname)
                 with fasteners.InterProcessLock(os.path.join(work_dir, "qc.lock")):
                     json_file = os.path.join(work_dir, "qc.json")
                     with open(json_file, "ab+") as f:
