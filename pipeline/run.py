@@ -285,16 +285,16 @@ def main():
             configuration["rest"]["GlobalSignal"] = False
             if response3 == "Yes":
                 response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration["rest"]["UseMovPar"] = True
                 response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration["rest"]["CSF"] = True
                 response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration["rest"]["Whitematter"] = True
                 response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration["rest"]["GlobalSignal"] = True
 
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
@@ -373,16 +373,16 @@ def main():
             configuration[field_name]["GlobalSignal"] = False
             if response3 == "Yes":
                 response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration[field_name]["UseMovPar"] = True
                 response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration[field_name]["CSF"] = True
                 response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration[field_name]["Whitematter"] = True
                 response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
-                if response4:
+                if response4 == "Yes":
                     configuration[field_name]["GlobalSignal"] = True
 
             # if response3 == "Yes":
