@@ -7,6 +7,7 @@ import pandas as pd
 import nibabel as nib
 import json
 import shutil
+import math
 from glob import glob
 from argparse import ArgumentParser
 from .cli import Cli
@@ -30,7 +31,8 @@ def main():
     ap.add_argument("-w", "--workdir")
     ap.add_argument("-p", "--nipype-plugin")
     ap.add_argument("-s", "--setup-only", action="store_true", default=False)
-    ap.add_argument("-j", "--jsonfile")
+    ap.add_argument("-j", "--json-file")
+    ap.add_argument("-b", "--block-size")
     args = ap.parse_args()
 
     workdir = None
@@ -69,8 +71,8 @@ def main():
 
     json_dir = os.path.join(workdir, 'json_files')
     path_to_pipeline_json = None
-    if args.jsonfile is not None:
-        path_to_pipeline_json = os.path.join(json_dir, args.jsonfile)
+    if args.json_file is not None:
+        path_to_pipeline_json = os.path.join(json_dir, args.json_file)
     else:
         path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
 
@@ -391,12 +393,11 @@ def main():
         c.info("")
 
         configuration["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
-                                                  o=str(125.0)))
+                                                       o=str(125.0)))
         configuration["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
-                                                 o=str(5.0)))
+                                                      o=str(5.0)))
 
         c.info("")
-
 
         spreadsheet_file = get_file("covariates/group data spreadsheet")
         spreadsheet = pd.read_csv(spreadsheet_file)
@@ -427,7 +428,6 @@ def main():
         configuration["Covariates"] = covariates
 
         c.info("")
-
 
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": configuration}, f, indent=4)
@@ -556,6 +556,7 @@ def main():
             subject_metadata[key] = configuration['metadata'][key]
 
         # getting names of paradigms (rest, task, etc) using keys in image section
+        subject_all_keys = list(configuration['images'])
         subject_keys = list(configuration['images'])
         subject_keys.remove('T1w')
 
@@ -570,20 +571,45 @@ def main():
         file = open(os.path.join(workdir, "execute.txt"), "w")
         command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
 
-        # Selecting images info per subject and saving respective json file
-        for subject in flattened_configuration:
-            file_name = subject + '_pipeline.json'
+        block_size = 1
+        if args.block_size is not None:
+            try:
+                block_size = int(args.block_size)
+            except Exception as ex:
+                print(ex)
+                print('The number of subjects per block must be an integer')
+                print('No blocks are being generated. Json files per subject are being generated')
+
+        subject_names = list(flattened_configuration)
+        subjects = len(subject_names)
+        blocks = math.ceil(subjects / block_size)
+
+        # loop for block
+        for i in range(blocks):
+            file_name = 'block_' + str(i) + '_pipeline.json'
             path_to_new_pipeline_json = os.path.join(json_dir, file_name)
             subject_images = dict()
-            # adding images per subject
-            for key in flattened_configuration[subject]:
-                key_dict = dict()
-                key_dict[subject] = configuration['images'][key][subject]
-                subject_images[key] = key_dict
-            # adding different metadata per subject (Repetition Time)
+            for key in subject_all_keys:
+                subject_images[key] = dict()
             for key in subject_keys:
                 subject_metadata[key]['RepetitionTime'] = dict()
-                subject_metadata[key]['RepetitionTime'][subject] = configuration['metadata'][key]['RepetitionTime'][subject]
+            # loop for subjects within a block
+            for j in range(block_size):
+                index = i * block_size + j
+                if index < subjects:
+                    subject = subject_names[index]
+                    print(str(i) + subject)
+                    # adding images per subject
+                    for key in subject_all_keys:
+                        subject_images[key][subject] = configuration['images'][key][subject]
+                    # adding different metadata per subject (Repetition Time)
+                    for key in subject_keys:
+                        subject_metadata[key]['RepetitionTime'][subject] = \
+                            configuration['metadata'][key]['RepetitionTime'][subject]
+                    # changing name of file in case no blocks are needed; file gets name of subject
+                    if block_size == 1:
+                        file_name = subject + '_pipeline.json'
+                        path_to_new_pipeline_json = os.path.join(json_dir, file_name)
             # writing individual json file
             with open(path_to_new_pipeline_json, "w+") as f:
                 json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
