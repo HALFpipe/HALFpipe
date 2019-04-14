@@ -7,6 +7,7 @@ import pandas as pd
 import nibabel as nib
 import json
 import shutil
+import math
 from glob import glob
 from argparse import ArgumentParser
 from .cli import Cli
@@ -30,6 +31,8 @@ def main():
     ap.add_argument("-w", "--workdir")
     ap.add_argument("-p", "--nipype-plugin")
     ap.add_argument("-s", "--setup-only", action="store_true", default=False)
+    ap.add_argument("-j", "--json-file")
+    ap.add_argument("-b", "--block-size")
     args = ap.parse_args()
 
     workdir = None
@@ -50,7 +53,7 @@ def main():
     #
 
     images = dict()
-    metadata = dict()
+    configuration = dict()
     # field_maps = dict()
 
     subject_ids = []
@@ -66,7 +69,12 @@ def main():
 
     os.makedirs(workdir, exist_ok=True)
 
-    path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
+    json_dir = os.path.join(workdir, 'json_files')
+    path_to_pipeline_json = None
+    if args.json_file is not None:
+        path_to_pipeline_json = os.path.join(json_dir, args.json_file)
+    else:
+        path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
 
     #
     # helper functions
@@ -235,39 +243,59 @@ def main():
         # response0 = "Yes"
 
         if response0 == "Yes":
-            field_name = c.read("Specify the paradigm name", "rest")
-
-            metadata[field_name] = dict()
-            images[field_name] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
-            metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
-                                                                  o=str(nib.load(image).header.get_zooms()[3])))
+            configuration["rest"] = dict()
+            images["rest"] = get_files(field_description, runs=True)
+            configuration["rest"]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                configuration["rest"]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images["rest"])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
+            # metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
+            #                                                       o=str(nib.load(image).header.get_zooms()[3])))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
-            metadata[field_name]["PhaseEncodingDirection"] = \
+            configuration["rest"]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
             response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["BrainAtlasImage"] = {}
+                configuration["rest"]["BrainAtlasImage"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify Atlas name")
-                    metadata[field_name]["BrainAtlasImage"][name] = get_file("brain atlas image")
+                    configuration["rest"]["BrainAtlasImage"][name] = get_file("brain atlas image")
                     response3 = c.select("Add another Atlas?", ["Yes", "No"])
 
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ConnectivitySeeds"] = {}
+                configuration["rest"]["ConnectivitySeeds"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify seed name")
-                    metadata[field_name]["ConnectivitySeeds"][name] = get_file("seed mask image")
+                    configuration["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
             response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                metadata[field_name]["ICAMaps"] = get_file("ICA component maps image")
+                configuration["rest"]["ICAMaps"] = get_file("ICA component maps image")
+
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            configuration["rest"]["UseMovPar"] = False
+            configuration["rest"]["CSF"] = False
+            configuration["rest"]["Whitematter"] = False
+            configuration["rest"]["GlobalSignal"] = False
+            if response3 == "Yes":
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration["rest"]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration["rest"]["CSF"] = True
+                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration["rest"]["Whitematter"] = True
+                response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration["rest"]["GlobalSignal"] = True
 
             # response3 = c.select("Is field map data available?", ["Yes", "No"])
             #
@@ -292,18 +320,19 @@ def main():
         while response0 == "Yes":
             field_name = c.read("Specify the paradigm name")
 
-            metadata[field_name] = dict()
+            configuration[field_name] = dict()
             images[field_name] = get_files(field_description, runs=True)
-
-            image = next(iter(next(iter(images[field_name].values())).values()))[""]
+            configuration[field_name]["RepetitionTime"] = dict()
+            for subject in subject_ids:
+                configuration[field_name]["RepetitionTime"][subject] = float(str(nib.load(
+                    transpose(images[field_name])[""][subject]  # gets the path of the nii.gz file for each subject
+                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
             # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
             #     o = str(nib.load(image).header.get_zooms()[3])))
 
-            metadata[field_name]["RepetitionTime"] = float(str(nib.load(image).header.get_zooms()[3]))
-
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
-            metadata[field_name]["PhaseEncodingDirection"] = \
+            configuration[field_name]["PhaseEncodingDirection"] = \
                 {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
 
             description2 = "condition/explanatory variable"
@@ -334,12 +363,28 @@ def main():
 
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
 
-            metadata[field_name]["Conditions"] = conditions
-            metadata[field_name]["Contrasts"] = contrasts
+            configuration[field_name]["Conditions"] = conditions
+            configuration[field_name]["Contrasts"] = contrasts
 
-            response3 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-            metadata[field_name]["UseMovPar"] = response3 == "Yes"
-            #
+            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
+            configuration[field_name]["UseMovPar"] = False
+            configuration[field_name]["CSF"] = False
+            configuration[field_name]["Whitematter"] = False
+            configuration[field_name]["GlobalSignal"] = False
+            if response3 == "Yes":
+                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[field_name]["UseMovPar"] = True
+                response4 = c.select("Add CSF to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[field_name]["CSF"] = True
+                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[field_name]["Whitematter"] = True
+                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[field_name]["GlobalSignal"] = True
+
             # if response3 == "Yes":
             #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
 
@@ -347,10 +392,10 @@ def main():
 
         c.info("")
 
-        metadata["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
-                                                  o=str(125.0)))
-        metadata["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
-                                                 o=str(5.0)))
+        configuration["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
+                                                       o=str(125.0)))
+        configuration["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
+                                                      o=str(5.0)))
 
         c.info("")
 
@@ -377,15 +422,15 @@ def main():
                 group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
 
-            metadata["SubjectGroups"] = groups
-            metadata["GroupContrasts"] = group_contrasts
+            configuration["SubjectGroups"] = groups
+            configuration["GroupContrasts"] = group_contrasts
 
-        metadata["Covariates"] = covariates
+        configuration["Covariates"] = covariates
 
         c.info("")
 
         with open(path_to_pipeline_json, "w+") as f:
-            json.dump({"images": images, "metadata": metadata}, f, indent=4)
+            json.dump({"images": images, "metadata": configuration}, f, indent=4)
 
         c.info("Saved configuration")
 
@@ -393,9 +438,9 @@ def main():
         c.info("")
 
     if not args.setup_only:
-        workflow = init_workflow(workdir)
+        workflow = init_workflow(workdir, path_to_pipeline_json)
 
-        init_logging(workdir)
+        init_logging(workdir, path_to_pipeline_json)
 
         if args.nipype_plugin is None:
             plugin_settings = {
@@ -419,13 +464,13 @@ def main():
         # copy confounds.tsv from task to intermediates/subject
         # access pipeline.json to get subjects and tasks for path
         with open(path_to_pipeline_json, "r") as f:
-            metadata = json.load(f)
+            configuration = json.load(f)
 
-        flattened_metadata = transpose(metadata['images'])
+        flattened_configuration = transpose(configuration['images'])
 
-        for subject in flattened_metadata:
+        for subject in flattened_configuration:
             # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-            for key in flattened_metadata[subject]:
+            for key in flattened_configuration[subject]:
                 if key not in ["T1w", "T2w", "FLAIR"]:
                     # Taskdata exists
                     task = key
@@ -443,20 +488,20 @@ def main():
                     pass
         # calculate correlation matrix from atlas matrix
         # save correlation matrix as csv
-        for subject in flattened_metadata:
-            for key in flattened_metadata[subject]:
+        for subject in flattened_configuration:
+            for key in flattened_configuration[subject]:
                 if key not in ["T1w", "T2w", "FLAIR"]:
                     task = key
                     try:
                         for idx, atlas_idx in enumerate(
-                                ["%04d" % x for x in range(len(metadata['metadata'][task]['BrainAtlasImage']))]):
-                            if len(metadata['metadata'][task]['BrainAtlasImage']) >= 2:
+                                ["%04d" % x for x in range(len(configuration['metadata'][task]['BrainAtlasImage']))]):
+                            if len(configuration['metadata'][task]['BrainAtlasImage']) >= 2:
                                 try:
                                     source = workdir + '/intermediates/' + subject + '/' + task + \
                                              '/brainatlas_matrix' + str(atlas_idx) + '.txt'
                                     destination = workdir + '/intermediates/' + subject + '/' + task + \
                                                   '/corr_matrix_' + \
-                                                  list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
                                     atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
@@ -466,7 +511,7 @@ def main():
                                     shutil.move(source,
                                                 workdir + '/intermediates/' + subject + '/' + task +
                                                 '/brainatlas_timeseries_' +
-                                                list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
                                 except OSError as e:
                                     print(
                                         'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
@@ -477,7 +522,7 @@ def main():
                                              '/brainatlas_matrix.txt'
                                     destination = workdir + '/intermediates/' + subject + '/' + task + \
                                                   '/corr_matrix_' + \
-                                                  list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
                                     atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
@@ -487,7 +532,7 @@ def main():
                                     shutil.move(source,
                                                 workdir + '/intermediates/' + subject + '/' + task +
                                                 '/brainatlas_timeseries_' +
-                                                list(metadata['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
                                 except OSError as e:
                                     print(
                                         'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
@@ -495,3 +540,80 @@ def main():
 
                     except KeyError:
                         pass
+    else:
+        os.makedirs(json_dir, exist_ok=True)
+
+        with open(path_to_pipeline_json, "r") as f:
+            configuration = json.load(f)
+
+        flattened_configuration = transpose(configuration['images'])
+
+        # selecting metadata to be shared among subjects
+        subject_metadata = dict()
+
+        subject_keys = ['TemporalFilter', 'SmoothingFWHM']
+        for key in subject_keys:
+            subject_metadata[key] = configuration['metadata'][key]
+
+        # getting names of paradigms (rest, task, etc) using keys in image section
+        subject_all_keys = list(configuration['images'])
+        subject_keys = list(configuration['images'])
+        subject_keys.remove('T1w')
+
+        for key in subject_keys:
+            paradigm_keys = list(configuration['metadata'][key])
+            paradigm_keys.remove('RepetitionTime')
+            subject_metadata[key] = dict()
+            for paradigm_key in paradigm_keys:
+                subject_metadata[key][paradigm_key] = configuration['metadata'][key][paradigm_key]
+
+        # file to save execution commands per subject
+        file = open(os.path.join(workdir, "execute.txt"), "w")
+        command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
+
+        block_size = 1
+        if args.block_size is not None:
+            try:
+                block_size = int(args.block_size)
+            except Exception as ex:
+                print(ex)
+                print('The number of subjects per block must be an integer')
+                print('No blocks are being generated. Json files per subject are being generated')
+
+        subject_names = list(flattened_configuration)
+        subjects = len(subject_names)
+        blocks = math.ceil(subjects / block_size)
+
+        # loop for block
+        for i in range(blocks):
+            file_name = 'block_' + str(i) + '_pipeline.json'
+            path_to_new_pipeline_json = os.path.join(json_dir, file_name)
+            subject_images = dict()
+            for key in subject_all_keys:
+                subject_images[key] = dict()
+            for key in subject_keys:
+                subject_metadata[key]['RepetitionTime'] = dict()
+            # loop for subjects within a block
+            for j in range(block_size):
+                index = i * block_size + j
+                if index < subjects:
+                    subject = subject_names[index]
+                    print(str(i) + subject)
+                    # adding images per subject
+                    for key in subject_all_keys:
+                        subject_images[key][subject] = configuration['images'][key][subject]
+                    # adding different metadata per subject (Repetition Time)
+                    for key in subject_keys:
+                        subject_metadata[key]['RepetitionTime'][subject] = \
+                            configuration['metadata'][key]['RepetitionTime'][subject]
+                    # changing name of file in case no blocks are needed; file gets name of subject
+                    if block_size == 1:
+                        file_name = subject + '_pipeline.json'
+                        path_to_new_pipeline_json = os.path.join(json_dir, file_name)
+            # writing individual json file
+            with open(path_to_new_pipeline_json, "w+") as f:
+                json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
+
+            file.write(command + file_name + '\n')
+
+        file.close()

@@ -133,7 +133,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             # json is loaded from pandas to json and then dumped to get indent in file
             json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4)
     else:
-        trimmed_subjects = subjects # in case there are no excluded subjects
+        trimmed_subjects = subjects  # in case there are no excluded subjects
 
     # option 1: one-sample t-test
     contrasts = [["mean", "T", ["intercept"], [1]]]
@@ -207,17 +207,9 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     contrast_names = [c[0] for c in contrasts]
 
-    # actuallt run FSL FLAME
+    # actually run FSL FLAME
 
-    if outname not in ["reho", "alff"]:
-        flameo = pe.MapNode(
-            interface=fsl.FLAMEO(
-                run_mode=run_mode
-            ),
-            name="flameo",
-            iterfield=["cope_file", "var_cope_file"]
-        )
-    else:
+    if outname in ["reho", "alff"]:
         flameo = pe.MapNode(
             interface=fsl.FLAMEO(
                 run_mode=run_mode
@@ -225,20 +217,70 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             name="flameo",
             iterfield=["cope_file"]
         )
+    else:
+        flameo = pe.MapNode(
+            interface=fsl.FLAMEO(
+                run_mode=run_mode
+            ),
+            name="flameo",
+            iterfield=["cope_file", "var_cope_file"]
+        )
 
-    workflow.connect([
-        (inputnode, imgmerge, [
-            ("imgs", "in_files")
-        ]),
+    # construct workflow
 
-        (inputnode, maskmerge, [
-            ("mask_files", "in_files")
-        ]),
-        (maskmerge, maskagg, [
-            ("merged_file", "in_file")
-        ]),
-    ])
-    if outname not in ["reho", "alff"]:
+    if outname in ["reho", "alff"]:
+        workflow.connect([
+            (inputnode, imgmerge, [
+                ("imgs", "in_files")
+            ]),
+
+            (inputnode, maskmerge, [
+                ("mask_files", "in_files")
+            ]),
+            (maskmerge, maskagg, [
+                ("merged_file", "in_file")
+            ]),
+        ])
+
+        workflow.connect([
+            (imgmerge, flameo, [
+                ("merged_file", "cope_file")
+            ])])
+
+        workflow.connect(([
+            (level2model, flameo, [
+                ("design_mat", "design_file"),
+                ("design_con", "t_con_file"),
+                ("design_grp", "cov_split_file")
+            ]),
+
+            (flameo, outputnode, [
+                (("copes", flatten), "imgs"),
+                (("var_copes", flatten), "varcopes"),
+                (("zstats", flatten), "zstats"),
+                (("tdof", flatten), "dof_files")
+            ]),
+            (maskagg, flameo, [
+                ("out_file", "mask_file")
+            ]),
+            (maskagg, outputnode, [
+                ("out_file", "mask_file")
+            ]),
+        ]))
+    else:
+        workflow.connect([
+            (inputnode, imgmerge, [
+                ("imgs", "in_files")
+            ]),
+
+            (inputnode, maskmerge, [
+                ("mask_files", "in_files")
+            ]),
+            (maskmerge, maskagg, [
+                ("merged_file", "in_file")
+            ]),
+        ])
+
         workflow.connect([
             (inputnode, gendofimage, [
                 ("imgs", "in_file"),
@@ -253,12 +295,11 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                 ("out_file", "in_files")
             ])])
 
-    workflow.connect([
-        (imgmerge, flameo, [
-            ("merged_file", "cope_file")
-        ])])
+        workflow.connect([
+            (imgmerge, flameo, [
+                ("merged_file", "cope_file")
+            ])])
 
-    if outname not in ["reho", "alff"]:
         workflow.connect([
             (varcopemerge, flameo, [
                 ("merged_file", "var_cope_file")
@@ -267,25 +308,25 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                 ("merged_file", "dof_var_cope_file")
             ])])
 
-    workflow.connect(([
-        (level2model, flameo, [
-            ("design_mat", "design_file"),
-            ("design_con", "t_con_file"),
-            ("design_grp", "cov_split_file")
-        ]),
+        workflow.connect(([
+            (level2model, flameo, [
+                ("design_mat", "design_file"),
+                ("design_con", "t_con_file"),
+                ("design_grp", "cov_split_file")
+            ]),
 
-        (flameo, outputnode, [
-            (("copes", flatten), "imgs"),
-            (("var_copes", flatten), "varcopes"),
-            (("zstats", flatten), "zstats"),
-            (("tdof", flatten), "dof_files")
-        ]),
-        (maskagg, flameo, [
-            ("out_file", "mask_file")
-        ]),
-        (maskagg, outputnode, [
-            ("out_file", "mask_file")
-        ]),
-    ]))
+            (flameo, outputnode, [
+                (("copes", flatten), "imgs"),
+                (("var_copes", flatten), "varcopes"),
+                (("zstats", flatten), "zstats"),
+                (("tdof", flatten), "dof_files")
+            ]),
+            (maskagg, flameo, [
+                ("out_file", "mask_file")
+            ]),
+            (maskagg, outputnode, [
+                ("out_file", "mask_file")
+            ]),
+        ]))
 
     return workflow, contrast_names
