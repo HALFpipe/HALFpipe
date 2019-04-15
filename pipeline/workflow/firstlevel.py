@@ -28,12 +28,15 @@ from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
 
+from .interfaces import GetSegmentationMean, ApplyXfmSegmentation
+
 _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
                           't1_tpms', 't1_aseg', 't1_aparc',
                           't1_2_mni_forward_transform', 't1_2_mni_reverse_transform',
                           'subjects_dir', 'subject_id',
                           't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform']
 
+# _func_inputnode_fields.append('mni_seg')
 
 def get_first(l):
     """
@@ -110,7 +113,7 @@ def init_subject_wf(item, workdir, images, data):
 
     for i, (name, value1) in enumerate(value0.items()):
         if name not in anat_field_names:
-            task_wf = pe.Workflow(name="task_" + name)
+            task_wf = pe.Workflow(name="task_" + name)  # change this to func_
 
             inputnode = pe.Node(niu.IdentityInterface(
                 fields=_func_inputnode_fields,
