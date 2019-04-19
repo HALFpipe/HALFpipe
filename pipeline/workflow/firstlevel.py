@@ -34,9 +34,9 @@ _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
                           't1_tpms', 't1_aseg', 't1_aparc',
                           't1_2_mni_forward_transform', 't1_2_mni_reverse_transform',
                           'subjects_dir', 'subject_id',
-                          't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform']
+                          't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform',
+                          'mni_seg']
 
-# _func_inputnode_fields.append('mni_seg')
 
 def get_first(l):
     """
@@ -128,7 +128,10 @@ def init_subject_wf(item, workdir, images, data):
             ])
 
             metadata = data["metadata"][name]
-            metadata["RepetitionTime"] = metadata["RepetitionTime"][subject]  # TR for one subject only
+            try:
+                metadata["RepetitionTime"] = metadata["RepetitionTime"][subject]  # TR for one subject only
+            except TypeError:
+                pass
             metadata["SmoothingFWHM"] = data["metadata"]["SmoothingFWHM"]
             metadata["TemporalFilter"] = data["metadata"]["TemporalFilter"]
             if "UseMovPar" not in metadata:
@@ -281,12 +284,33 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         name="mask_preproc"
     )
 
+    apply_xfm = pe.Node(
+        interface=ApplyXfmSegmentation(),
+        name="apply_xfm"
+    )
+
+    # Gets rid of zero valued voxels for time seried for CSF and white matter
+    csf_wm_maths = pe.Node(
+        interface=fsl.ApplyMask(),
+        name="csf_wm_maths"
+    )
+
+    # Creates label string for fslmeants
+    def get_csf_wm_label_string(in_file):
+        return f"--label={in_file}"
+
+    csf_wm_label_string = pe.Node(
+        name="csf_wm_label_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["label_string"],
+                               function=get_csf_wm_label_string)
+    )
+
     # Calculates the regression time series for CSF and white matter
     csf_wm_meants = pe.Node(
         interface=fsl.ImageMeants(),
         name="csf_wm_meants",
     )
-    csf_wm_meants.inputs.args = "--label=/root/src/pipeline/static/templates/fmriPrepSeg_to_FSL.nii.gz"
 
     # Calculates the regression time series for global signal
     gs_meants = pe.Node(
@@ -326,7 +350,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     wf.connect([
         (inputnode, func_preproc_wf, [
             (f, "inputnode.%s" % f)
-            for f in _func_inputnode_fields
+            for f in _func_inputnode_fields[:-1]
         ]),
         (func_preproc_wf, temporalfilter_wf, [
             ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
@@ -337,17 +361,24 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (func_preproc_wf, maskpreproc, [
             ("outputnode.bold_mask_mni", "mask_file")
         ]),
-        (func_preproc_wf, gs_meants, [
-            ("outputnode.bold_mask_mni", "mask")
-        ]),
         (maskpreproc, ds_preproc, [
             ("out_file", "in_file")
         ]),
-        (maskpreproc, gs_meants, [
+        # Workflow for CSF/WM time series
+        (inputnode, apply_xfm, [
+            ("mni_seg", "volume")
+        ]),
+        (apply_xfm, csf_wm_maths, [
+            ("transformed_volume", "in_file")
+        ]),
+        (func_preproc_wf, csf_wm_maths, [
+            ("outputnode.bold_mask_mni", "mask_file")
+        ]),
+        (csf_wm_maths, csf_wm_label_string, [
             ("out_file", "in_file")
         ]),
-        (gs_meants, ds_gs_meants, [
-            ("out_file", "in_file")
+        (csf_wm_label_string, csf_wm_meants, [
+            ("label_string", "args")
         ]),
         (maskpreproc, csf_wm_meants, [
             ("out_file", "in_file")
@@ -355,6 +386,17 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (csf_wm_meants, ds_csf_wm_meants, [
             ("out_file", "in_file")
         ]),
+        # Workflow for GS time series
+        (maskpreproc, gs_meants, [
+            ("out_file", "in_file")
+        ]),
+        (gs_meants, ds_gs_meants, [
+            ("out_file", "in_file")
+        ]),
+        (func_preproc_wf, gs_meants, [
+            ("outputnode.bold_mask_mni", "mask")
+        ]),
+
         (temporalfilter_wf, tsnr_wf, [
             ("outputnode.filtered_file", "inputnode.bold_file")
         ]),
@@ -399,12 +441,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     suffix="brainatlas_matrix"),
                 name="ds_%s_matrix_file" % name, run_without_submitting=True)
             wf.connect([
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
                     ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
-                ]),
-                (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.filtered_file", "inputnode.bold_file")
                 ]),
             ])
             wf.connect([
@@ -620,8 +662,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         interface=niu.IdentityInterface(
             fields=flatten([
                 [["%s_varcope" % outname,
-                 "%s_mask_file" % outname,
-                 "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
+                  "%s_mask_file" % outname,
+                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
                 [["%s_img" % outname] for outname in outnames]
                 for outnames in outnamesbywf.values()]
             )
