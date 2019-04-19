@@ -42,13 +42,19 @@ def init_seedconnectivity_wf(seeds,
     seednames = list(seeds.keys())  # contains the keys (seed names)
     seed_paths = [seeds[k] for k in seednames]  # contains the values (filenames)
 
+    maths = pe.MapNode(
+        interface=fsl.ApplyMask(),
+        name="maths",
+        iterfield=["in_file"]
+    )
+    maths.inputs.in_file = seed_paths
+
     # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
         interface=fsl.ImageMeants(),
         name="meants",
         iterfield=["mask"]
     )
-    meants.inputs.mask = seed_paths
 
     # calculate the regression of the mean time series onto the functional image
     # the result is the seed connectivity map
@@ -93,6 +99,12 @@ def init_seedconnectivity_wf(seeds,
     )
 
     workflow.connect([
+        (inputnode, maths, [
+            ("mask_file", "mask_file")
+        ]),
+        (maths, meants, [
+            ("out_file", "mask")
+        ]),
         (inputnode, meants, [
             ("bold_file", "in_file")
         ]),
