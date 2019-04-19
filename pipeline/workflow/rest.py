@@ -344,35 +344,57 @@ def init_brain_atlas_wf(atlases, name="firstlevel"):
         name="inputnode"
     )
 
-    # make two (ordered) lists from (unordered) dictionary of seeds
-    atlasnames = list(atlases.keys())  # contains the keys (seed names)
-    atlas_args = ['--label=' + atlases[k] for k in atlasnames]  # contains the values (filenames)
+    atlasnames = list(atlases.keys())
+    atlas_paths = [atlases[k] for k in atlasnames]
 
-    # calculate the mean time series of the region defined by each mask
+    maths = pe.MapNode(
+        interface=fsl.ApplyMask(),
+        name="maths",
+        iterfield=["in_file"]
+    )
+    maths.inputs.in_file = atlas_paths
+
+    # Creates label string for fslmeants
+    def get_brain_atlas_label_string(in_file):
+        label_commands = []
+        for atlas in in_file:
+            label_commands.append(f"--label={atlas}")
+        return label_commands
+
+    brain_atlas_label_string = pe.Node(
+        name="csf_wm_label_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["label_string"],
+                               function=get_brain_atlas_label_string),
+    )
+
     meants = pe.MapNode(
         interface=fsl.ImageMeants(),
         name="meants",
         iterfield=["args"]
     )
-    meants.inputs.args = atlas_args
 
-    # outputs are cope, varcope and zstat for each seed region and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
         fields=["brainatlas_matrix_file"]),
         name="outputnode"
     )
 
     workflow.connect([
+        (inputnode, maths, [
+            ("mask_file", "mask_file")
+        ]),
         (inputnode, meants, [
             ("bold_file", "in_file")
+        ]),
+        (maths, brain_atlas_label_string, [
+            ("out_file", "in_file")
+        ]),
+        (brain_atlas_label_string, meants, [
+            ("label_string", "args")
         ]),
         (meants, outputnode, [
             ("out_file", "brainatlas_matrix_file"),
         ]),
     ])
-
-    # # connect outputs named for the seeds
-    # for i, atlasname in enumerate(atlasnames):
-    #     workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % atlasname)
 
     return workflow, atlasnames

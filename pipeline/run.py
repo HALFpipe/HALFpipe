@@ -444,11 +444,11 @@ def main():
 
         if args.nipype_plugin is None:
             plugin_settings = {
-                "plugin": "MultiProc",
+                "plugin"     : "MultiProc",
                 "plugin_args": {
-                    "n_procs": cpu_count(),
+                    "n_procs"           : cpu_count(),
                     "raise_insufficient": False,
-                    "maxtasksperchild": 1,
+                    "maxtasksperchild"  : 1,
                 }
             }
         else:
@@ -501,7 +501,8 @@ def main():
                                              '/brainatlas_matrix' + str(atlas_idx) + '.txt'
                                     destination = workdir + '/intermediates/' + subject + '/' + task + \
                                                   '/corr_matrix_' + \
-                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
+                                                      idx] + '.csv'
                                     atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
@@ -511,7 +512,8 @@ def main():
                                     shutil.move(source,
                                                 workdir + '/intermediates/' + subject + '/' + task +
                                                 '/brainatlas_timeseries_' +
-                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
+                                                    idx] + '.txt')
                                 except OSError as e:
                                     print(
                                         'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
@@ -522,7 +524,8 @@ def main():
                                              '/brainatlas_matrix.txt'
                                     destination = workdir + '/intermediates/' + subject + '/' + task + \
                                                   '/corr_matrix_' + \
-                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.csv'
+                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
+                                                      idx] + '.csv'
                                     atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
@@ -532,7 +535,8 @@ def main():
                                     shutil.move(source,
                                                 workdir + '/intermediates/' + subject + '/' + task +
                                                 '/brainatlas_timeseries_' +
-                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[0] + '.txt')
+                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
+                                                    idx] + '.txt')
                                 except OSError as e:
                                     print(
                                         'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
