@@ -4,8 +4,6 @@
 
 import os
 import nibabel as nib
-import pandas as pd
-import numpy as np
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -42,8 +40,8 @@ def init_seedconnectivity_wf(seeds,
     """
     workflow = pe.Workflow(name=name)
 
-    # inputs are the bold file, the mask file and the confounds file 
-    # that contains the movement parameters
+    # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
+    # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
@@ -80,6 +78,7 @@ def init_seedconnectivity_wf(seeds,
         regressor_names.append("GS")
 
     def add_csf_wm_gs(seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
         designs = []
         for idx, seed_file in enumerate(seed_files):
@@ -259,8 +258,8 @@ def init_dualregression_wf(componentsfile,
     """
     workflow = pe.Workflow(name=name)
 
-    # inputs are the bold file, the mask file and the confounds file 
-    # that contains the movement parameters
+    # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
+    # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
@@ -301,8 +300,8 @@ def init_dualregression_wf(componentsfile,
         regressor_names.append("GS")
 
     def add_csf_wm_gs(design_file, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates the design matrix for the glm with added regressors"""
         import pandas as pd  # in-function import necessary for nipype-function
-
         design_df = pd.read_csv(design_file, sep=" ", header=None).dropna(how='all', axis=1)
         design_df.columns = ['component_' + str(idx) for idx, val in enumerate(design_df.columns)]
         mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
@@ -465,7 +464,6 @@ def init_dualregression_wf(componentsfile,
         (splitzstatsimage, splitzstats, [
             ("out_files", "inlist"),
         ]),
-
         (inputnode, gendoffile, [
             ("bold_file", "in_file"),
         ]),
