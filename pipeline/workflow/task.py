@@ -144,7 +144,7 @@ def init_glm_wf(conditions,
         name="stats"
     )
 
-    # actuallt estimate the firsy level model
+    # actually estimate the first level model
     modelestimate = pe.Node(
         interface=fsl.FILMGLS(smooth_autocorr=True,
                               mask_size=5),

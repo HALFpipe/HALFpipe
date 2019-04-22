@@ -28,12 +28,15 @@ from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
 
+from .interfaces import GetSegmentationMean, ApplyXfmSegmentation
+
 _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
                           't1_tpms', 't1_aseg', 't1_aparc',
                           't1_2_mni_forward_transform', 't1_2_mni_reverse_transform',
                           'subjects_dir', 'subject_id',
                           't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform']
 
+# _func_inputnode_fields.append('mni_seg')
 
 def get_first(l):
     """
@@ -110,7 +113,7 @@ def init_subject_wf(item, workdir, images, data):
 
     for i, (name, value1) in enumerate(value0.items()):
         if name not in anat_field_names:
-            task_wf = pe.Workflow(name="task_" + name)
+            task_wf = pe.Workflow(name="task_" + name)  # change this to func_
 
             inputnode = pe.Node(niu.IdentityInterface(
                 fields=_func_inputnode_fields,
@@ -490,6 +493,128 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
+        elif name == "seedconnectivity":
+            ds_dof_file = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    source_file=bold_file,
+                    suffix="dof"),
+                name="ds_%s_dof_file" % name, run_without_submitting=True)
+
+            wf.connect([
+                (firstlevel_wf, ds_dof_file, [
+                    ("outputnode.dof_file", "in_file")
+                ])
+            ])
+
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
+                (gs_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.gs_meants_file")
+                ]),
+                (csf_wm_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.csf_wm_meants_file")
+                ]),
+            ])
+
+            for outname in outnames:
+                ds_img = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_img" % outname),
+                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                ds_varcope = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_varcope" % outname),
+                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                ds_zstat = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_zstat" % outname),
+                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
+
+                wf.connect([
+                    (firstlevel_wf, ds_img, [
+                        ("outputnode.%s_img" % outname, "in_file")
+                    ]),
+                    (firstlevel_wf, ds_varcope, [
+                        ("outputnode.%s_varcope" % outname, "in_file")
+                    ]),
+                    (firstlevel_wf, ds_zstat, [
+                        ("outputnode.%s_zstat" % outname, "in_file")
+                    ]),
+                ])
+        elif name == "dualregression":
+            ds_dof_file = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    source_file=bold_file,
+                    suffix="dof"),
+                name="ds_%s_dof_file" % name, run_without_submitting=True)
+
+            wf.connect([
+                (firstlevel_wf, ds_dof_file, [
+                    ("outputnode.dof_file", "in_file")
+                ])
+            ])
+
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
+                (gs_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.gs_meants_file")
+                ]),
+                (csf_wm_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.csf_wm_meants_file")
+                ]),
+            ])
+
+            for outname in outnames:
+                ds_img = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_img" % outname),
+                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                ds_varcope = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_varcope" % outname),
+                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                ds_zstat = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_zstat" % outname),
+                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
+
+                wf.connect([
+                    (firstlevel_wf, ds_img, [
+                        ("outputnode.%s_img" % outname, "in_file")
+                    ]),
+                    (firstlevel_wf, ds_varcope, [
+                        ("outputnode.%s_varcope" % outname, "in_file")
+                    ]),
+                    (firstlevel_wf, ds_zstat, [
+                        ("outputnode.%s_zstat" % outname, "in_file")
+                    ]),
+                ])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -574,6 +699,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         firstlevel_wf, seednames = init_seedconnectivity_wf(
             metadata["ConnectivitySeeds"],
             metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
             name="seedconnectivity_wf"
         )
         create_ds(wf, firstlevel_wf, seednames, func_preproc_wf, temporalfilter_wf,
@@ -584,6 +714,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         firstlevel_wf, componentnames = init_dualregression_wf(
             metadata["ICAMaps"],
             metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
             name="dualregression_wf"
         )
         create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,

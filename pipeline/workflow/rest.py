@@ -17,7 +17,8 @@ from ..interface import Dof
 
 
 def init_seedconnectivity_wf(seeds,
-                             use_mov_pars, name="firstlevel"):
+                             use_mov_pars, use_csf, use_white_matter, use_global_signal,
+                             subject, output_dir, name="firstlevel"):
     """
     create workflow to calculate seed connectivity maps
     for resting state functional scans
@@ -25,16 +26,24 @@ def init_seedconnectivity_wf(seeds,
     :param seeds: dictionary of filenames by user-defined names 
         of binary masks that define the seed regions
     :param use_mov_pars: if true, regress out movement parameters when 
-        calculating seed connectivity
+        calculating the glm
+    :param use_csf: if true, regress out csf parameters when
+        calculating the glm
+    :param use_white_matter: if true, regress out white matter parameters when
+        calculating the glm
+    :param use_global_signal: if true, regress out global signal parameters when
+        calculating the glm
+    :param subject: name of subject this workflow belongs to
+    :param output_dir: path to intermediates directory
     :param name: workflow name (Default value = "firstlevel")
 
     """
     workflow = pe.Workflow(name=name)
 
-    # inputs are the bold file, the mask file and the confounds file 
-    # that contains the movement parameters
+    # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
+    # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
 
@@ -42,13 +51,90 @@ def init_seedconnectivity_wf(seeds,
     seednames = list(seeds.keys())  # contains the keys (seed names)
     seed_paths = [seeds[k] for k in seednames]  # contains the values (filenames)
 
+    # Delete zero voxels for mean time series
+    maths = pe.MapNode(
+        interface=fsl.ApplyMask(),
+        name="maths",
+        iterfield=["in_file"]
+    )
+    maths.inputs.in_file = seed_paths
+
     # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
         interface=fsl.ImageMeants(),
         name="meants",
         iterfield=["mask"]
     )
-    meants.inputs.mask = seed_paths
+
+    # create design matrix with added regressors to the seed column
+    regressor_names = []
+    if use_mov_pars:
+        regressor_names.append("MovPar")
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def add_csf_wm_gs(seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates a list of design matrices with added regressors to feed into the glm"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        designs = []
+        for idx, seed_file in enumerate(seed_files):
+            seed_df = pd.read_csv(seed_file, sep=" ", header=None).dropna(how='all', axis=1)
+            seed_df.columns = ['Seed']
+            mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+            mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
+            csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+            csf_wm_df.columns = ['CSF', 'GM', 'WM']
+            csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+            wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+            gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+            gs_df.columns = ['GS']
+            df = pd.concat([seed_df, mov_par_df, csf_df, wm_df, gs_df], axis=1)
+            if 'MovPar' not in regressor_names:
+                df.drop(columns=['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ'], inplace=True)
+            if 'CSF' not in regressor_names:
+                df.drop(columns=['CSF'], inplace=True)
+            if 'WM' not in regressor_names:
+                df.drop(columns=['WM'], inplace=True)
+            if 'GS' not in regressor_names:
+                df.drop(columns=['GS'], inplace=True)
+
+            df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
+            designs.append(file_path + str(idx) + ".txt")
+        return designs
+
+    design_node = pe.Node(
+        niu.Function(
+            input_names=["seed_files", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
+                         "file_path"],
+            output_names=["design"],
+            function=add_csf_wm_gs), name="design_node"
+    )
+    design_node.inputs.regressor_names = regressor_names
+    design_node.inputs.file_path = output_dir + "/" + subject + "_seed_"
+
+    # creates contrasts file for seedconnectivity glm
+    def get_contrast_file(design, output_dir):
+        import pandas as pd
+        import numpy as np
+        design_df = pd.read_csv(design[0], sep='\t', header=None)
+        contrasts = np.zeros(shape=design_df.shape)[0]
+        contrasts[0] = 1
+        pd.DataFrame(contrasts, dtype=np.int8).transpose().to_csv(output_dir + '/glm_contrast.txt',
+                                                                  header=False, index=False, encoding='utf-8', sep='\t')
+        return output_dir + '/glm_contrast.txt'
+
+    contrast_node = pe.Node(
+        niu.Function(
+            input_names=["design", "output_dir"],
+            output_names=["contrasts"],
+            function=get_contrast_file),
+        name="contrast_node"
+    )
+    contrast_node.inputs.output_dir = output_dir
 
     # calculate the regression of the mean time series onto the functional image
     # the result is the seed connectivity map
@@ -93,6 +179,12 @@ def init_seedconnectivity_wf(seeds,
     )
 
     workflow.connect([
+        (inputnode, maths, [
+            ("mask_file", "mask_file")
+        ]),
+        (maths, meants, [
+            ("out_file", "mask")
+        ]),
         (inputnode, meants, [
             ("bold_file", "in_file")
         ]),
@@ -100,10 +192,23 @@ def init_seedconnectivity_wf(seeds,
             ("bold_file", "in_file"),
             ("mask_file", "mask")
         ]),
-        (meants, glm, [
-            ("out_file", "design")
+        (meants, design_node, [
+            ("out_file", "seed_files"),
         ]),
-
+        (inputnode, design_node, [
+            ("confounds_file", "mov_par_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file"),
+            ("gs_meants_file", "gs_meants_file"),
+        ]),
+        (design_node, glm, [
+            ("design", "design")
+        ]),
+        (design_node, contrast_node, [
+            ("design", "design")
+        ]),
+        (contrast_node, glm, [
+            ("contrasts", "contrasts")
+        ]),
         (glm, splitimgs, [
             ("out_cope", "inlist"),
         ]),
@@ -132,24 +237,40 @@ def init_seedconnectivity_wf(seeds,
 
 
 def init_dualregression_wf(componentsfile,
-                           use_mov_pars, name="firstlevel"):
+                           use_mov_pars, use_csf, use_white_matter, use_global_signal,
+                           subject, output_dir, name="firstlevel"):
     """
     create a workflow to calculate dual regression for ICA seeds
 
     :param componentsfile: 4d image file with ica components
     :param use_mov_pars: if true, regress out movement parameters when 
-        calculating dual regression
+        calculating the glm
+    :param use_csf: if true, regress out csf parameters when
+        calculating the glm
+    :param use_white_matter: if true, regress out white matter parameters when
+        calculating the glm
+    :param use_global_signal: if true, regress out global signal parameters when
+        calculating the glm
+    :param subject: name of subject this workflow belongs to
+    :param output_dir: path to intermediates directory
     :param name: workflow name (Default value = "firstlevel")
 
     """
     workflow = pe.Workflow(name=name)
 
-    # inputs are the bold file, the mask file and the confounds file 
-    # that contains the movement parameters
+    # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
+    # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
+
+    # Delete zero voxels for mean time series
+    maths = pe.Node(
+        interface=fsl.ApplyMask(),
+        name="maths",
+    )
+    maths.inputs.in_file = componentsfile
 
     # extract number of ICA components from 4d image and name them
     ncomponents = nib.load(componentsfile).shape[3]
@@ -161,11 +282,79 @@ def init_dualregression_wf(componentsfile,
     glm0 = pe.Node(
         interface=fsl.GLM(
             out_file="beta",
-            demean=True
+            demean=True,
         ),
         name="glm0"
     )
-    glm0.inputs.design = componentsfile
+
+    # add regressors to design_matrix
+    # create design matrix with added regressors to the seed column
+    regressor_names = []
+    if use_mov_pars:
+        regressor_names.append("MovPar")
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def add_csf_wm_gs(design_file, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates the design matrix for the glm with added regressors"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        design_df = pd.read_csv(design_file, sep=" ", header=None).dropna(how='all', axis=1)
+        design_df.columns = ['component_' + str(idx) for idx, val in enumerate(design_df.columns)]
+        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([design_df, mov_par_df, csf_df, wm_df, gs_df], axis=1)
+        if 'MovPar' not in regressor_names:
+            df.drop(columns=['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ'], inplace=True)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
+        df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        return file_path
+
+    design_node = pe.Node(
+        niu.Function(
+            input_names=["design_file", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
+                         "file_path"],
+            output_names=["design"],
+            function=add_csf_wm_gs), name="design_node"
+    )
+    design_node.inputs.regressor_names = regressor_names
+    design_node.inputs.file_path = output_dir + "/" + subject + "_component.txt"
+
+    # creates contrasts file for glm1
+    def get_contrast_file(design_without_regressors, design, output_dir):
+        import pandas as pd
+        import numpy as np
+        dsw_df = pd.read_csv(design_without_regressors, delim_whitespace=True, header=None)
+        design_df = pd.read_csv(design, sep='\t', header=None)
+        contrasts = np.zeros(shape=design_df.shape)[0:len(dsw_df.columns)]
+        for idx, component in enumerate(dsw_df.columns):
+            contrasts[idx][idx] = 1
+        pd.DataFrame(contrasts, dtype=np.int8).to_csv(output_dir + '/glm_dualregression_contrast.txt',
+                                                      header=False, index=False, encoding='utf-8', sep='\t')
+        return output_dir + '/glm_dualregression_contrast.txt'
+
+    contrast_node = pe.Node(
+        niu.Function(
+            input_names=["design_without_regressors", "design", "output_dir"],
+            output_names=["contrasts"],
+            function=get_contrast_file),
+        name="contrast_node"
+    )
+    contrast_node.inputs.output_dir = output_dir
 
     # second step, calculate the temporal regression of the time series 
     # from the first step on to the bold file
@@ -223,6 +412,12 @@ def init_dualregression_wf(componentsfile,
     )
 
     workflow.connect([
+        (inputnode, maths, [
+            ("mask_file", "mask_file")
+        ]),
+        (maths, glm0, [
+            ("out_file", "design"),
+        ]),
         (inputnode, glm0, [
             ("bold_file", "in_file"),
             ("mask_file", "mask")
@@ -231,10 +426,26 @@ def init_dualregression_wf(componentsfile,
             ("bold_file", "in_file"),
             ("mask_file", "mask")
         ]),
-        (glm0, glm1, [
-            ("out_file", "design")
+        (glm0, design_node, [
+            ("out_file", "design_file")
         ]),
-
+        (inputnode, design_node, [
+            ("confounds_file", "mov_par_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file"),
+            ("gs_meants_file", "gs_meants_file"),
+        ]),
+        (design_node, glm1, [
+            ("design", "design")
+        ]),
+        (design_node, contrast_node, [
+            ("design", "design")
+        ]),
+        (glm0, contrast_node, [
+            ("out_file", "design_without_regressors")
+        ]),
+        (contrast_node, glm1, [
+            ("contrasts", "contrasts")
+        ]),
         (glm1, splitimgsimage, [
             ("out_cope", "in_file"),
         ]),
@@ -253,7 +464,6 @@ def init_dualregression_wf(componentsfile,
         (splitzstatsimage, splitzstats, [
             ("out_files", "inlist"),
         ]),
-
         (inputnode, gendoffile, [
             ("bold_file", "in_file"),
         ]),
@@ -344,35 +554,57 @@ def init_brain_atlas_wf(atlases, name="firstlevel"):
         name="inputnode"
     )
 
-    # make two (ordered) lists from (unordered) dictionary of seeds
-    atlasnames = list(atlases.keys())  # contains the keys (seed names)
-    atlas_args = ['--label=' + atlases[k] for k in atlasnames]  # contains the values (filenames)
+    atlasnames = list(atlases.keys())
+    atlas_paths = [atlases[k] for k in atlasnames]
 
-    # calculate the mean time series of the region defined by each mask
+    maths = pe.MapNode(
+        interface=fsl.ApplyMask(),
+        name="maths",
+        iterfield=["in_file"]
+    )
+    maths.inputs.in_file = atlas_paths
+
+    # Creates label string for fslmeants
+    def get_brain_atlas_label_string(in_file):
+        label_commands = []
+        for atlas in in_file:
+            label_commands.append(f"--label={atlas}")
+        return label_commands
+
+    brain_atlas_label_string = pe.Node(
+        name="csf_wm_label_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["label_string"],
+                               function=get_brain_atlas_label_string),
+    )
+
     meants = pe.MapNode(
         interface=fsl.ImageMeants(),
         name="meants",
         iterfield=["args"]
     )
-    meants.inputs.args = atlas_args
 
-    # outputs are cope, varcope and zstat for each seed region and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
         fields=["brainatlas_matrix_file"]),
         name="outputnode"
     )
 
     workflow.connect([
+        (inputnode, maths, [
+            ("mask_file", "mask_file")
+        ]),
         (inputnode, meants, [
             ("bold_file", "in_file")
+        ]),
+        (maths, brain_atlas_label_string, [
+            ("out_file", "in_file")
+        ]),
+        (brain_atlas_label_string, meants, [
+            ("label_string", "args")
         ]),
         (meants, outputnode, [
             ("out_file", "brainatlas_matrix_file"),
         ]),
     ])
-
-    # # connect outputs named for the seeds
-    # for i, atlasname in enumerate(atlasnames):
-    #     workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % atlasname)
 
     return workflow, atlasnames
