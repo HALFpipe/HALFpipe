@@ -3,10 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 from nipype.interfaces.base import BaseInterface, BaseInterfaceInputSpec, File, TraitedSpec
 from nipype.utils.filemanip import split_filename
+from nipype.interfaces.fsl import ApplyXFM
 
 import nibabel as nib
 import numpy as np
 import os
+import sys
 
 
 class ApplyXfmSegmentationInputSpec(BaseInterfaceInputSpec):
@@ -21,9 +23,9 @@ class ApplyXfmSegmentation(BaseInterface):
     input_spec = ApplyXfmSegmentationInputSpec
     output_spec = ApplyXfmSegmentationOutputSpec
 
-    def _run_interface(self,
-                       xfm="/root/src/pipeline/static/templates/icbm_to_mni_2mm.mat",
-                       ref="/root/src/pipeline/static/templates/MNI152lin_T1_2mm.nii.gz"):
+    def _run_interface(self, runtime):
+        xfm = "/root/src/pipeline/static/templates/icbm_to_mni_2mm.mat"
+        ref = "/root/src/pipeline/static/templates/MNI152lin_T1_2mm.nii.gz"
         seg_image_path = self.inputs.volume
         if not os.path.exists(seg_image_path):
             print('Error: %s not found' % seg_image_path)
@@ -41,15 +43,21 @@ class ApplyXfmSegmentation(BaseInterface):
             outdata[seg_data == label] = 1
             tempbasename = ("%d" % np.random.randint(99999)).zfill(5)
             nib.save(nib.Nifti1Image(outdata, affine=seg_img.affine), '%s.nii.gz' % tempbasename)
-            os.system("flirt -ref %s -in %s.nii -applyxfm -init %s -out %s_mni.nii.gz" % (ref, tempbasename, xfm,
-                                                                                          tempbasename))
-
+            applyxfm = ApplyXFM()
+            applyxfm.inputs.in_file = "%s.nii.gz" % tempbasename
+            applyxfm.inputs.reference = ref
+            applyxfm.inputs.apply_xfm = True
+            applyxfm.inputs.in_matrix_file = xfm
+            applyxfm.inputs.out_file = "%s_mni.nii.gz" % tempbasename
+            applyxfm.run()
             temp_data = nib.load("%s_mni.nii.gz" % tempbasename).get_data()
             out_data = out_data + (np.round(temp_data) * int(label))
             os.system("rm %s_mni.nii.gz %s.nii.gz" % (tempbasename, tempbasename))
             new_img = nib.Nifti1Image(out_data, ref_img.affine, ref_img.header)
             _, base, _ = split_filename(seg_image_path)
             nib.save(new_img, base + '_inMNI_2mm.nii')
+
+        return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
