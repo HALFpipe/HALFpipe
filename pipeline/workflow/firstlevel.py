@@ -14,7 +14,9 @@ from .fmriprepsettings import *
 
 from .func import init_temporalfilter_wf, init_tsnr_wf
 
-from .rest import init_seedconnectivity_wf, init_dualregression_wf, init_reho_wf, init_brain_atlas_wf
+from .rest import init_seedconnectivity_wf, init_dualregression_wf, init_brain_atlas_wf
+
+from .reho import init_reho_wf
 
 from .alff import create_alff
 
@@ -28,7 +30,7 @@ from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
 
-from .interfaces import GetSegmentationMean, ApplyXfmSegmentation
+from .interfaces import ApplyXfmSegmentation
 
 _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
                           't1_tpms', 't1_aseg', 't1_aparc',
@@ -454,7 +456,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.brainatlas_matrix_file", "in_file")
                 ])
             ])
-        elif name in ["reho", "alff"]:
+        elif name in ["alff"]:
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
@@ -657,6 +659,32 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
+        elif name == "reho":
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
+                (gs_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.gs_meants_file")
+                ]),
+                (csf_wm_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.csf_wm_meants_file")
+                ]),
+            ])
+
+            for outname in outnames:
+                ds_img = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_img" % outname),
+                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+
+                wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -771,6 +799,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     # ReHo["reho"]
     if True:
         firstlevel_wf = init_reho_wf(
+            metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
             name="reho_wf"
         )
         create_ds(wf, firstlevel_wf, ["reho"], func_preproc_wf, temporalfilter_wf,

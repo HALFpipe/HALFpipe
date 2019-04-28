@@ -3,18 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import nipype.algorithms.modelgen as model
-from nipype.interfaces.base import Bunch
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-import pandas as pd
-
-from ..utils import (
-    flatten,
-    get_float
-)
+from ..utils import flatten, get_float
 
 
 def init_glm_wf(conditions,
