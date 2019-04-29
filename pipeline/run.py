@@ -425,7 +425,7 @@ def main():
             configuration["SubjectGroups"] = groups
             configuration["GroupContrasts"] = group_contrasts
 
-        configuration["Covariates"] = covariates
+            configuration["Covariates"] = covariates
 
         c.info("")
 
