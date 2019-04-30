@@ -769,7 +769,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["dualregression_wf"] = componentnames
 
     # ReHo["reho"]
-    if True:
+    if "reho" in metadata:
         firstlevel_wf = init_reho_wf(
             name="reho_wf"
         )
@@ -779,7 +779,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["reho_wf"] = ["reho"]
 
     # ALFF
-    if True:
+    if "alff" in metadata:
         firstlevel_wf = create_alff(
             name="alff_wf"
         )
