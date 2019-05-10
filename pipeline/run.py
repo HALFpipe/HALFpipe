@@ -278,6 +278,14 @@ def main():
             if response3 == "Yes":
                 configuration["rest"]["ICAMaps"] = get_file("ICA component maps image")
 
+            response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
+            if response3 == "Yes":
+                configuration["rest"]["reho"] = True
+
+            response3 = c.select("Do you want to calculate ALFF?", ["Yes", "No"])
+            if response3 == "Yes":
+                configuration["rest"]["alff"] = True
+
             response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
             configuration["rest"]["UseMovPar"] = False
             configuration["rest"]["CSF"] = False
