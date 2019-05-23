@@ -78,6 +78,8 @@ def init_seedconnectivity_wf(seeds,
     def add_csf_wm_gs(seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
+        import os
+        import time
         designs = []
         for idx, seed_file in enumerate(seed_files):
             seed_df = pd.read_csv(seed_file, sep=" ", header=None).dropna(how='all', axis=1)
@@ -101,6 +103,11 @@ def init_seedconnectivity_wf(seeds,
                 df.drop(columns=['GS'], inplace=True)
 
             df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
+            print(df)
+            if not os.path.isfile(file_path + str(idx) + ".txt"):
+                time.sleep(1)
+                df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
+                time.sleep(1)
             designs.append(file_path + str(idx) + ".txt")
         return designs
 
@@ -300,6 +307,8 @@ def init_dualregression_wf(componentsfile,
     def add_csf_wm_gs(design_file, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates the design matrix for the glm with added regressors"""
         import pandas as pd  # in-function import necessary for nipype-function
+        import os
+        import time
         design_df = pd.read_csv(design_file, sep=" ", header=None).dropna(how='all', axis=1)
         design_df.columns = ['component_' + str(idx) for idx, val in enumerate(design_df.columns)]
         mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
@@ -320,6 +329,11 @@ def init_dualregression_wf(componentsfile,
         if 'GS' not in regressor_names:
             df.drop(columns=['GS'], inplace=True)
         df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        print(df)
+        if not os.path.isfile(file_path):
+            time.sleep(1)
+            df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+            time.sleep(1)
         return file_path
 
     design_node = pe.Node(
