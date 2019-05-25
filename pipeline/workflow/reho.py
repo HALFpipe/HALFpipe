@@ -1,10 +1,16 @@
 import os
 import sys
 import numpy as np
+
+from pathlib import Path
+
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from nipype.interfaces import fsl
-#import nibabel as nb
+from nipype.interfaces import io as nio
+
+
+from ..utils import create_directory
 
 
 def f_kendall(timeseries_matrix):
@@ -308,6 +314,12 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     """
     workflow = pe.Workflow(name=name)
 
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
+
     # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
@@ -346,18 +358,18 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         if 'GS' not in regressor_names:
             df.drop(columns=['GS'], inplace=True)
 
-        df.to_csv(file_path + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
-        return file_path + ".txt"
+        df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        return file_path
 
     reho_imports = ['import os', 'import sys', 'import nibabel as nb',
                     'import numpy as np',
                     'from pipeline.workflow.reho import f_kendall']
     raw_reho_map = pe.Node(niu.Function(input_names=['in_file', 'mask_file',
-                                                     'cluster_size'],
-                                        output_names=['out_file'],
-                                        function=compute_reho,
-                                        imports=reho_imports),
-                           name='reho_img')
+                                                        'cluster_size'],
+                                           output_names=['out_file'],
+                                           function=compute_reho,
+                                           imports=reho_imports),
+                              name='reho_img')
 
     raw_reho_map.inputs.cluster_size = 27
 
@@ -368,12 +380,13 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
             function=create_design), name="design_node"
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = output_dir + "/" + subject + "_reho_design"
+    design_node.inputs.file_path = nipype_dir + f"/{subject}_reho_design.txt"
 
     glm = pe.Node(
         interface=fsl.GLM(),
         name="glm",
     )
+    glm.inputs.out_res_name = 'reho_residuals.nii.gz'
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(

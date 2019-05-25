@@ -84,7 +84,8 @@ def init_seedconnectivity_wf(seeds,
     if use_global_signal:
         regressor_names.append("GS")
 
-    def add_csf_wm_gs(seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+    def add_csf_wm_gs(seed_names, seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names,
+                      file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
         designs = []
@@ -109,19 +110,21 @@ def init_seedconnectivity_wf(seeds,
             if 'GS' not in regressor_names:
                 df.drop(columns=['GS'], inplace=True)
 
-            df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
-            designs.append(file_path + str(idx) + ".txt")
+            save_path = file_path + '_' + str(seed_names[idx]) + '_design.txt'
+            df.to_csv(save_path, sep="\t", encoding='utf-8', header=False, index=False)
+            designs.append(save_path)
         return designs
 
     design_node = pe.Node(
         niu.Function(
-            input_names=["seed_files", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
-                         "file_path"],
+            input_names=["seed_names", "seed_files", "mov_par_file", "csf_wm_meants_file", "gs_meants_file",
+                         "regressor_names", "file_path"],
             output_names=["design"],
             function=add_csf_wm_gs), name="design_node", overwrite=True
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = nipype_dir + "/" + subject + "_seed_"
+    design_node.inputs.file_path = nipype_dir + "/" + subject
+    design_node.inputs.seed_names = seednames
 
     # creates contrasts file for seedconnectivity glm
     def get_contrast_file(design, output_dir):
@@ -345,7 +348,7 @@ def init_dualregression_wf(componentsfile,
             function=add_csf_wm_gs), name="design_node", overwrite=True
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = nipype_dir + "/" + subject + "_component.txt"
+    design_node.inputs.file_path = nipype_dir + "/" + subject + "_ica_template_design.txt"
 
     # creates contrasts file for glm1
     def get_contrast_file(design_without_regressors, design, output_dir):
