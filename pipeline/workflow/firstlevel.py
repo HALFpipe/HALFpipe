@@ -456,26 +456,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.brainatlas_matrix_file", "in_file")
                 ])
             ])
-        elif name in ["alff"]:
-            wf.connect([
-                (func_preproc_wf, firstlevel_wf, [
-                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
-                ]),
-                (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.filtered_file", "inputnode.bold_file")
-                ]),
-            ])
-
-            for outname in outnames:
-                ds_img = pe.Node(
-                    DerivativesDataSink(
-                        base_directory=output_dir,
-                        source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
-
-                wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
         elif name == 'glm':
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -685,6 +665,32 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
 
                 wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
+        elif name == "alff":
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
+                (gs_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.gs_meants_file")
+                ]),
+                (csf_wm_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.csf_wm_meants_file")
+                ]),
+            ])
+
+            for outname in outnames:
+                ds_img = pe.Node(
+                    DerivativesDataSink(
+                        base_directory=output_dir,
+                        source_file=bold_file,
+                        suffix="%s_img" % outname),
+                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+
+                wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -815,6 +821,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     # ALFF
     if "alff" in metadata:
         firstlevel_wf = create_alff(
+            metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
             name="alff_wf"
         )
         firstlevel_wf.get_node('hp_input').iterables = ('hp', [0.009])
