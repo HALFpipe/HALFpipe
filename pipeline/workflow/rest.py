@@ -497,11 +497,15 @@ def init_dualregression_wf(componentsfile,
     return workflow, componentnames
 
 
-def init_brain_atlas_wf(atlases, name="firstlevel"):
+def init_brain_atlas_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, atlases,
+                        name="firstlevel"):
     """
-    create workflow to calculate seed connectivity maps
-    for resting state functional scans
-
+    create workflow for brainatlas
+    :param use_mov_pars: regression - Movement parameters
+    :param use_csf: regression - CSF
+    :param use_white_matter: regression - White Matter
+    :param use_global_signal: regression - Global Signal
+    :param subject:
     :param atlases: dictionary of filenames by user-defined names
         of atlases
     :param name: workflow name (Default value = "firstlevel")
@@ -509,12 +513,67 @@ def init_brain_atlas_wf(atlases, name="firstlevel"):
     """
     workflow = pe.Workflow(name=name)
 
-    # inputs are the bold file, the mask file and the confounds file
-    # that contains the movement parameters
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
+
+    # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
+
+    # create design matrix with added regressors to the seed column
+    regressor_names = []
+    if use_mov_pars:
+        regressor_names.append("MovPar")
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def create_design(mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates a list of design matrices with added regressors to feed into the glm"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([mov_par_df, csf_df, wm_df, gs_df], axis=1)
+        if 'MovPar' not in regressor_names:
+            df.drop(columns=['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ'], inplace=True)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
+
+        df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        return file_path
+
+    design_node = pe.Node(
+        niu.Function(
+            input_names=["mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            output_names=["design"],
+            function=create_design), name="design_node"
+    )
+    design_node.inputs.regressor_names = regressor_names
+    design_node.inputs.file_path = nipype_dir + f"/{subject}_brainatlas_design.txt"
+
+    glm = pe.Node(
+        interface=fsl.GLM(),
+        name="glm",
+    )
+    glm.inputs.out_res_name = 'brainatlas_residuals.nii.gz'
 
     atlasnames = list(atlases.keys())
     atlas_paths = [atlases[k] for k in atlasnames]
@@ -552,11 +611,22 @@ def init_brain_atlas_wf(atlases, name="firstlevel"):
     )
 
     workflow.connect([
+        (inputnode, design_node, [
+            ("confounds_file", "mov_par_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file"),
+            ("gs_meants_file", "gs_meants_file"),
+        ]),
+        (inputnode, glm, [
+            ("bold_file", "in_file"),
+        ]),
+        (design_node, glm, [
+            ("design", "design"),
+        ]),
         (inputnode, maths, [
             ("mask_file", "mask_file")
         ]),
-        (inputnode, meants, [
-            ("bold_file", "in_file")
+        (glm, meants, [
+            ("out_res", "in_file")
         ]),
         (maths, brain_atlas_label_string, [
             ("out_file", "in_file")

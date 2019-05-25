@@ -14,11 +14,6 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and fractional ALFF maps
 
-    Parameters
-    ----------
-    name : string
-        Workflow name
-
     Returns
     -------
     alff_workflow : workflow object

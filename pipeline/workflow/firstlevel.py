@@ -443,12 +443,18 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     suffix="brainatlas_matrix"),
                 name="ds_%s_matrix_file" % name, run_without_submitting=True)
             wf.connect([
-                (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.filtered_file", "inputnode.bold_file")
-                ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
                     ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (temporalfilter_wf, firstlevel_wf, [
+                    ("outputnode.filtered_file", "inputnode.bold_file")
+                ]),
+                (gs_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.gs_meants_file")
+                ]),
+                (csf_wm_meants, firstlevel_wf, [
+                    ("out_file", "inputnode.csf_wm_meants_file")
                 ]),
             ])
             wf.connect([
@@ -766,6 +772,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["firstlevel_wf"] = connames
     if "BrainAtlasImage" in metadata:
         firstlevel_wf, atlasnames = init_brain_atlas_wf(
+            metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
             metadata["BrainAtlasImage"],
             name="brainatlas_wf"
         )
