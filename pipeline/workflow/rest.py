@@ -103,11 +103,6 @@ def init_seedconnectivity_wf(seeds,
                 df.drop(columns=['GS'], inplace=True)
 
             df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
-            print(df)
-            if not os.path.isfile(file_path + str(idx) + ".txt"):
-                time.sleep(1)
-                df.to_csv(file_path + str(idx) + ".txt", sep="\t", encoding='utf-8', header=False, index=False)
-                time.sleep(1)
             designs.append(file_path + str(idx) + ".txt")
         return designs
 
@@ -329,11 +324,6 @@ def init_dualregression_wf(componentsfile,
         if 'GS' not in regressor_names:
             df.drop(columns=['GS'], inplace=True)
         df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
-        print(df)
-        if not os.path.isfile(file_path):
-            time.sleep(1)
-            df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
-            time.sleep(1)
         return file_path
 
     design_node = pe.Node(
