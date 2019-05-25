@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import pathlib
 
 
 def get_path(path, EXT_PATH):
@@ -128,3 +129,10 @@ def lookup(d, subject_id=None, run_id=None, condition_id=None):
             return {k: flatten(v) for k, v in dd.items()}
         return dd
     return flatten(o)
+
+
+def create_directory(directory_path):
+    directory = pathlib.Path(directory_path)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory_path
+

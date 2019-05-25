@@ -5,6 +5,8 @@
 import os
 import nibabel as nib
 
+from pathlib import Path
+
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
@@ -12,6 +14,7 @@ from nipype.interfaces import fsl
 from fmriprep.interfaces.bids import _splitext
 
 from ..interface import Dof
+from ..utils import create_directory
 
 
 def init_seedconnectivity_wf(seeds,
@@ -37,6 +40,12 @@ def init_seedconnectivity_wf(seeds,
 
     """
     workflow = pe.Workflow(name=name)
+
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
 
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
@@ -78,8 +87,6 @@ def init_seedconnectivity_wf(seeds,
     def add_csf_wm_gs(seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
-        import os
-        import time
         designs = []
         for idx, seed_file in enumerate(seed_files):
             seed_df = pd.read_csv(seed_file, sep=" ", header=None).dropna(how='all', axis=1)
@@ -111,10 +118,10 @@ def init_seedconnectivity_wf(seeds,
             input_names=["seed_files", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
                          "file_path"],
             output_names=["design"],
-            function=add_csf_wm_gs), name="design_node"
+            function=add_csf_wm_gs), name="design_node", overwrite=True
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = output_dir + "/" + subject + "_seed_"
+    design_node.inputs.file_path = nipype_dir + "/" + subject + "_seed_"
 
     # creates contrasts file for seedconnectivity glm
     def get_contrast_file(design, output_dir):
@@ -134,7 +141,7 @@ def init_seedconnectivity_wf(seeds,
             function=get_contrast_file),
         name="contrast_node"
     )
-    contrast_node.inputs.output_dir = output_dir
+    contrast_node.inputs.output_dir = nipype_dir
 
     # calculate the regression of the mean time series onto the functional image
     # the result is the seed connectivity map
@@ -258,6 +265,12 @@ def init_dualregression_wf(componentsfile,
     """
     workflow = pe.Workflow(name=name)
 
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
+
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
@@ -302,8 +315,6 @@ def init_dualregression_wf(componentsfile,
     def add_csf_wm_gs(design_file, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates the design matrix for the glm with added regressors"""
         import pandas as pd  # in-function import necessary for nipype-function
-        import os
-        import time
         design_df = pd.read_csv(design_file, sep=" ", header=None).dropna(how='all', axis=1)
         design_df.columns = ['component_' + str(idx) for idx, val in enumerate(design_df.columns)]
         mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
@@ -331,10 +342,10 @@ def init_dualregression_wf(componentsfile,
             input_names=["design_file", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
                          "file_path"],
             output_names=["design"],
-            function=add_csf_wm_gs), name="design_node"
+            function=add_csf_wm_gs), name="design_node", overwrite=True
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = output_dir + "/" + subject + "_component.txt"
+    design_node.inputs.file_path = nipype_dir + "/" + subject + "_component.txt"
 
     # creates contrasts file for glm1
     def get_contrast_file(design_without_regressors, design, output_dir):
@@ -356,7 +367,7 @@ def init_dualregression_wf(componentsfile,
             function=get_contrast_file),
         name="contrast_node"
     )
-    contrast_node.inputs.output_dir = output_dir
+    contrast_node.inputs.output_dir = nipype_dir
 
     # second step, calculate the temporal regression of the time series 
     # from the first step on to the bold file
