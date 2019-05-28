@@ -3,21 +3,17 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import nipype.algorithms.modelgen as model
-from nipype.interfaces.base import Bunch
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ..utils import (
-    flatten,
-    get_float
-)
+from ..utils import flatten, get_float
 
 
 def init_glm_wf(conditions,
                 contrasts, repetition_time,
-                use_mov_pars, name="glm"):
+                use_mov_pars, use_csf, use_white_matter, use_global_signal, name="glm"):
     """
     create workflow to calculate a first level glm for task functional data
 
@@ -27,6 +23,12 @@ def init_glm_wf(conditions,
     :param repetition_time: repetition time
     :param use_mov_pars: if true, regress out movement parameters when 
         calculating the glm
+    :param use_csf: if true, regress out csf parameters when
+        calculating the glm
+    :param use_white_matter: if true, regress out white matter parameters when
+        calculating the glm
+    :param use_global_signal: if true, regress out global signal parameters when
+        calculating the glm
     :param name: workflow name (Default value = "glm")
 
     """
@@ -35,7 +37,7 @@ def init_glm_wf(conditions,
     # inputs are the bold file, the mask file and the confounds file 
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "gs_meants_file", "csf_wm_meants_file"]),
         name="inputnode"
     )
 
@@ -45,13 +47,53 @@ def init_glm_wf(conditions,
     onsets = [conditions[k]["onsets"] for k in names]
     durations = [conditions[k]["durations"] for k in names]
 
+    # include regressors
+    regressor_names = []
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def create_subject_info(names, onsets, durations, regressor_names, gs_meants_file, csf_wm_meants_file):
+        """Creates subject_info as input for the GLM Model"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        from nipype.interfaces.base import Bunch
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([csf_df, wm_df, gs_df], axis=1)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
+        regressors = df.transpose().values.tolist()
+        subject_info = Bunch(conditions=names, onsets=onsets, durations=durations, regressor_names=regressor_names,
+                             regressors=regressors)
+        return subject_info
+
+    # Create node for providing subject_info to the GLM model via nypipe
+    subject_info_node = pe.Node(niu.Function(
+        input_names=["names", "onsets", "durations", "regressor_names","gs_meants_file", "csf_wm_meants_file"],
+        output_names=["subject_info"],
+        function=create_subject_info), name="subject_info"
+    )
+    subject_info_node.inputs.names = names
+    subject_info_node.inputs.onsets = onsets
+    subject_info_node.inputs.durations = durations
+    subject_info_node.inputs.regressor_names = regressor_names
+
     # first level model specification
     modelspec = pe.Node(
         interface=model.SpecifyModel(
             input_units="secs",
             high_pass_filter_cutoff=128., time_repetition=repetition_time,
-            subject_info=Bunch(conditions=names,
-                               onsets=onsets, durations=durations)
         ),
         name="modelspec"
     )
@@ -96,7 +138,7 @@ def init_glm_wf(conditions,
         name="stats"
     )
 
-    # actuallt estimate the firsy level model
+    # actually estimate the first level model
     modelestimate = pe.Node(
         interface=fsl.FILMGLS(smooth_autocorr=True,
                               mask_size=5),
@@ -143,6 +185,11 @@ def init_glm_wf(conditions,
         )
 
     workflow.connect([
+        (inputnode, subject_info_node, [
+            ("gs_meants_file", "gs_meants_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file")
+        ]),
+        (subject_info_node, modelspec, [("subject_info", "subject_info")]),
         (inputnode, modelspec, c),
         (inputnode, modelestimate, [
             ("bold_file", "in_file")

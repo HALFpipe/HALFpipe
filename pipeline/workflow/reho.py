@@ -2,6 +2,15 @@ import os
 import sys
 import numpy as np
 
+from pathlib import Path
+
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
+from nipype.interfaces import fsl
+
+
+from ..utils import create_directory
+
 
 def f_kendall(timeseries_matrix):
     """
@@ -295,3 +304,116 @@ def get_operand_string(mean, std_dev):
     op_string = str1 + " -mas %s"
 
     return op_string
+
+
+def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name="firstlevel"):
+    """
+    create a workflow to do ReHo and ALFF
+
+    """
+    workflow = pe.Workflow(name=name)
+
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
+
+    # inputs are the bold file, the mask file and the regression files
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        name="inputnode"
+    )
+
+    # create design matrix with added regressors to the seed column
+    regressor_names = []
+    if use_mov_pars:
+        regressor_names.append("MovPar")
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def create_design(mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates a list of design matrices with added regressors to feed into the glm"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([mov_par_df, csf_df, wm_df, gs_df], axis=1)
+        if 'MovPar' not in regressor_names:
+            df.drop(columns=['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ'], inplace=True)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
+
+        df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        return file_path
+
+    design_node = pe.Node(
+        niu.Function(
+            input_names=["mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            output_names=["design"],
+            function=create_design), name="design_node"
+    )
+    design_node.inputs.regressor_names = regressor_names
+    design_node.inputs.file_path = nipype_dir + f"/{subject}_reho_design.txt"
+
+    glm = pe.Node(
+        interface=fsl.GLM(),
+        name="glm",
+    )
+    glm.inputs.out_res_name = 'reho_residuals.nii.gz'
+
+    reho_imports = ['import os', 'import sys', 'import nibabel as nb',
+                    'import numpy as np',
+                    'from pipeline.workflow.reho import f_kendall']
+    raw_reho_map = pe.Node(niu.Function(input_names=['in_file', 'mask_file',
+                                                     'cluster_size'],
+                                        output_names=['out_file'],
+                                        function=compute_reho,
+                                        imports=reho_imports),
+                           name='reho_img')
+    raw_reho_map.inputs.cluster_size = 27
+
+    # outputs are cope, varcope and zstat for each ICA component and a dof_file
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=["reho_img"]),
+        name="outputnode"
+    )
+
+    workflow.connect([
+        (inputnode, design_node, [
+            ("confounds_file", "mov_par_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file"),
+            ("gs_meants_file", "gs_meants_file"),
+        ]),
+        (inputnode, glm, [
+            ("bold_file", "in_file"),
+        ]),
+        (design_node, glm, [
+            ("design", "design"),
+        ]),
+        (glm, raw_reho_map, [
+            ("out_res", "in_file"),
+        ]),
+        (inputnode, raw_reho_map, [
+            ("mask_file", "mask_file"),
+        ]),
+        (raw_reho_map, outputnode, [
+            ("out_file", "reho_img"),
+        ]),
+    ])
+
+    return workflow
+

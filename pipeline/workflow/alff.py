@@ -1,18 +1,18 @@
 import os
+from pathlib import Path
+
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
-from .reho import get_operand_string, get_opt_string
+from nipype.interfaces import fsl
 from nipype.interfaces.afni import TStat, Calc, Bandpass
 
+from .reho import get_opt_string
+from ..utils import create_directory
 
-def create_alff(name='alff_workflow'):
+
+def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name='alff_workflow'):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and fractional ALFF maps
-
-    Parameters
-    ----------
-    name : string
-        Workflow name
 
     Returns
     -------
@@ -148,10 +148,67 @@ def create_alff(name='alff_workflow'):
     """
 
     wf = pe.Workflow(name=name)
+
+    # create directory for desing files
+    # /ext/path/to/working_directory/nipype/subject_name/rest/designs
+    nipype_dir = Path(output_dir)
+    nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
+    create_directory(nipype_dir)
+
     input_node = pe.Node(util.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
+
+    # create design matrix with added regressors to the seed column
+    regressor_names = []
+    if use_mov_pars:
+        regressor_names.append("MovPar")
+    if use_csf:
+        regressor_names.append("CSF")
+    if use_white_matter:
+        regressor_names.append("WM")
+    if use_global_signal:
+        regressor_names.append("GS")
+
+    def create_design(mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+        """Creates a list of design matrices with added regressors to feed into the glm"""
+        import pandas as pd  # in-function import necessary for nipype-function
+        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
+        csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        csf_wm_df.columns = ['CSF', 'GM', 'WM']
+        csf_df = pd.DataFrame(csf_wm_df, columns=['CSF'])
+        wm_df = pd.DataFrame(csf_wm_df, columns=['WM'])
+        gs_df = pd.read_csv(gs_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
+        gs_df.columns = ['GS']
+        df = pd.concat([mov_par_df, csf_df, wm_df, gs_df], axis=1)
+        if 'MovPar' not in regressor_names:
+            df.drop(columns=['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ'], inplace=True)
+        if 'CSF' not in regressor_names:
+            df.drop(columns=['CSF'], inplace=True)
+        if 'WM' not in regressor_names:
+            df.drop(columns=['WM'], inplace=True)
+        if 'GS' not in regressor_names:
+            df.drop(columns=['GS'], inplace=True)
+
+        df.to_csv(file_path, sep="\t", encoding='utf-8', header=False, index=False)
+        return file_path
+
+    design_node = pe.Node(
+        util.Function(
+            input_names=["mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            output_names=["design"],
+            function=create_design), name="design_node"
+    )
+    design_node.inputs.regressor_names = regressor_names
+    design_node.inputs.file_path = nipype_dir + f"/{subject}_alff_design.txt"
+
+    glm = pe.Node(
+        interface=fsl.GLM(),
+        name="glm",
+    )
+    glm.inputs.out_res_name = 'alff_residuals.nii.gz'
 
     inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
                            name='hp_input')
@@ -160,8 +217,8 @@ def create_alff(name='alff_workflow'):
                            name='lp_input')
 
     outputnode = pe.Node(util.IdentityInterface(fields=['alff_img',
-                                                         'falff_img']),
-                          name='outputnode')
+                                                        'falff_img']),
+                         name='outputnode')
 
     # filtering
     bandpass = pe.Node(interface=Bandpass(),
@@ -169,42 +226,22 @@ def create_alff(name='alff_workflow'):
     bandpass.inputs.outputtype = 'NIFTI_GZ'
     bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
 
-    wf.connect(inputnode_hp, 'hp',
-               bandpass, 'highpass')
-    wf.connect(inputnode_lp, 'lp',
-               bandpass, 'lowpass')
-    wf.connect(input_node, 'bold_file',
-               bandpass, 'in_file')
-
     get_option_string = pe.Node(util.Function(input_names=['mask'],
                                               output_names=['option_string'],
                                               function=get_opt_string),
                                 name='get_option_string')
-    wf.connect(input_node, 'mask_file',
-               get_option_string, 'mask')
 
     # standard deviation over frequency
     stddev_fltrd = pe.Node(interface=TStat(),
                            name='stddev_fltrd')
     stddev_fltrd.inputs.outputtype = 'NIFTI_GZ'
     stddev_fltrd.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered_3dT.nii.gz')
-    wf.connect(bandpass, 'out_file',
-               stddev_fltrd, 'in_file')
-    wf.connect(get_option_string, 'option_string',
-               stddev_fltrd, 'options')
-
-    wf.connect(stddev_fltrd, 'out_file',
-               outputnode, 'alff_img')
 
     # standard deviation of the unfiltered nuisance corrected image
     stddev_unfltrd = pe.Node(interface=TStat(),
                              name='stddev_unfltrd')
     stddev_unfltrd.inputs.outputtype = 'NIFTI_GZ'
     stddev_unfltrd.inputs.out_file = os.path.join(os.path.curdir, 'residual_3dT.nii.gz')
-    wf.connect(input_node, 'bold_file',
-               stddev_unfltrd, 'in_file')
-    wf.connect(get_option_string, 'option_string',
-               stddev_unfltrd, 'options')
 
     # falff calculations
     falff = pe.Node(interface=Calc(),
@@ -212,14 +249,58 @@ def create_alff(name='alff_workflow'):
     falff.inputs.args = '-float'
     falff.inputs.expr = '(1.0*bool(a))*((1.0*b)/(1.0*c))'
     falff.inputs.outputtype = 'NIFTI_GZ'
-    wf.connect(input_node, 'mask_file',
-               falff, 'in_file_a')
-    wf.connect(stddev_fltrd, 'out_file',
-               falff, 'in_file_b')
-    wf.connect(stddev_unfltrd, 'out_file',
-               falff, 'in_file_c')
 
-    wf.connect(falff, 'out_file',
-               outputnode, 'falff_img')
+    wf.connect([
+        (input_node, design_node, [
+            ("confounds_file", "mov_par_file"),
+            ("csf_wm_meants_file", "csf_wm_meants_file"),
+            ("gs_meants_file", "gs_meants_file"),
+        ]),
+        (input_node, glm, [
+            ("bold_file", "in_file"),
+        ]),
+        (design_node, glm, [
+            ("design", "design"),
+        ]),
+        (glm, bandpass, [
+            ("out_res", "in_file"),
+        ]),
+        (input_node, get_option_string, [
+            ("mask_file", "mask"),
+        ]),
+        (glm, stddev_unfltrd, [
+            ("out_res", "in_file"),
+        ]),
+        (input_node, falff, [
+            ("mask_file", "in_file_a"),
+        ]),
+        (inputnode_hp, bandpass, [
+            ("hp", "highpass"),
+        ]),
+        (inputnode_lp, bandpass, [
+            ("lp", "lowpass"),
+        ]),
+        (bandpass, stddev_fltrd, [
+            ("out_file", "in_file"),
+        ]),
+        (get_option_string, stddev_fltrd, [
+            ("option_string", "options"),
+        ]),
+        (get_option_string, stddev_unfltrd, [
+            ("option_string", "options"),
+        ]),
+        (stddev_fltrd, outputnode, [
+            ("out_file", "alff_img"),
+        ]),
+        (stddev_fltrd, falff, [
+            ("out_file", "in_file_b"),
+        ]),
+        (stddev_unfltrd, falff, [
+            ("out_file", "in_file_c"),
+        ]),
+        (falff, outputnode, [
+            ("out_file", "falff_img"),
+        ]),
+    ])
 
     return wf
