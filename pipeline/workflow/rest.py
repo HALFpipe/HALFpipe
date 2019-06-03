@@ -167,9 +167,9 @@ def init_seedconnectivity_wf(seeds,
     )
 
     # split regression outputs by name
-    splitimgs = pe.Node(
+    splitcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
-        name="splitimgs"
+        name="splitcopes"
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
@@ -182,7 +182,7 @@ def init_seedconnectivity_wf(seeds,
 
     # outputs are cope, varcope and zstat for each seed region and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["%s_img" % seedname,
+        fields=sum([["%s_cope" % seedname,
                      "%s_varcope" % seedname, "%s_zstat" % seedname]
                     for seedname in seednames], []) + ["dof_file"]),
         name="outputnode"
@@ -219,7 +219,7 @@ def init_seedconnectivity_wf(seeds,
         (contrast_node, glm, [
             ("contrasts", "contrasts")
         ]),
-        (glm, splitimgs, [
+        (glm, splitcopes, [
             ("out_cope", "inlist"),
         ]),
         (glm, splitvarcopes, [
@@ -239,7 +239,7 @@ def init_seedconnectivity_wf(seeds,
 
     # connect outputs named for the seeds
     for i, seedname in enumerate(seednames):
-        workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % seedname)
+        workflow.connect(splitcopes, "out%i" % (i + 1), outputnode, "%s_cope" % seedname)
         workflow.connect(splitvarcopes, "out%i" % (i + 1), outputnode, "%s_varcope" % seedname)
         workflow.connect(splitzstats, "out%i" % (i + 1), outputnode, "%s_zstat" % seedname)
 
@@ -386,9 +386,9 @@ def init_dualregression_wf(componentsfile,
     )
 
     # split regression outputs into individual images
-    splitimgsimage = pe.Node(
+    splitcopesimage = pe.Node(
         interface=fsl.Split(dimension="t"),
-        name="splitimgsimage"
+        name="splitcopesimage"
     )
     splitvarcopesimage = pe.Node(
         interface=fsl.Split(dimension="t"),
@@ -407,16 +407,16 @@ def init_dualregression_wf(componentsfile,
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=sum([["%s_img" % componentname,
+        fields=sum([["%s_cope" % componentname,
                      "%s_varcope" % componentname, "%s_zstat" % componentname]
                     for componentname in componentnames], []) + ["dof_file"]),
         name="outputnode"
     )
 
     # split regression outputs by name
-    splitimgs = pe.Node(
+    splitcopes = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
-        name="splitimgs"
+        name="splitcopes"
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
@@ -462,7 +462,7 @@ def init_dualregression_wf(componentsfile,
         (contrast_node, glm1, [
             ("contrasts", "contrasts")
         ]),
-        (glm1, splitimgsimage, [
+        (glm1, splitcopesimage, [
             ("out_cope", "in_file"),
         ]),
         (glm1, splitvarcopesimage, [
@@ -471,7 +471,7 @@ def init_dualregression_wf(componentsfile,
         (glm1, splitzstatsimage, [
             ("out_z", "in_file"),
         ]),
-        (splitimgsimage, splitimgs, [
+        (splitcopesimage, splitcopes, [
             ("out_files", "inlist"),
         ]),
         (splitvarcopesimage, splitvarcopes, [
@@ -490,7 +490,7 @@ def init_dualregression_wf(componentsfile,
 
     # connect outputs named for the ICA components
     for i, componentname in enumerate(componentnames):
-        workflow.connect(splitimgs, "out%i" % (i + 1), outputnode, "%s_img" % componentname)
+        workflow.connect(splitcopes, "out%i" % (i + 1), outputnode, "%s_cope" % componentname)
         workflow.connect(splitvarcopes, "out%i" % (i + 1), outputnode, "%s_varcope" % componentname)
         workflow.connect(splitzstats, "out%i" % (i + 1), outputnode, "%s_zstat" % componentname)
 

@@ -53,7 +53,6 @@ def init_workflow(workdir, jsonfile):
 
     workflow.add_nodes(subject_wfs)
 
-
     #
     # second level
     #
@@ -92,9 +91,9 @@ def init_workflow(workdir, jsonfile):
                                                                      subject_groups=subject_groups,
                                                                      group_contrasts=group_contrasts,
                                                                      outname=outname, workdir=workdir, task=task)
-                mergeimgs = pe.Node(
+                mergecopes = pe.Node(
                     interface=niu.Merge(len(subject_wfs)),
-                    name="%s_%s_mergeimgs" % (task, outname))
+                    name="%s_%s_mergecopes" % (task, outname))
                 mergevarcopes = pe.Node(
                     interface=niu.Merge(len(subject_wfs)),
                     name="%s_%s_mergevarcopes" % (task, outname))
@@ -119,10 +118,10 @@ def init_workflow(workdir, jsonfile):
                         if len(outputnode) > 0:
                             outputnode = outputnode[0]
                             if outname in ["reho", "alff"]:
-                                workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                             else:
-                                workflow.connect(outputnode, "%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
@@ -146,8 +145,8 @@ def init_workflow(workdir, jsonfile):
 
                 if outname in ["reho", "alff"]:
                     workflow.connect([
-                        (mergeimgs, higherlevel_wf, [
-                            ("out", "inputnode.imgs")
+                        (mergecopes, higherlevel_wf, [
+                            ("out", "inputnode.copes")
                         ]),
                         (mergemasks, higherlevel_wf, [
                             ("out", "inputnode.mask_files")
@@ -156,7 +155,7 @@ def init_workflow(workdir, jsonfile):
 
                     workflow.connect([
                         (higherlevel_wf, ds_stats, [
-                            ("outputnode.imgs", "cope")
+                            ("outputnode.copes", "cope")
                         ]),
                         (higherlevel_wf, ds_stats, [
                             ("outputnode.varcopes", "varcope")
@@ -174,8 +173,8 @@ def init_workflow(workdir, jsonfile):
 
                 else:
                     workflow.connect([
-                        (mergeimgs, higherlevel_wf, [
-                            ("out", "inputnode.imgs")
+                        (mergecopes, higherlevel_wf, [
+                            ("out", "inputnode.copes")
                         ]),
                         (mergemasks, higherlevel_wf, [
                             ("out", "inputnode.mask_files")
@@ -193,7 +192,7 @@ def init_workflow(workdir, jsonfile):
 
                     workflow.connect([
                         (higherlevel_wf, ds_stats, [
-                            ("outputnode.imgs", "cope")
+                            ("outputnode.copes", "cope")
                         ]),
                         (higherlevel_wf, ds_stats, [
                             ("outputnode.varcopes", "varcope")

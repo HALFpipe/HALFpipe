@@ -40,10 +40,10 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     Workflow Outputs::
 
-        outputspec.alff_img : string (nifti file)
+        outputspec.alff_cope : string (nifti file)
             outputs image containing the sum of the amplitudes in the low frequency band
 
-        outputspec.falff_img : string (nifti file)
+        outputspec.falff_cope : string (nifti file)
             outputs image containing the sum of the amplitudes in the low frequency band divided by the
             amplitude of the total frequency
 
@@ -216,8 +216,8 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
                            name='lp_input')
 
-    outputnode = pe.Node(util.IdentityInterface(fields=['alff_img',
-                                                        'falff_img']),
+    outputnode = pe.Node(util.IdentityInterface(fields=['alff_cope',
+                                                        'falff_cope']),
                          name='outputnode')
 
     # filtering
@@ -290,7 +290,7 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
             ("option_string", "options"),
         ]),
         (stddev_fltrd, outputnode, [
-            ("out_file", "alff_img"),
+            ("out_file", "alff_cope"),
         ]),
         (stddev_fltrd, falff, [
             ("out_file", "in_file_b"),
@@ -299,7 +299,7 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
             ("out_file", "in_file_c"),
         ]),
         (falff, outputnode, [
-            ("out_file", "falff_img"),
+            ("out_file", "falff_cope"),
         ]),
     ])
 

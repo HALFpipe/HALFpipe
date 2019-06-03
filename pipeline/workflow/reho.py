@@ -383,12 +383,12 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
                                         output_names=['out_file'],
                                         function=compute_reho,
                                         imports=reho_imports),
-                           name='reho_img')
+                           name='reho_cope')
     raw_reho_map.inputs.cluster_size = 27
 
     # outputs are cope, varcope and zstat for each ICA component and a dof_file
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["reho_img"]),
+        fields=["reho_cope"]),
         name="outputnode"
     )
 
@@ -411,7 +411,7 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
             ("mask_file", "mask_file"),
         ]),
         (raw_reho_map, outputnode, [
-            ("out_file", "reho_img"),
+            ("out_file", "reho_cope"),
         ]),
     ])
 

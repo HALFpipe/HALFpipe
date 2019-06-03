@@ -169,16 +169,16 @@ def init_subject_wf(item, workdir, images, data):
 
                 outnames[name] = outnamesset
                 outputnode = pe.Node(niu.IdentityInterface(
-                    fields=sum([["%s_img" % outname,
+                    fields=sum([["%s_cope" % outname,
                                  "%s_varcope" % outname, "%s_dof_file" % outname]
                                 for outname in outnames[name]], [])),
                     name="outputnode"
                 )
 
                 for outname in outnames[name]:
-                    mergeimgs = pe.Node(
+                    mergecopes = pe.Node(
                         interface=niu.Merge(len(run_wfs)),
-                        name="%s_mergeimgs" % outname)
+                        name="%s_mergecopes" % outname)
                     mergevarcopes = pe.Node(
                         interface=niu.Merge(len(run_wfs)),
                         name="%s_mergevarcopes" % outname)
@@ -187,7 +187,7 @@ def init_subject_wf(item, workdir, images, data):
                         name="%s_mergedoffiles" % outname)
 
                     for i, wf in run_wfs:
-                        task_wf.connect(wf, "outputnode.%s_img" % outname, mergeimgs, "in%i" % (i + 1))
+                        task_wf.connect(wf, "outputnode.%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                         task_wf.connect(wf, "outputnode.%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
                         task_wf.connect(wf, "outputnode.%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
 
@@ -198,8 +198,8 @@ def init_subject_wf(item, workdir, images, data):
                                                    outname=outname)
 
                     task_wf.connect([
-                        (mergeimgs, fe_wf, [
-                            ("out", "inputnode.imgs")
+                        (mergecopes, fe_wf, [
+                            ("out", "inputnode.copes")
                         ]),
                         (mergevarcopes, fe_wf, [
                             ("out", "inputnode.varcopes")
@@ -209,7 +209,7 @@ def init_subject_wf(item, workdir, images, data):
                         ]),
 
                         (fe_wf, outputnode, [
-                            (("outputnode.imgs", get_first), "%s_img" % outname),
+                            (("outputnode.copes", get_first), "%s_cope" % outname),
                             (("outputnode.varcopes", get_first), "%s_varcope" % outname),
                             (("outputnode.dof_files", get_first), "%s_dof_file" % outname)
                         ])
@@ -493,12 +493,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -513,8 +513,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
 
                 wf.connect([
-                    (firstlevel_wf, ds_img, [
-                        ("outputnode.%s_img" % outname, "in_file")
+                    (firstlevel_wf, ds_cope, [
+                        ("outputnode.%s_cope" % outname, "in_file")
                     ]),
                     (firstlevel_wf, ds_varcope, [
                         ("outputnode.%s_varcope" % outname, "in_file")
@@ -554,12 +554,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -574,8 +574,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
 
                 wf.connect([
-                    (firstlevel_wf, ds_img, [
-                        ("outputnode.%s_img" % outname, "in_file")
+                    (firstlevel_wf, ds_cope, [
+                        ("outputnode.%s_cope" % outname, "in_file")
                     ]),
                     (firstlevel_wf, ds_varcope, [
                         ("outputnode.%s_varcope" % outname, "in_file")
@@ -615,12 +615,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -635,8 +635,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
 
                 wf.connect([
-                    (firstlevel_wf, ds_img, [
-                        ("outputnode.%s_img" % outname, "in_file")
+                    (firstlevel_wf, ds_cope, [
+                        ("outputnode.%s_cope" % outname, "in_file")
                     ]),
                     (firstlevel_wf, ds_varcope, [
                         ("outputnode.%s_varcope" % outname, "in_file")
@@ -663,14 +663,14 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
 
-                wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
+                wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
         elif name == "alff":
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
@@ -689,14 +689,14 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
 
-                wf.connect([(firstlevel_wf, ds_img, [("outputnode.%s_img" % outname, "in_file")])])
+                wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -722,12 +722,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             ])
 
             for outname in outnames:
-                ds_img = pe.Node(
+                ds_cope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_img" % outname),
-                    name="ds_%s_%s_img" % (name, outname), run_without_submitting=True)
+                        suffix="%s_cope" % outname),
+                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -742,8 +742,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
 
                 wf.connect([
-                    (firstlevel_wf, ds_img, [
-                        ("outputnode.%s_img" % outname, "in_file")
+                    (firstlevel_wf, ds_cope, [
+                        ("outputnode.%s_cope" % outname, "in_file")
                     ]),
                     (firstlevel_wf, ds_varcope, [
                         ("outputnode.%s_varcope" % outname, "in_file")
@@ -854,7 +854,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 [["%s_varcope" % outname,
                   "%s_mask_file" % outname,
                   "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
-                [["%s_img" % outname] for outname in outnames]
+                [["%s_cope" % outname] for outname in outnames]
                 for outnames in outnamesbywf.values()]
             )
         ),
@@ -864,7 +864,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         if workflow_name not in ["reho_wf", "alff_wf", "brainatlas_wf"]:
             for outname in outnames:
                 wf.connect(
-                    wfbywf[workflow_name], "outputnode.%s_img" % outname, outputnode, "%s_img" % outname
+                    wfbywf[workflow_name], "outputnode.%s_cope" % outname, outputnode, "%s_cope" % outname
                 )
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.%s_varcope" % outname, outputnode, "%s_varcope" % outname
@@ -878,7 +878,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         elif workflow_name == "reho_wf":
             for outname in outnames:
                 wf.connect(
-                    wfbywf[workflow_name], "outputnode.reho_img", outputnode, "reho_img"
+                    wfbywf[workflow_name], "outputnode.reho_cope", outputnode, "reho_cope"
                 )
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
@@ -889,10 +889,10 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         elif workflow_name == "alff_wf":
             for outname in outnames:
                 wf.connect(
-                    wfbywf[workflow_name], "outputnode.alff_img", outputnode, "alff_img"
+                    wfbywf[workflow_name], "outputnode.alff_cope", outputnode, "alff_cope"
                 )
                 wf.connect(
-                    wfbywf[workflow_name], "outputnode.falff_img", outputnode, "falff_img"
+                    wfbywf[workflow_name], "outputnode.falff_cope", outputnode, "falff_cope"
                 )
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
