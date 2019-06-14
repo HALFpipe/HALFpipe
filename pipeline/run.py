@@ -552,6 +552,34 @@ def main():
 
                     except KeyError:
                         pass
+        # create confounds_mni.tsv
+        for subject in flattened_configuration:
+            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
+            for key in flattened_configuration[subject]:
+                if key not in ["T1w", "T2w", "FLAIR"]:
+                    # Taskdata exists
+                    task = key
+                    # get dataframe for original confounds.tsv
+                    orig_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
+                    df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
+                    # get dataframe for gs_meants.txt
+                    gs_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/gs_meants.txt'
+                    df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
+                    df_gs_meants.columns = ["GlobalSignal"]
+                    # get dataframe for csf_wm_meants.txt
+                    csf_wm_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/csf_wm_meants.txt'
+                    df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
+                    df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
+                    # Replace respective columns
+                    df_confounds['WhiteMatter'] = df_csf_wm_meants['WhiteMatter']
+                    df_confounds['CSF'] = df_csf_wm_meants['CSF']
+                    df_confounds['GlobalSignal'] = df_gs_meants['GlobalSignal']
+                    # Save dataframe as confounds_mni.tsv
+                    new_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds_mni.tsv'
+                    df_confounds.to_csv(new_confounds_path, sep="\t", encoding='utf-8', index=False)
+                else:
+                    # Taskdata doesn't exist
+                    pass
     else:
         os.makedirs(json_dir, exist_ok=True)
 
@@ -629,3 +657,7 @@ def main():
             file.write(command + file_name + '\n')
 
         file.close()
+
+
+
+
