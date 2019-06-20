@@ -5,6 +5,9 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
 from nipype.interfaces import fsl
 from nipype.interfaces.afni import TStat, Calc, Bandpass
+import nipype.interfaces.io as nio
+from fmriprep.interfaces.bids import DerivativesDataSink
+
 
 from .reho import get_opt_string
 from ..utils import create_directory
@@ -149,7 +152,7 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     wf = pe.Workflow(name=name)
 
-    # create directory for desing files
+    # create directory for design files
     # /ext/path/to/working_directory/nipype/subject_name/rest/designs
     nipype_dir = Path(output_dir)
     nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
@@ -250,6 +253,23 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     falff.inputs.expr = '(1.0*bool(a))*((1.0*b)/(1.0*c))'
     falff.inputs.outputtype = 'NIFTI_GZ'
 
+    # datasinks for alff/falff images
+    ds_alff = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('residual_filtered_3dT', 'alff_img')],
+            parameterization=False),
+        name="ds_alff", run_without_submitting=True)
+
+    ds_falff = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc', 'falff_img')],
+            parameterization=False),
+        name="ds_falff", run_without_submitting=True)
+
     wf.connect([
         (input_node, design_node, [
             ("confounds_file", "mov_par_file"),
@@ -289,6 +309,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (get_option_string, stddev_unfltrd, [
             ("option_string", "options"),
         ]),
+        (stddev_fltrd, ds_alff, [
+            ("out_file", "rest.@alff"),
+        ]),
         (stddev_fltrd, outputnode, [
             ("out_file", "alff_cope"),
         ]),
@@ -297,6 +320,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         ]),
         (stddev_unfltrd, falff, [
             ("out_file", "in_file_c"),
+        ]),
+        (falff, ds_falff, [
+            ("out_file", "rest.@fallf"),
         ]),
         (falff, outputnode, [
             ("out_file", "falff_cope"),
