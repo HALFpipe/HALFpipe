@@ -5,6 +5,9 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
 from nipype.interfaces import fsl
 from nipype.interfaces.afni import TStat, Calc, Bandpass
+import nipype.interfaces.io as nio
+from nipype.interfaces import utility as niu
+
 
 from .reho import get_opt_string
 from ..utils import create_directory
@@ -149,7 +152,7 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     wf = pe.Workflow(name=name)
 
-    # create directory for desing files
+    # create directory for design files
     # /ext/path/to/working_directory/nipype/subject_name/rest/designs
     nipype_dir = Path(output_dir)
     nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
@@ -250,6 +253,150 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     falff.inputs.expr = '(1.0*bool(a))*((1.0*b)/(1.0*c))'
     falff.inputs.outputtype = 'NIFTI_GZ'
 
+    # datasinks for alff/falff images
+    ds_alff = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('residual_filtered_3dT', 'alff_img')],
+            parameterization=False),
+        name="ds_alff", run_without_submitting=True)
+
+    ds_falff = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc', 'falff_img')],
+            parameterization=False),
+        name="ds_falff", run_without_submitting=True)
+
+    # calculate zstats from imgs
+
+    # alff
+    # calculate mean
+    alff_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="alff_stats_mean",
+    )
+    alff_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    alff_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="alff_stats_std",
+    )
+    alff_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+    def get_sub_op_string(in_file):
+        """
+
+        :param in_file: mean value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-sub ' + str(in_file)
+        return op_string
+
+    sub_op_string = pe.Node(
+        name="sub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    alff_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="alff_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+    def get_div_op_string(in_file):
+        """
+
+        :param in_file: std value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-div ' + str(in_file)
+        return op_string
+
+    div_op_string = pe.Node(
+        name="div_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+
+    alff_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="alff_maths_div",
+    )
+
+    # save file in intermediates
+    ds_alff_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('residual_filtered_3dT_maths_maths', 'alff_zstat')],
+            parameterization=False),
+        name="ds_alff_zstat", run_without_submitting=True)
+
+    # falff
+    # calculate mean
+    falff_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="falff_stats_mean",
+    )
+    falff_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    falff_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="falff_stats_std",
+    )
+    falff_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+
+    fsub_op_string = pe.Node(
+        name="fsub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    falff_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="falff_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+
+    fdiv_op_string = pe.Node(
+        name="fdiv_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+    falff_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="falff_maths_div",
+    )
+
+    # save file in intermediates
+    ds_falff_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc_maths_maths', 'falff_zstat')],
+            parameterization=False),
+        name="ds_falff_zstat", run_without_submitting=True)
+
     wf.connect([
         (input_node, design_node, [
             ("confounds_file", "mov_par_file"),
@@ -289,6 +436,36 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (get_option_string, stddev_unfltrd, [
             ("option_string", "options"),
         ]),
+        (stddev_fltrd, ds_alff, [
+            ("out_file", "rest.@alff"),
+        ]),
+        (stddev_fltrd, alff_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (alff_stats_mean, sub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (stddev_fltrd, alff_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (sub_op_string, alff_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (stddev_fltrd, alff_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (alff_stats_std, div_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (alff_maths_sub, alff_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (div_op_string, alff_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (alff_maths_div, ds_alff_zstat, [
+            ("out_file", "rest.@alff_zstat"),
+        ]),
         (stddev_fltrd, outputnode, [
             ("out_file", "alff_cope"),
         ]),
@@ -297,6 +474,36 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         ]),
         (stddev_unfltrd, falff, [
             ("out_file", "in_file_c"),
+        ]),
+        (falff, ds_falff, [
+            ("out_file", "rest.@fallf"),
+        ]),
+        (falff, falff_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (falff_stats_mean, fsub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (falff, falff_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (fsub_op_string, falff_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (falff, falff_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (falff_stats_std, fdiv_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (falff_maths_sub, falff_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (fdiv_op_string, falff_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (falff_maths_div, ds_falff_zstat, [
+            ("out_file", "rest.@alff_zstat"),
         ]),
         (falff, outputnode, [
             ("out_file", "falff_cope"),

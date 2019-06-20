@@ -678,7 +678,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.filtered_file", "inputnode.bold_file")
+                    ("outputnode.highpass_file", "inputnode.bold_file")
                 ]),
                 (gs_meants, firstlevel_wf, [
                     ("out_file", "inputnode.gs_meants_file")
