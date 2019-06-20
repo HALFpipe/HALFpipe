@@ -6,7 +6,7 @@ import nipype.interfaces.utility as util
 from nipype.interfaces import fsl
 from nipype.interfaces.afni import TStat, Calc, Bandpass
 import nipype.interfaces.io as nio
-from fmriprep.interfaces.bids import DerivativesDataSink
+from nipype.interfaces import utility as niu
 
 
 from .reho import get_opt_string
@@ -270,6 +270,79 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
             parameterization=False),
         name="ds_falff", run_without_submitting=True)
 
+    # calculate zstats from imgs
+
+    # alff
+    # calculate mean
+    alff_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="alff_stats_mean",
+    )
+    alff_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    alff_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="alff_stats_std",
+    )
+    alff_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+    def get_sub_op_string(in_file):
+        """
+
+        :param in_file: mean value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-sub ' + str(in_file)
+        return op_string
+
+    sub_op_string = pe.Node(
+        name="sub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    alff_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="alff_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+    def get_div_op_string(in_file):
+        """
+
+        :param in_file: std value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-div ' + str(in_file)
+        return op_string
+
+    div_op_string = pe.Node(
+        name="div_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+
+    alff_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="alff_maths_div",
+    )
+
+    # save file in intermediates
+    ds_alff_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('residual_filtered_3dT_maths_maths', 'alff_zstat')],
+            parameterization=False),
+        name="ds_alff_zstat", run_without_submitting=True)
+
     wf.connect([
         (input_node, design_node, [
             ("confounds_file", "mov_par_file"),
@@ -311,6 +384,33 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         ]),
         (stddev_fltrd, ds_alff, [
             ("out_file", "rest.@alff"),
+        ]),
+        (stddev_fltrd, alff_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (alff_stats_mean, sub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (stddev_fltrd, alff_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (sub_op_string, alff_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (stddev_fltrd, alff_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (alff_stats_std, div_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (alff_maths_sub, alff_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (div_op_string, alff_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (alff_maths_div, ds_alff_zstat, [
+            ("out_file", "rest.@alff_zstat"),
         ]),
         (stddev_fltrd, outputnode, [
             ("out_file", "alff_cope"),
