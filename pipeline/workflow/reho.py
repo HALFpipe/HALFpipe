@@ -2,6 +2,8 @@ import os
 import sys
 import numpy as np
 
+import nipype.interfaces.io as nio
+
 from pathlib import Path
 
 from nipype.interfaces import utility as niu
@@ -386,11 +388,83 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
                            name='reho_cope')
     raw_reho_map.inputs.cluster_size = 27
 
-    # outputs are cope, varcope and zstat for each ICA component and a dof_file
+    # outputs are cope
     outputnode = pe.Node(niu.IdentityInterface(
         fields=["reho_cope"]),
         name="outputnode"
     )
+
+    # calculate zstat from img
+
+    # calculate mean
+    reho_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="reho_stats_mean",
+    )
+    reho_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    reho_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="reho_stats_std",
+    )
+    reho_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+    def get_sub_op_string(in_file):
+        """
+
+        :param in_file: mean value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-sub ' + str(in_file)
+        return op_string
+
+    sub_op_string = pe.Node(
+        name="sub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    reho_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="reho_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+    def get_div_op_string(in_file):
+        """
+
+        :param in_file: std value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-div ' + str(in_file)
+        return op_string
+
+    div_op_string = pe.Node(
+        name="div_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+
+    reho_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="reho_maths_div",
+    )
+
+    # save file in intermediates
+    ds_reho_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ReHo_maths_maths', 'reho_zstat')],
+            parameterization=False),
+        name="ds_reho_zstat", run_without_submitting=True)
 
     workflow.connect([
         (inputnode, design_node, [
@@ -412,6 +486,33 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         ]),
         (raw_reho_map, outputnode, [
             ("out_file", "reho_cope"),
+        ]),
+        (raw_reho_map, reho_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (reho_stats_mean, sub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (raw_reho_map, reho_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (sub_op_string, reho_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (raw_reho_map, reho_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (reho_stats_std, div_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (reho_maths_sub, reho_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (div_op_string, reho_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (reho_maths_div, ds_reho_zstat, [
+            ("out_file", "rest.@alff_zstat"),
         ]),
     ])
 

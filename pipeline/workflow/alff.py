@@ -343,6 +343,60 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
             parameterization=False),
         name="ds_alff_zstat", run_without_submitting=True)
 
+    # falff
+    # calculate mean
+    falff_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="falff_stats_mean",
+    )
+    falff_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    falff_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="falff_stats_std",
+    )
+    falff_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+
+    fsub_op_string = pe.Node(
+        name="fsub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    falff_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="falff_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+
+    fdiv_op_string = pe.Node(
+        name="fdiv_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+    falff_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="falff_maths_div",
+    )
+
+    # save file in intermediates
+    ds_falff_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc_maths_maths', 'falff_zstat')],
+            parameterization=False),
+        name="ds_falff_zstat", run_without_submitting=True)
+
     wf.connect([
         (input_node, design_node, [
             ("confounds_file", "mov_par_file"),
@@ -423,6 +477,33 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         ]),
         (falff, ds_falff, [
             ("out_file", "rest.@fallf"),
+        ]),
+        (falff, falff_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (falff_stats_mean, fsub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (falff, falff_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (fsub_op_string, falff_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (falff, falff_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (falff_stats_std, fdiv_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (falff_maths_sub, falff_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (fdiv_op_string, falff_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (falff_maths_div, ds_falff_zstat, [
+            ("out_file", "rest.@alff_zstat"),
         ]),
         (falff, outputnode, [
             ("out_file", "falff_cope"),
