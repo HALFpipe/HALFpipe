@@ -854,7 +854,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 [["%s_varcope" % outname,
                   "%s_mask_file" % outname,
                   "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
-                [["%s_cope" % outname] for outname in outnames]
+                [["%s_cope" % outname] for outname in outnames] +
+                [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff"]]
                 for outnames in outnamesbywf.values()]
             )
         ),
@@ -890,6 +891,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for outname in outnames:
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.alff_cope", outputnode, "alff_cope"
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.alff_zstat", outputnode, "alff_zstat"
                 )
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.falff_cope", outputnode, "falff_cope"

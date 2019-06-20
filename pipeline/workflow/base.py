@@ -118,7 +118,7 @@ def init_workflow(workdir, jsonfile):
                         if len(outputnode) > 0:
                             outputnode = outputnode[0]
                             if outname in ["reho", "alff"]:
-                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
+                                workflow.connect(outputnode, "%s_zstat" % outname, mergecopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                             else:
                                 workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))

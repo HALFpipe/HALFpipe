@@ -215,7 +215,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                 run_mode=run_mode
             ),
             name="flameo",
-            iterfield=["cope_file"]
+            iterfield=["cope_file"]  # cope_file is here z_stat file (see base.py)
         )
     else:
         flameo = pe.MapNode(
