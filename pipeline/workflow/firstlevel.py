@@ -651,8 +651,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
                     ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
                 ]),
-                (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.filtered_file", "inputnode.bold_file")
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
                 (gs_meants, firstlevel_wf, [
                     ("out_file", "inputnode.gs_meants_file")
@@ -677,8 +677,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
                     ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
                 ]),
-                (temporalfilter_wf, firstlevel_wf, [
-                    ("outputnode.highpass_file", "inputnode.bold_file")
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
                 (gs_meants, firstlevel_wf, [
                     ("out_file", "inputnode.gs_meants_file")
@@ -825,6 +825,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             output_dir,
             name="reho_wf"
         )
+        firstlevel_wf.get_node('hp_input').iterables = ('hp', [0.009])
+        firstlevel_wf.get_node('lp_input').iterables = ('lp', [0.08])
         create_ds(wf, firstlevel_wf, ["reho"], func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="reho")
         wfbywf["reho_wf"] = firstlevel_wf

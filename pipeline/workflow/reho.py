@@ -9,6 +9,7 @@ from pathlib import Path
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from nipype.interfaces import fsl
+from nipype.interfaces.afni import Bandpass
 
 
 from ..utils import create_directory
@@ -327,6 +328,13 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         name="inputnode"
     )
 
+    # input nodes for bandpass filtering
+    inputnode_hp = pe.Node(niu.IdentityInterface(fields=['hp']),
+                           name='hp_input')
+
+    inputnode_lp = pe.Node(niu.IdentityInterface(fields=['lp']),
+                           name='lp_input')
+
     # create design matrix with added regressors to the seed column
     regressor_names = []
     if use_mov_pars:
@@ -376,6 +384,12 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         name="glm",
     )
     glm.inputs.out_res_name = 'reho_residuals.nii.gz'
+
+    # filtering
+    bandpass = pe.Node(interface=Bandpass(),
+                       name='bandpass_filtering')
+    bandpass.inputs.outputtype = 'NIFTI_GZ'
+    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
 
     reho_imports = ['import os', 'import sys', 'import nibabel as nb',
                     'import numpy as np',
@@ -478,8 +492,17 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         (design_node, glm, [
             ("design", "design"),
         ]),
-        (glm, raw_reho_map, [
+        (glm, bandpass, [
             ("out_res", "in_file"),
+        ]),
+        (inputnode_hp, bandpass, [
+            ("hp", "highpass"),
+        ]),
+        (inputnode_lp, bandpass, [
+            ("lp", "lowpass"),
+        ]),
+        (bandpass, raw_reho_map, [
+            ("out_file", "in_file"),
         ]),
         (inputnode, raw_reho_map, [
             ("mask_file", "mask_file"),
