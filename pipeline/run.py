@@ -407,15 +407,15 @@ def main():
 
         c.info("")
 
-        spreadsheet_file = get_file("covariates/group data spreadsheet")
-        spreadsheet = pd.read_csv(spreadsheet_file)
-
-        id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
-
-        covariates = spreadsheet.set_index(id_column).to_dict()
-
         response0 = c.select("Specify a group design?", ["Yes", "No"])
         if response0 == "Yes":
+            spreadsheet_file = get_file("covariates/group data spreadsheet")
+            spreadsheet = pd.read_csv(spreadsheet_file)
+
+            id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
+
+            covariates = spreadsheet.set_index(id_column).to_dict()
+
             group_column = c.select("Specify the column containing group names", spreadsheet.columns)
             groups = covariates[group_column]
             del covariates[group_column]
