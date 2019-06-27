@@ -4,6 +4,18 @@ import json
 from .utils import transpose
 
 
+# File checks for when a pipeline.json file is partitioned into different block/single subject processing units #
+def file_checks(workdir, json_dir, path_to_pipeline_json):
+    group_json = os.path.join(workdir, "pipeline.json")
+
+    # Check files of first level statistics for a particular file in workdir/json_dir/
+    if group_json != path_to_pipeline_json:
+        level_1_check(path_to_pipeline_json, workdir)
+
+    # Check files before second level statistics
+    level_2_check(workdir, json_dir)
+
+
 def level_1_check(path_to_pipeline_json, workdir):
 
     report_dir = 'reports'
@@ -200,9 +212,9 @@ def level_2_check(workdir, json_dir):
                 f.write('All reports were found \n\n\n')
 
             if done and not not_found:
-                f.write('Done. Ready to run group statistics!')
+                f.write('DONE. Ready to run group statistics!')
             else:
-                f.write('Not done. Group statistics cannot start yet!')
+                f.write('NOT DONE. Group statistics cannot start yet!')
 
     else:
         print('No reports available')

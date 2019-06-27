@@ -17,7 +17,7 @@ from .workflow import init_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
 from .utils import get_path, transpose
-from .file_checks import level_1_check, level_2_check
+from .file_checks import file_checks
 
 # Debug config for stop on first crash
 # from nipype import config
@@ -206,18 +206,6 @@ def main():
                 return get_files(description, runs=runs, conditions=conditions)
 
         return files
-
-    # File checks for when a pipeline.json file is partitioned into different block/single subject processing units #
-    def file_checks(workdir, json_dir, path_to_pipeline_json):
-
-        group_json = os.path.join(workdir, "pipeline.json")
-
-        # Check files of first level statistics for a particular file in workdir/json_dir/
-        if group_json != path_to_pipeline_json:
-            level_1_check(path_to_pipeline_json, workdir)
-
-        # Check files before second level statistics
-        level_2_check(workdir, json_dir)
 
     #
     # interface code that asks user questions
