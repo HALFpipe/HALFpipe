@@ -78,8 +78,9 @@ def level_1_check(path_to_pipeline_json, workdir):
                         command = "fslnvols " + configuration['metadata'][paradigm][field]
                         #print(configuration['metadata'][paradigm][field])
                         seeds = os.popen(command).read()
-                        seeds = int(seeds[-2:].strip())
+                        seeds = int(seeds.rstrip())
                         #print(seeds)
+                        #print(range(seeds))
 
                         for seed in range(seeds):
                             for suffix in suffixes:
@@ -191,10 +192,12 @@ def level_2_check(workdir, json_dir):
             f.writelines(my_list)
             f.write('\n\n')
 
+            f.write('REPORTS NOT FOUND: \n\n')
             if not_found:
-                f.write('REPORTS NOT FOUND: \n\n')
                 f.writelines(not_found)
                 f.write('\n\n')
+            else:
+                f.write('All reports were found \n\n\n')
 
             if done and not not_found:
                 f.write('Done. Ready to run group statistics!')
