@@ -6,8 +6,6 @@ import nipype.interfaces.utility as util
 from nipype.interfaces import fsl
 from nipype.interfaces.afni import TStat, Calc, Bandpass
 import nipype.interfaces.io as nio
-from nipype.interfaces import utility as niu
-
 
 from .reho import get_opt_string
 from ..utils import create_directory
@@ -219,9 +217,14 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
                            name='lp_input')
 
-    outputnode = pe.Node(util.IdentityInterface(fields=['alff_cope',
-                                                        'falff_cope']),
-                         name='outputnode')
+    outputnode = pe.Node(util.IdentityInterface(
+        fields=["alff_cope", "alff_zstat", "falff_cope", "falff_zstat"]),
+        name="outputnode"
+    )
+
+    # outputnode = pe.Node(util.IdentityInterface(
+    #     fields=["alff_cope", "falff_cope", "alff_zstat", "falff_zstat"]),
+    #                      name='outputnode')
 
     # filtering
     bandpass = pe.Node(interface=Bandpass(),
@@ -300,9 +303,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     sub_op_string = pe.Node(
         name="sub_op_string",
-        interface=niu.Function(input_names=["in_file"],
-                               output_names=["op_string"],
-                               function=get_sub_op_string),
+        interface=util.Function(input_names=["in_file"],
+                                output_names=["op_string"],
+                                function=get_sub_op_string),
     )
 
     # fslmaths cmd
@@ -324,9 +327,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     div_op_string = pe.Node(
         name="div_op_string",
-        interface=niu.Function(input_names=["in_file"],
-                               output_names=["op_string"],
-                               function=get_div_op_string),
+        interface=util.Function(input_names=["in_file"],
+                                output_names=["op_string"],
+                                function=get_div_op_string),
     )
 
     alff_maths_div = pe.Node(
@@ -363,9 +366,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     fsub_op_string = pe.Node(
         name="fsub_op_string",
-        interface=niu.Function(input_names=["in_file"],
-                               output_names=["op_string"],
-                               function=get_sub_op_string),
+        interface=util.Function(input_names=["in_file"],
+                                output_names=["op_string"],
+                                function=get_sub_op_string),
     )
 
     # fslmaths cmd
@@ -379,9 +382,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     fdiv_op_string = pe.Node(
         name="fdiv_op_string",
-        interface=niu.Function(input_names=["in_file"],
-                               output_names=["op_string"],
-                               function=get_div_op_string),
+        interface=util.Function(input_names=["in_file"],
+                                output_names=["op_string"],
+                                function=get_div_op_string),
     )
     falff_maths_div = pe.Node(
         interface=fsl.ImageMaths(),
@@ -466,6 +469,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (alff_maths_div, ds_alff_zstat, [
             ("out_file", "rest.@alff_zstat"),
         ]),
+        (alff_maths_div, outputnode, [
+            ("out_file", "alff_zstat"),
+        ]),
         (stddev_fltrd, outputnode, [
             ("out_file", "alff_cope"),
         ]),
@@ -504,6 +510,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         ]),
         (falff_maths_div, ds_falff_zstat, [
             ("out_file", "rest.@alff_zstat"),
+        ]),
+        (falff_maths_div, outputnode, [
+            ("out_file", "falff_zstat"),
         ]),
         (falff, outputnode, [
             ("out_file", "falff_cope"),

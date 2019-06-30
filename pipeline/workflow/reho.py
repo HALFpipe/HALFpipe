@@ -402,9 +402,9 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
                            name='reho_cope')
     raw_reho_map.inputs.cluster_size = 27
 
-    # outputs are cope
+    # outputs are cope and zstat
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["reho_cope"]),
+        fields=["reho_cope", "reho_zstat"]),
         name="outputnode"
     )
 
@@ -536,6 +536,9 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         ]),
         (reho_maths_div, ds_reho_zstat, [
             ("out_file", "rest.@alff_zstat"),
+        ]),
+        (reho_maths_div, outputnode, [
+            ("out_file", "reho_zstat"),
         ]),
     ])
 
