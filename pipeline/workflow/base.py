@@ -103,6 +103,9 @@ def init_workflow(workdir, jsonfile):
                 mergedoffiles = pe.Node(
                     interface=niu.Merge(len(subject_wfs)),
                     name="%s_%s_mergedoffiles" % (task, outname))
+                mergezstats = pe.Node(
+                    interface=niu.Merge(len(subject_wfs)),
+                    name="%s_%s_mergezstats" % (task, outname))
 
                 for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
                     excludethis = False
@@ -118,7 +121,8 @@ def init_workflow(workdir, jsonfile):
                         if len(outputnode) > 0:
                             outputnode = outputnode[0]
                             if outname in ["reho", "alff"]:
-                                workflow.connect(outputnode, "%s_zstat" % outname, mergecopes, "in%i" % (i + 1))
+                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
+                                workflow.connect(outputnode, "%s_zstat" % outname, mergezstats, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
                             else:
                                 workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
@@ -147,6 +151,9 @@ def init_workflow(workdir, jsonfile):
                     workflow.connect([
                         (mergecopes, higherlevel_wf, [
                             ("out", "inputnode.copes")
+                        ]),
+                        (mergezstats, higherlevel_wf, [
+                            ("out", "inputnode.zstats")
                         ]),
                         (mergemasks, higherlevel_wf, [
                             ("out", "inputnode.mask_files")

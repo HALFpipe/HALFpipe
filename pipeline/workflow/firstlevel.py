@@ -847,7 +847,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="alff")
         wfbywf["alff_wf"] = firstlevel_wf
         outnamesbywf["alff_wf"] = ["alff"]
-
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
             fields=flatten([
@@ -880,6 +879,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for outname in outnames:
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.reho_cope", outputnode, "reho_cope"
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.reho_zstat", outputnode, "reho_zstat"
                 )
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname

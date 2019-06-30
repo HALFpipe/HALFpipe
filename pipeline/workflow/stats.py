@@ -59,7 +59,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["copes", "varcopes", "dof_files", "mask_files"]
+            fields=["copes", "varcopes", "dof_files", "mask_files", "zstats"]
         ),
         name="inputnode"
     )
@@ -107,6 +107,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     dofmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
         name="dofmerge"
+    )
+
+    # merge all zstat files (reho/alff)
+    zstatmerge = pe.Node(
+        interface=fsl.Merge(dimension="t"),
+        name="zstatmerge"
     )
 
     # specify statistical analysis
@@ -215,7 +221,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                 run_mode=run_mode
             ),
             name="flameo",
-            iterfield=["cope_file"]  # cope_file is here z_stat file (see base.py)
+            iterfield=["cope_file"]  # cope_file is here z_stat file
         )
     else:
         flameo = pe.MapNode(
@@ -233,6 +239,9 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             (inputnode, copemerge, [
                 ("copes", "in_files")
             ]),
+            (inputnode, zstatmerge, [
+                ("zstats", "in_files")
+            ]),
 
             (inputnode, maskmerge, [
                 ("mask_files", "in_files")
@@ -243,9 +252,10 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         ])
 
         workflow.connect([
-            (copemerge, flameo, [
+            (zstatmerge, flameo, [
                 ("merged_file", "cope_file")
-            ])])
+            ])
+        ])
 
         workflow.connect(([
             (level2model, flameo, [
