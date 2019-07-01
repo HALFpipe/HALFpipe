@@ -215,6 +215,7 @@ def main():
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
 
+        '''
         #
         # anatomical/structural data
         #
@@ -406,34 +407,102 @@ def main():
                                                       o=str(5.0)))
 
         c.info("")
+        
+        '''
 
-        response0 = c.select("Specify a group design?", ["Yes", "No"])
+        response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
-            spreadsheet_file = get_file("covariates/group data spreadsheet")
+            #spreadsheet_file = get_file("covariates/group data spreadsheet")
+
+            ### REMOVE AFTER TESTING
+            spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
             spreadsheet = pd.read_csv(spreadsheet_file)
 
+
             id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
+            group_column = c.select("Specify the column containing group names", spreadsheet.columns)
 
             covariates = spreadsheet.set_index(id_column).to_dict()
-
-            group_column = c.select("Specify the column containing group names", spreadsheet.columns)
             groups = covariates[group_column]
             del covariates[group_column]
 
+            print(len(groups))
+            print('all groups: '+str(groups))
+
             unique_groups = set(groups.values())
+            unique_groups = list(unique_groups)
 
-            group_contrasts = {}
-            response3 = "Yes"
-            while response3 == "Yes":
-                contrast_name = c.read("Specify the contrast name")
-                contrast_values = c.fields("Specify the contrast values", unique_groups)
-                group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
-                response3 = c.select("Add another contrast?", ["Yes", "No"])
+            response1 = c.select("Specify a group comparison?", ["Yes", "No"])
+            if response1 == "Yes":
 
-            configuration["SubjectGroups"] = groups
-            configuration["GroupContrasts"] = group_contrasts
+                group_contrasts = {}
+                response3 = "Yes"
+                while response3 == "Yes":
+                    contrast_name = c.read("Specify the contrast name")
+                    contrast_values = c.fields("Specify the contrast values", unique_groups)
+                    group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
+                    response3 = c.select("Add another contrast?", ["Yes", "No"])
 
-            configuration["Covariates"] = covariates
+                configuration["SubjectGroups"] = groups
+                configuration["GroupContrasts"] = group_contrasts
+                print("group contrasts: "+str(group_contrasts))
+
+                configuration["Covariates"] = covariates
+                print('covariates: '+str(covariates))
+
+            response2 = c.select("Specify within group comparison?", ["Yes", "No"])
+            if response2 == "Yes":
+                response21 = c.select("Use all groups?", ["Yes", "No"])
+                if response21 == "Yes":
+                    selected_groups = unique_groups
+                else:
+                    response22 = "Yes"
+                    selected_groups = []
+                    while response22 == "Yes":
+                        selected_groups.append(c.select("Specify the group", unique_groups))
+                        response22 = c.select("Specify another group?", ["Yes", "No"])
+                    selected_groups = list(set(selected_groups))
+                print('groups: ' + str(selected_groups))
+
+                columns = spreadsheet.columns.tolist()
+                print(type(columns))
+                columns.remove(id_column)
+                columns.remove(group_column)
+                continuous_var_column = c.select("Specify the column containing the continuous variable",
+                                                 columns)
+                print('con_variable: '+str(continuous_var_column))
+                print('con_variable values: '+str(covariates[continuous_var_column]))
+
+
+        '''
+      response0 = c.select("Specify a group design?", ["Yes", "No"])
+      if response0 == "Yes":
+          spreadsheet_file = get_file("covariates/group data spreadsheet")
+          spreadsheet = pd.read_csv(spreadsheet_file)
+
+          id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
+
+          covariates = spreadsheet.set_index(id_column).to_dict()
+
+          group_column = c.select("Specify the column containing group names", spreadsheet.columns)
+          groups = covariates[group_column]
+          del covariates[group_column]
+
+          unique_groups = set(groups.values())
+
+          group_contrasts = {}
+          response3 = "Yes"
+          while response3 == "Yes":
+              contrast_name = c.read("Specify the contrast name")
+              contrast_values = c.fields("Specify the contrast values", unique_groups)
+              group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
+              response3 = c.select("Add another contrast?", ["Yes", "No"])
+
+          configuration["SubjectGroups"] = groups
+          configuration["GroupContrasts"] = group_contrasts
+
+          configuration["Covariates"] = covariates
+          '''
 
         c.info("")
 
