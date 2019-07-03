@@ -277,7 +277,7 @@ def main():
                     configuration["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
-            response3 = c.select("Calculate ICA network maps via dual regression?", ["Yes", "No"])
+            response3 = c.select("Calculate ICA network templates via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
                 configuration["rest"]["ICAMaps"] = {}
                 # name = "DualRegression"
