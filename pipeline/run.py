@@ -245,6 +245,7 @@ def main():
         # response0 = "Yes"
 
         if response0 == "Yes":
+
             configuration["rest"] = dict()
             images["rest"] = get_files(field_description, runs=True)
             configuration["rest"]["RepetitionTime"] = dict()
@@ -278,7 +279,15 @@ def main():
 
             response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                configuration["rest"]["ICAMaps"] = get_file("ICA component maps image")
+                configuration["rest"]["ICAMaps"] = {}
+                # name = "DualRegression"
+                # configuration["rest"]["ICAMaps"][name] = get_file("ICA component maps image")
+                # response3 = c.select("Calculate other ICA component maps?", ["Yes", "No"])
+
+                while response3 == "Yes":
+                    name = c.read("Specify an ICA map name")
+                    configuration["rest"]["ICAMaps"][name] = get_file("ICA component maps image")
+                    response3 = c.select("Calculate another ICA component maps?", ["Yes", "No"])
 
             response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
             if response3 == "Yes":

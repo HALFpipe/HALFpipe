@@ -798,7 +798,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="seedconnectivity")
         wfbywf["seedconnectivity_wf"] = firstlevel_wf
         outnamesbywf["seedconnectivity_wf"] = seednames
+
+    # ICAMaps
     if "ICAMaps" in metadata:
+        # TODO with all fields
+        for key in metadata["ICAMaps"]:
+
         firstlevel_wf, componentnames = init_dualregression_wf(
             metadata["ICAMaps"],
             metadata["UseMovPar"],
