@@ -801,23 +801,27 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
     # ICAMaps
     if "ICAMaps" in metadata:
-        # TODO with all fields
+
         for key in metadata["ICAMaps"]:
 
-        firstlevel_wf, componentnames = init_dualregression_wf(
-            metadata["ICAMaps"],
-            metadata["UseMovPar"],
-            metadata["CSF"],
-            metadata["Whitematter"],
-            metadata["GlobalSignal"],
-            subject,
-            output_dir,
-            name="dualregression_wf"
-        )
-        create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
-                  bold_file, output_dir, name="dualregression")
-        wfbywf["dualregression_wf"] = firstlevel_wf
-        outnamesbywf["dualregression_wf"] = componentnames
+            wf_name = key+"_wf"
+            file = metadata["ICAMaps"][key]
+            # print('ICAMaps: '+wf_name)
+            # print('ICAMaps: '+file)
+            firstlevel_wf, componentnames = init_dualregression_wf(
+                file,
+                metadata["UseMovPar"],
+                metadata["CSF"],
+                metadata["Whitematter"],
+                metadata["GlobalSignal"],
+                subject,
+                output_dir,
+                name=wf_name
+            )
+            create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
+                      bold_file, output_dir, name=key)
+            wfbywf[wf_name] = firstlevel_wf
+            outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
     if "reho" in metadata:
