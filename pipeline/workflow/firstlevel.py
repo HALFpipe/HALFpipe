@@ -392,11 +392,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (maskpreproc, gs_meants, [
             ("out_file", "in_file")
         ]),
-        (gs_meants, ds_gs_meants, [
-            ("out_file", "in_file")
-        ]),
         (func_preproc_wf, gs_meants, [
             ("outputnode.bold_mask_mni", "mask")
+        ]),
+        (gs_meants, ds_gs_meants, [
+            ("out_file", "in_file")
         ]),
 
         (temporalfilter_wf, tsnr_wf, [
@@ -654,11 +654,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
-                (gs_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.gs_meants_file")
-                ]),
-                (csf_wm_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.csf_wm_meants_file")
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
                 ]),
             ])
 
@@ -875,9 +872,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
                 )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.reho_z_score", outputnode, "reho_z_score"
-                # )
+
         elif workflow_name == "alff_wf":
             for outname in outnames:
                 wf.connect(
@@ -892,12 +887,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
                 )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.alff_z_img", outputnode, "alff_z_img"
-                # )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.falff_z_img", outputnode, "falff_z_img"
-                # )
 
     outnames = sum(outnamesbywf.values(), [])
 
