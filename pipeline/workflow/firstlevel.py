@@ -677,11 +677,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
-                (gs_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.gs_meants_file")
-                ]),
-                (csf_wm_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.csf_wm_meants_file")
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
                 ]),
             ])
 

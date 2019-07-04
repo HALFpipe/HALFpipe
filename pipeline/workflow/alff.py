@@ -156,9 +156,35 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
     create_directory(nipype_dir)
 
-    input_node = pe.Node(util.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+    inputnode = pe.Node(util.IdentityInterface(
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_label_string"]),
         name="inputnode"
+    )
+
+    inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
+                           name='hp_input')
+    inputnode_hp.inputs.hp = 0.009
+
+    inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
+                           name='lp_input')
+    inputnode_lp.inputs.lp = 0.08
+
+    # filtering
+    bandpass = pe.Node(interface=Bandpass(),
+                       name='bandpass_filtering')
+    bandpass.inputs.outputtype = 'NIFTI_GZ'
+    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
+
+    # Calculates the regression time series for CSF and white matter
+    csf_wm_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="csf_wm_meants",
+    )
+
+    # Calculates the regression time series for global signal
+    gs_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="gs_meants",
     )
 
     # create design matrix with added regressors to the seed column
@@ -211,28 +237,10 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     )
     glm.inputs.out_res_name = 'alff_residuals.nii.gz'
 
-    inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
-                           name='hp_input')
-    inputnode_hp.inputs.hp = 0.009
-
-    inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
-                           name='lp_input')
-    inputnode_lp.inputs.lp = 0.08
-
     outputnode = pe.Node(util.IdentityInterface(
         fields=["alff_cope", "alff_zstat", "falff_cope", "falff_zstat"]),
         name="outputnode"
     )
-
-    # outputnode = pe.Node(util.IdentityInterface(
-    #     fields=["alff_cope", "falff_cope", "alff_zstat", "falff_zstat"]),
-    #                      name='outputnode')
-
-    # filtering
-    bandpass = pe.Node(interface=Bandpass(),
-                       name='bandpass_filtering')
-    bandpass.inputs.outputtype = 'NIFTI_GZ'
-    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
 
     get_option_string = pe.Node(util.Function(input_names=['mask'],
                                               output_names=['option_string'],
@@ -403,28 +411,8 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         name="ds_falff_zstat", run_without_submitting=True)
 
     wf.connect([
-        (input_node, design_node, [
-            ("confounds_file", "mov_par_file"),
-            ("csf_wm_meants_file", "csf_wm_meants_file"),
-            ("gs_meants_file", "gs_meants_file"),
-        ]),
-        (input_node, glm, [
+        (inputnode, bandpass, [
             ("bold_file", "in_file"),
-        ]),
-        (design_node, glm, [
-            ("design", "design"),
-        ]),
-        (glm, bandpass, [
-            ("out_res", "in_file"),
-        ]),
-        (input_node, get_option_string, [
-            ("mask_file", "mask"),
-        ]),
-        (glm, stddev_unfltrd, [
-            ("out_res", "in_file"),
-        ]),
-        (input_node, falff, [
-            ("mask_file", "in_file_a"),
         ]),
         (inputnode_hp, bandpass, [
             ("hp", "highpass"),
@@ -432,8 +420,44 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (inputnode_lp, bandpass, [
             ("lp", "lowpass"),
         ]),
-        (bandpass, stddev_fltrd, [
+        (inputnode, csf_wm_meants, [
+            ("csf_wm_label_string", "args"),
+        ]),
+        (bandpass, csf_wm_meants, [
             ("out_file", "in_file"),
+        ]),
+        (csf_wm_meants, design_node, [
+            ("out_file", "csf_wm_meants_file"),
+        ]),
+        (bandpass, gs_meants, [
+            ("out_file", "in_file")
+        ]),
+        (inputnode, gs_meants, [
+            ("mask_file", "mask")
+        ]),
+        (gs_meants, design_node, [
+            ("out_file", "gs_meants_file")
+        ]),
+        (inputnode, design_node, [
+            ("confounds_file", "mov_par_file")
+        ]),
+        (design_node, glm, [
+            ("design", "design"),
+        ]),
+        (bandpass, glm, [
+            ("out_file", "in_file"),
+        ]),
+        (inputnode, get_option_string, [
+            ("mask_file", "mask"),
+        ]),
+        (inputnode, stddev_unfltrd, [
+            ("bold_file", "in_file"),
+        ]),
+        (inputnode, falff, [
+            ("mask_file", "in_file_a"),
+        ]),
+        (glm, stddev_fltrd, [
+            ("out_res", "in_file"),
         ]),
         (get_option_string, stddev_fltrd, [
             ("option_string", "options"),
