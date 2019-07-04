@@ -667,7 +667,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_cope" % outname),
+                        suffix="%s_img" % outname),
                     name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
 
                 wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
@@ -688,15 +688,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 ]),
             ])
 
-            for outname in outnames:
-                ds_cope = pe.Node(
-                    DerivativesDataSink(
-                        base_directory=output_dir,
-                        source_file=bold_file,
-                        suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
-
-                wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
