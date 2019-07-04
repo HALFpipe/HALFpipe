@@ -331,9 +331,11 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     # input nodes for bandpass filtering
     inputnode_hp = pe.Node(niu.IdentityInterface(fields=['hp']),
                            name='hp_input')
+    inputnode_hp.inputs.hp = 0.009
 
     inputnode_lp = pe.Node(niu.IdentityInterface(fields=['lp']),
                            name='lp_input')
+    inputnode_lp.inputs.lp = 0.08
 
     # create design matrix with added regressors to the seed column
     regressor_names = []

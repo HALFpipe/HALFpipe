@@ -213,9 +213,11 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
 
     inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
                            name='hp_input')
+    inputnode_hp.inputs.hp = 0.009
 
     inputnode_lp = pe.Node(util.IdentityInterface(fields=['lp']),
                            name='lp_input')
+    inputnode_lp.inputs.lp = 0.08
 
     outputnode = pe.Node(util.IdentityInterface(
         fields=["alff_cope", "alff_zstat", "falff_cope", "falff_zstat"]),
