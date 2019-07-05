@@ -411,26 +411,17 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         name="ds_falff_zstat", run_without_submitting=True)
 
     wf.connect([
-        (inputnode, bandpass, [
+        (inputnode, csf_wm_meants, [
             ("bold_file", "in_file"),
-        ]),
-        (inputnode_hp, bandpass, [
-            ("hp", "highpass"),
-        ]),
-        (inputnode_lp, bandpass, [
-            ("lp", "lowpass"),
         ]),
         (inputnode, csf_wm_meants, [
             ("csf_wm_label_string", "args"),
         ]),
-        (bandpass, csf_wm_meants, [
-            ("out_file", "in_file"),
-        ]),
         (csf_wm_meants, design_node, [
             ("out_file", "csf_wm_meants_file"),
         ]),
-        (bandpass, gs_meants, [
-            ("out_file", "in_file")
+        (inputnode, gs_meants, [
+            ("bold_file", "in_file")
         ]),
         (inputnode, gs_meants, [
             ("mask_file", "mask")
@@ -441,11 +432,20 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (inputnode, design_node, [
             ("confounds_file", "mov_par_file")
         ]),
+        (inputnode, glm, [
+            ("bold_file", "in_file"),
+        ]),
         (design_node, glm, [
             ("design", "design"),
         ]),
-        (bandpass, glm, [
-            ("out_file", "in_file"),
+        (glm, bandpass, [
+            ("out_res", "in_file"),
+        ]),
+        (inputnode_hp, bandpass, [
+            ("hp", "highpass"),
+        ]),
+        (inputnode_lp, bandpass, [
+            ("lp", "lowpass"),
         ]),
         (inputnode, get_option_string, [
             ("mask_file", "mask"),
@@ -456,8 +456,8 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (inputnode, falff, [
             ("mask_file", "in_file_a"),
         ]),
-        (glm, stddev_fltrd, [
-            ("out_res", "in_file"),
+        (bandpass, stddev_fltrd, [
+            ("out_file", "in_file"),
         ]),
         (get_option_string, stddev_fltrd, [
             ("option_string", "options"),

@@ -495,29 +495,20 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         name="ds_reho_zstat", run_without_submitting=True)
 
     workflow.connect([
-        (inputnode, bandpass, [
+        (inputnode, csf_wm_meants, [
             ("bold_file", "in_file"),
-        ]),
-        (inputnode_hp, bandpass, [
-            ("hp", "highpass"),
-        ]),
-        (inputnode_lp, bandpass, [
-            ("lp", "lowpass"),
         ]),
         (inputnode, csf_wm_meants, [
             ("csf_wm_label_string", "args"),
         ]),
-        (bandpass, csf_wm_meants, [
-            ("out_file", "in_file"),
-        ]),
-        (csf_wm_meants, design_node, [
-            ("out_file", "csf_wm_meants_file"),
-        ]),
-        (bandpass, gs_meants, [
-            ("out_file", "in_file")
+        (inputnode, gs_meants, [
+            ("bold_file", "in_file")
         ]),
         (inputnode, gs_meants, [
             ("mask_file", "mask")
+        ]),
+        (csf_wm_meants, design_node, [
+            ("out_file", "csf_wm_meants_file"),
         ]),
         (gs_meants, design_node, [
             ("out_file", "gs_meants_file")
@@ -525,14 +516,23 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         (inputnode, design_node, [
             ("confounds_file", "mov_par_file")
         ]),
+        (inputnode, glm, [
+            ("bold_file", "in_file"),
+        ]),
         (design_node, glm, [
             ("design", "design"),
         ]),
-        (bandpass, glm, [
-            ("out_file", "in_file"),
-        ]),
-        (glm, raw_reho_map, [
+        (glm, bandpass, [
             ("out_res", "in_file"),
+        ]),
+        (inputnode_hp, bandpass, [
+            ("hp", "highpass"),
+        ]),
+        (inputnode_lp, bandpass, [
+            ("lp", "lowpass"),
+        ]),
+        (bandpass, raw_reho_map, [
+            ("out_file", "in_file"),
         ]),
         (inputnode, raw_reho_map, [
             ("mask_file", "mask_file"),
