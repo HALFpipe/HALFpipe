@@ -288,6 +288,10 @@ def main():
             if response3 == "Yes":
                 configuration["rest"]["alff"] = True
 
+            response3 = c.select("Do you want to calculate fALFF?", ["Yes", "No"])
+            if response3 == "Yes":
+                configuration["rest"]["falff"] = True
+
             response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
             configuration["rest"]["UseMovPar"] = False
             configuration["rest"]["CSF"] = False

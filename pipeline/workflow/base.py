@@ -45,7 +45,7 @@ def init_workflow(workdir, jsonfile):
     # first level
     #
 
-    result = Pool().map(
+    result = map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
     )
@@ -120,7 +120,7 @@ def init_workflow(workdir, jsonfile):
                         ]
                         if len(outputnode) > 0:
                             outputnode = outputnode[0]
-                            if outname in ["reho", "alff"]:
+                            if outname in ["reho", "alff", "falff"]:
                                 workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_zstat" % outname, mergezstats, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
@@ -147,7 +147,7 @@ def init_workflow(workdir, jsonfile):
                         parameterization=False),
                     name="ds_%s_%s_mask" % (task, outname), run_without_submitting=True)
 
-                if outname in ["reho", "alff"]:
+                if outname in ["reho", "alff", "falff"]:
                     workflow.connect([
                         (mergecopes, higherlevel_wf, [
                             ("out", "inputnode.copes")

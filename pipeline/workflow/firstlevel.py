@@ -20,6 +20,8 @@ from .reho import init_reho_wf
 
 from .alff import create_alff
 
+from .falff import create_falff
+
 from .task import init_glm_wf
 
 from .patch import patch_wf
@@ -681,6 +683,19 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("label_string", "inputnode.csf_wm_label_string")
                 ]),
             ])
+        elif name == "falff":
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
+                ]),
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
+                ]),
+            ])
 
         else:
             ds_dof_file = pe.Node(
@@ -830,21 +845,38 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="alff")
         wfbywf["alff_wf"] = firstlevel_wf
         outnamesbywf["alff_wf"] = ["alff"]
+
+    # fALFF
+    if "falff" in metadata:
+        firstlevel_wf = create_falff(
+            metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
+            name="falff_wf"
+        )
+        create_ds(wf, firstlevel_wf, ["falff"], func_preproc_wf, temporalfilter_wf,
+                  bold_file, output_dir, name="falff")
+        wfbywf["falff_wf"] = firstlevel_wf
+        outnamesbywf["falff_wf"] = ["falff"]
+
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
             fields=flatten([
                 [["%s_varcope" % outname,
                   "%s_mask_file" % outname,
-                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
+                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff", "falff"]] +
                 [["%s_cope" % outname] for outname in outnames] +
-                [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff"]]
+                [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
                 for outnames in outnamesbywf.values()]
             )
         ),
         name="outputnode")
 
     for workflow_name, outnames in outnamesbywf.items():
-        if workflow_name not in ["reho_wf", "alff_wf", "brainatlas_wf"]:
+        if workflow_name not in ["reho_wf", "alff_wf", "falff_wf", "brainatlas_wf"]:
             for outname in outnames:
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.%s_cope" % outname, outputnode, "%s_cope" % outname
@@ -879,7 +911,16 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     wfbywf[workflow_name], "outputnode.alff_zstat", outputnode, "alff_zstat"
                 )
                 wf.connect(
+                    func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
+                )
+
+        elif workflow_name == "falff_wf":
+            for outname in outnames:
+                wf.connect(
                     wfbywf[workflow_name], "outputnode.falff_cope", outputnode, "falff_cope"
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.falff_zstat", outputnode, "falff_zstat"
                 )
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname

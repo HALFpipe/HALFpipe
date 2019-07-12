@@ -282,7 +282,7 @@ def get_opt_string(mask):
 def get_operand_string(mean, std_dev):
     """
     Generate the Operand String to be used in workflow nodes to supply
-    mean and std deviation to alff workflow nodes
+    mean and std deviation to workflow nodes
 
     Parameters
     ----------
@@ -311,7 +311,7 @@ def get_operand_string(mean, std_dev):
 
 def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name="firstlevel"):
     """
-    create a workflow to do ReHo and ALFF
+    create a workflow to do ReHo
 
     """
     workflow = pe.Workflow(name=name)
@@ -565,7 +565,7 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
             ("op_string", "op_string"),
         ]),
         (reho_maths_div, ds_reho_zstat, [
-            ("out_file", "rest.@alff_zstat"),
+            ("out_file", "rest.@reho_zstat"),
         ]),
         (reho_maths_div, outputnode, [
             ("out_file", "reho_zstat"),

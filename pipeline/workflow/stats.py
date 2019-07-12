@@ -109,7 +109,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="dofmerge"
     )
 
-    # merge all zstat files (reho/alff)
+    # merge all zstat files (reho/alff/falff)
     zstatmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
         name="zstatmerge"
@@ -215,7 +215,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # actually run FSL FLAME
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         flameo = pe.MapNode(
             interface=fsl.FLAMEO(
                 run_mode=run_mode
@@ -234,7 +234,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # construct workflow
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         workflow.connect([
             (inputnode, copemerge, [
                 ("copes", "in_files")
