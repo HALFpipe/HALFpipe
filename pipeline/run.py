@@ -491,7 +491,7 @@ def main():
                 # 3. Groups to use (in case not all patients are used)
                 else:
                     all_groups = False
-                    selected_groups = c.fields("Specify the groups for individual models", unique_groups)
+                    selected_groups = c.fields("Specify the group(s) for individual model(s)", unique_groups)
                     print(unique_groups)
                     selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
 
