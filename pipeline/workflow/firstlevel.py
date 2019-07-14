@@ -830,7 +830,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         wfbywf["reho_wf"] = firstlevel_wf
         outnamesbywf["reho_wf"] = ["reho"]
 
-    # ALFF
+    # ALFF / fALFF
     if "alff" in metadata:
         firstlevel_wf = create_alff(
             metadata["UseMovPar"],
@@ -847,7 +847,6 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["alff_wf"] = ["alff"]
 
     # fALFF
-    if "falff" in metadata:
         firstlevel_wf = create_falff(
             metadata["UseMovPar"],
             metadata["CSF"],
