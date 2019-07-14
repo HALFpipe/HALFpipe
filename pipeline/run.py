@@ -418,21 +418,27 @@ def main():
             spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
             spreadsheet = pd.read_csv(spreadsheet_file)
 
-            id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
-            group_column = c.select("Specify the column containing group names", spreadsheet.columns)
+            columns = spreadsheet.columns.tolist()
+            columns.remove('Unnamed: 0')  # numbering of subjects
+
+            id_column = c.select("Specify the column containing subject names", columns)
+            columns.remove(id_column)
+            group_column = c.select("Specify the column containing group names", columns)
 
             covariates = spreadsheet.set_index(id_column).to_dict()
             groups = covariates[group_column]
 
-            # Removing numbering and group column from covariates
-            del covariates['Unnamed: 0']  # numbering of subjects
-            del covariates[group_column]
+            configuration["SubjectGroups"] = groups
 
             print(len(groups))
             print('all groups: '+str(groups))
 
             unique_groups = set(groups.values())
             unique_groups = list(unique_groups)
+
+            # Removing numbering and group column from covariates
+            del covariates['Unnamed: 0']  # numbering of subjects
+            del covariates[group_column]
 
             # GROUP COMPARISON
             response1 = c.select("Specify a group comparison?", ["Yes", "No"])
@@ -448,12 +454,11 @@ def main():
                     group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
                     response3 = c.select("Add another contrast?", ["Yes", "No"])
 
-                configuration["SubjectGroups"] = groups
                 configuration["GroupContrasts"] = group_contrasts
                 print("group contrasts: "+str(group_contrasts))
 
                 # 2. Covariates
-                covariates_selected = c.fields("Specify the contrasts to be used", list(covariates))
+                covariates_selected = c.fields("Specify the covariates to be used", list(covariates))
                 print(list(covariates))
 
                 covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx] == '1']
@@ -467,39 +472,49 @@ def main():
 
             # WITHING GROUP COMPARISON
             response2 = c.select("Specify within group comparison?", ["Yes", "No"])
+            if response2 == "Yes":
+                configuration["WithinGroup"]={}
             while response2 == "Yes":
 
                 # 1. Selection of continuous variable
-                continuous_var_column = c.select("Specify the column containing the continuous variable",
-                                                 list(covariates))
-                print('con_variable: '+str(continuous_var_column))
-                print('con_variable values: '+str(covariates[continuous_var_column]))
+                convariable_name = c.select("Specify the column containing the continuous variable", list(covariates))
+                print('con_variable: '+str(convariable_name))
+                print('con_variable values: '+str(covariates[convariable_name]))
+                configuration["WithinGroup"][convariable_name] = {}
 
                 # GROUPS
                 # 2. Using all patients (all groups)?
                 response21 = c.select("Use all groups?", ["Yes", "No"])
                 if response21 == "Yes":
                     all_groups = True
+                    selected_groups = unique_groups
                 # 3. Groups to use (in case not all patients are used)
                 else:
+                    all_groups = False
                     selected_groups = c.fields("Specify the groups for individual models", unique_groups)
                     print(unique_groups)
-
                     selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
-                    print('groups: ' + str(selected_groups))
+
+                print('groups: ' + str(selected_groups))
+
+                # change depending of what the processing requires   # subjects with groups? # groups with 1 or 0?
+                configuration["WithinGroup"][convariable_name]['Groups'] = dict.fromkeys(selected_groups, 1)
+                configuration["WithinGroup"][convariable_name]['AllGroups'] = all_groups
 
                 # 4. Covariates
                 cov_names = list(covariates)
                 print(cov_names)
-                cov_names.remove(continuous_var_column)
+                cov_names.remove(convariable_name)
                 print(cov_names)
 
-                covariates_selected = c.fields("Specify the contrasts to be used", cov_names)
+                covariates_selected = c.fields("Specify the covariates to be used", cov_names)
                 covariates_selected = [i for idx, i in enumerate(cov_names) if covariates_selected[idx] == '1']
                 print(covariates_selected)
 
                 covariates_subset = {k: covariates[k] for k in covariates_selected}
                 print('covariates_sub: ' + str(covariates_subset))
+
+                configuration["WithinGroup"][convariable_name]['Covariates'] = covariates_subset
 
                 response2 = c.select("Specify another within group comparison?", ["Yes", "No"])
 
