@@ -280,9 +280,6 @@ def main():
             response3 = c.select("Calculate ICA network templates via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
                 configuration["rest"]["ICAMaps"] = {}
-                # name = "DualRegression"
-                # configuration["rest"]["ICAMaps"][name] = get_file("ICA component maps image")
-                # response3 = c.select("Calculate other ICA component maps?", ["Yes", "No"])
 
                 while response3 == "Yes":
                     name = c.read("Specify an ICA network templates name")
