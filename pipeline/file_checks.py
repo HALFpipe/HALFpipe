@@ -6,13 +6,11 @@ from .utils import transpose
 
 # File checks for when a pipeline.json file is partitioned into different block/single subject processing units #
 def file_checks(workdir, json_dir, path_to_pipeline_json):
-    group_json = os.path.join(workdir, "pipeline.json")
 
-    # Check files of first level statistics for a particular file in workdir/json_dir/
-    if group_json != path_to_pipeline_json:
-        level_1_check(path_to_pipeline_json, workdir)
+    # Always check files of first level statistics for the particular json file
+    level_1_check(path_to_pipeline_json, workdir)
 
-    # Check files before second level statistics
+    # Summary report
     level_2_check(workdir, json_dir)
 
 
@@ -99,12 +97,14 @@ def level_1_check(path_to_pipeline_json, workdir):
                                 file = name + '_' + str(seed) + suffix
                                 my_list.append(file)
 
+                    suffixes = ['_img.nii.gz', '_zstat.nii.gz']
                     fields = ['reho', 'alff']
                     for field in fields:
                         if field in configuration['metadata'][paradigm] and configuration['metadata'][paradigm][field]:
                             #print('entered '+field)
-                            file = field+suffixes[0]
-                            my_list.append(file)
+                            for suffix in suffixes:
+                                file = field+suffix
+                                my_list.append(file)
 
                 # Paradigms different than rest (Tasks)
                 else:
@@ -178,9 +178,9 @@ def level_2_check(workdir, json_dir):
                         my_list.append(last_line + "\n")
                         done = done and parts[0] == 'True'
                     else:
-                        my_list.append('Check '+os.path.basename(report))
+                        my_list.append('Check '+os.path.basename(report)+ "\n")
                 else:
-                    my_list.append('Check ' + os.path.basename(report))
+                    my_list.append('Check ' + os.path.basename(report)+ "\n")
 
         # Check if there are reports missing
 
