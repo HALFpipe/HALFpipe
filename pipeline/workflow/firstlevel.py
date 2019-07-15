@@ -798,21 +798,30 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="seedconnectivity")
         wfbywf["seedconnectivity_wf"] = firstlevel_wf
         outnamesbywf["seedconnectivity_wf"] = seednames
+
+    # ICAMaps
     if "ICAMaps" in metadata:
-        firstlevel_wf, componentnames = init_dualregression_wf(
-            metadata["ICAMaps"],
-            metadata["UseMovPar"],
-            metadata["CSF"],
-            metadata["Whitematter"],
-            metadata["GlobalSignal"],
-            subject,
-            output_dir,
-            name="dualregression_wf"
-        )
-        create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
-                  bold_file, output_dir, name="dualregression")
-        wfbywf["dualregression_wf"] = firstlevel_wf
-        outnamesbywf["dualregression_wf"] = componentnames
+
+        for key in metadata["ICAMaps"]:
+
+            wf_name = key+"_wf"
+            file = metadata["ICAMaps"][key]
+            # print('ICAMaps: '+wf_name)
+            # print('ICAMaps: '+file)
+            firstlevel_wf, componentnames = init_dualregression_wf(
+                file,
+                metadata["UseMovPar"],
+                metadata["CSF"],
+                metadata["Whitematter"],
+                metadata["GlobalSignal"],
+                subject,
+                output_dir,
+                name=wf_name
+            )
+            create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
+                      bold_file, output_dir, name=key)
+            wfbywf[wf_name] = firstlevel_wf
+            outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
     if "reho" in metadata:

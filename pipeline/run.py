@@ -245,6 +245,7 @@ def main():
         # response0 = "Yes"
 
         if response0 == "Yes":
+
             configuration["rest"] = dict()
             images["rest"] = get_files(field_description, runs=True)
             configuration["rest"]["RepetitionTime"] = dict()
@@ -276,9 +277,14 @@ def main():
                     configuration["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
-            response3 = c.select("Calculate ICA component maps via dual regression?", ["Yes", "No"])
+            response3 = c.select("Calculate ICA network templates via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
-                configuration["rest"]["ICAMaps"] = get_file("ICA component maps image")
+                configuration["rest"]["ICAMaps"] = {}
+
+                while response3 == "Yes":
+                    name = c.read("Specify an ICA network templates name")
+                    configuration["rest"]["ICAMaps"][name] = get_file("ICA network templates image")
+                    response3 = c.select("Use another ICA network templates image?", ["Yes", "No"])
 
             response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
             if response3 == "Yes":
