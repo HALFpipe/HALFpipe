@@ -6,13 +6,11 @@ from .utils import transpose
 
 # File checks for when a pipeline.json file is partitioned into different block/single subject processing units #
 def file_checks(workdir, json_dir, path_to_pipeline_json):
-    group_json = os.path.join(workdir, "pipeline.json")
 
-    # Check files of first level statistics for a particular file in workdir/json_dir/
-    if group_json != path_to_pipeline_json:
-        level_1_check(path_to_pipeline_json, workdir)
+    # Always check files of first level statistics for the particular json file
+    level_1_check(path_to_pipeline_json, workdir)
 
-    # Check files before second level statistics
+    # Summary report
     level_2_check(workdir, json_dir)
 
 
@@ -66,7 +64,6 @@ def level_1_check(path_to_pipeline_json, workdir):
 
                     field = 'BrainAtlasImage'
                     if field in configuration['metadata'][paradigm]:
-                        #print('entered '+field)
                         for key in configuration['metadata'][paradigm][field]:
                             file = 'brainatlas_timeseries_'+key+'.txt'
                             my_list.append(file)
@@ -75,7 +72,6 @@ def level_1_check(path_to_pipeline_json, workdir):
 
                     field = 'ConnectivitySeeds'
                     if field in configuration['metadata'][paradigm]:
-                        #print('entered '+field)
                         for key in configuration['metadata'][paradigm][field]:
                             for suffix in suffixes:
                                 file = key+suffix
@@ -83,43 +79,38 @@ def level_1_check(path_to_pipeline_json, workdir):
 
                     field = 'ICAMaps'
                     if field in configuration['metadata'][paradigm]:
-                        #print('entered '+field)
                         name = configuration['metadata'][paradigm][field]
                         name = os.path.splitext(os.path.basename(name))[0]
                         name = os.path.splitext(name)[0]
                         command = "fslnvols " + configuration['metadata'][paradigm][field]
-                        #print(configuration['metadata'][paradigm][field])
                         seeds = os.popen(command).read()
                         seeds = int(seeds.rstrip())
-                        #print(seeds)
-                        #print(range(seeds))
 
                         for seed in range(seeds):
                             for suffix in suffixes:
                                 file = name + '_' + str(seed) + suffix
                                 my_list.append(file)
 
+                    suffixes = ['_img.nii.gz', '_zstat.nii.gz']
                     fields = ['reho', 'alff']
                     for field in fields:
                         if field in configuration['metadata'][paradigm] and configuration['metadata'][paradigm][field]:
-                            #print('entered '+field)
-                            file = field+suffixes[0]
-                            my_list.append(file)
+                            for suffix in suffixes:
+                                file = field+suffix
+                                my_list.append(file)
+                                if field == 'alff':
+                                    file = 'f' + field + suffix
+                                    my_list.append(file)
 
                 # Paradigms different than rest (Tasks)
                 else:
 
                     field = 'Contrasts'
                     if field in configuration['metadata'][paradigm]:
-                        #print('entered '+field)
                         for key in configuration['metadata'][paradigm][field]:
                             for suffix in suffixes:
                                 file = key + suffix
                                 my_list.append(file)
-
-                # #### REMOVE AFTER TESTING
-                #my_list.append('/ext/Users/eliana/Documents/BERLIN-Work/output/')
-                #my_list.append('/ext/Users/eliana/Documents/BERLIN-Work/output/pipeline*.json')
 
                 # Writing report
                 all_exist = []
@@ -178,9 +169,9 @@ def level_2_check(workdir, json_dir):
                         my_list.append(last_line + "\n")
                         done = done and parts[0] == 'True'
                     else:
-                        my_list.append('Check '+os.path.basename(report))
+                        my_list.append('Check '+os.path.basename(report)+ "\n")
                 else:
-                    my_list.append('Check ' + os.path.basename(report))
+                    my_list.append('Check ' + os.path.basename(report)+ "\n")
 
         # Check if there are reports missing
 
@@ -189,15 +180,10 @@ def level_2_check(workdir, json_dir):
             suffix = 'pipeline.json'
             json_files = glob.glob(os.path.join(json_dir,  '*'+suffix))
             for path_to_pipeline_json in json_files:
-                #print(path_to_pipeline_json)
                 report_name = "report_" + os.path.splitext(os.path.basename(path_to_pipeline_json))[0] + ".txt"
                 path_to_report = os.path.join(report_dir, report_name)
-                #print(path_to_report)
-                #print(str(os.path.exists(path_to_report)))
                 if not os.path.exists(path_to_report):
                     not_found.append(report_name + "\n")
-
-            #print(json_files)
 
         with open(summary_report, 'w+') as f:
             f.write('REPORTS FOUND: \n\n')
