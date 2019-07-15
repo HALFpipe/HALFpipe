@@ -17,6 +17,7 @@ from .workflow import init_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
 from .utils import get_path, transpose
+from .file_checks import file_checks
 
 # Debug config for stop on first crash
 # from nipype import config
@@ -33,6 +34,7 @@ def main():
     ap.add_argument("-s", "--setup-only", action="store_true", default=False)
     ap.add_argument("-j", "--json-file")
     ap.add_argument("-b", "--block-size")
+    ap.add_argument("-f", "--file-status", action='store_true')
     args = ap.parse_args()
 
     workdir = None
@@ -407,15 +409,15 @@ def main():
 
         c.info("")
 
-        spreadsheet_file = get_file("covariates/group data spreadsheet")
-        spreadsheet = pd.read_csv(spreadsheet_file)
-
-        id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
-
-        covariates = spreadsheet.set_index(id_column).to_dict()
-
         response0 = c.select("Specify a group design?", ["Yes", "No"])
         if response0 == "Yes":
+            spreadsheet_file = get_file("covariates/group data spreadsheet")
+            spreadsheet = pd.read_csv(spreadsheet_file)
+
+            id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
+
+            covariates = spreadsheet.set_index(id_column).to_dict()
+
             group_column = c.select("Specify the column containing group names", spreadsheet.columns)
             groups = covariates[group_column]
             del covariates[group_column]
@@ -445,7 +447,12 @@ def main():
         c.info("")
         c.info("")
 
-    if not args.setup_only:
+    # Manual file check: Check file status after first level statistics is done
+    if args.file_status:
+        file_checks(workdir, json_dir, path_to_pipeline_json)
+
+    # Run workflow if setup_only flag is not given
+    elif not args.setup_only:
         workflow = init_workflow(workdir, path_to_pipeline_json)
 
         init_logging(workdir, path_to_pipeline_json)
@@ -552,7 +559,41 @@ def main():
 
                     except KeyError:
                         pass
+        # create confounds_mni.tsv
+        for subject in flattened_configuration:
+            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
+            for key in flattened_configuration[subject]:
+                if key not in ["T1w", "T2w", "FLAIR"]:
+                    # Taskdata exists
+                    task = key
+                    # get dataframe for original confounds.tsv
+                    orig_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
+                    df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
+                    # get dataframe for gs_meants.txt
+                    gs_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/gs_meants.txt'
+                    df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
+                    df_gs_meants.columns = ["GlobalSignal"]
+                    # get dataframe for csf_wm_meants.txt
+                    csf_wm_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/csf_wm_meants.txt'
+                    df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
+                    df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
+                    # Replace respective columns
+                    df_confounds['WhiteMatter'] = df_csf_wm_meants['WhiteMatter']
+                    df_confounds['CSF'] = df_csf_wm_meants['CSF']
+                    df_confounds['GlobalSignal'] = df_gs_meants['GlobalSignal']
+                    # Save dataframe as confounds_mni.tsv
+                    new_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds_mni.tsv'
+                    df_confounds.to_csv(new_confounds_path, sep="\t", encoding='utf-8', index=False)
+                else:
+                    # Taskdata doesn't exist
+                    pass
+
+        # Automatic file check: Check file status after first level statistics is done
+        file_checks(workdir, json_dir, path_to_pipeline_json)
+
+    # Creation of individual/block json files
     else:
+
         os.makedirs(json_dir, exist_ok=True)
 
         with open(path_to_pipeline_json, "r") as f:
@@ -629,3 +670,4 @@ def main():
             file.write(command + file_name + '\n')
 
         file.close()
+

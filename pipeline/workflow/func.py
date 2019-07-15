@@ -28,7 +28,7 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time, name="tempora
 
     # only output is the filtered bold image
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["filtered_file"]),
+        fields=["filtered_file", "highpass_file"]),
         name="outputnode"
     )
 
@@ -62,6 +62,9 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time, name="tempora
         ]),
         (inputnode, meanfunc, [
             ("bold_file", "in_file")
+        ]),
+        (highpass, outputnode, [
+            ("out_file", "highpass_file")
         ]),
         (highpass, addmean, [
             ("out_file", "in_file")

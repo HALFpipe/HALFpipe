@@ -2,11 +2,14 @@ import os
 import sys
 import numpy as np
 
+import nipype.interfaces.io as nio
+
 from pathlib import Path
 
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from nipype.interfaces import fsl
+from nipype.interfaces.afni import Bandpass
 
 
 from ..utils import create_directory
@@ -279,7 +282,7 @@ def get_opt_string(mask):
 def get_operand_string(mean, std_dev):
     """
     Generate the Operand String to be used in workflow nodes to supply
-    mean and std deviation to alff workflow nodes
+    mean and std deviation to workflow nodes
 
     Parameters
     ----------
@@ -308,7 +311,7 @@ def get_operand_string(mean, std_dev):
 
 def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name="firstlevel"):
     """
-    create a workflow to do ReHo and ALFF
+    create a workflow to do ReHo
 
     """
     workflow = pe.Workflow(name=name)
@@ -321,8 +324,35 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
 
     # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_label_string"]),
         name="inputnode"
+    )
+
+    # input nodes for bandpass filtering
+    inputnode_hp = pe.Node(niu.IdentityInterface(fields=['hp']),
+                           name='hp_input')
+    inputnode_hp.inputs.hp = 0.009
+
+    inputnode_lp = pe.Node(niu.IdentityInterface(fields=['lp']),
+                           name='lp_input')
+    inputnode_lp.inputs.lp = 0.08
+
+    # filtering
+    bandpass = pe.Node(interface=Bandpass(),
+                       name='bandpass_filtering')
+    bandpass.inputs.outputtype = 'NIFTI_GZ'
+    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
+
+    # Calculates the regression time series for CSF and white matter
+    csf_wm_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="csf_wm_meants",
+    )
+
+    # Calculates the regression time series for global signal
+    gs_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="gs_meants",
     )
 
     # create design matrix with added regressors to the seed column
@@ -383,20 +413,108 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
                                         output_names=['out_file'],
                                         function=compute_reho,
                                         imports=reho_imports),
-                           name='reho_img')
+                           name='reho_cope')
     raw_reho_map.inputs.cluster_size = 27
 
-    # outputs are cope, varcope and zstat for each ICA component and a dof_file
+    # outputs are cope and zstat
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["reho_img"]),
+        fields=["reho_cope", "reho_zstat"]),
         name="outputnode"
     )
 
+    # calculate zstat from img
+
+    # calculate mean
+    reho_stats_mean = pe.Node(
+        interface=fsl.ImageStats(),
+        name="reho_stats_mean",
+    )
+    reho_stats_mean.inputs.op_string = '-M'
+
+    # calculate std
+    reho_stats_std = pe.Node(
+        interface=fsl.ImageStats(),
+        name="reho_stats_std",
+    )
+    reho_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
+    def get_sub_op_string(in_file):
+        """
+
+        :param in_file: mean value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-sub ' + str(in_file)
+        return op_string
+
+    sub_op_string = pe.Node(
+        name="sub_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_sub_op_string),
+    )
+
+    # fslmaths cmd
+    reho_maths_sub = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="reho_maths_sub",
+    )
+
+    # divide by std
+    # Creates op_string for fslmaths
+    def get_div_op_string(in_file):
+        """
+
+        :param in_file: std value of the img
+        :return: op_string for fslmaths
+        """
+        op_string = '-div ' + str(in_file)
+        return op_string
+
+    div_op_string = pe.Node(
+        name="div_op_string",
+        interface=niu.Function(input_names=["in_file"],
+                               output_names=["op_string"],
+                               function=get_div_op_string),
+    )
+
+    reho_maths_div = pe.Node(
+        interface=fsl.ImageMaths(),
+        name="reho_maths_div",
+    )
+
+    # save file in intermediates
+    ds_reho_zstat = pe.Node(
+        nio.DataSink(
+            base_directory=output_dir,
+            container=subject,
+            substitutions=[('ReHo_maths_maths', 'reho_zstat')],
+            parameterization=False),
+        name="ds_reho_zstat", run_without_submitting=True)
+
     workflow.connect([
+        (inputnode, csf_wm_meants, [
+            ("bold_file", "in_file"),
+        ]),
+        (inputnode, csf_wm_meants, [
+            ("csf_wm_label_string", "args"),
+        ]),
+        (inputnode, gs_meants, [
+            ("bold_file", "in_file")
+        ]),
+        (inputnode, gs_meants, [
+            ("mask_file", "mask")
+        ]),
+        (csf_wm_meants, design_node, [
+            ("out_file", "csf_wm_meants_file"),
+        ]),
+        (gs_meants, design_node, [
+            ("out_file", "gs_meants_file")
+        ]),
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file"),
-            ("csf_wm_meants_file", "csf_wm_meants_file"),
-            ("gs_meants_file", "gs_meants_file"),
+            ("confounds_file", "mov_par_file")
         ]),
         (inputnode, glm, [
             ("bold_file", "in_file"),
@@ -404,14 +522,53 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         (design_node, glm, [
             ("design", "design"),
         ]),
-        (glm, raw_reho_map, [
+        (glm, bandpass, [
             ("out_res", "in_file"),
+        ]),
+        (inputnode_hp, bandpass, [
+            ("hp", "highpass"),
+        ]),
+        (inputnode_lp, bandpass, [
+            ("lp", "lowpass"),
+        ]),
+        (bandpass, raw_reho_map, [
+            ("out_file", "in_file"),
         ]),
         (inputnode, raw_reho_map, [
             ("mask_file", "mask_file"),
         ]),
         (raw_reho_map, outputnode, [
-            ("out_file", "reho_img"),
+            ("out_file", "reho_cope"),
+        ]),
+        (raw_reho_map, reho_stats_mean, [
+            ("out_file", "in_file"),
+        ]),
+        (reho_stats_mean, sub_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (raw_reho_map, reho_maths_sub, [
+            ("out_file", "in_file"),
+        ]),
+        (sub_op_string, reho_maths_sub, [
+            ("op_string", "op_string"),
+        ]),
+        (raw_reho_map, reho_stats_std, [
+            ("out_file", "in_file"),
+        ]),
+        (reho_stats_std, div_op_string, [
+            ("out_stat", "in_file"),
+        ]),
+        (reho_maths_sub, reho_maths_div, [
+            ("out_file", "in_file"),
+        ]),
+        (div_op_string, reho_maths_div, [
+            ("op_string", "op_string"),
+        ]),
+        (reho_maths_div, ds_reho_zstat, [
+            ("out_file", "rest.@reho_zstat"),
+        ]),
+        (reho_maths_div, outputnode, [
+            ("out_file", "reho_zstat"),
         ]),
     ])
 

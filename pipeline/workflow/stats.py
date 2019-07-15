@@ -59,14 +59,14 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["imgs", "varcopes", "dof_files", "mask_files"]
+            fields=["copes", "varcopes", "dof_files", "mask_files", "zstats"]
         ),
         name="inputnode"
     )
 
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["imgs", "varcopes", "zstats", "dof_files", "mask_file"]
+            fields=["copes", "varcopes", "zstats", "dof_files", "mask_file"]
         ),
         name="outputnode"
     )
@@ -85,9 +85,9 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     )
 
     # merge all input nii image files to one big nii file
-    imgmerge = pe.Node(
+    copemerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
-        name="imgmerge"
+        name="copemerge"
     )
 
     # we get a text dof_file, but need to transform it to an nii image
@@ -107,6 +107,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     dofmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
         name="dofmerge"
+    )
+
+    # merge all zstat files (reho/alff/falff)
+    zstatmerge = pe.Node(
+        interface=fsl.Merge(dimension="t"),
+        name="zstatmerge"
     )
 
     # specify statistical analysis
@@ -209,13 +215,13 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # actually run FSL FLAME
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         flameo = pe.MapNode(
             interface=fsl.FLAMEO(
                 run_mode=run_mode
             ),
             name="flameo",
-            iterfield=["cope_file"]
+            iterfield=["cope_file"]  # cope_file is here z_stat file
         )
     else:
         flameo = pe.MapNode(
@@ -228,10 +234,13 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # construct workflow
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         workflow.connect([
-            (inputnode, imgmerge, [
-                ("imgs", "in_files")
+            (inputnode, copemerge, [
+                ("copes", "in_files")
+            ]),
+            (inputnode, zstatmerge, [
+                ("zstats", "in_files")
             ]),
 
             (inputnode, maskmerge, [
@@ -243,9 +252,10 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         ])
 
         workflow.connect([
-            (imgmerge, flameo, [
+            (zstatmerge, flameo, [
                 ("merged_file", "cope_file")
-            ])])
+            ])
+        ])
 
         workflow.connect(([
             (level2model, flameo, [
@@ -255,7 +265,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ]),
 
             (flameo, outputnode, [
-                (("copes", flatten), "imgs"),
+                (("copes", flatten), "copes"),
                 (("var_copes", flatten), "varcopes"),
                 (("zstats", flatten), "zstats"),
                 (("tdof", flatten), "dof_files")
@@ -269,8 +279,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         ]))
     else:
         workflow.connect([
-            (inputnode, imgmerge, [
-                ("imgs", "in_files")
+            (inputnode, copemerge, [
+                ("copes", "in_files")
             ]),
 
             (inputnode, maskmerge, [
@@ -283,7 +293,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
         workflow.connect([
             (inputnode, gendofimage, [
-                ("imgs", "in_file"),
+                ("copes", "in_file"),
                 (("dof_files", gen_merge_op_str), "op_string")
             ]),
 
@@ -296,7 +306,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ])])
 
         workflow.connect([
-            (imgmerge, flameo, [
+            (copemerge, flameo, [
                 ("merged_file", "cope_file")
             ])])
 
@@ -316,7 +326,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ]),
 
             (flameo, outputnode, [
-                (("copes", flatten), "imgs"),
+                (("copes", flatten), "copes"),
                 (("var_copes", flatten), "varcopes"),
                 (("zstats", flatten), "zstats"),
                 (("tdof", flatten), "dof_files")
