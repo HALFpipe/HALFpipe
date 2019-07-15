@@ -105,6 +105,9 @@ def level_1_check(path_to_pipeline_json, workdir):
                             for suffix in suffixes:
                                 file = field+suffix
                                 my_list.append(file)
+                                if field == 'alff':
+                                    file = 'f' + field + suffix
+                                    my_list.append(file)
 
                 # Paradigms different than rest (Tasks)
                 else:
