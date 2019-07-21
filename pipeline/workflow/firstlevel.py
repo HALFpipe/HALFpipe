@@ -586,13 +586,16 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
-        elif name == "dualregression":
+        elif "dualregression" in name:
+            # get template_name from workflow name
+            template_name = name.split(sep="_")[0]
+
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     source_file=bold_file,
                     suffix="dof"),
-                name="ds_%s_dof_file" % name, run_without_submitting=True)
+                name="ds_%s_dof_file" % template_name, run_without_submitting=True)
 
             wf.connect([
                 (firstlevel_wf, ds_dof_file, [
@@ -622,20 +625,19 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_cope" % (template_name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_varcope" % outname),
-                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_varcope" % (template_name, outname), run_without_submitting=True)
                 ds_zstat = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_zstat" % outname),
-                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
-
+                    name="ds_%s_%s_zstat" % (template_name, outname), run_without_submitting=True)
                 wf.connect([
                     (firstlevel_wf, ds_cope, [
                         ("outputnode.%s_cope" % outname, "in_file")
@@ -798,21 +800,28 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="seedconnectivity")
         wfbywf["seedconnectivity_wf"] = firstlevel_wf
         outnamesbywf["seedconnectivity_wf"] = seednames
+
+    # ICAMaps
     if "ICAMaps" in metadata:
-        firstlevel_wf, componentnames = init_dualregression_wf(
-            metadata["ICAMaps"],
-            metadata["UseMovPar"],
-            metadata["CSF"],
-            metadata["Whitematter"],
-            metadata["GlobalSignal"],
-            subject,
-            output_dir,
-            name="dualregression_wf"
-        )
-        create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
-                  bold_file, output_dir, name="dualregression")
-        wfbywf["dualregression_wf"] = firstlevel_wf
-        outnamesbywf["dualregression_wf"] = componentnames
+
+        for key in metadata["ICAMaps"]:
+
+            wf_name = key+"_dualregression_wf"
+            file = metadata["ICAMaps"][key]
+            firstlevel_wf, componentnames = init_dualregression_wf(
+                file,
+                metadata["UseMovPar"],
+                metadata["CSF"],
+                metadata["Whitematter"],
+                metadata["GlobalSignal"],
+                subject,
+                output_dir,
+                name=wf_name
+            )
+            create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
+                      bold_file, output_dir, name=wf_name)
+            wfbywf[wf_name] = firstlevel_wf
+            outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
     if "reho" in metadata:
