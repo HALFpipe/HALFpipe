@@ -173,9 +173,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         df_covariates = pd.concat([df_subject_group, df_covariates], axis=1, sort=True)
         df_covariates = df_covariates.reset_index()  # add id column
         df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
-
         # save demeaned covariates to csv
-        df_covariates.to_csv(workdir + '/demeaned_covariates.csv')
+        df_covariates.to_csv(workdir + '/demeaned_covariates.csv', index=False)
 
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()}
