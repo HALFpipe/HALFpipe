@@ -79,17 +79,18 @@ def level_1_check(path_to_pipeline_json, workdir):
 
                     field = 'ICAMaps'
                     if field in configuration['metadata'][paradigm]:
-                        name = configuration['metadata'][paradigm][field]
-                        name = os.path.splitext(os.path.basename(name))[0]
-                        name = os.path.splitext(name)[0]
-                        command = "fslnvols " + configuration['metadata'][paradigm][field]
-                        seeds = os.popen(command).read()
-                        seeds = int(seeds.rstrip())
+                        template_dict = configuration['metadata'][paradigm][field]
+                        for name in template_dict:
+                            name = os.path.splitext(os.path.basename(name))[0]
+                            name = os.path.splitext(name)[0]
+                            command = "fslnvols " + configuration['metadata'][paradigm][field][name]
+                            seeds = os.popen(command).read()
+                            seeds = int(seeds.rstrip())
 
-                        for seed in range(seeds):
-                            for suffix in suffixes:
-                                file = name + '_' + str(seed) + suffix
-                                my_list.append(file)
+                            for seed in range(seeds):
+                                for suffix in suffixes:
+                                    file = name + '_' + str(seed) + suffix
+                                    my_list.append(file)
 
                     suffixes = ['_img.nii.gz', '_zstat.nii.gz']
                     fields = ['reho', 'alff']

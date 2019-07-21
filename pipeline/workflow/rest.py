@@ -276,7 +276,7 @@ def init_dualregression_wf(componentsfile,
 
     # Get name of ICA template from workflow name
     template_name = name.split(sep="_")[0]
-    import ipdb; ipdb.set_trace()
+
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
@@ -293,8 +293,7 @@ def init_dualregression_wf(componentsfile,
 
     # extract number of ICA components from 4d image and name them
     ncomponents = nib.load(componentsfile).shape[3]
-    fname, _ = _splitext(os.path.basename(componentsfile))
-    componentnames = ["%s_%d" % (fname, i) for i in range(ncomponents)]
+    componentnames = ["%s_%d" % (template_name, i) for i in range(ncomponents)]
 
     # first step, calculate spatial regression of ICA components on to the
     # bold file
