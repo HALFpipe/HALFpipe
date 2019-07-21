@@ -586,7 +586,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
-        elif name == "dualregression":
+        elif "dualregression" in name:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -804,10 +804,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
         for key in metadata["ICAMaps"]:
 
-            wf_name = key+"_wf"
+            wf_name = key+"_dualregression_wf"
             file = metadata["ICAMaps"][key]
-            # print('ICAMaps: '+wf_name)
-            # print('ICAMaps: '+file)
             firstlevel_wf, componentnames = init_dualregression_wf(
                 file,
                 metadata["UseMovPar"],
@@ -819,7 +817,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 name=wf_name
             )
             create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
-                      bold_file, output_dir, name=key)
+                      bold_file, output_dir, name=wf_name)
             wfbywf[wf_name] = firstlevel_wf
             outnamesbywf[wf_name] = componentnames
 
