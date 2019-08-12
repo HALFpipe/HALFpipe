@@ -162,14 +162,18 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
             for excluded_subject in excluded_subjects:
                 subject_groups.pop(excluded_subject, None)
+        # boolean condition whether there is at least one nan value in the datasheet
+        is_nan = df_covariates.isin(['NaN', 'n/a']).any().any()
         # replace not available values by numpy NaN to be ignored for demeaning
-        df_covariates = df_covariates.replace({'NaN': np.nan, 'n/a': np.nan})
+        if is_nan:
+            df_covariates = df_covariates.replace({'NaN': np.nan, 'n/a': np.nan})
 
         for covariate in df_covariates:
             # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
         # replace np.nan by 0 for demeaned_covariates file and regression models
-        df_covariates = df_covariates.replace({np.nan: 0})
+        if is_nan:
+            df_covariates = df_covariates.replace({np.nan: 0})
         # safe reduced dataframe for regressors later
         df_regressors = df_covariates
 
