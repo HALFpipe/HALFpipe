@@ -16,7 +16,7 @@ from .info import __version__
 from .workflow import init_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
-from .utils import get_path, transpose
+from .utils import get_path, transpose, nonzero_atlas
 from .file_checks import file_checks
 
 # Debug config for stop on first crash
@@ -528,6 +528,13 @@ def main():
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
                                                       inplace=True)
+                                    import ipdb; ipdb.set_trace()
+                                    df_coverage = pd.DataFrame(nonzero_atlas(
+                                        seg_image_path="/ext/home/marc/mindandbrain/output_marc/nipype/sub_lea_01/"
+                                                       "task_rest/func_preproc_01_rest/bold_mni_trans_wf/mask_mni_tfm/"
+                                                       "ref_image_corrected_brain_mask_maths_trans.nii.gz",
+                                        atlas_image_path=configuration['metadata'][task]['BrainAtlasImage']))
+
                                     corr_matrix = atlas_matrix.corr(method='pearson')
                                     corr_matrix.to_csv(destination, index=False, header=False)
                                     shutil.move(source,

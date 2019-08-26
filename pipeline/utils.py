@@ -5,6 +5,9 @@
 import os
 import pathlib
 
+import nibabel as nib
+import numpy as np
+
 
 def get_path(path, EXT_PATH):
     path = path.strip()
@@ -136,3 +139,42 @@ def create_directory(directory_path):
     directory.mkdir(parents=True, exist_ok=True)
     return directory_path
 
+
+def nonzero_atlas(atlas_image_path, seg_image_path):
+    """
+
+    :param atlas_image_path: atlas_file
+    :param seg_image_path: image file to be compared
+    :return:
+    """
+    input_image = atlas_image_path
+    in_img = nib.load(input_image)
+    in_data = in_img.get_data()
+    # binarize image
+    in_data[in_data != 0] = 1
+
+    seg_image = seg_image_path
+    seg_img = nib.load(seg_image_path)
+    seg_data = seg_img.get_data()
+
+    masked = np.zeros_like(seg_data)
+    masked[in_data != 0] = seg_data[in_data != 0]
+
+    in_data = in_data.astype(np.uint8)
+
+    label_number = []
+    size_roi_data = []
+    size_roi_atlas = []
+
+    for label in np.unique(seg_data):
+        if int(label) > 0:
+            label_number.append(label)
+            size_roi_data.append(int(seg_data[masked == label].shape[0]))
+            size_roi_atlas.append(int(seg_data[seg_data == label].shape[0]))
+
+    out_arr = np.column_stack((label_number, size_roi_data))
+    out_arr = np.column_stack((out_arr, size_roi_atlas))
+
+    # column1, column2, column3
+    # Label, n_data, n_atlas
+    return out_arr
