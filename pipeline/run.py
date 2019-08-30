@@ -8,6 +8,7 @@ import nibabel as nib
 import json
 import shutil
 import math
+import sys
 from glob import glob
 from argparse import ArgumentParser
 from .cli import Cli
@@ -471,23 +472,32 @@ def main():
                     covariates_subset = {k: covariates[k] for k in covariates_selected}
                     print('covariates_sub: '+str(covariates_subset))
 
+                    if not covariates_subset:
+                        response4 = c.select("No covariates were selected."
+                                             " Do you want to continue without covariates?", ["Yes", "No"])
+                        if response4 == "No":
+                            # Stop program
+                            sys.exit("Program exited. No covariates selected")
+
                     configuration["Covariates"] = covariates_subset
+
                 else:
-                    # TODO change question
-                    response4 = c.select("There are no additional columns in the spreadsheet for "
-                                         " Specify a group comparison?", ["Yes", "No"])
+                    response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
+                                         " Do you want to continue without covariates?", ["Yes", "No"])
                     if response4 == "No":
-                        # TODO break whole code
                         # Stop program
-                        print("Program exited")
+                        sys.exit("Program exited. No covariates found")
                     else:
                         # Continue without covariates
                         configuration["Covariates"] = {}
 
             # WITHING GROUP COMPARISON
+
+            # TODO CHECK LOGIG
             response2 = c.select("Specify within group comparison?", ["Yes", "No"])
             if response2 == "Yes":
                 if covariates:
+                    # TODO add covariates
                     configuration["WithinGroup"] = {}
                 else:
                     # TODO change question
@@ -496,7 +506,7 @@ def main():
                     if response4 == "No":
                         # TODO break whole code
                         # Stop program
-                        print("Program exited")
+                        sys.exit("Program exited. No covariates found")
                     else:
                         # Continue without within group comparison
                         response2 == "No"
