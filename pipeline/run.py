@@ -419,11 +419,14 @@ def main():
             spreadsheet = pd.read_csv(spreadsheet_file)
 
             columns = spreadsheet.columns.tolist()
-            columns.remove('Unnamed: 0')  # numbering of subjects
 
-            id_column = c.select("Specify the column containing subject names", columns)
+            numbering = 'Unnamed: 0'
+            if numbering in columns:
+                columns.remove(numbering)  # numbering of subjects
+
+            id_column = c.select("Select the column containing subject names", columns)
             columns.remove(id_column)
-            group_column = c.select("Specify the column containing group names", columns)
+            group_column = c.select("Select the column containing group names", columns)
 
             covariates = spreadsheet.set_index(id_column).to_dict()
             groups = covariates[group_column]
@@ -458,7 +461,8 @@ def main():
 
                 # 2. Covariates
                 if covariates:
-                    covariates_selected = c.fields("Specify the covariates to be used", list(covariates))
+                    covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
+                                                   list(covariates))
                     print(list(covariates))
 
                     covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx] == '1']
@@ -475,6 +479,7 @@ def main():
                     if response4 == "No":
                         # TODO break whole code
                         # Stop program
+                        print("Program exited")
                     else:
                         # Continue without covariates
                         configuration["Covariates"] = {}
@@ -491,6 +496,7 @@ def main():
                     if response4 == "No":
                         # TODO break whole code
                         # Stop program
+                        print("Program exited")
                     else:
                         # Continue without within group comparison
                         response2 == "No"
@@ -498,7 +504,7 @@ def main():
             while response2 == "Yes":
 
                 # 1. Selection of continuous variable
-                convariable_name = c.select("Specify the column containing the continuous variable", list(covariates))
+                convariable_name = c.select("Select the column containing the continuous variable", list(covariates))
                 print('con_variable: '+str(convariable_name))
                 print('con_variable values: '+str(covariates[convariable_name]))
                 configuration["WithinGroup"][convariable_name] = {}
@@ -512,7 +518,8 @@ def main():
                 # 3. Groups to use (in case not all patients are used)
                 else:
                     all_groups = False
-                    selected_groups = c.fields("Specify the group(s) for individual model(s)", unique_groups)
+                    selected_groups = c.fields("Specify the group(s) for individual model(s). "
+                                               "Use 1 to select, 0 otherwise", unique_groups)
                     print(unique_groups)
                     selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
 
@@ -529,7 +536,8 @@ def main():
                     cov_names.remove(convariable_name)
                     print(cov_names)
 
-                    covariates_selected = c.fields("Specify the covariates to be used", cov_names)
+                    covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
+                                                   cov_names)
                     covariates_selected = [i for idx, i in enumerate(cov_names) if covariates_selected[idx] == '1']
                     print(covariates_selected)
 
