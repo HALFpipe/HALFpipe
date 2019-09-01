@@ -493,12 +493,12 @@ def main():
 
             # WITHING GROUP COMPARISON
             response2 = c.select("Specify within group comparison?", ["Yes", "No"])
+            if response2 == "Yes":
+                configuration["WithinGroup"] = {}
 
             while response2 == "Yes":
 
                 if covariates:
-
-                    configuration["WithinGroup"] = {}
 
                     # 1. Selection of continuous variable
                     convariable_name = c.select("Select the column containing the continuous variable",
@@ -530,7 +530,8 @@ def main():
                                 sys.exit("Program exited. No covariates selected")
                             else:
                                 # Not including configuration for within group comparison
-                                if "WithinGroup" in configuration: del configuration["WithinGroup"]
+                                if "WithinGroup" in configuration:
+                                    del configuration["WithinGroup"]
                                 break
 
                     print('Groups: ' + str(selected_groups))
@@ -580,9 +581,25 @@ def main():
                             else:
                                 print('Covariates: ' + str(covariates_selected))
 
-                                covariates_subset = {k: covariates[k] for k in covariates_selected}
-                                print('Values: ' + str(covariates_subset))
+                                if all_groups:
+                                    covariates_subset = {k: covariates[k] for k in covariates_selected}
 
+                                else:
+                                    covariates_subset = {}
+                                    # Filter dictionary of covariates
+
+                                    # Selection of subjects according to groups
+                                    subjects = dict(filter(lambda elem: elem[1] in selected_groups,
+                                                           configuration['SubjectGroups'].items()))
+
+                                    print("Subjects: " + subjects)
+
+                                    # Selection of covariates according to subjects
+                                    for k in covariates_selected:
+                                        covariates_subset[k] = dict(filter(lambda elem: elem[0] in subjects.keys(),
+                                                                           covariates[k].items()))
+
+                                print('Values: ' + str(covariates_subset))
                                 configuration["WithinGroup"][convariable_name]['Covariates'] = covariates_subset
 
                     response2 = c.select("Specify another within group comparison?", ["Yes", "No"])
