@@ -71,7 +71,7 @@ def main():
     os.makedirs(workdir, exist_ok=True)
 
     json_dir = os.path.join(workdir, 'json_files')
-    path_to_pipeline_json = None
+
     if args.json_file is not None:
         path_to_pipeline_json = os.path.join(json_dir, args.json_file)
     else:
@@ -413,7 +413,7 @@ def main():
 
         response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
-            #spreadsheet_file = get_file("covariates/group data spreadsheet")
+            # spreadsheet_file = get_file("covariates/group data spreadsheet")
 
             ### REMOVE AFTER TESTING
             spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
@@ -434,8 +434,7 @@ def main():
 
             configuration["SubjectGroups"] = groups
 
-            print(len(groups))
-            print('all groups: '+str(groups))
+            print('All groups: ' + str(groups))
 
             unique_groups = set(groups.values())
             unique_groups = list(unique_groups)
@@ -458,19 +457,19 @@ def main():
                     response3 = c.select("Add another contrast?", ["Yes", "No"])
 
                 configuration["GroupContrasts"] = group_contrasts
-                print("group contrasts: "+str(group_contrasts))
+                print("Group Contrasts: " + str(group_contrasts))
 
                 # 2. Covariates
                 if covariates:
                     covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
                                                    list(covariates))
-                    print(list(covariates))
 
-                    covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx] == '1']
-                    print(covariates_selected)
+                    covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx]
+                                           == '1']
+                    print('Covariates: ' + str(covariates_selected))
 
                     covariates_subset = {k: covariates[k] for k in covariates_selected}
-                    print('covariates_sub: '+str(covariates_subset))
+                    print('Values: ' + str(covariates_subset))
 
                     if not covariates_subset:
                         response4 = c.select("No covariates were selected."
@@ -493,26 +492,6 @@ def main():
                         configuration["Covariates"] = {}
 
             # WITHING GROUP COMPARISON
-            ''' 
-            # TODO CHECK LOGIC
-            # No covariates selected yet
-            
-            if response2 == "Yes":
-                if not covariates:
-                    # TODO add covariates
-                    configuration["WithinGroup"] = {}
-                else:
-                    # TODO change question
-                    response4 = c.select("There are no additional columns in the spreadsheet for "
-                                         " Specify a group comparison?", ["Yes", "No"])
-                    if response4 == "No":
-                        # TODO break whole code
-                        # Stop program
-                        sys.exit("Program exited. No covariates found")
-                    else:
-                        # Continue without within group comparison
-                        response2 == "No"
-            '''
             response2 = c.select("Specify within group comparison?", ["Yes", "No"])
 
             while response2 == "Yes":
@@ -522,9 +501,10 @@ def main():
                     configuration["WithinGroup"] = {}
 
                     # 1. Selection of continuous variable
-                    convariable_name = c.select("Select the column containing the continuous variable", list(covariates))
-                    print('Continuous variable: '+str(convariable_name))
-                    print('Values: '+str(covariates[convariable_name]))
+                    convariable_name = c.select("Select the column containing the continuous variable",
+                                                list(covariates))
+                    print('Continuous variable: ' + str(convariable_name))
+                    print('Values: ' + str(covariates[convariable_name]))
 
                     configuration["WithinGroup"][convariable_name] = {}
 
@@ -542,13 +522,14 @@ def main():
                         selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
 
                         if not selected_groups:
-                            response4 = c.select("No groups were selected. "
-                                                 "Do you want to continue without specifying a within group comparison?",
+                            response4 = c.select("No groups were selected. Do you want to continue without specifying "
+                                                 "a within group comparison?",
                                                  ["Yes", "No"])
                             if response4 == "No":
                                 # Stop program
                                 sys.exit("Program exited. No covariates selected")
                             else:
+                                # Not including configuration for within group comparison
                                 if "WithinGroup" in configuration: del configuration["WithinGroup"]
                                 break
 
@@ -566,8 +547,10 @@ def main():
                         # print(cov_names)
 
                         if not cov_names:
-                            response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
-                                                 " Do you want to continue the within group comparison without covariates?",
+                            response4 = c.select("There are no additional columns in the spreadsheet to use as "
+                                                 "covariates."
+                                                 " Do you want to continue the within group comparison without "
+                                                 "covariates?",
                                                  ["Yes", "No"])
 
                             if response4 == "No":
@@ -592,6 +575,7 @@ def main():
                                     # Stop program
                                     sys.exit("Program exited. No covariates selected")
                                 else:
+                                    # Continue without covariates
                                     configuration["WithinGroup"][convariable_name]['Covariates'] = {}
                             else:
                                 print('Covariates: ' + str(covariates_selected))
@@ -631,11 +615,11 @@ def main():
 
         if args.nipype_plugin is None:
             plugin_settings = {
-                "plugin"     : "MultiProc",
+                "plugin": "MultiProc",
                 "plugin_args": {
-                    "n_procs"           : cpu_count(),
+                    "n_procs": cpu_count(),
                     "raise_insufficient": False,
-                    "maxtasksperchild"  : 1,
+                    "maxtasksperchild": 1,
                 }
             }
         else:
@@ -836,7 +820,3 @@ def main():
             file.write(command + file_name + '\n')
 
         file.close()
-
-
-
-
