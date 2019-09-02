@@ -618,11 +618,12 @@ def main():
                                                   '%volume_lg_0.5': percentage_vol_lg_05, 'Max_X': max_x,
                                                   'Max_Y': max_y, 'Max_Z': max_z, 'Max_RotX': max_rot_x,
                                                   'Max_RotY': max_rot_y, 'Max_RotZ': max_rot_z}, ignore_index=True)
+                    import ipdb; ipdb.set_trace()
                 else:
                     # Taskdata doesn't exist
                     pass
         if not df_motion.empty:
-            df_motion.to_csv(workdir + '/qualitycheck/motion_report.csv')
+            df_motion.to_csv(workdir + '/qualitycheck/motion_report.csv', sep="\t", encoding='utf-8')
 
         # Automatic file check: Check file status after first level statistics is done
         file_checks(workdir, json_dir, path_to_pipeline_json)
