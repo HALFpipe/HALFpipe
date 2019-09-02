@@ -574,7 +574,10 @@ def main():
 
                     except KeyError:
                         pass
-        # create confounds_mni.tsv
+        # create confounds_mni.tsv / motion_report.csv
+        df_motion = pd.DataFrame(
+            columns=['Subject', 'Mean_FD', '%volume_lg_0.5', 'Max_X', 'Max_Y', 'Max_Z', 'Max_RotX', 'Max_RotY',
+                     'Max_RotZ'])
         for subject in flattened_configuration:
             # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
             for key in flattened_configuration[subject]:
@@ -599,9 +602,27 @@ def main():
                     # Save dataframe as confounds_mni.tsv
                     new_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds_mni.tsv'
                     df_confounds.to_csv(new_confounds_path, sep="\t", encoding='utf-8', index=False)
+
+                    # motion_report part
+                    mean_fd = df_confounds['FramewiseDisplacement'].mean()
+                    vol_lg_05 = len(df_confounds[df_confounds['FramewiseDisplacement'] > 0.5])
+                    total_vol = len(df_confounds)
+                    percentage_vol_lg_05 = vol_lg_05 / total_vol
+                    max_x = df_confounds['X'].max()
+                    max_y = df_confounds['Y'].max()
+                    max_z = df_confounds['Z'].max()
+                    max_rot_x = df_confounds['RotX'].max()
+                    max_rot_y = df_confounds['RotY'].max()
+                    max_rot_z = df_confounds['RotZ'].max()
+                    df_motion = df_motion.append({'Subject': subject, 'Mean_FD': mean_fd,
+                                                  '%volume_lg_0.5': percentage_vol_lg_05, 'Max_X': max_x,
+                                                  'Max_Y': max_y, 'Max_Z': max_z, 'Max_RotX': max_rot_x,
+                                                  'Max_RotY': max_rot_y, 'Max_RotZ': max_rot_z}, ignore_index=True)
                 else:
                     # Taskdata doesn't exist
                     pass
+        if not df_motion.empty:
+            df_motion.to_csv(workdir + '/qualitycheck/motion_report.csv')
 
         # Automatic file check: Check file status after first level statistics is done
         file_checks(workdir, json_dir, path_to_pipeline_json)
