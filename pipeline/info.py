@@ -32,7 +32,7 @@ REQUIRES = [
     "mriqc",
     "numpy",
     "scipy",
-    "nibabel",
+    "nibabel>=2.4.0",
     "jinja2",
     "fasteners",
     "pandas",
