@@ -274,6 +274,9 @@ def init_dualregression_wf(componentsfile,
     nipype_dir = str(nipype_dir.parent.joinpath('nipype', f'sub_{subject}', 'task_rest', 'designs'))
     create_directory(nipype_dir)
 
+    # Get name of ICA template from workflow name
+    template_name = name.split(sep="_")[0]
+
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
@@ -290,8 +293,7 @@ def init_dualregression_wf(componentsfile,
 
     # extract number of ICA components from 4d image and name them
     ncomponents = nib.load(componentsfile).shape[3]
-    fname, _ = _splitext(os.path.basename(componentsfile))
-    componentnames = ["%s_%d" % (fname, i) for i in range(ncomponents)]
+    componentnames = ["%s_%d" % (template_name, i) for i in range(ncomponents)]
 
     # first step, calculate spatial regression of ICA components on to the
     # bold file
@@ -348,10 +350,10 @@ def init_dualregression_wf(componentsfile,
             function=add_csf_wm_gs), name="design_node", overwrite=True
     )
     design_node.inputs.regressor_names = regressor_names
-    design_node.inputs.file_path = nipype_dir + "/" + subject + "_ica_template_design.txt"
+    design_node.inputs.file_path = nipype_dir + "/" + subject + '_' + template_name + "_ica_template_design.txt"
 
     # creates contrasts file for glm1
-    def get_contrast_file(design_without_regressors, design, output_dir):
+    def get_contrast_file(design_without_regressors, design, path):
         import pandas as pd
         import numpy as np
         dsw_df = pd.read_csv(design_without_regressors, delim_whitespace=True, header=None)
@@ -359,18 +361,17 @@ def init_dualregression_wf(componentsfile,
         contrasts = np.zeros(shape=design_df.shape)[0:len(dsw_df.columns)]
         for idx, component in enumerate(dsw_df.columns):
             contrasts[idx][idx] = 1
-        pd.DataFrame(contrasts, dtype=np.int8).to_csv(output_dir + '/glm_dualregression_contrast.txt',
-                                                      header=False, index=False, encoding='utf-8', sep='\t')
-        return output_dir + '/glm_dualregression_contrast.txt'
+        pd.DataFrame(contrasts, dtype=np.int8).to_csv(path, header=False, index=False, encoding='utf-8', sep='\t')
+        return path
 
     contrast_node = pe.Node(
         niu.Function(
-            input_names=["design_without_regressors", "design", "output_dir"],
+            input_names=["design_without_regressors", "design", "path"],
             output_names=["contrasts"],
             function=get_contrast_file),
         name="contrast_node"
     )
-    contrast_node.inputs.output_dir = nipype_dir
+    contrast_node.inputs.path = nipype_dir + '/' + template_name + '_glm_dualregression_contrast.txt'
 
     # second step, calculate the temporal regression of the time series 
     # from the first step on to the bold file

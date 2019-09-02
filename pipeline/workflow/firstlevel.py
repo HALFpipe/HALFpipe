@@ -20,6 +20,8 @@ from .reho import init_reho_wf
 
 from .alff import create_alff
 
+from .falff import create_falff
+
 from .task import init_glm_wf
 
 from .patch import patch_wf
@@ -392,11 +394,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (maskpreproc, gs_meants, [
             ("out_file", "in_file")
         ]),
-        (gs_meants, ds_gs_meants, [
-            ("out_file", "in_file")
-        ]),
         (func_preproc_wf, gs_meants, [
             ("outputnode.bold_mask_mni", "mask")
+        ]),
+        (gs_meants, ds_gs_meants, [
+            ("out_file", "in_file")
         ]),
 
         (temporalfilter_wf, tsnr_wf, [
@@ -584,13 +586,16 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
-        elif name == "dualregression":
+        elif "dualregression" in name:
+            # get template_name from workflow name
+            template_name = name.split(sep="_")[0]
+
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     source_file=bold_file,
                     suffix="dof"),
-                name="ds_%s_dof_file" % name, run_without_submitting=True)
+                name="ds_%s_dof_file" % template_name, run_without_submitting=True)
 
             wf.connect([
                 (firstlevel_wf, ds_dof_file, [
@@ -620,20 +625,19 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_cope" % (template_name, outname), run_without_submitting=True)
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_varcope" % outname),
-                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_varcope" % (template_name, outname), run_without_submitting=True)
                 ds_zstat = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_zstat" % outname),
-                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
-
+                    name="ds_%s_%s_zstat" % (template_name, outname), run_without_submitting=True)
                 wf.connect([
                     (firstlevel_wf, ds_cope, [
                         ("outputnode.%s_cope" % outname, "in_file")
@@ -654,11 +658,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
-                (gs_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.gs_meants_file")
-                ]),
-                (csf_wm_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.csf_wm_meants_file")
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
                 ]),
             ])
 
@@ -667,7 +668,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
-                        suffix="%s_cope" % outname),
+                        suffix="%s_img" % outname),
                     name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
 
                 wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
@@ -680,23 +681,24 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
                 ]),
-                (gs_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.gs_meants_file")
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
                 ]),
-                (csf_wm_meants, firstlevel_wf, [
-                    ("out_file", "inputnode.csf_wm_meants_file")
+            ])
+        elif name == "falff":
+            wf.connect([
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                ]),
+                (func_preproc_wf, firstlevel_wf, [
+                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
+                ]),
+                (csf_wm_label_string, firstlevel_wf, [
+                    ("label_string", "inputnode.csf_wm_label_string")
                 ]),
             ])
 
-            for outname in outnames:
-                ds_cope = pe.Node(
-                    DerivativesDataSink(
-                        base_directory=output_dir,
-                        source_file=bold_file,
-                        suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
-
-                wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
         else:
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
@@ -798,21 +800,28 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="seedconnectivity")
         wfbywf["seedconnectivity_wf"] = firstlevel_wf
         outnamesbywf["seedconnectivity_wf"] = seednames
+
+    # ICAMaps
     if "ICAMaps" in metadata:
-        firstlevel_wf, componentnames = init_dualregression_wf(
-            metadata["ICAMaps"],
-            metadata["UseMovPar"],
-            metadata["CSF"],
-            metadata["Whitematter"],
-            metadata["GlobalSignal"],
-            subject,
-            output_dir,
-            name="dualregression_wf"
-        )
-        create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
-                  bold_file, output_dir, name="dualregression")
-        wfbywf["dualregression_wf"] = firstlevel_wf
-        outnamesbywf["dualregression_wf"] = componentnames
+
+        for key in metadata["ICAMaps"]:
+
+            wf_name = key+"_dualregression_wf"
+            file = metadata["ICAMaps"][key]
+            firstlevel_wf, componentnames = init_dualregression_wf(
+                file,
+                metadata["UseMovPar"],
+                metadata["CSF"],
+                metadata["Whitematter"],
+                metadata["GlobalSignal"],
+                subject,
+                output_dir,
+                name=wf_name
+            )
+            create_ds(wf, firstlevel_wf, componentnames, func_preproc_wf, temporalfilter_wf,
+                      bold_file, output_dir, name=wf_name)
+            wfbywf[wf_name] = firstlevel_wf
+            outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
     if "reho" in metadata:
@@ -825,14 +834,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             output_dir,
             name="reho_wf"
         )
-        firstlevel_wf.get_node('hp_input').iterables = ('hp', [0.009])
-        firstlevel_wf.get_node('lp_input').iterables = ('lp', [0.08])
         create_ds(wf, firstlevel_wf, ["reho"], func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="reho")
         wfbywf["reho_wf"] = firstlevel_wf
         outnamesbywf["reho_wf"] = ["reho"]
 
-    # ALFF
+    # ALFF / fALFF
     if "alff" in metadata:
         firstlevel_wf = create_alff(
             metadata["UseMovPar"],
@@ -843,27 +850,41 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             output_dir,
             name="alff_wf"
         )
-        firstlevel_wf.get_node('hp_input').iterables = ('hp', [0.009])
-        firstlevel_wf.get_node('lp_input').iterables = ('lp', [0.08])
         create_ds(wf, firstlevel_wf, ["alff"], func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="alff")
         wfbywf["alff_wf"] = firstlevel_wf
         outnamesbywf["alff_wf"] = ["alff"]
+
+    # fALFF
+        firstlevel_wf = create_falff(
+            metadata["UseMovPar"],
+            metadata["CSF"],
+            metadata["Whitematter"],
+            metadata["GlobalSignal"],
+            subject,
+            output_dir,
+            name="falff_wf"
+        )
+        create_ds(wf, firstlevel_wf, ["falff"], func_preproc_wf, temporalfilter_wf,
+                  bold_file, output_dir, name="falff")
+        wfbywf["falff_wf"] = firstlevel_wf
+        outnamesbywf["falff_wf"] = ["falff"]
 
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
             fields=flatten([
                 [["%s_varcope" % outname,
                   "%s_mask_file" % outname,
-                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff"]] +
-                [["%s_cope" % outname] for outname in outnames]
+                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff", "falff"]] +
+                [["%s_cope" % outname] for outname in outnames] +
+                [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
                 for outnames in outnamesbywf.values()]
             )
         ),
         name="outputnode")
 
     for workflow_name, outnames in outnamesbywf.items():
-        if workflow_name not in ["reho_wf", "alff_wf", "brainatlas_wf"]:
+        if workflow_name not in ["reho_wf", "alff_wf", "falff_wf", "brainatlas_wf"]:
             for outname in outnames:
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.%s_cope" % outname, outputnode, "%s_cope" % outname
@@ -883,28 +904,35 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     wfbywf[workflow_name], "outputnode.reho_cope", outputnode, "reho_cope"
                 )
                 wf.connect(
+                    wfbywf[workflow_name], "outputnode.reho_zstat", outputnode, "reho_zstat"
+                )
+                wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
                 )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.reho_z_score", outputnode, "reho_z_score"
-                # )
+
         elif workflow_name == "alff_wf":
             for outname in outnames:
                 wf.connect(
                     wfbywf[workflow_name], "outputnode.alff_cope", outputnode, "alff_cope"
                 )
                 wf.connect(
-                    wfbywf[workflow_name], "outputnode.falff_cope", outputnode, "falff_cope"
+                    wfbywf[workflow_name], "outputnode.alff_zstat", outputnode, "alff_zstat"
                 )
                 wf.connect(
                     func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
                 )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.alff_z_img", outputnode, "alff_z_img"
-                # )
-                # wf.connect(
-                #     wfbywf[workflow_name], "outputnode.falff_z_img", outputnode, "falff_z_img"
-                # )
+
+        elif workflow_name == "falff_wf":
+            for outname in outnames:
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.falff_cope", outputnode, "falff_cope"
+                )
+                wf.connect(
+                    wfbywf[workflow_name], "outputnode.falff_zstat", outputnode, "falff_zstat"
+                )
+                wf.connect(
+                    func_preproc_wf, "outputnode.bold_mask_mni", outputnode, "%s_mask_file" % outname
+                )
 
     outnames = sum(outnamesbywf.values(), [])
 

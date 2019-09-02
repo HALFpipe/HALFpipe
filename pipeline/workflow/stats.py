@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import pandas as pd
+import numpy as np
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -59,7 +60,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["copes", "varcopes", "dof_files", "mask_files"]
+            fields=["copes", "varcopes", "dof_files", "mask_files", "zstats"]
         ),
         name="inputnode"
     )
@@ -109,6 +110,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="dofmerge"
     )
 
+    # merge all zstat files (reho/alff/falff)
+    zstatmerge = pe.Node(
+        interface=fsl.Merge(dimension="t"),
+        name="zstatmerge"
+    )
+
     # specify statistical analysis
 
     # Read qcresults.json and exclude bad subjects from statistics
@@ -155,22 +162,30 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
             for excluded_subject in excluded_subjects:
                 subject_groups.pop(excluded_subject, None)
+        # boolean condition whether there is at least one nan value in the datasheet
+        is_nan = df_covariates.isin(['NaN', 'n/a']).any().any()
+        # replace not available values by numpy NaN to be ignored for demeaning
+        if is_nan:
+            df_covariates = df_covariates.replace({'NaN': np.nan, 'n/a': np.nan})
 
         for covariate in df_covariates:
             # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
-        # transform reduced covariates back to dict for later purposes
-        covariates = df_covariates.to_dict()
+        # replace np.nan by 0 for demeaned_covariates file and regression models
+        if is_nan:
+            df_covariates = df_covariates.replace({np.nan: 0})
+        # safe reduced dataframe for regressors later
+        df_regressors = df_covariates
 
         # add SubjectGroups and ID to header
         df_subject_group = pd.DataFrame.from_dict(subject_groups, orient='index', columns=['SubjectGroup'])
         df_covariates = pd.concat([df_subject_group, df_covariates], axis=1, sort=True)
         df_covariates = df_covariates.reset_index()  # add id column
         df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
-
         # save demeaned covariates to csv
-        df_covariates.to_csv(workdir + '/demeaned_covariates.csv')
-
+        df_covariates.to_csv(workdir + '/demeaned_covariates.csv', index=False)
+        # transform into dict to extract regressors for level2model
+        covariates = df_regressors.to_dict()
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()}
         if (subject_groups is None) or (bool(subject_groups) is False):
@@ -209,13 +224,13 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # actually run FSL FLAME
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         flameo = pe.MapNode(
             interface=fsl.FLAMEO(
                 run_mode=run_mode
             ),
             name="flameo",
-            iterfield=["cope_file"]
+            iterfield=["cope_file"]  # cope_file is here z_stat file
         )
     else:
         flameo = pe.MapNode(
@@ -228,10 +243,13 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # construct workflow
 
-    if outname in ["reho", "alff"]:
+    if outname in ["reho", "alff", "falff"]:
         workflow.connect([
             (inputnode, copemerge, [
                 ("copes", "in_files")
+            ]),
+            (inputnode, zstatmerge, [
+                ("zstats", "in_files")
             ]),
 
             (inputnode, maskmerge, [
@@ -243,9 +261,10 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         ])
 
         workflow.connect([
-            (copemerge, flameo, [
+            (zstatmerge, flameo, [
                 ("merged_file", "cope_file")
-            ])])
+            ])
+        ])
 
         workflow.connect(([
             (level2model, flameo, [

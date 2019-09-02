@@ -24,8 +24,8 @@ class ApplyXfmSegmentation(BaseInterface):
     output_spec = ApplyXfmSegmentationOutputSpec
 
     def _run_interface(self, runtime):
-        xfm = "/root/src/pipeline/static/templates/icbm_to_mni_2mm.mat"
-        ref = "/root/src/pipeline/static/templates/MNI152lin_T1_2mm.nii.gz"
+        xfm = "/opt/static/templates/icbm_to_mni_2mm.mat"
+        ref = "/opt/static/templates/MNI152lin_T1_2mm.nii.gz"
         seg_image_path = self.inputs.volume
         if not os.path.exists(seg_image_path):
             print('Error: %s not found' % seg_image_path)

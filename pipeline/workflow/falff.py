@@ -11,141 +11,10 @@ from .reho import get_opt_string
 from ..utils import create_directory
 
 
-def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name='alff_workflow'):
+def create_falff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir,
+                 name='falff_workflow'):
     """
-    Calculate Amplitude of low frequency oscillations(ALFF) and fractional ALFF maps
-
-    Returns
-    -------
-    alff_workflow : workflow object
-        ALFF workflow
-
-    Notes
-    -----
-    `Source <https://github.com/FCP-INDI/C-PAC/blob/master/CPAC/alff/alff.py>`_
-
-    Workflow Inputs::
-
-        hp_input.hp : list (float)
-            high pass frequencies
-
-        lp_input.lp : list (float)
-            low pass frequencies
-
-        inputspec.rest_res : string (existing nifti file)
-            Nuisance signal regressed functional image
-
-        inputspec.rest_mask : string (existing nifti file)
-            A mask volume(derived by dilating the motion corrected functional volume) in native space
-
-
-    Workflow Outputs::
-
-        outputspec.alff_cope : string (nifti file)
-            outputs image containing the sum of the amplitudes in the low frequency band
-
-        outputspec.falff_cope : string (nifti file)
-            outputs image containing the sum of the amplitudes in the low frequency band divided by the
-            amplitude of the total frequency
-
-        outputspec.alff_Z_img : string (nifti file)
-            outputs image containing Normalized ALFF Z scores across full brain in native space
-
-        outputspec.falff_Z_img : string (nifti file)
-            outputs image containing Normalized fALFF Z scores across full brain in native space
-
-
-    Order of Commands:
-
-    - Filter the input file rest file( slice-time, motion corrected and nuisance regressed) ::
-        3dBandpass -prefix residual_filtered.nii.gz
-                    0.009 0.08 residual.nii.gz
-
-    - Calculate ALFF by taking the standard deviation of the filtered file ::
-        3dTstat -stdev
-                -mask rest_mask.nii.gz
-                -prefix residual_filtered_3dT.nii.gz
-                residual_filtered.nii.gz
-
-    - Calculate the standard deviation of the unfiltered file ::
-        3dTstat -stdev
-                -mask rest_mask.nii.gz
-                -prefix residual_3dT.nii.gz
-                residual.nii.gz
-
-    - Calculate fALFF ::
-        3dcalc -a rest_mask.nii.gz
-               -b residual_filtered_3dT.nii.gz
-               -c residual_3dT.nii.gz
-               -expr '(1.0*bool(a))*((1.0*b)/(1.0*c))' -float
-
-    - Normalize ALFF/fALFF to Z-score across full brain ::
-
-        fslstats
-        ALFF.nii.gz
-        -k rest_mask.nii.gz
-        -m > mean_ALFF.txt ; mean=$( cat mean_ALFF.txt )
-
-        fslstats
-        ALFF.nii.gz
-        -k rest_mask.nii.gz
-        -s > std_ALFF.txt ; std=$( cat std_ALFF.txt )
-
-        fslmaths
-        ALFF.nii.gz
-        -sub ${mean}
-        -div ${std}
-        -mas rest_mask.nii.gz ALFF_Z.nii.gz
-
-        fslstats
-        fALFF.nii.gz
-        -k rest_mask.nii.gz
-        -m > mean_fALFF.txt ; mean=$( cat mean_fALFF.txt )
-
-        fslstats
-        fALFF.nii.gz
-        -k rest_mask.nii.gz
-        -s > std_fALFF.txt
-        std=$( cat std_fALFF.txt )
-
-        fslmaths
-        fALFF.nii.gz
-        -sub ${mean}
-        -div ${std}
-        -mas rest_mask.nii.gz
-        fALFF_Z.nii.gz
-
-    High Level Workflow Graph:
-
-    .. image:: ../images/alff.dot.png
-        :width: 500
-
-    Detailed Workflow Graph:
-
-    .. image:: ../images/alff_detailed.dot.png
-        :width: 500
-
-
-    References
-    ----------
-
-    .. [1] Zou, Q.-H., Zhu, C.-Z., Yang, Y., Zuo, X.-N., Long, X.-Y., Cao, Q.-J., Wang, Y.-F., et al. (2008).
-    An improved approach to detection of amplitude of low-frequency fluctuation (ALFF) for resting-state fMRI:
-    fractional ALFF. Journal of neuroscience methods, 172(1), 137-41. doi:10.10
-
-    Examples
-    --------
-
-    # >>> alff_w = create_alff()
-    # >>> alff_w.inputs.hp_input.hp = [0.01]
-    # >>> alff_w.inputs.lp_input.lp = [0.1]
-    # >>> alff_w.get_node('hp_input').iterables = ('hp',[0.01])
-    # >>> alff_w.get_node('lp_input').iterables = ('lp',[0.1])
-    # >>> alff_w.inputs.inputspec.rest_res = '/home/data/subject/func/rest_bandpassed.nii.gz'
-    # >>> alff_w.inputs.inputspec.rest_mask= '/home/data/subject/func/rest_mask.nii.gz'
-    # >>> alff_w.run() # doctest: +SKIP
-
-
+    See Documentation in alff workflow
     """
 
     wf = pe.Workflow(name=name)
@@ -238,7 +107,7 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     glm.inputs.out_res_name = 'alff_residuals.nii.gz'
 
     outputnode = pe.Node(util.IdentityInterface(
-        fields=["alff_cope", "alff_zstat"]),
+        fields=["falff_cope", "falff_zstat"]),
         name="outputnode"
     )
 
@@ -259,31 +128,42 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
     stddev_unfltrd.inputs.outputtype = 'NIFTI_GZ'
     stddev_unfltrd.inputs.out_file = os.path.join(os.path.curdir, 'residual_3dT.nii.gz')
 
-    # datasinks for alff images
-    ds_alff = pe.Node(
+    # falff calculations
+    falff = pe.Node(interface=Calc(),
+                    name='falff')
+    falff.inputs.args = '-float'
+    falff.inputs.expr = '(1.0*bool(a))*((1.0*b)/(1.0*c))'
+    falff.inputs.outputtype = 'NIFTI_GZ'
+
+    # datasinks for falff images
+
+    ds_falff = pe.Node(
         nio.DataSink(
             base_directory=output_dir,
             container=subject,
-            substitutions=[('residual_filtered_3dT', 'alff_img')],
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc', 'falff_img')],
             parameterization=False),
-        name="ds_alff", run_without_submitting=True)
+        name="ds_falff", run_without_submitting=True)
 
     # calculate zstats from imgs
 
-    # alff
+    # falff
     # calculate mean
-    alff_stats_mean = pe.Node(
+    falff_stats_mean = pe.Node(
         interface=fsl.ImageStats(),
-        name="alff_stats_mean",
+        name="falff_stats_mean",
     )
-    alff_stats_mean.inputs.op_string = '-M'
+    falff_stats_mean.inputs.op_string = '-M'
 
     # calculate std
-    alff_stats_std = pe.Node(
+    falff_stats_std = pe.Node(
         interface=fsl.ImageStats(),
-        name="alff_stats_std",
+        name="falff_stats_std",
     )
-    alff_stats_std.inputs.op_string = '-S'
+    falff_stats_std.inputs.op_string = '-S'
+
+    # substract mean from img
+    # Creates op_string for fslmaths
 
     # substract mean from img
     # Creates op_string for fslmaths
@@ -296,17 +176,17 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         op_string = '-sub ' + str(in_file)
         return op_string
 
-    sub_op_string = pe.Node(
-        name="sub_op_string",
+    fsub_op_string = pe.Node(
+        name="fsub_op_string",
         interface=util.Function(input_names=["in_file"],
                                 output_names=["op_string"],
                                 function=get_sub_op_string),
     )
 
     # fslmaths cmd
-    alff_maths_sub = pe.Node(
+    falff_maths_sub = pe.Node(
         interface=fsl.ImageMaths(),
-        name="alff_maths_sub",
+        name="falff_maths_sub",
     )
 
     # divide by std
@@ -320,26 +200,25 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         op_string = '-div ' + str(in_file)
         return op_string
 
-    div_op_string = pe.Node(
-        name="div_op_string",
+    fdiv_op_string = pe.Node(
+        name="fdiv_op_string",
         interface=util.Function(input_names=["in_file"],
                                 output_names=["op_string"],
                                 function=get_div_op_string),
     )
-
-    alff_maths_div = pe.Node(
+    falff_maths_div = pe.Node(
         interface=fsl.ImageMaths(),
-        name="alff_maths_div",
+        name="falff_maths_div",
     )
 
     # save file in intermediates
-    ds_alff_zstat = pe.Node(
+    ds_falff_zstat = pe.Node(
         nio.DataSink(
             base_directory=output_dir,
             container=subject,
-            substitutions=[('residual_filtered_3dT_maths_maths', 'alff_zstat')],
+            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc_maths_maths', 'falff_zstat')],
             parameterization=False),
-        name="ds_alff_zstat", run_without_submitting=True)
+        name="ds_falff_zstat", run_without_submitting=True)
 
     wf.connect([
         (inputnode, csf_wm_meants, [
@@ -384,6 +263,9 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (inputnode, stddev_unfltrd, [
             ("bold_file", "in_file"),
         ]),
+        (inputnode, falff, [
+            ("mask_file", "in_file_a"),
+        ]),
         (bandpass, stddev_fltrd, [
             ("out_file", "in_file"),
         ]),
@@ -393,41 +275,47 @@ def create_alff(use_mov_pars, use_csf, use_white_matter, use_global_signal, subj
         (get_option_string, stddev_unfltrd, [
             ("option_string", "options"),
         ]),
-        (stddev_fltrd, ds_alff, [
-            ("out_file", "rest.@alff"),
+        (stddev_fltrd, falff, [
+            ("out_file", "in_file_b"),
         ]),
-        (stddev_fltrd, alff_stats_mean, [
+        (stddev_unfltrd, falff, [
+            ("out_file", "in_file_c"),
+        ]),
+        (falff, ds_falff, [
+            ("out_file", "rest.@fallf"),
+        ]),
+        (falff, falff_stats_mean, [
             ("out_file", "in_file"),
         ]),
-        (alff_stats_mean, sub_op_string, [
+        (falff_stats_mean, fsub_op_string, [
             ("out_stat", "in_file"),
         ]),
-        (stddev_fltrd, alff_maths_sub, [
+        (falff, falff_maths_sub, [
             ("out_file", "in_file"),
         ]),
-        (sub_op_string, alff_maths_sub, [
+        (fsub_op_string, falff_maths_sub, [
             ("op_string", "op_string"),
         ]),
-        (stddev_fltrd, alff_stats_std, [
+        (falff, falff_stats_std, [
             ("out_file", "in_file"),
         ]),
-        (alff_stats_std, div_op_string, [
+        (falff_stats_std, fdiv_op_string, [
             ("out_stat", "in_file"),
         ]),
-        (alff_maths_sub, alff_maths_div, [
+        (falff_maths_sub, falff_maths_div, [
             ("out_file", "in_file"),
         ]),
-        (div_op_string, alff_maths_div, [
+        (fdiv_op_string, falff_maths_div, [
             ("op_string", "op_string"),
         ]),
-        (alff_maths_div, ds_alff_zstat, [
+        (falff_maths_div, ds_falff_zstat, [
             ("out_file", "rest.@alff_zstat"),
         ]),
-        (alff_maths_div, outputnode, [
-            ("out_file", "alff_zstat"),
+        (falff_maths_div, outputnode, [
+            ("out_file", "falff_zstat"),
         ]),
-        (stddev_fltrd, outputnode, [
-            ("out_file", "alff_cope"),
+        (falff, outputnode, [
+            ("out_file", "falff_cope"),
         ]),
     ])
 

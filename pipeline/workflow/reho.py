@@ -282,7 +282,7 @@ def get_opt_string(mask):
 def get_operand_string(mean, std_dev):
     """
     Generate the Operand String to be used in workflow nodes to supply
-    mean and std deviation to alff workflow nodes
+    mean and std deviation to workflow nodes
 
     Parameters
     ----------
@@ -311,7 +311,7 @@ def get_operand_string(mean, std_dev):
 
 def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, subject, output_dir, name="firstlevel"):
     """
-    create a workflow to do ReHo and ALFF
+    create a workflow to do ReHo
 
     """
     workflow = pe.Workflow(name=name)
@@ -324,16 +324,36 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
 
     # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_label_string"]),
         name="inputnode"
     )
 
     # input nodes for bandpass filtering
     inputnode_hp = pe.Node(niu.IdentityInterface(fields=['hp']),
                            name='hp_input')
+    inputnode_hp.inputs.hp = 0.009
 
     inputnode_lp = pe.Node(niu.IdentityInterface(fields=['lp']),
                            name='lp_input')
+    inputnode_lp.inputs.lp = 0.08
+
+    # filtering
+    bandpass = pe.Node(interface=Bandpass(),
+                       name='bandpass_filtering')
+    bandpass.inputs.outputtype = 'NIFTI_GZ'
+    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
+
+    # Calculates the regression time series for CSF and white matter
+    csf_wm_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="csf_wm_meants",
+    )
+
+    # Calculates the regression time series for global signal
+    gs_meants = pe.Node(
+        interface=fsl.ImageMeants(),
+        name="gs_meants",
+    )
 
     # create design matrix with added regressors to the seed column
     regressor_names = []
@@ -385,12 +405,6 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     )
     glm.inputs.out_res_name = 'reho_residuals.nii.gz'
 
-    # filtering
-    bandpass = pe.Node(interface=Bandpass(),
-                       name='bandpass_filtering')
-    bandpass.inputs.outputtype = 'NIFTI_GZ'
-    bandpass.inputs.out_file = os.path.join(os.path.curdir, 'residual_filtered.nii.gz')
-
     reho_imports = ['import os', 'import sys', 'import nibabel as nb',
                     'import numpy as np',
                     'from pipeline.workflow.reho import f_kendall']
@@ -402,9 +416,9 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
                            name='reho_cope')
     raw_reho_map.inputs.cluster_size = 27
 
-    # outputs are cope
+    # outputs are cope and zstat
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["reho_cope"]),
+        fields=["reho_cope", "reho_zstat"]),
         name="outputnode"
     )
 
@@ -481,10 +495,26 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         name="ds_reho_zstat", run_without_submitting=True)
 
     workflow.connect([
+        (inputnode, csf_wm_meants, [
+            ("bold_file", "in_file"),
+        ]),
+        (inputnode, csf_wm_meants, [
+            ("csf_wm_label_string", "args"),
+        ]),
+        (inputnode, gs_meants, [
+            ("bold_file", "in_file")
+        ]),
+        (inputnode, gs_meants, [
+            ("mask_file", "mask")
+        ]),
+        (csf_wm_meants, design_node, [
+            ("out_file", "csf_wm_meants_file"),
+        ]),
+        (gs_meants, design_node, [
+            ("out_file", "gs_meants_file")
+        ]),
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file"),
-            ("csf_wm_meants_file", "csf_wm_meants_file"),
-            ("gs_meants_file", "gs_meants_file"),
+            ("confounds_file", "mov_par_file")
         ]),
         (inputnode, glm, [
             ("bold_file", "in_file"),
@@ -535,7 +565,10 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
             ("op_string", "op_string"),
         ]),
         (reho_maths_div, ds_reho_zstat, [
-            ("out_file", "rest.@alff_zstat"),
+            ("out_file", "rest.@reho_zstat"),
+        ]),
+        (reho_maths_div, outputnode, [
+            ("out_file", "reho_zstat"),
         ]),
     ])
 
