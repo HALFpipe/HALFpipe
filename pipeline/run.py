@@ -528,12 +528,24 @@ def main():
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
                                                       inplace=True)
-                                    import ipdb; ipdb.set_trace()
+                                    # coverage part (#issue9)
+                                    atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
+                                    atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
+                                    seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
+                                                          task + '/func_preproc*' +
+                                                          '/bold_mni_trans_wf/mask_mni_tfm/'
+                                                          'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
+                                    dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
+                                                    atlas_name + '_coverage.csv'
                                     df_coverage = pd.DataFrame(nonzero_atlas(
-                                        seg_image_path="/ext/home/marc/mindandbrain/output_marc/nipype/sub_lea_01/"
-                                                       "task_rest/func_preproc_01_rest/bold_mni_trans_wf/mask_mni_tfm/"
-                                                       "ref_image_corrected_brain_mask_maths_trans.nii.gz",
-                                        atlas_image_path=configuration['metadata'][task]['BrainAtlasImage']))
+                                        seg_image_path=seg_image_path,
+                                        atlas_image_path=atlas_file))
+                                    df_coverage.columns = ['label', 'data', 'atlas']
+                                    n_data = df_coverage['data'][0]
+                                    n_atlas = df_coverage['atlas'][0]
+                                    ratio = n_data/n_atlas
+                                    df_coverage['ratio'] = [ratio]
+                                    df_coverage.to_csv(dest_coverage, index=False)
 
                                     corr_matrix = atlas_matrix.corr(method='pearson')
                                     corr_matrix.to_csv(destination, index=False, header=False)
@@ -558,6 +570,25 @@ def main():
                                     # drop last column as there is only NaN in there due to delimiting issues
                                     atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
                                                       inplace=True)
+                                    # coverage part (#issue9)
+                                    atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
+                                    atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
+                                    seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
+                                                          task + '/func_preproc*' +
+                                                          '/bold_mni_trans_wf/mask_mni_tfm/'
+                                                          'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
+                                    dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
+                                                    atlas_name + '_coverage.csv'
+                                    df_coverage = pd.DataFrame(nonzero_atlas(
+                                        seg_image_path=seg_image_path,
+                                        atlas_image_path=atlas_file))
+                                    df_coverage.columns = ['label', 'data', 'atlas']
+                                    n_data = df_coverage['data'][0]
+                                    n_atlas = df_coverage['atlas'][0]
+                                    ratio = n_data / n_atlas
+                                    df_coverage['ratio'] = [ratio]
+                                    df_coverage.to_csv(dest_coverage, index=False)
+                                    
                                     corr_matrix = atlas_matrix.corr(method='pearson')
                                     corr_matrix.to_csv(destination, index=False, header=False)
                                     shutil.move(source,
