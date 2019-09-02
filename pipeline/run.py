@@ -445,6 +445,15 @@ def main():
 
         c.info("")
 
+        response0 = c.select("Do you want to exclude subjects based on movement?", ["Yes", "No"])
+        if response0 == "Yes":
+            configuration["AVGFramewiseDisplacement"] = float(c.read("Set the threshold for the average "
+                                                                     "Framewise Displacement:", o=str(0.5)))
+            configuration["MovementPercentage"] = float(c.read("Set the threshold for the percentage of volumes "
+                                                                     "larger than 0.5", o=str(0.1)))
+
+        c.info("")
+
         with open(path_to_pipeline_json, "w+") as f:
             json.dump({"images": images, "metadata": configuration}, f, indent=4)
 
