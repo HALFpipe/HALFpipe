@@ -147,14 +147,14 @@ def nonzero_atlas(atlas_image_path, seg_image_path):
     :param seg_image_path: image file to be compared
     :return:
     """
-    input_image = atlas_image_path
+    input_image = seg_image_path
     in_img = nib.load(input_image)
     in_data = in_img.get_data()
     # binarize image
     in_data[in_data != 0] = 1
 
-    seg_image = seg_image_path
-    seg_img = nib.load(seg_image_path)
+    seg_image = atlas_image_path
+    seg_img = nib.load(atlas_image_path)
     seg_data = seg_img.get_data()
 
     masked = np.zeros_like(seg_data)

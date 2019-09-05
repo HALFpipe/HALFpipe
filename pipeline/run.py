@@ -537,16 +537,16 @@ def main():
                                                           'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
                                     dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
                                                     atlas_name + '_coverage.csv'
+                                    import ipdb; ipdb.set_trace()
                                     df_coverage = pd.DataFrame(nonzero_atlas(
-                                        seg_image_path=seg_image_path,
-                                        atlas_image_path=atlas_file))
+                                        seg_image_path=atlas_file,
+                                        atlas_image_path=seg_image_path))
                                     df_coverage.columns = ['label', 'data', 'atlas']
                                     n_data = df_coverage['data'][0]
                                     n_atlas = df_coverage['atlas'][0]
                                     ratio = n_data/n_atlas
                                     df_coverage['ratio'] = [ratio]
                                     df_coverage.to_csv(dest_coverage, index=False)
-
                                     corr_matrix = atlas_matrix.corr(method='pearson')
                                     corr_matrix.to_csv(destination, index=False, header=False)
                                     shutil.move(source,
