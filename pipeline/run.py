@@ -3,6 +3,7 @@ from multiprocessing import set_start_method, cpu_count
 set_start_method("forkserver", force=True)
 
 import os
+import numpy as np
 import pandas as pd
 import nibabel as nib
 import json
@@ -516,91 +517,54 @@ def main():
                     try:
                         for idx, atlas_idx in enumerate(
                                 ["%04d" % x for x in range(len(configuration['metadata'][task]['BrainAtlasImage']))]):
-                            if len(configuration['metadata'][task]['BrainAtlasImage']) >= 2:
-                                try:
+                            try:
+                                if len(configuration['metadata'][task]['BrainAtlasImage']) >= 2:
                                     source = workdir + '/intermediates/' + subject + '/' + task + \
                                              '/brainatlas_matrix' + str(atlas_idx) + '.txt'
-                                    destination = workdir + '/intermediates/' + subject + '/' + task + \
-                                                  '/corr_matrix_' + \
-                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
-                                                      idx] + '.csv'
-                                    atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-                                    # drop last column as there is only NaN in there due to delimiting issues
-                                    atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
-                                                      inplace=True)
-                                    # coverage part (#issue9)
-                                    atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
-                                    atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
-                                    seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
-                                                          task + '/func_preproc*' +
-                                                          '/bold_mni_trans_wf/mask_mni_tfm/'
-                                                          'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
-                                    dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
-                                                    atlas_name + '_coverage.csv'
-                                    import ipdb; ipdb.set_trace()
-                                    df_coverage = pd.DataFrame(nonzero_atlas(
-                                        seg_image_path=atlas_file,
-                                        atlas_image_path=seg_image_path))
-                                    df_coverage.columns = ['label', 'data', 'atlas']
-                                    n_data = df_coverage['data'][0]
-                                    n_atlas = df_coverage['atlas'][0]
-                                    ratio = n_data/n_atlas
-                                    df_coverage['ratio'] = [ratio]
-                                    df_coverage.to_csv(dest_coverage, index=False)
-                                    corr_matrix = atlas_matrix.corr(method='pearson')
-                                    corr_matrix.to_csv(destination, index=False, header=False)
-                                    shutil.move(source,
-                                                workdir + '/intermediates/' + subject + '/' + task +
-                                                '/brainatlas_timeseries_' +
-                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
-                                                    idx] + '.txt')
-                                except OSError as e:
-                                    print(
-                                        'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
-                                    print(e)
-                            else:
-                                try:
-                                    source = workdir + '/intermediates/' + subject + '/' + task + \
-                                             '/brainatlas_matrix.txt'
-                                    destination = workdir + '/intermediates/' + subject + '/' + task + \
-                                                  '/corr_matrix_' + \
-                                                  list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
-                                                      idx] + '.csv'
-                                    atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-                                    # drop last column as there is only NaN in there due to delimiting issues
-                                    atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
-                                                      inplace=True)
-                                    # coverage part (#issue9)
-                                    atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
-                                    atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
-                                    seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
-                                                          task + '/func_preproc*' +
-                                                          '/bold_mni_trans_wf/mask_mni_tfm/'
-                                                          'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
-                                    dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
-                                                    atlas_name + '_coverage.csv'
-                                    df_coverage = pd.DataFrame(nonzero_atlas(
-                                        seg_image_path=seg_image_path,
-                                        atlas_image_path=atlas_file))
-                                    df_coverage.columns = ['label', 'data', 'atlas']
-                                    n_data = df_coverage['data'][0]
-                                    n_atlas = df_coverage['atlas'][0]
-                                    ratio = n_data / n_atlas
-                                    df_coverage['ratio'] = [ratio]
-                                    df_coverage.to_csv(dest_coverage, index=False)
-                                    
-                                    corr_matrix = atlas_matrix.corr(method='pearson')
-                                    corr_matrix.to_csv(destination, index=False, header=False)
-                                    shutil.move(source,
-                                                workdir + '/intermediates/' + subject + '/' + task +
-                                                '/brainatlas_timeseries_' +
-                                                list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
-                                                    idx] + '.txt')
-                                except OSError as e:
-                                    print(
-                                        'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
-                                    print(e)
-
+                                else:
+                                    source = workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix.txt'
+                                destination = workdir + '/intermediates/' + subject + '/' + task + \
+                                              '/corr_matrix_' + \
+                                              list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx] + \
+                                              '.csv'
+                                atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
+                                # drop last column as there is only NaN in there due to delimiting issues
+                                atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
+                                                  inplace=True)
+                                # coverage part (#issue9)
+                                atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
+                                atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
+                                seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
+                                                      task + '/func_preproc*' +
+                                                      '/bold_mni_trans_wf/mask_mni_tfm/'
+                                                      'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
+                                dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
+                                                atlas_name + '_coverage.csv'
+                                # create get coverage from util function and create dataframe
+                                df_coverage = pd.DataFrame(nonzero_atlas(
+                                    seg_image_path=seg_image_path,
+                                    atlas_image_path=atlas_file))
+                                df_coverage.columns = ['label', 'data', 'atlas']
+                                df_coverage['ratio'] = df_coverage['data'] / df_coverage['atlas']
+                                df_coverage.to_csv(dest_coverage, index=False)
+                                # get list of all rows below threshold
+                                threshold = 0.8
+                                indices_below_threshold = list(
+                                    df_coverage.loc[df_coverage['ratio'] < threshold].index
+                                )
+                                for index in indices_below_threshold:
+                                    atlas_matrix[index] = np.nan
+                                corr_matrix = atlas_matrix.corr(method='pearson')
+                                corr_matrix.to_csv(destination, index=False, header=False)
+                                shutil.move(source,
+                                            workdir + '/intermediates/' + subject + '/' + task +
+                                            '/brainatlas_timeseries_' +
+                                            list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
+                                                idx] + '.txt')
+                            except OSError as e:
+                                print(
+                                    'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
+                                print(e)
                     except KeyError:
                         pass
         # create confounds_mni.tsv
@@ -714,4 +678,3 @@ def main():
             file.write(command + file_name + '\n')
 
         file.close()
-
