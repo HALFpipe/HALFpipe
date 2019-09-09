@@ -469,9 +469,10 @@ def main():
                 "plugin_args": {
                     "n_procs"           : cpu_count(),
                     "raise_insufficient": False,
-                    "maxtasksperchild"  : 1,
                 }
             }
+        elif args.nipype_plugin == "none":
+            plugin_settings = dict()
         else:
             plugin_settings = {
                 "plugin": args.nipype_plugin

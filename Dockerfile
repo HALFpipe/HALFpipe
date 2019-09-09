@@ -33,10 +33,10 @@ RUN mkdir -p /root/src/mriqc && \
 RUN mkdir /ext
 
 COPY ./qualitycheck /root/src/qualitycheck
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash && \
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash && \
   apt-get install -y nodejs &&  \
   cd /root/src/qualitycheck && \
-  npm install && npm run build && \
+  npm install && NODE_ENV=production npm run build && \
   cp -r dist/index.html /root/src && \
   cd .. && rm -rf qualitycheck && \
   apt-get purge -y nodejs

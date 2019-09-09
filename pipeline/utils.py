@@ -17,6 +17,21 @@ def get_path(path, EXT_PATH):
     return path
 
 
+def deepvalues(l):
+    """
+    Return values of a dictionary, recursive
+
+    :param l: Input dictionary
+
+    """
+    if isinstance(l, str):
+        return [l]
+    else:
+        o = []
+        for k in l.values():
+            o += deepvalues(k)
+        return o
+
 def flatten(l):
     """
     Flatten a list

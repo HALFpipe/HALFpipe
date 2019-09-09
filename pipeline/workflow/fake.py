@@ -1,8 +1,10 @@
 import os
+from os import path as op
 
 import gzip
 import fasteners
 import json
+import pickle
 
 from shutil import copy, copyfileobj
 from pathlib import Path
@@ -20,6 +22,10 @@ from fmriprep.interfaces.bids import (
     _splitext
 )
 
+from ..utils import (
+    deepvalues,
+    flatten
+)
 
 class FakeBIDSLayout:
     def __init__(self,
@@ -78,61 +84,93 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             out_path = ""
 
         _, ext = _splitext(self.inputs.in_file[0])
-        compress = ext == '.nii'
+        compress = ext == ".nii"
         if compress:
-            ext = '.nii.gz'
+            ext = ".nii.gz"
 
         base_directory = runtime.cwd
         if isdefined(self.inputs.base_directory):
-            base_directory = os.path.abspath(self.inputs.base_directory)
+            base_directory = op.abspath(self.inputs.base_directory)
 
         if base_directory == self.fmriprep_output_dir:
-            # don't copy file
+            # don"t copy file
             return runtime
         elif base_directory == self.fmriprep_reportlets_dir:
             # write to json
             work_dir = base_directory
             json_id = "%s.%s" % (self.node_id, self.inputs.suffix)
-            json_id = re.sub(r'func_preproc_[^.]*', "func_preproc_wf", json_id)
+            json_id = re.sub(r"func_preproc_[^.]*", "func_preproc_wf", json_id)
             json_data = {"id": json_id}
 
-            os.makedirs(os.path.join(work_dir, out_path), exist_ok=True)
+            os.makedirs(op.join(work_dir, out_path), exist_ok=True)
+            
+            # discover source files
+            sourceImages = []
+            
+            def extractSourceImages(finputs):
+                with gzip.open(finputs, "r") as file:
+                    inputs = pickle.load(file)
+                    for valuelist in inputs.values():
+                        if isinstance(valuelist, list) or isinstance(valuelist, str):
+                            valuelist = flatten(valuelist)
+                            for value in valuelist:
+                                if value.endswith(".nii.gz"):
+                                    sourceImages.append(value)
+            
+            for fname in self.inputs.in_file:
+                finputs = op.join(op.dirname(fname), "_inputs.pklz")
+                if op.isfile(finputs):
+                    extractSourceImages(finputs)
+                else:
+                    finputs = op.join(op.dirname(op.dirname(fname)), "_inputs.pklz")
+                    if op.isfile(finputs):
+                        extractSourceImages(finputs)
+            
+            # output relative path only for derivatives, not for input images
+            dataImages = set(deepvalues(self.images))
+            sourceImages = [op.relpath(s, start = work_dir) if s not in dataImages else s for s in sourceImages]
+            
+            # output path for images
+            touch_fname = op.join(out_path, json_data["id"] + ext)
+            touch_path = op.join(work_dir, touch_fname)
 
-            touch_fname = os.path.join(out_path, json_data["id"] + ext)
-            touch_path = os.path.join(work_dir, touch_fname)
-
-            if not os.path.isfile(touch_path):
+            if not op.isfile(touch_path):
                 for i, fname in enumerate(self.inputs.in_file):
                     copy(fname, touch_path)
-                    # with open(fname, "r") as f:
-                    #     json_data["html"] += f.read()
-                json_data["fname"] = os.path.join(touch_fname)
-                with fasteners.InterProcessLock(os.path.join(work_dir, "qc.lock")):
-                    json_file = os.path.join(work_dir, "qc.json")
+                
+                json_data["fname"] = op.join(touch_fname)
+                json_data["sources"] = sourceImages
+                with fasteners.InterProcessLock(op.join(work_dir, "qualitycheck.lock")):
+                    json_file = op.join(work_dir, "qualitycheck.js")
                     with open(json_file, "ab+") as f:
                         f.seek(0, 2)
+                        
+                        closingCharacters = "])"
 
                         if f.tell() == 0:
+                            f.write("qualitycheck(".encode())
                             f.write(json.dumps([json_data]).encode())
+                            f.write(")".encode())
                         else:
-                            f.seek(-1, 2)
+                            f.seek(-len(closingCharacters), 2)
                             f.truncate()
-                            f.write(','.encode())
+                            f.write(",".encode())
                             f.write(json.dumps(json_data).encode())
-                            f.write(']'.encode())
+                            f.write(closingCharacters.encode())
                 Path(touch_path).touch()
-            html_path = os.path.join(work_dir, "index.html")
-            if not os.path.isfile(html_path):
-                copy(pkgr('pipeline', 'index.html'), html_path)
+            
+            html_path = op.join(work_dir, "index.html")
+            if not op.isfile(html_path):
+                copy(pkgr("pipeline", "index.html"), html_path)
         else:
             # copy file to out_path
-            out_path = os.path.join(base_directory, out_path)
+            out_path = op.join(base_directory, out_path)
 
             os.makedirs(out_path, exist_ok=True)
 
-            formatstr = '{suffix}{ext}'
+            formatstr = "{suffix}{ext}"
             if len(self.inputs.in_file) > 1 and not isdefined(self.inputs.extra_values):
-                formatstr = '{suffix}{i:04d}{ext}'
+                formatstr = "{suffix}{i:04d}{ext}"
 
             for i, fname in enumerate(self.inputs.in_file):
                 out_file = formatstr.format(
@@ -146,13 +184,13 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                         extra_value=self.inputs.extra_values[i]
                     )
 
-                out_file = os.path.join(out_path, out_file)
+                out_file = op.join(out_path, out_file)
 
-                self._results['out_file'].append(out_file)
+                self._results["out_file"].append(out_file)
 
                 if compress:
-                    with open(fname, 'rb') as f_in:
-                        with gzip.open(out_file, 'wb') as f_out:
+                    with open(fname, "rb") as f_in:
+                        with gzip.open(out_file, "wb") as f_out:
                             copyfileobj(f_in, f_out)
                 else:
                     copy(fname, out_file)

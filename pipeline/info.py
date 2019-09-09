@@ -6,14 +6,15 @@
 Base module variables
 """
 
-__version__ = "0.2.1-dev"
+from pathlib import Path
+__version__ = Path("../VERSION").read_text().strip()
 
 __author__ = ""
 __copyright__ = ""
 __credits__ = [""]
 __license__ = ""
 __maintainer__ = "Lea Waller"
-__email__ = "lea.waller@charite."
+__email__ = "lea@berlin.de"
 __status__ = ""
 __url__ = "https://github.com/mindandbrain/pipeline"
 __packagename__ = "pipeline"

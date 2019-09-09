@@ -20,7 +20,7 @@ nthreads = int(cpu_count()/2)
 
 # Maximum number of threads an individual process may use
 # omp_nthreads = cpu_count()
-omp_nthreads = 1
+omp_nthreads = 2
 
 # Enable FreeSurfer surface reconstruction (may increase runtime)
 freesurfer = False
