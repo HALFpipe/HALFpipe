@@ -46,7 +46,8 @@ def main():
         dependency_links=ldict['LINKS_REQUIRES'],
         package_data={
             'pipeline': [
-                "index.html"
+                "index.html",
+                "VERSION"
             ]
         },
         entry_points={'console_scripts': [

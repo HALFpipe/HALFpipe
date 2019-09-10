@@ -6,8 +6,11 @@
 Base module variables
 """
 
+from os import path as op
 from pathlib import Path
-__version__ = Path("../VERSION").read_text().strip()
+here = op.abspath(op.dirname(__file__))
+versionFileName = op.join(here, "VERSION")
+__version__ = Path(versionFileName).read_text().strip()
 
 __author__ = ""
 __copyright__ = ""
