@@ -555,6 +555,9 @@ def main():
                                 for index in indices_below_threshold:
                                     atlas_matrix[index] = np.nan
                                 corr_matrix = atlas_matrix.corr(method='pearson')
+                                for index in indices_below_threshold:
+                                    corr_matrix[index] = 'NaN'
+                                    corr_matrix.loc[index] = 'NaN'
                                 corr_matrix.to_csv(destination, index=False, header=False)
                                 shutil.move(source,
                                             workdir + '/intermediates/' + subject + '/' + task +
