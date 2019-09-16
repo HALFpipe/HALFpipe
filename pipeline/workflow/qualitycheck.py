@@ -1,5 +1,6 @@
 import os
 import json
+import pandas as pd
 
 
 def get_qualitycheck_exclude(base_directory):
@@ -13,10 +14,25 @@ def get_qualitycheck_exclude(base_directory):
 
     # load qcresult.json
     qc_result = {}
-    qc_result_fname = os.path.join(base_directory, "qcresult.json")
+    qc_result_fname = os.path.join(base_directory, "qualitycheck", "qcresult.json")
     if os.path.isfile(qc_result_fname):
         with open(qc_result_fname) as qc_result_file:
             qc_result = json.load(qc_result_file)
+
+    # load motion report
+    motion_report_fname = os.path.join(base_directory, "qualitycheck", "motion_report.csv")
+    if os.path.isfile(motion_report_fname):
+        motion_report = pd.read_csv(motion_report_fname, index_col=0)
+
+    # load pipeline.json
+
+    pipeline_fname = os.path.join(base_directory, "pipeline.json")
+    if os.path.isfile(pipeline_fname):
+        with open(pipeline_fname) as pipeline_file:
+            pipeline_json = json.load(pipeline_file)
+
+    avg_framewise_displacement = pipeline_json['metadata']['AVGFramewiseDisplacement']
+    movement_percentage = pipeline_json['metadata']['MovementPercentage']
 
     # if there are issues with the functional preprocessing, then
     # exclude the specific scan
@@ -51,5 +67,20 @@ def get_qualitycheck_exclude(base_directory):
                             value = True
                     for k in exclude[sub].keys():
                         exclude[sub][k] |= value
+
+    # exclude entire subject based on movement parameters
+
+    # get all rows of motion_report where Mean_FD threshold is broken
+    mean_fd_excludes = motion_report[motion_report['Mean_FD'] > avg_framewise_displacement]
+    # get all rows of motion_report where %volume_lg_0.5 is broken
+    movement_percentage_excludes = motion_report[motion_report['%volume_lg_0.5'] > movement_percentage]
+
+    for subject in mean_fd_excludes['Subject']:
+        for k in exclude[subject].keys():
+            exclude[subject][k] = True
+
+    for subject in movement_percentage_excludes['Subject']:
+        for k in exclude[subject].keys():
+            exclude[subject][k] = True
 
     return exclude

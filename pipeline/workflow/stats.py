@@ -152,7 +152,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="l2model"
     )
 
-    if covariates is not None:
+    if covariates:
 
         # Transform covariates dict to pandas dataframe
         df_covariates = pd.DataFrame(covariates)
@@ -184,6 +184,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
         # save demeaned covariates to csv
         df_covariates.to_csv(workdir + '/demeaned_covariates.csv', index=False)
+
         # transform into dict to extract regressors for level2model
         covariates = df_regressors.to_dict()
         # transform to dictionary of lists
