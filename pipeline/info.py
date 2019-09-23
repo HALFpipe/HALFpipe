@@ -40,8 +40,8 @@ REQUIRES = [
     "jinja2",
     "fasteners",
     "pandas",
-    "pygraphviz",
-    "graphviz",
+    # "pygraphviz",
+    # "graphviz",
     "ipdb"
 ]
 

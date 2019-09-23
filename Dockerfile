@@ -17,20 +17,20 @@ RUN mkdir -p /root/src/mriqc && \
     pip install .[all] && \
     rm -rf ~/.cache/pip
 
- RUN apt-get update && \
-     apt-get install -y graphviz \
-       graphviz-dev
-
-RUN mkdir /ext
-
-COPY . /root/src/pipeline/
+# RUN apt-get update && \
+#      apt-get install -y graphviz \
+#      graphviz-dev
 
 RUN curl -sSL \
   $(curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" \
-  | grep browser_download_url | cut -d '"' -f 4) -o /root/src/pipeline/index.html 
+  | grep browser_download_url | cut -d '"' -f 4) -o /root/src/qualitycheck.html 
+  
+RUN mkdir /ext
+COPY . /root/src/pipeline/
   
 RUN cd /root/src/pipeline && \
-    cp VERSION index.html pipeline && \
+    cp /root/src/qualitycheck.html pipeline/index.html && \
+    cp VERSION pipeline/VERSION && \
     python setup.py install && \
     rm -rf ~/.cache/pip && \
     cd .. && rm -rf /root/src/pipeline
