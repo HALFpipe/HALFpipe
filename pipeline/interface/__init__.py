@@ -3,3 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .dof import Dof
+
+from .segmentation import (
+    ApplyXfmSegmentation, 
+    GetSegmentationMean
+)

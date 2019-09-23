@@ -23,22 +23,16 @@ RUN mkdir -p /root/src/mriqc && \
 
 RUN mkdir /ext
 
-COPY VERSION /root/src/pipeline/
-COPY qualitycheck /root/src/pipeline/qualitycheck
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash && \
-  apt-get install -y nodejs &&  \
-  cd /root/src/pipeline/qualitycheck && \
-  npm install && NODE_ENV=production npm run build && \
-  cp dist/index.html /root/src/pipeline && \
-  cd .. && rm -rf qualitycheck && \
-  apt-get purge -y nodejs
+COPY . /root/src/pipeline/
+
+RUN curl -sSL \
+  $(curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" \
+  | grep browser_download_url | cut -d '"' -f 4) -o /root/src/pipeline/index.html 
   
-COPY . /root/src/pipeline
 RUN cd /root/src/pipeline && \
     cp VERSION index.html pipeline && \
     python setup.py install && \
     rm -rf ~/.cache/pip && \
-    mv /root/src/pipeline/static /opt/static && \
     cd .. && rm -rf /root/src/pipeline
 
 ENTRYPOINT ["/usr/local/miniconda/bin/pipeline"]

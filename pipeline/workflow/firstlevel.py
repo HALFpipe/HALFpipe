@@ -32,7 +32,7 @@ from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
 
-from .interfaces import ApplyXfmSegmentation
+from ..interface import ApplyXfmSegmentation
 
 _func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
                           't1_tpms', 't1_aseg', 't1_aparc',
