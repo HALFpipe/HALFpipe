@@ -484,6 +484,7 @@ def main():
                                              " Do you want to continue without covariates?", ["Yes", "No"])
                         if response4 == "No":
                             # Stop program
+                            # TODO give option again instead of exiting
                             sys.exit("Program exited. No covariates selected")
 
                     configuration["Covariates"] = covariates_subset
@@ -535,7 +536,8 @@ def main():
                                                  ["Yes", "No"])
                             if response4 == "No":
                                 # Stop program
-                                sys.exit("Program exited. No covariates selected")
+                                # TODO go back to specify within group comparison
+                                sys.exit("Program exited. No groups selected")
                             else:
                                 # Not including configuration for within group comparison
                                 if "WithinGroup" in configuration:
@@ -582,6 +584,7 @@ def main():
                                                      " Do you want to continue without covariates?", ["Yes", "No"])
                                 if response4 == "No":
                                     # Stop program
+                                    # TODO give option again instead of exiting
                                     sys.exit("Program exited. No covariates selected")
                                 else:
                                     # Continue without covariates
