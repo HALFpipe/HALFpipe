@@ -288,10 +288,12 @@ def main():
                     response3 = c.select("Use another ICA network templates image?", ["Yes", "No"])
 
             response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
+            configuration["rest"]["reho"] = False
             if response3 == "Yes":
                 configuration["rest"]["reho"] = True
 
             response3 = c.select("Do you want to calculate ALFF?", ["Yes", "No"])
+            configuration["rest"]["alff"] = False
             if response3 == "Yes":
                 configuration["rest"]["alff"] = True
 
