@@ -45,6 +45,7 @@ COPY . /root/src/pipeline
 RUN cd /root/src/pipeline && \
     cp ../index.html pipeline && \
     python setup.py install && \
-    rm -rf ~/.cache/pip
+    rm -rf ~/.cache/pip && \
+    mv /root/src/pipeline/static /opt/static
 
 ENTRYPOINT ["/usr/local/miniconda/bin/pipeline"]
