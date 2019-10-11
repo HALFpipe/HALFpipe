@@ -824,7 +824,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
-    if "reho" in metadata:
+    if 'reho' in metadata:
         firstlevel_wf = init_reho_wf(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -840,7 +840,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["reho_wf"] = ["reho"]
 
     # ALFF / fALFF
-    if "alff" in metadata:
+    if 'alff' in metadata:
         firstlevel_wf = create_alff(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -870,18 +870,19 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         wfbywf["falff_wf"] = firstlevel_wf
         outnamesbywf["falff_wf"] = ["falff"]
 
-    outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=flatten([
-                [["%s_varcope" % outname,
-                  "%s_mask_file" % outname,
-                  "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff", "falff"]] +
-                [["%s_cope" % outname] for outname in outnames] +
-                [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
-                for outnames in outnamesbywf.values()]
-            )
-        ),
-        name="outputnode")
+    if outnamesbywf:
+        outputnode = pe.Node(
+            interface=niu.IdentityInterface(
+                fields=flatten([
+                    [["%s_varcope" % outname,
+                      "%s_mask_file" % outname,
+                      "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff", "falff"]] +
+                    [["%s_cope" % outname] for outname in outnames] +
+                    [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
+                    for outnames in outnamesbywf.values()]
+                )
+            ),
+            name="outputnode")
 
     for workflow_name, outnames in outnamesbywf.items():
         if workflow_name not in ["reho_wf", "alff_wf", "falff_wf", "brainatlas_wf"]:
