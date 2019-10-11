@@ -45,7 +45,7 @@ def init_workflow(workdir, jsonfile):
     # first level
     #
 
-    result = map(
+    result = Pool().map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
     )
@@ -251,7 +251,7 @@ def init_stat_only_workflow(workdir, jsonfile):
     #
     # second level
     #
-    import ipdb; ipdb.set_trace()
+
     # Run second level statistics only if json file does not correspond to a single subject
     group_json = os.path.join(workdir, "pipeline.json")
     if group_json == fp:
@@ -316,9 +316,30 @@ def init_stat_only_workflow(workdir, jsonfile):
                         if len(outputnode) > 0:
                             outputnode = outputnode[0]
                             if outname in ["reho", "alff", "falff"]:
-                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
-                                workflow.connect(outputnode, "%s_zstat" % outname, mergezstats, "in%i" % (i + 1))
-                                workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
+                                dg_node = pe.Node(
+                                    nio.DataGrabber(infields=['subject_id', 'task_name', 'outname'],
+                                                    outfields=['cope', 'zstat', 'mask_file']),
+                                    name=f'dg_{subject}_{task}_{outname}'
+                                )
+                                dg_node.inputs.base_directory = workdir + '/intermediates/'
+                                dg_node.inputs.template = '*'
+                                dg_node.inputs.sort_filelist = True
+                                dg_node.inputs.template_args = {
+                                    'cope': [['subject_id', 'task_name', 'outname']],
+                                    'zstat': [['subject_id', 'task_name', 'outname']],
+                                    'mask_file': [['subject_id', 'task_name']]
+                                }
+                                dg_node.inputs.field_template = {
+                                    'cope': '%s/%s/%s_img.nii.gz',
+                                    'zstat': '%s/%s/%s_zstat.nii.gz',
+                                    'mask_file': '%s/%s/mask.nii.gz',
+                                }
+                                dg_node.inputs.subject_id = subject
+                                dg_node.inputs.task_name = task
+                                dg_node.inputs.outname = outname
+                                workflow.connect(dg_node, "cope", mergecopes, "in%i" % (i + 1))
+                                workflow.connect(dg_node, "zstat", mergezstats, "in%i" % (i + 1))
+                                workflow.connect(dg_node, "mask_file", mergemasks, "in%i" % (i + 1))
                             else:
                                 workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                                 workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))

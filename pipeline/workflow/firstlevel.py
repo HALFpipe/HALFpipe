@@ -343,6 +343,13 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             suffix="preproc"),
         name="ds_preproc", run_without_submitting=True)
 
+    ds_mask = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            suffix="mask"),
+        name="ds_mask", run_without_submitting=True)
+
     tsnr_wf = init_tsnr_wf()
     ds_tsnr = pe.Node(
         DerivativesDataSink(
@@ -364,6 +371,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         ]),
         (func_preproc_wf, maskpreproc, [
             ("outputnode.bold_mask_mni", "mask_file")
+        ]),
+        (func_preproc_wf, ds_mask, [
+            ("outputnode.bold_mask_mni", "in_file")
         ]),
         (maskpreproc, ds_preproc, [
             ("out_file", "in_file")
