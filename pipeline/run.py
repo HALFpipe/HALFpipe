@@ -14,7 +14,7 @@ from argparse import ArgumentParser
 from .cli import Cli
 from .conditions import parse_condition_files
 from .info import __version__
-from .workflow import init_workflow
+from .workflow import init_workflow, init_stat_only_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
 from .utils import get_path, transpose, nonzero_atlas
@@ -35,7 +35,8 @@ def main():
     ap.add_argument("-s", "--setup-only", action="store_true", default=False)
     ap.add_argument("-j", "--json-file")
     ap.add_argument("-b", "--block-size")
-    ap.add_argument("-f", "--file-status", action='store_true')
+    ap.add_argument("-f", "--file-status", action="store_true")
+    ap.add_argument("-o", "--only-stats", action="store_true")
     args = ap.parse_args()
 
     workdir = None
@@ -460,17 +461,13 @@ def main():
 
     # Run workflow if setup_only flag is not given
     elif not args.setup_only:
-        workflow = init_workflow(workdir, path_to_pipeline_json)
-
-        init_logging(workdir, path_to_pipeline_json)
-
         if args.nipype_plugin is None:
             plugin_settings = {
-                "plugin"     : "MultiProc",
+                "plugin": "MultiProc",
                 "plugin_args": {
-                    "n_procs"           : cpu_count(),
+                    "n_procs": cpu_count(),
                     "raise_insufficient": False,
-                    "maxtasksperchild"  : 1,
+                    "maxtasksperchild": 1,
                 }
             }
         else:
@@ -478,10 +475,17 @@ def main():
                 "plugin": args.nipype_plugin
             }
 
+        init_logging(workdir, path_to_pipeline_json)
+
         import gc
         gc.collect()
 
-        workflow.run(**plugin_settings)
+        if args.only_stats:
+            workflow = init_stat_only_workflow(workdir, path_to_pipeline_json)
+            workflow.run(**plugin_settings)
+        else:
+            workflow = init_workflow(workdir, path_to_pipeline_json)
+            workflow.run(**plugin_settings)
 
         # copy confounds.tsv from task to intermediates/subject
         # access pipeline.json to get subjects and tasks for path
