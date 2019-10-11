@@ -341,10 +341,34 @@ def init_stat_only_workflow(workdir, jsonfile):
                                 workflow.connect(dg_node, "zstat", mergezstats, "in%i" % (i + 1))
                                 workflow.connect(dg_node, "mask_file", mergemasks, "in%i" % (i + 1))
                             else:
-                                workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
-                                workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
-                                workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
-                                workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
+                                dg_node = pe.Node(
+                                    nio.DataGrabber(infields=['subject_id', 'task_name', 'outname'],
+                                                    outfields=['cope', 'mask_file', 'varcope', 'dof_file']),
+                                    name=f'dg_{subject}_{task}_{outname}'
+                                )
+                                dg_node.inputs.base_directory = workdir + '/intermediates/'
+                                dg_node.inputs.template = '*'
+                                dg_node.inputs.sort_filelist = True
+                                dg_node.inputs.template_args = {
+                                    'cope': [['subject_id', 'task_name', 'outname']],
+                                    'mask_file': [['subject_id', 'task_name']],
+                                    'varcope': [['subject_id', 'task_name', 'outname']],
+                                    'dof_file': [['subject_id', 'task_name']]
+                                }
+                                dg_node.inputs.field_template = {
+                                    'cope': '%s/%s/%s_cope.nii.gz',
+                                    'mask_file': '%s/%s/mask.nii.gz',
+                                    'varcope': '%s/%s/%s_varcope.nii.gz',
+                                    'dof_file': '%s/%s/dof',
+
+                                }
+                                dg_node.inputs.subject_id = subject
+                                dg_node.inputs.task_name = task
+                                dg_node.inputs.outname = outname
+                                workflow.connect(dg_node, "cope", mergecopes, "in%i" % (i + 1))
+                                workflow.connect(dg_node, "mask_file", mergemasks, "in%i" % (i + 1))
+                                workflow.connect(dg_node, "varcope", mergevarcopes, "in%i" % (i + 1))
+                                workflow.connect(dg_node, "dof_file", mergedoffiles, "in%i" % (i + 1))
 
                 ds_stats = pe.MapNode(
                     nio.DataSink(
