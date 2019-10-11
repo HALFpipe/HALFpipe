@@ -563,7 +563,7 @@ def main():
                                     corr_matrix[index] = 'NaN'
                                     corr_matrix.loc[index] = 'NaN'
                                 corr_matrix.to_csv(destination, index=False, header=False)
-                                shutil.move(source,
+                                shutil.copy(source,
                                             workdir + '/intermediates/' + subject + '/' + task +
                                             '/brainatlas_timeseries_' +
                                             list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
