@@ -217,7 +217,7 @@ def main():
             c = Cli()
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
-
+        '''
 
         #
         # anatomical/structural data
@@ -417,13 +417,13 @@ def main():
 
         c.info("")
         
-
+        '''
 
         response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
             # spreadsheet_file = get_file("covariates/group data spreadsheet")
 
-            ### REMOVE AFTER TESTING
+            # TODO ## REMOVE AFTER TESTING
             spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
             spreadsheet = pd.read_csv(spreadsheet_file)
 
@@ -451,7 +451,7 @@ def main():
             del covariates[group_column]
 
             # GROUP COMPARISON
-            response1 = c.select("Specify a group comparison?", ["Yes", "No"])
+            response1 = c.select("Specify between group comparison?", ["Yes", "No"])
             if response1 == "Yes":
 
                 group_contrasts = {}
@@ -507,71 +507,71 @@ def main():
 
             while response2 == "Yes":
 
+                # Only when there are covariates, within group comparison can be specified
                 if covariates:
 
                     # 1. Selection of continuous variable
                     convariable_name = c.select("Select the column containing the continuous variable",
                                                 list(covariates))
                     print('Continuous variable: ' + str(convariable_name))
-                    print('Values: ' + str(covariates[convariable_name]))
-
-                    configuration["WithinGroup"][convariable_name] = {}
 
                     # GROUPS
-                    # 2. Using all patients (across all groups)?
-                    response21 = c.select("Across all groups?", ["Yes", "No"])
-                    if response21 == "Yes":
-                        all_groups = True
-                        selected_groups = unique_groups
-                    # 3. Groups to use (in case not all patients are used)
-                    else:
-                        all_groups = False
-                        selected_groups = c.fields("Specify the group(s) for individual model(s). "
+                    selected_groups = []
+                    # 2. Selection of groups to use in the model (across selected groups)
+
+                    while not selected_groups:
+                        selected_groups = c.fields("Specify the group(s) for the model. "
                                                    "Use 1 to select, 0 otherwise", unique_groups)
                         selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
 
                         if not selected_groups:
-                            response4 = c.select("No groups were selected. Do you want to continue without specifying "
-                                                 "a within group comparison?",
-                                                 ["Yes", "No"])
-                            if response4 == "No":
-                                # Stop program
-                                # TODO go back to specify within group comparison
-                                sys.exit("Program exited. No groups selected")
-                            else:
-                                # Not including configuration for within group comparison
-                                if "WithinGroup" in configuration:
-                                    del configuration["WithinGroup"]
-                                break
+                            c.info("No groups were selected. Please select at least one group for the model.")
 
                     print('Groups: ' + str(selected_groups))
 
-                    # change depending of what the processing requires   # subjects with groups? # groups with 1 or 0?
-                    configuration["WithinGroup"][convariable_name]['Groups'] = dict.fromkeys(selected_groups, 1)
-                    configuration["WithinGroup"][convariable_name]['AllGroups'] = all_groups
+                    # Create dictionary for the model
+                    group_names = '_'.join(selected_groups)
+                    model_name = str(convariable_name) + "_" + group_names
+                    configuration["WithinGroup"][model_name] = {}
 
-                    # 4. Covariates
-                    if covariates:
-                        cov_names = list(covariates)
-                        # print(cov_names)
-                        cov_names.remove(convariable_name)
-                        # print(cov_names)
+                    # Filtering dictionary: Adding continuous variable values for patients in selected groups
 
-                        if not cov_names:
-                            response4 = c.select("There are no additional columns in the spreadsheet to use as "
-                                                 "covariates."
-                                                 " Do you want to continue the within group comparison without "
-                                                 "covariates?",
-                                                 ["Yes", "No"])
+                    # Selection of subjects according to selected groups
+                    subjects = dict(filter(lambda elem: elem[1] in selected_groups,
+                                           configuration['SubjectGroups'].items()))
 
-                            if response4 == "No":
-                                # Stop program
-                                sys.exit("Program exited. No covariates found")
-                            else:
-                                # Continue without covariates
-                                configuration["WithinGroup"][convariable_name]['Covariates'] = {}
+                    print("Subjects: " + str(subjects))
 
+                    # Selection of continuous variable according to subjects
+                    convariable_subset = {}
+                    convariable_subset[convariable_name] = dict(filter(lambda elem: elem[0] in subjects.keys(),
+                                                                       covariates[convariable_name].items()))
+
+                    configuration["WithinGroup"][model_name]['ContinuousVariable'] = convariable_subset
+
+                    print('ConVariable: ' + str(convariable_subset))
+
+                    # 3. Covariates
+                    cov_names = list(covariates)
+                    cov_names.remove(convariable_name)
+
+                    if not cov_names:
+                        response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
+                                             " Do you want to continue the within group comparison without covariates?",
+                                             ["Yes", "No"])
+
+                        if response4 == "No":
+                            # Stop program
+                            sys.exit("Program exited. No covariates found")
                         else:
+                            # Continue without covariates
+                            covariates_subset = {}
+
+                    else:
+                        covariates_selected = []
+                        response4 = "No"
+
+                        while not covariates_selected and response4 == "No":
                             covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, "
                                                            "0 otherwise",
                                                            cov_names)
@@ -580,50 +580,35 @@ def main():
 
                             if not covariates_selected:
 
-                                response4 = c.select("No covariates were selected."
-                                                     " Do you want to continue without covariates?", ["Yes", "No"])
-                                if response4 == "No":
-                                    # Stop program
-                                    # TODO give option again instead of exiting
-                                    sys.exit("Program exited. No covariates selected")
-                                else:
-                                    # Continue without covariates
-                                    configuration["WithinGroup"][convariable_name]['Covariates'] = {}
-                            else:
-                                print('Covariates: ' + str(covariates_selected))
+                                response4 = c.select("No covariates were selected. "
+                                                     "Do you want to continue without covariates?", ["Yes", "No"])
 
-                                if all_groups:
-                                    covariates_subset = {k: covariates[k] for k in covariates_selected}
+                        covariates_subset = {}
+                        # Continue without covariates otherwise
+                        if covariates_selected:
+                            print('Covariates: ' + str(covariates_selected))
 
-                                else:
-                                    covariates_subset = {}
-                                    # Filter dictionary of covariates
+                            # Filtering dictionary: Selection of covariate values according to subjects
 
-                                    # Selection of subjects according to groups
-                                    subjects = dict(filter(lambda elem: elem[1] in selected_groups,
-                                                           configuration['SubjectGroups'].items()))
+                            for k in covariates_selected:
+                                covariates_subset[k] = dict(filter(lambda elem: elem[0] in subjects.keys(),
+                                                                   covariates[k].items()))
 
-                                    print("Subjects: " + subjects)
-
-                                    # Selection of covariates according to subjects
-                                    for k in covariates_selected:
-                                        covariates_subset[k] = dict(filter(lambda elem: elem[0] in subjects.keys(),
-                                                                           covariates[k].items()))
-
-                                print('Values: ' + str(covariates_subset))
-                                configuration["WithinGroup"][convariable_name]['Covariates'] = covariates_subset
+                    configuration["WithinGroup"][model_name]['Covariates'] = covariates_subset
+                    print('Covariates: ' + str(covariates_subset))
 
                     response2 = c.select("Specify another within group comparison?", ["Yes", "No"])
 
                 else:
-                    response4 = c.select("There are no additional columns in the spreadsheet to use as continuous "
-                                         "variable. "
+                    response4 = c.select("There are no columns in the spreadsheet to use as continuous variable. "
                                          "Do you want to continue without specifying a within group comparison?",
                                          ["Yes", "No"])
                     if response4 == "No":
                         # Stop program
-                        sys.exit("Program exited. No within group comparison was specified")
+                        sys.exit("Program exited. No within group comparison was specified. Spreadsheet did not contain"
+                                 " columns to use as continuous variable")
                     else:
+                        # Continue without within group comparison
                         response2 = "No"
 
         c.info("")
