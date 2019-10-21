@@ -217,7 +217,8 @@ def main():
             c = Cli()
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
-        '''
+        # TODO remove after testing
+        # '''
 
         #
         # anatomical/structural data
@@ -417,14 +418,15 @@ def main():
 
         c.info("")
         
-        '''
+        # TODO remove after testing
+        # '''
 
         response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
-            # spreadsheet_file = get_file("covariates/group data spreadsheet")
+            spreadsheet_file = get_file("covariates/group data spreadsheet")
 
-            # TODO ## REMOVE AFTER TESTING
-            spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
+            # TODO REMOVE AFTER TESTING
+            # spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
             spreadsheet = pd.read_csv(spreadsheet_file)
 
             columns = spreadsheet.columns.tolist()
