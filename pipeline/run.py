@@ -218,7 +218,7 @@ def main():
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
         # TODO remove after testing
-        # '''
+        #'''
 
         #
         # anatomical/structural data
@@ -472,25 +472,24 @@ def main():
 
                 # 2. Covariates
                 if covariates:
-                    covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
-                                                   list(covariates))
+                    covariates_selected = []
+                    response5 = "No"
 
-                    covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx]
-                                           == '1']
-                    print('Covariates: ' + str(covariates_selected))
+                    while not covariates_selected and response5 == "No":
 
-                    covariates_subset = {k: covariates[k] for k in covariates_selected}
-                    print('Values: ' + str(covariates_subset))
+                        covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
+                                                       list(covariates))
 
-                    if not covariates_subset:
-                        response4 = c.select("No covariates were selected."
-                                             " Do you want to continue without covariates?", ["Yes", "No"])
-                        if response4 == "No":
-                            # Stop program
-                            # TODO give option again instead of exiting
-                            sys.exit("Program exited. No covariates selected")
+                        covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx]
+                                               == '1']
+                        print('Covariates: ' + str(covariates_selected))
 
-                    configuration["Covariates"] = covariates_subset
+                        if not covariates_selected:
+                            response5 = c.select("No covariates were selected."
+                                                 " Do you want to continue without covariates?", ["Yes", "No"])
+                            covariates_subset = {}
+                        else:
+                            covariates_subset = {k: covariates[k] for k in covariates_selected}
 
                 else:
                     response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
@@ -501,7 +500,10 @@ def main():
                         sys.exit("Program exited. No covariates found")
                     else:
                         # Continue without covariates
-                        configuration["Covariates"] = {}
+                        covariates_subset = {}
+
+                print('Values: ' + str(covariates_subset))
+                configuration["Covariates"] = covariates_subset
 
             # WITHING GROUP COMPARISON
             response2 = c.select("Specify within group comparison?", ["Yes", "No"])
