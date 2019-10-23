@@ -142,6 +142,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     else:
         trimmed_subjects = subjects  # in case there are no excluded subjects
 
+    regressors = {}
+
     if covariates is not None:
 
         # Transform covariates dict to pandas dataframe
@@ -179,26 +181,26 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         # transform to dictionary of lists
         regressors = {k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()}
 
-        # two-sample t-tests with covariates
+    # two-sample t-tests with covariates
 
-        # dummy coding of variables: group names --> numbers in the matrix
-        # see fsl feat documentation
-        # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
-        dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
-        # transform to dictionary of lists
-        dummies = {k: [float(v[s]) for s in trimmed_subjects] for k, v in dummies.items()}
-        regressors.update(dummies)
+    # dummy coding of variables: group names --> numbers in the matrix
+    # see fsl feat documentation
+    # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
+    dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
+    # transform to dictionary of lists
+    dummies = {k: [float(v[s]) for s in trimmed_subjects] for k, v in dummies.items()}
+    regressors.update(dummies)
 
-        # transform to dictionary of lists
-        contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
+    # transform to dictionary of lists
+    contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
 
-        level2model = pe.Node(
-            interface=fsl.MultipleRegressDesign(
-                regressors=regressors,
-                contrasts=contrasts
-            ),
-            name="l2model"
-        )
+    level2model = pe.Node(
+        interface=fsl.MultipleRegressDesign(
+            regressors=regressors,
+            contrasts=contrasts
+        ),
+        name="l2model"
+    )
 
     contrast_names = [c[0] for c in contrasts]
 
