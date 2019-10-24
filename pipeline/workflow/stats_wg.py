@@ -43,7 +43,7 @@ def get_len(x):
 
 def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
                            subjects=None, covariates=None,
-                           continuous_variable=None, subject_groups=None,
+                           subject_groups=None, continuous_variable=None,
                            outname=None, workdir=None, task=None):
     """
 
@@ -126,7 +126,8 @@ def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
         excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
         trimmed_subjects = list(subjects)
         for excluded_subject in excluded_subjects:
-            trimmed_subjects.remove(excluded_subject)
+            if excluded_subject in trimmed_subjects:
+                trimmed_subjects.remove(excluded_subject)
 
         # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
         # use of sets here for easy substraction of subjects
@@ -134,7 +135,7 @@ def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
         df_included_subjects = pd.DataFrame(included_subjects, columns=['Subjects'])
         df_included_subjects = df_included_subjects.sort_values(by=['Subjects'])  # sort by name
         df_included_subjects = df_included_subjects.reset_index(drop=True)  # reindex for ascending numbers
-        json_path = workdir + '/' + name + 'included_subjects.json'
+        json_path = workdir + '/' + name + '_included_subjects.json'
         df_included_subjects.to_json(json_path)
         with open(json_path, 'w') as json_file:
             # json is loaded from pandas to json and then dumped to get indent in file
@@ -177,9 +178,10 @@ def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
     df_con_variable = df_con_variable.reset_index()  # add id column
     df_con_variable = df_con_variable.rename(columns={'index': 'Subject_ID'})  # rename subject column
     # save demeaned continuous variable to csv
-    df_con_variable.to_csv(workdir + '/' + name + 'demeaned_continuous_variable.csv', index=False)
+    df_con_variable.to_csv(workdir + '/' + name + '_demeaned_continuous_variable.csv', index=False)
     # transform into dict to extract regressor for level2model
     con_variable = df_regressors.to_dict()
+
     # transform to dictionary of lists
     regressors.update({k: [float(v[s]) for s in trimmed_subjects] for k, v in con_variable.items()})
 
@@ -216,7 +218,7 @@ def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
         df_covariates = df_covariates.reset_index()  # add id column
         df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
         # save demeaned covariates to csv
-        df_covariates.to_csv(workdir + '/' + name + 'demeaned_covariates.csv', index=False)
+        df_covariates.to_csv(workdir + '/' + name + '_demeaned_covariates.csv', index=False)
         # transform into dict to extract regressors for level2model
         covariates = df_regressors.to_dict()
         # transform dictionary to lists
