@@ -75,6 +75,14 @@ def get_qualitycheck_exclude(base_directory):
         # get all rows of motion_report where %volume_lg_0.5 is broken
         movement_percentage_excludes = motion_report[motion_report['%volume_lg_0.5'] > movement_percentage]
 
+        # create dummy exclude dictionary in case there is no qcresult.json
+        if not exclude:
+            exclude = {}
+            for subject in motion_report['Subject']:
+                exclude[subject] = {}
+                for image in pipeline_json['images']:
+                    exclude[subject][image] = False
+
         for subject in mean_fd_excludes['Subject']:
             for k in exclude[subject].keys():
                 exclude[subject][k] = True
