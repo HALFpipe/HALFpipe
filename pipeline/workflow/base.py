@@ -80,7 +80,8 @@ def init_workflow(workdir, jsonfile):
                         outnamessets[k] = set()
                     outnamessets[k].update(v)
 
-            print("PRINT:" + str(outnameslists))
+            print("PRINT: lists: " + str(outnameslists))
+            print("PRINT: sets: " + str(outnamessets))
 
             exclude = get_qualitycheck_exclude(workdir)
 
@@ -96,6 +97,8 @@ def init_workflow(workdir, jsonfile):
             if "WithinGroup" in metadata:
                 models.update(metadata["WithinGroup"])
 
+            print("PRINT: models: "+str(models))
+
             stats_dir = os.path.join(workdir, "stats")
 
             for model in models:
@@ -103,10 +106,11 @@ def init_workflow(workdir, jsonfile):
                 for task, outnamesset in outnamessets.items():
                     for outname in outnamesset:
 
-                        #name = "%s_%s_%s_higherlevel" % (model, task, outname)
-                        name = "%s_higherlevel" % model
+                        name = "%s_%s_%s_higherlevel" % (model, task, outname)
                         covariates = models[model]["Covariates"]
                         subject_groups = models[model]["SubjectGroups"]
+
+                        print("PRINT: "+name+' '+outname)
 
                         if model == bg_name:
                             print("PRINT: between group model")
