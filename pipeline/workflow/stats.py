@@ -124,9 +124,10 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     if excluded_overview:
         df_exclude = pd.DataFrame(excluded_overview).transpose()
         excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
+        excluded_subjects = [str(x) for x in excluded_subjects]
         trimmed_subjects = list(subjects)
         for excluded_subject in excluded_subjects:
-            trimmed_subjects.remove(excluded_subject)
+            trimmed_subjects.remove(str(excluded_subject))
 
         # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
         # use of sets here for easy substraction of subjects
