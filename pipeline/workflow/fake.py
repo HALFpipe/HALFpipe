@@ -145,10 +145,10 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                     with open(json_file, "ab+") as f:
                         f.seek(0, 2)
                         
-                        closingCharacters = "])"
+                        closingCharacters = "]`))"
 
                         if f.tell() == 0:
-                            f.write("qualitycheck(".encode())
+                            f.write("qualitycheck(JSON.parse(`".encode())
                             f.write(json.dumps([json_data]).encode())
                             f.write(")".encode())
                         else:
