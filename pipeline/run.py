@@ -17,7 +17,7 @@ from .info import __version__
 from .workflow import init_workflow, init_stat_only_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
-from .utils import get_path, transpose, nonzero_atlas
+from .utils import get_path, transpose, nonzero_atlas, firstval
 from .file_checks import file_checks
 
 # Debug config for stop on first crash
@@ -343,7 +343,8 @@ def main():
             configuration[field_name]["RepetitionTime"] = dict()
             for subject in subject_ids:
                 configuration[field_name]["RepetitionTime"][subject] = float(str(nib.load(
-                    transpose(images[field_name])[""][subject]  # gets the path of the nii.gz file for each subject
+                    # gets the path of the first nii.gz file for each subject
+                    firstval(firstval(images[field_name][subject]))  
                 ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
             # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
             #     o = str(nib.load(image).header.get_zooms()[3])))
@@ -365,7 +366,7 @@ def main():
 
             conditions = parse_condition_files(conditions, form=response2)
 
-            condition = list(next(iter(next(iter(conditions.values())).values())))
+            condition = list(firstval(firstval(conditions)))
             condition = sorted(condition)
 
             c.info("Specify contrasts")
@@ -376,7 +377,12 @@ def main():
             while response3 == "Yes":
                 contrast_name = c.read("Specify the contrast name")
                 contrast_values = c.fields("Specify the contrast values", condition)
-
+                
+                # allow for empty fields
+                for i in range(len(contrast_values)):
+                    if contrast_values[i] == "":
+                        contrast_values[i] = 0
+                
                 contrasts[contrast_name] = {k: float(v) for k, v in zip(condition, contrast_values)}
 
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
@@ -431,6 +437,7 @@ def main():
             del covariates[group_column]
 
             unique_groups = set(groups.values())
+            unique_groups = [str(x) for x in unique_groups]
 
             group_contrasts = {}
             response3 = "Yes"
@@ -466,8 +473,7 @@ def main():
                 "plugin": "MultiProc",
                 "plugin_args": {
                     "n_procs": cpu_count(),
-                    "raise_insufficient": False,
-                    "maxtasksperchild": 1,
+                    "raise_insufficient": False
                 }
             }
         elif args.nipype_plugin == "none":
@@ -486,8 +492,24 @@ def main():
             workflow = init_stat_only_workflow(workdir, path_to_pipeline_json)
             workflow.run(**plugin_settings)
         else:
+            # import cProfile
+            # pr = cProfile.Profile()
+            # pr.enable()
+        
             workflow = init_workflow(workdir, path_to_pipeline_json)
+            
+            # pr.disable()
+            # pr.print_stats(sort = "time")
+            # pr.dump_stats("/ext/Volumes/leassd/init_workflow.txt")
+            
+            # pr = cProfile.Profile()
+            # pr.enable()
+            
             workflow.run(**plugin_settings)
+            
+            # pr.disable()
+            # pr.print_stats(sort = "time")
+            # pr.dump_stats("/ext/Volumes/leassd/run_workflow.txt")
 
         # copy confounds.tsv from task to intermediates/subject
         # access pipeline.json to get subjects and tasks for path

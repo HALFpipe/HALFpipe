@@ -42,7 +42,7 @@ REQUIRES = [
     "pandas",
     # "pygraphviz",
     # "graphviz",
-    "ipdb"
+    #"ipdb"
 ]
 
 LINKS_REQUIRES = [

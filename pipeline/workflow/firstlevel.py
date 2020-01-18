@@ -187,17 +187,41 @@ def init_subject_wf(item, workdir, images, data):
                     mergedoffiles = pe.Node(
                         interface=niu.Merge(len(run_wfs)),
                         name="%s_mergedoffiles" % outname)
+                    mergemaskfiles = pe.Node(
+                        interface=niu.Merge(len(run_wfs)),
+                        name="%s_mergemaskfiles" % outname)
 
-                    for i, wf in run_wfs:
+                    for i, wf in enumerate(run_wfs):
                         task_wf.connect(wf, "outputnode.%s_cope" % outname, mergecopes, "in%i" % (i + 1))
                         task_wf.connect(wf, "outputnode.%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
                         task_wf.connect(wf, "outputnode.%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
+                        task_wf.connect(wf, "outputnode.%s_mask_file" % outname, mergemaskfiles, "in%i" % (i + 1))
 
                     # aggregate stats from multiple runs in fixed-effects
                     # model
                     fe_wf, _ = init_higherlevel_wf(run_mode="fe",
                                                    name="%s_fe" % outname,
-                                                   outname=outname)
+                                                   outname=outname,
+                                                   workdir=workdir)
+
+                    get_first_cope = pe.Node(
+                        name="%s_get_first_cope" % outname,
+                        interface=niu.Function(input_names=["in"],
+                                               output_names=["out"],
+                                               function=get_first)
+                    )
+                    get_first_varcope = pe.Node(
+                        name="%s_get_first_varcope" % outname,
+                        interface=niu.Function(input_names=["in"],
+                                               output_names=["out"],
+                                               function=get_first)
+                    )
+                    get_first_doffile = pe.Node(
+                        name="%s_get_first_doffile" % outname,
+                        interface=niu.Function(input_names=["in"],
+                                               output_names=["out"],
+                                               function=get_first)
+                    )
 
                     task_wf.connect([
                         (mergecopes, fe_wf, [
@@ -209,11 +233,31 @@ def init_subject_wf(item, workdir, images, data):
                         (mergedoffiles, fe_wf, [
                             ("out", "inputnode.dof_files")
                         ]),
-
+                        (mergemaskfiles, fe_wf, [
+                            ("out", "inputnode.mask_files")
+                        ]),
+                        
+                        (fe_wf, get_first_cope, [
+                            ("outputnode.copes", "in")
+                        ]),
+                        (fe_wf, get_first_varcope, [
+                            ("outputnode.varcopes", "in")
+                        ]),
+                        (fe_wf, get_first_doffile, [
+                            ("outputnode.dof_files", "in")
+                        ]),
+                        
+                        (get_first_cope, outputnode, [
+                            ("out", "%s_cope" % outname)
+                        ]),
+                        (get_first_varcope, outputnode, [
+                            ("out", "%s_varcope" % outname)
+                        ]),
+                        (get_first_doffile, outputnode, [
+                            ("out", "%s_dof_file" % outname)
+                        ]),
                         (fe_wf, outputnode, [
-                            (("outputnode.copes", get_first), "%s_cope" % outname),
-                            (("outputnode.varcopes", get_first), "%s_varcope" % outname),
-                            (("outputnode.dof_files", get_first), "%s_dof_file" % outname)
+                            ("outputnode.mask_file", "%s_mask_file" % outname)
                         ])
                     ])
             else:
@@ -879,7 +923,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="falff")
         wfbywf["falff_wf"] = firstlevel_wf
         outnamesbywf["falff_wf"] = ["falff"]
-
+    
     if outnamesbywf:
         outputnode = pe.Node(
             interface=niu.IdentityInterface(
@@ -893,7 +937,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                 )
             ),
             name="outputnode")
-
+    
     for workflow_name, outnames in outnamesbywf.items():
         if workflow_name not in ["reho_wf", "alff_wf", "falff_wf", "brainatlas_wf"]:
             for outname in outnames:

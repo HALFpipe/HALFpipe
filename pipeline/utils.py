@@ -8,6 +8,8 @@ import pathlib
 import nibabel as nib
 import numpy as np
 
+def firstval(dict):
+    return next(iter(dict.values()))
 
 def get_path(path, EXT_PATH):
     path = path.strip()

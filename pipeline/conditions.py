@@ -34,16 +34,23 @@ def parse_condition_files(files, form="FSL 3-column"):
                         data = loadmat(value2)
                     except:
                         pass
-
                     if data is not None:
-                        durations_ = np.squeeze(data["durations"])
-                        onsets_ = np.squeeze(data["onsets"])
-                        for i, name in enumerate(data["names"]):
-                            name_ = extract(name)
-                            conditions[subject][run][name_] = {"onsets"   : np.ravel(onsets_[i]).tolist(),
-                                                               "durations": np.ravel(durations_[i]).tolist()
+                        names = np.squeeze(data["names"])
+                        durations = np.squeeze(data["durations"])
+                        onsets = np.squeeze(data["onsets"])
+                        for i, name in enumerate(names):
+                            condition = extract(name)
+                            ionsets = np.ravel(onsets[i])
+                            idurations = np.ravel(durations[i])
+                            
+                            data = np.zeros((ionsets.size, 2))
+                            data[:, 0] = ionsets
+                            data[:, 1] = idurations
+                            
+                            conditions[subject][run][condition] = {
+                                "onsets"   : data[:, 0].tolist(), \
+                                "durations": data[:, 1].tolist()
                             }
-
                 if form == "FSL 3-column":
                     data = np.loadtxt(value2)
                     conditions[subject][run][condition] = {

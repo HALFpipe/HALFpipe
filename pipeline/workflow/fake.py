@@ -145,12 +145,12 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                     with open(json_file, "ab+") as f:
                         f.seek(0, 2)
                         
-                        closingCharacters = "]`))"
+                        closingCharacters = "]'))"
 
                         if f.tell() == 0:
-                            f.write("qualitycheck(JSON.parse(`".encode())
+                            f.write("qualitycheck(JSON.parse('".encode())
                             f.write(json.dumps([json_data]).encode())
-                            f.write(")".encode())
+                            f.write(closingCharacters[1:].encode()) # skip json list bracket
                         else:
                             f.seek(-len(closingCharacters), 2)
                             f.truncate()

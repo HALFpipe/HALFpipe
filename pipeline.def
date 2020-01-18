@@ -1,0 +1,31 @@
+Bootstrap: docker
+From: poldracklab/fmriprep:1.1.6
+%files
+. /root/src/pipeline/
+%post
+
+mkdir -p /root/src/mriqc
+curl -sSL "https://api.github.com/repos/poldracklab/mriqc/tarball/0.14.2" \
+| tar -xzC /root/src/mriqc --strip-components 1 
+cd /root/src/mriqc 
+pip install -r requirements.txt 
+pip install .[all] 
+rm -rf ~/.cache/pip
+
+curl -sSL \
+$(curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" \
+| grep browser_download_url | cut -d '"' -f 4) -o /root/src/qualitycheck.html
+
+mkdir /ext
+
+cd /root/src/pipeline 
+cp /root/src/qualitycheck.html pipeline/index.html 
+cp VERSION pipeline/VERSION 
+python setup.py install 
+rm -rf ~/.cache/pip
+cd .. && rm -rf /root/src/pipeline
+
+%runscript
+exec /usr/local/miniconda/bin/pipeline "$@"
+%startscript
+exec /usr/local/miniconda/bin/pipeline "$@"
