@@ -54,7 +54,7 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
     :param group_contrasts: two-level dictionary of contrasts by contrast name and values by group (Default = None)
     :param outname: names of inputs for higherlevel workflow, names of outputs from firstlevel workflow
     :param workdir: the working directory to check for qualitycheck excludes
-    :param task: name of task to filter excludes FIXME this shouldn't be necessary, go by filename instead
+    :param task: name of task to filter excludes FIXME this shouldn"t be necessary, go by filename instead
 
     """
     workflow = pe.Workflow(name=name)
@@ -117,11 +117,10 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="zstatmerge"
     )
 
+    contrasts = [["mean", "T", ["intercept"], [1]]]
+
     # specify statistical analysis
-    
-    contrast_names = None
-    
-    if not subjects:
+    if not subjects or not covariates: # option 1: one-sample t-test
         level2model = pe.Node(
             interface = fsl.L2Model(), 
             name = "l2model"
@@ -132,106 +131,74 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
                 (("copes", get_len), "num_copes")
             ]),
         ])
-    else:
-        # Read qcresults.json and exclude bad subjects from statistics
-        excluded_overview = get_qualitycheck_exclude(workdir)
-        excluded_subjects = []
-        included_subjects = subjects  
-        if excluded_overview:
-            df_exclude = pd.DataFrame(excluded_overview).transpose()
-            excluded_subjects = df_exclude.loc[df_exclude[task] == True].index # FIXME
+    elif covariates:
+        # Transform covariates dict to pandas dataframe
+        df_covariates = pd.DataFrame(covariates)
+        
+        # only keep subjects that are in this analysis
+        df_covariates = df_covariates.filter(subjects)
+        
 
-            # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
-            # use of sets here for easy substraction of subjects
-            included_subjects = list(set(subjects) - set(excluded_subjects))
-            df_included_subjects = pd.DataFrame(included_subjects, columns=['Subjects'])
-            df_included_subjects = df_included_subjects.sort_values(by=['Subjects'])  # sort by name
-            df_included_subjects = df_included_subjects.reset_index(drop=True)  # reindex for ascending numbers
-            json_path = workdir + '/included_subjects.json'
-            df_included_subjects.to_json(json_path)
-            with open(json_path, 'w') as json_file:
-                # json is loaded from pandas to json and then dumped to get indent in file
-                json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4) # FIXME no extra jsons
+            for excluded_subject in excluded_subjects:
+                subject_groups.pop(excluded_subject, None)
+                
+        # replace not available values by numpy NaN to be ignored for demeaning
+        df_covariates = df_covariates.replace({"NaN": np.nan, "n/a": np.nan, "NA": np.nan})
 
-        # option 1: one-sample t-test
-        contrasts = [["mean", "T", ["intercept"], [1]]]
-        level2model = pe.Node(
-            interface=fsl.MultipleRegressDesign(
-                regressors={"intercept": [1.0 for s in included_subjects]},
-                contrasts=contrasts
-            ),
-            name="l2model"
-        )
+        for covariate in df_covariates:
+            # Demean covariates for flameo
+            df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
+        
+        # replace np.nan by 0 for demeaned_covariates file and regression models
+        df_covariates = df_covariates.replace({np.nan: 0})
 
-        if covariates is not None:
+        # add SubjectGroups and ID to header
+        df_subject_group = pd.DataFrame.from_dict(subject_groups, orient = "index", columns = ["SubjectGroup"])
+        df_covariates_forsaving = pd.concat([df_subject_group, df_covariates], axis = 1, sort = True)
+        df_covariates_forsaving = df_covariates.reset_index()  # add id column
+        df_covariates_forsaving = df_covariates.rename(columns = {"index": "Subject_ID"})  # rename subject column
+        # save demeaned covariates to csv
+        df_covariates_forsaving.to_csv(workdir + "/demeaned_covariates.csv", index = False)
 
-            # Transform covariates dict to pandas dataframe
-            df_covariates = pd.DataFrame(covariates)
-            if list(excluded_subjects):
-                # Read qcresults.json and exclude bad subjects from covariates and subject_groups
-                df_covariates = df_covariates.drop(excluded_subjects)
+        # transform into dict to extract regressors for level2model
+        covariates = df_covariates.to_dict()
+        
+        # transform to dictionary of lists
+        regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}
+        
+        if (subject_groups is None) or (bool(subject_groups) is False):
+            # one-sample t-test with covariates
+            regressors["intercept"] = [1.0 for s in subjects]
+            level2model = pe.Node(
+                interface=fsl.MultipleRegressDesign(
+                    regressors=regressors,
+                    contrasts=contrasts
+                ),
+                name="l2model"
+            )
+        else:
+            # two-sample t-tests with covariates
 
-                for excluded_subject in excluded_subjects:
-                    subject_groups.pop(excluded_subject, None)
-            # boolean condition whether there is at least one nan value in the datasheet
-            is_nan = df_covariates.isin(['NaN', 'n/a']).any().any()
-            # replace not available values by numpy NaN to be ignored for demeaning
-            if is_nan:
-                df_covariates = df_covariates.replace({'NaN': np.nan, 'n/a': np.nan})
-
-            for covariate in df_covariates:
-                # Demean covariates for flameo
-                df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
-            # replace np.nan by 0 for demeaned_covariates file and regression models
-            if is_nan:
-                df_covariates = df_covariates.replace({np.nan: 0})
-            # safe reduced dataframe for regressors later
-            df_regressors = df_covariates
-
-            # add SubjectGroups and ID to header
-            df_subject_group = pd.DataFrame.from_dict(subject_groups, orient='index', columns=['SubjectGroup'])
-            df_covariates = pd.concat([df_subject_group, df_covariates], axis=1, sort=True)
-            df_covariates = df_covariates.reset_index()  # add id column
-            df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
-            # save demeaned covariates to csv
-            df_covariates.to_csv(workdir + '/demeaned_covariates.csv', index=False)
-            # transform into dict to extract regressors for level2model
-            covariates = df_regressors.to_dict()
+            # dummy coding of variables: group names --> numbers in the matrix
+            # see fsl feat documentation
+            # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
+            dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
             # transform to dictionary of lists
-            regressors = {k: [float(v[s]) for s in included_subjects] for k, v in covariates.items()}
-            if (subject_groups is None) or (bool(subject_groups) is False):
-                # one-sample t-test with covariates
-                regressors["intercept"] = [1.0 for s in included_subjects]
-                level2model = pe.Node(
-                    interface=fsl.MultipleRegressDesign(
-                        regressors=regressors,
-                        contrasts=contrasts
-                    ),
-                    name="l2model"
-                )
-            else:
-                # two-sample t-tests with covariates
+            dummies = {k: [float(v[s]) for s in subjects] for k, v in dummies.items()}
+            regressors.update(dummies)
 
-                # dummy coding of variables: group names --> numbers in the matrix
-                # see fsl feat documentation
-                # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
-                dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
-                # transform to dictionary of lists
-                dummies = {k: [float(v[s]) for s in included_subjects] for k, v in dummies.items()}
-                regressors.update(dummies)
+            # transform to dictionary of lists
+            contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
 
-                # transform to dictionary of lists
-                contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
+            level2model = pe.Node(
+                interface=fsl.MultipleRegressDesign(
+                    regressors=regressors,
+                    contrasts=contrasts
+                ),
+                name="l2model"
+            )
 
-                level2model = pe.Node(
-                    interface=fsl.MultipleRegressDesign(
-                        regressors=regressors,
-                        contrasts=contrasts
-                    ),
-                    name="l2model"
-                )
-
-        contrast_names = [c[0] for c in contrasts]
+    contrast_names = [c[0] for c in contrasts]
 
     # actually run FSL FLAME
 
