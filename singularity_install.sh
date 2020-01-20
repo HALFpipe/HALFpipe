@@ -37,6 +37,6 @@ export PATH=$(pwd)/singularity/bin:${PATH}
 mkdir -p cache
 export SINGULARITY_CACHEDIR=$(pwd)/cache
 
-runCmd singularity build --sandbox pipeline docker://mindandbrain/pipeline
+runCmd singularity build pipeline docker://mindandbrain/pipeline:dev
  
  

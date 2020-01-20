@@ -36,7 +36,7 @@ REQUIRES = [
     "mriqc",
     "numpy",
     "scipy",
-    "nibabel>=2.4.0",
+    "nibabel>=3.0.0",
     "jinja2",
     "fasteners",
     "pandas",

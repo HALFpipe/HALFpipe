@@ -899,7 +899,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
+<<<<<<< HEAD
     if "reho" in metadata and metadata["reho"]:
+=======
+    if 'reho' in metadata:
+>>>>>>> b414dd7697362d9b60b2973e74a03e5637f1b59d
         firstlevel_wf = init_reho_wf(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -915,7 +919,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["reho_wf"] = ["reho"]
 
     # ALFF / fALFF
+<<<<<<< HEAD
     if "alff" in metadata and metadata["alff"]:
+=======
+    if 'alff' in metadata:
+>>>>>>> b414dd7697362d9b60b2973e74a03e5637f1b59d
         firstlevel_wf = create_alff(
             metadata["UseMovPar"],
             metadata["CSF"],
