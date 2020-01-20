@@ -104,7 +104,7 @@ class Filter(SimpleInterface):
             getisenabled = lambda idx: getattr(self.inputs, "is_enabled%d" % (idx + 1))
             values = [
                 getval(idx) for idx in range(self._numinputs) 
-                    if isdefined(getval(idx)) and (!isdefined(getisenabled(idx)) or getisenabled(idx))
+                    if isdefined(getval(idx)) and (not isdefined(getisenabled(idx)) or getisenabled(idx))
             ]
 
         if self.inputs.axis == "vstack":

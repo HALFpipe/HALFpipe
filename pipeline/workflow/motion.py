@@ -29,7 +29,7 @@ def _motion_cutoff(mean_fd_cutoff, fd_greater_0_5_cutoff, confounds = None):
     
     fd_greater_0_5 = np.mean(df_confounds["FramewiseDisplacement"] > 0.5)
     
-    return !(mean_fd > mean_fd_cutoff or \
+    return not (mean_fd > mean_fd_cutoff or \
         fd_greater_0_5 > fd_greater_0_5_cutoff)
 
 class MotionCutoffInputSpec(TraitedSpec):

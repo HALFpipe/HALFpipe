@@ -180,9 +180,8 @@ def init_subject_wf(item, workdir, images, data):
                         
                 outnames[name] = outnamesset
                 outputnode = pe.Node(niu.IdentityInterface(
-                    fields=,
-                    name="outputnode"
-                )
+                    fields = outputnode_fields
+                ), name = "outputnode")
 
                 for outname in outnames[name]:
                     mergecopes = pe.Node(

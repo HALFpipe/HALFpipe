@@ -138,9 +138,8 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         # only keep subjects that are in this analysis
         df_covariates = df_covariates.filter(subjects)
         
-
-            for excluded_subject in excluded_subjects:
-                subject_groups.pop(excluded_subject, None)
+        for excluded_subject in excluded_subjects:
+            subject_groups.pop(excluded_subject, None)
                 
         # replace not available values by numpy NaN to be ignored for demeaning
         df_covariates = df_covariates.replace({"NaN": np.nan, "n/a": np.nan, "NA": np.nan})
