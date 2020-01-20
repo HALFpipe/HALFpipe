@@ -98,7 +98,7 @@ def init_workflow(workdir, jsonfile):
                         included_subjects.append(subject)
                         included_wfs.append(wf)
                 
-                
+                # FIXME is this still needed? adapt if yes
                 # # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
                 # # use of sets here for easy substraction of subjects
                 # included_subjects = list(set(subjects) - set(excluded_subjects))

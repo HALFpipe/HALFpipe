@@ -50,7 +50,7 @@ def init_seedconnectivity_wf(seeds,
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        fields=["bold_file", "mask_file", "movpar_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
 
@@ -84,7 +84,7 @@ def init_seedconnectivity_wf(seeds,
     if use_global_signal:
         regressor_names.append("GS")
 
-    def add_csf_wm_gs(seed_names, seed_files, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names,
+    def add_csf_wm_gs(seed_names, seed_files, movpar_file, csf_wm_meants_file, gs_meants_file, regressor_names,
                       file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
@@ -92,7 +92,7 @@ def init_seedconnectivity_wf(seeds,
         for idx, seed_file in enumerate(seed_files):
             seed_df = pd.read_csv(seed_file, sep=" ", header=None).dropna(how='all', axis=1)
             seed_df.columns = ['Seed']
-            mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+            mov_par_df = pd.read_csv(movpar_file, sep=" ", header=None).dropna(how='all', axis=1)
             mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
             csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
             csf_wm_df.columns = ['CSF', 'GM', 'WM']
@@ -117,7 +117,7 @@ def init_seedconnectivity_wf(seeds,
 
     design_node = pe.Node(
         niu.Function(
-            input_names=["seed_names", "seed_files", "mov_par_file", "csf_wm_meants_file", "gs_meants_file",
+            input_names=["seed_names", "seed_files", "movpar_file", "csf_wm_meants_file", "gs_meants_file",
                          "regressor_names", "file_path"],
             output_names=["design"],
             function=add_csf_wm_gs), name="design_node", overwrite=True
@@ -206,7 +206,7 @@ def init_seedconnectivity_wf(seeds,
             ("out_file", "seed_files"),
         ]),
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file"),
+            ("movpar_file", "movpar_file"),
             ("csf_wm_meants_file", "csf_wm_meants_file"),
             ("gs_meants_file", "gs_meants_file"),
         ]),
@@ -280,7 +280,7 @@ def init_dualregression_wf(componentsfile,
     # inputs are the bold file, the mask file, the confounds file  that contains the movement parameters,
     # the extracted timeseries for CSF, white matter and the time series for global signal
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        fields=["bold_file", "mask_file", "movpar_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
 
@@ -317,12 +317,12 @@ def init_dualregression_wf(componentsfile,
     if use_global_signal:
         regressor_names.append("GS")
 
-    def add_csf_wm_gs(design_file, mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+    def add_csf_wm_gs(design_file, movpar_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates the design matrix for the glm with added regressors"""
         import pandas as pd  # in-function import necessary for nipype-function
         design_df = pd.read_csv(design_file, sep=" ", header=None).dropna(how='all', axis=1)
         design_df.columns = ['component_' + str(idx) for idx, val in enumerate(design_df.columns)]
-        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df = pd.read_csv(movpar_file, sep=" ", header=None).dropna(how='all', axis=1)
         mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
         csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
         csf_wm_df.columns = ['CSF', 'GM', 'WM']
@@ -344,7 +344,7 @@ def init_dualregression_wf(componentsfile,
 
     design_node = pe.Node(
         niu.Function(
-            input_names=["design_file", "mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
+            input_names=["design_file", "movpar_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names",
                          "file_path"],
             output_names=["design"],
             function=add_csf_wm_gs), name="design_node", overwrite=True
@@ -447,7 +447,7 @@ def init_dualregression_wf(componentsfile,
             ("out_file", "design_file")
         ]),
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file"),
+            ("movpar_file", "movpar_file"),
             ("csf_wm_meants_file", "csf_wm_meants_file"),
             ("gs_meants_file", "gs_meants_file"),
         ]),
@@ -522,7 +522,7 @@ def init_brain_atlas_wf(use_mov_pars, use_csf, use_white_matter, use_global_sign
 
     # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_meants_file", "gs_meants_file"]),
+        fields=["bold_file", "mask_file", "movpar_file", "csf_wm_meants_file", "gs_meants_file"]),
         name="inputnode"
     )
 
@@ -537,10 +537,10 @@ def init_brain_atlas_wf(use_mov_pars, use_csf, use_white_matter, use_global_sign
     if use_global_signal:
         regressor_names.append("GS")
 
-    def create_design(mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+    def create_design(movpar_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
-        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df = pd.read_csv(movpar_file, sep=" ", header=None).dropna(how='all', axis=1)
         mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
         csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
         csf_wm_df.columns = ['CSF', 'GM', 'WM']
@@ -563,7 +563,7 @@ def init_brain_atlas_wf(use_mov_pars, use_csf, use_white_matter, use_global_sign
 
     design_node = pe.Node(
         niu.Function(
-            input_names=["mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            input_names=["movpar_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
             output_names=["design"],
             function=create_design), name="design_node"
     )
@@ -613,7 +613,7 @@ def init_brain_atlas_wf(use_mov_pars, use_csf, use_white_matter, use_global_sign
 
     workflow.connect([
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file"),
+            ("movpar_file", "movpar_file"),
             ("csf_wm_meants_file", "csf_wm_meants_file"),
             ("gs_meants_file", "gs_meants_file"),
         ]),

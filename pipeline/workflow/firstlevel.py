@@ -28,6 +28,9 @@ from .patch import patch_wf
 
 from .stats import init_higherlevel_wf
 
+from .motion import MotionCutoff
+from .filter import LogicalAnd
+
 from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
@@ -169,11 +172,15 @@ def init_subject_wf(item, workdir, images, data):
                                                 subject=subject)
                     outnamesset.update(run_outnames)
 
+                outputnode_fields = sum([["%s_cope" % outname, \
+                    "%s_varcope" % outname, \
+                    "%s_dof_file" % outname, \
+                    "%s_mask_file" % outname] for outname in outnames[name]], [])
+                outputnode_fields.append("motioncutoff_keep")
+                        
                 outnames[name] = outnamesset
                 outputnode = pe.Node(niu.IdentityInterface(
-                    fields=sum([["%s_cope" % outname,
-                                 "%s_varcope" % outname, "%s_dof_file" % outname]
-                                for outname in outnames[name]], [])),
+                    fields=,
                     name="outputnode"
                 )
 
@@ -261,6 +268,10 @@ def init_subject_wf(item, workdir, images, data):
                         ])
                     ])
             else:
+                #
+                # one run
+                #
+                
                 outnames[name] = init_func_wf(task_wf, inputnode, value1, metadata,
                                               fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject=subject)
 
@@ -402,6 +413,14 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             suffix="tsnr"),
         name="ds_tsnr", run_without_submitting=True)
 
+    # checks for motion above the cutoffs
+    motioncutoff = pe.Node(
+        interface=MotionCutoff(),
+        name="motioncutoff"
+    )
+    motioncutoff.inputs.mean_fd_cutoff = metadata["AVGFramewiseDisplacement"]
+    motioncutoff.inputs.fd_greater_0_5_cutoff = metadata["MovementPercentage"]
+
     wf.connect([
         (inputnode, func_preproc_wf, [
             (f, "inputnode.%s" % f)
@@ -454,6 +473,10 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (gs_meants, ds_gs_meants, [
             ("out_file", "in_file")
         ]),
+        
+        (func_preproc_wf, motioncutoff, [
+        ("outputnode.confounds", "confounds"),
+        ]),
 
         (temporalfilter_wf, tsnr_wf, [
             ("outputnode.filtered_file", "inputnode.bold_file")
@@ -501,7 +524,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -535,7 +558,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -596,7 +619,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -660,7 +683,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -707,7 +730,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
@@ -730,7 +753,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
@@ -743,7 +766,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
@@ -770,7 +793,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.confounds_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -826,7 +849,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="glm")
         wfbywf["firstlevel_wf"] = firstlevel_wf
         outnamesbywf["firstlevel_wf"] = connames
-    if "BrainAtlasImage" in metadata:
+    if "BrainAtlasImage" in metadata and metadata["BrainAtlasImage"]:
         firstlevel_wf, atlasnames = init_brain_atlas_wf(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -839,7 +862,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         )
         create_ds(wf, firstlevel_wf, atlasnames, func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="brainatlas")
-    if "ConnectivitySeeds" in metadata:
+    if "ConnectivitySeeds" in metadata and metadata["ConnectivitySeeds"]:
         firstlevel_wf, seednames = init_seedconnectivity_wf(
             metadata["ConnectivitySeeds"],
             metadata["UseMovPar"],
@@ -856,10 +879,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["seedconnectivity_wf"] = seednames
 
     # ICAMaps
-    if "ICAMaps" in metadata:
-
+    if "ICAMaps" in metadata and metadata["ICAMaps"]:
         for key in metadata["ICAMaps"]:
-
             wf_name = key+"_dualregression_wf"
             file = metadata["ICAMaps"][key]
             firstlevel_wf, componentnames = init_dualregression_wf(
@@ -878,7 +899,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             outnamesbywf[wf_name] = componentnames
 
     # ReHo["reho"]
-    if 'reho' in metadata:
+    if "reho" in metadata and metadata["reho"]:
         firstlevel_wf = init_reho_wf(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -894,7 +915,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["reho_wf"] = ["reho"]
 
     # ALFF / fALFF
-    if 'alff' in metadata:
+    if "alff" in metadata and metadata["alff"]:
         firstlevel_wf = create_alff(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -909,7 +930,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         wfbywf["alff_wf"] = firstlevel_wf
         outnamesbywf["alff_wf"] = ["alff"]
 
-    # fALFF
+        # fALFF
         firstlevel_wf = create_falff(
             metadata["UseMovPar"],
             metadata["CSF"],
@@ -925,16 +946,17 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         outnamesbywf["falff_wf"] = ["falff"]
     
     if outnamesbywf:
+        outputnode_fields = flatten([
+            [["%s_cope" % outname, "%s_mask_file" % outname] for outname in outnames] +
+            [["%s_varcope" % outname, "%s_dof_file" % outname] for outname in outnames \
+                if outname not in ["reho", "alff", "falff"]] +
+            [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
+            for outnames in outnamesbywf.values()
+        ])
+        
         outputnode = pe.Node(
             interface=niu.IdentityInterface(
-                fields=flatten([
-                    [["%s_varcope" % outname,
-                      "%s_mask_file" % outname,
-                      "%s_dof_file" % outname] for outname in outnames if outname not in ["reho", "alff", "falff"]] +
-                    [["%s_cope" % outname] for outname in outnames] +
-                    [["%s_zstat" % outname] for outname in outnames if outname in ["reho", "alff", "falff"]]
-                    for outnames in outnamesbywf.values()]
-                )
+                fields=outputnode_fields
             ),
             name="outputnode")
     

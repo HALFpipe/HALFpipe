@@ -37,7 +37,7 @@ def init_glm_wf(conditions,
     # inputs are the bold file, the mask file and the confounds file 
     # that contains the movement parameters
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "gs_meants_file", "csf_wm_meants_file"]),
+        fields=["bold_file", "mask_file", "movpar_file", "gs_meants_file", "csf_wm_meants_file"]),
         name="inputnode"
     )
 
@@ -181,7 +181,7 @@ def init_glm_wf(conditions,
     c = [("bold_file", "functional_runs")]
     if use_mov_pars:
         c.append(
-            ("confounds_file", "realignment_parameters")
+            ("movpar_file", "realignment_parameters")
         )
 
     workflow.connect([

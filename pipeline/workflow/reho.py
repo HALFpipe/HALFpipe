@@ -324,7 +324,7 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
 
     # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds_file", "csf_wm_label_string"]),
+        fields=["bold_file", "mask_file", "movpar_file", "csf_wm_label_string"]),
         name="inputnode"
     )
 
@@ -366,10 +366,10 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     if use_global_signal:
         regressor_names.append("GS")
 
-    def create_design(mov_par_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
+    def create_design(movpar_file, csf_wm_meants_file, gs_meants_file, regressor_names, file_path):
         """Creates a list of design matrices with added regressors to feed into the glm"""
         import pandas as pd  # in-function import necessary for nipype-function
-        mov_par_df = pd.read_csv(mov_par_file, sep=" ", header=None).dropna(how='all', axis=1)
+        mov_par_df = pd.read_csv(movpar_file, sep=" ", header=None).dropna(how='all', axis=1)
         mov_par_df.columns = ['X', 'Y', 'Z', 'RotX', 'RotY', 'RotZ']
         csf_wm_df = pd.read_csv(csf_wm_meants_file, sep=" ", header=None).dropna(how='all', axis=1)
         csf_wm_df.columns = ['CSF', 'GM', 'WM']
@@ -392,7 +392,7 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
 
     design_node = pe.Node(
         niu.Function(
-            input_names=["mov_par_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            input_names=["movpar_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
             output_names=["design"],
             function=create_design), name="design_node"
     )
@@ -514,7 +514,7 @@ def init_reho_wf(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
             ("out_file", "gs_meants_file")
         ]),
         (inputnode, design_node, [
-            ("confounds_file", "mov_par_file")
+            ("movpar_file", "movpar_file")
         ]),
         (inputnode, glm, [
             ("bold_file", "in_file"),
