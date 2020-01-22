@@ -28,27 +28,27 @@ from .patch import patch_wf
 
 from .stats import init_higherlevel_wf
 
-from .motion import MotionCutoff
-from .filter import LogicalAnd
-
 from .fake import FakeBIDSLayout
 
 from ..utils import lookup, flatten
 
 from ..interface import ApplyXfmSegmentation
+from ..interface.motion import MotionCutoff
+from ..interface.filter import LogicalAnd
+from ..interface.qualitycheck import QualityCheck
 
-_func_inputnode_fields = ['t1_preproc', 't1_brain', 't1_mask', 't1_seg',
-                          't1_tpms', 't1_aseg', 't1_aparc',
-                          't1_2_mni_forward_transform', 't1_2_mni_reverse_transform',
-                          'subjects_dir', 'subject_id',
-                          't1_2_fsnative_forward_transform', 't1_2_fsnative_reverse_transform',
-                          'mni_seg']
+_func_inputnode_fields = ["t1_preproc", "t1_brain", "t1_mask", "t1_seg",
+                          "t1_tpms", "t1_aseg", "t1_aparc",
+                          "t1_2_mni_forward_transform", "t1_2_mni_reverse_transform",
+                          "subjects_dir", "subject_id",
+                          "t1_2_fsnative_forward_transform", "t1_2_fsnative_reverse_transform",
+                          "mni_seg"]
 
 
 def get_first(l):
     """
     get first element from list
-    doesn't fail is input is not a list
+    doesn"t fail is input is not a list
 
     :param l: 
 
@@ -172,16 +172,18 @@ def init_subject_wf(item, workdir, images, data):
                                                 subject=subject)
                     outnamesset.update(run_outnames)
 
-                outputnode_fields = sum([["%s_cope" % outname, \
-                    "%s_varcope" % outname, \
-                    "%s_dof_file" % outname, \
-                    "%s_mask_file" % outname] for outname in outnames[name]], [])
-                outputnode_fields.append("motioncutoff_keep")
-                        
+                outputnode_fields = \
+                    sum([["%s_cope" % outname,
+                          "%s_varcope" % outname,
+                          "%s_dof_file" % outname,
+                          "%s_mask_file" % outname]
+                        for outname in outnames[name]], [])
+                outputnode_fields.append("keep")
+
                 outnames[name] = outnamesset
                 outputnode = pe.Node(niu.IdentityInterface(
-                    fields = outputnode_fields
-                ), name = "outputnode")
+                    fields=outputnode_fields
+                ), name="outputnode")
 
                 for outname in outnames[name]:
                     mergecopes = pe.Node(
@@ -242,7 +244,7 @@ def init_subject_wf(item, workdir, images, data):
                         (mergemaskfiles, fe_wf, [
                             ("out", "inputnode.mask_files")
                         ]),
-                        
+
                         (fe_wf, get_first_cope, [
                             ("outputnode.copes", "in")
                         ]),
@@ -252,7 +254,7 @@ def init_subject_wf(item, workdir, images, data):
                         (fe_wf, get_first_doffile, [
                             ("outputnode.dof_files", "in")
                         ]),
-                        
+
                         (get_first_cope, outputnode, [
                             ("out", "%s_cope" % outname)
                         ]),
@@ -266,32 +268,81 @@ def init_subject_wf(item, workdir, images, data):
                             ("outputnode.mask_file", "%s_mask_file" % outname)
                         ])
                     ])
+                    
+                # aggregate motioncutoff_keep
+                
+                logicaland = pe.Node(
+                    name="logicaland",
+                    interface=LogicalAnd(numinputs=(len(run_wfs) + 1))
+                )
+                
+                for i, wf in enumerate(run_wfs):
+                    task_wf.connect(wf, "motioncutoff.keep", logicaland, "in%i" % (i + 1))
+                
+                qualitycheck = pe.Node(
+                    name="qualitycheck",
+                    interface=QualityCheck(base_directory=workdir,
+                        subject=subject, task=name)
+                )
+                
+                task_wf.connect(qualitycheck, "keep", logicaland, "in%i" % (len(run_wfs) + 1))
+                
+                task_wf.connect(logicaland, "out", outputnode, "keep")
             else:
                 #
                 # one run
                 #
+
+                outnames[name] = init_func_wf(task_wf, inputnode, value1,
+                                              metadata,
+                                              fmriprep_reportlets_dir,
+                                              fmriprep_output_dir,
+                                              output_dir, subject=subject)
                 
-                outnames[name] = init_func_wf(task_wf, inputnode, value1, metadata,
-                                              fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject=subject)
+                # aggregate motioncutoff_keep
+                
+                logicaland = pe.Node(
+                    name="logicaland",
+                    interface=LogicalAnd(numinputs=2
+                )
+                qualitycheck = pe.Node(
+                    name="qualitycheck",
+                    interface=QualityCheck(base_directory=workdir,
+                        subject=subject, task=name)
+                )
+                
+                task_wf.connect([
+                    (task_wf, logicaland, [
+                        ("motioncutoff.keep", "in1")
+                    ]),
+                    (qualitycheck, logicaland, [
+                        ("keep", "in2")
+                    ]),
+                    (logicaland, task_wf, [
+                        ("out", "outputnode.keep")
+                    ])
+                ])
 
     subject_wf = patch_wf(subject_wf,
-                          images, output_dir, fmriprep_reportlets_dir, fmriprep_output_dir)
+                          images, output_dir,
+                          fmriprep_reportlets_dir, fmriprep_output_dir)
 
     return subject, subject_wf, outnames
 
 
 def init_func_wf(wf, inputnode, bold_file, metadata,
-                 fmriprep_reportlets_dir, fmriprep_output_dir, output_dir, subject, run=None):
+                 fmriprep_reportlets_dir, fmriprep_output_dir,
+                 output_dir, subject, run=None):
     """Initialize workflow for single functional scan
 
-    :param wf: 
+    :param wf:
     :param inputnode:
-    :param bold_file: 
+    :param bold_file:
     :param metadata:
-    :param fmriprep_reportlets_dir: 
+    :param fmriprep_reportlets_dir:
     :param fmriprep_output_dir:
-    :param output_dir: 
-    :param subject: 
+    :param output_dir:
+    :param subject:
     :param run:  (Default value = None)
 
     """
@@ -472,9 +523,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         (gs_meants, ds_gs_meants, [
             ("out_file", "in_file")
         ]),
-        
+
         (func_preproc_wf, motioncutoff, [
-        ("outputnode.confounds", "confounds"),
+            ("outputnode.confounds", "confounds"),
         ]),
 
         (temporalfilter_wf, tsnr_wf, [
@@ -497,6 +548,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     # first level models
     #
 
+    # FIXME remove repeat declarations
     def create_ds(wf, firstlevel_wf, outnames,
                   func_preproc_wf, temporalfilter_wf,
                   bold_file, output_dir, name="firstlevel"):
@@ -540,7 +592,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     ("outputnode.brainatlas_matrix_file", "in_file")
                 ])
             ])
-        elif name == 'glm':
+        elif name == "glm":
             ds_dof_file = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -576,19 +628,25 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_cope" % (name, outname),
+                    run_without_submitting=True
+                )
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_varcope" % outname),
-                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_varcope" % (name, outname),
+                    run_without_submitting=True
+                )
                 ds_zstat = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_zstat" % outname),
-                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_zstat" % (name, outname),
+                    run_without_submitting=True
+                )
 
                 wf.connect([
                     (firstlevel_wf, ds_cope, [
@@ -618,7 +676,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file",
+                        "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -637,19 +696,25 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_cope" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_cope" % (name, outname),
+                    run_without_submitting=True
+                )
                 ds_varcope = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_varcope" % outname),
-                    name="ds_%s_%s_varcope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_varcope" % (name, outname),
+                    run_without_submitting=True
+                )
                 ds_zstat = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_zstat" % outname),
-                    name="ds_%s_%s_zstat" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_zstat" % (name, outname),
+                    run_without_submitting=True
+                )
 
                 wf.connect([
                     (firstlevel_wf, ds_cope, [
@@ -671,7 +736,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                     base_directory=output_dir,
                     source_file=bold_file,
                     suffix="dof"),
-                name="ds_%s_dof_file" % template_name, run_without_submitting=True)
+                name="ds_%s_dof_file" % template_name,
+                run_without_submitting=True
+            )
 
             wf.connect([
                 (firstlevel_wf, ds_dof_file, [
@@ -682,7 +749,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file",
+                        "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -725,11 +793,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         ("outputnode.%s_zstat" % outname, "in_file")
                     ]),
                 ])
-        elif name == "reho":
+        elif name == "alff" or name == "falff" or name == "reho":
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file",
+                        "inputnode.movpar_file"),
                 ]),
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
@@ -745,35 +814,15 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                         base_directory=output_dir,
                         source_file=bold_file,
                         suffix="%s_img" % outname),
-                    name="ds_%s_%s_cope" % (name, outname), run_without_submitting=True)
+                    name="ds_%s_%s_cope" % (name, outname),
+                    run_without_submitting=True
+                )
 
-                wf.connect([(firstlevel_wf, ds_cope, [("outputnode.%s_cope" % outname, "in_file")])])
-        elif name == "alff":
-            wf.connect([
-                (func_preproc_wf, firstlevel_wf, [
-                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
-                ]),
-                (func_preproc_wf, firstlevel_wf, [
-                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
-                ]),
-                (csf_wm_label_string, firstlevel_wf, [
-                    ("label_string", "inputnode.csf_wm_label_string")
-                ]),
-            ])
-        elif name == "falff":
-            wf.connect([
-                (func_preproc_wf, firstlevel_wf, [
-                    ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
-                ]),
-                (func_preproc_wf, firstlevel_wf, [
-                    ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
-                ]),
-                (csf_wm_label_string, firstlevel_wf, [
-                    ("label_string", "inputnode.csf_wm_label_string")
-                ]),
-            ])
+                wf.connect([
+                    (firstlevel_wf, ds_cope, [
+                        ("outputnode.%s_cope" % outname, "in_file")
+                    ])
+                ])
 
         else:
             ds_dof_file = pe.Node(
@@ -792,7 +841,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             wf.connect([
                 (func_preproc_wf, firstlevel_wf, [
                     ("outputnode.bold_mask_mni", "inputnode.mask_file"),
-                    ("bold_hmc_wf.outputnode.movpar_file", "inputnode.movpar_file"),
+                    ("bold_hmc_wf.outputnode.movpar_file", 
+                        "inputnode.movpar_file"),
                 ]),
                 (temporalfilter_wf, firstlevel_wf, [
                     ("outputnode.filtered_file", "inputnode.bold_file")
@@ -943,7 +993,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
                   bold_file, output_dir, name="falff")
         wfbywf["falff_wf"] = firstlevel_wf
         outnamesbywf["falff_wf"] = ["falff"]
-    
+
     if outnamesbywf:
         outputnode_fields = flatten([
             [["%s_cope" % outname, "%s_mask_file" % outname] for outname in outnames] +
@@ -953,13 +1003,15 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for outnames in outnamesbywf.values()
         ])
         
+        outputnode_fields.append("keep")
+
         outputnode = pe.Node(
             interface=niu.IdentityInterface(
                 fields=outputnode_fields
             ),
             name="outputnode")
     
-    for workflow_name, outnames in outnamesbywf.items():
+    for workflow_name, outnames in outnamesbywf.items(): # FIXME remove repeat declarations
         if workflow_name not in ["reho_wf", "alff_wf", "falff_wf", "brainatlas_wf"]:
             for outname in outnames:
                 wf.connect(

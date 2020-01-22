@@ -19,11 +19,6 @@ import pandas as pd
 def _motion_cutoff(mean_fd_cutoff, fd_greater_0_5_cutoff, confounds = None):
     df_confounds = pd.read_csv(confounds, sep="\t")
     
-    # get dataframe for gs_meants.txt
-    gs_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/gs_meants.txt"
-    df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
-    df_gs_meants.columns = ["GlobalSignal"]
-
     # motion_report part
     mean_fd = df_confounds["FramewiseDisplacement"].mean()
     
@@ -43,7 +38,7 @@ class MotionCutoffOutputSpec(TraitedSpec):
 
 class MotionCutoff(SimpleInterface):
     """
-
+    Tests if framewise displacement is greater than the specified cutoffs
     """
 
     input_spec = MotionCutoffInputSpec

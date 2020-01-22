@@ -26,8 +26,9 @@ def create_falff(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     create_directory(nipype_dir)
 
     inputnode = pe.Node(util.IdentityInterface(
-        fields=["bold_file", "mask_file", "movpar_file", "csf_wm_label_string"]),
-        name="inputnode"
+                        fields=["bold_file", "mask_file", 
+                                "movpar_file", "csf_wm_label_string"]),
+                        name="inputnode"
     )
 
     inputnode_hp = pe.Node(util.IdentityInterface(fields=['hp']),
@@ -93,7 +94,8 @@ def create_falff(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
 
     design_node = pe.Node(
         util.Function(
-            input_names=["movpar_file", "csf_wm_meants_file", "gs_meants_file", "regressor_names", "file_path"],
+            input_names=["movpar_file", "csf_wm_meants_file", 
+                         "gs_meants_file", "regressor_names", "file_path"],
             output_names=["design"],
             function=create_design), name="design_node"
     )
@@ -107,8 +109,8 @@ def create_falff(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
     glm.inputs.out_res_name = 'alff_residuals.nii.gz'
 
     outputnode = pe.Node(util.IdentityInterface(
-        fields=["falff_cope", "falff_zstat"]),
-        name="outputnode"
+                         fields=["falff_cope", "falff_zstat"]),
+                         name="outputnode"
     )
 
     get_option_string = pe.Node(util.Function(input_names=['mask'],
@@ -210,13 +212,15 @@ def create_falff(use_mov_pars, use_csf, use_white_matter, use_global_signal, sub
         interface=fsl.ImageMaths(),
         name="falff_maths_div",
     )
-
+    
     # save file in intermediates
     ds_falff_zstat = pe.Node(
         nio.DataSink(
             base_directory=output_dir,
             container=subject,
-            substitutions=[('ref_image_corrected_brain_mask_maths_trans_calc_maths_maths', 'falff_zstat')],
+            substitutions=[
+                ('ref_image_corrected_brain_mask_maths_trans_calc_maths_maths', 'falff_zstat')
+            ],
             parameterization=False),
         name="ds_falff_zstat", run_without_submitting=True)
 

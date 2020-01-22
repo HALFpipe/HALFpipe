@@ -15,11 +15,11 @@ from nipype.interfaces import io as nio
 from .firstlevel import init_subject_wf
 
 from .stats import init_higherlevel_wf
+from .stats_wg import init_higherlevel_wg_wf
 
-from .qualitycheck import get_qualitycheck_exclude
+from ..interface.filter import Filter
 
 from ..utils import transpose
-
 
 def init_workflow(workdir, jsonfile):
     """
@@ -44,7 +44,7 @@ def init_workflow(workdir, jsonfile):
     #
     # first level
     #
-    
+
     result = Pool().map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
@@ -61,17 +61,9 @@ def init_workflow(workdir, jsonfile):
     group_json = os.path.join(workdir, "pipeline.json")
     if group_json == fp:
 
-        # Remove duplicates from outnameslists
-        outnamessets = {}
-        for outnameslist in outnameslists:
-            for k, v in outnameslist.items():
-                if k not in outnamessets:
-                    outnamessets[k] = set()
-                outnamessets[k].update(v)
-
-        exclude = get_qualitycheck_exclude(workdir)
         metadata = data["metadata"]
-        subject_groups = None
+
+        # Only run if SubjectGroups is present in json file
         if "SubjectGroups" in metadata:
             subject_groups = metadata["SubjectGroups"]
         group_contrasts = None
@@ -86,70 +78,55 @@ def init_workflow(workdir, jsonfile):
         for task, outnamesset in outnamessets.items():
             for outname in outnamesset:
                 
-                included_subjects = []
-                included_wfs = []
-                
-                for subject, wf in zip(subjects, subject_wfs):
-                    excludethis = False
-                    if subject in exclude:
-                        if task in exclude[subject]:
-                            excludethis = exclude[subject][task]
-                    if not excludethis:
-                        included_subjects.append(subject)
-                        included_wfs.append(wf)
-                
-                # FIXME is this still needed? adapt if yes
-                # # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
-                # # use of sets here for easy substraction of subjects
-                # included_subjects = list(set(subjects) - set(excluded_subjects))
-                # df_included_subjects = pd.DataFrame(included_subjects, columns=['Subjects'])
-                # df_included_subjects = df_included_subjects.sort_values(by=['Subjects'])  # sort by name
-                # df_included_subjects = df_included_subjects.reset_index(drop=True)  # reindex for ascending numbers
-                # json_path = workdir + '/included_subjects.json'
-                # df_included_subjects.to_json(json_path)
-                # with open(json_path, 'w') as json_file:
-                #     # json is loaded from pandas to json and then dumped to get indent in file
-                #     json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4)
-                
                 higherlevel_wf, contrast_names = init_higherlevel_wf(run_mode="flame1",
                                                                      name="%s_%s_higherlevel" % (task, outname),
                                                                      subjects=subjects, covariates=covariates,
                                                                      subject_groups=subject_groups,
                                                                      group_contrasts=group_contrasts,
                                                                      outname=outname, workdir=workdir, task=task)
-                mergecopes = pe.Node(
-                    interface=niu.Merge(len(included_subjects)),
-                    name="%s_%s_mergecopes" % (task, outname))
-                mergevarcopes = pe.Node(
-                    interface=niu.Merge(len(included_subjects)),
-                    name="%s_%s_mergevarcopes" % (task, outname))
-                mergemasks = pe.Node(
-                    interface=niu.Merge(len(included_subjects)),
-                    name="%s_%s_mergemasks" % (task, outname))
-                mergedoffiles = pe.Node(
-                    interface=niu.Merge(len(included_subjects)),
-                    name="%s_%s_mergedoffiles" % (task, outname))
-                mergezstats = pe.Node(
-                    interface=niu.Merge(len(included_subjects)),
-                    name="%s_%s_mergezstats" % (task, outname))
+                filtercopes = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filtercopes" % (task, outname))
+                filtercopes = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filtercopes" % (task, outname))
+                filtervarcopes = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filtervarcopes" % (task, outname))
+                filtermasks = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filtermasks" % (task, outname))
+                filterdoffiles = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filterdoffiles" % (task, outname))
+                filterzstats = pe.Node(
+                    interface=Filter(len(subjects)),
+                    name="%s_%s_filterzstats" % (task, outname))
 
-                for i, (subject, wf) in enumerate(zip(included_subjects, included_wfs)):
+                for i, (subject, wf) in enumerate(zip(subjects, included_wfs)):
                     nodename = "task_%s.outputnode" % task
-                    outputnode = [
-                        node for node in wf._graph.nodes()
-                        if str(node).endswith('.' + nodename)
-                    ]
+                    outputnode = [node for node in wf._get_all_nodes() 
+                                  if str(node).endswith('.' + nodename)]
                     if len(outputnode) > 0:
                         outputnode = outputnode[0]
-                        if outname in ["reho", "alff", "falff"]:
-                            workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_zstat" % outname, mergezstats, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
-                        else:
-                            workflow.connect(outputnode, "%s_cope" % outname, mergecopes, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_mask_file" % outname, mergemasks, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_varcope" % outname, mergevarcopes, "in%i" % (i + 1))
-                            workflow.connect(outputnode, "%s_dof_file" % outname, mergedoffiles, "in%i" % (i + 1))
+                        workflow.connect([
+                            (outputnode, filtercopes, [
+                                ("%s_cope" % outname, "in%i" % (i + 1)),
+                                ("keep", "is_enabled%i" % (i + 1))
+                            ]),
+                            (outputnode, filtermasks, [
+                                ("%s_mask_file" % outname, "in%i" % (i + 1)),
+                                ("keep", "is_enabled%i" % (i + 1))
+                            ])
+                        ])
+                        import pdb; pdb.set_trace()
+                        workflow.connect(outputnode, "%s_zstat" % outname, filterzstats, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_mask_file" % outname, filtermasks, "in%i" % (i + 1))
+                    else:
+                        workflow.connect(outputnode, "%s_cope" % outname, filtercopes, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_mask_file" % outname, filtermasks, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_varcope" % outname, filtervarcopes, "in%i" % (i + 1))
+                        workflow.connect(outputnode, "%s_dof_file" % outname, filterdoffiles, "in%i" % (i + 1))
 
                 ds_stats = pe.MapNode(
                     nio.DataSink(

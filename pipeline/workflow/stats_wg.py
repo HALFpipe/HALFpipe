@@ -10,52 +10,50 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ..utils import flatten
+from .qualitycheck import get_qualitycheck_exclude
 
-def gen_merge_op_str(fileNames):
+import json
+
+
+def gen_merge_op_str(files):
     """
     generate string argument to FSLMATHS that creates a dof image
     file from a dof text file
 
-    :param fileNames: dof text file
+    :param files: dof text file
 
     """
     out = []
-    for fileName in fileNames:
-        with open(fileName) as file:
-            text = file.read()
+    for file in files:
+        with open(file) as f:
+            text = f.read()
         out.append("-abs -bin -mul %f" % float(text))
     return out
 
 
-def get_len(arr):
+def get_len(x):
     """
     wrapper around len
 
-    :param arr: array
+    :param x: x
 
     """
-    return len(arr)
+    return len(x)
 
 
-def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
-                        subjects=None, covariates=None,
-                        subject_groups=None, group_contrasts=None,
-                        outname=None, workdir=None, task=None): 
-                        # FIXME split this into two functions
+def init_higherlevel_wg_wf(run_mode="flame1", name="higherlevel",
+                           subjects=None, covariates=None,
+                           subject_groups=None, continuous_variable=None,
+                           outname=None, workdir=None, task=None):
     """
 
     :param run_mode: mode argument passed to FSL FLAMEO (Default value = "flame1")
     :param name: workflow name (Default value = "higherlevel")
     :param subjects: list of subject names (Default value = None)
+    :param continuous_variable: one-level dictionary with continuous variable values for eac subject
     :param covariates: two-level dictionary of covariates by name and subject (Default value = None)
     :param subject_groups: dictionary of subjects by group (Default value = None)
-    :param group_contrasts: two-level dictionary of contrasts by contrast 
-        name and values by group (Default = None)
-    :param outname: names of inputs for higherlevel workflow, 
-        names of outputs from firstlevel workflow
-    :param workdir: the working directory to check for qualitycheck excludes
-    :param task: name of task to filter excludes FIXME this 
-        shouldn"t be necessary, go by filename instead
+    :param outname: names of inputs for higherlevel workflow, names of outputs from firstlevel workflow
 
     """
     workflow = pe.Workflow(name=name)
@@ -118,90 +116,133 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
         name="zstatmerge"
     )
 
-    contrasts = [["mean", "T", ["intercept"], [1]]]
-
     # specify statistical analysis
-    if not subjects or not covariates: # option 1: one-sample t-test
-        level2model = pe.Node(
-            interface=fsl.L2Model(),
-            name="l2model"
-        )
 
-        workflow.connect([
-            (inputnode, level2model, [
-                (("copes", get_len), "num_copes")
-            ]),
-        ])
-    elif covariates:
+    # Read qcresults.json and exclude bad subjects from statistics
+    excluded_overview = get_qualitycheck_exclude(workdir)
+    excluded_subjects = []
+    if excluded_overview:
+        df_exclude = pd.DataFrame(excluded_overview).transpose()
+        excluded_subjects = df_exclude.loc[df_exclude[task] == True].index
+        trimmed_subjects = list(subjects)
+        for excluded_subject in excluded_subjects:
+            if excluded_subject in trimmed_subjects:
+                trimmed_subjects.remove(excluded_subject)
+
+        # save json file in workdir with list for included subjects if subjects were excluded due to qualitycheck
+        # use of sets here for easy substraction of subjects
+        included_subjects = list(set(subjects) - set(excluded_subjects))
+        df_included_subjects = pd.DataFrame(included_subjects, columns=['Subjects'])
+        df_included_subjects = df_included_subjects.sort_values(by=['Subjects'])  # sort by name
+        df_included_subjects = df_included_subjects.reset_index(drop=True)  # reindex for ascending numbers
+        json_path = workdir + '/' + name + '_included_subjects.json'
+        df_included_subjects.to_json(json_path)
+        with open(json_path, 'w') as json_file:
+            # json is loaded from pandas to json and then dumped to get indent in file
+            json.dump(json.loads(df_included_subjects.to_json()), json_file, indent=4)
+    else:
+        trimmed_subjects = subjects  # in case there are no excluded subjects
+
+    regressors = {}
+
+    # CONTINUOUS VARIABLE
+
+    # Transform continuous variable dict to pandas dataframe
+    df_con_variable = pd.DataFrame(continuous_variable)
+
+    # Exclude bad subjects from continuous variable and subject_groups
+    if list(excluded_subjects):
+        df_con_variable = df_con_variable.drop(excluded_subjects)
+        for excluded_subject in excluded_subjects:
+            subject_groups.pop(excluded_subject, None)
+
+    # boolean condition whether there is at least one nan value in the datasheet
+    is_nan = df_con_variable.isin(['NaN', 'n/a']).any().any()
+    # replace not available values by numpy NaN to be ignored for demeaning
+    if is_nan:
+        df_con_variable = df_con_variable.replace({'NaN': np.nan, 'n/a': np.nan})
+
+    # TODO change to one column only (Only one continuous variable)
+    for variable in df_con_variable:
+        # Demean covariates for flameo
+        df_con_variable[variable] = df_con_variable[variable] - df_con_variable[variable].mean()
+    # replace np.nan by 0 for demeaned_covariates file and regression models
+    if is_nan:
+        df_con_variable = df_con_variable.replace({np.nan: 0})
+    # safe reduced dataframe for regressors later
+    df_regressors = df_con_variable
+
+    # add SubjectGroups and ID to header
+    df_subject_group = pd.DataFrame.from_dict(subject_groups, orient='index', columns=['SubjectGroup'])
+    df_con_variable = pd.concat([df_subject_group, df_con_variable], axis=1, sort=True)
+    df_con_variable = df_con_variable.reset_index()  # add id column
+    df_con_variable = df_con_variable.rename(columns={'index': 'Subject_ID'})  # rename subject column
+    # save demeaned continuous variable to csv
+    df_con_variable.to_csv(workdir + '/' + name + '_demeaned_continuous_variable.csv', index=False)
+    # transform into dict to extract regressor for level2model
+    con_variable = df_regressors.to_dict()
+
+    # transform to dictionary of lists
+    regressors.update({k: [float(v[s]) for s in trimmed_subjects] for k, v in con_variable.items()})
+
+    # COVARIATES
+
+    if covariates:
+
         # Transform covariates dict to pandas dataframe
         df_covariates = pd.DataFrame(covariates)
+        if list(excluded_subjects):
+            # Read qcresults.json and exclude bad subjects from covariates and subject_groups
+            df_covariates = df_covariates.drop(excluded_subjects)
 
-        # only keep subjects that are in this analysis
-        df_covariates = df_covariates.filter(subjects)
-        subject_groups = { subject: subject_groups[subject] 
-            for subject in subjects }
-
+            for excluded_subject in excluded_subjects:
+                subject_groups.pop(excluded_subject, None)
+        # boolean condition whether there is at least one nan value in the datasheet
+        is_nan = df_covariates.isin(['NaN', 'n/a']).any().any()
         # replace not available values by numpy NaN to be ignored for demeaning
-        df_covariates = df_covariates.replace({"NaN": np.nan, "n/a": np.nan, "NA": np.nan})
+        if is_nan:
+            df_covariates = df_covariates.replace({'NaN': np.nan, 'n/a': np.nan})
 
         for covariate in df_covariates:
             # Demean covariates for flameo
             df_covariates[covariate] = df_covariates[covariate] - df_covariates[covariate].mean()
-
         # replace np.nan by 0 for demeaned_covariates file and regression models
-        df_covariates = df_covariates.replace({np.nan: 0})
+        if is_nan:
+            df_covariates = df_covariates.replace({np.nan: 0})
+        # safe reduced dataframe for regressors later
+        df_regressors = df_covariates
 
         # add SubjectGroups and ID to header
-        df_subject_group = pd.DataFrame.from_dict(subject_groups, 
-                                                  orient="index", 
-                                                  columns=["SubjectGroup"])
-        df_covariates_forsaving = pd.concat(
-            [df_subject_group, df_covariates], axis=1, sort=True)
-        df_covariates_forsaving = df_covariates.reset_index()  # add id column
-        df_covariates_forsaving = df_covariates.rename(
-            columns={"index": "Subject_ID"})  # rename subject column
-
+        df_subject_group = pd.DataFrame.from_dict(subject_groups, orient='index', columns=['SubjectGroup'])
+        df_covariates = pd.concat([df_subject_group, df_covariates], axis=1, sort=True)
+        df_covariates = df_covariates.reset_index()  # add id column
+        df_covariates = df_covariates.rename(columns={'index': 'Subject_ID'})  # rename subject column
         # save demeaned covariates to csv
-        df_covariates_forsaving.to_csv(workdir + "/demeaned_covariates.csv", index=False)
-
+        df_covariates.to_csv(workdir + '/' + name + '_demeaned_covariates.csv', index=False)
         # transform into dict to extract regressors for level2model
-        covariates = df_covariates.to_dict()
+        covariates = df_regressors.to_dict()
+        # transform dictionary to lists
+        regressors.update({k: [float(v[s]) for s in trimmed_subjects] for k, v in covariates.items()})
 
-        # transform to dictionary of lists
-        regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}
+    # COLUMN OF ONES
+    regressors.update({"intercept": [1.0 for s in trimmed_subjects]})
 
-        if (subject_groups is None) or (bool(subject_groups) is False):
-            # one-sample t-test with covariates
-            regressors["intercept"] = [1.0 for s in subjects]
-            level2model = pe.Node(
-                interface=fsl.MultipleRegressDesign(
-                    regressors=regressors,
-                    contrasts=contrasts
-                ),
-                name="l2model"
-            )
-        else:
-            # two-sample t-tests with covariates
+    # CONTRASTS
+    con_variable_name = list(continuous_variable)[0]
+    positive = {con_variable_name: 1}
+    negative = {con_variable_name: -1}
+    group_contrasts = {'positive': positive, 'negative': negative}
+    # transform dictionary to lists
+    contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) for k, v in group_contrasts.items()]
 
-            # dummy coding of variables: group names --> numbers in the matrix
-            # see fsl feat documentation
-            # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
-            dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
-            # transform to dictionary of lists
-            dummies = {k: [float(v[s]) for s in subjects] for k, v in dummies.items()}
-            regressors.update(dummies)
-
-            # transform to dictionary of lists
-            contrasts = [[k, "T"] + list(map(list, zip(*v.items()))) 
-                         for k, v in group_contrasts.items()]
-
-            level2model = pe.Node(
-                interface=fsl.MultipleRegressDesign(
-                    regressors=regressors,
-                    contrasts=contrasts
-                ),
-                name="l2model"
-            )
+    # WITHIN GROUP MODEL
+    level2model = pe.Node(
+        interface=fsl.MultipleRegressDesign(
+            regressors=regressors,
+            contrasts=contrasts
+        ),
+        name="l2model"
+    )
 
     contrast_names = [c[0] for c in contrasts]
 
@@ -226,13 +267,13 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
     # construct workflow
 
-    if outname in ["reho", "alff", "falff"]: # FIXME no hard coded names
+    if outname in ["reho", "alff", "falff"]:
         workflow.connect([
             (inputnode, copemerge, [
                 ("copes", "in_files")
             ]),
             (inputnode, zstatmerge, [
-                ("zstats", "in_files") # FIXME alff zstats are not zstats in the flame sense, but just normalized across the volume. which zstats are thus used here?
+                ("zstats", "in_files")
             ]),
 
             (inputnode, maskmerge, [
@@ -295,14 +336,12 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
 
             (gendofimage, dofmerge, [
                 ("out_file", "in_files")
-            ])
-        ])
+            ])])
 
         workflow.connect([
             (copemerge, flameo, [
                 ("merged_file", "cope_file")
-            ])
-        ])
+            ])])
 
         workflow.connect([
             (varcopemerge, flameo, [
@@ -310,10 +349,9 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             ]),
             (dofmerge, flameo, [
                 ("merged_file", "dof_var_cope_file")
-            ])
-        ])
+            ])])
 
-        workflow.connect([
+        workflow.connect(([
             (level2model, flameo, [
                 ("design_mat", "design_file"),
                 ("design_con", "t_con_file"),
@@ -332,6 +370,6 @@ def init_higherlevel_wf(run_mode="flame1", name="higherlevel",
             (maskagg, outputnode, [
                 ("out_file", "mask_file")
             ]),
-        ])
-    
+        ]))
+
     return workflow, contrast_names

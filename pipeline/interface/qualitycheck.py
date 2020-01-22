@@ -18,7 +18,6 @@ from nipype.interfaces.io import (
 )
 
 import numpy as np
-import pandas as pd
 
 def _qualitycheck(base_directory = None, subject = None, task = None):
     

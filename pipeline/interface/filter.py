@@ -1,12 +1,13 @@
-from nipype.interfaces.base import ( 
+from nipype.interfaces.base import (
     isdefined,
     traits,
-    TraitedSpec, 
+    TraitedSpec,
     DynamicTraitedSpec,
     SimpleInterface
-) 
+)
 from nipype.interfaces.io import (
-    add_traits
+    add_traits,
+    IOBase
 )
 
 class LogicalAndInputSpec(DynamicTraitedSpec):
@@ -15,7 +16,7 @@ class LogicalAndInputSpec(DynamicTraitedSpec):
 class LogicalAndOutputSpec(TraitedSpec):
     out = traits.Bool(desc="output")
 
-class LogicalAnd(SimpleInterface):
+class LogicalAnd(IOBase):
     """
 
     """
@@ -31,19 +32,19 @@ class LogicalAnd(SimpleInterface):
             add_traits(self.inputs, input_names, trait_type = traits.Bool)
         else:
             input_names = []
-        
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         out = []
 
         if self._numinputs < 1:
             return outputs
-        else:
-            getval = lambda idx: getattr(self.inputs, "in%d" % (idx + 1))
-            values = [
-                getval(idx) for idx in range(self._numinputs) 
-                    if isdefined(getval(idx))
-            ]
+
+        getval = lambda idx: getattr(self.inputs, "in%d" % (idx + 1))
+        values = [
+            getval(idx) for idx in range(self._numinputs) 
+                if isdefined(getval(idx))
+        ]
         
         out = False
         
@@ -74,7 +75,7 @@ class FilterInputSpec(DynamicTraitedSpec):
 class FilterOutputSpec(TraitedSpec):
     out = traits.List(desc="Merged output")
 
-class Filter(SimpleInterface):
+class Filter(IOBase):
     """Basic interface class to merge inputs into a single list
 
     """
@@ -99,13 +100,13 @@ class Filter(SimpleInterface):
 
         if self._numinputs < 1:
             return outputs
-        else:
-            getval = lambda idx: getattr(self.inputs, "in%d" % (idx + 1))
-            getisenabled = lambda idx: getattr(self.inputs, "is_enabled%d" % (idx + 1))
-            values = [
-                getval(idx) for idx in range(self._numinputs) 
-                    if isdefined(getval(idx)) and (not isdefined(getisenabled(idx)) or getisenabled(idx))
-            ]
+
+        getval = lambda idx: getattr(self.inputs, "in%d" % (idx + 1))
+        getisenabled = lambda idx: getattr(self.inputs, "is_enabled%d" % (idx + 1))
+        values = [
+            getval(idx) for idx in range(self._numinputs) 
+            if isdefined(getval(idx)) and (not isdefined(getisenabled(idx)) or getisenabled(idx))
+        ]
 
         if self.inputs.axis == "vstack":
             for value in values:
