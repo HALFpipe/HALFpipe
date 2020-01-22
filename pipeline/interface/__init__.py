@@ -3,8 +3,15 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .dof import Dof
-
+from .filter import (
+    LogicalAnd,
+    Filter
+)
+from .motion import MotionCutoff
+from .qualitycheck import QualityCheck
 from .segmentation import (
-    ApplyXfmSegmentation, 
+    ApplyXfmSegmentation,
     GetSegmentationMean
 )
+from .stats import HigherLevelDesign
+from .utils import SelectColumns

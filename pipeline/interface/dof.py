@@ -14,7 +14,10 @@ class DofInputSpec(TraitedSpec):
         "dof",
         usedefault=True,
         desc="output file name")
-    num_regressors = traits.Range(low=1, mandatory=True, desc="number of regressors")
+    num_regressors = traits.Range(
+        low=1,
+        mandatory=True,
+        desc="number of regressors")
 
 
 class DofOutputSpec(TraitedSpec):
@@ -30,7 +33,7 @@ class Dof(BaseInterface):
     def _run_interface(self, runtime):
         """
 
-        :param runtime: 
+        :param runtime: the runtime
 
         """
         im = nib.load(self.inputs.in_file)

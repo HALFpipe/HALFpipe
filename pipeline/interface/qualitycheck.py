@@ -4,30 +4,25 @@
 
 import os
 import json
-import pandas as pd
 
-from nipype.interfaces.base import ( 
-    isdefined,
+from nipype.interfaces.base import (
     traits,
-    TraitedSpec, 
-    DynamicTraitedSpec,
-    SimpleInterface
-) 
-from nipype.interfaces.io import (
-    add_traits
+    TraitedSpec,
+    SimpleInterface,
+    Directory
 )
 
-import numpy as np
 
-def _qualitycheck(base_directory = None, subject = None, task = None):
-    
-    qcresult_fname = os.path.join(base_directory, "qualitycheck", "qcresult.json")
-    
-    qcresult = dictionary()
+def _qualitycheck(base_directory=None, subject=None, task=None):
+    qcresult_fname = os.path.join(base_directory,
+                                  "qualitycheck",
+                                  "qcresult.json")
+
+    qcresult = {}
     if os.path.isfile(qcresult_fname):
         with open(qcresult_fname) as qcresult_file:
             qcresult = json.load(qcresult_file)
-    
+
     is_good = True
     for s, value0 in qcresult.items():
         if s == subject:
@@ -37,15 +32,19 @@ def _qualitycheck(base_directory = None, subject = None, task = None):
                         for k, v in value2.items():
                             if v == "bad":
                                 is_good = False
-                        
-    
+
     return is_good
 
+
 class QualityCheckInputSpec(TraitedSpec):
-    pass
+    base_directory = Directory(desc="base directory")
+    subject = traits.Str(desc="subject name")
+    task = traits.Str(desc="task name")
+
 
 class QualityCheckOutputSpec(TraitedSpec):
     keep = traits.Bool(desc="Decision, true means keep")
+
 
 class QualityCheck(SimpleInterface):
     """
@@ -55,22 +54,12 @@ class QualityCheck(SimpleInterface):
     input_spec = QualityCheckInputSpec
     output_spec = QualityCheckOutputSpec
 
-    def __init__(self, 
-        base_directory = None, subject = None, task = None, **inputs):
-        super(QualityCheck, self).__init__(**inputs) 
-        
-        self.base_directory = base_directory
-        self.subject = subject
-        self.task = task
-
     def _run_interface(self, runtime):
         keep = _qualitycheck(
-            base_directory = self.base_directory,
-            subject = self.subject,
-            task = self.task,
+            base_directory=self.inputs.base_directory,
+            subject=self.inputs.subject,
+            task=self.inputs.task,
         )
         self._results["keep"] = keep
-        
+
         return runtime
-
-

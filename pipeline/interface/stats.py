@@ -11,7 +11,8 @@ from nipype.interfaces.base import (
     traits,
     TraitedSpec, 
     DynamicTraitedSpec,
-    SimpleInterface
+    SimpleInterface,
+    BaseInterface
 ) 
 from nipype.interfaces.io import (
     add_traits
@@ -26,41 +27,13 @@ class HigherLevelDesignInputSpec(TraitedSpec):
 class HigherLevelDesignOutputSpec(TraitedSpec):
     out = traits.Bool(desc="output")
 
-class HigherLevelDesign(IOBase):
+class HigherLevelDesign(BaseInterface):
     """
 
     """
 
-    input_spec = LogicalAndInputSpec
-    output_spec = LogicalAndOutputSpec
+    input_spec = HigherLevelDesignInputSpec
+    output_spec = HigherLevelDesignOutputSpec
 
-    def __init__(self, numinputs=0, **inputs):
-        super(Filter, self).__init__(**inputs)
-        self._numinputs = numinputs
-        if numinputs >= 1:
-            input_names = ["in%d" % (i + 1) for i in range(numinputs)]
-            add_traits(self.inputs, input_names, trait_type = traits.Bool)
-        else:
-            input_names = []
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        out = []
-
-        if self._numinputs < 1:
-            return outputs
-
-        getval = lambda idx: getattr(self.inputs, "in%d" % (idx + 1))
-        values = [
-            getval(idx) for idx in range(self._numinputs) 
-                if isdefined(getval(idx))
-        ]
-        
-        out = False
-        
-        if len(values) > 0:
-            out = np.all(values)
-        
-        outputs["out"] = out
-        
-        return outputs
+    def _run_interface(self, runtime):
+        pass
