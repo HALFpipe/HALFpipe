@@ -23,13 +23,13 @@ def init_rest_wf(metadata,
 
     workflow = pe.Workflow(name=name)
 
-    unfilteredFileEndpoint = [inputnode, "bold_file"]
-
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds"]),
         name="inputnode"
     )
+
+    unfilteredFileEndpoint = [inputnode, "bold_file"]
 
     confoundsregression_wf = init_confoundsregression_wf(metadata)
     workflow.connect(
