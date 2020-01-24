@@ -36,13 +36,14 @@ REQUIRES = [
     "mriqc",
     "numpy",
     "scipy",
+    "pandas",
+    "patsy",
     "nibabel>=3.0.0",
     "jinja2",
     "fasteners",
-    "pandas",
     # "pygraphviz",
     # "graphviz",
-    #"ipdb"
+    # "ipdb"
 ]
 
 LINKS_REQUIRES = [

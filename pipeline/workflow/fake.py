@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
 import os
 from os import path as op
 
@@ -26,6 +30,7 @@ from ..utils import (
     deepvalues,
     flatten
 )
+
 
 class FakeBIDSLayout:
     def __init__(self,
@@ -103,10 +108,10 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             json_data = {"id": json_id}
 
             os.makedirs(op.join(work_dir, out_path), exist_ok=True)
-            
+
             # discover source files
             sourceImages = []
-            
+
             def extractSourceImages(finputs):
                 with gzip.open(finputs, "r") as file:
                     inputs = pickle.load(file)
@@ -116,7 +121,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                             for value in valuelist:
                                 if value.endswith(".nii.gz"):
                                     sourceImages.append(value)
-            
+
             for fname in self.inputs.in_file:
                 finputs = op.join(op.dirname(fname), "_inputs.pklz")
                 if op.isfile(finputs):
@@ -125,11 +130,11 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                     finputs = op.join(op.dirname(op.dirname(fname)), "_inputs.pklz")
                     if op.isfile(finputs):
                         extractSourceImages(finputs)
-            
+
             # output relative path only for derivatives, not for input images
             dataImages = set(deepvalues(self.images))
             sourceImages = [op.relpath(s, start = work_dir) if s not in dataImages else s for s in sourceImages]
-            
+
             # output path for images
             touch_fname = op.join(out_path, json_data["id"] + ext)
             touch_path = op.join(work_dir, touch_fname)
@@ -137,14 +142,14 @@ class FakeDerivativesDataSink(DerivativesDataSink):
             if not op.isfile(touch_path):
                 for i, fname in enumerate(self.inputs.in_file):
                     copy(fname, touch_path)
-                
+
                 json_data["fname"] = op.join(touch_fname)
                 json_data["sources"] = sourceImages
                 with fasteners.InterProcessLock(op.join(work_dir, "qualitycheck.lock")):
                     json_file = op.join(work_dir, "qualitycheck.js")
                     with open(json_file, "ab+") as f:
                         f.seek(0, 2)
-                        
+
                         closingCharacters = "]'))"
 
                         if f.tell() == 0:
@@ -158,7 +163,7 @@ class FakeDerivativesDataSink(DerivativesDataSink):
                             f.write(json.dumps(json_data).encode())
                             f.write(closingCharacters.encode())
                 Path(touch_path).touch()
-            
+
             html_path = op.join(work_dir, "index.html")
             if not op.isfile(html_path):
                 copy(pkgr("pipeline", "index.html"), html_path)

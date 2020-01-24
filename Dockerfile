@@ -7,6 +7,9 @@ FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 # ENV HTTP_PROXY http://141.42.1.215:8080
 # ENV HTTPS_PROXY https://141.42.1.215:8080
 
+RUN pip install --upgrade pip && \
+    pip install 'nibabel>=3.0.0' cython
+
 ARG MRIQC_VERSION
 
 RUN mkdir -p /root/src/mriqc && \
@@ -27,7 +30,7 @@ RUN curl -sSL \
   
 RUN mkdir /ext
 COPY . /root/src/pipeline/
-  
+
 RUN cd /root/src/pipeline && \
     cp /root/src/qualitycheck.html pipeline/index.html && \
     cp VERSION pipeline/VERSION && \

@@ -1,14 +1,17 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
-from nipype.algorithms import confounds as nac
-
-from mriqc.interfaces import viz
+from nipype.interfaces import afni
 
 
-def init_temporalfilter_wf(temporal_filter_width, repetition_time, name="temporalfilter"):
+def init_temporalfilter_wf(temporal_filter_width, repetition_time,
+                           name="temporalfilter"):
     """
-    create a workflow for temporal filtering of functional data based on 
+    create a workflow for temporal filtering of functional data based on
     gaussian smoothing implemented by FSLMATHS
 
     :param temporal_filter_width: width of the remporal filter in seconds
@@ -43,8 +46,8 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time, name="tempora
         name="highpass"
     )
 
-    # temporal filtering also demeans the image, which is not desired. Therefore, 
-    # we add the mean of the original image back in.
+    # temporal filtering also demeans the image, which is not desired.
+    # Therefore, we add the mean of the original image back in.
     meanfunc = pe.Node(
         interface=fsl.ImageMaths(
             op_string="-Tmean", suffix="_mean"),
@@ -80,50 +83,40 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time, name="tempora
     return workflow
 
 
-def init_tsnr_wf(name="tsnr"):
-    """
-    create a workflow to calculate the temporal signal-to-noise
-    ratio of a functional image
-
-    :param name: workflow name (Default value = "tsnr")
-
-    """
+def init_bandpass_wf(repetition_time, highpass=0.009, lowpass=0.08,
+                     name="bandpass"):
     workflow = pe.Workflow(name=name)
 
-    # only input is the bold image
+    # inputs are the bold file, the mask file and the regression files
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file"]),
+        fields=["bold_file", "mask_file"]),
         name="inputnode"
     )
 
-    # output is an image file for display in the qualitycheck web page
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=["report_file"]),
+    # filtering
+    bandpass = pe.Node(
+        interface=afni.Bandpass(),
+        name="bandpass_filtering"
+    )
+    bandpass.inputs.lowpass = lowpass
+    bandpass.inputs.highpass = highpass
+    bandpass.inputs.tr = repetition_time
+    bandpass.inputs.outputtype = "NIFTI_GZ"
+
+    outputnode = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["filtered_file"]),
         name="outputnode"
     )
 
-    # actually calculate the tsnr image
-    tsnr = pe.Node(
-        interface=nac.TSNR(),
-        name="compute_tsnr")
-
-    # plot the resulting image as a mosaic
-    mosaic_stddev = pe.Node(
-        interface=viz.PlotMosaic(
-            out_file="plot_func_stddev_mosaic2_stddev.svg",
-            cmap="viridis"),
-        name="plot_mosaic")
-
     workflow.connect([
-        (inputnode, tsnr, [
-            ("bold_file", "in_file")
+        (inputnode, bandpass, [
+            ("bold_file", "in_file"),
+            ("mask_file", "mask"),
         ]),
-        (tsnr, mosaic_stddev, [
-            ("tsnr_file", "in_file")
+        (bandpass, outputnode, [
+            ("out_file", "filtered_file"),
         ]),
-        (mosaic_stddev, outputnode, [
-            ("out_file", "report_file")
-        ])
     ])
 
     return workflow

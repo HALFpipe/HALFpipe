@@ -2,7 +2,9 @@ import os
 
 import nibabel as nib
 
-from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, File
+from nipype.interfaces.base import (
+    TraitedSpec, BaseInterface, traits, File
+)
 
 
 class DofInputSpec(TraitedSpec):

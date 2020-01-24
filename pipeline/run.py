@@ -1,25 +1,24 @@
-from multiprocessing import set_start_method, cpu_count
-
-set_start_method("forkserver", force=True)
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import numpy as np
 import pandas as pd
 import nibabel as nib
 import json
-import shutil
-import math
-import sys
 from glob import glob
 from argparse import ArgumentParser
 from .cli import Cli
 from .conditions import parse_condition_files
 from .info import __version__
-from .workflow import init_workflow, init_stat_only_workflow
+from .workflow import init_workflow  # , init_stat_only_workflow
 from .logging import init_logging
 from .patterns import ambiguous_match
-from .utils import get_path, transpose, nonzero_atlas, firstval
+from .utils import get_path, transpose, firstval
 from .file_checks import file_checks
+
+from multiprocessing import set_start_method, cpu_count
+set_start_method("forkserver", force=True)
 
 # Debug config for stop on first crash
 # from nipype import config
@@ -27,6 +26,7 @@ from .file_checks import file_checks
 # config.update_config(cfg)
 
 EXT_PATH = "/ext"
+
 
 def main():
     ap = ArgumentParser(description="")
@@ -50,7 +50,9 @@ def main():
     c = None
 
     if not (os.path.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
-        c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
+        # FIXME update to singularity syntax
+        c.error("Can not access host files at path %s." % EXT_PATH +
+                "Did you forget the docker argument \"--mount ...\"?")
 
     #
     # data structures
@@ -85,7 +87,10 @@ def main():
     #
 
     def get_file(description):
-        path = get_path(c.read("Specify the path of the %s file" % description), EXT_PATH)
+        path = get_path(
+            c.read("Specify the path of the %s file" % description),
+            EXT_PATH
+        )
         if not os.path.isfile(path):  # does file exist
             return get_file(description)  # repeat if doesn"t exist
         return path
@@ -115,7 +120,11 @@ def main():
 
         wildcards += ["*"]
 
-        wildcard_descriptions = {"*": "subject name", "$": "condition name", "?": "run name"}
+        wildcard_descriptions = {
+            "*": "subject name",
+            "$": "condition name",
+            "?": "run name"
+        }
 
         glob_path = path
         if runs:
@@ -136,7 +145,11 @@ def main():
             if len(m) > 1:
                 m_ = []
 
-                wildcard_descriptions_ = {k: v for k, v in wildcard_descriptions.items() if k in wildcards}
+                wildcard_descriptions_ = {
+                    k: v
+                    for k, v in wildcard_descriptions.items()
+                    if k in wildcards
+                }
 
                 is_good = set()
                 for k, v in wildcard_descriptions_.items():
@@ -162,7 +175,11 @@ def main():
                                     messagedisplayed = True
                                 y = ["\"" + x + "\"" for x in w[field]]
                                 response0 = c.select(
-                                    "Does %s contain %s?" % (wildcard_descriptions_[k], " and ".join(y)), ["Yes", "No"])
+                                    "Does {} contain {}?".format(
+                                        wildcard_descriptions_[k],
+                                        " and ".join(y)),
+                                    ["Yes", "No"]
+                                )
                                 if response0 == "Yes":
                                     # contains[field] = n[field]
                                     break
@@ -219,7 +236,6 @@ def main():
             c.info("mindandbrain pipeline %s" % __version__)
             c.info("")
         # TODO remove after testing
-        #'''
 
         #
         # anatomical/structural data
@@ -248,29 +264,61 @@ def main():
         # c.info("Please specify %s" % description)
         # response0 = "Yes"
 
-        if response0 == "Yes":
-
-            configuration["rest"] = dict()
-            images["rest"] = get_files(field_description, runs=True)
-            configuration["rest"]["RepetitionTime"] = dict()
+        def get_scan(scanname):
+            configuration[scanname] = dict()
+            images[scanname] = get_files(field_description, runs=True)
+            configuration[scanname]["RepetitionTime"] = dict()
             for subject in subject_ids:
-                configuration["rest"]["RepetitionTime"][subject] = float(str(nib.load(
-                    transpose(images["rest"])[""][subject]  # gets the path of the nii.gz file for each subject
-                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
-            # metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
-            #                                                       o=str(nib.load(image).header.get_zooms()[3])))
+                # reads the repetion time from the nii.gz file
+                configuration[scanname]["RepetitionTime"][subject] = \
+                    float(str(nib.load(
+                        transpose(images[scanname])[""][subject]
+                        # gets the path of the nii.gz file for each subject
+                    ).header.get_zooms()[3]))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
-            configuration["rest"]["PhaseEncodingDirection"] = \
-                {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
+            configuration[scanname]["PhaseEncodingDirection"] = {
+                "AP": "j", "PA": "j",
+                "LR": "i", "RL": "i",
+                "IS": "k", "SI": "k"
+            }[ped]
 
-            response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
+        def get_confounds(scanname):
+            response3 = c.select("Add confound regressors to the model?",
+                                 ["Yes", "No"])
+            configuration[scanname]["UseMovPar"] = False
+            configuration[scanname]["CSF"] = False
+            configuration[scanname]["Whitematter"] = False
+            configuration[scanname]["GlobalSignal"] = False
+            if response3 == "Yes":
+                response4 = c.select("Add motion parameters (6 dof) to model?",
+                                     ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[scanname]["UseMovPar"] = True
+                response4 = c.select("Add CSF signal to model?", ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[scanname]["CSF"] = True
+                response4 = c.select("Add white matter signal to model?",
+                                     ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[scanname]["Whitematter"] = True
+                response4 = c.select("Add global signal to model?",
+                                     ["Yes", "No"])
+                if response4 == "Yes":
+                    configuration[scanname]["GlobalSignal"] = True
+
+        if response0 == "Yes":
+            get_scan("rest")
+
+            response3 = c.select("Calculate functional connectivity " +
+                                 "based on a brain atlas?", ["Yes", "No"])
             if response3 == "Yes":
                 configuration["rest"]["BrainAtlasImage"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify Atlas name")
-                    configuration["rest"]["BrainAtlasImage"][name] = get_file("brain atlas image")
+                    configuration["rest"]["BrainAtlasImage"][name] = \
+                        get_file("brain atlas image")
                     response3 = c.select("Add another Atlas?", ["Yes", "No"])
 
             response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
@@ -278,51 +326,33 @@ def main():
                 configuration["rest"]["ConnectivitySeeds"] = {}
                 while response3 == "Yes":
                     name = c.read("Specify seed name")
-                    configuration["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
+                    configuration["rest"]["ConnectivitySeeds"][name] = \
+                        get_file("seed mask image")
                     response3 = c.select("Add another seed?", ["Yes", "No"])
 
-            response3 = c.select("Calculate ICA network templates via dual regression?", ["Yes", "No"])
+            response3 = c.select("Calculate ICA network templates " +
+                                 "via dual regression?", ["Yes", "No"])
             if response3 == "Yes":
                 configuration["rest"]["ICAMaps"] = {}
 
                 while response3 == "Yes":
                     name = c.read("Specify an ICA network templates name")
-                    configuration["rest"]["ICAMaps"][name] = get_file("ICA network templates image")
-                    response3 = c.select("Use another ICA network templates image?", ["Yes", "No"])
+                    configuration["rest"]["ICAMaps"][name] = \
+                        get_file("ICA network templates image")
+                    response3 = c.select("Use another ICA networ" +
+                                         "templates image?", ["Yes", "No"])
 
-            response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
+            response3 = c.select("Calculate ReHo?", ["Yes", "No"])
+            configuration["rest"]["ReHo"] = False
             if response3 == "Yes":
-                configuration["rest"]["reho"] = True
+                configuration["rest"]["ReHo"] = True
 
-            response3 = c.select("Do you want to calculate ALFF?", ["Yes", "No"])
+            response3 = c.select("Calculate ALFF?", ["Yes", "No"])
+            configuration["rest"]["ALFF"] = False
             if response3 == "Yes":
-                configuration["rest"]["alff"] = True
+                configuration["rest"]["ALFF"] = True
 
-            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
-            configuration["rest"]["UseMovPar"] = False
-            configuration["rest"]["CSF"] = False
-            configuration["rest"]["Whitematter"] = False
-            configuration["rest"]["GlobalSignal"] = False
-            if response3 == "Yes":
-                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["UseMovPar"] = True
-                response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["CSF"] = True
-                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["Whitematter"] = True
-                response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["GlobalSignal"] = True
-
-            # response3 = c.select("Is field map data available?", ["Yes", "No"])
-            #
-            # if response3 == "Yes":
-            #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
-
-            # response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
+            get_confounds("rest")
 
         c.info("")
 
@@ -334,37 +364,23 @@ def main():
         field_description = "task image"
 
         response0 = c.select("Is %s available?" % description, ["Yes", "No"])
-        # c.info("Please specify %s" % description)
-        # response0 = "Yes"
 
         while response0 == "Yes":
             field_name = c.read("Specify the paradigm name")
 
-            configuration[field_name] = dict()
-            images[field_name] = get_files(field_description, runs=True)
-            configuration[field_name]["RepetitionTime"] = dict()
-            for subject in subject_ids:
-                configuration[field_name]["RepetitionTime"][subject] = float(str(nib.load(
-                    # gets the path of the first nii.gz file for each subject
-                    firstval(firstval(images[field_name][subject]))  
-                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
-            # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
-            #     o = str(nib.load(image).header.get_zooms()[3])))
-
-            ped = c.select("Specify the phase encoding direction",
-                           ["AP", "PA", "LR", "RL", "SI", "IS"])
-            configuration[field_name]["PhaseEncodingDirection"] = \
-                {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
+            get_scan(field_name)
 
             description2 = "condition/explanatory variable"
-            response2 = c.select("Specify the format of the %s files" % description2,
+            response2 = c.select("Specify the format of the %s files"
+                                 % description2,
                                  ["FSL 3-column", "SPM multiple conditions"])
 
             conditions = None
             if response2 == "SPM multiple conditions":
                 conditions = get_files(description2, runs=True)
             elif response2 == "FSL 3-column":
-                conditions = get_files(description2, runs=True, conditions=True)
+                conditions = get_files(
+                    description2, runs=True, conditions=True)
 
             conditions = parse_condition_files(conditions, form=response2)
 
@@ -378,265 +394,193 @@ def main():
             response3 = "Yes"
             while response3 == "Yes":
                 contrast_name = c.read("Specify the contrast name")
-                contrast_values = c.fields("Specify the contrast values", condition)
-                
+                contrast_values = c.fields("Specify the contrast values",
+                                           condition)
+
                 # allow for empty fields
                 for i in range(len(contrast_values)):
                     if contrast_values[i] == "":
                         contrast_values[i] = 0
-                
-                contrasts[contrast_name] = {k: float(v) for k, v in zip(condition, contrast_values)}
+
+                contrasts[contrast_name] = {
+                    k: float(v)
+                    for k, v in zip(condition, contrast_values)
+                }
 
                 response3 = c.select("Add another contrast?", ["Yes", "No"])
 
             configuration[field_name]["Conditions"] = conditions
             configuration[field_name]["Contrasts"] = contrasts
 
-            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
-            configuration[field_name]["UseMovPar"] = False
-            configuration[field_name]["CSF"] = False
-            configuration[field_name]["Whitematter"] = False
-            configuration[field_name]["GlobalSignal"] = False
-            if response3 == "Yes":
-                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["UseMovPar"] = True
-                response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["CSF"] = True
-                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["Whitematter"] = True
-                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["GlobalSignal"] = True
+            get_confounds(field_name)
 
-            # if response3 == "Yes":
-            #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
-
-            response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
+            response0 = c.select("Is further %s available?" % description,
+                                 ["Yes", "No"])
 
         c.info("")
 
-        configuration["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
-                                                       o=str(125.0)))
-        configuration["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
-                                                      o=str(5.0)))
+        configuration["TemporalFilter"] = float(c.read(
+            "Specify the temporal filter width in seconds",
+            o=str(125.0)
+        ))
+        configuration["SmoothingFWHM"] = float(c.read(
+            "Specify the smoothing FWHM in mm",
+            o=str(5.0)
+        ))
 
         c.info("")
-        
-        # TODO remove after testing
-        # '''
+
+        response0 = c.select("Do you want to exclude subjects " +
+                             "based on movement?", ["Yes", "No"])
+
+        motion_cutoff = False
+        if response0 == "Yes":
+            motion_cutoff = {}
+            motion_cutoff["MeanFDCutoff"] = float(c.read(
+                "Specify the cutoff mean FramewiseDisplacement",
+                o=str(0.5)
+            ))
+            # c.info("")
+            motion_cutoff["ProportionFDGt0_5Cutoff"] = float(c.read(
+                "Specify the cutoff proportion of " +
+                "frames with (FramewiseDisplacement > 0.5)",
+                o=str(0.1)
+            ))
+        configuration["MotionCutoff"] = motion_cutoff
+        c.info("")
 
         response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
-            spreadsheet_file = get_file("covariates/group data spreadsheet")
+            group_design = {}
+            configuration["GroupDesign"] = group_design
+            group_data = {}
+            group_design["Data"] = group_data
 
-            # TODO REMOVE AFTER TESTING
-            #spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables.csv'
-            #spreadsheet_file = '/ext/Users/eliana/Documents/BERLIN-Work/test_data/test_data_set_pipeline/variables_none.csv'
+            spreadsheet_name = "covariates/group data spreadsheet"
+            spreadsheet_file = get_file(spreadsheet_name)
+
             spreadsheet = pd.read_csv(spreadsheet_file)
 
             columns = spreadsheet.columns.tolist()
 
-            numbering = 'Unnamed: 0'
-            if numbering in columns:
-                columns.remove(numbering)  # numbering of subjects
+            for invalid_column in ["Unnamed: 0"]:
+                if invalid_column in columns:
+                    columns.remove(invalid_column)
 
-            id_column = c.select("Select the column containing subject names", columns)
+            id_column = c.select("Select the column containing subject names",
+                                 columns)
             columns.remove(id_column)
-            group_column = c.select("Select the column containing group names", columns)
 
             covariates = spreadsheet.set_index(id_column).to_dict()
-            groups = covariates[group_column]
+            _covariates = spreadsheet.set_index(id_column).to_dict()
 
-            configuration["SubjectGroups"] = groups
+            continuous_columns = []
+            discrete_columns = []
 
-            print('All groups: ' + str(groups))
+            response1 = c.select("Specify between-group comparison?",
+                                 ["Yes", "No"])
+            while response1 == "Yes":
+                group_column = c.select("Select the column containing " +
+                                        "group names", columns)
 
-            unique_groups = set(groups.values())
-            unique_groups = [str(x) for x in unique_groups]
+                groups = covariates[group_column]
 
-            # Removing group column from covariates
-            del covariates[group_column]
+                unique_groups = set(groups.values())
+                unique_groups = [str(x) for x in unique_groups]
 
-            # GROUP COMPARISON
-            response1 = c.select("Specify between group comparison?", ["Yes", "No"])
-            if response1 == "Yes":
+                # Removing group column from covariates
+                del _covariates[group_column]
 
                 group_contrasts = {}
                 response3 = "Yes"
                 while response3 == "Yes":
-                    # For each contrast
+                    # for each contrast
                     contrast_name = c.read("Specify the contrast name")
-                    # 1. Contrast values
-                    contrast_values = c.fields("Specify the contrast values", unique_groups)
-                    group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
-                    response3 = c.select("Add another contrast?", ["Yes", "No"])
-
-                configuration["GroupContrasts"] = group_contrasts
-                print("Group Contrasts: " + str(group_contrasts))
-
-                # 2. Covariates
-                if covariates:
-                    covariates_selected = []
-                    response5 = "No"
-
-                    while not covariates_selected and response5 == "No":
-
-                        covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, 0 otherwise",
-                                                       list(covariates))
-
-                        covariates_selected = [i for idx, i in enumerate(list(covariates)) if covariates_selected[idx]
-                                               == '1']
-                        print('Covariates: ' + str(covariates_selected))
-
-                        if not covariates_selected:
-                            response5 = c.select("No covariates were selected."
-                                                 " Do you want to continue without covariates?", ["Yes", "No"])
-                            covariates_subset = {}
-                        else:
-                            covariates_subset = {k: covariates[k] for k in covariates_selected}
-
-                else:
-                    response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
-                                         " Do you want to continue the group comparison without covariates?",
+                    contrast_values = c.fields("Specify the contrast values",
+                                               unique_groups)
+                    group_contrasts[contrast_name] = {
+                        k: float(v)
+                        for k, v in zip(unique_groups, contrast_values)
+                    }
+                    response3 = c.select("Add another contrast?",
                                          ["Yes", "No"])
-                    if response4 == "No":
-                        # Stop program
-                        sys.exit("Program exited. No covariates found")
-                    else:
-                        # Continue without covariates
-                        covariates_subset = {}
 
-                print('Values: ' + str(covariates_subset))
-                configuration["Covariates"] = covariates_subset
+                var = {
+                    "SubjectGroups": groups,
+                    "Contrasts": group_contrasts
+                }
+                group_data[group_column] = var
+                discrete_columns.append(group_column)
 
-            # WITHING GROUP COMPARISON
-            response2 = c.select("Specify within group comparison?", ["Yes", "No"])
-            if response2 == "Yes":
-                configuration["WithinGroup"] = {}
+                response1 = c.select("Add another between-group comparison?",
+                                     ["Yes", "No"])
 
+            response1 = c.select("Specify continuous covariate?",
+                                 ["Yes", "No"])
+            while response1 == "Yes":
+                if _covariates:
+                    k = c.select("Select the column containing " +
+                                 "the covariate", list(_covariates))
+                    var = {
+                        "Covariate": covariates[k],
+                        "Contrasts": True
+                    }
+                    group_data[k] = var
+                    continuous_columns.append(k)
+
+                    del _covariates[k]
+
+                    response1 = c.select("Add another continuous " +
+                                         "covariate?",
+                                         ["Yes", "No"])
+                else:
+                    c.info("No covariates available in %s" % spreadsheet_name)
+
+            if _covariates:
+                c.info("Specify additional covariates of no interest")
+                covariates_selected = c.choice(
+                    "Any key toggles the selection",
+                    [c for c in covariates if c not in discrete_columns]
+                )
+                for k in covariates_selected:
+                    continuous_columns.append(k)
+                    group_data[k] = {
+                        "Covariate": covariates[k]
+                    }
+
+            response2 = c.select("Repeat analysis within sub-groups?",
+                                 ["Yes", "No"])
             while response2 == "Yes":
-
-                # Only when there are covariates, within group comparison can be specified
-                if covariates:
-
-                    # 1. Selection of continuous variable
-                    convariable_name = c.select("Select the column containing the continuous variable",
-                                                list(covariates))
-                    print('Continuous variable: ' + str(convariable_name))
-
-                    # GROUPS
-                    selected_groups = []
-                    # 2. Selection of groups to use in the model (across selected groups)
-
-                    while not selected_groups:
-                        selected_groups = c.fields("Specify the group(s) for the model. "
-                                                   "Use 1 to select, 0 otherwise", unique_groups)
-                        selected_groups = [i for idx, i in enumerate(unique_groups) if selected_groups[idx] == '1']
-
-                        if not selected_groups:
-                            c.info("No groups were selected. Please select at least one group for the model.")
-
-                    print('Groups: ' + str(selected_groups))
-
-                    # Create dictionary for the model
-                    group_names = '_'.join(selected_groups)
-                    model_name = str(convariable_name) + "_" + group_names
-                    configuration["WithinGroup"][model_name] = {}
-
-                    # Filtering dictionary: Adding continuous variable values for patients in selected groups
-
-                    # Selection of subjects according to selected groups
-                    subjects = dict(filter(lambda elem: elem[1] in selected_groups,
-                                           configuration['SubjectGroups'].items()))
-
-                    configuration["WithinGroup"][model_name]['SubjectGroups'] = subjects
-                    print("Subjects: " + str(subjects))
-
-                    # Selection of continuous variable according to subjects
-                    convariable_subset = {}
-                    convariable_subset[convariable_name] = dict(filter(lambda elem: elem[0] in subjects.keys(),
-                                                                       covariates[convariable_name].items()))
-
-                    configuration["WithinGroup"][model_name]['ContinuousVariable'] = convariable_subset
-
-                    print('ConVariable: ' + str(convariable_subset))
-
-                    # 3. Covariates
-                    cov_names = list(covariates)
-                    cov_names.remove(convariable_name)
-
-                    if not cov_names:
-                        response4 = c.select("There are no additional columns in the spreadsheet to use as covariates."
-                                             " Do you want to continue the within group comparison without covariates?",
-                                             ["Yes", "No"])
-
-                        if response4 == "No":
-                            # Stop program
-                            sys.exit("Program exited. No covariates found")
-                        else:
-                            # Continue without covariates
-                            covariates_subset = {}
-
-                    else:
-                        covariates_selected = []
-                        response4 = "No"
-
-                        while not covariates_selected and response4 == "No":
-                            covariates_selected = c.fields("Specify the covariates to be used. Use 1 to select, "
-                                                           "0 otherwise",
-                                                           cov_names)
-                            covariates_selected = [i for idx, i in enumerate(cov_names) if covariates_selected[idx]
-                                                   == '1']
-
-                            if not covariates_selected:
-
-                                response4 = c.select("No covariates were selected. "
-                                                     "Do you want to continue without covariates?", ["Yes", "No"])
-
-                        covariates_subset = {}
-                        # Continue without covariates otherwise
-                        if covariates_selected:
-                            print('Covariates: ' + str(covariates_selected))
-
-                            # Filtering dictionary: Selection of covariate values according to subjects
-
-                            for k in covariates_selected:
-                                covariates_subset[k] = dict(filter(lambda elem: elem[0] in subjects.keys(),
-                                                                   covariates[k].items()))
-
-                    configuration["WithinGroup"][model_name]['Covariates'] = covariates_subset
-                    print('Covariates: ' + str(covariates_subset))
-
-                    response2 = c.select("Specify another within group comparison?", ["Yes", "No"])
-
-                else:
-                    response4 = c.select("There are no columns in the spreadsheet to use as continuous variable. "
-                                         "Do you want to continue without specifying a within group comparison?",
-                                         ["Yes", "No"])
-                    if response4 == "No":
-                        # Stop program
-                        sys.exit("Program exited. No within group comparison was specified. Spreadsheet did not contain"
-                                 " columns to use as continuous variable")
-                    else:
-                        # Continue without within group comparison
-                        response2 = "No"
-
-        c.info("")
-
-        response0 = c.select("Do you want to exclude subjects based on movement?", ["Yes", "No"])
-        if response0 == "Yes":
-            configuration["AVGFramewiseDisplacement"] = float(c.read("Set the threshold for the average "
-                                                                     "Framewise Displacement:", o=str(0.5)))
-            configuration["MovementPercentage"] = float(c.read("Set the threshold for the percentage of volumes "
-                                                                     "larger than 0.5", o=str(0.1)))
-
+                available = [
+                    c for c in covariates
+                    if c not in continuous_columns
+                ]
+                if len(available) == 0:
+                    c.info("No further columns " +
+                           "available in %s" % spreadsheet_name)
+                    break
+                subgroup_column = c.select(
+                    "Select the column containing " +
+                    "sub-group names",
+                    available)
+                if subgroup_column not in \
+                        group_data:
+                    group_data[subgroup_column] = {
+                        "SubjectGroups": covariates[subgroup_column]
+                    }
+                if "RepeatWithinSubGroups" not in group_design:
+                    group_design["RepeatWithinSubGroups"] = []
+                group_design["RepeatWithinSubGroups"].append(
+                    subgroup_column)
+                del covariates[subgroup_column]
+                response2 = c.select("Add another set of sub-groups?",
+                                     ["Yes", "No"])
         c.info("")
 
         with open(path_to_pipeline_json, "w+") as f:
-            json.dump({"images": images, "metadata": configuration}, f, indent=4)
+            json.dump(
+                {"images": images, "metadata": configuration},
+                f, indent=4)
 
         c.info("Saved configuration")
 
@@ -676,238 +620,238 @@ def main():
             # import cProfile
             # pr = cProfile.Profile()
             # pr.enable()
-        
+
             workflow = init_workflow(workdir, path_to_pipeline_json)
-            
+
             # pr.disable()
             # pr.print_stats(sort = "time")
             # pr.dump_stats("/ext/Volumes/leassd/init_workflow.txt")
-            
+
             # pr = cProfile.Profile()
             # pr.enable()
-            
+
             workflow.run(**plugin_settings)
-            
+
             # pr.disable()
             # pr.print_stats(sort = "time")
             # pr.dump_stats("/ext/Volumes/leassd/run_workflow.txt")
 
-        # copy confounds.tsv from task to intermediates/subject
-        # access pipeline.json to get subjects and tasks for path
-        with open(path_to_pipeline_json, "r") as f:
-            configuration = json.load(f)
-
-        flattened_configuration = transpose(configuration["images"])
-
-        for subject in flattened_configuration:
-            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    # Taskdata exists
-                    task = key
-                    # use glob for wildcard as path has truncated subject_id in fmriprep
-                    try:
-                        source = glob(workdir + "/nipype/sub_" + subject + "/task_" + task + "/func_preproc*" +
-                                      "/bold_confounds_wf/concat/confounds.tsv")[0]
-                        destination = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
-                        shutil.copyfile(src=source, dst=destination)
-                    except IndexError:
-                        print(
-                            "Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...")
-                else:
-                    # Taskdata doesn"t exist
-                    pass
-        # calculate correlation matrix from atlas matrix
-        # save correlation matrix as csv
-        for subject in flattened_configuration:
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    task = key
-                    try:
-                        for idx, atlas_idx in enumerate(
-                                ["%04d" % x for x in range(len(configuration["metadata"][task]["BrainAtlasImage"]))]):
-                            try:
-                                if len(configuration["metadata"][task]["BrainAtlasImage"]) >= 2:
-                                    source = workdir + "/intermediates/" + subject + "/" + task + \
-                                             "/brainatlas_matrix" + str(atlas_idx) + ".txt"
-                                else:
-                                    source = workdir + "/intermediates/" + subject + "/" + task + "/brainatlas_matrix.txt"
-                                destination = workdir + "/intermediates/" + subject + "/" + task + \
-                                              "/corr_matrix_" + \
-                                              list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx] + \
-                                              ".csv"
-                                atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-                                # drop last column as there is only NaN in there due to delimiting issues
-                                atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
-                                                  inplace=True)
-                                # coverage part (#issue9)
-                                atlas_name = list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx]
-                                atlas_file = configuration["metadata"][task]["BrainAtlasImage"][atlas_name]
-                                seg_image_path = glob(workdir + "/nipype/sub_" + subject + "/task_" +
-                                                      task + "/func_preproc*" +
-                                                      "/bold_mni_trans_wf/mask_mni_tfm/"
-                                                      "ref_image_corrected_brain_mask_maths_trans.nii.gz")[0]
-                                dest_coverage = workdir + "/intermediates/" + subject + "/" + task + "/" + \
-                                                atlas_name + "_coverage.csv"
-                                # create get coverage from util function and create dataframe
-                                df_coverage = pd.DataFrame(nonzero_atlas(
-                                    seg_image_path=seg_image_path,
-                                    atlas_image_path=atlas_file))
-                                df_coverage.columns = ["label", "data", "atlas"]
-                                df_coverage["ratio"] = df_coverage["data"] / df_coverage["atlas"]
-                                df_coverage.to_csv(dest_coverage, index=False)
-                                # get list of all rows below threshold
-                                threshold = 0.8
-                                indices_below_threshold = list(
-                                    df_coverage.loc[df_coverage["ratio"] < threshold].index
-                                )
-                                for index in indices_below_threshold:
-                                    atlas_matrix[index] = np.nan
-                                corr_matrix = atlas_matrix.corr(method="pearson")
-                                for index in indices_below_threshold:
-                                    corr_matrix[index] = "NaN"
-                                    corr_matrix.loc[index] = "NaN"
-                                corr_matrix.to_csv(destination, index=False, header=False)
-                                shutil.copy(source,
-                                            workdir + "/intermediates/" + subject + "/" + task +
-                                            "/brainatlas_timeseries_" +
-                                            list(configuration["metadata"][task]["BrainAtlasImage"].keys())[
-                                                idx] + ".txt")
-                            except OSError as e:
-                                print(
-                                    "Warning: atlas_matrix was not found. Correlation matrix could not be computed")
-                                print(e)
-                    except KeyError:
-                        pass
-        # create confounds_mni.tsv / motion_report.csv
-        df_motion = pd.DataFrame(
-            columns=["Subject", "Mean_FD", "%volume_lg_0.5", "Max_X", "Max_Y", "Max_Z", "Max_RotX", "Max_RotY",
-                     "Max_RotZ"])
-        for subject in flattened_configuration:
-            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    # Taskdata exists
-                    task = key
-                    # get dataframe for original confounds.tsv
-                    orig_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
-                    df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
-                    # get dataframe for gs_meants.txt
-                    gs_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/gs_meants.txt"
-                    df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
-                    df_gs_meants.columns = ["GlobalSignal"]
-                    # get dataframe for csf_wm_meants.txt
-                    csf_wm_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/csf_wm_meants.txt"
-                    df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
-                    df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
-                    # Replace respective columns
-                    df_confounds["WhiteMatter"] = df_csf_wm_meants["WhiteMatter"]
-                    df_confounds["CSF"] = df_csf_wm_meants["CSF"]
-                    df_confounds["GlobalSignal"] = df_gs_meants["GlobalSignal"]
-                    # Save dataframe as confounds_mni.tsv
-                    new_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds_mni.tsv"
-                    df_confounds.to_csv(new_confounds_path, sep="\t", encoding="utf-8", index=False)
-
-                    # motion_report part
-                    mean_fd = df_confounds["FramewiseDisplacement"].mean()
-                    vol_lg_05 = len(df_confounds[df_confounds["FramewiseDisplacement"] > 0.5])
-                    total_vol = len(df_confounds)
-                    percentage_vol_lg_05 = vol_lg_05 / total_vol
-                    max_x = df_confounds["X"].max()
-                    max_y = df_confounds["Y"].max()
-                    max_z = df_confounds["Z"].max()
-                    max_rot_x = df_confounds["RotX"].max()
-                    max_rot_y = df_confounds["RotY"].max()
-                    max_rot_z = df_confounds["RotZ"].max()
-                    df_motion = df_motion.append({"Subject": subject, "Mean_FD": mean_fd,
-                                                  "%volume_lg_0.5": percentage_vol_lg_05, "Max_X": max_x,
-                                                  "Max_Y": max_y, "Max_Z": max_z, "Max_RotX": max_rot_x,
-                                                  "Max_RotY": max_rot_y, "Max_RotZ": max_rot_z}, ignore_index=True)
-                else:
-                    # Taskdata doesn"t exist
-                    pass
-        if not df_motion.empty:
-            df_motion.to_csv(workdir + "/qualitycheck/motion_report.csv", sep="\t", encoding="utf-8")
-
-        # Automatic file check: Check file status after first level statistics is done
-        file_checks(workdir, json_dir, path_to_pipeline_json)
-
-    # Creation of individual/block json files
-    else:
-
-        os.makedirs(json_dir, exist_ok=True)
-
-        with open(path_to_pipeline_json, "r") as f:
-            configuration = json.load(f)
-
-        flattened_configuration = transpose(configuration["images"])
-
-        # selecting metadata to be shared among subjects
-        subject_metadata = dict()
-
-        subject_keys = ["TemporalFilter", "SmoothingFWHM"]
-        for key in subject_keys:
-            subject_metadata[key] = configuration["metadata"][key]
-
-        # getting names of paradigms (rest, task, etc) using keys in image section
-        subject_all_keys = list(configuration["images"])
-        subject_keys = list(configuration["images"])
-        subject_keys.remove("T1w")
-
-        for key in subject_keys:
-            paradigm_keys = list(configuration["metadata"][key])
-            paradigm_keys.remove("RepetitionTime")
-            subject_metadata[key] = dict()
-            for paradigm_key in paradigm_keys:
-                subject_metadata[key][paradigm_key] = configuration["metadata"][key][paradigm_key]
-
-        # file to save execution commands per subject
-        file = open(os.path.join(workdir, "execute.txt"), "w")
-        command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
-
-        block_size = 1
-        if args.block_size is not None:
-            try:
-                block_size = int(args.block_size)
-            except Exception as ex:
-                print(ex)
-                print("The number of subjects per block must be an integer")
-                print("No blocks are being generated. Json files per subject are being generated")
-
-        subject_names = list(flattened_configuration)
-        subjects = len(subject_names)
-        blocks = math.ceil(subjects / block_size)
-
-        # loop for block
-        for i in range(blocks):
-            file_name = "block_" + str(i) + "_pipeline.json"
-            path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-            subject_images = dict()
-            for key in subject_all_keys:
-                subject_images[key] = dict()
-            for key in subject_keys:
-                subject_metadata[key]["RepetitionTime"] = dict()
-            # loop for subjects within a block
-            for j in range(block_size):
-                index = i * block_size + j
-                if index < subjects:
-                    subject = subject_names[index]
-                    print(str(i) + subject)
-                    # adding images per subject
-                    for key in subject_all_keys:
-                        subject_images[key][subject] = configuration["images"][key][subject]
-                    # adding different metadata per subject (Repetition Time)
-                    for key in subject_keys:
-                        subject_metadata[key]["RepetitionTime"][subject] = \
-                            configuration["metadata"][key]["RepetitionTime"][subject]
-                    # changing name of file in case no blocks are needed; file gets name of subject
-                    if block_size == 1:
-                        file_name = subject + "_pipeline.json"
-                        path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-            # writing individual json file
-            with open(path_to_new_pipeline_json, "w+") as f:
-                json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
-
-            file.write(command + file_name + "\n")
-
-        file.close()
+    #     # copy confounds.tsv from task to intermediates/subject
+    #     # access pipeline.json to get subjects and tasks for path
+    #     with open(path_to_pipeline_json, "r") as f:
+    #         configuration = json.load(f)
+    # 
+    #     flattened_configuration = transpose(configuration["images"])
+    # 
+    #     for subject in flattened_configuration:
+    #         # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
+    #         for key in flattened_configuration[subject]:
+    #             if key not in ["T1w", "T2w", "FLAIR"]:
+    #                 # Taskdata exists
+    #                 task = key
+    #                 # use glob for wildcard as path has truncated subject_id in fmriprep
+    #                 try:
+    #                     source = glob(workdir + "/nipype/sub_" + subject + "/scan_" + task + "/func_preproc*" +
+    #                                   "/bold_confounds_wf/concat/confounds.tsv")[0]
+    #                     destination = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
+    #                     shutil.copyfile(src=source, dst=destination)
+    #                 except IndexError:
+    #                     print(
+    #                         "Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...")
+    #             else:
+    #                 # Taskdata doesn"t exist
+    #                 pass
+    #     # calculate correlation matrix from atlas matrix
+    #     # save correlation matrix as csv
+    #     for subject in flattened_configuration:
+    #         for key in flattened_configuration[subject]:
+    #             if key not in ["T1w", "T2w", "FLAIR"]:
+    #                 task = key
+    #                 try:
+    #                     for idx, atlas_idx in enumerate(
+    #                             ["%04d" % x for x in range(len(configuration["metadata"][task]["BrainAtlasImage"]))]):
+    #                         try:
+    #                             if len(configuration["metadata"][task]["BrainAtlasImage"]) >= 2:
+    #                                 source = workdir + "/intermediates/" + subject + "/" + task + \
+    #                                          "/brainatlas_matrix" + str(atlas_idx) + ".txt"
+    #                             else:
+    #                                 source = workdir + "/intermediates/" + subject + "/" + task + "/brainatlas_matrix.txt"
+    #                             destination = workdir + "/intermediates/" + subject + "/" + task + \
+    #                                           "/corr_matrix_" + \
+    #                                           list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx] + \
+    #                                           ".csv"
+    #                             atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
+    #                             # drop last column as there is only NaN in there due to delimiting issues
+    #                             atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
+    #                                               inplace=True)
+    #                             # coverage part (#issue9)
+    #                             atlas_name = list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx]
+    #                             atlas_file = configuration["metadata"][task]["BrainAtlasImage"][atlas_name]
+    #                             seg_image_path = glob(workdir + "/nipype/sub_" + subject + "/scan_" +
+    #                                                   task + "/func_preproc*" +
+    #                                                   "/bold_mni_trans_wf/mask_mni_tfm/"
+    #                                                   "ref_image_corrected_brain_mask_maths_trans.nii.gz")[0]
+    #                             dest_coverage = workdir + "/intermediates/" + subject + "/" + task + "/" + \
+    #                                             atlas_name + "_coverage.csv"
+    #                             # create get coverage from util function and create dataframe
+    #                             df_coverage = pd.DataFrame(nonzero_atlas(
+    #                                 seg_image_path=seg_image_path,
+    #                                 atlas_image_path=atlas_file))
+    #                             df_coverage.columns = ["label", "data", "atlas"]
+    #                             df_coverage["ratio"] = df_coverage["data"] / df_coverage["atlas"]
+    #                             df_coverage.to_csv(dest_coverage, index=False)
+    #                             # get list of all rows below threshold
+    #                             threshold = 0.8
+    #                             indices_below_threshold = list(
+    #                                 df_coverage.loc[df_coverage["ratio"] < threshold].index
+    #                             )
+    #                             for index in indices_below_threshold:
+    #                                 atlas_matrix[index] = np.nan
+    #                             corr_matrix = atlas_matrix.corr(method="pearson")
+    #                             for index in indices_below_threshold:
+    #                                 corr_matrix[index] = "NaN"
+    #                                 corr_matrix.loc[index] = "NaN"
+    #                             corr_matrix.to_csv(destination, index=False, header=False)
+    #                             shutil.copy(source,
+    #                                         workdir + "/intermediates/" + subject + "/" + task +
+    #                                         "/brainatlas_timeseries_" +
+    #                                         list(configuration["metadata"][task]["BrainAtlasImage"].keys())[
+    #                                             idx] + ".txt")
+    #                         except OSError as e:
+    #                             print(
+    #                                 "Warning: atlas_matrix was not found. Correlation matrix could not be computed")
+    #                             print(e)
+    #                 except KeyError:
+    #                     pass
+    #     # create confounds_mni.tsv / motion_report.csv
+    #     df_motion = pd.DataFrame(
+    #         columns=["Subject", "Mean_FD", "%volume_lg_0.5", "Max_X", "Max_Y", "Max_Z", "Max_RotX", "Max_RotY",
+    #                  "Max_RotZ"])
+    #     for subject in flattened_configuration:
+    #         # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
+    #         for key in flattened_configuration[subject]:
+    #             if key not in ["T1w", "T2w", "FLAIR"]:
+    #                 # Taskdata exists
+    #                 task = key
+    #                 # get dataframe for original confounds.tsv
+    #                 orig_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
+    #                 df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
+    #                 # get dataframe for gs_meants.txt
+    #                 gs_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/gs_meants.txt"
+    #                 df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
+    #                 df_gs_meants.columns = ["GlobalSignal"]
+    #                 # get dataframe for csf_wm_meants.txt
+    #                 csf_wm_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/csf_wm_meants.txt"
+    #                 df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
+    #                 df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
+    #                 # Replace respective columns
+    #                 df_confounds["WhiteMatter"] = df_csf_wm_meants["WhiteMatter"]
+    #                 df_confounds["CSF"] = df_csf_wm_meants["CSF"]
+    #                 df_confounds["GlobalSignal"] = df_gs_meants["GlobalSignal"]
+    #                 # Save dataframe as confounds_mni.tsv
+    #                 new_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds_mni.tsv"
+    #                 df_confounds.to_csv(new_confounds_path, sep="\t", encoding="utf-8", index=False)
+    # 
+    #                 # motion_report part
+    #                 mean_fd = df_confounds["FramewiseDisplacement"].mean()
+    #                 vol_lg_05 = len(df_confounds[df_confounds["FramewiseDisplacement"] > 0.5])
+    #                 total_vol = len(df_confounds)
+    #                 percentage_vol_lg_05 = vol_lg_05 / total_vol
+    #                 max_x = df_confounds["X"].max()
+    #                 max_y = df_confounds["Y"].max()
+    #                 max_z = df_confounds["Z"].max()
+    #                 max_rot_x = df_confounds["RotX"].max()
+    #                 max_rot_y = df_confounds["RotY"].max()
+    #                 max_rot_z = df_confounds["RotZ"].max()
+    #                 df_motion = df_motion.append({"Subject": subject, "Mean_FD": mean_fd,
+    #                                               "%volume_lg_0.5": percentage_vol_lg_05, "Max_X": max_x,
+    #                                               "Max_Y": max_y, "Max_Z": max_z, "Max_RotX": max_rot_x,
+    #                                               "Max_RotY": max_rot_y, "Max_RotZ": max_rot_z}, ignore_index=True)
+    #             else:
+    #                 # Taskdata doesn"t exist
+    #                 pass
+    #     if not df_motion.empty:
+    #         df_motion.to_csv(workdir + "/qualitycheck/motion_report.csv", sep="\t", encoding="utf-8")
+    # 
+    #     # Automatic file check: Check file status after first level statistics is done
+    #     file_checks(workdir, json_dir, path_to_pipeline_json)
+    # 
+    # # Creation of individual/block json files
+    # else:
+    # 
+    #     os.makedirs(json_dir, exist_ok=True)
+    # 
+    #     with open(path_to_pipeline_json, "r") as f:
+    #         configuration = json.load(f)
+    # 
+    #     flattened_configuration = transpose(configuration["images"])
+    # 
+    #     # selecting metadata to be shared among subjects
+    #     subject_metadata = dict()
+    # 
+    #     subject_keys = ["TemporalFilter", "SmoothingFWHM"]
+    #     for key in subject_keys:
+    #         subject_metadata[key] = configuration["metadata"][key]
+    # 
+    #     # getting names of paradigms (rest, task, etc) using keys in image section
+    #     subject_all_keys = list(configuration["images"])
+    #     subject_keys = list(configuration["images"])
+    #     subject_keys.remove("T1w")
+    # 
+    #     for key in subject_keys:
+    #         paradigm_keys = list(configuration["metadata"][key])
+    #         paradigm_keys.remove("RepetitionTime")
+    #         subject_metadata[key] = dict()
+    #         for paradigm_key in paradigm_keys:
+    #             subject_metadata[key][paradigm_key] = configuration["metadata"][key][paradigm_key]
+    # 
+    #     # file to save execution commands per subject
+    #     file = open(os.path.join(workdir, "execute.txt"), "w")
+    #     command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
+    # 
+    #     block_size = 1
+    #     if args.block_size is not None:
+    #         try:
+    #             block_size = int(args.block_size)
+    #         except Exception as ex:
+    #             print(ex)
+    #             print("The number of subjects per block must be an integer")
+    #             print("No blocks are being generated. Json files per subject are being generated")
+    # 
+    #     subject_names = list(flattened_configuration)
+    #     subjects = len(subject_names)
+    #     blocks = math.ceil(subjects / block_size)
+    # 
+    #     # loop for block
+    #     for i in range(blocks):
+    #         file_name = "block_" + str(i) + "_pipeline.json"
+    #         path_to_new_pipeline_json = os.path.join(json_dir, file_name)
+    #         subject_images = dict()
+    #         for key in subject_all_keys:
+    #             subject_images[key] = dict()
+    #         for key in subject_keys:
+    #             subject_metadata[key]["RepetitionTime"] = dict()
+    #         # loop for subjects within a block
+    #         for j in range(block_size):
+    #             index = i * block_size + j
+    #             if index < subjects:
+    #                 subject = subject_names[index]
+    #                 print(str(i) + subject)
+    #                 # adding images per subject
+    #                 for key in subject_all_keys:
+    #                     subject_images[key][subject] = configuration["images"][key][subject]
+    #                 # adding different metadata per subject (Repetition Time)
+    #                 for key in subject_keys:
+    #                     subject_metadata[key]["RepetitionTime"][subject] = \
+    #                         configuration["metadata"][key]["RepetitionTime"][subject]
+    #                 # changing name of file in case no blocks are needed; file gets name of subject
+    #                 if block_size == 1:
+    #                     file_name = subject + "_pipeline.json"
+    #                     path_to_new_pipeline_json = os.path.join(json_dir, file_name)
+    #         # writing individual json file
+    #         with open(path_to_new_pipeline_json, "w+") as f:
+    #             json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
+    # 
+    #         file.write(command + file_name + "\n")
+    # 
+    #     file.close()

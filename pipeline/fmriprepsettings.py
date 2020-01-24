@@ -64,7 +64,7 @@ force_syn = False
 
 # Custom reference image for normalization
 template_out_grid = os.path.join(os.getenv("FSLDIR"),
-                            "data", "standard", "MNI152_T1_2mm.nii.gz")
+                                 "data", "standard", "MNI152_T1_2mm.nii.gz")
 
 # Generate bold CIFTI file in output spaces
 cifti_output = False
@@ -75,3 +75,37 @@ use_aroma = True
 ignore_aroma_err = False
 
 aroma_melodic_dim = None
+
+anatSettings = {
+    "skull_strip_template": skull_strip_template,
+    "output_spaces": output_spaces,
+    "template": template,
+    "debug": debug,
+    "longitudinal": longitudinal,
+    "omp_nthreads": omp_nthreads,
+    "freesurfer": freesurfer,
+    "hires": hires
+}
+
+funcSettings = {
+    "ignore": ignore,
+    "freesurfer": freesurfer,
+    "use_bbr": use_bbr,
+    "t2s_coreg": t2s_coreg,
+    "bold2t1w_dof": bold2t1w_dof,
+    "output_spaces": output_spaces,
+    "template": template,
+    "medial_surface_nan": medial_surface_nan,
+    "cifti_output": cifti_output,
+    "omp_nthreads": omp_nthreads,
+    "low_mem": low_mem,
+    "fmap_bspline": fmap_bspline,
+    "fmap_demean": fmap_demean,
+    "use_syn": use_syn,
+    "force_syn": force_syn,
+    "debug": debug,
+    "template_out_grid": template_out_grid,
+    "use_aroma": use_aroma,
+    "aroma_melodic_dim": aroma_melodic_dim,
+    "ignore_aroma_err": ignore_aroma_err
+}

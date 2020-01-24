@@ -14,8 +14,6 @@ from nipype.interfaces.io import (
     add_traits,
     IOBase
 )
-from nipype.interfaces.utility.base import _ravel
-from nipype.utils.filemanip import ensure_list
 
 
 class LogicalAndInputSpec(DynamicTraitedSpec):
@@ -35,7 +33,7 @@ class LogicalAnd(IOBase):
     output_spec = LogicalAndOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
-        super(Filter, self).__init__(**inputs)
+        super(LogicalAnd, self).__init__(**inputs)
         self._numinputs = numinputs
         if numinputs >= 1:
             input_names = ["in%d" % (i + 1) for i in range(numinputs)]
@@ -67,42 +65,25 @@ class LogicalAnd(IOBase):
         return outputs
 
 
-class FilterInputSpec(DynamicTraitedSpec):
-    axis = traits.Enum(
-        "vstack",
-        "hstack",
-        usedefault=True,
-        desc="direction in which to merge, hstack requires" +
-             "same number of elements in each input",
-    )
-    no_flatten = traits.Bool(
-        False,
-        usedefault=True,
-        desc="append to outlist instead of extending in vstack mode",
-    )
-    ravel_inputs = traits.Bool(
-        False, usedefault=True, desc="ravel inputs when no_flatten is False"
-    )
-
-
-class FilterOutputSpec(TraitedSpec):
-    out = traits.List(desc="Merged output")
-
-
 class Filter(IOBase):
-    """Basic interface class to merge inputs into a single list
+    """Basic interface class to merge inputs into lists
 
     """
 
-    input_spec = FilterInputSpec
-    output_spec = FilterOutputSpec
+    input_spec = DynamicTraitedSpec
+    output_spec = DynamicTraitedSpec
 
-    def __init__(self, numinputs=0, **inputs):
+    def __init__(self, numinputs=0, fieldnames=["value"], **inputs):
         super(Filter, self).__init__(**inputs)
         self._numinputs = numinputs
+        self._fieldnames = fieldnames
         if numinputs >= 1:
-            input_names = ["in%d" % (i + 1) for i in range(numinputs)]
-            add_traits(self.inputs, input_names)
+            for fieldname in self._fieldnames:
+                input_names = [
+                    "{}{}".format(fieldname, (i + 1))
+                    for i in range(numinputs)
+                ]
+                add_traits(self.inputs, input_names)
             isenabled_input_names = \
                 ["is_enabled%d" % (i + 1) for i in range(numinputs)]
             add_traits(self.inputs, isenabled_input_names,
@@ -110,35 +91,33 @@ class Filter(IOBase):
         else:
             input_names = []
 
+    def _add_output_traits(self, base):
+        return add_traits(base, self._fieldnames)
+
     def _list_outputs(self):
         outputs = self._outputs().get()
-        out = []
 
         if self._numinputs < 1:
             return outputs
 
-        def getval(idx):
-            return getattr(self.inputs, "in%d" % (idx + 1))
-
         def getisenabled(idx):
             return getattr(self.inputs, "is_enabled%d" % (idx + 1))
 
-        values = [
-            getval(idx) for idx in range(self._numinputs)
-            if isdefined(getval(idx)) and
-            (not isdefined(getisenabled(idx)) or getisenabled(idx))
-        ]
+        def getval(fieldname, idx):
+            return getattr(
+                self.inputs,
+                "{}{}".format(fieldname, (idx + 1))
+            )
 
-        if self.inputs.axis == "vstack":
-            for value in values:
-                if isinstance(value, list) and not self.inputs.no_flatten:
-                    out.extend(_ravel(value)
-                               if self.inputs.ravel_inputs else value)
-                else:
-                    out.append(value)
-        else:
-            lists = [ensure_list(val) for val in values]
-            out = [[val[i] for val in lists] for i in range(len(lists[0]))]
+        for fieldname in self._fieldnames:
+            outputs["fieldname"] = []
 
-        outputs["out"] = out
+        for idx in range(self._numinputs):
+            use = isdefined(getisenabled(idx)) and getisenabled(idx)
+            for fieldname in self._fieldnames:  # all need to be defined
+                use &= isdefined(getval(fieldname, idx))
+            if use:
+                for fieldname in self._fieldnames:
+                    outputs[fieldname].append(getval(fieldname, idx))
+
         return outputs

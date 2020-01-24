@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from .design import GroupDesign
 from .dof import Dof
 from .filter import (
     LogicalAnd,
@@ -9,9 +10,14 @@ from .filter import (
 )
 from .motion import MotionCutoff
 from .qualitycheck import QualityCheck
+from .reho import ReHo
 from .segmentation import (
     ApplyXfmSegmentation,
     GetSegmentationMean
 )
 from .stats import HigherLevelDesign
-from .utils import SelectColumns
+from .utils import (
+    SelectColumnsTSV,
+    MergeColumnsTSV,
+    MatrixToTSV
+)

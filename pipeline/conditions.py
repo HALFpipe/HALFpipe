@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
 import numpy as np
 from scipy.io import loadmat
 
@@ -6,7 +10,7 @@ def extract(x):
     """
     Extract single value from n-dimensional array
 
-    :param x: Array 
+    :param x: Array
 
     """
     if isinstance(x, np.ndarray):
@@ -19,7 +23,8 @@ def parse_condition_files(files, form="FSL 3-column"):
     Parse condition files into a dictionary data structure
 
     :param files: Input path
-    :param form: Either "SPM multiple conditions" or "FSL 3-column" (Default value = "FSL 3-column")
+    :param form: Either "SPM multiple conditions" or "FSL 3-column"
+        (Default value = "FSL 3-column")
 
     """
     conditions = dict()
@@ -32,7 +37,9 @@ def parse_condition_files(files, form="FSL 3-column"):
                     data = None
                     try:
                         data = loadmat(value2)
-                    except:
+                    except IOError:
+                        pass
+                    except TypeError:
                         pass
                     if data is not None:
                         names = np.squeeze(data["names"])
@@ -42,19 +49,19 @@ def parse_condition_files(files, form="FSL 3-column"):
                             condition = extract(name)
                             ionsets = np.ravel(onsets[i])
                             idurations = np.ravel(durations[i])
-                            
+
                             data = np.zeros((ionsets.size, 2))
                             data[:, 0] = ionsets
                             data[:, 1] = idurations
-                            
+
                             conditions[subject][run][condition] = {
-                                "onsets"   : data[:, 0].tolist(), \
+                                "onsets": data[:, 0].tolist(),
                                 "durations": data[:, 1].tolist()
                             }
                 if form == "FSL 3-column":
                     data = np.loadtxt(value2)
                     conditions[subject][run][condition] = {
-                        "onsets"   : data[:, 0].tolist(), \
+                        "onsets": data[:, 0].tolist(),
                         "durations": data[:, 1].tolist()
                     }
 

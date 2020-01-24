@@ -8,8 +8,27 @@ import pathlib
 import nibabel as nib
 import numpy as np
 
+
+def get_first(l):
+    """
+    get first element from list
+    doesn't fail is input is not a list
+
+    :param l: input list
+
+    """
+    if not isinstance(l, list):
+        return l
+    else:
+        return get_first(l[0])
+
+
 def firstval(dict):
+    """
+    get first value from dict
+    """
     return next(iter(dict.values()))
+
 
 def get_path(path, EXT_PATH):
     path = path.strip()
@@ -36,6 +55,7 @@ def deepvalues(l):
         for k in l.values():
             o += deepvalues(k)
         return o
+
 
 def flatten(l):
     """
@@ -78,7 +98,8 @@ def transpose(d):
         for key1, value1 in value0.items():
             if key1 not in out:
                 out[key1] = dict()
-            while isinstance(value1, dict) and len(value1) == 1 and "" in value1:
+            while isinstance(value1, dict) and \
+                    len(value1) == 1 and "" in value1:
                 value1 = value1[""]
             out[key1][key0] = value1
     return out
@@ -170,7 +191,6 @@ def nonzero_atlas(atlas_image_path, seg_image_path):
     # binarize image
     in_data[in_data != 0] = 1
 
-    seg_image = atlas_image_path
     seg_img = nib.load(atlas_image_path)
     seg_data = seg_img.get_data()
 

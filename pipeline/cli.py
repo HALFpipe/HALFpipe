@@ -37,7 +37,8 @@ class Cli(object):
         try:
             tty.setraw(sys.stdin)
         except termios.error:
-            c.error("Did you forget the docker arguments \"--interactive --tty\"?")
+            c.error("Did you forget the docker arguments " +
+                    "\"--interactive --tty\"?")
             raise
 
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
@@ -67,7 +68,7 @@ class Cli(object):
     def error(self, q):
         """
         Render text in error color
-        
+
         :param q: Text
 
         """
@@ -215,15 +216,18 @@ class Cli(object):
 
                     refresh()
 
-    #  from pipeline.Cli import Cli; c = Cli(); c.fields("How are you?", ["Today", "Yesterday"])
+    # from pipeline.Cli import Cli
+    # c = Cli()
+    # c.fields("How are you?", ["Today", "Yesterday"])
     def fields(self, q, o, max_length=6):
         """
         Text prompt with multiple fixed-width fields, used for example to
         input contrast vector for first level fMRI analysis.
-        
+
         :param q: Prompt text
         :param o: Initial value
-        :param max_length: Maximum length of each text input (Default value = 6)
+        :param max_length: Maximum length of each text input
+            (Default value = 6)
 
         """
         tty.setraw(sys.stdin)
@@ -329,12 +333,88 @@ class Cli(object):
 
             if 32 <= character <= 126:  # text input
                 if len(v[selected0]) < len(o[selected0]) - 2:
-                    v[selected0] = v[selected0][:selected1] + chr(character) + v[selected0][selected1:]
+                    v[selected0] = v[selected0][:selected1] + \
+                        chr(character) + v[selected0][selected1:]
                     selected1 += 1
                     refresh()
 
             if character == 127:  # backspace
                 if selected1 > 0:
-                    v[selected0] = v[selected0][:selected1 - 1] + v[selected0][selected1:]
+                    v[selected0] = v[selected0][:selected1 - 1] + \
+                        v[selected0][selected1:]
                     selected1 -= 1
                     refresh()
+
+    def choice(self, q, o):
+        """
+        Multiple choice prompt with multiple possible answers
+
+        :param q: Prompt text
+        :param o: List of possible answers
+
+        """
+        tty.setraw(sys.stdin)
+
+        sys.stdout.write(CURSOR_MOVE_LEFT)
+        sys.stdout.write(COLOR_NORMAL)
+        sys.stdout.write(q)
+        sys.stdout.write(RESET)
+        sys.stdout.write("\n")
+
+        selected = 0
+
+        chosen = [False for v in o]
+
+        def refresh():
+            """ renders the prompt """
+            sys.stdout.write(CURSOR_MOVE_LEFT)
+            sys.stdout.write(COLOR_NORMAL)
+            for i, oo in enumerate(o):
+                if i == selected:
+                    sys.stdout.write(COLOR_EMPHASIS)
+                else:
+                    sys.stdout.write(COLOR_NORMAL)
+                if chosen[i]:
+                    sys.stdout.write("[*] %s " % oo)
+                else:
+                    sys.stdout.write("[ ] %s " % oo)
+            sys.stdout.write(CURSOR_MOVE_LEFT)
+            sys.stdout.flush()
+
+        refresh()
+        while True:
+            character = ord(sys.stdin.read(1))
+
+            if character == 3:  # ctrl-c
+                sys.stdout.write(RESET)
+                sys.stdout.write("\n")
+
+                sys.stdout.write(CURSOR_SHOW)
+                sys.stdout.flush()
+
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
+
+                return None
+
+            if character in {10, 13}:  # enter
+                sys.stdout.write(RESET)
+                sys.stdout.write("\n")
+
+                sys.stdout.write(CURSOR_SHOW)
+                sys.stdout.flush()
+
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
+                return [v for v, c in zip(o, chosen) if c]
+
+            if character == 27:  # arrow keys
+                next1, next2 = ord(sys.stdin.read(1)), ord(sys.stdin.read(1))
+                if next1 == 91:
+                    if next2 == 68:  # left
+                        selected = max(0, selected - 1)
+                    elif next2 == 67:  # right
+                        selected = min(len(o) - 1, selected + 1)
+                    refresh()
+
+            if 32 <= character <= 126:  # text input
+                chosen[selected] = not chosen[selected]
+                refresh()
