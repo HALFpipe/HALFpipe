@@ -9,6 +9,25 @@ import nibabel as nib
 import numpy as np
 
 
+def _splitext(fname):
+    """Splits filename and extension (.gz safe)
+    >>> splitext('some/file.nii.gz')
+    ('file', '.nii.gz')
+    >>> splitext('some/other/file.nii')
+    ('file', '.nii')
+    >>> splitext('otherext.tar.gz')
+    ('otherext', '.tar.gz')
+    >>> splitext('text.txt')
+    ('text', '.txt')
+
+    Source: niworkflows
+    """
+    from pathlib import Path
+    basename = str(Path(fname).name)
+    stem = Path(basename.rstrip('.gz')).stem
+    return stem, basename[len(stem):]
+
+
 def get_first(l):
     """
     get first element from list
@@ -57,21 +76,17 @@ def deepvalues(l):
         return o
 
 
-def flatten(l):
-    """
-    Flatten a list
-    Always returns a list even if the input is not
-
-    :param l: Input list
-
-    """
-    if isinstance(l, str):
-        return [l]
-    else:
-        o = []
-        for k in l:
-            o += flatten(k)
-        return o
+def _ravel(in_val):
+    if not isinstance(in_val, list):
+        return in_val
+    flat_list = []
+    for val in in_val:
+        raveled_val = _ravel(val)
+        if isinstance(raveled_val, (tuple, list)):
+            flat_list.extend(raveled_val)
+        else:
+            flat_list.append(raveled_val)
+    return flat_list
 
 
 def get_float(input):

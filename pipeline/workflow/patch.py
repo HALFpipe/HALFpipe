@@ -2,22 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import sys
+
 import networkx as nx
 
 from copy import deepcopy
 
-from fmriprep.interfaces.bids import DerivativesDataSink
-
+from niworkflows.interfaces.bids import DerivativesDataSink
 from nipype.interfaces import utility as niu
 
 from .fake import FakeDerivativesDataSink
-
-# def _get_all_workflows(wf):
-#     workflows = [wf]
-#     for node in wf._graph.nodes():
-#         if isinstance(node, pe.Workflow):
-#             workflows.extend(_get_all_workflows(node))
-#     return workflows
 
 G = nx.DiGraph()
 G.add_edge("A", "C")
@@ -51,7 +45,8 @@ def _rank_collapse(graph):
         for node in zero_indegree:
             ranks[node] = i
             for _, child in graph.out_edges(node):
-                if graph.in_degree(child) == 1 and graph.out_degree(child) == 1:
+                if graph.in_degree(child) == 1 and \
+                        graph.out_degree(child) == 1:
                     _, child_ = next(iter(graph.out_edges(child)))
                     if graph.in_degree(child_) == 1:
                         child = child_
@@ -81,8 +76,8 @@ def patch_wf(workflow, images,
     """
     workflow._graph = workflow._create_flat_graph()
 
-    # fmriprep includes a bugfix for when multiple T1w images are passed, so 
-    # that only one is used for functional preprocessing. This can be the
+    # fmriprep includes a bugfix for when multiple T1w images are passed,
+    # so that only one is used for functional preprocessing. This can be the
     # the case in longitudinal studies.
     # However, as this function depends on BIDS, and because we don't support
     # longitudinal data in the first place, we attempt to remove this bugfix.
@@ -93,31 +88,47 @@ def patch_wf(workflow, images,
                     d["connect"][i] = (src[0], dest)
 
     for node in workflow._get_all_nodes():
-        if type(node._interface) is DerivativesDataSink:
+        if isinstance(node.interface, DerivativesDataSink):
             # the DerivativesDataSink class of fmriprep depends on the BIDS
-            # data structure to determine output file names. We replace it with a
-            # custom version that does not, this class is called FakeDerivativesDataSink.
-            base_directory = node._interface.inputs.base_directory
-            in_file = node._interface.inputs.in_file
-            source_file = node._interface.inputs.source_file
-            suffix = node._interface.inputs.suffix
-            extra_values = node._interface.inputs.extra_values
-            node._interface = FakeDerivativesDataSink(images=images,
-                                                      output_dir=output_dir,
-                                                      fmriprep_reportlets_dir=fmriprep_reportlets_dir,
-                                                      fmriprep_output_dir=fmriprep_output_dir,
-                                                      node_id="%s.%s" % (node._hierarchy, node.name), depends=None,
-                                                      base_directory=base_directory,
-                                                      source_file=source_file,
-                                                      in_file=in_file,
-                                                      suffix=suffix,
-                                                      extra_values=extra_values)
-        elif type(node._interface) is niu.Function and \
-                "fix_multi_T1w_source_name" in node._interface.inputs.function_str:
-            # Second line of defence against fix_multi_T1w_source_name
-            node._interface.inputs.function_str = "def fix_multi_T1w_source_name(in_files):\n    " \
-                                                  "if isinstance(in_files, str):\n        " \
-                                                  "return in_files\n    else:\n        return in_files[0]"
+            # data structure to determine output file names. We replace it with
+            # a custom version that does not, this class is called
+            # FakeDerivativesDataSink.
+            node_id = "%s.%s" % (node._hierarchy, node.name)
+            sys.stdout.write(
+                "Patching DerivativesDataSink {}\n".format(node_id))
+            node._interface = FakeDerivativesDataSink(
+                images=images,
+                output_dir=output_dir,
+                fmriprep_reportlets_dir=fmriprep_reportlets_dir,
+                fmriprep_output_dir=fmriprep_output_dir,
+                node_id=node_id, depends=None,
+
+                base_directory=node.inputs.base_directory,
+                source_file=node.inputs.source_file,
+                in_file=node.inputs.in_file,
+                suffix=node.inputs.suffix,
+                extra_values=node.inputs.extra_values,
+                keep_dtype=node.inputs.keep_dtype,
+                space=node.inputs.space,
+                check_hdr=node.inputs.check_hdr,
+                compress=node.inputs.compress
+            )
+        elif isinstance(node.interface, niu.Function):
+            if "fix_multi_T1w_source_name" in \
+                    node.interface.inputs.function_str:
+                # patch function nodes with fix_multi_T1w_source_name
+                node.interface.inputs.function_str = \
+                    "def fix_multi_T1w_source_name(in_files):\n" + \
+                    "    if isinstance(in_files, str):\n" + \
+                    "        return in_files\n" + \
+                    "    else:\n" + \
+                    "        return in_files[0]"
+            elif "_bids_relative" in \
+                    node.interface.inputs.function_str:
+                # patch function nodes with _bids_relative
+                node.interface.inputs.function_str = \
+                    "def _bids_relative(in_files, bids_root):\n" + \
+                    "    return in_files"
 
     # copy run configuration of root workflow to nodes
     for node in workflow._get_all_nodes():

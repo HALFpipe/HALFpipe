@@ -1,4 +1,4 @@
-ARG FMRIPREP_VERSION=1.1.6
+ARG FMRIPREP_VERSION=1.5.7
 ARG MRIQC_VERSION=0.14.2
 ARG CPAC_VERSION=v1.3.0
 
@@ -8,7 +8,7 @@ FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 # ENV HTTPS_PROXY https://141.42.1.215:8080
 
 RUN pip install --upgrade pip && \
-    pip install 'nibabel>=3.0.0' cython
+    pip install 'nibabel>=3.0.0' 'niworkflows~=1.1.3' cython 
 
 ARG MRIQC_VERSION
 

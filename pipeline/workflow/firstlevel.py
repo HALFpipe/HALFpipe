@@ -9,14 +9,12 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import io as nio
 from nipype.interfaces import fsl
 
-from fmriprep.workflows.anatomical import init_anat_preproc_wf
-from fmriprep.workflows.bold import init_func_preproc_wf
-from fmriprep.interfaces.bids import DerivativesDataSink
+from smriprep.workflows.anatomical import init_anat_preproc_wf
 
-from ..fmriprepsettings import (
-    anatSettings,
-    funcSettings
-)
+from fmriprep.workflows.bold import init_func_preproc_wf
+from fmriprep.interfaces import DerivativesDataSink
+
+from ..fmriprepsettings import settings as fmriprepsettings
 
 from .temporalfilter import init_temporalfilter_wf
 from .tsnr import init_tsnr_wf
@@ -43,11 +41,13 @@ from ..interface import (
 )
 
 _func_inputnode_fields = [
-    "t1_preproc", "t1_brain", "t1_mask", "t1_seg",
-    "t1_tpms", "t1_aseg", "t1_aparc",
-    "t1_2_mni_forward_transform", "t1_2_mni_reverse_transform",
+    "t1w_preproc", "t1w_brain", "t1w_mask", "t1w_dseg",
+    "t1w_aseg", "t1w_aparc", "t1w_tpms",
+    "template",
+    "anat2std_xfm", "std2anat_xfm",
+    "joint_template", "joint_anat2std_xfm", "joint_std2anat_xfm",
     "subjects_dir", "subject_id",
-    "t1_2_fsnative_forward_transform", "t1_2_fsnative_reverse_transform"
+    "fsnative2t1w_xfm"
 ]
 
 
@@ -74,11 +74,18 @@ def init_subject_wf(item, workdir, images, data):
         return subject_wf
 
     anat_preproc_wf = init_anat_preproc_wf(
-        name="T1w",
-        reportlets_dir=fmriprep_reportlets_dir,
-        output_dir=fmriprep_output_dir,
-        num_t1w=1,
-        **anatSettings
+        fmriprepsettings.bids_dir,
+        fmriprepsettings.freesurfer,
+        fmriprepsettings.hires,
+        fmriprepsettings.longitudinal,
+        fmriprepsettings.omp_nthreads,
+        fmriprep_output_dir,
+        fmriprepsettings.output_spaces,
+        1,  # num_t1w
+        fmriprep_reportlets_dir,
+        fmriprepsettings.skull_strip_template,
+        debug=fmriprepsettings.debug,
+        name="T1w"
     )
     anat_inputnode = anat_preproc_wf.get_node("inputnode")
     anat_inputnode.inputs.t1w = subjectdata["T1w"]
@@ -162,11 +169,32 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     layout = FakeBIDSLayout(bold_file, metadata)
 
     func_preproc_wf = init_func_preproc_wf(
-        bold_file=bold_file,
-        layout=layout,
-        reportlets_dir=fmriprep_reportlets_dir,
-        output_dir=fmriprep_output_dir,
-        **funcSettings)
+        fmriprepsettings.aroma_melodic_dim,
+        fmriprepsettings.bold2t1w_dof,
+        bold_file,
+        fmriprepsettings.cifti_output,
+        fmriprepsettings.debug,
+        None,  # dummy_scans
+        fmriprepsettings.err_on_aroma_warn,
+        fmriprepsettings.fmap_bspline,
+        fmriprepsettings.fmap_demean,
+        fmriprepsettings.force_syn,
+        fmriprepsettings.freesurfer,
+        fmriprepsettings.ignore,
+        fmriprepsettings.low_mem,
+        fmriprepsettings.medial_surface_nan,
+        fmriprepsettings.omp_nthreads,
+        fmriprep_output_dir,
+        fmriprepsettings.output_spaces,
+        fmriprepsettings.regressors_all_comps,
+        fmriprepsettings.regressors_dvars_th,
+        fmriprepsettings.regressors_fd_th,
+        fmriprep_reportlets_dir,
+        fmriprepsettings.t2s_coreg,
+        fmriprepsettings.use_aroma,
+        fmriprepsettings.use_bbr,
+        fmriprepsettings.use_syn,
+        layout=layout, num_bold=1)
 
     for node in func_preproc_wf._get_all_nodes():
         if type(node._interface) is fsl.SUSAN:
@@ -223,16 +251,16 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for f in _func_inputnode_fields
         ]),
         (func_preproc_wf, temporalfilter_wf, [
-            ("outputnode.nonaggr_denoised_file", "inputnode.bold_file")
+            ("outputnode.bold_std", "inputnode.bold_file")
         ]),
         (temporalfilter_wf, maskpreproc, [
             ("outputnode.filtered_file", "in_file")
         ]),
         (func_preproc_wf, maskpreproc, [
-            ("outputnode.bold_mask_mni", "mask_file")
+            ("outputnode.bold_mask_std", "mask_file")
         ]),
         (func_preproc_wf, ds_mask, [
-            ("outputnode.bold_mask_mni", "in_file")
+            ("outputnode.bold_mask_std", "in_file")
         ]),
         (maskpreproc, ds_preproc, [
             ("out_file", "in_file")
@@ -278,7 +306,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             in outByWorkflowName.items():
         wf.connect([
             (func_preproc_wf, firstlevel_wf, [
-                ("outputnode.bold_mask_mni", "inputnode.mask_file"),
+                ("outputnode.bold_mask_std", "inputnode.mask_file"),
                 ("outputnode.confounds", "inputnode.confounds"),
             ]),
             (maskpreproc, firstlevel_wf, [
@@ -297,7 +325,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             varname = make_varname(outname, "mask_file")
             wf.connect([
                 (func_preproc_wf, outputnode, [
-                    ("outputnode.bold_mask_mni", varname)
+                    ("outputnode.bold_mask_std", varname)
                 ])
             ])
 

@@ -65,7 +65,7 @@ def _merge_columns(in_list):
         if out_array is None:
             out_array = in_array
         else:
-            out_array = np.dstack((out_array, in_array))
+            out_array = np.hstack((out_array, in_array))
     out_array = np.squeeze(out_array)
     outputpath = op.join(os.getcwd(), "merged_columns.tsv")
     np.savetxt(outputpath, out_array, delimiter="\t")

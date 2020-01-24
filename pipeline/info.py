@@ -32,7 +32,7 @@ SETUP_REQUIRES = [
 ]
 
 REQUIRES = [
-    "fmriprep",
+    # "fmriprep", # FIXME dependency error
     "mriqc",
     "numpy",
     "scipy",

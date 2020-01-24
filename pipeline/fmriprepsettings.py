@@ -4,10 +4,22 @@
 
 import os
 
+from collections import OrderedDict
 from multiprocessing import cpu_count
 
 # Root directory of BIDS dataset
 bids_dir = "."
+
+# Perform ICA-AROMA on MNI-resampled functional series
+use_aroma = True
+err_on_aroma_warn = False
+# Maximum number of components identified by MELODIC within ICA-AROMA
+aroma_melodic_dim = -200
+
+# Criterion for flagging outliers
+regressors_all_comps = False
+regressors_dvars_th = 1.5
+regressors_fd_th = 0.5
 
 # Treat multiple sessions as longitudinal (may increase runtime)
 longitudinal = False
@@ -16,11 +28,12 @@ longitudinal = False
 t2s_coreg = False
 
 # Maximum number of threads across all processes
-nthreads = int(cpu_count()/2)
+nthreads = cpu_count()
 
 # Maximum number of threads an individual process may use
-# omp_nthreads = cpu_count()
-omp_nthreads = 2
+omp_nthreads = int(nthreads/4)
+if nthreads < 4:
+    omp_nthreads = int(nthreads/2)
 
 # Enable FreeSurfer surface reconstruction (may increase runtime)
 freesurfer = False
@@ -30,10 +43,15 @@ medial_surface_nan = False
 hires = True
 
 # Name of ANTs skull-stripping template ('OASIS' or 'NKI')
-skull_strip_template = "OASIS"
+skull_strip_template = ("OASIS30ANTs", None)
 
-template = "MNI152NLin2009cAsym"
-output_spaces = ["template"]
+template = {}
+
+# Ordered dictionary where keys are TemplateFlow ID strings
+# Values of the dictionary aggregate modifiers
+output_spaces = OrderedDict([
+    ("MNI152NLin6Asym", {})  # necessary for ICA-AROMA
+])
 
 # Preprocessing steps to skip (may include "slicetiming", "fieldmaps")
 ignore = []
@@ -69,27 +87,15 @@ template_out_grid = os.path.join(os.getenv("FSLDIR"),
 # Generate bold CIFTI file in output spaces
 cifti_output = False
 
-# Perform ICA-AROMA on MNI-resampled functional series
-use_aroma = True
 
-ignore_aroma_err = False
-
-aroma_melodic_dim = None
-
-anatSettings = {
+settings_dict = {
+    "bids_dir": bids_dir,
+    "aroma_melodic_dim": aroma_melodic_dim,
     "skull_strip_template": skull_strip_template,
-    "output_spaces": output_spaces,
-    "template": template,
-    "debug": debug,
     "longitudinal": longitudinal,
-    "omp_nthreads": omp_nthreads,
     "freesurfer": freesurfer,
-    "hires": hires
-}
-
-funcSettings = {
+    "hires": hires,
     "ignore": ignore,
-    "freesurfer": freesurfer,
     "use_bbr": use_bbr,
     "t2s_coreg": t2s_coreg,
     "bold2t1w_dof": bold2t1w_dof,
@@ -107,5 +113,16 @@ funcSettings = {
     "template_out_grid": template_out_grid,
     "use_aroma": use_aroma,
     "aroma_melodic_dim": aroma_melodic_dim,
-    "ignore_aroma_err": ignore_aroma_err
+    "err_on_aroma_warn": err_on_aroma_warn,
+    "regressors_all_comps": regressors_all_comps,
+    "regressors_dvars_th": regressors_dvars_th,
+    "regressors_fd_th": regressors_fd_th
 }
+
+
+class dict_wrapper(object):
+    def __init__(self, d):
+        self.__dict__ = d
+
+
+settings = dict_wrapper(settings_dict)

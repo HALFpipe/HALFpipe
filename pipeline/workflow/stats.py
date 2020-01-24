@@ -8,7 +8,7 @@ from nipype.interfaces import fsl
 
 from ..interface import GroupDesign
 
-from ..utils import flatten
+from ..utils import _ravel
 
 
 def gen_merge_op_str(fileNames):
@@ -208,10 +208,10 @@ def init_higherlevel_wf(fieldnames,
         ]),
 
         (flameo, outputnode, [
-            (("copes", flatten), "copes"),
-            (("var_copes", flatten), "varcopes"),
-            (("zstats", flatten), "zstats"),
-            (("tdof", flatten), "dof_files")
+            (("copes", _ravel), "copes"),
+            (("var_copes", _ravel), "varcopes"),
+            (("zstats", _ravel), "zstats"),
+            (("tdof", _ravel), "dof_files")
         ]),
     ])
 

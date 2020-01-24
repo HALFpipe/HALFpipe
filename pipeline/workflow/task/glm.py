@@ -10,7 +10,7 @@ from nipype.interfaces import fsl
 from nipype.interfaces.base import Bunch
 
 from ...utils import (
-    flatten,
+    _ravel,
     get_float
 )
 from ..confounds import make_confounds_selectcolumns
@@ -204,13 +204,13 @@ def init_glm_wf(metadata, conditions,
         ]),
 
         (modelestimate, maskcopes, [
-            (("copes", flatten), "in_file"),
+            (("copes", _ravel), "in_file"),
         ]),
         (modelestimate, maskvarcopes, [
-            (("varcopes", flatten), "in_file"),
+            (("varcopes", _ravel), "in_file"),
         ]),
         (modelestimate, maskzstats, [
-            (("zstats", flatten), "in_file"),
+            (("zstats", _ravel), "in_file"),
         ]),
 
         (maskcopes, splitcopes, [

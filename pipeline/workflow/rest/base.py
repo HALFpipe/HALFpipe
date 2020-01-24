@@ -30,22 +30,20 @@ def init_rest_wf(metadata,
     )
 
     unfilteredFileEndpoint = [inputnode, "bold_file"]
+    confoundsFilteredFileEndpoint = unfilteredFileEndpoint
 
     confoundsregression_wf = init_confoundsregression_wf(metadata)
-    workflow.connect(
-        *unfilteredFileEndpoint,
-        confoundsregression_wf, "inputnode.bold_file"
-    )
-
-    workflow.connect([
-        (inputnode, confoundsregression_wf, [
-            ("mask_file", "inputnode.mask_file"),
-            ("confounds", "inputnode.confounds"),
-        ])
-    ])
-
-    confoundsFilteredFileEndpoint = unfilteredFileEndpoint
     if confoundsregression_wf is not None:
+        workflow.connect(
+            *unfilteredFileEndpoint,
+            confoundsregression_wf, "inputnode.bold_file"
+        )
+        workflow.connect([
+            (inputnode, confoundsregression_wf, [
+                ("mask_file", "inputnode.mask_file"),
+                ("confounds", "inputnode.confounds"),
+            ])
+        ])
         confoundsFilteredFileEndpoint = \
             [confoundsregression_wf, "outputnode.filtered_file"]
 
