@@ -163,7 +163,7 @@ def init_dualregression_wf(metadata, componentsfile,
             ("confounds", "in_file"),
         ]),
         (selectcolumns, mergecolumns, [
-            ("confounds", "in2"),
+            ("out_file", "in2"),
         ]),
         (mergecolumns, glm1, [
             ("out_file", "design")

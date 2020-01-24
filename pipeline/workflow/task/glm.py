@@ -39,6 +39,10 @@ def init_glm_wf(metadata, conditions,
 
     workflow = pe.Workflow(name=name)
 
+    if "Contrasts" not in metadata:
+        return workflow, [], []
+    if "RepetitionTime" not in metadata:
+        return workflow, [], []
     contrasts = metadata["Contrasts"]
     repetition_time = metadata["RepetitionTime"]
 

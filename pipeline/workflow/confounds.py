@@ -80,7 +80,7 @@ def init_confoundsregression_wf(metadata,
             ("confounds", "in_file"),
         ]),
         (selectcolumns, regfilt, [
-            ("confounds", "design_file"),
+            ("out_file", "design_file"),
         ]),
         (inputnode, regfilt, [
             ("bold_file", "in_file"),

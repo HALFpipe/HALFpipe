@@ -263,11 +263,12 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         )
 
     # first level stats workflows
-    conditions = lookup(metadata["Conditions"],
-                        subject_id=subject, run_id=run)
-    aggregate(init_glm_wf(
-        metadata, conditions
-    ))
+    if "Conditions" in metadata:
+        conditions = lookup(metadata["Conditions"],
+                            subject_id=subject, run_id=run)
+        aggregate(init_glm_wf(
+            metadata, conditions
+        ))
     aggregate(init_rest_wf(
         metadata
     ))

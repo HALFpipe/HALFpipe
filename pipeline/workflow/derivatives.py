@@ -7,6 +7,8 @@ from os import path as op
 from nipype.pipeline import engine as pe
 from nipype.interfaces import io as nio
 
+from .utils import make_varname
+
 
 def get_container_path(subject, scan=None, run=None):
     container = subject
@@ -17,27 +19,32 @@ def get_container_path(subject, scan=None, run=None):
     return container
 
 
-def make_firstlevel_datasink(workflow, 
+def make_firstlevel_datasink(workflow,
                              firstlevel_wf, outnames, outfields,
                              output_dir, subject, scan=None, run=None):
     name = workflow.name
 
+    varnames = []
     for outname in outnames:
-        for outfield in outfields:
-            varname = "{}_{}".format(outname, outfield)
+        _outfields = outfields
+        if isinstance(_outfields, dict):
+            _outfields = _outfields[outname]
+        for outfield in _outfields:
+            varnames.append(make_varname(outname, outfield))
 
-            ds_field = pe.Node(
-                interface=nio.DataSink(
-                    varname
-                ),
-                name="ds_{}_{}_{}".format(name, outname, outfield),
-                run_without_submitting=True
-            )
-            ds_field.inputs.base_directory = output_dir
-            ds_field.inputs.container = get_container_path(subject, scan, run)
+    ds_field = pe.Node(
+        interface=nio.DataSink(
+            infields=varnames
+        ),
+        name="ds_{}".format(name),
+        run_without_submitting=True
+    )
+    ds_field.inputs.base_directory = output_dir
+    ds_field.inputs.container = get_container_path(subject, scan, run)
 
-            workflow.connect([
-                (firstlevel_wf, ds_field, [
-                    ("outputnode.{}".format(varname), varname)
-                ]),
-            ])
+    for varname in varnames:
+        workflow.connect([
+            (firstlevel_wf, ds_field, [
+                ("outputnode.{}".format(varname), varname)
+            ]),
+        ])

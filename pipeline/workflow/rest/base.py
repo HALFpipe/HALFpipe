@@ -23,6 +23,8 @@ def init_rest_wf(metadata,
 
     workflow = pe.Workflow(name=name)
 
+    unfilteredFileEndpoint = [inputnode, "bold_file"]
+
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(niu.IdentityInterface(
         fields=["bold_file", "mask_file", "confounds"]),
@@ -30,8 +32,17 @@ def init_rest_wf(metadata,
     )
 
     confoundsregression_wf = init_confoundsregression_wf(metadata)
+    workflow.connect(
+        *unfilteredFileEndpoint,
+        confoundsregression_wf, "inputnode.bold_file"
+    )
 
-    unfilteredFileEndpoint = [inputnode, "bold_file"]
+    workflow.connect([
+        (inputnode, confoundsregression_wf, [
+            ("mask_file", "inputnode.mask_file"),
+            ("confounds", "inputnode.confounds"),
+        ])
+    ])
 
     confoundsFilteredFileEndpoint = unfilteredFileEndpoint
     if confoundsregression_wf is not None:
@@ -46,6 +57,12 @@ def init_rest_wf(metadata,
         bandpass_wf, "inputnode.bold_file"
     )
     bandpassFilteredFileEndpoint = [bandpass_wf, "outputnode.filtered_file"]
+
+    workflow.connect([
+        (inputnode, bandpass_wf, [
+            ("mask_file", "inputnode.mask_file"),
+        ])
+    ])
 
     outByWorkflowName = {}
 
@@ -76,16 +93,11 @@ def init_rest_wf(metadata,
         )
 
     if "ICAMaps" in metadata:
-        for componentsfile in metadata["ICAMaps"]:
-            name = "{}_dualregression_wf".format(
-                op.splitext(
-                    op.basename(componentsfile)
-                )[0]
-            )
+        for name, componentsfile in metadata["ICAMaps"].items():
             out = init_dualregression_wf(
                 metadata,
                 componentsfile,
-                name=name
+                name="{}_dualregression_wf".format(name)
             )
             aggregate(out)
             dualregression_wf, outnames, _ = out
@@ -130,5 +142,7 @@ def init_rest_wf(metadata,
     _, outfieldsByOutname = make_outputnode(
         workflow, outByWorkflowName
     )
+
+    outnames = list(outfieldsByOutname.keys())
 
     return workflow, outnames, outfieldsByOutname
