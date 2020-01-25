@@ -110,7 +110,7 @@ class Filter(IOBase):
             )
 
         for fieldname in self._fieldnames:
-            outputs["fieldname"] = []
+            outputs[fieldname] = []
 
         for idx in range(self._numinputs):
             use = isdefined(getisenabled(idx)) and getisenabled(idx)

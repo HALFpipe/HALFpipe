@@ -22,15 +22,22 @@ from .tsnr import init_tsnr_wf
 from .rest import init_rest_wf
 from .task import init_glm_wf
 
-from .derivatives import make_firstlevel_datasink
+from .derivatives import (
+    get_container_path,
+    make_firstlevel_datasink
+)
 
 from .patch import patch_wf
 from .fake import FakeBIDSLayout
 
-from ..utils import lookup
+from ..utils import (
+    lookup,
+    _get_first
+)
 from .utils import (
     make_varname,
-    make_outputnode
+    make_outputnode,
+    dataSinkRegexpSubstitutions
 )
 
 from ..interface import (
@@ -217,22 +224,17 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     #     name="apply_xfm"
     # )
 
-    ds_preproc = pe.Node(
+    ds_scan = pe.Node(
         interface=nio.DataSink(
+            infields=["preproc", "mask"],
+            regexp_substitutions=dataSinkRegexpSubstitutions,
             base_directory=output_dir,
-            source_file=bold_file,
-            suffix="preproc"
+            container=get_container_path(subject, scan, run),
+            suffix="preproc",
+            parameterization=False,
+            force_run=True
         ),
-        name="ds_preproc", run_without_submitting=True
-    )
-
-    ds_mask = pe.Node(
-        interface=DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            suffix="mask"
-        ),
-        name="ds_mask", run_without_submitting=True
+        name="ds_scan", run_without_submitting=True
     )
 
     tsnr_wf = init_tsnr_wf()
@@ -251,19 +253,19 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for f in _func_inputnode_fields
         ]),
         (func_preproc_wf, temporalfilter_wf, [
-            ("outputnode.bold_std", "inputnode.bold_file")
+            (("outputnode.bold_std", _get_first), "inputnode.bold_file")
         ]),
         (temporalfilter_wf, maskpreproc, [
             ("outputnode.filtered_file", "in_file")
         ]),
         (func_preproc_wf, maskpreproc, [
-            ("outputnode.bold_mask_std", "mask_file")
+            (("outputnode.bold_mask_std", _get_first), "mask_file")
         ]),
-        (func_preproc_wf, ds_mask, [
-            ("outputnode.bold_mask_std", "in_file")
+        (func_preproc_wf, ds_scan, [
+            (("outputnode.bold_mask_std", _get_first), "preproc")
         ]),
-        (maskpreproc, ds_preproc, [
-            ("out_file", "in_file")
+        (maskpreproc, ds_scan, [
+            ("out_file", "mask")
         ]),
 
         (temporalfilter_wf, tsnr_wf, [
@@ -306,7 +308,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             in outByWorkflowName.items():
         wf.connect([
             (func_preproc_wf, firstlevel_wf, [
-                ("outputnode.bold_mask_std", "inputnode.mask_file"),
+                (("outputnode.bold_mask_std", _get_first),
+                    "inputnode.mask_file"),
                 ("outputnode.confounds", "inputnode.confounds"),
             ]),
             (maskpreproc, firstlevel_wf, [
@@ -325,7 +328,7 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             varname = make_varname(outname, "mask_file")
             wf.connect([
                 (func_preproc_wf, outputnode, [
-                    ("outputnode.bold_mask_std", varname)
+                    (("outputnode.bold_mask_std", _get_first), varname)
                 ])
             ])
 

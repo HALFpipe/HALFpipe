@@ -5,6 +5,8 @@
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
+dataSinkRegexpSubstitutions = [(r"(/.+)/.+.nii.gz", r"\1.nii.gz")]
+
 
 def make_varname(outname, outfield):
     return "{}_{}".format(outname, outfield)
@@ -56,8 +58,8 @@ def make_outputnode(workflow, outByWorkflowName,
     outfieldsByOutname = {
         outname:
             outfields if isinstance(outfields, list) else outfields[outname]
-        for outname in outnames
         for workflowName, (_, outnames, outfields) in outByWorkflowName.items()
+        for outname in outnames
     }
 
     for outfield in extraOutfields:

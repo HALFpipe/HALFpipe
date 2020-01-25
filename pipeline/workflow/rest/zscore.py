@@ -8,6 +8,10 @@ from nipype.interfaces import fsl
 
 
 def init_zscore_wf(name="zscore"):
+    """
+    Within-volume z score
+    Used for ReHo and ALFF
+    """
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -28,7 +32,7 @@ def init_zscore_wf(name="zscore"):
         :param list
         :return: op_string for fslmaths
         """
-        return "-sub {:f} -dev {:f}".format(*list)
+        return "-sub {:f} -div {:f}".format(*list)
 
     zscore = pe.Node(
         interface=fsl.ImageMaths(),
@@ -38,7 +42,7 @@ def init_zscore_wf(name="zscore"):
     outputnode = pe.Node(
         interface=util.IdentityInterface(
             fields=["out_file"]),
-        name="inputnode"
+        name="outputnode"
     )
 
     workflow.connect([
@@ -47,6 +51,7 @@ def init_zscore_wf(name="zscore"):
             ("mask_file", "mask_file")
         ]),
         (inputnode, zscore, [
+            ("in_file", "in_file"),
             ("mask_file", "mask_file")
         ]),
         (stats, zscore, [

@@ -6,6 +6,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from ...utils import _get_first
+
 
 def init_brainatlas_wf(metadata, name="brainatlas"):
     """
@@ -26,7 +28,7 @@ def init_brainatlas_wf(metadata, name="brainatlas"):
         fields=["bold_file", "mask_file"]),
         name="inputnode"
     )
-        
+
     if "BrainAtlasImage" not in metadata:
         return workflow, [], []
 
@@ -43,7 +45,7 @@ def init_brainatlas_wf(metadata, name="brainatlas"):
     maths.inputs.in_file = atlas_paths
 
     # Creates label string for fslmeants
-    def get_brain_atlas_label_string(in_file):
+    def make_brainatlas_label_arg(in_file):
         label_commands = []
         for atlas in in_file:
             label_commands.append(f"--label={atlas}")
@@ -55,40 +57,40 @@ def init_brainatlas_wf(metadata, name="brainatlas"):
         iterfield=["args"]
     )
 
+    splitmatrices = pe.Node(
+        interface=niu.Split(splits=[1 for atlasname in atlasnames]),
+        name="splitmatrices"
+    )
+
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["brainatlas_matrix_file"]),
+        fields=["{}_matrix".format(atlasname)
+                for atlasname in atlasnames]),
         name="outputnode"
     )
 
     workflow.connect([
-        (inputnode, design_node, [
-            ("movpar_file", "movpar_file"),
-            ("csf_wm_meants_file", "csf_wm_meants_file"),
-            ("gs_meants_file", "gs_meants_file"),
-        ]),
-        (inputnode, glm, [
-            ("bold_file", "in_file"),
-        ]),
-        (design_node, glm, [
-            ("design", "design"),
-        ]),
         (inputnode, maths, [
             ("mask_file", "mask_file")
         ]),
-        (glm, meants, [
-            ("out_res", "in_file")
+        (inputnode, meants, [
+            ("bold_file", "in_file")
         ]),
-        (maths, brain_atlas_label_string, [
-            ("out_file", "in_file")
+        (maths, meants, [
+            (("out_file", make_brainatlas_label_arg), "in_file")
         ]),
-        (brain_atlas_label_string, meants, [
-            ("label_string", "args")
-        ]),
-        (meants, outputnode, [
-            ("out_file", "brainatlas_matrix_file"),
+        (meants, splitmatrices, [
+            ("out_file", "inlist"),
         ]),
     ])
 
-    outfields = []
+    # connect outputs named for the atlases
+    for i, atlasname in enumerate(atlasnames):
+        workflow.connect([
+            (splitmatrices, outputnode, [
+                (("out%i" % (i + 1), _get_first), "%s_matrix" % atlasname)
+            ]),
+        ])
+
+    outfields = ["matrix"]
 
     return workflow, atlasnames, outfields

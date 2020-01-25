@@ -7,7 +7,10 @@ from os import path as op
 from nipype.pipeline import engine as pe
 from nipype.interfaces import io as nio
 
-from .utils import make_varname
+from .utils import (
+    make_varname,
+    dataSinkRegexpSubstitutions
+)
 
 
 def get_container_path(subject, scan=None, run=None):
@@ -34,7 +37,10 @@ def make_firstlevel_datasink(workflow,
 
     ds_field = pe.Node(
         interface=nio.DataSink(
-            infields=varnames
+            infields=varnames,
+            regexp_substitutions=dataSinkRegexpSubstitutions,
+            parameterization=False,
+            force_run=True
         ),
         name="ds_{}".format(name),
         run_without_submitting=True

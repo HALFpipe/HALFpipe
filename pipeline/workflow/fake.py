@@ -87,7 +87,8 @@ def _find(target, d):
 
 class FakeDerivativesDataSink(DerivativesDataSink):
     def __init__(self,
-                 images, output_dir, fmriprep_reportlets_dir, fmriprep_output_dir,
+                 images, output_dir,
+                 fmriprep_reportlets_dir, fmriprep_output_dir,
                  node_id, depends,
                  **inputs):
         super(FakeDerivativesDataSink, self).__init__(**inputs)

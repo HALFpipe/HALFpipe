@@ -14,10 +14,11 @@ from ...interface import (
     MatrixToTSV
 )
 from ..confounds import make_confounds_selectcolumns
+from ...utils import _get_first
 
 
 def init_seedconnectivity_wf(metadata,
-                             name="firstlevel"):
+                             name="seedconnectivity"):
     """
     create workflow to calculate seed connectivity maps
     for resting state functional scans
@@ -184,13 +185,13 @@ def init_seedconnectivity_wf(metadata,
     for i, seedname in enumerate(seednames):
         workflow.connect([
             (splitcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_stat" % seedname)
+                (("out%i" % (i + 1), _get_first), "%s_stat" % seedname)
             ]),
             (splitvarcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_var" % seedname)
+                (("out%i" % (i + 1), _get_first), "%s_var" % seedname)
             ]),
             (splitzstats, outputnode, [
-                ("out%i" % (i + 1), "%s_zstat" % seedname)
+                (("out%i" % (i + 1), _get_first), "%s_zstat" % seedname)
             ]),
             (gendoffile, outputnode, [
                 ("out_file", "%s_dof_file" % seedname)

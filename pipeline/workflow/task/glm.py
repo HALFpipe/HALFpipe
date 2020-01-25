@@ -11,9 +11,21 @@ from nipype.interfaces.base import Bunch
 
 from ...utils import (
     _ravel,
-    get_float
+    _get_first
 )
 from ..confounds import make_confounds_selectcolumns
+
+
+def _get_float(input):
+    def flatten(l):
+        if isinstance(l, str) or isinstance(l, float):
+            return [l]
+        else:
+            o = []
+            for k in l:
+                o += flatten(k)
+            return o
+    return float(flatten(input)[0])
 
 
 def init_glm_wf(metadata, conditions,
@@ -186,7 +198,7 @@ def init_glm_wf(metadata, conditions,
             ("bold_file", "in_file")
         ]),
         (stats, modelestimate, [
-            (("out_stat", get_float), "threshold")
+            (("out_stat", _get_float), "threshold")
         ]),
         (modelgen, modelestimate, [
             ("design_file", "design_file"),
@@ -228,16 +240,16 @@ def init_glm_wf(metadata, conditions,
     for i, conname in enumerate(connames):
         workflow.connect([
             (splitcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_stat" % conname)
+                (("out%i" % (i + 1), _get_first), "%s_stat" % conname)
             ]),
             (splitvarcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_var" % conname)
+                (("out%i" % (i + 1), _get_first), "%s_var" % conname)
+            ]),
+            (splitzstats, outputnode, [
+                (("out%i" % (i + 1), _get_first), "%s_zstat" % conname)
             ]),
             (modelestimate, outputnode, [
                 ("dof_file", "%s_dof_file" % conname)
-            ]),
-            (splitzstats, outputnode, [
-                ("out%i" % (i + 1), "%s_zstat" % conname)
             ]),
         ])
 

@@ -17,9 +17,9 @@ def _motion_cutoff(mean_fd_cutoff, fd_greater_0_5_cutoff, confounds=None):
     df_confounds = pd.read_csv(confounds, sep="\t")
 
     # motion_report part
-    mean_fd = df_confounds["FramewiseDisplacement"].mean()
+    mean_fd = df_confounds["framewise_displacement"].mean()
 
-    fd_greater_0_5 = np.mean(df_confounds["FramewiseDisplacement"] > 0.5)
+    fd_greater_0_5 = np.mean(df_confounds["framewise_displacement"] > 0.5)
 
     return not (mean_fd > mean_fd_cutoff or
                 fd_greater_0_5 > fd_greater_0_5_cutoff)
@@ -46,6 +46,8 @@ class MotionCutoff(SimpleInterface):
 
     def _run_interface(self, runtime):
         keep = _motion_cutoff(
+            self.inputs.mean_fd_cutoff,
+            self.inputs.fd_greater_0_5_cutoff,
             confounds=self.inputs.confounds,
         )
         self._results["keep"] = keep

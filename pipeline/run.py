@@ -3,32 +3,24 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import pandas as pd
-import nibabel as nib
-import json
-from glob import glob
-from argparse import ArgumentParser
-from .cli import Cli
-from .conditions import parse_condition_files
+
 from .info import __version__
-from .workflow import init_workflow  # , init_stat_only_workflow
-from .logging import init_logging
-from .patterns import ambiguous_match
-from .utils import get_path, transpose, firstval
-from .file_checks import file_checks
 
 from multiprocessing import set_start_method, cpu_count
 set_start_method("forkserver", force=True)
-
-# Debug config for stop on first crash
-# from nipype import config
-# cfg = dict(execution={"stop_on_first_crash": True})
-# config.update_config(cfg)
 
 EXT_PATH = "/ext"
 
 
 def main():
+    from argparse import ArgumentParser
+    from .utils import get_path, transpose, firstval
+
+    from .cli import Cli
+
+    from .conditions import parse_condition_files
+    from .patterns import ambiguous_match
+
     ap = ArgumentParser(description="")
     ap.add_argument("-w", "--workdir")
     ap.add_argument("-p", "--nipype-plugin")
@@ -37,6 +29,7 @@ def main():
     ap.add_argument("-b", "--block-size")
     ap.add_argument("-f", "--file-status", action="store_true")
     ap.add_argument("-o", "--only-stats", action="store_true")
+    ap.add_argument("-d", "--debug-nipype", action="store_true")
     args = ap.parse_args()
 
     workdir = None
@@ -86,6 +79,8 @@ def main():
     # helper functions
     #
 
+    from glob import glob
+
     def get_file(description):
         path = get_path(
             c.read("Specify the path of the %s file" % description),
@@ -131,6 +126,7 @@ def main():
             glob_path = glob_path.replace("?", "*")
         if conditions:
             glob_path = glob_path.replace("$", "*")
+
         glob_result = glob(glob_path)
 
         glob_result = [g for g in glob_result if os.path.isfile(g)]
@@ -263,6 +259,8 @@ def main():
         response0 = c.select("Is %s available?" % description, ["Yes", "No"])
         # c.info("Please specify %s" % description)
         # response0 = "Yes"
+
+        import nibabel as nib
 
         def get_scan(scanname):
             configuration[scanname] = dict()
@@ -449,6 +447,10 @@ def main():
         configuration["MotionCutoff"] = motion_cutoff
         c.info("")
 
+        #
+        # group design
+        #
+
         response0 = c.select("Specify a group-level design?", ["Yes", "No"])
         if response0 == "Yes":
             group_design = {}
@@ -459,7 +461,14 @@ def main():
             spreadsheet_name = "covariates/group data spreadsheet"
             spreadsheet_file = get_file(spreadsheet_name)
 
+            import pandas as pd
             spreadsheet = pd.read_csv(spreadsheet_file)
+
+            # replace not available values by numpy NaN
+            import numpy as np
+            spreadsheet.replace({
+                "NaN": np.nan, "n/a": np.nan, "NA": np.nan
+            }, inplace=True)
 
             columns = spreadsheet.columns.tolist()
 
@@ -577,6 +586,7 @@ def main():
                                      ["Yes", "No"])
         c.info("")
 
+        import json
         with open(path_to_pipeline_json, "w+") as f:
             json.dump(
                 {"images": images, "metadata": configuration},
@@ -589,6 +599,7 @@ def main():
 
     # Manual file check: Check file status after first level statistics is done
     if args.file_status:
+        from .file_checks import file_checks
         file_checks(workdir, json_dir, path_to_pipeline_json)
 
     # Run workflow if setup_only flag is not given
@@ -608,250 +619,40 @@ def main():
                 "plugin": args.nipype_plugin
             }
 
+        from .logging import init_logging
         init_logging(workdir, path_to_pipeline_json)
 
         import gc
         gc.collect()
 
         if args.only_stats:
-            workflow = init_stat_only_workflow(workdir, path_to_pipeline_json)
-            workflow.run(**plugin_settings)
-        else:
-            # import cProfile
-            # pr = cProfile.Profile()
-            # pr.enable()
+            return
+            # workflow = \
+            #     init_stat_only_workflow(workdir, path_to_pipeline_json)
+            # workflow.run(**plugin_settings)
 
-            workflow = init_workflow(workdir, path_to_pipeline_json)
+        if args.debug_nipype:
+            # Debug config for stop on first crash
+            from nipype import config
+            cfg = dict(execution={"stop_on_first_crash": True})
+            config.update_config(cfg)
 
-            # pr.disable()
-            # pr.print_stats(sort = "time")
-            # pr.dump_stats("/ext/Volumes/leassd/init_workflow.txt")
+        # import cProfile
+        # pr = cProfile.Profile()
+        # pr.enable()
 
-            # pr = cProfile.Profile()
-            # pr.enable()
+        from .workflow import init_workflow
+        workflow = init_workflow(workdir, path_to_pipeline_json)
 
-            workflow.run(**plugin_settings)
+        # pr.disable()
+        # pr.print_stats(sort = "time")
+        # pr.dump_stats("/ext/Volumes/leassd/init_workflow.txt")
 
-            # pr.disable()
-            # pr.print_stats(sort = "time")
-            # pr.dump_stats("/ext/Volumes/leassd/run_workflow.txt")
+        # pr = cProfile.Profile()
+        # pr.enable()
 
-    #     # copy confounds.tsv from task to intermediates/subject
-    #     # access pipeline.json to get subjects and tasks for path
-    #     with open(path_to_pipeline_json, "r") as f:
-    #         configuration = json.load(f)
-    # 
-    #     flattened_configuration = transpose(configuration["images"])
-    # 
-    #     for subject in flattened_configuration:
-    #         # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-    #         for key in flattened_configuration[subject]:
-    #             if key not in ["T1w", "T2w", "FLAIR"]:
-    #                 # Taskdata exists
-    #                 task = key
-    #                 # use glob for wildcard as path has truncated subject_id in fmriprep
-    #                 try:
-    #                     source = glob(workdir + "/nipype/sub_" + subject + "/scan_" + task + "/func_preproc*" +
-    #                                   "/bold_confounds_wf/concat/confounds.tsv")[0]
-    #                     destination = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
-    #                     shutil.copyfile(src=source, dst=destination)
-    #                 except IndexError:
-    #                     print(
-    #                         "Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...")
-    #             else:
-    #                 # Taskdata doesn"t exist
-    #                 pass
-    #     # calculate correlation matrix from atlas matrix
-    #     # save correlation matrix as csv
-    #     for subject in flattened_configuration:
-    #         for key in flattened_configuration[subject]:
-    #             if key not in ["T1w", "T2w", "FLAIR"]:
-    #                 task = key
-    #                 try:
-    #                     for idx, atlas_idx in enumerate(
-    #                             ["%04d" % x for x in range(len(configuration["metadata"][task]["BrainAtlasImage"]))]):
-    #                         try:
-    #                             if len(configuration["metadata"][task]["BrainAtlasImage"]) >= 2:
-    #                                 source = workdir + "/intermediates/" + subject + "/" + task + \
-    #                                          "/brainatlas_matrix" + str(atlas_idx) + ".txt"
-    #                             else:
-    #                                 source = workdir + "/intermediates/" + subject + "/" + task + "/brainatlas_matrix.txt"
-    #                             destination = workdir + "/intermediates/" + subject + "/" + task + \
-    #                                           "/corr_matrix_" + \
-    #                                           list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx] + \
-    #                                           ".csv"
-    #                             atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-    #                             # drop last column as there is only NaN in there due to delimiting issues
-    #                             atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
-    #                                               inplace=True)
-    #                             # coverage part (#issue9)
-    #                             atlas_name = list(configuration["metadata"][task]["BrainAtlasImage"].keys())[idx]
-    #                             atlas_file = configuration["metadata"][task]["BrainAtlasImage"][atlas_name]
-    #                             seg_image_path = glob(workdir + "/nipype/sub_" + subject + "/scan_" +
-    #                                                   task + "/func_preproc*" +
-    #                                                   "/bold_mni_trans_wf/mask_mni_tfm/"
-    #                                                   "ref_image_corrected_brain_mask_maths_trans.nii.gz")[0]
-    #                             dest_coverage = workdir + "/intermediates/" + subject + "/" + task + "/" + \
-    #                                             atlas_name + "_coverage.csv"
-    #                             # create get coverage from util function and create dataframe
-    #                             df_coverage = pd.DataFrame(nonzero_atlas(
-    #                                 seg_image_path=seg_image_path,
-    #                                 atlas_image_path=atlas_file))
-    #                             df_coverage.columns = ["label", "data", "atlas"]
-    #                             df_coverage["ratio"] = df_coverage["data"] / df_coverage["atlas"]
-    #                             df_coverage.to_csv(dest_coverage, index=False)
-    #                             # get list of all rows below threshold
-    #                             threshold = 0.8
-    #                             indices_below_threshold = list(
-    #                                 df_coverage.loc[df_coverage["ratio"] < threshold].index
-    #                             )
-    #                             for index in indices_below_threshold:
-    #                                 atlas_matrix[index] = np.nan
-    #                             corr_matrix = atlas_matrix.corr(method="pearson")
-    #                             for index in indices_below_threshold:
-    #                                 corr_matrix[index] = "NaN"
-    #                                 corr_matrix.loc[index] = "NaN"
-    #                             corr_matrix.to_csv(destination, index=False, header=False)
-    #                             shutil.copy(source,
-    #                                         workdir + "/intermediates/" + subject + "/" + task +
-    #                                         "/brainatlas_timeseries_" +
-    #                                         list(configuration["metadata"][task]["BrainAtlasImage"].keys())[
-    #                                             idx] + ".txt")
-    #                         except OSError as e:
-    #                             print(
-    #                                 "Warning: atlas_matrix was not found. Correlation matrix could not be computed")
-    #                             print(e)
-    #                 except KeyError:
-    #                     pass
-    #     # create confounds_mni.tsv / motion_report.csv
-    #     df_motion = pd.DataFrame(
-    #         columns=["Subject", "Mean_FD", "%volume_lg_0.5", "Max_X", "Max_Y", "Max_Z", "Max_RotX", "Max_RotY",
-    #                  "Max_RotZ"])
-    #     for subject in flattened_configuration:
-    #         # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-    #         for key in flattened_configuration[subject]:
-    #             if key not in ["T1w", "T2w", "FLAIR"]:
-    #                 # Taskdata exists
-    #                 task = key
-    #                 # get dataframe for original confounds.tsv
-    #                 orig_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds.tsv"
-    #                 df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
-    #                 # get dataframe for gs_meants.txt
-    #                 gs_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/gs_meants.txt"
-    #                 df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
-    #                 df_gs_meants.columns = ["GlobalSignal"]
-    #                 # get dataframe for csf_wm_meants.txt
-    #                 csf_wm_meants_path = workdir + "/intermediates/" + subject + "/" + task + "/csf_wm_meants.txt"
-    #                 df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
-    #                 df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
-    #                 # Replace respective columns
-    #                 df_confounds["WhiteMatter"] = df_csf_wm_meants["WhiteMatter"]
-    #                 df_confounds["CSF"] = df_csf_wm_meants["CSF"]
-    #                 df_confounds["GlobalSignal"] = df_gs_meants["GlobalSignal"]
-    #                 # Save dataframe as confounds_mni.tsv
-    #                 new_confounds_path = workdir + "/intermediates/" + subject + "/" + task + "/confounds_mni.tsv"
-    #                 df_confounds.to_csv(new_confounds_path, sep="\t", encoding="utf-8", index=False)
-    # 
-    #                 # motion_report part
-    #                 mean_fd = df_confounds["FramewiseDisplacement"].mean()
-    #                 vol_lg_05 = len(df_confounds[df_confounds["FramewiseDisplacement"] > 0.5])
-    #                 total_vol = len(df_confounds)
-    #                 percentage_vol_lg_05 = vol_lg_05 / total_vol
-    #                 max_x = df_confounds["X"].max()
-    #                 max_y = df_confounds["Y"].max()
-    #                 max_z = df_confounds["Z"].max()
-    #                 max_rot_x = df_confounds["RotX"].max()
-    #                 max_rot_y = df_confounds["RotY"].max()
-    #                 max_rot_z = df_confounds["RotZ"].max()
-    #                 df_motion = df_motion.append({"Subject": subject, "Mean_FD": mean_fd,
-    #                                               "%volume_lg_0.5": percentage_vol_lg_05, "Max_X": max_x,
-    #                                               "Max_Y": max_y, "Max_Z": max_z, "Max_RotX": max_rot_x,
-    #                                               "Max_RotY": max_rot_y, "Max_RotZ": max_rot_z}, ignore_index=True)
-    #             else:
-    #                 # Taskdata doesn"t exist
-    #                 pass
-    #     if not df_motion.empty:
-    #         df_motion.to_csv(workdir + "/qualitycheck/motion_report.csv", sep="\t", encoding="utf-8")
-    # 
-    #     # Automatic file check: Check file status after first level statistics is done
-    #     file_checks(workdir, json_dir, path_to_pipeline_json)
-    # 
-    # # Creation of individual/block json files
-    # else:
-    # 
-    #     os.makedirs(json_dir, exist_ok=True)
-    # 
-    #     with open(path_to_pipeline_json, "r") as f:
-    #         configuration = json.load(f)
-    # 
-    #     flattened_configuration = transpose(configuration["images"])
-    # 
-    #     # selecting metadata to be shared among subjects
-    #     subject_metadata = dict()
-    # 
-    #     subject_keys = ["TemporalFilter", "SmoothingFWHM"]
-    #     for key in subject_keys:
-    #         subject_metadata[key] = configuration["metadata"][key]
-    # 
-    #     # getting names of paradigms (rest, task, etc) using keys in image section
-    #     subject_all_keys = list(configuration["images"])
-    #     subject_keys = list(configuration["images"])
-    #     subject_keys.remove("T1w")
-    # 
-    #     for key in subject_keys:
-    #         paradigm_keys = list(configuration["metadata"][key])
-    #         paradigm_keys.remove("RepetitionTime")
-    #         subject_metadata[key] = dict()
-    #         for paradigm_key in paradigm_keys:
-    #             subject_metadata[key][paradigm_key] = configuration["metadata"][key][paradigm_key]
-    # 
-    #     # file to save execution commands per subject
-    #     file = open(os.path.join(workdir, "execute.txt"), "w")
-    #     command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
-    # 
-    #     block_size = 1
-    #     if args.block_size is not None:
-    #         try:
-    #             block_size = int(args.block_size)
-    #         except Exception as ex:
-    #             print(ex)
-    #             print("The number of subjects per block must be an integer")
-    #             print("No blocks are being generated. Json files per subject are being generated")
-    # 
-    #     subject_names = list(flattened_configuration)
-    #     subjects = len(subject_names)
-    #     blocks = math.ceil(subjects / block_size)
-    # 
-    #     # loop for block
-    #     for i in range(blocks):
-    #         file_name = "block_" + str(i) + "_pipeline.json"
-    #         path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-    #         subject_images = dict()
-    #         for key in subject_all_keys:
-    #             subject_images[key] = dict()
-    #         for key in subject_keys:
-    #             subject_metadata[key]["RepetitionTime"] = dict()
-    #         # loop for subjects within a block
-    #         for j in range(block_size):
-    #             index = i * block_size + j
-    #             if index < subjects:
-    #                 subject = subject_names[index]
-    #                 print(str(i) + subject)
-    #                 # adding images per subject
-    #                 for key in subject_all_keys:
-    #                     subject_images[key][subject] = configuration["images"][key][subject]
-    #                 # adding different metadata per subject (Repetition Time)
-    #                 for key in subject_keys:
-    #                     subject_metadata[key]["RepetitionTime"][subject] = \
-    #                         configuration["metadata"][key]["RepetitionTime"][subject]
-    #                 # changing name of file in case no blocks are needed; file gets name of subject
-    #                 if block_size == 1:
-    #                     file_name = subject + "_pipeline.json"
-    #                     path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-    #         # writing individual json file
-    #         with open(path_to_new_pipeline_json, "w+") as f:
-    #             json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
-    # 
-    #         file.write(command + file_name + "\n")
-    # 
-    #     file.close()
+        workflow.run(**plugin_settings)
+
+        # pr.disable()
+        # pr.print_stats(sort = "time")
+        # pr.dump_stats("/ext/Volumes/leassd/run_workflow.txt")

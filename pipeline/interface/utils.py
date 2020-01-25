@@ -4,6 +4,7 @@
 
 import os
 from os import path as op
+import sys
 
 from nipype.interfaces.base import (
     traits,
@@ -52,16 +53,30 @@ class MatrixToTSV(SimpleInterface):
         return runtime
 
 
+def _robust_read_columns(in_file):
+    try:
+        in_array = np.loadtxt(in_file)
+    except ValueError:
+        try:
+            in_array = np.loadtxt(in_file, skiprows=1)
+        except ValueError:
+            try:
+                in_array = np.loadtxt(in_file, delimiter=",")
+            except ValueError:
+                try:
+                    in_array = np.loadtxt(in_file, delimiter=",", skiprows=1)
+                except ValueError as e:
+                    sys.stdout.write("Could not load file {}".format(in_file))
+                    raise e
+    return in_array
+
+
 def _merge_columns(in_list):
     out_array = None
     for idx, in_file in enumerate(in_list):
-        try:
-            in_array = np.loadtxt(in_file, delimiter="\t")
-        except ValueError:
-            try:
-                in_array = np.loadtxt(in_file, delimiter="\t", skiprows=1)
-            except ValueError:
-                continue
+        in_array = _robust_read_columns(in_file)
+        if in_array.ndim == 1:  # single column file
+            in_array = in_array.reshape((-1, 1))
         if out_array is None:
             out_array = in_array
         else:

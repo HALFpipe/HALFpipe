@@ -2,8 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
 import sys
+from itertools import product
 
 from nipype.interfaces.base import (
     traits,
@@ -40,33 +40,19 @@ def _check_multicollinearity(matrix):
 
 
 def _group_design(data, subjects):
-    columns = {}
+    covariates_columns = {}
+    factor_columns = {}
     for k, v in data.items():
         # only include factors with defined contrasts
         # other factors are for sub-group analyses only
         if "SubjectGroups" in v and "Contrasts" in v:
-            columns[k] = v["SubjectGroups"]
+            factor_columns[k] = v["SubjectGroups"]
         if "Covariate" in v:
-            columns[k] = v["Covariate"]
-
-    dataframe = pd.DataFrame(columns)
-
-    # only keep subjects that are in this analysis
-    # also sets order
-    dataframe = dataframe.loc[subjects, :]
-
-    # remove zero variance columns
-    columns_var_gt_0 = (dataframe != dataframe.iloc[0]).any()
-    dataframe = dataframe.loc[:, columns_var_gt_0]
+            covariates_columns[k] = v["Covariate"]
 
     # separate
-    covariates = dataframe.select_dtypes(include=np.number)
-    factors = dataframe.select_dtypes(exclude=np.number)
-
-    # replace not available values by numpy NaN to be ignored for demeaning
-    covariates = covariates.replace({
-        "NaN": np.nan, "n/a": np.nan, "NA": np.nan
-    })
+    covariates = pd.DataFrame.from_dict(covariates_columns, orient="columns")
+    factors = pd.DataFrame.from_dict(factor_columns, orient="columns")
 
     # Demean covariates for flameo
     covariates -= covariates.mean()
@@ -74,32 +60,95 @@ def _group_design(data, subjects):
     # replace np.nan by 0 for demeaned_covariates file and regression models
     covariates = covariates.replace({np.nan: 0})
 
+    # change type first to string then to category
+    factors = factors.astype(str)
     factors = factors.astype("category")
 
-    dataframe = pd.concat((factors, covariates), axis=1)
+    # merge
+    dataframe = factors.join(covariates, how="outer")
 
-    # with intercept
-    desc = ModelDesc([], [Term([])] + [
-        Term([LookupFactor(name)]) for name in dataframe
-    ])
+    # only keep subjects that are in this analysis
+    # also sets order
+    dataframe = dataframe.loc[subjects, :]
 
-    dmatrix_obj = dmatrix(desc, dataframe, return_type="dataframe")
+    # remove zero variance columns
+    columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1
+    dataframe = dataframe.loc[:, columns_var_gt_0]
 
-    contrast_dict = {}
+    # don't need to specify lhs
+    lhs = []
 
-    lc = dmatrix_obj.design_info.linear_constraint({"Intercept": 0})
-    contrast_dict["Intercept"] = lc
+    # specify patsy design matrix
+    rhs = ([Term([])] +  # force intercept
+           [Term([LookupFactor(name)]) for name in dataframe])
+    modelDesc = ModelDesc(lhs, rhs)
+    dmat = dmatrix(modelDesc, dataframe, return_type="dataframe")
+    _check_multicollinearity(dmat)
 
-    for c in covariates:
-        if data[c]["Contrasts"]:
-            lc = dmatrix_obj.design_info.linear_constraint({c: 0})
-            contrast_dict[c] = lc
+    # prepare lsmeans
+    uniqueValuesForFactors = [
+        (0.0,)
+        if pd.api.types.is_numeric_dtype(dataframe[f].dtype) else
+        dataframe[f].unique()
+        for f in dataframe.columns
+    ]
+    grid = pd.DataFrame(list(product(*uniqueValuesForFactors)),
+                        columns=dataframe.columns)
+    refDmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
+
+    # data frame to store contrasts
+    contrastVectors = pd.DataFrame(columns=dmat.columns)
+
+    # create intercept contrast separately
+    contrastIntercept = dmat.design_info.linear_constraint({"Intercept": 0})
+    contrastVectors.loc["mean", contrastIntercept.variable_names] = \
+        contrastIntercept.coefs
+
+    for field in dataframe.columns:
+        _data = data[field]
+        if "Contrasts" in _data:
+            if "SubjectGroups" in _data:
+                contrasts = _data["Contrasts"]
+                fieldLevels = dataframe[field].unique()
+                # Generate the lsmeans matrix where there is one row for each
+                # factor level. Each row is a contrast vector.
+                # This contrast vector corresponds to the mean of the dependent
+                # variable at the factor level.
+                # For example, we would have one row that calculates the mean
+                # for patients, and one for controls.
+                lsmeans = pd.DataFrame(index=fieldLevels, columns=dmat.columns)
+                for level in fieldLevels:
+                    lsmeans.loc[level, :] = \
+                        refDmat.loc[grid[field] == level, :].mean()
+                for contrastName, valueDict in contrasts.items():
+                    names, values = zip(*valueDict.items())
+                    # If we wish to test the mean of each group against zero,
+                    # we can simply use these contrasts and be done.
+                    # To test a linear hypothesis such as patient-control=0,
+                    # which is expressed here as {"patient":1, "control":-1},
+                    # we translate it to a contrast vector by taking the linear
+                    # combination of the lsmeans contrasts.
+                    contrastVector = \
+                        lsmeans.loc[names, :].mul(values, axis=0).sum()
+                    contrastVectors.loc[contrastName, :] = contrastVector
+        if "Covariate" in _data:
+            contrastIntercept = dmat.design_info.linear_constraint(
+                {field: 0})
+            contrastVectors.loc[field, contrastIntercept.variable_names] = \
+                contrastIntercept.coefs
+
+    npts, nevs = dmat.shape
+
+    if nevs >= npts:
+        sys.stdout.write("No design generated. nevs >= npts\n")
+        return {"intercept": [1.0 for s in subjects]}, [], []
 
     regressors = {
-        k: dmatrix_obj.loc[:, k].tolist() for k in dmatrix_obj
+        d: dmat[d].tolist() for d in dmat.columns
     }
-    contrasts = [[k, "T", lc.variable_names, lc.coefs]
-                 for k, lc in contrast_dict.items()]
+    contrasts = [
+        [contrastName, "T", contrastVectors.columns.tolist(), coefs.tolist()]
+        for contrastName, coefs in contrastVectors.iterrows()]
     contrast_names = [c[0] for c in contrasts]
 
     return regressors, contrasts, contrast_names
@@ -113,7 +162,7 @@ class GroupDesignInputSpec(TraitedSpec):
 class GroupDesignOutputSpec(TraitedSpec):
     regressors = traits.Any()
     contrasts = traits.Any()
-    contrast_names = traits.Str()
+    contrast_names = traits.List(traits.Str, desc="contrast names list")
 
 
 class GroupDesign(SimpleInterface):
@@ -131,30 +180,3 @@ class GroupDesign(SimpleInterface):
         self._results["contrast_names"] = contrast_names
 
         return runtime
-
-# # transform into dict to extract regressors for level2model
-# covariates = df_covariates.to_dict()
-#
-# # transform to dictionary of lists
-# regressors = {k: [float(v[s]) for s in subjects] for k, v in covariates.items()}
-#
-# if (subject_groups is None) or (bool(subject_groups) is False):
-#     # one-sample t-test with covariates
-#     regressors["intercept"] = [1.0 for s in subjects]
-#     level2model = pe.Node(
-#         interface=fsl.MultipleRegressDesign(
-#             regressors=regressors,
-#             contrasts=contrasts
-#         ),
-#         name="l2model"
-#     )
-# else:
-#     # two-sample t-tests with covariates
-#
-#     # dummy coding of variables: group names --> numbers in the matrix
-#     # see fsl feat documentation
-#     # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT/UserGuide#Tripled_Two-Group_Difference_.28.22Tripled.22_T-Test.29
-#     dummies = pd.Series(subject_groups).str.get_dummies().to_dict()
-#     # transform to dictionary of lists
-#     dummies = {k: [float(v[s]) for s in subjects] for k, v in dummies.items()}
-#     regressors.update(dummies)

@@ -28,7 +28,7 @@ def _splitext(fname):
     return stem, basename[len(stem):]
 
 
-def get_first(l):
+def _get_first(l):
     """
     get first element from list
     doesn't fail is input is not a list
@@ -39,7 +39,7 @@ def get_first(l):
     if not isinstance(l, list):
         return l
     else:
-        return get_first(l[0])
+        return _get_first(l[0])
 
 
 def firstval(dict):
@@ -87,18 +87,6 @@ def _ravel(in_val):
         else:
             flat_list.append(raveled_val)
     return flat_list
-
-
-def get_float(input):
-    def flatten(l):
-        if isinstance(l, str) or isinstance(l, float):
-            return [l]
-        else:
-            o = []
-            for k in l:
-                o += flatten(k)
-            return o
-    return float(flatten(input)[0])
 
 
 def transpose(d):

@@ -19,13 +19,15 @@ def make_confounds_selectcolumns(metadata):
 
     column_names = []
     if metadata["UseMovPar"]:
-        column_names.extend(["X", "Y", "Z", "RotX", "RotY", "RotZ"])
+        column_names.extend(
+            ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+        )
     if metadata["CSF"]:
-        column_names.append("CSF")
+        column_names.append("csf")
     if metadata["Whitematter"]:
-        column_names.append("WhiteMatter")
+        column_names.append("white_matter")
     if metadata["GlobalSignal"]:
-        column_names.append("GlobalSignal")
+        column_names.append("global_signal")
 
     selectcolumns.inputs.column_names = column_names
 

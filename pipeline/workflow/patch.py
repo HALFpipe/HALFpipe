@@ -94,8 +94,6 @@ def patch_wf(workflow, images,
             # a custom version that does not, this class is called
             # FakeDerivativesDataSink.
             node_id = "%s.%s" % (node._hierarchy, node.name)
-            sys.stdout.write(
-                "Patching DerivativesDataSink {}\n".format(node_id))
             node._interface = FakeDerivativesDataSink(
                 images=images,
                 output_dir=output_dir,

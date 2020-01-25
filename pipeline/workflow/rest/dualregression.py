@@ -15,10 +15,11 @@ from ...interface import (
     MatrixToTSV
 )
 from ..confounds import make_confounds_selectcolumns
+from ...utils import _get_first
 
 
 def init_dualregression_wf(metadata, componentsfile,
-                           name="firstlevel"):
+                           name="dualregression"):
     """
     create a workflow to calculate dual regression for ICA seeds
     :param componentsfile: 4d image file with ica components
@@ -65,12 +66,6 @@ def init_dualregression_wf(metadata, componentsfile,
     selectcolumns, confounds_list = make_confounds_selectcolumns(
         metadata
     )
-
-    mergecolumns = pe.Node(
-        interface=MergeColumnsTSV(2),
-        name="mergecolumns"
-    )
-
     contrasts = np.zeros((ncomponents, ncomponents+len(confounds_list)))
     contrasts[:ncomponents, :ncomponents] = np.eye(ncomponents)
 
@@ -92,6 +87,32 @@ def init_dualregression_wf(metadata, componentsfile,
         ),
         name="glm1"
     )
+
+    if len(confounds_list) > 0:
+        mergecolumns = pe.Node(
+            interface=MergeColumnsTSV(2),
+            name="mergecolumns"
+        )
+        workflow.connect([
+            (glm0, mergecolumns, [
+                ("out_file", "in1")
+            ]),
+            (inputnode, selectcolumns, [
+                ("confounds", "in_file"),
+            ]),
+            (selectcolumns, mergecolumns, [
+                ("out_file", "in2"),
+            ]),
+            (mergecolumns, glm1, [
+                ("out_file", "design")
+            ]),
+        ])
+    else:
+        workflow.connect([
+            (glm0, glm1, [
+                ("out_file", "design")
+            ]),
+        ])
 
     # split regression outputs into individual images
     splitcopesimage = pe.Node(
@@ -156,18 +177,6 @@ def init_dualregression_wf(metadata, componentsfile,
             ("bold_file", "in_file"),
             ("mask_file", "mask")
         ]),
-        (glm0, mergecolumns, [
-            ("out_file", "in1")
-        ]),
-        (inputnode, selectcolumns, [
-            ("confounds", "in_file"),
-        ]),
-        (selectcolumns, mergecolumns, [
-            ("out_file", "in2"),
-        ]),
-        (mergecolumns, glm1, [
-            ("out_file", "design")
-        ]),
         (contrasttotsv, glm1, [
             ("out_file", "contrasts")
         ]),
@@ -203,13 +212,13 @@ def init_dualregression_wf(metadata, componentsfile,
     for i, componentname in enumerate(componentnames):
         workflow.connect([
             (splitcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_stat" % componentname)
+                (("out%i" % (i + 1), _get_first), "%s_stat" % componentname)
             ]),
             (splitvarcopes, outputnode, [
-                ("out%i" % (i + 1), "%s_var" % componentname)
+                (("out%i" % (i + 1), _get_first), "%s_var" % componentname)
             ]),
             (splitzstats, outputnode, [
-                ("out%i" % (i + 1), "%s_zstat" % componentname)
+                (("out%i" % (i + 1), _get_first), "%s_zstat" % componentname)
             ]),
             (gendoffile, outputnode, [
                 ("out_file", "%s_dof_file" % componentname)

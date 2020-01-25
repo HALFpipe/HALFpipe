@@ -1,4 +1,8 @@
-import os
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
+from os import path as op
 
 import nibabel as nib
 
@@ -41,7 +45,7 @@ class Dof(BaseInterface):
         im = nib.load(self.inputs.in_file)
         print(im)
         dof = im.shape[3] - self.inputs.num_regressors
-        with open(os.path.abspath(self.inputs.out_file), "w") as f:
+        with open(op.abspath(self.inputs.out_file), "w") as f:
             f.write("%i" % dof)
             f.write("\n")
         return runtime
@@ -49,5 +53,5 @@ class Dof(BaseInterface):
     def _list_outputs(self):
         """ """
         outputs = self._outputs().get()
-        outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+        outputs["out_file"] = op.abspath(self.inputs.out_file)
         return outputs

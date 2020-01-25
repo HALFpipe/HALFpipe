@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+from os import path as op
 
 from collections import OrderedDict
 from multiprocessing import cpu_count
@@ -50,8 +51,8 @@ template = {}
 # Ordered dictionary where keys are TemplateFlow ID strings
 # Values of the dictionary aggregate modifiers
 output_spaces = OrderedDict([
+    ("MNI152NLin6Asym", {"res": 2}),
     ("MNI152NLin2009cAsym", {"res": 2}),
-    ("MNI152NLin6Asym", {"res": 2})  # necessary for ICA-AROMA
 ])
 # Option "--use-aroma" requires functional images to be resampled to
 # MNI152NLin6Asym space. The argument "MNI152NLin6Asym:res-2" has
@@ -85,8 +86,8 @@ use_syn = True
 force_syn = False
 
 # Custom reference image for normalization
-template_out_grid = os.path.join(os.getenv("FSLDIR"),
-                                 "data", "standard", "MNI152_T1_2mm.nii.gz")
+template_out_grid = op.join(os.getenv("FSLDIR"),
+                            "data", "standard", "MNI152_T1_2mm.nii.gz")
 
 # Generate bold CIFTI file in output spaces
 cifti_output = False

@@ -9,6 +9,7 @@ from nipype.interfaces import fsl
 from ..interface import GroupDesign
 
 from ..utils import _ravel
+from ..nodes import TryNode
 
 
 def gen_merge_op_str(fileNames):
@@ -84,15 +85,11 @@ def init_higherlevel_wf(fieldnames,
     if "mask_file" not in fieldnames:
         return
 
-    flame_iterfields = ["cope_file"]
-    if "var" in fieldnames:
-        flame_iterfields.append("varcope_file")
-    flameo = pe.MapNode(
+    flameo = TryNode(
         interface=fsl.FLAMEO(
             run_mode=run_mode
         ),
         name="flameo",
-        iterfield=flame_iterfields
     )
 
     # merge all input nii image files to one big nii file
@@ -182,7 +179,7 @@ def init_higherlevel_wf(fieldnames,
     )
     design.inputs.data = group_data
 
-    level2model = pe.Node(
+    level2model = TryNode(
         interface=fsl.MultipleRegressDesign(),
         name="l2model"
     )

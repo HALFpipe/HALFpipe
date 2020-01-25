@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
+from os import path as op
 import json
 
 from nipype.interfaces.base import (
@@ -14,12 +14,12 @@ from nipype.interfaces.base import (
 
 
 def _qualitycheck(base_directory=None, subject=None, scan=None, run=None):
-    qcresult_fname = os.path.join(base_directory,
-                                  "qualitycheck",
-                                  "qcresult.json")
+    qcresult_fname = op.join(base_directory,
+                             "qualitycheck",
+                             "qcresult.json")
 
     qcresult = {}
-    if os.path.isfile(qcresult_fname):
+    if op.isfile(qcresult_fname):
         with open(qcresult_fname) as qcresult_file:
             qcresult = json.load(qcresult_file)
 
