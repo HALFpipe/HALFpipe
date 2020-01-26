@@ -11,10 +11,6 @@ from .filter import (
 from .motion import MotionCutoff
 from .qualitycheck import QualityCheck
 from .reho import ReHo
-from .segmentation import (
-    ApplyXfmSegmentation,
-    GetSegmentationMean
-)
 from .stats import HigherLevelDesign
 from .utils import (
     SelectColumnsTSV,
