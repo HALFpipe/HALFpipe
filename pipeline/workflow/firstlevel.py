@@ -133,7 +133,7 @@ def init_subject_wf(item, workdir, images, data):
                 scanmetadata[k] = metadata[k]
 
         if isinstance(scandata, dict):  # multiple runs
-            raise NotImplementedError("To be implemented")
+            pass
         else:  # one run
             outfieldsByOutnameByScan[scanname] = init_func_wf(
                 scan_wf, inputnode, scandata, scanmetadata,

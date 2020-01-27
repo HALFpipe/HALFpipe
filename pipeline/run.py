@@ -270,7 +270,7 @@ def main():
                 # reads the repetion time from the nii.gz file
                 configuration[scanname]["RepetitionTime"][subject] = \
                     float(str(nib.load(
-                        transpose(images[scanname])[""][subject]
+                        firstval(transpose(images[scanname]))[subject]
                         # gets the path of the nii.gz file for each subject
                     ).header.get_zooms()[3]))
 
