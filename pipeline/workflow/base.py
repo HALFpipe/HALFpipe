@@ -83,6 +83,9 @@ def init_workflow(workdir, jsonfile):
     # if group_json == fp:
 
     metadata = data["metadata"]
+    if "GroupDesign" not in metadata:
+        return workflow
+
     group_design = metadata["GroupDesign"]
     group_data = group_design["Data"]
 
