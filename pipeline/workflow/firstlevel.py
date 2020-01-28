@@ -133,7 +133,29 @@ def init_subject_wf(item, workdir, images, data):
                 scanmetadata[k] = metadata[k]
 
         if isinstance(scandata, dict):  # multiple runs
-            pass
+            for runname, bold_file in scandata.items():
+                run_wf = pe.Workflow(name="run_" + runname)
+                # run_wfs.append(run_wf)
+
+                run_inputnode = pe.Node(niu.IdentityInterface(
+                    fields=_func_inputnode_fields,
+                ), name="inputnode")
+                run_wf.add_nodes((inputnode,))
+
+                scan_wf.connect([
+                    (inputnode, run_wf, [
+                        (f, "inputnode.%s" % f)
+                        for f in _func_inputnode_fields
+                    ])
+                ])
+                _ = init_func_wf(
+                    run_wf, run_inputnode, scandata, scanmetadata,
+                    workdir,
+                    fmriprep_reportlets_dir,
+                    fmriprep_output_dir,
+                    output_dir,
+                    subject=subject, scan=scanname, run=runname
+                )
         else:  # one run
             outfieldsByOutnameByScan[scanname] = init_func_wf(
                 scan_wf, inputnode, scandata, scanmetadata,
@@ -253,7 +275,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             for f in _func_inputnode_fields
         ]),
         (func_preproc_wf, temporalfilter_wf, [
-            (("outputnode.bold_std", _get_first), "inputnode.bold_file")
+            (("outputnode.nonaggr_denoised_file", _get_first),
+                "inputnode.bold_file")
         ]),
         (temporalfilter_wf, maskpreproc, [
             ("outputnode.filtered_file", "in_file")
