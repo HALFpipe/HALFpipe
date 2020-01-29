@@ -22,7 +22,13 @@ def save_traceback(t, v, b, odir=os.getcwd()):
         "tb": info
     }
 
-    path = op.join(odir, f"{name}.txt")
+    os.makedirs(odir, exist_ok=True)
+
+    i = 0
+    path = op.join(odir, f"{name}{i}.txt")
+    while op.isfile(path):
+        path = op.join(odir, f"{name}{i}.txt")
+
     with open(path, "w") as fp:
         json.dump(data, fp, indent=4)
     sys.stdout.write("TryNode caught exception. " +
@@ -62,13 +68,13 @@ class TryMapNode(pe.MapNode):
 
     def _get_inputs(self):
         try:
-            super(TryNode, self)._get_inputs()
+            super(TryMapNode, self)._get_inputs()
         except Exception:
             save_traceback(*sys.exc_info(), odir=self.output_dir())
         self._got_inputs = True
 
     def _check_iterfield(self):
         try:
-            super(TryNode, self)._check_iterfield()
+            super(TryMapNode, self)._check_iterfield()
         except Exception:
             save_traceback(*sys.exc_info(), odir=self.output_dir())

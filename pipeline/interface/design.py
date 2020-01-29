@@ -135,13 +135,14 @@ def _group_design(data, subjects):
             contrastIntercept = dmat.design_info.linear_constraint(
                 {field: 0})
             contrastVectors.loc[field, contrastIntercept.variable_names] = \
-                contrastIntercept.coefs
+                contrastIntercept.coefs.ravel()
 
     npts, nevs = dmat.shape
 
     if nevs >= npts:
         sys.stdout.write("No design generated. nevs >= npts\n")
-        return {"intercept": [1.0 for s in subjects]}, [], []
+        return ({"intercept": [1.0 for s in subjects]},
+                [["mean", "T", ["intercept"], [1]]], ["mean"])
 
     regressors = {
         d: dmat[d].tolist() for d in dmat.columns
