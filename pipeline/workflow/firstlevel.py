@@ -285,10 +285,10 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             (("outputnode.bold_mask_std", _get_first), "mask_file")
         ]),
         (func_preproc_wf, ds_scan, [
-            (("outputnode.bold_mask_std", _get_first), "preproc")
+            (("outputnode.bold_mask_std", _get_first), "mask")
         ]),
         (maskpreproc, ds_scan, [
-            ("out_file", "mask")
+            ("out_file", "preproc")
         ]),
 
         (temporalfilter_wf, tsnr_wf, [

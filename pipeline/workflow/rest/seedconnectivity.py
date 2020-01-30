@@ -78,7 +78,7 @@ def init_seedconnectivity_wf(metadata,
         iterfield=["in1"]
     )
 
-    contrast = np.zeros((1, len(confounds_list)+1))
+    contrast = np.zeros((len(confounds_list)+1,))
     contrast[0] = 1
 
     contrasttotsv = pe.Node(
