@@ -54,6 +54,11 @@ def _group_design(data, subjects):
     covariates = pd.DataFrame.from_dict(covariates_columns, orient="columns")
     factors = pd.DataFrame.from_dict(factor_columns, orient="columns")
 
+    # only keep subjects that are in this analysis
+    # also sets order
+    covariates = covariates.loc[subjects, :]
+    factors = factors.loc[subjects, :]
+
     # Demean covariates for flameo
     covariates -= covariates.mean()
 
@@ -65,11 +70,7 @@ def _group_design(data, subjects):
     factors = factors.astype("category")
 
     # merge
-    dataframe = factors.join(covariates, how="outer")
-
-    # only keep subjects that are in this analysis
-    # also sets order
-    dataframe = dataframe.loc[subjects, :]
+    dataframe = factors.join(covariates, how="outer").loc[subjects, :]
 
     # remove zero variance columns
     columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1
@@ -100,9 +101,9 @@ def _group_design(data, subjects):
     contrastVectors = pd.DataFrame(columns=dmat.columns)
 
     # create intercept contrast separately
-    contrastIntercept = dmat.design_info.linear_constraint({"Intercept": 0})
-    contrastVectors.loc["mean", contrastIntercept.variable_names] = \
-        contrastIntercept.coefs
+    contrastIntercept = refDmat.mean()
+    contrastVectors.loc["mean", :] = \
+        contrastIntercept
 
     for field in dataframe.columns:
         _data = data[field]
