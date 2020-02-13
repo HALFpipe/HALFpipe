@@ -59,7 +59,7 @@ output_spaces = OrderedDict([
 # been automatically added to the list of output spaces
 
 # Preprocessing steps to skip (may include "slicetiming", "fieldmaps")
-ignore = []
+ignore = ["sbref"]
 
 # Enable debugging outputs
 debug = False

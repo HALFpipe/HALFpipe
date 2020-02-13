@@ -5,8 +5,68 @@
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
+from nipype.interfaces.ants.resampling import ApplyTransforms
 
-from ..interface import SelectColumnsTSV
+from fmriprep.workflows.bold import init_bold_confs_wf
+
+from ..interface import (
+    SelectColumnsTSV,
+    DontApplyTransforms
+)
+
+from .memory import MemoryCalculator
+from ..fmriprepsettings import settings as fmriprepsettings
+
+
+def init_confounds_wf(metadata,
+                      name="confounds",
+                      memcalc=MemoryCalculator()):
+    workflow = pe.Workflow(name=name)
+
+    inputnode = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["bold_file", "mask_file",
+                    "tpms", "movpar_file", "skip_vols"]),
+        name="inputnode"
+    )
+
+    outputnode = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["confounds"]),
+        name="outputnode"
+    )
+
+    mem_gb = memcalc.series_std_gb
+    bold_confounds_wf = init_bold_confs_wf(
+        mem_gb,
+        metadata,
+        regressors_all_comps=fmriprepsettings.regressors_all_comps,
+        regressors_dvars_th=fmriprepsettings.regressors_dvars_th,
+        regressors_fd_th=fmriprepsettings.regressors_fd_th,
+    )
+
+    # we are passing everything in standard space
+    for nodename in bold_confounds_wf.list_node_names():
+        node = bold_confounds_wf.get_node(nodename)
+        if isinstance(node.interface, ApplyTransforms):
+            node._interface = DontApplyTransforms()
+    bold_confounds_wf.get_node("inputnode").inputs.t1_bold_xform = "identity"
+
+    workflow.connect([
+        (inputnode, bold_confounds_wf, [
+            ("bold_file", "inputnode.bold"),
+            ("mask_file", "inputnode.bold_mask"),
+            ("skip_vols", "inputnode.skip_vols"),
+            ("tpms", "inputnode.t1w_tpms"),
+            ("mask_file", "inputnode.t1w_mask"),
+            ("movpar_file", "inputnode.movpar_file")
+        ]),
+        (bold_confounds_wf, outputnode, [
+            ("outputnode.confounds_file", "confounds"),
+        ])
+    ])
+
+    return workflow
 
 
 def make_confounds_selectcolumns(metadata):

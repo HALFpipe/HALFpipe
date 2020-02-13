@@ -8,8 +8,10 @@ import nipype.interfaces.utility as niu
 from .zscore import init_zscore_wf
 from ...interface import ReHo
 
+from ..memory import MemoryCalculator
 
-def init_reho_wf(name="reho"):
+
+def init_reho_wf(name="reho", memcalc=MemoryCalculator()):
     """
     create a workflow to do ReHo
 
@@ -24,7 +26,8 @@ def init_reho_wf(name="reho"):
 
     reho = pe.Node(
         interface=ReHo(),
-        name="reho"
+        name="reho",
+        mem_gb=memcalc.series_std_gb*2
     )
     reho.inputs.cluster_size = 27
 

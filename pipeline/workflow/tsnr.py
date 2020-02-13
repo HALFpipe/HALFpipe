@@ -8,8 +8,10 @@ from nipype.algorithms import confounds as nac
 
 from mriqc.interfaces import viz
 
+from .memory import MemoryCalculator
 
-def init_tsnr_wf(name="tsnr"):
+
+def init_tsnr_wf(name="tsnr", memcalc=MemoryCalculator()):
     """
     create a workflow to calculate the temporal signal-to-noise
     ratio of a functional image
@@ -34,14 +36,18 @@ def init_tsnr_wf(name="tsnr"):
     # actually calculate the tsnr image
     tsnr = pe.Node(
         interface=nac.TSNR(),
-        name="compute_tsnr")
+        name="compute_tsnr",
+        mem_gb=memcalc.series_std_gb
+    )
 
     # plot the resulting image as a mosaic
     mosaic_stddev = pe.Node(
         interface=viz.PlotMosaic(
             out_file="plot_func_stddev_mosaic2_stddev.svg",
             cmap="viridis"),
-        name="plot_mosaic")
+        name="plot_mosaic",
+        mem_gb=memcalc.min_gb
+    )
 
     workflow.connect([
         (inputnode, tsnr, [

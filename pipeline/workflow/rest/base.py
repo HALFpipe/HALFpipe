@@ -13,17 +13,22 @@ from .dualregression import init_dualregression_wf
 from .reho import init_reho_wf
 from .alff import init_alff_wf
 
+from ..memory import MemoryCalculator
+
 from ..utils import make_outputnode
 
 
 def init_rest_wf(metadata,
-                 name="rest"):
+                 name="rest",
+                 memcalc=MemoryCalculator()):
 
     workflow = pe.Workflow(name=name)
 
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds"]),
+        fields=["bold_file",
+                "confounds",
+                "mask_file"]),
         name="inputnode"
     )
 
@@ -104,7 +109,7 @@ def init_rest_wf(metadata,
                 )
 
     if "ReHo" in metadata and metadata["ReHo"]:
-        out = init_reho_wf()
+        out = init_reho_wf(memcalc=memcalc)
         aggregate(out)
         reho_wf, outnames, _ = out
         if len(outnames) > 0:

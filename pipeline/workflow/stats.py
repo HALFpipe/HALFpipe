@@ -11,6 +11,8 @@ from ..interface import GroupDesign
 from ..utils import _ravel
 from ..nodes import TryNode
 
+from .memory import MemoryCalculator
+
 
 def gen_merge_op_str(fileNames):
     """
@@ -39,7 +41,8 @@ def get_len(arr):
 
 
 def init_higherlevel_wf(fieldnames,
-                        group_data, run_mode="flame1", name="higherlevel"):
+                        group_data, run_mode="flame1",
+                        name="higherlevel", memcalc=MemoryCalculator()):
     """
 
     :param run_mode: mode argument passed to FSL FLAMEO
@@ -90,19 +93,22 @@ def init_higherlevel_wf(fieldnames,
             run_mode=run_mode
         ),
         name="flameo",
+        mem_gb=memcalc.volume_std_gb*100
     )
 
     # merge all input nii image files to one big nii file
     maskmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
-        name="maskmerge"
+        name="maskmerge",
+        mem_gb=memcalc.volume_std_gb*100
     )
     # calculate the intersection of all masks
     maskagg = pe.Node(
         interface=fsl.ImageMaths(
             op_string="-Tmin -thr 1 -bin"
         ),
-        name="maskagg"
+        name="maskagg",
+        mem_gb=memcalc.volume_std_gb*100
     )
     workflow.connect([
         (inputnode, maskmerge, [
@@ -122,7 +128,8 @@ def init_higherlevel_wf(fieldnames,
     # merge all input nii image files to one big nii file
     statmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
-        name="statmerge"
+        name="statmerge",
+        mem_gb=memcalc.volume_std_gb*100
     )
     workflow.connect([
         (inputnode, statmerge, [
@@ -137,7 +144,8 @@ def init_higherlevel_wf(fieldnames,
         # merge all input nii image files to one big nii file
         varmerge = pe.Node(
             interface=fsl.Merge(dimension="t"),
-            name="varmerge"
+            name="varmerge",
+            mem_gb=memcalc.volume_std_gb*100
         )
         workflow.connect([
             (inputnode, varmerge, [
@@ -153,12 +161,14 @@ def init_higherlevel_wf(fieldnames,
         gendofimage = pe.MapNode(
             interface=fsl.ImageMaths(),
             iterfield=["in_file", "op_string"],
-            name="gendofimage"
+            name="gendofimage",
+            mem_gb=memcalc.volume_std_gb
         )
         # merge all generated nii image files to one big nii file
         dofmerge = pe.Node(
             interface=fsl.Merge(dimension="t"),
-            name="dofmerge"
+            name="dofmerge",
+            mem_gb=memcalc.volume_std_gb*100
         )
         workflow.connect([
             (inputnode, gendofimage, [
@@ -175,13 +185,15 @@ def init_higherlevel_wf(fieldnames,
 
     design = pe.Node(
         interface=GroupDesign(),
-        name="group_design"
+        name="group_design",
+        mem_gb=memcalc.min_gb
     )
     design.inputs.data = group_data
 
     level2model = TryNode(
         interface=fsl.MultipleRegressDesign(),
-        name="l2model"
+        name="l2model",
+        mem_gb=memcalc.min_gb
     )
 
     workflow.connect([

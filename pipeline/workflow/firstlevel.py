@@ -16,6 +16,7 @@ from fmriprep.interfaces import DerivativesDataSink
 
 from ..fmriprepsettings import settings as fmriprepsettings
 
+from .confounds import init_confounds_wf
 from .temporalfilter import init_temporalfilter_wf
 from .tsnr import init_tsnr_wf
 
@@ -29,6 +30,7 @@ from .derivatives import (
 
 from .patch import patch_wf
 from .fake import FakeBIDSLayout
+from .memory import MemoryCalculator
 
 from ..utils import (
     lookup,
@@ -47,7 +49,7 @@ from ..interface import (
     QualityCheck
 )
 
-_func_inputnode_fields = [
+_func_preproc_inputnode_fields = [
     "t1w_preproc", "t1w_brain", "t1w_mask", "t1w_dseg",
     "t1w_aseg", "t1w_aparc", "t1w_tpms",
     "template",
@@ -55,6 +57,9 @@ _func_inputnode_fields = [
     "joint_template", "joint_anat2std_xfm", "joint_std2anat_xfm",
     "subjects_dir", "subject_id",
     "fsnative2t1w_xfm"
+]
+_func_inputnode_fields = _func_preproc_inputnode_fields + [
+    "std_tpms"
 ]
 
 
@@ -225,27 +230,75 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         fmriprepsettings.use_syn,
         layout=layout, num_bold=1)
 
+    # adjust smoothing
     for node in func_preproc_wf._get_all_nodes():
         if type(node._interface) is fsl.SUSAN:
             node._interface.inputs.fwhm = float(metadata["SmoothingFWHM"])
 
+    # connect fmriprep inputs
+    wf.connect([
+        (inputnode, func_preproc_wf, [
+            (f, "inputnode.%s" % f)
+            for f in _func_preproc_inputnode_fields
+        ]),
+    ])
+
+    memcalc = MemoryCalculator(bold_file)
     repetition_time = metadata["RepetitionTime"]
 
-    temporalfilter_wf = init_temporalfilter_wf(
-        metadata["TemporalFilter"],
-        repetition_time
+    # create helper to access important files more easily
+    helper = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["mask_file",
+                    "tpms", "movpar_file", "skip_vols"]),
+        name="helper"
     )
+    wf.connect([
+        (func_preproc_wf, helper, [
+            (("outputnode.bold_mask_std", _get_first),
+                "mask_file"),
+            ("bold_hmc_wf.outputnode.movpar_file", "movpar_file"),
+            ("bold_reference_wf.outputnode.skip_vols", "skip_vols")
+        ]),
+        (inputnode, helper, [
+            ("std_tpms", "tpms")
+        ])
+    ])
 
+    # mask bold file
     maskpreproc = pe.Node(
         interface=fsl.ApplyMask(),
-        name="mask_preproc"
+        name="mask_preproc",
+        mem_gb=memcalc.series_std_gb
     )
+    wf.connect([
+        (func_preproc_wf, maskpreproc, [
+            (("outputnode.nonaggr_denoised_file", _get_first),
+                "in_file"),
+        ]),
+        (helper, maskpreproc, [
+            ("mask_file", "mask_file")
+        ])
+    ])
 
-    # apply_xfm = pe.Node(
-    #     interface=ApplyXfmSegmentation(),
-    #     name="apply_xfm"
-    # )
+    # recalculate confounds
+    confounds_wf = init_confounds_wf(
+        metadata,
+        memcalc=memcalc
+    )
+    wf.connect([
+        (helper, confounds_wf, [
+            ("mask_file", "inputnode.mask_file"),
+            ("skip_vols", "inputnode.skip_vols"),
+            ("movpar_file", "inputnode.movpar_file"),
+            ("tpms", "inputnode.tpms"),
+        ]),
+        (maskpreproc, confounds_wf, [
+            ("out_file", "inputnode.bold_file")
+        ])
+    ])
 
+    # copy preproc and mask
     ds_scan = pe.Node(
         interface=nio.DataSink(
             infields=["preproc", "mask"],
@@ -256,9 +309,31 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             parameterization=False,
             force_run=True
         ),
-        name="ds_scan", run_without_submitting=True
+        name="ds_scan", run_without_submitting=True,
+        mem_gb=memcalc.min_gb
     )
+    wf.connect([
+        (maskpreproc, ds_scan, [
+            ("out_file", "preproc")
+        ]),
+        (func_preproc_wf, ds_scan, [
+            (("outputnode.bold_mask_std", _get_first), "mask")
+        ])
+    ])
 
+    # high pass filter
+    temporalfilter_wf = init_temporalfilter_wf(
+        metadata["TemporalFilter"],
+        repetition_time,
+        memcalc=memcalc
+    )
+    wf.connect([
+        (maskpreproc, temporalfilter_wf, [
+            ("out_file", "inputnode.bold_file")
+        ])
+    ])
+
+    # calculate tsnr image
     tsnr_wf = init_tsnr_wf()
     ds_tsnr = pe.Node(
         interface=DerivativesDataSink(
@@ -266,31 +341,10 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
             source_file=bold_file,
             suffix="tsnr"
         ),
-        name="ds_tsnr", run_without_submitting=True
+        name="ds_tsnr", run_without_submitting=True,
+        mem_gb=memcalc.min_gb
     )
-
     wf.connect([
-        (inputnode, func_preproc_wf, [
-            (f, "inputnode.%s" % f)
-            for f in _func_inputnode_fields
-        ]),
-        (func_preproc_wf, temporalfilter_wf, [
-            (("outputnode.nonaggr_denoised_file", _get_first),
-                "inputnode.bold_file")
-        ]),
-        (temporalfilter_wf, maskpreproc, [
-            ("outputnode.filtered_file", "in_file")
-        ]),
-        (func_preproc_wf, maskpreproc, [
-            (("outputnode.bold_mask_std", _get_first), "mask_file")
-        ]),
-        (func_preproc_wf, ds_scan, [
-            (("outputnode.bold_mask_std", _get_first), "mask")
-        ]),
-        (maskpreproc, ds_scan, [
-            ("out_file", "preproc")
-        ]),
-
         (temporalfilter_wf, tsnr_wf, [
             ("outputnode.filtered_file", "inputnode.bold_file")
         ]),
@@ -330,13 +384,14 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     for workflowName, (firstlevel_wf, outnames, outfields) \
             in outByWorkflowName.items():
         wf.connect([
-            (func_preproc_wf, firstlevel_wf, [
-                (("outputnode.bold_mask_std", _get_first),
-                    "inputnode.mask_file"),
-                ("outputnode.confounds", "inputnode.confounds"),
-            ]),
             (maskpreproc, firstlevel_wf, [
-                ("out_file", "inputnode.bold_file"),
+                ("out_file", "inputnode.bold_file")
+            ]),
+            (helper, firstlevel_wf, [
+                ("mask_file", "inputnode.mask_file")
+            ]),
+            (confounds_wf, firstlevel_wf, [
+                ("outputnode.confounds", "inputnode.confounds"),
             ])
         ])
 
@@ -350,8 +405,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         for outname in outnames:
             varname = make_varname(outname, "mask_file")
             wf.connect([
-                (func_preproc_wf, outputnode, [
-                    (("outputnode.bold_mask_std", _get_first), varname)
+                (helper, outputnode, [
+                    ("mask_file", varname)
                 ])
             ])
 
@@ -369,7 +424,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         # checks for motion above the cutoffs
         motioncutoff = pe.Node(
             interface=MotionCutoff(),
-            name="motioncutoff"
+            name="motioncutoff",
+            run_without_submitting=True,
+            mem_gb=memcalc.min_gb
         )
         motioncutoff.inputs.mean_fd_cutoff = \
             metadata["MotionCutoff"]["MeanFDCutoff"]
@@ -378,7 +435,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
         logicaland = pe.Node(
             interface=LogicalAnd(numinputs=2),
-            name="logicaland"
+            name="logicaland",
+            run_without_submitting=True,
+            mem_gb=memcalc.min_gb
         )
 
         wf.connect([
