@@ -11,8 +11,11 @@ from nipype.interfaces import fsl
 
 from smriprep.workflows.anatomical import init_anat_preproc_wf
 
+import fmriprep.workflows.bold
 from fmriprep.workflows.bold import init_func_preproc_wf
 from fmriprep.interfaces import DerivativesDataSink
+
+from niworkflows.interfaces.utility import KeySelect
 
 from ..fmriprepsettings import settings as fmriprepsettings
 
@@ -33,8 +36,7 @@ from .fake import FakeBIDSLayout
 from .memory import MemoryCalculator
 
 from ..utils import (
-    lookup,
-    _get_first
+    lookup
 )
 from .utils import (
     make_varname,
@@ -49,7 +51,7 @@ from ..interface import (
     QualityCheck
 )
 
-_func_preproc_inputnode_fields = [
+_anat2func_fields = [
     "t1w_preproc", "t1w_brain", "t1w_mask", "t1w_dseg",
     "t1w_aseg", "t1w_aparc", "t1w_tpms",
     "template",
@@ -58,9 +60,13 @@ _func_preproc_inputnode_fields = [
     "subjects_dir", "subject_id",
     "fsnative2t1w_xfm"
 ]
-_func_inputnode_fields = _func_preproc_inputnode_fields + [
-    "std_tpms"
-]
+
+
+def _get_wf_name(bold_fname):
+    return "fmriprep"
+
+
+fmriprep.workflows.bold._get_wf_name = _get_wf_name
 
 
 def init_subject_wf(item, workdir, images, data):
@@ -97,10 +103,24 @@ def init_subject_wf(item, workdir, images, data):
         fmriprep_reportlets_dir,
         fmriprepsettings.skull_strip_template,
         debug=fmriprepsettings.debug,
-        name="T1w"
+        name="smriprep"
     )
-    anat_inputnode = anat_preproc_wf.get_node("inputnode")
-    anat_inputnode.inputs.t1w = subjectdata["T1w"]
+    anat_preproc_wf.get_node("inputnode").inputs.t1w = subjectdata["T1w"]
+
+    anat_outputnode = anat_preproc_wf.get_node("outputnode")
+    anat_helper = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=[
+                "std_tpms"
+            ],
+        ),
+        name="anat_helper"
+    )
+    subject_wf.connect([
+        (anat_preproc_wf, anat_helper, [
+            ("anat_norm_wf.outputnode.std_tpms", "std_tpms")
+        ])
+    ])
 
     outfieldsByOutnameByScan = {}
 
@@ -110,21 +130,6 @@ def init_subject_wf(item, workdir, images, data):
             continue
 
         scan_wf = pe.Workflow(name="scan_" + scanname)
-
-        inputnode = pe.Node(
-            interface=niu.IdentityInterface(
-                fields=_func_inputnode_fields,
-            ),
-            name="inputnode"
-        )
-        scan_wf.add_nodes((inputnode,))
-
-        subject_wf.connect([
-            (anat_preproc_wf, scan_wf, [
-                ("outputnode.%s" % f, "inputnode.%s" % f)
-                for f in _func_inputnode_fields
-            ])
-        ])
 
         scanmetadata = metadata[scanname]
         try:
@@ -140,21 +145,11 @@ def init_subject_wf(item, workdir, images, data):
         if isinstance(scandata, dict):  # multiple runs
             for runname, bold_file in scandata.items():
                 run_wf = pe.Workflow(name="run_" + runname)
-                # run_wfs.append(run_wf)
 
-                run_inputnode = pe.Node(niu.IdentityInterface(
-                    fields=_func_inputnode_fields,
-                ), name="inputnode")
-                run_wf.add_nodes((inputnode,))
-
-                scan_wf.connect([
-                    (inputnode, run_wf, [
-                        (f, "inputnode.%s" % f)
-                        for f in _func_inputnode_fields
-                    ])
-                ])
                 _ = init_func_wf(
-                    run_wf, run_inputnode, scandata, scanmetadata,
+                    run_wf,
+                    anat_outputnode, anat_helper,
+                    scandata, scanmetadata,
                     workdir,
                     fmriprep_reportlets_dir,
                     fmriprep_output_dir,
@@ -163,7 +158,9 @@ def init_subject_wf(item, workdir, images, data):
                 )
         else:  # one run
             outfieldsByOutnameByScan[scanname] = init_func_wf(
-                scan_wf, inputnode, scandata, scanmetadata,
+                scan_wf,
+                anat_outputnode, anat_helper,
+                scandata, scanmetadata,
                 workdir,
                 fmriprep_reportlets_dir,
                 fmriprep_output_dir,
@@ -178,7 +175,9 @@ def init_subject_wf(item, workdir, images, data):
     return subject, subject_wf, outfieldsByOutnameByScan
 
 
-def init_func_wf(wf, inputnode, bold_file, metadata,
+def init_func_wf(wf,
+                 anat_outputnode, anat_helper,
+                 bold_file, metadata,
                  workdir,
                  fmriprep_reportlets_dir,
                  fmriprep_output_dir,
@@ -237,30 +236,29 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
 
     # connect fmriprep inputs
     wf.connect([
-        (inputnode, func_preproc_wf, [
+        (anat_outputnode, func_preproc_wf, [
             (f, "inputnode.%s" % f)
-            for f in _func_preproc_inputnode_fields
+            for f in _anat2func_fields
         ]),
     ])
 
     memcalc = MemoryCalculator(bold_file)
     repetition_time = metadata["RepetitionTime"]
 
-    # create helper to access important files more easily
-    helper = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["mask_file",
-                    "tpms", "movpar_file", "skip_vols"]),
-        name="helper"
+    # select standard space
+    select_std = pe.Node(
+        interface=KeySelect(
+            fields=["bold_file", "mask_file", "tpms"]),
+        name="select_std"
     )
+    select_std.inputs.key = "MNI152NLin6Asym"
     wf.connect([
-        (func_preproc_wf, helper, [
-            (("outputnode.bold_mask_std", _get_first),
-                "mask_file"),
-            ("bold_hmc_wf.outputnode.movpar_file", "movpar_file"),
-            ("bold_reference_wf.outputnode.skip_vols", "skip_vols")
+        (func_preproc_wf, select_std, [
+            ("outputnode.nonaggr_denoised_file", "bold_file"),
+            ("outputnode.bold_mask_std",  "mask_file"),
+            ("bold_std_trans_wf.outputnode.templates", "keys")
         ]),
-        (inputnode, helper, [
+        (anat_helper, select_std, [
             ("std_tpms", "tpms")
         ])
     ])
@@ -272,12 +270,32 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         mem_gb=memcalc.series_std_gb
     )
     wf.connect([
-        (func_preproc_wf, maskpreproc, [
-            (("outputnode.nonaggr_denoised_file", _get_first),
-                "in_file"),
-        ]),
-        (helper, maskpreproc, [
+        (select_std, maskpreproc, [
+            ("bold_file", "in_file"),
             ("mask_file", "mask_file")
+        ])
+    ])
+
+    # shortcut
+    helper = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["bold_file", "mask_file",
+                    "tpms", "movpar_file", "skip_vols"]),
+        name="helper",
+        run_without_submitting=True,
+        mem_gb=memcalc.min_gb
+    )
+    wf.connect([
+        (maskpreproc, helper, [
+            ("out_file", "bold_file")
+        ]),
+        (select_std, helper, [
+            ("mask_file", "mask_file"),
+            ("tpms", "tpms")
+        ]),
+        (func_preproc_wf, helper, [
+            ("bold_hmc_wf.outputnode.movpar_file", "movpar_file"),
+            ("bold_reference_wf.outputnode.skip_vols", "skip_vols")
         ])
     ])
 
@@ -288,13 +306,11 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     )
     wf.connect([
         (helper, confounds_wf, [
+            ("bold_file", "inputnode.bold_file"),
             ("mask_file", "inputnode.mask_file"),
             ("skip_vols", "inputnode.skip_vols"),
             ("movpar_file", "inputnode.movpar_file"),
             ("tpms", "inputnode.tpms"),
-        ]),
-        (maskpreproc, confounds_wf, [
-            ("out_file", "inputnode.bold_file")
         ])
     ])
 
@@ -313,11 +329,9 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         mem_gb=memcalc.min_gb
     )
     wf.connect([
-        (maskpreproc, ds_scan, [
-            ("out_file", "preproc")
-        ]),
-        (func_preproc_wf, ds_scan, [
-            (("outputnode.bold_mask_std", _get_first), "mask")
+        (helper, ds_scan, [
+            ("bold_file", "preproc"),
+            ("mask_file", "mask")
         ])
     ])
 
@@ -328,8 +342,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
         memcalc=memcalc
     )
     wf.connect([
-        (maskpreproc, temporalfilter_wf, [
-            ("out_file", "inputnode.bold_file")
+        (helper, temporalfilter_wf, [
+            ("bold_file", "inputnode.bold_file")
         ])
     ])
 
@@ -384,10 +398,8 @@ def init_func_wf(wf, inputnode, bold_file, metadata,
     for workflowName, (firstlevel_wf, outnames, outfields) \
             in outByWorkflowName.items():
         wf.connect([
-            (maskpreproc, firstlevel_wf, [
-                ("out_file", "inputnode.bold_file")
-            ]),
             (helper, firstlevel_wf, [
+                ("bold_file", "inputnode.bold_file"),
                 ("mask_file", "inputnode.mask_file")
             ]),
             (confounds_wf, firstlevel_wf, [

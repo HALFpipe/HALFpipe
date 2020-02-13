@@ -52,7 +52,7 @@ template = {}
 # Values of the dictionary aggregate modifiers
 output_spaces = OrderedDict([
     ("MNI152NLin6Asym", {"res": 2}),
-    ("MNI152NLin2009cAsym", {"res": 2}),
+    ("MNI152NLin2009cAsym", {"res": 2})
 ])
 # Option "--use-aroma" requires functional images to be resampled to
 # MNI152NLin6Asym space. The argument "MNI152NLin6Asym:res-2" has

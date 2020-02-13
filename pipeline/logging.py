@@ -35,7 +35,9 @@ def init_logging(workdir, jsonfile):
     formatter = Formatter(fmt=nlogging.fmt, datefmt=nlogging.datefmt)
     hdlr.setFormatter(formatter)
 
-    config.set("logging", "interface_level", "DEBUG")
+    # config.set("logging", "interface_level", "DEBUG")
+    # config.set("logging", "utils_level", "DEBUG")
+    # config.set("logging", "workflow_level", "DEBUG")
     nlogging.update_logging(config)
 
     nlogging._iflogger.handlers = []
