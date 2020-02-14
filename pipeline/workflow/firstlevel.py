@@ -62,13 +62,6 @@ _anat2func_fields = [
 ]
 
 
-def _get_wf_name(bold_fname):
-    return "fmriprep"
-
-
-fmriprep.workflows.bold._get_wf_name = _get_wf_name
-
-
 def init_subject_wf(item, workdir, images, data):
     """
     initialize workflow for all scans of a single subject
@@ -130,6 +123,7 @@ def init_subject_wf(item, workdir, images, data):
             continue
 
         scan_wf = pe.Workflow(name="scan_" + scanname)
+        subject_wf.add_nodes([scan_wf])
 
         scanmetadata = metadata[scanname]
         try:
@@ -145,6 +139,7 @@ def init_subject_wf(item, workdir, images, data):
         if isinstance(scandata, dict):  # multiple runs
             for runname, bold_file in scandata.items():
                 run_wf = pe.Workflow(name="run_" + runname)
+                scan_wf.add_nodes([run_wf])
 
                 _ = init_func_wf(
                     run_wf,
@@ -228,6 +223,7 @@ def init_func_wf(wf,
         fmriprepsettings.use_bbr,
         fmriprepsettings.use_syn,
         layout=layout, num_bold=1)
+    func_preproc_wf.name = "fmriprep"
 
     # adjust smoothing
     for node in func_preproc_wf._get_all_nodes():
