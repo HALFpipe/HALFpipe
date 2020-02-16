@@ -5,13 +5,11 @@
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
-from nipype.interfaces.ants.resampling import ApplyTransforms
 
 from fmriprep.workflows.bold import init_bold_confs_wf
 
 from ..interface import (
-    SelectColumnsTSV,
-    DontApplyTransforms
+    SelectColumnsTSV
 )
 
 from .memory import MemoryCalculator
@@ -26,7 +24,8 @@ def init_confounds_wf(metadata,
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
             fields=["bold_file", "mask_file",
-                    "tpms", "movpar_file", "skip_vols"]),
+                    "movpar_file", "skip_vols",
+                    "t1w_tpms", "t1w_mask", "anat2std_xfm"]),
         name="inputnode"
     )
 
@@ -45,21 +44,15 @@ def init_confounds_wf(metadata,
         regressors_fd_th=fmriprepsettings.regressors_fd_th,
     )
 
-    # we are passing everything in standard space
-    for nodename in bold_confounds_wf.list_node_names():
-        node = bold_confounds_wf.get_node(nodename)
-        if isinstance(node.interface, ApplyTransforms):
-            node._interface = DontApplyTransforms()
-    bold_confounds_wf.get_node("inputnode").inputs.t1_bold_xform = "identity"
-
     workflow.connect([
         (inputnode, bold_confounds_wf, [
             ("bold_file", "inputnode.bold"),
             ("mask_file", "inputnode.bold_mask"),
             ("skip_vols", "inputnode.skip_vols"),
-            ("tpms", "inputnode.t1w_tpms"),
-            ("mask_file", "inputnode.t1w_mask"),
-            ("movpar_file", "inputnode.movpar_file")
+            ("t1w_tpms", "inputnode.t1w_tpms"),
+            ("t1w_mask", "inputnode.t1w_mask"),
+            ("movpar_file", "inputnode.movpar_file"),
+            ("anat2std_xfm", "inputnode.t1_bold_xform")
         ]),
         (bold_confounds_wf, outputnode, [
             ("outputnode.confounds_file", "confounds"),

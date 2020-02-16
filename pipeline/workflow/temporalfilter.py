@@ -37,14 +37,10 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time,
         name="outputnode"
     )
 
-    # prepare operand string for FSLMATHS
-    highpass_operand = "-bptf %.10f -1" % \
-                       (temporal_filter_width / (2.0 * repetition_time))
-
     # node that calls FSLMATHS to actually do the temporal filtering
     highpass = pe.Node(
-        interface=fsl.ImageMaths(
-            op_string=highpass_operand, suffix="_tempfilt"),
+        interface=fsl.TemporalFilter(
+            highpass_sigma=(temporal_filter_width / (2.0 * repetition_time))),
         name="highpass",
         mem_gb=memcalc.series_std_gb
     )
