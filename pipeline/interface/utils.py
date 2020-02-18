@@ -87,7 +87,6 @@ def _robust_read_columns(in_file):
 
 
 def _merge_columns(in_list):
-    print("_merge_columns", in_list)
     out_array = None
     for idx, in_file in enumerate(in_list):
         in_array = _robust_read_columns(in_file)
