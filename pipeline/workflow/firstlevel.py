@@ -46,10 +46,10 @@ from .utils import (
 )
 
 from ..interface import (
-    # ApplyXfmSegmentation,
     MotionCutoff,
     LogicalAnd,
-    QualityCheck
+    QualityCheck,
+    SelectColumnsTSV
 )
 
 _anat2func_fields = [
@@ -306,46 +306,24 @@ def init_func_wf(wf,
     ])
 
     # regfilt
-    # soutputnode = pe.Node(
-    #     interface=niu.IdentityInterface(
-    #         fields=["melodic_dir", "ica_aroma_dir"]),
-    #     name="soutputnode"
-    # )
-    # ica_aroma_wf = func_preproc_wf.get_node("ica_aroma_wf")
-    # melodic = func_preproc_wf.get_node("ica_aroma_wf.melodic")
-    # ica_aroma = func_preproc_wf.get_node("ica_aroma_wf.ica_aroma")
-    # ica_aroma_wf.connect([
-    #     (melodic, soutputnode, [
-    #         ("out_dir", "melodic_dir")
-    #     ]),
-    #     (ica_aroma, soutputnode, [
-    #         ("out_dir", "ica_aroma_dir")
-    #     ])
-    # ])
-    # regfilthelper = pe.Node(
-    #     interface=niu.IdentityInterface(
-    #         fields=["melodic_dir", "ica_aroma_dir"]),
-    #     name="regfilthelper"
-    # )
-    # wf.connect([
-    #     (func_preproc_wf, regfilthelper, [
-    #         ("ica_aroma_wf.soutputnode.melodic_dir", "melodic_dir"),
-    #         ("ica_aroma_wf.soutputnode.ica_aroma_dir",
-    #             "ica_aroma_dir")
-    #     ])
-    # ])
-    # motion_ics = lambda ica_out_dir: \
-    #     op.join(ica_out_dir, "classified_motion_ICs.txt")
-    # melodic_ics = lambda ica_out_dir: \
-    #     op.join(ica_out_dir, "melodic_IC.nii.gz")
+    selectcolumns = pe.Node(
+        interface=SelectColumnsTSV(
+            column_names=["aroma_motion_\\d+"]
+        ),
+        name="selectcolumns",
+        run_without_submitting=True
+    )
     regfilt = pe.Node(
         interface=fsl.FilterRegressor(),
         name="regfilt",
     )
     regfilt.inputs.filter_all = True
     wf.connect([
-        (func_preproc_wf, regfilt, [
-            ("ica_aroma_wf.outputnode.aroma_confounds", "design_file")
+        (func_preproc_wf, selectcolumns, [
+            ("outputnode.confounds", "in_file")
+        ]),
+        (selectcolumns, regfilt, [
+            ("out_file", "design_file")
         ]),
         (select_std, regfilt, [
             ("bold_file", "in_file"),

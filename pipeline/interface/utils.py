@@ -5,6 +5,7 @@
 import os
 from os import path as op
 import sys
+import re
 
 from nipype.interfaces.base import (
     traits,
@@ -55,29 +56,44 @@ class MatrixToTSV(SimpleInterface):
 
 def _robust_read_columns(in_file):
     try:
-        in_array = np.loadtxt(in_file)
+        in_array = np.genfromtxt(
+            in_file,
+            missing_values="NaN,n/a,NA")
+        return in_array
     except ValueError:
-        try:
-            in_array = np.loadtxt(in_file, skiprows=1)
-        except ValueError:
-            try:
-                in_array = np.loadtxt(in_file, delimiter=",")
-            except ValueError:
-                try:
-                    in_array = np.loadtxt(in_file, delimiter=",", skiprows=1)
-                except ValueError as e:
-                    sys.stdout.write("Could not load file {}".format(in_file))
-                    raise e
-    return in_array
+        pass
+    try:
+        in_array = np.genfromtxt(
+            in_file, skip_header=1,
+            missing_values="NaN,n/a,NA")
+        return in_array
+    except ValueError:
+        pass
+    try:
+        in_array = np.genfromtxt(
+            in_file, delimiter=",",
+            missing_values="NaN,n/a,NA")
+        return in_array
+    except ValueError:
+        pass
+    try:
+        in_array = np.genfromtxt(
+            in_file, delimiter=",", skip_header=1,
+            missing_values="NaN,n/a,NA")
+        return in_array
+    except ValueError as e:
+        sys.stdout.write("Could not load file {}".format(in_file))
+        raise e
 
 
 def _merge_columns(in_list):
+    print("_merge_columns", in_list)
     out_array = None
     for idx, in_file in enumerate(in_list):
         in_array = _robust_read_columns(in_file)
         if in_array.ndim == 1:  # single column file
             in_array = in_array.reshape((-1, 1))
-        if in_array.shape[0] > 0:
+        if in_array.size > 0:
             if out_array is None:
                 out_array = in_array
             else:
@@ -140,9 +156,13 @@ class MergeColumnsTSV(IOBase):
 
 def _select_columns(column_names=None, inputpath=None,
                     header=False):
+    filter = re.compile("^(" + "|".join(column_names) + ")$")
     dataframe = pd.read_csv(inputpath, sep="\t")
-    dataframe = dataframe[[column for column in dataframe.columns
-                           if column in column_names]]
+    dataframe = dataframe[[
+        column for column in dataframe.columns
+        if filter.match(column) is not None and
+        len(column_names) > 0
+    ]]
     outputpath = op.join(os.getcwd(), "selected_columns.tsv")
     dataframe.to_csv(outputpath, sep="\t", index=False,
                      na_rep="n/a",
@@ -152,7 +172,8 @@ def _select_columns(column_names=None, inputpath=None,
 
 class SelectColumnsTSVInputSpec(TraitedSpec):
     in_file = File(exists=True, desc="input tsv file")
-    column_names = traits.List(traits.Str, desc="list of column names")
+    column_names = traits.List(
+        traits.Str, desc="list of column names, can be regular expressions")
     header = traits.Bool(False, usedefault=True)
 
 

@@ -70,13 +70,6 @@ def init_confounds_wf(metadata,
 
 
 def make_confounds_selectcolumns(metadata):
-    # create design matrix
-    selectcolumns = pe.Node(
-        interface=SelectColumnsTSV(),
-        name="selectcolumns",
-        run_without_submitting=True
-    )
-
     column_names = []
     if "UseMovPar" in metadata and metadata["UseMovPar"]:
         column_names.extend(
@@ -89,7 +82,14 @@ def make_confounds_selectcolumns(metadata):
     if "GlobalSignal" in metadata and metadata["GlobalSignal"]:
         column_names.append("global_signal")
 
-    selectcolumns.inputs.column_names = column_names
+    # create design matrix
+    selectcolumns = pe.Node(
+        interface=SelectColumnsTSV(
+            column_names=column_names
+        ),
+        name="selectcolumns",
+        run_without_submitting=True
+    )
 
     return selectcolumns, column_names
 
