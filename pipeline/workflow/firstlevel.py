@@ -267,6 +267,7 @@ def init_func_wf(wf,
     select_std = pe.Node(
         interface=KeySelect(
             fields=[
+                "bold_file",
                 "mask_file",
                 "anat2std_xfm"
             ]),
@@ -277,6 +278,7 @@ def init_func_wf(wf,
     select_std.inputs.key = "MNI152NLin6Asym"
     wf.connect([
         (func_preproc_wf, select_std, [
+            ("outputnode.bold_std",  "bold_file"),
             ("outputnode.bold_mask_std",  "mask_file"),
             ("bold_std_trans_wf.outputnode.templates", "keys")
         ]),
@@ -286,36 +288,131 @@ def init_func_wf(wf,
     ])
 
     # mask bold file
-    applymask = pe.Node(
+    applymasksd = pe.Node(
         interface=afni.Calc(
             expr="a*step(b)",
             outputtype="NIFTI_GZ"
         ),
-        name="applymask",
+        name="applymask_sd",
         mem_gb=memcalc.series_std_gb
     )
     wf.connect([
-        (func_preproc_wf, applymask, [
+        (func_preproc_wf, applymasksd, [
             ("outputnode.nonaggr_denoised_file", "in_file_a")
         ]),
-        (select_std, applymask, [
+        (select_std, applymasksd, [
             ("mask_file", "in_file_b")
+        ])
+    ])
+
+    # regfilt
+    # soutputnode = pe.Node(
+    #     interface=niu.IdentityInterface(
+    #         fields=["melodic_dir", "ica_aroma_dir"]),
+    #     name="soutputnode"
+    # )
+    # ica_aroma_wf = func_preproc_wf.get_node("ica_aroma_wf")
+    # melodic = func_preproc_wf.get_node("ica_aroma_wf.melodic")
+    # ica_aroma = func_preproc_wf.get_node("ica_aroma_wf.ica_aroma")
+    # ica_aroma_wf.connect([
+    #     (melodic, soutputnode, [
+    #         ("out_dir", "melodic_dir")
+    #     ]),
+    #     (ica_aroma, soutputnode, [
+    #         ("out_dir", "ica_aroma_dir")
+    #     ])
+    # ])
+    # regfilthelper = pe.Node(
+    #     interface=niu.IdentityInterface(
+    #         fields=["melodic_dir", "ica_aroma_dir"]),
+    #     name="regfilthelper"
+    # )
+    # wf.connect([
+    #     (func_preproc_wf, regfilthelper, [
+    #         ("ica_aroma_wf.soutputnode.melodic_dir", "melodic_dir"),
+    #         ("ica_aroma_wf.soutputnode.ica_aroma_dir",
+    #             "ica_aroma_dir")
+    #     ])
+    # ])
+    # motion_ics = lambda ica_out_dir: \
+    #     op.join(ica_out_dir, "classified_motion_ICs.txt")
+    # melodic_ics = lambda ica_out_dir: \
+    #     op.join(ica_out_dir, "melodic_IC.nii.gz")
+    regfilt = pe.Node(
+        interface=fsl.FilterRegressor(),
+        name="regfilt",
+    )
+    regfilt.inputs.filter_all = True
+    wf.connect([
+        (func_preproc_wf, regfilt, [
+            ("ica_aroma_wf.outputnode.aroma_confounds", "design_file")
+        ]),
+        (select_std, regfilt, [
+            ("bold_file", "in_file"),
+            ("mask_file", "mask")
+        ])
+    ])
+    applymaskd = pe.Node(
+        interface=afni.Calc(
+            expr="a*step(b)",
+            outputtype="NIFTI_GZ"
+        ),
+        name="applymask_d",
+        mem_gb=memcalc.series_std_gb
+    )
+    wf.connect([
+        (regfilt, applymaskd, [
+            ("out_file", "in_file_a"),
+        ]),
+        (select_std, applymaskd, [
+            ("mask_file", "in_file_b")
+        ])
+    ])
+
+    # high pass filter
+    temporalfilterd = init_temporalfilter_wf(
+        metadata["TemporalFilter"],
+        repetition_time,
+        name="temporalfilter_d",
+        memcalc=memcalc
+    )
+    wf.connect([
+        (applymaskd, temporalfilterd, [
+            ("out_file", "inputnode.bold_file")
+        ])
+    ])
+    temporalfiltersd = init_temporalfilter_wf(
+        metadata["TemporalFilter"],
+        repetition_time,
+        name="temporalfilter_sd",
+        memcalc=memcalc
+    )
+    wf.connect([
+        (applymasksd, temporalfiltersd, [
+            ("out_file", "inputnode.bold_file")
         ])
     ])
 
     # shortcut
     helper = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["bold_file", "mask_file",
+            fields=["bold_file_d",
+                    "bold_file_df",
+                    "bold_file_sdf",
+                    "mask_file",
                     "t1w_tpms", "t1w_mask", "anat2std_xfm",
                     "movpar_file", "skip_vols"]),
-        name="helper",
-        run_without_submitting=True,
-        mem_gb=memcalc.min_gb
+        name="helper"
     )
     wf.connect([
-        (applymask, helper, [
-            ("out_file", "bold_file")
+        (applymaskd, helper, [
+            ("out_file", "bold_file_d")
+        ]),
+        (temporalfilterd, helper, [
+            ("outputnode.filtered_file", "bold_file_df")
+        ]),
+        (temporalfiltersd, helper, [
+            ("outputnode.filtered_file", "bold_file_sdf")
         ]),
         (select_std, helper, [
             ("mask_file", "mask_file"),
@@ -332,21 +429,74 @@ def init_func_wf(wf,
     ])
 
     # recalculate confounds
-    confounds_wf = init_confounds_wf(
+    confoundshelper = pe.Node(
+        interface=niu.IdentityInterface(
+            fields=["confounds_d",
+                    "confounds_df",
+                    "confounds_sdf"]),
+        name="confoundshelper"
+    )
+    confoundsd = init_confounds_wf(
         metadata,
         bold_file,
         fmriprep_reportlets_dir,
+        name="confounds_d_wf",
         memcalc=memcalc
     )
     wf.connect([
-        (helper, confounds_wf, [
-            ("bold_file", "inputnode.bold_file"),
+        (helper, confoundsd, [
+            ("bold_file_d", "inputnode.bold_file"),
             ("mask_file", "inputnode.mask_file"),
             ("skip_vols", "inputnode.skip_vols"),
             ("movpar_file", "inputnode.movpar_file"),
             ("t1w_tpms", "inputnode.t1w_tpms"),
             ("t1w_mask", "inputnode.t1w_mask"),
             ("anat2std_xfm", "inputnode.anat2std_xfm")
+        ]),
+        (confoundsd, confoundshelper, [
+            ("outputnode.confounds", "confounds_d")
+        ])
+    ])
+    confoundsdf = init_confounds_wf(
+        metadata,
+        bold_file,
+        fmriprep_reportlets_dir,
+        name="confounds_df_wf",
+        memcalc=memcalc
+    )
+    wf.connect([
+        (helper, confoundsdf, [
+            ("bold_file_df", "inputnode.bold_file"),
+            ("mask_file", "inputnode.mask_file"),
+            ("skip_vols", "inputnode.skip_vols"),
+            ("movpar_file", "inputnode.movpar_file"),
+            ("t1w_tpms", "inputnode.t1w_tpms"),
+            ("t1w_mask", "inputnode.t1w_mask"),
+            ("anat2std_xfm", "inputnode.anat2std_xfm")
+        ]),
+        (confoundsdf, confoundshelper, [
+            ("outputnode.confounds", "confounds_df")
+        ])
+    ])
+    confoundssdf = init_confounds_wf(
+        metadata,
+        bold_file,
+        fmriprep_reportlets_dir,
+        name="confounds_sdf_wf",
+        memcalc=memcalc
+    )
+    wf.connect([
+        (helper, confoundssdf, [
+            ("bold_file_sdf", "inputnode.bold_file"),
+            ("mask_file", "inputnode.mask_file"),
+            ("skip_vols", "inputnode.skip_vols"),
+            ("movpar_file", "inputnode.movpar_file"),
+            ("t1w_tpms", "inputnode.t1w_tpms"),
+            ("t1w_mask", "inputnode.t1w_mask"),
+            ("anat2std_xfm", "inputnode.anat2std_xfm")
+        ]),
+        (confoundsd, confoundshelper, [
+            ("outputnode.confounds", "confounds_sdf")
         ])
     ])
 
@@ -366,20 +516,8 @@ def init_func_wf(wf,
     )
     wf.connect([
         (helper, ds_scan, [
-            ("bold_file", "preproc"),
+            ("bold_file_sdf", "preproc"),
             ("mask_file", "mask")
-        ])
-    ])
-
-    # high pass filter
-    temporalfilter_wf = init_temporalfilter_wf(
-        metadata["TemporalFilter"],
-        repetition_time,
-        memcalc=memcalc
-    )
-    wf.connect([
-        (helper, temporalfilter_wf, [
-            ("bold_file", "inputnode.bold_file")
         ])
     ])
 
@@ -395,8 +533,8 @@ def init_func_wf(wf,
         mem_gb=memcalc.min_gb
     )
     wf.connect([
-        (temporalfilter_wf, tsnr_wf, [
-            ("outputnode.filtered_file", "inputnode.bold_file")
+        (helper, tsnr_wf, [
+            ("bold_file_sdf", "inputnode.bold_file")
         ]),
         (tsnr_wf, ds_tsnr, [
             ("outputnode.report_file", "in_file")
@@ -418,30 +556,41 @@ def init_func_wf(wf,
             firstlevel_wf, outnames, outfields,
             output_dir, subject, scan, run
         )
+        return firstlevel_wf
 
     # first level stats workflows
     if "Conditions" in metadata:
         conditions = lookup(metadata["Conditions"],
                             subject_id=subject, run_id=run)
-        aggregate(init_glm_wf(
+        glm_wf = aggregate(init_glm_wf(
             metadata, conditions
         ))
-    aggregate(init_rest_wf(
-        metadata
-    ))
-
-    # connect inputs
-    for workflowName, (firstlevel_wf, outnames, outfields) \
-            in outByWorkflowName.items():
         wf.connect([
-            (helper, firstlevel_wf, [
-                ("bold_file", "inputnode.bold_file"),
+            (helper, glm_wf, [
+                ("bold_file_sdf", "inputnode.bold_file"),
                 ("mask_file", "inputnode.mask_file")
             ]),
-            (confounds_wf, firstlevel_wf, [
-                ("outputnode.confounds", "inputnode.confounds"),
+            (confoundshelper, glm_wf, [
+                ("confounds_sdf", "inputnode.confounds"),
             ])
         ])
+
+    rest_wf = aggregate(init_rest_wf(
+        metadata
+    ))
+    wf.connect([
+        (helper, rest_wf, [
+            ("bold_file_d", "inputnode.bold_file_d"),
+            ("bold_file_df", "inputnode.bold_file_df"),
+            ("bold_file_sdf", "inputnode.bold_file_sdf"),
+            ("mask_file", "inputnode.mask_file")
+        ]),
+        (confoundshelper, rest_wf, [
+            ("confounds_d", "inputnode.confounds_d"),
+            ("confounds_df", "inputnode.confounds_df"),
+            ("confounds_sdf", "inputnode.confounds_sdf"),
+        ])
+    ])
 
     outputnode, outfieldsByOutname = \
         make_outputnode(wf, outByWorkflowName,

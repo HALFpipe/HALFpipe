@@ -20,7 +20,7 @@ def init_reho_wf(name="reho", memcalc=MemoryCalculator()):
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["bold_file", "mask_file", "confounds"]),
+            fields=["bold_file", "mask_file"]),
         name="inputnode"
     )
 

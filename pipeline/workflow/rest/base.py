@@ -26,38 +26,41 @@ def init_rest_wf(metadata,
 
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file",
-                "confounds",
+        fields=["bold_file_d",
+                "confounds_d",
+                "bold_file_df",
+                "confounds_df",
+                "bold_file_sdf",
+                "confounds_sdf",
                 "mask_file"]),
         name="inputnode"
     )
 
-    unfilteredFileEndpoint = [inputnode, "bold_file"]
-    confoundsFilteredFileEndpoint = unfilteredFileEndpoint
-
-    confoundsregression_wf = init_confoundsregression_wf(metadata)
-    if confoundsregression_wf is not None:
+    unfilteredFileEndpointd = [inputnode, "bold_file_d"]
+    confoundsFilteredFileEndpointd = unfilteredFileEndpointd
+    confoundsregressiond = init_confoundsregression_wf(metadata)
+    if confoundsregressiond is not None:
         workflow.connect(
-            *unfilteredFileEndpoint,
-            confoundsregression_wf, "inputnode.bold_file"
+            *unfilteredFileEndpointd,
+            confoundsregressiond, "inputnode.bold_file"
         )
         workflow.connect([
-            (inputnode, confoundsregression_wf, [
+            (inputnode, confoundsregressiond, [
+                ("confounds_d", "inputnode.confounds"),
                 ("mask_file", "inputnode.mask_file"),
-                ("confounds", "inputnode.confounds"),
             ])
         ])
-        confoundsFilteredFileEndpoint = \
-            [confoundsregression_wf, "outputnode.filtered_file"]
+        confoundsFilteredFileEndpointd = \
+            [confoundsregressiond, "outputnode.filtered_file"]
 
     repetition_time = metadata["RepetitionTime"]
 
     bandpass_wf = init_bandpass_wf(repetition_time)
     workflow.connect(
-        *confoundsFilteredFileEndpoint,
+        *confoundsFilteredFileEndpointd,
         bandpass_wf, "inputnode.bold_file"
     )
-    bandpassFilteredFileEndpoint = [bandpass_wf, "outputnode.filtered_file"]
+    bandpassFilteredFileEndpointd = [bandpass_wf, "outputnode.filtered_file"]
 
     workflow.connect([
         (inputnode, bandpass_wf, [
@@ -79,8 +82,24 @@ def init_rest_wf(metadata,
     aggregate(out)
     brainatlas_wf, outnames, _ = out
     if len(outnames) > 0:
+        unfilteredFileEndpointdf = [inputnode, "bold_file_df"]
+        confoundsFilteredFileEndpointdf = unfilteredFileEndpointdf
+        confoundsregressiondf = init_confoundsregression_wf(metadata)
+        if confoundsregressiondf is not None:
+            workflow.connect(
+                *unfilteredFileEndpointdf,
+                confoundsregressiondf, "inputnode.bold_file"
+            )
+            workflow.connect([
+                (inputnode, confoundsregressiondf, [
+                    ("confounds_d", "inputnode.confounds"),
+                    ("mask_file", "inputnode.mask_file"),
+                ])
+            ])
+            confoundsFilteredFileEndpointdf = \
+                [confoundsregressiond, "outputnode.filtered_file"]
         workflow.connect(
-            *confoundsFilteredFileEndpoint,
+            *confoundsFilteredFileEndpointdf,
             brainatlas_wf, "inputnode.bold_file"
         )
 
@@ -88,10 +107,12 @@ def init_rest_wf(metadata,
     aggregate(out)
     seedconnectivity_wf, outnames, _ = out
     if len(outnames) > 0:
-        workflow.connect(
-            *unfilteredFileEndpoint,
-            seedconnectivity_wf, "inputnode.bold_file"
-        )
+        workflow.connect([
+            (inputnode, seedconnectivity_wf, [
+                ("bold_file_sdf", "inputnode.bold_file"),
+                ("confounds_sdf", "inputnode.confounds")
+            ])
+        ])
 
     if "ICAMaps" in metadata:
         for name, componentsfile in metadata["ICAMaps"].items():
@@ -103,10 +124,12 @@ def init_rest_wf(metadata,
             aggregate(out)
             dualregression_wf, outnames, _ = out
             if len(outnames) > 0:
-                workflow.connect(
-                    *unfilteredFileEndpoint,
-                    dualregression_wf, "inputnode.bold_file"
-                )
+                workflow.connect([
+                    (inputnode, dualregression_wf, [
+                        ("bold_file_sdf", "inputnode.bold_file"),
+                        ("confounds_sdf", "inputnode.confounds")
+                    ])
+                ])
 
     if "ReHo" in metadata and metadata["ReHo"]:
         out = init_reho_wf(memcalc=memcalc)
@@ -114,7 +137,7 @@ def init_rest_wf(metadata,
         reho_wf, outnames, _ = out
         if len(outnames) > 0:
             workflow.connect(
-                *bandpassFilteredFileEndpoint,
+                *bandpassFilteredFileEndpointd,
                 reho_wf, "inputnode.bold_file"
             )
 
@@ -124,19 +147,18 @@ def init_rest_wf(metadata,
         alff_wf, outnames, _ = out
         if len(outnames) > 0:
             workflow.connect(
-                *confoundsFilteredFileEndpoint,
+                *confoundsFilteredFileEndpointd,
                 alff_wf, "inputnode.bold_file"
             )
             workflow.connect(
-                *bandpassFilteredFileEndpoint,
+                *bandpassFilteredFileEndpointd,
                 alff_wf, "inputnode.filtered_file"
             )
 
     for workflowName, (wf, outnames, outfields) in outByWorkflowName.items():
         workflow.connect([
             (inputnode, wf, [
-                ("mask_file", "inputnode.mask_file"),
-                ("confounds", "inputnode.confounds"),
+                ("mask_file", "inputnode.mask_file")
             ])
         ])
 

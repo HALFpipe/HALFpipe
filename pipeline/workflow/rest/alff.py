@@ -50,7 +50,7 @@ def init_alff_wf(name="alff"):
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["bold_file", "filtered_file", "mask_file", "confounds"]),
+            fields=["bold_file", "filtered_file", "mask_file"]),
         name="inputnode"
     )
 

@@ -25,7 +25,7 @@ def init_brainatlas_wf(metadata, name="brainatlas"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file", "confounds"]),
+        fields=["bold_file", "mask_file"]),
         name="inputnode"
     )
 

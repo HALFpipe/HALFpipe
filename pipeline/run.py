@@ -526,7 +526,7 @@ def main():
                 response1 = c.select("Add another between-group comparison?",
                                      ["Yes", "No"])
 
-            response1 = c.select("Specify continuous covariate?",
+            response1 = c.select("Specify covariate?",
                                  ["Yes", "No"])
             while response1 == "Yes":
                 if _covariates:
@@ -541,7 +541,7 @@ def main():
 
                     del _covariates[k]
 
-                    response1 = c.select("Add another continuous " +
+                    response1 = c.select("Add another " +
                                          "covariate?",
                                          ["Yes", "No"])
                 else:
