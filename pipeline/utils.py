@@ -42,6 +42,20 @@ def _get_first(l):
         return _get_first(l[0])
 
 
+def _omit_first(l):
+    """
+    omit first element from list
+    doesn't fail is input is not a list
+
+    :param l: input list
+
+    """
+    if not isinstance(l, list):
+        return l
+    else:
+        return l[1:]
+
+
 def firstval(dict):
     """
     get first value from dict

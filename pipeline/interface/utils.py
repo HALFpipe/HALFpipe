@@ -77,10 +77,11 @@ def _merge_columns(in_list):
         in_array = _robust_read_columns(in_file)
         if in_array.ndim == 1:  # single column file
             in_array = in_array.reshape((-1, 1))
-        if out_array is None:
-            out_array = in_array
-        else:
-            out_array = np.hstack((out_array, in_array))
+        if in_array.shape[0] > 0:
+            if out_array is None:
+                out_array = in_array
+            else:
+                out_array = np.hstack((out_array, in_array))
     out_array = np.squeeze(out_array)
     outputpath = op.join(os.getcwd(), "merged_columns.tsv")
     np.savetxt(outputpath, out_array, delimiter="\t")

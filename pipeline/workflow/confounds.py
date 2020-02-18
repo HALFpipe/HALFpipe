@@ -17,6 +17,8 @@ from ..fmriprepsettings import settings as fmriprepsettings
 
 
 def init_confounds_wf(metadata,
+                      bold_file,
+                      fmriprep_reportlets_dir,
                       name="confounds",
                       memcalc=MemoryCalculator()):
     workflow = pe.Workflow(name=name)
@@ -58,6 +60,11 @@ def init_confounds_wf(metadata,
             ("outputnode.confounds_file", "confounds"),
         ])
     ])
+    for node in workflow.list_node_names():
+        if node.split('.')[-1].startswith("ds_report"):
+            workflow.get_node(node).inputs.base_directory = \
+                fmriprep_reportlets_dir
+            workflow.get_node(node).inputs.source_file = bold_file
 
     return workflow
 

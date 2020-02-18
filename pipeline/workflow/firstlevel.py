@@ -90,7 +90,7 @@ def init_subject_wf(item, workdir, images, data):
 
     # assert structural data
     if "T1w" not in subjectdata:
-        return subject_wf
+        return subject, subject_wf, {}
 
     anat_preproc_wf = init_anat_preproc_wf(
         fmriprepsettings.bids_dir,
@@ -187,6 +187,8 @@ def init_subject_wf(item, workdir, images, data):
     subject_wf = patch_wf(subject_wf,
                           images, output_dir,
                           fmriprep_reportlets_dir, fmriprep_output_dir)
+
+    subject_wf._graph = subject_wf._create_flat_graph()
 
     return subject, subject_wf, outfieldsByOutnameByScan
 
@@ -332,6 +334,8 @@ def init_func_wf(wf,
     # recalculate confounds
     confounds_wf = init_confounds_wf(
         metadata,
+        bold_file,
+        fmriprep_reportlets_dir,
         memcalc=memcalc
     )
     wf.connect([

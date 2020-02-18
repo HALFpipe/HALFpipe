@@ -8,6 +8,7 @@ from copy import deepcopy
 
 from niworkflows.interfaces.bids import DerivativesDataSink
 from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
 from .fake import FakeDerivativesDataSink
 
@@ -72,20 +73,30 @@ def patch_wf(workflow, images,
     :param fmriprep_output_dir: the output dir passed to FMRIPREP
 
     """
-    workflow._graph = workflow._create_flat_graph()
 
     # fmriprep includes a bugfix for when multiple T1w images are passed,
     # so that only one is used for functional preprocessing. This can be the
     # the case in longitudinal studies.
     # However, as this function depends on BIDS, and because we don't support
     # longitudinal data in the first place, we attempt to remove this bugfix.
-    for _, _, d in workflow._graph.edges(data=True):
-        for i, (src, dest) in enumerate(d["connect"]):
-            if isinstance(src, tuple) and len(src) > 1:
-                if "fix_multi_T1w_source_name" in src[1]:
-                    d["connect"][i] = (src[0], dest)
+    workflows = [workflow]
+    while len(workflows) > 0:
+        _workflow = workflows.pop()
+        for node in _workflow._graph.nodes:
+            if isinstance(node, pe.Workflow):
+                workflows.append(node)
+        for _, _, d in _workflow._graph.edges(data=True):
+            for i, (src, dest) in enumerate(d["connect"]):
+                if isinstance(src, tuple) and len(src) > 1:
+                    if "fix_multi_T1w_source_name" in src[1]:
+                        d["connect"][i] = (src[0], dest)
 
-    for node in workflow._get_all_nodes():
+    for nodename in workflow.list_node_names():
+        node = workflow.get_node(nodename)
+
+        # copy run configuration of root workflow to nodes
+        node.config = deepcopy(workflow.config)
+
         if isinstance(node.interface, DerivativesDataSink):
             # the DerivativesDataSink class of fmriprep depends on the BIDS
             # data structure to determine output file names. We replace it with
@@ -125,9 +136,5 @@ def patch_wf(workflow, images,
                 node.interface.inputs.function_str = \
                     "def _bids_relative(in_files, bids_root):\n" + \
                     "    return in_files"
-
-    # copy run configuration of root workflow to nodes
-    for node in workflow._get_all_nodes():
-        node.config = deepcopy(workflow.config)
 
     return workflow

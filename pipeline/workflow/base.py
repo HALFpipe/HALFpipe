@@ -92,16 +92,19 @@ def init_workflow(workdir, jsonfile):
     subject_sets = {
         "AllSubjects": subjects
     }
-    repeat_within_subgroup_fields = group_design["RepeatWithinSubGroups"]
-    for field in repeat_within_subgroup_fields:
-        subject_groups = group_data[field]["SubjectGroups"]
-        unique_groups = set(subject_groups.values())
-        for group in unique_groups:
-            subject_set_name = "Within_{}.{}".format(field, group)
-            subject_set = {
-                subject for subject, g in subject_groups.items() if g == group
-            }
-            subject_sets[subject_set_name] = subject_set
+    if "RepeatWithinSubGroups" in group_design:
+        repeat_within_subgroup_fields = group_design["RepeatWithinSubGroups"]
+        for field in repeat_within_subgroup_fields:
+            subject_groups = group_data[field]["SubjectGroups"]
+            unique_groups = set(subject_groups.values())
+            for group in unique_groups:
+                subject_set_name = "Within_{}.{}".format(field, group)
+                subject_set = {
+                    subject
+                    for subject, g in subject_groups.items()
+                    if g == group
+                }
+                subject_sets[subject_set_name] = subject_set
 
     stats_dir = os.path.join(workdir, "stats")
     for scanname, outfieldsByOutname in outfieldsByOutnameByScan.items():
@@ -150,6 +153,8 @@ def init_workflow(workdir, jsonfile):
                         if str(node).endswith('.' + nodename):
                             outputnode = node
                             break
+                    if outputnode is None:
+                        continue
                     for outfield in fieldnames:
                         if outfield == "subject":
                             continue

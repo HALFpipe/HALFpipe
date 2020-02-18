@@ -268,11 +268,13 @@ def main():
             configuration[scanname]["RepetitionTime"] = dict()
             for subject in subject_ids:
                 # reads the repetion time from the nii.gz file
-                configuration[scanname]["RepetitionTime"][subject] = \
-                    float(str(nib.load(
-                        firstval(transpose(images[scanname]))[subject]
-                        # gets the path of the nii.gz file for each subject
-                    ).header.get_zooms()[3]))
+                scanimages = firstval(transpose(images[scanname]))
+                if subject in scanimages:
+                    configuration[scanname]["RepetitionTime"][subject] = \
+                        float(str(nib.load(
+                            scanimages[subject]
+                            # gets the path of the nii.gz file for each subject
+                        ).header.get_zooms()[3]))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
