@@ -38,7 +38,9 @@ def init_rest_wf(metadata,
 
     unfilteredFileEndpointd = [inputnode, "bold_file_d"]
     confoundsFilteredFileEndpointd = unfilteredFileEndpointd
-    confoundsregressiond = init_confoundsregression_wf(metadata)
+    confoundsregressiond = init_confoundsregression_wf(
+        metadata,
+        name="confoundsregressiond")
     if confoundsregressiond is not None:
         workflow.connect(
             *unfilteredFileEndpointd,
@@ -84,7 +86,9 @@ def init_rest_wf(metadata,
     if len(outnames) > 0:
         unfilteredFileEndpointdf = [inputnode, "bold_file_df"]
         confoundsFilteredFileEndpointdf = unfilteredFileEndpointdf
-        confoundsregressiondf = init_confoundsregression_wf(metadata)
+        confoundsregressiondf = init_confoundsregression_wf(
+            metadata,
+            name="confoundsregressiondf")
         if confoundsregressiondf is not None:
             workflow.connect(
                 *unfilteredFileEndpointdf,
