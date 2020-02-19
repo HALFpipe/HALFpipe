@@ -5,7 +5,11 @@
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
-dataSinkRegexpSubstitutions = [(r"(/.+)/.+.nii.gz", r"\1.nii.gz")]
+dataSinkRegexpSubstitutions = [
+    (r"(/.+)/dof", r"\1"),
+    (r"(/.+)/.+.txt", r"\1.txt"),
+    (r"(/.+)/.+.nii.gz", r"\1.nii.gz"),
+]
 
 
 def make_varname(outname, outfield):

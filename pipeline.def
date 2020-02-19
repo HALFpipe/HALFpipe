@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: poldracklab/fmriprep:1.5.7
+From: poldracklab/fmriprep:1.5.9
 
 %setup
   echo $PWD

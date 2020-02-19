@@ -43,7 +43,6 @@ class Dof(BaseInterface):
 
         """
         im = nib.load(self.inputs.in_file)
-        print(im)
         dof = im.shape[3] - self.inputs.num_regressors
         with open(op.abspath(self.inputs.out_file), "w") as f:
             f.write("%i" % dof)
