@@ -95,7 +95,8 @@ def make_confounds_selectcolumns(metadata):
 
 
 def init_confoundsregression_wf(metadata,
-                                name="confoundsregression"):
+                                name="confoundsregression",
+                                memcalc=MemoryCalculator()):
     """
     create workflow to ccorrect for
     for covariates in functional scans
@@ -128,6 +129,7 @@ def init_confoundsregression_wf(metadata,
     regfilt = pe.Node(
         interface=fsl.FilterRegressor(),
         name="regfilt",
+        mem_gb=memcalc.series_std_gb
     )
     regfilt.inputs.filter_all = True
 

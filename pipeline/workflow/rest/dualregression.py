@@ -17,9 +17,12 @@ from ...interface import (
 from ..confounds import make_confounds_selectcolumns
 from ...utils import _get_first
 
+from ..memory import MemoryCalculator
+
 
 def init_dualregression_wf(metadata, componentsfile,
-                           name="dualregression"):
+                           name="dualregression",
+                           memcalc=MemoryCalculator()):
     """
     create a workflow to calculate dual regression for ICA seeds
     :param componentsfile: 4d image file with ica components
@@ -46,6 +49,7 @@ def init_dualregression_wf(metadata, componentsfile,
     maths = pe.Node(
         interface=fsl.ApplyMask(),
         name="maths",
+        mem_gb=memcalc.volume_std_gb
     )
     maths.inputs.in_file = componentsfile
 
@@ -60,7 +64,8 @@ def init_dualregression_wf(metadata, componentsfile,
             out_file="beta",
             demean=True,
         ),
-        name="glm0"
+        name="glm0",
+        mem_gb=memcalc.series_std_gb*ncomponents
     )
 
     selectcolumns, confounds_list = make_confounds_selectcolumns(
@@ -71,7 +76,9 @@ def init_dualregression_wf(metadata, componentsfile,
 
     contrasttotsv = pe.Node(
         interface=MatrixToTSV(),
-        name="contrast_node"
+        name="contrast_node",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     contrasttotsv.inputs.matrix = contrasts
 
@@ -85,13 +92,16 @@ def init_dualregression_wf(metadata, componentsfile,
             out_z_name="zstat.nii.gz",
             demean=True
         ),
-        name="glm1"
+        name="glm1",
+        mem_gb=memcalc.series_std_gb*ncomponents
     )
 
     if len(confounds_list) > 0:
         mergecolumns = pe.Node(
             interface=MergeColumnsTSV(2),
-            name="mergecolumns"
+            name="mergecolumns",
+            mem_gb=memcalc.min_gb,
+            run_without_submitting=True
         )
         workflow.connect([
             (glm0, mergecolumns, [
@@ -117,21 +127,26 @@ def init_dualregression_wf(metadata, componentsfile,
     # split regression outputs into individual images
     splitcopesimage = pe.Node(
         interface=fsl.Split(dimension="t"),
-        name="splitcopesimage"
+        name="splitcopesimage",
+        mem_gb=memcalc.volume_std_gb*ncomponents
     )
     splitvarcopesimage = pe.Node(
         interface=fsl.Split(dimension="t"),
-        name="splitvarcopesimage"
+        name="splitvarcopesimage",
+        mem_gb=memcalc.volume_std_gb*ncomponents
     )
     splitzstatsimage = pe.Node(
         interface=fsl.Split(dimension="t"),
-        name="splitzstatsimage"
+        name="splitzstatsimage",
+        mem_gb=memcalc.volume_std_gb*ncomponents
     )
 
     # generate dof text file
     gendoffile = pe.Node(
         interface=Dof(num_regressors=1),
-        name="gendoffile"
+        name="gendoffile",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     # outputs are cope, varcope and zstat for each seed region and a dof_file
@@ -151,15 +166,21 @@ def init_dualregression_wf(metadata, componentsfile,
     # split regression outputs by name
     splitcopes = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
-        name="splitcopes"
+        name="splitcopes",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
-        name="splitvarcopes"
+        name="splitvarcopes",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     splitzstats = pe.Node(
         interface=niu.Split(splits=[1 for componentname in componentnames]),
-        name="splitzstats"
+        name="splitzstats",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     workflow.connect([

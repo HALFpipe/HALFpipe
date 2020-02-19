@@ -8,8 +8,11 @@ from nipype.interfaces import afni
 
 from .zscore import init_zscore_wf
 
+from ..memory import MemoryCalculator
 
-def init_alff_wf(name="alff"):
+
+def init_alff_wf(name="alff",
+                 memcalc=MemoryCalculator()):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
     fractional ALFF maps
@@ -57,7 +60,8 @@ def init_alff_wf(name="alff"):
     # standard deviation over frequency
     stddev_filtered = pe.Node(
         interface=afni.TStat(),
-        name="stddev_filtered"
+        name="stddev_filtered",
+        mem_gb=memcalc.series_std_gb
     )
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
@@ -65,14 +69,16 @@ def init_alff_wf(name="alff"):
     # standard deviation of the unfiltered nuisance corrected image
     stddev_unfiltered = pe.Node(
         interface=afni.TStat(),
-        name="stddev_unfiltered"
+        name="stddev_unfiltered",
+        mem_gb=memcalc.series_std_gb
     )
     stddev_unfiltered.inputs.outputtype = "NIFTI_GZ"
     stddev_unfiltered.inputs.options = "-stdev"
 
     falff = pe.Node(
         interface=afni.Calc(),
-        name="falff"
+        name="falff",
+        mem_gb=memcalc.volume_std_gb
     )
     falff.inputs.args = "-float"
     falff.inputs.expr = "(1.0*bool(a))*((1.0*b)/(1.0*c))"

@@ -16,9 +16,12 @@ from ...interface import (
 from ..confounds import make_confounds_selectcolumns
 from ...utils import _get_first
 
+from ..memory import MemoryCalculator
+
 
 def init_seedconnectivity_wf(metadata,
-                             name="seedconnectivity"):
+                             name="seedconnectivity",
+                             memcalc=MemoryCalculator()):
     """
     create workflow to calculate seed connectivity maps
     for resting state functional scans
@@ -57,7 +60,8 @@ def init_seedconnectivity_wf(metadata,
     maths = pe.MapNode(
         interface=fsl.ApplyMask(),
         name="maths",
-        iterfield=["in_file"]
+        iterfield=["in_file"],
+        mem_gb=memcalc.volume_std_gb
     )
     maths.inputs.in_file = seed_paths
 
@@ -65,7 +69,8 @@ def init_seedconnectivity_wf(metadata,
     meants = pe.MapNode(
         interface=fsl.ImageMeants(),
         name="meants",
-        iterfield=["mask"]
+        iterfield=["mask"],
+        mem_gb=memcalc.series_std_gb
     )
 
     selectcolumns, confounds_list = make_confounds_selectcolumns(
@@ -75,7 +80,9 @@ def init_seedconnectivity_wf(metadata,
     mergecolumns = pe.MapNode(
         interface=MergeColumnsTSV(2),
         name="mergecolumns",
-        iterfield=["in1"]
+        iterfield=["in1"],
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     contrast = np.zeros((1, len(confounds_list)+1))
@@ -83,7 +90,9 @@ def init_seedconnectivity_wf(metadata,
 
     contrasttotsv = pe.Node(
         interface=MatrixToTSV(),
-        name="contrast_node"
+        name="contrast_node",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     contrasttotsv.inputs.matrix = contrast
 
@@ -99,27 +108,36 @@ def init_seedconnectivity_wf(metadata,
             demean=True
         ),
         name="glm",
-        iterfield=["design"]
+        iterfield=["design"],
+        mem_gb=memcalc.series_std_gb*contrast.size
     )
 
     # generate dof text file
     gendoffile = pe.Node(
         interface=Dof(num_regressors=1),
-        name="gendoffile"
+        name="gendoffile",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     # split regression outputs by name
     splitcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
-        name="splitcopes"
+        name="splitcopes",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
-        name="splitvarcopes"
+        name="splitvarcopes",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     splitzstats = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
-        name="splitzstats"
+        name="splitzstats",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     # outputs are cope, varcope and zstat for each seed region and a dof_file

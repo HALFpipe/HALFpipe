@@ -311,11 +311,13 @@ def init_func_wf(wf,
             column_names=["aroma_motion_\\d+"]
         ),
         name="selectcolumns",
-        run_without_submitting=True
+        run_without_submitting=True,
+        mem_gb=memcalc.min_gb
     )
     regfilt = pe.Node(
         interface=fsl.FilterRegressor(),
         name="regfilt",
+        mem_gb=memcalc.series_std_gb
     )
     regfilt.inputs.filter_all = True
     wf.connect([

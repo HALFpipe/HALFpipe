@@ -8,8 +8,12 @@ from nipype.interfaces import utility as niu
 from ...interface import ConnectivityMeasure
 from ...utils import _get_first
 
+from ..memory import MemoryCalculator
 
-def init_brainatlas_wf(metadata, name="brainatlas"):
+
+def init_brainatlas_wf(metadata,
+                       name="brainatlas",
+                       memcalc=MemoryCalculator()):
     """
     create workflow for brainatlas
     :param use_mov_pars: regression - Movement parameters
@@ -45,17 +49,22 @@ def init_brainatlas_wf(metadata, name="brainatlas"):
             standardize=False
         ),
         name="connectivitymeasure",
-        iterfield=["atlas_file"]
+        iterfield=["atlas_file"],
+        mem_gb=memcalc.series_std_gb
     )
     connectivitymeasure.inputs.atlas_file = atlas_files
 
     splitconnectivity = pe.Node(
         interface=niu.Split(splits=[1 for atlasname in atlasnames]),
-        name="splitconnectivity"
+        name="splitconnectivity",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
     splittimeseries = pe.Node(
         interface=niu.Split(splits=[1 for atlasname in atlasnames]),
-        name="splittimeseries"
+        name="splittimeseries",
+        mem_gb=memcalc.min_gb,
+        run_without_submitting=True
     )
 
     outputnode = pe.Node(niu.IdentityInterface(

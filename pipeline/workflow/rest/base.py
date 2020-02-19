@@ -78,7 +78,7 @@ def init_rest_wf(metadata,
 
         outByWorkflowName[wf.name] = out
 
-    out = init_brainatlas_wf(metadata)
+    out = init_brainatlas_wf(metadata, memcalc=memcalc)
     aggregate(out)
     brainatlas_wf, outnames, _ = out
     if len(outnames) > 0:
@@ -103,7 +103,7 @@ def init_rest_wf(metadata,
             brainatlas_wf, "inputnode.bold_file"
         )
 
-    out = init_seedconnectivity_wf(metadata)
+    out = init_seedconnectivity_wf(metadata, memcalc=memcalc)
     aggregate(out)
     seedconnectivity_wf, outnames, _ = out
     if len(outnames) > 0:
@@ -119,7 +119,8 @@ def init_rest_wf(metadata,
             out = init_dualregression_wf(
                 metadata,
                 componentsfile,
-                name="{}_dualregression_wf".format(name)
+                name="{}_dualregression_wf".format(name),
+                memcalc=memcalc
             )
             aggregate(out)
             dualregression_wf, outnames, _ = out
@@ -142,7 +143,7 @@ def init_rest_wf(metadata,
             )
 
     if "ALFF" in metadata and metadata["ALFF"]:
-        out = init_alff_wf()
+        out = init_alff_wf(memcalc=memcalc)
         aggregate(out)
         alff_wf, outnames, _ = out
         if len(outnames) > 0:
