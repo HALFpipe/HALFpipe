@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import nipype.pipeline.engine as pe
-import nipype.interfaces.utility as util
+import nipype.interfaces.utility as niu
 from nipype.interfaces import fsl
 
 
@@ -15,7 +15,7 @@ def init_zscore_wf(name="zscore"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=util.IdentityInterface(
+        interface=niu.IdentityInterface(
             fields=["in_file", "mask_file"]),
         name="inputnode"
     )
@@ -40,7 +40,7 @@ def init_zscore_wf(name="zscore"):
     )
 
     outputnode = pe.Node(
-        interface=util.IdentityInterface(
+        interface=niu.IdentityInterface(
             fields=["out_file"]),
         name="outputnode"
     )

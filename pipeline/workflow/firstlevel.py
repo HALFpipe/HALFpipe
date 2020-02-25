@@ -545,32 +545,34 @@ def init_func_wf(wf,
         glm_wf = aggregate(init_glm_wf(
             metadata, conditions
         ))
-        wf.connect([
-            (helper, glm_wf, [
-                ("bold_file_sdf", "inputnode.bold_file"),
-                ("mask_file", "inputnode.mask_file")
-            ]),
-            (confoundshelper, glm_wf, [
-                ("confounds_sdf", "inputnode.confounds"),
+        if glm_wf is not None:
+            wf.connect([
+                (helper, glm_wf, [
+                    ("bold_file_sdf", "inputnode.bold_file"),
+                    ("mask_file", "inputnode.mask_file")
+                ]),
+                (confoundshelper, glm_wf, [
+                    ("confounds_sdf", "inputnode.confounds"),
+                ])
             ])
-        ])
 
     rest_wf = aggregate(init_rest_wf(
         metadata
     ))
-    wf.connect([
-        (helper, rest_wf, [
-            ("bold_file_d", "inputnode.bold_file_d"),
-            ("bold_file_df", "inputnode.bold_file_df"),
-            ("bold_file_sdf", "inputnode.bold_file_sdf"),
-            ("mask_file", "inputnode.mask_file")
-        ]),
-        (confoundshelper, rest_wf, [
-            ("confounds_d", "inputnode.confounds_d"),
-            ("confounds_df", "inputnode.confounds_df"),
-            ("confounds_sdf", "inputnode.confounds_sdf"),
+    if rest_wf is not None:
+        wf.connect([
+            (helper, rest_wf, [
+                ("bold_file_d", "inputnode.bold_file_d"),
+                ("bold_file_df", "inputnode.bold_file_df"),
+                ("bold_file_sdf", "inputnode.bold_file_sdf"),
+                ("mask_file", "inputnode.mask_file")
+            ]),
+            (confoundshelper, rest_wf, [
+                ("confounds_d", "inputnode.confounds_d"),
+                ("confounds_df", "inputnode.confounds_df"),
+                ("confounds_sdf", "inputnode.confounds_sdf"),
+            ])
         ])
-    ])
 
     outputnode, outfieldsByOutname = \
         make_outputnode(wf, outByWorkflowName,

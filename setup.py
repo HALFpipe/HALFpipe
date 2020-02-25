@@ -1,26 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 
 def main():
     """ Install entry-point """
     from io import open
+    from os import path as op
 
     from inspect import getfile, currentframe
     from setuptools import setup, find_packages
-    from setuptools.extension import Extension
-    from numpy import get_include
 
-    this_path = os.path.dirname(os.path.abspath(getfile(currentframe())))
+    this_path = op.dirname(op.abspath(getfile(currentframe())))
 
     # Python 3: use a locals dictionary
     # http://stackoverflow.com/a/1463370/6820620
     ldict = locals()
     # Get version and release info, which is all stored in pipeline/info.py
-    module_file = os.path.join(this_path, "pipeline", "info.py")
+    module_file = op.join(this_path, "pipeline", "info.py")
     with open(module_file) as infofile:
-        pythoncode = [line for line in infofile.readlines() if not line.strip().startswith("#")]
+        pythoncode = [
+            line for line in infofile.readlines()
+            if not line.strip().startswith("#")]
         exec("\n".join(pythoncode), globals(), ldict)
 
     extensions = []
@@ -58,6 +58,7 @@ def main():
         zip_safe=False,
         ext_modules=extensions
     )
+
 
 if __name__ == "__main__":
     main()

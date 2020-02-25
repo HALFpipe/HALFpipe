@@ -9,6 +9,8 @@ from .info import __version__
 from multiprocessing import set_start_method, cpu_count
 set_start_method("forkserver", force=True)
 
+os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
+
 EXT_PATH = "/ext"
 
 
