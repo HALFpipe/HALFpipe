@@ -81,7 +81,7 @@ fmap_bspline = False
 fmap_demean = True
 
 # Enable ANTs SyN-based susceptibility distortion correction (SDC).
-use_syn = True
+use_syn = False
 # Always run SyN-based SDC even if actual fieldmaps are present
 force_syn = False
 

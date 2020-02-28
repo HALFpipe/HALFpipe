@@ -100,6 +100,6 @@ def init_brainatlas_wf(metadata,
             ]),
         ])
 
-    outfields = ["connectivity", "timeseries"]
+    outfields = ["correlation_matrix", "timeseries"]
 
     return workflow, atlasnames, outfields

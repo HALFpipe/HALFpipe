@@ -90,7 +90,7 @@ def init_workflow(workdir, jsonfile):
     group_data = group_design["Data"]
 
     subject_sets = {
-        "AllSubjects": subjects
+        "BetweenGroups": subjects
     }
     if "RepeatWithinSubGroups" in group_design:
         repeat_within_subgroup_fields = group_design["RepeatWithinSubGroups"]
