@@ -73,9 +73,10 @@ def init_glm_wf(metadata, conditions,
     onsets = [conditions[k]["onsets"] for k in names]
     durations = [conditions[k]["durations"] for k in names]
 
-    selectcolumns, _ = make_confounds_selectcolumns(
+    selectcolumns, confounds_column_names = make_confounds_selectcolumns(
         metadata
     )
+    has_confounds = len(confounds_column_names) > 0
 
     # first level model specification
     modelspec = pe.Node(
@@ -172,14 +173,17 @@ def init_glm_wf(metadata, conditions,
         name="outputnode"
     )
 
-    workflow.connect([
-        (inputnode, selectcolumns, [
-            ("confounds", "in_file")
-        ]),
-        (selectcolumns, modelspec, [
-            ("out_file", "realignment_parameters")
-        ]),
+    if has_confounds:
+        workflow.connect([
+            (inputnode, selectcolumns, [
+                ("confounds", "in_file")
+            ]),
+            (selectcolumns, modelspec, [
+                ("out_file", "realignment_parameters")
+            ]),
+        ])
 
+    workflow.connect([
         (inputnode, modelspec, [
             ("bold_file", "functional_runs")
         ]),

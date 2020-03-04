@@ -80,7 +80,7 @@ fmap_bspline = False
 # Demean voxel-shift map during unwarp
 fmap_demean = True
 
-# Enable ANTs SyN-based susceptibility distortion correction (SDC).
+# Disable ANTs SyN-based susceptibility distortion correction (SDC).
 use_syn = False
 # Always run SyN-based SDC even if actual fieldmaps are present
 force_syn = False

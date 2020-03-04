@@ -483,7 +483,7 @@ def init_func_wf(wf,
     # copy preproc and mask
     ds_scan = pe.Node(
         interface=nio.DataSink(
-            infields=["preproc", "mask"],
+            infields=["preproc", "mask", "confounds"],
             regexp_substitutions=dataSinkRegexpSubstitutions,
             base_directory=output_dir,
             container=get_container_path(subject, scan, run),
@@ -498,6 +498,9 @@ def init_func_wf(wf,
         (helper, ds_scan, [
             ("bold_file_sdf", "preproc"),
             ("mask_file", "mask")
+        ]),
+        (confoundshelper, ds_scan, [
+            ("confounds_sdf", "confounds")
         ])
     ])
 

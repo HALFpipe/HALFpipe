@@ -268,15 +268,14 @@ def main():
             configuration[scanname] = dict()
             images[scanname] = get_files(field_description, runs=True)
             configuration[scanname]["RepetitionTime"] = dict()
+            scanimages = firstval(transpose(images[scanname]))
             for subject in subject_ids:
                 # reads the repetion time from the nii.gz file
-                scanimages = firstval(transpose(images[scanname]))
                 if subject in scanimages:
-                    configuration[scanname]["RepetitionTime"][subject] = \
-                        float(str(nib.load(
-                            scanimages[subject]
-                            # gets the path of the nii.gz file for each subject
-                        ).header.get_zooms()[3]))
+                    nbimg = nib.load(scanimages[subject])
+                    if len(nbimg.shape) == 4:
+                        configuration[scanname]["RepetitionTime"][subject] = \
+                            float(str(nbimg.header.get_zooms()[3]))
 
             ped = c.select("Specify the phase encoding direction",
                            ["AP", "PA", "LR", "RL", "SI", "IS"])
