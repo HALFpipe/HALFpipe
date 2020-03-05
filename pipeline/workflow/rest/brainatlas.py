@@ -92,7 +92,7 @@ def init_brainatlas_wf(metadata,
         workflow.connect([
             (splitconnectivity, outputnode, [
                 (("out%i" % (i + 1), _get_first),
-                    "%s_connectivity" % atlasname)
+                    "%s_correlation_matrix" % atlasname)
             ]),
             (splittimeseries, outputnode, [
                 (("out%i" % (i + 1), _get_first),
