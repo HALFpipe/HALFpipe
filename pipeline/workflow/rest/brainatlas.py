@@ -68,7 +68,7 @@ def init_brainatlas_wf(metadata,
     )
 
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=["{}_connectivity".format(atlasname)
+        fields=["{}_correlation_matrix".format(atlasname)
                 for atlasname in atlasnames] +
         ["{}_timeseries".format(atlasname) for atlasname in atlasnames]),
         name="outputnode"
