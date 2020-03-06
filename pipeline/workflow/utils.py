@@ -9,6 +9,8 @@ dataSinkRegexpSubstitutions = [
     (r"^(/.+)/dof$", r"\1"),
     (r"^(/.+)/.+.txt$", r"\1.txt"),
     (r"^(/.+)/.+.nii.gz$", r"\1.nii.gz"),
+    (r"trait_added$", r""),
+    (r"suffix$", r""),
 ]
 
 
