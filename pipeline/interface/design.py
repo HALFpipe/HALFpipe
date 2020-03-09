@@ -122,7 +122,10 @@ def _group_design(data, subjects):
                     lsmeans.loc[level, :] = \
                         refDmat.loc[grid[field] == level, :].mean()
                 for contrastName, valueDict in contrasts.items():
-                    names, values = zip(*valueDict.items())
+                    names = [name
+                             for name in valueDict.keys()
+                             if name in fieldLevels]
+                    values = [valueDict[name] for name in names]
                     # If we wish to test the mean of each group against zero,
                     # we can simply use these contrasts and be done.
                     # To test a linear hypothesis such as patient-control=0,
