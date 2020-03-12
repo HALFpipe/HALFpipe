@@ -8,6 +8,7 @@ from nipype.interfaces import utility as niu
 dataSinkRegexpSubstitutions = [
     (r"^(/.+)/dof$", r"\1"),
     (r"^(/.+)/.+.txt$", r"\1.txt"),
+    (r"^(/.+)/.+.tsv$", r"\1.tsv"),
     (r"^(/.+)/.+.nii.gz$", r"\1.nii.gz"),
     (r"trait_added$", r""),
     (r"suffix$", r""),
@@ -46,6 +47,7 @@ def make_outputnode(workflow, outByWorkflowName,
     )
 
     # connect outputs
+    connections = []
     for workflowName, (wf, outnames, outfields) \
             in outByWorkflowName.items():
         for outname in outnames:
@@ -54,11 +56,12 @@ def make_outputnode(workflow, outByWorkflowName,
                 _outfields = _outfields[outname]
             for outfield in _outfields:
                 varname = make_varname(outname, outfield)
-                workflow.connect([
+                connections.append(
                     (wf, outputnode, [
                         ("outputnode.{}".format(varname), varname)
                     ])
-                ])
+                )
+    workflow.connect(connections)
 
     # make spec
     outfieldsByOutname = {
