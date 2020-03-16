@@ -26,7 +26,7 @@ class Step:
         raise NotImplementedError
 
     def teardown(self):
-        for view in self.views:
+        for view in reversed(self.views):
             self.app.layout.remove(view)
 
     def run(self, ctx):
