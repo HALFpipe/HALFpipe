@@ -188,7 +188,7 @@ def init_subject_wf(item, workdir, images, data):
                           images, output_dir,
                           fmriprep_reportlets_dir, fmriprep_output_dir)
 
-    subject_wf._graph = subject_wf._create_flat_graph()
+    # subject_wf._graph = subject_wf._create_flat_graph()
 
     return subject, subject_wf, outfieldsByOutnameByScan
 
@@ -280,7 +280,7 @@ def init_func_wf(wf,
         (func_preproc_wf, select_std, [
             ("outputnode.bold_std",  "bold_file"),
             ("outputnode.bold_mask_std",  "mask_file"),
-            ("bold_std_trans_wf.outputnode.templates", "keys")
+            ("bold_std_trans_wf.outputnode.templates34", "keys")
         ]),
         (inputnode, select_std, [
             ("joint_anat2std_xfm",  "anat2std_xfm")

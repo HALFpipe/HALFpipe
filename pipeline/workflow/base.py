@@ -54,7 +54,7 @@ def init_workflow(workdir, jsonfile):
     # first level
     # Pool().
 
-    result = Pool().map(
+    result = map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
         list(images.items())
     )

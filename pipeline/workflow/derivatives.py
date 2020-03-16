@@ -48,9 +48,9 @@ def make_firstlevel_datasink(workflow,
     ds_field.inputs.base_directory = output_dir
     ds_field.inputs.container = get_container_path(subject, scan, run)
 
+    connections = []
     for varname in varnames:
-        workflow.connect([
-            (firstlevel_wf, ds_field, [
-                ("outputnode.{}".format(varname), varname)
-            ]),
-        ])
+        connections.append((firstlevel_wf, ds_field, [
+            ("outputnode.{}".format(varname), varname)
+        ]))
+    workflow.connect(connections)
