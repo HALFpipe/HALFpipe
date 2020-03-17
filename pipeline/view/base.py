@@ -97,7 +97,8 @@ class AnatStep(Step):
         self.anat_pattern_input_view = FilePatternInputView(["subject"])
         self._append_view(self.anat_pattern_input_view)
         entity_instruction.text = self.anat_pattern_input_view._tokenize(
-            "Specify {subject} in place of the subject names"
+            "Specify {subject} in place of the subject names",
+            addBrackets=False
         )
         self._append_view(SpacerView(1))
 

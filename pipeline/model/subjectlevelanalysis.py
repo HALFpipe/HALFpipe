@@ -20,6 +20,11 @@ class SubjectLevelAnalysisSpec:
         self.tags = tags
 
 
+class SubjectLevelAnalysisSpecSchema(Schema):
+    name = fields.Str()
+    tags = fields.Str()
+
+
 class TaskBasedGLMAnalysisSpec(SubjectLevelAnalysisSpec):
     def __init__(self, name, tags, files, contrasts):
         super(TaskBasedGLMAnalysisSpec, self).__init__(
@@ -29,7 +34,8 @@ class TaskBasedGLMAnalysisSpec(SubjectLevelAnalysisSpec):
         self.contrasts = contrasts
 
 
-class TaskBasedGLMAnalysisSpecSchema()
+class TaskBasedGLMAnalysisSpecSchema(Schema):
+    pass
 
 
 class SeedBasedConnectivityAnalysisSpec(SubjectLevelAnalysisSpec):
