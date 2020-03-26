@@ -13,12 +13,9 @@ from nipype.interfaces.base import (
     SimpleInterface,
     File,
     DynamicTraitedSpec,
-    isdefined
+    isdefined,
 )
-from nipype.interfaces.io import (
-    add_traits,
-    IOBase
-)
+from nipype.interfaces.io import add_traits, IOBase
 import pandas as pd
 import numpy as np
 
@@ -46,9 +43,7 @@ class MatrixToTSV(SimpleInterface):
     output_spec = MatrixToTSVOutputSpec
 
     def _run_interface(self, runtime):
-        outputpath = _matrix_to_tsv(
-            matrix=self.inputs.matrix,
-        )
+        outputpath = _matrix_to_tsv(matrix=self.inputs.matrix,)
         self._results["out_file"] = outputpath
 
         return runtime
@@ -56,30 +51,24 @@ class MatrixToTSV(SimpleInterface):
 
 def _robust_read_columns(in_file):
     try:
-        in_array = np.genfromtxt(
-            in_file,
-            missing_values="NaN,n/a,NA")
+        in_array = np.genfromtxt(in_file, missing_values="NaN,n/a,NA")
+        return in_array
+    except ValueError:
+        pass
+    try:
+        in_array = np.genfromtxt(in_file, skip_header=1, missing_values="NaN,n/a,NA")
+        return in_array
+    except ValueError:
+        pass
+    try:
+        in_array = np.genfromtxt(in_file, delimiter=",", missing_values="NaN,n/a,NA")
         return in_array
     except ValueError:
         pass
     try:
         in_array = np.genfromtxt(
-            in_file, skip_header=1,
-            missing_values="NaN,n/a,NA")
-        return in_array
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(
-            in_file, delimiter=",",
-            missing_values="NaN,n/a,NA")
-        return in_array
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(
-            in_file, delimiter=",", skip_header=1,
-            missing_values="NaN,n/a,NA")
+            in_file, delimiter=",", skip_header=1, missing_values="NaN,n/a,NA"
+        )
         return in_array
     except ValueError as e:
         sys.stdout.write("Could not load file {}".format(in_file))
@@ -138,41 +127,38 @@ class MergeColumnsTSV(IOBase):
             return getattr(self.inputs, "in%d" % (idx + 1))
 
         values = [
-            getval(idx) for idx in range(self._numinputs)
-            if isdefined(getval(idx))
+            getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))
         ]
 
         out_file = None
 
         if len(values) > 0:
-            out_file = _merge_columns(
-                values
-            )
+            out_file = _merge_columns(values)
 
         outputs["out_file"] = out_file
         return outputs
 
 
-def _select_columns(column_names=None, inputpath=None,
-                    header=False):
+def _select_columns(column_names=None, inputpath=None, header=False):
     filter = re.compile("^(" + "|".join(column_names) + ")$")
     dataframe = pd.read_csv(inputpath, sep="\t")
-    dataframe = dataframe[[
-        column for column in dataframe.columns
-        if filter.match(column) is not None and
-        len(column_names) > 0
-    ]]
+    dataframe = dataframe[
+        [
+            column
+            for column in dataframe.columns
+            if filter.match(column) is not None and len(column_names) > 0
+        ]
+    ]
     outputpath = op.join(os.getcwd(), "selected_columns.tsv")
-    dataframe.to_csv(outputpath, sep="\t", index=False,
-                     na_rep="n/a",
-                     header=header)
+    dataframe.to_csv(outputpath, sep="\t", index=False, na_rep="n/a", header=header)
     return outputpath
 
 
 class SelectColumnsTSVInputSpec(TraitedSpec):
     in_file = File(exists=True, desc="input tsv file")
     column_names = traits.List(
-        traits.Str, desc="list of column names, can be regular expressions")
+        traits.Str, desc="list of column names, can be regular expressions"
+    )
     header = traits.Bool(False, usedefault=True)
 
 
@@ -192,7 +178,7 @@ class SelectColumnsTSV(SimpleInterface):
         outputpath = _select_columns(
             column_names=self.inputs.column_names,
             inputpath=self.inputs.in_file,
-            header=self.inputs.header
+            header=self.inputs.header,
         )
         self._results["out_file"] = outputpath
 

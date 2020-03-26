@@ -2,12 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    SimpleInterface,
-    File
-)
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
 
 import numpy as np
 import pandas as pd
@@ -21,8 +16,7 @@ def _motion_cutoff(mean_fd_cutoff, fd_greater_0_5_cutoff, confounds=None):
 
     fd_greater_0_5 = np.mean(df_confounds["framewise_displacement"] > 0.5)
 
-    return not (mean_fd > mean_fd_cutoff or
-                fd_greater_0_5 > fd_greater_0_5_cutoff)
+    return not (mean_fd > mean_fd_cutoff or fd_greater_0_5 > fd_greater_0_5_cutoff)
 
 
 class MotionCutoffInputSpec(TraitedSpec):

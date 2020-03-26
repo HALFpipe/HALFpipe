@@ -19,12 +19,10 @@ def make_varname(outname, outfield):
     return "{}_{}".format(outname, outfield)
 
 
-def make_outputnode(workflow, outByWorkflowName,
-                    extraOutfields=[], extraVarnames=[]):
+def make_outputnode(workflow, outByWorkflowName, extraOutfields=[], extraVarnames=[]):
     # get outputnode field names
     varnames = []
-    for workflowName, (firstlevel_wf, outnames, outfields) \
-            in outByWorkflowName.items():
+    for workflowName, (firstlevel_wf, outnames, outfields) in outByWorkflowName.items():
         for outname in outnames:
             _outfields = outfields
             if isinstance(_outfields, dict):
@@ -40,16 +38,12 @@ def make_outputnode(workflow, outByWorkflowName,
         return None, {}
 
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=varnames
-        ),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=varnames), name="outputnode"
     )
 
     # connect outputs
     connections = []
-    for workflowName, (wf, outnames, outfields) \
-            in outByWorkflowName.items():
+    for workflowName, (wf, outnames, outfields) in outByWorkflowName.items():
         for outname in outnames:
             _outfields = outfields
             if isinstance(_outfields, dict):
@@ -57,16 +51,13 @@ def make_outputnode(workflow, outByWorkflowName,
             for outfield in _outfields:
                 varname = make_varname(outname, outfield)
                 connections.append(
-                    (wf, outputnode, [
-                        ("outputnode.{}".format(varname), varname)
-                    ])
+                    (wf, outputnode, [("outputnode.{}".format(varname), varname)])
                 )
     workflow.connect(connections)
 
     # make spec
     outfieldsByOutname = {
-        outname:
-            outfields if isinstance(outfields, list) else outfields[outname]
+        outname: outfields if isinstance(outfields, list) else outfields[outname]
         for workflowName, (_, outnames, outfields) in outByWorkflowName.items()
         for outname in outnames
     }

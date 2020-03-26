@@ -6,33 +6,26 @@ from os import path as op
 
 import nibabel as nib
 
-from nipype.interfaces.base import (
-    TraitedSpec, BaseInterface, traits, File
-)
+from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, File
 
 
 class DofInputSpec(TraitedSpec):
     """ """
-    in_file = File(exists=True,
-                   mandatory=True,
-                   desc="input file")
-    out_file = File(
-        "dof",
-        usedefault=True,
-        desc="output file name")
-    num_regressors = traits.Range(
-        low=1,
-        mandatory=True,
-        desc="number of regressors")
+
+    in_file = File(exists=True, mandatory=True, desc="input file")
+    out_file = File("dof", usedefault=True, desc="output file name")
+    num_regressors = traits.Range(low=1, mandatory=True, desc="number of regressors")
 
 
 class DofOutputSpec(TraitedSpec):
     """ """
+
     out_file = File(exists=True)
 
 
 class Dof(BaseInterface):
     """ simple interface to write a dof text file """
+
     input_spec = DofInputSpec
     output_spec = DofOutputSpec
 

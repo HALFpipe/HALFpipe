@@ -86,8 +86,12 @@ def _ambiguous_match(string, pattern, wildcards):
             for v in o:
                 v[d] += c
 
-            m, mu = _ambiguous_match(string[1:], pattern, wildcards)  # continue wildcard
-            n, nu = _ambiguous_match(string[1:], pattern[1:], wildcards)  # finish wildcard
+            m, mu = _ambiguous_match(
+                string[1:], pattern, wildcards
+            )  # continue wildcard
+            n, nu = _ambiguous_match(
+                string[1:], pattern[1:], wildcards
+            )  # finish wildcard
 
             if m and not n:
                 o = [_append(v, w) for v in o for w in m]

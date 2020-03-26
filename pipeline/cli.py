@@ -37,8 +37,7 @@ class Cli(object):
         try:
             tty.setraw(sys.stdin)
         except termios.error:
-            c.error("Did you forget the docker arguments " +
-                    "\"--interactive --tty\"?")
+            c.error("Did you forget the docker arguments " + '"--interactive --tty"?')
             raise
 
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
@@ -148,7 +147,7 @@ class Cli(object):
 
             if character == 127:  # backspace
                 if selected > 0:
-                    o = o[:selected - 1] + o[selected:]
+                    o = o[: selected - 1] + o[selected:]
                     selected -= 1
                     refresh()
 
@@ -333,15 +332,19 @@ class Cli(object):
 
             if 32 <= character <= 126:  # text input
                 if len(v[selected0]) < len(o[selected0]) - 2:
-                    v[selected0] = v[selected0][:selected1] + \
-                        chr(character) + v[selected0][selected1:]
+                    v[selected0] = (
+                        v[selected0][:selected1]
+                        + chr(character)
+                        + v[selected0][selected1:]
+                    )
                     selected1 += 1
                     refresh()
 
             if character == 127:  # backspace
                 if selected1 > 0:
-                    v[selected0] = v[selected0][:selected1 - 1] + \
-                        v[selected0][selected1:]
+                    v[selected0] = (
+                        v[selected0][: selected1 - 1] + v[selected0][selected1:]
+                    )
                     selected1 -= 1
                     refresh()
 

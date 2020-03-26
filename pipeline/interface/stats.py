@@ -6,17 +6,15 @@ import os
 import json
 import pandas as pd
 
-from nipype.interfaces.base import ( 
+from nipype.interfaces.base import (
     isdefined,
     traits,
-    TraitedSpec, 
+    TraitedSpec,
     DynamicTraitedSpec,
     SimpleInterface,
-    BaseInterface
-) 
-from nipype.interfaces.io import (
-    add_traits
+    BaseInterface,
 )
+from nipype.interfaces.io import add_traits
 
 import numpy as np
 
@@ -24,8 +22,10 @@ import numpy as np
 class HigherLevelDesignInputSpec(TraitedSpec):
     pass
 
+
 class HigherLevelDesignOutputSpec(TraitedSpec):
     out = traits.Bool(desc="output")
+
 
 class HigherLevelDesign(BaseInterface):
     """

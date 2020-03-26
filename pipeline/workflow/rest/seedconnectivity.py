@@ -8,20 +8,16 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ...interface import (
-    Dof,
-    MergeColumnsTSV,
-    MatrixToTSV
-)
+from ...interface import Dof, MergeColumnsTSV, MatrixToTSV
 from ..confounds import make_confounds_selectcolumns
 from ...utils import _get_first
 
 from ..memory import MemoryCalculator
 
 
-def init_seedconnectivity_wf(metadata,
-                             name="seedconnectivity",
-                             memcalc=MemoryCalculator()):
+def init_seedconnectivity_wf(
+    metadata, name="seedconnectivity", memcalc=MemoryCalculator()
+):
     """
     create workflow to calculate seed connectivity maps
     for resting state functional scans
@@ -42,10 +38,8 @@ def init_seedconnectivity_wf(metadata,
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["bold_file", "mask_file", "confounds"]
-        ),
-        name="inputnode"
+        interface=niu.IdentityInterface(fields=["bold_file", "mask_file", "confounds"]),
+        name="inputnode",
     )
 
     if "ConnectivitySeeds" not in metadata:
@@ -61,7 +55,7 @@ def init_seedconnectivity_wf(metadata,
         interface=fsl.ApplyMask(),
         name="maths",
         iterfield=["in_file"],
-        mem_gb=memcalc.volume_std_gb
+        mem_gb=memcalc.volume_std_gb,
     )
     maths.inputs.in_file = seed_paths
 
@@ -70,29 +64,27 @@ def init_seedconnectivity_wf(metadata,
         interface=fsl.ImageMeants(),
         name="meants",
         iterfield=["mask"],
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
 
-    selectcolumns, confounds_list = make_confounds_selectcolumns(
-        metadata
-    )
+    selectcolumns, confounds_list = make_confounds_selectcolumns(metadata)
 
     mergecolumns = pe.MapNode(
         interface=MergeColumnsTSV(2),
         name="mergecolumns",
         iterfield=["in1"],
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
 
-    contrast = np.zeros((1, len(confounds_list)+1))
+    contrast = np.zeros((1, len(confounds_list) + 1))
     contrast[0, 0] = 1
 
     contrasttotsv = pe.Node(
         interface=MatrixToTSV(),
         name="contrast_node",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
     contrasttotsv.inputs.matrix = contrast
 
@@ -105,11 +97,11 @@ def init_seedconnectivity_wf(metadata,
             out_cope="cope.nii.gz",
             out_varcb_name="varcope.nii.gz",
             out_z_name="zstat.nii.gz",
-            demean=True
+            demean=True,
         ),
         name="glm",
         iterfield=["design"],
-        mem_gb=memcalc.series_std_gb*contrast.size
+        mem_gb=memcalc.series_std_gb * contrast.size,
     )
 
     # generate dof text file
@@ -117,7 +109,7 @@ def init_seedconnectivity_wf(metadata,
         interface=Dof(num_regressors=1),
         name="gendoffile",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
 
     # split regression outputs by name
@@ -125,96 +117,79 @@ def init_seedconnectivity_wf(metadata,
         interface=niu.Split(splits=[1 for seedname in seednames]),
         name="splitcopes",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
     splitvarcopes = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
         name="splitvarcopes",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
     splitzstats = pe.Node(
         interface=niu.Split(splits=[1 for seedname in seednames]),
         name="splitzstats",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
 
     # outputs are cope, varcope and zstat for each seed region and a dof_file
     varnames = sum(
-        [["%s_stat" % seedname, "%s_var" % seedname,
-          "%s_zstat" % seedname, "%s_dof_file" % seedname]
-         for seedname in seednames], []
+        [
+            [
+                "%s_stat" % seedname,
+                "%s_var" % seedname,
+                "%s_zstat" % seedname,
+                "%s_dof_file" % seedname,
+            ]
+            for seedname in seednames
+        ],
+        [],
     )
 
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=varnames,
-        ),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=varnames,), name="outputnode"
     )
 
-    workflow.connect([
-        (inputnode, maths, [
-            ("mask_file", "mask_file")
-        ]),
-        (maths, meants, [
-            ("out_file", "mask")
-        ]),
-        (inputnode, meants, [
-            ("bold_file", "in_file")
-        ]),
-        (inputnode, glm, [
-            ("bold_file", "in_file"),
-            ("mask_file", "mask")
-        ]),
-        (meants, mergecolumns, [
-            ("out_file", "in1"),
-        ]),
-        (inputnode, selectcolumns, [
-            ("confounds", "in_file"),
-        ]),
-        (selectcolumns, mergecolumns, [
-            ("out_file", "in2"),
-        ]),
-        (mergecolumns, glm, [
-            ("out_file", "design")
-        ]),
-        (contrasttotsv, glm, [
-            ("out_file", "contrasts")
-        ]),
-
-        (glm, splitcopes, [
-            ("out_cope", "inlist"),
-        ]),
-        (glm, splitvarcopes, [
-            ("out_varcb", "inlist"),
-        ]),
-        (glm, splitzstats, [
-            ("out_z", "inlist"),
-        ]),
-
-        (inputnode, gendoffile, [
-            ("bold_file", "in_file"),
-        ]),
-    ])
+    workflow.connect(
+        [
+            (inputnode, maths, [("mask_file", "mask_file")]),
+            (maths, meants, [("out_file", "mask")]),
+            (inputnode, meants, [("bold_file", "in_file")]),
+            (inputnode, glm, [("bold_file", "in_file"), ("mask_file", "mask")]),
+            (meants, mergecolumns, [("out_file", "in1"),]),
+            (inputnode, selectcolumns, [("confounds", "in_file"),]),
+            (selectcolumns, mergecolumns, [("out_file", "in2"),]),
+            (mergecolumns, glm, [("out_file", "design")]),
+            (contrasttotsv, glm, [("out_file", "contrasts")]),
+            (glm, splitcopes, [("out_cope", "inlist"),]),
+            (glm, splitvarcopes, [("out_varcb", "inlist"),]),
+            (glm, splitzstats, [("out_z", "inlist"),]),
+            (inputnode, gendoffile, [("bold_file", "in_file"),]),
+        ]
+    )
 
     # connect outputs named for the seeds
     for i, seedname in enumerate(seednames):
-        workflow.connect([
-            (splitcopes, outputnode, [
-                (("out%i" % (i + 1), _get_first), "%s_stat" % seedname)
-            ]),
-            (splitvarcopes, outputnode, [
-                (("out%i" % (i + 1), _get_first), "%s_var" % seedname)
-            ]),
-            (splitzstats, outputnode, [
-                (("out%i" % (i + 1), _get_first), "%s_zstat" % seedname)
-            ]),
-            (gendoffile, outputnode, [
-                ("out_file", "%s_dof_file" % seedname)
-            ]),
-        ])
+        workflow.connect(
+            [
+                (
+                    splitcopes,
+                    outputnode,
+                    [(("out%i" % (i + 1), _get_first), "%s_stat" % seedname)],
+                ),
+                (
+                    splitvarcopes,
+                    outputnode,
+                    [(("out%i" % (i + 1), _get_first), "%s_var" % seedname)],
+                ),
+                (
+                    splitzstats,
+                    outputnode,
+                    [(("out%i" % (i + 1), _get_first), "%s_zstat" % seedname)],
+                ),
+                (gendoffile, outputnode, [("out_file", "%s_dof_file" % seedname)]),
+            ]
+        )
 
     outfields = ["stat", "var", "zstat", "dof_file"]
 

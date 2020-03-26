@@ -5,12 +5,7 @@
 import os
 from os import path as op
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    SimpleInterface,
-    File
-)
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
 import numpy as np
 import nibabel as nb
 
@@ -99,8 +94,9 @@ def compute_reho(in_file, mask_file, cluster_size):
     res_data = np.reshape(res_data, (n_x * n_y * n_z, n_t), order="F").T
 
     # create a blank array of zeroes of size n_voxels, one for each time point
-    Ranks_res_data = np.tile((np.zeros((1, (res_data.shape)[1]))),
-                             [(res_data.shape)[0], 1])
+    Ranks_res_data = np.tile(
+        (np.zeros((1, (res_data.shape)[1]))), [(res_data.shape)[0], 1]
+    )
 
     # divide the number of total voxels by the cutnumber (set to 10)
     # ex. end up with a number in the thousands if there are tens of thousands
@@ -114,11 +110,11 @@ def compute_reho(in_file, mask_file, cluster_size):
         # create a Numpy array of evenly spaced values from the segment
         # starting point up until the segment_length integer
         if not (icut == (cutnumber - 1)):
-            segment = np.array(np.arange(icut * segment_length,
-                                         (icut + 1) * segment_length))
+            segment = np.array(
+                np.arange(icut * segment_length, (icut + 1) * segment_length)
+            )
         else:
-            segment = np.array(np.arange(icut * segment_length,
-                                         (res_data.shape[1])))
+            segment = np.array(np.arange(icut * segment_length, (res_data.shape[1])))
 
         segment = np.int64(segment[np.newaxis])
 
@@ -161,15 +157,15 @@ def compute_reho(in_file, mask_file, cluster_size):
                 maxties = len(tieloc)
                 tiecount = 0
 
-                while (tiecount < maxties - 1):
+                while tiecount < maxties - 1:
                     tiestart = tieloc[tiecount]
                     ntied = 2
-                    while (tieloc[tiecount + 1] == (tieloc[tiecount] + 1)):
+                    while tieloc[tiecount + 1] == (tieloc[tiecount] + 1):
                         tiecount += 1
                         ntied += 1
 
-                    ranks[tiestart:tiestart + ntied] = np.ceil(
-                        np.float32(np.sum(ranks[tiestart:tiestart + ntied]))
+                    ranks[tiestart : tiestart + ntied] = np.ceil(
+                        np.float32(np.sum(ranks[tiestart : tiestart + ntied]))
                         / np.float32(ntied)
                     )
                     tiecount += 1
@@ -197,9 +193,7 @@ def compute_reho(in_file, mask_file, cluster_size):
 
         Ranks_res_data[:, segment[0]] = ranks_piece
 
-    Ranks_res_data = np.reshape(
-        Ranks_res_data, (n_t, n_x, n_y, n_z), order="F"
-    )
+    Ranks_res_data = np.reshape(Ranks_res_data, (n_t, n_x, n_y, n_z), order="F")
 
     K = np.zeros((n_x, n_y, n_z))
 
@@ -242,29 +236,24 @@ def compute_reho(in_file, mask_file, cluster_size):
         for j in range(1, n_y - 1):
             for k in range(1, n_z - 1):
 
-                block = \
-                    Ranks_res_data[:, i - 1:i + 2, j - 1:j + 2, k - 1:k + 2]
-                mask_block = \
-                    res_mask_data[i - 1:i + 2, j - 1:j + 2, k - 1:k + 2]
+                block = Ranks_res_data[:, i - 1 : i + 2, j - 1 : j + 2, k - 1 : k + 2]
+                mask_block = res_mask_data[i - 1 : i + 2, j - 1 : j + 2, k - 1 : k + 2]
 
                 if not (int(mask_block[1, 1, 1]) == 0):
 
                     if nvoxel == 19 or nvoxel == 7:
                         mask_block = np.multiply(mask_block, mask_cluster)
 
-                    R_block = np.reshape(block, (block.shape[0], 27),
-                                         order="F")
+                    R_block = np.reshape(block, (block.shape[0], 27), order="F")
 
                     mask_indices = np.argwhere(
                         np.reshape(mask_block, (1, 27), order="F") > 0
                     )
-                    mask_R_block = \
-                        R_block[:, mask_indices[:, 1]]
+                    mask_R_block = R_block[:, mask_indices[:, 1]]
 
                     K[i, j, k] = f_kendall(mask_R_block)
 
-    img = nb.Nifti1Image(K, header=res_img.get_header(),
-                         affine=res_img.get_affine())
+    img = nb.Nifti1Image(K, header=res_img.get_header(), affine=res_img.get_affine())
     reho_file = op.join(os.getcwd(), "ReHo.nii.gz")
     img.to_filename(reho_file)
     out_file = reho_file
@@ -294,7 +283,7 @@ class ReHo(SimpleInterface):
         out_file = compute_reho(
             in_file=self.inputs.in_file,
             mask_file=self.inputs.mask_file,
-            cluster_size=self.inputs.cluster_size
+            cluster_size=self.inputs.cluster_size,
         )
         self._results["out_file"] = out_file
 

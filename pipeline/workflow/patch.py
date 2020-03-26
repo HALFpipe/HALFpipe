@@ -44,8 +44,7 @@ def _rank_collapse(graph):
         for node in zero_indegree:
             ranks[node] = i
             for _, child in graph.out_edges(node):
-                if graph.in_degree(child) == 1 and \
-                        graph.out_degree(child) == 1:
+                if graph.in_degree(child) == 1 and graph.out_degree(child) == 1:
                     _, child_ = next(iter(graph.out_edges(child)))
                     if graph.in_degree(child_) == 1:
                         child = child_
@@ -60,8 +59,9 @@ def _rank_collapse(graph):
     return ranks
 
 
-def patch_wf(workflow, images,
-             output_dir, fmriprep_reportlets_dir, fmriprep_output_dir):
+def patch_wf(
+    workflow, images, output_dir, fmriprep_reportlets_dir, fmriprep_output_dir
+):
     """
     patches/edits the FMRIPREP-generated workflow so that BIDS-specific
     nodes are replaced with generic nodes
@@ -108,8 +108,8 @@ def patch_wf(workflow, images,
                 output_dir=output_dir,
                 fmriprep_reportlets_dir=fmriprep_reportlets_dir,
                 fmriprep_output_dir=fmriprep_output_dir,
-                node_id=node_id, depends=None,
-
+                node_id=node_id,
+                depends=None,
                 base_directory=node.inputs.base_directory,
                 source_file=node.inputs.source_file,
                 in_file=node.inputs.in_file,
@@ -118,23 +118,22 @@ def patch_wf(workflow, images,
                 keep_dtype=node.inputs.keep_dtype,
                 space=node.inputs.space,
                 check_hdr=node.inputs.check_hdr,
-                compress=node.inputs.compress
+                compress=node.inputs.compress,
             )
         elif isinstance(node.interface, niu.Function):
-            if "fix_multi_T1w_source_name" in \
-                    node.interface.inputs.function_str:
+            if "fix_multi_T1w_source_name" in node.interface.inputs.function_str:
                 # patch function nodes with fix_multi_T1w_source_name
-                node.interface.inputs.function_str = \
-                    "def fix_multi_T1w_source_name(in_files):\n" + \
-                    "    if isinstance(in_files, str):\n" + \
-                    "        return in_files\n" + \
-                    "    else:\n" + \
-                    "        return in_files[0]"
-            elif "_bids_relative" in \
-                    node.interface.inputs.function_str:
+                node.interface.inputs.function_str = (
+                    "def fix_multi_T1w_source_name(in_files):\n"
+                    + "    if isinstance(in_files, str):\n"
+                    + "        return in_files\n"
+                    + "    else:\n"
+                    + "        return in_files[0]"
+                )
+            elif "_bids_relative" in node.interface.inputs.function_str:
                 # patch function nodes with _bids_relative
-                node.interface.inputs.function_str = \
-                    "def _bids_relative(in_files, bids_root):\n" + \
-                    "    return in_files"
+                node.interface.inputs.function_str = (
+                    "def _bids_relative(in_files, bids_root):\n" + "    return in_files"
+                )
 
     return workflow

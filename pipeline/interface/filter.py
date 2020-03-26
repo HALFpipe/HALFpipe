@@ -4,16 +4,8 @@
 
 import numpy as np
 
-from nipype.interfaces.base import (
-    isdefined,
-    traits,
-    TraitedSpec,
-    DynamicTraitedSpec
-)
-from nipype.interfaces.io import (
-    add_traits,
-    IOBase
-)
+from nipype.interfaces.base import isdefined, traits, TraitedSpec, DynamicTraitedSpec
+from nipype.interfaces.io import add_traits, IOBase
 
 
 class LogicalAndInputSpec(DynamicTraitedSpec):
@@ -52,8 +44,7 @@ class LogicalAnd(IOBase):
             return getattr(self.inputs, "in%d" % (idx + 1))
 
         values = [
-            getval(idx) for idx in range(self._numinputs)
-            if isdefined(getval(idx))
+            getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))
         ]
 
         out = False
@@ -80,14 +71,11 @@ class Filter(IOBase):
         if numinputs >= 1:
             for fieldname in self._fieldnames:
                 input_names = [
-                    "{}{}".format(fieldname, (i + 1))
-                    for i in range(numinputs)
+                    "{}{}".format(fieldname, (i + 1)) for i in range(numinputs)
                 ]
                 add_traits(self.inputs, input_names)
-            isenabled_input_names = \
-                ["is_enabled%d" % (i + 1) for i in range(numinputs)]
-            add_traits(self.inputs, isenabled_input_names,
-                       trait_type=traits.Bool)
+            isenabled_input_names = ["is_enabled%d" % (i + 1) for i in range(numinputs)]
+            add_traits(self.inputs, isenabled_input_names, trait_type=traits.Bool)
         else:
             input_names = []
 
@@ -104,10 +92,7 @@ class Filter(IOBase):
             return getattr(self.inputs, "is_enabled%d" % (idx + 1))
 
         def getval(fieldname, idx):
-            return getattr(
-                self.inputs,
-                "{}{}".format(fieldname, (idx + 1))
-            )
+            return getattr(self.inputs, "{}{}".format(fieldname, (idx + 1)))
 
         for fieldname in self._fieldnames:
             outputs[fieldname] = []

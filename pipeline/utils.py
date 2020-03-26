@@ -9,7 +9,13 @@ import nibabel as nib
 import numpy as np
 
 
-def _splitext(fname):
+def nvol(fname):
+    nbimg = nib.load(fname)
+    assert len(nbimg.shape) >= 4
+    return nbimg.shape[3]
+
+
+def splitext(fname):
     """Splits filename and extension (.gz safe)
     >>> splitext('some/file.nii.gz')
     ('file', '.nii.gz')
@@ -23,9 +29,10 @@ def _splitext(fname):
     Source: niworkflows
     """
     from pathlib import Path
+
     basename = str(Path(fname).name)
-    stem = Path(basename.rstrip('.gz')).stem
-    return stem, basename[len(stem):]
+    stem = Path(basename.rstrip(".gz")).stem
+    return stem, basename[len(stem) :]
 
 
 def _get_first(l):
@@ -90,13 +97,13 @@ def deepvalues(l):
         return o
 
 
-def _ravel(in_val):
+def ravel(in_val):
     if not isinstance(in_val, list):
         return in_val
     flat_list = []
     for val in in_val:
-        raveled_val = _ravel(val)
-        if isinstance(raveled_val, (tuple, list)):
+        raveled_val = ravel(val)
+        if isinstance(raveled_val, (tuple, list, set)):
             flat_list.extend(raveled_val)
         else:
             flat_list.append(raveled_val)
@@ -115,8 +122,7 @@ def transpose(d):
         for key1, value1 in value0.items():
             if key1 not in out:
                 out[key1] = dict()
-            while isinstance(value1, dict) and \
-                    len(value1) == 1 and "" in value1:
+            while isinstance(value1, dict) and len(value1) == 1 and "" in value1:
                 value1 = value1[""]
             out[key1][key0] = value1
     return out
@@ -186,6 +192,7 @@ def lookup(d, subject_id=None, run_id=None, condition_id=None):
                 return flatten(next(iter(dd.values())))
             return {k: flatten(v) for k, v in dd.items()}
         return dd
+
     return flatten(o)
 
 

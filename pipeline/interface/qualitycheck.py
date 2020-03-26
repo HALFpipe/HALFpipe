@@ -5,18 +5,11 @@
 from os import path as op
 import json
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    SimpleInterface,
-    Directory
-)
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, Directory
 
 
 def _qualitycheck(base_directory=None, subject=None, scan=None, run=None):
-    qcresult_fname = op.join(base_directory,
-                             "qualitycheck",
-                             "qcresult.json")
+    qcresult_fname = op.join(base_directory, "qualitycheck", "qcresult.json")
 
     qcresult = {}
     if op.isfile(qcresult_fname):
@@ -61,7 +54,7 @@ class QualityCheck(SimpleInterface):
             base_directory=self.inputs.base_directory,
             subject=self.inputs.subject,
             scan=self.inputs.scan,
-            run=self.inputs.run
+            run=self.inputs.run,
         )
         self._results["keep"] = keep
 

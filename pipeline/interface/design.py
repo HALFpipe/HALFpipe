@@ -5,19 +5,10 @@
 import sys
 from itertools import product
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    SimpleInterface
-)
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 import pandas as pd
 import numpy as np
-from patsy import (
-    ModelDesc,
-    dmatrix,
-    Term,
-    LookupFactor
-)
+from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
 
 def _check_multicollinearity(matrix):
@@ -30,13 +21,18 @@ def _check_multicollinearity(matrix):
     max_singular = np.max(s)
     min_singular = np.min(s)
 
-    sys.stdout.write("max_singular={} min_singular={} rank={}\n".format(
-        max_singular, min_singular, np.linalg.matrix_rank(matrix)))
+    sys.stdout.write(
+        "max_singular={} min_singular={} rank={}\n".format(
+            max_singular, min_singular, np.linalg.matrix_rank(matrix)
+        )
+    )
 
     if min_singular == 0:
-        sys.stdout.write("[!] CPAC warns: Detected multicollinearity in the " +
-                         "computed group-level analysis model. Please double-"
-                         "check your model design.\n\n")
+        sys.stdout.write(
+            "[!] CPAC warns: Detected multicollinearity in the "
+            + "computed group-level analysis model. Please double-"
+            "check your model design.\n\n"
+        )
 
 
 def _group_design(data, subjects):
@@ -80,8 +76,9 @@ def _group_design(data, subjects):
     lhs = []
 
     # specify patsy design matrix
-    rhs = ([Term([])] +  # force intercept
-           [Term([LookupFactor(name)]) for name in dataframe])
+    rhs = [Term([])] + [  # force intercept
+        Term([LookupFactor(name)]) for name in dataframe
+    ]
     modelDesc = ModelDesc(lhs, rhs)
     dmat = dmatrix(modelDesc, dataframe, return_type="dataframe")
     _check_multicollinearity(dmat)
@@ -89,12 +86,13 @@ def _group_design(data, subjects):
     # prepare lsmeans
     uniqueValuesForFactors = [
         (0.0,)
-        if pd.api.types.is_numeric_dtype(dataframe[f].dtype) else
-        dataframe[f].unique()
+        if pd.api.types.is_numeric_dtype(dataframe[f].dtype)
+        else dataframe[f].unique()
         for f in dataframe.columns
     ]
-    grid = pd.DataFrame(list(product(*uniqueValuesForFactors)),
-                        columns=dataframe.columns)
+    grid = pd.DataFrame(
+        list(product(*uniqueValuesForFactors)), columns=dataframe.columns
+    )
     refDmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
 
     # data frame to store contrasts
@@ -102,8 +100,7 @@ def _group_design(data, subjects):
 
     # create intercept contrast separately
     contrastIntercept = refDmat.mean()
-    contrastVectors.loc["mean", :] = \
-        contrastIntercept
+    contrastVectors.loc["mean", :] = contrastIntercept
 
     for field in dataframe.columns:
         _data = data[field]
@@ -119,12 +116,9 @@ def _group_design(data, subjects):
                 # for patients, and one for controls.
                 lsmeans = pd.DataFrame(index=fieldLevels, columns=dmat.columns)
                 for level in fieldLevels:
-                    lsmeans.loc[level, :] = \
-                        refDmat.loc[grid[field] == level, :].mean()
+                    lsmeans.loc[level, :] = refDmat.loc[grid[field] == level, :].mean()
                 for contrastName, valueDict in contrasts.items():
-                    names = [name
-                             for name in valueDict.keys()
-                             if name in fieldLevels]
+                    names = [name for name in valueDict.keys() if name in fieldLevels]
                     values = [valueDict[name] for name in names]
                     # If we wish to test the mean of each group against zero,
                     # we can simply use these contrasts and be done.
@@ -132,28 +126,29 @@ def _group_design(data, subjects):
                     # which is expressed here as {"patient":1, "control":-1},
                     # we translate it to a contrast vector by taking the linear
                     # combination of the lsmeans contrasts.
-                    contrastVector = \
-                        lsmeans.loc[names, :].mul(values, axis=0).sum()
+                    contrastVector = lsmeans.loc[names, :].mul(values, axis=0).sum()
                     contrastVectors.loc[contrastName, :] = contrastVector
         if "Covariate" in _data:
-            contrastIntercept = dmat.design_info.linear_constraint(
-                {field: 0})
-            contrastVectors.loc[field, contrastIntercept.variable_names] = \
-                contrastIntercept.coefs.ravel()
+            contrastIntercept = dmat.design_info.linear_constraint({field: 0})
+            contrastVectors.loc[
+                field, contrastIntercept.variable_names
+            ] = contrastIntercept.coefs.ravel()
 
     npts, nevs = dmat.shape
 
     if nevs >= npts:
         sys.stdout.write("No design generated. nevs >= npts\n")
-        return ({"intercept": [1.0 for s in subjects]},
-                [["mean", "T", ["intercept"], [1]]], ["mean"])
+        return (
+            {"intercept": [1.0 for s in subjects]},
+            [["mean", "T", ["intercept"], [1]]],
+            ["mean"],
+        )
 
-    regressors = {
-        d: dmat[d].tolist() for d in dmat.columns
-    }
+    regressors = {d: dmat[d].tolist() for d in dmat.columns}
     contrasts = [
         [contrastName, "T", contrastVectors.columns.tolist(), coefs.tolist()]
-        for contrastName, coefs in contrastVectors.iterrows()]
+        for contrastName, coefs in contrastVectors.iterrows()
+    ]
     contrast_names = [c[0] for c in contrasts]
 
     return regressors, contrasts, contrast_names
@@ -172,13 +167,13 @@ class GroupDesignOutputSpec(TraitedSpec):
 
 class GroupDesign(SimpleInterface):
     """ interface to construct a group design """
+
     input_spec = GroupDesignInputSpec
     output_spec = GroupDesignOutputSpec
 
     def _run_interface(self, runtime):
         regressors, contrasts, contrast_names = _group_design(
-            data=self.inputs.data,
-            subjects=self.inputs.subjects,
+            data=self.inputs.data, subjects=self.inputs.subjects,
         )
         self._results["regressors"] = regressors
         self._results["contrasts"] = contrasts

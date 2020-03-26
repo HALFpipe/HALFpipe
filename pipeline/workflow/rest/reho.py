@@ -19,42 +19,28 @@ def init_reho_wf(name="reho", memcalc=MemoryCalculator()):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["bold_file", "mask_file"]),
-        name="inputnode"
+        interface=niu.IdentityInterface(fields=["bold_file", "mask_file"]),
+        name="inputnode",
     )
 
-    reho = pe.Node(
-        interface=ReHo(),
-        name="reho",
-        mem_gb=memcalc.series_std_gb*2
-    )
+    reho = pe.Node(interface=ReHo(), name="reho", mem_gb=memcalc.series_std_gb * 2)
     reho.inputs.cluster_size = 27
 
     zscore_workflow = init_zscore_wf()
 
     # outputs are cope and zstat
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["reho_stat"]),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=["reho_stat"]), name="outputnode"
     )
 
-    workflow.connect([
-        (inputnode, reho, [
-            ("bold_file", "in_file"),
-            ("mask_file", "mask_file"),
-        ]),
-        (reho, zscore_workflow, [
-            ("out_file", "inputnode.in_file"),
-        ]),
-        (inputnode, zscore_workflow, [
-            ("mask_file", "inputnode.mask_file"),
-        ]),
-        (zscore_workflow, outputnode, [
-            ("outputnode.out_file", "reho_stat"),
-        ]),
-    ])
+    workflow.connect(
+        [
+            (inputnode, reho, [("bold_file", "in_file"), ("mask_file", "mask_file"),]),
+            (reho, zscore_workflow, [("out_file", "inputnode.in_file"),]),
+            (inputnode, zscore_workflow, [("mask_file", "inputnode.mask_file"),]),
+            (zscore_workflow, outputnode, [("outputnode.out_file", "reho_stat"),]),
+        ]
+    )
 
     outnames = ["reho"]
 

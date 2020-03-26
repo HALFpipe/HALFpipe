@@ -11,8 +11,7 @@ from .zscore import init_zscore_wf
 from ..memory import MemoryCalculator
 
 
-def init_alff_wf(name="alff",
-                 memcalc=MemoryCalculator()):
+def init_alff_wf(name="alff", memcalc=MemoryCalculator()):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
     fractional ALFF maps
@@ -53,33 +52,26 @@ def init_alff_wf(name="alff",
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["bold_file", "filtered_file", "mask_file"]),
-        name="inputnode"
+            fields=["bold_file", "filtered_file", "mask_file"]
+        ),
+        name="inputnode",
     )
 
     # standard deviation over frequency
     stddev_filtered = pe.Node(
-        interface=afni.TStat(),
-        name="stddev_filtered",
-        mem_gb=memcalc.series_std_gb
+        interface=afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb
     )
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
 
     # standard deviation of the unfiltered nuisance corrected image
     stddev_unfiltered = pe.Node(
-        interface=afni.TStat(),
-        name="stddev_unfiltered",
-        mem_gb=memcalc.series_std_gb
+        interface=afni.TStat(), name="stddev_unfiltered", mem_gb=memcalc.series_std_gb
     )
     stddev_unfiltered.inputs.outputtype = "NIFTI_GZ"
     stddev_unfiltered.inputs.options = "-stdev"
 
-    falff = pe.Node(
-        interface=afni.Calc(),
-        name="falff",
-        mem_gb=memcalc.volume_std_gb
-    )
+    falff = pe.Node(interface=afni.Calc(), name="falff", mem_gb=memcalc.volume_std_gb)
     falff.inputs.args = "-float"
     falff.inputs.expr = "(1.0*bool(a))*((1.0*b)/(1.0*c))"
     falff.inputs.outputtype = "NIFTI_GZ"
@@ -89,51 +81,41 @@ def init_alff_wf(name="alff",
     falff_zscore_workflow = init_zscore_wf("falff_zscore")
 
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["alff_stat", "falff_stat"]),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=["alff_stat", "falff_stat"]),
+        name="outputnode",
     )
 
-    workflow.connect([
-        (inputnode, stddev_unfiltered, [
-            ("bold_file", "in_file"),
-            ("mask_file", "mask"),
-        ]),
-        (inputnode, stddev_filtered, [
-            ("filtered_file", "in_file"),
-            ("mask_file", "mask"),
-        ]),
-
-        (inputnode, falff, [
-            ("mask_file", "in_file_a"),
-        ]),
-        (stddev_filtered, falff, [
-            ("out_file", "in_file_b"),
-        ]),
-        (stddev_unfiltered, falff, [
-            ("out_file", "in_file_c"),
-        ]),
-
-        (inputnode, alff_zscore_workflow, [
-            ("mask_file", "inputnode.mask_file"),
-        ]),
-        (stddev_filtered, alff_zscore_workflow, [
-            ("out_file", "inputnode.in_file"),
-        ]),
-        (inputnode, falff_zscore_workflow, [
-            ("mask_file", "inputnode.mask_file"),
-        ]),
-        (falff, falff_zscore_workflow, [
-            ("out_file", "inputnode.in_file"),
-        ]),
-
-        (alff_zscore_workflow, outputnode, [
-            ("outputnode.out_file", "alff_stat"),
-        ]),
-        (falff_zscore_workflow, outputnode, [
-            ("outputnode.out_file", "falff_stat"),
-        ]),
-    ])
+    workflow.connect(
+        [
+            (
+                inputnode,
+                stddev_unfiltered,
+                [("bold_file", "in_file"), ("mask_file", "mask"),],
+            ),
+            (
+                inputnode,
+                stddev_filtered,
+                [("filtered_file", "in_file"), ("mask_file", "mask"),],
+            ),
+            (inputnode, falff, [("mask_file", "in_file_a"),]),
+            (stddev_filtered, falff, [("out_file", "in_file_b"),]),
+            (stddev_unfiltered, falff, [("out_file", "in_file_c"),]),
+            (inputnode, alff_zscore_workflow, [("mask_file", "inputnode.mask_file"),]),
+            (
+                stddev_filtered,
+                alff_zscore_workflow,
+                [("out_file", "inputnode.in_file"),],
+            ),
+            (inputnode, falff_zscore_workflow, [("mask_file", "inputnode.mask_file"),]),
+            (falff, falff_zscore_workflow, [("out_file", "inputnode.in_file"),]),
+            (alff_zscore_workflow, outputnode, [("outputnode.out_file", "alff_stat"),]),
+            (
+                falff_zscore_workflow,
+                outputnode,
+                [("outputnode.out_file", "falff_stat"),],
+            ),
+        ]
+    )
 
     outnames = ["alff", "falff"]
 

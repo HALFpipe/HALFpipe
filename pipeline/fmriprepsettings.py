@@ -32,9 +32,9 @@ t2s_coreg = False
 nthreads = cpu_count()
 
 # Maximum number of threads an individual process may use
-omp_nthreads = int(nthreads/4)
+omp_nthreads = int(nthreads / 4)
 if nthreads < 4:
-    omp_nthreads = int(nthreads/2)
+    omp_nthreads = int(nthreads / 2)
 
 # Enable FreeSurfer surface reconstruction (may increase runtime)
 freesurfer = False
@@ -50,10 +50,9 @@ template = {}
 
 # Ordered dictionary where keys are TemplateFlow ID strings
 # Values of the dictionary aggregate modifiers
-output_spaces = OrderedDict([
-    ("MNI152NLin6Asym", {"res": 2}),
-    ("MNI152NLin2009cAsym", {"res": 2})
-])
+output_spaces = OrderedDict(
+    [("MNI152NLin6Asym", {"res": 2}), ("MNI152NLin2009cAsym", {"res": 2})]
+)
 # Option "--use-aroma" requires functional images to be resampled to
 # MNI152NLin6Asym space. The argument "MNI152NLin6Asym:res-2" has
 # been automatically added to the list of output spaces
@@ -86,8 +85,9 @@ use_syn = False
 force_syn = False
 
 # Custom reference image for normalization
-template_out_grid = op.join(os.getenv("FSLDIR"),
-                            "data", "standard", "MNI152_T1_2mm.nii.gz")
+template_out_grid = op.join(
+    os.getenv("FSLDIR"), "data", "standard", "MNI152_T1_2mm.nii.gz"
+)
 
 # Generate bold CIFTI file in output spaces
 cifti_output = False
@@ -121,7 +121,7 @@ settings_dict = {
     "err_on_aroma_warn": err_on_aroma_warn,
     "regressors_all_comps": regressors_all_comps,
     "regressors_dvars_th": regressors_dvars_th,
-    "regressors_fd_th": regressors_fd_th
+    "regressors_fd_th": regressors_fd_th,
 }
 
 

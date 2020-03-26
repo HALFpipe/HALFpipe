@@ -7,10 +7,7 @@ from os import path as op
 from nipype.pipeline import engine as pe
 from nipype.interfaces import io as nio
 
-from .utils import (
-    make_varname,
-    dataSinkRegexpSubstitutions
-)
+from .utils import make_varname, dataSinkRegexpSubstitutions
 
 
 def get_container_path(subject, scan=None, run=None):
@@ -22,9 +19,16 @@ def get_container_path(subject, scan=None, run=None):
     return container
 
 
-def make_firstlevel_datasink(workflow,
-                             firstlevel_wf, outnames, outfields,
-                             output_dir, subject, scan=None, run=None):
+def make_firstlevel_datasink(
+    workflow,
+    firstlevel_wf,
+    outnames,
+    outfields,
+    output_dir,
+    subject,
+    scan=None,
+    run=None,
+):
     name = workflow.name
 
     varnames = []
@@ -40,17 +44,17 @@ def make_firstlevel_datasink(workflow,
             infields=varnames,
             regexp_substitutions=dataSinkRegexpSubstitutions,
             parameterization=False,
-            force_run=True
+            force_run=True,
         ),
         name="ds_{}".format(name),
-        run_without_submitting=True
+        run_without_submitting=True,
     )
     ds_field.inputs.base_directory = output_dir
     ds_field.inputs.container = get_container_path(subject, scan, run)
 
     connections = []
     for varname in varnames:
-        connections.append((firstlevel_wf, ds_field, [
-            ("outputnode.{}".format(varname), varname)
-        ]))
+        connections.append(
+            (firstlevel_wf, ds_field, [("outputnode.{}".format(varname), varname)])
+        )
     workflow.connect(connections)

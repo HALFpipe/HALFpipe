@@ -11,9 +11,7 @@ from ...utils import _get_first
 from ..memory import MemoryCalculator
 
 
-def init_brainatlas_wf(metadata,
-                       name="brainatlas",
-                       memcalc=MemoryCalculator()):
+def init_brainatlas_wf(metadata, name="brainatlas", memcalc=MemoryCalculator()):
     """
     create workflow for brainatlas
     :param use_mov_pars: regression - Movement parameters
@@ -28,9 +26,8 @@ def init_brainatlas_wf(metadata,
     """
     workflow = pe.Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file"]),
-        name="inputnode"
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["bold_file", "mask_file"]), name="inputnode"
     )
 
     if "BrainAtlasImage" not in metadata:
@@ -46,11 +43,11 @@ def init_brainatlas_wf(metadata,
             kind="correlation",
             resampling_target="labels",
             atlas_type="labels",
-            standardize=False
+            standardize=False,
         ),
         name="connectivitymeasure",
         iterfield=["atlas_file"],
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
     connectivitymeasure.inputs.atlas_file = atlas_files
 
@@ -58,47 +55,58 @@ def init_brainatlas_wf(metadata,
         interface=niu.Split(splits=[1 for atlasname in atlasnames]),
         name="splitconnectivity",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
     splittimeseries = pe.Node(
         interface=niu.Split(splits=[1 for atlasname in atlasnames]),
         name="splittimeseries",
         mem_gb=memcalc.min_gb,
-        run_without_submitting=True
+        run_without_submitting=True,
     )
 
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=["{}_correlation_matrix".format(atlasname)
-                for atlasname in atlasnames] +
-        ["{}_timeseries".format(atlasname) for atlasname in atlasnames]),
-        name="outputnode"
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "{}_correlation_matrix".format(atlasname) for atlasname in atlasnames
+            ]
+            + ["{}_timeseries".format(atlasname) for atlasname in atlasnames]
+        ),
+        name="outputnode",
     )
 
-    workflow.connect([
-        (inputnode, connectivitymeasure, [
-            ("bold_file", "in_file"),
-            ("mask_file", "mask_file")
-        ]),
-        (connectivitymeasure, splitconnectivity, [
-            ("connectivity", "inlist"),
-        ]),
-        (connectivitymeasure, splittimeseries, [
-            ("timeseries", "inlist"),
-        ])
-    ])
+    workflow.connect(
+        [
+            (
+                inputnode,
+                connectivitymeasure,
+                [("bold_file", "in_file"), ("mask_file", "mask_file")],
+            ),
+            (connectivitymeasure, splitconnectivity, [("connectivity", "inlist"),]),
+            (connectivitymeasure, splittimeseries, [("timeseries", "inlist"),]),
+        ]
+    )
 
     # connect outputs named for the atlases
     for i, atlasname in enumerate(atlasnames):
-        workflow.connect([
-            (splitconnectivity, outputnode, [
-                (("out%i" % (i + 1), _get_first),
-                    "%s_correlation_matrix" % atlasname)
-            ]),
-            (splittimeseries, outputnode, [
-                (("out%i" % (i + 1), _get_first),
-                    "%s_timeseries" % atlasname)
-            ]),
-        ])
+        workflow.connect(
+            [
+                (
+                    splitconnectivity,
+                    outputnode,
+                    [
+                        (
+                            ("out%i" % (i + 1), _get_first),
+                            "%s_correlation_matrix" % atlasname,
+                        )
+                    ],
+                ),
+                (
+                    splittimeseries,
+                    outputnode,
+                    [(("out%i" % (i + 1), _get_first), "%s_timeseries" % atlasname)],
+                ),
+            ]
+        )
 
     outfields = ["correlation_matrix", "timeseries"]
 

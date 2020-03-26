@@ -19,14 +19,8 @@ from .stats import init_higherlevel_wf
 from ..interface.filter import Filter
 
 from ..utils import transpose
-from .utils import (
-    make_varname,
-    dataSinkRegexpSubstitutions
-)
-from ..nodes import (
-    TryNode,
-    TryMapNode
-)
+from .utils import make_varname, dataSinkRegexpSubstitutions
+from ..nodes import TryNode, TryMapNode
 
 
 def init_workflow(workdir, jsonfile):
@@ -56,7 +50,7 @@ def init_workflow(workdir, jsonfile):
 
     result = map(
         partial(init_subject_wf, workdir=workdir, images=images, data=data),
-        list(images.items())
+        list(images.items()),
     )
     subjects, subject_wfs, outfieldsByOutnameByScanArray = zip(*result)
 
@@ -89,9 +83,7 @@ def init_workflow(workdir, jsonfile):
     group_design = metadata["GroupDesign"]
     group_data = group_design["Data"]
 
-    subject_sets = {
-        "BetweenGroups": subjects
-    }
+    subject_sets = {"BetweenGroups": subjects}
     if "RepeatWithinSubGroups" in group_design:
         repeat_within_subgroup_fields = group_design["RepeatWithinSubGroups"]
         for field in repeat_within_subgroup_fields:
@@ -100,9 +92,7 @@ def init_workflow(workdir, jsonfile):
             for group in unique_groups:
                 subject_set_name = "Within_{}.{}".format(field, group)
                 subject_set = {
-                    subject
-                    for subject, g in subject_groups.items()
-                    if g == group
+                    subject for subject, g in subject_groups.items() if g == group
                 }
                 subject_sets[subject_set_name] = subject_set
 
@@ -113,12 +103,9 @@ def init_workflow(workdir, jsonfile):
                 outdir = op.join(stats_dir, scanname, outname)
                 if len(subject_sets) > 1:
                     outdir = op.join(outdir, subject_set_name)
-                suffix = "{}_{}".format(
-                    scanname, outname
-                )
+                suffix = "{}_{}".format(scanname, outname)
                 if len(subject_sets) > 1:
-                    suffix += "_{}".format(
-                        subject_set_name.replace(".", "_"))
+                    suffix += "_{}".format(subject_set_name.replace(".", "_"))
 
                 fieldnames = ["subject"]
                 for outfield in outfields:
@@ -136,11 +123,8 @@ def init_workflow(workdir, jsonfile):
                     continue
 
                 filter = pe.Node(
-                    interface=Filter(
-                        numinputs=len(subjects),
-                        fieldnames=fieldnames
-                    ),
-                    name="{}_subjects_filter".format(suffix)
+                    interface=Filter(numinputs=len(subjects), fieldnames=fieldnames),
+                    name="{}_subjects_filter".format(suffix),
                 )
 
                 for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
@@ -150,7 +134,7 @@ def init_workflow(workdir, jsonfile):
                     outputnode = None
                     for node in wf._get_all_nodes():
                         nodename = "scan_%s.outputnode" % scanname
-                        if str(node).endswith('.' + nodename):
+                        if str(node).endswith("." + nodename):
                             outputnode = node
                             break
                     if outputnode is None:
@@ -158,25 +142,35 @@ def init_workflow(workdir, jsonfile):
                     for outfield in fieldnames:
                         if outfield == "subject":
                             continue
-                        workflow.connect([
-                            (outputnode, filter, [
-                                (make_varname(outname, outfield),
-                                    "{}{}".format(outfield, i + 1))
-                            ]),
-                        ])
-                    workflow.connect([
-                        (outputnode, filter, [
-                            ("keep", "is_enabled%i" % (i + 1))
-                        ]),
-                    ])
+                        workflow.connect(
+                            [
+                                (
+                                    outputnode,
+                                    filter,
+                                    [
+                                        (
+                                            make_varname(outname, outfield),
+                                            "{}{}".format(outfield, i + 1),
+                                        )
+                                    ],
+                                ),
+                            ]
+                        )
+                    workflow.connect(
+                        [(outputnode, filter, [("keep", "is_enabled%i" % (i + 1))]),]
+                    )
                     setattr(filter.inputs, "subject{}".format(i + 1), subject)
 
                 for outfield in fieldnames:
-                    workflow.connect([
-                        (filter, higherlevel_wf, [
-                            (outfield, "inputnode.{}".format(outfield))
-                        ]),
-                    ])
+                    workflow.connect(
+                        [
+                            (
+                                filter,
+                                higherlevel_wf,
+                                [(outfield, "inputnode.{}".format(outfield))],
+                            ),
+                        ]
+                    )
 
                 ds_stats = TryMapNode(
                     nio.DataSink(
@@ -184,10 +178,11 @@ def init_workflow(workdir, jsonfile):
                         regexp_substitutions=dataSinkRegexpSubstitutions,
                         base_directory=outdir,
                         parameterization=False,
-                        force_run=True),
+                        force_run=True,
+                    ),
                     iterfield=["container", "cope", "varcope", "zstat", "dof"],
                     name="ds_%s_stats" % suffix,
-                    run_without_submitting=True
+                    run_without_submitting=True,
                 )
 
                 ds_mask = TryNode(
@@ -196,30 +191,29 @@ def init_workflow(workdir, jsonfile):
                         base_directory=outdir,
                         regexp_substitutions=dataSinkRegexpSubstitutions,
                         parameterization=False,
-                        force_run=True),
+                        force_run=True,
+                    ),
                     name="ds_%s_mask" % suffix,
-                    run_without_submitting=True
+                    run_without_submitting=True,
                 )
 
-                workflow.connect([
-                    (higherlevel_wf, ds_stats, [
-                        ("outputnode.contrast_names", "container")
-                    ]),
-                    (higherlevel_wf, ds_stats, [
-                        ("outputnode.copes", "cope")
-                    ]),
-                    (higherlevel_wf, ds_stats, [
-                        ("outputnode.varcopes", "varcope")
-                    ]),
-                    (higherlevel_wf, ds_stats, [
-                        ("outputnode.zstats", "zstat")
-                    ]),
-                    (higherlevel_wf, ds_stats, [
-                        ("outputnode.dof_files", "dof")
-                    ]),
-                    (higherlevel_wf, ds_mask, [
-                        ("outputnode.mask_file", "mask")
-                    ])
-                ])
+                workflow.connect(
+                    [
+                        (
+                            higherlevel_wf,
+                            ds_stats,
+                            [("outputnode.contrast_names", "container")],
+                        ),
+                        (higherlevel_wf, ds_stats, [("outputnode.copes", "cope")]),
+                        (
+                            higherlevel_wf,
+                            ds_stats,
+                            [("outputnode.varcopes", "varcope")],
+                        ),
+                        (higherlevel_wf, ds_stats, [("outputnode.zstats", "zstat")]),
+                        (higherlevel_wf, ds_stats, [("outputnode.dof_files", "dof")]),
+                        (higherlevel_wf, ds_mask, [("outputnode.mask_file", "mask")]),
+                    ]
+                )
 
     return workflow

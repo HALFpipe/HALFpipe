@@ -40,9 +40,13 @@ def get_len(arr):
     return len(arr)
 
 
-def init_higherlevel_wf(fieldnames,
-                        group_data, run_mode="flame1",
-                        name="higherlevel", memcalc=MemoryCalculator()):
+def init_higherlevel_wf(
+    fieldnames,
+    group_data,
+    run_mode="flame1",
+    name="higherlevel",
+    memcalc=MemoryCalculator(),
+):
     """
 
     :param run_mode: mode argument passed to FSL FLAMEO
@@ -65,20 +69,21 @@ def init_higherlevel_wf(fieldnames,
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=fieldnames
-        ),
-        name="inputnode"
+        interface=niu.IdentityInterface(fields=fieldnames), name="inputnode"
     )
 
     outputnode = pe.Node(
         interface=niu.IdentityInterface(
             fields=[
-                "copes", "varcopes", "zstats", "dof_files", "mask_file",
-                "contrast_names"
+                "copes",
+                "varcopes",
+                "zstats",
+                "dof_files",
+                "mask_file",
+                "contrast_names",
             ]
         ),
-        name="outputnode"
+        name="outputnode",
     )
 
     if "subject" not in fieldnames:
@@ -89,72 +94,58 @@ def init_higherlevel_wf(fieldnames,
         return
 
     flameo = TryNode(
-        interface=fsl.FLAMEO(
-            run_mode=run_mode
-        ),
+        interface=fsl.FLAMEO(run_mode=run_mode),
         name="flameo",
-        mem_gb=memcalc.volume_std_gb*100
+        mem_gb=memcalc.volume_std_gb * 100,
     )
 
     # merge all input nii image files to one big nii file
     maskmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
         name="maskmerge",
-        mem_gb=memcalc.volume_std_gb*100
+        mem_gb=memcalc.volume_std_gb * 100,
     )
     # calculate the intersection of all masks
     maskagg = pe.Node(
-        interface=fsl.ImageMaths(
-            op_string="-Tmin -thr 1 -bin"
-        ),
+        interface=fsl.ImageMaths(op_string="-Tmin -thr 1 -bin"),
         name="maskagg",
-        mem_gb=memcalc.volume_std_gb*100
+        mem_gb=memcalc.volume_std_gb * 100,
     )
-    workflow.connect([
-        (inputnode, maskmerge, [
-            ("mask_file", "in_files")
-        ]),
-        (maskmerge, maskagg, [
-            ("merged_file", "in_file")
-        ]),
-        (maskagg, flameo, [
-            ("out_file", "mask_file")
-        ]),
-        (maskagg, outputnode, [
-            ("out_file", "mask_file")
-        ]),
-    ])
+    workflow.connect(
+        [
+            (inputnode, maskmerge, [("mask_file", "in_files")]),
+            (maskmerge, maskagg, [("merged_file", "in_file")]),
+            (maskagg, flameo, [("out_file", "mask_file")]),
+            (maskagg, outputnode, [("out_file", "mask_file")]),
+        ]
+    )
 
     # merge all input nii image files to one big nii file
     statmerge = pe.Node(
         interface=fsl.Merge(dimension="t"),
         name="statmerge",
-        mem_gb=memcalc.volume_std_gb*100
+        mem_gb=memcalc.volume_std_gb * 100,
     )
-    workflow.connect([
-        (inputnode, statmerge, [
-            ("stat", "in_files")
-        ]),
-        (statmerge, flameo, [
-            ("merged_file", "cope_file")
-        ])
-    ])
+    workflow.connect(
+        [
+            (inputnode, statmerge, [("stat", "in_files")]),
+            (statmerge, flameo, [("merged_file", "cope_file")]),
+        ]
+    )
 
     if "var" in fieldnames:
         # merge all input nii image files to one big nii file
         varmerge = pe.Node(
             interface=fsl.Merge(dimension="t"),
             name="varmerge",
-            mem_gb=memcalc.volume_std_gb*100
+            mem_gb=memcalc.volume_std_gb * 100,
         )
-        workflow.connect([
-            (inputnode, varmerge, [
-                ("var", "in_files")
-            ]),
-            (varmerge, flameo, [
-                ("merged_file", "var_cope_file")
-            ]),
-        ])
+        workflow.connect(
+            [
+                (inputnode, varmerge, [("var", "in_files")]),
+                (varmerge, flameo, [("merged_file", "var_cope_file")]),
+            ]
+        )
 
     if "dof_file" in fieldnames:
         # we get a text dof_file, but need to transform it to an nii image
@@ -162,66 +153,67 @@ def init_higherlevel_wf(fieldnames,
             interface=fsl.ImageMaths(),
             iterfield=["in_file", "op_string"],
             name="gendofimage",
-            mem_gb=memcalc.volume_std_gb
+            mem_gb=memcalc.volume_std_gb,
         )
         # merge all generated nii image files to one big nii file
         dofmerge = pe.Node(
             interface=fsl.Merge(dimension="t"),
             name="dofmerge",
-            mem_gb=memcalc.volume_std_gb*100
+            mem_gb=memcalc.volume_std_gb * 100,
         )
-        workflow.connect([
-            (inputnode, gendofimage, [
-                ("stat", "in_file"),
-                (("dof_file", gen_merge_op_str), "op_string")
-            ]),
-            (gendofimage, dofmerge, [
-                ("out_file", "in_files")
-            ]),
-            (dofmerge, flameo, [
-                ("merged_file", "dof_var_cope_file")
-            ])
-        ])
+        workflow.connect(
+            [
+                (
+                    inputnode,
+                    gendofimage,
+                    [
+                        ("stat", "in_file"),
+                        (("dof_file", gen_merge_op_str), "op_string"),
+                    ],
+                ),
+                (gendofimage, dofmerge, [("out_file", "in_files")]),
+                (dofmerge, flameo, [("merged_file", "dof_var_cope_file")]),
+            ]
+        )
 
     design = pe.Node(
-        interface=GroupDesign(),
-        name="group_design",
-        mem_gb=memcalc.min_gb
+        interface=GroupDesign(), name="group_design", mem_gb=memcalc.min_gb
     )
     design.inputs.data = group_data
 
     level2model = TryNode(
-        interface=fsl.MultipleRegressDesign(),
-        name="l2model",
-        mem_gb=memcalc.min_gb
+        interface=fsl.MultipleRegressDesign(), name="l2model", mem_gb=memcalc.min_gb
     )
 
-    workflow.connect([
-        (inputnode, design, [
-            ("subject", "subjects")
-        ]),
-
-        (design, level2model, [
-            ("regressors", "regressors"),
-            ("contrasts", "contrasts"),
-        ]),
-
-        (design, outputnode, [
-            ("contrast_names", "contrast_names")
-        ]),
-
-        (level2model, flameo, [
-            ("design_mat", "design_file"),
-            ("design_con", "t_con_file"),
-            ("design_grp", "cov_split_file")
-        ]),
-
-        (flameo, outputnode, [
-            (("copes", _ravel), "copes"),
-            (("var_copes", _ravel), "varcopes"),
-            (("zstats", _ravel), "zstats"),
-            (("tdof", _ravel), "dof_files")
-        ]),
-    ])
+    workflow.connect(
+        [
+            (inputnode, design, [("subject", "subjects")]),
+            (
+                design,
+                level2model,
+                [("regressors", "regressors"), ("contrasts", "contrasts"),],
+            ),
+            (design, outputnode, [("contrast_names", "contrast_names")]),
+            (
+                level2model,
+                flameo,
+                [
+                    ("design_mat", "design_file"),
+                    ("design_con", "t_con_file"),
+                    ("design_grp", "cov_split_file"),
+                ],
+            ),
+            (
+                flameo,
+                outputnode,
+                [
+                    (("copes", _ravel), "copes"),
+                    (("var_copes", _ravel), "varcopes"),
+                    (("zstats", _ravel), "zstats"),
+                    (("tdof", _ravel), "dof_files"),
+                ],
+            ),
+        ]
+    )
 
     return workflow

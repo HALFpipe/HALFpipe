@@ -5,16 +5,24 @@
 from .connectivity import ConnectivityMeasure
 from .design import GroupDesign
 from .dof import Dof
-from .filter import (
-    LogicalAnd,
-    Filter
-)
+from .filter import LogicalAnd, Filter
 from .motion import MotionCutoff
 from .qualitycheck import QualityCheck
 from .reho import ReHo
 from .stats import HigherLevelDesign
-from .utils import (
+from .utils import SelectColumnsTSV, MergeColumnsTSV, MatrixToTSV
+
+__all__ = [
+    ConnectivityMeasure,
+    GroupDesign,
+    Dof,
+    LogicalAnd,
+    Filter,
+    MotionCutoff,
+    QualityCheck,
+    ReHo,
+    HigherLevelDesign,
     SelectColumnsTSV,
     MergeColumnsTSV,
-    MatrixToTSV
-)
+    MatrixToTSV,
+]

@@ -15,15 +15,11 @@ def init_zscore_wf(name="zscore"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["in_file", "mask_file"]),
-        name="inputnode"
+        interface=niu.IdentityInterface(fields=["in_file", "mask_file"]),
+        name="inputnode",
     )
 
-    stats = pe.Node(
-        interface=fsl.ImageStats(),
-        name="stats",
-    )
+    stats = pe.Node(interface=fsl.ImageStats(), name="stats",)
     stats.inputs.op_string = "-k %s -m -s"
 
     def get_zscore_op_string(list):
@@ -34,32 +30,19 @@ def init_zscore_wf(name="zscore"):
         """
         return "-sub {:f} -div {:f}".format(*list)
 
-    zscore = pe.Node(
-        interface=fsl.ImageMaths(),
-        name="zscore",
-    )
+    zscore = pe.Node(interface=fsl.ImageMaths(), name="zscore",)
 
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["out_file"]),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=["out_file"]), name="outputnode"
     )
 
-    workflow.connect([
-        (inputnode, stats, [
-            ("in_file", "in_file"),
-            ("mask_file", "mask_file")
-        ]),
-        (inputnode, zscore, [
-            ("in_file", "in_file"),
-            ("mask_file", "mask_file")
-        ]),
-        (stats, zscore, [
-            (("out_stat", get_zscore_op_string), "op_string")
-        ]),
-        (zscore, outputnode, [
-            ("out_file", "out_file")
-        ])
-    ])
+    workflow.connect(
+        [
+            (inputnode, stats, [("in_file", "in_file"), ("mask_file", "mask_file")]),
+            (inputnode, zscore, [("in_file", "in_file"), ("mask_file", "mask_file")]),
+            (stats, zscore, [(("out_stat", get_zscore_op_string), "op_string")]),
+            (zscore, outputnode, [("out_file", "out_file")]),
+        ]
+    )
 
     return workflow

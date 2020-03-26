@@ -56,9 +56,7 @@ class WfHandler(StreamHandler):
         self.output_dir = output_dir
         self.images = images
 
-        self.files = {
-            k: op.join(output_dir, "%s.txt" % k) for k in images.keys()
-        }
+        self.files = {k: op.join(output_dir, "%s.txt" % k) for k in images.keys()}
         self.handles = {k: None for k in images.keys()}
 
         os.makedirs(self.output_dir, exist_ok=True)
@@ -83,8 +81,7 @@ class WfHandler(StreamHandler):
                             for k, stream in self.handles.items():
                                 if k in hierarchy:
                                     if stream is None:
-                                        self.handles[k] = open(
-                                            self.files[k], "a")
+                                        self.handles[k] = open(self.files[k], "a")
                                         stream = self.handles[k]
                                     self.stream = stream
                                     StreamHandler.emit(self, record)
@@ -95,6 +92,7 @@ class WfHandler(StreamHandler):
         self.stream = self.catch_all
         StreamHandler.emit(self, record)
         # print(record)
+
 
 #     def acquire(self):
 #         """ Acquire thread and file locks. Also re-opening log

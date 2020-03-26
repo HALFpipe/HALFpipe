@@ -15,12 +15,7 @@ def save_traceback(t, v, b, odir=os.getcwd()):
     name = str(v.__class__.__name__)
     mod_name = str(v.__class__.__module__)
     info = traceback.format_exception(t, v, b)
-    data = {
-        "class": name,
-        "module": mod_name,
-        "message": f"{v}",
-        "tb": info
-    }
+    data = {"class": name, "module": mod_name, "message": f"{v}", "tb": info}
 
     os.makedirs(odir, exist_ok=True)
 
@@ -31,8 +26,7 @@ def save_traceback(t, v, b, odir=os.getcwd()):
 
     with open(path, "w") as fp:
         json.dump(data, fp, indent=4)
-    sys.stdout.write("TryNode caught exception. " +
-                     f"Saved exception to \"{path}\"\n")
+    sys.stdout.write("TryNode caught exception. " + f'Saved exception to "{path}"\n')
 
 
 class TryNode(pe.Node):
@@ -45,6 +39,7 @@ class TryNode(pe.Node):
     fail on exceptions
     The TryNode solves this issue by simply ignoring any errors that may occur
     """
+
     def run(self, updatehash=False):
         try:
             super(TryNode, self).run(updatehash=updatehash)

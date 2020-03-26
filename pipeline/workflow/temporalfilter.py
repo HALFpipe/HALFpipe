@@ -10,8 +10,12 @@ from nipype.interfaces import afni
 from .memory import MemoryCalculator
 
 
-def init_temporalfilter_wf(temporal_filter_width, repetition_time,
-                           name="temporalfilter", memcalc=MemoryCalculator()):
+def init_temporalfilter_wf(
+    temporal_filter_width,
+    repetition_time,
+    name="temporalfilter",
+    memcalc=MemoryCalculator(),
+):
     """
     create a workflow for temporal filtering of functional data based on
     gaussian smoothing implemented by FSLMATHS
@@ -26,98 +30,74 @@ def init_temporalfilter_wf(temporal_filter_width, repetition_time,
     workflow = pe.Workflow(name=name)
 
     # only input is the bold image to be filtered
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file"]),
-        name="inputnode"
-    )
+    inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
 
     # only output is the filtered bold image
-    outputnode = pe.Node(niu.IdentityInterface(
-        fields=["filtered_file", "highpass_file"]),
-        name="outputnode"
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["filtered_file", "highpass_file"]),
+        name="outputnode",
     )
 
     # node that calls FSLMATHS to actually do the temporal filtering
     highpass = pe.Node(
         interface=fsl.TemporalFilter(
-            highpass_sigma=(temporal_filter_width / (2.0 * repetition_time))),
+            highpass_sigma=(temporal_filter_width / (2.0 * repetition_time))
+        ),
         name="highpass",
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
 
     # temporal filtering also demeans the image, which is not desired.
     # Therefore, we add the mean of the original image back in.
     meanfunc = pe.Node(
-        interface=fsl.ImageMaths(
-            op_string="-Tmean", suffix="_mean"),
+        interface=fsl.ImageMaths(op_string="-Tmean", suffix="_mean"),
         name="meanfunc",
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
     addmean = pe.Node(
-        interface=fsl.BinaryMaths(
-            operation="add"),
+        interface=fsl.BinaryMaths(operation="add"),
         name="addmean",
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
 
-    workflow.connect([
-        (inputnode, highpass, [
-            ("bold_file", "in_file")
-        ]),
-        (inputnode, meanfunc, [
-            ("bold_file", "in_file")
-        ]),
-        (highpass, outputnode, [
-            ("out_file", "highpass_file")
-        ]),
-        (highpass, addmean, [
-            ("out_file", "in_file")
-        ]),
-        (meanfunc, addmean, [
-            ("out_file", "operand_file")
-        ]),
-        (addmean, outputnode, [
-            ("out_file", "filtered_file")
-        ])
-    ])
+    workflow.connect(
+        [
+            (inputnode, highpass, [("bold_file", "in_file")]),
+            (inputnode, meanfunc, [("bold_file", "in_file")]),
+            (highpass, outputnode, [("out_file", "highpass_file")]),
+            (highpass, addmean, [("out_file", "in_file")]),
+            (meanfunc, addmean, [("out_file", "operand_file")]),
+            (addmean, outputnode, [("out_file", "filtered_file")]),
+        ]
+    )
 
     return workflow
 
 
-def init_bandpass_wf(repetition_time, highpass=0.009, lowpass=0.08,
-                     name="bandpass"):
+def init_bandpass_wf(repetition_time, highpass=0.009, lowpass=0.08, name="bandpass"):
     workflow = pe.Workflow(name=name)
 
     # inputs are the bold file, the mask file and the regression files
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=["bold_file", "mask_file"]),
-        name="inputnode"
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["bold_file", "mask_file"]), name="inputnode"
     )
 
     # filtering
-    bandpass = pe.Node(
-        interface=afni.Bandpass(),
-        name="bandpass_filtering"
-    )
+    bandpass = pe.Node(interface=afni.Bandpass(), name="bandpass_filtering")
     bandpass.inputs.lowpass = lowpass
     bandpass.inputs.highpass = highpass
     bandpass.inputs.tr = repetition_time
     bandpass.inputs.outputtype = "NIFTI_GZ"
 
     outputnode = pe.Node(
-        interface=niu.IdentityInterface(
-            fields=["filtered_file"]),
-        name="outputnode"
+        interface=niu.IdentityInterface(fields=["filtered_file"]), name="outputnode"
     )
 
-    workflow.connect([
-        (inputnode, bandpass, [
-            ("bold_file", "in_file"),
-            ("mask_file", "mask"),
-        ]),
-        (bandpass, outputnode, [
-            ("out_file", "filtered_file"),
-        ]),
-    ])
+    workflow.connect(
+        [
+            (inputnode, bandpass, [("bold_file", "in_file"), ("mask_file", "mask"),]),
+            (bandpass, outputnode, [("out_file", "filtered_file"),]),
+        ]
+    )
 
     return workflow
