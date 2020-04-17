@@ -31,7 +31,7 @@ From: poldracklab/fmriprep:20.1.0rc2
   cd /root/src/pipeline && \
     cp /root/src/qualitycheck.html pipeline/index.html && \
     cp /root/src/pipeline/VERSION pipeline/VERSION && \
-    python setup.py install 
+    pip install .[all]
   
   rm -rf ~/.cache/pip
   rm -rf /root/src/pipeline
