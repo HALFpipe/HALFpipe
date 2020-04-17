@@ -4,7 +4,7 @@
 
 
 from .pattern import FilePatternStep, FilePatternSummaryStep
-from ..spec import BoldTagsSchema
+from ..spec import BoldTagsSchema, bold_entities
 from .utils import YesNoStep
 from .fmap import FmapStep, FmapSummaryStep
 
@@ -26,7 +26,7 @@ class BoldStep(FilePatternStep):
     header_str = "Specify functional data"
     filetype_str = "BOLD image"
     tags_dict = {"datatype": "func", "suffix": "bold"}
-    allowed_entities = ["subject", "session", "run", "task", "direction"]
+    allowed_entities = bold_entities
     ask_if_missing_entities = ["task"]
     required_in_pattern_entities = ["subject"]
     next_step_type = HasMoreBoldStep

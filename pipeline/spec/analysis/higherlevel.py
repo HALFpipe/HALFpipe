@@ -6,8 +6,6 @@
 
 """
 
-from enum import Enum
-
 from marshmallow import Schema, fields, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
@@ -15,33 +13,22 @@ from .contrast import HigherLevelContrastSchema
 from .base import Analysis, BaseAnalysisSchema
 from .variable import HigherLevelVariableSchema
 
-# HigherLevelAnalysisType = Enum(
-#     value="HigherLevelAnalysisType",
-#     names=[
-#         ("fixed_effects", "fixed_effects"),
-#         ("Fixed effects", "fixed_effects"),
-#         ("intercept_only", "intercept_only"),
-#         ("Intercept-only", "intercept_only"),
-#         ("Intercept only", "intercept_only"),
-#         ("glm", "glm"),
-#         ("GLM", "glm"),
-#     ],
-# )
-
-
-class FilterType(Enum):
-    mean_fd = "mean_fd"
-    fd_gt_0_5 = "fd_gt_0_5"
-    group = "group"
-
 
 class Filter:
     def __init__(self, **kwargs):
         self.type = kwargs.get("type")
+        self.action = kwargs.get("action")
         self.cutoff = kwargs.get("cutoff")
         self.variable = kwargs.get("variable")
         self.levels = kwargs.get("levels")
-        self.action = kwargs.get("action")
+
+    def __hash__(self):
+        safelevels = None
+        if self.levels is not None:
+            safelevels = tuple(self.levels)
+        return hash(
+            ("filter", self.type, self.action, self.cutoff, self.variable, safelevels,)
+        )
 
 
 class BaseFilterSchema(Schema):
@@ -56,16 +43,16 @@ class BaseCutoffFilterSchema(BaseFilterSchema):
 
 
 class MeanFdFilterSchema(BaseCutoffFilterSchema):
-    type = fields.Constant(FilterType.mean_fd.value)
+    type = fields.Constant("mean_fd")
 
 
 class FdGt0_5FilterSchema(BaseCutoffFilterSchema):
-    type = fields.Constant(FilterType.fd_gt_0_5.value)
+    type = fields.Constant("fd_gt_0_5")
 
 
 class GroupFilterSchema(BaseFilterSchema):
     action = fields.Str(validate=validate.OneOf(["include", "exclude"]))
-    type = fields.Constant(FilterType.group.value)
+    type = fields.Constant("group")
     variable = fields.Str()
     levels = fields.List(fields.Str)
 
@@ -81,10 +68,8 @@ class FilterSchema(OneOfSchema):
 
     def get_obj_type(self, obj):
         if isinstance(obj, Filter):
-            if isinstance(obj.type, FilterType):
-                return obj.type.value
             return obj.type
-        raise Exception("Cannot get obj type for HigherLevelAnalysis")
+        raise Exception("Cannot get obj type for Filter")
 
 
 class BaseHigherLevelAnalysisSchema(BaseAnalysisSchema):
@@ -103,13 +88,12 @@ class GLMHigherLevelAnalysisSchema(BaseHigherLevelAnalysisSchema):
 
 class FixedEffectsHigherLevelAnalysisSchema(BaseHigherLevelAnalysisSchema):
     type = fields.Constant("fixed_effects")
-    across = fields.Str(
-        validate=validate.OneOf(["task", "session", "run", "direction"]),
-    )
+    across = fields.Str(validate=validate.OneOf(["task", "session", "run", "direction"]),)
 
 
 class InterceptOnlyHigherLevelAnalysisSchema(BaseHigherLevelAnalysisSchema):
     type = fields.Constant("intercept_only")
+    across = fields.Constant("subject")
 
 
 class HigherLevelAnalysisSchema(OneOfSchema):

@@ -36,10 +36,7 @@ class PEPOLARTagsSchema(BaseFmapTagsSchema):
 class PhaseDifferenceTagsSchema(BaseFmapTagsSchema):
     suffix = fields.Constant("phasediff")
 
-    extension = fields.Str(validate=validate.OneOf(["nii", "nii.gz"]))
-
-    echo_time_1 = fields.Float()
-    echo_time_2 = fields.Float()
+    echo_time_difference = fields.Float()
 
 
 class Phase1TagsSchema(BaseFmapTagsSchema):

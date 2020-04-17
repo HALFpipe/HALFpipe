@@ -2,14 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import re
 import numpy as np
 
-from nipype.interfaces.base import isdefined, traits, TraitedSpec, DynamicTraitedSpec
+from nipype.interfaces.base import (
+    isdefined,
+    traits,
+    TraitedSpec,
+    DynamicTraitedSpec,
+    BaseInterfaceInputSpec,
+)
 from nipype.interfaces.io import add_traits, IOBase
-
-
-class LogicalAndInputSpec(DynamicTraitedSpec):
-    pass
 
 
 class LogicalAndOutputSpec(TraitedSpec):
@@ -21,7 +24,7 @@ class LogicalAnd(IOBase):
 
     """
 
-    input_spec = LogicalAndInputSpec
+    input_spec = DynamicTraitedSpec
     output_spec = LogicalAndOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
@@ -43,9 +46,7 @@ class LogicalAnd(IOBase):
         def getval(idx):
             return getattr(self.inputs, "in%d" % (idx + 1))
 
-        values = [
-            getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))
-        ]
+        values = [getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))]
 
         out = False
 
@@ -70,9 +71,7 @@ class Filter(IOBase):
         self._fieldnames = fieldnames
         if numinputs >= 1:
             for fieldname in self._fieldnames:
-                input_names = [
-                    "{}{}".format(fieldname, (i + 1)) for i in range(numinputs)
-                ]
+                input_names = ["{}{}".format(fieldname, (i + 1)) for i in range(numinputs)]
                 add_traits(self.inputs, input_names)
             isenabled_input_names = ["is_enabled%d" % (i + 1) for i in range(numinputs)]
             add_traits(self.inputs, isenabled_input_names, trait_type=traits.Bool)
@@ -104,5 +103,43 @@ class Filter(IOBase):
             if use:
                 for fieldname in self._fieldnames:
                     outputs[fieldname].append(getval(fieldname, idx))
+
+        return outputs
+
+
+class FilterListInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
+    keys = traits.List(traits.Str(), mandatory=True)
+    pattern = traits.Str(mandatory=True)
+
+
+class FilterList(IOBase):
+    input_spec = FilterListInputSpec
+    output_spec = DynamicTraitedSpec
+
+    def __init__(self, fields=None, **inputs):  # filterdict=None,
+        super(FilterList, self).__init__(**inputs)
+        if fields is not None:
+            add_traits(self.inputs, fields)
+        else:
+            fields = []
+        self._fields = fields
+
+    def _add_output_traits(self, base):
+        return add_traits(base, self._fields)
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+
+        includelist = [
+            re.match(self.inputs.pattern, in_value) is not None
+            for in_value in self.inputs.keys
+        ]
+
+        for field in self._fields:
+            outputs[field] = [
+                value
+                for include, value in zip(includelist, getattr(self.inputs, field))
+                if include
+            ]
 
         return outputs

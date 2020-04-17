@@ -11,23 +11,17 @@ from marshmallow import Schema, fields, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
 
-# HigherLevelVariableType = Enum(
-#     value="HigherLevelVariableType",
-#     names=[
-#         ("id", "id"),
-#         ("continuous", "continuous"),
-#         ("Continuous", "continuous"),
-#         ("categorical", "categorical"),
-#         ("Categorical", "categorical"),
-#     ],
-# )
-
-
 class Variable:
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
         self.type = kwargs.get("type")
         self.levels = kwargs.get("levels")
+
+    def __hash__(self):
+        safelevels = None
+        if self.levels is not None:
+            safelevels = tuple(self.levels)
+        return hash(("variable", self.name, self.type, safelevels))
 
 
 class BaseVariableSchema(Schema):
@@ -38,7 +32,7 @@ class BaseVariableSchema(Schema):
         return Variable(**data)
 
 
-class SubjectLevelVariableSchema(BaseVariableSchema):
+class FirstLevelVariableSchema(BaseVariableSchema):
     type = fields.Str(validate=validate.OneOf(["events"]))
 
 

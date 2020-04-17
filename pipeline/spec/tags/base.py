@@ -20,6 +20,34 @@ entity_colors = {
     "seed": "yellow",
 }
 
+tagnames = [
+    "datatype",
+    "suffix",
+    "extension",
+    #
+    "subject",
+    "session",
+    "run",
+    "task",
+    "condition",
+    #
+    "phase_encoding_direction",
+    "effective_echo_spacing",
+    "echo_time_difference",
+    "echo_time",
+    "repetition_time",
+    #
+    "smoothed",
+    "band_pass_filtered",
+    "confounds_removed",
+    "space",
+    "desc",
+    #
+    "atlas",
+    "seed",
+    "map",
+]
+
 
 class Tags:
     def __init__(self, **kwargs):
@@ -35,8 +63,7 @@ class Tags:
         #
         self.phase_encoding_direction = kwargs.get("phase_encoding_direction")
         self.effective_echo_spacing = kwargs.get("effective_echo_spacing")
-        self.echo_time_1 = kwargs.get("echo_time_1")
-        self.echo_time_2 = kwargs.get("echo_time_2")
+        self.echo_time_difference = kwargs.get("echo_time_difference")
         self.echo_time = kwargs.get("echo_time")
         self.repetition_time = kwargs.get("repetition_time")
         #
@@ -59,36 +86,15 @@ class Tags:
         self.phase_encoding_direction = value
 
     def __hash__(self):
-        return hash(
-            (
-                self.datatype,
-                self.suffix,
-                self.extension,
-                #
-                self.subject,
-                self.session,
-                self.run,
-                self.task,
-                self.condition,
-                #
-                self.phase_encoding_direction,
-                self.effective_echo_spacing,
-                self.echo_time_1,
-                self.echo_time_2,
-                self.echo_time,
-                self.repetition_time,
-                #
-                self.smoothed,
-                self.band_pass_filtered,
-                self.confounds_removed,
-                self.space,
-                self.desc,
-                #
-                self.atlas,
-                self.seed,
-                self.map,
-            )
-        )
+        return hash((getattr(self, name, None) for name in tagnames))
+
+    def get_tagdict(self, entities, keep_none=False):
+        ret = {}
+        for tagname in entities:
+            tagval = getattr(self, tagname, None)
+            if keep_none or tagval is not None:
+                ret[tagname] = tagval
+        return ret
 
 
 class BaseSchema(Schema):

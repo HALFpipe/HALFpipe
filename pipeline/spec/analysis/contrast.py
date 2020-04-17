@@ -17,6 +17,23 @@ class Contrast:
         self.values = kwargs.get("values")
         self.variable = kwargs.get("variable")
 
+    def __hash__(self):
+        safevalues = None
+        if self.values is not None:
+            safevalues = tuple((k, v) for k, v in sorted(self.values.items()))
+        safevariable = None
+        if self.variable is not None:
+            safevariable = tuple(self.variable)
+        return hash(
+            (
+                "contrast",
+                self.name,
+                self.type,
+                ("variable", safevariable),
+                ("values", safevalues),
+            )
+        )
+
 
 class BaseContrastSchema(Schema):
     @post_load
@@ -24,7 +41,7 @@ class BaseContrastSchema(Schema):
         return Contrast(**data)
 
 
-class SubjectLevelContrastSchema(BaseContrastSchema):
+class FirstLevelContrastSchema(BaseContrastSchema):
     type = fields.Constant("t")
     name = fields.Str()
     values = fields.Dict(keys=fields.Str(), values=fields.Float())

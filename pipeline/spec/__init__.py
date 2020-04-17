@@ -2,7 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from .base import Spec, SpecSchema, scan_entities, entity_aliases
+from .base import (
+    Spec,
+    SpecSchema,
+    entity_aliases,
+    save_spec,
+    loadspec,
+)
 from .file import File, FileSchema
 from .direction import PhaseEncodingDirection
 from .analysis import (
@@ -20,11 +26,15 @@ from .analysis import (
 from .tags import (
     Tags,
     entity_colors,
+    tagnames,
     TagsSchema,
     AnatTagsSchema,
     FuncTagsSchema,
     BoldTagsSchema,
+    PreprocessedBoldTagsSchema,
     EventsTagsSchema,
+    study_entities,
+    bold_entities,
     PEPOLARTagsSchema,
     PhaseDifferenceTagsSchema,
     Phase1TagsSchema,
@@ -39,13 +49,11 @@ from .tags import (
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    derivative_entities,
     AtlasTagsSchema,
     SeedTagsSchema,
     MapTag,
     MapTagsSchema,
-)
-
-from .bids import (
     BIDSAnatTagsSchema,
     BIDSEventsTagsSchema,
     BIDSBoldTagsSchema,
@@ -55,16 +63,21 @@ from .bids import (
 __all__ = [
     Spec,
     SpecSchema,
-    scan_entities,
+    study_entities,
+    bold_entities,
     entity_aliases,
+    save_spec,
+    loadspec,
     File,
     FileSchema,
     Tags,
     entity_colors,
+    tagnames,
     TagsSchema,
     AnatTagsSchema,
     FuncTagsSchema,
     BoldTagsSchema,
+    PreprocessedBoldTagsSchema,
     EventsTagsSchema,
     PEPOLARTagsSchema,
     PhaseDifferenceTagsSchema,
@@ -80,6 +93,7 @@ __all__ = [
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    derivative_entities,
     AtlasTagsSchema,
     SeedTagsSchema,
     MapTag,

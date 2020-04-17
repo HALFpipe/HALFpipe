@@ -44,10 +44,11 @@ def messagefun(database, filetype, filepaths, tagnames):
             f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})"
         )
         if len(filepaths) > 0:
-            n_by_tag = {
-                tagname: len(database.get_tags_set(filepaths, tagname))
-                for tagname in tagnames
-            }
+            n_by_tag = dict()
+            for tagname in tagnames:
+                tagvalset = database.get_tagval_set(tagname, filepaths=filepaths)
+                if tagvalset is not None:
+                    n_by_tag[tagname] = len(tagvalset)
             tagmessages = [
                 p.inflect(f"{n} plural('{tagname}', {n})")
                 for tagname, n in n_by_tag.items()
@@ -77,9 +78,12 @@ class BranchStep(Step):
         return True
 
     def next(self, ctx):
-        if self.choice is None or self.options[self.choice] is None:
+        if self.choice is None:
+            return
+        elif self.options[self.choice] is None:
             return ctx
-        return self.options[self.choice](self.app)(ctx)
+        else:
+            return self.options[self.choice](self.app)(ctx)
 
 
 class YesNoStep(BranchStep):
@@ -181,8 +185,8 @@ class BaseBOLDSelectStep(Step):
 
     def _setup_options(self, ctx, filepaths, header_nchr_prepend=0):
         color_obj = self.app.layout.color
-        self.entities, self.tags_set = ctx.database.get_multi_tags_set(
-            filepaths, self.entities
+        self.entities, self.tags_set = ctx.database.get_multi_tagval_set(
+            self.entities, filepaths=filepaths
         )
         colwidths = [
             max(

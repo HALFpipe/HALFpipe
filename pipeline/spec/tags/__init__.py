@@ -6,13 +6,22 @@
 
 """
 
-from .base import Tags, entity_colors
+from .base import Tags, entity_colors, tagnames
+from .bids import (
+    BIDSAnatTagsSchema,
+    BIDSEventsTagsSchema,
+    BIDSBoldTagsSchema,
+    BIDSFmapTagsSchema,
+)
 from .schema import TagsSchema
 from .anat import AnatTagsSchema
 from .func import (
     FuncTagsSchema,
     BoldTagsSchema,
+    PreprocessedBoldTagsSchema,
     EventsTagsSchema,
+    study_entities,
+    bold_entities,
 )
 from .fmap import (
     PEPOLARTagsSchema,
@@ -31,17 +40,26 @@ from .derivative import (
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    derivative_entities,
 )
 from .other import AtlasTagsSchema, SeedTagsSchema, MapTag, MapTagsSchema
 
 __all__ = [
     Tags,
     entity_colors,
+    tagnames,
+    BIDSAnatTagsSchema,
+    BIDSEventsTagsSchema,
+    BIDSBoldTagsSchema,
+    BIDSFmapTagsSchema,
     TagsSchema,
     AnatTagsSchema,
     FuncTagsSchema,
     BoldTagsSchema,
+    PreprocessedBoldTagsSchema,
     EventsTagsSchema,
+    study_entities,
+    bold_entities,
     PEPOLARTagsSchema,
     PhaseDifferenceTagsSchema,
     Phase1TagsSchema,
@@ -56,6 +74,7 @@ __all__ = [
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    derivative_entities,
     AtlasTagsSchema,
     SeedTagsSchema,
     MapTag,

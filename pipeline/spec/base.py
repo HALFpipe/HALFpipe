@@ -6,19 +6,29 @@
 
 """
 
-from marshmallow import fields, Schema, post_load
+import logging
+from uuid import uuid4
+import os
+from os import path as op
+
+from marshmallow import fields, Schema, post_load, RAISE, validate
+import marshmallow.exceptions
 
 from .file import FileSchema
 from .analysis import AnalysisSchema
 
-scan_entities = ["task", "session", "run", "direction", "subject"]
 entity_aliases = {"direction": "phase_encoding_direction"}
+compatible_versions = ["1.0"]
 
 
 class Spec:
-    def __init__(self, files=[], analyses=[]):
-        self.files = files
-        self.analyses = analyses
+    version = "1.0"
+
+    def __init__(self, **kwargs):
+        self.uuid = kwargs.get("uuid", uuid4())
+        self.version = kwargs.get("version", self.version)
+        self.files = kwargs.get("files", [])
+        self.analyses = kwargs.get("analyses", [])
 
     def _has_datatype(self, datatype):
         res = False
@@ -32,9 +42,53 @@ class Spec:
 
 
 class SpecSchema(Schema):
-    files = fields.List(fields.Nested(FileSchema))
-    analyses = fields.List(fields.Nested(AnalysisSchema))
+    uuid = fields.UUID(required=True)
+    version = fields.Str(validate=validate.OneOf(compatible_versions))
+    files = fields.List(fields.Nested(FileSchema), required=True)
+    analyses = fields.List(fields.Nested(AnalysisSchema), required=True)
 
     @post_load
     def make_object(self, data, **kwargs):
         return Spec(**data)
+
+
+def loadspec(workdir=None, uuidstr=None, specpath=None, logger=logging.getLogger("pipeline")):
+    if specpath is None:
+        assert workdir is not None
+        if uuidstr is not None:
+            specpath = op.join(workdir, f"spec.{uuidstr}.json")
+        else:
+            specpath = op.join(workdir, "spec.json")
+    if not op.isfile(specpath):
+        return
+
+    logger.info(f"Loading spec file: {specpath}")
+    with open(specpath, "r") as f:
+        jsn = f.read()
+
+    try:
+        spec = SpecSchema().loads(jsn, many=False, unknown=RAISE)
+        return spec
+    except marshmallow.exceptions.ValidationError as e:
+        logger.warning(f'Ignored validation error in "{specpath}": %s', e, stack_info=True)
+
+
+def save_spec(spec, workdir=None, specpath=None, logger=logging.getLogger("pipeline")):
+    os.makedirs(workdir, exist_ok=True)
+    if specpath is None:
+        assert workdir is not None
+        specpath = op.join(workdir, "spec.json")
+    if op.isfile(specpath):
+        spectomove = loadspec(specpath=specpath)
+        if spectomove is None:
+            logger.warn("Overwriting invalid spec file")
+        else:
+            uuidstr = str(spectomove.uuid)[:8]
+            newspecpath = op.join(workdir, f"spec.{uuidstr}.json")
+            logger.info(f'Moving previous spec file from "{specpath}" to "{newspecpath}"')
+            if op.isfile(newspecpath):
+                logger.warn("Found specpath uuidstr collision, overwriting")
+            os.replace(specpath, newspecpath)
+    jsn = SpecSchema().dumps(spec, many=False, indent=4)
+    with open(specpath, "w") as f:
+        f.write(jsn)

@@ -2,218 +2,307 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from os import path as op
-import json
+import logging
+from uuid import uuid5
+import pickle
+from pathlib import Path
 
-from functools import partial
-from multiprocessing import Pool
+from ..interface import AggregateResultdicts
+from ..database import Database
+from ..spec import loadspec, study_entities
+from ..utils import cacheobj, uncacheobj
+from ..io import get_repetition_time
+from .utils import make_resultdict_datasink
 
 from nipype.pipeline import engine as pe
-from nipype.interfaces import io as nio
 
-from .firstlevel import init_subject_wf
+from .fmriprepwrapper import (
+    init_anat_preproc_wf,
+    init_func_preproc_wf,
+    connect_func_wf_attrs_from_anat_preproc_wf,
+    get_fmaps,
+)
+from .firstlevel import init_firstlevel_analysis_wf, connect_firstlevel_analysis_extra_args
+from .higherlevel import init_higherlevel_analysis_wf
+from .filt import (
+    init_bold_filt_wf,
+    connect_filt_wf_attrs_from_anat_preproc_wf,
+    connect_filt_wf_attrs_from_func_preproc_wf,
+)
+from .memory import memcalc_from_database
 
-from .stats import init_higherlevel_wf
-
-from ..interface.filter import Filter
-
-from ..utils import transpose
-from .utils import make_varname, dataSinkRegexpSubstitutions
-from ..nodes import TryNode, TryMapNode
+analysisoutattr = "outputnode.resultdicts"
 
 
-def init_workflow(workdir, jsonfile):
+class Cache:
+    def __init__(self):
+        self._cache = {}
+
+    def get(self, func, argtuples=None):
+        if argtuples is None:
+            key = repr(func)
+        else:
+            key = (repr(func), tuple(argtuples))
+        if key not in self._cache:
+            kwargs = {}
+            if argtuples is not None:
+                kwargs = dict(list(argtuples))
+                # print([(key, hash(arg)) for key, arg in kwargs.items()])
+            obj = func(**kwargs)
+            # print([(key, hash(arg)) for key, arg in kwargs.items()])
+            self._cache[key] = pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
+        return pickle.loads(self._cache[key])
+
+
+class Formatter:
+    def __init__(self, tmpl=None):
+        self.tmpl = tmpl
+
+    def __call__(self, **kwargs):
+        return self.tpl.format(**kwargs)
+
+
+class Pipeline:
+    def __init__(self):
+        pass
+
+
+def init_workflow(workdir):
     """
-    initialize nipype workflow for a workdir containing a pipeline.json file.
+    initialize nipype workflow
 
-    :param workdir: path to workdir
-    :param jsonfile: path to pipeline.json
+    :param spec
     """
-    # TODO implement workflow caching
-    # workflow_file = os.path.join(workdir, "workflow.pklz")
 
-    fp = os.path.join(workdir, jsonfile)
+    logger = logging.getLogger("pipeline")
 
-    data = None
-    with open(fp, "r") as f:
-        data = json.load(f)
+    spec = loadspec(workdir=workdir)
+    database = Database(files=spec.files)
+    uuid = uuid5(spec.uuid, database.sha1())
 
-    name = "nipype"
-    workflow = pe.Workflow(name=name, base_dir=workdir)
-
-    images = transpose(data["images"])
-
-    #
-    # first level
-    # Pool().
-
-    result = map(
-        partial(init_subject_wf, workdir=workdir, images=images, data=data),
-        list(images.items()),
-    )
-    subjects, subject_wfs, outfieldsByOutnameByScanArray = zip(*result)
-
-    workflow.add_nodes(subject_wfs)
-
-    # Remove duplicates from outfieldsByOutnameByScan
-    outfieldsByOutnameByScan = {}
-    for outfieldsByOutnameByScan_ in outfieldsByOutnameByScanArray:
-        for scan, outfieldsByOutname in outfieldsByOutnameByScan_.items():
-            if scan not in outfieldsByOutnameByScan:
-                outfieldsByOutnameByScan[scan] = {}
-            for outname, outfields in outfieldsByOutname.items():
-                if outname not in outfieldsByOutnameByScan[scan]:
-                    outfieldsByOutnameByScan[scan][outname] = set()
-                outfieldsByOutnameByScan[scan][outname].update(outfields)
-
-    #
-    # second level
-    #
-
-    # Run second level statistics only if json file does
-    # not correspond to a single subject
-    # group_json = os.path.join(workdir, "pipeline.json")
-    # if group_json == fp:
-
-    metadata = data["metadata"]
-    if "GroupDesign" not in metadata:
+    workflow = uncacheobj(workdir, "workflow", uuid)
+    if workflow is not None:
         return workflow
 
-    group_design = metadata["GroupDesign"]
-    group_data = group_design["Data"]
+    # create workflow
+    workflow = pe.Workflow(name="nipype", base_dir=workdir)
+    workflow.uuid = uuid
+    uuidstr = str(uuid)[:8]
+    logger.info(f"New workflow: {uuidstr}")
+    workflow.config["execution"] = {
+        "crashdump_dir": workflow.base_dir,
+        "poll_sleep_duration": 0.1,
+    }
 
-    subject_sets = {"BetweenGroups": subjects}
-    if "RepeatWithinSubGroups" in group_design:
-        repeat_within_subgroup_fields = group_design["RepeatWithinSubGroups"]
-        for field in repeat_within_subgroup_fields:
-            subject_groups = group_data[field]["SubjectGroups"]
-            unique_groups = set(subject_groups.values())
-            for group in unique_groups:
-                subject_set_name = "Within_{}.{}".format(field, group)
-                subject_set = {
-                    subject for subject, g in subject_groups.items() if g == group
-                }
-                subject_sets[subject_set_name] = subject_set
+    # dirs
+    statsdirectory = Path(workdir) / "stats"
+    intermediatesdirectory = Path(workdir) / "intermediates"
 
-    stats_dir = os.path.join(workdir, "stats")
-    for scanname, outfieldsByOutname in outfieldsByOutnameByScan.items():
-        for outname, outfields in outfieldsByOutname.items():
-            for subject_set_name, subject_set in subject_sets.items():
-                outdir = op.join(stats_dir, scanname, outname)
-                if len(subject_sets) > 1:
-                    outdir = op.join(outdir, subject_set_name)
-                suffix = "{}_{}".format(scanname, outname)
-                if len(subject_sets) > 1:
-                    suffix += "_{}".format(subject_set_name.replace(".", "_"))
+    # helpers
+    memcalc = memcalc_from_database(database)
+    cache = Cache()
 
-                fieldnames = ["subject"]
-                for outfield in outfields:
-                    if outfield in ["stat", "var", "dof_file", "mask_file"]:
-                        fieldnames.append(outfield)
+    subjectlevelworkflow = pe.Workflow(name=f"subjectlevel")
+    workflow.add_nodes([subjectlevelworkflow])
 
-                higherlevel_wf = init_higherlevel_wf(
-                    fieldnames,
-                    group_data,
-                    run_mode="flame1",
-                    name="%s_higherlevel" % suffix,
-                )
+    firstlevel_analyses = [analysis for analysis in spec.analyses if analysis.level == "first"]
+    firstlevel_analysis_tagdicts = [
+        analysis.tags.get_tagdict(study_entities) for analysis in firstlevel_analyses
+    ]
 
-                if higherlevel_wf is None:
+    subjectlevel_analyses = [
+        analysis
+        for analysis in spec.analyses
+        if analysis.level == "higher" and analysis.across != "subject"
+    ]
+
+    grouplevel_analyses = [
+        analysis
+        for analysis in spec.analyses
+        if analysis.level == "higher" and analysis.across == "subject"
+    ]
+
+    analysisendpoints = {analysis.name: [] for analysis in spec.analyses}
+
+    subjects = database.get_tagval_set("subject")
+    for subject in subjects:
+        subjectfiles = database.get(subject=subject)
+
+        subjectworkflow = pe.Workflow(name=f"_subject_{subject}_")
+        subjectlevelworkflow.add_nodes([subjectworkflow])
+
+        t1wfiles = database.filter(subjectfiles, datatype="anat", suffix="T1w")
+        nt1wfiles = len(t1wfiles)
+        t1wfile = t1wfiles.pop()
+        if nt1wfiles > 1:
+            logger.warn(
+                f'Found {nt1wfiles} T1w files for subject "{subject}", using "{t1wfile}"'
+            )
+        anat_preproc_wf = cache.get(init_anat_preproc_wf)
+        anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
+
+        boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
+        boldentities, _ = database.get_multi_tagval_set(study_entities, filepaths=boldfiles)
+        subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
+        for boldfile in boldfiles:
+            boldfilemetadata = {"subject": subject}
+            # make name
+            name = "_bold_"
+            for entity in boldentities:
+                value = database.get_tagval(boldfile, entity)
+                if value is not None:
+                    name += f"{entity}_{value}_"
+                    boldfilemetadata[entity] = value
+
+            boldfileworkflow = pe.Workflow(name=name)
+
+            fmap_type, fmaps, fmapmetadata = get_fmaps(boldfile, database)
+            boldfilemetadata.update(fmapmetadata)
+
+            repetition_time = database.get_tagval(boldfile, "repetition_time")
+            if repetition_time is None:
+                repetition_time = get_repetition_time(boldfile)
+            boldfilemetadata["RepetitionTime"] = repetition_time
+
+            func_preproc_wf = cache.get(
+                init_func_preproc_wf,
+                argtuples=[("fmap_type", fmap_type), ("memcalc", memcalc)],
+            )
+            boldfileworkflow.add_nodes([func_preproc_wf])
+            func_preproc_inputnode = func_preproc_wf.get_node("inputnode")
+            func_preproc_inputnode.inputs.bold_file = boldfile
+            func_preproc_inputnode.inputs.fmaps = fmaps
+            func_preproc_inputnode.inputs.metadata = boldfilemetadata
+            connect_func_wf_attrs_from_anat_preproc_wf(
+                subjectworkflow,
+                anat_preproc_wf,
+                boldfileworkflow,
+                in_nodename=f"{func_preproc_wf.name}.inputnode",
+            )
+
+            bold_filt_wf_dict = dict()
+            for analysis, tagdict in zip(firstlevel_analyses, firstlevel_analysis_tagdicts):
+                if not database.matches(boldfile, **tagdict):
                     continue
-
-                filter = pe.Node(
-                    interface=Filter(numinputs=len(subjects), fieldnames=fieldnames),
-                    name="{}_subjects_filter".format(suffix),
+                analysisworkflow, boldfilevariants = cache.get(
+                    init_firstlevel_analysis_wf,
+                    argtuples=[("analysis", analysis), ("memcalc", memcalc)],
                 )
-
-                for i, (subject, wf) in enumerate(zip(subjects, subject_wfs)):
-                    if subject not in subject_set:
-                        continue
-
-                    outputnode = None
-                    for node in wf._get_all_nodes():
-                        nodename = "scan_%s.outputnode" % scanname
-                        if str(node).endswith("." + nodename):
-                            outputnode = node
-                            break
-                    if outputnode is None:
-                        continue
-                    for outfield in fieldnames:
-                        if outfield == "subject":
-                            continue
-                        workflow.connect(
-                            [
-                                (
-                                    outputnode,
-                                    filter,
-                                    [
-                                        (
-                                            make_varname(outname, outfield),
-                                            "{}{}".format(outfield, i + 1),
-                                        )
-                                    ],
-                                ),
-                            ]
+                analysisworkflow.get_node("inputnode").inputs.metadata = boldfilemetadata
+                #
+                endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
+                subjectanalysisendpoints[analysis.name].append(endpoint)
+                make_resultdict_datasink(
+                    boldfileworkflow,
+                    intermediatesdirectory,
+                    (analysisworkflow, analysisoutattr),
+                    name=f"{analysisworkflow.name}_resultdictdatasink",
+                )
+                # 1 mask_file
+                boldfileworkflow.connect(
+                    func_preproc_wf,
+                    "outputnode.bold_mask_std",
+                    analysisworkflow,
+                    "inputnode.mask_file",
+                )
+                # 2 bold_file
+                for attrnames, variant in boldfilevariants:
+                    if variant in bold_filt_wf_dict:
+                        bold_filt_wf = bold_filt_wf_dict[variant]
+                    else:
+                        bold_filt_wf = cache.get(
+                            init_bold_filt_wf,
+                            argtuples=[("variant", variant), ("memcalc", memcalc)],
                         )
-                    workflow.connect(
-                        [(outputnode, filter, [("keep", "is_enabled%i" % (i + 1))]),]
-                    )
-                    setattr(filter.inputs, "subject{}".format(i + 1), subject)
-
-                for outfield in fieldnames:
-                    workflow.connect(
-                        [
-                            (
-                                filter,
-                                higherlevel_wf,
-                                [(outfield, "inputnode.{}".format(outfield))],
-                            ),
-                        ]
-                    )
-
-                ds_stats = TryMapNode(
-                    nio.DataSink(
-                        infields=["cope", "varcope", "zstat", "dof"],
-                        regexp_substitutions=dataSinkRegexpSubstitutions,
-                        base_directory=outdir,
-                        parameterization=False,
-                        force_run=True,
-                    ),
-                    iterfield=["container", "cope", "varcope", "zstat", "dof"],
-                    name="ds_%s_stats" % suffix,
-                    run_without_submitting=True,
+                        boldfileworkflow.add_nodes([bold_filt_wf])
+                        bold_filt_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
+                        connect_filt_wf_attrs_from_anat_preproc_wf(
+                            subjectworkflow,
+                            anat_preproc_wf,
+                            boldfileworkflow,
+                            in_nodename=f"{bold_filt_wf.name}.inputnode",
+                        )
+                        connect_filt_wf_attrs_from_func_preproc_wf(
+                            boldfileworkflow, func_preproc_wf, bold_filt_wf
+                        )
+                        bold_filt_wf_dict[variant] = bold_filt_wf
+                    for i, attrname in enumerate(attrnames):
+                        boldfileworkflow.connect(
+                            bold_filt_wf,
+                            f"outputnode.out{i+1}",
+                            analysisworkflow,
+                            f"inputnode.{attrname}",
+                        )
+                # 3 type specific
+                connect_firstlevel_analysis_extra_args(
+                    analysisworkflow, analysis, database, boldfile
                 )
+        # subjectlevel aggregate
+        for analysis in subjectlevel_analyses:
+            endpoints = sum(
+                (
+                    subjectanalysisendpoints[inputanalysisname]
+                    for inputanalysisname in analysis.input
+                ),
+                [],
+            )
+            collectinputs = pe.Node(
+                AggregateResultdicts(numinputs=len(endpoints), across=analysis.across),
+                name=f"collectinputs_{analysis.name}",
+            )
+            for i, endpoint in enumerate(endpoints):
+                subjectworkflow.connect(*endpoint, collectinputs, f"in{i+1}")
+            analysisworkflow = cache.get(
+                init_higherlevel_analysis_wf,
+                argtuples=[("analysis", analysis), ("memcalc", memcalc)],
+            )
+            subjectworkflow.connect(
+                collectinputs, "resultdicts", analysisworkflow, "inputnode.indicts"
+            )
+            endpoint = (subjectworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
+            subjectanalysisendpoints[analysis.name].append(endpoint)
+            make_resultdict_datasink(
+                subjectworkflow,
+                intermediatesdirectory,
+                (analysisworkflow, analysisoutattr),
+                name=f"{analysisworkflow.name}_resultdictdatasink",
+            )
+        for analysisname, endpoints in subjectanalysisendpoints.items():
+            for endpoint in endpoints:
+                node, attr = endpoint
+                attr = f"{node.name}.{attr}"
+                if node is not subjectworkflow:
+                    attr = f"{subjectworkflow.name}.{attr}"
+                analysisendpoints[analysisname].append((subjectlevelworkflow, attr))
 
-                ds_mask = TryNode(
-                    nio.DataSink(
-                        infields=["mask"],
-                        base_directory=outdir,
-                        regexp_substitutions=dataSinkRegexpSubstitutions,
-                        parameterization=False,
-                        force_run=True,
-                    ),
-                    name="ds_%s_mask" % suffix,
-                    run_without_submitting=True,
-                )
+    grouplevelworkflow = pe.Workflow(name=f"grouplevel")
 
-                workflow.connect(
-                    [
-                        (
-                            higherlevel_wf,
-                            ds_stats,
-                            [("outputnode.contrast_names", "container")],
-                        ),
-                        (higherlevel_wf, ds_stats, [("outputnode.copes", "cope")]),
-                        (
-                            higherlevel_wf,
-                            ds_stats,
-                            [("outputnode.varcopes", "varcope")],
-                        ),
-                        (higherlevel_wf, ds_stats, [("outputnode.zstats", "zstat")]),
-                        (higherlevel_wf, ds_stats, [("outputnode.dof_files", "dof")]),
-                        (higherlevel_wf, ds_mask, [("outputnode.mask_file", "mask")]),
-                    ]
-                )
+    for analysis in grouplevel_analyses:
+        endpoints = sum(
+            (analysisendpoints[inputanalysisname] for inputanalysisname in analysis.input), [],
+        )
+        collectinputs = pe.Node(
+            AggregateResultdicts(numinputs=len(endpoints), across=analysis.across),
+            name=f"collectinputs_{analysis.name}",
+        )
+        grouplevelworkflow.add_nodes([collectinputs])
+        for i, endpoint in enumerate(endpoints):
+            workflow.connect(*endpoint, grouplevelworkflow, f"{collectinputs.name}.in{i+1}")
+        analysisworkflow = cache.get(
+            init_higherlevel_analysis_wf,
+            argtuples=[("analysis", analysis), ("memcalc", memcalc)],
+        )
+        grouplevelworkflow.connect(
+            collectinputs, "resultdicts", analysisworkflow, "inputnode.indicts"
+        )
+        endpoint = (grouplevelworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
+        analysisendpoints[analysis.name].append(endpoint)
+        make_resultdict_datasink(
+            grouplevelworkflow,
+            statsdirectory,
+            (analysisworkflow, analysisoutattr),
+            name=f"{analysisworkflow.name}_resultdictdatasink",
+        )
 
+    cacheobj(workdir, "workflow", workflow)
     return workflow

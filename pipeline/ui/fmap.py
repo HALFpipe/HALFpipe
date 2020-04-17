@@ -21,14 +21,14 @@ from ..spec import (
     Magnitude1TagsSchema,
     FieldMapTagsSchema,
     PhaseEncodingDirection,
+    bold_entities,
 )
-from .subjectlevelanalysis import SubjectLevelAnalysisStep
+from .firstlevel import FirstLevelAnalysisStep
 
 from .utils import (
     BranchStep,
     YesNoStep,
     NumericMetadataStep,
-    MultiNumericMetadataStep,
     BaseBOLDSelectStep,
 )
 
@@ -36,8 +36,8 @@ from .utils import (
 class FmapSummaryStep(FilePatternSummaryStep):
     filetype_str = "field-map"
     tags_dict = {"datatype": "fmap"}
-    allowed_entities = ["subject", "session", "run", "task", "direction"]
-    next_step_type = SubjectLevelAnalysisStep
+    allowed_entities = bold_entities
+    next_step_type = FirstLevelAnalysisStep
 
 
 class BaseBOLDMissingMetadataStep(BaseBOLDSelectStep):
@@ -109,7 +109,7 @@ class BoldDirectionStep(BaseBOLDMissingMetadataStep):
         fileobj.tags.phase_encoding_direction = pedir_obj
 
     def next(self, ctx):
-        return SubjectLevelAnalysisStep(self.app)(ctx)
+        return FirstLevelAnalysisStep(self.app)(ctx)
 
 
 class BoldEffectiveEchoSpacingStep(BaseBOLDMissingMetadataStep):
@@ -152,13 +152,10 @@ class FieldMapStep(FilePatternStep):
     tags_schema = FieldMapTagsSchema()
 
 
-class PhaseDifferenceEchoTimeStep(MultiNumericMetadataStep):
-    header_str = "Specify the echo times in seconds"
+class PhaseDifferenceEchoTimeStep(NumericMetadataStep):
+    header_str = "Specify the echo time difference in seconds"
     min = 0
-    entities_by_str = {
-        "Echo time 1": "echo_time_1",
-        "Echo time 2": "echo_time_2",
-    }
+    entity = "echo_time_difference"
     next_step_type = BoldEffectiveEchoSpacingStep
 
 
@@ -229,7 +226,7 @@ class FieldMapMagnitude1Step(PhaseDifferenceMagnitude1Step):
 class PEPOLARStep(FilePatternStep):
     filetype_str = "blip-up blip-down EPI image"
     tags_dict = {"datatype": "fmap", "suffix": "epi"}
-    allowed_entities = ["subject", "session", "run", "task", "direction"]
+    allowed_entities = bold_entities
     ask_if_missing_entities = []
     required_in_pattern_entities = ["subject", "direction"]
     next_step_type = BoldDirectionStep
@@ -249,7 +246,7 @@ class FmapTypeStep(BranchStep):
 class HasFmapStep(YesNoStep):
     header_str = f"Are field-map images available?"
     yes_step_type = FmapTypeStep
-    no_step_type = SubjectLevelAnalysisStep
+    no_step_type = FirstLevelAnalysisStep
 
 
 FmapStep = HasFmapStep

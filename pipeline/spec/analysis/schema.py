@@ -8,7 +8,7 @@
 
 from marshmallow_oneofschema import OneOfSchema
 
-from .subjectlevel import SubjectLevelAnalysisSchema
+from .firstlevel import FirstLevelAnalysisSchema
 from .higherlevel import HigherLevelAnalysisSchema
 from .base import Analysis
 
@@ -17,7 +17,7 @@ class AnalysisSchema(OneOfSchema):
     type_field = "level"
     type_field_remove = False
     type_schemas = {
-        "subject": SubjectLevelAnalysisSchema,
+        "first": FirstLevelAnalysisSchema,
         "higher": HigherLevelAnalysisSchema,
     }
 

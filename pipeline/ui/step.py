@@ -2,8 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+
 from calamities import TextView, SpacerView, TextElement
 
+import logging
 from copy import deepcopy
 
 
@@ -27,15 +29,13 @@ class Step:
                     if new_ctx is not None:
                         return new_ctx
                 except Exception as e:
+                    logging.getLogger("pipeline.ui").exception("Exception: %s", e)
                     error_color = self.app.layout.color.red
                     self._append_view(TextView(TextElement(str(e), color=error_color)))
                     self._append_view(SpacerView(1))
-                    if ctx.debug:
-                        raise e
         except Exception as e:
             self.teardown()
-            if ctx.debug:
-                raise e
+            raise e  # go back to previous step
 
     def setup(self, ctx):
         raise NotImplementedError

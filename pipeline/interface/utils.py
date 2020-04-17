@@ -19,6 +19,8 @@ from nipype.interfaces.io import add_traits, IOBase
 import pandas as pd
 import numpy as np
 
+from ..utils import readtsv
+
 
 def _matrix_to_tsv(matrix=None):
     outputpath = op.join(os.getcwd(), "merged_columns.tsv")
@@ -49,36 +51,10 @@ class MatrixToTSV(SimpleInterface):
         return runtime
 
 
-def _robust_read_columns(in_file):
-    try:
-        in_array = np.genfromtxt(in_file, missing_values="NaN,n/a,NA")
-        return in_array
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(in_file, skip_header=1, missing_values="NaN,n/a,NA")
-        return in_array
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(in_file, delimiter=",", missing_values="NaN,n/a,NA")
-        return in_array
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(
-            in_file, delimiter=",", skip_header=1, missing_values="NaN,n/a,NA"
-        )
-        return in_array
-    except ValueError as e:
-        sys.stdout.write("Could not load file {}".format(in_file))
-        raise e
-
-
 def _merge_columns(in_list):
     out_array = None
     for idx, in_file in enumerate(in_list):
-        in_array = _robust_read_columns(in_file)
+        in_array = readtsv(in_file)
         if in_array.ndim == 1:  # single column file
             in_array = in_array.reshape((-1, 1))
         if in_array.size > 0:
@@ -126,9 +102,7 @@ class MergeColumnsTSV(IOBase):
         def getval(idx):
             return getattr(self.inputs, "in%d" % (idx + 1))
 
-        values = [
-            getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))
-        ]
+        values = [getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))]
 
         out_file = None
 
@@ -139,7 +113,7 @@ class MergeColumnsTSV(IOBase):
         return outputs
 
 
-def _select_columns(column_names=None, inputpath=None, header=False):
+def _select_columns(column_names=None, inputpath=None, output_with_header=False):
     filter = re.compile("^(" + "|".join(column_names) + ")$")
     dataframe = pd.read_csv(inputpath, sep="\t")
     dataframe = dataframe[
@@ -150,7 +124,9 @@ def _select_columns(column_names=None, inputpath=None, header=False):
         ]
     ]
     outputpath = op.join(os.getcwd(), "selected_columns.tsv")
-    dataframe.to_csv(outputpath, sep="\t", index=False, na_rep="n/a", header=header)
+    dataframe.to_csv(
+        outputpath, sep="\t", index=False, na_rep="n/a", header=output_with_header
+    )
     return outputpath
 
 
@@ -159,7 +135,7 @@ class SelectColumnsTSVInputSpec(TraitedSpec):
     column_names = traits.List(
         traits.Str, desc="list of column names, can be regular expressions"
     )
-    header = traits.Bool(False, usedefault=True)
+    output_with_header = traits.Bool(False, usedefault=True)
 
 
 class SelectColumnsTSVOutputSpec(TraitedSpec):
@@ -178,7 +154,7 @@ class SelectColumnsTSV(SimpleInterface):
         outputpath = _select_columns(
             column_names=self.inputs.column_names,
             inputpath=self.inputs.in_file,
-            header=self.inputs.header,
+            output_with_header=self.inputs.output_with_header,
         )
         self._results["out_file"] = outputpath
 

@@ -13,6 +13,7 @@ from calamities import (
 
 import re
 from os import path as op
+import logging
 
 from .step import Step
 from ..spec import File, entity_colors
@@ -51,12 +52,8 @@ class FilePatternStep(Step):
         if self.header_str is not None:
             self._append_view(TextView(self.header_str))
             self._append_view(SpacerView(1))
-        self._append_view(
-            TextView(f"Specify the path of the {self.filetype_str} files")
-        )
-        required_entities = (
-            self.ask_if_missing_entities + self.required_in_pattern_entities
-        )
+        self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
+        required_entities = self.ask_if_missing_entities + self.required_in_pattern_entities
         entity_instruction_strs = []
         for entity in required_entities:
             entity_str = entity.replace("_", " ")
@@ -98,6 +95,7 @@ class FilePatternStep(Step):
                 self.file_obj = File(path=op.abspath(pattern), tags=tags_obj)
                 return True
             except Exception as e:
+                logging.getLogger("pipeline.ui").exception("Exception: %s", e)
                 error_color = self.app.layout.color.red
                 self.file_pattern_input_view.show_message(
                     TextElement(str(e), color=error_color)
@@ -151,8 +149,6 @@ class AskForMissingEntities(Step):
                     return False
                 if forbidden_chars.search(tagval) is None:
                     setattr(self.tags_obj, self.cur_entity, tagval)
-                    if len(self.ask_if_missing_entities) == 0:
-                        ctx.add_file_obj(self.file_obj)
                     break
         return True
 
@@ -161,11 +157,9 @@ class AskForMissingEntities(Step):
             self.is_first_run = False
             if len(self.ask_if_missing_entities) > 0:
                 return AskForMissingEntities(
-                    self.app,
-                    self.file_obj,
-                    self.ask_if_missing_entities,
-                    self.next_step,
+                    self.app, self.file_obj, self.ask_if_missing_entities, self.next_step,
                 )(ctx)
             else:
+                ctx.add_file_obj(self.file_obj)
                 return self.next_step(ctx)
         return

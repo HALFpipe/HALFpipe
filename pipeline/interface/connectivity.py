@@ -7,15 +7,57 @@ Adapted from https://github.com/Neurita/pypes
 """
 from os import path as op
 
-import nilearn.connectome
 import numpy as np
-from nilearn.input_data import NiftiMapsMasker, NiftiLabelsMasker
+import nibabel as nib
+import pandas as pd
+
+from scipy.ndimage.measurements import mean
+from nilearn.connectome.connectivity_matrices import prec_to_partial
+
 from nipype.interfaces.base import (
     BaseInterface,
     TraitedSpec,
     BaseInterfaceInputSpec,
     traits,
 )
+
+from ..utils import nvol
+
+
+def _img_to_signals(in_file, mask_file, atlas_file, background_label=0, min_n_voxels=50):
+    in_img = nib.load(in_file)
+
+    atlas_img = nib.load(atlas_file)
+    assert nvol(atlas_img) == 1
+    assert atlas_img.shape[:3] == in_img.shape[:3]
+    assert np.allclose(atlas_img.affine, in_img.affine)
+
+    mask_img = nib.load(mask_file)
+    assert nvol(mask_img) == 1
+    assert mask_img.shape[:3] == in_img.shape[:3]
+    assert np.allclose(mask_img.affine, in_img.affine)
+
+    labels = np.asanyarray(atlas_img.dataobj).astype(np.int32)
+    nlabel = labels.max()
+    mask_data = np.asanyarray(mask_img.dataobj).astype(np.bool)
+
+    labels[np.logical_not(mask_data)] = background_label
+    assert np.all(labels >= 0)
+
+    indices, counts = np.unique(labels, return_counts=True)
+    indices = indices[counts >= min_n_voxels]
+    indices = np.setdiff1d(indices, [background_label])
+
+    in_data = in_img.get_fdata()
+    if in_data.ndim == 3:
+        in_data = in_data[:, :, :, np.newaxis]
+    assert in_data.ndim == 4
+
+    result = np.full((in_data.shape[3], nlabel), np.nan)
+    for i, img in enumerate(np.moveaxis(in_data, 3, 0)):
+        result[i, indices - 1] = mean(img, labels=labels, index=indices)
+
+    return result
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
@@ -24,83 +66,58 @@ class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
     )
     mask_file = traits.File(desc="Mask file", exists=True, mandatory=True)
     atlas_file = traits.File(
-        desc="Atlas image file defining the connectivity ROIs",
-        exists=True,
-        mandatory=True,
-    )
-    atlas_type = traits.Enum(
-        "probabilistic", "labels", desc="The type of atlas", default="labels"
+        desc="Atlas image file defining the connectivity ROIs", exists=True, mandatory=True,
     )
 
-    standardize = traits.Either(
-        False,
-        traits.Enum("zscore", "psc"),
-        desc="Strategy to standardize the signal",
-        default=False,
-    )
-    resampling_target = traits.Either(
-        None,
-        traits.Enum("data", "labels"),
-        desc="Gives which image gives the final shape/size",
-        default=None,
-    )
-
-    kind = traits.Enum(
-        "correlation",
-        "partial correlation",
-        "tangent",
-        "covariance",
-        "precision",
-        desc="The connectivity matrix kind",
-        default="covariance",
-    )
+    background_label = traits.Int(desc="", default=0,)
+    min_n_voxels = traits.Int(desc="", default=50,)
 
 
 class ConnectivityMeasureOutputSpec(TraitedSpec):
-    connectivity = traits.File(desc="Numpy text file with the connectivity matrix")
-    timeseries = traits.File(desc="Numpy text file with the timeseries matrix")
+    time_series = traits.File(desc="Numpy text file with the timeseries matrix")
+    covariance = traits.File(desc="Numpy text file with the connectivity matrix")
+    correlation = traits.File(desc="Numpy text file with the connectivity matrix")
+    partial_correlation = traits.File(desc="Numpy text file with the connectivity matrix")
 
 
 class ConnectivityMeasure(BaseInterface):
-    """
-    For more information look at: nilearn.connectome.ConnectivityMeasure
-    """
-
     input_spec = ConnectivityMeasureInputSpec
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime):
-        self._time_series_file = op.abspath("conn_timeseries.txt")
-        self._conn_mat_file = op.abspath("connectivity.txt")
-
-        niftiMasker = NiftiLabelsMasker
-        if self.inputs.atlas_type == "probabilistic":
-            niftiMasker = NiftiMapsMasker
-
-        masker = niftiMasker(
-            labels_img=self.inputs.atlas_file,
-            background_label=0,
-            mask_img=self.inputs.mask_file,
-            smoothing_fwhm=None,
-            standardize=self.inputs.standardize,
-            resampling_target=self.inputs.resampling_target,
-            memory="nilearn_cache",
-            verbose=5,
+        self._time_series = _img_to_signals(
+            self.inputs.in_file,
+            self.inputs.mask_file,
+            self.inputs.atlas_file,
+            background_label=self.inputs.background_label,
+            min_n_voxels=self.inputs.min_n_voxels,
         )
 
-        self._time_series = masker.fit_transform(self.inputs.in_file)
+        df = pd.DataFrame(self._time_series)
 
-        conn_measure = nilearn.connectome.ConnectivityMeasure(kind=self.inputs.kind)
-        self._conn_mat = conn_measure.fit_transform([self._time_series])
+        self._cov_mat = np.asarray(df.cov())
+        self._corr_mat = np.asarray(df.corr())
+        self._pcorr_mat = prec_to_partial(np.linalg.inv(self._cov_mat))
 
         return runtime
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
 
-        np.savetxt(self._time_series_file, self._time_series, fmt="%.10f")
-        np.savetxt(self._conn_mat_file, self._conn_mat.squeeze(), fmt="%.10f")
+        time_series_file = op.abspath("timeseries.txt")
+        np.savetxt(time_series_file, self._time_series, fmt="%.10f")
 
-        outputs["timeseries"] = self._time_series_file
-        outputs["connectivity"] = self._conn_mat_file
+        covariance_file = op.abspath("timeseries.txt")
+        np.savetxt(covariance_file, self._cov_mat, fmt="%.10f")
+
+        correlation_file = op.abspath("timeseries.txt")
+        np.savetxt(correlation_file, self._corr_mat, fmt="%.10f")
+
+        partial_correlation_file = op.abspath("partial_correlation.txt")
+        np.savetxt(partial_correlation_file, self._pcorr_mat, fmt="%.10f")
+
+        outputs["time_series"] = time_series_file
+        outputs["covariance"] = covariance_file
+        outputs["correlation"] = correlation_file
+        outputs["partial_correlation"] = partial_correlation_file
         return outputs

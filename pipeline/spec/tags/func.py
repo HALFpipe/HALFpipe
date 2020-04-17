@@ -18,6 +18,9 @@ from .derivative import (
     ConfoundsRemovedTagSchema,
 )
 
+study_entities = ["task", "session", "run", "direction"]
+bold_entities = study_entities + ["subject"]
+
 
 class BaseFuncTagsSchema(BaseSchema):
     datatype = fields.Constant("func")
@@ -26,6 +29,7 @@ class BaseFuncTagsSchema(BaseSchema):
     session = fields.Str()
     run = fields.Str()
     task = fields.Str()
+    direction = fields.Str()
 
 
 class BaseEventsTagsSchema(BaseFuncTagsSchema):
@@ -72,6 +76,8 @@ class BoldTagsSchema(BaseFuncTagsSchema):
         validate=validate.OneOf(phase_encoding_direction_values)
     )
 
+
+class PreprocessedBoldTagsSchema(BoldTagsSchema):
     space = fields.Str(validate=validate.OneOf(["mni"]))
     smoothed = fields.Nested(SmoothedTagSchema)
     band_pass_filtered = fields.Nested(BandPassFilteredTagSchema)
