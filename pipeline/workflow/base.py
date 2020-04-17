@@ -89,10 +89,9 @@ def init_workflow(workdir):
     workflow.uuid = uuid
     uuidstr = str(uuid)[:8]
     logger.info(f"New workflow: {uuidstr}")
-    workflow.config["execution"] = {
-        "crashdump_dir": workflow.base_dir,
-        "poll_sleep_duration": 0.1,
-    }
+    workflow.config["execution"].update(
+        {"crashdump_dir": workflow.base_dir, "poll_sleep_duration": 2}
+    )
 
     # dirs
     statsdirectory = Path(workdir) / "stats"

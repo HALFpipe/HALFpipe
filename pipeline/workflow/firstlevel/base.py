@@ -53,7 +53,7 @@ def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database,
         awfinputnode.inputs.seed_names = seed_names
     elif analysis.type == "dual_regression":
         if analysis.tags.map is None:
-            map_files = database.get_all_with_tag("map")
+            map_files = list(database.get_all_with_tag("map"))
         else:
             map_files = list(database.get(map=analysis.tags.map))
         map_tags = database.get_tagval(map_files, "map")

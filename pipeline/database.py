@@ -71,6 +71,8 @@ class Database:
                 self.set_file_tag(filepath, tagname, tagval)
 
     def set_file_tag(self, filepath, tagname, tagval):
+        if tagval is None:
+            return
         if tagname not in self.filepaths_by_tags:
             self.filepaths_by_tags[tagname] = dict()
         tagvaldict = self.filepaths_by_tags[tagname]
@@ -134,7 +136,7 @@ class Database:
 
     def get_tagval(self, filepath, tagname):
         if isinstance(filepath, (list, tuple)):
-            return list(map(self.get_tagval, filepath))
+            return [self.get_tagval(fp, tagname) for fp in filepath]
         tagsobj = self.tags_by_filepaths.get(filepath)
         if tagsobj is not None:
             return getattr(tagsobj, _resolve(tagname), None)

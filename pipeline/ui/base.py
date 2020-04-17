@@ -7,6 +7,7 @@ from os import path as op
 import logging
 
 from calamities import TextView, GiantTextView, SpacerView, DirectoryInputView, App
+from calamities.config import config as calamities_config
 
 from .step import Step
 from .. import __version__
@@ -85,10 +86,7 @@ class WorkingDirectoryStep(Step):
                 Logger.setup(ctx.workdir, debug=ctx.debug)
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
-            if (
-                loadspec(ctx.workdir, logger=logging.getLogger("pipeline.ui"))
-                is not None
-            ):
+            if loadspec(ctx.workdir, logger=logging.getLogger("pipeline.ui")) is not None:
                 return UseExistingSpecStep(self.app)(ctx)
             else:
                 return BIDSStep(self.app)(ctx)
@@ -103,9 +101,7 @@ class FirstStep(Step):
         self._append_view(TextView("Welcome to the mindandbrain/pipeline!"))
         self._append_view(TextView(f"You are using version {__version__}"))
         self._append_view(SpacerView(1))
-        self._append_view(
-            TextView("Please report any problems or leave suggestions at")
-        )
+        self._append_view(TextView("Please report any problems or leave suggestions at"))
         self._append_view(TextView("https://github.com/mindandbrain/pipeline/issues"))
         self._append_view(SpacerView(1))
         self.is_first_run = True
@@ -121,10 +117,8 @@ class FirstStep(Step):
             return
 
 
-def init_spec_ui(fs_root, workdir=None):
-    from calamities.config import config as calamities_config
-
-    calamities_config.fs_root = fs_root
+def init_spec_ui(workdir=None):
+    fs_root = calamities_config.fs_root
 
     cur_dir = os.environ["PWD"]
     new_dir = op.join(fs_root, cur_dir[1:])
@@ -145,9 +139,7 @@ def init_spec_ui(fs_root, workdir=None):
         assert ctx.workdir is not None
         workdir = ctx.workdir
         if not ctx.use_existing_spec:
-            save_spec(
-                ctx.spec, workdir=ctx.workdir, logger=logging.getLogger("pipeline.ui")
-            )
+            save_spec(ctx.spec, workdir=ctx.workdir, logger=logging.getLogger("pipeline.ui"))
     else:
         import sys
 

@@ -65,8 +65,8 @@ def _main():
         "--chunk-index", type=int, help="select which subjectlevel chunk to run"
     )
 
-    rungroup.add_argument("--max-mem-gb", type=float)
-    rungroup.add_argument("--max-n-cores", type=int)
+    rungroup.add_argument("--nipype-memory-gb", type=float)
+    rungroup.add_argument("--nipype-n-procs", type=int)
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
 
     ap.add_argument(
@@ -110,12 +110,17 @@ def _main():
         if getattr(args, attrname) is True:
             should_run[step] = False
 
-    workdir = args.workdir
+    from calamities.config import config as calamities_config
+
+    calamities_config.fs_root = args.fs_root
+    from calamities.file import resolve
+
+    workdir = resolve(args.workdir)
 
     if should_run["spec-ui"]:
         from .ui import init_spec_ui
 
-        workdir = init_spec_ui(args.fs_root, workdir=workdir)
+        workdir = init_spec_ui(workdir=workdir)
 
     assert workdir is not None, "Missing working directory"
     assert op.isdir(workdir), "Working directory does not exist"
@@ -158,7 +163,12 @@ def _main():
     else:
         from nipype.pipeline import plugins
 
-        runner = getattr(plugins, f"{args.nipype_run_plugin}Plugin")()
+        plugin_args = {}
+        if args.nipype_n_procs is not None:
+            plugin_args["n_procs"] = args.nipype_n_procs
+        if args.nipype_memory_gb is not None:
+            plugin_args["memory_gb"] = args.nipype_memory_gb
+        runner = getattr(plugins, f"{args.nipype_run_plugin}Plugin")(plugin_args=plugin_args)
         # import pdb
         #
         # pdb.set_trace()

@@ -142,13 +142,19 @@ def hexdigest(obj):
 
 
 def loadpicklelzma(filepath):
-    with lzma.open(filepath, "rb") as fptr:
-        return pickle.load(fptr)
+    try:
+        with lzma.open(filepath, "rb") as fptr:
+            return pickle.load(fptr)
+    except lzma.LZMAError:
+        pass
 
 
 def savepicklelzma(filepath, obj):
-    with lzma.open(filepath, "wb") as fptr:
-        pickle.dump(obj, fptr)
+    try:
+        with lzma.open(filepath, "wb") as fptr:
+            pickle.dump(obj, fptr)
+    except lzma.LZMAError:
+        pass
 
 
 def uncacheobj(workdir, typestr, uuid):
@@ -157,10 +163,12 @@ def uncacheobj(workdir, typestr, uuid):
         path = op.join(workdir, f"{typestr}.{uuidstr}.pickle.xz")
         if op.isfile(path):
             obj = loadpicklelzma(path)
-            objuuid = getattr(obj, "uuid", None)
-            if objuuid is not None and objuuid == uuid:
-                logging.getLogger("pipeline").info(f"Using cached {typestr} from {path}")
-                return obj
+            if hasattr(obj, "uuid"):
+                objuuid = getattr(obj, "uuid")
+                if objuuid is None or objuuid != uuid:
+                    return
+            logging.getLogger("pipeline").info(f"Using cached {typestr} from {path}")
+            return obj
     else:
         path = op.join(workdir, f"{typestr}.pickle.xz")
         return loadpicklelzma(path)
