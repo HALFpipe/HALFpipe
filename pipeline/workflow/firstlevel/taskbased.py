@@ -8,9 +8,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ...interface import MakeDofVolume, MakeResultdicts
+from ...interface import MakeDofVolume, MakeResultdicts, ParseConditionFile
 from ...utils import ravel, first, firstfloat, onlyboldentitiesdict
-from ...io import parse_condition_file
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
 
 from ..memory import MemoryCalculator
@@ -61,19 +60,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     )
 
     # parse condition files into three (ordered) lists
-    parseconditionfile = pe.Node(
-        interface=niu.Function(
-            input_names=["in_any"], output_names=["out_tupl"], function=parse_condition_file,
-        ),
-        name="parseconditionfile",
-    )
-
-    def makebunch(in_tupl):
-        from nipype.interfaces.base import Bunch
-
-        conditions, onsets, durations = in_tupl
-        return Bunch(conditions=conditions, onsets=onsets, durations=durations)
-
+    parseconditionfile = pe.Node(interface=ParseConditionFile(), name="parseconditionfile",)
     workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
 
     def get_repetition_time(dic):
@@ -91,7 +78,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
                     (("metadata", get_repetition_time), "time_repetition"),
                 ],
             ),
-            (parseconditionfile, modelspec, [(("out_tupl", makebunch), "subject_info")]),
+            (parseconditionfile, modelspec, [("subject_info", "subject_info")]),
         ]
     )
     if analysis.tags.band_pass_filtered is not None:

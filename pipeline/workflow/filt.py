@@ -16,6 +16,7 @@ from ..interface import SelectColumnsTSV
 
 from .memory import MemoryCalculator
 from ..utils import first, hexdigest
+from ..ui.utils import forbidden_chars
 from .utils import convert_afni_endpoint, ConnectAttrlistHelper
 from ..fmriprepconfig import config as fmriprepconfig
 
@@ -97,7 +98,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     name = "filt"
     for key, value in tagdict.items():
-        if not isinstance(value, str):
+        if not isinstance(value, str) or forbidden_chars.search(value) is not None:
             value = hexdigest(value)
         name += f"_{key}_{value}"
 
@@ -119,6 +120,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     if "smoothed" in tagdict:
         fwhm = tagdict["smoothed"]
+        assert isinstance(fwhm, float)
         if np.isclose(fwhm, 6.0):
             if "confounds_removed" in tagdict:
                 if "aroma_motion_[0-9]+" in tagdict["confounds_removed"]:

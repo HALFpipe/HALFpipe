@@ -7,7 +7,7 @@ from uuid import uuid5
 import pickle
 from pathlib import Path
 
-from ..interface import AggregateResultdicts
+from ..interface import AggregateResultdicts, MakeResultdicts
 from ..database import Database
 from ..spec import loadspec, study_entities
 from ..utils import cacheobj, uncacheobj
@@ -141,13 +141,12 @@ def init_workflow(workdir):
         anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
 
         boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
-        boldentities, _ = database.get_multi_tagval_set(study_entities, filepaths=boldfiles)
         subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
         for boldfile in boldfiles:
             boldfilemetadata = {"subject": subject}
             # make name
             name = "_bold_"
-            for entity in boldentities:
+            for entity in study_entities:
                 value = database.get_tagval(boldfile, entity)
                 if value is not None:
                     name += f"{entity}_{value}_"
@@ -179,7 +178,52 @@ def init_workflow(workdir):
                 in_nodename=f"{func_preproc_wf.name}.inputnode",
             )
 
-            bold_filt_wf_dict = dict()
+            bold_filt_wf_by_variant_dict = dict()
+
+            def get_variant_bold_filt_wf(variant):
+                if variant in bold_filt_wf_by_variant_dict:
+                    return bold_filt_wf_by_variant_dict[variant]
+                else:
+                    bold_filt_wf = cache.get(
+                        init_bold_filt_wf,
+                        argtuples=[("variant", variant), ("memcalc", memcalc)],
+                    )
+                    boldfileworkflow.add_nodes([bold_filt_wf])
+                    bold_filt_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
+                    connect_filt_wf_attrs_from_anat_preproc_wf(
+                        subjectworkflow,
+                        anat_preproc_wf,
+                        boldfileworkflow,
+                        in_nodename=f"{bold_filt_wf.name}.inputnode",
+                    )
+                    connect_filt_wf_attrs_from_func_preproc_wf(
+                        boldfileworkflow, func_preproc_wf, bold_filt_wf
+                    )
+                    bold_filt_wf_by_variant_dict[variant] = bold_filt_wf
+                    return bold_filt_wf
+
+            variant_to_output = (
+                ("space", "mni"),
+                ("smoothed", 6.0),
+                ("confounds_removed", ("aroma_motion_[0-9]+",)),
+                ("band_pass_filtered", ("gaussian", 128.0)),
+            )
+            bold_filt_wf = get_variant_bold_filt_wf(variant_to_output)
+            preprocresultdict = pe.Node(
+                interface=MakeResultdicts(keys=["preproc", "mask_file"]),
+                name="preprocresultdict",
+            )
+            preprocresultdict.inputs.basedict = boldfilemetadata
+            boldfileworkflow.connect(
+                bold_filt_wf, "outputnode.out1", preprocresultdict, "preproc",
+            )
+            make_resultdict_datasink(
+                boldfileworkflow,
+                intermediatesdirectory,
+                (preprocresultdict, "resultdicts"),
+                name=f"preprocdatasink",
+            )
+
             for analysis, tagdict in zip(firstlevel_analyses, firstlevel_analysis_tagdicts):
                 if not database.matches(boldfile, **tagdict):
                     continue
@@ -204,27 +248,9 @@ def init_workflow(workdir):
                     analysisworkflow,
                     "inputnode.mask_file",
                 )
-                # 2 bold_file
+                # 2 bold_file and confounds
                 for attrnames, variant in boldfilevariants:
-                    if variant in bold_filt_wf_dict:
-                        bold_filt_wf = bold_filt_wf_dict[variant]
-                    else:
-                        bold_filt_wf = cache.get(
-                            init_bold_filt_wf,
-                            argtuples=[("variant", variant), ("memcalc", memcalc)],
-                        )
-                        boldfileworkflow.add_nodes([bold_filt_wf])
-                        bold_filt_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
-                        connect_filt_wf_attrs_from_anat_preproc_wf(
-                            subjectworkflow,
-                            anat_preproc_wf,
-                            boldfileworkflow,
-                            in_nodename=f"{bold_filt_wf.name}.inputnode",
-                        )
-                        connect_filt_wf_attrs_from_func_preproc_wf(
-                            boldfileworkflow, func_preproc_wf, bold_filt_wf
-                        )
-                        bold_filt_wf_dict[variant] = bold_filt_wf
+                    bold_filt_wf = get_variant_bold_filt_wf(variant)
                     for i, attrname in enumerate(attrnames):
                         boldfileworkflow.connect(
                             bold_filt_wf,

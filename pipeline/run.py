@@ -9,9 +9,6 @@ os.environ["NIPYPE_NO_ET"] = "1"  # noqa; disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"  # noqa
 
 from os import path as op
-from multiprocessing import set_start_method
-
-set_start_method("forkserver", force=True)
 
 global debug
 debug = False
@@ -39,6 +36,7 @@ def _main():
         "--fs-root", default="/ext", help="directory where input files are stored"
     )
     basegroup.add_argument("--debug", action="store_true", default=False)
+    basegroup.add_argument("--verbose", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
 
@@ -80,6 +78,7 @@ def _main():
     args = ap.parse_args()
     global debug
     debug = args.debug
+    verbose = args.verbose
 
     if args.version is True:
         sys.stdout.write(f"{__version__}\n")
@@ -129,7 +128,7 @@ def _main():
     from .logger import Logger
 
     if not Logger.is_setup:
-        Logger.setup(workdir, debug=debug)
+        Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("pipeline")
 
     logger.info(f"Version: {__version__}")
@@ -161,14 +160,23 @@ def _main():
     if not should_run["run"]:
         logger.info(f"Did not run step: run-subjectlevel")
     else:
-        from nipype.pipeline import plugins
+        from nipype.pipeline import plugins as nip
+        from pipeline import plugins as ppp
 
-        plugin_args = {}
+        plugin_args = {"workdir": workdir, "debug": debug, "verbose": verbose}
         if args.nipype_n_procs is not None:
             plugin_args["n_procs"] = args.nipype_n_procs
         if args.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = args.nipype_memory_gb
-        runner = getattr(plugins, f"{args.nipype_run_plugin}Plugin")(plugin_args=plugin_args)
+
+        runnername = f"{args.nipype_run_plugin}Plugin"
+        if hasattr(ppp, runnername):
+            runnercls = getattr(ppp, runnername)
+        elif hasattr(nip, runnername):
+            runnercls = getattr(nip, runnername)
+        else:
+            raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
+        runner = runnercls(plugin_args=plugin_args)
         # import pdb
         #
         # pdb.set_trace()

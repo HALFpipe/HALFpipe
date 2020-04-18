@@ -49,6 +49,8 @@ def first(obj):
     """
     get first element from iterable
     """
+    if isinstance(obj, str):  # don't want to get letters from strings
+        return obj
     try:
         return next(iter(obj))
     except TypeError:

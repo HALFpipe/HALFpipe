@@ -34,6 +34,7 @@ RUN cd /root/src/pipeline && \
     cp /root/src/qualitycheck.html pipeline/index.html && \
     cp VERSION pipeline/VERSION && \
     pip install .[all] && \
+    python postsetup.py && \
     rm -rf ~/.cache/pip && \
     cd .. && rm -rf /root/src/pipeline
 

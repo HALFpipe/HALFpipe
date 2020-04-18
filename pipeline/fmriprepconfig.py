@@ -2,9 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from os import path as op
-
 from multiprocessing import cpu_count
 
 from niworkflows.utils.spaces import Reference
@@ -86,9 +83,6 @@ use_syn = False
 # Always run SyN-based SDC even if actual fieldmaps are present
 force_syn = False
 
-# Custom reference image for normalization
-template_out_grid = op.join(os.getenv("FSLDIR"), "data", "standard", "MNI152_T1_2mm.nii.gz")
-
 # Generate bold CIFTI file in output spaces
 cifti_output = False
 
@@ -119,7 +113,6 @@ config_dict = {
     "use_syn": use_syn,
     "force_syn": force_syn,
     "debug": debug,
-    "template_out_grid": template_out_grid,
     "use_aroma": use_aroma,
     "aroma_melodic_dim": aroma_melodic_dim,
     "aroma_err_on_warn": aroma_err_on_warn,

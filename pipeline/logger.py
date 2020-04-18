@@ -97,7 +97,7 @@ def remove_handlers(logger):
 class Logger:
     is_setup = False
 
-    def setup(workdir, debug=False):
+    def setup(workdir, debug=False, verbose=False):
         """
         Add new logging handler to nipype to output to log directory
 
@@ -129,6 +129,8 @@ class Logger:
         stdout_handler.setFormatter(ColorFormatter())
         if debug:
             stdout_handler.setLevel(logging.DEBUG)
+        elif verbose:
+            stdout_handler.setLevel(logging.INFO)
         else:
             stdout_handler.setLevel(logging.WARNING)
         handlers.append(stdout_handler)
@@ -159,6 +161,4 @@ class Logger:
             for handler in handlers:
                 logger.addHandler(handler)
 
-        logging.getLogger("pipeline.ui").removeHandler(
-            stdout_handler
-        )  # only log to file
+        logging.getLogger("pipeline.ui").removeHandler(stdout_handler)  # only log to file
