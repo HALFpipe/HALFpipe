@@ -41,7 +41,7 @@ def database_parse_condition_files(eventfilepaths_dict, database):
                 File(path=filepath, tags=database.get_tags(filepath))
                 for filepath in event_filepaths
             ]
-        yield (bold_filepath, *parse_condition_file(fileobj))
+        yield (bold_filepath, *parse_condition_file(in_any=fileobj))
 
 
 def parse_tsv_condition_file(filepath):
@@ -111,26 +111,26 @@ def parse_txt_condition_files(filepaths, conditions):
     return conditions, onsets, durations
 
 
-def parse_condition_file(input):
+def parse_condition_file(in_any=None):
     conditions = []
     onsets = []
     durations = []
-    if isinstance(input, list) or isinstance(input, tuple):
-        assert all(fileobj.tags.extension == "txt" for fileobj in input)
+    if isinstance(in_any, list) or isinstance(in_any, tuple):
+        assert all(fileobj.tags.extension == "txt" for fileobj in in_any)
         return parse_txt_condition_files(
-            *zip((fileobj.path, fileobj.tags.condition) for fileobj in input)
+            *zip((fileobj.path, fileobj.tags.condition) for fileobj in in_any)
         )
-    elif isinstance(input, dict):
+    elif isinstance(in_any, dict):
         return parse_txt_condition_files(
-            *zip((fileobj.path, fileobj.tags.condition) for fileobj in input)
+            *zip((fileobj.path, fileobj.tags.condition) for fileobj in in_any)
         )
-    elif isinstance(input, str):
+    elif isinstance(in_any, str):
         try:
-            return parse_mat_condition_file(input)
+            return parse_mat_condition_file(in_any)
         except ValueError:
-            return parse_tsv_condition_file(input)
-    elif isinstance(input, File):
-        fileobj = input
+            return parse_tsv_condition_file(in_any)
+    elif isinstance(in_any, File):
+        fileobj = in_any
         extension = fileobj.tags.extension
         filepath = fileobj.path
         if extension == "tsv":
