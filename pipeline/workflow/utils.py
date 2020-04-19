@@ -5,6 +5,8 @@
 import nipype.pipeline.engine as pe
 from nipype.interfaces import afni
 
+from niworkflows.interfaces.utility import KeySelect
+
 from ..interface import ResultdictDatasink
 
 
@@ -26,8 +28,11 @@ def make_resultdict_datasink(workflow, base_directory, endpoint, name="resultdic
 
 
 class ConnectAttrlistHelper:
-    def __init__(self, attrlist):
-        self._attrlist = attrlist
+    def __init__(self, attrs, keyAttr=None, keyVal=None, keySelectAttrs=None):
+        self._attrs = attrs
+        self._keyAttr = keyAttr
+        self._keyVal = keyVal
+        self._keySelectAttrs = keySelectAttrs
 
     def __call__(
         self, parentworkflow, out_wf, in_wf, out_nodename="outputnode", in_nodename="inputnode"
@@ -47,8 +52,39 @@ class ConnectAttrlistHelper:
                     in_wf,
                     [
                         (f"{out_nodename}{attr}", f"{in_nodename}{attr}")
-                        for attr in self._attrlist
+                        for attr in self._attrs
                     ],
                 )
             ]
         )
+        if self._keyAttr is not None:
+            assert self._keyVal is not None
+            assert self._keySelectAttrs is not None and len(self._keySelectAttrs) > 0
+
+            selectnodename = f"keyselect_from_{out_wf.name}_to_{in_wf.name}"
+            select = parentworkflow.get_node(selectnodename)
+            if select is None:
+                select = pe.Node(
+                    interface=KeySelect(fields=self._keySelectAttrs, key=self._keyVal),
+                    name=selectnodename,
+                    run_without_submitting=True,
+                )
+                parentworkflow.connect(out_wf, self._keyAttr, select, "keys")
+                parentworkflow.connect(
+                    [
+                        (
+                            out_wf,
+                            select,
+                            [(f"{out_nodename}{attr}", attr) for attr in self._keySelectAttrs],
+                        ),
+                    ]
+                )
+            parentworkflow.connect(
+                [
+                    (
+                        select,
+                        in_wf,
+                        [(attr, f"{in_nodename}{attr}") for attr in self._keySelectAttrs],
+                    ),
+                ]
+            )

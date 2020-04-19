@@ -162,8 +162,8 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     outputnode = pe.Node(
         interface=MakeResultdicts(
             keys=[
-                "analysisname",
-                "firstlevelname",
+                "firstlevelanalysisname",
+                "firstlevelfeaturename",
                 "cope",
                 "varcope",
                 "zstat",
@@ -173,8 +173,8 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
         ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
-    outputnode.inputs.firstlevelname = list(map(first, contrasts))
+    outputnode.inputs.firstlevelanalysisname = analysis.name
+    outputnode.inputs.firstlevelfeaturename = list(map(first, contrasts))
     workflow.connect(
         [
             (

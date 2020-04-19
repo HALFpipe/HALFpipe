@@ -6,8 +6,9 @@ from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
 from .dof import MakeDofVolume
 from .filter import LogicalAnd, Filter, FilterList
+from .fsl import SafeFLAMEO
 from .merge import SafeMerge, SafeMaskMerge
-from .model import GroupModel, InterceptOnlyModel
+from .model import GroupModel, InterceptOnlyModel, SafeMultipleRegressDesign
 from .motion import MotionCutoff
 from .qualitycheck import QualityCheck
 from .resample import ResampleIfNeeded
@@ -24,6 +25,7 @@ __all__ = [
     ConnectivityMeasure,
     GroupModel,
     InterceptOnlyModel,
+    SafeMultipleRegressDesign,
     MakeDofVolume,
     LogicalAnd,
     Filter,

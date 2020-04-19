@@ -22,8 +22,7 @@ from fmriprep.workflows.bold.resampling import (
     init_bold_std_trans_wf,
     init_bold_preproc_trans_wf,
 )
-from fmriprep.workflows.bold.confounds import init_ica_aroma_wf  # init_bold_confs_wf
-from fmriprep.workflows.bold.base import _to_join
+from fmriprep.workflows.bold.confounds import init_ica_aroma_wf
 
 in_attrs_from_anat_preproc_wf = [
     "t1w_preproc",
@@ -63,8 +62,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                 "nonaggr_denoised_file",
                 "aroma_confounds",
                 "movpar_file",
-                "skip_vols"
-                # "confounds_metadata",
+                "skip_vols",
             ]
         ),
         name="outputnode",
@@ -331,16 +329,22 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
         ]
     )
 
-    join = pe.Node(
-        niu.Function(output_names=["out_file"], function=_to_join), name="aroma_confounds",
-    )
-    workflow.connect(
-        [
-            # (bold_confounds_wf, join, [("outputnode.confounds_file", "in_file")]),
-            (ica_aroma_wf, join, [("outputnode.aroma_confounds", "join_file")]),
-            (join, outputnode, [("out_file", "confounds")]),
-        ]
-    )
+    for nodepath in workflow.list_node_names():
+        hierarchy = nodepath.split(".")
+        nodename = hierarchy[-1]
+        if nodename.startswith("ds_report"):
+            node = workflow.get_node(nodepath)
+
+            parentpath = ".".join(hierarchy[:-1])
+            parent = workflow.get_node(parentpath)
+            assert isinstance(parent, pe.Workflow)
+
+            parent.remove_nodes([node])
+
+            # parent._graph.in_edges(node)
+            # import pdb
+            #
+            # pdb.set_trace()
 
     return workflow
 

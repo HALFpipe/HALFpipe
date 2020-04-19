@@ -14,6 +14,21 @@ from ...fmriprepconfig import config as fmriprepconfig
 from ...utils import first
 
 
+anat_preproc_wf_output_attrs = [
+    "t1w_preproc",
+    "t1w_mask",
+    "t1w_dseg",
+    "t1w_tpms",
+    "std_preproc",
+    "std_mask",
+    "std_dseg",
+    "std_tpms",
+    "template",
+    "anat2std_xfm",
+    "std2anat_xfm",
+]
+
+
 def init_anat_preproc_wf(name="anat_preproc_wf"):
     """
     simplified from smriprep/workflows/anatomical.py
@@ -28,22 +43,7 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "t1w_preproc",
-                "t1w_mask",
-                "t1w_dseg",
-                "t1w_tpms",
-                "std_preproc",
-                "std_mask",
-                "std_dseg",
-                "std_tpms",
-                "template",
-                "anat2std_xfm",
-                "std2anat_xfm",
-            ],
-        ),
-        name="outputnode",
+        niu.IdentityInterface(fields=anat_preproc_wf_output_attrs,), name="outputnode",
     )
 
     # Step 1
@@ -121,5 +121,61 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
             ),
         ]
     )
+
+    # # Write outputs ############################################3
+    # anat_reports_wf = init_anat_reports_wf(
+    #     reportlets_dir=reportlets_dir, freesurfer=freesurfer
+    # )
+    #
+    # anat_derivatives_wf = init_anat_derivatives_wf(
+    #     bids_root=bids_root, freesurfer=freesurfer, num_t1w=num_t1w, output_dir=output_dir,
+    # )
+    #
+    # workflow.connect(
+    #     [
+    #         # Connect reportlets
+    #         (inputnode, anat_reports_wf, [("t1w", "inputnode.source_file")],),
+    #         # (
+    #         #     anat_template_wf,
+    #         #     anat_reports_wf,
+    #         #     [("outputnode.out_report", "inputnode.t1w_conform_report")],
+    #         # ),
+    #         (
+    #             outputnode,
+    #             anat_reports_wf,
+    #             [
+    #                 ("t1w_preproc", "inputnode.t1w_preproc"),
+    #                 ("t1w_dseg", "inputnode.t1w_dseg"),
+    #                 ("t1w_mask", "inputnode.t1w_mask"),
+    #                 ("std_t1w", "inputnode.std_t1w"),
+    #                 ("std_mask", "inputnode.std_mask"),
+    #             ],
+    #         ),
+    #         (
+    #             anat_norm_wf,
+    #             anat_reports_wf,
+    #             [
+    #                 ("poutputnode.template", "inputnode.template"),
+    #                 ("poutputnode.template_spec", "inputnode.template_spec"),
+    #             ],
+    #         ),
+    #         # Connect derivatives
+    #         # (
+    #         #     anat_template_wf,
+    #         #     anat_derivatives_wf,
+    #         #     [("outputnode.t1w_valid_list", "inputnode.source_files")],
+    #         # ),
+    #         (
+    #             anat_norm_wf,
+    #             anat_derivatives_wf,
+    #             [("poutputnode.template", "inputnode.template")],
+    #         ),
+    #         (
+    #             outputnode,
+    #             anat_derivatives_wf,
+    #             [(attr, f"inputnode.{attr}") for attr in anat_preproc_wf_output_attrs],
+    #         ),
+    #     ]
+    # )
 
     return workflow

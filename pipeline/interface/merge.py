@@ -31,7 +31,7 @@ class SafeMergeInputSpec(BaseInterfaceInputSpec):
 
 
 class SafeMergeOutputSpec(TraitedSpec):
-    merged_file = traits.File()
+    merged_file = traits.Either(traits.File(), traits.Bool())
 
 
 class SafeMerge(BaseInterface):
@@ -45,6 +45,10 @@ class SafeMerge(BaseInterface):
             return runtime
 
         in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
+
+        if len(in_imgs) == 0:
+            return runtime
+
         idim = dimensions.index(self.inputs.dimension)
 
         sizes = [niftidim(in_img, idim) for in_img in in_imgs]
@@ -70,16 +74,18 @@ class SafeMerge(BaseInterface):
 
         outimg = new_img_like(first(in_imgs), outarr)
 
-        self._out_file = op.abspath(f"merged.nii.gz")
-        nib.save(outimg, self._out_file)
+        self._merged_file = op.abspath(f"merged.nii.gz")
+        nib.save(outimg, self._merged_file)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
 
-        if self._out_file is not None:
-            outputs["out_file"] = self._out_file
+        if self._merged_file is not None:
+            outputs["merged_file"] = self._merged_file
+        else:
+            outputs["merged_file"] = False
         return outputs
 
 
@@ -89,13 +95,9 @@ class SafeMaskMergeInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class SafeMaskMergeOutputSpec(TraitedSpec):
-    merged_file = traits.File()
-
-
 class SafeMaskMerge(BaseInterface):
     input_spec = SafeMaskMergeInputSpec
-    output_spec = SafeMaskMergeOutputSpec
+    output_spec = SafeMergeOutputSpec
 
     def _run_interface(self, runtime):
         self._merged_file = None
@@ -105,6 +107,9 @@ class SafeMaskMerge(BaseInterface):
 
         in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
 
+        if len(in_imgs) == 0:
+            return runtime
+
         outshape = first(in_imgs).shape
         assert all(in_img.shape == outshape for in_img in in_imgs)
 
@@ -113,14 +118,16 @@ class SafeMaskMerge(BaseInterface):
 
         outimg = new_img_like(first(in_imgs), outarr)
 
-        self._out_file = op.abspath(f"merged.nii.gz")
-        nib.save(outimg, self._out_file)
+        self._merged_file = op.abspath(f"merged.nii.gz")
+        nib.save(outimg, self._merged_file)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
 
-        if self._out_file is not None:
-            outputs["out_file"] = self._out_file
+        if self._merged_file is not None:
+            outputs["merged_file"] = self._merged_file
+        else:
+            outputs["merged_file"] = False
         return outputs

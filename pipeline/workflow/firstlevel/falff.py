@@ -133,12 +133,12 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
-            keys=["analysisname", "firstlevelname", "stat", "mask_file"]
+            keys=["firstlevelanalysisname", "firstlevelfeaturename", "stat", "mask_file"]
         ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
-    outputnode.inputs.firstlevelname = endpointnames
+    outputnode.inputs.firstlevelanalysisname = analysis.name
+    outputnode.inputs.firstlevelfeaturename = endpointnames
     workflow.connect(
         [
             (

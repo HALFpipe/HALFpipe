@@ -4,7 +4,6 @@
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
-from nipype.interfaces import fsl
 
 from ..interface import (
     InterceptOnlyModel,
@@ -14,6 +13,8 @@ from ..interface import (
     ExtractFromResultdict,
     MakeResultdicts,
     FilterList,
+    SafeMultipleRegressDesign,
+    SafeFLAMEO,
 )
 
 from ..utils import ravel, maplen
@@ -37,7 +38,7 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
         iterfield="indict",
         name="extractfromresultdict",
     )
-    workflow.connect(inputnode, "indicts", extractfromresultdict, "indict")
+    workflow.connect([(inputnode, extractfromresultdict, [(("indicts", ravel), "indict")])])
 
     maskmerge = pe.MapNode(
         interface=SafeMaskMerge(),
@@ -102,7 +103,7 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
         workflow.connect([(extractfromresultdict, model, [("subject", "subjects")])])
 
     multipleregressdesign = pe.MapNode(
-        interface=fsl.MultipleRegressDesign(),
+        interface=SafeMultipleRegressDesign(),
         name="multipleregressdesign",
         iterfield=["regressors", "contrasts"],
         mem_gb=memcalc.min_gb,
@@ -111,7 +112,7 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
     workflow.connect(model, "contrasts", multipleregressdesign, "contrasts")
 
     flameo = pe.MapNode(
-        interface=fsl.FLAMEO(run_mode=run_mode),
+        interface=SafeFLAMEO(run_mode=run_mode),
         name="flameo",
         mem_gb=memcalc.volume_std_gb * 100,
         iterfield=[
@@ -125,19 +126,29 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
             "cov_split_file",
         ],
     )
-    workflow.connect(maskmerge, "merged_file", flameo, "mask_file")
-    workflow.connect(copemerge, "merged_file", flameo, "cope_file")
-    workflow.connect(varcopemerge, "merged_file", flameo, "var_cope_file")
-    workflow.connect(dofmerge, "merged_file", flameo, "dof_var_cope_file")
-    workflow.connect(multipleregressdesign, "design_mat", flameo, "design_file")
-    workflow.connect(multipleregressdesign, "design_con", flameo, "t_con_file")
-    workflow.connect(multipleregressdesign, "design_fts", flameo, "f_con_file")
-    workflow.connect(multipleregressdesign, "design_grp", flameo, "cov_split_file")
+    workflow.connect(
+        [
+            (maskmerge, flameo, [("merged_file", "mask_file")]),
+            (copemerge, flameo, [("merged_file", "cope_file")]),
+            (varcopemerge, flameo, [("merged_file", "var_cope_file")]),
+            (dofmerge, flameo, [("merged_file", "dof_var_cope_file")]),
+            (
+                multipleregressdesign,
+                flameo,
+                [
+                    ("design_mat", "design_file"),
+                    ("design_con", "t_con_file"),
+                    ("design_fts", "f_con_file"),
+                    ("design_grp", "cov_split_file"),
+                ],
+            ),
+        ]
+    )
 
-    filtercons = pe.Node(
-        interface=FilterList(
-            fields=["contrastname", "cope", "varcope", "zstat", "dof_file"], pattern=r"^_"
-        ),
+    outattrs = ["contrastname", "cope", "varcope", "zstat", "dof_file"]
+    filtercons = pe.MapNode(
+        interface=FilterList(fields=outattrs, pattern=r"^_"),
+        iterfield=[*outattrs, "keys"],
         name="filtercons",
     )
     workflow.connect(
@@ -151,46 +162,34 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
                 flameo,
                 filtercons,
                 [
-                    (("copes", ravel), "cope"),
-                    (("var_copes", ravel), "varcope"),
-                    (("zstats", ravel), "zstat"),
-                    (("tdof", ravel), "dof_file"),
+                    ("copes", "cope"),
+                    ("var_copes", "varcope"),
+                    ("zstats", "zstat"),
+                    ("tdof", "dof_file"),
                 ],
             ),
         ]
     )
 
-    outputnode = pe.Node(
-        interface=MakeResultdicts(
-            keys=[
-                "analysisname",
-                "contrastname",
-                "cope",
-                "varcope",
-                "zstat",
-                "dof_file",
-                "mask_file",
-            ]
-        ),
-        name="outputnode",
+    makeresultdicts = pe.MapNode(
+        interface=MakeResultdicts(keys=["analysisname", *outattrs, "mask_file"]),
+        iterfield=[*outattrs, "basedict", "mask_file"],
+        name="makeresultdicts",
     )
-    outputnode.inputs.analysisname = analysis.name
-    workflow.connect(maskmerge, "merged_file", outputnode, "mask_file")
+    makeresultdicts.inputs.analysisname = analysis.name
+    workflow.connect(maskmerge, "merged_file", makeresultdicts, "mask_file")
     workflow.connect(
         [
-            (extractfromresultdict, outputnode, [("remainder", "basedict")],),
-            (
-                filtercons,
-                outputnode,
-                [
-                    ("contrastname", "contrastname"),
-                    ("cope", "cope"),
-                    ("varcope", "varcope"),
-                    ("zstat", "zstat"),
-                    ("dof_file", "dof_file"),
-                ],
-            ),
+            (extractfromresultdict, makeresultdicts, [("remainder", "basedict")],),
+            (filtercons, makeresultdicts, [(attr, attr) for attr in outattrs],),
         ]
+    )
+
+    outputnode = pe.Node(
+        interface=niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
+    workflow.connect(
+        [(makeresultdicts, outputnode, [(("resultdicts", ravel), "resultdicts")])]
     )
 
     return workflow

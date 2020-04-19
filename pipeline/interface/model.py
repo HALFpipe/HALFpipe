@@ -5,7 +5,10 @@
 import sys
 from itertools import product
 import logging
+import os
+from os import path as op
 
+from nipype.interfaces import fsl
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 import pandas as pd
 import numpy as np
@@ -226,3 +229,32 @@ class InterceptOnlyModel(SimpleInterface):
         self._results["contrast_names"] = list(map(first, self._results["contrasts"]))
 
         return runtime
+
+
+class SafeMultipleRegressDesignOutputSpec(TraitedSpec):
+    design_mat = traits.Either(
+        traits.File(exists=True, desc="design matrix file"), traits.Bool()
+    )
+    design_con = traits.Either(
+        traits.File(exists=True, desc="design t-contrast file"), traits.Bool()
+    )
+    design_fts = traits.Either(
+        traits.File(exists=True, desc="design f-contrast file"), traits.Bool()
+    )
+    design_grp = traits.Either(
+        traits.File(exists=True, desc="design group file"), traits.Bool()
+    )
+
+
+class SafeMultipleRegressDesign(fsl.MultipleRegressDesign):
+    output_spec = SafeMultipleRegressDesignOutputSpec
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        nfcons = sum([1 for con in self.inputs.contrasts if con[1] == "F"])
+        for field in list(outputs.keys()):
+            if ("fts" in field) and (nfcons == 0):
+                outputs[field] = False
+                continue
+            outputs[field] = op.join(os.getcwd(), field.replace("_", "."))
+        return outputs

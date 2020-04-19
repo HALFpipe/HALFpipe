@@ -131,15 +131,15 @@ class FilterList(IOBase):
         outputs = self.output_spec().get()
 
         includelist = [
-            re.match(self.inputs.pattern, in_value) is not None
-            for in_value in self.inputs.keys
+            re.match(self.inputs.pattern, in_value) is None for in_value in self.inputs.keys
         ]
 
         for field in self._fields:
+            valuelist = getattr(self.inputs, field)
+            if not isinstance(valuelist, list):
+                valuelist = [valuelist]
             outputs[field] = [
-                value
-                for include, value in zip(includelist, getattr(self.inputs, field))
-                if include
+                value for include, value in zip(includelist, valuelist) if include
             ]
 
         return outputs

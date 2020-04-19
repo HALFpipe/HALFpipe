@@ -64,7 +64,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     resampleifneeded = pe.MapNode(
         interface=ResampleIfNeeded(method="nearest"),
-        name="connectivitymeasure",
+        name="resampleifneeded",
         iterfield=["in_file"],
         mem_gb=memcalc.series_std_gb,
     )
@@ -99,6 +99,38 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         ]
     )
 
+    def make_contrastmat(confounds_file=None):
+        import os
+        from os import path as op
+
+        from pipeline.utils import ncol
+        import numpy as np
+
+        if confounds_file is not None:
+            nconfounds = ncol(confounds_file)
+        else:
+            nconfounds = 0
+        contrastmat = np.zeros((1, 1 + nconfounds))
+        contrastmat[0, 0] = 1
+
+        out_file = op.join(os.getcwd(), "contrasts.tsv")
+        np.savetxt(out_file, contrastmat, delimiter="\t")
+        return out_file
+
+    contrastmat = pe.MapNode(
+        interface=niu.Function(
+            input_names=[*confoundsfilefields],
+            output_names=["out_file"],
+            function=make_contrastmat,
+        ),
+        iterfield="map_file",
+        name="contrastmat",
+    )
+    if confoundsfilefields:
+        workflow.connect(
+            [(inputnode, contrastmat, [(*confoundsfilefields, *confoundsfilefields)])]
+        )
+
     # calculate the regression of the mean time series
     # onto the functional image.
     # the result is the seed connectivity map
@@ -114,15 +146,14 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         iterfield="design",
         mem_gb=memcalc.series_std_gb * 5,
     )
-    workflow.connect([(meants, glm, [("out_file", "design")])])
+    workflow.connect(
+        [
+            (meants, glm, [("out_file", "design")]),
+            (contrastmat, glm, [("out_file", "contrasts")]),
+        ]
+    )
 
     if confoundsfilefields:
-
-        def ncolplusone(in_file):
-            from pipeline.utils import ncol
-
-            return ncol(in_file) + 1
-
         mergecolumns = pe.MapNode(
             interface=MergeColumnsTSV(2),
             name="mergecolumns",
@@ -142,11 +173,18 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
-            keys=["analysisname", "firstlevelname", "cope", "varcope", "zstat", "mask_file"]
+            keys=[
+                "firstlevelanalysisname",
+                "firstlevelfeaturename",
+                "cope",
+                "varcope",
+                "zstat",
+                "mask_file",
+            ]
         ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
+    outputnode.inputs.firstlevelanalysisname = analysis.name
     workflow.connect(
         [
             (
@@ -155,7 +193,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
                 [
                     (("metadata", onlyboldentitiesdict), "basedict"),
                     ("mask_file", "mask_file"),
-                    ("seed_names", "firstlevelname"),
+                    ("seed_names", "firstlevelfeaturename"),
                 ],
             ),
             (

@@ -4,7 +4,6 @@
 
 import os
 from os import path as op
-import sys
 import re
 
 from nipype.interfaces.base import (

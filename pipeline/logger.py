@@ -5,6 +5,7 @@
 from os import path as op
 import sys
 import logging
+import time
 
 from filelock import SoftFileLock
 
@@ -31,6 +32,7 @@ colors = {
 class Formatter(logging.Formatter):
     def __init__(self):
         super(Formatter, self).__init__(fmt=fmt, datefmt=datefmt, style="{")
+        self.converter = time.localtime
 
     def format(self, record):
         formatted = super(Formatter, self).format(record)
@@ -125,8 +127,10 @@ class Logger:
 
         handlers = []
 
+        formatter = ColorFormatter()
+
         stdout_handler = logging.StreamHandler(stream=sys.stdout)
-        stdout_handler.setFormatter(ColorFormatter())
+        stdout_handler.setFormatter(formatter)
         if debug:
             stdout_handler.setLevel(logging.DEBUG)
         elif verbose:
@@ -134,8 +138,6 @@ class Logger:
         else:
             stdout_handler.setLevel(logging.WARNING)
         handlers.append(stdout_handler)
-
-        formatter = Formatter()
 
         if workdir is not None:
             full_log_handler = FileHandler(op.join(workdir, "log.txt"))

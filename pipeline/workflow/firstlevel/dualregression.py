@@ -64,7 +64,7 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
 
     resampleifneeded = pe.MapNode(
         interface=ResampleIfNeeded(method="continuous"),
-        name="connectivitymeasure",
+        name="resampleifneeded",
         iterfield=["in_file"],
         mem_gb=memcalc.series_std_gb,
     )
@@ -176,15 +176,39 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
     else:
         workflow.connect([(glm0, glm1, [("out_file", "design")])])
 
+    splitcopesimages = pe.MapNode(
+        interface=fsl.Split(dimension="t"), iterfield="in_file", name="splitcopesimages"
+    )
+    splitvarcopesimage = pe.MapNode(
+        interface=fsl.Split(dimension="t"), iterfield="in_file", name="splitvarcopesimage"
+    )
+    splitzstatsimage = pe.MapNode(
+        interface=fsl.Split(dimension="t"), iterfield="in_file", name="splitzstatsimage"
+    )
+    workflow.connect(
+        [
+            (glm1, splitcopesimages, [("out_cope", "in_file")]),
+            (glm1, splitvarcopesimage, [("out_varcb", "in_file")]),
+            (glm1, splitzstatsimage, [("out_z", "in_file")]),
+        ]
+    )
+
     # output
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
-            keys=["analysisname", "firstlevelname", "cope", "varcope", "zstat", "mask_file"]
+            keys=[
+                "firstlevelanalysisname",
+                "firstlevelfeaturename",
+                "cope",
+                "varcope",
+                "zstat",
+                "mask_file",
+            ]
         ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
+    outputnode.inputs.firstlevelanalysisname = analysis.name
     workflow.connect(
         [
             (
@@ -193,18 +217,12 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
                 [
                     (("metadata", onlyboldentitiesdict), "basedict"),
                     ("mask_file", "mask_file"),
-                    (("map_components", ravel), "firstlevelname"),
+                    (("map_components", ravel), "firstlevelfeaturename"),
                 ],
             ),
-            (
-                glm1,
-                outputnode,
-                [
-                    (("out_cope", ravel), "cope"),
-                    (("out_varcb", ravel), "varcope"),
-                    (("out_z", ravel), "zstat"),
-                ],
-            ),
+            (splitcopesimages, outputnode, [(("out_files", ravel), "cope")]),
+            (splitvarcopesimage, outputnode, [(("out_files", ravel), "varcope")]),
+            (splitzstatsimage, outputnode, [(("out_files", ravel), "zstat")]),
         ]
     )
 

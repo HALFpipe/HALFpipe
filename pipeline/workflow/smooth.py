@@ -7,7 +7,6 @@ import nipype.interfaces.utility as niu
 from nipype.interfaces import afni
 
 from .memory import MemoryCalculator
-from .utils import convert_afni_endpoint
 
 
 def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
@@ -25,7 +24,9 @@ def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
         assert isinstance(fwhm, float)
         inputnode.inputs.fwhm = fwhm
 
-    smooth = pe.Node(afni.BlurInMask(preserve=True, float_out=True), name="smooth")
+    smooth = pe.Node(
+        afni.BlurInMask(preserve=True, float_out=True, out_file="blur.nii"), name="smooth"
+    )
 
     workflow.connect(
         [
@@ -41,7 +42,6 @@ def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
         interface=niu.IdentityInterface(fields=["out_file"]), name="outputnode"
     )
 
-    endpoint = convert_afni_endpoint(workflow, (smooth, "out_file"))
-    workflow.connect(*endpoint, outputnode, "out_file")
+    workflow.connect(smooth, "out_file", outputnode, "out_file")
 
     return workflow

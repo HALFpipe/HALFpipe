@@ -46,7 +46,7 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
     )
 
     reho = pe.Node(
-        interface=afni.ReHo(neighborhood="vertices"),
+        interface=afni.ReHo(neighborhood="vertices", out_file="reho.nii"),
         name="reho",
         mem_gb=memcalc.series_std_gb * 2,
     )
@@ -69,12 +69,12 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
-            keys=["analysisname", "firstlevelname", "stat", "mask_file"]
+            keys=["firstlevelanalysisname", "firstlevelfeaturename", "stat", "mask_file"]
         ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
-    outputnode.inputs.firstlevelname = "reho"
+    outputnode.inputs.firstlevelanalysisname = analysis.name
+    outputnode.inputs.firstlevelfeaturename = "reho"
     workflow.connect(
         [
             (

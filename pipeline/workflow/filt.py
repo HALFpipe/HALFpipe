@@ -17,24 +17,44 @@ from ..interface import SelectColumnsTSV
 from .memory import MemoryCalculator
 from ..utils import first, hexdigest
 from ..ui.utils import forbidden_chars
-from .utils import convert_afni_endpoint, ConnectAttrlistHelper
+from .utils import ConnectAttrlistHelper
 from ..fmriprepconfig import config as fmriprepconfig
 
 
-in_attrs_from_anat_preproc_wf = [
-    "t1w_tpms",
-    "t1w_mask",
-    "anat2std_xfm",
-]
+in_attrs_from_anat_preproc_wf_direct = ["t1w_tpms", "t1w_mask"]
+in_attrs_from_anat_preproc_wf_keyselect = ["anat2std_xfm"]
+in_attrs_from_anat_preproc_wf = (
+    in_attrs_from_anat_preproc_wf_direct + in_attrs_from_anat_preproc_wf_keyselect
+)
 
-in_attrs_from_func_preproc_wf = [
-    "bold_std",
-    "nonaggr_denoised_file",
-    "bold_mask_std",
+in_attrs_from_func_preproc_wf_direct = [
     "movpar_file",
     "skip_vols",
+    "nonaggr_denoised_file",
     "aroma_confounds",
 ]
+in_attrs_from_func_preproc_wf_keyselect = [
+    "bold_std",
+    "bold_mask_std",
+]
+in_attrs_from_func_preproc_wf = (
+    in_attrs_from_func_preproc_wf_direct + in_attrs_from_func_preproc_wf_keyselect
+)
+
+target_space = "MNI152NLin6Asym"
+
+connect_filt_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
+    in_attrs_from_anat_preproc_wf_direct,
+    keyAttr="outputnode.template",
+    keyVal=target_space,
+    keySelectAttrs=in_attrs_from_anat_preproc_wf_keyselect,
+)
+connect_filt_wf_attrs_from_func_preproc_wf = ConnectAttrlistHelper(
+    in_attrs_from_func_preproc_wf_direct,
+    keyAttr="inputnode.template",
+    keyVal=target_space,
+    keySelectAttrs=in_attrs_from_func_preproc_wf_keyselect,
+)
 
 
 def get_repetition_time(dic):
@@ -52,6 +72,21 @@ def make_confoundsendpoint(prefix, workflow, boldfileendpoint, confoundnames, me
         regressors_dvars_th=fmriprepconfig.regressors_dvars_th,
         name=f"{prefix}_bold_confounds_wf",
     )
+
+    for nodepath in bold_confounds_wf.list_node_names():
+        hierarchy = nodepath.split(".")
+        nodename = hierarchy[-1]
+        if nodename.startswith("ds_report"):
+            node = bold_confounds_wf.get_node(nodepath)
+
+            parentpath = ".".join(hierarchy[:-1])
+            if parentpath == "":
+                parent = bold_confounds_wf
+            else:
+                parent = bold_confounds_wf.get_node(parentpath)
+            assert isinstance(parent, pe.Workflow)
+
+            parent.remove_nodes([node])
 
     bold_confounds_wf.get_node("inputnode").inputs.t1_transform_flags = [False]
     workflow.connect(*boldfileendpoint, bold_confounds_wf, "inputnode.bold")
@@ -91,9 +126,7 @@ def make_confoundsendpoint(prefix, workflow, boldfileendpoint, confoundnames, me
     return (selectcolumns, "out_file")
 
 
-def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
-    assert variant is not None
-
+def make_variant_bold_filt_wf_name(variant):
     tagdict = dict(variant)
 
     name = "filt"
@@ -101,6 +134,13 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
         if not isinstance(value, str) or forbidden_chars.search(value) is not None:
             value = hexdigest(value)
         name += f"_{key}_{value}"
+    return name
+
+
+def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
+    assert variant is not None
+
+    name = make_variant_bold_filt_wf_name(variant)
 
     workflow = pe.Workflow(name=name)
 
@@ -118,6 +158,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     boldfileendpoint = (inputnode, "bold_std")
 
+    tagdict = dict(variant)
     if "smoothed" in tagdict:
         fwhm = tagdict["smoothed"]
         assert isinstance(fwhm, float)
@@ -156,18 +197,20 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     if "confounds_removed" in tagdict:
         confoundnames = tagdict["confounds_removed"]
-        ortendpoint = make_confoundsendpoint(
-            "remove", workflow, boldfileendpoint, confoundnames, memcalc
-        )
+        if len(confoundnames) > 0:
+            ortendpoint = make_confoundsendpoint(
+                "remove", workflow, boldfileendpoint, confoundnames, memcalc
+            )
 
     if bandpass is not None or ortendpoint is not None:
-        tproject = pe.Node(afni.TProject(polort=1), name="tproject")
+        tproject = pe.Node(afni.TProject(polort=1, out_file="tproject.nii"), name="tproject")
+        workflow.connect(*boldfileendpoint, tproject, "in_file")
         workflow.connect([(inputnode, tproject, [(("metadata", get_repetition_time), "TR")])])
         if bandpass is not None:
             tproject.inputs.bandpass = bandpass
         if ortendpoint is not None:
             workflow.connect(*ortendpoint, tproject, "ort")
-        boldfileendpoint = convert_afni_endpoint(workflow, (tproject, "out_file"))
+        boldfileendpoint = (tproject, "out_file")
 
     endpoints = [boldfileendpoint]  # boldfile is finished
 
@@ -180,18 +223,12 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     outnames = [f"out{i+1}" for i in range(len(endpoints))]
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=outnames), name="outputnode",)
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=[*outnames, "mask_file"]), name="outputnode",
+    )
+    workflow.connect(inputnode, "bold_mask_std", outputnode, "mask_file")
 
     for outname, endpoint in zip(outnames, endpoints):
         workflow.connect(*endpoint, outputnode, outname)
 
     return workflow
-
-
-# Utility functions
-connect_filt_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
-    in_attrs_from_anat_preproc_wf
-)
-connect_filt_wf_attrs_from_func_preproc_wf = ConnectAttrlistHelper(
-    in_attrs_from_func_preproc_wf
-)

@@ -26,6 +26,7 @@ from .firstlevel import init_firstlevel_analysis_wf, connect_firstlevel_analysis
 from .higherlevel import init_higherlevel_analysis_wf
 from .filt import (
     init_bold_filt_wf,
+    make_variant_bold_filt_wf_name,
     connect_filt_wf_attrs_from_anat_preproc_wf,
     connect_filt_wf_attrs_from_func_preproc_wf,
 )
@@ -54,19 +55,6 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-class Formatter:
-    def __init__(self, tmpl=None):
-        self.tmpl = tmpl
-
-    def __call__(self, **kwargs):
-        return self.tpl.format(**kwargs)
-
-
-class Pipeline:
-    def __init__(self):
-        pass
-
-
 def init_workflow(workdir):
     """
     initialize nipype workflow
@@ -90,7 +78,7 @@ def init_workflow(workdir):
     uuidstr = str(uuid)[:8]
     logger.info(f"New workflow: {uuidstr}")
     workflow.config["execution"].update(
-        {"crashdump_dir": workflow.base_dir, "poll_sleep_duration": 2}
+        {"crashdump_dir": workflow.base_dir, "poll_sleep_duration": 0.1}
     )
 
     # dirs
@@ -178,12 +166,10 @@ def init_workflow(workdir):
                 in_nodename=f"{func_preproc_wf.name}.inputnode",
             )
 
-            bold_filt_wf_by_variant_dict = dict()
-
             def get_variant_bold_filt_wf(variant):
-                if variant in bold_filt_wf_by_variant_dict:
-                    return bold_filt_wf_by_variant_dict[variant]
-                else:
+                name = make_variant_bold_filt_wf_name(variant)
+                bold_filt_wf = boldfileworkflow.get_node(name)
+                if bold_filt_wf is None:
                     bold_filt_wf = cache.get(
                         init_bold_filt_wf,
                         argtuples=[("variant", variant), ("memcalc", memcalc)],
@@ -199,8 +185,7 @@ def init_workflow(workdir):
                     connect_filt_wf_attrs_from_func_preproc_wf(
                         boldfileworkflow, func_preproc_wf, bold_filt_wf
                     )
-                    bold_filt_wf_by_variant_dict[variant] = bold_filt_wf
-                    return bold_filt_wf
+                return bold_filt_wf
 
             variant_to_output = (
                 ("space", "mni"),
@@ -241,14 +226,6 @@ def init_workflow(workdir):
                     (analysisworkflow, analysisoutattr),
                     name=f"{analysisworkflow.name}_resultdictdatasink",
                 )
-                # 1 mask_file
-                boldfileworkflow.connect(
-                    func_preproc_wf,
-                    "outputnode.bold_mask_std",
-                    analysisworkflow,
-                    "inputnode.mask_file",
-                )
-                # 2 bold_file and confounds
                 for attrnames, variant in boldfilevariants:
                     bold_filt_wf = get_variant_bold_filt_wf(variant)
                     for i, attrname in enumerate(attrnames):
@@ -258,7 +235,12 @@ def init_workflow(workdir):
                             analysisworkflow,
                             f"inputnode.{attrname}",
                         )
-                # 3 type specific
+                boldfileworkflow.connect(
+                    bold_filt_wf,
+                    "outputnode.mask_file",
+                    analysisworkflow,
+                    "inputnode.mask_file",
+                )
                 connect_firstlevel_analysis_extra_args(
                     analysisworkflow, analysis, database, boldfile
                 )

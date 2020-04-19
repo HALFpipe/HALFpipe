@@ -17,10 +17,11 @@ from nipype.interfaces.base import (
     DynamicTraitedSpec,
     BaseInterfaceInputSpec,
     SimpleInterface,
+    isdefined,
 )
 from nipype.interfaces.io import add_traits, IOBase
 
-filefields = ["stat", "cope", "varcope", "dof_file", "mask_file", "matrix"]
+filefields = ["preproc", "stat", "cope", "varcope", "zstat", "dof_file", "mask_file", "matrix"]
 
 
 class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
@@ -28,7 +29,7 @@ class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
 
 
 class MakeResultdictsOutputSpec(TraitedSpec):
-    resultdicts = traits.Dict(traits.Str(), traits.Any())
+    resultdicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
 
 
 class MakeResultdicts(IOBase):
@@ -48,7 +49,7 @@ class MakeResultdicts(IOBase):
         outputs = self._outputs().get()
 
         inputs = [getattr(self.inputs, key) for key in self._keys]
-        maxlen = max(len(input) for input in inputs)
+        maxlen = max(len(input) if isinstance(input, (list, tuple)) else 1 for input in inputs)
 
         for i in range(len(inputs)):
             if isinstance(inputs[i], tuple):
@@ -57,6 +58,8 @@ class MakeResultdicts(IOBase):
                 inputs[i] = [inputs[i]]
             if len(inputs[i]) == 1:  # simple broadcasting
                 inputs[i] *= maxlen
+            if len(inputs[i]) == 0:
+                inputs[i] = [None] * maxlen
             assert len(inputs[i]) == maxlen, "Can't broadcast lists"
 
         inputtupls = zip(*inputs)
@@ -64,7 +67,9 @@ class MakeResultdicts(IOBase):
         resultdicts = []
         for inputtupl in inputtupls:
             resultdict = deepcopy(self.inputs.basedict)
-            resultdict.update(zip(self._keys, inputtupl))
+            for k, v in zip(self._keys, inputtupl):
+                if v is not None:
+                    resultdict[k] = v
             resultdicts.append(resultdict)
 
         # if self._filterdict is not None:
@@ -108,17 +113,14 @@ class AggregateResultdicts(IOBase):
     def _list_outputs(self):
         outputs = self._outputs().get()
 
-        for fieldname in self._fieldnames:
-            outputs[fieldname] = []
-
         inputs = ravel([getattr(self.inputs, f"in{i+1}") for i in range(self._numinputs)])
 
         across = self.inputs.across
         assert across in bold_entities
 
-        filter = self.inputs.filter
-        if filter is None:
-            filter = {}
+        filter = {}
+        if isdefined(self.inputs.filter):
+            filter = self.inputs.filter
 
         aggdict = {}
         for resultdict in inputs:
@@ -162,9 +164,7 @@ class AggregateResultdicts(IOBase):
 
 
 class ExtractFromResultdictInputSpec(BaseInterfaceInputSpec):
-    indict = traits.Dict(
-        traits.Str(), traits.Any(), desc="indict", exists=True, mandatory=True,
-    )
+    indict = traits.Dict(traits.Str(), traits.Any())
 
 
 class ExtractFromResultdictOutputSpec(DynamicTraitedSpec):
@@ -190,15 +190,26 @@ class ExtractFromResultdict(IOBase):
 
         indict = self.inputs.indict
 
+        outdict = dict()
         for key in self._keys:
             keys = [key]
             if key in self._aliases:
                 keys.extend(self._aliases[key])
             for inkey in keys:
                 if inkey in indict:
-                    outputs[key] = indict[inkey]
+                    outdict[key] = indict[inkey]
                     del indict[inkey]
                     break
+
+        for key in self._keys:
+            if key in outdict:
+                outputs[key] = outdict[key]
+            else:
+                outputs[key] = []
+
+        for key in filefields:
+            if key in indict:
+                del indict[key]
 
         outputs["remainder"] = indict
 
@@ -207,12 +218,14 @@ class ExtractFromResultdict(IOBase):
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
     base_directory = traits.Directory(desc="Path to the base directory for storing data.")
-    indicts = traits.Dict(traits.Str(), traits.Any())
+    indicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
 
 
 class ResultdictDatasink(SimpleInterface):
     input_spec = ResultdictDatasinkInputSpec
     output_spec = TraitedSpec
+
+    always_run = True
 
     def _run_interface(self, runtime):
         for resultdict in self.inputs.indicts:
@@ -220,22 +233,26 @@ class ResultdictDatasink(SimpleInterface):
             keys = set(resultdict.keys())
             for entity in reversed(bold_entities):
                 if entity in keys and isinstance(resultdict[entity], str):
-                    basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
                     keys.remove(entity)
-            for entity in keys:
+            newkeys = set()
+            for entity in sorted(keys):
                 if entity not in filefields and isinstance(resultdict[entity], str):
-                    basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
-                    keys.remove(entity)
+                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                else:
+                    newkeys.add(entity)
+            keys = newkeys
             basepath.mkdir(parents=True, exist_ok=True)
             for field in reversed(filefields):
-                if isinstance(resultdict[field], str):
-                    _, ext = splitext(resultdict[field])
+                fieldvalue = resultdict.get(field)
+                if isinstance(fieldvalue, str):
+                    _, ext = splitext(fieldvalue)
                     outpath = basepath / f"{field}{ext}"
                     if outpath.exists():
                         logging.getLogger("pipeline").warning(f'Overwriting file "{outpath}"')
-                    copyfile(resultdict[entity], outpath)
-                else:
-                    pstr = pformat(resultdict[field])
-                    logging.getLogger("pipeline").warning(f'Not copying "{pstr}"')
+                    copyfile(fieldvalue, outpath)
+                elif fieldvalue is not None:
+                    pstr = pformat(fieldvalue)
+                    logging.getLogger("pipeline").debug(f'Not copying "{pstr}"')
 
         return runtime

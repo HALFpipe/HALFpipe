@@ -68,11 +68,13 @@ def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         workflow.connect(connectivitymeasure, outname, mergeconnmatrixresults, f"in{i+1}")
 
     outputnode = pe.Node(
-        interface=MakeResultdicts(keys=["analysisname", "firstlevelname", "matrix"]),
+        interface=MakeResultdicts(
+            keys=["firstlevelanalysisname", "firstlevelfeaturename", "matrix"]
+        ),
         name="outputnode",
     )
-    outputnode.inputs.analysisname = analysis.name
-    outputnode.inputs.firstlevelname = connmatrixnames
+    outputnode.inputs.firstlevelanalysisname = analysis.name
+    outputnode.inputs.firstlevelfeaturename = connmatrixnames
     workflow.connect(
         [(inputnode, outputnode, [(("metadata", onlyboldentitiesdict), "basedict")])]
     )
