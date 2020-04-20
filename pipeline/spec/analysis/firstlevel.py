@@ -11,13 +11,13 @@ from marshmallow_oneofschema import OneOfSchema
 
 from .contrast import FirstLevelContrastSchema
 from .base import Analysis, BaseAnalysisSchema
-from ..tags import PreprocessedBoldTagsSchema
+from ..tags import PreprocessedBoldTagsSchema, SeedTagsSchema, MapTagsSchema, AtlasTagsSchema
 from .variable import FirstLevelVariableSchema
 
 
 class BaseFirstLevelAnalysisSchema(BaseAnalysisSchema):
     level = fields.Constant("first")
-    tags = fields.Nested(PreprocessedBoldTagsSchema)  # we only do analyses on bold data
+    tags = fields.Nested(PreprocessedBoldTagsSchema)
 
 
 class TaskBasedFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
@@ -26,16 +26,37 @@ class TaskBasedFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
     contrasts = fields.List(fields.Nested(FirstLevelContrastSchema))
 
 
+class SeedBasedConnectivityFirstLevelAnalysis_PreprocessedBoldTagsSchema(
+    PreprocessedBoldTagsSchema, SeedTagsSchema
+):
+    pass
+
+
 class SeedBasedConnectivityFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
     type = fields.Constant("seed_based_connectivity")
+    tags = fields.Nested(SeedBasedConnectivityFirstLevelAnalysis_PreprocessedBoldTagsSchema)
+
+
+class DualRegressionFirstLevelAnalysis_PreprocessedBoldTagsSchema(
+    PreprocessedBoldTagsSchema, MapTagsSchema
+):
+    pass
 
 
 class DualRegressionFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
     type = fields.Constant("dual_regression")
+    tags = fields.Nested(DualRegressionFirstLevelAnalysis_PreprocessedBoldTagsSchema)
+
+
+class AtlasBasedConnectivityFirstLevelAnalysis_PreprocessedBoldTagsSchema(
+    PreprocessedBoldTagsSchema, AtlasTagsSchema
+):
+    pass
 
 
 class AtlasBasedConnectivityFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
     type = fields.Constant("atlas_based_connectivity")
+    tags = fields.Nested(AtlasBasedConnectivityFirstLevelAnalysis_PreprocessedBoldTagsSchema)
 
 
 class ReHoFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):

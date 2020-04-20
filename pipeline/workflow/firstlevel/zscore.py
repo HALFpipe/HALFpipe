@@ -6,8 +6,10 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 from nipype.interfaces import fsl
 
+from ..memory import MemoryCalculator
 
-def init_zscore_wf(name="zscore_wf"):
+
+def init_zscore_wf(name="zscore_wf", memcalc=MemoryCalculator()):
     """
     Within-volume z score
     Used for ReHo and ALFF
@@ -15,8 +17,7 @@ def init_zscore_wf(name="zscore_wf"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(fields=["in_file", "mask_file"]),
-        name="inputnode",
+        interface=niu.IdentityInterface(fields=["in_file", "mask_file"]), name="inputnode",
     )
 
     stats = pe.Node(interface=fsl.ImageStats(), name="stats",)

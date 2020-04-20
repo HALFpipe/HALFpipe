@@ -191,16 +191,27 @@ def init_workflow(workdir):
                 ("space", "mni"),
                 ("smoothed", 6.0),
                 ("confounds_removed", ("aroma_motion_[0-9]+",)),
+                ("confounds_extract", (".+",)),
                 ("band_pass_filtered", ("gaussian", 128.0)),
             )
             bold_filt_wf = get_variant_bold_filt_wf(variant_to_output)
             preprocresultdict = pe.Node(
-                interface=MakeResultdicts(keys=["preproc", "mask_file"]),
+                interface=MakeResultdicts(keys=["preproc", "confounds", "mask_file"]),
                 name="preprocresultdict",
             )
             preprocresultdict.inputs.basedict = boldfilemetadata
             boldfileworkflow.connect(
-                bold_filt_wf, "outputnode.out1", preprocresultdict, "preproc",
+                [
+                    (
+                        bold_filt_wf,
+                        preprocresultdict,
+                        [
+                            ("outputnode.out1", "preproc"),
+                            ("outputnode.out2", "confounds"),
+                            ("outputnode.mask_file", "mask_file"),
+                        ],
+                    )
+                ]
             )
             make_resultdict_datasink(
                 boldfileworkflow,
@@ -219,7 +230,6 @@ def init_workflow(workdir):
                 analysisworkflow.get_node("inputnode").inputs.metadata = boldfilemetadata
                 #
                 endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
-                subjectanalysisendpoints[analysis.name].append(endpoint)
                 make_resultdict_datasink(
                     boldfileworkflow,
                     intermediatesdirectory,
@@ -244,6 +254,10 @@ def init_workflow(workdir):
                 connect_firstlevel_analysis_extra_args(
                     analysisworkflow, analysis, database, boldfile
                 )
+                if analysis.type == "atlas_based_connectivity":
+                    pass
+                else:  # FIXME don't fail with zero copes
+                    subjectanalysisendpoints[analysis.name].append(endpoint)
         # subjectlevel aggregate
         for analysis in subjectlevel_analyses:
             endpoints = sum(

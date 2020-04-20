@@ -67,10 +67,6 @@ def _merge_columns(in_list):
     return outputpath
 
 
-class MergeColumnsTSVInputSpec(DynamicTraitedSpec):
-    pass
-
-
 class MergeColumnsTSVOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output tsv file")
 
@@ -80,7 +76,7 @@ class MergeColumnsTSV(IOBase):
     Select columns to make a design matrix
     """
 
-    input_spec = MergeColumnsTSVInputSpec
+    input_spec = DynamicTraitedSpec
     output_spec = MergeColumnsTSVOutputSpec
 
     def __init__(self, numinputs=0, **inputs):

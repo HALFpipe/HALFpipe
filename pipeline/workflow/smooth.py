@@ -41,7 +41,6 @@ def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
     outputnode = pe.Node(
         interface=niu.IdentityInterface(fields=["out_file"]), name="outputnode"
     )
-
     workflow.connect(smooth, "out_file", outputnode, "out_file")
 
     return workflow

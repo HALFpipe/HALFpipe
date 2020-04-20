@@ -100,12 +100,14 @@ class FilePatternStep(Step):
                 self.file_pattern_input_view.show_message(
                     TextElement(str(e), color=error_color)
                 )
+                if ctx.debug:
+                    raise
 
     def next(self, ctx):
         return AskForMissingEntities(
             self.app,
             self.file_obj,
-            self.ask_if_missing_entities,
+            self.ask_if_missing_entities.copy(),
             self.next_step_type(self.app),
         )(ctx)
 
@@ -157,7 +159,10 @@ class AskForMissingEntities(Step):
             self.is_first_run = False
             if len(self.ask_if_missing_entities) > 0:
                 return AskForMissingEntities(
-                    self.app, self.file_obj, self.ask_if_missing_entities, self.next_step,
+                    self.app,
+                    self.file_obj,
+                    self.ask_if_missing_entities.copy(),
+                    self.next_step,
                 )(ctx)
             else:
                 ctx.add_file_obj(self.file_obj)

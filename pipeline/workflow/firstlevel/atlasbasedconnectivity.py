@@ -37,14 +37,14 @@ def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
-            fields=["bold_file", "mask_file", "atlas_files", "metadata"]
+            fields=["bold_file", "mask_file", "atlas_names", "atlas_files", "metadata"]
         ),
         name="inputnode",
     )
 
     resampleifneeded = pe.MapNode(
         interface=ResampleIfNeeded(method="nearest"),
-        name="connectivitymeasure",
+        name="resampleifneeded",
         iterfield=["in_file"],
         mem_gb=memcalc.series_std_gb,
     )
@@ -61,23 +61,29 @@ def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
     workflow.connect(inputnode, "mask_file", connectivitymeasure, "mask_file")
     workflow.connect(resampleifneeded, "out_file", connectivitymeasure, "atlas_file")
 
-    connmatrixnames = ["time_series", "covariance", "correlation", "partial_correlation"]
-
-    mergeconnmatrixresults = pe.Node(interface=niu.Merge(4), name="mergeconnmatrixresults")
-    for i, outname in enumerate(connmatrixnames):
-        workflow.connect(connectivitymeasure, outname, mergeconnmatrixresults, f"in{i+1}")
+    outattrs = ["time_series", "covariance", "correlation", "partial_correlation"]
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
-            keys=["firstlevelanalysisname", "firstlevelfeaturename", "matrix"]
+            keys=["firstlevelanalysisname", "firstlevelfeaturename", *outattrs]
         ),
         name="outputnode",
     )
     outputnode.inputs.firstlevelanalysisname = analysis.name
-    outputnode.inputs.firstlevelfeaturename = connmatrixnames
     workflow.connect(
-        [(inputnode, outputnode, [(("metadata", onlyboldentitiesdict), "basedict")])]
+        [
+            (
+                inputnode,
+                outputnode,
+                [
+                    (("metadata", onlyboldentitiesdict), "basedict"),
+                    ("atlas_names", "firstlevelfeaturename"),
+                ],
+            )
+        ]
     )
-    workflow.connect(mergeconnmatrixresults, "out", outputnode, "connectivity_matrix")
+
+    for attr in outattrs:
+        workflow.connect(connectivitymeasure, attr, outputnode, attr)
 
     return workflow, (boldfilevariant,)

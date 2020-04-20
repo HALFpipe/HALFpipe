@@ -10,6 +10,7 @@ from nipype.interfaces import afni
 from nipype.interfaces import fsl
 
 from fmriprep.workflows.bold import init_bold_confs_wf
+from niworkflows.interfaces.utils import JoinTSVColumns
 
 from .smooth import init_smooth_wf
 from ..interface import SelectColumnsTSV
@@ -115,22 +116,40 @@ def make_confoundsendpoint(prefix, workflow, boldfileendpoint, confoundnames, me
         ]
     )
 
+    mergecolumns = pe.Node(
+        JoinTSVColumns(),
+        run_without_submitting=True,
+        mem_gb=memcalc.min_gb,
+        name=f"{prefix}_mergecolumns",
+    )
+    workflow.connect(bold_confounds_wf, "outputnode.confounds_file", mergecolumns, "in_file")
+    workflow.connect(inputnode, "aroma_confounds", mergecolumns, "join_file")
+
     selectcolumns = pe.Node(
         SelectColumnsTSV(column_names=list(confoundnames), output_with_header=False),
         run_without_submitting=True,
         mem_gb=memcalc.min_gb,
         name=f"{prefix}_selectcolumns",
     )
-    workflow.connect(bold_confounds_wf, "outputnode.confounds_file", selectcolumns, "in_file")
+    workflow.connect(mergecolumns, "out_file", selectcolumns, "in_file")
 
-    return (selectcolumns, "out_file")
+    selectcolumnswithheader = pe.Node(
+        SelectColumnsTSV(column_names=list(confoundnames), output_with_header=True),
+        run_without_submitting=True,
+        mem_gb=memcalc.min_gb,
+        name=f"{prefix}_selectcolumns_with_header",
+    )
+    workflow.connect(mergecolumns, "out_file", selectcolumnswithheader, "in_file")
+
+    return (selectcolumns, "out_file"), (selectcolumnswithheader, "out_file")
 
 
 def make_variant_bold_filt_wf_name(variant):
     tagdict = dict(variant)
 
     name = "filt"
-    for key, value in tagdict.items():
+    for key in sorted(tagdict):
+        value = tagdict[key]
         if not isinstance(value, str) or forbidden_chars.search(value) is not None:
             value = hexdigest(value)
         name += f"_{key}_{value}"
@@ -189,8 +208,25 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
         if type == "frequency_based":
             bandpass = args
         elif type == "gaussian":
-            gaussianfilter = pe.Node(
-                fsl.TemporalFilter(highpass_sigma=first(args)), name="gaussianfilter"
+
+            def calc_highpass_sigma(temporal_filter_width=None, metadata=None):
+                repetition_time = metadata.get("RepetitionTime")
+                highpass_sigma = temporal_filter_width / (2.0 * repetition_time)
+                return highpass_sigma
+
+            calchighpasssigma = pe.Node(
+                interface=niu.Function(
+                    input_names=["temporal_filter_width", "metadata"],
+                    output_names=["highpass_sigma"],
+                    function=calc_highpass_sigma,
+                ),
+                name="calchighpasssigma",
+            )
+            workflow.connect(inputnode, "metadata", calchighpasssigma, "metadata")
+            calchighpasssigma.inputs.temporal_filter_width = first(args)
+            gaussianfilter = pe.Node(fsl.TemporalFilter(), name="gaussianfilter")
+            workflow.connect(
+                calchighpasssigma, "highpass_sigma", gaussianfilter, "highpass_sigma"
             )
             workflow.connect(*boldfileendpoint, gaussianfilter, "in_file")
             boldfileendpoint = (gaussianfilter, "out_file")
@@ -198,7 +234,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
     if "confounds_removed" in tagdict:
         confoundnames = tagdict["confounds_removed"]
         if len(confoundnames) > 0:
-            ortendpoint = make_confoundsendpoint(
+            ortendpoint, _ = make_confoundsendpoint(
                 "remove", workflow, boldfileendpoint, confoundnames, memcalc
             )
 
@@ -216,10 +252,11 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     if "confounds_extract" in tagdict:  # last
         confoundnames = tagdict["confounds_extract"]
-        confoundsextractendpoint = make_confoundsendpoint(
+        confoundsextractendpoint, confoundsextractendpointwithheader = make_confoundsendpoint(
             "extract", workflow, boldfileendpoint, confoundnames, memcalc
         )
         endpoints.append(confoundsextractendpoint)
+        endpoints.append(confoundsextractendpointwithheader)
 
     outnames = [f"out{i+1}" for i in range(len(endpoints))]
 

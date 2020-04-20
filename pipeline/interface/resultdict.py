@@ -21,7 +21,20 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import add_traits, IOBase
 
-filefields = ["preproc", "stat", "cope", "varcope", "zstat", "dof_file", "mask_file", "matrix"]
+filefields = [
+    "preproc",
+    "confounds",
+    "stat",
+    "cope",
+    "varcope",
+    "zstat",
+    "dof_file",
+    "mask_file",
+    "time_series",
+    "covariance",
+    "correlation",
+    "partial_correlation",
+]
 
 
 class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):

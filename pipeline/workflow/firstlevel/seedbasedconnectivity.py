@@ -28,11 +28,11 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         varianttupls.append(analysis.tags.band_pass_filtered.as_tupl())
     if analysis.tags.confounds_removed is not None:
         assert isinstance(analysis.tags.confounds_removed, ConfoundsRemovedTag)
-        confounds_removed_names = (
+        confounds_removed_names = tuple(
             name for name in analysis.tags.confounds_removed.names if "ica_aroma" in name
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
-        confounds_extract_names = (
+        confounds_extract_names = tuple(
             name for name in analysis.tags.confounds_removed.names if "ica_aroma" not in name
         )
         if len(confounds_extract_names) > 0:
@@ -117,13 +117,12 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         np.savetxt(out_file, contrastmat, delimiter="\t")
         return out_file
 
-    contrastmat = pe.MapNode(
+    contrastmat = pe.Node(
         interface=niu.Function(
             input_names=[*confoundsfilefields],
             output_names=["out_file"],
             function=make_contrastmat,
         ),
-        iterfield="map_file",
         name="contrastmat",
     )
     if confoundsfilefields:
@@ -148,7 +147,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
     )
     workflow.connect(
         [
-            (meants, glm, [("out_file", "design")]),
+            (inputnode, glm, [("bold_file", "in_file")]),
             (contrastmat, glm, [("out_file", "contrasts")]),
         ]
     )

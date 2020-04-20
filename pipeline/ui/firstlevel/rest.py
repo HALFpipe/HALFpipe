@@ -70,9 +70,7 @@ class InputSelectStep(Step):
                 return False
             elif self.choice in self.tagval_by_str:
                 setattr(
-                    ctx.spec.analyses[-1].tags,
-                    self.entity,
-                    self.tagval_by_str[self.choice],
+                    ctx.spec.analyses[-1].tags, self.entity, self.tagval_by_str[self.choice],
                 )
             elif self.choice == self.all_str:
                 setattr(ctx.spec.analyses[-1].tags, self.entity, None)
@@ -92,9 +90,7 @@ class InputSelectStep(Step):
 
 class AtlasDoHighPassFilterStep(DoHighPassFilterStep):
     def setup(self, ctx):
-        self._append_view(
-            TextView("No smoothing will be performed before feature extraction")
-        )
+        self._append_view(TextView("No smoothing will be performed before feature extraction"))
         self._append_view(SpacerView(1))
         super(AtlasDoHighPassFilterStep, self).setup(ctx)
 
@@ -167,8 +163,7 @@ class MapComponentsStep(Step):
         self._append_view(TextView("Specify the spatial map component names"))
         self.options = [f"Component {i+1}" for i in range(self.nvol)]
         suggestion = [
-            make_name_suggestion(self.desc, "component", index=i + 1)
-            for i in range(self.nvol)
+            make_name_suggestion(self.desc, "component", index=i + 1) for i in range(self.nvol)
         ]
         self.input_view = MultiTextInputView(self.options, suggestion)
         self._append_view(self.input_view)

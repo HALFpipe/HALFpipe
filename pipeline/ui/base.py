@@ -117,7 +117,7 @@ class FirstStep(Step):
             return
 
 
-def init_spec_ui(workdir=None):
+def init_spec_ui(workdir=None, debug=False):
     fs_root = calamities_config.fs_root
 
     cur_dir = os.environ["PWD"]
@@ -129,6 +129,7 @@ def init_spec_ui(workdir=None):
 
     app = App()
     ctx = Context()
+    ctx.debug = debug
     if workdir is not None:
         ctx.workdir = workdir
 

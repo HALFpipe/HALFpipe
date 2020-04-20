@@ -119,7 +119,7 @@ def _main():
     if should_run["spec-ui"]:
         from .ui import init_spec_ui
 
-        workdir = init_spec_ui(workdir=workdir)
+        workdir = init_spec_ui(workdir=workdir, debug=debug)
 
     assert workdir is not None, "Missing working directory"
     assert op.isdir(workdir), "Working directory does not exist"

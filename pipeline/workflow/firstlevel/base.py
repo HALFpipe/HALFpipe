@@ -44,11 +44,10 @@ def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database,
         awfinputnode.inputs.condition_files = condition_files
     elif analysis.type == "seed_based_connectivity":
         if analysis.tags.seed is None:
-            seed_files = database.get_all_with_tag("seed")
+            seed_files = list(database.get_all_with_tag("seed"))
         else:
             seed_files = list(database.get(seed=analysis.tags.seed))
-        seed_tags = database.get_tagval(seed_files, "seed")
-        seed_names = [seed_tag.seed for seed_tag in seed_tags]
+        seed_names = database.get_tagval(seed_files, "seed")
         awfinputnode.inputs.seed_files = seed_files
         awfinputnode.inputs.seed_names = seed_names
     elif analysis.type == "dual_regression":
@@ -62,7 +61,9 @@ def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database,
         awfinputnode.inputs.map_components = map_components
     elif analysis.type == "atlas_based_connectivity":
         if analysis.tags.atlas is None:
-            atlas_files = database.get_all_with_tag("atlas")
+            atlas_files = list(database.get_all_with_tag("atlas"))
         else:
             atlas_files = list(database.get(atlas=analysis.tags.atlas))
+        atlas_names = database.get_tagval(atlas_files, "atlas")
         awfinputnode.inputs.atlas_files = atlas_files
+        awfinputnode.inputs.atlas_names = atlas_names
