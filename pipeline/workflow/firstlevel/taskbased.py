@@ -33,11 +33,13 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     if analysis.tags.confounds_removed is not None:
         assert isinstance(analysis.tags.confounds_removed, ConfoundsRemovedTag)
         confounds_removed_names = tuple(
-            name for name in analysis.tags.confounds_removed.names if "ica_aroma" in name
+            name for name in analysis.tags.confounds_removed.names if "aroma_motion" in name
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name for name in analysis.tags.confounds_removed.names if "ica_aroma" not in name
+            name
+            for name in analysis.tags.confounds_removed.names
+            if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             boldfilefields.append("confounds_file")
@@ -45,6 +47,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     if analysis.tags.smoothed is not None:
         assert isinstance(analysis.tags.smoothed, SmoothedTag)
         varianttupls.append(analysis.tags.smoothed.as_tupl())
+    variantdict = dict(varianttupls)
 
     boldfilevariant = (tuple(boldfilefields), tuple(varianttupls))
 
@@ -81,9 +84,9 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
             (parseconditionfile, modelspec, [("subject_info", "subject_info")]),
         ]
     )
-    if analysis.tags.band_pass_filtered is not None:
+    if "band_pass_filtered" in variantdict:
         modelspec.inputs.high_pass_filter_cutoff = float(analysis.tags.band_pass_filtered.high)
-    if analysis.tags.confounds_removed is not None:
+    if "confounds_extract" in variantdict:
         workflow.connect(
             [(inputnode, modelspec, [("confounds_file", "realignment_parameters")])]
         )
@@ -154,7 +157,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
             (
                 modelestimate,
                 makedofvolume,
-                [(("copes", first), "cope"), ("dof_file", "dof_file")],
+                [(("copes", first), "cope_file"), ("dof_file", "dof_file")],
             ),
         ]
     )

@@ -29,11 +29,13 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
     if analysis.tags.confounds_removed is not None:
         assert isinstance(analysis.tags.confounds_removed, ConfoundsRemovedTag)
         confounds_removed_names = tuple(
-            name for name in analysis.tags.confounds_removed.names if "ica_aroma" in name
+            name for name in analysis.tags.confounds_removed.names if "aroma_motion" in name
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name for name in analysis.tags.confounds_removed.names if "ica_aroma" not in name
+            name
+            for name in analysis.tags.confounds_removed.names
+            if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             confoundsfilefields.append("confounds_file")

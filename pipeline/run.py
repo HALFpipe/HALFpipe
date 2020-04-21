@@ -177,22 +177,33 @@ def _main():
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
         runner = runnercls(plugin_args=plugin_args)
-        # import pdb
-        #
-        # pdb.set_trace()
-        # if not should_run["run-subjectlevel"]:
-        #     logger.info(f"Did not run step: run-subjectlevel")
-        # else:
-        #     if args.chunk_index is not None:
-        #         runner.run(execgraph, updatehash=False, config=workflow.config)
-        #
-        # if not should_run["run-grouplevel"]:
-        #     logger.info(f"Did not run step: run-grouplevel")
-        # else:
-        #     pass
-        # else:
-        for execgraph in execgraphs:
+
+        execgraph = None
+
+        if not should_run["run-subjectlevel"]:
+            logger.info(f"Did not run step: run-subjectlevel")
+        else:
+            if args.chunk_index is not None:
+                n_subjectlevel_chunks = len(execgraphs) - 1
+                logger.info(
+                    f"Running subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
+                )
+                zerobasedchunkindex = args.chunk_index - 1
+                assert zerobasedchunkindex < n_subjectlevel_chunks
+                execgraph = execgraphs[zerobasedchunkindex]
+
+        if not should_run["run-grouplevel"]:
+            logger.info(f"Did not run step: run-grouplevel")
+        else:
+            logger.info(f"Running grouplevel")
+            execgraph = execgraphs[-1]
+
+        if execgraph is not None:
             runner.run(execgraph, updatehash=False, config=workflow.config)
+        else:
+            logger.info(f"Running everything")
+            for execgraph in execgraphs:
+                runner.run(execgraph, updatehash=False, config=workflow.config)
 
 
 def main():

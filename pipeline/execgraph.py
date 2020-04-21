@@ -8,7 +8,10 @@ from itertools import islice
 import numpy as np
 import networkx as nx
 
-from .utils import cacheobj, uncacheobj
+import nipype.pipeline.engine as pe
+
+from .interface import LoadResult
+from .utils import cacheobj, uncacheobj, first, hexdigest
 
 
 class DontRunRunner:
@@ -22,7 +25,10 @@ def init_execgraph(workdir, workflow, n_chunks=None):
     logger = logging.getLogger("pipeline")
 
     uuid = workflow.uuid
-    execgraphs = uncacheobj(workdir, "execgraph", uuid)
+    fileid = "execgraph"
+    if n_chunks is not None and n_chunks > 1:
+        fileid = f"{fileid}.{n_chunks:02d}_chunks"
+    execgraphs = uncacheobj(workdir, fileid, uuid)
     if execgraphs is not None:
         return execgraphs
 
@@ -38,27 +44,35 @@ def init_execgraph(workdir, workflow, n_chunks=None):
         execgraphs = []
 
         subjectworkflows = {}
-        grouplevelnodes = set()
         for node in execgraph.nodes():
             if node._hierarchy.startswith("nipype.subjectlevel"):
                 subjectworkflowname = node._hierarchy.split(".")[2]
                 if subjectworkflowname not in subjectworkflows:
                     subjectworkflows[subjectworkflowname] = set()
                 subjectworkflows[subjectworkflowname].add(node)
-            else:
-                grouplevelnodes.add(node)
 
         chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)
         partitioniter = iter(subjectworkflows.values())
         for chunk in chunks:
             nodes = set.union(*islice(partitioniter, len(chunk)))
-            execgraphs.append(execgraph.subgraph(nodes))
+            execgraphs.append(execgraph.subgraph(nodes).copy())
 
         subjectlevelnodes = set.union(*subjectworkflows.values())
         for (u, v, c) in nx.edge_boundary(execgraph, subjectlevelnodes, data=True):
-            import pdb
+            attrs = [first(inattr) for inattr, outattr in c["connect"]]
+            uhex = hexdigest(u.fullname)
+            newu = pe.Node(LoadResult(u, attrs), name=f"loadresult_{uhex}")
+            execgraph.remove_node(u)
+            execgraph.add_edge(newu, v, attr_dict=c)
+        execgraph.remove_nodes_from(subjectlevelnodes)
 
-            pdb.set_trace()
+        execgraphs.append(execgraph)
 
-    cacheobj(workdir, "execgraph", execgraphs, uuid=uuid)
+        assert len(execgraphs) == n_chunks + 1
+
+        import pdb
+
+        pdb.set_trace()
+
+    cacheobj(workdir, fileid, execgraphs, uuid=uuid)
     return execgraphs

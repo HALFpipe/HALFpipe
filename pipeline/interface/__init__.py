@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from .cache import LoadResult
 from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
 from .dof import MakeDofVolume
@@ -21,6 +22,7 @@ from .resultdict import (
 from .utils import SelectColumnsTSV, MergeColumnsTSV, MatrixToTSV
 
 __all__ = [
+    LoadResult,
     ParseConditionFile,
     ConnectivityMeasure,
     GroupModel,
@@ -30,6 +32,7 @@ __all__ = [
     LogicalAnd,
     Filter,
     FilterList,
+    SafeFLAMEO,
     SafeMerge,
     SafeMaskMerge,
     MotionCutoff,

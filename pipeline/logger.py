@@ -127,10 +127,8 @@ class Logger:
 
         handlers = []
 
-        formatter = ColorFormatter()
-
         stdout_handler = logging.StreamHandler(stream=sys.stdout)
-        stdout_handler.setFormatter(formatter)
+        stdout_handler.setFormatter(ColorFormatter())
         if debug:
             stdout_handler.setLevel(logging.DEBUG)
         elif verbose:
@@ -139,6 +137,7 @@ class Logger:
             stdout_handler.setLevel(logging.WARNING)
         handlers.append(stdout_handler)
 
+        formatter = Formatter()
         if workdir is not None:
             full_log_handler = FileHandler(op.join(workdir, "log.txt"))
             full_log_handler.setFormatter(formatter)
