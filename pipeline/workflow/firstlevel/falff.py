@@ -14,7 +14,7 @@ from ...interface import MakeResultdicts
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
-from ...utils import first, onlyboldentitiesdict
+from ...utils import first
 
 
 def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
@@ -140,13 +140,7 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
     outputnode.inputs.firstlevelanalysisname = analysis.name
     outputnode.inputs.firstlevelfeaturename = endpointnames
     workflow.connect(
-        [
-            (
-                inputnode,
-                outputnode,
-                [(("metadata", onlyboldentitiesdict), "basedict"), ("mask_file", "mask_file")],
-            )
-        ]
+        [(inputnode, outputnode, [("metadata", "basedict"), ("mask_file", "mask_file")],)]
     )
     workflow.connect(mergeresults, "out", outputnode, "stat")
 

@@ -1,5 +1,5 @@
 ARG FMRIPREP_VERSION=20.1.0rc2
-ARG MRIQC_VERSION=0.14.2
+# ARG MRIQC_VERSION=0.14.2
 
 FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 
@@ -9,15 +9,15 @@ FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 RUN pip install --upgrade pip && \
     pip install 'nibabel>=3.0.0' 'niworkflows~=1.1.3' cython 
 
-ARG MRIQC_VERSION
-
-RUN mkdir -p /root/src/mriqc && \
-    curl -sSL "https://api.github.com/repos/poldracklab/mriqc/tarball/${MRIQC_VERSION}" \
-    | tar -xzC /root/src/mriqc --strip-components 1 && \
-    cd /root/src/mriqc && \
-    pip install -r requirements.txt && \
-    pip install .[all] && \
-    rm -rf ~/.cache/pip
+# ARG MRIQC_VERSION
+# 
+# RUN mkdir -p /root/src/mriqc && \
+#     curl -sSL "https://api.github.com/repos/poldracklab/mriqc/tarball/${MRIQC_VERSION}" \
+#     | tar -xzC /root/src/mriqc --strip-components 1 && \
+#     cd /root/src/mriqc && \
+#     pip install -r requirements.txt && \
+#     pip install .[all] && \
+#     rm -rf ~/.cache/pip
 
 # RUN apt-get update && \
 #      apt-get install -y graphviz \

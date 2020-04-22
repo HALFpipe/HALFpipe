@@ -8,6 +8,7 @@ from nipype.interfaces import afni
 from niworkflows.interfaces.utility import KeySelect
 
 from ..interface import ResultdictDatasink
+from ..utils import hexdigest
 
 
 def convert_afni_endpoint(workflow, endpoint):
@@ -25,6 +26,10 @@ def make_resultdict_datasink(workflow, base_directory, endpoint, name="resultdic
         interface=ResultdictDatasink(base_directory=str(base_directory)), name=name
     )
     workflow.connect(*endpoint, resultdictdatasink, "indicts")
+
+
+def _get_attrname(attr):
+    return attr.replace(".", "_")
 
 
 class ConnectAttrlistHelper:
@@ -51,7 +56,7 @@ class ConnectAttrlistHelper:
                     out_wf,
                     in_wf,
                     [
-                        (f"{out_nodename}{attr}", f"{in_nodename}{attr}")
+                        (f"{out_nodename}{attr}", f"{in_nodename}{_get_attrname(attr)}")
                         for attr in self._attrs
                     ],
                 )
@@ -61,7 +66,8 @@ class ConnectAttrlistHelper:
             assert self._keyVal is not None
             assert self._keySelectAttrs is not None and len(self._keySelectAttrs) > 0
 
-            selectnodename = f"keyselect_from_{out_wf.name}_to_{in_wf.name}"
+            hexval = hexdigest((self._keyAttr, self._keyVal, self._keySelectAttrs))
+            selectnodename = f"keyselect_from_{out_wf.name}_{hexval}"
             select = parentworkflow.get_node(selectnodename)
             if select is None:
                 select = pe.Node(
@@ -84,7 +90,10 @@ class ConnectAttrlistHelper:
                     (
                         select,
                         in_wf,
-                        [(attr, f"{in_nodename}{attr}") for attr in self._keySelectAttrs],
+                        [
+                            (attr, f"{in_nodename}{_get_attrname(attr)}")
+                            for attr in self._keySelectAttrs
+                        ],
                     ),
                 ]
             )

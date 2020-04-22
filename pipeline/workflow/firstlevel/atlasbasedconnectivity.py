@@ -9,7 +9,6 @@ from ...interface import ConnectivityMeasure, ResampleIfNeeded, MakeResultdicts
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag
-from ...utils import onlyboldentitiesdict
 
 
 def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
@@ -75,10 +74,7 @@ def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
             (
                 inputnode,
                 outputnode,
-                [
-                    (("metadata", onlyboldentitiesdict), "basedict"),
-                    ("atlas_names", "firstlevelfeaturename"),
-                ],
+                [("metadata", "basedict"), ("atlas_names", "firstlevelfeaturename")],
             )
         ]
     )

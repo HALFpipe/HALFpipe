@@ -14,7 +14,6 @@ from .zscore import init_zscore_wf
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
 from ...interface import MakeResultdicts
-from ...utils import onlyboldentitiesdict
 
 
 def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
@@ -76,13 +75,7 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
     outputnode.inputs.firstlevelanalysisname = analysis.name
     outputnode.inputs.firstlevelfeaturename = "reho"
     workflow.connect(
-        [
-            (
-                inputnode,
-                outputnode,
-                [(("metadata", onlyboldentitiesdict), "basedict"), ("mask_file", "mask_file")],
-            )
-        ]
+        [(inputnode, outputnode, [("metadata", "basedict"), ("mask_file", "mask_file")],)]
     )
     workflow.connect(zscore_workflow, "outputnode.out_file", outputnode, "stat")
 

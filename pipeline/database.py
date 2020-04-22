@@ -7,11 +7,19 @@
 """
 
 from hashlib import sha1
+import json
+from functools import lru_cache
 
 from calamities import tag_glob
 from calamities.input.pattern import tag_parse
 
-from .spec import TagsSchema, bold_entities, entity_aliases as aliases, tagnames
+from .spec import (
+    TagsSchema,
+    bold_entities,
+    entity_aliases as aliases,
+    tagnames,
+    QualitycheckExcludeEntrySchema,
+)
 from .utils import first
 
 
@@ -205,3 +213,49 @@ class Database:
         tmplstrset = set(self.tmplstr_by_filepaths.get(filepath) for filepath in filepaths)
         if len(tmplstrset) == 1:
             return first(tmplstrset)
+
+
+def _set_in_hierarchy(dicthierarchy, entities, entry):
+    entity = entities.pop()
+    curval = getattr(entry, entity, None)
+    if len(entities) == 0:
+        dicthierarchy[curval] = True
+    else:
+        if curval not in dicthierarchy:
+            dicthierarchy[curval] = dict()
+        if isinstance(dicthierarchy[curval], dict):
+            _set_in_hierarchy(dicthierarchy[curval], entities, entry)
+
+
+@lru_cache(maxsize=128)
+def init_qualitycheck_exclude_database_cached(qualitycheckexcludefile):
+    return QualitycheckExcludeDatabase(qualitycheckexcludefile)
+
+
+class QualitycheckExcludeDatabase:
+    def __init__(self, qualitycheckexcludefile):
+        with open(qualitycheckexcludefile, "r") as fp:
+            qualitycheckexcludes = json.load(fp)
+        assert isinstance(qualitycheckexcludes, list)
+        schema = QualitycheckExcludeEntrySchema()
+
+        self.excludedicthierarchy = dict()
+
+        for qualitycheckexcludedict in qualitycheckexcludes:
+            entry = schema.load(qualitycheckexcludedict)
+            for i, entity in enumerate(bold_entities):  # order determines precedence
+                if getattr(entry, entity, None) is not None:
+                    break
+            _set_in_hierarchy(self.excludedicthierarchy, bold_entities[i:], entry)
+
+    def get(self, **kwargs):
+        curdict = self.excludedicthierarchy
+        for entity in bold_entities:
+            curval = kwargs.get(entity)
+            if curval not in curdict:
+                return
+            elif curdict[curval] is True:
+                return True
+            elif isinstance(curdict[curval], dict):
+                curdict = curdict[curval]
+        return False

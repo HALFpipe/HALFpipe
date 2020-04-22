@@ -7,7 +7,7 @@ from uuid import uuid5
 import pickle
 from pathlib import Path
 
-from ..interface import AggregateResultdicts, MakeResultdicts
+from ..interface import MakeResultdicts
 from ..database import Database
 from ..spec import loadspec, study_entities
 from ..utils import cacheobj, uncacheobj
@@ -15,6 +15,7 @@ from ..io import get_repetition_time
 from .utils import make_resultdict_datasink
 
 from nipype.pipeline import engine as pe
+from nipype.interfaces import utility as niu
 
 from .fmriprepwrapper import (
     init_anat_preproc_wf,
@@ -29,6 +30,12 @@ from .filt import (
     make_variant_bold_filt_wf_name,
     connect_filt_wf_attrs_from_anat_preproc_wf,
     connect_filt_wf_attrs_from_func_preproc_wf,
+)
+from .report import (
+    init_report_wf,
+    connect_report_wf_attrs_from_anat_preproc_wf,
+    connect_report_wf_attrs_from_func_preproc_wf,
+    connect_report_wf_attrs_from_filt_wf,
 )
 from .memory import memcalc_from_database
 
@@ -207,7 +214,7 @@ def init_workflow(workdir):
                         preprocresultdict,
                         [
                             ("outputnode.out1", "preproc"),
-                            ("outputnode.out2", "confounds"),
+                            ("outputnode.out3", "confounds"),
                             ("outputnode.mask_file", "mask_file"),
                         ],
                     )
@@ -220,6 +227,19 @@ def init_workflow(workdir):
                 name=f"preprocdatasink",
             )
 
+            report_wf = cache.get(init_report_wf, argtuples=[("memcalc", memcalc)])
+            report_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
+            connect_report_wf_attrs_from_filt_wf(boldfileworkflow, bold_filt_wf, report_wf)
+            connect_report_wf_attrs_from_anat_preproc_wf(
+                subjectworkflow,
+                anat_preproc_wf,
+                boldfileworkflow,
+                in_nodename=f"{report_wf.name}.inputnode",
+            )
+            connect_report_wf_attrs_from_func_preproc_wf(
+                boldfileworkflow, func_preproc_wf, report_wf
+            )
+
             for analysis, tagdict in zip(firstlevel_analyses, firstlevel_analysis_tagdicts):
                 if not database.matches(boldfile, **tagdict):
                     continue
@@ -227,7 +247,9 @@ def init_workflow(workdir):
                     init_firstlevel_analysis_wf,
                     argtuples=[("analysis", analysis), ("memcalc", memcalc)],
                 )
-                analysisworkflow.get_node("inputnode").inputs.metadata = boldfilemetadata
+                boldfileworkflow.connect(
+                    report_wf, "outputnode.metadata", analysisworkflow, "inputnode.metadata"
+                )
                 #
                 endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
                 make_resultdict_datasink(
@@ -260,16 +282,11 @@ def init_workflow(workdir):
                     subjectanalysisendpoints[analysis.name].append(endpoint)
         # subjectlevel aggregate
         for analysis in subjectlevel_analyses:
-            endpoints = sum(
-                (
-                    subjectanalysisendpoints[inputanalysisname]
-                    for inputanalysisname in analysis.input
-                ),
-                [],
-            )
+            endpoints = []
+            for inputanalysisname in analysis.input:
+                endpoints.extend(subjectanalysisendpoints[inputanalysisname])
             collectinputs = pe.Node(
-                AggregateResultdicts(numinputs=len(endpoints), across=analysis.across),
-                name=f"collectinputs_{analysis.name}",
+                niu.Merge(numinputs=len(endpoints)), name=f"collectinputs_{analysis.name}",
             )
             for i, endpoint in enumerate(endpoints):
                 subjectworkflow.connect(*endpoint, collectinputs, f"in{i+1}")
@@ -278,7 +295,7 @@ def init_workflow(workdir):
                 argtuples=[("analysis", analysis), ("memcalc", memcalc)],
             )
             subjectworkflow.connect(
-                collectinputs, "resultdicts", analysisworkflow, "inputnode.indicts"
+                collectinputs, "out", analysisworkflow, "inputnode.indicts"
             )
             endpoint = (subjectworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
             subjectanalysisendpoints[analysis.name].append(endpoint)
@@ -299,12 +316,11 @@ def init_workflow(workdir):
     grouplevelworkflow = pe.Workflow(name=f"grouplevel")
 
     for analysis in grouplevel_analyses:
-        endpoints = sum(
-            (analysisendpoints[inputanalysisname] for inputanalysisname in analysis.input), [],
-        )
+        endpoints = []
+        for inputanalysisname in analysis.input:
+            endpoints.extend(analysisendpoints[inputanalysisname])
         collectinputs = pe.Node(
-            AggregateResultdicts(numinputs=len(endpoints), across=analysis.across),
-            name=f"collectinputs_{analysis.name}",
+            niu.Merge(numinputs=len(endpoints)), name=f"collectinputs_{analysis.name}",
         )
         grouplevelworkflow.add_nodes([collectinputs])
         for i, endpoint in enumerate(endpoints):
@@ -313,9 +329,7 @@ def init_workflow(workdir):
             init_higherlevel_analysis_wf,
             argtuples=[("analysis", analysis), ("memcalc", memcalc)],
         )
-        grouplevelworkflow.connect(
-            collectinputs, "resultdicts", analysisworkflow, "inputnode.indicts"
-        )
+        grouplevelworkflow.connect(collectinputs, "out", analysisworkflow, "inputnode.indicts")
         endpoint = (grouplevelworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
         analysisendpoints[analysis.name].append(endpoint)
         make_resultdict_datasink(

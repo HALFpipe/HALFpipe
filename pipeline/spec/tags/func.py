@@ -18,7 +18,7 @@ from .derivative import (
     ConfoundsRemovedTagSchema,
 )
 
-study_entities = ["task", "session", "run", "direction"]
+study_entities = ["direction", "run", "session", "task"]
 bold_entities = study_entities + ["subject"]
 
 

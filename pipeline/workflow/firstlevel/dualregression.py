@@ -7,7 +7,7 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts
-from ...utils import ravel, onlyboldentitiesdict
+from ...utils import ravel
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
@@ -33,7 +33,9 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name for name in analysis.tags.confounds_removed.names if "aroma_motion" not in name
+            name
+            for name in analysis.tags.confounds_removed.names
+            if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             confoundsfilefields.append("confounds_file")
@@ -215,7 +217,7 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
                 inputnode,
                 outputnode,
                 [
-                    (("metadata", onlyboldentitiesdict), "basedict"),
+                    ("metadata", "basedict"),
                     ("mask_file", "mask_file"),
                     (("map_components", ravel), "firstlevelfeaturename"),
                 ],

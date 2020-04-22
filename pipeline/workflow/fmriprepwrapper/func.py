@@ -15,6 +15,9 @@ from ..utils import ConnectAttrlistHelper
 from .sdc import init_sdc_estimate_wf
 
 from niworkflows.interfaces.nibabel import ApplyMask
+
+# from niworkflows.interfaces.utility import KeySelect
+
 from niworkflows.func.util import init_bold_reference_wf
 from fmriprep.workflows.bold.hmc import init_bold_hmc_wf
 from fmriprep.workflows.bold.registration import init_bold_t1_trans_wf, init_bold_reg_wf
@@ -22,7 +25,7 @@ from fmriprep.workflows.bold.resampling import (
     init_bold_std_trans_wf,
     init_bold_preproc_trans_wf,
 )
-from fmriprep.workflows.bold.confounds import init_ica_aroma_wf
+from fmriprep.workflows.bold.confounds import init_ica_aroma_wf  # , init_carpetplot_wf
 
 in_attrs_from_anat_preproc_wf = [
     "t1w_preproc",
@@ -61,6 +64,8 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                 "melodic_mix",
                 "nonaggr_denoised_file",
                 "aroma_confounds",
+                "aroma_report",
+                "aroma_metadata",
                 "movpar_file",
                 "skip_vols",
             ]
@@ -324,10 +329,58 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                     ("outputnode.melodic_mix", "melodic_mix"),
                     ("outputnode.nonaggr_denoised_file", "nonaggr_denoised_file"),
                     ("outputnode.aroma_confounds", "aroma_confounds"),
+                    ("outputnode.aroma_metadata", "aroma_metadata"),
+                    ("ica_aroma.out_report", "aroma_report"),
                 ],
             ),
         ]
     )
+
+    # carpetplot_wf = init_carpetplot_wf(
+    #     mem_gb=memcalc.series_std_gb,
+    #     metadata={},
+    #     cifti_output=fmriprepconfig.cifti_output,
+    #     name="carpetplot_wf",
+    # )
+    #
+    # carpetplot_select_std = pe.Node(
+    #     KeySelect(fields=["std2anat_xfm"], key="MNI152NLin2009cAsym"),
+    #     name="carpetplot_select_std",
+    #     run_without_submitting=True,
+    # )
+    #
+    # workflow.connect(
+    #     [
+    #         (
+    #             inputnode,
+    #             carpetplot_select_std,
+    #             [("std2anat_xfm", "std2anat_xfm"), ("template", "keys")],
+    #         ),
+    #         (
+    #             carpetplot_select_std,
+    #             carpetplot_wf,
+    #             [("std2anat_xfm", "inputnode.std2anat_xfm")],
+    #         ),
+    #         (
+    #             bold_bold_trans_wf,
+    #             carpetplot_wf,
+    #             [
+    #                 ("outputnode.bold", "inputnode.bold"),
+    #                 ("outputnode.bold_mask", "inputnode.bold_mask"),
+    #             ],
+    #         ),
+    #         (
+    #             bold_reg_wf,
+    #             carpetplot_wf,
+    #             [("outputnode.itk_t1_to_bold", "inputnode.t1_bold_xform")],
+    #         ),
+    #         (
+    #             bold_confounds_wf,
+    #             carpetplot_wf,
+    #             [("outputnode.confounds_file", "inputnode.confounds_file")],
+    #         )
+    #     ]
+    # )
 
     for nodepath in workflow.list_node_names():
         hierarchy = nodepath.split(".")

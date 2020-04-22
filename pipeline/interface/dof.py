@@ -67,6 +67,6 @@ class MakeDofVolume(BaseInterface):
         outputs = self._outputs().get()
 
         if self._out_file is not None:
-            outputs["out_file"] = op.abspath(self.inputs.out_file)
+            outputs["out_file"] = self._out_file
 
         return outputs

@@ -36,6 +36,7 @@ in_attrs_from_func_preproc_wf_direct = [
 ]
 in_attrs_from_func_preproc_wf_keyselect = [
     "bold_std",
+    "bold_std_ref",
     "bold_mask_std",
 ]
 in_attrs_from_func_preproc_wf = (
@@ -141,7 +142,7 @@ def make_confoundsendpoint(prefix, workflow, boldfileendpoint, confoundnames, me
     )
     workflow.connect(mergecolumns, "out_file", selectcolumnswithheader, "in_file")
 
-    return (selectcolumns, "out_file"), (selectcolumnswithheader, "out_file")
+    return ((selectcolumns, "out_file"), (selectcolumnswithheader, "out_file"))
 
 
 def make_variant_bold_filt_wf_name(variant):
@@ -203,6 +204,9 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
             workflow.connect(*boldfileendpoint, smooth_workflow, "inputnode.in_file")
             boldfileendpoint = (smooth_workflow, "outputnode.out_file")
 
+    need_to_add_mean = False
+    boldfileendpoint_for_meanfunc = boldfileendpoint
+
     if "band_pass_filtered" in tagdict:
         type, args = tagdict["band_pass_filtered"]
         if type == "frequency_based":
@@ -224,12 +228,10 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
             )
             workflow.connect(inputnode, "metadata", calchighpasssigma, "metadata")
             calchighpasssigma.inputs.temporal_filter_width = first(args)
-            gaussianfilter = pe.Node(fsl.TemporalFilter(), name="gaussianfilter")
-            workflow.connect(
-                calchighpasssigma, "highpass_sigma", gaussianfilter, "highpass_sigma"
-            )
-            workflow.connect(*boldfileendpoint, gaussianfilter, "in_file")
-            boldfileendpoint = (gaussianfilter, "out_file")
+            highpass = pe.Node(fsl.TemporalFilter(), name="gaussianfilter")
+            workflow.connect(calchighpasssigma, "highpass_sigma", highpass, "highpass_sigma")
+            workflow.connect(*boldfileendpoint, highpass, "in_file")
+            need_to_add_mean = True
 
     if "confounds_removed" in tagdict:
         confoundnames = tagdict["confounds_removed"]
@@ -247,6 +249,17 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
         if ortendpoint is not None:
             workflow.connect(*ortendpoint, tproject, "ort")
         boldfileendpoint = (tproject, "out_file")
+        need_to_add_mean = True
+
+    if need_to_add_mean is True:
+        meanfunc = pe.Node(
+            interface=fsl.ImageMaths(op_string="-Tmean", suffix="_mean"), name="meanfunc"
+        )
+        workflow.connect(*boldfileendpoint_for_meanfunc, meanfunc, "in_file")
+        addmean = pe.Node(interface=fsl.BinaryMaths(operation="add"), name="addmean")
+        workflow.connect(*boldfileendpoint, addmean, "in_file")
+        workflow.connect(meanfunc, "out_file", addmean, "operand_file")
+        boldfileendpoint = (addmean, "out_file")
 
     endpoints = [boldfileendpoint]  # boldfile is finished
 

@@ -3,13 +3,19 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from os import path as op
 from copy import deepcopy
 from shutil import copyfile
 import logging
 from pprint import pformat
 
+import numpy as np
+
+from .report import report_metadata_fields
 from ..spec import bold_entities
 from ..utils import ravel, splitext
+from ..io import load_spreadsheet
+from ..database import init_qualitycheck_exclude_database_cached
 
 from nipype.interfaces.base import (
     traits,
@@ -41,13 +47,13 @@ class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     basedict = traits.Dict(traits.Str(), traits.Any())
 
 
-class MakeResultdictsOutputSpec(TraitedSpec):
+class ResultdictsOutputSpec(TraitedSpec):
     resultdicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
 
 
 class MakeResultdicts(IOBase):
     input_spec = MakeResultdictsInputSpec
-    output_spec = MakeResultdictsOutputSpec
+    output_spec = ResultdictsOutputSpec
 
     def __init__(self, keys=None, **inputs):  # filterdict=None,
         super(MakeResultdicts, self).__init__(**inputs)
@@ -112,7 +118,7 @@ class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
 
 class AggregateResultdicts(IOBase):
     input_spec = AggregateResultdictsInputSpec
-    output_spec = MakeResultdictsOutputSpec
+    output_spec = ResultdictsOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
         super(AggregateResultdicts, self).__init__(**inputs)
@@ -148,6 +154,7 @@ class AggregateResultdicts(IOBase):
                 (key, value)
                 for key, value in resultdict.items()
                 if key not in filefields
+                and key not in report_metadata_fields
                 and key != across
                 and not isinstance(value, (tuple, list))  # if we aggregated before, ignore
                 # this is important for example if we want have aggregated unequal numbers
@@ -174,6 +181,108 @@ class AggregateResultdicts(IOBase):
         outputs["resultdicts"] = resultdicts
 
         return outputs
+
+
+def _aggregate_if_needed(inval):
+    if isinstance(inval, (list, tuple)):
+        return np.asarray(inval).mean()
+    return float(inval)
+
+
+def _get_categorical_dict(filepath, variableobjs):
+    rawdataframe = load_spreadsheet(filepath)
+    for variableobj in variableobjs:
+        if variableobj.type == "id":
+            id_column = variableobj.name
+            break
+
+    rawdataframe = rawdataframe.set_index(id_column)
+
+    categorical_columns = []
+    for variableobj in variableobjs:
+        if variableobj.type == "categorical":
+            categorical_columns.append(variableobj.name)
+
+    return rawdataframe[categorical_columns].to_dict()
+
+
+class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
+    indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
+    filterobjs = traits.List(desc="filter list", mandatory=True)
+    variableobjs = traits.List(desc="variable list")
+    spreadsheet = traits.File(desc="spreadsheet")
+    requireoneofkeys = traits.List(
+        traits.Str(), desc="only keep resultdicts that have at least one of these keys"
+    )
+    qualitycheckfile = traits.File()
+
+
+class FilterResultdicts(SimpleInterface):
+    input_spec = FilterResultdictsInputSpec
+    output_spec = ResultdictsOutputSpec
+
+    def _run_interface(self, runtime):
+        outdicts = self.inputs.indicts.copy()
+
+        categorical_dict = None
+
+        for filterobj in self.inputs.filterobjs:
+            if filterobj.type == "group":
+                if categorical_dict is None:
+                    assert isdefined(self.inputs.spreadsheet)
+                    assert isdefined(self.inputs.variableobjs)
+                    categorical_dict = _get_categorical_dict(
+                        self.inputs.spreadsheet, self.inputs.variableobjs
+                    )
+                if filterobj.variable not in categorical_dict:
+                    continue
+                if filterobj.levels is None or len(filterobj.levels) == 0:
+                    continue
+                variable_dict = categorical_dict[filterobj.variable]
+                selectedsubjects = set(
+                    subject
+                    for subject, value in variable_dict.items()
+                    if value in filterobj.levels
+                )
+                if filterobj.action == "include":
+                    outdicts = [
+                        outdict
+                        for outdict in outdicts
+                        if outdict.get("subject") in selectedsubjects
+                    ]
+                elif filterobj.action == "exclude":
+                    outdicts = [
+                        outdict
+                        for outdict in outdicts
+                        if outdict.get("subject") not in selectedsubjects
+                    ]
+                else:
+                    raise ValueError(f'Invalid action "{filterobj.action}"')
+            elif getattr(filterobj, "cutoff", None) is not None:
+                assert filterobj.action == "exclude"
+                assert isinstance(filterobj.cutoff, float)
+                outdicts = [
+                    outdict
+                    for outdict in outdicts
+                    if _aggregate_if_needed(outdict.get(filterobj.type, np.inf))
+                    < filterobj.cutoff
+                ]
+
+        if isdefined(self.inputs.requireoneofkeys) and len(self.inputs.requireoneofkeys) > 0:
+            requireoneofkeys = self.inputs.requireoneofkeys
+            outdicts = [
+                outdict
+                for outdict in outdicts
+                if any(requireoneofkey in outdict for requireoneofkey in requireoneofkeys)
+            ]
+
+        if isdefined(self.inputs.qualitycheckfile) and op.isfile(self.inputs.qualitycheckfile):
+            database = init_qualitycheck_exclude_database_cached(self.inputs.qualitycheckfile)
+            outdicts = [outdict for outdict in outdicts if database.get(outdict) is False]
+
+        self._results["resultdicts"] = outdicts
+
+        return runtime
 
 
 class ExtractFromResultdictInputSpec(BaseInterfaceInputSpec):
@@ -262,7 +371,7 @@ class ResultdictDatasink(SimpleInterface):
                     _, ext = splitext(fieldvalue)
                     outpath = basepath / f"{field}{ext}"
                     if outpath.exists():
-                        logging.getLogger("pipeline").warning(f'Overwriting file "{outpath}"')
+                        logging.getLogger("pipeline").info(f'Overwriting file "{outpath}"')
                     copyfile(fieldvalue, outpath)
                 elif fieldvalue is not None:
                     pstr = pformat(fieldvalue)

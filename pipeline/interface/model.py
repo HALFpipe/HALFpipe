@@ -50,19 +50,22 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
             id_column = variableobj.name
             break
 
-    rawdict = rawdataframe.set_index(id_column).to_dict()
+    rawdataframe = rawdataframe.set_index(id_column)
 
-    continuous_columns = {}
-    categorical_columns = {}
+    continuous_columns = []
+    categorical_columns = []
+    columns_in_order = []
     for variableobj in variableobjs:
         if variableobj.type == "continuous":
-            continuous_columns[variableobj.name] = rawdict[variableobj.name]
+            continuous_columns.append(variableobj.name)
+            columns_in_order.append(variableobj.name)
         elif variableobj.type == "categorical":
-            categorical_columns[variableobj.name] = rawdict[variableobj.name]
+            categorical_columns.append(variableobj.name)
+            columns_in_order.append(variableobj.name)
 
     # separate
-    continuous = pd.DataFrame.from_dict(continuous_columns, orient="columns")
-    categorical = pd.DataFrame.from_dict(categorical_columns, orient="columns")
+    continuous = rawdataframe[continuous_columns]
+    categorical = rawdataframe[categorical_columns]
 
     # only keep subjects that are in this analysis
     # also sets order
@@ -81,6 +84,9 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
 
     # merge
     dataframe = categorical.join(continuous, how="outer").loc[subjects, :]
+
+    # maintain order
+    dataframe = dataframe[columns_in_order]
 
     # remove zero variance columns
     columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1
@@ -181,10 +187,10 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
 
 
 class GroupModelInputSpec(TraitedSpec):
-    spreadsheet = traits.File(exist=True)
-    contrastobjs = traits.List(desc="subject list")
-    variableobjs = traits.List(desc="subject list")
-    subjects = traits.List(traits.Str(), desc="subject list")
+    spreadsheet = traits.File(exist=True, mandatory=True)
+    contrastobjs = traits.List(desc="contrast list", mandatory=True)
+    variableobjs = traits.List(desc="variable list", mandatory=True)
+    subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
 
 
 class GroupModelOutputSpec(TraitedSpec):

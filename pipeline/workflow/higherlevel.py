@@ -15,6 +15,8 @@ from ..interface import (
     FilterList,
     SafeMultipleRegressDesign,
     SafeFLAMEO,
+    FilterResultdicts,
+    AggregateResultdicts,
 )
 
 from ..utils import ravel, maplen
@@ -30,6 +32,29 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
 
     inputnode = pe.Node(interface=niu.IdentityInterface(fields=["indicts"]), name="inputnode")
 
+    indictsendpoint = (inputnode, "indicts")
+
+    if analysis.filter is not None:
+        kwargs = {}
+        if analysis.spreadsheet is not None:
+            kwargs["spreadsheet"] = analysis.spreadsheet
+        if analysis.variables is not None:
+            kwargs["variableobjs"] = analysis.variables
+        filterresultsdicts = pe.Node(
+            FilterResultdicts(
+                filterobjs=analysis.filter, requireoneofkeys=["cope", "stat"], **kwargs
+            ),
+            name=f"filterresultsdicts",
+        )
+        workflow.connect(*indictsendpoint, filterresultsdicts, "indicts")
+        indictsendpoint = (filterresultsdicts, "resultdicts")
+
+    aggregateresultdicts = pe.Node(
+        AggregateResultdicts(numinputs=1, across=analysis.across),
+        name=f"aggregateresultdicts",
+    )
+    workflow.connect(*indictsendpoint, aggregateresultdicts, "in1")
+
     extractfromresultdict = pe.MapNode(
         interface=ExtractFromResultdict(
             keys=[analysis.across, "cope", "varcope", "dof_file", "mask_file"],
@@ -38,7 +63,9 @@ def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
         iterfield="indict",
         name="extractfromresultdict",
     )
-    workflow.connect([(inputnode, extractfromresultdict, [(("indicts", ravel), "indict")])])
+    workflow.connect(
+        [(aggregateresultdicts, extractfromresultdict, [(("resultdicts", ravel), "indict")])]
+    )
 
     maskmerge = pe.MapNode(
         interface=SafeMaskMerge(),

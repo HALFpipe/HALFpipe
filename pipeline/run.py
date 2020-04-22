@@ -19,7 +19,7 @@ def _main():
     from argparse import ArgumentParser
 
     ap = ArgumentParser(
-        description="mindandbrain/pipeline is a user-friendly interface "
+        description=f"mindandbrain/pipeline {__version__} is a user-friendly interface "
         "for performing reproducible analysis of fMRI data, including preprocessing, "
         "single-subject feature extraction, and group analysis."
     )
@@ -39,10 +39,8 @@ def _main():
     basegroup.add_argument("--verbose", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
-
     steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
     steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
-
     for step in steps:
         steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
@@ -50,19 +48,15 @@ def _main():
             stepgroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
-
     execgraphgroup.add_argument(
-        "--n-chunks", type=int, help="number of subjectlevel chunks to generate"
+        "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
     )
 
     rungroup = ap.add_argument_group("run", "")
-
     rungroup.add_argument("--execgraph-file", type=str, help="manually select file to run")
-
     rungroup.add_argument(
         "--chunk-index", type=int, help="select which subjectlevel chunk to run"
     )
-
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int)
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
@@ -74,6 +68,9 @@ def _main():
         help="print the version number and exit",
         default=False,
     )
+    ap.add_argument(
+        "--preproc-report", action="store_true", help="print a report", default=False,
+    )
 
     args = ap.parse_args()
     global debug
@@ -82,6 +79,10 @@ def _main():
 
     if args.version is True:
         sys.stdout.write(f"{__version__}\n")
+        sys.exit(0)
+
+    if args.preproc_report is True:
+        # TODO
         sys.exit(0)
 
     should_run = {step: True for step in steps}
@@ -171,39 +172,48 @@ def _main():
 
         runnername = f"{args.nipype_run_plugin}Plugin"
         if hasattr(ppp, runnername):
+            logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
             runnercls = getattr(ppp, runnername)
         elif hasattr(nip, runnername):
+            logger.info(f'Using nipype_run_plugin "{runnername}"')
             runnercls = getattr(nip, runnername)
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
         runner = runnercls(plugin_args=plugin_args)
 
-        execgraph = None
-
-        if not should_run["run-subjectlevel"]:
-            logger.info(f"Did not run step: run-subjectlevel")
-        else:
-            if args.chunk_index is not None:
-                n_subjectlevel_chunks = len(execgraphs) - 1
-                logger.info(
-                    f"Running subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
-                )
+        execgraphstorun = []
+        if len(execgraphs) > 1:
+            n_subjectlevel_chunks = len(execgraphs) - 1
+            if not should_run["run-subjectlevel"]:
+                logger.info(f"Will not run subjectlevel chunks")
+            elif args.chunk_index is not None:
                 zerobasedchunkindex = args.chunk_index - 1
                 assert zerobasedchunkindex < n_subjectlevel_chunks
-                execgraph = execgraphs[zerobasedchunkindex]
+                logger.info(
+                    f"Will run subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
+                )
+                execgraphstorun.append(execgraphs[zerobasedchunkindex])
+            else:
+                logger.info(f"Will run all {n_subjectlevel_chunks} subjectlevel chunks")
+                execgraphstorun.extend(execgraphs[:-1])
 
-        if not should_run["run-grouplevel"]:
-            logger.info(f"Did not run step: run-grouplevel")
+            if not should_run["run-grouplevel"]:
+                logger.info(f"Will not run grouplevel chunk")
+            else:
+                logger.info(f"Will run grouplevel chunk")
+                execgraphstorun.append(execgraphs[-1])
+        elif len(execgraphs) == 1:
+            execgraphstorun.append(execgraphs[0])
         else:
-            logger.info(f"Running grouplevel")
-            execgraph = execgraphs[-1]
+            raise ValueError("No execgraphs")
 
-        if execgraph is not None:
+        n_execgraphstorun = len(execgraphstorun)
+        for i, execgraph in enumerate(execgraphstorun):
+            if len(execgraphs) > 1:
+                logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
             runner.run(execgraph, updatehash=False, config=workflow.config)
-        else:
-            logger.info(f"Running everything")
-            for execgraph in execgraphs:
-                runner.run(execgraph, updatehash=False, config=workflow.config)
+            if len(execgraphs) > 1:
+                logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 
 
 def main():

@@ -60,6 +60,8 @@ from .tags import (
     BIDSFmapTagsSchema,
 )
 
+from .qualitycheck import QualitycheckExcludeEntrySchema
+
 __all__ = [
     Spec,
     SpecSchema,
@@ -112,4 +114,5 @@ __all__ = [
     FixedEffectsHigherLevelAnalysisSchema,
     GLMHigherLevelAnalysisSchema,
     GroupFilterSchema,
+    QualitycheckExcludeEntrySchema,
 ]

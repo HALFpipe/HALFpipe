@@ -9,6 +9,8 @@ import time
 
 from filelock import SoftFileLock
 
+from .io import IndexedFile
+
 
 fmt = "[{asctime},{msecs:3.0f}] [{name:16}] [{levelname:7}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
@@ -83,6 +85,56 @@ class FileHandler(logging.FileHandler):
             self.stream_lock.release()  # stream lock
         finally:
             logging.Handler.release(self)  # thread lock
+
+
+class JSReportHandler(logging.Handler):
+    def __init__(self, filename, level=logging.INFO):
+        super(JSReportHandler, self).__init__(level=level)
+        self.filename = filename
+        self.indexed_file_obj = None
+        self.cur_nodename = None
+
+    def emit(self, record):
+        if self.indexed_file_obj is None and op.isfile(self.filename):
+            try:
+                self.indexed_file_obj = IndexedFile(self.filename)
+            except Exception:
+                pass
+
+        nodeisdone = False
+        nodestatus = None
+
+        if record.msg == '[Node] Setting-up "%s" in "%s".':
+            self.cur_nodename = record.args[0]
+            nodestatus = "RUNNING"
+        elif record.msg == '[Node] Cached "%s" - collecting precomputed outputs':
+            pass
+        elif record.msg == '[Node] "%s" found cached%s.':
+            nodeisdone = True
+            # nodestatus = "SUCCESS"
+        elif record.msg.startswith("[Node] Running"):
+            pass
+        elif record.msg == '[Node] Finished "%s".':
+            nodeisdone = True
+            nodestatus = "SUCCESS"
+        elif record.msg == "Node %s failed to run on host %s.":
+            nodeisdone = True
+            nodestatus = "FAILED"
+
+        if (
+            self.cur_nodename is not None
+            and not self.cur_nodename.startswith("_")
+            and nodestatus is not None
+        ):
+            if self.indexed_file_obj is None:
+                logging.getLogger("pipeline").warning(
+                    f"Missing indexed_file_obj to log nodestatus"
+                )
+            else:
+                self.indexed_file_obj.set(self.cur_nodename, nodestatus)
+
+        if nodeisdone:
+            self.cur_nodename = None
 
 
 def remove_handlers(logger):
@@ -163,3 +215,7 @@ class Logger:
                 logger.addHandler(handler)
 
         logging.getLogger("pipeline.ui").removeHandler(stdout_handler)  # only log to file
+
+        logging.getLogger("nipype.workflow").addHandler(
+            JSReportHandler(op.join(workdir, "report.js"))
+        )

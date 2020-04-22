@@ -159,7 +159,9 @@ def savepicklelzma(filepath, obj):
         pass
 
 
-def uncacheobj(workdir, typestr, uuid):
+def uncacheobj(workdir, typestr, uuid, typedisplaystr=None):
+    if typedisplaystr is None:
+        typedisplaystr = typestr
     if uuid is not None:
         uuidstr = str(uuid)[:8]
         path = op.join(workdir, f"{typestr}.{uuidstr}.pickle.xz")
@@ -169,7 +171,7 @@ def uncacheobj(workdir, typestr, uuid):
                 objuuid = getattr(obj, "uuid")
                 if objuuid is None or objuuid != uuid:
                     return
-            logging.getLogger("pipeline").info(f"Using cached {typestr} from {path}")
+            logging.getLogger("pipeline").info(f"Using cached {typedisplaystr} from {path}")
             return obj
     else:
         path = op.join(workdir, f"{typestr}.pickle.xz")

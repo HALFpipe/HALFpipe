@@ -11,10 +11,11 @@ from .fsl import SafeFLAMEO
 from .merge import SafeMerge, SafeMaskMerge
 from .model import GroupModel, InterceptOnlyModel, SafeMultipleRegressDesign
 from .motion import MotionCutoff
-from .qualitycheck import QualityCheck
+from .report import BoldFileReportMetadata, PlotEpi, PlotRegistration
 from .resample import ResampleIfNeeded
 from .resultdict import (
     MakeResultdicts,
+    FilterResultdicts,
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
@@ -36,9 +37,12 @@ __all__ = [
     SafeMerge,
     SafeMaskMerge,
     MotionCutoff,
-    QualityCheck,
+    BoldFileReportMetadata,
+    PlotEpi,
+    PlotRegistration,
     ResampleIfNeeded,
     MakeResultdicts,
+    FilterResultdicts,
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,

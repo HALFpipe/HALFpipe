@@ -9,7 +9,7 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ...interface import MakeDofVolume, MakeResultdicts, ParseConditionFile
-from ...utils import ravel, first, firstfloat, onlyboldentitiesdict
+from ...utils import ravel, first, firstfloat
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
 
 from ..memory import MemoryCalculator
@@ -180,14 +180,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     outputnode.inputs.firstlevelfeaturename = list(map(first, contrasts))
     workflow.connect(
         [
-            (
-                inputnode,
-                outputnode,
-                [
-                    (("metadata", onlyboldentitiesdict), "basedict"),
-                    ("mask_file", "mask_file"),
-                ],
-            ),
+            (inputnode, outputnode, [("metadata", "basedict"), ("mask_file", "mask_file")]),
             (
                 modelestimate,
                 outputnode,

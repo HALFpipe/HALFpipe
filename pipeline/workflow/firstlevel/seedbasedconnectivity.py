@@ -7,7 +7,7 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts
-from ...utils import ravel, onlyboldentitiesdict
+from ...utils import ravel
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
@@ -192,7 +192,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
                 inputnode,
                 outputnode,
                 [
-                    (("metadata", onlyboldentitiesdict), "basedict"),
+                    ("metadata", "basedict"),
                     ("mask_file", "mask_file"),
                     ("seed_names", "firstlevelfeaturename"),
                 ],
