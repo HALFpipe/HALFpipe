@@ -23,7 +23,7 @@ from ..spec import entity_colors
 
 p = inflect.engine()
 
-forbidden_chars = re.compile(r"[^a-zA-Z0-9]")
+forbidden_chars = re.compile(r"[^a-zA-Z0-9_]")
 _check_tagval = re.compile(r"[a-zA-Z0-9_-]+")
 
 

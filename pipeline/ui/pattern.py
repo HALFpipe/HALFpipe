@@ -152,7 +152,8 @@ class AskForMissingEntities(Step):
                 if forbidden_chars.search(tagval) is None:
                     setattr(self.tags_obj, self.cur_entity, tagval)
                     break
-        return True
+            return True
+        return self.is_first_run
 
     def next(self, ctx):
         if self.cur_entity is not None or self.is_first_run:

@@ -74,7 +74,8 @@ class BOLDSelectStep(BaseBOLDSelectStep):
             tagvals_set = set(tagvals)
             if len(tagvals_set) > 1:
                 dsp_entities.append(entity)
-                filterval_by_value = [("Use all", None)]
+                if len(tagvals_set) > 2:
+                    filterval_by_value = [("Use all", None)]
                 filterval_by_value += [
                     ("Use {}".format(self._format_tag(tagval)), tagval)
                     for tagval in tagvals_set
@@ -116,7 +117,8 @@ class BOLDSelectStep(BaseBOLDSelectStep):
                 tagval = self.tagval_by_str[i][tag_str]
                 if tagval is not None:
                     setattr(ctx.spec.analyses[-1].tags, entity, tagval)
-        return True
+            return True
+        return self.is_first_run
 
     def next(self, ctx):
         if self.should_run or self.is_first_run:
