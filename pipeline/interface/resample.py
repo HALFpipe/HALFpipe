@@ -38,17 +38,19 @@ class ResampleIfNeeded(BaseInterface):
 
         in_img = nib.load(self.inputs.in_file)
         ref_img = nib.load(self.inputs.ref_file)
-        if not in_img.shape[:3] == ref_img.shape[:3]:
-            if not np.allclose(in_img.affine, ref_img.affine):
-                resampled_img = resample_img(
-                    in_img,
-                    interpolation=self.inputs.method,
-                    target_shape=ref_img.shape[:3],
-                    target_affine=ref_img.affine,
-                )
-                basename, _ = splitext(op.basename(self._out_file))
-                self._out_file = op.abspath(f"{basename}_res.nii.gz")
-                nib.save(resampled_img, self._out_file)
+
+        if not in_img.shape[:3] == ref_img.shape[:3] or not np.allclose(
+            in_img.affine, ref_img.affine
+        ):
+            resampled_img = resample_img(
+                in_img,
+                interpolation=self.inputs.method,
+                target_shape=ref_img.shape[:3],
+                target_affine=ref_img.affine,
+            )
+            basename, _ = splitext(op.basename(self._out_file))
+            self._out_file = op.abspath(f"{basename}_res.nii.gz")
+            nib.save(resampled_img, self._out_file)
 
         return runtime
 

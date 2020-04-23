@@ -50,6 +50,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
             id_column = variableobj.name
             break
 
+    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
     rawdataframe = rawdataframe.set_index(id_column)
 
     continuous_columns = []

@@ -19,6 +19,7 @@ from .resultdict import (
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
+    ReportResultdictDatasink,
 )
 from .utils import SelectColumnsTSV, MergeColumnsTSV, MatrixToTSV
 
@@ -46,6 +47,7 @@ __all__ = [
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
+    ReportResultdictDatasink,
     SelectColumnsTSV,
     MergeColumnsTSV,
     MatrixToTSV,

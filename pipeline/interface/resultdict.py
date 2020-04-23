@@ -68,6 +68,9 @@ class MakeResultdicts(IOBase):
         outputs = self._outputs().get()
 
         inputs = [getattr(self.inputs, key) for key in self._keys]
+        if len(inputs) == 0:
+            outputs["resultdicts"] = []
+            return outputs
         maxlen = max(len(input) if isinstance(input, (list, tuple)) else 1 for input in inputs)
 
         for i in range(len(inputs)):
@@ -339,7 +342,9 @@ class ExtractFromResultdict(IOBase):
 
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
-    base_directory = traits.Directory(desc="Path to the base directory for storing data.")
+    base_directory = traits.Directory(
+        desc="Path to the base directory for storing data.", mandatory=True
+    )
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
 
 
@@ -376,5 +381,37 @@ class ResultdictDatasink(SimpleInterface):
                 elif fieldvalue is not None:
                     pstr = pformat(fieldvalue)
                     logging.getLogger("pipeline").debug(f'Not copying "{pstr}"')
+
+        return runtime
+
+
+class ReportResultdictDatasink(SimpleInterface):
+    input_spec = ResultdictDatasinkInputSpec
+    output_spec = TraitedSpec
+
+    always_run = True
+
+    def _run_interface(self, runtime):
+        for resultdict in self.inputs.indicts:
+            basepath = Path(self.inputs.base_directory)
+            keys = set(resultdict.keys())
+            for entity in reversed(bold_entities):
+                if entity in keys and isinstance(resultdict[entity], str):
+                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                    keys.remove(entity)
+            basepath.mkdir(parents=True, exist_ok=True)
+
+            reportdesc = resultdict.get("desc")
+            reportfile = resultdict.get("report")
+            if (
+                isinstance(reportfile, str)
+                and op.isfile(reportfile)
+                and isinstance(reportdesc, str)
+            ):
+                _, ext = splitext(reportfile)
+                outpath = basepath / f"{reportdesc}{ext}"
+                if outpath.exists():
+                    logging.getLogger("pipeline").info(f'Overwriting file "{outpath}"')
+                copyfile(reportfile, outpath)
 
         return runtime
