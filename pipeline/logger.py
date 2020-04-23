@@ -12,7 +12,7 @@ from filelock import SoftFileLock
 from .io import IndexedFile
 
 
-fmt = "[{asctime},{msecs:3.0f}] [{name:16}] [{levelname:7}] {message}"
+fmt = "[{asctime},{msecs:4.0f}] [{name:16}] [{levelname:7}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
 
 black, red, green, yellow, blue, magenta, cyan, white = range(8)
@@ -217,5 +217,5 @@ class Logger:
         logging.getLogger("pipeline.ui").removeHandler(stdout_handler)  # only log to file
 
         logging.getLogger("nipype.workflow").addHandler(
-            JSReportHandler(op.join(workdir, "report.js"))
+            JSReportHandler(op.join(workdir, "reports", "execreport.js"))
         )

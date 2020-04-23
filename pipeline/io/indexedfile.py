@@ -6,9 +6,9 @@
 
 """
 
-from os import path as op
 from functools import lru_cache
 import logging
+from pathlib import Path
 
 from ..utils import loadpicklelzma, savepicklelzma
 
@@ -34,7 +34,7 @@ class FileIndex:
 class IndexedFile:
     def __init__(self, filename):
         self.filename = filename
-        assert op.isfile(filename)
+        assert Path(filename).is_file()
         self.lock_file = f"{filename}.lock"
         index_file = f"{filename}.index.pickle.xz"
         self.file_index = _load_index_file(index_file)
@@ -66,6 +66,7 @@ def init_indexed_js_object_file(filename, functionname, keynames, maxlen, defaul
     append_comma = True
     indexdict = dict()
     lastkey = None
+    Path(filename).parent.mkdir(parents=True, exist_ok=True)
     with open(filename, "wb") as fp:
         fp.write(f"{functionname}(JSON.parse('{{ ".encode())
         fp.write("\\\n".encode())
@@ -112,35 +113,35 @@ def init_indexed_js_list_file(
     savepicklelzma(index_file, index)
 
 
-def init_indexed_js_list_multivalue_file(
-    filename, functionname, keytupls_list, maxlen, valuekeynames, defaultvalue=""
-):
-    append_comma = True
-    indexdict = dict()
-    with open(filename, "wb") as fp:
-        fp.write(f"{functionname}(JSON.parse('[ ".encode())
-        fp.write("\\\n".encode())
-        placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
-        first = True
-        lastkey = None
-        for keytupls in keytupls_list:
-            if not first:
-                fp.write(", \\\n".encode())
-            first = False
-            fp.write("  { \\\n".encode())
-            for key, val in keytupls:
-                fp.write(f'    "{key}": "{val}", \\\n'.encode())
-            for i, val in enumerate(valuekeynames):
-                if i == len(valuekeynames) - 1:  # last iteration
-                    placeholder = _quote(defaultvalue, maxlen, False).encode()
-                    lastkey = val
-                valkeytupl = (keytupls, val)
-                fp.write(f'    "{val}": '.encode())
-                indexdict[valkeytupl] = fp.tell()
-                fp.write(placeholder)
-                fp.write(f" \\\n".encode())
-            fp.write("  }".encode())
-        fp.write(" \\\n]'));\n".encode())
-    index_file = f"{filename}.index.pickle.xz"
-    index = FileIndex(indexdict, maxlen, append_comma, lastkey=lastkey)
-    savepicklelzma(index_file, index)
+# def init_indexed_js_list_multivalue_file(
+#     filename, functionname, keytupls_list, maxlen, valuekeynames, defaultvalue=""
+# ):
+#     append_comma = True
+#     indexdict = dict()
+#     with open(filename, "wb") as fp:
+#         fp.write(f"{functionname}(JSON.parse('[ ".encode())
+#         fp.write("\\\n".encode())
+#         placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
+#         first = True
+#         lastkey = None
+#         for keytupls in keytupls_list:
+#             if not first:
+#                 fp.write(", \\\n".encode())
+#             first = False
+#             fp.write("  { \\\n".encode())
+#             for key, val in keytupls:
+#                 fp.write(f'    "{key}": "{val}", \\\n'.encode())
+#             for i, val in enumerate(valuekeynames):
+#                 if i == len(valuekeynames) - 1:  # last iteration
+#                     placeholder = _quote(defaultvalue, maxlen, False).encode()
+#                     lastkey = val
+#                 valkeytupl = (keytupls, val)
+#                 fp.write(f'    "{val}": '.encode())
+#                 indexdict[valkeytupl] = fp.tell()
+#                 fp.write(placeholder)
+#                 fp.write(f" \\\n".encode())
+#             fp.write("  }".encode())
+#         fp.write(" \\\n]'));\n".encode())
+#     index_file = f"{filename}.index.pickle.xz"
+#     index = FileIndex(indexdict, maxlen, append_comma, lastkey=lastkey)
+#     savepicklelzma(index_file, index)

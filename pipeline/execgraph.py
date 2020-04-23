@@ -36,14 +36,14 @@ def init_execgraph(workdir, workflow, n_chunks=None):
         logger.info(f"New execgraph: {uuidstr}")
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
-    reportjsfilename = op.join(workdir, "report.js")
+    reportjsfilename = op.join(workdir, "reports", "execreport.js")
     try:
         IndexedFile(reportjsfilename)
     except Exception:
-        logger.info(f"Init report.js")
+        logger.info(f"Init execreport.js")
         allnodenames = [node.fullname for node in execgraph.nodes()]
         init_indexed_js_object_file(
-            reportjsfilename, "qualitycheck.runreport", allnodenames, 10
+            reportjsfilename, "qualitycheck.execreport", allnodenames, 10
         )
 
     if n_chunks is not None and n_chunks > 1:

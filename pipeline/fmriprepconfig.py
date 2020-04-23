@@ -52,6 +52,8 @@ skull_strip_template = Reference.from_string("OASIS30ANTs").pop(0)
 fmriprep.config.init_spaces()
 spaces = fmriprep.config.workflow.spaces
 
+target_space = "MNI152NLin6Asym"
+
 # Option "--use-aroma" requires functional images to be resampled to
 # MNI152NLin6Asym space. The argument "MNI152NLin6Asym:res-2" has
 # been automatically added to the list of output spaces
@@ -121,6 +123,7 @@ config_dict = {
     "regressors_fd_th": regressors_fd_th,
     "dummy_scans": dummy_scans,
     "multiecho": multiecho,
+    "target_space": target_space,
 }
 
 

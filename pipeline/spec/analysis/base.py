@@ -9,7 +9,23 @@
 from marshmallow import fields, Schema, post_load, post_dump
 
 
+analysisattrnames = [
+    "name",
+    "level",
+    "input",
+    "filter",
+    "across",
+    "type",
+    "tags",
+    "variables",
+    "contrasts",
+    "spreadsheet",
+]
+
+
 class Analysis:
+    attrnames = analysisattrnames
+
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
         self.level = kwargs.get("level")
@@ -23,33 +39,7 @@ class Analysis:
         self.spreadsheet = kwargs.get("spreadsheet")
 
     def __hash__(self):
-        safeinput = None
-        if self.input is not None:
-            safeinput = tuple(self.input)
-        safefilter = None
-        if self.filter is not None:
-            safefilter = tuple(self.filter)
-        safevariables = None
-        if self.variables is not None:
-            safevariables = tuple(self.variables)
-        safecontrasts = None
-        if self.contrasts is not None:
-            safecontrasts = tuple(self.contrasts)
-        return hash(
-            (
-                "analysis",
-                self.name,
-                self.level,
-                safeinput,
-                safefilter,
-                self.across,
-                self.type,
-                self.tags,
-                safevariables,
-                safecontrasts,
-                self.spreadsheet,
-            )
-        )
+        return hash(self.name)  # name is unique
 
 
 class BaseAnalysisSchema(Schema):

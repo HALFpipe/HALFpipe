@@ -7,10 +7,17 @@ from nipype.interfaces import utility as niu
 from nipype.algorithms import confounds as nac
 
 from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
-from ..interface import PlotRegistration, PlotEpi, BoldFileReportMetadata, ResampleIfNeeded
+from ..interface import (
+    PlotRegistration,
+    PlotEpi,
+    BoldFileReportMetadata,
+    ResampleIfNeeded,
+    MakeResultdicts,
+)
 
 from .memory import MemoryCalculator
 from .utils import ConnectAttrlistHelper
+from ..fmriprepconfig import config as fmriprepconfig
 
 in_attrs_from_anat_preproc_wf_direct = ["t1w_preproc", "t1w_mask", "t1w_dseg"]
 in_attrs_from_anat_preproc_wf_keyselect = [
@@ -18,71 +25,32 @@ in_attrs_from_anat_preproc_wf_keyselect = [
     "std_mask",
     "std_dseg",
 ]
-in_attrs_from_anat_preproc_wf = (
+anat_in_attrs_from_anat_preproc_wf = (
     in_attrs_from_anat_preproc_wf_direct + in_attrs_from_anat_preproc_wf_keyselect
 )
-
-in_attrs_from_func_preproc_wf_direct = ["aroma_metadata", "aroma_report"]
-in_attrs_from_func_preproc_wf_keyselect = [
-    "bold_std",
-    "bold_std_ref",
-    "bold_mask_std",
-]
-in_attrs_from_func_preproc_wf = (
-    in_attrs_from_func_preproc_wf_direct + in_attrs_from_func_preproc_wf_keyselect
-)
-
-target_space = "MNI152NLin6Asym"
-
-connect_report_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
+connect_anat_report_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
     in_attrs_from_anat_preproc_wf_direct,
     keyAttr="outputnode.template",
-    keyVal=target_space,
+    keyVal=fmriprepconfig.target_space,
     keySelectAttrs=in_attrs_from_anat_preproc_wf_keyselect,
 )
-connect_report_wf_attrs_from_func_preproc_wf = ConnectAttrlistHelper(
-    in_attrs_from_func_preproc_wf_direct,
-    keyAttr="inputnode.template",
-    keyVal=target_space,
-    keySelectAttrs=in_attrs_from_func_preproc_wf_keyselect,
-)
-
-in_attrs_from_filt_wf = ["out3"]
-
-connect_report_wf_attrs_from_filt_wf = ConnectAttrlistHelper(in_attrs_from_filt_wf)
 
 
-def init_report_wf(name="report_wf", memcalc=MemoryCalculator()):
-    """
-
-    """
+def init_anat_report_wf(name="anat_report_wf", memcalc=MemoryCalculator()):
     workflow = pe.Workflow(name=name)
 
     # only input is the bold image
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                *in_attrs_from_anat_preproc_wf,
-                *in_attrs_from_func_preproc_wf,
-                *in_attrs_from_filt_wf,
-                "metadata",
-            ]
-        ),
+        niu.IdentityInterface(fields=[*anat_in_attrs_from_anat_preproc_wf, "metadata"]),
         name="inputnode",
     )
-
-    # output is an image file for display in the qualitycheck web page
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts", "metadata"]), name="outputnode"
-    )
-
     # T1w segmentation
-    seg_rpt = pe.Node(SimpleShowMaskRPT(), name="seg_rpt")
+    skull_strip_report = pe.Node(SimpleShowMaskRPT(), name="skull_strip_report")
     workflow.connect(
         [
             (
                 inputnode,
-                seg_rpt,
+                skull_strip_report,
                 [("t1w_preproc", "background_file"), ("t1w_mask", "mask_file")],
             )
         ]
@@ -93,6 +61,75 @@ def init_report_wf(name="report_wf", memcalc=MemoryCalculator()):
     workflow.connect(
         [(inputnode, t1_norm_rpt, [("std_preproc", "in_file"), ("std_mask", "mask_file")],)]
     )
+
+    mergereport = pe.Node(
+        interface=niu.Merge(2), name="mergereport", run_without_submitting=True,
+    )
+    workflow.connect(
+        [
+            (skull_strip_report, mergereport, [("out_report", "in1")]),
+            (t1_norm_rpt, mergereport, [("out_report", "in2")]),
+        ]
+    )
+
+    reportnode = pe.Node(interface=MakeResultdicts(keys=["desc", "report"]), name="reportnode")
+    reportnode.inputs.desc = ["skull_strip_report", "t1_norm_rpt"]
+    workflow.connect(inputnode, "metadata", reportnode, "basedict")
+    workflow.connect(mergereport, "out", reportnode, "report")
+
+    return workflow
+
+
+in_attrs_from_anat_preproc_wf_keyselect = ["std_dseg"]
+func_in_attrs_from_anat_preproc_wf = in_attrs_from_anat_preproc_wf_keyselect
+connect_func_report_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
+    [],
+    keyAttr="outputnode.template",
+    keyVal=fmriprepconfig.target_space,
+    keySelectAttrs=in_attrs_from_anat_preproc_wf_keyselect,
+)
+
+in_attrs_from_func_preproc_wf_direct = ["aroma_metadata"]
+in_attrs_from_func_preproc_wf_keyselect = [
+    "bold_std",
+    "bold_std_ref",
+    "bold_mask_std",
+]
+in_attrs_from_func_preproc_wf = (
+    in_attrs_from_func_preproc_wf_direct + in_attrs_from_func_preproc_wf_keyselect
+)
+connect_func_report_wf_attrs_from_func_preproc_wf = ConnectAttrlistHelper(
+    in_attrs_from_func_preproc_wf_direct,
+    keyAttr="inputnode.template",
+    keyVal=fmriprepconfig.target_space,
+    keySelectAttrs=in_attrs_from_func_preproc_wf_keyselect,
+)
+
+in_attrs_from_filt_wf = ["out3"]
+connect_func_report_wf_attrs_from_filt_wf = ConnectAttrlistHelper(in_attrs_from_filt_wf)
+
+
+def init_func_report_wf(name="func_report_wf", memcalc=MemoryCalculator()):
+    """
+
+    """
+    workflow = pe.Workflow(name=name)
+
+    # only input is the bold image
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                *func_in_attrs_from_anat_preproc_wf,
+                *in_attrs_from_func_preproc_wf,
+                *in_attrs_from_filt_wf,
+                "metadata",
+            ]
+        ),
+        name="inputnode",
+    )
+
+    # output is an image file for display in the qualitycheck web page
+    outputnode = pe.Node(niu.IdentityInterface(fields=["metadata"]), name="outputnode")
 
     # EPI->mni
     epi_norm_rpt = pe.Node(PlotRegistration(), name="epi_norm_rpt", mem_gb=0.1)
@@ -111,15 +148,25 @@ def init_report_wf(name="report_wf", memcalc=MemoryCalculator()):
     workflow.connect([(inputnode, tsnr, [("bold_std", "in_file")])])
 
     # plot the tsnr image
-    plot_tsnr = pe.Node(interface=PlotEpi(), name="plot_tsnr", mem_gb=memcalc.min_gb)
+    tsnr_rpt = pe.Node(interface=PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(
         [
-            (inputnode, plot_tsnr, [("bold_mask_std", "mask_file")]),
-            (tsnr, plot_tsnr, [("tsnr_file", "in_file")]),
+            (inputnode, tsnr_rpt, [("bold_mask_std", "mask_file")]),
+            (tsnr, tsnr_rpt, [("tsnr_file", "in_file")]),
         ]
     )
 
-    # carpetplot
+    # reportnode
+    mergereport = pe.Node(
+        interface=niu.Merge(2), name="mergereport", run_without_submitting=True,
+    )
+    workflow.connect(epi_norm_rpt, "out_report", mergereport, "in1")
+    workflow.connect(tsnr_rpt, "out_report", mergereport, "in2")
+
+    reportnode = pe.Node(interface=MakeResultdicts(keys=["desc", "report"]), name="reportnode")
+    reportnode.inputs.desc = ["epi_norm_rpt", "tsnr_rpt"]
+    workflow.connect(inputnode, "metadata", reportnode, "basedict")
+    workflow.connect(mergereport, "out", reportnode, "report")
 
     # metrics
     resampleifneeded = pe.Node(
@@ -137,22 +184,6 @@ def init_report_wf(name="report_wf", memcalc=MemoryCalculator()):
     workflow.connect(tsnr, "tsnr_file", reportmetadata, "tsnr_file")
     workflow.connect(inputnode, "aroma_metadata", reportmetadata, "aroma_metadata")
     workflow.connect(resampleifneeded, "out_file", reportmetadata, "dseg")
-
     workflow.connect(reportmetadata, "outdict", outputnode, "metadata")
-    #
-    # makeresultdicts = pe.Node(
-    #     interface=MakeResultdicts(
-    #         keys=[
-    #             "firstlevelanalysisname",
-    #             "firstlevelfeaturename",
-    #             "cope",
-    #             "varcope",
-    #             "zstat",
-    #             "dof_file",
-    #             "mask_file",
-    #         ]
-    #     ),
-    #     name="makeresultdicts",
-    # )
 
     return workflow

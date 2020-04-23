@@ -50,6 +50,8 @@ tagnames = [
 
 
 class Tags:
+    attrnames = tagnames
+
     def __init__(self, **kwargs):
         self.datatype = kwargs.get("datatype")
         self.suffix = kwargs.get("suffix")
@@ -86,7 +88,7 @@ class Tags:
         self.phase_encoding_direction = value
 
     def __hash__(self):
-        return hash((getattr(self, name, None) for name in tagnames))
+        return hash((hash(getattr(self, name, None)) for name in self.attrnames))
 
     def get_tagdict(self, entities, keep_none=False):
         ret = {}

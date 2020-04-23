@@ -12,7 +12,7 @@ from ..database import Database
 from ..spec import loadspec, study_entities
 from ..utils import cacheobj, uncacheobj
 from ..io import get_repetition_time
-from .utils import make_resultdict_datasink
+from .utils import make_resultdict_datasink, make_reportnode_datasink
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -32,10 +32,12 @@ from .filt import (
     connect_filt_wf_attrs_from_func_preproc_wf,
 )
 from .report import (
-    init_report_wf,
-    connect_report_wf_attrs_from_anat_preproc_wf,
-    connect_report_wf_attrs_from_func_preproc_wf,
-    connect_report_wf_attrs_from_filt_wf,
+    init_anat_report_wf,
+    init_func_report_wf,
+    connect_anat_report_wf_attrs_from_anat_preproc_wf,
+    connect_func_report_wf_attrs_from_anat_preproc_wf,
+    connect_func_report_wf_attrs_from_func_preproc_wf,
+    connect_func_report_wf_attrs_from_filt_wf,
 )
 from .memory import memcalc_from_database
 
@@ -55,9 +57,7 @@ class Cache:
             kwargs = {}
             if argtuples is not None:
                 kwargs = dict(list(argtuples))
-                # print([(key, hash(arg)) for key, arg in kwargs.items()])
             obj = func(**kwargs)
-            # print([(key, hash(arg)) for key, arg in kwargs.items()])
             self._cache[key] = pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
         return pickle.loads(self._cache[key])
 
@@ -89,8 +89,8 @@ def init_workflow(workdir):
     )
 
     # dirs
-    statsdirectory = Path(workdir) / "stats"
-    intermediatesdirectory = Path(workdir) / "intermediates"
+    groupleveldir = Path(workdir) / "grouplevel"
+    subjectleveldir = Path(workdir) / "subjectlevel"
 
     # helpers
     memcalc = memcalc_from_database(database)
@@ -120,6 +120,8 @@ def init_workflow(workdir):
 
     subjects = database.get_tagval_set("subject")
     for subject in subjects:
+        subjectmetadata = {"subject": subject}
+
         subjectfiles = database.get(subject=subject)
 
         subjectworkflow = pe.Workflow(name=f"_subject_{subject}_")
@@ -134,11 +136,20 @@ def init_workflow(workdir):
             )
         anat_preproc_wf = cache.get(init_anat_preproc_wf)
         anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
+        anat_preproc_wf.get_node("inputnode").inputs.metadata = subjectmetadata
+        make_reportnode_datasink(anat_preproc_wf, workdir)
+
+        anat_report_wf = cache.get(init_anat_report_wf, argtuples=[("memcalc", memcalc)])
+        anat_report_wf.get_node("inputnode").inputs.metadata = subjectmetadata
+        connect_anat_report_wf_attrs_from_anat_preproc_wf(
+            subjectworkflow, anat_preproc_wf, anat_report_wf,
+        )
+        make_reportnode_datasink(anat_report_wf, workdir)
 
         boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
         subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
         for boldfile in boldfiles:
-            boldfilemetadata = {"subject": subject}
+            boldfilemetadata = subjectmetadata.copy()
             # make name
             name = "_bold_"
             for entity in study_entities:
@@ -172,6 +183,7 @@ def init_workflow(workdir):
                 boldfileworkflow,
                 in_nodename=f"{func_preproc_wf.name}.inputnode",
             )
+            make_reportnode_datasink(func_preproc_wf, workdir)
 
             def get_variant_bold_filt_wf(variant):
                 name = make_variant_bold_filt_wf_name(variant)
@@ -222,23 +234,26 @@ def init_workflow(workdir):
             )
             make_resultdict_datasink(
                 boldfileworkflow,
-                intermediatesdirectory,
+                subjectleveldir,
                 (preprocresultdict, "resultdicts"),
                 name=f"preprocdatasink",
             )
 
-            report_wf = cache.get(init_report_wf, argtuples=[("memcalc", memcalc)])
-            report_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
-            connect_report_wf_attrs_from_filt_wf(boldfileworkflow, bold_filt_wf, report_wf)
-            connect_report_wf_attrs_from_anat_preproc_wf(
+            func_report_wf = cache.get(init_func_report_wf, argtuples=[("memcalc", memcalc)])
+            func_report_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
+            connect_func_report_wf_attrs_from_filt_wf(
+                boldfileworkflow, bold_filt_wf, func_report_wf
+            )
+            connect_func_report_wf_attrs_from_func_preproc_wf(
+                boldfileworkflow, func_preproc_wf, func_report_wf
+            )
+            connect_func_report_wf_attrs_from_anat_preproc_wf(
                 subjectworkflow,
                 anat_preproc_wf,
                 boldfileworkflow,
-                in_nodename=f"{report_wf.name}.inputnode",
+                in_nodename=f"{func_report_wf.name}.inputnode",
             )
-            connect_report_wf_attrs_from_func_preproc_wf(
-                boldfileworkflow, func_preproc_wf, report_wf
-            )
+            make_reportnode_datasink(func_report_wf, workdir)
 
             for analysis, tagdict in zip(firstlevel_analyses, firstlevel_analysis_tagdicts):
                 if not database.matches(boldfile, **tagdict):
@@ -248,13 +263,16 @@ def init_workflow(workdir):
                     argtuples=[("analysis", analysis), ("memcalc", memcalc)],
                 )
                 boldfileworkflow.connect(
-                    report_wf, "outputnode.metadata", analysisworkflow, "inputnode.metadata"
+                    func_report_wf,
+                    "outputnode.metadata",
+                    analysisworkflow,
+                    "inputnode.metadata",
                 )
                 #
                 endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
                 make_resultdict_datasink(
                     boldfileworkflow,
-                    intermediatesdirectory,
+                    subjectleveldir,
                     (analysisworkflow, analysisoutattr),
                     name=f"{analysisworkflow.name}_resultdictdatasink",
                 )
@@ -301,7 +319,7 @@ def init_workflow(workdir):
             subjectanalysisendpoints[analysis.name].append(endpoint)
             make_resultdict_datasink(
                 subjectworkflow,
-                intermediatesdirectory,
+                subjectleveldir,
                 (analysisworkflow, analysisoutattr),
                 name=f"{analysisworkflow.name}_resultdictdatasink",
             )
@@ -334,7 +352,7 @@ def init_workflow(workdir):
         analysisendpoints[analysis.name].append(endpoint)
         make_resultdict_datasink(
             grouplevelworkflow,
-            statsdirectory,
+            groupleveldir,
             (analysisworkflow, analysisoutattr),
             name=f"{analysisworkflow.name}_resultdictdatasink",
         )

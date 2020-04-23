@@ -8,14 +8,17 @@ from copy import deepcopy
 from shutil import copyfile
 import logging
 from pprint import pformat
+import json
 
 import numpy as np
+from filelock import SoftFileLock
 
 from .report import report_metadata_fields
 from ..spec import bold_entities
 from ..utils import ravel, splitext
 from ..io import load_spreadsheet
 from ..database import init_qualitycheck_exclude_database_cached
+from ..fmriprepconfig import config as fmriprepconfig
 
 from nipype.interfaces.base import (
     traits,
@@ -360,12 +363,12 @@ class ResultdictDatasink(SimpleInterface):
             keys = set(resultdict.keys())
             for entity in reversed(bold_entities):
                 if entity in keys and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
                     keys.remove(entity)
             newkeys = set()
             for entity in sorted(keys):
                 if entity not in filefields and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
                 else:
                     newkeys.add(entity)
             keys = newkeys
@@ -392,17 +395,30 @@ class ReportResultdictDatasink(SimpleInterface):
     always_run = True
 
     def _run_interface(self, runtime):
+        sinkdresultdicts = []
         for resultdict in self.inputs.indicts:
-            basepath = Path(self.inputs.base_directory)
+            reportsdir = Path(self.inputs.base_directory) / "reports"
+
+            basepath = reportsdir
             keys = set(resultdict.keys())
             for entity in reversed(bold_entities):
                 if entity in keys and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"_{entity}_{resultdict[entity]}_")
+                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
                     keys.remove(entity)
+
             basepath.mkdir(parents=True, exist_ok=True)
 
             reportdesc = resultdict.get("desc")
             reportfile = resultdict.get("report")
+
+            reportspace = resultdict.get("space")
+            if (
+                isdefined(reportspace)
+                and reportspace is not None
+                and fmriprepconfig.target_space not in str(reportspace)
+            ):
+                continue
+
             if (
                 isinstance(reportfile, str)
                 and op.isfile(reportfile)
@@ -413,5 +429,54 @@ class ReportResultdictDatasink(SimpleInterface):
                 if outpath.exists():
                     logging.getLogger("pipeline").info(f'Overwriting file "{outpath}"')
                 copyfile(reportfile, outpath)
+
+                sinkdresultdicts.append(
+                    {
+                        k: v
+                        for k, v in resultdict.items()
+                        if k in bold_entities or k in {"report", "desc"}
+                    }
+                )
+
+        indexfilename = reportsdir / "reportimgs.js"
+        lockfilename = reportsdir / "reportimgs.js.lock"
+        lock = SoftFileLock(str(lockfilename))
+
+        header = f"qualitycheck.reportimgs(JSON.parse(`".encode()
+        footer = f"`));".encode()
+
+        with lock:
+            indexlist = []
+            if indexfilename.is_file():
+                with open(str(indexfilename), "rb") as fp:
+                    bytesfromfile = fp.read()
+                    try:
+                        indexlist = json.loads(bytesfromfile[len(header) : -len(footer)])
+                    except json.decoder.JSONDecodeError as e:
+                        logging.getLogger("pipeline").warning("JSONDecodeError %s", e)
+
+            newindexlist = [*sinkdresultdicts]
+            for resultdict0 in indexlist:
+                overwrite = False
+                for resultdict1 in sinkdresultdicts:
+                    areequal = True
+                    for key in {*bold_entities, "desc"}:
+                        if (
+                            key in resultdict0
+                            and key in resultdict1
+                            and resultdict0[key] == resultdict1[key]
+                        ):
+                            pass
+                        else:
+                            areequal = False
+                    if areequal:
+                        overwrite = True
+                        break
+                if not overwrite:
+                    newindexlist.append(resultdict0)
+            with open(str(indexfilename), "w") as fp:
+                fp.write(header.decode())
+                json.dump(newindexlist, fp, indent=4, ensure_ascii=False)
+                fp.write(footer.decode())
 
         return runtime

@@ -8,15 +8,17 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import Split as FSLSplit
 
+from fmriprep.workflows.bold import init_bold_confs_wf
+from fmriprep.workflows.bold.confounds import init_carpetplot_wf
+
 from ...fmriprepconfig import config as fmriprepconfig
 from ..memory import MemoryCalculator
-from ..utils import ConnectAttrlistHelper
+from ..utils import ConnectAttrlistHelper, make_reportnode
 
 from .sdc import init_sdc_estimate_wf
 
 from niworkflows.interfaces.nibabel import ApplyMask
-
-# from niworkflows.interfaces.utility import KeySelect
+from niworkflows.interfaces.utility import KeySelect
 
 from niworkflows.func.util import init_bold_reference_wf
 from fmriprep.workflows.bold.hmc import init_bold_hmc_wf
@@ -35,6 +37,33 @@ in_attrs_from_anat_preproc_wf = [
     "anat2std_xfm",
     "std2anat_xfm",
     "template",
+]
+connect_func_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
+    in_attrs_from_anat_preproc_wf
+)
+
+func_preproc_wf_out_attrs = [
+    "bold_t1",
+    "bold_t1_ref",
+    "bold_mask_t1",
+    "bold_aseg_t1",
+    "bold_aparc_t1",
+    "bold_std",
+    "bold_std_ref",
+    "bold_mask_std",
+    "bold_aseg_std",
+    "bold_aparc_std",
+    "bold_native",
+    "bold_cifti",
+    "cifti_variant",
+    "cifti_metadata",
+    "cifti_density",
+    "surfaces",
+    "confounds",
+    "aroma_noise_ics",
+    "melodic_mix",
+    "nonaggr_denoised_file",
+    "confounds_metadata",
 ]
 
 
@@ -55,16 +84,8 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_std",
-                "bold_std_ref",
-                "bold_mask_std",
-                "smoothed_file",
-                "bold_native",
-                "aroma_noise_ics",
-                "melodic_mix",
-                "nonaggr_denoised_file",
+                *func_preproc_wf_out_attrs,
                 "aroma_confounds",
-                "aroma_report",
                 "aroma_metadata",
                 "movpar_file",
                 "skip_vols",
@@ -292,7 +313,6 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     # ica_aroma_wf.get_node("melodic").inputs.TR
     workflow.connect(
         [
-            (bold_bold_trans_wf, outputnode, [("outputnode.bold", "bold_native")]),
             (inputnode, ica_aroma_wf, [("bold_file", "inputnode.name_source")]),
             (
                 metadatanode,
@@ -330,80 +350,113 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                     ("outputnode.nonaggr_denoised_file", "nonaggr_denoised_file"),
                     ("outputnode.aroma_confounds", "aroma_confounds"),
                     ("outputnode.aroma_metadata", "aroma_metadata"),
-                    ("ica_aroma.out_report", "aroma_report"),
                 ],
             ),
         ]
     )
 
-    # carpetplot_wf = init_carpetplot_wf(
-    #     mem_gb=memcalc.series_std_gb,
-    #     metadata={},
-    #     cifti_output=fmriprepconfig.cifti_output,
-    #     name="carpetplot_wf",
-    # )
-    #
-    # carpetplot_select_std = pe.Node(
-    #     KeySelect(fields=["std2anat_xfm"], key="MNI152NLin2009cAsym"),
-    #     name="carpetplot_select_std",
-    #     run_without_submitting=True,
-    # )
-    #
-    # workflow.connect(
-    #     [
-    #         (
-    #             inputnode,
-    #             carpetplot_select_std,
-    #             [("std2anat_xfm", "std2anat_xfm"), ("template", "keys")],
-    #         ),
-    #         (
-    #             carpetplot_select_std,
-    #             carpetplot_wf,
-    #             [("std2anat_xfm", "inputnode.std2anat_xfm")],
-    #         ),
-    #         (
-    #             bold_bold_trans_wf,
-    #             carpetplot_wf,
-    #             [
-    #                 ("outputnode.bold", "inputnode.bold"),
-    #                 ("outputnode.bold_mask", "inputnode.bold_mask"),
-    #             ],
-    #         ),
-    #         (
-    #             bold_reg_wf,
-    #             carpetplot_wf,
-    #             [("outputnode.itk_t1_to_bold", "inputnode.t1_bold_xform")],
-    #         ),
-    #         (
-    #             bold_confounds_wf,
-    #             carpetplot_wf,
-    #             [("outputnode.confounds_file", "inputnode.confounds_file")],
-    #         )
-    #     ]
-    # )
+    bold_confounds_wf = init_bold_confs_wf(
+        mem_gb=memcalc.series_std_gb,
+        metadata={},
+        regressors_all_comps=fmriprepconfig.regressors_all_comps,
+        regressors_fd_th=fmriprepconfig.regressors_fd_th,
+        regressors_dvars_th=fmriprepconfig.regressors_dvars_th,
+        name="bold_confounds_wf",
+    )
+    bold_confounds_wf.get_node("inputnode").inputs.t1_transform_flags = [False]
+    workflow.connect(
+        [
+            (
+                inputnode,
+                bold_confounds_wf,
+                [("t1w_tpms", "inputnode.t1w_tpms"), ("t1w_mask", "inputnode.t1w_mask")],
+            ),
+            (
+                bold_hmc_wf,
+                bold_confounds_wf,
+                [("outputnode.movpar_file", "inputnode.movpar_file")],
+            ),
+            (
+                bold_reg_wf,
+                bold_confounds_wf,
+                [("outputnode.itk_t1_to_bold", "inputnode.t1_bold_xform")],
+            ),
+            (
+                bold_reference_wf,
+                bold_confounds_wf,
+                [("outputnode.skip_vols", "inputnode.skip_vols")],
+            ),
+            (bold_confounds_wf, outputnode, [("outputnode.confounds_file", "confounds")]),
+            (
+                bold_confounds_wf,
+                outputnode,
+                [("outputnode.confounds_metadata", "confounds_metadata")],
+            ),
+            (
+                metadatanode,
+                bold_confounds_wf,
+                [
+                    ("repetition_time", "acompcor.repetition_time"),
+                    ("repetition_time", "tcompcor.repetition_time"),
+                ],
+            ),
+            (
+                bold_bold_trans_wf,
+                bold_confounds_wf,
+                [
+                    ("outputnode.bold", "inputnode.bold"),
+                    ("outputnode.bold_mask", "inputnode.bold_mask"),
+                ],
+            ),
+        ]
+    )
 
-    for nodepath in workflow.list_node_names():
-        hierarchy = nodepath.split(".")
-        nodename = hierarchy[-1]
-        if nodename.startswith("ds_report"):
-            node = workflow.get_node(nodepath)
+    carpetplot_wf = init_carpetplot_wf(
+        mem_gb=memcalc.series_std_gb,
+        metadata={"RepetitionTime": np.nan},
+        cifti_output=fmriprepconfig.cifti_output,
+        name="carpetplot_wf",
+    )
+    carpetplot_select_std = pe.Node(
+        KeySelect(fields=["std2anat_xfm"], key="MNI152NLin2009cAsym"),
+        name="carpetplot_select_std",
+        run_without_submitting=True,
+    )
 
-            parentpath = ".".join(hierarchy[:-1])
-            parent = workflow.get_node(parentpath)
-            assert isinstance(parent, pe.Workflow)
+    workflow.connect(
+        [
+            (
+                inputnode,
+                carpetplot_select_std,
+                [("std2anat_xfm", "std2anat_xfm"), ("template", "keys")],
+            ),
+            (
+                carpetplot_select_std,
+                carpetplot_wf,
+                [("std2anat_xfm", "inputnode.std2anat_xfm")],
+            ),
+            (
+                bold_bold_trans_wf,
+                carpetplot_wf,
+                [
+                    ("outputnode.bold", "inputnode.bold"),
+                    ("outputnode.bold_mask", "inputnode.bold_mask"),
+                ],
+            ),
+            (
+                bold_reg_wf,
+                carpetplot_wf,
+                [("outputnode.itk_t1_to_bold", "inputnode.t1_bold_xform")],
+            ),
+            (
+                bold_confounds_wf,
+                carpetplot_wf,
+                [("outputnode.confounds_file", "inputnode.confounds_file")],
+            ),
+            (metadatanode, carpetplot_wf, [("repetition_time", "conf_plot.tr")]),
+        ]
+    )
 
-            parent.remove_nodes([node])
-
-            # parent._graph.in_edges(node)
-            # import pdb
-            #
-            # pdb.set_trace()
+    make_reportnode(workflow)
 
     return workflow
-
-
-# Utility functions
-
-connect_func_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
-    in_attrs_from_anat_preproc_wf
-)

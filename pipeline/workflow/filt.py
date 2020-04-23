@@ -43,18 +43,16 @@ in_attrs_from_func_preproc_wf = (
     in_attrs_from_func_preproc_wf_direct + in_attrs_from_func_preproc_wf_keyselect
 )
 
-target_space = "MNI152NLin6Asym"
-
 connect_filt_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
     in_attrs_from_anat_preproc_wf_direct,
     keyAttr="outputnode.template",
-    keyVal=target_space,
+    keyVal=fmriprepconfig.target_space,
     keySelectAttrs=in_attrs_from_anat_preproc_wf_keyselect,
 )
 connect_filt_wf_attrs_from_func_preproc_wf = ConnectAttrlistHelper(
     in_attrs_from_func_preproc_wf_direct,
     keyAttr="inputnode.template",
-    keyVal=target_space,
+    keyVal=fmriprepconfig.target_space,
     keySelectAttrs=in_attrs_from_func_preproc_wf_keyselect,
 )
 

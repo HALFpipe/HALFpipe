@@ -115,7 +115,9 @@ def _main():
     calamities_config.fs_root = args.fs_root
     from calamities.file import resolve
 
-    workdir = resolve(args.workdir)
+    workdir = args.workdir
+    if workdir is not None:
+        workdir = resolve(workdir)
 
     if should_run["spec-ui"]:
         from .ui import init_spec_ui
