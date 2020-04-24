@@ -168,9 +168,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
     for contrastName, contrastMat in contrastMats:
         if contrastMat.shape[0] == 1:
             contrastVec = contrastMat.squeeze()
-            contrasts.append(
-                [contrastName, "T", contrastVec.keys().to_list(), contrastVec.to_list()]
-            )
+            contrasts.append([contrastName, "T", list(contrastVec.keys()), list(contrastVec)])
             contrast_names.append(contrastName)
     for contrastName, contrastMat in contrastMats:
         if contrastMat.shape[0] > 1:
@@ -179,7 +177,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
                 tname = f"_{contrastName}_{i:d}"
                 tnames.append(tname)
                 contrasts.append(
-                    [tname, "T", contrastVec.keys().to_list(), contrastVec.to_list()]
+                    [contrastName, "T", list(contrastVec.keys()), list(contrastVec)]
                 )
             contrasts.append([contrastName, "F", tnames])
             contrast_names.append(contrastName)

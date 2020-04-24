@@ -124,7 +124,7 @@ def init_workflow(workdir):
 
         subjectfiles = database.get(subject=subject)
 
-        subjectworkflow = pe.Workflow(name=f"_subject_{subject}_")
+        subjectworkflow = pe.Workflow(name=f"subject_{subject}")
         subjectlevelworkflow.add_nodes([subjectworkflow])
 
         t1wfiles = database.filter(subjectfiles, datatype="anat", suffix="T1w")
@@ -151,11 +151,11 @@ def init_workflow(workdir):
         for boldfile in boldfiles:
             boldfilemetadata = subjectmetadata.copy()
             # make name
-            name = "_bold_"
+            name = "bold"
             for entity in study_entities:
                 value = database.get_tagval(boldfile, entity)
                 if value is not None:
-                    name += f"{entity}_{value}_"
+                    name += f"_{entity}_{value}"
                     boldfilemetadata[entity] = value
 
             boldfileworkflow = pe.Workflow(name=name)
