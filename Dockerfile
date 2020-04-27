@@ -23,9 +23,9 @@ RUN pip install --upgrade pip && \
 #      apt-get install -y graphviz \
 #      graphviz-dev
 
-RUN curl -sSL \
-  $(curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" \
-  | grep browser_download_url | cut -d '"' -f 4) -o /root/src/qualitycheck.html 
+RUN LATESTRELEASE=$(mktemp) && \
+  curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" -o ${LATESTRELEASE} && \
+  curl -sSL $(grep browser_download_url ${LATESTRELEASE} | cut -d '"' -f 4) -o /root/src/qualitycheck.html 
   
 RUN mkdir /ext
 COPY . /root/src/pipeline/
