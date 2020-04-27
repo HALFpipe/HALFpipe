@@ -4,8 +4,7 @@
 
 from multiprocessing import cpu_count
 
-from niworkflows.utils.spaces import Reference
-import fmriprep.config
+from niworkflows.utils.spaces import SpatialReferences, Reference
 
 
 # Root directory of BIDS dataset
@@ -13,7 +12,6 @@ bids_dir = "."
 
 # Perform ICA-AROMA on MNI-resampled functional series
 use_aroma = True
-fmriprep.config.workflow.use_aroma = use_aroma
 aroma_err_on_warn = False
 # Maximum number of components identified by MELODIC within ICA-AROMA
 aroma_melodic_dim = -200
@@ -49,14 +47,9 @@ skull_strip_template = Reference.from_string("OASIS30ANTs").pop(0)
 
 # Add the default standard space if not already present (required by several sub-workflows)
 # Make sure there's a normalization to FSL for AROMA to use.
-fmriprep.config.init_spaces()
-spaces = fmriprep.config.workflow.spaces
-
-target_space = "MNI152NLin6Asym"
-
-# Option "--use-aroma" requires functional images to be resampled to
-# MNI152NLin6Asym space. The argument "MNI152NLin6Asym:res-2" has
-# been automatically added to the list of output spaces
+spaces = SpatialReferences()
+target_space = "MNI152NLin2009cAsym"
+spaces.add(Reference(target_space, {"res": "2"}))
 
 # Preprocessing steps to skip (may include "slicetiming", "fieldmaps")
 ignore = ["sbref"]
