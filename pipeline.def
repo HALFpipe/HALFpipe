@@ -2,8 +2,6 @@ Bootstrap: docker
 From: poldracklab/fmriprep:20.1.0rc2
 
 %setup
-  echo $PWD
-  env
   mkdir -p ${SINGULARITY_ROOTFS}/root/src/pipeline
 
 %files

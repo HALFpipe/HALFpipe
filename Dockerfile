@@ -11,6 +11,7 @@ RUN mkdir -p /root/src && \
   | grep browser_download_url | cut -d '"' -f 4) -o /root/src/qualitycheck.html 
   
 RUN mkdir /ext
+
 COPY . /root/src/pipeline/
 
 RUN cd /root/src/pipeline && \
