@@ -58,7 +58,11 @@ class InputSelectStep(Step):
         if self.values is not None and len(self.values) > 0:
             self.is_missing = False
             self.add_file_str = f"Add {self.filetype_str} file"
-            dsp_values = [self.all_str, *self._make_tagval_strs(), self.add_file_str]
+            dsp_values = []
+            if len(self.values) > 1:
+                dsp_values.append(self.all_str)
+            dsp_values.extend(self._make_tagval_strs())
+            dsp_values.append(self.add_file_str)
             self.input_view = SingleChoiceInputView(dsp_values, isVertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

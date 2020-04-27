@@ -23,7 +23,7 @@ class DontRunRunner:
         pass
 
 
-def init_execgraph(workdir, workflow, n_chunks=None):
+def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     logger = logging.getLogger("pipeline")
 
     uuid = workflow.uuid
@@ -37,22 +37,17 @@ def init_execgraph(workdir, workflow, n_chunks=None):
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     reportjsfilename = op.join(workdir, "reports", "execreport.js")
+    allnodenames = set(node.fullname for node in execgraph.nodes())
     try:
-        IndexedFile(reportjsfilename)
+        indexedfileobj = IndexedFile(reportjsfilename)
+        assert allnodenames.issubset(indexedfileobj.file_index.indexdict)
     except Exception:
         logger.info(f"Init execreport.js")
-        allnodenames = [node.fullname for node in execgraph.nodes()]
         init_indexed_js_object_file(
             reportjsfilename, "qualitycheck.execreport", allnodenames, 10
-        )
+        )  # TODO don't overwrite current values
 
-    if n_chunks is not None and n_chunks > 1:
-        typestr = f"execgraph.{n_chunks:02d}_chunks"
-        execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
-        if execgraphs is not None:
-            return execgraphs
-
-        logger.info(f"New execgraph split with {n_chunks} chunks")
+    if subject_chunks or (n_chunks is not None and n_chunks > 1):
         subjectworkflows = dict()
         for node in execgraph.nodes():
             if node._hierarchy.startswith("nipype.subjectlevel"):
@@ -60,6 +55,16 @@ def init_execgraph(workdir, workflow, n_chunks=None):
                 if subjectworkflowname not in subjectworkflows:
                     subjectworkflows[subjectworkflowname] = set()
                 subjectworkflows[subjectworkflowname].add(node)
+
+        if subject_chunks:
+            n_chunks = len(subjectworkflows)
+
+        typestr = f"execgraph.{n_chunks:02d}_chunks"
+        execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
+        if execgraphs is not None:
+            return execgraphs
+
+        logger.info(f"New execgraph split with {n_chunks} chunks")
 
         execgraphs = []
         chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)

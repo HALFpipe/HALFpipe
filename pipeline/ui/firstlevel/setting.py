@@ -13,8 +13,6 @@ from calamities import (
     TextView,
 )
 
-import numpy as np
-
 from ...spec import (
     SmoothedTagSchema,
     ConfoundsRemovedTagSchema,
@@ -23,6 +21,23 @@ from ...spec import (
 from ..utils import YesNoStep
 from ..step import Step
 from .loop import AddAnotherFirstLevelAnalysisStep
+from ...utils import first, ravel
+
+
+class ConfirmInconsistentConfoundsSettingStep(YesNoStep):
+    header_str = (
+        "Do you really want to use inconsistent nuisance regressor settings across analyses?"
+    )
+    yes_step_type = AddAnotherFirstLevelAnalysisStep
+    no_step_type = None
+
+    def run(self, ctx):
+        self.choice = self.input_view()
+        if self.choice is None:
+            return False
+        if self.choice == "No":
+            return False
+        return True
 
 
 class ConfoundsSelectStep(Step):
@@ -42,8 +57,18 @@ class ConfoundsSelectStep(Step):
         self._append_view(TextView("ICA-AROMA will be performed"))
         self._append_view(SpacerView(1))
         self._append_view(TextView("Remove other nuisance regressors?"))
+
+        self.confs = set(
+            analysis.tags.confounds_removed.as_tupl()
+            for analysis in ctx.spec.analyses
+            if analysis.tags is not None and analysis.tags.confounds_removed is not None
+        )
+        suggestion = []
+        if len(self.confs) > 0:
+            revopts = {v: k for k, v in self.options.items()}
+            suggestion = [revopts[s] for s in ravel(first(self.confs))[1:] if s in revopts]
         self.input_view = MultipleChoiceInputView(
-            list(self.options.keys()), isVertical=True
+            list(self.options.keys()), checked=suggestion, isVertical=True
         )
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -57,26 +82,30 @@ class ConfoundsSelectStep(Step):
         ]
         confoundnames += self.base_options
         if len(confoundnames) > 0:
-            ctx.spec.analyses[
-                -1
-            ].tags.confounds_removed = ConfoundsRemovedTagSchema().load(
+            ctx.spec.analyses[-1].tags.confounds_removed = ConfoundsRemovedTagSchema().load(
                 {"names": confoundnames}
             )
         return True
 
     def next(self, ctx):
+        if (
+            len(self.confs) == 1
+            and ctx.spec.analyses[-1].tags.confounds_removed is not None
+            and ctx.spec.analyses[-1].tags.confounds_removed.as_tupl() not in self.confs
+        ):
+            return ConfirmInconsistentConfoundsSettingStep(self.app)(ctx)
         return AddAnotherFirstLevelAnalysisStep(self.app)(ctx)
 
 
 class ConfirmInconsistentHighPassTemporalFilterSettingStep(YesNoStep):
     header_str = (
-        "Do you really want to use temporal filter width values across analyses?"
+        "Do you really want to use inconsistent temporal filter width values across analyses?"
     )
     yes_step_type = ConfoundsSelectStep
     no_step_type = None
 
     def run(self, ctx):
-        self.choice = self.yes_no_input_view()
+        self.choice = self.input_view()
         if self.choice is None:
             return False
         if self.choice == "No":
@@ -87,9 +116,16 @@ class ConfirmInconsistentHighPassTemporalFilterSettingStep(YesNoStep):
 class HighPassTemporalFilterSettingStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the temporal filter width in seconds"))
-        suggestion = 128
-        if ctx.high_pass_filter_width is not None:
-            suggestion = ctx.high_pass_filter_width
+        suggestion = 128.0
+        self.bptfs = set(
+            analysis.tags.band_pass_filtered.as_tupl()
+            for analysis in ctx.spec.analyses
+            if analysis.tags is not None
+            and analysis.tags.band_pass_filtered is not None
+            and analysis.tags.band_pass_filtered.type == "gaussian"
+        )
+        if len(self.bptfs) > 0:
+            suggestion = ravel(first(self.bptfs))[-1]
         self.input_view = NumberInputView(number=suggestion, min=0)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -105,13 +141,11 @@ class HighPassTemporalFilterSettingStep(Step):
         return True
 
     def next(self, ctx):
-        value = ctx.spec.analyses[-1].tags.band_pass_filtered.high
-        assert value is not None
-        if ctx.high_pass_filter_width is not None and not np.isclose(
-            ctx.high_pass_filter_width, value
+        if (
+            len(self.bptfs) == 1
+            and ctx.spec.analyses[-1].tags.band_pass_filtered.as_tupl() not in self.bptfs
         ):
             return ConfirmInconsistentHighPassTemporalFilterSettingStep(self.app)(ctx)
-        ctx.high_pass_filter_width = value
         return ConfoundsSelectStep(self.app)(ctx)
 
 
@@ -123,7 +157,7 @@ class DoHighPassFilterStep(YesNoStep):
 
 class ConfirmInconsistentSmoothingSettingStep(YesNoStep):
     header_str = (
-        "Do you really want to use different smoothing FWHM values across analyses?"
+        "Do you really want to use inconsistent smoothing FWHM values across analyses?"
     )
     no_step_type = None
 
@@ -132,7 +166,7 @@ class ConfirmInconsistentSmoothingSettingStep(YesNoStep):
         super(ConfirmInconsistentSmoothingSettingStep, self).__init__(app)
 
     def run(self, ctx):
-        self.choice = self.yes_no_input_view()
+        self.choice = self.input_view()
         if self.choice is None:
             return False
         if self.choice == "No":
@@ -141,40 +175,41 @@ class ConfirmInconsistentSmoothingSettingStep(YesNoStep):
 
 
 class PreSmoothingSettingStep(Step):
-    next_step_type = DoHighPassFilterStep
-
     def setup(self, ctx):
         self._append_view(TextView("Scans will be smoothed before feature extraction"))
         self._append_view(TextView("Specify the smoothing FWHM in mm"))
-        suggestion = 6
-        if ctx.smoothing_fwhm is not None:
-            suggestion = ctx.smoothing_fwhm
+        suggestion = 6.0
+        self.fwhms = set(
+            analysis.tags.smoothed.as_tupl()
+            for analysis in ctx.spec.analyses
+            if analysis.tags is not None and analysis.tags.smoothed is not None
+        )
+        if len(self.fwhms) > 0:
+            suggestion = first(self.fwhms)[-1]
         self.input_view = NumberInputView(number=suggestion, min=0)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        value = self.input_view()
-        if value is None:
+        self._value = self.input_view()
+        if self._value is None:
             return False
-        ctx.spec.analyses[-1].tags.smoothed = SmoothedTagSchema().load({"fwhm": value})
         return True
 
     def next(self, ctx):
-        value = ctx.spec.analyses[-1].tags.smoothed.fwhm
-        assert value is not None
-        if ctx.smoothing_fwhm is not None and not np.isclose(ctx.smoothing_fwhm, value):
-            return ConfirmInconsistentSmoothingSettingStep(
-                self.app, self.next_step_type
-            )(ctx)
-        ctx.smoothing_fwhm = value
-        return self.next_step_type(self.app)(ctx)
+        assert self._value is not None
+        ctx.spec.analyses[-1].tags.smoothed = SmoothedTagSchema().load({"fwhm": self._value})
+        if (
+            len(self.fwhms) == 1
+            and ctx.spec.analyses[-1].tags.smoothed.as_tupl() not in self.fwhms
+        ):
+            return ConfirmInconsistentSmoothingSettingStep(self.app, DoHighPassFilterStep)(ctx)
+        return DoHighPassFilterStep(self.app)(ctx)
 
 
 class ReHoAndFALFFSettingStep(Step):
     low_pass_freq = 0.1
     high_pass_freq = 0.01
-    next_step_type = ConfoundsSelectStep
 
     def setup(self, ctx):
         self._append_view(
@@ -188,9 +223,14 @@ class ReHoAndFALFFSettingStep(Step):
             TextView("Statistical maps will be smoothed after feature extraction")
         )
         self._append_view(TextView("Specify the smoothing FWHM in mm"))
-        suggestion = 6
-        if ctx.smoothing_fwhm is not None:
-            suggestion = ctx.smoothing_fwhm
+        suggestion = 6.0
+        self.fwhms = set(
+            analysis.tags.smoothed.as_tupl()
+            for analysis in ctx.spec.analyses
+            if analysis.tags is not None and analysis.tags.smoothed is not None
+        )
+        if len(self.fwhms) > 0:
+            suggestion = first(self.fwhms)[-1]
         self.input_view = NumberInputView(number=suggestion, min=0)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -211,11 +251,6 @@ class ReHoAndFALFFSettingStep(Step):
         return True
 
     def next(self, ctx):
-        value = ctx.spec.analyses[-1].tags.smoothed.fwhm
-        assert value is not None
-        if ctx.smoothing_fwhm is not None and not np.isclose(ctx.smoothing_fwhm, value):
-            return ConfirmInconsistentSmoothingSettingStep(
-                self.app, self.next_step_type
-            )(ctx)
-        ctx.smoothing_fwhm = value
-        return self.next_step_type(self.app)(ctx)
+        if len(self.fwhms) == 1 and ctx.spec.analyses[-1].tags.smoothed not in self.fwhms:
+            return ConfirmInconsistentSmoothingSettingStep(self.app, ConfoundsSelectStep)(ctx)
+        return ConfoundsSelectStep(self.app)(ctx)

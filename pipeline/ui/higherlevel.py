@@ -27,7 +27,7 @@ from inflection import camelize
 from copy import deepcopy
 from itertools import combinations, chain
 
-from .utils import YesNoStep, BranchStep, make_name_suggestion, forbidden_chars
+from .utils import YesNoStep, make_name_suggestion, forbidden_chars
 from .step import Step
 from ..spec import (
     Analysis,
@@ -42,6 +42,12 @@ from ..database import bold_entities
 from ..io import load_spreadsheet
 
 p = inflect.engine()
+
+
+def add_group_level_analysis_obj(ctx):
+    analysis_dict = {"level": "higher", "across": "subject"}
+    analysis_obj = Analysis(**analysis_dict)
+    ctx.add_analysis_obj(analysis_obj)
 
 
 def _format_column(colname):
@@ -534,21 +540,6 @@ class SpreadsheetStep(Step):
         return SpreadsheetIdColumnStep(self.app, self.df)(ctx)
 
 
-class GroupLevelAnalysisTypeStep(BranchStep):
-    is_vertical = True
-    header_str = "Specify the analysis type"
-    options = {
-        "Intercept-only": InterceptOnlyGroupLevelAnalysisMotionFilterStep,
-        "GLM": SpreadsheetStep,
-    }
-
-    def next(self, ctx):
-        ctx.spec.analyses[-1].type = {"Intercept-only": "intercept_only", "GLM": "glm"}[
-            self.choice
-        ]
-        return super(GroupLevelAnalysisTypeStep, self).next(ctx)
-
-
 class GroupLevelAnalysisAggregateStep(Step):
     aggregate_order = ["direction", "run", "session"]
 
@@ -665,7 +656,11 @@ class GroupLevelAnalysisAggregateStep(Step):
     def next(self, ctx):
         if len(self.options) > 0 or self.is_first_run:
             self.is_first_run = False
-            return GroupLevelAnalysisTypeStep(self.app)(ctx)
+            next_step_type = {
+                "intercept_only": InterceptOnlyGroupLevelAnalysisMotionFilterStep,
+                "glm": SpreadsheetStep,
+            }[ctx.spec.analyses[-1].type]
+            return next_step_type(self.app)(ctx)
         else:
             return
 
@@ -705,8 +700,9 @@ class GroupLevelAnalysisInputStep(Step):
 class GroupLevelAnalysisNameStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify analysis name"))
-        index = 1
         assert ctx.spec.analyses is not None
+        self.names = set(analysis.name for analysis in ctx.spec.analyses)
+        index = 0
         for analysis in ctx.spec.analyses:
             assert analysis.level is not None
             if analysis.level == "higher" and analysis.across == "subject":
@@ -718,28 +714,52 @@ class GroupLevelAnalysisNameStep(Step):
 
     def run(self, ctx):
         while True:
-            name = self.input_view()
-            if name is None:  # was cancelled
+            self._name = self.input_view()
+            if self._name is None:  # was cancelled
                 return False
-            if forbidden_chars.search(name) is None:
-                analysis_dict = {"name": name, "level": "higher", "across": "subject"}
-                analysis_obj = Analysis(**analysis_dict)
-                ctx.add_analysis_obj(analysis_obj)
-                break
+            if forbidden_chars.search(self._name) is None and self._name not in self.names:
+                return True
             else:
                 pass  # TODO add messagefun
+
+    def next(self, ctx):
+        assert self._name not in self.names, "Duplicate analysis name"
+        ctx.spec.analyses[-1].name = self._name
+        return GroupLevelAnalysisInputStep(self.app)(ctx)
+
+
+class GroupLevelAnalysisTypeStep(Step):
+    is_vertical = True
+    options = {"Intercept-only": "intercept_only", "GLM": "glm"}
+
+    def setup(self, ctx):
+        self._append_view(TextView("Specify the analysis type"))
+        self.input_view = SingleChoiceInputView(
+            list(self.options.keys()), isVertical=self.is_vertical
+        )
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.choice = self.input_view()
+        if self.choice is None:
+            return False
         return True
 
     def next(self, ctx):
-        return GroupLevelAnalysisInputStep(self.app)(ctx)
+        add_group_level_analysis_obj(ctx)
+        if self.choice is None:
+            return
+        ctx.spec.analyses[-1].type = self.options[self.choice]
+        return GroupLevelAnalysisNameStep(self.app)(ctx)
 
 
 class HasGroupLevelAnalysisStep(YesNoStep):
     header_str = "Specify group-level analysis?"
-    yes_step_type = GroupLevelAnalysisNameStep
+    yes_step_type = GroupLevelAnalysisTypeStep
     no_step_type = None
 
 
-AddAnotherGroupLevelAnalysisStep.yes_step_type = GroupLevelAnalysisNameStep
+AddAnotherGroupLevelAnalysisStep.yes_step_type = GroupLevelAnalysisTypeStep
 
 GroupLevelAnalysisStep = HasGroupLevelAnalysisStep

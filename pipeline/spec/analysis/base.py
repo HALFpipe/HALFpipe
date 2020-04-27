@@ -6,7 +6,7 @@
 
 """
 
-from marshmallow import fields, Schema, post_load, post_dump
+from marshmallow import fields, Schema, post_load, post_dump, validates_schema, ValidationError
 
 
 analysisattrnames = [
@@ -48,6 +48,14 @@ class BaseAnalysisSchema(Schema):
     @post_load
     def make_object(self, data, **kwargs):
         return Analysis(**data)
+
+    @validates_schema
+    def validate_variables(self, data, **kwargs):
+        if "variables" in data:
+            seen_names = set()
+            for variable in data["variables"]:
+                if variable.name in seen_names:
+                    raise ValidationError("variable name must be unique")
 
     @post_dump(pass_many=False)
     def remove_none(self, data, many):

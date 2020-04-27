@@ -166,6 +166,9 @@ def init_workflow(workdir):
             repetition_time = database.get_tagval(boldfile, "repetition_time")
             if repetition_time is None:
                 repetition_time = get_repetition_time(boldfile)
+            assert (
+                repetition_time > 0.01
+            ), f'Repetition time value "{repetition_time}" is too low for file "{boldfile}"'
             boldfilemetadata["RepetitionTime"] = repetition_time
 
             func_preproc_wf = cache.get(

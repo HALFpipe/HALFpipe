@@ -41,12 +41,11 @@ class BandPassFilteredTag(BaseTag):
 
     def as_tupl(self):
         if self.type == "gaussian":
-            vals = (self.high,)
+            return ("band_pass_filtered", (self.type, self.high))
         elif self.type == "frequency_based":
-            vals = (self.high, self.low)
+            return ("band_pass_filtered", (self.type, self.high, self.low))
         else:
             raise ValueError(f'Unknown BandPassFilteredTag type "{self.type}"')
-        return ("band_pass_filtered", (self.type, vals))
 
 
 class ConfoundsRemovedTag(BaseTag):

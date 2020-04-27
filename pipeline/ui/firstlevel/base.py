@@ -6,15 +6,18 @@
 
 """
 
-from calamities import TextView, SpacerView, MultiSingleChoiceInputView, TextInputView
-
+from calamities import (
+    TextView,
+    SpacerView,
+    MultiSingleChoiceInputView,
+    TextInputView,
+    SingleChoiceInputView,
+)
 
 from ...spec import Analysis, PreprocessedBoldTagsSchema, study_entities
 from ..utils import (
     YesNoStep,
-    BranchStep,
     BaseBOLDSelectStep,
-    make_name_suggestion,
     forbidden_chars,
 )
 from ..step import Step
@@ -31,28 +34,15 @@ from .loop import AddAnotherFirstLevelAnalysisStep
 bold_tags_dict = {"datatype": "func", "suffix": "bold"}
 
 
-class FirstLevelAnalysisTypeStep(BranchStep):
-    is_vertical = True
-    header_str = "Specify the analysis type"
-    options = {
-        "Task-based": TaskBasedStep,
-        "Seed-based connectivity": SeedBasedConnectivityStep,
-        "Dual regression": DualRegressionStep,
-        "Atlas-based connectivity matrix": AtlasBasedConnectivityStep,
-        "ReHo": ReHoStep,
-        "fALFF": FALFFStep,
+def add_first_level_analysis_obj(ctx):
+    analysis_tags_dict = {**bold_tags_dict, "space": "mni"}
+    analysis_tags_obj = PreprocessedBoldTagsSchema().load(analysis_tags_dict)
+    analysis_dict = {
+        "level": "first",
+        "tags": analysis_tags_obj,
     }
-
-    def next(self, ctx):
-        ctx.spec.analyses[-1].type = {
-            "Task-based": "task_based",
-            "Seed-based connectivity": "seed_based_connectivity",
-            "Dual regression": "dual_regression",
-            "Atlas-based connectivity matrix": "atlas_based_connectivity",
-            "ReHo": "reho",
-            "fALFF": "falff",
-        }[self.choice]
-        return super(FirstLevelAnalysisTypeStep, self).next(ctx)
+    analysis_obj = Analysis(**analysis_dict)
+    ctx.add_analysis_obj(analysis_obj)
 
 
 class BOLDSelectStep(BaseBOLDSelectStep):
@@ -123,49 +113,95 @@ class BOLDSelectStep(BaseBOLDSelectStep):
     def next(self, ctx):
         if self.should_run or self.is_first_run:
             self.is_first_run = False
-            return FirstLevelAnalysisTypeStep(self.app)(ctx)
+            next_step_type = {
+                "task_based": TaskBasedStep,
+                "seed_based_connectivity": SeedBasedConnectivityStep,
+                "dual_regression": DualRegressionStep,
+                "atlas_based_connectivity": AtlasBasedConnectivityStep,
+                "reho": ReHoStep,
+                "falff": FALFFStep,
+            }[ctx.spec.analyses[-1].type]
+            return next_step_type(self.app)(ctx)
         return
 
 
 class SubjectAnalysisNameStep(Step):
+    nameSuggestionByAnalysisType = {
+        "task_based": "taskBased",
+        "seed_based_connectivity": "seedCorr",
+        "dual_regression": "dualReg",
+        "atlas_based_connectivity": "corrMatrix",
+        "reho": "reHo",
+        "falff": "fALFF",
+    }
+
     def setup(self, ctx):
         self._append_view(TextView("Specify analysis name"))
+        assert ctx.spec.analyses is not None and len(ctx.spec.analyses) > 0
+        self.names = set(analysis.name for analysis in ctx.spec.analyses)
+        baseSuggestion = self.nameSuggestionByAnalysisType[ctx.spec.analyses[-1].type]
+        suggestion = baseSuggestion
         index = 1
-        if ctx.spec.analyses is not None:
-            index = len(ctx.spec.analyses) + 1
-        suggestion = make_name_suggestion("analysis", index=index)
+        while suggestion in self.names:
+            suggestion = f"{baseSuggestion}_{index}"
+            index += 1
         self.input_view = TextInputView(text=suggestion)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
         while True:
-            name = self.input_view()
-            if name is None:  # was cancelled
+            self._name = self.input_view()
+            if self._name is None:  # was cancelled
                 return False
-            if forbidden_chars.search(name) is None:
-                analysis_tags_dict = {**bold_tags_dict, "space": "mni"}
-                analysis_tags_obj = PreprocessedBoldTagsSchema().load(analysis_tags_dict)
-                analysis_dict = {
-                    "name": name,
-                    "level": "first",
-                    "tags": analysis_tags_obj,
-                }
-                analysis_obj = Analysis(**analysis_dict)
-                ctx.add_analysis_obj(analysis_obj)
-                break
+            if forbidden_chars.search(self._name) is None and self._name not in self.names:
+                return True
             else:
                 pass  # TODO add messagefun
+
+    def next(self, ctx):
+        assert self._name not in self.names, "Duplicate analysis name"
+        ctx.spec.analyses[-1].name = self._name
+        return BOLDSelectStep(self.app)(ctx)
+
+
+class FirstLevelAnalysisTypeStep(Step):
+    is_vertical = True
+    options = {
+        "Task-based": "task_based",
+        "Seed-based connectivity": "seed_based_connectivity",
+        "Dual regression": "dual_regression",
+        "Atlas-based connectivity matrix": "atlas_based_connectivity",
+        "ReHo": "reho",
+        "fALFF": "falff",
+    }
+
+    def setup(self, ctx):
+        self._append_view(TextView("Specify the analysis type"))
+        self.input_view = SingleChoiceInputView(
+            list(self.options.keys()), isVertical=self.is_vertical
+        )
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.choice = self.input_view()
+        if self.choice is None:
+            return False
         return True
 
     def next(self, ctx):
-        return BOLDSelectStep(self.app)(ctx)
+        add_first_level_analysis_obj(ctx)
+        if self.choice is None:
+            return
+        ctx.spec.analyses[-1].type = self.options[self.choice]
+        return SubjectAnalysisNameStep(self.app)(ctx)
 
 
 class HasFirstLevelAnalysisStep(YesNoStep):
     header_str = f"Specify subject-level analysis?"
-    yes_step_type = SubjectAnalysisNameStep
+    yes_step_type = FirstLevelAnalysisTypeStep
     no_step_type = None
 
 
-AddAnotherFirstLevelAnalysisStep.yes_step_type = SubjectAnalysisNameStep
+AddAnotherFirstLevelAnalysisStep.yes_step_type = FirstLevelAnalysisTypeStep

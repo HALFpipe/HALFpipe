@@ -32,9 +32,7 @@ def _main():
         type=str,
         help="directory where output and intermediate files are stored",
     )
-    basegroup.add_argument(
-        "--fs-root", default="/ext", help="directory where input files are stored"
-    )
+    basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
     basegroup.add_argument("--debug", action="store_true", default=False)
     basegroup.add_argument("--verbose", action="store_true", default=False)
 
@@ -49,11 +47,23 @@ def _main():
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument(
+        "--workflow-file", type=str, help="manually select workflow file"
+    )
+    chunkinggroup = execgraphgroup.add_mutually_exclusive_group(required=False)
+    chunkinggroup.add_argument(
         "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
+    )
+    chunkinggroup.add_argument(
+        "--subject-chunks",
+        action="store_true",
+        default=False,
+        help="generate one subject-level workflow per subject",
     )
 
     rungroup = ap.add_argument_group("run", "")
-    rungroup.add_argument("--execgraph-file", type=str, help="manually select file to run")
+    rungroup.add_argument(
+        "--execgraphs-file", type=str, help="manually select execgraphs file"
+    )
     rungroup.add_argument(
         "--chunk-index", type=int, help="select which subjectlevel chunk to run"
     )
@@ -158,11 +168,38 @@ def _main():
         logger.info(f"Running step: execgraph")
         from .execgraph import init_execgraph
 
-        execgraphs = init_execgraph(workdir, workflow, n_chunks=args.n_chunks)
+        if workflow is None:
+            from .utils import loadpicklelzma
+
+            assert (
+                args.workflow_file is not None
+            ), "Missing required --workflow-file input for step execgraph"
+            workflow = loadpicklelzma(args.workflow_file)
+            logger.info(f'Using workflow defined in file "{args.workflow_file}"')
+        else:
+            logger.info(f"Using workflow from previous step")
+
+        execgraphs = init_execgraph(
+            workdir, workflow, n_chunks=args.n_chunks, subject_chunks=args.subject_chunks
+        )
 
     if not should_run["run"]:
-        logger.info(f"Did not run step: run-subjectlevel")
+        logger.info(f"Did not run step: run")
     else:
+        logger.info(f"Running step: run")
+        if execgraphs is None:
+            from .utils import loadpicklelzma
+
+            assert (
+                args.execgraphs_file is not None
+            ), "Missing required --execgraph-file input for step run"
+            execgraphs = loadpicklelzma(args.execgraphs_file)
+            if not isinstance(execgraphs, list):
+                execgraphs = [execgraphs]
+            logger.info(f'Using execgraphs defined in file "{args.execgraphs_file}"')
+        else:
+            logger.info(f"Using execgraphs from previous step")
+
         from nipype.pipeline import plugins as nip
         from pipeline import plugins as ppp
 

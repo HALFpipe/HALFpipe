@@ -11,7 +11,15 @@ from uuid import uuid4
 import os
 from os import path as op
 
-from marshmallow import fields, Schema, post_load, RAISE, validate
+from marshmallow import (
+    fields,
+    Schema,
+    post_load,
+    RAISE,
+    validate,
+    validates_schema,
+    ValidationError,
+)
 import marshmallow.exceptions
 
 from .file import FileSchema
@@ -46,6 +54,13 @@ class SpecSchema(Schema):
     version = fields.Str(validate=validate.OneOf(compatible_versions))
     files = fields.List(fields.Nested(FileSchema), required=True)
     analyses = fields.List(fields.Nested(AnalysisSchema), required=True)
+
+    @validates_schema
+    def validate_analyses(self, data, **kwargs):
+        seen_names = set()
+        for analysis in data["analyses"]:
+            if analysis.name in seen_names:
+                raise ValidationError("analysis name must be unique")
 
     @post_load
     def make_object(self, data, **kwargs):

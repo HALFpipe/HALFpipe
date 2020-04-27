@@ -12,7 +12,6 @@ def get_repetition_time(fname):
         nbimg = nib.load(fname)
         assert nvol(nbimg) > 1, "Cannot get repetition time for single volume"
         repetition_time = float(nbimg.header.get_zooms()[3])
-        assert repetition_time > 0.01, f'Repetition time value "{repetition_time}" is too low'
         return repetition_time
     except Exception:
         return

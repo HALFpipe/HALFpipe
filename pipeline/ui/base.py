@@ -6,7 +6,14 @@ import os
 from os import path as op
 import logging
 
-from calamities import TextView, GiantTextView, SpacerView, DirectoryInputView, App
+from calamities import (
+    TextView,
+    GiantTextView,
+    SpacerView,
+    DirectoryInputView,
+    App,
+    SingleChoiceInputView,
+)
 from calamities.config import config as calamities_config
 
 from .step import Step
@@ -16,7 +23,8 @@ from ..database import Database
 from ..logger import Logger
 
 from .bids import BIDSStep
-from .utils import YesNoStep
+from .firstlevel import FirstLevelAnalysisStep
+from .higherlevel import GroupLevelAnalysisStep
 
 
 class Context:
@@ -25,9 +33,6 @@ class Context:
         self.workdir = None
         self.use_existing_spec = False
         self.database = Database()
-        self.smoothing_fwhm = None
-        self.high_pass_filter_width = None
-        self.spreadsheet_file = None
         self.debug = False
 
     def add_file_obj(self, file_obj):
@@ -40,20 +45,54 @@ class Context:
         return len(self.spec.analyses) - 1
 
 
-class UseExistingSpecStep(YesNoStep):
-    yes_step_type = None  # continue
-    no_step_type = BIDSStep
+class UseExistingSpecStep(Step):
+    options = [
+        "Continue with existing spec file without modification",
+        "Start over with empty spec",
+        "Keep files from existing spec file, start over at subject-level analysis spec",
+        "Keep files and first level analyses from existing spec file, start over at group-level analysis spec",
+    ]
 
     def setup(self, ctx):
-        self._append_view(TextView("Found spec file in working directory"))
-        self._append_view(TextView("Use existing spec file?"))
-        super(UseExistingSpecStep, self).setup(ctx)
+        self.is_first_run = True
+        self.existing_spec = loadspec(ctx.workdir, logger=logging.getLogger("pipeline.ui"))
+        self.choice = None
+        if self.existing_spec is not None:
+            self._append_view(TextView("Found spec file in working directory"))
+            self.input_view = SingleChoiceInputView(self.options, isVertical=True)
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        if self.existing_spec is not None:
+            self.choice = self.input_view()
+            if self.choice is None:
+                return False
+            return True
+        else:
+            return self.is_first_run
 
     def next(self, ctx):
-        if self.choice == "Yes":
-            ctx.use_existing_spec = True
-            return ctx
-        return super(UseExistingSpecStep, self).next(ctx)
+        if self.is_first_run or self.existing_spec is not None:
+            self.is_first_run = False
+            if self.choice == self.options[0]:
+                ctx.use_existing_spec = True
+                return ctx
+            elif self.choice == self.options[2]:
+                for fileobj in self.existing_spec.files:
+                    ctx.add_file_obj(fileobj)
+                return FirstLevelAnalysisStep(self.app)(ctx)
+            elif self.choice == self.options[3]:
+                for fileobj in self.existing_spec.files:
+                    ctx.add_file_obj(fileobj)
+                for analysisobj in self.existing_spec.analyses:
+                    if analysisobj.level == "first":
+                        ctx.add_analysis_obj(analysisobj)
+                return GroupLevelAnalysisStep(self.app)(ctx)
+            else:
+                return BIDSStep(self.app)(ctx)
+        else:
+            return
 
 
 class WorkingDirectoryStep(Step):
@@ -81,15 +120,11 @@ class WorkingDirectoryStep(Step):
 
     def next(self, ctx):
         if ctx.workdir is not None and op.isdir(ctx.workdir):
-
             if not Logger.is_setup:
                 Logger.setup(ctx.workdir, debug=ctx.debug)
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
-            if loadspec(ctx.workdir, logger=logging.getLogger("pipeline.ui")) is not None:
-                return UseExistingSpecStep(self.app)(ctx)
-            else:
-                return BIDSStep(self.app)(ctx)
+            return UseExistingSpecStep(self.app)(ctx)
         else:
             return
 
