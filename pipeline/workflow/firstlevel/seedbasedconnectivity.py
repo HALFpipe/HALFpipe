@@ -6,8 +6,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts
-from ...utils import ravel
+from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts, MakeDofVolume
+from ...utils import ravel, ncol
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
@@ -33,9 +33,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name
-            for name in analysis.tags.confounds_removed.names
-            if "aroma_motion" not in name
+            name for name in analysis.tags.confounds_removed.names if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             confoundsfilefields.append("confounds_file")
@@ -89,10 +87,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
-        interface=fsl.ImageMeants(),
-        name="meants",
-        iterfield="mask",
-        mem_gb=memcalc.series_std_gb,
+        interface=fsl.ImageMeants(), name="meants", iterfield="mask", mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(
         [
@@ -128,9 +123,26 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         name="contrastmat",
     )
     if confoundsfilefields:
-        workflow.connect(
-            [(inputnode, contrastmat, [(*confoundsfilefields, *confoundsfilefields)])]
+        workflow.connect([(inputnode, contrastmat, [(*confoundsfilefields, *confoundsfilefields)])])
+
+    designnode = pe.Node(niu.IdentityInterface(fields=["design"]), name="designnode")
+    if confoundsfilefields:
+        mergecolumns = pe.MapNode(
+            interface=MergeColumnsTSV(2),
+            name="mergecolumns",
+            mem_gb=memcalc.min_gb,
+            iterfield="in1",
+            run_without_submitting=True,
         )
+        workflow.connect(
+            [
+                (meants, mergecolumns, [("out_file", "in1")]),
+                (inputnode, mergecolumns, [(*confoundsfilefields, "in2")]),
+                (mergecolumns, designnode, [("out_file", "design")]),
+            ]
+        )
+    else:
+        workflow.connect([(meants, designnode, [("out_file", "design")])])
 
     # calculate the regression of the mean time series
     # onto the functional image.
@@ -151,26 +163,20 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
         [
             (inputnode, glm, [("bold_file", "in_file")]),
             (contrastmat, glm, [("out_file", "contrasts")]),
+            (designnode, glm, [("design", "design")]),
         ]
     )
 
-    if confoundsfilefields:
-        mergecolumns = pe.MapNode(
-            interface=MergeColumnsTSV(2),
-            name="mergecolumns",
-            mem_gb=memcalc.min_gb,
-            iterfield="in1",
-            run_without_submitting=True,
-        )
-        workflow.connect(
-            [
-                (meants, mergecolumns, [("out_file", "in1")]),
-                (inputnode, mergecolumns, [(*confoundsfilefields, "in2")]),
-                (mergecolumns, glm, [("out_file", "design")]),
-            ]
-        )
-    else:
-        workflow.connect([(meants, glm, [("out_file", "design")])])
+    # make dof volume
+    makedofvolume = pe.MapNode(
+        interface=MakeDofVolume(), iterfield=["dof_file", "cope_file"], name="makedofvolume",
+    )
+    workflow.connect(
+        [
+            (inputnode, makedofvolume, [("bold_file", "bold_file")]),
+            (designnode, makedofvolume, [(("design", ncol), "num_regressors")]),
+        ]
+    )
 
     outputnode = pe.Node(
         interface=MakeResultdicts(
@@ -180,6 +186,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
                 "cope",
                 "varcope",
                 "zstat",
+                "dof_file",
                 "mask_file",
             ]
         ),
@@ -197,6 +204,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
                     ("seed_names", "firstlevelfeaturename"),
                 ],
             ),
+            (makedofvolume, outputnode, [("out_file", "dof_file")]),
             (
                 glm,
                 outputnode,

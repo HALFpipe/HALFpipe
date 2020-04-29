@@ -7,12 +7,12 @@ import sys
 import logging
 import time
 
-from filelock import SoftFileLock
+import fasteners
 
 from .io import IndexedFile
 
 
-fmt = "[{asctime},{msecs:4.0f}] [{name:16}] [{levelname:7}] {message}"
+fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:7}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
 
 black, red, green, yellow, blue, magenta, cyan, white = range(8)
@@ -74,7 +74,7 @@ class FileHandler(logging.FileHandler):
     def __init__(self, filename, **kwargs):
         super(FileHandler, self).__init__(filename, **kwargs)
         self.lock_file = f"{filename}.lock"
-        self.stream_lock = SoftFileLock(self.lock_file)
+        self.stream_lock = fasteners.InterProcessLock(self.lock_file)
 
     def acquire(self):
         logging.Handler.acquire(self)  # thread lock
@@ -83,6 +83,8 @@ class FileHandler(logging.FileHandler):
     def release(self):
         try:
             self.stream_lock.release()  # stream lock
+        except RuntimeError:
+            pass
         finally:
             logging.Handler.release(self)  # thread lock
 
@@ -127,9 +129,7 @@ class JSReportHandler(logging.Handler):
             and nodestatus is not None
         ):
             if self.indexed_file_obj is None:
-                logging.getLogger("pipeline").warning(
-                    f"Missing indexed_file_obj to log nodestatus"
-                )
+                logging.getLogger("pipeline").warning(f"Missing indexed_file_obj to log nodestatus")
             else:
                 self.indexed_file_obj.set(self.cur_nodename, nodestatus)
 
@@ -217,5 +217,5 @@ class Logger:
         logging.getLogger("pipeline.ui").removeHandler(stdout_handler)  # only log to file
 
         logging.getLogger("nipype.workflow").addHandler(
-            JSReportHandler(op.join(workdir, "reports", "execreport.js"))
+            JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
         )

@@ -10,10 +10,10 @@ from nipype.interfaces.fsl import Split as FSLSplit
 
 from fmriprep.workflows.bold import init_bold_confs_wf
 from fmriprep.workflows.bold.confounds import init_carpetplot_wf
+from fmriprep import config
 
-from ...fmriprepconfig import config as fmriprepconfig
 from ..memory import MemoryCalculator
-from ..utils import ConnectAttrlistHelper, make_reportnode
+from ..utils import ConnectAttrlistHelper, make_reportnode, make_reportnode_datasink
 
 from .sdc import init_sdc_estimate_wf
 
@@ -38,9 +38,7 @@ in_attrs_from_anat_preproc_wf = [
     "std2anat_xfm",
     "template",
 ]
-connect_func_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(
-    in_attrs_from_anat_preproc_wf
-)
+connect_func_wf_attrs_from_anat_preproc_wf = ConnectAttrlistHelper(in_attrs_from_anat_preproc_wf)
 
 func_preproc_wf_out_attrs = [
     "bold_t1",
@@ -67,7 +65,9 @@ func_preproc_wf_out_attrs = [
 ]
 
 
-def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryCalculator()):
+def init_func_preproc_wf(
+    workdir=None, name="func_preproc_wf", fmap_type=None, memcalc=MemoryCalculator()
+):
     """
     simplified from fmriprep/workflows/bold/base.py
     """
@@ -97,9 +97,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     def get_repetition_time(dic):
         return dic.get("RepetitionTime")
 
-    metadatanode = pe.Node(
-        niu.IdentityInterface(fields=["repetition_time"]), name="metadatanode"
-    )
+    metadatanode = pe.Node(niu.IdentityInterface(fields=["repetition_time"]), name="metadatanode")
     workflow.connect(
         [(inputnode, metadatanode, [(("metadata", get_repetition_time), "repetition_time")],)]
     )
@@ -111,8 +109,8 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     )
 
     # Generate a tentative boldref
-    bold_reference_wf = init_bold_reference_wf(omp_nthreads=fmriprepconfig.omp_nthreads)
-    bold_reference_wf.get_node("inputnode").inputs.dummy_scans = fmriprepconfig.dummy_scans
+    bold_reference_wf = init_bold_reference_wf(omp_nthreads=config.nipype.omp_nthreads)
+    bold_reference_wf.get_node("inputnode").inputs.dummy_scans = config.workflow.dummy_scans
     workflow.connect(inputnode, "bold_file", bold_reference_wf, "inputnode.bold_file")
     workflow.connect(bold_reference_wf, "outputnode.skip_vols", outputnode, "skip_vols")
 
@@ -138,14 +136,12 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     )
 
     # Top-level BOLD splitter
-    bold_split = pe.Node(
-        FSLSplit(dimension="t"), name="bold_split", mem_gb=memcalc.series_gb * 3
-    )
+    bold_split = pe.Node(FSLSplit(dimension="t"), name="bold_split", mem_gb=memcalc.series_gb * 3)
     workflow.connect(inputnode, "bold_file", bold_split, "in_file")
 
     # HMC on the BOLD
     bold_hmc_wf = init_bold_hmc_wf(
-        name="bold_hmc_wf", mem_gb=memcalc.series_gb, omp_nthreads=fmriprepconfig.omp_nthreads,
+        name="bold_hmc_wf", mem_gb=memcalc.series_gb, omp_nthreads=config.nipype.omp_nthreads,
     )
     workflow.connect(
         [
@@ -164,33 +160,29 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     # calculate BOLD registration to T1w
     bold_reg_wf = init_bold_reg_wf(
         name="bold_reg_wf",
-        freesurfer=fmriprepconfig.freesurfer,
-        use_bbr=fmriprepconfig.use_bbr,
-        bold2t1w_dof=fmriprepconfig.bold2t1w_dof,
+        freesurfer=config.workflow.run_reconall,
+        use_bbr=config.workflow.use_bbr,
+        bold2t1w_dof=config.workflow.bold2t1w_dof,
         mem_gb=memcalc.series_std_gb,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
         use_compression=False,
     )
     workflow.connect(
         [
             (inputnode, bold_reg_wf, [("t1w_dseg", "inputnode.t1w_dseg")]),
             (t1w_brain, bold_reg_wf, [("out_file", "inputnode.t1w_brain")]),
-            (
-                bold_sdc_wf,
-                bold_reg_wf,
-                [("outputnode.epi_brain", "inputnode.ref_bold_brain")],
-            ),
+            (bold_sdc_wf, bold_reg_wf, [("outputnode.epi_brain", "inputnode.ref_bold_brain")],),
         ]
     )
 
     # apply BOLD registration to T1w
     bold_t1_trans_wf = init_bold_t1_trans_wf(
         name="bold_t1_trans_wf",
-        freesurfer=fmriprepconfig.freesurfer,
+        freesurfer=config.workflow.run_reconall,
         use_fieldwarp=fmap_type is not None,
-        multiecho=fmriprepconfig.multiecho,
+        multiecho=False,
         mem_gb=memcalc.series_std_gb,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
         use_compression=False,
     )
     workflow.connect(
@@ -224,8 +216,8 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     # Only use uncompressed output if AROMA is to be run
     bold_bold_trans_wf = init_bold_preproc_trans_wf(
         mem_gb=memcalc.series_std_gb,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
-        use_compression=not fmriprepconfig.low_mem,
+        omp_nthreads=config.nipype.omp_nthreads,
+        use_compression=not config.execution.low_mem,
         use_fieldwarp=True,
         name="bold_bold_trans_wf",
     )
@@ -234,11 +226,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
         [
             (inputnode, bold_bold_trans_wf, [("bold_file", "inputnode.name_source")]),
             (bold_split, bold_bold_trans_wf, [("out_files", "inputnode.bold_file")]),
-            (
-                bold_hmc_wf,
-                bold_bold_trans_wf,
-                [("outputnode.xforms", "inputnode.hmc_xforms")],
-            ),
+            (bold_hmc_wf, bold_bold_trans_wf, [("outputnode.xforms", "inputnode.hmc_xforms")],),
             (
                 bold_sdc_wf,
                 bold_bold_trans_wf,
@@ -253,12 +241,12 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     # Apply transforms in 1 shot
     # Only use uncompressed output if AROMA is to be run
     bold_std_trans_wf = init_bold_std_trans_wf(
-        freesurfer=fmriprepconfig.freesurfer,
+        freesurfer=config.workflow.run_reconall,
         mem_gb=memcalc.series_std_gb,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
-        spaces=fmriprepconfig.spaces,
+        omp_nthreads=config.nipype.omp_nthreads,
+        spaces=config.workflow.spaces,
         name="bold_std_trans_wf",
-        use_compression=not fmriprepconfig.low_mem,
+        use_compression=not config.execution.low_mem,
         use_fieldwarp=fmap_type is not None,
     )
     workflow.connect(
@@ -284,11 +272,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                 bold_std_trans_wf,
                 [("outputnode.bold_mask", "inputnode.bold_mask")],
             ),
-            (
-                bold_sdc_wf,
-                bold_std_trans_wf,
-                [("outputnode.out_warp", "inputnode.fieldwarp")],
-            ),
+            (bold_sdc_wf, bold_std_trans_wf, [("outputnode.out_warp", "inputnode.fieldwarp")],),
             (
                 bold_std_trans_wf,
                 outputnode,
@@ -304,34 +288,22 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     ica_aroma_wf = init_ica_aroma_wf(
         mem_gb=memcalc.series_std_gb,
         metadata={"RepetitionTime": np.nan},
-        omp_nthreads=fmriprepconfig.omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
         use_fieldwarp=True,
-        err_on_aroma_warn=fmriprepconfig.aroma_err_on_warn,
-        aroma_melodic_dim=fmriprepconfig.aroma_melodic_dim,
+        err_on_aroma_warn=config.workflow.aroma_err_on_warn,
+        aroma_melodic_dim=config.workflow.aroma_melodic_dim,
         name="ica_aroma_wf",
     )
-    # ica_aroma_wf.get_node("melodic").inputs.TR
     workflow.connect(
         [
             (inputnode, ica_aroma_wf, [("bold_file", "inputnode.name_source")]),
             (
                 metadatanode,
                 ica_aroma_wf,
-                [
-                    ("repetition_time", "melodic.tr_sec",),
-                    ("repetition_time", "ica_aroma.TR",),
-                ],
+                [("repetition_time", "melodic.tr_sec",), ("repetition_time", "ica_aroma.TR")],
             ),
-            (
-                bold_hmc_wf,
-                ica_aroma_wf,
-                [("outputnode.movpar_file", "inputnode.movpar_file")],
-            ),
-            (
-                bold_reference_wf,
-                ica_aroma_wf,
-                [("outputnode.skip_vols", "inputnode.skip_vols")],
-            ),
+            (bold_hmc_wf, ica_aroma_wf, [("outputnode.movpar_file", "inputnode.movpar_file")]),
+            (bold_reference_wf, ica_aroma_wf, [("outputnode.skip_vols", "inputnode.skip_vols")]),
             (
                 bold_std_trans_wf,
                 ica_aroma_wf,
@@ -358,9 +330,9 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     bold_confounds_wf = init_bold_confs_wf(
         mem_gb=memcalc.series_std_gb,
         metadata={},
-        regressors_all_comps=fmriprepconfig.regressors_all_comps,
-        regressors_fd_th=fmriprepconfig.regressors_fd_th,
-        regressors_dvars_th=fmriprepconfig.regressors_dvars_th,
+        regressors_all_comps=config.workflow.regressors_all_comps,
+        regressors_fd_th=config.workflow.regressors_fd_th,
+        regressors_dvars_th=config.workflow.regressors_dvars_th,
         name="bold_confounds_wf",
     )
     bold_confounds_wf.get_node("inputnode").inputs.t1_transform_flags = [False]
@@ -414,7 +386,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
     carpetplot_wf = init_carpetplot_wf(
         mem_gb=memcalc.series_std_gb,
         metadata={"RepetitionTime": np.nan},
-        cifti_output=fmriprepconfig.cifti_output,
+        cifti_output=config.workflow.cifti_output,
         name="carpetplot_wf",
     )
     carpetplot_select_std = pe.Node(
@@ -430,11 +402,7 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
                 carpetplot_select_std,
                 [("std2anat_xfm", "std2anat_xfm"), ("template", "keys")],
             ),
-            (
-                carpetplot_select_std,
-                carpetplot_wf,
-                [("std2anat_xfm", "inputnode.std2anat_xfm")],
-            ),
+            (carpetplot_select_std, carpetplot_wf, [("std2anat_xfm", "inputnode.std2anat_xfm")],),
             (
                 bold_bold_trans_wf,
                 carpetplot_wf,
@@ -457,6 +425,10 @@ def init_func_preproc_wf(name="func_preproc_wf", fmap_type=None, memcalc=MemoryC
         ]
     )
 
+    # Custom
+
     make_reportnode(workflow)
+    assert workdir is not None
+    make_reportnode_datasink(workflow, workdir)
 
     return workflow

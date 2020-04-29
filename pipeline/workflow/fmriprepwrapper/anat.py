@@ -10,10 +10,16 @@ from smriprep.workflows.norm import init_anat_norm_wf
 from smriprep.workflows.outputs import init_anat_reports_wf
 from niworkflows.anat.ants import init_brain_extraction_wf
 from niworkflows.interfaces.images import ValidateImage
-from ..utils import make_reportnode
+from niworkflows.utils.spaces import Reference
+from fmriprep import config
 
-from ...fmriprepconfig import config as fmriprepconfig
+from ..space import add_templates_by_composing_transforms
+
+from ..utils import make_reportnode, make_reportnode_datasink
 from ...utils import first
+
+norm_templates = ["MNI152NLin2009cAsym"]
+extra_templates = ["MNI152NLin6Asym"]
 
 
 anat_preproc_wf_output_attrs = [
@@ -31,30 +37,30 @@ anat_preproc_wf_output_attrs = [
 ]
 
 
-def init_anat_preproc_wf(name="anat_preproc_wf"):
+def init_anat_preproc_wf(workdir=None, name="anat_preproc_wf"):
     """
-    simplified from smriprep/workflows/anatomical.py
+    modified from smriprep/workflows/anatomical.py
     """
 
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["t1w", "metadata"]), name="inputnode")
 
-    buffernode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_brain", "t1w_mask"]), name="buffernode"
-    )
+    buffernode = pe.Node(niu.IdentityInterface(fields=["t1w_brain", "t1w_mask"]), name="buffernode")
 
     outputnode = pe.Node(
         niu.IdentityInterface(fields=anat_preproc_wf_output_attrs,), name="outputnode",
     )
 
+    skull_strip_template = Reference.from_string(config.workflow.skull_strip_template)[0]
+
     # Step 1
     anat_validate = pe.Node(ValidateImage(), name="anat_validate", run_without_submitting=True)
     brain_extraction_wf = init_brain_extraction_wf(
-        in_template=fmriprepconfig.skull_strip_template.space,
-        template_spec=fmriprepconfig.skull_strip_template.spec,
-        atropos_use_random_seed=True,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
+        in_template=skull_strip_template.space,
+        template_spec=skull_strip_template.spec,
+        atropos_use_random_seed=not config.workflow.skull_strip_fixed_seed,
+        omp_nthreads=config.nipype.omp_nthreads,
         normalization_quality="precise",
     )
     workflow.connect(
@@ -76,9 +82,7 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
 
     # Step 2
     t1w_dseg = pe.Node(
-        fsl.FAST(segments=True, no_bias=True, probability_maps=True),
-        name="t1w_dseg",
-        mem_gb=3,
+        fsl.FAST(segments=True, no_bias=True, probability_maps=True), name="t1w_dseg", mem_gb=3,
     )
     workflow.connect(
         [
@@ -93,9 +97,9 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
 
     # Step 3
     anat_norm_wf = init_anat_norm_wf(
-        debug=fmriprepconfig.debug,
-        omp_nthreads=fmriprepconfig.omp_nthreads,
-        templates=fmriprepconfig.spaces.get_spaces(nonstandard=False, dim=(3,)),
+        debug=config.execution.debug,
+        omp_nthreads=config.nipype.omp_nthreads,
+        templates=norm_templates,
     )
     workflow.connect(
         [
@@ -108,25 +112,12 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
             (buffernode, anat_norm_wf, [("t1w_mask", "inputnode.moving_mask")]),
             (t1w_dseg, anat_norm_wf, [("tissue_class_map", "inputnode.moving_segmentation")],),
             (t1w_dseg, anat_norm_wf, [("probability_maps", "inputnode.moving_tpms")]),
-            (
-                anat_norm_wf,
-                outputnode,
-                [
-                    ("outputnode.standardized", "std_preproc"),
-                    ("outputnode.std_mask", "std_mask"),
-                    ("outputnode.std_dseg", "std_dseg"),
-                    ("outputnode.std_tpms", "std_tpms"),
-                    ("outputnode.template", "template"),
-                    ("outputnode.anat2std_xfm", "anat2std_xfm"),
-                    ("outputnode.std2anat_xfm", "std2anat_xfm"),
-                ],
-            ),
         ]
     )
 
-    # # Write outputs ############################################3
+    # Write outputs
     anat_reports_wf = init_anat_reports_wf(
-        reportlets_dir="/", freesurfer=fmriprepconfig.freesurfer
+        reportlets_dir="/", freesurfer=config.workflow.run_reconall
     )
     workflow.connect(
         [
@@ -152,6 +143,12 @@ def init_anat_preproc_wf(name="anat_preproc_wf"):
         ]
     )
 
+    # Custom
+
+    add_templates_by_composing_transforms(workflow, templates=extra_templates)
+
     make_reportnode(workflow, spaces=True)
+    assert workdir is not None
+    make_reportnode_datasink(workflow, workdir)
 
     return workflow

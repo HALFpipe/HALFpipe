@@ -33,6 +33,14 @@ class SmoothedTag(BaseTag):
         return ("smoothed", self.fwhm)
 
 
+class GrandMeanScaledTag(BaseTag):
+    def __init__(self, **kwargs):
+        self.mean = kwargs.get("mean")
+
+    def as_tupl(self):
+        return ("grand_mean_scaled", self.mean)
+
+
 class BandPassFilteredTag(BaseTag):
     def __init__(self, **kwargs):
         self.type = kwargs.get("type")
@@ -68,6 +76,14 @@ class SmoothedTagSchema(BaseSchema):
     @post_load
     def make_object(self, data, **kwargs):
         return SmoothedTag(**data)
+
+
+class GrandMeanScaledTagSchema(BaseSchema):
+    mean = fields.Float()
+
+    @post_load
+    def make_object(self, data, **kwargs):
+        return GrandMeanScaledTag(**data)
 
 
 class BandPassFilteredTagSchema(BaseSchema):

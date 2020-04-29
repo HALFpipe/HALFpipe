@@ -3,27 +3,17 @@ From: poldracklab/fmriprep:20.1.0rc2
 
 %setup
   mkdir -p ${SINGULARITY_ROOTFS}/root/src/pipeline
+  mkdir -p ${SINGULARITY_ROOTFS}/ext
 
 %files
   . /root/src/pipeline
 
 %post
   export PATH=/usr/local/miniconda/bin:$PATH
-
+  
   pip install --upgrade pip
-  pip install 'nibabel>=3.0.0' 'niworkflows~=1.1.12' cython
-
-  mkdir -p /root/src
-
-  curl -sSL \
-  $(curl -sSL "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest" | \
-    grep browser_download_url | cut -d '"' -f 4) -o /root/src/qualitycheck.html
-
-  mkdir -p /ext
   
   cd /root/src/pipeline && \
-    cp /root/src/qualitycheck.html pipeline/index.html && \
-    cp /root/src/pipeline/VERSION pipeline/VERSION && \
     pip install .[all] && \
     python postsetup.py
   

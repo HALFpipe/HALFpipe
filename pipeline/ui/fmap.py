@@ -19,6 +19,7 @@ from ..spec import (
     Phase1TagsSchema,
     Phase2TagsSchema,
     Magnitude1TagsSchema,
+    Magnitude2TagsSchema,
     FieldMapTagsSchema,
     PhaseEncodingDirection,
     bold_entities,
@@ -64,9 +65,7 @@ class BaseBOLDMissingMetadataStep(BaseBOLDSelectStep):
                 filepaths = ctx.database.filter(
                     self.filepaths_with_missing_metadata, **filterdict
                 )
-                fileobj_set = set(
-                    ctx.database.get_fileobj(filepath) for filepath in filepaths
-                )
+                fileobj_set = set(ctx.database.get_fileobj(filepath) for filepath in filepaths)
                 for fileobj in fileobj_set:
                     self._set_value(fileobj, res)
         return True
@@ -104,9 +103,9 @@ class BoldDirectionStep(BaseBOLDMissingMetadataStep):
         pedir_obj = PhaseEncodingDirection[res]
         assert (
             fileobj.tags.phase_encoding_direction is None
-            or fileobj.tags.phase_encoding_direction == pedir_obj
+            or fileobj.tags.phase_encoding_direction == pedir_obj.value
         ), "Inconsistent phase encoding directions"
-        fileobj.tags.phase_encoding_direction = pedir_obj
+        fileobj.tags.phase_encoding_direction = pedir_obj.value
 
     def next(self, ctx):
         return FirstLevelAnalysisStep(self.app)(ctx)
@@ -202,21 +201,41 @@ class Phase1Step(FilePatternStep):
 
 class PhaseTypeStep(BranchStep):
     is_vertical = True
-    header_str = "Specify the type of the field maps"
+    header_str = "Specify the type of the phase images"
     options = {
         "One phase difference image": PhaseDifferenceStep,
         "Two phase images": Phase1Step,
     }
 
 
-class PhaseDifferenceMagnitude1Step(FilePatternStep):
-    filetype_str = "magnitude image"
-    tags_dict = {"datatype": "fmap", "suffix": "magnitude1"}
+class PhaseDifferenceMagnitude2Step(FilePatternStep):
+    filetype_str = "second magnitude image"
+    tags_dict = {"datatype": "fmap", "suffix": "magnitude2"}
     allowed_entities = ["subject", "session", "run", "task"]
     ask_if_missing_entities = []
     required_in_pattern_entities = ["subject"]
     next_step_type = PhaseTypeStep
+    tags_schema = Magnitude2TagsSchema()
+
+
+class PhaseDifferenceOnlyMagnitude1Step(PhaseDifferenceMagnitude2Step):
+    filetype_str = "magnitude image"
+    tags_dict = {"datatype": "fmap", "suffix": "magnitude1"}
     tags_schema = Magnitude1TagsSchema()
+
+
+class PhaseDifferenceMagnitude1Step(PhaseDifferenceOnlyMagnitude1Step):
+    filetype_str = "first magnitude image"
+    next_step_type = PhaseDifferenceMagnitude2Step
+
+
+class PhaseDifferenceMagnitudeTypeStep(BranchStep):
+    is_vertical = True
+    header_str = "Specify the type of the magnitude images"
+    options = {
+        "One magnitude image file": PhaseDifferenceOnlyMagnitude1Step,
+        "Two magnitude image files": PhaseDifferenceMagnitude1Step,
+    }
 
 
 class FieldMapMagnitude1Step(PhaseDifferenceMagnitude1Step):
@@ -238,7 +257,7 @@ class FmapTypeStep(BranchStep):
     header_str = "Specify the type of the field maps"
     options = {
         "Blip-up blip-down (PEPOLAR)": PEPOLARStep,
-        "Phase difference and magnitude": PhaseDifferenceMagnitude1Step,
+        "Phase difference and magnitude": PhaseDifferenceMagnitudeTypeStep,
         "Field map": FieldMapMagnitude1Step,
     }
 

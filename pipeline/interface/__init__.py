@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from .ants import FixInputApplyTransforms
 from .cache import LoadResult
 from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
@@ -19,11 +20,12 @@ from .resultdict import (
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
-    ReportResultdictDatasink,
 )
+from .scaling import GrandMeanScaling
 from .utils import SelectColumnsTSV, MergeColumnsTSV, MatrixToTSV
 
 __all__ = [
+    FixInputApplyTransforms,
     LoadResult,
     ParseConditionFile,
     ConnectivityMeasure,
@@ -47,7 +49,7 @@ __all__ = [
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
-    ReportResultdictDatasink,
+    GrandMeanScaling,
     SelectColumnsTSV,
     MergeColumnsTSV,
     MatrixToTSV,

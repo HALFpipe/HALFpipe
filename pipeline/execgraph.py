@@ -36,15 +36,15 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         logger.info(f"New execgraph: {uuidstr}")
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
-    reportjsfilename = op.join(workdir, "reports", "execreport.js")
+    reportjsfilename = op.join(workdir, "reports", "reportexec.js")
     allnodenames = set(node.fullname for node in execgraph.nodes())
     try:
         indexedfileobj = IndexedFile(reportjsfilename)
         assert allnodenames.issubset(indexedfileobj.file_index.indexdict)
     except Exception:
-        logger.info(f"Init execreport.js")
+        logger.info(f"Init reportexec.js")
         init_indexed_js_object_file(
-            reportjsfilename, "qualitycheck.execreport", allnodenames, 10
+            reportjsfilename, "qualitycheck.reportexec", allnodenames, 10
         )  # TODO don't overwrite current values
 
     if subject_chunks or (n_chunks is not None and n_chunks > 1):

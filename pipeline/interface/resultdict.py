@@ -2,23 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
 from os import path as op
 from copy import deepcopy
-from shutil import copyfile
-import logging
-from pprint import pformat
-import json
 
 import numpy as np
-from filelock import SoftFileLock
 
 from .report import report_metadata_fields
 from ..spec import bold_entities
-from ..utils import ravel, splitext
-from ..io import load_spreadsheet
+from ..utils import ravel
+from ..io import load_spreadsheet, get_resulthooks
 from ..database import init_qualitycheck_exclude_database_cached
-from ..fmriprepconfig import config as fmriprepconfig
 
 from nipype.interfaces.base import (
     traits,
@@ -43,6 +36,7 @@ filefields = [
     "covariance",
     "correlation",
     "partial_correlation",
+    "report",
 ]
 
 
@@ -58,14 +52,13 @@ class MakeResultdicts(IOBase):
     input_spec = MakeResultdictsInputSpec
     output_spec = ResultdictsOutputSpec
 
-    def __init__(self, keys=None, **inputs):  # filterdict=None,
+    def __init__(self, keys=None, **inputs):
         super(MakeResultdicts, self).__init__(**inputs)
         if keys is not None:
             add_traits(self.inputs, keys)
         else:
             keys = []
         self._keys = keys
-        # self._filterdict = filterdict
 
     def _list_outputs(self):
         outputs = self._outputs().get()
@@ -96,19 +89,6 @@ class MakeResultdicts(IOBase):
                 if v is not None:
                     resultdict[k] = v
             resultdicts.append(resultdict)
-
-        # if self._filterdict is not None:
-        #     filteredresultdicts = []
-        #     for resultdict in resultdicts:
-        #         include = True
-        #         for key, filter in self._filterdict.items():
-        #             if key not in resultdict:
-        #                 continue
-        #             if re.match(filter, resultdict[key]) is not None:
-        #                 include = False
-        #         if include:
-        #             filteredresultdicts.append(resultdict)
-        #     resultdicts = filteredresultdicts
 
         outputs["resultdicts"] = resultdicts
 
@@ -358,125 +338,11 @@ class ResultdictDatasink(SimpleInterface):
     always_run = True
 
     def _run_interface(self, runtime):
-        for resultdict in self.inputs.indicts:
-            basepath = Path(self.inputs.base_directory)
-            keys = set(resultdict.keys())
-            for entity in reversed(bold_entities):
-                if entity in keys and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
-                    keys.remove(entity)
-            newkeys = set()
-            for entity in sorted(keys):
-                if entity not in filefields and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
-                else:
-                    newkeys.add(entity)
-            keys = newkeys
-            basepath.mkdir(parents=True, exist_ok=True)
-            for field in reversed(filefields):
-                fieldvalue = resultdict.get(field)
-                if isinstance(fieldvalue, str):
-                    _, ext = splitext(fieldvalue)
-                    outpath = basepath / f"{field}{ext}"
-                    if outpath.exists():
-                        logging.getLogger("pipeline").info(f'Overwriting file "{outpath}"')
-                    copyfile(fieldvalue, outpath)
-                elif fieldvalue is not None:
-                    pstr = pformat(fieldvalue)
-                    logging.getLogger("pipeline").debug(f'Not copying "{pstr}"')
-
-        return runtime
-
-
-class ReportResultdictDatasink(SimpleInterface):
-    input_spec = ResultdictDatasinkInputSpec
-    output_spec = TraitedSpec
-
-    always_run = True
-
-    def _run_interface(self, runtime):
-        sinkdresultdicts = []
-        for resultdict in self.inputs.indicts:
-            reportsdir = Path(self.inputs.base_directory) / "reports"
-
-            basepath = reportsdir
-            keys = set(resultdict.keys())
-            for entity in reversed(bold_entities):
-                if entity in keys and isinstance(resultdict[entity], str):
-                    basepath = basepath.joinpath(f"{entity}_{resultdict[entity]}")
-                    keys.remove(entity)
-
-            basepath.mkdir(parents=True, exist_ok=True)
-
-            reportdesc = resultdict.get("desc")
-            reportfile = resultdict.get("report")
-
-            reportspace = resultdict.get("space")
-            if (
-                isdefined(reportspace)
-                and reportspace is not None
-                and fmriprepconfig.target_space not in str(reportspace)
-            ):
-                continue
-
-            if (
-                isinstance(reportfile, str)
-                and op.isfile(reportfile)
-                and isinstance(reportdesc, str)
-            ):
-                _, ext = splitext(reportfile)
-                outpath = basepath / f"{reportdesc}{ext}"
-                if outpath.exists():
-                    logging.getLogger("pipeline").info(f'Overwriting file "{outpath}"')
-                copyfile(reportfile, outpath)
-
-                sinkdresultdicts.append(
-                    {
-                        k: v
-                        for k, v in resultdict.items()
-                        if k in bold_entities or k in {"report", "desc"}
-                    }
-                )
-
-        indexfilename = reportsdir / "reportimgs.js"
-        lockfilename = reportsdir / "reportimgs.js.lock"
-        lock = SoftFileLock(str(lockfilename))
-
-        header = f"qualitycheck.reportimgs(JSON.parse(`".encode()
-        footer = f"`));".encode()
-
-        with lock:
-            indexlist = []
-            if indexfilename.is_file():
-                with open(str(indexfilename), "rb") as fp:
-                    bytesfromfile = fp.read()
-                    try:
-                        indexlist = json.loads(bytesfromfile[len(header) : -len(footer)])
-                    except json.decoder.JSONDecodeError as e:
-                        logging.getLogger("pipeline").warning("JSONDecodeError %s", e)
-
-            newindexlist = [*sinkdresultdicts]
-            for resultdict0 in indexlist:
-                overwrite = False
-                for resultdict1 in sinkdresultdicts:
-                    areequal = True
-                    for key in {*bold_entities, "desc"}:
-                        if (
-                            key in resultdict0
-                            and key in resultdict1
-                            and resultdict0[key] == resultdict1[key]
-                        ):
-                            pass
-                        else:
-                            areequal = False
-                    if areequal:
-                        overwrite = True
-                        break
-                if not overwrite:
-                    newindexlist.append(resultdict0)
-            with open(str(indexfilename), "w") as fp:
-                fp.write(header.decode())
-                json.dump(newindexlist, fp, indent=4, ensure_ascii=False)
-                fp.write(footer.decode())
+        base_directory = self.inputs.base_directory
+        resulthooks = get_resulthooks(base_directory)
+        for resulthook in resulthooks:
+            with resulthook:
+                for resultdict in self.inputs.indicts:
+                    resulthook.run(resultdict)
 
         return runtime

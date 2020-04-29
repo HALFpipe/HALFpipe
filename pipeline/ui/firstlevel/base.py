@@ -35,7 +35,11 @@ bold_tags_dict = {"datatype": "func", "suffix": "bold"}
 
 
 def add_first_level_analysis_obj(ctx):
-    analysis_tags_dict = {**bold_tags_dict, "space": "mni"}
+    analysis_tags_dict = {
+        **bold_tags_dict,
+        "space": "mni",
+        "grand_mean_scaled": {"mean": 10000},
+    }
     analysis_tags_obj = PreprocessedBoldTagsSchema().load(analysis_tags_dict)
     analysis_dict = {
         "level": "first",

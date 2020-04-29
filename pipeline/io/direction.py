@@ -37,9 +37,9 @@ def canonicalize_pedir_str(pedir_str, pat):
         for i, axcode in enumerate(axcodes):
             axcode = axcode.lower()
             if axcode in pedir_str:
-                pedir_str = ["i", "j", "k"][i]
+                canonical_pedir_str = ["i", "j", "k"][i]
                 if pedir_str[0] == axcode:
-                    pedir_str += "-"
+                    canonical_pedir_str += "-"
                 break
-    assert pedir_str in canonical_pedir_strs, "Unknown phase encoding direction code"
-    return pedir_str
+    assert canonical_pedir_str in canonical_pedir_strs, "Unknown phase encoding direction code"
+    return canonical_pedir_str

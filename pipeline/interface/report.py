@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from os import path as op
-import pkg_resources
 from uuid import uuid4
 
 import numpy as np
@@ -27,6 +26,7 @@ from nilearn.plotting import plot_epi, plot_anat
 
 from ..io import img_to_signals, load_spreadsheet
 from ..utils import nvol
+from ..resources import get as getresource
 
 
 report_metadata_fields = ["mean_fd", "fd_gt_0_5", "aroma_noise_frac", "mean_gm_tsnr"]
@@ -124,8 +124,12 @@ class PlotEpi(ReportingInterface):
         compose_view(bg_svgs=outfiles, fg_svgs=None, out_file=self._out_report)
 
 
+class PlotRegistrationInputSpec(PlotInputSpec):
+    template = traits.Str(mandatory=True)
+
+
 class PlotRegistration(ReportingInterface):
-    input_spec = PlotInputSpec
+    input_spec = PlotRegistrationInputSpec
 
     def _generate_report(self):
         in_img = nib.load(self.inputs.in_file)
@@ -134,7 +138,11 @@ class PlotRegistration(ReportingInterface):
         mask_img = nib.load(self.inputs.mask_file)
         assert nvol(mask_img) == 1
 
-        parc_file = pkg_resources.resource_filename("pipeline", "registrationCheckParc.nii.gz")
+        template = self.inputs.template
+
+        parc_file = getresource(f"tpl-{template}_RegistrationCheckOverlay.nii.gz")
+        assert parc_file is not None
+
         parc_img = nib.load(parc_file)
 
         levels = np.unique(np.asanyarray(parc_img.dataobj).astype(np.int32))

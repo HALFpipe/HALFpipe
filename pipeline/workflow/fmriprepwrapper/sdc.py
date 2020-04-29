@@ -11,8 +11,8 @@ from sdcflows.workflows.pepolar import init_pepolar_unwarp_wf, check_pes
 from sdcflows.workflows.fmap import init_fmap2field_wf, init_fmap_wf
 from sdcflows.workflows.unwarp import init_sdc_unwarp_wf
 from sdcflows.workflows.phdiff import init_phdiff_wf
+from fmriprep import config
 
-from ...fmriprepconfig import config as fmriprepconfig
 from ...io import canonicalize_pedir_str
 
 
@@ -24,9 +24,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
     workflow = pe.Workflow(name=name if fmap_type else "sdc_bypass_wf")
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["epi_file", "epi_brain", "epi_mask", "metadata", "fmaps"]
-        ),
+        niu.IdentityInterface(fields=["epi_file", "epi_brain", "epi_mask", "metadata", "fmaps"]),
         name="inputnode",
     )
 
@@ -70,7 +68,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
 
         # Get EPI polarities and their metadata
         sdc_unwarp_wf = init_pepolar_unwarp_wf(
-            matched_pe=matched_pe, omp_nthreads=fmriprepconfig.omp_nthreads
+            matched_pe=matched_pe, omp_nthreads=config.nipype.omp_nthreads
         )
 
         workflow.connect(
@@ -91,9 +89,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
     elif fmap_type == "fieldmap" or fmap_type == "phasediff":
         if fmap_type == "fieldmap":
             outputnode.inputs.method = "FMB (fieldmap-based) - directly measured B0 map"
-            fmap_wf = init_fmap_wf(
-                omp_nthreads=fmriprepconfig.omp_nthreads, fmap_bspline=False
-            )
+            fmap_wf = init_fmap_wf(omp_nthreads=config.nipype.omp_nthreads, fmap_bspline=False)
             workflow.connect(
                 [
                     (
@@ -108,7 +104,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
             )
         elif fmap_type == "phasediff":
             outputnode.inputs.method = "FMB (fieldmap-based) - phase-difference map"
-            fmap_wf = init_phdiff_wf(omp_nthreads=fmriprepconfig.omp_nthreads)
+            fmap_wf = init_phdiff_wf(omp_nthreads=config.nipype.omp_nthreads)
             workflow.connect(
                 [
                     (
@@ -123,7 +119,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
             )
 
         fmap2field_wf = init_fmap2field_wf(
-            omp_nthreads=fmriprepconfig.omp_nthreads, debug=fmriprepconfig.debug
+            omp_nthreads=config.nipype.omp_nthreads, debug=config.execution.debug
         )
         workflow.connect(
             [
@@ -149,8 +145,8 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
         )
 
         sdc_unwarp_wf = init_sdc_unwarp_wf(
-            omp_nthreads=fmriprepconfig.omp_nthreads,
-            debug=fmriprepconfig.debug,
+            omp_nthreads=config.nipype.omp_nthreads,
+            debug=config.execution.debug,
             name="sdc_unwarp_wf",
         )
         workflow.connect(
@@ -163,11 +159,7 @@ def init_sdc_estimate_wf(fmap_type=None, name="sdc_estimate_wf"):
                         ("epi_mask", "inputnode.in_reference_mask"),
                     ],
                 ),
-                (
-                    fmap2field_wf,
-                    sdc_unwarp_wf,
-                    [("outputnode.out_warp", "inputnode.in_warp")],
-                ),
+                (fmap2field_wf, sdc_unwarp_wf, [("outputnode.out_warp", "inputnode.in_warp")],),
             ]
         )
     else:
@@ -222,6 +214,7 @@ def get_fmaps(boldfile, database):
         try:
             matched_pe = check_pes(epi)
             if matched_pe:
+                metadata["fmap_type"] = "epi"
                 return "epi", epi, metadata
         except ValueError as ve:
             logging.getLogger("pipeline").warn(f"Skip fmap: %s", ve, stack_info=True)
@@ -236,6 +229,7 @@ def get_fmaps(boldfile, database):
         metadata["EffectiveEchoSpacing"] = ees
         if len(fieldmap) > 0:
             fmaps = {"magnitude": magnitude.pop(), "fieldmap": fieldmap.pop()}
+            metadata["fmap_type"] = "fieldmap"
             return "fieldmap", fmaps, metadata
 
         if len(phasediff) > 0:
@@ -270,6 +264,7 @@ def get_fmaps(boldfile, database):
                     f"Skip fmap: invalid number of phase images ({nphasediff})"
                 )
                 return None, None, metadata
+            metadata["fmap_type"] = "phasediff"
             return "phasediff", fmaps, metadata
 
     return None, None, metadata

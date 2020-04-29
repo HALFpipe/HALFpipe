@@ -6,8 +6,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
-from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts
-from ...utils import ravel
+from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts, MakeDofVolume
+from ...utils import ravel, ncol
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
@@ -33,9 +33,7 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name
-            for name in analysis.tags.confounds_removed.names
-            if "aroma_motion" not in name
+            name for name in analysis.tags.confounds_removed.names if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             confoundsfilefields.append("confounds_file")
@@ -137,9 +135,26 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
     )
     workflow.connect([(inputnode, contrastmat, [("map_files", "map_file")])])
     if confoundsfilefields:
-        workflow.connect(
-            [(inputnode, contrastmat, [(*confoundsfilefields, *confoundsfilefields)])]
+        workflow.connect([(inputnode, contrastmat, [(*confoundsfilefields, *confoundsfilefields)])])
+
+    designnode = pe.Node(niu.IdentityInterface(fields=["design"]), name="designnode")
+    if confoundsfilefields:
+        mergecolumns = pe.MapNode(
+            interface=MergeColumnsTSV(2),
+            name="mergecolumns",
+            mem_gb=memcalc.min_gb,
+            iterfield="in1",
+            run_without_submitting=True,
         )
+        workflow.connect(
+            [
+                (glm0, mergecolumns, [("out_file", "in1")]),
+                (inputnode, mergecolumns, [(*confoundsfilefields, "in2")]),
+                (mergecolumns, designnode, [("out_file", "design")]),
+            ]
+        )
+    else:
+        workflow.connect([(glm0, designnode, [("out_file", "design")])])
 
     glm1 = pe.MapNode(
         interface=fsl.GLM(
@@ -157,26 +172,9 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
         [
             (inputnode, glm1, [("bold_file", "in_file"), ("mask_file", "mask")]),
             (contrastmat, glm1, [("out_file", "contrasts")]),
+            (designnode, glm1, [("design", "design")]),
         ]
     )
-
-    if confoundsfilefields:
-        mergecolumns = pe.MapNode(
-            interface=MergeColumnsTSV(2),
-            name="mergecolumns",
-            mem_gb=memcalc.min_gb,
-            iterfield="in1",
-            run_without_submitting=True,
-        )
-        workflow.connect(
-            [
-                (glm0, mergecolumns, [("out_file", "in1")]),
-                (inputnode, mergecolumns, [(*confoundsfilefields, "in2")]),
-                (mergecolumns, glm1, [("out_file", "design")]),
-            ]
-        )
-    else:
-        workflow.connect([(glm0, glm1, [("out_file", "design")])])
 
     splitcopesimages = pe.MapNode(
         interface=fsl.Split(dimension="t"), iterfield="in_file", name="splitcopesimages"
@@ -195,6 +193,17 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
         ]
     )
 
+    # make dof volume
+    makedofvolume = pe.MapNode(
+        interface=MakeDofVolume(), iterfield=["dof_file", "cope_file"], name="makedofvolume",
+    )
+    workflow.connect(
+        [
+            (inputnode, makedofvolume, [("bold_file", "bold_file")]),
+            (designnode, makedofvolume, [(("design", ncol), "num_regressors")]),
+        ]
+    )
+
     # output
 
     outputnode = pe.Node(
@@ -205,6 +214,7 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
                 "cope",
                 "varcope",
                 "zstat",
+                "dof_file",
                 "mask_file",
             ]
         ),
@@ -222,6 +232,7 @@ def init_dualregression_wf(analysis, memcalc=MemoryCalculator()):
                     (("map_components", ravel), "firstlevelfeaturename"),
                 ],
             ),
+            (makedofvolume, outputnode, [("out_file", "dof_file")]),
             (splitcopesimages, outputnode, [(("out_files", ravel), "cope")]),
             (splitvarcopesimage, outputnode, [(("out_files", ravel), "varcope")]),
             (splitzstatsimage, outputnode, [(("out_files", ravel), "zstat")]),

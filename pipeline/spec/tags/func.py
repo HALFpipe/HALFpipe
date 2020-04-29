@@ -16,6 +16,7 @@ from .derivative import (
     SmoothedTagSchema,
     BandPassFilteredTagSchema,
     ConfoundsRemovedTagSchema,
+    GrandMeanScaledTagSchema,
 )
 
 study_entities = ["direction", "run", "session", "task"]
@@ -29,7 +30,6 @@ class BaseFuncTagsSchema(BaseSchema):
     session = fields.Str()
     run = fields.Str()
     task = fields.Str()
-    direction = fields.Str()
 
 
 class BaseEventsTagsSchema(BaseFuncTagsSchema):
@@ -80,6 +80,7 @@ class BoldTagsSchema(BaseFuncTagsSchema):
 class PreprocessedBoldTagsSchema(BoldTagsSchema):
     space = fields.Str(validate=validate.OneOf(["mni"]))
     smoothed = fields.Nested(SmoothedTagSchema)
+    grand_mean_scaled = fields.Nested(GrandMeanScaledTagSchema)
     band_pass_filtered = fields.Nested(BandPassFilteredTagSchema)
     confounds_removed = fields.Nested(ConfoundsRemovedTagSchema)
 

@@ -3,12 +3,17 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+from os import path as op
 import sys
+import pkg_resources
 
 os.environ["NIPYPE_NO_ET"] = "1"  # noqa; disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"  # noqa
 
-from os import path as op
+from fmriprep import config
+
+configfilename = pkg_resources.resource_filename("pipeline", "data/config.toml")
+config.load(configfilename)
 
 global debug
 debug = False
@@ -37,13 +42,16 @@ def _main():
     basegroup.add_argument("--verbose", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
-    steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
     steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
     for step in steps:
+        steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
         steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
         if "run" not in step:
             stepgroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
+
+    workflowgroup = ap.add_argument_group("workflow", "")
+    workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument(
@@ -85,6 +93,7 @@ def _main():
     args = ap.parse_args()
     global debug
     debug = args.debug
+    config.execution.debug = debug
     verbose = args.verbose
 
     if args.version is True:
@@ -158,6 +167,9 @@ def _main():
         logger.info(f"Running step: workflow")
         from .workflow import init_workflow
 
+        if args.nipype_omp_nthreads is not None:
+            config.nipype.omp_nthreads = args.nipype_omp_nthreads
+
         workflow = init_workflow(workdir)
 
     execgraphs = None
@@ -183,7 +195,11 @@ def _main():
             workdir, workflow, n_chunks=args.n_chunks, subject_chunks=args.subject_chunks
         )
 
-    if not should_run["run"]:
+    if (
+        not should_run["run"]
+        and not should_run["run-subjectlevel"]
+        and not should_run["run-grouplevel"]
+    ):
         logger.info(f"Did not run step: run")
     else:
         logger.info(f"Running step: run")

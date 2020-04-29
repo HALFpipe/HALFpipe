@@ -38,6 +38,7 @@ tagnames = [
     "repetition_time",
     #
     "smoothed",
+    "grand_mean_scaled",
     "band_pass_filtered",
     "confounds_removed",
     "space",
@@ -70,6 +71,7 @@ class Tags:
         self.repetition_time = kwargs.get("repetition_time")
         #
         self.smoothed = kwargs.get("smoothed")
+        self.grand_mean_scaled = kwargs.get("grand_mean_scaled")
         self.band_pass_filtered = kwargs.get("band_pass_filtered")
         self.confounds_removed = kwargs.get("confounds_removed")
         self.space = kwargs.get("space")

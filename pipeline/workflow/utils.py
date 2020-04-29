@@ -9,25 +9,24 @@ from nipype.interfaces import utility as niu
 
 from niworkflows.interfaces.utility import KeySelect
 
-from ..interface import ResultdictDatasink, MakeResultdicts, ReportResultdictDatasink
+from ..interface import ResultdictDatasink, MakeResultdicts
 from ..utils import hexdigest, first
 
 reportlets_datasink_match = re.compile(r"ds_?(.*?)_?report_?(.*?)").fullmatch
 
 
-def make_resultdict_datasink(workflow, base_directory, endpoint, name="resultdictdatasink"):
+def make_resultdict_datasink(workflow, workdir, endpoint, name="resultdictdatasink"):
     resultdictdatasink = pe.Node(
-        interface=ResultdictDatasink(base_directory=str(base_directory)), name=name
+        interface=ResultdictDatasink(base_directory=str(workdir)), name=name
     )
     workflow.connect(*endpoint, resultdictdatasink, "indicts")
 
 
 def make_reportnode_datasink(workflow, workdir):
-    reportdatasink = pe.Node(
-        interface=ReportResultdictDatasink(base_directory=str(workdir)), name="reportdatasink",
-    )
     reportnode = workflow.get_node("reportnode")
-    workflow.connect(reportnode, "resultdicts", reportdatasink, "indicts")
+    make_resultdict_datasink(
+        workflow, workdir, (reportnode, "resultdicts"), name="reportdatasink"
+    )
 
 
 def make_reportnode(workflow, spaces=False):
