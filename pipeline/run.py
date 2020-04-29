@@ -216,8 +216,8 @@ def _main():
         else:
             logger.info(f"Using execgraphs from previous step")
 
-        from nipype.pipeline import plugins as nip
-        from pipeline import plugins as ppp
+        import nipype.pipeline.plugins as nip
+        import pipeline.plugins as ppp
 
         plugin_args = {
             "workdir": workdir,

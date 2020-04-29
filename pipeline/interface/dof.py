@@ -56,7 +56,7 @@ class MakeDofVolume(BaseInterface):
         if ref_img is None:
             return runtime
 
-        outshape = ref_img.shape
+        outshape = ref_img.shape[:3]
         outarr = np.full(outshape, dof)
 
         outimg = new_img_like(ref_img, outarr)

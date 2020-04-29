@@ -7,9 +7,7 @@ from pathlib import Path
 from templateflow import api
 
 DEFAULT_PIPELINE_RESOURCE_DIR = Path.home() / ".cache" / "pipeline"
-PIPELINE_RESOURCE_DIR = Path(
-    getenv("PIPELINE_RESOURCE_DIR", str(DEFAULT_PIPELINE_RESOURCE_DIR))
-)
+PIPELINE_RESOURCE_DIR = Path(getenv("PIPELINE_RESOURCE_DIR", str(DEFAULT_PIPELINE_RESOURCE_DIR)))
 
 ONLINE_RESOURCES = {
     "index.html": (
@@ -90,4 +88,4 @@ def get(filename=None):
 
         download(resource, target=filepath)
 
-        return filepath
+        return str(filepath)
