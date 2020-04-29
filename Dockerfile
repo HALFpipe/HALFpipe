@@ -2,7 +2,9 @@ ARG FMRIPREP_VERSION=20.1.0rc2
 
 FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
 
-ENV PATH="/usr/local/miniconda/bin:$PATH"
+ENV PATH="/usr/local/miniconda/bin:$PATH" \
+    PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline" \
+    TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
 
 COPY . /root/src/pipeline/
 

@@ -1,6 +1,11 @@
 Bootstrap: docker
 From: poldracklab/fmriprep:20.1.0rc2
 
+%environment
+  PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline"
+  TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
+  export PIPELINE_RESOURCE_DIR TEMPLATEFLOW_HOME
+
 %setup
   mkdir -p ${SINGULARITY_ROOTFS}/pipeline
   mkdir -p ${SINGULARITY_ROOTFS}/ext
