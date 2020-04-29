@@ -199,8 +199,7 @@ class Database:
             tagnames,
             set(
                 tuple(
-                    getattr(self.tags_by_filepaths[filepath], tn, None)
-                    for tn in resolvedtagnames
+                    getattr(self.tags_by_filepaths[filepath], tn, None) for tn in resolvedtagnames
                 )
                 for filepath in filepaths
                 if filepath in self.tags_by_filepaths

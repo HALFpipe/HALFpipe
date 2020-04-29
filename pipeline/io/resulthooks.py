@@ -150,7 +150,7 @@ class ReportResultHook(ResultHook):
         self._copy_file(report_file, out_filepath)
 
         outdict = dict(entitytupls)
-        outdict.update({"desc": desc, "report": report_file})
+        outdict.update({"desc": desc, "report": str(out_filepath.relative_to(self.base_directory))})
         self.dictlistfile.put(outdict)
 
 
