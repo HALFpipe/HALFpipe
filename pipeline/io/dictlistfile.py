@@ -84,13 +84,10 @@ class DictListFile:
         for i, curdict in enumerate(self.dictlist):
             matches = True
             for key in [*bold_entities, "desc"]:  # index fields to match
-                if key in indict and key in curdict and indict[key] == curdict[key]:
-                    pass
-                else:
-                    matches = False
+                if key in indict and key in curdict:
+                    matches = indict[key] == curdict[key]
             if matches:
                 break
-
         if matches:
             self.dictlist[i] = indict
         else:

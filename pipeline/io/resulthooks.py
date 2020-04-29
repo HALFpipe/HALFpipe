@@ -49,7 +49,7 @@ class ResultHook:
         out_directory.mkdir(parents=True, exist_ok=True)
 
         for key, value in valuedict.items():
-            if isinstance(value, str):
+            if isinstance(value, str) and Path(value).exists():
                 _, ext = splitext(value)
                 out_filepath = out_directory / f"{key}{ext}"
                 self._copy_file(value, out_filepath)
@@ -88,7 +88,7 @@ class PreprocessedImgCopyOutResultHook(ResultHook):
 
         statusdict = dict(entitytupls)
         statusdict.update({"status": "done"})
-        self.dictlistfile.put(valuedict)
+        self.dictlistfile.put(statusdict)
 
 
 class ReportValsResultHook(ResultHook):
@@ -145,6 +145,9 @@ class ReportResultHook(ResultHook):
         desc = valuedict["desc"]
         report_file = valuedict["report"]
 
+        if not Path(report_file).exists():
+            return
+
         _, ext = splitext(report_file)
         out_filepath = out_directory / f"{desc}{ext}"
         self._copy_file(report_file, out_filepath)
@@ -188,7 +191,7 @@ class SubjectLevelFeatureCopyOutResultHook(ResultHook):
         out_directory.mkdir(parents=True, exist_ok=True)
 
         for key, value in valuedict.items():
-            if isinstance(value, str):
+            if isinstance(value, str) and Path(value).exists():
                 _, ext = splitext(value)
                 out_filepath = out_directory / f"{key}{ext}"
                 self._copy_file(value, out_filepath)
@@ -233,7 +236,7 @@ class GroupLevelFeatureCopyOutResultHook(ResultHook):
         out_directory.mkdir(parents=True, exist_ok=True)
 
         for key, value in valuedict.items():
-            if isinstance(value, str):
+            if isinstance(value, str) and Path(value).exists():
                 _, ext = splitext(value)
                 out_filepath = out_directory / f"{key}{ext}"
                 self._copy_file(value, out_filepath)

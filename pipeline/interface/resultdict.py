@@ -226,9 +226,7 @@ class FilterResultdicts(SimpleInterface):
                     continue
                 variable_dict = categorical_dict[filterobj.variable]
                 selectedsubjects = set(
-                    subject
-                    for subject, value in variable_dict.items()
-                    if value in filterobj.levels
+                    subject for subject, value in variable_dict.items() if value in filterobj.levels
                 )
                 if filterobj.action == "include":
                     outdicts = [
@@ -250,8 +248,7 @@ class FilterResultdicts(SimpleInterface):
                 outdicts = [
                     outdict
                     for outdict in outdicts
-                    if _aggregate_if_needed(outdict.get(filterobj.type, np.inf))
-                    < filterobj.cutoff
+                    if _aggregate_if_needed(outdict.get(filterobj.type, np.inf)) < filterobj.cutoff
                 ]
 
         if isdefined(self.inputs.requireoneofkeys) and len(self.inputs.requireoneofkeys) > 0:

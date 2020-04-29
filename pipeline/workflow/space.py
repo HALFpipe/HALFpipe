@@ -16,6 +16,26 @@ def add_templates_by_composing_transforms(workflow, templates=["MNI152NLin6Asym"
     anat_norm_wf = workflow.get_node("anat_norm_wf")
     outputnode = workflow.get_node("outputnode")
 
+    if len(templates) == 0:
+        workflow.connect(
+            [
+                (
+                    anat_norm_wf,
+                    outputnode,
+                    [
+                        ("outputnode.standardized", "std_preproc"),
+                        ("outputnode.std_mask", "std_mask"),
+                        ("outputnode.std_dseg", "std_dseg"),
+                        ("outputnode.std_tpms", "std_tpms"),
+                        ("outputnode.template", "template"),
+                        ("outputnode.anat2std_xfm", "anat2std_xfm"),
+                        ("outputnode.std2anat_xfm", "std2anat_xfm"),
+                    ],
+                ),
+            ]
+        )
+        return
+
     templitersrc = pe.Node(
         niu.IdentityInterface(fields=["template"]),
         iterables=[("template", templates)],
@@ -51,9 +71,7 @@ def add_templates_by_composing_transforms(workflow, templates=["MNI152NLin6Asym"
         from pipeline import resources
 
         for base_template in base_template_list:
-            xfm_file = resources.get(
-                f"tpl_{out_template}_from_{base_template}_mode_image_xfm.h5"
-            )
+            xfm_file = resources.get(f"tpl_{out_template}_from_{base_template}_mode_image_xfm.h5")
             inv_xfm_file = resources.get(
                 f"tpl_{base_template}_from_{out_template}_mode_image_xfm.h5"
             )
@@ -104,9 +122,7 @@ def add_templates_by_composing_transforms(workflow, templates=["MNI152NLin6Asym"
     workflow.connect(tf_select, "t1w_file", compxfm, "reference_image")
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
-    mergeinvxfm = pe.Node(
-        niu.Merge(numinputs=2), name="mergeinvxfm", run_without_submitting=True
-    )
+    mergeinvxfm = pe.Node(niu.Merge(numinputs=2), name="mergeinvxfm", run_without_submitting=True)
     workflow.connect(selectcompxfm, "inv_xfm", mergeinvxfm, "in1")
     workflow.connect(selectbasexfm, "std2anat_xfm", mergeinvxfm, "in2")
 
@@ -186,12 +202,8 @@ def add_templates_by_composing_transforms(workflow, templates=["MNI152NLin6Asym"
     workflow.connect(std_tpms, "output_image", joinnode, "std_tpms")
 
     for field in mergefields:
-        merge = pe.Node(
-            niu.Merge(numinputs=2), name=f"merge{field}", run_without_submitting=True
-        )
+        merge = pe.Node(niu.Merge(numinputs=2), name=f"merge{field}", run_without_submitting=True)
         workflow.connect(anat_norm_wf, f"outputnode.{field}", merge, "in1")
         workflow.connect(joinnode, field, merge, "in2")
 
-        workflow.connect(
-            merge, "out", outputnode, aliases[field] if field in aliases else field
-        )
+        workflow.connect(merge, "out", outputnode, aliases[field] if field in aliases else field)

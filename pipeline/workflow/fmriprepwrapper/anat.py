@@ -37,7 +37,7 @@ anat_preproc_wf_output_attrs = [
 ]
 
 
-def init_anat_preproc_wf(workdir=None, name="anat_preproc_wf"):
+def init_anat_preproc_wf(workdir=None, no_compose_transforms=False, name="anat_preproc_wf"):
     """
     modified from smriprep/workflows/anatomical.py
     """
@@ -99,7 +99,7 @@ def init_anat_preproc_wf(workdir=None, name="anat_preproc_wf"):
     anat_norm_wf = init_anat_norm_wf(
         debug=config.execution.debug,
         omp_nthreads=config.nipype.omp_nthreads,
-        templates=norm_templates,
+        templates=norm_templates if not no_compose_transforms else norm_templates + extra_templates,
     )
     workflow.connect(
         [
@@ -145,7 +145,9 @@ def init_anat_preproc_wf(workdir=None, name="anat_preproc_wf"):
 
     # Custom
 
-    add_templates_by_composing_transforms(workflow, templates=extra_templates)
+    add_templates_by_composing_transforms(
+        workflow, templates=extra_templates if not no_compose_transforms else []
+    )
 
     make_reportnode(workflow, spaces=True)
     assert workdir is not None

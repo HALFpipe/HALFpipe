@@ -210,9 +210,7 @@ def readtsv(in_file):
     except ValueError:
         pass
     try:
-        in_array = np.genfromtxt(
-            in_file, delimiter=",", skip_header=1, missing_values="NaN,n/a,NA"
-        )
+        in_array = np.genfromtxt(in_file, delimiter=",", skip_header=1, missing_values="NaN,n/a,NA")
         return in_array
     except ValueError as e:
         logging.getLogger("pipeline").exception(f"Could not load file {in_file}", e)
@@ -222,7 +220,10 @@ def readtsv(in_file):
 def ncol(in_file):
     from pipeline.utils import readtsv
 
-    return readtsv(in_file).shape[1]
+    array = readtsv(in_file)
+    if array.ndim == 1:
+        return 1
+    return array.shape[1]
 
 
 def rank(in_file):

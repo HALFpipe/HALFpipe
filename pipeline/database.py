@@ -9,6 +9,7 @@
 from hashlib import sha1
 import json
 from functools import lru_cache
+import logging
 
 from calamities import tag_glob
 from calamities.input.pattern import tag_parse
@@ -55,7 +56,12 @@ class Database:
     def add_file_obj(self, file_obj):
         othertagdict = self.tags_schema.dump(file_obj.tags)
 
-        tagglobres = tag_glob(file_obj.path)
+        tagglobres = list(tag_glob(file_obj.path))
+
+        if len(tagglobres) == 0:
+            logging.getLogger("pipeline").warning(
+                f'No files found for query "{file_obj.path}", skipping'
+            )
 
         tmplstr = tag_parse.sub("{\\g<tag_name>}", file_obj.path)
         if tmplstr not in self.filepaths_by_tmplstr:

@@ -7,7 +7,7 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts, MakeDofVolume
-from ...utils import ravel, ncol
+from ...utils import ravel
 
 from ..memory import MemoryCalculator
 from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
@@ -169,12 +169,12 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     # make dof volume
     makedofvolume = pe.MapNode(
-        interface=MakeDofVolume(), iterfield=["dof_file", "cope_file"], name="makedofvolume",
+        interface=MakeDofVolume(), iterfield=["design"], name="makedofvolume",
     )
     workflow.connect(
         [
             (inputnode, makedofvolume, [("bold_file", "bold_file")]),
-            (designnode, makedofvolume, [(("design", ncol), "num_regressors")]),
+            (designnode, makedofvolume, [("design", "design")]),
         ]
     )
 

@@ -52,11 +52,11 @@ def _main():
 
     workflowgroup = ap.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
+    workflowgroup.add_argument(f"--anatomical-only", action="store_true", default=False)
+    workflowgroup.add_argument(f"--no-compose-transforms", action="store_true", default=False)
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
-    execgraphgroup.add_argument(
-        "--workflow-file", type=str, help="manually select workflow file"
-    )
+    execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
     chunkinggroup = execgraphgroup.add_mutually_exclusive_group(required=False)
     chunkinggroup.add_argument(
         "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
@@ -69,12 +69,8 @@ def _main():
     )
 
     rungroup = ap.add_argument_group("run", "")
-    rungroup.add_argument(
-        "--execgraphs-file", type=str, help="manually select execgraphs file"
-    )
-    rungroup.add_argument(
-        "--chunk-index", type=int, help="select which subjectlevel chunk to run"
-    )
+    rungroup.add_argument("--execgraphs-file", type=str, help="manually select execgraphs file")
+    rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int)
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
@@ -170,7 +166,11 @@ def _main():
         if args.nipype_omp_nthreads is not None:
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
 
-        workflow = init_workflow(workdir)
+        workflow = init_workflow(
+            workdir,
+            anatomical_only=args.anatomical_only,
+            no_compose_transforms=args.no_compose_transforms,
+        )
 
     execgraphs = None
 
@@ -219,7 +219,12 @@ def _main():
         from nipype.pipeline import plugins as nip
         from pipeline import plugins as ppp
 
-        plugin_args = {"workdir": workdir, "debug": debug, "verbose": verbose}
+        plugin_args = {
+            "workdir": workdir,
+            "debug": debug,
+            "verbose": verbose,
+            "stop_on_first_crash": debug,
+        }
         if args.nipype_n_procs is not None:
             plugin_args["n_procs"] = args.nipype_n_procs
         if args.nipype_memory_gb is not None:

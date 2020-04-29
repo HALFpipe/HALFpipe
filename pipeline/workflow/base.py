@@ -5,7 +5,6 @@
 import logging
 from uuid import uuid5
 import pickle
-from pathlib import Path
 
 from calamities import get_entities_in_path
 from ..interface import MakeResultdicts
@@ -63,7 +62,7 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(workdir):
+def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
     """
     initialize nipype workflow
 
@@ -88,10 +87,6 @@ def init_workflow(workdir):
     workflow.config["execution"].update(
         {"crashdump_dir": workflow.base_dir, "poll_sleep_duration": 0.1}
     )
-
-    # dirs
-    groupleveldir = Path(workdir) / "grouplevel"
-    subjectleveldir = Path(workdir) / "subjectlevel"
 
     # helpers
     memcalc = memcalc_from_database(database)
@@ -136,7 +131,10 @@ def init_workflow(workdir):
         t1wfile = t1wfiles.pop()
         if nt1wfiles > 1:
             logger.warn(f'Found {nt1wfiles} T1w files for subject "{subject}", using "{t1wfile}"')
-        anat_preproc_wf = cache.get(init_anat_preproc_wf, argtuples=[("workdir", workdir)])
+        anat_preproc_wf = cache.get(
+            init_anat_preproc_wf,
+            argtuples=[("workdir", workdir), ("no_compose_transforms", no_compose_transforms)],
+        )
         anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
         anat_preproc_wf.get_node("inputnode").inputs.metadata = subjectmetadata
         subjectworkflow.add_nodes([anat_preproc_wf])
@@ -148,6 +146,9 @@ def init_workflow(workdir):
         connect_anat_report_wf_attrs_from_anat_preproc_wf(
             subjectworkflow, anat_preproc_wf, anat_report_wf,
         )
+
+        if anatomical_only:
+            continue
 
         boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
         subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
@@ -234,7 +235,7 @@ def init_workflow(workdir):
             )
             make_resultdict_datasink(
                 boldfileworkflow,
-                subjectleveldir,
+                workdir,
                 (preprocresultdict, "resultdicts"),
                 name=f"preprocdatasink",
             )
@@ -270,7 +271,7 @@ def init_workflow(workdir):
                 endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
                 make_resultdict_datasink(
                     boldfileworkflow,
-                    subjectleveldir,
+                    workdir,
                     (analysisworkflow, analysisoutattr),
                     name=f"{analysisworkflow.name}_resultdictdatasink",
                 )
@@ -312,7 +313,7 @@ def init_workflow(workdir):
             subjectanalysisendpoints[analysis.name].append(endpoint)
             make_resultdict_datasink(
                 subjectworkflow,
-                subjectleveldir,
+                workdir,
                 (analysisworkflow, analysisoutattr),
                 name=f"{analysisworkflow.name}_resultdictdatasink",
             )
@@ -330,6 +331,8 @@ def init_workflow(workdir):
         endpoints = []
         for inputanalysisname in analysis.input:
             endpoints.extend(analysisendpoints[inputanalysisname])
+        if len(endpoints) == 0:
+            continue
         collectinputs = pe.Node(
             niu.Merge(numinputs=len(endpoints)), name=f"collectinputs_{analysis.name}",
         )
@@ -344,7 +347,7 @@ def init_workflow(workdir):
         analysisendpoints[analysis.name].append(endpoint)
         make_resultdict_datasink(
             grouplevelworkflow,
-            groupleveldir,
+            workdir,
             (analysisworkflow, analysisoutattr),
             name=f"{analysisworkflow.name}_resultdictdatasink",
         )

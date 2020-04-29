@@ -10,7 +10,7 @@ import nibabel as nib
 from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, isdefined
 from nilearn.image import new_img_like
 
-from ..utils import nvol
+from ..utils import nvol, ncol
 
 
 class MakeDofVolumeInputSpec(TraitedSpec):
@@ -19,6 +19,7 @@ class MakeDofVolumeInputSpec(TraitedSpec):
 
     bold_file = traits.File(exists=True, desc="input file")
     num_regressors = traits.Range(low=1, desc="number of regressors")
+    design = traits.File(desc="", exists=True)
 
 
 class MakeDofVolumeOutputSpec(TraitedSpec):
@@ -43,6 +44,8 @@ class MakeDofVolume(BaseInterface):
             ref_img = nib.load(self.inputs.bold_file)
             if isdefined(self.inputs.num_regressors):
                 dof = float(nvol(ref_img) - self.inputs.num_regressors)
+            elif isdefined(self.inputs.design):
+                dof = float(nvol(ref_img) - ncol(self.inputs.design))
 
         if isdefined(self.inputs.cope_file):
             ref_img = nib.load(self.inputs.cope_file)

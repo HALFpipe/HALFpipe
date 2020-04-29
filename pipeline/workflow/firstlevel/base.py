@@ -33,7 +33,7 @@ def init_firstlevel_analysis_wf(analysis=None, memcalc=MemoryCalculator()):
 
 
 def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database, boldfile):
-    awfinputnode = analysisworkflow.get_node("inputnode")
+    inputnode = analysisworkflow.get_node("inputnode")
     if analysis.type == "task_based":
         condition_files = database.get_associations(boldfile, datatype="func", suffix="events")
         if "txt" in database.get_tagval_set("extension", filepaths=condition_files):
@@ -41,29 +41,32 @@ def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database,
                 database.get_tagval(condition_file, "condition"): condition_file
                 for condition_file in condition_files
             }
-        awfinputnode.inputs.condition_files = condition_files
+        inputnode.inputs.condition_files = condition_files
     elif analysis.type == "seed_based_connectivity":
         if analysis.tags.seed is None:
             seed_files = list(database.get_all_with_tag("seed"))
         else:
             seed_files = list(database.get(seed=analysis.tags.seed))
+        assert len(seed_files) > 0, "No seed files"
         seed_names = database.get_tagval(seed_files, "seed")
-        awfinputnode.inputs.seed_files = seed_files
-        awfinputnode.inputs.seed_names = seed_names
+        inputnode.inputs.seed_files = seed_files
+        inputnode.inputs.seed_names = seed_names
     elif analysis.type == "dual_regression":
         if analysis.tags.map is None:
             map_files = list(database.get_all_with_tag("map"))
         else:
             map_files = list(database.get(map=analysis.tags.map))
+        assert len(map_files) > 0, "No map files"
         map_tags = database.get_tagval(map_files, "map")
         map_components = [map_tagobj.components for map_tagobj in map_tags]
-        awfinputnode.inputs.map_files = map_files
-        awfinputnode.inputs.map_components = map_components
+        inputnode.inputs.map_files = map_files
+        inputnode.inputs.map_components = map_components
     elif analysis.type == "atlas_based_connectivity":
         if analysis.tags.atlas is None:
             atlas_files = list(database.get_all_with_tag("atlas"))
         else:
             atlas_files = list(database.get(atlas=analysis.tags.atlas))
+        assert len(atlas_files) > 0, "No atlas files"
         atlas_names = database.get_tagval(atlas_files, "atlas")
-        awfinputnode.inputs.atlas_files = atlas_files
-        awfinputnode.inputs.atlas_names = atlas_names
+        inputnode.inputs.atlas_files = atlas_files
+        inputnode.inputs.atlas_names = atlas_names

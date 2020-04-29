@@ -267,4 +267,5 @@ def get_fmaps(boldfile, database):
             metadata["fmap_type"] = "phasediff"
             return "phasediff", fmaps, metadata
 
+    metadata["fmap_type"] = "none"
     return None, None, metadata
