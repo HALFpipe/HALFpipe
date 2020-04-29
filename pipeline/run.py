@@ -69,7 +69,7 @@ def _main():
     )
 
     rungroup = ap.add_argument_group("run", "")
-    rungroup.add_argument("--execgraphs-file", type=str, help="manually select execgraphs file")
+    rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
     rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int)
@@ -207,12 +207,12 @@ def _main():
             from .utils import loadpicklelzma
 
             assert (
-                args.execgraphs_file is not None
+                args.execgraph_file is not None
             ), "Missing required --execgraph-file input for step run"
-            execgraphs = loadpicklelzma(args.execgraphs_file)
+            execgraphs = loadpicklelzma(args.execgraph_file)
             if not isinstance(execgraphs, list):
                 execgraphs = [execgraphs]
-            logger.info(f'Using execgraphs defined in file "{args.execgraphs_file}"')
+            logger.info(f'Using execgraphs defined in file "{args.execgraph_file}"')
         else:
             logger.info(f"Using execgraphs from previous step")
 
@@ -224,6 +224,7 @@ def _main():
             "debug": debug,
             "verbose": verbose,
             "stop_on_first_crash": debug,
+            "raise_insufficient": False,
         }
         if args.nipype_n_procs is not None:
             plugin_args["n_procs"] = args.nipype_n_procs
@@ -269,9 +270,11 @@ def _main():
 
         n_execgraphstorun = len(execgraphstorun)
         for i, execgraph in enumerate(execgraphstorun):
+            from .utils import first
+
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
-            runner.run(execgraph, updatehash=False, config=workflow.config)
+            runner.run(execgraph, updatehash=False, config=first(execgraph.nodes()).config)
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 
