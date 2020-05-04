@@ -6,7 +6,7 @@ from .base import (
     Spec,
     SpecSchema,
     entity_aliases,
-    save_spec,
+    savespec,
     loadspec,
 )
 from .file import File, FileSchema
@@ -68,7 +68,7 @@ __all__ = [
     study_entities,
     bold_entities,
     entity_aliases,
-    save_spec,
+    savespec,
     loadspec,
     File,
     FileSchema,

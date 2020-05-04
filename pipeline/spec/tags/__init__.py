@@ -41,6 +41,7 @@ from .derivative import (
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
     derivative_entities,
+    DerivativeTagsSchema,
 )
 from .other import AtlasTagsSchema, SeedTagsSchema, MapTag, MapTagsSchema
 
@@ -75,6 +76,7 @@ __all__ = [
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
     derivative_entities,
+    DerivativeTagsSchema,
     AtlasTagsSchema,
     SeedTagsSchema,
     MapTag,

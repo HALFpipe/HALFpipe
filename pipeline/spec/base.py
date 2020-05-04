@@ -36,6 +36,7 @@ class Spec:
         self.uuid = kwargs.get("uuid", uuid4())
         self.version = kwargs.get("version", self.version)
         self.files = kwargs.get("files", [])
+        self.variants = kwargs.get("variants", [])
         self.analyses = kwargs.get("analyses", [])
 
     def _has_datatype(self, datatype):
@@ -57,6 +58,8 @@ class SpecSchema(Schema):
 
     @validates_schema
     def validate_analyses(self, data, **kwargs):
+        if "analyses" not in data:
+            return
         seen_names = set()
         for analysis in data["analyses"]:
             if analysis.name in seen_names:
@@ -88,7 +91,7 @@ def loadspec(workdir=None, uuidstr=None, specpath=None, logger=logging.getLogger
         logger.warning(f'Ignored validation error in "{specpath}": %s', e, stack_info=True)
 
 
-def save_spec(spec, workdir=None, specpath=None, logger=logging.getLogger("pipeline")):
+def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("pipeline")):
     os.makedirs(workdir, exist_ok=True)
     if specpath is None:
         assert workdir is not None

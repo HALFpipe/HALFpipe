@@ -84,9 +84,7 @@ class InteractionTermsStep(Step):
         for var_str, is_checked in checked.items():
             if is_checked:
                 termtpl = list(self.term_by_str[var_str])
-                ctx.spec.analyses[-1].contrasts.append(
-                    Contrast(variable=termtpl, type="infer")
-                )
+                ctx.spec.analyses[-1].contrasts.append(Contrast(variable=termtpl, type="infer"))
         return True
 
     def next(self, ctx):
@@ -419,9 +417,7 @@ class SpreadsheetColumnTypeStep(Step):
             if ctx.spec.analyses[-1].variables is None:
                 ctx.spec.analyses[-1].variables = []
             self.varname_by_str = {
-                _format_column(column): column
-                for column in self.df
-                if column not in already_used
+                _format_column(column): column for column in self.df if column not in already_used
             }
             options = list(self.varname_by_str.keys())
             values = ["Continuous", "Categorical"]
@@ -471,9 +467,7 @@ class SpreadsheetIdColumnStep(Step):
                 ctx.spec.analyses[-1].variables = []
             already_used = set(variable.name for variable in ctx.spec.analyses[-1].variables)
             self.varname_by_str = {
-                _format_column(column): column
-                for column in self.df
-                if column not in already_used
+                _format_column(column): column for column in self.df if column not in already_used
             }
             options = list(self.varname_by_str.keys())
             self.input_view = SingleChoiceInputView(options, isVertical=True)
@@ -504,9 +498,7 @@ class SpreadsheetStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the covariates/group data spreadsheet file"))
         self.message = None
-        self.input_view = FileInputView(
-            base_path=ctx.spreadsheet_file, messagefun=self._messagefun
-        )
+        self.input_view = FileInputView(base_path=ctx.spreadsheet_file, messagefun=self._messagefun)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
@@ -528,7 +520,6 @@ class SpreadsheetStep(Step):
                 if ctx.spec.analyses[-1].variables is None:
                     ctx.spec.analyses[-1].variables = []
                 ctx.spec.analyses[-1].spreadsheet = filepath
-                ctx.spreadsheet_file = filepath
                 break
             except Exception as e:
                 logging.getLogger("pipeline.ui").exception("Exception: %s", e)
@@ -606,9 +597,7 @@ class GroupLevelAnalysisAggregateStep(Step):
     def setup(self, ctx):
         self.is_first_run = True
         self.entities_by_analysis = self._resolve_tags(ctx)
-        entitiesset = set.union(
-            *[set(entities) for entities in self.entities_by_analysis.values()]
-        )
+        entitiesset = set.union(*[set(entities) for entities in self.entities_by_analysis.values()])
         entitiesset &= set(self.aggregate_order)
         across = ctx.spec.analyses[-1].across
         if across in entitiesset:
@@ -667,9 +656,7 @@ class GroupLevelAnalysisAggregateStep(Step):
 
 class GroupLevelAnalysisInputStep(Step):
     def setup(self, ctx):
-        self._append_view(
-            TextView("Select subject-level analyses to include in this analysis")
-        )
+        self._append_view(TextView("Select subject-level analyses to include in this analysis"))
         assert ctx.spec.analyses is not None
         namesset = set()
         for analysis in ctx.spec.analyses:

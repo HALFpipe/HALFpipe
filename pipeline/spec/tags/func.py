@@ -12,12 +12,7 @@ from marshmallow_oneofschema import OneOfSchema
 
 from ..direction import phase_encoding_direction_values
 from .base import BaseSchema, Tags
-from .derivative import (
-    SmoothedTagSchema,
-    BandPassFilteredTagSchema,
-    ConfoundsRemovedTagSchema,
-    GrandMeanScaledTagSchema,
-)
+from .derivative import DerivativeTagsSchema
 
 study_entities = ["direction", "run", "session", "task"]
 bold_entities = study_entities + ["subject"]
@@ -72,17 +67,11 @@ class BoldTagsSchema(BaseFuncTagsSchema):
     repetition_time = fields.Float()
 
     effective_echo_spacing = fields.Float()
-    phase_encoding_direction = fields.Str(
-        validate=validate.OneOf(phase_encoding_direction_values)
-    )
+    phase_encoding_direction = fields.Str(validate=validate.OneOf(phase_encoding_direction_values))
 
 
-class PreprocessedBoldTagsSchema(BoldTagsSchema):
-    space = fields.Str(validate=validate.OneOf(["mni"]))
-    smoothed = fields.Nested(SmoothedTagSchema)
-    grand_mean_scaled = fields.Nested(GrandMeanScaledTagSchema)
-    band_pass_filtered = fields.Nested(BandPassFilteredTagSchema)
-    confounds_removed = fields.Nested(ConfoundsRemovedTagSchema)
+class PreprocessedBoldTagsSchema(DerivativeTagsSchema, BoldTagsSchema):
+    pass
 
 
 class FuncTagsSchema(OneOfSchema):

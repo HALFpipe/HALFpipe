@@ -102,3 +102,11 @@ class ConfoundsRemovedTagSchema(BaseSchema):
     @post_load
     def make_object(self, data, **kwargs):
         return ConfoundsRemovedTag(**data)
+
+
+class DerivativeTagsSchema(BaseSchema):
+    space = fields.Str(validate=validate.OneOf(["mni"]))
+    smoothed = fields.Nested(SmoothedTagSchema)
+    grand_mean_scaled = fields.Nested(GrandMeanScaledTagSchema)
+    band_pass_filtered = fields.Nested(BandPassFilteredTagSchema)
+    confounds_removed = fields.Nested(ConfoundsRemovedTagSchema)

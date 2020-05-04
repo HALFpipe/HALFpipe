@@ -18,7 +18,7 @@ from calamities.config import config as calamities_config
 
 from .step import Step
 from .. import __version__
-from ..spec import Spec, loadspec, save_spec
+from ..spec import SpecSchema, loadspec, savespec
 from ..database import Database
 from ..logger import Logger
 
@@ -29,11 +29,37 @@ from .higherlevel import GroupLevelAnalysisStep
 
 class Context:
     def __init__(self):
-        self.spec = Spec()
+        self.spec = SpecSchema().load({}, partial=True,)
         self.workdir = None
         self.use_existing_spec = False
         self.database = Database()
         self.debug = False
+        self._spreadsheet_file = None
+
+    def spreadsheet_file():
+        doc = "The spreadsheet_file property."
+
+        def fget(self):
+            if self._spreadsheet_file is not None:
+                return self._spreadsheet_file
+            if self.spec.analyses is not None and len(self.spec.analyses) > 0:
+                spreadsheet_files = [
+                    analysis.spreadsheet
+                    for analysis in self.spec.analyses
+                    if analysis.spreadsheet is not None
+                ]
+                if len(spreadsheet_files) > 0:
+                    return spreadsheet_files[0]
+
+        def fset(self, value):
+            self._spreadsheet_file = value
+
+        def fdel(self):
+            del self._spreadsheet_file
+
+        return locals()
+
+    spreadsheet_file = property(**spreadsheet_file())
 
     def add_file_obj(self, file_obj):
         self.database.add_file_obj(file_obj)
@@ -175,7 +201,7 @@ def init_spec_ui(workdir=None, debug=False):
         assert ctx.workdir is not None
         workdir = ctx.workdir
         if not ctx.use_existing_spec:
-            save_spec(ctx.spec, workdir=ctx.workdir, logger=logging.getLogger("pipeline.ui"))
+            savespec(ctx.spec, workdir=ctx.workdir, logger=logging.getLogger("pipeline.ui"))
     else:
         import sys
 
