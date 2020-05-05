@@ -92,6 +92,9 @@ class Tags:
     def __hash__(self):
         return hash((hash(getattr(self, name, None)) for name in self.attrnames))
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     def get_tagdict(self, entities, keep_none=False):
         ret = {}
         for tagname in entities:

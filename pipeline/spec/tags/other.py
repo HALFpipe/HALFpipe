@@ -21,6 +21,9 @@ class MapTag:
     def __hash__(self):
         return hash((*self.components, self.desc))
 
+    def __eq__(self, other):
+        return self.desc == other.desc
+
 
 class MapTagSchema(Schema):
     desc = fields.Str()
@@ -61,18 +64,10 @@ class OtherTagsSchema(OneOfSchema):
 
     def _load(self, data, *, partial=None, unknown=None):
         if "atlas" in data:
-            return AtlasTagsSchema().load(
-                data, many=False, partial=partial, unknown=unknown
-            )
+            return AtlasTagsSchema().load(data, many=False, partial=partial, unknown=unknown)
         elif "seed" in data:
-            return SeedTagsSchema().load(
-                data, many=False, partial=partial, unknown=unknown
-            )
+            return SeedTagsSchema().load(data, many=False, partial=partial, unknown=unknown)
         elif "map" in data:
-            return MapTagsSchema().load(
-                data, many=False, partial=partial, unknown=unknown
-            )
+            return MapTagsSchema().load(data, many=False, partial=partial, unknown=unknown)
         else:
-            return BaseOtherTagsSchema().load(
-                data, many=False, partial=partial, unknown=unknown
-            )
+            return BaseOtherTagsSchema().load(data, many=False, partial=partial, unknown=unknown)
