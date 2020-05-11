@@ -27,9 +27,7 @@ class FilePatternSummaryStep(Step):
     def setup(self, ctx):
         filepaths = ctx.database.get(**self.tags_dict)
         self.is_first_run = True
-        message = messagefun(
-            ctx.database, self.filetype_str, filepaths, self.allowed_entities,
-        )
+        message = messagefun(ctx.database, self.filetype_str, filepaths, self.allowed_entities,)
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
 
@@ -46,6 +44,7 @@ class FilePatternSummaryStep(Step):
 
 class FilePatternStep(Step):
     header_str = None
+    suggest_file_stem = False
 
     def setup(self, ctx):
         self.file_obj = None
@@ -57,9 +56,7 @@ class FilePatternStep(Step):
         entity_instruction_strs = []
         for entity in required_entities:
             entity_str = entity.replace("_", " ")
-            entity_instruction_strs.append(
-                f"Put {{{entity}}} in place of the {entity_str} names"
-            )
+            entity_instruction_strs.append(f"Put {{{entity}}} in place of the {entity_str} names")
         for entity in self.allowed_entities:
             if entity not in required_entities:
                 entity_str = entity.replace("_", " ")
@@ -97,9 +94,7 @@ class FilePatternStep(Step):
             except Exception as e:
                 logging.getLogger("pipeline.ui").exception("Exception: %s", e)
                 error_color = self.app.layout.color.red
-                self.file_pattern_input_view.show_message(
-                    TextElement(str(e), color=error_color)
-                )
+                self.file_pattern_input_view.show_message(TextElement(str(e), color=error_color))
                 if ctx.debug:
                     raise
 
@@ -109,16 +104,18 @@ class FilePatternStep(Step):
             self.file_obj,
             self.ask_if_missing_entities.copy(),
             self.next_step_type(self.app),
+            suggest_file_stem=self.suggest_file_stem,
         )(ctx)
 
 
 class AskForMissingEntities(Step):
-    def __init__(self, app, file_obj, ask_if_missing_entities, next_step):
+    def __init__(self, app, file_obj, ask_if_missing_entities, next_step, suggest_file_stem=False):
         super(AskForMissingEntities, self).__init__(app)
         self.file_obj = file_obj
         self.ask_if_missing_entities = ask_if_missing_entities
         self.next_step = next_step
         self.cur_entity = None
+        self.suggest_file_stem = suggest_file_stem
 
     def _isok(self, text):
         return _check_tagval.fullmatch(text) is not None
@@ -139,7 +136,10 @@ class AskForMissingEntities(Step):
         if self.cur_entity is not None:
             self._append_view(TextView(f"No {self.cur_entity} name was specified"))
             self._append_view(TextView(f"Specify the {self.cur_entity} name"))
-            self.tagval_input_view = TextInputView(isokfun=self._isok)
+            suggestion = ""
+            if self.suggest_file_stem:
+                suggestion, _ = splitext(self.file_obj.path)
+            self.tagval_input_view = TextInputView(text=suggestion, isokfun=self._isok)
             self._append_view(self.tagval_input_view)
             self._append_view(SpacerView(1))
 
@@ -164,6 +164,7 @@ class AskForMissingEntities(Step):
                     self.file_obj,
                     self.ask_if_missing_entities.copy(),
                     self.next_step,
+                    suggest_file_stem=self.suggest_file_stem,
                 )(ctx)
             else:
                 ctx.add_file_obj(self.file_obj)

@@ -16,8 +16,7 @@ def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(fields=["in_file", "mask_file", "fwhm"]),
-        name="inputnode",
+        interface=niu.IdentityInterface(fields=["in_file", "mask_file", "fwhm"]), name="inputnode",
     )
 
     if fwhm is not None:
@@ -25,22 +24,14 @@ def init_smooth_wf(fwhm=None, memcalc=MemoryCalculator(), name="smooth_wf"):
         inputnode.inputs.fwhm = fwhm
 
     smooth = pe.Node(
-        afni.BlurInMask(preserve=True, float_out=True, out_file="blur.nii"), name="smooth"
+        afni.BlurInMask(preserve=True, float_out=True, out_file="blur.nii.gz"), name="smooth"
     )
 
     workflow.connect(
-        [
-            (
-                inputnode,
-                smooth,
-                [("in_file", "in_file"), ("mask_file", "mask"), ("fwhm", "fwhm")],
-            ),
-        ]
+        [(inputnode, smooth, [("in_file", "in_file"), ("mask_file", "mask"), ("fwhm", "fwhm")],),]
     )
 
-    outputnode = pe.Node(
-        interface=niu.IdentityInterface(fields=["out_file"]), name="outputnode"
-    )
+    outputnode = pe.Node(interface=niu.IdentityInterface(fields=["out_file"]), name="outputnode")
     workflow.connect(smooth, "out_file", outputnode, "out_file")
 
     return workflow

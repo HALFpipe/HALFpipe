@@ -61,7 +61,9 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(workdir, anatomical_only=False, freesurfer=False, no_compose_transforms=False):
+def init_workflow(
+    workdir, anatomical_only=False, freesurfer=False, no_compose_transforms=False, keep_all=False
+):
     """
     initialize nipype workflow
 
@@ -84,7 +86,13 @@ def init_workflow(workdir, anatomical_only=False, freesurfer=False, no_compose_t
     uuidstr = str(uuid)[:8]
     logger.info(f"New workflow: {uuidstr}")
     workflow.config["execution"].update(
-        {"crashdump_dir": workflow.base_dir, "poll_sleep_duration": 0.1}
+        {
+            "crashdump_dir": workflow.base_dir,
+            "poll_sleep_duration": 0.1,
+            "use_relative_paths": True,
+            "check_version": False,
+            "remove_node_directories": not keep_all,
+        }
     )
 
     # helpers

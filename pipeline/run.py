@@ -53,9 +53,10 @@ def _main():
 
     workflowgroup = ap.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
-    workflowgroup.add_argument(f"--anatomical-only", action="store_true", default=False)
-    workflowgroup.add_argument(f"--no-compose-transforms", action="store_true", default=False)
-    workflowgroup.add_argument(f"--freesurfer", action="store_true", default=False)
+    workflowgroup.add_argument("--anatomical-only", action="store_true", default=False)
+    workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
+    workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
+    workflowgroup.add_argument("--keep-all", action="store_true", default=False)
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
@@ -173,6 +174,7 @@ def _main():
             anatomical_only=args.anatomical_only,
             no_compose_transforms=args.no_compose_transforms,
             freesurfer=args.freesurfer,
+            keep_all=args.keep_all,
         )
 
     execgraphs = None
@@ -239,7 +241,7 @@ def _main():
             logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
             runnercls = getattr(ppp, runnername)
         elif hasattr(nip, runnername):
-            logger.info(f'Using nipype_run_plugin "{runnername}"')
+            logger.warning(f'Using unsupported nipype_run_plugin "{runnername}"')
             runnercls = getattr(nip, runnername)
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')

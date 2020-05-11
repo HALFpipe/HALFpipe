@@ -294,6 +294,7 @@ def init_func_preproc_wf(
         aroma_melodic_dim=config.workflow.aroma_melodic_dim,
         name="ica_aroma_wf",
     )
+    ica_aroma_wf.get_node("ica_aroma").inputs.denoise_type = "no"
     workflow.connect(
         [
             (inputnode, ica_aroma_wf, [("bold_file", "inputnode.name_source")]),

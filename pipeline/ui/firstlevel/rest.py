@@ -107,6 +107,7 @@ class AddAtlasStep(FilePatternStep):
     required_in_pattern_entities = []
     tags_schema = AtlasTagsSchema()
     next_step_type = None
+    suggest_file_stem = True
 
 
 class AtlasSelectStep(InputSelectStep):
@@ -125,6 +126,7 @@ class AddSeedStep(FilePatternStep):
     required_in_pattern_entities = []
     tags_schema = SeedTagsSchema()
     next_step_type = None
+    suggest_file_stem = True
 
 
 class SeedSelectStep(InputSelectStep):
