@@ -20,6 +20,11 @@ class BaseFirstLevelAnalysisSchema(BaseAnalysisSchema):
     tags = fields.Nested(PreprocessedBoldTagsSchema)
 
 
+class ImageOutputFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
+    type = fields.Constant("image_output")
+    tags = fields.Nested(PreprocessedBoldTagsSchema)
+
+
 class TaskBasedFirstLevelAnalysisSchema(BaseFirstLevelAnalysisSchema):
     type = fields.Constant("task_based")
     variables = fields.List(fields.Nested(FirstLevelVariableSchema))
@@ -71,6 +76,7 @@ class FirstLevelAnalysisSchema(OneOfSchema):
     type_field = "type"
     type_field_remove = False
     type_schemas = {
+        "image_output": ImageOutputFirstLevelAnalysisSchema,
         "task_based": TaskBasedFirstLevelAnalysisSchema,
         "seed_based_connectivity": SeedBasedConnectivityFirstLevelAnalysisSchema,
         "dual_regression": DualRegressionFirstLevelAnalysisSchema,

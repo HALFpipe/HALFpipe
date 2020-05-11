@@ -8,6 +8,7 @@ from .seedbasedconnectivity import init_seedbasedconnectivity_wf
 from .dualregression import init_dualregression_wf
 from .reho import init_reho_wf
 from .falff import init_falff_wf
+from .imageoutput import init_imageoutput_wf
 
 from ..memory import MemoryCalculator
 from ...spec import Analysis
@@ -16,7 +17,9 @@ from ...spec import Analysis
 def init_firstlevel_analysis_wf(analysis=None, memcalc=MemoryCalculator()):
     assert isinstance(analysis, Analysis)
 
-    if analysis.type == "task_based":
+    if analysis.type == "image_output":
+        return init_imageoutput_wf(analysis=analysis, memcalc=memcalc)
+    elif analysis.type == "task_based":
         return init_taskbased_wf(analysis=analysis, memcalc=memcalc)
     elif analysis.type == "seed_based_connectivity":
         return init_seedbasedconnectivity_wf(analysis=analysis, memcalc=memcalc)

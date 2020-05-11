@@ -14,7 +14,7 @@ from calamities import (
     SingleChoiceInputView,
 )
 
-from ...spec import Analysis, PreprocessedBoldTagsSchema, study_entities
+from ...spec import Analysis, PreprocessedBoldTagsSchema, GrandMeanScaledTag, study_entities
 from ..utils import (
     YesNoStep,
     BaseBOLDSelectStep,
@@ -38,7 +38,6 @@ def add_first_level_analysis_obj(ctx):
     analysis_tags_dict = {
         **bold_tags_dict,
         "space": "mni",
-        "grand_mean_scaled": {"mean": 10000},
     }
     analysis_tags_obj = PreprocessedBoldTagsSchema().load(analysis_tags_dict)
     analysis_dict = {
@@ -71,8 +70,7 @@ class BOLDSelectStep(BaseBOLDSelectStep):
                 if len(tagvals_set) > 2:
                     filterval_by_value = [("Use all", None)]
                 filterval_by_value += [
-                    ("Use {}".format(self._format_tag(tagval)), tagval)
-                    for tagval in tagvals_set
+                    ("Use {}".format(self._format_tag(tagval)), tagval) for tagval in tagvals_set
                 ]
                 self.tagval_by_str.append(dict(filterval_by_value))
                 value_strs, _ = zip(*filterval_by_value)
@@ -105,9 +103,7 @@ class BOLDSelectStep(BaseBOLDSelectStep):
                 if filepaths is not None and len(filepaths) > 1:
                     break
             assert len(ctx.spec.analyses) > 0
-            for i, (entity, tag_str) in enumerate(
-                zip(self.entities, tags_by_options.values())
-            ):
+            for i, (entity, tag_str) in enumerate(zip(self.entities, tags_by_options.values())):
                 tagval = self.tagval_by_str[i][tag_str]
                 if tagval is not None:
                     setattr(ctx.spec.analyses[-1].tags, entity, tagval)
@@ -131,12 +127,12 @@ class BOLDSelectStep(BaseBOLDSelectStep):
 
 class SubjectAnalysisNameStep(Step):
     nameSuggestionByAnalysisType = {
-        "task_based": "taskBased",
-        "seed_based_connectivity": "seedCorr",
-        "dual_regression": "dualReg",
-        "atlas_based_connectivity": "corrMatrix",
-        "reho": "reHo",
-        "falff": "fALFF",
+        "task_based": "TaskBased",
+        "seed_based_connectivity": "SeedCorr",
+        "dual_regression": "DualReg",
+        "atlas_based_connectivity": "CorrMatrix",
+        "reho": "ReHo",
+        "falff": "FALFF",
     }
 
     def setup(self, ctx):
@@ -199,6 +195,8 @@ class FirstLevelAnalysisTypeStep(Step):
         if self.choice is None:
             return
         ctx.spec.analyses[-1].type = self.options[self.choice]
+        if ctx.spec.analyses[-1].type == "task_based":
+            ctx.spec.analyses[-1].tags.grand_mean_scaled = GrandMeanScaledTag(mean=10000.0)
         return SubjectAnalysisNameStep(self.app)(ctx)
 
 

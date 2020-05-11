@@ -7,7 +7,6 @@ from uuid import uuid5
 import pickle
 
 from calamities import get_entities_in_path
-from ..interface import MakeResultdicts
 from ..database import Database
 from ..spec import loadspec, study_entities, bold_entities
 from ..utils import cacheobj, uncacheobj
@@ -62,7 +61,7 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
+def init_workflow(workdir, anatomical_only=False, freesurfer=False, no_compose_transforms=False):
     """
     initialize nipype workflow
 
@@ -133,7 +132,11 @@ def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
             logger.warn(f'Found {nt1wfiles} T1w files for subject "{subject}", using "{t1wfile}"')
         anat_preproc_wf = cache.get(
             init_anat_preproc_wf,
-            argtuples=[("workdir", workdir), ("no_compose_transforms", no_compose_transforms)],
+            argtuples=[
+                ("workdir", workdir),
+                ("no_compose_transforms", no_compose_transforms),
+                ("freesurfer", freesurfer),
+            ],
         )
         anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
         anat_preproc_wf.get_node("inputnode").inputs.metadata = subjectmetadata
@@ -153,18 +156,22 @@ def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
         boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
         subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
         for boldfile in boldfiles:
-            boldfilemetadata = subjectmetadata.copy()
             # make name
+            boldfilemetadata = subjectmetadata.copy()
+            has_direction = True
+            if database.get_tagval(boldfile, "direction") is not None:
+                tmplstr = database.get_tmplstr(boldfile)
+                entities_in_path = get_entities_in_path(tmplstr)
+                has_direction = "direction" in entities_in_path
             name = "bold"
             for entity in study_entities:
                 value = database.get_tagval(boldfile, entity)
-                if value is not None:
+                if value is not None and (entity != "direction" or has_direction):
                     name += "_"
                     name += f"{entity}_{value}"
                     boldfilemetadata[entity] = value
-
+            # workflow
             boldfileworkflow = pe.Workflow(name=name)
-
             fmap_type, fmaps, fmapmetadata = get_fmaps(boldfile, database)
             boldfilemetadata.update(fmapmetadata)
 
@@ -191,95 +198,43 @@ def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
                 boldfileworkflow,
                 in_nodename=f"{func_preproc_wf.name}.inputnode",
             )
-
-            def get_variant_bold_filt_wf(variant):
-                name = make_variant_bold_filt_wf_name(variant)
-                bold_filt_wf = boldfileworkflow.get_node(name)
-                if bold_filt_wf is None:
-                    bold_filt_wf = cache.get(
-                        init_bold_filt_wf, argtuples=[("variant", variant), ("memcalc", memcalc)],
-                    )
-                    boldfileworkflow.add_nodes([bold_filt_wf])
-                    bold_filt_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
-                    connect_filt_wf_attrs_from_anat_preproc_wf(
-                        subjectworkflow,
-                        anat_preproc_wf,
-                        boldfileworkflow,
-                        in_nodename=f"{bold_filt_wf.name}.inputnode",
-                    )
-                    connect_filt_wf_attrs_from_func_preproc_wf(
-                        boldfileworkflow, func_preproc_wf, bold_filt_wf
-                    )
-                return bold_filt_wf
-
-            variant_to_output = (
-                ("space", "mni"),
-                ("smoothed", 6.0),
-                ("grand_mean_scaled", 10000.0),
-                ("confounds_removed", ("aroma_motion_[0-9]+",)),
-                ("confounds_extract", (".+",)),
-                ("band_pass_filtered", ("gaussian", 128.0)),
-            )
-            bold_filt_wf = get_variant_bold_filt_wf(variant_to_output)
-            preprocresultdict = pe.Node(
-                interface=MakeResultdicts(keys=["preproc", "confounds", "mask_file"]),
-                name="preprocresultdict",
-            )
-            preprocresultdict.inputs.basedict = boldfilemetadata
-            boldfileworkflow.connect(bold_filt_wf, "outputnode.out1", preprocresultdict, "preproc")
-            boldfileworkflow.connect(
-                bold_filt_wf, "outputnode.out3", preprocresultdict, "confounds"
-            )
-            boldfileworkflow.connect(
-                bold_filt_wf, "outputnode.mask_file", preprocresultdict, "mask_file"
-            )
-            make_resultdict_datasink(
-                boldfileworkflow,
-                workdir,
-                (preprocresultdict, "resultdicts"),
-                name=f"preprocdatasink",
-            )
-
-            func_report_wf = cache.get(
-                init_func_report_wf, argtuples=[("workdir", workdir), ("memcalc", memcalc)]
-            )
-            func_report_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
-            connect_func_report_wf_attrs_from_filt_wf(
-                boldfileworkflow, bold_filt_wf, func_report_wf
-            )
-            connect_func_report_wf_attrs_from_func_preproc_wf(
-                boldfileworkflow, func_preproc_wf, func_report_wf
-            )
-            connect_func_report_wf_attrs_from_anat_preproc_wf(
-                subjectworkflow,
-                anat_preproc_wf,
-                boldfileworkflow,
-                in_nodename=f"{func_report_wf.name}.inputnode",
-            )
-
+            func_report_wf = None
             for analysis, tagdict in zip(firstlevel_analyses, firstlevel_analysis_tagdicts):
                 if not database.matches(boldfile, **tagdict):
                     continue
+                # get analysis workflow
                 analysisworkflow, boldfilevariants = cache.get(
                     init_firstlevel_analysis_wf,
                     argtuples=[("analysis", analysis), ("memcalc", memcalc)],
                 )
-                boldfileworkflow.connect(
-                    func_report_wf, "outputnode.metadata", analysisworkflow, "inputnode.metadata",
-                )
-                #
-                endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
-                make_resultdict_datasink(
-                    boldfileworkflow,
-                    workdir,
-                    (analysisworkflow, analysisoutattr),
-                    name=f"{analysisworkflow.name}_resultdictdatasink",
-                )
+                # workflow input variants
+                bold_filt_wf = None
                 for attrnames, variant in boldfilevariants:
-                    bold_filt_wf = get_variant_bold_filt_wf(variant)
+                    name = make_variant_bold_filt_wf_name(variant)
+                    variant_bold_filt_wf = boldfileworkflow.get_node(name)
+                    if variant_bold_filt_wf is None:
+                        variant_bold_filt_wf = cache.get(
+                            init_bold_filt_wf,
+                            argtuples=[("variant", variant), ("memcalc", memcalc)],
+                        )
+                        boldfileworkflow.add_nodes([variant_bold_filt_wf])
+                        variant_bold_filt_wf.get_node(
+                            "inputnode"
+                        ).inputs.metadata = boldfilemetadata
+                        connect_filt_wf_attrs_from_anat_preproc_wf(
+                            subjectworkflow,
+                            anat_preproc_wf,
+                            boldfileworkflow,
+                            in_nodename=f"{variant_bold_filt_wf.name}.inputnode",
+                        )
+                        connect_filt_wf_attrs_from_func_preproc_wf(
+                            boldfileworkflow, func_preproc_wf, variant_bold_filt_wf
+                        )
+                    if bold_filt_wf is None:  # use first variant bold_filt_wf
+                        bold_filt_wf = variant_bold_filt_wf
                     for i, attrname in enumerate(attrnames):
                         boldfileworkflow.connect(
-                            bold_filt_wf,
+                            variant_bold_filt_wf,
                             f"outputnode.out{i+1}",
                             analysisworkflow,
                             f"inputnode.{attrname}",
@@ -290,7 +245,36 @@ def init_workflow(workdir, anatomical_only=False, no_compose_transforms=False):
                 connect_firstlevel_analysis_extra_args(
                     analysisworkflow, analysis, database, boldfile
                 )
-                if analysis.type == "atlas_based_connectivity":
+                # use first variant to create func_report_wf
+                if func_report_wf is None:
+                    func_report_wf = cache.get(
+                        init_func_report_wf, argtuples=[("workdir", workdir), ("memcalc", memcalc)]
+                    )
+                    func_report_wf.get_node("inputnode").inputs.metadata = boldfilemetadata
+                    connect_func_report_wf_attrs_from_filt_wf(
+                        boldfileworkflow, bold_filt_wf, func_report_wf
+                    )
+                    connect_func_report_wf_attrs_from_func_preproc_wf(
+                        boldfileworkflow, func_preproc_wf, func_report_wf
+                    )
+                    connect_func_report_wf_attrs_from_anat_preproc_wf(
+                        subjectworkflow,
+                        anat_preproc_wf,
+                        boldfileworkflow,
+                        in_nodename=f"{func_report_wf.name}.inputnode",
+                    )
+                boldfileworkflow.connect(
+                    func_report_wf, "outputnode.metadata", analysisworkflow, "inputnode.metadata",
+                )
+                # sink outputs
+                endpoint = (boldfileworkflow, f"{analysisworkflow.name}.{analysisoutattr}")
+                make_resultdict_datasink(
+                    boldfileworkflow,
+                    workdir,
+                    (analysisworkflow, analysisoutattr),
+                    name=f"{analysisworkflow.name}_resultdictdatasink",
+                )
+                if analysis.type == "atlas_based_connectivity" or analysis.type == "image_output":
                     pass
                 else:  # FIXME don't fail with zero copes
                     subjectanalysisendpoints[analysis.name].append(endpoint)

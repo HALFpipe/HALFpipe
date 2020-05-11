@@ -12,7 +12,14 @@ from ..smooth import init_smooth_wf
 from .zscore import init_zscore_wf
 
 from ..memory import MemoryCalculator
-from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
+from ...spec import (
+    Tags,
+    Analysis,
+    BandPassFilteredTag,
+    ConfoundsRemovedTag,
+    SmoothedTag,
+    GrandMeanScaledTag,
+)
 from ...interface import MakeResultdicts
 
 
@@ -27,6 +34,9 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
 
     # make bold file variant specification
     varianttupls = [("space", analysis.tags.space)]
+    if analysis.tags.grand_mean_scaled is not None:
+        assert isinstance(analysis.tags.grand_mean_scaled, GrandMeanScaledTag)
+        varianttupls.append(analysis.tags.grand_mean_scaled.as_tupl())
     if analysis.tags.band_pass_filtered is not None:
         assert isinstance(analysis.tags.band_pass_filtered, BandPassFilteredTag)
         varianttupls.append(analysis.tags.band_pass_filtered.as_tupl())
@@ -49,9 +59,7 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
         name="reho",
         mem_gb=memcalc.series_std_gb * 2,
     )
-    workflow.connect(
-        [(inputnode, reho, [("bold_file", "in_file"), ("mask_file", "mask_file")])]
-    )
+    workflow.connect([(inputnode, reho, [("bold_file", "in_file"), ("mask_file", "mask_file")])])
 
     endpoint = (reho, "out_file")
     if analysis.tags.smoothed is not None:

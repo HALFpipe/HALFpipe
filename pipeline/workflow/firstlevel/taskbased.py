@@ -10,7 +10,14 @@ from nipype.interfaces import fsl
 
 from ...interface import MakeDofVolume, MakeResultdicts, ParseConditionFile
 from ...utils import ravel, first, firstfloat
-from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
+from ...spec import (
+    Tags,
+    Analysis,
+    BandPassFilteredTag,
+    ConfoundsRemovedTag,
+    SmoothedTag,
+    GrandMeanScaledTag,
+)
 
 from ..memory import MemoryCalculator
 
@@ -26,6 +33,9 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     # make bold file variant specification
     boldfilefields = ["bold_file"]
     varianttupls = [("space", analysis.tags.space)]
+    if analysis.tags.grand_mean_scaled is not None:
+        assert isinstance(analysis.tags.grand_mean_scaled, GrandMeanScaledTag)
+        varianttupls.append(analysis.tags.grand_mean_scaled.as_tupl())
     if analysis.tags.band_pass_filtered is not None:
         assert isinstance(analysis.tags.band_pass_filtered, BandPassFilteredTag)
         assert analysis.tags.band_pass_filtered.type == "gaussian"
@@ -37,9 +47,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
         )
         varianttupls.append(("confounds_removed", confounds_removed_names))
         confounds_extract_names = tuple(
-            name
-            for name in analysis.tags.confounds_removed.names
-            if "aroma_motion" not in name
+            name for name in analysis.tags.confounds_removed.names if "aroma_motion" not in name
         )
         if len(confounds_extract_names) > 0:
             boldfilefields.append("confounds_file")
@@ -56,9 +64,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
 
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[*boldfilefields, "mask_file", "condition_files", "metadata"]
-        ),
+        niu.IdentityInterface(fields=[*boldfilefields, "mask_file", "condition_files", "metadata"]),
         name="inputnode",
     )
 
@@ -87,9 +93,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     if "band_pass_filtered" in variantdict:
         modelspec.inputs.high_pass_filter_cutoff = float(analysis.tags.band_pass_filtered.high)
     if "confounds_extract" in variantdict:
-        workflow.connect(
-            [(inputnode, modelspec, [("confounds_file", "realignment_parameters")])]
-        )
+        workflow.connect([(inputnode, modelspec, [("confounds_file", "realignment_parameters")])])
 
     # transform contrasts dictionary to nipype list data structure
     contrasts = [
@@ -108,11 +112,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     )
     workflow.connect(
         [
-            (
-                inputnode,
-                level1design,
-                [(("metadata", get_repetition_time), "interscan_interval")],
-            ),
+            (inputnode, level1design, [(("metadata", get_repetition_time), "interscan_interval")],),
             (modelspec, level1design, [("session_info", "session_info")]),
         ]
     )
@@ -140,11 +140,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
         [
             (inputnode, modelestimate, [("bold_file", "in_file")]),
             (boldfilecutoff, modelestimate, [(("out_stat", firstfloat), "threshold")]),
-            (
-                modelgen,
-                modelestimate,
-                [("design_file", "design_file"), ("con_file", "tcon_file")],
-            ),
+            (modelgen, modelestimate, [("design_file", "design_file"), ("con_file", "tcon_file")],),
         ]
     )
 

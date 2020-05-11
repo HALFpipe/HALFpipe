@@ -61,7 +61,9 @@ class ConfoundsSelectStep(Step):
         self.confs = set(
             analysis.tags.confounds_removed.as_tupl()
             for analysis in ctx.spec.analyses
-            if analysis.tags is not None and analysis.tags.confounds_removed is not None
+            if analysis.tags is not None
+            and analysis.tags.confounds_removed is not None
+            and analysis.type != "image_output"
         )
         suggestion = []
         if len(self.confs) > 0:
@@ -116,13 +118,14 @@ class ConfirmInconsistentHighPassTemporalFilterSettingStep(YesNoStep):
 class HighPassTemporalFilterSettingStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the temporal filter width in seconds"))
-        suggestion = 128.0
+        suggestion = 125.0
         self.bptfs = set(
             analysis.tags.band_pass_filtered.as_tupl()
             for analysis in ctx.spec.analyses
             if analysis.tags is not None
             and analysis.tags.band_pass_filtered is not None
             and analysis.tags.band_pass_filtered.type == "gaussian"
+            and analysis.type != "image_output"
         )
         if len(self.bptfs) > 0:
             suggestion = ravel(first(self.bptfs))[-1]
@@ -156,9 +159,7 @@ class DoHighPassFilterStep(YesNoStep):
 
 
 class ConfirmInconsistentSmoothingSettingStep(YesNoStep):
-    header_str = (
-        "Do you really want to use inconsistent smoothing FWHM values across analyses?"
-    )
+    header_str = "Do you really want to use inconsistent smoothing FWHM values across analyses?"
     no_step_type = None
 
     def __init__(self, app, yes_step_type):
@@ -182,7 +183,9 @@ class PreSmoothingSettingStep(Step):
         self.fwhms = set(
             analysis.tags.smoothed.as_tupl()
             for analysis in ctx.spec.analyses
-            if analysis.tags is not None and analysis.tags.smoothed is not None
+            if analysis.tags is not None
+            and analysis.tags.smoothed is not None
+            and analysis.type != "image_output"
         )
         if len(self.fwhms) > 0:
             suggestion = first(self.fwhms)[-1]
@@ -199,10 +202,7 @@ class PreSmoothingSettingStep(Step):
     def next(self, ctx):
         assert self._value is not None
         ctx.spec.analyses[-1].tags.smoothed = SmoothedTagSchema().load({"fwhm": self._value})
-        if (
-            len(self.fwhms) == 1
-            and ctx.spec.analyses[-1].tags.smoothed.as_tupl() not in self.fwhms
-        ):
+        if len(self.fwhms) == 1 and ctx.spec.analyses[-1].tags.smoothed.as_tupl() not in self.fwhms:
             return ConfirmInconsistentSmoothingSettingStep(self.app, DoHighPassFilterStep)(ctx)
         return DoHighPassFilterStep(self.app)(ctx)
 
@@ -219,15 +219,15 @@ class ReHoAndFALFFSettingStep(Step):
             )
         )
         self._append_view(SpacerView(1))
-        self._append_view(
-            TextView("Statistical maps will be smoothed after feature extraction")
-        )
+        self._append_view(TextView("Statistical maps will be smoothed after feature extraction"))
         self._append_view(TextView("Specify the smoothing FWHM in mm"))
         suggestion = 6.0
         self.fwhms = set(
             analysis.tags.smoothed.as_tupl()
             for analysis in ctx.spec.analyses
-            if analysis.tags is not None and analysis.tags.smoothed is not None
+            if analysis.tags is not None
+            and analysis.tags.smoothed is not None
+            and analysis.type != "image_output"
         )
         if len(self.fwhms) > 0:
             suggestion = first(self.fwhms)[-1]
@@ -241,11 +241,7 @@ class ReHoAndFALFFSettingStep(Step):
             return False
         tags_obj = ctx.spec.analyses[-1].tags
         tags_obj.band_pass_filtered = BandPassFilteredTagSchema().load(
-            {
-                "type": "frequency_based",
-                "low": self.low_pass_freq,
-                "high": self.high_pass_freq,
-            }
+            {"type": "frequency_based", "low": self.low_pass_freq, "high": self.high_pass_freq}
         )
         tags_obj.smoothed = SmoothedTagSchema().load({"fwhm": value})
         return True

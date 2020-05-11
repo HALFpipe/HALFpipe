@@ -40,6 +40,8 @@ from .derivative import (
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    GrandMeanScaledTag,
+    GrandMeanScaledTagSchema,
     derivative_entities,
     DerivativeTagsSchema,
 )
@@ -75,6 +77,8 @@ __all__ = [
     BandPassFilteredTag,
     ConfoundsRemovedTag,
     ConfoundsRemovedTagSchema,
+    GrandMeanScaledTag,
+    GrandMeanScaledTagSchema,
     derivative_entities,
     DerivativeTagsSchema,
     AtlasTagsSchema,

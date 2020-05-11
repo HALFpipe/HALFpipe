@@ -2,9 +2,8 @@ Bootstrap: docker
 From: poldracklab/fmriprep:20.1.0rc2
 
 %environment
-  PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline"
-  TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
-  export PIPELINE_RESOURCE_DIR TEMPLATEFLOW_HOME
+  export PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline"
+  export TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
 
 %setup
   mkdir -p ${SINGULARITY_ROOTFS}/pipeline
@@ -23,7 +22,6 @@ From: poldracklab/fmriprep:20.1.0rc2
     python postsetup.py' fmriprep
   
   rm -rf ~/.cache/pip
-  rm -rf /root/src/pipeline
 
 %runscript
   exec /usr/local/miniconda/bin/pipeline "$@"

@@ -13,7 +13,14 @@ from .zscore import init_zscore_wf
 from ...interface import MakeResultdicts
 
 from ..memory import MemoryCalculator
-from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
+from ...spec import (
+    Tags,
+    Analysis,
+    BandPassFilteredTag,
+    ConfoundsRemovedTag,
+    SmoothedTag,
+    GrandMeanScaledTag,
+)
 from ...utils import first
 
 
@@ -40,6 +47,10 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
     # make bold file variant specification
     varianttupls_filtered = [("space", analysis.tags.space)]
     varianttupls_unfiltered = [("space", analysis.tags.space)]
+    if analysis.tags.grand_mean_scaled is not None:
+        assert isinstance(analysis.tags.grand_mean_scaled, GrandMeanScaledTag)
+        varianttupls_filtered.append(analysis.tags.grand_mean_scaled.as_tupl())
+        varianttupls_unfiltered.append(analysis.tags.grand_mean_scaled.as_tupl())
     assert analysis.tags.band_pass_filtered is not None
     assert isinstance(analysis.tags.band_pass_filtered, BandPassFilteredTag)
     varianttupls_filtered.append(analysis.tags.band_pass_filtered.as_tupl())
@@ -70,13 +81,7 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
     workflow.connect(
-        [
-            (
-                inputnode,
-                stddev_filtered,
-                [("bold_file_filtered", "in_file"), ("mask_file", "mask")],
-            )
-        ]
+        [(inputnode, stddev_filtered, [("bold_file_filtered", "in_file"), ("mask_file", "mask")],)]
     )
 
     # standard deviation of the unfiltered nuisance corrected image
@@ -120,9 +125,7 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
                 smooth_workflow = init_smooth_wf(
                     fwhm=analysis.tags.smoothed.fwhm, name=f"{name}_smooth_wf", memcalc=memcalc
                 )
-                workflow.connect(
-                    inputnode, "mask_file", smooth_workflow, "inputnode.mask_file"
-                )
+                workflow.connect(inputnode, "mask_file", smooth_workflow, "inputnode.mask_file")
                 workflow.connect(*endpoint, smooth_workflow, "inputnode.in_file")
                 endpoint = (smooth_workflow, "outputnode.out_file")
         zscore_workflow = init_zscore_wf(name=f"{name}_zscore_wf", memcalc=memcalc)

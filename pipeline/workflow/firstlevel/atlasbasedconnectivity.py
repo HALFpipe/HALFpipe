@@ -8,7 +8,7 @@ from nipype.interfaces import utility as niu
 from ...interface import ConnectivityMeasure, ResampleIfNeeded, MakeResultdicts
 
 from ..memory import MemoryCalculator
-from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag
+from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, GrandMeanScaledTag
 
 
 def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
@@ -21,6 +21,9 @@ def init_atlasbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
 
     # make bold file variant specification
     varianttupls = [("space", analysis.tags.space)]
+    if analysis.tags.grand_mean_scaled is not None:
+        assert isinstance(analysis.tags.grand_mean_scaled, GrandMeanScaledTag)
+        varianttupls.append(analysis.tags.grand_mean_scaled.as_tupl())
     if analysis.tags.band_pass_filtered is not None:
         assert isinstance(analysis.tags.band_pass_filtered, BandPassFilteredTag)
         varianttupls.append(analysis.tags.band_pass_filtered.as_tupl())

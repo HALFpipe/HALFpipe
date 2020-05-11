@@ -212,15 +212,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
         if type == "gaussian":
             simultaneous_bandpass_and_ort = False
 
-    confounds_to_remove_before_filtering = set(
-        (
-            "aroma_motion_[0-9]+",
-            "(trans|rot)_[xyz]",
-            "(trans|rot)_[xyz]_derivative1",
-            "(trans|rot)_[xyz]_power2",
-            "(trans|rot)_[xyz]_derivative1_power2",
-        )
-    )
+    confounds_to_remove_before_filtering = set(("aroma_motion_[0-9]+",))
     if (
         not simultaneous_bandpass_and_ort
         and "confounds_removed" in tagdict
@@ -296,6 +288,11 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
         workflow.connect(*boldfileendpoint, addmean, "in_file")
         workflow.connect(meanfunc, "out_file", addmean, "operand_file")
         boldfileendpoint = (addmean, "out_file")
+
+    applymask = pe.Node(interface=fsl.ApplyMask(), name="applymask", mem_gb=memcalc.volume_std_gb,)
+    workflow.connect(*boldfileendpoint, applymask, "in_file")
+    workflow.connect(inputnode, "bold_mask_std", applymask, "mask_file")
+    boldfileendpoint = (applymask, "out_file")
 
     endpoints = [boldfileendpoint]  # boldfile is finished
 

@@ -2,12 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from smriprep.workflows.norm import init_anat_norm_wf
 from smriprep.workflows.outputs import init_anat_reports_wf
+from smriprep.workflows.surfaces import init_surface_recon_wf
 from niworkflows.anat.ants import init_brain_extraction_wf
 from niworkflows.interfaces.images import ValidateImage
 from niworkflows.utils.spaces import Reference
@@ -37,7 +40,9 @@ anat_preproc_wf_output_attrs = [
 ]
 
 
-def init_anat_preproc_wf(workdir=None, no_compose_transforms=False, name="anat_preproc_wf"):
+def init_anat_preproc_wf(
+    workdir=None, freesurfer=False, no_compose_transforms=False, name="anat_preproc_wf"
+):
     """
     modified from smriprep/workflows/anatomical.py
     """
@@ -116,9 +121,7 @@ def init_anat_preproc_wf(workdir=None, no_compose_transforms=False, name="anat_p
     )
 
     # Write outputs
-    anat_reports_wf = init_anat_reports_wf(
-        reportlets_dir="/", freesurfer=config.workflow.run_reconall
-    )
+    anat_reports_wf = init_anat_reports_wf(reportlets_dir="/", freesurfer=freesurfer)
     workflow.connect(
         [
             (
@@ -152,5 +155,47 @@ def init_anat_preproc_wf(workdir=None, no_compose_transforms=False, name="anat_p
     make_reportnode(workflow, spaces=True)
     assert workdir is not None
     make_reportnode_datasink(workflow, workdir)
+
+    if freesurfer:
+
+        def get_subject(dic):
+            return dic.get("subject")
+
+        # 5. Surface reconstruction (--fs-no-reconall not set)
+        surface_recon_wf = init_surface_recon_wf(
+            name="surface_recon_wf",
+            omp_nthreads=config.nipype.omp_nthreads,
+            hires=config.workflow.hires,
+        )
+        subjects_dir = Path(workdir) / "subjects_dir"
+        subjects_dir.mkdir(parents=True, exist_ok=True)
+        surface_recon_wf.get_node("inputnode").inputs.subjects_dir = str(subjects_dir)
+        workflow.connect(
+            [
+                (
+                    inputnode,
+                    surface_recon_wf,
+                    [(("metadata", get_subject), "inputnode.subject_id")],
+                ),
+                (anat_validate, surface_recon_wf, [("out_file", "inputnode.t1w")]),
+                (
+                    brain_extraction_wf,
+                    surface_recon_wf,
+                    [
+                        (("outputnode.out_file", first), "inputnode.skullstripped_t1"),
+                        ("outputnode.out_segm", "inputnode.ants_segs"),
+                        (("outputnode.bias_corrected", first), "inputnode.corrected_t1"),
+                    ],
+                ),
+                (
+                    surface_recon_wf,
+                    anat_reports_wf,
+                    [
+                        ("outputnode.subject_id", "inputnode.subject_id"),
+                        ("outputnode.subjects_dir", "inputnode.subjects_dir"),
+                    ],
+                ),
+            ]
+        )
 
     return workflow

@@ -62,9 +62,7 @@ class BaseBOLDMissingMetadataStep(BaseBOLDSelectStep):
             for k, res in res_by_str.items():
                 tags = self.tags_by_str[k]
                 filterdict = {k: v for k, v in zip(self.entities, tags)}
-                filepaths = ctx.database.filter(
-                    self.filepaths_with_missing_metadata, **filterdict
-                )
+                filepaths = ctx.database.filter(self.filepaths_with_missing_metadata, **filterdict)
                 fileobj_set = set(ctx.database.get_fileobj(filepath) for filepath in filepaths)
                 for fileobj in fileobj_set:
                     self._set_value(fileobj, res)
@@ -209,7 +207,7 @@ class PhaseTypeStep(BranchStep):
 
 
 class PhaseDifferenceMagnitude2Step(FilePatternStep):
-    filetype_str = "second magnitude image"
+    filetype_str = "second set of magnitude image"
     tags_dict = {"datatype": "fmap", "suffix": "magnitude2"}
     allowed_entities = ["subject", "session", "run", "task"]
     ask_if_missing_entities = []
@@ -225,7 +223,7 @@ class PhaseDifferenceOnlyMagnitude1Step(PhaseDifferenceMagnitude2Step):
 
 
 class PhaseDifferenceMagnitude1Step(PhaseDifferenceOnlyMagnitude1Step):
-    filetype_str = "first magnitude image"
+    filetype_str = "first set of magnitude image"
     next_step_type = PhaseDifferenceMagnitude2Step
 
 

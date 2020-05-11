@@ -10,7 +10,14 @@ from ...interface import MergeColumnsTSV, ResampleIfNeeded, MakeResultdicts, Mak
 from ...utils import ravel
 
 from ..memory import MemoryCalculator
-from ...spec import Tags, Analysis, BandPassFilteredTag, ConfoundsRemovedTag, SmoothedTag
+from ...spec import (
+    Tags,
+    Analysis,
+    BandPassFilteredTag,
+    ConfoundsRemovedTag,
+    SmoothedTag,
+    GrandMeanScaledTag,
+)
 
 
 def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
@@ -23,6 +30,9 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
     # make bold file variant specification
     confoundsfilefields = []
     varianttupls = [("space", analysis.tags.space)]
+    if analysis.tags.grand_mean_scaled is not None:
+        assert isinstance(analysis.tags.grand_mean_scaled, GrandMeanScaledTag)
+        varianttupls.append(analysis.tags.grand_mean_scaled.as_tupl())
     if analysis.tags.band_pass_filtered is not None:
         assert isinstance(analysis.tags.band_pass_filtered, BandPassFilteredTag)
         varianttupls.append(analysis.tags.band_pass_filtered.as_tupl())

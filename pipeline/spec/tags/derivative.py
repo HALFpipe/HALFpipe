@@ -30,7 +30,7 @@ class SmoothedTag(BaseTag):
         self.fwhm = kwargs.get("fwhm")
 
     def as_tupl(self):
-        return ("smoothed", self.fwhm)
+        return ("smoothed", f"{self.fwhm:f}")
 
 
 class GrandMeanScaledTag(BaseTag):

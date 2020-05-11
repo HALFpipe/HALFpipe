@@ -29,7 +29,23 @@ from .higherlevel import GroupLevelAnalysisStep
 
 class Context:
     def __init__(self):
-        self.spec = SpecSchema().load({}, partial=True,)
+        self.spec = SpecSchema().load(
+            {
+                "analyses": [
+                    {
+                        "type": "image_output",
+                        "tags": {
+                            "space": "mni",
+                            "confounds_removed": {"names": ["aroma_motion_[0-9]+"]},
+                            "band_pass_filtered": {"type": "gaussian", "high": 125.0},
+                        },
+                        "level": "first",
+                        "name": "ImageOutput",
+                    }
+                ],
+            },
+            partial=True,
+        )
         self.workdir = None
         self.use_existing_spec = False
         self.database = Database()
@@ -111,6 +127,7 @@ class UseExistingSpecStep(Step):
             elif self.choice == self.options[3]:
                 for fileobj in self.existing_spec.files:
                     ctx.add_file_obj(fileobj)
+                ctx.spec.analyses = []  # reset default analyses
                 for analysisobj in self.existing_spec.analyses:
                     if analysisobj.level == "first":
                         ctx.add_analysis_obj(analysisobj)

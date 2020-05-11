@@ -34,6 +34,7 @@ def _main():
     basegroup.add_argument(
         "-w",
         "--workdir",
+        default="/work",
         type=str,
         help="directory where output and intermediate files are stored",
     )
@@ -54,6 +55,7 @@ def _main():
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument(f"--anatomical-only", action="store_true", default=False)
     workflowgroup.add_argument(f"--no-compose-transforms", action="store_true", default=False)
+    workflowgroup.add_argument(f"--freesurfer", action="store_true", default=False)
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
@@ -170,6 +172,7 @@ def _main():
             workdir,
             anatomical_only=args.anatomical_only,
             no_compose_transforms=args.no_compose_transforms,
+            freesurfer=args.freesurfer,
         )
 
     execgraphs = None
