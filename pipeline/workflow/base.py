@@ -61,9 +61,7 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(
-    workdir, anatomical_only=False, freesurfer=False, no_compose_transforms=False, keep_all=False
-):
+def init_workflow(workdir, freesurfer=False, no_compose_transforms=False, keep_all=False):
     """
     initialize nipype workflow
 
@@ -89,7 +87,7 @@ def init_workflow(
         {
             "crashdump_dir": workflow.base_dir,
             "poll_sleep_duration": 0.1,
-            "use_relative_paths": True,
+            "use_relative_paths": False,
             "check_version": False,
             "remove_node_directories": not keep_all,
         }
@@ -158,7 +156,7 @@ def init_workflow(
             subjectworkflow, anat_preproc_wf, anat_report_wf,
         )
 
-        if anatomical_only:
+        if len(firstlevel_analyses) == 0:
             continue
 
         boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")

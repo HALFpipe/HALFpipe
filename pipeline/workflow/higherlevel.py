@@ -28,7 +28,7 @@ from .memory import MemoryCalculator
 def init_higherlevel_analysis_wf(analysis, memcalc=MemoryCalculator()):
     assert isinstance(analysis, Analysis)
 
-    workflow = pe.Workflow(name=analysis.name)
+    workflow = pe.Workflow(name=f"{analysis.name}_analysis_wf")
 
     inputnode = pe.Node(interface=niu.IdentityInterface(fields=["indicts"]), name="inputnode")
 

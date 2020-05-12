@@ -14,7 +14,8 @@ from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 from nipype.utils.misc import str2bool
 
-from pipeline.logger import Logger
+from .refcount import ReferenceCounter
+from ..logger import Logger
 
 logger = logging.getLogger("nipype.workflow")
 
@@ -32,6 +33,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._taskresult = {}
         self._task_obj = {}
         self._taskid = 0
+        self._rc = ReferenceCounter()
 
         # Cache current working directory and make sure we
         # change to it when workers are set up
@@ -45,7 +47,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self.raise_insufficient = self.plugin_args.get("raise_insufficient", True)
 
         # Instantiate different thread pools for non-daemon processes
-        logging.getLogger("pipeline").debug(
+        logger.debug(
             "[MultiProc] Starting (n_procs=%d, " "mem_gb=%0.2f, cwd=%s)",
             self.processors,
             self.memory_gb,
@@ -65,6 +67,13 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self._stats = None
 
+    def _task_finished_cb(self, jobid, cached=False):
+        try:
+            self._rc.put(self.procs[jobid].result, jobid=jobid)
+        except Exception:
+            pass  # node doesn't have a result
+        super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)
+
     def _async_callback(self, args):
         try:
             result = args.result()
@@ -81,15 +90,20 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 if idx in self.mapnodesubids:
                     continue
                 if self.proc_done[idx] and (not self.proc_pending[idx]):
+                    name = self.procs[idx].fullname
                     if (
-                        "anat_preproc_wf" in self.procs[idx].fullname
-                        or "func_preproc_wf" in self.procs[idx].fullname
+                        "anat_preproc_wf" in name
+                        or "func_preproc_wf" in name
+                        or "analysis_wf" in name
                     ):
-                        continue  # keep some nodes because this is not safe
+                        continue  # keep some nodes because deleting them is not safe
                     self.refidx[idx, idx] = -1
                     outdir = self.procs[idx].output_dir()
+                    self._rc.pop(idx)
+                    if not self._rc.can_delete(outdir):
+                        continue
                     logger.info(
                         ("[node dependencies finished] " "removing node: %s from directory %s")
                         % (self.procs[idx]._id, outdir)
                     )
-                    shutil.rmtree(outdir)
+                    shutil.rmtree(outdir, ignore_errors=True)

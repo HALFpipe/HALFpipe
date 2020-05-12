@@ -47,7 +47,7 @@ def init_reho_wf(analysis=None, memcalc=MemoryCalculator()):
     boldfilevariant = (("bold_file",), tuple(varianttupls))
 
     assert analysis.name is not None
-    workflow = pe.Workflow(name=analysis.name)
+    workflow = pe.Workflow(name=f"{analysis.name}_analysis_wf")
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(fields=["bold_file", "mask_file", "metadata"]),

@@ -53,7 +53,6 @@ def _main():
 
     workflowgroup = ap.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
-    workflowgroup.add_argument("--anatomical-only", action="store_true", default=False)
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
     workflowgroup.add_argument("--keep-all", action="store_true", default=False)
@@ -171,7 +170,6 @@ def _main():
 
         workflow = init_workflow(
             workdir,
-            anatomical_only=args.anatomical_only,
             no_compose_transforms=args.no_compose_transforms,
             freesurfer=args.freesurfer,
             keep_all=args.keep_all,

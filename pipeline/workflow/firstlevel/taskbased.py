@@ -60,7 +60,7 @@ def init_taskbased_wf(analysis=None, memcalc=MemoryCalculator()):
     boldfilevariant = (tuple(boldfilefields), tuple(varianttupls))
 
     assert analysis.name is not None
-    workflow = pe.Workflow(name=analysis.name)
+    workflow = pe.Workflow(name=f"{analysis.name}_analysis_wf")
 
     # inputs are the bold file, the mask file and the confounds file
     inputnode = pe.Node(

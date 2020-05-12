@@ -65,7 +65,7 @@ def init_falff_wf(analysis=None, memcalc=MemoryCalculator()):
     )
 
     assert analysis.name is not None
-    workflow = pe.Workflow(name=analysis.name)
+    workflow = pe.Workflow(name=f"{analysis.name}_analysis_wf")
 
     inputnode = pe.Node(
         interface=niu.IdentityInterface(
