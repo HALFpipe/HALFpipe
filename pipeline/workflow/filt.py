@@ -183,8 +183,7 @@ def init_bold_filt_wf(variant=None, memcalc=MemoryCalculator()):
 
     # smoothing is done first
     if "smoothed" in tagdict:
-        fwhm = tagdict["smoothed"]
-        assert isinstance(fwhm, float)
+        fwhm = float(tagdict["smoothed"])
         smooth_workflow = init_smooth_wf(fwhm=fwhm)
         workflow.connect(inputnode, "bold_mask_std", smooth_workflow, "inputnode.mask_file")
         workflow.connect(*boldfileendpoint, smooth_workflow, "inputnode.in_file")
