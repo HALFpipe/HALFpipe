@@ -19,8 +19,19 @@ class ReferenceCounter:
         self.files = {}
         self.sets = []
 
+    def addpath(self, path, jobid):
+        curfiles = self.files
+        for elem in iterpath(path.resolve()):
+            if elem not in curfiles:
+                curfiles[elem] = {}
+            curfiles = curfiles[elem]
+        if 0 not in curfiles or not isinstance(curfiles[0], set):
+            curfiles[0] = set()
+            self.sets.append(curfiles[0])
+        curfiles[0].add(jobid)
+
     def put(self, result, jobid=0):
-        values = []
+        paths = []
         stack = [result]
         while len(stack) > 0:
             obj = stack.pop()
@@ -28,28 +39,21 @@ class ReferenceCounter:
                 stack.append(obj.outputs.__dict__)
             elif isinstance(obj, dict):
                 stack.extend(obj.values())
-            elif isinstance(obj, str):
-                values.append(obj)
-            elif isinstance(obj, Path):
-                values.append(str(obj))
+            elif isinstance(obj, str) or isinstance(obj, Path):
+                paths.append(obj)
             else:  # probably some kind of iterable
                 try:
                     stack.extend(obj)
                 except TypeError:
                     pass
-        for val in values:
-            path = Path(val)
+        while len(paths) > 0:
+            path = Path(paths.pop())
             if not path.exists():
                 continue
-            curfiles = self.files
-            for elem in iterpath(path):
-                if elem not in curfiles:
-                    curfiles[elem] = {}
-                curfiles = curfiles[elem]
-            if 0 not in curfiles or not isinstance(curfiles[0], set):
-                curfiles[0] = set()
-                self.sets.append(curfiles[0])
-            curfiles[0].add(jobid)
+            if path.is_dir():
+                paths.extend(path.iterdir())
+            else:
+                self.addpath(path, jobid)
 
     def pop(self, jobid):
         for s in self.sets:

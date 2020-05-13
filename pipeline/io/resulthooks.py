@@ -63,9 +63,7 @@ class PreprocessedImgCopyOutResultHook(ResultHook):
         super(PreprocessedImgCopyOutResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / "reports" / "reportpreproc.js"
-        self.dictlistfile = DictListFile(
-            dictlistfilename, "qualitycheck.reportpreproc(JSON.parse(`", "`));"
-        )
+        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()
@@ -99,9 +97,7 @@ class ReportValsResultHook(ResultHook):
         super(ReportValsResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / self.subdirectory / "reportvals.js"
-        self.dictlistfile = DictListFile(
-            dictlistfilename, "qualitycheck.reportvals(JSON.parse(`", "`));"
-        )
+        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()
@@ -123,9 +119,7 @@ class ReportResultHook(ResultHook):
         super(ReportResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / self.subdirectory / "reportimgs.js"
-        self.dictlistfile = DictListFile(
-            dictlistfilename, "qualitycheck.reportimgs(JSON.parse(`", "`));"
-        )
+        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()

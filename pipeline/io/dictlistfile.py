@@ -14,6 +14,8 @@ from tabulate import tabulate
 
 from ..spec import bold_entities
 
+logger = logging.getLogger("pipeline")
+
 
 class DictListFile:
     def __init__(self, filename, header=None, footer=None):
@@ -32,28 +34,36 @@ class DictListFile:
         self.footer = footer
 
         self.dictlist = None
+        self.is_dirty = None
 
     def __enter__(self):
         self.lock.acquire()
 
         self.dictlist = []
+        self.is_dirty = False
         if self.filename.is_file():
             with open(str(self.filename), "rb") as fp:
                 bytesfromfile = fp.read()
-                try:
-                    if self.header is not None:
-                        bytesfromfile = bytesfromfile[len(self.header) :]
-                    if self.footer is not None:
-                        bytesfromfile = bytesfromfile[: -len(self.footer)]
-                    self.dictlist = json.loads(bytesfromfile)
-                except json.decoder.JSONDecodeError as e:
-                    logging.getLogger("pipeline").warning("JSONDecodeError %s", e)
+            try:
+                if self.header is not None:
+                    bytesfromfile = bytesfromfile[len(self.header) :]
+                if self.footer is not None:
+                    bytesfromfile = bytesfromfile[: -len(self.footer)]
+                jsonstr = bytesfromfile.decode()
+                jsonstr = jsonstr.replace("\\\n", "")
+                self.dictlist = json.loads(jsonstr)
+            except json.decoder.JSONDecodeError as e:
+                logging.getLogger("pipeline").warning("JSONDecodeError %s", e)
 
     def __exit__(self, *args):
-        with open(str(self.filename), "w") as fp:
-            fp.write(self.header.decode())
-            json.dump(self.dictlist, fp, indent=4, ensure_ascii=False)
-            fp.write(self.footer.decode())
+        if self.is_dirty:
+            with open(str(self.filename), "w") as fp:
+                fp.write(self.header.decode())
+                jsonstr = json.dumps(self.dictlist, indent=4, ensure_ascii=False)
+                for line in jsonstr.splitlines():
+                    fp.write(line)
+                    fp.write("\\\n")
+                fp.write(self.footer.decode())
         try:
             self.lock.release()
         except RuntimeError:
@@ -82,18 +92,24 @@ class DictListFile:
     def put(self, indict):
         assert self.dictlist is not None
 
+        keykeys = set((*bold_entities, "desc"))
         matches = False
+
         for i, curdict in enumerate(self.dictlist):
             matches = True
-            for key in [*bold_entities, "desc"]:  # index fields to match
-                if key in indict and key in curdict:
-                    matches = matches and (indict[key] == curdict[key])
+            equals = True
+            for key, value in curdict.items():
+                valmatches = key in indict and indict[key] == curdict[key]
+                if key in keykeys:
+                    matches = matches and valmatches
+                equals = equals and valmatches
+            if equals:
+                return
             if matches:
                 break
+        self.is_dirty = True
         if matches:
             self.dictlist[i] = indict
-            logging.getLogger("pipeline").info(
-                f"Updating output file entry {curdict} with {indict}"
-            )
+            logger.info(f"Updating {self.filename} entry {curdict} with {indict}")
         else:
             self.dictlist.append(indict)

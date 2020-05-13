@@ -55,7 +55,7 @@ def init_seedbasedconnectivity_wf(analysis, memcalc=MemoryCalculator()):
     boldfilevariant = (("bold_file", *confoundsfilefields), tuple(varianttupls))
 
     assert analysis.name is not None
-    workflow = pe.Workflow(name=f"{analysis.name}_analysis_wf")
+    workflow = pe.Workflow(name=analysis.name)
 
     # input
     inputnode = pe.Node(

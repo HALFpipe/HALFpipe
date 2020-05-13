@@ -68,7 +68,7 @@ def init_indexed_js_object_file(filename, functionname, keynames, maxlen, defaul
     lastkey = None
     Path(filename).parent.mkdir(parents=True, exist_ok=True)
     with open(filename, "wb") as fp:
-        fp.write(f"{functionname}(JSON.parse('{{ ".encode())
+        fp.write(f"{functionname}('{{ ".encode())
         fp.write("\\\n".encode())
         placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
         for i, keyname in enumerate(keynames):
@@ -79,7 +79,7 @@ def init_indexed_js_object_file(filename, functionname, keynames, maxlen, defaul
             indexdict[keyname] = fp.tell()
             fp.write(placeholder)
             fp.write(" \\\n".encode())
-        fp.write("}'));\n".encode())
+        fp.write("}');\n".encode())
     index_file = f"{filename}.index.pickle.xz"
     index = FileIndex(indexdict, maxlen, append_comma, lastkey=lastkey)
     savepicklelzma(index_file, index)
@@ -91,7 +91,7 @@ def init_indexed_js_list_file(
     append_comma = False
     indexdict = dict()
     with open(filename, "wb") as fp:
-        fp.write(f"{functionname}(JSON.parse('[ ".encode())
+        fp.write(f"{functionname}('[ ".encode())
         fp.write("\\\n".encode())
         placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
         first = True
@@ -107,41 +107,7 @@ def init_indexed_js_list_file(
             fp.write(placeholder)
             fp.write(f" \\\n".encode())
             fp.write("  }".encode())
-        fp.write(" \\\n]'));\n".encode())
+        fp.write(" \\\n]');\n".encode())
     index_file = f"{filename}.index.pickle.xz"
     index = FileIndex(indexdict, maxlen, append_comma)
     savepicklelzma(index_file, index)
-
-
-# def init_indexed_js_list_multivalue_file(
-#     filename, functionname, keytupls_list, maxlen, valuekeynames, defaultvalue=""
-# ):
-#     append_comma = True
-#     indexdict = dict()
-#     with open(filename, "wb") as fp:
-#         fp.write(f"{functionname}(JSON.parse('[ ".encode())
-#         fp.write("\\\n".encode())
-#         placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
-#         first = True
-#         lastkey = None
-#         for keytupls in keytupls_list:
-#             if not first:
-#                 fp.write(", \\\n".encode())
-#             first = False
-#             fp.write("  { \\\n".encode())
-#             for key, val in keytupls:
-#                 fp.write(f'    "{key}": "{val}", \\\n'.encode())
-#             for i, val in enumerate(valuekeynames):
-#                 if i == len(valuekeynames) - 1:  # last iteration
-#                     placeholder = _quote(defaultvalue, maxlen, False).encode()
-#                     lastkey = val
-#                 valkeytupl = (keytupls, val)
-#                 fp.write(f'    "{val}": '.encode())
-#                 indexdict[valkeytupl] = fp.tell()
-#                 fp.write(placeholder)
-#                 fp.write(f" \\\n".encode())
-#             fp.write("  }".encode())
-#         fp.write(" \\\n]'));\n".encode())
-#     index_file = f"{filename}.index.pickle.xz"
-#     index = FileIndex(indexdict, maxlen, append_comma, lastkey=lastkey)
-#     savepicklelzma(index_file, index)
