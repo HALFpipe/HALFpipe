@@ -18,6 +18,8 @@ from ..spec import bold_entities
 class DictListFile:
     def __init__(self, filename, header=None, footer=None):
         self.filename = Path(filename)
+        self.filename.parent.mkdir(parents=True, exist_ok=True)
+
         lockfilename = f"{filename}.lock"
         self.lock = filelock.SoftFileLock(str(lockfilename), timeout=3600)
 
@@ -85,10 +87,13 @@ class DictListFile:
             matches = True
             for key in [*bold_entities, "desc"]:  # index fields to match
                 if key in indict and key in curdict:
-                    matches = indict[key] == curdict[key]
+                    matches = matches and (indict[key] == curdict[key])
             if matches:
                 break
         if matches:
             self.dictlist[i] = indict
+            logging.getLogger("pipeline").info(
+                f"Updating output file entry {curdict} with {indict}"
+            )
         else:
             self.dictlist.append(indict)
