@@ -295,7 +295,7 @@ def init_func_preproc_wf(
         name="ica_aroma_wf",
     )
     ica_aroma_wf.get_node("ica_aroma").inputs.denoise_type = "no"
-    ica_aroma_wf.remove_nodes([ica_aroma_wf.get_node("add_non_steady_state")])
+    ica_aroma_wf.remove_nodes([ica_aroma_wf.get_node("add_nonsteady")])
     workflow.connect(
         [
             (inputnode, ica_aroma_wf, [("bold_file", "inputnode.name_source")]),

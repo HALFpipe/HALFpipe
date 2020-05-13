@@ -188,7 +188,7 @@ class PreSmoothingSettingStep(Step):
             and analysis.type != "image_output"
         )
         if len(self.fwhms) > 0:
-            suggestion = first(self.fwhms)[-1]
+            suggestion = float(first(self.fwhms)[-1])
         self.input_view = NumberInputView(number=suggestion, min=0)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -230,7 +230,7 @@ class ReHoAndFALFFSettingStep(Step):
             and analysis.type != "image_output"
         )
         if len(self.fwhms) > 0:
-            suggestion = first(self.fwhms)[-1]
+            suggestion = float(first(self.fwhms)[-1])
         self.input_view = NumberInputView(number=suggestion, min=0)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -247,6 +247,6 @@ class ReHoAndFALFFSettingStep(Step):
         return True
 
     def next(self, ctx):
-        if len(self.fwhms) == 1 and ctx.spec.analyses[-1].tags.smoothed not in self.fwhms:
+        if len(self.fwhms) == 1 and ctx.spec.analyses[-1].tags.smoothed.as_tupl() not in self.fwhms:
             return ConfirmInconsistentSmoothingSettingStep(self.app, ConfoundsSelectStep)(ctx)
         return ConfoundsSelectStep(self.app)(ctx)

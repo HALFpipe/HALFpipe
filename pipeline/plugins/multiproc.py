@@ -66,6 +66,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         )
 
         self._stats = None
+        self._keep = plugin_args.get("keep", "all")
 
     def _task_finished_cb(self, jobid, cached=False):
         try:
@@ -91,11 +92,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                     continue
                 if self.proc_done[idx] and (not self.proc_pending[idx]):
                     name = self.procs[idx].fullname
-                    if (
-                        "anat_preproc_wf" in name
-                        or "func_preproc_wf" in name
-                        or "analysis_wf" in name
-                    ):
+                    if (self._keep != "none" and "preproc_wf" in name) or "outputnode" in name:
                         continue  # keep some nodes because deleting them is not safe
                     self.refidx[idx, idx] = -1
                     outdir = self.procs[idx].output_dir()

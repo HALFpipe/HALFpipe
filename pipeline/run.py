@@ -34,7 +34,6 @@ def _main():
     basegroup.add_argument(
         "-w",
         "--workdir",
-        default="/work",
         type=str,
         help="directory where output and intermediate files are stored",
     )
@@ -55,7 +54,12 @@ def _main():
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
-    workflowgroup.add_argument("--keep-all", action="store_true", default=False)
+    workflowgroup.add_argument(
+        "--keep",
+        choices=["all", "some", "none"],
+        default="some",
+        help="choose which intermediate files to keep",
+    )
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
@@ -172,7 +176,7 @@ def _main():
             workdir,
             no_compose_transforms=args.no_compose_transforms,
             freesurfer=args.freesurfer,
-            keep_all=args.keep_all,
+            keep=args.keep,
         )
 
     execgraphs = None
@@ -228,6 +232,7 @@ def _main():
             "verbose": verbose,
             "stop_on_first_crash": debug,
             "raise_insufficient": False,
+            "keep": args.keep,
         }
         if args.nipype_n_procs is not None:
             plugin_args["n_procs"] = args.nipype_n_procs

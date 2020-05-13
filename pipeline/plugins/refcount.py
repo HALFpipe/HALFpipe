@@ -30,6 +30,13 @@ class ReferenceCounter:
                 stack.extend(obj.values())
             elif isinstance(obj, str):
                 values.append(obj)
+            elif isinstance(obj, Path):
+                values.append(str(obj))
+            else:  # probably some kind of iterable
+                try:
+                    stack.extend(obj)
+                except TypeError:
+                    pass
         for val in values:
             path = Path(val)
             if not path.exists():

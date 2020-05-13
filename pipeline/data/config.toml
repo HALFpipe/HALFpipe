@@ -1,5 +1,6 @@
 [execution]
 bids_dir = "/dev/null"
+work_dir = "nipype"
 output_spaces = "MNI152NLin2009cAsym:res-2"
 write_graph = false
 
