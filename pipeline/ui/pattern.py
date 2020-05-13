@@ -14,6 +14,7 @@ from calamities import (
 import re
 from os import path as op
 import logging
+from copy import deepcopy
 
 from .step import Step
 from ..spec import File, entity_colors
@@ -103,19 +104,22 @@ class FilePatternStep(Step):
             self.app,
             self.file_obj,
             self.ask_if_missing_entities.copy(),
-            self.next_step_type(self.app),
+            self.next_step_type,
             suggest_file_stem=self.suggest_file_stem,
         )(ctx)
 
 
 class AskForMissingEntities(Step):
-    def __init__(self, app, file_obj, ask_if_missing_entities, next_step, suggest_file_stem=False):
+    def __init__(
+        self, app, file_obj, ask_if_missing_entities, next_step_type, suggest_file_stem=False
+    ):
         super(AskForMissingEntities, self).__init__(app)
         self.file_obj = file_obj
         self.ask_if_missing_entities = ask_if_missing_entities
-        self.next_step = next_step
+        self.next_step_type = next_step_type
         self.cur_entity = None
         self.suggest_file_stem = suggest_file_stem
+        self.tagval = None
 
     def _isok(self, text):
         return _check_tagval.fullmatch(text) is not None
@@ -146,27 +150,29 @@ class AskForMissingEntities(Step):
     def run(self, ctx):
         if self.cur_entity is not None:
             while True:
-                tagval = self.tagval_input_view()
-                if tagval is None:
+                self.tagval = self.tagval_input_view()
+                if self.tagval is None:
                     return False
-                if forbidden_chars.search(tagval) is None:
-                    setattr(self.tags_obj, self.cur_entity, tagval)
+                if forbidden_chars.search(self.tagval) is None:
                     break
             return True
         return self.is_first_run
 
     def next(self, ctx):
+        file_obj = deepcopy(self.file_obj)
+        if self.tagval is not None:
+            setattr(file_obj.tags, self.cur_entity, self.tagval)
         if self.cur_entity is not None or self.is_first_run:
             self.is_first_run = False
             if len(self.ask_if_missing_entities) > 0:
                 return AskForMissingEntities(
                     self.app,
-                    self.file_obj,
+                    file_obj,
                     self.ask_if_missing_entities.copy(),
                     self.next_step,
                     suggest_file_stem=self.suggest_file_stem,
                 )(ctx)
             else:
-                ctx.add_file_obj(self.file_obj)
-                return self.next_step(ctx)
+                ctx.add_file_obj(file_obj)
+                return self.next_step_type(self.app)(ctx)
         return

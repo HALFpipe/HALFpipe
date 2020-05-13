@@ -9,7 +9,7 @@ import json
 import pandas as pd
 import numpy as np
 
-import fasteners
+import filelock
 from tabulate import tabulate
 
 from ..spec import bold_entities
@@ -19,7 +19,7 @@ class DictListFile:
     def __init__(self, filename, header=None, footer=None):
         self.filename = Path(filename)
         lockfilename = f"{filename}.lock"
-        self.lock = fasteners.InterProcessLock(str(lockfilename))
+        self.lock = filelock.SoftFileLock(str(lockfilename), timeout=3600)
 
         if isinstance(header, str):
             header = header.encode()
