@@ -54,12 +54,6 @@ def _main():
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
-    workflowgroup.add_argument(
-        "--keep",
-        choices=["all", "some", "none"],
-        default="some",
-        help="choose which intermediate files to keep",
-    )
 
     execgraphgroup = ap.add_argument_group("execgraph", "")
     execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
@@ -80,6 +74,12 @@ def _main():
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int)
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
+    rungroup.add_argument(
+        "--keep",
+        choices=["all", "some", "none"],
+        default="some",
+        help="choose which intermediate files to keep",
+    )
 
     ap.add_argument(
         "-v",
@@ -173,10 +173,7 @@ def _main():
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
 
         workflow = init_workflow(
-            workdir,
-            no_compose_transforms=args.no_compose_transforms,
-            freesurfer=args.freesurfer,
-            keep=args.keep,
+            workdir, no_compose_transforms=args.no_compose_transforms, freesurfer=args.freesurfer
         )
 
     execgraphs = None

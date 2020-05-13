@@ -61,7 +61,7 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(workdir, freesurfer=False, no_compose_transforms=False, keep="all"):
+def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
     """
     initialize nipype workflow
 
@@ -89,7 +89,6 @@ def init_workflow(workdir, freesurfer=False, no_compose_transforms=False, keep="
             "poll_sleep_duration": 0.1,
             "use_relative_paths": False,
             "check_version": False,
-            "remove_node_directories": keep != "all",
         }
     )
 

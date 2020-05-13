@@ -12,7 +12,6 @@ import numpy as np
 
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
-from nipype.utils.misc import str2bool
 
 from .refcount import ReferenceCounter
 from ..logger import Logger
@@ -85,22 +84,25 @@ class MultiProcPlugin(nip.MultiProcPlugin):
     def _remove_node_dirs(self):
         """Removes directories whose outputs have already been used up
         """
-        if str2bool(self._config["execution"]["remove_node_directories"]):
-            indices = np.nonzero((self.refidx.sum(axis=1) == 0).__array__())[0]
-            for idx in indices:
-                if idx in self.mapnodesubids:
+        if self._keep == "all":
+            return
+        indices = np.nonzero((self.refidx.sum(axis=1) == 0).__array__())[0]
+        for idx in indices:
+            if idx in self.mapnodesubids:
+                continue
+            if self.proc_done[idx] and (not self.proc_pending[idx]):
+                name = self.procs[idx].fullname
+                if self._keep == "some" and "preproc_wf" in name:
+                    continue  # keep fmriprep if keep is "some"
+                if "outputnode" in name:
+                    continue  # always keep outputs
+                self.refidx[idx, idx] = -1
+                outdir = self.procs[idx].output_dir()
+                self._rc.pop(idx)
+                if not self._rc.can_delete(outdir):
                     continue
-                if self.proc_done[idx] and (not self.proc_pending[idx]):
-                    name = self.procs[idx].fullname
-                    if (self._keep != "none" and "preproc_wf" in name) or "outputnode" in name:
-                        continue  # keep some nodes because deleting them is not safe
-                    self.refidx[idx, idx] = -1
-                    outdir = self.procs[idx].output_dir()
-                    self._rc.pop(idx)
-                    if not self._rc.can_delete(outdir):
-                        continue
-                    logger.info(
-                        ("[node dependencies finished] " "removing node: %s from directory %s")
-                        % (self.procs[idx]._id, outdir)
-                    )
-                    shutil.rmtree(outdir, ignore_errors=True)
+                logger.info(
+                    ("[node dependencies finished] " "removing node: %s from directory %s")
+                    % (self.procs[idx]._id, outdir)
+                )
+                shutil.rmtree(outdir, ignore_errors=True)
