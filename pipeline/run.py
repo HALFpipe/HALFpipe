@@ -22,6 +22,7 @@ debug = False
 def _main():
     from . import __version__
     from argparse import ArgumentParser
+    from multiprocessing import cpu_count
 
     ap = ArgumentParser(
         description=f"mindandbrain/pipeline {__version__} is a user-friendly interface "
@@ -51,7 +52,7 @@ def _main():
             stepgroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     workflowgroup = ap.add_argument_group("workflow", "")
-    workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
+    workflowgroup.add_argument("--nipype-omp-nthreads", type=int, default=min(4, cpu_count()))
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
 
