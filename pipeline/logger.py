@@ -7,7 +7,7 @@ import sys
 import logging
 import time
 
-import filelock
+import fasteners
 
 from .io import IndexedFile
 
@@ -74,7 +74,7 @@ class FileHandler(logging.FileHandler):
     def __init__(self, filename, **kwargs):
         super(FileHandler, self).__init__(filename, **kwargs)
         self.lock_file = f"{filename}.lock"
-        self.stream_lock = filelock.SoftFileLock(self.lock_file, timeout=3600)
+        self.stream_lock = fasteners.InterProcessLock(str(self.lock_file))
 
     def acquire(self):
         logging.Handler.acquire(self)  # thread lock

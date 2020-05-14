@@ -8,7 +8,7 @@ nipype
 fmriprep
 smriprep
 niworkflows
-filelock
+fasteners
 inflect
 inflection
 marshmallow
