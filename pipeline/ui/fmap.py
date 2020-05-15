@@ -255,8 +255,8 @@ class FmapTypeStep(BranchStep):
     header_str = "Specify the type of the field maps"
     options = {
         "Blip-up blip-down (PEPOLAR)": PEPOLARStep,
-        "Phase difference and magnitude": PhaseDifferenceMagnitudeTypeStep,
-        "Field map": FieldMapMagnitude1Step,
+        "Phase difference and magnitude (used by Siemens scanners)": PhaseDifferenceMagnitudeTypeStep,
+        "Scanner-computed field map and magnitude (used by GE / Philips scanners)": FieldMapMagnitude1Step,
     }
 
 

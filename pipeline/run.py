@@ -49,10 +49,14 @@ def _main():
         steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
         if "run" not in step:
-            stepgroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
+            steponlygroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     workflowgroup = ap.add_argument_group("workflow", "")
-    workflowgroup.add_argument("--nipype-omp-nthreads", type=int, default=min(4, cpu_count()))
+
+    ncpus = cpu_count()
+    workflowgroup.add_argument(
+        "--nipype-omp-nthreads", type=int, default=8 if ncpus > 16 else (4 if ncpus > 8 else 1)
+    )
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
 
