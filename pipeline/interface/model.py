@@ -149,7 +149,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
             # we translate it to a contrast vector by taking the linear
             # combination of the lsmeans contrasts.
             contrastVector = lsmeans.loc[names, :].mul(values, axis=0).sum()
-            contrastMat = pd.DataFrame(contrastVector, columns=dmat.columns)
+            contrastMat = pd.DataFrame([contrastVector], columns=dmat.columns)
             contrastMats.append((contrastobj.name, contrastMat))
 
     npts, nevs = dmat.shape
@@ -176,9 +176,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
             for i, contrastVec in contrastMat.iterrows():
                 tname = f"_{contrastName}_{i:d}"
                 tnames.append(tname)
-                contrasts.append(
-                    [contrastName, "T", list(contrastVec.keys()), list(contrastVec)]
-                )
+                contrasts.append([contrastName, "T", list(contrastVec.keys()), list(contrastVec)])
             contrasts.append([contrastName, "F", tnames])
             contrast_names.append(contrastName)
 
@@ -237,18 +235,14 @@ class InterceptOnlyModel(SimpleInterface):
 
 
 class SafeMultipleRegressDesignOutputSpec(TraitedSpec):
-    design_mat = traits.Either(
-        traits.File(exists=True, desc="design matrix file"), traits.Bool()
-    )
+    design_mat = traits.Either(traits.File(exists=True, desc="design matrix file"), traits.Bool())
     design_con = traits.Either(
         traits.File(exists=True, desc="design t-contrast file"), traits.Bool()
     )
     design_fts = traits.Either(
         traits.File(exists=True, desc="design f-contrast file"), traits.Bool()
     )
-    design_grp = traits.Either(
-        traits.File(exists=True, desc="design group file"), traits.Bool()
-    )
+    design_grp = traits.Either(traits.File(exists=True, desc="design group file"), traits.Bool())
 
 
 class SafeMultipleRegressDesign(fsl.MultipleRegressDesign):
