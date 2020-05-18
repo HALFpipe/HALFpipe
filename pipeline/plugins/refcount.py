@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from nipype.interfaces.base.support import InterfaceResult
+from ..utils import findpaths
 
 
 def iterpath(path):
@@ -31,25 +31,9 @@ class ReferenceCounter:
         curfiles[0].add(jobid)
 
     def put(self, result, jobid=0):
-        paths = []
-        stack = [result]
-        while len(stack) > 0:
-            obj = stack.pop()
-            if isinstance(obj, InterfaceResult):
-                stack.append(obj.outputs.__dict__)
-            elif isinstance(obj, dict):
-                stack.extend(obj.values())
-            elif isinstance(obj, str) or isinstance(obj, Path):
-                paths.append(obj)
-            else:  # probably some kind of iterable
-                try:
-                    stack.extend(obj)
-                except TypeError:
-                    pass
+        paths = findpaths(result)
         while len(paths) > 0:
             path = Path(paths.pop())
-            if not path.exists():
-                continue
             if path.is_dir():
                 paths.extend(path.iterdir())
             else:

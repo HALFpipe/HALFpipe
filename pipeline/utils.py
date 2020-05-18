@@ -5,7 +5,9 @@
 import logging
 import lzma
 import pickle
-from os import path as op
+from pathlib import Path
+
+from nipype.interfaces.base.support import InterfaceResult
 
 
 def niftidim(input, idim):
@@ -164,8 +166,8 @@ def uncacheobj(workdir, typestr, uuid, typedisplaystr=None):
         typedisplaystr = typestr
     if uuid is not None:
         uuidstr = str(uuid)[:8]
-        path = op.join(workdir, f"{typestr}.{uuidstr}.pickle.xz")
-        if op.isfile(path):
+        path = Path(workdir) / f"{typestr}.{uuidstr}.pickle.xz"
+        if path.exists():
             obj = loadpicklelzma(path)
             if hasattr(obj, "uuid"):
                 objuuid = getattr(obj, "uuid")
@@ -174,7 +176,7 @@ def uncacheobj(workdir, typestr, uuid, typedisplaystr=None):
             logging.getLogger("pipeline").info(f"Using cached {typedisplaystr} from {path}")
             return obj
     else:
-        path = op.join(workdir, f"{typestr}.pickle.xz")
+        path = Path(workdir) / f"{typestr}.pickle.xz"
         return loadpicklelzma(path)
 
 
@@ -183,10 +185,10 @@ def cacheobj(workdir, typestr, obj, uuid=None):
         uuid = getattr(obj, "uuid", None)
     if uuid is not None:
         uuidstr = str(uuid)[:8]
-        path = op.join(workdir, f"{typestr}.{uuidstr}.pickle.xz")
+        path = Path(workdir) / f"{typestr}.{uuidstr}.pickle.xz"
     else:
-        path = op.join(workdir, f"{typestr}.pickle.xz")
-    if op.isfile(path):
+        path = Path(workdir) / f"{typestr}.pickle.xz"
+    if path.exists():
         logging.getLogger("pipeline").warn(f"Overwrite {path}")
     savepicklelzma(path, obj)
 
@@ -265,3 +267,26 @@ def falsetoundefined(arr):
         else:
             ret.append(val)
     return ret
+
+
+def findpaths(obj):
+    paths = []
+    stack = [obj]
+    while len(stack) > 0:
+        obj = stack.pop()
+        if isinstance(obj, InterfaceResult):
+            stack.append(obj.outputs.__dict__)
+        elif isinstance(obj, dict):
+            stack.extend(obj.values())
+        elif isinstance(obj, str):
+            if not obj.startswith("def") and Path(obj).exists():
+                paths.append(obj)
+        elif isinstance(obj, Path):
+            if obj.exists():
+                paths.append(obj)
+        else:  # probably some kind of iterable
+            try:
+                stack.extend(obj)
+            except TypeError:
+                pass
+    return paths

@@ -44,7 +44,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     except Exception:
         logger.info(f"Init reportexec.js")
         init_indexed_js_object_file(
-            reportjsfilename, "qualitycheck.reportexec", allnodenames, 10
+            reportjsfilename, "report", allnodenames, 10
         )  # TODO don't overwrite current values
 
     if subject_chunks or (n_chunks is not None and n_chunks > 1):

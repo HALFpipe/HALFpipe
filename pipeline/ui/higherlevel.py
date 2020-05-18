@@ -96,6 +96,9 @@ class InteractionVariablesStep(Step):
         self._append_view(
             TextView("Specify the variables for which to calculate interaction terms")
         )
+        assert (
+            len(ctx.spec.analyses[-1].variables) > 0
+        ), "No variables to calculate interaction terms"
         self.varname_by_str = {
             _format_column(variable.name): variable.name
             for variable in ctx.spec.analyses[-1].variables
@@ -252,7 +255,10 @@ class VariableSelectStep(Step):
         self.variables = [
             variable for variable in ctx.spec.analyses[-1].variables if variable.type != "id"
         ]
-        options = [_format_column(variable.name) for variable in self.variables]
+        self.varname_by_str = {
+            _format_column(variable.name): variable.name for variable in self.variables
+        }
+        options = list(self.varname_by_str.keys())
         self.input_view = MultipleChoiceInputView(options, checked=options)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -261,12 +267,14 @@ class VariableSelectStep(Step):
         filterdict = self.input_view()
         if filterdict is None:  # was cancelled
             return False
-        for varname, checked in filterdict.items():
-            if not checked:
-                for i, variable in enumerate(ctx.spec.analyses[-1].variables):
-                    if variable.name == varname:
-                        ctx.spec.analyses[-1].variables.pop(i)
-                        break
+        checkedvarnames = set(
+            self.varname_by_str[varname] for varname, checked in filterdict.items() if checked
+        )
+        ctx.spec.analyses[-1].variables = [
+            variable
+            for variable in ctx.spec.analyses[-1].variables
+            if variable.name in checkedvarnames
+        ]
         return True
 
     def next(self, ctx):

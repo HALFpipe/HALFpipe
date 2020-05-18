@@ -5,10 +5,14 @@
 from pathlib import Path
 import logging
 from shutil import copyfile
+import json
+import re
+import hashlib
+from os import path as op
 
 from .dictlistfile import DictListFile
 from ..spec import bold_entities
-from ..utils import splitext
+from ..utils import splitext, first, findpaths
 
 
 def make_path(entitytupls):
@@ -63,7 +67,7 @@ class PreprocessedImgCopyOutResultHook(ResultHook):
         super(PreprocessedImgCopyOutResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / "reports" / "reportpreproc.js"
-        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
+        self.dictlistfile = DictListFile(dictlistfilename, "report('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()
@@ -97,7 +101,7 @@ class ReportValsResultHook(ResultHook):
         super(ReportValsResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / self.subdirectory / "reportvals.js"
-        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
+        self.dictlistfile = DictListFile(dictlistfilename, "report('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()
@@ -111,15 +115,15 @@ class ReportValsResultHook(ResultHook):
         self.dictlistfile.put(valuedict)
 
 
-class ReportResultHook(ResultHook):
+class ReportImgResultHook(ResultHook):
     subdirectory = "reports"
     keys = ["desc", "report"]
 
     def __init__(self, base_directory):
-        super(ReportResultHook, self).__init__(base_directory)
+        super(ReportImgResultHook, self).__init__(base_directory)
 
         dictlistfilename = Path(self.base_directory) / self.subdirectory / "reportimgs.js"
-        self.dictlistfile = DictListFile(dictlistfilename, "qualitycheck('", "');")
+        self.dictlistfile = DictListFile(dictlistfilename, "report('", "');")
 
     def __enter__(self):
         self.dictlistfile.__enter__()
@@ -133,7 +137,9 @@ class ReportResultHook(ResultHook):
         if "desc" not in valuedict:
             return
 
-        out_directory = Path(self.base_directory) / self.subdirectory / make_path(entitytupls)
+        base_directory = Path(self.base_directory)
+        reports_directory = base_directory / self.subdirectory
+        out_directory = reports_directory / make_path(entitytupls)
         out_directory.mkdir(parents=True, exist_ok=True)
 
         desc = valuedict["desc"]
@@ -146,8 +152,37 @@ class ReportResultHook(ResultHook):
         out_filepath = out_directory / f"{desc}{ext}"
         self._copy_file(report_file, out_filepath)
 
+        hash = None
+        inputpaths = None
+        for parent in Path(report_file).parents:
+            hashfile = first(parent.glob("_0x*.json"))
+            if hashfile is not None:
+                match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
+                if match is not None:
+                    hash = match.group("hash")
+                with open(hashfile, "r") as fp:
+                    inputpaths = findpaths(json.load(fp))
+                    break
+
+        if hash is None:
+            md5 = hashlib.md5()
+            with open(report_file, "rb") as fp:
+                md5.update(fp.read())
+            hash = md5.hexdigest()
+
         outdict = dict(entitytupls)
-        outdict.update({"desc": desc, "report": str(out_filepath.relative_to(self.base_directory))})
+
+        report_file = str(op.relpath(out_filepath, start=reports_directory))
+        outdict.update({"desc": desc, "report": report_file, "hash": hash})
+
+        if inputpaths is not None:
+            outdict["inputpaths"] = []
+            for inputpath in inputpaths:
+                inputpath = Path(inputpath)
+                if base_directory in inputpath.parents:
+                    inputpath = op.relpath(inputpath, start=reports_directory)
+                outdict["inputpaths"].append(str(inputpath))
+
         self.dictlistfile.put(outdict)
 
 
@@ -240,7 +275,7 @@ def get_resulthooks(base_directory):
     return [
         PreprocessedImgCopyOutResultHook(base_directory),
         ReportValsResultHook(base_directory),
-        ReportResultHook(base_directory),
+        ReportImgResultHook(base_directory),
         SubjectLevelFeatureCopyOutResultHook(base_directory),
         GroupLevelFeatureCopyOutResultHook(base_directory),
     ]
