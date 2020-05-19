@@ -28,9 +28,7 @@ class BaseFmapTagsSchema(BaseSchema):
 class PEPOLARTagsSchema(BaseFmapTagsSchema):
     suffix = fields.Constant("epi")
 
-    phase_encoding_direction = fields.Str(
-        validate=validate.OneOf(phase_encoding_direction_values)
-    )
+    phase_encoding_direction = fields.Str(validate=validate.OneOf(phase_encoding_direction_values))
 
 
 class PhaseDifferenceTagsSchema(BaseFmapTagsSchema):

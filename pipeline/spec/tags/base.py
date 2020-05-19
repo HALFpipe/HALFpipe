@@ -8,6 +8,8 @@
 
 from marshmallow import Schema, RAISE, post_load, post_dump, pre_load
 
+from ..direction import PhaseEncodingDirection
+
 
 entity_colors = {
     "subject": "ired",
@@ -109,10 +111,15 @@ class BaseSchema(Schema):
         unknown = RAISE
 
     @pre_load
-    def canonicalize_pedir_tagname(self, in_data, **kwargs):
+    def canonicalize_pedir(self, in_data, **kwargs):
         if "direction" in in_data and "phase_encoding_direction" not in in_data:
             in_data["phase_encoding_direction"] = in_data["direction"]
             del in_data["direction"]
+        if "phase_encoding_direction" in in_data:
+            if in_data["phase_encoding_direction"] in PhaseEncodingDirection.__members__:
+                in_data["phase_encoding_direction"] = PhaseEncodingDirection[
+                    in_data["phase_encoding_direction"]
+                ].value
         return in_data
 
     @post_load
