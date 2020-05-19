@@ -23,7 +23,7 @@ from ..spec import entity_colors
 
 p = inflect.engine()
 
-forbidden_chars = re.compile(r"[^a-zA-Z0-9_]")
+forbidden_chars = re.compile(r"[^a-zA-Z0-9_-]")
 _check_tagval = re.compile(r"[a-zA-Z0-9_-]+")
 
 
@@ -40,9 +40,7 @@ def make_name_suggestion(*words, index=None):
 def messagefun(database, filetype, filepaths, tagnames):
     message = ""
     if filepaths is not None:
-        message = p.inflect(
-            f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})"
-        )
+        message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
         if len(filepaths) > 0:
             n_by_tag = dict()
             for tagname in tagnames:
@@ -104,9 +102,7 @@ class NumericMetadataStep(Step):
         self.tags_obj = file_obj.tags
         assert hasattr(self.tags_obj, self.entity)
         self._append_view(TextView(self.header_str))
-        self.number_input_view = NumberInputView(
-            self.initial_value, min=self.min, max=self.max
-        )
+        self.number_input_view = NumberInputView(self.initial_value, min=self.min, max=self.max)
         self._append_view(self.number_input_view)
         self._append_view(SpacerView(1))
 

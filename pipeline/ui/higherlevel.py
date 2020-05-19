@@ -273,7 +273,7 @@ class VariableSelectStep(Step):
         ctx.spec.analyses[-1].variables = [
             variable
             for variable in ctx.spec.analyses[-1].variables
-            if variable.name in checkedvarnames
+            if variable.type == "id" or variable.name in checkedvarnames
         ]
         return True
 

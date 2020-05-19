@@ -172,16 +172,16 @@ class ReportImgResultHook(ResultHook):
 
         outdict = dict(entitytupls)
 
-        report_file = str(op.relpath(out_filepath, start=reports_directory))
-        outdict.update({"desc": desc, "report": report_file, "hash": hash})
+        path = str(op.relpath(out_filepath, start=reports_directory))
+        outdict.update({"desc": desc, "path": path, "hash": hash})
 
         if inputpaths is not None:
-            outdict["inputpaths"] = []
+            outdict["sourcefiles"] = []
             for inputpath in inputpaths:
                 inputpath = Path(inputpath)
                 if base_directory in inputpath.parents:
                     inputpath = op.relpath(inputpath, start=reports_directory)
-                outdict["inputpaths"].append(str(inputpath))
+                outdict["sourcefiles"].append(str(inputpath))
 
         self.dictlistfile.put(outdict)
 
