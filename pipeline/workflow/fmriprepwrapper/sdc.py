@@ -212,10 +212,16 @@ def get_fmaps(boldfile, database):
 
     if len(epi) > 0:
         try:
-            matched_pe = check_pes(epi)
+            epi_pedir_strs = [
+                canonicalize_pedir_str(
+                    database.get_tagval(epi_file, "phase_encoding_direction"),
+                    epi_file
+                ) for epi_file in epi]
+            epi_fmaps = list(zip(epi, epi_pedir_strs))
+            matched_pe = check_pes(epi_fmaps, pedir_str)
             if matched_pe:
                 metadata["fmap_type"] = "epi"
-                return "epi", epi, metadata
+                return "epi", epi_fmaps, metadata
         except ValueError as ve:
             logging.getLogger("pipeline").warn(f"Skip fmap: %s", ve, stack_info=True)
 

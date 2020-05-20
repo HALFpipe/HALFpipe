@@ -12,7 +12,7 @@ from functools import lru_cache
 import logging
 
 from calamities import tag_glob
-from calamities.input.pattern import tag_parse
+from calamities.input.pattern import tag_parse, get_entities_in_path
 
 from .spec import (
     TagsSchema,
@@ -134,6 +134,8 @@ class Database:
             return
         res = self.get(**filters)
         for entity in bold_entities:
+            if entity == "direction" and "direction" not in get_entities_in_path(self.tmplstr_by_filepaths[filepath]):
+                continue
             entity = _resolve(entity)
             tagval = getattr(tagsobj, entity)
             if tagval is None:
