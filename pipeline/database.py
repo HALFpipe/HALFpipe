@@ -144,7 +144,7 @@ class Database:
             if len(cur_set) == 1:
                 break
         if len(res) == 1:
-            return res.pop()
+            return (res.pop(),)
         elif len(res) > 1:
             return tuple(res)
 
