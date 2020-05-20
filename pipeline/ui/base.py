@@ -131,6 +131,10 @@ class UseExistingSpecStep(Step):
                 for analysisobj in self.existing_spec.analyses:
                     if analysisobj.level == "first":
                         ctx.add_analysis_obj(analysisobj)
+                    elif (
+                        hasattr(analysisobj, "spreadsheet") and analysisobj.spreadsheet is not None
+                    ):
+                        ctx.spreadsheet_file = analysisobj.spreadsheet
                 return GroupLevelAnalysisStep(self.app)(ctx)
             else:
                 return BIDSStep(self.app)(ctx)

@@ -442,7 +442,9 @@ class SpreadsheetColumnTypeStep(Step):
     def setup(self, ctx):
         self.is_first_run = True
         self.is_missing = True
-        already_used = set(variable.name for variable in ctx.spec.analyses[-1].variables)
+        already_used = set(
+            variable.name for variable in ctx.spec.analyses[-1].variables if variable.type == "id"
+        )  # omit id column
         if all(column in already_used for column in self.df):
             self.is_missing = False
         if self.is_missing:
@@ -575,7 +577,11 @@ class GroupLevelAnalysisAggregateStep(Step):
         firstlevel_analysis_objs = []
         for obj in ctx.spec.analyses:
             if obj.name in input:
-                if obj.level == "first":
+                if (
+                    obj.level == "first"
+                    and obj.type != "atlas_based_connectivity"
+                    and obj.type != "image_output"
+                ):
                     firstlevel_analysis_objs.append(obj)
 
         entities_by_analysis = {
@@ -694,7 +700,11 @@ class GroupLevelAnalysisInputStep(Step):
         namesset = set()
         for analysis in ctx.spec.analyses:
             assert analysis.level is not None
-            if analysis.level == "first":
+            if (
+                analysis.level == "first"
+                and analysis.type != "atlas_based_connectivity"
+                and analysis.type != "image_output"
+            ):
                 namesset.add(analysis.name)
         names = list(namesset)
         self.input_view = MultipleChoiceInputView(names, checked=names)
