@@ -3,3 +3,5 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .base import init_workflow
+
+__all__ = [init_workflow]

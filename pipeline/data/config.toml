@@ -1,0 +1,25 @@
+[execution]
+bids_dir = "/dev/null"
+work_dir = "nipype"
+output_spaces = "MNI152NLin2009cAsym:res-2"
+write_graph = false
+
+[workflow]
+anat_only = false
+aroma_err_on_warn = false
+aroma_melodic_dim = -200
+bold2t1w_dof = 9
+fmap_bspline = true
+force_syn = false
+hires = true
+ignore = ["slicetiming", "sbref"]
+longitudinal = false
+medial_surface_nan = false
+regressors_all_comps = false
+regressors_dvars_th = 1.5
+regressors_fd_th = 0.5
+run_reconall = false
+skull_strip_fixed_seed = false
+skull_strip_template = "OASIS30ANTs"
+t2s_coreg = false
+use_aroma = true

@@ -1,683 +1,307 @@
-from multiprocessing import set_start_method, cpu_count
-
-set_start_method("forkserver", force=True)
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import numpy as np
-import pandas as pd
-import nibabel as nib
-import json
-import shutil
-import math
-from glob import glob
-from argparse import ArgumentParser
-from .cli import Cli
-from .conditions import parse_condition_files
-from .info import __version__
-from .workflow import init_workflow
-from .logging import init_logging
-from .patterns import ambiguous_match
-from .utils import get_path, transpose, nonzero_atlas
-from .file_checks import file_checks
+from os import path as op
+import sys
+import pkg_resources
 
-# Debug config for stop on first crash
-# from nipype import config
-# cfg = dict(execution={'stop_on_first_crash': True})
-# config.update_config(cfg)
+os.environ["NIPYPE_NO_ET"] = "1"  # noqa; disable nipype update check
+os.environ["NIPYPE_NO_MATLAB"] = "1"  # noqa
+os.environ["PIPELINE_RESOURCE_DIR"] = "/home/fmriprep/.cache/pipeline"  # noqa
+os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"  # noqa
 
-EXT_PATH = "/ext"
+from fmriprep import config
+
+configfilename = pkg_resources.resource_filename("pipeline", "data/config.toml")
+config.load(configfilename)
+
+global debug
+debug = False
+
+
+def _main():
+    from . import __version__
+    from argparse import ArgumentParser
+    from multiprocessing import cpu_count
+
+    ap = ArgumentParser(
+        description=f"mindandbrain/pipeline {__version__} is a user-friendly interface "
+        "for performing reproducible analysis of fMRI data, including preprocessing, "
+        "single-subject feature extraction, and group analysis."
+    )
+
+    basegroup = ap.add_argument_group("base", "")
+
+    basegroup.add_argument(
+        "-w",
+        "--workdir",
+        type=str,
+        help="directory where output and intermediate files are stored",
+    )
+    basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
+    basegroup.add_argument("--debug", action="store_true", default=False)
+    basegroup.add_argument("--verbose", action="store_true", default=False)
+
+    stepgroup = ap.add_argument_group("steps", "")
+    steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
+    for step in steps:
+        steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
+        steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
+        steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
+        if "run" not in step:
+            steponlygroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
+
+    workflowgroup = ap.add_argument_group("workflow", "")
+
+    ncpus = cpu_count()
+    workflowgroup.add_argument(
+        "--nipype-omp-nthreads", type=int, default=8 if ncpus > 16 else (4 if ncpus > 8 else 1)
+    )
+    workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
+    workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
+
+    execgraphgroup = ap.add_argument_group("execgraph", "")
+    execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
+    chunkinggroup = execgraphgroup.add_mutually_exclusive_group(required=False)
+    chunkinggroup.add_argument(
+        "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
+    )
+    chunkinggroup.add_argument(
+        "--subject-chunks",
+        action="store_true",
+        default=False,
+        help="generate one subject-level workflow per subject",
+    )
+
+    rungroup = ap.add_argument_group("run", "")
+    rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
+    rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
+    rungroup.add_argument("--nipype-memory-gb", type=float)
+    rungroup.add_argument("--nipype-n-procs", type=int)
+    rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
+    rungroup.add_argument(
+        "--keep",
+        choices=["all", "some", "none"],
+        default="some",
+        help="choose which intermediate files to keep",
+    )
+
+    ap.add_argument(
+        "-v",
+        "--version",
+        action="store_true",
+        help="print the version number and exit",
+        default=False,
+    )
+    ap.add_argument(
+        "--preproc-report", action="store_true", help="print a report", default=False,
+    )
+
+    args = ap.parse_args()
+    global debug
+    debug = args.debug
+    config.execution.debug = debug
+    verbose = args.verbose
+
+    if args.version is True:
+        sys.stdout.write(f"{__version__}\n")
+        sys.exit(0)
+
+    if args.preproc_report is True:
+        # TODO
+        sys.exit(0)
+
+    should_run = {step: True for step in steps}
+
+    for step in steps:
+        attrname = f"{step}-only".replace("-", "_")
+        if getattr(args, attrname) is True:
+            should_run = {step0: step0 == step for step0 in steps}
+            break
+
+    for step in steps:
+        if "run" in step:
+            continue
+        attrname = f"stop-after-{step}".replace("-", "_")
+        if getattr(args, attrname) is True:
+            state = True
+            for step0 in steps:
+                should_run[step0] = state
+                if step0 == step:
+                    state = False
+            break
+
+    for step in steps:
+        attrname = f"skip-{step}".replace("-", "_")
+        if getattr(args, attrname) is True:
+            should_run[step] = False
+
+    from calamities.config import config as calamities_config
+
+    calamities_config.fs_root = args.fs_root
+    from calamities.file import resolve
+
+    workdir = args.workdir
+    if workdir is not None:
+        workdir = resolve(workdir)
+
+    if should_run["spec-ui"]:
+        from .ui import init_spec_ui
+
+        workdir = init_spec_ui(workdir=workdir, debug=debug)
+
+    assert workdir is not None, "Missing working directory"
+    assert op.isdir(workdir), "Working directory does not exist"
+
+    import logging
+    from .logger import Logger
+
+    if not Logger.is_setup:
+        Logger.setup(workdir, debug=debug, verbose=verbose)
+    logger = logging.getLogger("pipeline")
+
+    logger.info(f"Version: {__version__}")
+    logger.info(f"Debug: {debug}")
+
+    if not should_run["spec-ui"]:
+        logger.info(f"Did not run step: spec")
+
+    workflow = None
+
+    if not should_run["workflow"]:
+        logger.info(f"Did not run step: workflow")
+    else:
+        logger.info(f"Running step: workflow")
+        from .workflow import init_workflow
+
+        if args.nipype_omp_nthreads is not None:
+            config.nipype.omp_nthreads = args.nipype_omp_nthreads
+
+        workflow = init_workflow(
+            workdir, no_compose_transforms=args.no_compose_transforms, freesurfer=args.freesurfer
+        )
+
+    execgraphs = None
+
+    if not should_run["execgraph"]:
+        logger.info(f"Did not run step: execgraph")
+    else:
+        logger.info(f"Running step: execgraph")
+        from .execgraph import init_execgraph
+
+        if workflow is None:
+            from .utils import loadpicklelzma
+
+            assert (
+                args.workflow_file is not None
+            ), "Missing required --workflow-file input for step execgraph"
+            workflow = loadpicklelzma(args.workflow_file)
+            logger.info(f'Using workflow defined in file "{args.workflow_file}"')
+        else:
+            logger.info(f"Using workflow from previous step")
+
+        execgraphs = init_execgraph(
+            workdir, workflow, n_chunks=args.n_chunks, subject_chunks=args.subject_chunks
+        )
+
+    if (
+        not should_run["run"]
+        and not should_run["run-subjectlevel"]
+        and not should_run["run-grouplevel"]
+    ):
+        logger.info(f"Did not run step: run")
+    else:
+        logger.info(f"Running step: run")
+        if execgraphs is None:
+            from .utils import loadpicklelzma
+
+            assert (
+                args.execgraph_file is not None
+            ), "Missing required --execgraph-file input for step run"
+            execgraphs = loadpicklelzma(args.execgraph_file)
+            if not isinstance(execgraphs, list):
+                execgraphs = [execgraphs]
+            logger.info(f'Using execgraphs defined in file "{args.execgraph_file}"')
+        else:
+            logger.info(f"Using execgraphs from previous step")
+
+        import nipype.pipeline.plugins as nip
+        import pipeline.plugins as ppp
+
+        plugin_args = {
+            "workdir": workdir,
+            "debug": debug,
+            "verbose": verbose,
+            "stop_on_first_crash": debug,
+            "raise_insufficient": False,
+            "keep": args.keep,
+        }
+        if args.nipype_n_procs is not None:
+            plugin_args["n_procs"] = args.nipype_n_procs
+        if args.nipype_memory_gb is not None:
+            plugin_args["memory_gb"] = args.nipype_memory_gb
+
+        runnername = f"{args.nipype_run_plugin}Plugin"
+        if hasattr(ppp, runnername):
+            logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
+            runnercls = getattr(ppp, runnername)
+        elif hasattr(nip, runnername):
+            logger.warning(f'Using unsupported nipype_run_plugin "{runnername}"')
+            runnercls = getattr(nip, runnername)
+        else:
+            raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
+        runner = runnercls(plugin_args=plugin_args)
+
+        execgraphstorun = []
+        if len(execgraphs) > 1:
+            n_subjectlevel_chunks = len(execgraphs) - 1
+            if not should_run["run-subjectlevel"]:
+                logger.info(f"Will not run subjectlevel chunks")
+            elif args.chunk_index is not None:
+                zerobasedchunkindex = args.chunk_index - 1
+                assert zerobasedchunkindex < n_subjectlevel_chunks
+                logger.info(
+                    f"Will run subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
+                )
+                execgraphstorun.append(execgraphs[zerobasedchunkindex])
+            else:
+                logger.info(f"Will run all {n_subjectlevel_chunks} subjectlevel chunks")
+                execgraphstorun.extend(execgraphs[:-1])
+
+            if not should_run["run-grouplevel"]:
+                logger.info(f"Will not run grouplevel chunk")
+            else:
+                logger.info(f"Will run grouplevel chunk")
+                execgraphstorun.append(execgraphs[-1])
+        elif len(execgraphs) == 1:
+            execgraphstorun.append(execgraphs[0])
+        else:
+            raise ValueError("No execgraphs")
+
+        n_execgraphstorun = len(execgraphstorun)
+        for i, execgraph in enumerate(execgraphstorun):
+            from .utils import first
+
+            if len(execgraphs) > 1:
+                logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
+            runner.run(execgraph, updatehash=False, config=first(execgraph.nodes()).config)
+            if len(execgraphs) > 1:
+                logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 
 
 def main():
-    ap = ArgumentParser(description="")
-    ap.add_argument("-w", "--workdir")
-    ap.add_argument("-p", "--nipype-plugin")
-    ap.add_argument("-s", "--setup-only", action="store_true", default=False)
-    ap.add_argument("-j", "--json-file")
-    ap.add_argument("-b", "--block-size")
-    ap.add_argument("-f", "--file-status", action='store_true')
-    args = ap.parse_args()
-
-    workdir = None
-    if args.workdir is not None:
-        workdir = get_path(args.workdir, EXT_PATH)
-
-    #
-    # tests
-    #
-
-    c = None
-
-    if not (os.path.isdir(EXT_PATH) and len(os.listdir(EXT_PATH)) > 0):
-        c.error("Can not access host files at path %s. Did you forget the docker argument \"--mount ...\"?" % EXT_PATH)
-
-    #
-    # data structures
-    #
-
-    images = dict()
-    configuration = dict()
-    # field_maps = dict()
-
-    subject_ids = []
-
-    if workdir is None:
-        if c is None:
-            c = Cli()
-            c.info("mindandbrain pipeline %s" % __version__)
-            c.info("")
-
-        workdir = get_path(c.read("Specify the working directory"), EXT_PATH)
-        c.info("")
-
-    os.makedirs(workdir, exist_ok=True)
-
-    json_dir = os.path.join(workdir, 'json_files')
-    path_to_pipeline_json = None
-    if args.json_file is not None:
-        path_to_pipeline_json = os.path.join(json_dir, args.json_file)
-    else:
-        path_to_pipeline_json = os.path.join(workdir, "pipeline.json")
-
-    #
-    # helper functions
-    #
-
-    def get_file(description):
-        path = get_path(c.read("Specify the path of the %s file" % description), EXT_PATH)
-        if not os.path.isfile(path):  # does file exist
-            return get_file(description)  # repeat if doesn"t exist
-        return path
-
-    def get_files(description, runs=False, conditions=False):
-        """ Match files by wildcards """
-        files = dict()
-
-        c.info("Specify the path of the %s files" % description)
-
-        wildcards = []
-
-        if runs:
-            c.info("Put \"?\" in place of run names")
-            wildcards += ["?"]
-
-        if conditions:
-            c.info("Put \"$\" in place of condition names")
-            wildcards += ["$"]
-
-        c.info("Put \"*\" in place of the subject names")
-
-        if description == "T1-weighted image":
-            c.info("(e.g: /path/to/your/data/*_t1.nii.gz)")
-
-        path = get_path(c.read(q=None), EXT_PATH)
-
-        wildcards += ["*"]
-
-        wildcard_descriptions = {"*": "subject name", "$": "condition name", "?": "run name"}
-
-        glob_path = path
-        if runs:
-            glob_path = glob_path.replace("?", "*")
-        if conditions:
-            glob_path = glob_path.replace("$", "*")
-        glob_result = glob(glob_path)
-
-        glob_result = [g for g in glob_result if os.path.isfile(g)]
-
-        c.info("Found %i %s files" % (len(glob_result), description))
-
-        contains = {}
-
-        for g in glob_result:
-            m = ambiguous_match(g, path, wildcards)
-
-            if len(m) > 1:
-                m_ = []
-
-                wildcard_descriptions_ = {k: v for k, v in wildcard_descriptions.items() if k in wildcards}
-
-                is_good = set()
-                for k, v in wildcard_descriptions_.items():
-                    field = k + "_contains"
-                    for i, w in enumerate(m):
-                        if w[field] is not None:
-                            if w["*"] in subject_ids:
-                                is_good.add(i)
-                if len(is_good) == 1:
-                    w = m[next(iter(is_good))]
-                    for k, v in wildcard_descriptions_.items():
-                        field = k + "_contains"
-                        contains[field] = w[field]
-
-                messagedisplayed = False
-                for k, v in wildcard_descriptions_.items():
-                    field = k + "_contains"
-                    if field not in contains:
-                        for w in m:
-                            if w[field] is not None:
-                                if not messagedisplayed:
-                                    c.info("Detected ambiguous filenames!")
-                                    messagedisplayed = True
-                                y = ["\"" + x + "\"" for x in w[field]]
-                                response0 = c.select(
-                                    "Does %s contain %s?" % (wildcard_descriptions_[k], " and ".join(y)), ["Yes", "No"])
-                                if response0 == "Yes":
-                                    # contains[field] = n[field]
-                                    break
-                    if field not in contains:
-                        contains[field] = None
-
-                for n in m:
-                    is_good = True
-                    for k, v in wildcard_descriptions_.items():
-                        field = k + "_contains"
-                        if field in contains and field in n:
-                            if n[field] != contains[field]:
-                                is_good = False
-                    if is_good:
-                        m_ += [n]
-                m = m_
-
-            m = m[0]
-
-            subject = ""
-            if "*" in m:
-                subject = m["*"]
-
-            run = ""
-            if "?" in m:
-                run = m["?"]
-
-            condition = ""
-            if "$" in m:
-                condition = m["$"]
-
-            if subject not in files:
-                files[subject] = dict()
-            if run not in files[subject]:
-                files[subject][run] = dict()
-
-            files[subject][run][condition] = g
-
-        if len(files) == 0:
-            response = c.select("Try again?", ["Yes", "No"])
-
-            if response == "Yes":
-                return get_files(description, runs=runs, conditions=conditions)
-
-        return files
-
-    #
-    # interface code that asks user questions
-    #
-
-    if not os.path.isfile(path_to_pipeline_json):
-        if c is None:
-            c = Cli()
-            c.info("mindandbrain pipeline %s" % __version__)
-            c.info("")
-
-        #
-        # anatomical/structural data
-        #
-
-        description = "anatomical/structural data"
-        c.info("Please specify %s" % description)
-
-        field_name = "T1w"
-        field_description = "T1-weighted image"
-
-        images[field_name] = get_files(field_description)
-
-        subject_ids = list(images[field_name].keys())
-
-        c.info("")
-
-        #
-        # functional/rest data
-        #
-
-        description = "resting state data"
-        field_description = "resting state image"
-
-        response0 = c.select("Is %s available?" % description, ["Yes", "No"])
-        # c.info("Please specify %s" % description)
-        # response0 = "Yes"
-
-        if response0 == "Yes":
-
-            configuration["rest"] = dict()
-            images["rest"] = get_files(field_description, runs=True)
-            configuration["rest"]["RepetitionTime"] = dict()
-            for subject in subject_ids:
-                configuration["rest"]["RepetitionTime"][subject] = float(str(nib.load(
-                    transpose(images["rest"])[""][subject]  # gets the path of the nii.gz file for each subject
-                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
-            # metadata["rest"]["RepetitionTime"] = float(c.read("Specify the repetition time",
-            #                                                       o=str(nib.load(image).header.get_zooms()[3])))
-
-            ped = c.select("Specify the phase encoding direction",
-                           ["AP", "PA", "LR", "RL", "SI", "IS"])
-            configuration["rest"]["PhaseEncodingDirection"] = \
-                {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
-
-            response3 = c.select("Calculate connectivity matrix from brain atlas?", ["Yes", "No"])
-            if response3 == "Yes":
-                configuration["rest"]["BrainAtlasImage"] = {}
-                while response3 == "Yes":
-                    name = c.read("Specify Atlas name")
-                    configuration["rest"]["BrainAtlasImage"][name] = get_file("brain atlas image")
-                    response3 = c.select("Add another Atlas?", ["Yes", "No"])
-
-            response3 = c.select("Calculate seed connectivity?", ["Yes", "No"])
-            if response3 == "Yes":
-                configuration["rest"]["ConnectivitySeeds"] = {}
-                while response3 == "Yes":
-                    name = c.read("Specify seed name")
-                    configuration["rest"]["ConnectivitySeeds"][name] = get_file("seed mask image")
-                    response3 = c.select("Add another seed?", ["Yes", "No"])
-
-            response3 = c.select("Calculate ICA network templates via dual regression?", ["Yes", "No"])
-            if response3 == "Yes":
-                configuration["rest"]["ICAMaps"] = {}
-
-                while response3 == "Yes":
-                    name = c.read("Specify an ICA network templates name")
-                    configuration["rest"]["ICAMaps"][name] = get_file("ICA network templates image")
-                    response3 = c.select("Use another ICA network templates image?", ["Yes", "No"])
-
-            response3 = c.select("Do you want to calculate ReHo?", ["Yes", "No"])
-            if response3 == "Yes":
-                configuration["rest"]["reho"] = True
-
-            response3 = c.select("Do you want to calculate ALFF?", ["Yes", "No"])
-            if response3 == "Yes":
-                configuration["rest"]["alff"] = True
-
-            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
-            configuration["rest"]["UseMovPar"] = False
-            configuration["rest"]["CSF"] = False
-            configuration["rest"]["Whitematter"] = False
-            configuration["rest"]["GlobalSignal"] = False
-            if response3 == "Yes":
-                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["UseMovPar"] = True
-                response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["CSF"] = True
-                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["Whitematter"] = True
-                response4 = c.select("Add Global Signal to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration["rest"]["GlobalSignal"] = True
-
-            # response3 = c.select("Is field map data available?", ["Yes", "No"])
-            #
-            # if response3 == "Yes":
-            #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
-
-            # response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
-
-        c.info("")
-
-        #
-        # functional/task data
-        #
-
-        description = "task data"
-        field_description = "task image"
-
-        response0 = c.select("Is %s available?" % description, ["Yes", "No"])
-        # c.info("Please specify %s" % description)
-        # response0 = "Yes"
-
-        while response0 == "Yes":
-            field_name = c.read("Specify the paradigm name")
-
-            configuration[field_name] = dict()
-            images[field_name] = get_files(field_description, runs=True)
-            configuration[field_name]["RepetitionTime"] = dict()
-            for subject in subject_ids:
-                configuration[field_name]["RepetitionTime"][subject] = float(str(nib.load(
-                    transpose(images[field_name])[""][subject]  # gets the path of the nii.gz file for each subject
-                ).header.get_zooms()[3]))  # reads the repetion time from the nii.gz file
-            # metadata[field_name]["RepetitionTime"] = float(c.read("Specify the repetition time",
-            #     o = str(nib.load(image).header.get_zooms()[3])))
-
-            ped = c.select("Specify the phase encoding direction",
-                           ["AP", "PA", "LR", "RL", "SI", "IS"])
-            configuration[field_name]["PhaseEncodingDirection"] = \
-                {"AP": "j", "PA": "j", "LR": "i", "RL": "i", "IS": "k", "SI": "k"}[ped]
-
-            description2 = "condition/explanatory variable"
-            response2 = c.select("Specify the format of the %s files" % description2,
-                                 ["FSL 3-column", "SPM multiple conditions"])
-
-            conditions = None
-            if response2 == "SPM multiple conditions":
-                conditions = get_files(description2, runs=True)
-            elif response2 == "FSL 3-column":
-                conditions = get_files(description2, runs=True, conditions=True)
-
-            conditions = parse_condition_files(conditions, form=response2)
-
-            condition = list(next(iter(next(iter(conditions.values())).values())))
-            condition = sorted(condition)
-
-            c.info("Specify contrasts")
-
-            contrasts = dict()
-
-            response3 = "Yes"
-            while response3 == "Yes":
-                contrast_name = c.read("Specify the contrast name")
-                contrast_values = c.fields("Specify the contrast values", condition)
-
-                contrasts[contrast_name] = {k: float(v) for k, v in zip(condition, contrast_values)}
-
-                response3 = c.select("Add another contrast?", ["Yes", "No"])
-
-            configuration[field_name]["Conditions"] = conditions
-            configuration[field_name]["Contrasts"] = contrasts
-
-            response3 = c.select("Do you want to add confound regressors to the model?", ["Yes", "No"])
-            configuration[field_name]["UseMovPar"] = False
-            configuration[field_name]["CSF"] = False
-            configuration[field_name]["Whitematter"] = False
-            configuration[field_name]["GlobalSignal"] = False
-            if response3 == "Yes":
-                response4 = c.select("Add motion parameters (6 dof) to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["UseMovPar"] = True
-                response4 = c.select("Add CSF to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["CSF"] = True
-                response4 = c.select("Add White Matter to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["Whitematter"] = True
-                response4 = c.select("Add GlobalSignal to model?", ["Yes", "No"])
-                if response4 == "Yes":
-                    configuration[field_name]["GlobalSignal"] = True
-
-            # if response3 == "Yes":
-            #     response4 = c.select("Specify the format of field map data", ["Yes", "No"])
-
-            response0 = c.select("Is further %s available?" % description, ["Yes", "No"])
-
-        c.info("")
-
-        configuration["TemporalFilter"] = float(c.read("Specify the temporal filter width in seconds",
-                                                       o=str(125.0)))
-        configuration["SmoothingFWHM"] = float(c.read("Specify the smoothing FWHM in mm",
-                                                      o=str(5.0)))
-
-        c.info("")
-
-        response0 = c.select("Specify a group design?", ["Yes", "No"])
-        if response0 == "Yes":
-            spreadsheet_file = get_file("covariates/group data spreadsheet")
-            spreadsheet = pd.read_csv(spreadsheet_file)
-
-            id_column = c.select("Specify the column containing subject names", spreadsheet.columns)
-
-            covariates = spreadsheet.set_index(id_column).to_dict()
-
-            group_column = c.select("Specify the column containing group names", spreadsheet.columns)
-            groups = covariates[group_column]
-            del covariates[group_column]
-
-            unique_groups = set(groups.values())
-
-            group_contrasts = {}
-            response3 = "Yes"
-            while response3 == "Yes":
-                contrast_name = c.read("Specify the contrast name")
-                contrast_values = c.fields("Specify the contrast values", unique_groups)
-                group_contrasts[contrast_name] = {k: float(v) for k, v in zip(unique_groups, contrast_values)}
-                response3 = c.select("Add another contrast?", ["Yes", "No"])
-
-            configuration["SubjectGroups"] = groups
-            configuration["GroupContrasts"] = group_contrasts
-
-            configuration["Covariates"] = covariates
-
-        c.info("")
-
-        with open(path_to_pipeline_json, "w+") as f:
-            json.dump({"images": images, "metadata": configuration}, f, indent=4)
-
-        c.info("Saved configuration")
-
-        c.info("")
-        c.info("")
-
-    # Manual file check: Check file status after first level statistics is done
-    if args.file_status:
-        file_checks(workdir, json_dir, path_to_pipeline_json)
-
-    # Run workflow if setup_only flag is not given
-    elif not args.setup_only:
-        workflow = init_workflow(workdir, path_to_pipeline_json)
-
-        init_logging(workdir, path_to_pipeline_json)
-
-        if args.nipype_plugin is None:
-            plugin_settings = {
-                "plugin"     : "MultiProc",
-                "plugin_args": {
-                    "n_procs"           : cpu_count(),
-                    "raise_insufficient": False,
-                    "maxtasksperchild"  : 1,
-                }
-            }
-        else:
-            plugin_settings = {
-                "plugin": args.nipype_plugin
-            }
-
-        import gc
-        gc.collect()
-
-        workflow.run(**plugin_settings)
-
-        # copy confounds.tsv from task to intermediates/subject
-        # access pipeline.json to get subjects and tasks for path
-        with open(path_to_pipeline_json, "r") as f:
-            configuration = json.load(f)
-
-        flattened_configuration = transpose(configuration['images'])
-
-        for subject in flattened_configuration:
-            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    # Taskdata exists
-                    task = key
-                    # use glob for wildcard as path has truncated subject_id in fmriprep
-                    try:
-                        source = glob(workdir + '/nipype/sub_' + subject + '/task_' + task + '/func_preproc*' +
-                                      '/bold_confounds_wf/concat/confounds.tsv')[0]
-                        destination = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
-                        shutil.copyfile(src=source, dst=destination)
-                    except IndexError:
-                        print(
-                            'Warning: confounds.tsv was not found, check intermediate files in nipype/<subject_id>/...')
-                else:
-                    # Taskdata doesn't exist
-                    pass
-        # calculate correlation matrix from atlas matrix
-        # save correlation matrix as csv
-        for subject in flattened_configuration:
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    task = key
-                    try:
-                        for idx, atlas_idx in enumerate(
-                                ["%04d" % x for x in range(len(configuration['metadata'][task]['BrainAtlasImage']))]):
-                            try:
-                                if len(configuration['metadata'][task]['BrainAtlasImage']) >= 2:
-                                    source = workdir + '/intermediates/' + subject + '/' + task + \
-                                             '/brainatlas_matrix' + str(atlas_idx) + '.txt'
-                                else:
-                                    source = workdir + '/intermediates/' + subject + '/' + task + '/brainatlas_matrix.txt'
-                                destination = workdir + '/intermediates/' + subject + '/' + task + \
-                                              '/corr_matrix_' + \
-                                              list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx] + \
-                                              '.csv'
-                                atlas_matrix = pd.read_csv(source, sep=" ", header=None, skipinitialspace=True)
-                                # drop last column as there is only NaN in there due to delimiting issues
-                                atlas_matrix.drop(atlas_matrix.columns[len(atlas_matrix.columns) - 1], axis=1,
-                                                  inplace=True)
-                                # coverage part (#issue9)
-                                atlas_name = list(configuration['metadata'][task]['BrainAtlasImage'].keys())[idx]
-                                atlas_file = configuration['metadata'][task]['BrainAtlasImage'][atlas_name]
-                                seg_image_path = glob(workdir + '/nipype/sub_' + subject + '/task_' +
-                                                      task + '/func_preproc*' +
-                                                      '/bold_mni_trans_wf/mask_mni_tfm/'
-                                                      'ref_image_corrected_brain_mask_maths_trans.nii.gz')[0]
-                                dest_coverage = workdir + '/intermediates/' + subject + '/' + task + '/' + \
-                                                atlas_name + '_coverage.csv'
-                                # create get coverage from util function and create dataframe
-                                df_coverage = pd.DataFrame(nonzero_atlas(
-                                    seg_image_path=seg_image_path,
-                                    atlas_image_path=atlas_file))
-                                df_coverage.columns = ['label', 'data', 'atlas']
-                                df_coverage['ratio'] = df_coverage['data'] / df_coverage['atlas']
-                                df_coverage.to_csv(dest_coverage, index=False)
-                                # get list of all rows below threshold
-                                threshold = 0.8
-                                indices_below_threshold = list(
-                                    df_coverage.loc[df_coverage['ratio'] < threshold].index
-                                )
-                                for index in indices_below_threshold:
-                                    atlas_matrix[index] = np.nan
-                                corr_matrix = atlas_matrix.corr(method='pearson')
-                                for index in indices_below_threshold:
-                                    corr_matrix[index] = 'NaN'
-                                    corr_matrix.loc[index] = 'NaN'
-                                corr_matrix.to_csv(destination, index=False, header=False)
-                                shutil.move(source,
-                                            workdir + '/intermediates/' + subject + '/' + task +
-                                            '/brainatlas_timeseries_' +
-                                            list(configuration['metadata'][task]['BrainAtlasImage'].keys())[
-                                                idx] + '.txt')
-                            except OSError as e:
-                                print(
-                                    'Warning: atlas_matrix was not found. Correlation matrix could not be computed')
-                                print(e)
-                    except KeyError:
-                        pass
-        # create confounds_mni.tsv
-        for subject in flattened_configuration:
-            # Check if there is taskdata in metadata as otherwise there is no confounds.tsv
-            for key in flattened_configuration[subject]:
-                if key not in ["T1w", "T2w", "FLAIR"]:
-                    # Taskdata exists
-                    task = key
-                    # get dataframe for original confounds.tsv
-                    orig_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds.tsv'
-                    df_confounds = pd.read_csv(orig_confounds_path, sep="\t")
-                    # get dataframe for gs_meants.txt
-                    gs_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/gs_meants.txt'
-                    df_gs_meants = pd.read_csv(gs_meants_path, sep="\t", header=None)
-                    df_gs_meants.columns = ["GlobalSignal"]
-                    # get dataframe for csf_wm_meants.txt
-                    csf_wm_meants_path = workdir + '/intermediates/' + subject + '/' + task + '/csf_wm_meants.txt'
-                    df_csf_wm_meants = pd.read_csv(csf_wm_meants_path, delim_whitespace=True, header=None)
-                    df_csf_wm_meants.columns = ["CSF", "GreyMatter", "WhiteMatter"]
-                    # Replace respective columns
-                    df_confounds['WhiteMatter'] = df_csf_wm_meants['WhiteMatter']
-                    df_confounds['CSF'] = df_csf_wm_meants['CSF']
-                    df_confounds['GlobalSignal'] = df_gs_meants['GlobalSignal']
-                    # Save dataframe as confounds_mni.tsv
-                    new_confounds_path = workdir + '/intermediates/' + subject + '/' + task + '/confounds_mni.tsv'
-                    df_confounds.to_csv(new_confounds_path, sep="\t", encoding='utf-8', index=False)
-                else:
-                    # Taskdata doesn't exist
-                    pass
-
-        # Automatic file check: Check file status after first level statistics is done
-        file_checks(workdir, json_dir, path_to_pipeline_json)
-
-    # Creation of individual/block json files
-    else:
-
-        os.makedirs(json_dir, exist_ok=True)
-
-        with open(path_to_pipeline_json, "r") as f:
-            configuration = json.load(f)
-
-        flattened_configuration = transpose(configuration['images'])
-
-        # selecting metadata to be shared among subjects
-        subject_metadata = dict()
-
-        subject_keys = ['TemporalFilter', 'SmoothingFWHM']
-        for key in subject_keys:
-            subject_metadata[key] = configuration['metadata'][key]
-
-        # getting names of paradigms (rest, task, etc) using keys in image section
-        subject_all_keys = list(configuration['images'])
-        subject_keys = list(configuration['images'])
-        subject_keys.remove('T1w')
-
-        for key in subject_keys:
-            paradigm_keys = list(configuration['metadata'][key])
-            paradigm_keys.remove('RepetitionTime')
-            subject_metadata[key] = dict()
-            for paradigm_key in paradigm_keys:
-                subject_metadata[key][paradigm_key] = configuration['metadata'][key][paradigm_key]
-
-        # file to save execution commands per subject
-        file = open(os.path.join(workdir, "execute.txt"), "w")
-        command = "docker run -itv /:/ext mindandbrain/pipeline -w " + workdir[4:] + " -j "
-
-        block_size = 1
-        if args.block_size is not None:
-            try:
-                block_size = int(args.block_size)
-            except Exception as ex:
-                print(ex)
-                print('The number of subjects per block must be an integer')
-                print('No blocks are being generated. Json files per subject are being generated')
-
-        subject_names = list(flattened_configuration)
-        subjects = len(subject_names)
-        blocks = math.ceil(subjects / block_size)
-
-        # loop for block
-        for i in range(blocks):
-            file_name = 'block_' + str(i) + '_pipeline.json'
-            path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-            subject_images = dict()
-            for key in subject_all_keys:
-                subject_images[key] = dict()
-            for key in subject_keys:
-                subject_metadata[key]['RepetitionTime'] = dict()
-            # loop for subjects within a block
-            for j in range(block_size):
-                index = i * block_size + j
-                if index < subjects:
-                    subject = subject_names[index]
-                    print(str(i) + subject)
-                    # adding images per subject
-                    for key in subject_all_keys:
-                        subject_images[key][subject] = configuration['images'][key][subject]
-                    # adding different metadata per subject (Repetition Time)
-                    for key in subject_keys:
-                        subject_metadata[key]['RepetitionTime'][subject] = \
-                            configuration['metadata'][key]['RepetitionTime'][subject]
-                    # changing name of file in case no blocks are needed; file gets name of subject
-                    if block_size == 1:
-                        file_name = subject + '_pipeline.json'
-                        path_to_new_pipeline_json = os.path.join(json_dir, file_name)
-            # writing individual json file
-            with open(path_to_new_pipeline_json, "w+") as f:
-                json.dump({"images": subject_images, "metadata": subject_metadata}, f, indent=4)
-
-            file.write(command + file_name + '\n')
-
-        file.close()
+    try:
+        _main()
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger("pipeline")
+        logger.exception("Exception: %s", e)
+
+        global debug
+        if debug:
+            import pdb
+
+            pdb.post_mortem()

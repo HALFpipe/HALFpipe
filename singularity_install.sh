@@ -37,6 +37,11 @@ export PATH=$(pwd)/singularity/bin:${PATH}
 mkdir -p cache
 export SINGULARITY_CACHEDIR=$(pwd)/cache
 
+# build from latest master
 runCmd singularity build pipeline docker://mindandbrain/pipeline
+
+# build from current directory
+# requires super user
+# sudo singularity build ../pipeline.simg pipeline.def 
  
  
