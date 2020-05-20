@@ -132,6 +132,31 @@ class AddInteractionTerms(YesNoStep):
     yes_step_type = InteractionVariablesStep
     no_step_type = AddAnotherGroupLevelAnalysisStep
 
+    def setup(self, ctx):
+        self.is_first_run = True
+        self.is_missing = False
+        number_of_variables = sum(
+            1 for variable in ctx.spec.analyses[-1].variables if variable.type != "id"
+        )
+        if number_of_variables > 1:
+            self.is_missing = True
+            super(AddInteractionTerms, self).setup(ctx)
+
+    def run(self, ctx):
+        if self.is_missing:
+            return super(AddInteractionTerms, self).run(ctx)
+        return self.is_first_run
+
+    def next(self, ctx):
+        if self.is_missing:
+            return super(AddInteractionTerms, self).next(ctx)
+        else:
+            if self.is_first_run:
+                self.is_first_run = False
+                return self.no_step_type(self.app)(ctx)
+            else:
+                return
+
 
 class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"

@@ -45,10 +45,13 @@ def _check_multicollinearity(matrix):
 def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subjects=None):
     rawdataframe = load_spreadsheet(spreadsheet)
 
+    id_column = None
     for variableobj in variableobjs:
         if variableobj.type == "id":
             id_column = variableobj.name
             break
+
+    assert id_column is not None, "Missing id column, cannot specify model"
 
     rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
     rawdataframe = rawdataframe.set_index(id_column)

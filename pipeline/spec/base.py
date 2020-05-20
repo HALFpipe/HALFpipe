@@ -7,9 +7,10 @@
 """
 
 import logging
-from uuid import uuid4
 import os
 from os import path as op
+from datetime import datetime as dt
+import uuid
 
 from marshmallow import (
     fields,
@@ -26,14 +27,17 @@ from .file import FileSchema
 from .analysis import AnalysisSchema
 
 entity_aliases = {"direction": "phase_encoding_direction"}
-compatible_versions = ["1.0"]
+timestampfmt = "%Y-%m-%d_%H-%M"
+namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
+
+compatible_versions = ["1.1"]
 
 
 class Spec:
-    version = "1.0"
+    version = "1.1"
 
     def __init__(self, **kwargs):
-        self.uuid = kwargs.get("uuid", uuid4())
+        self.timestamp = kwargs.get("timestamp", dt.now())
         self.version = kwargs.get("version", self.version)
         self.files = kwargs.get("files", [])
         self.variants = kwargs.get("variants", [])
@@ -49,9 +53,17 @@ class Spec:
     def has_anat(self):
         return self._has_datatype("anat")
 
+    @property
+    def timestampstr(self):
+        return self.timestamp.strftime(timestampfmt)
+
+    @property
+    def uuid(self):
+        return uuid.uuid5(namespace, self.timestampstr)
+
 
 class SpecSchema(Schema):
-    uuid = fields.UUID(required=True)
+    timestamp = fields.DateTime(format=timestampfmt, required=True)
     version = fields.Str(validate=validate.OneOf(compatible_versions))
     files = fields.List(fields.Nested(FileSchema), required=True)
     analyses = fields.List(fields.Nested(AnalysisSchema), required=True)
@@ -70,11 +82,12 @@ class SpecSchema(Schema):
         return Spec(**data)
 
 
-def loadspec(workdir=None, uuidstr=None, specpath=None, logger=logging.getLogger("pipeline")):
+def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogger("pipeline")):
     if specpath is None:
         assert workdir is not None
-        if uuidstr is not None:
-            specpath = op.join(workdir, f"spec.{uuidstr}.json")
+        if timestamp is not None:
+            timestampstr = timestamp.strftime(timestampfmt)
+            specpath = op.join(workdir, f"spec.{timestampstr}.json")
         else:
             specpath = op.join(workdir, "spec.json")
     if not op.isfile(specpath):
@@ -101,11 +114,10 @@ def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("pipeli
         if spectomove is None:
             logger.warn("Overwriting invalid spec file")
         else:
-            uuidstr = str(spectomove.uuid)[:8]
-            newspecpath = op.join(workdir, f"spec.{uuidstr}.json")
+            newspecpath = op.join(workdir, f"spec.{spectomove.timestampstr}.json")
             logger.info(f'Moving previous spec file from "{specpath}" to "{newspecpath}"')
             if op.isfile(newspecpath):
-                logger.warn("Found specpath uuidstr collision, overwriting")
+                logger.warn("Found specpath timestampstr collision, overwriting")
             os.replace(specpath, newspecpath)
     jsn = SpecSchema().dumps(spec, many=False, indent=4)
     with open(specpath, "w") as f:
