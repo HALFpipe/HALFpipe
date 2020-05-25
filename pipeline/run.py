@@ -9,8 +9,10 @@ import pkg_resources
 
 os.environ["NIPYPE_NO_ET"] = "1"  # noqa; disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"  # noqa
-os.environ["PIPELINE_RESOURCE_DIR"] = "/home/fmriprep/.cache/pipeline"  # noqa
-os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"  # noqa
+
+if op.isdir("/home/fmriprep/.cache/pipeline"):
+    os.environ["PIPELINE_RESOURCE_DIR"] = "/home/fmriprep/.cache/pipeline"  # noqa
+    os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"  # noqa
 
 from fmriprep import config
 
