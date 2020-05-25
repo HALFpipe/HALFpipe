@@ -99,72 +99,7 @@ Docker              | `docker run --interactive --tty --volume /:/ext mindandbra
 
 You should now see the user interface.
 
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="566.36px" height="384.81px" viewBox="0 0 566.36 384.81" style="enable-background:new 0 0 566.36 384.81;"
-	 xml:space="preserve">
-<style type="text/css">
-	.st1{fill:#FFFFFF;border-radius:3px;filter:drop-shadow(0px 0px 20px rgba(0, 0, 0, .7));}
-	.st2{fill:#4EB5E1;}
-	.st3{fill:#6F7A86;}
-	.st4{font-family:SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;}
-	.st5{font-size:9.331px;}
-</style>
-<rect x="43.18" y="43.64" rx="5" class="st1" width="476.75" height="297.03"/>
-<g>
-	<rect x="63.82" y="272.68" class="st2" width="4.67" height="10.11"/>
-	<rect x="59.15" y="313.11" width="443.22" height="10.11"/>
-	<g>
-		<rect x="126.8" y="70.51" width="19.44" height="20.22"/>
-		<rect x="358.52" y="70.51" width="19.44" height="20.22"/>
-		<polygon points="339.86,151.38 339.86,161.49 300.98,161.49 300.98,90.73 291.65,90.73 291.65,80.62 320.42,80.62 320.42,151.38 
-					"/>
-		<path d="M59.15,100.83v80.87h19.44v-20.21h28.77v-60.66H59.15z M87.92,151.38h-9.33v-40.44h9.33V151.38z"/>
-		<polygon points="165.68,151.38 165.68,161.49 126.8,161.49 126.8,110.94 117.47,110.94 117.47,100.83 146.24,100.83 
-			146.24,151.38 		"/>
-		<path d="M175.01,100.83v80.87h19.44v-20.21h28.77v-60.66H175.01z M203.78,151.38h-9.33v-40.44h9.33V151.38z"/>
-		<path d="M233.33,100.83v60.66h48.21v-10.11h-28.77v-20.22h28.77v-30.33H233.33z M262.1,121.05h-9.33v-10.11h9.33V121.05z"/>
-		<polygon points="397.4,151.38 397.4,161.49 358.52,161.49 358.52,110.94 349.19,110.94 349.19,100.83 377.96,100.83 
-			377.96,151.38 		"/>
-		<polygon points="454.94,100.83 454.94,161.49 435.5,161.49 435.5,110.94 426.17,110.94 426.17,161.49 406.73,161.49 
-			406.73,100.83 		"/>
-		<path d="M465.05,100.83v60.66h37.32v-10.11h-17.88v-20.22h17.88v-30.33H465.05z M493.82,121.05h-9.33v-10.11h9.33V121.05z"/>
-	</g>	<text transform="matrix(1 0 0 1 59.15 210.4713)" class="st4 st5">Welcome to the mindandbrain/pipeline!</text>	<text transform="matrix(1 0 0 1 59.15 220.5797)" class="st4 st5">You are using version 1.0.0rc2</text>	<text transform="matrix(1 0 0 1 59.15 240.7975)" class="st4 st5">Please report any problems or leave suggestions at</text>	<text transform="matrix(1 0 0 1 59.15 250.9054)" class="st4 st5">https://github.com/mindandbrain/pipeline/issues</text>	<text transform="matrix(1 0 0 1 59.15 271.1227)" class="st4 st5">Specify working directory</text>
-	<text transform="matrix(1 0 0 1 59.15 281.2316)" class="st4 st5">[</text>
-	<text transform="matrix(1 0 0 1 63.98 281.2316)" class="st1 st4 st5">]</text>
-	<text transform="matrix(1 0 0 1 59.15 291.3405)" class="st4 st5">data/</text>
-	<text transform="matrix(1 0 0 1 59.15 301.4489)" class="st4 st5">scratch/</text>
-	<text transform="matrix(1 0 0 1 59.15 321.6661)" class="st1 st4 st5">[</text>
-	<polygon class="st1" points="68.13,318.39 65.72,318.39 65.72,319.62 64.16,318.06 65.72,316.5 65.72,317.72 67.45,317.72 
-		67.45,314.47 68.13,314.47 	"/>
-	<text transform="matrix(1 0 0 1 68.8101 321.6661)" class="st1 st4 st5">] Ok  [</text>
-	<polygon class="st1" points="102.85,318.06 104.4,316.5 104.4,317.72 107.14,317.72 107.14,318.39 104.4,318.39 104.4,319.62 	"/>	<polygon class="st1" points="115.32,319.62 115.32,318.39 112.58,318.39 112.58,317.72 115.32,317.72 115.32,316.5 116.88,318.06 	
-		"/>
-	<g>		
-    <text transform="matrix(1 0 0 1 257.1724 321.6661)" class="st1 st4 st5">l</text>
-		<text transform="matrix(1 0 0 1 252.3424 321.6661)" class="st1 st4 st5">e</text>
-		<text transform="matrix(1 0 0 1 247.5123 321.6661)" class="st1 st4 st5">c</text>
-		<text transform="matrix(1 0 0 1 242.6822 321.6661)" class="st1 st4 st5">n</text>
-		<text transform="matrix(1 0 0 1 237.8531 321.6661)" class="st1 st4 st5">a</text>
-		<text transform="matrix(1 0 0 1 233.023 321.6661)" class="st1 st4 st5">C</text>		
-    <text transform="matrix(1 0 0 1 223.3629 321.6661)" class="st1 st4 st5">]</text>
-		<text transform="matrix(1 0 0 1 218.5338 321.6661)" class="st1 st4 st5">c</text>
-		<text transform="matrix(1 0 0 1 213.7037 321.6661)" class="st1 st4 st5">-</text>
-		<text transform="matrix(1 0 0 1 208.8736 321.6661)" class="st1 st4 st5">l</text>
-		<text transform="matrix(1 0 0 1 204.0435 321.6661)" class="st1 st4 st5">r</text>
-		<text transform="matrix(1 0 0 1 199.2144 321.6661)" class="st1 st4 st5">t</text>
-		<text transform="matrix(1 0 0 1 194.3844 321.6661)" class="st1 st4 st5">c</text>
-		<text transform="matrix(1 0 0 1 189.5543 321.6661)" class="st1 st4 st5">[</text>		<text transform="matrix(1 0 0 1 175.065 321.6661)" class="st1 st4 st5">r</text>
-		<text transform="matrix(1 0 0 1 170.2349 321.6661)" class="st1 st4 st5">o</text>
-		<text transform="matrix(1 0 0 1 165.4058 321.6661)" class="st1 st4 st5">s</text>
-		<text transform="matrix(1 0 0 1 160.5758 321.6661)" class="st1 st4 st5">r</text>
-		<text transform="matrix(1 0 0 1 155.7457 321.6661)" class="st1 st4 st5">u</text>
-		<text transform="matrix(1 0 0 1 150.9166 321.6661)" class="st1 st4 st5">c</text>		<text transform="matrix(1 0 0 1 141.2564 321.6661)" class="st1 st4 st5">e</text>
-		<text transform="matrix(1 0 0 1 136.4273 321.6661)" class="st1 st4 st5">v</text>
-		<text transform="matrix(1 0 0 1 131.5972 321.6661)" class="st1 st4 st5">o</text>
-		<text transform="matrix(1 0 0 1 126.7672 321.6661)" class="st1 st4 st5">M</text>		<text transform="matrix(1 0 0 1 117.108 321.6661)" class="st1 st4 st5">]</text>
-	</g>
-</g>
-</svg>
+![User interface screenshot](./pipeline/data/img0.svg)
 
 #### Explanation
 
@@ -219,36 +154,3 @@ us via e-mail.
  Lea Waller  | Developer       | lea.waller@charite.de
  Ilya Veer   | Project manager | ilya.veer@charite.de
  Susanne Erk | Project manager | susanne.erk@charite.de
-
-<style type="text/css">
-  h1 { counter-reset: h2-counter; }
-  h2 { counter-reset: h3-counter; }
-  h2::before {
-    counter-increment: h2-counter;
-    content: counter(h2-counter) ".\0000a0\0000a0";
-  }
-  h3::before {
-    counter-increment: h3-counter;
-    content: counter(h2-counter) "."
-             counter(h3-counter) ".\0000a0\0000a0";
-  }
-  
-  .table-of-contents-pre-header + h2::before { 
-    counter-increment: none;
-    content: normal;
-  }
-  
-  .table-of-contents ol {
-    counter-reset: section;
-    list-style-type: none;
-  }
-  .table-of-contents li::before {
-    counter-increment: section;
-    content: counters(section, ".") ". ";
-  }
-  
-  svg {
-    width:100%;
-  }
-</style>
-
