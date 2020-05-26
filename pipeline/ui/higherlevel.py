@@ -227,23 +227,24 @@ class ContrastNameStep(Step):
         self.input_view = TextInputView(text=suggestion)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
+        self.value = None
 
     def run(self, ctx):
         while True:
-            value = self.input_view()
-            if value is None:
+            self.value = self.input_view()
+            if self.value is None:
                 return False
-            if forbidden_chars.search(value) is None:
+            if forbidden_chars.search(self.value) is None:
                 if ctx.spec.analyses[-1].contrasts is None:
                     ctx.spec.analyses[-1].contrasts = []
                 for contrast in ctx.spec.analyses[-1].contrasts:
-                    if contrast.name == value:
+                    if contrast.name == self.value:
                         continue
-                ctx.spec.analyses[-1].contrasts.append(Contrast(name=value, type="t"))
                 break
         return True
 
     def next(self, ctx):
+        ctx.spec.analyses[-1].contrasts.append(Contrast(name=self.value, type="t"))
         return ContrastVariableStep(self.app)(ctx)
 
 
