@@ -30,21 +30,16 @@ from ...spec import (
 )
 from ..utils import BranchStep, YesNoStep, make_name_suggestion, forbidden_chars
 from ..step import Step
-from ...io import analysis_get_condition_files, database_parse_condition_files
+from ...io import analysis_parse_condition_files
 from ...utils import splitext
 from .setting import PreSmoothingSettingStep
 
 
 def _get_conditions(ctx):
-    eventfile_dict = analysis_get_condition_files(ctx.spec.analyses[-1], ctx.database)
-    if eventfile_dict is None:
+    out_list = list(analysis_parse_condition_files(ctx.spec.analyses[-1], ctx.database))
+    if out_list is None or len(out_list) == 0:
         return
-    eventfile_set = set(eventfile_dict.values())
-    if len(eventfile_set) == 0 or eventfile_set.pop() is None:
-        return
-    bold_filepaths, conditions_list, onsets_list, durations_list = zip(
-        *database_parse_condition_files(eventfile_dict, ctx.database)
-    )
+    event_filepaths, conditions_list, onsets_list, durations_list = zip(*out_list)
     conditionssets = [set(conditions) for conditions in conditions_list]
     conditions = set.intersection(*conditionssets)
     if len(conditions) == 0:
@@ -151,8 +146,8 @@ class EventsStep(FilePatternStep):
                     for k, v in tags_dict.items()
                     if k in self.allowed_entities and k not in entities_in_pattern
                 }
-                tags_dict.update({"extension": self._transform_extension(ext)})
                 tags_dict.update(self.tags_dict)
+                tags_dict.update({"extension": self._transform_extension(ext)})
                 tags_obj = self.tags_schema.load(tags_dict)
                 file_obj = File(path=op.abspath(pattern), tags=tags_obj)
                 scratchctx = deepcopy(ctx)
@@ -168,9 +163,7 @@ class EventsStep(FilePatternStep):
                 return True
             except Exception as e:
                 logging.getLogger("pipeline.ui").exception("Exception: %s", e)
-                self.file_pattern_input_view.show_message(
-                    TextElement(str(e), color=error_color)
-                )
+                self.file_pattern_input_view.show_message(TextElement(str(e), color=error_color))
 
     def next(self, ctx):
         return ContrastNameStep(self.app)(ctx)

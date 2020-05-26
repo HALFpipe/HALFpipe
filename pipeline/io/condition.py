@@ -9,39 +9,30 @@ import pandas as pd
 # import h5py
 
 from ..spec import BoldTagsSchema, File
+from ..utils import first
 
 
-def analysis_get_condition_files(analysisobj, database):
+def analysis_parse_condition_files(analysisobj, database):
     """
-    returns dictionary bold image file path -> list of event file paths
+    returns generator for tuple event file paths, conditions, onsets, durations
     """
     tagdict = BoldTagsSchema().dump(analysisobj.tags)
     bold_filepaths = database.get(**tagdict)
     if bold_filepaths is None:
         return
-    return {
+    eventfile_dict = {
         filepath: database.get_associations(filepath, datatype="func", suffix="events")
         for filepath in bold_filepaths.copy()
     }
-
-
-def database_parse_condition_files(eventfilepaths_dict, database):
-    """
-    Parse condition files into conditions, onsets and durations
-
-    :param eventfilepaths_dict: dictionary bold image file path -> list of event file paths
-    :param ext: EventsExtension
-
-    """
-    for bold_filepath, event_filepaths in eventfilepaths_dict.items():
-        if isinstance(event_filepaths, str):
-            fileobj = File(path=event_filepaths, tags=database.get_tags(event_filepaths))
+    eventfile_set = set(eventfile_dict.values())
+    if len(eventfile_set) == 0 or None in eventfile_set:
+        return
+    for in_any in eventfile_set:
+        if isinstance(in_any, str):
+            fileobj = File(path=in_any, tags=database.get_tags(in_any))
         else:
-            fileobj = [
-                File(path=filepath, tags=database.get_tags(filepath))
-                for filepath in event_filepaths
-            ]
-        yield (bold_filepath, *parse_condition_file(in_any=fileobj))
+            fileobj = [File(path=filepath, tags=database.get_tags(filepath)) for filepath in in_any]
+        yield (in_any, *parse_condition_file(in_any=fileobj))
 
 
 def parse_tsv_condition_file(filepath):
@@ -99,13 +90,11 @@ def parse_mat_condition_file(filepath):
 
 
 def parse_txt_condition_files(filepaths, conditions):
-    conditions = []
     onsets = []
     durations = []
     for filepath, condition in zip(filepaths, conditions):
         assert condition is not None
         data = np.loadtxt(filepath)
-        conditions.append(condition)
         onsets.append(data[:, 0].tolist())
         durations.append(data[:, 1].tolist())
     return conditions, onsets, durations
@@ -115,15 +104,15 @@ def parse_condition_file(in_any=None):
     conditions = []
     onsets = []
     durations = []
-    if isinstance(in_any, list) or isinstance(in_any, tuple):
-        assert all(fileobj.tags.extension == "txt" for fileobj in in_any)
-        return parse_txt_condition_files(
-            *zip((fileobj.path, fileobj.tags.condition) for fileobj in in_any)
-        )
-    elif isinstance(in_any, dict):
-        return parse_txt_condition_files(
-            *zip((fileobj.path, fileobj.tags.condition) for fileobj in in_any)
-        )
+    if isinstance(in_any, (list, dict, tuple)):
+        if all(fileobj.tags.extension == "txt" for fileobj in in_any):
+            condition_file_tpls = [(fileobj.path, fileobj.tags.condition) for fileobj in in_any]
+            filepaths, conditions = zip(*condition_file_tpls)
+            return parse_txt_condition_files(filepaths, conditions)
+        elif len(in_any) == 1:
+            return parse_condition_file(first(in_any))
+        else:
+            raise ValueError("Cannot read condition files")
     elif isinstance(in_any, str):
         try:
             return parse_mat_condition_file(in_any)

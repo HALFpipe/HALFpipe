@@ -18,31 +18,29 @@ on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) with
 
 ## Table of Contents
 
-<div class="table-of-contents">
-  <ol>
-    <li>
-      <a href="#getting-started">Getting started</a>
-      <ol>
-        <li><a href="#container-platform">Container platform</a></li>
-        <li><a href="#download">Download</a></li>
-      </ol>
-    </li>
-    <li><a href="#usage-of-the-user-interface">Usage of the user interface</a></li>
-    <li><a href="#usage-on-a-high-performance-computing-cluster">Usage on a high-performance computing cluster</a></li>
-    <li><a href="#command-line-options">Command line options</a></li>
-    <li><a href="#troubleshooting">Troubleshooting</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ol>
-</div>
+<ol>
+  <li>
+    <a href="#getting-started">Getting started</a>
+    <ol>
+      <li><a href="#container-platform">Container platform</a></li>
+      <li><a href="#download">Download</a></li>
+    </ol>
+  </li>
+  <li><a href="#usage-of-the-user-interface">Usage of the user interface</a></li>
+  <li><a href="#usage-on-a-high-performance-computing-cluster">Usage on a high-performance computing cluster</a></li>
+  <li><a href="#command-line-options">Command line options</a></li>
+  <li><a href="#troubleshooting">Troubleshooting</a></li>
+  <li><a href="#contact">Contact</a></li>
+</ol>
 
-## Getting started
+## 1. Getting started
 
 The pipeline is distributed as a container, meaning that all software needed for
 analysis comes bundled in it. This allows for easier installation on new
 systems, and makes data analysis more reproducible, because software versions
 are guaranteed to be the same for all users. 
 
-### Container platform
+### 1.1. Container platform
 
 The first step is to install one of the supported container platforms. 
 If you're using a high-performance computing cluster, more often than not
@@ -69,7 +67,7 @@ Container platform  | Version   | Installation
 Singularity         | 2.6.1     | `sudo apt install singularity-container`
 Docker              |           | See <https://docs.docker.com/engine/install/>
 
-### Download
+### 1.2. Download
 
 The second step is to download the `mindandbrain/pipeline` to your computer. 
 This requires approximately 5 gigabytes of storage.
@@ -88,7 +86,7 @@ this file.
 `Docker` will store the container in its storage base directory, so  it does
 not matter from which directory you run the `pull` command.
 
-### Running
+### 1.3. Running
 
 The third step is to run the downloaded container. 
 
@@ -101,7 +99,7 @@ You should now see the user interface.
 
 ![User interface screenshot](./pipeline/data/img0.svg)
 
-#### Explanation
+#### Background
 
 Containers are by default isolated from the host computer. This adds security,
 but also means that the container cannot access the data it needs for analysis.
@@ -119,31 +117,31 @@ with the pipeline. To avoid this, we need to pass the option `--cleanenv`.
 `Docker` does not pass the host shell environment by default, so we don't need
 to pass an option.
 
-## Usage of the user interface
+## 2. Usage of the user interface
 
 > **TODO**
 
-## Usage on a high-performance computing cluster
+## 3. Usage on a high-performance computing cluster
 
 > **TODO**
 
-## Command line options
+## 4. Command line options
 
 > **TODO**
 
-### --fs-root
+### 4.1. --fs-root
 
 > **TODO**
 
-### --verbose and --debug
+### 4.2. --verbose and --debug
 
 > **TODO**
 
-## Troubleshooting
+## 5. Troubleshooting
 
 > **TODO**
 
-## Contact
+## 6. Contact
 
 For questions or support, please submit an
 [issue](https://github.com/mindandbrain/pipeline/issues/new/choose) or contact

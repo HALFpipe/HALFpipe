@@ -3,8 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .condition import (
-    analysis_get_condition_files,
-    database_parse_condition_files,
+    analysis_parse_condition_files,
     parse_condition_file,
 )
 from .dictlistfile import DictListFile
@@ -16,8 +15,7 @@ from .signals import img_to_signals
 from .spreadsheet import load_spreadsheet
 
 __all__ = [
-    analysis_get_condition_files,
-    database_parse_condition_files,
+    analysis_parse_condition_files,
     parse_condition_file,
     DictListFile,
     get_axcodes_set,
