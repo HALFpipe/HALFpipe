@@ -13,6 +13,8 @@ From: poldracklab/fmriprep:20.1.0rc2
   . /pipeline
 
 %post
+  BUILD=3
+
   chmod -R a+rwx /pipeline /usr/local/miniconda
   
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \
