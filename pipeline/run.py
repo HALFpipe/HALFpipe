@@ -7,14 +7,14 @@ from os import path as op
 import sys
 import pkg_resources
 
-os.environ["NIPYPE_NO_ET"] = "1"  # noqa; disable nipype update check
-os.environ["NIPYPE_NO_MATLAB"] = "1"  # noqa
+os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
+os.environ["NIPYPE_NO_MATLAB"] = "1"
 
 if op.isdir("/home/fmriprep/.cache/pipeline"):
-    os.environ["PIPELINE_RESOURCE_DIR"] = "/home/fmriprep/.cache/pipeline"  # noqa
-    os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"  # noqa
+    os.environ["PIPELINE_RESOURCE_DIR"] = "/home/fmriprep/.cache/pipeline"
+    os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"
 
-from fmriprep import config
+from fmriprep import config  # noqa
 
 configfilename = pkg_resources.resource_filename("pipeline", "data/config.toml")
 config.load(configfilename)

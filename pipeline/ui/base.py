@@ -4,6 +4,7 @@
 
 import os
 from os import path as op
+from pathlib import Path
 import logging
 
 from calamities import (
@@ -202,7 +203,7 @@ class FirstStep(Step):
 def init_spec_ui(workdir=None, debug=False):
     fs_root = calamities_config.fs_root
 
-    cur_dir = os.environ["PWD"]
+    cur_dir = str(Path.cwd())
     new_dir = op.join(fs_root, cur_dir[1:])
     if op.isdir(new_dir):
         os.chdir(new_dir)
