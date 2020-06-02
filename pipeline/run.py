@@ -97,9 +97,6 @@ def _main():
         help="print the version number and exit",
         default=False,
     )
-    ap.add_argument(
-        "--preproc-report", action="store_true", help="print a report", default=False,
-    )
 
     args = ap.parse_args()
     global debug
@@ -109,10 +106,6 @@ def _main():
 
     if args.version is True:
         sys.stdout.write(f"{__version__}\n")
-        sys.exit(0)
-
-    if args.preproc_report is True:
-        # TODO
         sys.exit(0)
 
     should_run = {step: True for step in steps}
