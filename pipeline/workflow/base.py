@@ -6,7 +6,7 @@ import logging
 from uuid import uuid5
 import pickle
 
-from calamities import get_entities_in_path
+from calamities.pattern import get_entities_in_path
 from ..database import Database
 from ..spec import loadspec, study_entities, bold_entities
 from ..utils import cacheobj, uncacheobj

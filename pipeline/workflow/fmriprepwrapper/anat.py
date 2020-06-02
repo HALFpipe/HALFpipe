@@ -121,7 +121,7 @@ def init_anat_preproc_wf(
     )
 
     # Write outputs
-    anat_reports_wf = init_anat_reports_wf(reportlets_dir="/", freesurfer=freesurfer)
+    anat_reports_wf = init_anat_reports_wf(freesurfer=freesurfer, output_dir="/")
     workflow.connect(
         [
             (

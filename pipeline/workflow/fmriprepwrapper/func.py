@@ -88,6 +88,7 @@ def init_func_preproc_wf(
                 "aroma_confounds",
                 "aroma_metadata",
                 "movpar_file",
+                "rmsd_file",
                 "skip_vols",
             ]
         ),
@@ -153,16 +154,20 @@ def init_func_preproc_wf(
                     ("outputnode.bold_file", "inputnode.bold_file"),
                 ],
             ),
-            (bold_hmc_wf, outputnode, [("outputnode.movpar_file", "movpar_file")],),
+            (
+                bold_hmc_wf,
+                outputnode,
+                [("outputnode.movpar_file", "movpar_file"), ("outputnode.rmsd_file", "rmsd_file")],
+            ),
         ]
     )
 
     # calculate BOLD registration to T1w
     bold_reg_wf = init_bold_reg_wf(
-        name="bold_reg_wf",
         freesurfer=config.workflow.run_reconall,
         use_bbr=config.workflow.use_bbr,
         bold2t1w_dof=config.workflow.bold2t1w_dof,
+        bold2t1w_init=config.workflow.bold2t1w_init,
         mem_gb=memcalc.series_std_gb,
         omp_nthreads=config.nipype.omp_nthreads,
         use_compression=False,
@@ -348,7 +353,10 @@ def init_func_preproc_wf(
             (
                 bold_hmc_wf,
                 bold_confounds_wf,
-                [("outputnode.movpar_file", "inputnode.movpar_file")],
+                [
+                    ("outputnode.movpar_file", "inputnode.movpar_file"),
+                    ("outputnode.rmsd_file", "inputnode.rmsd_file"),
+                ],
             ),
             (
                 bold_reg_wf,
