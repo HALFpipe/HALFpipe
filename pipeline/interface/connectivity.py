@@ -6,6 +6,7 @@ Nipype interfaces to calculate connectivity measures using nilearn.
 Adapted from https://github.com/Neurita/pypes
 """
 from os import path as op
+import logging
 
 import numpy as np
 import pandas as pd
@@ -59,7 +60,11 @@ class ConnectivityMeasure(BaseInterface):
 
         self._cov_mat = np.asarray(df.cov())
         self._corr_mat = np.asarray(df.corr())
-        self._pcorr_mat = prec_to_partial(np.linalg.inv(self._cov_mat))
+        try:
+            self._pcorr_mat = prec_to_partial(np.linalg.inv(self._cov_mat))
+        except np.linalg.LinAlgError as e:
+            logging.getLogger("pipeline").warning("LinAlgError %s", e)
+            self._pcorr_mat = np.full_like(self._cov_mat, np.nan)
 
         return runtime
 

@@ -63,20 +63,20 @@ class BOLDSelectStep(BaseBOLDSelectStep):
         dsp_entities = []
         self.tagval_by_str = []
         dsp_values = []
+        options = []
         for entity, tagvals in zip(db_entities, zip(*db_tags_set)):
             tagvals_set = set(tagvals)
             if len(tagvals_set) > 1:
                 dsp_entities.append(entity)
-                if len(tagvals_set) > 2:
-                    filterval_by_value = [("Use all", None)]
+                filterval_by_value = [("Use all", None)]
                 filterval_by_value += [
                     ("Use {}".format(self._format_tag(tagval)), tagval) for tagval in tagvals_set
                 ]
                 self.tagval_by_str.append(dict(filterval_by_value))
                 value_strs, _ = zip(*filterval_by_value)
                 dsp_values.append(list(value_strs))
+                options.append(self._tokenize_entity(entity))
         self.entities = dsp_entities
-        options = [self._tokenize_entity(entity) for entity in self.entities]
         self.should_run = True
         if len(options) == 0:
             self.should_run = False

@@ -159,10 +159,10 @@ def init_func_preproc_wf(
 
     # calculate BOLD registration to T1w
     bold_reg_wf = init_bold_reg_wf(
-        name="bold_reg_wf",
         freesurfer=config.workflow.run_reconall,
         use_bbr=config.workflow.use_bbr,
         bold2t1w_dof=config.workflow.bold2t1w_dof,
+        bold2t1w_init=config.workflow.bold2t1w_init,
         mem_gb=memcalc.series_std_gb,
         omp_nthreads=config.nipype.omp_nthreads,
         use_compression=False,

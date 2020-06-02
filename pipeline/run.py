@@ -133,18 +133,18 @@ def _main():
         if getattr(args, attrname) is True:
             should_run[step] = False
 
-    from calamities.config import config as calamities_config
-
-    calamities_config.fs_root = args.fs_root
-    from calamities.file import resolve
-
     workdir = args.workdir
-    if workdir is not None:
-        workdir = resolve(workdir)
+    if workdir is not None:  # resolve workdir in fs_root
+        abspath = op.abspath(workdir)
+        if not abspath.startswith(args.fs_root):
+            abspath = op.normpath(args.fs_root + abspath)
+        workdir = abspath
 
     if should_run["spec-ui"]:
         from .ui import init_spec_ui
+        from calamities.config import config as calamities_config
 
+        calamities_config.fs_root = args.fs_root
         workdir = init_spec_ui(workdir=workdir, debug=debug)
 
     assert workdir is not None, "Missing working directory"
