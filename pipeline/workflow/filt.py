@@ -28,6 +28,7 @@ in_attrs_from_anat_preproc_wf = (
 
 in_attrs_from_func_preproc_wf_direct = [
     "movpar_file",
+    "rmsd_file",
     "skip_vols",
     "nonaggr_denoised_file",
     "aroma_confounds",
@@ -99,6 +100,7 @@ def make_confoundsendpoint(prefix, workflow, boldfileendpoint, confoundnames, me
                     ("t1w_tpms", "inputnode.t1w_tpms"),
                     ("t1w_mask", "inputnode.t1w_mask"),
                     ("movpar_file", "inputnode.movpar_file"),
+                    ("rmsd_file", "inputnode.rmsd_file"),
                     ("anat2std_xfm", "inputnode.t1_bold_xform"),
                 ],
             ),
