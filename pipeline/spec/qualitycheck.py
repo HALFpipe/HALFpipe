@@ -15,7 +15,9 @@ class QualitycheckExcludeEntry:
         self.session = kwargs.get("session")
         self.run = kwargs.get("run")
         self.task = kwargs.get("task")
-        self.condition = kwargs.get("condition")
+        self.direction = kwargs.get("direction")
+
+        self.keep = kwargs.get("keep")
 
 
 class QualitycheckExcludeEntrySchema(Schema):
