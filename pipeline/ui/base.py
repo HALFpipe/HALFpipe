@@ -179,9 +179,10 @@ class WorkingDirectoryStep(Step):
 
 class FirstStep(Step):
     def setup(self, ctx):
+        # __version__ = "1.0.0rc3"
         self._append_view(GiantTextView("pipeline"))
         self._append_view(SpacerView(2))
-        self._append_view(TextView("Welcome to the mindandbrain/pipeline!"))
+        self._append_view(TextView("Welcome to mindandbrain/pipeline!"))
         self._append_view(TextView(f"You are using version {__version__}"))
         self._append_view(SpacerView(1))
         self._append_view(TextView("Please report any problems or leave suggestions at"))

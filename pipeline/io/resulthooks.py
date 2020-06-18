@@ -13,6 +13,7 @@ from os import path as op
 from .dictlistfile import DictListFile
 from ..spec import bold_entities
 from ..utils import splitext, first, findpaths
+from ..resources import get as getresource
 
 
 def make_path(entitytupls):
@@ -141,6 +142,10 @@ class ReportImgResultHook(ResultHook):
         reports_directory = base_directory / self.subdirectory
         out_directory = reports_directory / make_path(entitytupls)
         out_directory.mkdir(parents=True, exist_ok=True)
+
+        indexhtml_path = reports_directory / "index.html"
+        if not indexhtml_path.exists():
+            self._copy_file(getresource("index.html"), indexhtml_path)
 
         desc = valuedict["desc"]
         report_file = valuedict["report"]

@@ -10,7 +10,7 @@ from .dictlistfile import DictListFile
 from .direction import get_axcodes_set, canonicalize_pedir_str
 from .indexedfile import init_indexed_js_object_file, init_indexed_js_list_file, IndexedFile
 from .repetition_time import get_repetition_time
-from .resulthooks import PreprocessedImgCopyOutResultHook, get_resulthooks
+from .resulthooks import PreprocessedImgCopyOutResultHook, ReportValsResultHook, get_resulthooks
 from .signals import img_to_signals
 from .spreadsheet import load_spreadsheet
 
@@ -25,6 +25,7 @@ __all__ = [
     IndexedFile,
     get_repetition_time,
     PreprocessedImgCopyOutResultHook,
+    ReportValsResultHook,
     get_resulthooks,
     img_to_signals,
     load_spreadsheet,

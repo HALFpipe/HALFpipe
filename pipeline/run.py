@@ -6,6 +6,7 @@ import os
 from os import path as op
 import sys
 import pkg_resources
+import logging
 
 os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"
@@ -37,14 +38,12 @@ def _main():
     basegroup = ap.add_argument_group("base", "")
 
     basegroup.add_argument(
-        "-w",
-        "--workdir",
-        type=str,
-        help="directory where output and intermediate files are stored",
+        "--workdir", type=str, help="directory where output and intermediate files are stored",
     )
     basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
     basegroup.add_argument("--debug", action="store_true", default=False)
     basegroup.add_argument("--verbose", action="store_true", default=False)
+    basegroup.add_argument("--watchdog", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
     steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
@@ -153,12 +152,17 @@ def _main():
     import logging
     from .logger import Logger
 
-    if not Logger.is_setup:
-        Logger.setup(workdir, debug=debug, verbose=verbose)
+    # if not Logger.is_setup:
+    Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("pipeline")
 
     logger.info(f"Version: {__version__}")
     logger.info(f"Debug: {debug}")
+
+    if args.watchdog is True:
+        from .watchdog import start_watchdog_daemon
+
+        start_watchdog_daemon()
 
     if not should_run["spec-ui"]:
         logger.info(f"Did not run step: spec")
@@ -229,6 +233,7 @@ def _main():
             "workdir": workdir,
             "debug": debug,
             "verbose": verbose,
+            "watchdog": args.watchdog,
             "stop_on_first_crash": debug,
             "raise_insufficient": False,
             "keep": args.keep,
@@ -290,8 +295,6 @@ def main():
     try:
         _main()
     except Exception as e:
-        import logging
-
         logger = logging.getLogger("pipeline")
         logger.exception("Exception: %s", e)
 

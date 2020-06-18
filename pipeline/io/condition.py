@@ -104,10 +104,13 @@ def parse_condition_file(in_any=None):
     conditions = []
     onsets = []
     durations = []
-    if isinstance(in_any, (list, dict, tuple)):
-        if all(fileobj.tags.extension == "txt" for fileobj in in_any):
+    if isinstance(in_any, (list, tuple)):
+        if all(isinstance(fileobj, File) and fileobj.tags.extension == "txt" for fileobj in in_any):
             condition_file_tpls = [(fileobj.path, fileobj.tags.condition) for fileobj in in_any]
             filepaths, conditions = zip(*condition_file_tpls)
+            return parse_txt_condition_files(filepaths, conditions)
+        elif all(len(fileobj) == 2 for fileobj in in_any):
+            filepaths, conditions = zip(*in_any)
             return parse_txt_condition_files(filepaths, conditions)
         elif len(in_any) == 1:
             return parse_condition_file(first(in_any))

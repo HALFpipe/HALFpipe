@@ -10,7 +10,7 @@ import numpy as np
 from .report import report_metadata_fields
 from ..spec import bold_entities
 from ..utils import ravel
-from ..io import load_spreadsheet, get_resulthooks
+from ..io import load_spreadsheet, get_resulthooks, ReportValsResultHook
 from ..database import init_qualitycheck_exclude_database_cached
 
 from nipype.interfaces.base import (
@@ -95,6 +95,13 @@ class MakeResultdicts(IOBase):
         return outputs
 
 
+def _aggregate_if_possible(inval):
+    if isinstance(inval, (list, tuple)):
+        if all(isinstance(val, float) for val in inval):
+            return np.asarray(inval).mean()
+    return inval
+
+
 class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     across = traits.Str(desc="across which entity to aggregate")
     filter = traits.Dict(
@@ -152,7 +159,10 @@ class AggregateResultdicts(IOBase):
                 if isinstance(key, list):
                     key = tuple(key)  # need to be able to use this as key
                 if (
-                    key in filefields or key == across or isinstance(value, (list, tuple))
+                    key in filefields
+                    or key in ReportValsResultHook.keys
+                    or key == across
+                    or isinstance(value, (list, tuple))
                 ):  # the inverse of above
                     if key not in aggdict[tagtupl]:
                         aggdict[tagtupl][key] = []
@@ -162,6 +172,8 @@ class AggregateResultdicts(IOBase):
         for tagtupl, listdict in aggdict.items():
             resultdict = dict(tagtupl)
             resultdict.update(listdict)
+            for key in resultdict.keys():
+                resultdict[key] = _aggregate_if_possible(resultdict[key])
             resultdicts.append(resultdict)
 
         outputs["resultdicts"] = resultdicts

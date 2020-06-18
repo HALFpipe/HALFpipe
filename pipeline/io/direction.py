@@ -8,7 +8,7 @@
 
 import nibabel as nib
 
-from calamities import tag_glob
+from calamities.pattern import tag_glob
 
 
 def get_axcodes_set(pat):

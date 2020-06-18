@@ -15,6 +15,8 @@ from .interface import LoadResult
 from .utils import cacheobj, uncacheobj, first, hexdigest
 from .io import init_indexed_js_object_file, IndexedFile
 
+max_chunk_size = 50  # subjects
+
 
 class DontRunRunner:
     plugin_args = dict()
@@ -47,14 +49,22 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
             reportjsfilename, "report", allnodenames, 10
         )  # TODO don't overwrite current values
 
-    if subject_chunks or (n_chunks is not None and n_chunks > 1):
-        subjectworkflows = dict()
-        for node in execgraph.nodes():
-            if node._hierarchy.startswith("nipype.subjectlevel"):
-                subjectworkflowname = node._hierarchy.split(".")[2]
-                if subjectworkflowname not in subjectworkflows:
-                    subjectworkflows[subjectworkflowname] = set()
-                subjectworkflows[subjectworkflowname].add(node)
+    subjectworkflows = dict()
+    for node in execgraph.nodes():
+        if node._hierarchy.startswith("nipype.subjectlevel"):
+            subjectworkflowname = node._hierarchy.split(".")[2]
+            if subjectworkflowname not in subjectworkflows:
+                subjectworkflows[subjectworkflowname] = set()
+            subjectworkflows[subjectworkflowname].add(node)
+
+    if (
+        subject_chunks
+        or (n_chunks is not None and n_chunks > 1)
+        or len(subjectworkflows) > max_chunk_size
+    ):
+        if n_chunks is None:
+            n_chunks = -(-len(subjectworkflows) // max_chunk_size)
+            logger.info(f"Will create chunks due to max_chunk_size")
 
         if subject_chunks:
             n_chunks = len(subjectworkflows)

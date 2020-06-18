@@ -26,27 +26,19 @@ from sdcflows.interfaces.fmap import get_ees
 
 
 def _make_regex_dict(layout, entity_names):
-    regex_dict = {
-        entity_name: layout.entities[entity_name].regex for entity_name in entity_names
-    }
+    regex_dict = {entity_name: layout.entities[entity_name].regex for entity_name in entity_names}
     return regex_dict
 
 
 def _get_metadata_tuple(fname, metadata_entities, layout):
     metadata = layout.get_metadata(fname)
-    if (
-        "EffectiveEchoSpacing" in metadata_entities
-        and "EffectiveEchoSpacing" not in metadata
-    ):
+    if "EffectiveEchoSpacing" in metadata_entities and "EffectiveEchoSpacing" not in metadata:
         try:
             # get effective echo spacing even if not explicitly specified
             metadata["EffectiveEchoSpacing"] = get_ees(metadata, in_file=fname)
         except Exception:
             pass
-    if (
-        "EchoTimeDifference" in metadata_entities
-        and "EchoTimeDifference" not in metadata
-    ):
+    if "EchoTimeDifference" in metadata_entities and "EchoTimeDifference" not in metadata:
         if "EchoTime1" in metadata and "EchoTime2" in metadata:
             metadata["EchoTimeDifference"] = abs(
                 float(metadata["EchoTime1"]) - float(metadata["EchoTime2"])
@@ -90,9 +82,7 @@ def _get_tags_tuple(file_path, regex_dict):
     return tuple(other_tags)
 
 
-def _get_pattern_set(
-    layout, filepaths, generic_entities, other_entities, metadata_entities
-):
+def _get_pattern_set(layout, filepaths, generic_entities, other_entities, metadata_entities):
     generic_regex_dict = _make_regex_dict(layout, generic_entities)
     other_regex_dict = _make_regex_dict(layout, other_entities)
     pattern_set = set()
@@ -104,9 +94,7 @@ def _get_pattern_set(
     return pattern_set
 
 
-def _get_fmap_pattern_set(
-    layout, funcfiles, generic_entities, other_entities, metadata_entities
-):
+def _get_fmap_pattern_set(layout, funcfiles, generic_entities, other_entities, metadata_entities):
     generic_regex_dict = _make_regex_dict(layout, generic_entities)
     other_regex_dict = _make_regex_dict(layout, other_entities)
 
@@ -152,8 +140,7 @@ def _get_fmap_pattern_set(
             for entity, v in generic_regex_dict.items()
             if entity in entityvals  # is constant across associated bold files
             and entity in fmapfile_entitydict  # defined for fmap file
-            and fmapfile_entitydict[entity]
-            == entityvals[entity]  # the same for fmap file
+            and fmapfile_entitydict[entity] == entityvals[entity]  # the same for fmap file
         }
         generic_path, entities_in_path = _make_generic_path(fmapfile, regex_dict)
         # other tags
@@ -192,9 +179,7 @@ def _load_bids(ctx, bids_dir):
     # load
 
     anatfiles = layout.get(return_type="filename", datatype="anat", suffix="T1w")
-    anat_pattern_set = _get_pattern_set(
-        layout, anatfiles, ["subject"], other_entities, [],
-    )
+    anat_pattern_set = _get_pattern_set(layout, anatfiles, ["subject"], other_entities, [],)
     _load_part(ctx, BIDSAnatTagsSchema(), anat_pattern_set)
 
     funcfiles = layout.get(return_type="filename", datatype="func", suffix="bold")
@@ -241,8 +226,10 @@ def _load_bids(ctx, bids_dir):
                 if not op.isfile(fmapfile):
                     continue
                 bidsfmapset.add(fmapfile)
-        specfmapset = set(ctx.database.get_associations(funcfile, datatype="fmap"))
-        assert bidsfmapset == specfmapset, "Inconsistent FieldMap specification"
+        fmapfiles = ctx.database.get_associations(funcfile, datatype="fmap")
+        if fmapfiles is not None:
+            specfmapset = set(fmapfiles)
+            assert bidsfmapset == specfmapset, "Inconsistent FieldMap specification"
 
 
 class GetBIDSDirStep(Step):

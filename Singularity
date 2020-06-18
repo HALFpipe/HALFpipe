@@ -13,7 +13,7 @@ From: poldracklab/fmriprep:20.1.0rc2
   . /pipeline
 
 %post
-  BUILD=6
+  BUILD=10
 
   chmod -R a+rwx /pipeline /usr/local/miniconda
   

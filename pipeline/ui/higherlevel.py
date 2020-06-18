@@ -257,11 +257,9 @@ class HaveContrastsStep(YesNoStep):
 
     def setup(self, ctx):
         self._append_view(
-            TextView(
-                "Contrasts for the mean across all subjects, and for all variables "
-                "will be generated automatically"
-            )
+            TextView("Contrasts for the mean across all subjects, and for all variables ")
         )
+        self._append_view(TextView("will be generated automatically"))
         self._append_view(SpacerView(1))
         # generate contrasts automatically
         if ctx.spec.analyses[-1].contrasts is None:
@@ -385,11 +383,9 @@ class SubjectGroupFilterStep(Step):
                 )
             )
             self._append_view(
-                TextView(
-                    "If you specify selections across different categorical variables, "
-                    "the intersection of the groups will be used"
-                )
+                TextView("If you specify selections across different categorical variables, ")
             )
+            self._append_view(TextView("the intersection of the groups will be used"))
             options = [_format_column(variable.name) for variable in self.variables]
             values = [variable.levels for variable in self.variables]
             self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)

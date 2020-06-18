@@ -78,6 +78,7 @@ class InputSelectStep(Step):
                 )
             elif self.choice == self.all_str:
                 setattr(ctx.spec.analyses[-1].tags, self.entity, None)
+            return True
         return self.is_first_run
 
     def next(self, ctx):

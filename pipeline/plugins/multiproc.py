@@ -15,12 +15,15 @@ from nipype.utils.profiler import get_system_total_memory_gb
 
 from .refcount import ReferenceCounter
 from ..logger import Logger
+from ..watchdog import start_watchdog_daemon
 
 logger = logging.getLogger("nipype.workflow")
 
 
-def initializer(workdir, debug, verbose):
+def initializer(workdir, debug, verbose, watchdog):
     Logger.setup(workdir, debug=debug, verbose=verbose)
+    if watchdog is True:
+        start_watchdog_daemon()
 
     os.chdir(workdir)
 
@@ -55,12 +58,13 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         debug = plugin_args.get("debug", False)
         verbose = plugin_args.get("verbose", False)
+        watchdog = plugin_args.get("watchdog", False)
 
         mp_context = mp.get_context("forkserver")  # force forkserver
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
             initializer=initializer,
-            initargs=(self._cwd, debug, verbose),
+            initargs=(self._cwd, debug, verbose, watchdog),
             mp_context=mp_context,
         )
 

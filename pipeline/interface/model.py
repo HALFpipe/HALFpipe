@@ -171,16 +171,15 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
     for contrastName, contrastMat in contrastMats:
         if contrastMat.shape[0] == 1:
             contrastVec = contrastMat.squeeze()
-            contrasts.append([contrastName, "T", list(contrastVec.keys()), list(contrastVec)])
+            contrasts.append((contrastName, "T", list(contrastVec.keys()), list(contrastVec)))
             contrast_names.append(contrastName)
     for contrastName, contrastMat in contrastMats:
         if contrastMat.shape[0] > 1:
-            tnames = []
+            tcontrasts = []
             for i, contrastVec in contrastMat.iterrows():
-                tname = f"_{contrastName}_{i:d}"
-                tnames.append(tname)
-                contrasts.append([contrastName, "T", list(contrastVec.keys()), list(contrastVec)])
-            contrasts.append([contrastName, "F", tnames])
+                tname = f"{contrastName}_{i:d}"
+                tcontrasts.append((tname, "T", list(contrastVec.keys()), list(contrastVec)))
+            contrasts.append((contrastName, "F", tcontrasts))
             contrast_names.append(contrastName)
 
     return regressors, contrasts, contrast_names

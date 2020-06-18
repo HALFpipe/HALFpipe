@@ -9,7 +9,11 @@ from ..io import parse_condition_file
 
 
 class ParseConditionFileInputSpec(TraitedSpec):
-    in_any = traits.Either(traits.File(), traits.List(traits.File()), traits.Tuple(traits.File()))
+    in_any = traits.Either(
+        traits.File(),
+        traits.List(traits.File()),
+        traits.List(traits.Tuple(traits.Str(), traits.File())),
+    )
 
 
 class ParseConditionFileOutputSpec(TraitedSpec):

@@ -40,10 +40,10 @@ def connect_firstlevel_analysis_extra_args(analysisworkflow, analysis, database,
     if analysis.type == "task_based":
         condition_files = database.get_associations(boldfile, datatype="func", suffix="events")
         if "txt" in database.get_tagval_set("extension", filepaths=condition_files):
-            condition_files = {
-                database.get_tagval(condition_file, "condition"): condition_file
+            condition_files = [
+                (condition_file, database.get_tagval(condition_file, "condition"))
                 for condition_file in condition_files
-            }
+            ]
         inputnode.inputs.condition_files = condition_files
     elif analysis.type == "seed_based_connectivity":
         if analysis.tags.seed is None:
