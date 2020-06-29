@@ -48,10 +48,13 @@ def add_templates_by_composing_transforms(workflow, templates=["MNI152NLin6Asym"
         ),
         name="movingsrc",
     )
+    brain_extraction_wf = workflow.get_node("brain_extraction_wf")
+    if brain_extraction_wf is None:
+        brain_extraction_wf = workflow.get_node("n4_only_wf")
     workflow.connect(
         [
             (
-                workflow.get_node("brain_extraction_wf"),
+                brain_extraction_wf,
                 movingsrc,
                 [(("outputnode.bias_corrected", first), "moving_image")],
             ),

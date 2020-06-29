@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: poldracklab/fmriprep:20.1.0rc2
+From: poldracklab/fmriprep:20.1.1
 
 %environment
   export PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline"

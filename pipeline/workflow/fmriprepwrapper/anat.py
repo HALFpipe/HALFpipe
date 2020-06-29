@@ -11,7 +11,7 @@ from nipype.interfaces import fsl
 from smriprep.workflows.norm import init_anat_norm_wf
 from smriprep.workflows.outputs import init_anat_reports_wf
 from smriprep.workflows.surfaces import init_surface_recon_wf
-from niworkflows.anat.ants import init_brain_extraction_wf
+from niworkflows.anat.ants import init_brain_extraction_wf, init_n4_only_wf
 from niworkflows.interfaces.images import ValidateImage
 from niworkflows.utils.spaces import Reference
 from fmriprep import config
@@ -41,7 +41,11 @@ anat_preproc_wf_output_attrs = [
 
 
 def init_anat_preproc_wf(
-    workdir=None, freesurfer=False, no_compose_transforms=False, name="anat_preproc_wf"
+    workdir=None,
+    freesurfer=False,
+    no_compose_transforms=False,
+    skull_strip_algorithm="ants",
+    name="anat_preproc_wf",
 ):
     """
     modified from smriprep/workflows/anatomical.py
@@ -61,13 +65,21 @@ def init_anat_preproc_wf(
 
     # Step 1
     anat_validate = pe.Node(ValidateImage(), name="anat_validate", run_without_submitting=True)
-    brain_extraction_wf = init_brain_extraction_wf(
-        in_template=skull_strip_template.space,
-        template_spec=skull_strip_template.spec,
-        atropos_use_random_seed=not config.workflow.skull_strip_fixed_seed,
-        omp_nthreads=config.nipype.omp_nthreads,
-        normalization_quality="precise",
-    )
+    if skull_strip_algorithm == "none":
+        brain_extraction_wf = init_n4_only_wf(
+            omp_nthreads=config.nipype.omp_nthreads,
+            atropos_use_random_seed=not config.workflow.skull_strip_fixed_seed,
+        )
+    elif skull_strip_algorithm == "ants":
+        brain_extraction_wf = init_brain_extraction_wf(
+            in_template=skull_strip_template.space,
+            template_spec=skull_strip_template.spec,
+            atropos_use_random_seed=not config.workflow.skull_strip_fixed_seed,
+            omp_nthreads=config.nipype.omp_nthreads,
+            normalization_quality="precise",
+        )
+    else:
+        raise ValueError(f'Unknown skull_strip_algorithm "{skull_strip_algorithm}"')
     workflow.connect(
         [
             (inputnode, anat_validate, [("t1w", "in_file")]),

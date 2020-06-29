@@ -56,9 +56,12 @@ def _main():
 
     workflowgroup = ap.add_argument_group("workflow", "")
 
-    ncpus = cpu_count()
+    workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument(
-        "--nipype-omp-nthreads", type=int, default=8 if ncpus > 16 else (4 if ncpus > 8 else 1)
+        "--skull-strip-algorithm",
+        choices=["none", "ants"],
+        default="ants",
+        help="specify how to perform skull stripping",
     )
     workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
     workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
@@ -80,7 +83,7 @@ def _main():
     rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
     rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
     rungroup.add_argument("--nipype-memory-gb", type=float)
-    rungroup.add_argument("--nipype-n-procs", type=int)
+    rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
     rungroup.add_argument(
         "--keep",
@@ -175,11 +178,20 @@ def _main():
         logger.info(f"Running step: workflow")
         from .workflow import init_workflow
 
-        if args.nipype_omp_nthreads is not None:
+        if args.nipype_omp_nthreads is not None and args.nipype_omp_nthreads > 0:
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
+            logger.info(f"Using config.nipype.omp_nthreads={config.nipype.omp_nthreads} from args")
+        else:
+            config.nipype.omp_nthreads = (
+                8 if args.nipype_n_procs > 16 else (4 if args.nipype_n_procs > 8 else 1)
+            )
+            logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
 
         workflow = init_workflow(
-            workdir, no_compose_transforms=args.no_compose_transforms, freesurfer=args.freesurfer
+            workdir,
+            no_compose_transforms=args.no_compose_transforms,
+            freesurfer=args.freesurfer,
+            skull_strip_algorithm=args.skull_strip_algorithm,
         )
 
     execgraphs = None

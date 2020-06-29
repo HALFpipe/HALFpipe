@@ -61,7 +61,9 @@ class Cache:
         return pickle.loads(self._cache[key])
 
 
-def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
+def init_workflow(
+    workdir, freesurfer=False, no_compose_transforms=False, skull_strip_algorithm="ants"
+):
     """
     initialize nipype workflow
 
@@ -123,6 +125,12 @@ def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
         subjectmetadata = {"subject": subject}
 
         subjectfiles = database.get(subject=subject)
+        boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
+
+        nboldfiles = len(boldfiles)
+        if nboldfiles == 0:
+            logger.warn(f'Found {nboldfiles} BOLD files for subject "{subject}", skipping')
+            continue
 
         subjectworkflow = pe.Workflow(name=f"subject_{subject}")
         subjectlevelworkflow.add_nodes([subjectworkflow])
@@ -132,6 +140,7 @@ def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
         if nt1wfiles == 0:
             logger.warn(f'Found {nt1wfiles} T1w files for subject "{subject}", skipping')
             continue
+
         t1wfile = t1wfiles.pop()
         if nt1wfiles > 1:
             logger.warn(f'Found {nt1wfiles} T1w files for subject "{subject}", using "{t1wfile}"')
@@ -141,6 +150,7 @@ def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
                 ("workdir", workdir),
                 ("no_compose_transforms", no_compose_transforms),
                 ("freesurfer", freesurfer),
+                ("skull_strip_algorithm", skull_strip_algorithm),
             ],
         )
         anat_preproc_wf.get_node("inputnode").inputs.t1w = t1wfile
@@ -158,7 +168,6 @@ def init_workflow(workdir, freesurfer=False, no_compose_transforms=False):
         if len(firstlevel_analyses) == 0:
             continue
 
-        boldfiles = database.filter(subjectfiles, datatype="func", suffix="bold")
         subjectanalysisendpoints = {analysis.name: [] for analysis in spec.analyses}
         for boldfile in boldfiles:
             # make name
