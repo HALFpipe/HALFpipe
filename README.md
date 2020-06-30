@@ -1,6 +1,6 @@
-# Welcome to the mindandbrain/pipeline!
+# Welcome to ENIGMA Halfpipe!
 
-`mindandbrain/pipeline` is a user-friendly software that facilitates reproducible
+`ENIGMA Halfpipe` is a user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
 group analysis. 
 It provides state-of-the-art preprocessing using
@@ -11,7 +11,7 @@ Common resting-state and task-based fMRI features can the be calculated
 on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) with
 [`nipype`](https://nipype.readthedocs.io/) for statistics.
 
-> **NOTE:** The `mindandbrain/pipeline` is pre-release software and not yet
+> **NOTE:** ENIGMA Halfpipe is pre-release software and not yet
 > considered production-ready.
 
 <div class="table-of-contents-pre-header"></div>
@@ -35,7 +35,7 @@ on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) with
 
 ## 1. Getting started
 
-The pipeline is distributed as a container, meaning that all software needed for
+Halfpipe is distributed as a container, meaning that all software needed for
 analysis comes bundled in it. This allows for easier installation on new
 systems, and makes data analysis more reproducible, because software versions
 are guaranteed to be the same for all users. 
@@ -69,18 +69,19 @@ Docker              |           | See <https://docs.docker.com/engine/install/>
 
 ### 1.2. Download
 
-The second step is to download the `mindandbrain/pipeline` to your computer. 
+The second step is to download the Halfpipe to your computer. 
 This requires approximately 5 gigabytes of storage.
 
-Container platform  | Command
---------------------|-------------------------------------------------
-Singularity         | `singularity pull shub://mindandbrain/pipeline`
-Docker              | `docker pull mindandbrain/pipeline`
+Container platform  | Version   | Installation
+--------------------|-----------|--------------------------------------------------------------------
+Singularity         | 3.x       | `singularity pull shub://mindandbrain/halfpipe`
+Singularity         | 2.x       | `singularity pull docker://mindandbrain/halfpipe`
+Docker              |           | `docker pull mindandbrain/halfpipe`
 
 `Singularity` version `3.x` creates a container image file called 
-`pipeline_latest.sif` in the directory where you run the `pull` command.
+`halfpipe_latest.sif` in the directory where you run the `pull` command.
 For `Singularity` version `2.x` the file is named 
-`mindandbrain-pipeline-master-latest.simg`.
+`mindandbrain-halfpipe-master-latest.simg`.
 Whenever you want to use the container, you need pass `Singularity` the path to
 this file.
 `Docker` will store the container in its storage base directory, so  it does
@@ -92,18 +93,18 @@ The third step is to run the downloaded container.
 
 Container platform  | Command
 --------------------|--------------------------------------------------------------------------
-Singularity         | `singularity run --no-home --cleanenv --bind /:/ext pipeline_latest.sif`
-Docker              | `docker run --interactive --tty --volume /:/ext mindandbrain/pipeline`
+Singularity         | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif`
+Docker              | `docker run --interactive --tty --volume /:/ext mindandbrain/halfpipe`
 
 You should now see the user interface.
 
-![User interface screenshot](./pipeline/data/img0.svg)
+<!-- ![User interface screenshot](./pipeline/data/img0.svg) -->
 
 #### Background
 
 Containers are by default isolated from the host computer. This adds security,
 but also means that the container cannot access the data it needs for analysis.
-The `mindandbrain/pipeline` expects all inputs (e.g., image files and
+Halfpipe expects all inputs (e.g., image files and
 spreadsheets) and outputs (the working directory) to be places in the path 
 `/ext` (see also [--fs-root](#--fs-root)). Using the option `--bind /:/ext`, we
 instruct `Singularity` to map all of the host file system (`/`) to that path
@@ -113,7 +114,7 @@ keep in mind that any directories that are not mapped will not be visible later.
 
 `Singularity` passes the host shell environment to the container by default.
 This means that in some cases, the host computer's configuration can interfere
-with the pipeline. To avoid this, we need to pass the option `--cleanenv`.
+with the software. To avoid this, we need to pass the option `--cleanenv`.
 `Docker` does not pass the host shell environment by default, so we don't need
 to pass an option.
 
@@ -144,7 +145,7 @@ to pass an option.
 ## 6. Contact
 
 For questions or support, please submit an
-[issue](https://github.com/mindandbrain/pipeline/issues/new/choose) or contact
+[issue](https://github.com/mindandbrain/halfpipe/issues/new/choose) or contact
 us via e-mail.
 
  Name        | Role            | E-mail address

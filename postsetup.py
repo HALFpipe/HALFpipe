@@ -4,7 +4,7 @@
 
 from templateflow import api
 
-from pipeline.resources import ONLINE_RESOURCES, get
+from halfpipe.resources import ONLINE_RESOURCES, get
 
 spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
 assert all(len(api.get(space, atlas=None)) > 0 for space in spaces)

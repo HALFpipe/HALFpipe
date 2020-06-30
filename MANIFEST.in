@@ -1,2 +1,2 @@
 include versioneer.py
-include pipeline/_version.py
+include halfpipe/_version.py

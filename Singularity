@@ -2,23 +2,23 @@ Bootstrap: docker
 From: poldracklab/fmriprep:20.1.1
 
 %environment
-  export PIPELINE_RESOURCE_DIR="/home/fmriprep/.cache/pipeline"
+  export HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe"
   export TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
 
 %setup
-  mkdir -p ${SINGULARITY_ROOTFS}/pipeline
+  mkdir -p ${SINGULARITY_ROOTFS}/halfpipe
   mkdir -p ${SINGULARITY_ROOTFS}/ext
 
 %files
-  . /pipeline
+  . /halfpipe
 
 %post
   BUILD=12
 
-  chmod -R a+rwx /pipeline /usr/local/miniconda
+  chmod -R a+rwx /halfpipe /usr/local/miniconda
   
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \
-    cd /pipeline && \
+    cd /halfpipe && \
     pip install --upgrade pip && \
     pip install . && \
     python postsetup.py' fmriprep
@@ -26,7 +26,7 @@ From: poldracklab/fmriprep:20.1.1
   rm -rf ~/.cache/pip
 
 %runscript
-  exec /usr/local/miniconda/bin/pipeline "$@"
+  exec /usr/local/miniconda/bin/halfpipe "$@"
   
 %startscript
-  exec /usr/local/miniconda/bin/pipeline "$@"
+  exec /usr/local/miniconda/bin/halfpipe "$@"
