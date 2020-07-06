@@ -158,7 +158,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
     npts, nevs = dmat.shape
 
     if nevs >= npts:
-        sys.stdout.write("No design generated. nevs >= npts\n")
+        sys.stdout.write("Reverting to simple intercept only design. nevs >= npts\n")
         return (
             {"intercept": [1.0] * len(subjects)},
             [["mean", "T", ["intercept"], [1]]],
