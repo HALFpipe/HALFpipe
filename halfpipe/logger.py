@@ -12,7 +12,7 @@ import fasteners
 from .io import IndexedFile
 
 
-fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:7}] {message}"
+fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:9}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
 
 black, red, green, yellow, blue, magenta, cyan, white = range(8)
@@ -25,6 +25,7 @@ blueseq = colorseq.format(30 + white, 40 + blue)
 colors = {
     "DEBUG": blueseq,
     "INFO": blueseq,
+    "IMPORTANT": yellowseq,
     "WARNING": yellowseq,
     "CRITICAL": redseq,
     "ERROR": redseq,
@@ -162,6 +163,8 @@ class Logger:
 
         import nipype  # noqa
 
+        logging.captureWarnings(True)
+
         loggernames = [
             "halfpipe",
             "halfpipe.ui",
@@ -170,6 +173,7 @@ class Logger:
             "nipype.utils",
             "nipype.filemanip",
             "nipype.interface",
+            "py.warnings"
         ]
 
         for loggername in loggernames:

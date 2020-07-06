@@ -8,12 +8,7 @@ import sys
 import pkg_resources
 import logging
 
-os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
-os.environ["NIPYPE_NO_MATLAB"] = "1"
-
-if op.isdir("/home/fmriprep/.cache/halfpipe"):
-    os.environ["HALFPIPE_RESOURCE_DIR"] = "/home/fmriprep/.cache/halfpipe"
-    os.environ["TEMPLATEFLOW_HOME"] = "/home/fmriprep/.cache/templateflow"
+from . import __version__
 
 from fmriprep import config  # noqa
 
@@ -25,7 +20,6 @@ debug = False
 
 
 def _main():
-    from . import __version__
     from argparse import ArgumentParser
     from multiprocessing import cpu_count
 
@@ -159,6 +153,12 @@ def _main():
     Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("halfpipe")
 
+    if not verbose:
+        logger.warning(
+            f'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
+            'Detailed logs information will only be available in the "log.txt" file in the working directory. '
+        )
+
     logger.info(f"Version: {__version__}")
     logger.info(f"Debug: {debug}")
 
@@ -254,6 +254,11 @@ def _main():
             plugin_args["n_procs"] = args.nipype_n_procs
         if args.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = args.nipype_memory_gb
+        elif "SLURM_MEM_PER_CPU" in os.environ and "SLURM_CPUS_PER_TASK" in os.environ:
+            memory_mb = float(os.environ["SLURM_MEM_PER_CPU"]) * float(
+                os.environ["SLURM_CPUS_PER_TASK"]
+            )
+            plugin_args["memory_gb"] = memory_mb / 1024.0
 
         runnername = f"{args.nipype_run_plugin}Plugin"
         if hasattr(ppp, runnername):
