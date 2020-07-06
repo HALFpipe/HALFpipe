@@ -6,12 +6,9 @@ Nipype interfaces to calculate connectivity measures using nilearn.
 Adapted from https://github.com/Neurita/pypes
 """
 from os import path as op
-import logging
 
 import numpy as np
 import pandas as pd
-
-from nilearn.connectome.connectivity_matrices import prec_to_partial
 
 from nipype.interfaces.base import (
     BaseInterface,
@@ -60,11 +57,6 @@ class ConnectivityMeasure(BaseInterface):
 
         self._cov_mat = np.asarray(df.cov())
         self._corr_mat = np.asarray(df.corr())
-        try:
-            self._pcorr_mat = prec_to_partial(np.linalg.inv(self._cov_mat))
-        except np.linalg.LinAlgError as e:
-            logging.getLogger("halfpipe").warning("LinAlgError %s", e)
-            self._pcorr_mat = np.full_like(self._cov_mat, np.nan)
 
         return runtime
 
@@ -74,17 +66,13 @@ class ConnectivityMeasure(BaseInterface):
         time_series_file = op.abspath("timeseries.txt")
         np.savetxt(time_series_file, self._time_series, fmt="%.10f")
 
-        covariance_file = op.abspath("timeseries.txt")
+        covariance_file = op.abspath("covariance.txt")
         np.savetxt(covariance_file, self._cov_mat, fmt="%.10f")
 
-        correlation_file = op.abspath("timeseries.txt")
+        correlation_file = op.abspath("correlation.txt")
         np.savetxt(correlation_file, self._corr_mat, fmt="%.10f")
-
-        partial_correlation_file = op.abspath("partial_correlation.txt")
-        np.savetxt(partial_correlation_file, self._pcorr_mat, fmt="%.10f")
 
         outputs["time_series"] = time_series_file
         outputs["covariance"] = covariance_file
         outputs["correlation"] = correlation_file
-        outputs["partial_correlation"] = partial_correlation_file
         return outputs
