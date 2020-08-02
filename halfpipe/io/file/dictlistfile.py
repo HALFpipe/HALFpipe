@@ -5,6 +5,7 @@
 from pathlib import Path
 import logging
 import json
+from functools import lru_cache
 
 import pandas as pd
 import numpy as np
@@ -12,13 +13,13 @@ import numpy as np
 import fasteners
 from tabulate import tabulate
 
-from ..spec import bold_entities
+from ..model import entities
 
 logger = logging.getLogger("halfpipe")
 
 
 class DictListFile:
-    def __init__(self, filename, header=None, footer=None):
+    def __init__(self, filename, header="report('", footer="');"):
         self.filename = Path(filename)
         self.filename.parent.mkdir(parents=True, exist_ok=True)
 
@@ -35,6 +36,11 @@ class DictListFile:
 
         self.dictlist = None
         self.is_dirty = None
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def cached(cls, filename, header=None, footer=None):
+        return cls(filename, header=header, footer=footer)
 
     def __enter__(self):
         self.lock.acquire()
@@ -75,10 +81,8 @@ class DictListFile:
         dataframe = pd.DataFrame.from_records(dictlist)
         dataframe = dataframe.replace({np.nan: ""})
 
-        columnsinorder = [entity for entity in reversed(bold_entities) if entity in dataframe]
-        columnsinorder.extend(
-            sorted([column for column in dataframe if column not in bold_entities])
-        )
+        columnsinorder = [entity for entity in reversed(entities) if entity in dataframe]
+        columnsinorder.extend(sorted([column for column in dataframe if column not in entities]))
 
         dataframe = dataframe[columnsinorder]
 
@@ -92,7 +96,6 @@ class DictListFile:
     def put(self, indict):
         assert self.dictlist is not None
 
-        keykeys = set((*bold_entities, "desc"))
         matches = False
 
         for i, curdict in enumerate(self.dictlist):
@@ -100,7 +103,7 @@ class DictListFile:
             equals = True
             for key, value in curdict.items():
                 valmatches = key in indict and indict[key] == curdict[key]
-                if key in keykeys:
+                if key in entities:
                     matches = matches and valmatches
                 equals = equals and valmatches
             if equals:

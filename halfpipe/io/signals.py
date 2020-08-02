@@ -14,7 +14,7 @@ from scipy.ndimage.measurements import mean
 from ..utils import nvol
 
 
-def img_to_signals(in_file, atlas_file, mask_file=None, background_label=0, min_n_voxels=50):
+def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_n_voxels=50):
     in_img = nib.load(in_file)
 
     atlas_img = nib.load(atlas_file)

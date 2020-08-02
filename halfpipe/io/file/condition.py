@@ -6,32 +6,42 @@ import numpy as np
 from scipy.io import loadmat
 import pandas as pd
 
-# import h5py
-
-from ..spec import BoldTagsSchema, File
+from ..model import File
 from ..utils import first
 
+bold_filedict = {"datatype": "func", "suffix": "bold"}
 
-def analysis_parse_condition_files(analysisobj, database):
+
+def find_and_parse_condition_files(database, filters=None):
     """
     returns generator for tuple event file paths, conditions, onsets, durations
     """
-    tagdict = BoldTagsSchema().dump(analysisobj.tags)
-    bold_filepaths = database.get(**tagdict)
+    bold_filepaths = database.get(**bold_filedict)
     if bold_filepaths is None:
         return
+
+    bold_filepaths = set(bold_filepaths)
+
+    if filters is not None:
+        bold_filepaths = database.applyfilters(bold_filepaths, filters)
+
     eventfile_dict = {
-        filepath: database.get_associations(filepath, datatype="func", suffix="events")
+        filepath: database.associations(filepath, **{"datatype": "func", "suffix": "events"})
         for filepath in bold_filepaths.copy()
     }
+
     eventfile_set = set(eventfile_dict.values())
     if len(eventfile_set) == 0 or None in eventfile_set:
         return
+
     for in_any in eventfile_set:
         if isinstance(in_any, str):
-            fileobj = File(path=in_any, tags=database.get_tags(in_any))
+            fileobj = File(path=database.fileobj(in_any), tags=database.tags(in_any))
+        elif isinstance(in_any, (tuple, list, set)):
+            fileobj = [database.fileobj(filepath) for filepath in in_any]
+            assert all(f is not None for f in fileobj)
         else:
-            fileobj = [File(path=filepath, tags=database.get_tags(filepath)) for filepath in in_any]
+            raise ValueError(f'Unknown event file "{in_any}"')
         yield (in_any, *parse_condition_file(in_any=fileobj))
 
 
@@ -105,11 +115,13 @@ def parse_condition_file(in_any=None):
     onsets = []
     durations = []
     if isinstance(in_any, (list, tuple)):
-        if all(isinstance(fileobj, File) and fileobj.tags.extension == "txt" for fileobj in in_any):
-            condition_file_tpls = [(fileobj.path, fileobj.tags.condition) for fileobj in in_any]
+        if all(isinstance(fileobj, File) and fileobj.extension == "txt" for fileobj in in_any):
+            condition_file_tpls = [
+                (fileobj.path, fileobj.tags.get("condition")) for fileobj in in_any
+            ]
             filepaths, conditions = zip(*condition_file_tpls)
             return parse_txt_condition_files(filepaths, conditions)
-        elif all(len(fileobj) == 2 for fileobj in in_any):
+        elif all(isinstance(tpl, (list, tuple)) and len(tpl) == 2 for tpl in in_any):
             filepaths, conditions = zip(*in_any)
             return parse_txt_condition_files(filepaths, conditions)
         elif len(in_any) == 1:
@@ -123,7 +135,7 @@ def parse_condition_file(in_any=None):
             return parse_tsv_condition_file(in_any)
     elif isinstance(in_any, File):
         fileobj = in_any
-        extension = fileobj.tags.extension
+        extension = fileobj.extension
         filepath = fileobj.path
         if extension == "tsv":
             return parse_tsv_condition_file(filepath)
