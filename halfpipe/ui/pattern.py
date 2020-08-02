@@ -10,25 +10,33 @@ from calamities import (
     get_entities_in_path,
     TextElement,
 )
+from calamities.pattern import tag_parse
 
-import re
-from os import path as op
 import logging
-from copy import deepcopy
 
 from .step import Step
-from ..spec import File, entity_colors
-from .utils import messagefun, forbidden_chars
-from ..utils import splitext
-
-_check_tagval = re.compile(r"[a-zA-Z0-9_-]+")
+from ..model import FileSchema, entities, entity_longnames as entity_display_aliases
+from .utils import messagefun, forbidden_chars, entity_colors
+from ..utils import splitext, inflect_engine as p
 
 
 class FilePatternSummaryStep(Step):
+    entity_display_aliases = entity_display_aliases
+
+    filetype_str = "file"
+    filedict = {}
+    schema = FileSchema
+
+    next_step_type = None
+
     def setup(self, ctx):
-        filepaths = ctx.database.get(**self.tags_dict)
         self.is_first_run = True
-        message = messagefun(ctx.database, self.filetype_str, filepaths, self.allowed_entities,)
+
+        entities = self.schema().fields["tags"].nested().fields.keys()
+
+        filepaths = ctx.database.get(**self.filedict)
+        message = messagefun(ctx.database, self.filetype_str, filepaths, entities)
+
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
 
@@ -44,135 +52,218 @@ class FilePatternSummaryStep(Step):
 
 
 class FilePatternStep(Step):
-    header_str = None
     suggest_file_stem = False
+    entity_display_aliases = entity_display_aliases
+
+    filetype_str = "file"
+    filedict = {}
+    schema = FileSchema
+
+    ask_if_missing_entities = []
+    required_in_path_entities = []
+
+    next_step_type = None
+
+    def _transform_extension(self, ext):
+        return ext
 
     def setup(self, ctx):
         self.file_obj = None
-        if self.header_str is not None:
+
+        if hasattr(self, "header_str") and self.header_str is not None:
             self._append_view(TextView(self.header_str))
             self._append_view(SpacerView(1))
+
         self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
-        required_entities = self.ask_if_missing_entities + self.required_in_pattern_entities
+
+        schema_entities = self.schema().fields["tags"].nested().fields.keys()
+        schema_entities = [
+            entity for entity in reversed(entities) if entity in schema_entities
+        ]  # keep order
+
+        # need original entities for this
+        entity_colors_list = [entity_colors[entity] for entity in schema_entities]
+
+        # convert to display
+        schema_entities = [
+            self.entity_display_aliases[entity] if entity in self.entity_display_aliases else entity
+            for entity in schema_entities
+        ]
+
+        required_entities = [*self.ask_if_missing_entities, *self.required_in_path_entities]
+
         entity_instruction_strs = []
-        for entity in required_entities:
-            entity_str = entity.replace("_", " ")
-            entity_instruction_strs.append(f"Put {{{entity}}} in place of the {entity_str} names")
-        for entity in self.allowed_entities:
-            if entity not in required_entities:
-                entity_str = entity.replace("_", " ")
-                entity_instruction_strs.append(
-                    f"Put {{{entity}}} in place of the {entity_str} names if applicable"
-                )
+        optional_entity_strs = []
+        for entity in schema_entities:
+            if entity in required_entities:
+                entity_instruction_strs.append(f"Put {{{entity}}} in place of the {entity} names")
+            else:
+                optional_entity_strs.append(f"{{{entity}}}")
+
+        if len(optional_entity_strs) > 0:
+            entity_instruction_strs.append(f"You can also use {p.join(optional_entity_strs)}")
+
         entity_instruction_views = [TextView("") for str in entity_instruction_strs]
         for view in entity_instruction_views:
             self._append_view(view)
-        entity_colors_list = [entity_colors[entity] for entity in self.allowed_entities]
+
         self.file_pattern_input_view = FilePatternInputView(
-            self.allowed_entities,
+            schema_entities,
             entity_colors_list=entity_colors_list,
-            required_entities=self.required_in_pattern_entities,
+            required_entities=self.required_in_path_entities,
         )
         self._append_view(self.file_pattern_input_view)
+
         for str, view in zip(entity_instruction_strs, entity_instruction_views):
             view.text = self.file_pattern_input_view._tokenize(str, addBrackets=False)
+
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
         while True:
-            pattern = self.file_pattern_input_view()
-            if pattern is None:
+            path = self.file_pattern_input_view()
+            if path is None:
                 return False
+
+            # remove display aliases
+
+            inv = {alias: entity for entity, alias in self.entity_display_aliases.items()}
+
+            i = 0
+            _path = ""
+            for match in tag_parse.finditer(path):
+                groupdict = match.groupdict()
+                if groupdict.get("tag_name") in inv:
+                    _path += path[i : match.start("tag_name")]
+                    _path += inv[groupdict.get("tag_name")]
+                    i = match.end("tag_name")
+
+            _path += path[i:]
+            path = _path
+
+            # create file obj
+
             try:
-                _, ext = splitext(pattern)
+                filedict = {**self.filedict, "path": path, "tags": {}}
+
+                _, ext = splitext(path)
                 if ext[0] == ".":  # remove leading dot
                     ext = ext[1:]
-                tags_dict = {"extension": ext}
-                tags_dict.update(self.tags_dict)
-                tags_obj = self.tags_schema.load(tags_dict)
-                self.file_obj = File(path=op.abspath(pattern), tags=tags_obj)
+                filedict["extension"] = self._transform_extension(ext)
+
+                self.fileobj = self.schema().load(filedict)
                 return True
+
             except Exception as e:
+
                 logging.getLogger("halfpipe.ui").exception("Exception: %s", e)
+
                 error_color = self.app.layout.color.red
                 self.file_pattern_input_view.show_message(TextElement(str(e), color=error_color))
+
                 if ctx.debug:
                     raise
 
     def next(self, ctx):
+        ctx.spec.files.append(self.fileobj)
+
         return AskForMissingEntities(
             self.app,
-            self.file_obj,
-            self.ask_if_missing_entities.copy(),
+            {**self.entity_display_aliases},
+            [*self.ask_if_missing_entities],
+            self.suggest_file_stem,
             self.next_step_type,
-            suggest_file_stem=self.suggest_file_stem,
         )(ctx)
 
 
 class AskForMissingEntities(Step):
     def __init__(
-        self, app, file_obj, ask_if_missing_entities, next_step_type, suggest_file_stem=False
+        self,
+        app,
+        entity_display_aliases,
+        ask_if_missing_entities,
+        suggest_file_stem,
+        next_step_type,
     ):
         super(AskForMissingEntities, self).__init__(app)
-        self.file_obj = file_obj
+
+        self.entity_display_aliases = entity_display_aliases
         self.ask_if_missing_entities = ask_if_missing_entities
-        self.next_step_type = next_step_type
-        self.cur_entity = None
         self.suggest_file_stem = suggest_file_stem
+
+        self.entity = None
+        self.entity_str = None
         self.tagval = None
 
-    def _isok(self, text):
-        return _check_tagval.fullmatch(text) is not None
+        self.next_step_type = next_step_type
 
     def setup(self, ctx):
         self.is_first_run = True
-        entites_in_path = get_entities_in_path(self.file_obj.path)
-        self.tags_obj = self.file_obj.tags
+
+        entites_in_path = get_entities_in_path(ctx.spec.files[-1].path)
+
+        tags = ctx.spec.files[-1].tags
         while len(self.ask_if_missing_entities) > 0:
             entity = self.ask_if_missing_entities.pop(0)
-            if (
-                hasattr(self.tags_obj, entity)
-                and getattr(self.tags_obj, entity) is None
-                and entity not in entites_in_path
-            ):
-                self.cur_entity = entity
-                break
-        if self.cur_entity is not None:
-            self._append_view(TextView(f"No {self.cur_entity} name was specified"))
-            self._append_view(TextView(f"Specify the {self.cur_entity} name"))
+
+            if entity in entites_in_path:
+                continue
+
+            if tags.get(entity) is not None:
+                continue
+
+            self.entity = entity
+            break
+
+        if self.entity is not None:
+            self.entity_str = self.entity
+            if self.entity_str in self.entity_display_aliases:
+                self.entity_str = self.entity_display_aliases[self.entity_str]
+
+            self._append_view(TextView(f"No {self.entity_str} name was specified"))
+            self._append_view(TextView(f"Specify the {self.entity_str} name"))
+
             suggestion = ""
             if self.suggest_file_stem:
-                suggestion, _ = splitext(self.file_obj.path)
-            self.tagval_input_view = TextInputView(text=suggestion, isokfun=self._isok)
-            self._append_view(self.tagval_input_view)
+                suggestion, _ = splitext(ctx.spec.files[-1].path)
+
+            self.input_view = TextInputView(
+                text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
+            )
+
+            self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        if self.cur_entity is not None:
-            while True:
-                self.tagval = self.tagval_input_view()
-                if self.tagval is None:
-                    return False
-                if forbidden_chars.search(self.tagval) is None:
-                    break
+        if self.entity is None:
+            return self.is_first_run
+        else:
+            self.tagval = self.input_view()
+            if self.tagval is None:
+                return False
             return True
-        return self.is_first_run
 
     def next(self, ctx):
-        file_obj = deepcopy(self.file_obj)
         if self.tagval is not None:
-            setattr(file_obj.tags, self.cur_entity, self.tagval)
-        if self.cur_entity is not None or self.is_first_run:
+            ctx.spec.files[-1].tags[self.entity] = self.tagval
+
+        if self.entity is not None or self.is_first_run:
             self.is_first_run = False
+
             if len(self.ask_if_missing_entities) > 0:
                 return AskForMissingEntities(
                     self.app,
-                    file_obj,
-                    self.ask_if_missing_entities.copy(),
-                    self.next_step,
-                    suggest_file_stem=self.suggest_file_stem,
+                    {**self.entity_display_aliases},
+                    [*self.ask_if_missing_entities],
+                    self.suggest_file_stem,
+                    self.next_step_type,
                 )(ctx)
+
             else:
-                ctx.add_file_obj(file_obj)
+                ctx.database.put(
+                    ctx.spec.files[-1]
+                )  # we've got all tags, so we can add the fileobj to the index
+
                 return self.next_step_type(self.app)(ctx)
+
         return
