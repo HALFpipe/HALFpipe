@@ -10,38 +10,38 @@ import nibabel as nib
 from nilearn.image import resample_img
 
 from nipype.interfaces.base import (
-    BaseInterface,
+    SimpleInterface,
     TraitedSpec,
-    BaseInterfaceInputSpec,
     traits,
 )
 
 from ..utils import splitext
 
 
-class ResampleIfNeededInputSpec(BaseInterfaceInputSpec):
+class ResampleInputSpec(TraitedSpec):
     in_file = traits.File(desc="Image file(s) to resample", exists=True, mandatory=True)
     ref_file = traits.File(desc="Reference file", exists=True, mandatory=True)
     method = traits.Enum("continuous", "linear", "nearest", default="continuous")
+    lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
 
 
-class ResampleIfNeededOutputSpec(TraitedSpec):
+class ResampleOutputSpec(TraitedSpec):
     out_file = traits.File()
 
 
-class ResampleIfNeeded(BaseInterface):
-    input_spec = ResampleIfNeededInputSpec
-    output_spec = ResampleIfNeededOutputSpec
+class Resample(SimpleInterface):
+    input_spec = ResampleInputSpec
+    output_spec = ResampleOutputSpec
 
     def _run_interface(self, runtime):
-        self._out_file = self.inputs.in_file
+        out_file = self.inputs.in_file
 
         in_img = nib.load(self.inputs.in_file)
         ref_img = nib.load(self.inputs.ref_file)
 
         if not in_img.shape[:3] == ref_img.shape[:3] or not np.allclose(
             in_img.affine, ref_img.affine
-        ):
+        ) or not self.inputs.lazy:
             resampled_img = resample_img(
                 in_img,
                 interpolation=self.inputs.method,
@@ -49,13 +49,11 @@ class ResampleIfNeeded(BaseInterface):
                 target_affine=ref_img.affine,
             )
             basename, _ = splitext(op.basename(self._out_file))
-            self._out_file = op.abspath(f"{basename}_res.nii.gz")
-            nib.save(resampled_img, self._out_file)
+
+            out_file = op.abspath(f"{basename}_res.nii.gz")
+
+            nib.save(resampled_img, out_file)
+
+        self._results["out_file"] = out_file
 
         return runtime
-
-    def _list_outputs(self):
-        outputs = self.output_spec().get()
-
-        outputs["out_file"] = self._out_file
-        return outputs

@@ -17,7 +17,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from ..io import img_to_signals
+from ..io import meansignals
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
@@ -45,7 +45,7 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime):
-        self._time_series = img_to_signals(
+        self._time_series = meansignals(
             self.inputs.in_file,
             self.inputs.atlas_file,
             mask_file=self.inputs.mask_file,

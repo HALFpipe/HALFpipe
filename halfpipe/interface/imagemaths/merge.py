@@ -11,9 +11,8 @@ import nibabel as nib
 from nilearn.image import new_img_like
 
 from nipype.interfaces.base import (
-    BaseInterface,
+    SimpleInterface,
     TraitedSpec,
-    BaseInterfaceInputSpec,
     traits,
     isdefined,
 )
@@ -23,20 +22,20 @@ from ..utils import niftidim, first
 dimensions = ["x", "y", "z", "t"]
 
 
-class SafeMergeInputSpec(BaseInterfaceInputSpec):
+class MergeInputSpec(TraitedSpec):
     in_files = traits.List(
         traits.File(desc="Image file(s) to resample", exists=True), mandatory=True
     )
     dimension = traits.Enum(*dimensions, desc="dimension along which to merge", mandatory=True)
 
 
-class SafeMergeOutputSpec(TraitedSpec):
+class MergeOutputSpec(TraitedSpec):
     merged_file = traits.Either(traits.File(), traits.Bool())
 
 
-class SafeMerge(BaseInterface):
-    input_spec = SafeMergeInputSpec
-    output_spec = SafeMergeOutputSpec
+class Merge(SimpleInterface):
+    input_spec = MergeInputSpec
+    output_spec = MergeOutputSpec
 
     def _run_interface(self, runtime):
         self._merged_file = None
@@ -74,30 +73,23 @@ class SafeMerge(BaseInterface):
 
         outimg = new_img_like(first(in_imgs), outarr)
 
-        self._merged_file = op.abspath(f"merged.nii.gz")
-        nib.save(outimg, self._merged_file)
+        merged_file = op.abspath(f"merged.nii.gz")
+        nib.save(outimg, merged_file)
+
+        self._results["merged_file"] = merged_file
 
         return runtime
 
-    def _list_outputs(self):
-        outputs = self.output_spec().get()
 
-        if self._merged_file is not None:
-            outputs["merged_file"] = self._merged_file
-        else:
-            outputs["merged_file"] = False
-        return outputs
-
-
-class SafeMaskMergeInputSpec(BaseInterfaceInputSpec):
+class MergeMaskInputSpec(TraitedSpec):
     in_files = traits.List(
         traits.File(desc="Image file(s) to resample", exists=True), mandatory=True
     )
 
 
-class SafeMaskMerge(BaseInterface):
-    input_spec = SafeMaskMergeInputSpec
-    output_spec = SafeMergeOutputSpec
+class MergeMask(SimpleInterface):
+    input_spec = MergeMaskInputSpec
+    output_spec = MergeOutputSpec
 
     def _run_interface(self, runtime):
         self._merged_file = None
@@ -118,16 +110,9 @@ class SafeMaskMerge(BaseInterface):
 
         outimg = new_img_like(first(in_imgs), outarr)
 
-        self._merged_file = op.abspath(f"merged.nii.gz")
-        nib.save(outimg, self._merged_file)
+        merged_file = op.abspath(f"merged.nii.gz")
+        nib.save(outimg, merged_file)
+
+        self._results["merged_file"] = merged_file
 
         return runtime
-
-    def _list_outputs(self):
-        outputs = self.output_spec().get()
-
-        if self._merged_file is not None:
-            outputs["merged_file"] = self._merged_file
-        else:
-            outputs["merged_file"] = False
-        return outputs

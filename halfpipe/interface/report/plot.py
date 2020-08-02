@@ -14,8 +14,6 @@ from seaborn import color_palette
 
 from nipype.interfaces.base import (
     traits,
-    TraitedSpec,
-    SimpleInterface,
     File,
     isdefined,
 )
@@ -24,52 +22,8 @@ from niworkflows.interfaces.report_base import ReportingInterface, _SVGReportCap
 from niworkflows.viz.utils import compose_view, extract_svg, cuts_from_bbox
 from nilearn.plotting import plot_epi, plot_anat
 
-from ..io import img_to_signals, load_spreadsheet
 from ..utils import nvol
 from ..resources import get as getresource
-
-
-report_metadata_fields = ["mean_fd", "fd_gt_0_5", "aroma_noise_frac", "mean_gm_tsnr"]
-
-
-class BoldFileReportMetadataInputSpec(TraitedSpec):
-    basedict = traits.Dict(traits.Str(), traits.Any())
-    confounds = File(exists=True, mandatory=True)
-    tsnr_file = File(exists=True, mandatory=True)
-    dseg = File(exists=True, mandatory=True)
-    aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True, mandatory=True)
-
-
-class BoldFileReportMetadataOutputSpec(TraitedSpec):
-    outdict = traits.Dict(traits.Str(), traits.Any())
-
-
-class BoldFileReportMetadata(SimpleInterface):
-    input_spec = BoldFileReportMetadataInputSpec
-    output_spec = BoldFileReportMetadataOutputSpec
-
-    def _run_interface(self, runtime):
-        outdict = dict()
-
-        df_confounds = load_spreadsheet(self.inputs.confounds)
-        outdict["mean_fd"] = df_confounds["framewise_displacement"].mean()
-        outdict["fd_gt_0_5"] = (df_confounds["framewise_displacement"] > 0.5).mean()
-
-        aroma_metadata = self.inputs.aroma_metadata
-        outdict["aroma_noise_frac"] = np.asarray(
-            [val["MotionNoise"] is True for val in aroma_metadata.values()]
-        ).mean()
-
-        _, outdict["mean_gm_tsnr"], _ = img_to_signals(
-            self.inputs.tsnr_file, self.inputs.dseg
-        ).ravel()
-
-        if isdefined(self.inputs.basedict):
-            outdict.update(self.inputs.basedict)
-
-        self._results["outdict"] = outdict
-
-        return runtime
 
 
 class PlotInputSpec(_SVGReportCapableInputSpec):

@@ -5,17 +5,14 @@
 import sys
 from itertools import product
 import logging
-import os
-from os import path as op
 
-from nipype.interfaces import fsl
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
 from ..utils import first
-from ..io import load_spreadsheet
+from ..io import loadspreadsheet
 
 
 def _check_multicollinearity(matrix):
@@ -43,7 +40,7 @@ def _check_multicollinearity(matrix):
 
 
 def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subjects=None):
-    rawdataframe = load_spreadsheet(spreadsheet)
+    rawdataframe = loadspreadsheet(spreadsheet)
 
     id_column = None
     for variableobj in variableobjs:
@@ -185,24 +182,24 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
     return regressors, contrasts, contrast_names
 
 
-class GroupModelInputSpec(TraitedSpec):
+class LinearModelInputSpec(TraitedSpec):
     spreadsheet = traits.File(exist=True, mandatory=True)
     contrastobjs = traits.List(desc="contrast list", mandatory=True)
     variableobjs = traits.List(desc="variable list", mandatory=True)
     subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
 
 
-class GroupModelOutputSpec(TraitedSpec):
+class ModelOutputSpec(TraitedSpec):
     regressors = traits.Any()
     contrasts = traits.Any()
     contrast_names = traits.List(traits.Str(), desc="contrast names list")
 
 
-class GroupModel(SimpleInterface):
+class LinearModel(SimpleInterface):
     """ interface to construct a group design """
 
-    input_spec = GroupModelInputSpec
-    output_spec = GroupModelOutputSpec
+    input_spec = LinearModelInputSpec
+    output_spec = ModelOutputSpec
 
     def _run_interface(self, runtime):
         regressors, contrasts, contrast_names = _group_model(
@@ -226,7 +223,7 @@ class InterceptOnlyModel(SimpleInterface):
     """ interface to construct a group design """
 
     input_spec = InterceptOnlyModelInputSpec
-    output_spec = GroupModelOutputSpec
+    output_spec = ModelOutputSpec
 
     def _run_interface(self, runtime):
         self._results["regressors"] = {"intercept": [1.0] * self.inputs.n_copes}
@@ -234,28 +231,3 @@ class InterceptOnlyModel(SimpleInterface):
         self._results["contrast_names"] = list(map(first, self._results["contrasts"]))
 
         return runtime
-
-
-class SafeMultipleRegressDesignOutputSpec(TraitedSpec):
-    design_mat = traits.Either(traits.File(exists=True, desc="design matrix file"), traits.Bool())
-    design_con = traits.Either(
-        traits.File(exists=True, desc="design t-contrast file"), traits.Bool()
-    )
-    design_fts = traits.Either(
-        traits.File(exists=True, desc="design f-contrast file"), traits.Bool()
-    )
-    design_grp = traits.Either(traits.File(exists=True, desc="design group file"), traits.Bool())
-
-
-class SafeMultipleRegressDesign(fsl.MultipleRegressDesign):
-    output_spec = SafeMultipleRegressDesignOutputSpec
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        nfcons = sum([1 for con in self.inputs.contrasts if con[1] == "F"])
-        for field in list(outputs.keys()):
-            if ("fts" in field) and (nfcons == 0):
-                outputs[field] = False
-                continue
-            outputs[field] = op.join(os.getcwd(), field.replace("_", "."))
-        return outputs

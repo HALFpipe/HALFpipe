@@ -14,7 +14,7 @@ from nipype.interfaces.io import add_traits
 
 
 class LoadResult(SimpleInterface):
-    """ interface to construct a group design """
+    """ load a result from cache """
 
     input_spec = TraitedSpec
     output_spec = DynamicTraitedSpec

@@ -4,11 +4,11 @@
 
 from nipype.interfaces.base import File
 
-from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
+from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec as NipypeApplyTransformsInputSpec
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
 
 
-class FixInputApplyTransformsInputSpec(ApplyTransformsInputSpec):
+class ApplyTransformsInputSpec(NipypeApplyTransformsInputSpec):
     input_image = File(
         argstr="--input %s",
         mandatory=False,
@@ -17,8 +17,8 @@ class FixInputApplyTransformsInputSpec(ApplyTransformsInputSpec):
     )
 
 
-class FixInputApplyTransforms(FixHeaderApplyTransforms):
-    input_spec = FixInputApplyTransformsInputSpec
+class ApplyTransforms(FixHeaderApplyTransforms):
+    input_spec = ApplyTransformsInputSpec
 
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         if self.inputs.print_out_composite_warp_file:
@@ -28,7 +28,7 @@ class FixInputApplyTransforms(FixHeaderApplyTransforms):
             )
         else:
             # Run fixed
-            runtime = super(FixInputApplyTransforms, self)._run_interface(
+            runtime = super(ApplyTransforms, self)._run_interface(
                 runtime, correct_return_codes
             )
 

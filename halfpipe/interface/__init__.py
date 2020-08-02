@@ -2,18 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from .ants import FixInputApplyTransforms
-from .cache import LoadResult
-from .conditions import ParseConditionFile
-from .connectivity import ConnectivityMeasure
-from .dof import MakeDofVolume
-from .filter import LogicalAnd, Filter, FilterList
-from .fsl import SafeFLAMEO
-from .merge import SafeMerge, SafeMaskMerge
-from .model import GroupModel, InterceptOnlyModel, SafeMultipleRegressDesign
-from .motion import MotionCutoff
-from .report import BoldFileReportMetadata, PlotEpi, PlotRegistration
-from .resample import ResampleIfNeeded
+from .fixes import ApplyTransforms, FLAMEO, MultipleRegressDesign
+from .fslnumpy import FilterRegressor, TemporalFilter
+from .imagemaths import AddMeans, Merge, MergeMask, Resample
+from .preprocessing import GrandMeanScaling
+from .report import PlotEpi, PlotRegistration, Vals
 from .resultdict import (
     MakeResultdicts,
     FilterResultdicts,
@@ -21,36 +14,48 @@ from .resultdict import (
     ExtractFromResultdict,
     ResultdictDatasink,
 )
-from .scaling import GrandMeanScaling
-from .utils import SelectColumnsTSV, MergeColumnsTSV, MatrixToTSV
+from .stats import MakeDofVolume, InterceptOnlyModel, LinearModel
+from .utility import (
+    Exec,
+    Filter,
+    Interleave,
+    Select,
+    ToAFNI,
+    FromAFNI,
+    LoadResult,
+    MergeColumns,
+    SelectColumns,
+)
 
 __all__ = [
-    FixInputApplyTransforms,
-    LoadResult,
-    ParseConditionFile,
-    ConnectivityMeasure,
-    GroupModel,
-    InterceptOnlyModel,
-    SafeMultipleRegressDesign,
-    MakeDofVolume,
-    LogicalAnd,
-    Filter,
-    FilterList,
-    SafeFLAMEO,
-    SafeMerge,
-    SafeMaskMerge,
-    MotionCutoff,
-    BoldFileReportMetadata,
+    ApplyTransforms,
+    FLAMEO,
+    MultipleRegressDesign,
+    FilterRegressor,
+    TemporalFilter,
+    AddMeans,
+    Merge,
+    MergeMask,
+    Resample,
+    GrandMeanScaling,
     PlotEpi,
     PlotRegistration,
-    ResampleIfNeeded,
+    Vals,
     MakeResultdicts,
     FilterResultdicts,
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
-    GrandMeanScaling,
-    SelectColumnsTSV,
-    MergeColumnsTSV,
-    MatrixToTSV,
+    MakeDofVolume,
+    InterceptOnlyModel,
+    LinearModel,
+    Exec,
+    Filter,
+    Interleave,
+    Select,
+    ToAFNI,
+    FromAFNI,
+    LoadResult,
+    MergeColumns,
+    SelectColumns,
 ]

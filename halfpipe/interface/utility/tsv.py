@@ -21,35 +21,6 @@ import numpy as np
 from ..utils import readtsv
 
 
-def _matrix_to_tsv(matrix=None):
-    outputpath = op.join(os.getcwd(), "merged_columns.tsv")
-    np.savetxt(outputpath, matrix, delimiter="\t")
-    return outputpath
-
-
-class MatrixToTSVInputSpec(TraitedSpec):
-    matrix = traits.Array(desc="matrix")
-
-
-class MatrixToTSVOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc="output file")
-
-
-class MatrixToTSV(SimpleInterface):
-    """
-    Select columns to make a design matrix
-    """
-
-    input_spec = MatrixToTSVInputSpec
-    output_spec = MatrixToTSVOutputSpec
-
-    def _run_interface(self, runtime):
-        outputpath = _matrix_to_tsv(matrix=self.inputs.matrix,)
-        self._results["out_file"] = outputpath
-
-        return runtime
-
-
 def _merge_columns(in_list):
     out_array = None
     for idx, in_file in enumerate(in_list):
@@ -67,20 +38,19 @@ def _merge_columns(in_list):
     return outputpath
 
 
-class MergeColumnsTSVOutputSpec(TraitedSpec):
+class MergeColumnsOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output tsv file")
 
 
-class MergeColumnsTSV(IOBase):
+class MergeColumns(IOBase):
     """
-    Select columns to make a design matrix
     """
 
     input_spec = DynamicTraitedSpec
-    output_spec = MergeColumnsTSVOutputSpec
+    output_spec = MergeColumnsOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
-        super(MergeColumnsTSV, self).__init__(**inputs)
+        super(MergeColumns, self).__init__(**inputs)
         self._numinputs = numinputs
         if numinputs >= 1:
             input_names = ["in%d" % (i + 1) for i in range(numinputs)]
@@ -125,7 +95,7 @@ def _select_columns(column_names=None, inputpath=None, output_with_header=False)
     return outputpath
 
 
-class SelectColumnsTSVInputSpec(TraitedSpec):
+class SelectColumnsInputSpec(TraitedSpec):
     in_file = File(exists=True, desc="input tsv file")
     column_names = traits.List(
         traits.Str, desc="list of column names, can be regular expressions"
@@ -133,17 +103,17 @@ class SelectColumnsTSVInputSpec(TraitedSpec):
     output_with_header = traits.Bool(False, usedefault=True)
 
 
-class SelectColumnsTSVOutputSpec(TraitedSpec):
+class SelectColumnsOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output tsv file")
 
 
-class SelectColumnsTSV(SimpleInterface):
+class SelectColumns(SimpleInterface):
     """
     Select columns to make a design matrix
     """
 
-    input_spec = SelectColumnsTSVInputSpec
-    output_spec = SelectColumnsTSVOutputSpec
+    input_spec = SelectColumnsInputSpec
+    output_spec = SelectColumnsOutputSpec
 
     def _run_interface(self, runtime):
         outputpath = _select_columns(

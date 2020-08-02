@@ -6,12 +6,15 @@ import os
 from os import path as op
 from glob import glob
 
-from nipype.interfaces.fsl.model import FLAMEOInputSpec, FLAMEO
+from nipype.interfaces.fsl.model import (
+    FLAMEOInputSpec as NipypeFLAMEOInputSpec,
+    FLAMEO as NipypeFLAMEO,
+)
 from nipype.interfaces.base import traits, isdefined
 from nipype.utils.misc import human_order_sorted
 
 
-class SafeFLAMEOInputSpec(FLAMEOInputSpec):
+class FLAMEOInputSpec(NipypeFLAMEOInputSpec):
     var_cope_file = traits.Either(
         traits.File(exists=True),
         traits.Bool(),
@@ -32,13 +35,13 @@ class SafeFLAMEOInputSpec(FLAMEOInputSpec):
     )
 
 
-class SafeFLAMEO(FLAMEO):
-    input_spec = SafeFLAMEOInputSpec
+class FLAMEO(NipypeFLAMEO):
+    input_spec = FLAMEOInputSpec
 
     def _format_arg(self, name, trait_spec, value):
         if value is False:
             return None
-        return super(SafeFLAMEO, self)._format_arg(name, trait_spec, value)
+        return super(FLAMEO, self)._format_arg(name, trait_spec, value)
 
     def _list_outputs(self):
         outputs = self._outputs().get()
