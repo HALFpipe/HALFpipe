@@ -112,9 +112,14 @@ class ModelAggregateStep(Step):
 
         filepaths = ctx.database.get(**bold_filedict)
 
+        setting_filters = dict()
+        for setting in ctx.spec.settings:
+            setting_filters[setting["name"]] = setting.get("filters")
+
         self.feature_entities = dict()
         for obj in featureobjs:
-            feature_filepaths = ctx.database.applyfilters([*filepaths], obj)
+            filters = setting_filters[obj.setting]
+            feature_filepaths = ctx.database.applyfilters([*filepaths], filters)
             self.feature_entities[obj.name], _ = ctx.database.multitagvalset(
                 aggregate_order, filepaths=feature_filepaths
             )

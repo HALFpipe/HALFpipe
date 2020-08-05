@@ -48,7 +48,6 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     )
     if model is not None:
         make_resultdicts_a.inputs.model = model.name
-    workflow.connect(inputnode, "tags", make_resultdicts_a, "tags")
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
@@ -81,10 +80,11 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     )
 
     #
-    if model.filter is not None:
-        kwargs = dict(filterobjs=model.filters, requireoneoffeatures=["effect", "reho", "falff", "alff"])
-        if model.spreadsheet is not None and variables is not None:
-            kwargs.update(dict(spreadsheet=model.spreadsheet, variableobjs=variables))
+    if model.filters is not None:
+        kwargs = dict(filterdicts=model.filters, requireoneofimages=["effect", "reho", "falff", "alff"])
+        if hasattr(model, "spreadsheet"):
+            if model.spreadsheet is not None and variables is not None:
+                kwargs.update(dict(spreadsheet=model.spreadsheet, variableobjs=variables))
         filterresultsdicts = pe.Node(FilterResultdicts(**kwargs), name="filterresultsdicts")
         workflow.connect(merge_resultdicts_a, "out", filterresultsdicts, "indicts")
         workflow.connect(filterresultsdicts, "resultdicts", aggregateresultdicts, "in1")

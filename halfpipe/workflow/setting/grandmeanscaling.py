@@ -27,9 +27,9 @@ def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator(), name=None,
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["files", "mask", "mean"]), name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "bold_mask_std"]), name="outputnode")
+    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask"]), name="outputnode")
 
-    workflow.connect(inputnode, "bold_mask_std", outputnode, "bold_mask_std")
+    workflow.connect(inputnode, "mask", outputnode, "mask")
 
     if mean is not None:
         inputnode.inputs.mean = float(mean)

@@ -31,7 +31,7 @@ class DatabaseMetadataLoader:
                     pass
 
         if key == "echo_time_difference":  # calculate from associated files
-            if fileobj.get("datatype") == "fmap" and fileobj.get("suffix") == "phasediff":
+            if fileobj.datatype == "fmap" and fileobj.suffix == "phasediff":
                 filepath = fileobj.path
                 magnitude1 = self.database.associations(filepath, suffix="magnitude1")
                 magnitude2 = self.database.associations(filepath, suffix="magnitude2")

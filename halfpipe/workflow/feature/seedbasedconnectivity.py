@@ -164,7 +164,7 @@ def init_seedbasedconnectivity_wf(
     )
     workflow.connect(design, "out_with_header", contrasts, "design_file")
 
-    workflow.connect(contrasts, "out_with_header", make_resultdicts, "design_matrix")
+    workflow.connect(contrasts, "out_with_header", make_resultdicts, "contrast_matrix")
 
     fillna = pe.MapNode(FillNA(), iterfield="in_tsv", name="fillna")
     workflow.connect(design, "out_no_header", fillna, "in_tsv")

@@ -80,6 +80,14 @@ class Factory:
         raise NotImplementedError()
 
     def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode):
+        inputattrs = set(inputnode.inputs.copyable_trait_names())
+        outputattrs = set(outputnode.outputs.copyable_trait_names())
+        attrs = inputattrs & outputattrs  # find common attr names
+
+        for attr in attrs:
+            self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
+
+    def connect_attr(self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 
@@ -90,14 +98,14 @@ class Factory:
 
         workflow = inputhierarchy[0]
 
-        inputattrs = set(inputnode.inputs.copyable_trait_names())
-        outputattrs = set(outputnode.outputs.copyable_trait_names())
-        attrs = inputattrs & outputattrs  # find common attr names
+        if isinstance(outputnode, str):
+            outputnode = outputhierarchy[-1].get_node(outputnode)
+        if isinstance(inputnode, str):
+            inputnode = inputhierarchy[-1].get_node(inputnode)
 
-        for attr in attrs:
-            outputendpoint = self._endpoint(outputhierarchy, outputnode, attr)
-            inputendpoint = self._endpoint(inputhierarchy, inputnode, attr)
-            workflow.connect(*outputendpoint, *inputendpoint)
+        outputendpoint = self._endpoint(outputhierarchy, outputnode, outattr)
+        inputendpoint = self._endpoint(inputhierarchy, inputnode, inattr)
+        workflow.connect(*outputendpoint, *inputendpoint)
 
     def connect(self, nodehierarchy, node, *args, **kwargs):
         outputhierarchy, outputnode = self.get(*args, **kwargs)

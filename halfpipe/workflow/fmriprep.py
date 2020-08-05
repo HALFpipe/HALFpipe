@@ -12,7 +12,7 @@ from fmriprep.cli.workflow import build_workflow
 from .factory import Factory
 from .report import init_anat_report_wf, init_func_report_wf
 
-from ..utils import formatlikebids, deepcopyfactory
+from ..utils import deepcopyfactory
 
 
 def _follow_to_datasink(hierarchy, node, attr):
@@ -77,8 +77,14 @@ class FmriprepFactory(Factory):
         output_dir = Path(workdir) / "derivatives"
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        subjects = [*database.tagvalset("sub", filepaths=boldfilepaths)]
-        bidssubjects = map(formatlikebids, subjects)
+        subjects = set()
+        bidssubjects = set()
+        for boldfilepath in boldfilepaths:
+            subjects.add(database.tagval(boldfilepath, "sub"))
+            bidspath = bidsdatabase.tobids(boldfilepath)
+            bidssubjects.add(bidsdatabase.tagval(bidspath, "subject"))
+        subjects = list(subjects)
+        bidssubjects = list(bidssubjects)
 
         ignore = ["sbref"]
         if spec.global_settings.get("slice_timing") is not True:
@@ -160,31 +166,26 @@ class FmriprepFactory(Factory):
         """
         connected_attrs = set()
 
-        def _connect(hierarchy):
-            workflow = hierarchy[0]
-            wf = hierarchy[-1]
+        inputattrs = set(node.inputs.copyable_trait_names())
+        dsattrs = set(attr for attr in inputattrs if attr.startswith("ds_"))
 
-            inputattrs = set(node.inputs.copyable_trait_names())
-            dsattrs = set(attr for attr in inputattrs if attr.startswith("ds_"))
+        def _connect(hierarchy):
+            wf = hierarchy[-1]
 
             outputnode = wf.get_node("outputnode")
             outputattrs = set(outputnode.outputs.copyable_trait_names())
             attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
+
             for attr in attrs:
-                outputendpoint = self._endpoint(
-                    *_follow_to_datasink(hierarchy, outputnode, attr)
-                )
-                inputendpoint = self._endpoint(nodehierarchy, node, attr)
-                workflow.connect(*outputendpoint, *inputendpoint)
+                fouthierarchy, foutputnode, fattr = _follow_to_datasink(hierarchy, outputnode, attr)
+                self.connect_attr(fouthierarchy, foutputnode, fattr, nodehierarchy, node, attr)
                 connected_attrs.add(attr)
 
             while len(dsattrs) > 0:
                 attr = dsattrs.pop()
                 childtpl = _find_child(hierarchy, attr)
                 if childtpl is not None:
-                    outputendpoint = self._endpoint(*childtpl, "out_file")
-                    inputendpoint = self._endpoint(nodehierarchy, node, attr)
-                    workflow.connect(*outputendpoint, *inputendpoint)
+                    self.connect_attr(*childtpl, "out_file", nodehierarchy, node, attr)
                     connected_attrs.add(attr)
 
         hierarchy = self._get_hierarchy("fmriprep_wf", sourcefile=sourcefile, subject_id=subject_id)
@@ -204,6 +205,13 @@ class FmriprepFactory(Factory):
             bold_wf = wf.get_node(name)
             if bold_wf is not None:
                 _connect([*hierarchy, bold_wf])
+
+        if "bold_split" in inputattrs:
+            splitnode = wf.get_node("split_opt_comb")
+            if splitnode is None:
+                splitnode = wf.get_node("bold_split")
+            self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
+            connected_attrs.add("bold_split")
 
         while wf.get_node("anat_preproc_wf") is None:
             hierarchy.pop()

@@ -35,14 +35,19 @@ class BidsDatabase:
         return formatlikebids(v)
 
     def put(self, filepath):
-        if filepath in self.bidspaths_by_filepaths:
+        if self.bidspaths_by_filepaths.get(filepath) is not None:
             return  # already added
+        tags = self.database.tags(filepath)
         bidstags = dict()
-        for k, v in self.database.tags(filepath).items():
-            bidsentity = entity_longnames[k] if k in entity_longnames else k
+        for k, v in tags.items():
+            bidsentity = k
+            if bidsentity in entity_longnames:
+                bidsentity = entity_longnames[bidsentity]
             if k in entities:
                 bidstags[bidsentity] = self._format_tagval(k, v)
             else:
+                if k == "suffix" and tags.get("datatype") == "fmap":
+                    k = "fmap"
                 bidstags[k] = v
         bidspath = build_path(bidstags, bidsconfig.default_path_patterns)
         self.bidspaths_by_filepaths[filepath] = str(bidspath)

@@ -40,13 +40,13 @@ class ModelFactory(Factory):
             variables = database.metadata(model.spreadsheet, "variables")
 
         inputs = []
-        for input in model.inputs:
-            if self.has(input):
-                inputs.extend(self.feature_factory.get(input))
-            elif self.feature_factory.has(input):
-                inputs.extend(self.feature_factory.get(input))
+        for inputname in model.inputs:
+            if self.has(inputname):
+                inputs.extend(self.get(inputname))
+            elif self.feature_factory.has(inputname):
+                inputs.extend(self.feature_factory.get(inputname))
             else:
-                raise ValueError(f'Unknown input "{input}"')
+                raise ValueError(f'Unknown input name "{inputname}"')
 
         kwargs = dict(model=model, variables=variables, workdir=self.workdir, memcalc=self.memcalc)
         vwf = init_model_wf(numinputs=len(inputs), **kwargs)
@@ -57,14 +57,8 @@ class ModelFactory(Factory):
             self.wfs[model.name] = []
         self.wfs[model.name].append(hierarchy)
 
-        inputnode = vwf.get_node("inputnode")
-
-        for i, outputhierarchy in enumerate(input):
-            owf = outputhierarchy[-1]
-            outputnode = owf.get_node("outputnode")
-            outputendpoint = self._endpoint(outputhierarchy, outputnode, "resultdicts")
-            inputendpoint = self._endpoint(hierarchy, inputnode, f"in{i+1:d}")
-            wf.connect(*outputendpoint, *inputendpoint)
+        for i, outputhierarchy in enumerate(inputs):
+            self.connect_attr(outputhierarchy, "outputnode", "resultdicts", hierarchy, "inputnode", f"in{i+1:d}")
 
         return vwf
 

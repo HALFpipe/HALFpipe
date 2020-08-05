@@ -297,7 +297,7 @@ class SettingFactory(Factory):
         self.confounds_select_factory = ConfoundsSelectFactory(ctx, self.setting_adapter_factory)
         self.confounds_regression_factory = ConfoundsRegressionFactory(ctx, self.confounds_select_factory)
 
-        settingnames = set(setting.name for setting in self.spec.settings if setting.get("output_image") is True)
+        settingnames = set(setting["name"] for setting in self.spec.settings if setting.get("output_image") is True)
         self.sourcefiles = self.get_sourcefiles(settingnames)
 
     def get_sourcefiles(self, settingnames):

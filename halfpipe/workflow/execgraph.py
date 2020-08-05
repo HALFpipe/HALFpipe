@@ -29,13 +29,15 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
+    uuidstr = str(uuid)[:8]
+
     execgraph = uncacheobj(workdir, "execgraph", uuid)
     if execgraph is None:
         # create execgraph
+        logger.info(f"Initializing new execgraph: {uuidstr}")
         execgraph = workflow.run(plugin=DontRunRunner())
         execgraph.uuid = uuid
-        uuidstr = str(uuid)[:8]
-        logger.info(f"New execgraph: {uuidstr}")
+        logger.info(f"Finished execgraph: {uuidstr}")
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     reportjsfilename = op.join(workdir, "reports", "reportexec.js")
@@ -44,7 +46,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         indexedfileobj = IndexedFile(reportjsfilename)
         assert allnodenames.issubset(indexedfileobj.file_index.indexdict.keys())
     except Exception:
-        logger.info(f"Init reportexec.js")
+        logger.info(f"Initializing reportexec.js")
         IndexedFile.init_indexed_js_object_file(
             reportjsfilename, "report", allnodenames, 10
         )  # TODO don't overwrite current values
@@ -76,7 +78,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         if execgraphs is not None:
             return execgraphs
 
-        logger.info(f"New execgraph split with {n_chunks} chunks")
+        logger.info(f"Initializing execgraph split with {n_chunks} chunks")
 
         execgraphs = []
         chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)
@@ -99,6 +101,8 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
         execgraphs.append(execgraph)
         assert len(execgraphs) == n_chunks + 1
+
+        logger.info(f"Finished execgraph split")
         cacheobj(workdir, typestr, execgraphs, uuid=uuid)
 
         return execgraphs

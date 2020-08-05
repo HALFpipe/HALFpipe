@@ -53,9 +53,9 @@ class EventsFileSchema(OneOfSchema):
     type_field = "extension"
     type_field_remove = False
     type_schemas = {
-        "tsv": TsvEventsFileSchema,
-        "mat": MatEventsFileSchema,
-        "txt": TxtEventsFileSchema,
+        ".tsv": TsvEventsFileSchema,
+        ".mat": MatEventsFileSchema,
+        ".txt": TxtEventsFileSchema,
     }
 
     def get_obj_type(self, obj):

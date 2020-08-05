@@ -40,7 +40,7 @@ def init_workflow(workdir):
     workflow = pe.Workflow(name="nipype", base_dir=workdir)
     workflow.uuid = uuid
     uuidstr = str(uuid)[:8]
-    logger.info(f"New workflow: {uuidstr}")
+    logger.info(f"Initializing new workflow: {uuidstr}")
     workflow.config["execution"].update(
         {
             "crashdump_dir": workflow.base_dir,
@@ -65,6 +65,8 @@ def init_workflow(workdir):
     setting_factory.setup()
     feature_factory.setup()
     model_factory.setup()
+
+    logger.info(f"Finished workflow: {uuidstr}")
 
     cacheobj(workdir, "workflow", workflow)
     return init_execgraph(workdir, workflow)

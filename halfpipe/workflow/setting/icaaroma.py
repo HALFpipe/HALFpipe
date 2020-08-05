@@ -21,7 +21,7 @@ from ...interface import (
     MakeResultdicts,
     ResultdictDatasink,
     Vals,
-    FilterRegressor
+    FilterRegressor,
 )
 from ...resource import get as getresource
 from ...utils import firststr, loadints
@@ -48,6 +48,7 @@ def init_ica_aroma_components_wf(
             fieldtpls=[
                 ("tags", None),
                 *[(field, "firststr") for field in strfields],
+                ("bold_split", None),
                 ("repetition_time", None),
                 ("skip_vols", None),
                 ("xforms", None),
@@ -79,7 +80,9 @@ def init_ica_aroma_components_wf(
     #
     mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm", run_without_submitting=True)
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in1")
-    mergexfm.inputs.in2 = getresource("tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5")
+    mergexfm.inputs.in2 = getresource(
+        "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5"
+    )
 
     compxfm = pe.Node(
         ApplyTransforms(
@@ -89,7 +92,9 @@ def init_ica_aroma_components_wf(
         ),
         name="compxfm",
     )
-    compxfm.inputs.reference_image = firststr(get_template("MNI152NLin6Asym", resolution=1, suffix="T1w"))
+    compxfm.inputs.reference_image = firststr(
+        get_template("MNI152NLin6Asym", resolution=1, suffix="T1w")
+    )
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
     #
@@ -108,6 +113,7 @@ def init_ica_aroma_components_wf(
 
     workflow.connect(compxfm, "output_image", bold_std_trans_wf, "inputnode.anat2std_xfm")
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.name_source")
+    workflow.connect(inputnode, "bold_split", bold_std_trans_wf, "inputnode.bold_split")
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.hmc_xforms")
     workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.itk_bold_to_t1")
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.bold_mask")
@@ -149,16 +155,16 @@ def init_ica_aroma_components_wf(
     workflow.connect(ica_aroma_wf, "outputnode.aroma_confounds", outputnode, "aroma_confounds")
     workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
 
-    vals = pe.Node(
-        interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb
-    )
+    vals = pe.Node(interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb)
     workflow.connect(outputnode, "aroma_metadata", vals, "aroma_metadata")
     workflow.connect(vals, "aroma_noise_frac", make_resultdicts, "aroma_noise_frac")
 
     return workflow
 
 
-def init_ica_aroma_regression_wf(name="ica_aroma_regression_wf", memcalc=MemoryCalculator(), suffix=None):
+def init_ica_aroma_regression_wf(
+    name="ica_aroma_regression_wf", memcalc=MemoryCalculator(), suffix=None
+):
     """
 
     """
@@ -166,57 +172,48 @@ def init_ica_aroma_regression_wf(name="ica_aroma_regression_wf", memcalc=MemoryC
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
 
+    #
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["files", "mask", "melodic_mix", "aroma_noise_ics"]
+            fields=["files", "mask", "aroma_confounds", "melodic_mix", "aroma_noise_ics"]
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["files", "mask"]
-        ),
-        name="outputnode",
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask"]), name="outputnode",)
 
+    workflow.connect(inputnode, "mask", outputnode, "mask")
+
+    #
     loadaromanoiseics = pe.Node(
         interface=niu.Function(
-            input_names=["aroma_noise_ics"],
-            output_names=["aroma_noise_ics"],
-            function=loadints,
+            input_names=["aroma_noise_ics"], output_names=["aroma_noise_ics"], function=loadints,
         ),
-        name="loadaromanoiseics"
+        name="loadaromanoiseics",
     )
     workflow.connect(inputnode, "aroma_noise_ics", loadaromanoiseics, "aroma_noise_ics")
 
-    select = pe.Node(
-        Select(regex=r".+\.tsv"), name="select", run_without_submitting=True
-    )
+    # add aroma_confounds to the matrix
+    select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
     workflow.connect(inputnode, "files", select, "in_list")
 
-    merge_columns = pe.Node(
-        MergeColumns(2), name="merge_columns", run_without_submitting=True
-    )
+    merge_columns = pe.Node(MergeColumns(2), name="merge_columns", run_without_submitting=True)
     workflow.connect(select, "match_list", merge_columns, "in1")
     workflow.connect(inputnode, "aroma_confounds", merge_columns, "in2")
 
-    merge = pe.Node(
-        niu.Merge(2), name="merge", run_without_submitting=True
-    )
+    merge = pe.Node(niu.Merge(2), name="merge", run_without_submitting=True)
     workflow.connect(select, "other_list", merge, "in1")
     workflow.connect(merge_columns, "out_file", merge, "in2")
 
-    workflow.connect(inputnode, "bold_mask_std", outputnode, "bold_mask_std")
-
+    #
     filter_regressor = pe.MapNode(
         FilterRegressor(),
         iterfield="in_file",
         name="filter_regressor",
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
 
     workflow.connect(inputnode, "files", filter_regressor, "in_file")
-    workflow.connect(inputnode, "bold_mask_std", filter_regressor, "mask")
+    workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
     workflow.connect(loadaromanoiseics, "aroma_noise_ics", filter_regressor, "filter_columns")
 
