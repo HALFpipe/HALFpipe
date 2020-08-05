@@ -54,7 +54,7 @@ class MakeResultdicts(IOBase):
             outputs["resultdicts"] = []
             return outputs
 
-        fieldnames, keys, values = zip(*inputs)
+        fieldnames, keys, values = map(list, zip(*inputs))
 
         maxlen = 1
         nbroadcast = None

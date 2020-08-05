@@ -17,6 +17,7 @@ from .execgraph import init_execgraph
 from .memory import MemoryCalculator
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
+from ..utils import deepcopyfactory
 
 
 def init_workflow(workdir):
@@ -65,6 +66,10 @@ def init_workflow(workdir):
     setting_factory.setup()
     feature_factory.setup()
     model_factory.setup()
+
+    config_factory = deepcopyfactory(workflow.config)
+    for node in workflow._get_all_nodes():
+        node.config = config_factory()
 
     logger.info(f"Finished workflow: {uuidstr}")
 

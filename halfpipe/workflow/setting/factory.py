@@ -105,6 +105,9 @@ class LookupFactory(Factory):
         return obj is None
 
     def _connect_inputs(self, hierarchy, inputnode, sourcefile, settingname, tpl):
+        if hasattr(inputnode.inputs, "repetition_time"):
+            self.database.fillmetadata("repetition_time", [sourcefile])
+            inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
         self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, settingname=settingname)
 
     def get(self, sourcefile, settingname):

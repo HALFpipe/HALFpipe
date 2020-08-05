@@ -116,8 +116,10 @@ class FeatureFactory(Factory):
             m = inputnode_name.fullmatch(node.name)
             if m is not None:
                 if hasattr(node.inputs, "repetition_time"):
-                    self.database.fillmetadata("repetition_time", [sourcefile])
-                    node.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
+                    database.fillmetadata("repetition_time", [sourcefile])
+                    node.inputs.repetition_time = database.metadata(sourcefile, "repetition_time")
+                if hasattr(node.inputs, "tags"):
+                    node.inputs.tags = database.tags(sourcefile)
                 settingnamefield = "setting"
                 if m.group("prefix") is not None:
                     settingnamefield = f'{m.group("prefix")}{settingnamefield}'
