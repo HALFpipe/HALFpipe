@@ -17,7 +17,7 @@ from nipype.interfaces.base import (
     isdefined,
 )
 
-from ..utils import niftidim, first
+from ...utils import niftidim, first
 
 dimensions = ["x", "y", "z", "t"]
 

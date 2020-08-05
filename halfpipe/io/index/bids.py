@@ -41,12 +41,12 @@ class BidsDatabase:
         for k, v in self.database.tags(filepath).items():
             bidsentity = entity_longnames[k] if k in entity_longnames else k
             if k in entities:
-                bidstags[bidsentity] = self._format_tagval(v)
+                bidstags[bidsentity] = self._format_tagval(k, v)
             else:
                 bidstags[k] = v
         bidspath = build_path(bidstags, bidsconfig.default_path_patterns)
-        self.bidspaths_by_filepaths[filepath] = bidspath
-        self.filepaths_by_bidspaths[bidspath] = filepath
+        self.bidspaths_by_filepaths[filepath] = str(bidspath)
+        self.filepaths_by_bidspaths[bidspath] = str(filepath)
         self.bidstags_by_bidspaths[bidspath] = bidstags
 
     def tobids(self, filepath):
@@ -72,20 +72,23 @@ class BidsDatabase:
         bidsdir = Path(bidsdir)
         if bidsdir.is_symlink():
             raise ValueError("Will not write to symlink")
+        bidsdir.mkdir(parents=True, exist_ok=True)
 
         dataset_description = {
-            "Name": self.database.sha1(),
+            "Name": self.database.sha1,
             "BIDSVersion": bidsversion,
             "DatasetType": "raw"
         }
         with open(bidsdir / "dataset_description.json", "w") as f:
             json.dump(dataset_description, f, indent=4)
 
-        for filepath, bidspath in self.filepaths_by_bidspaths.items():
+        for bidspath, filepath in self.filepaths_by_bidspaths.items():
             bidspath = Path(bidsdir) / bidspath
             bidspath.parent.mkdir(parents=True, exist_ok=True)
-            if bidspath.exists():
-                if bidspath.resolve() == Path(filepath).resolve:
+            if bidspath.is_file():
+                continue  # ignore real files
+            elif bidspath.is_symlink():
+                if bidspath.resolve() == Path(filepath).resolve():
                     continue  # nothing to be done
                 else:
                     bidspath.unlink()  # symlink points to different file

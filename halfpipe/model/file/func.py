@@ -11,13 +11,13 @@ from marshmallow_oneofschema import OneOfSchema
 
 from .base import File, BaseFileSchema
 from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
-from ..metadata import BoldMetadataSchema, MatEventsMetadataSchema
+from ..metadata import BoldMetadataSchema, EventsMetadataSchema
 
 
 class BoldFileSchema(BaseFileSchema):
     datatype = fields.Str(default="func", validate=validate.Equal("func"))
     suffix = fields.Str(default="bold", validate=validate.Equal("bold"))
-    extension = fields.Str(validate=validate.OneOf(["nii", "nii.gz"]))
+    extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
     tags = fields.Nested(BoldTagsSchema, default=dict())
     metadata = fields.Nested(BoldMetadataSchema)
@@ -31,19 +31,22 @@ class BaseEventsFileSchema(BaseFileSchema):
 
 
 class MatEventsFileSchema(BaseEventsFileSchema):
-    extension = fields.Str(validate=validate.OneOf(["mat"]))
+    extension = fields.Str(validate=validate.OneOf([".mat"]))
 
-    metadata = fields.Nested(MatEventsMetadataSchema)
+    metadata = fields.Nested(EventsMetadataSchema)
 
 
 class TsvEventsFileSchema(BaseEventsFileSchema):
-    extension = fields.Str(validate=validate.OneOf(["tsv"]))
+    extension = fields.Str(validate=validate.OneOf([".tsv"]))
+
+    metadata = fields.Nested(EventsMetadataSchema, default={"units": "seconds"})
 
 
 class TxtEventsFileSchema(BaseEventsFileSchema):
-    extension = fields.Str(validate=validate.OneOf(["txt"]))
+    extension = fields.Str(validate=validate.OneOf([".txt"]))
 
     tags = fields.Nested(TxtEventsTagsSchema, default=dict())
+    metadata = fields.Nested(EventsMetadataSchema, default={"units": "seconds"})
 
 
 class EventsFileSchema(OneOfSchema):

@@ -10,7 +10,7 @@ from functools import lru_cache
 import logging
 from pathlib import Path
 
-from ..utils import loadpicklelzma, savepicklelzma
+from .pickle import loadpicklelzma, dumppicklelzma
 
 
 @lru_cache(maxsize=128)
@@ -82,7 +82,7 @@ class IndexedFile:
             fp.write("}');\n".encode())
         index_file = f"{filename}.index.pickle.xz"
         index = FileIndex(indexdict, maxlen, append_comma, lastkey=lastkey)
-        savepicklelzma(index_file, index)
+        dumppicklelzma(index_file, index)
 
     @staticmethod
     def init_indexed_js_list_file(
@@ -110,4 +110,4 @@ class IndexedFile:
             fp.write(" \\\n]');\n".encode())
         index_file = f"{filename}.index.pickle.xz"
         index = FileIndex(indexdict, maxlen, append_comma)
-        savepicklelzma(index_file, index)
+        dumppicklelzma(index_file, index)

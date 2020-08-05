@@ -17,7 +17,8 @@ class ExtractFromResultdictInputSpec(BaseInterfaceInputSpec):
 
 
 class ExtractFromResultdictOutputSpec(DynamicTraitedSpec):
-    remainder = traits.Dict(traits.Str(), traits.Any())
+    tags = traits.Dict(traits.Str(), traits.Any())
+    metadata = traits.Dict(traits.Str(), traits.Any())
 
 
 class ExtractFromResultdict(IOBase):
@@ -57,6 +58,7 @@ class ExtractFromResultdict(IOBase):
             else:
                 outputs[key] = []
 
-        outputs["remainder"] = resultdict_schema.dump(resultdict)
+        outputs["tags"] = resultdict.get("tags")
+        outputs["metadata"] = resultdict.get("metadata")
 
         return outputs

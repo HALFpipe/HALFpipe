@@ -13,6 +13,7 @@ from nilearn.image import new_img_like
 from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits
 )
 
@@ -22,6 +23,7 @@ from ..utils import splitext, nvol
 
 class TransformerInputSpec(TraitedSpec):
     in_file = traits.File(desc="File to filter", exists=True, mandatory=True)
+    mask = traits.File(desc="mask to use for volumes", exists=True)
 
 
 class TransformerOutputSpec(TraitedSpec):
@@ -44,6 +46,7 @@ class Transformer(SimpleInterface):
         stem, ext = splitext(in_file)
         self.stem, self.ext = stem, ext
 
+        self.mask = None
         if ext in [".nii", ".nii.gz"]:
             in_img = nib.load(in_file)
             self.in_img = in_img
@@ -51,6 +54,17 @@ class Transformer(SimpleInterface):
             n = nvol(in_img)
             in_fdata = in_img.get_fdata(dtype=np.float64)
             array = in_fdata.reshape((-1, n))
+
+            mask_file = self.inputs.mask
+            if isdefined(mask_file):
+                mask_img = nib.load(mask_file)
+                assert nvol(mask_img) == 1
+                assert np.allclose(mask_img.affine, in_img.affine)
+                mask_fdata = mask_img.get_fdata(dtype=np.float64)
+                mask_bin = np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
+                self.mask = np.ravel(mask_bin)
+                assert self.mask.size == array.shape[0]
+                array = array[self.mask, :]
 
         else:
             in_df = loadspreadsheet(in_file)
@@ -64,12 +78,18 @@ class Transformer(SimpleInterface):
         stem, ext = self.stem, self.ext
 
         out_file = op.abspath(f"{stem}_{self.suffix}{ext}")
-        self._results["out_file"] = out_file
 
         if ext in [".nii", ".nii.gz"]:
             in_img = self.in_img
 
-            out_img = new_img_like(in_img, array2.reshape(in_img.shape))
+            if self.mask is not None:
+                m, n = array2.shape
+                out_array = np.zeros((*in_img.shape[:3], n))
+                out_array[self.mask, :] = array2
+            else:
+                out_array = array2.reshape((*in_img.shape[:3], -1))
+
+            out_img = new_img_like(in_img, out_array)
             nib.save(out_img, out_file)
 
         else:
@@ -81,6 +101,8 @@ class Transformer(SimpleInterface):
                 out_file, sep="\t", index=False, na_rep="n/a", header=True
             )
 
+        return out_file
+
     def _run_interface(self, runtime):
         self._merged_file = None
 
@@ -90,6 +112,7 @@ class Transformer(SimpleInterface):
 
         array2 = self._transform(array)
 
-        self._dump(array2)
+        out_file = self._dump(array2)
+        self._results["out_file"] = out_file
 
         return runtime

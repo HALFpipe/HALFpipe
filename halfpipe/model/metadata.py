@@ -92,7 +92,7 @@ class PhaseDiffMetadataSchema(BaseMetadataSchema):
     )
 
 
-class MatEventsMetadataSchema(BaseMetadataSchema):
+class EventsMetadataSchema(BaseMetadataSchema):
     units = fields.Str(
         validate=validate.OneOf(["scans", "seconds"]),
         description="The units in which onsets and durations are specified.",
@@ -121,6 +121,10 @@ class SpreadsheetMetadataSchema(Schema):
 class ResultdictMetadataSchema(SettingSchema):
     sources = fields.List(fields.Str())
     raw_sources = fields.List(fields.Str())
+    sampling_frequency = fields.Float()
+    repetition_time = fields.Float()
+    skull_stripped = fields.Bool()
+    mean_t_s_n_r = fields.Raw()
 
 
 MetadataSchema = Schema.from_dict(
@@ -128,7 +132,7 @@ MetadataSchema = Schema.from_dict(
         k: v
         for schema in [
             PhaseDiffMetadataSchema,
-            MatEventsMetadataSchema,
+            EventsMetadataSchema,
             RefMetadataSchema,
             BoldMetadataSchema,
         ]

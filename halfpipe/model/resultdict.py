@@ -27,18 +27,24 @@ def validate_file(v):
 
 class ResultdictImagesSchema(Schema):
     # according to https://fmriprep.org/en/stable/outputs.html
-    bold = fields.Str()
+    bold = fields.Raw(validate=validate_file)
 
     # according to https://github.com/poldracklab/fitlins/blob/0.6.2/fitlins/workflows/base.py
     effect = fields.Raw(validate=validate_file)
     variance = fields.Raw(validate=validate_file)
     z = fields.Raw(validate=validate_file)
+    dof = fields.Raw(validate=validate_file)
 
     # according to https://github.com/bids-standard/bids-specification/blob/derivatives/src/05-derivatives/05-functional-derivatives.md
     tsnr = fields.Raw(validate=validate_file)
     alff = fields.Raw(validate=validate_file)
     falff = fields.Raw(validate=validate_file)
     reho = fields.Raw(validate=validate_file)
+    timeseries = fields.Raw(validate=validate_file)
+
+    #
+    matrix = fields.Raw(validate=validate_file)
+    regressors = fields.Raw(validate=validate_file)
 
 
 def validate_val(v):

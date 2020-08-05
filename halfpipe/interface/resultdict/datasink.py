@@ -17,7 +17,7 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 from ...io import DictListFile
 from ...model import ResultdictSchema, entities
 from ...utils import splitext, findpaths, first, formatlikebids
-from ...resources import get as getresource
+from ...resource import get as getresource
 
 
 def _make_path(type, tags, suffix, **kwargs):
@@ -117,12 +117,10 @@ class ResultdictDatasink(SimpleInterface):
 
             for key, inpath in images.items():
                 outpath = None
-                if key in ["effect", "variance", "z"]:
+                if key in ["effect", "variance", "z", "dof"]:  # apply rule
                     outpath = base_directory / _make_path("image", tags, "statmap", stat=key)
-                elif key in ["bold", "tsnr", "alff", "falff", "reho"]:
-                    outpath = base_directory / _make_path("image", tags, key)
                 else:
-                    raise ValueError(f'Invalid image key "{key}"')
+                    outpath = base_directory / _make_path("image", tags, key)
                 _copy_file(inpath, outpath)
 
                 stem, _ = splitext(outpath)

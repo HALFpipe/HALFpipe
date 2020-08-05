@@ -10,6 +10,7 @@ from marshmallow import fields, validate, Schema, post_dump, post_load
 from marshmallow_oneofschema import OneOfSchema
 
 from .contrast import TContrastSchema
+from .setting import SmoothingSettingSchema
 
 
 class Feature:
@@ -42,6 +43,7 @@ class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(default="task_based", validate=validate.Equal("task_based"))
     conditions = fields.List(fields.Str())
     contrasts = fields.List(fields.Nested(TContrastSchema))
+    high_pass_filter_cutoff = fields.Float(default=125.)
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
@@ -63,6 +65,16 @@ class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
     atlases = fields.List(fields.Str())
 
 
+class ReHoFeatureSchema(BaseFeatureSchema):
+    smoothing = fields.Nested(
+        SmoothingSettingSchema, allow_none=True
+    )  # none is allowed to signify that this step will be skipped
+
+
+class FALFFFeatureSchema(ReHoFeatureSchema):
+    unfiltered_setting = fields.Str()
+
+
 class FeatureSchema(OneOfSchema):
     type_field = "type"
     type_field_remove = False
@@ -71,8 +83,8 @@ class FeatureSchema(OneOfSchema):
         "seed_based_connectivity": SeedBasedConnectivityFeatureSchema,
         "dual_regression": DualRegressionFeatureSchema,
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
-        "reho": BaseFeatureSchema,
-        "falff": BaseFeatureSchema,
+        "reho": ReHoFeatureSchema,
+        "falff": FALFFFeatureSchema,
     }
 
     def get_obj_type(self, obj):

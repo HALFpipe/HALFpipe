@@ -18,6 +18,7 @@ class MultipleRegressDesignOutputSpec(TraitedSpec):
         traits.File(exists=True, desc="design f-contrast file"), traits.Bool()
     )
     design_grp = traits.Either(traits.File(exists=True, desc="design group file"), traits.Bool())
+    regs = traits.List(traits.Str)
 
 
 class MultipleRegressDesign(fsl.MultipleRegressDesign):
@@ -25,6 +26,7 @@ class MultipleRegressDesign(fsl.MultipleRegressDesign):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
+        outputs["regs"] = sorted(self.inputs.regressors.keys())  # design matrix column names
         nfcons = sum([1 for con in self.inputs.contrasts if con[1] == "F"])
         for field in list(outputs.keys()):
             if ("fts" in field) and (nfcons == 0):

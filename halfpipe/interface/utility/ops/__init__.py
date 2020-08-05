@@ -3,8 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .exec import Exec
-from .filter import Filter
-from .interleave import Interleave
+from .filter import Filter, FilterList
 from .select import Select
 
-__all__ = [Exec, Filter, Interleave, Select]
+__all__ = [Exec, Filter, FilterList, Select]

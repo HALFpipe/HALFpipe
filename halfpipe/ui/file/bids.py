@@ -14,16 +14,21 @@ class GetBidsDirStep(Step):
         return self.message
 
     def setup(self, ctx):
+        self.bids_dir = None
+
         self._append_view(TextView("Specify the path of the BIDS directory"))
+
         self.message = None
-        self.bids_dir_input_view = DirectoryInputView(messagefun=self._message)
-        self._append_view(self.bids_dir_input_view)
+        self.input_view = DirectoryInputView(messagefun=self._message)
+        self._append_view(self.input_view)
+
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        bids_dir = self.bids_dir_input_view()
-        if bids_dir is None:
+        self.bids_dir = self.input_view()
+        if self.bids_dir is None:
             return False
+        return True
 
     def next(self, ctx):
         ctx.put(BidsFileSchema().load({"datatype": "bids", "path": self.bids_dir}))

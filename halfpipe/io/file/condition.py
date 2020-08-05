@@ -6,8 +6,8 @@ import numpy as np
 from scipy.io import loadmat
 import pandas as pd
 
-from ..model import File
-from ..utils import first
+from ...model import File
+from ...utils import first
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -115,7 +115,7 @@ def parse_condition_file(in_any=None):
     onsets = []
     durations = []
     if isinstance(in_any, (list, tuple)):
-        if all(isinstance(fileobj, File) and fileobj.extension == "txt" for fileobj in in_any):
+        if all(isinstance(fileobj, File) and fileobj.extension == ".txt" for fileobj in in_any):
             condition_file_tpls = [
                 (fileobj.path, fileobj.tags.get("condition")) for fileobj in in_any
             ]
@@ -137,9 +137,9 @@ def parse_condition_file(in_any=None):
         fileobj = in_any
         extension = fileobj.extension
         filepath = fileobj.path
-        if extension == "tsv":
+        if extension == ".tsv":
             return parse_tsv_condition_file(filepath)
-        elif extension == "mat":
+        elif extension == ".mat":
             return parse_mat_condition_file(filepath)
         else:
             raise ValueError("Unknown extension")

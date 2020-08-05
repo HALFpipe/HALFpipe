@@ -23,13 +23,13 @@ from ...model import (
 from ...utils import first, inflect_engine as p
 
 
-def get_setting_vals_steps(next_step_type, noun="setting"):
+def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
     class ConfirmInconsistentStep(YesNoStep):
         no_step_type = None
 
-        def __init__(self, app, noun, next_step_type):
-            self.header_str = f"Do you really want to use inconsistent {noun} across analyses?"
-            self.yes_step_type = next_step_type
+        def __init__(self, app, val_noun, this_next_step_type):
+            self.header_str = f"Do you really want to use inconsistent {val_noun} across {p.plural(noun)}?"
+            self.yes_step_type = this_next_step_type
             super(ConfirmInconsistentStep, self).__init__(app)
 
         def run(self, ctx):
@@ -95,14 +95,19 @@ def get_setting_vals_steps(next_step_type, noun="setting"):
                 ctx.spec.settings[-1]["ica_aroma"] = ica_aroma
                 ctx.spec.settings[-1]["confounds_removal"] = confoundnames
 
+            if oncompletefn is not None:
+                oncompletefn(ctx)
+
+            this_next_step_type = next_step_type
+
             if (
                 len(self.confs) == 1
                 and len(confoundnames) > 0
                 and tuple(sorted(confoundnames)) not in self.confs
             ):
-                return ConfirmInconsistentStep(self.app, self.noun, next_step_type)(ctx)
+                return ConfirmInconsistentStep(self.app, self.noun, this_next_step_type)(ctx)
 
-            return next_step_type(self.app)(ctx)
+            return this_next_step_type(self.app)(ctx)
 
     class FrequencyBasedBandpassSettingStep(Step):
         noun = "filter cutoff frequencies"
@@ -169,13 +174,15 @@ def get_setting_vals_steps(next_step_type, noun="setting"):
                     filterdict
                 )
 
+            this_next_step_type = ConfoundsSelectStep
+
             if any(
                 len(self.valsets[key]) == 1 and filterdict[key] not in self.valsets[key]
                 for key in self.keys
             ):
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", next_step_type)(ctx)
+                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
 
-            return ConfoundsSelectStep(self.app)(ctx)
+            return this_next_step_type(self.app)(ctx)
 
     class GaussianWeightedBandpassSettingStep(FrequencyBasedBandpassSettingStep):
         noun = "filter width"
@@ -290,12 +297,12 @@ def get_setting_vals_steps(next_step_type, noun="setting"):
                 {"mean": self._value}
             )
 
-            next_step_type = DoBandpassFilterStep
+            this_next_step_type = DoBandpassFilterStep
 
             if len(self.means) == 1 and self._value not in self.means:
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", next_step_type)(ctx)
+                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
 
-            return next_step_type(self.app)(ctx)
+            return this_next_step_type(self.app)(ctx)
 
     class DoGrandMeanScalingStep(YesNoStep):
         header_str = "Do grand mean scaling?"
@@ -363,10 +370,13 @@ def get_setting_vals_steps(next_step_type, noun="setting"):
             ctx.spec.settings[-1]["smoothing"] = SmoothingSettingSchema().load(
                 {"fwhm": self._value}
             )
-            if len(self.fwhms) == 1 and self._value not in self.fwhms:
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", next_step_type)(ctx)
 
-            return DoGrandMeanScalingStep(self.app)(ctx)
+            this_next_step_type = DoGrandMeanScalingStep
+
+            if len(self.fwhms) == 1 and self._value not in self.fwhms:
+                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
+
+            return this_next_step_type(self.app)(ctx)
 
     class DoSmoothingStep(YesNoStep):
         header_str = "Apply smoothing?"

@@ -12,13 +12,48 @@ from nipype.interfaces.base import (
     isdefined,
 )
 
-from ..io import meansignals, loadspreadsheet
+from ...utils import first
+from ...io import meansignals, loadspreadsheet
+
+
+class CalcMeanInputSpec(TraitedSpec):
+    in_file = File(exists=True, mandatory=True)
+    mask = File(exists=True)
+    parcellation = File(exists=True)
+    dseg = File(exists=True)
+
+
+class CalcMeanOutputSpec(TraitedSpec):
+    mean = traits.Either(traits.Float(), traits.List(traits.Float))
+
+
+class CalcMean(SimpleInterface):
+    input_spec = CalcMeanInputSpec
+    output_spec = CalcMeanOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        mask_file = None
+        if isdefined(self.inputs.mask):
+            mask_file = self.inputs.mask
+
+        if isdefined(self.inputs.dseg):  # get grey matter only
+            _, self._results["mean"], _ = meansignals(
+                in_file, self.inputs.dseg, mask_file=mask_file, min_n_voxels=0
+            ).ravel()
+        elif isdefined(self.inputs.parcellation):
+            self._results["mean"] = meansignals(
+                in_file, self.inputs.parcellation, mask_file=mask_file, min_n_voxels=0
+            ).ravel()
+        elif mask_file is not None:
+            self._results["mean"] = first(meansignals(
+                in_file, mask_file, min_n_voxels=0
+            ).ravel())
+        return runtime
 
 
 class ValsInputSpec(TraitedSpec):
     confounds = File(exists=True)
-    tsnr_file = File(exists=True)
-    dseg = File(exists=True)
     aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True)
 
 
@@ -26,7 +61,6 @@ class ValsOutputSpec(TraitedSpec):
     fd_mean = traits.Float()
     fd_perc = traits.Float()
     aroma_noise_frac = traits.Float()
-    mean_gm_tsnr = traits.Float()
 
 
 class Vals(SimpleInterface):
@@ -44,10 +78,5 @@ class Vals(SimpleInterface):
             self._results["aroma_noise_frac"] = np.asarray(
                 [val["MotionNoise"] is True for val in aroma_metadata.values()]
             ).mean()
-
-        if isdefined(self.inputs.tsnr_file) and isdefined(self.inputs.dseg):
-            _, self._results["mean_gm_tsnr"], _ = meansignals(
-                self.inputs.tsnr_file, self.inputs.dseg
-            ).ravel()
 
         return runtime

@@ -2,8 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from os import path as op
+import logging
+from pathlib import Path
 import re
 
 from nipype.interfaces.base import (
@@ -18,36 +18,65 @@ from nipype.interfaces.io import add_traits, IOBase
 import pandas as pd
 import numpy as np
 
-from ..utils import readtsv
+from ...io import loadspreadsheet
 
 
-def _merge_columns(in_list):
-    out_array = None
-    for idx, in_file in enumerate(in_list):
-        in_array = readtsv(in_file)
-        if in_array.ndim == 1:  # single column file
-            in_array = in_array.reshape((-1, 1))
-        if in_array.size > 0:
-            if out_array is None:
-                out_array = in_array
+class FillNAInputSpec(TraitedSpec):
+    in_tsv = File(exists=True, desc="input tsv file")
+    replace_with = traits.Float(default=0.0, usedefault=True)
+
+
+class TsvOutputSpec(TraitedSpec):
+    out_with_header = File(exists=True, desc="output tsv file")
+    out_no_header = File(exists=True, desc="output tsv file")
+    column_names = traits.List(
+        traits.Str, desc="list of column names in order"
+    )
+
+
+class FillNA(SimpleInterface):
+    """
+    Remove NA values
+    """
+
+    input_spec = FillNAInputSpec
+    output_spec = TsvOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.input.in_tsv
+
+        if isdefined(in_file):
+            replace_with = self.inputs.replace_with
+
+            df = loadspreadsheet(in_file)
+
+            non_finite_count = np.logical_not(np.isfinite(df.values)).sum()
+            if non_finite_count > 0:
+                logging.getLogger("halfpipe").warning(f"Replacing {non_finite_count:d} non-finite values with {replace_with:f} in file \"{in_file}\"")
+
+                df.replace([np.inf, -np.inf], np.nan, inplace=True)
+                df.fillna(replace_with, inplace=True)
+                self._results["out_no_header"] = Path.cwd() / "fillna_no_header.tsv"
+                df.to_csv(
+                    self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+                )
             else:
-                out_array = np.hstack((out_array, in_array))
-    out_array = np.squeeze(out_array)
-    outputpath = op.join(os.getcwd(), "merged_columns.tsv")
-    np.savetxt(outputpath, out_array, delimiter="\t")
-    return outputpath
+                self._results["out_no_header"] = in_file
+                self._results["column_names"] = list(df.columns)
+
+        return runtime
 
 
-class MergeColumnsOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc="output tsv file")
+class MergeColumnsInputSpec(DynamicTraitedSpec):
+    row_index = traits.Either(traits.List(traits.Str), traits.Bool(), default=False, usedefault=True)
 
 
 class MergeColumns(IOBase):
     """
     """
 
-    input_spec = DynamicTraitedSpec
-    output_spec = MergeColumnsOutputSpec
+    input_spec = MergeColumnsInputSpec
+    output_spec = TsvOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
         super(MergeColumns, self).__init__(**inputs)
@@ -55,6 +84,8 @@ class MergeColumns(IOBase):
         if numinputs >= 1:
             input_names = ["in%d" % (i + 1) for i in range(numinputs)]
             add_traits(self.inputs, input_names, trait_type=File)
+            input_names = ["column_names%d" % (i + 1) for i in range(numinputs)]
+            add_traits(self.inputs, input_names)
         else:
             input_names = []
 
@@ -64,35 +95,41 @@ class MergeColumns(IOBase):
         if self._numinputs < 1:
             return outputs
 
-        def getval(idx):
-            return getattr(self.inputs, "in%d" % (idx + 1))
+        out_df = None
 
-        values = [getval(idx) for idx in range(self._numinputs) if isdefined(getval(idx))]
+        for i in range(self._numinputs):
+            in_file = getattr(self.inputs, "in%d" % (i + 1))
+            if not isdefined(in_file):
+                continue
+            in_df = loadspreadsheet(in_file)
+            if in_df.size == 0:
+                continue
+            column_names = getattr(self.inputs, "column_names%d" % (i + 1))
+            if isdefined(column_names):
+                if not isinstance(column_names, (list, tuple)):
+                    column_names = [column_names]
+                in_df.columns = column_names
+            if out_df is None:
+                out_df = in_df
+            else:
+                out_df = pd.concat((out_df, in_df), axis=1)
 
-        out_file = None
+        index = self.inputs.row_index is not False
+        if isinstance(self.inputs.row_index, list):
+            index = True
+            out_df.index = self.inputs.row_index
 
-        if len(values) > 0:
-            out_file = _merge_columns(values)
+        outputs["out_with_header"] = Path.cwd() / "merge_with_header.tsv"
+        out_df.to_csv(
+            outputs["out_with_header"], sep="\t", index=index, na_rep="n/a", header=True
+        )
+        outputs["out_no_header"] = Path.cwd() / "merge_no_header.tsv"
+        out_df.to_csv(
+            outputs["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+        )
+        outputs["column_names"] = list(out_df.columns)
 
-        outputs["out_file"] = out_file
         return outputs
-
-
-def _select_columns(column_names=None, inputpath=None, output_with_header=False):
-    filter = re.compile("^(" + "|".join(column_names) + ")$")
-    dataframe = pd.read_csv(inputpath, sep="\t")
-    dataframe = dataframe[
-        [
-            column
-            for column in dataframe.columns
-            if filter.match(column) is not None and len(column_names) > 0
-        ]
-    ]
-    outputpath = op.join(os.getcwd(), "selected_columns.tsv")
-    dataframe.to_csv(
-        outputpath, sep="\t", index=False, na_rep="n/a", header=output_with_header
-    )
-    return outputpath
 
 
 class SelectColumnsInputSpec(TraitedSpec):
@@ -100,11 +137,6 @@ class SelectColumnsInputSpec(TraitedSpec):
     column_names = traits.List(
         traits.Str, desc="list of column names, can be regular expressions"
     )
-    output_with_header = traits.Bool(False, usedefault=True)
-
-
-class SelectColumnsOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc="output tsv file")
 
 
 class SelectColumns(SimpleInterface):
@@ -113,14 +145,29 @@ class SelectColumns(SimpleInterface):
     """
 
     input_spec = SelectColumnsInputSpec
-    output_spec = SelectColumnsOutputSpec
+    output_spec = TsvOutputSpec
 
     def _run_interface(self, runtime):
-        outputpath = _select_columns(
-            column_names=self.inputs.column_names,
-            inputpath=self.inputs.in_file,
-            output_with_header=self.inputs.output_with_header,
+        inputpath = self.inputs.in_file
+        column_names = self.inputs.column_names
+
+        filter = re.compile("^(" + "|".join(column_names) + ")$")
+        dataframe = loadspreadsheet(inputpath)
+        dataframe = dataframe[
+            [
+                column
+                for column in dataframe.columns
+                if filter.match(column) is not None and len(column_names) > 0
+            ]
+        ]
+        self._results["out_with_header"] = Path.cwd() / "select_with_header.tsv"
+        dataframe.to_csv(
+            self._results["out_with_header"], sep="\t", index=False, na_rep="n/a", header=True
         )
-        self._results["out_file"] = outputpath
+        self._results["out_no_header"] = Path.cwd() / "select_no_header.tsv"
+        dataframe.to_csv(
+            self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+        )
+        self._results["column_names"] = list(dataframe.columns)
 
         return runtime

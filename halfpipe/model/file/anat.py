@@ -16,7 +16,7 @@ from ..tags import AnatTagsSchema
 class T1wFileSchema(BaseFileSchema):
     datatype = fields.Str(default="anat", validate=validate.Equal("anat"))
     suffix = fields.Str(default="T1w", validate=validate.Equal("T1w"))
-    extension = fields.Str(validate=validate.OneOf(["nii", "nii.gz"]))
+    extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
     tags = fields.Nested(AnatTagsSchema, default=dict())
 

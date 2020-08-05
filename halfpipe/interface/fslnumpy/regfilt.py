@@ -6,32 +6,14 @@
 import logging
 
 import numpy as np
-import nibabel as nib
 
-from nipype.interfaces.base import (
-    traits,
-    isdefined,
-)
+from nipype.interfaces.base import traits
 
-from ..utils import readtsv
+from ...io import loadmatrix
 from ..transformer import Transformer, TransformerInputSpec
 
 
-def binarise(array, lowerth, upperth, threstype="inclusive", invert=False):
-    """
-    numpy translation of fsl newimage.cc binarise
-    default arguments come from newimagefns.h:142
-    """
-    assert invert is True or invert is False
-    if threstype == "inclusive":
-        it = np.logical_and(array >= lowerth, array <= upperth)
-    elif threstype == "exclusive":
-        it = np.logical_and(array > lowerth, array < upperth)
-    array2 = np.logical_xor(invert, it)
-    return array2
-
-
-def regfilt(array, design, comps, mask=None, aggressive=False):
+def regfilt(array, design, comps, aggressive=False):
     """
     numpy translation of fsl fsl_regfilt.cc dofilter
     """
@@ -39,14 +21,7 @@ def regfilt(array, design, comps, mask=None, aggressive=False):
 
     # setup
 
-    if mask is None:
-        mean = array.mean(axis=1)
-        mmin = mean.min()
-        mmax = mean.max()
-        mask = binarise(mean, mmin + 0.01 * (mmax - mmin), mmax)
-
-    mask_vec = np.ravel(mask)
-    data = array[mask_vec, :].T
+    data = array.T
     m, n = data.shape
 
     mean_r = data.mean(axis=0)
@@ -75,15 +50,15 @@ def regfilt(array, design, comps, mask=None, aggressive=False):
 
     new_data += mean_r[None, :]
 
-    temp_vol = np.zeros_like(array)
-    temp_vol[mask_vec, :] = new_data.T
+    temp_vol = new_data.T
 
     return temp_vol
 
 
 class FilterRegressorInputSpec(TransformerInputSpec):
     design_file = traits.File(desc="design file", exists=True, mandatory=True)
-    filter_columns = traits.List(traits.Int, mandatory=True)
+    filter_columns = traits.List(traits.Int)
+    filter_all = traits.Bool(default=False, usedefault=True)
     mask = traits.File(desc="mask image file name", exists=True)
     aggressive = traits.Bool(default=False, usedefault=True)
 
@@ -91,18 +66,19 @@ class FilterRegressorInputSpec(TransformerInputSpec):
 class FilterRegressor(Transformer):
     input_spec = FilterRegressorInputSpec
 
-    def _transform(self, array):
-        design = readtsv(self.inputs.design_file, dtype=np.float64)
+    def _transform(self, array, mask=None):
+        design = loadmatrix(self.inputs.design_file, dtype=np.float64)
 
-        mask = self.inputs.mask
-        if isdefined(mask):
-            mask_img = nib.load(mask)
-            mask = mask_img.get_fdata(dtype=np.float64)
+        filter_all = self.inputs.filter_all
+
+        if filter_all is not True:
+            filter_columns = self.inputs.filter_columns
+
         else:
-            mask = None
+            filter_columns = list(range(1, design.shape[1] + 1))
 
-        filter_columns = self.inputs.filter_columns
-
-        array2 = regfilt(array, design, filter_columns, mask=mask, aggressive=False)
+        array2 = regfilt(
+            array, design, filter_columns, mask=mask, aggressive=self.inputs.aggressive
+        )
 
         return array2

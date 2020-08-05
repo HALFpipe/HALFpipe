@@ -8,6 +8,7 @@ from .hash import hexdigest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol
 from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach
+from .path import findpaths, splitext
 
 from inflect import engine
 
@@ -22,5 +23,6 @@ __all__ = [
     hexdigest,
     niftidim, nvol,
     loadints, ncol,
-    first, second, firstfloat, firststr, ravel, removenone, lenforeach
+    first, second, firstfloat, firststr, ravel, removenone, lenforeach,
+    findpaths, splitext
 ]

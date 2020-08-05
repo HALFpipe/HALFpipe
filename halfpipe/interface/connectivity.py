@@ -37,7 +37,6 @@ class ConnectivityMeasureOutputSpec(TraitedSpec):
     time_series = traits.File(desc="Numpy text file with the timeseries matrix")
     covariance = traits.File(desc="Numpy text file with the connectivity matrix")
     correlation = traits.File(desc="Numpy text file with the connectivity matrix")
-    partial_correlation = traits.File(desc="Numpy text file with the connectivity matrix")
 
 
 class ConnectivityMeasure(BaseInterface):

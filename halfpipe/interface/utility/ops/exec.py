@@ -28,7 +28,7 @@ class Exec(IOBase):
     output_spec = DynamicTraitedSpec
 
     def __init__(self, fieldtpls=[], **inputs):
-        super(Sanitize, self).__init__(**inputs)
+        super(Exec, self).__init__(**inputs)
 
         self.fieldtpls = fieldtpls
 

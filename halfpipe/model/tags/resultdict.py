@@ -23,6 +23,14 @@ def validate_tags(v):
 ResultdictTagsSchema = Schema.from_dict(
     {
         entity: fields.Raw(validate=validate_tags)
-        for entity in [*FuncTagsSchema().fields.keys(), "setting", "feature", "seed", "component"]
+        for entity in [
+            *FuncTagsSchema().fields.keys(),
+            "stat",
+            "setting",
+            "feature",
+            "seed",
+            "component",
+            "atlas",
+        ]
     }
 )

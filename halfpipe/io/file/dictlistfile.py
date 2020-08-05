@@ -13,7 +13,7 @@ import numpy as np
 import fasteners
 from tabulate import tabulate
 
-from ..model import entities
+from ...model import entities
 
 logger = logging.getLogger("halfpipe")
 

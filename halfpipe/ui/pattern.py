@@ -147,8 +147,6 @@ class FilePatternStep(Step):
                 filedict = {**self.filedict, "path": path, "tags": {}}
 
                 _, ext = splitext(path)
-                if ext[0] == ".":  # remove leading dot
-                    ext = ext[1:]
                 filedict["extension"] = self._transform_extension(ext)
 
                 self.fileobj = self.schema().load(filedict)

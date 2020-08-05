@@ -2,18 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
 from os import path as op
 import sys
-import pkg_resources
 import logging
 
 from . import __version__
 
-from fmriprep import config  # noqa
-
-configfilename = pkg_resources.resource_filename("halfpipe", "data/config.toml")
-config.load(configfilename)
+from fmriprep import config
 
 global debug
 debug = False
@@ -40,7 +35,7 @@ def _main():
     basegroup.add_argument("--watchdog", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
-    steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
+    steps = ["spec-ui", "workflow", "run", "run-subjectlevel", "run-grouplevel"]
     for step in steps:
         steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
         steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
@@ -49,20 +44,8 @@ def _main():
             steponlygroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     workflowgroup = ap.add_argument_group("workflow", "")
-
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
-    workflowgroup.add_argument(
-        "--skull-strip-algorithm",
-        choices=["none", "ants"],
-        default="ants",
-        help="specify how to perform skull stripping",
-    )
-    workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
-    workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
-
-    execgraphgroup = ap.add_argument_group("execgraph", "")
-    execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
-    chunkinggroup = execgraphgroup.add_mutually_exclusive_group(required=False)
+    chunkinggroup = workflowgroup.add_mutually_exclusive_group(required=False)
     chunkinggroup.add_argument(
         "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
     )
@@ -71,6 +54,18 @@ def _main():
         action="store_true",
         default=False,
         help="generate one subject-level workflow per subject",
+    )
+    chunkinggroup.add_argument(
+        "--use-slurm",
+        action="store_true",
+        default=False,
+        help="generate workflow suitable for running on a SLURM cluster",
+    )
+    chunkinggroup.add_argument(
+        "--use-sge",
+        action="store_true",
+        default=False,
+        help="generate workflow suitable for running on an SGE cluster",
     )
 
     rungroup = ap.add_argument_group("run", "")
@@ -153,7 +148,7 @@ def _main():
     Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("halfpipe")
 
-    if not verbose:
+    if not verbose and not debug:
         logger.warning(
             f'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
             'Detailed logs information will only be available in the "log.txt" file in the working directory. '
@@ -170,7 +165,7 @@ def _main():
     if not should_run["spec-ui"]:
         logger.info(f"Did not run step: spec")
 
-    workflow = None
+    execgraph = None
 
     if not should_run["workflow"]:
         logger.info(f"Did not run step: workflow")
@@ -187,34 +182,8 @@ def _main():
             )
             logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
 
-        workflow = init_workflow(
-            workdir,
-            no_compose_transforms=args.no_compose_transforms,
-            freesurfer=args.freesurfer,
-            skull_strip_algorithm=args.skull_strip_algorithm,
-        )
-
-    execgraphs = None
-
-    if not should_run["execgraph"]:
-        logger.info(f"Did not run step: execgraph")
-    else:
-        logger.info(f"Running step: execgraph")
-        from .execgraph import init_execgraph
-
-        if workflow is None:
-            from .utils import loadpicklelzma
-
-            assert (
-                args.workflow_file is not None
-            ), "Missing required --workflow-file input for step execgraph"
-            workflow = loadpicklelzma(args.workflow_file)
-            logger.info(f'Using workflow defined in file "{args.workflow_file}"')
-        else:
-            logger.info(f"Using workflow from previous step")
-
-        execgraphs = init_execgraph(
-            workdir, workflow, n_chunks=args.n_chunks, subject_chunks=args.subject_chunks
+        execgraphs = init_workflow(
+            workdir
         )
 
     if (
@@ -254,11 +223,12 @@ def _main():
             plugin_args["n_procs"] = args.nipype_n_procs
         if args.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = args.nipype_memory_gb
-        elif "SLURM_MEM_PER_CPU" in os.environ and "SLURM_CPUS_PER_TASK" in os.environ:
-            memory_mb = float(os.environ["SLURM_MEM_PER_CPU"]) * float(
-                os.environ["SLURM_CPUS_PER_TASK"]
-            )
-            plugin_args["memory_gb"] = memory_mb / 1024.0
+        else:
+            from .memory import memorylimit
+
+            memory_gb = memorylimit()
+            if memory_gb is not None:
+                plugin_args["memory_gb"] = memory_gb
 
         runnername = f"{args.nipype_run_plugin}Plugin"
         if hasattr(ppp, runnername):

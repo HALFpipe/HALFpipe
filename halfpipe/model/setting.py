@@ -18,6 +18,8 @@ class GlobalSettingsSchema(Schema):
         validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), default="ants", required=True
     )
 
+    fd_thres = fields.Float(default=0.5, required=True)
+
     anat_only = fields.Boolean(default=False, required=True)
     write_graph = fields.Boolean(default=False, required=True)
 
@@ -42,7 +44,7 @@ class GlobalSettingsSchema(Schema):
     skull_strip_template = fields.Str(default="OASIS30ANTs", required=True)
 
     aroma_err_on_warn = fields.Boolean(default=False, required=True)
-    aroma_melodic_dim = fields.Float(default=-200, required=True)
+    aroma_melodic_dim = fields.Int(default=-200, required=True)
 
 
 class SmoothingSettingSchema(Schema):

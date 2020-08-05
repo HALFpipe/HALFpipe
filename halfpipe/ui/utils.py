@@ -39,7 +39,7 @@ def messagefun(database, filetype, filepaths, tagnames):
         if len(filepaths) > 0:
             n_by_tag = dict()
             for tagname in tagnames:
-                tagvalset = database.get_tagval_set(tagname, filepaths=filepaths)
+                tagvalset = database.tagvalset(tagname, filepaths=filepaths)
                 if tagvalset is not None:
                     n_by_tag[tagname] = len(tagvalset)
             tagmessages = [

@@ -9,7 +9,7 @@ from .condition import (
     find_and_parse_condition_files,
     parse_condition_file,
 )
-from .spreadsheet import loadspreadsheet
+from .spreadsheet import loadspreadsheet, loadmatrix
 
 from .pickle import loadpicklelzma, dumppicklelzma, cacheobj, uncacheobj
 
@@ -19,6 +19,7 @@ __all__ = [
     find_and_parse_condition_files,
     parse_condition_file,
     loadspreadsheet,
+    loadmatrix,
     loadpicklelzma,
     dumppicklelzma,
     cacheobj,

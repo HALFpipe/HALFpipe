@@ -12,12 +12,15 @@ from calamities import (
     CombinedMultipleAndSingleChoiceInputView,
 )
 
+from .loop import AddAnotherFeatureStep, SettingValsStep
+
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..step import Step
-from .loop import SettingValsStep
+from ..setting import get_setting_init_steps, get_setting_vals_steps
+
 from ...model import RefFileSchema
-from ..setting import get_setting_init_steps
+from ...utils import formatlikebids, deepcopy
 
 next_step_type = SettingValsStep
 
@@ -136,8 +139,33 @@ settingdict = {
     "bandpass_filter": {"type": "frequency_based", "low": 0.01, "high": 0.1},
     "grand_mean_scaling": {"mean": 10000.0},
 }
+
+
+def move_setting_smoothing_to_feature(ctx):
+    if ctx.settings[-1].get("smoothing") is not None:
+        smoothing = ctx.settings[-1]["smoothing"]
+        del ctx.settings[-1]["smoothing"]
+        ctx.features[-1].smoothing = smoothing
+
+
+def on_falff_setting(ctx):
+    move_setting_smoothing_to_feature(ctx)
+
+    name = formatlikebids(f"{ctx.spec.features[-1].name} unfiltered setting")
+
+    unfiltered_setting = deepcopy(ctx.settings[-1])
+    unfiltered_setting["name"] = name
+    del unfiltered_setting["bandpass_filter"]  # remove bandpass filter, keep everything else
+    ctx.spec.settings.append(unfiltered_setting)
+
+    ctx.spec.features[-1].unfiltered_setting = name
+
+
+ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
 ReHoSettingInitStep = get_setting_init_steps(next_step_type, settingdict=settingdict)
-FALFFSettingInitStep = get_setting_init_steps(next_step_type, settingdict=settingdict)
+
+FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
+FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)
 
 SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep

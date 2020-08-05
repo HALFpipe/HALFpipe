@@ -39,31 +39,6 @@ schema_version = "2.0.0"
 compatible_schema_versions = ["2.0.0"]
 
 
-class Spec:
-    def __init__(self, **kwargs):
-        assert "timestamp" in kwargs
-        assert "files" in kwargs
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    @property
-    def timestampstr(self):
-        return self.timestamp.strftime(timestampfmt)
-
-    @property
-    def uuid(self):
-        return uuid.uuid5(namespace, hexdigest(self))
-
-    def validate(self):
-        SpecSchema().validate(self)
-
-    def put(self, fileobj):
-        for file in self.files:
-            if file.path == fileobj.path:  # path must be unique
-                return
-        self.files.append(fileobj)
-
-
 class SpecSchema(Schema):
     class Meta:
         unknown = RAISE
@@ -129,6 +104,31 @@ class SpecSchema(Schema):
     @post_load
     def make_object(self, data, **kwargs):
         return Spec(**data)
+
+
+class Spec:
+    def __init__(self, **kwargs):
+        assert "timestamp" in kwargs
+        assert "files" in kwargs
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    @property
+    def timestampstr(self):
+        return self.timestamp.strftime(timestampfmt)
+
+    @property
+    def uuid(self):
+        return uuid.uuid5(namespace, hexdigest(SpecSchema().dump(self)))
+
+    def validate(self):
+        SpecSchema().validate(self)
+
+    def put(self, fileobj):
+        for file in self.files:
+            if file.path == fileobj.path:  # path must be unique
+                return
+        self.files.append(fileobj)
 
 
 def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogger("halfpipe")):

@@ -8,5 +8,5 @@ def hexdigest(obj):
     import json
 
     m = hashlib.sha1()
-    m.update(json.dumps(obj, sort_keys=True))
+    m.update(json.dumps(obj, sort_keys=True).encode())
     return m.hexdigest()

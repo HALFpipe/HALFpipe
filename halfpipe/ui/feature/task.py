@@ -11,14 +11,15 @@ from calamities import (
     TextInputView,
     TextView,
     SpacerView,
-    MultipleChoiceInputView
+    MultipleChoiceInputView,
+    MultiCombinedNumberAndSingleChoiceInputView
 )
 
 from ..step import Step, BranchStep, YesNoStep
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..utils import forbidden_chars
-from ...utils import ravel
+from ...utils import first, ravel
 from ..setting import get_setting_init_steps
 from .loop import SettingValsStep
 
@@ -57,6 +58,68 @@ class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"
     yes_step_type = None  # add later, because not yet defined
     no_step_type = next_step_type
+
+
+class ConfirmInconsistentStep(YesNoStep):
+    no_step_type = None
+
+    def __init__(self, app, noun, next_step_type):
+        self.header_str = f"Do you really want to use inconsistent {noun} across features?"
+        self.yes_step_type = next_step_type
+        super(ConfirmInconsistentStep, self).__init__(app)
+
+    def run(self, ctx):
+        self.choice = self.input_view()
+        if self.choice is None:
+            return False
+        if self.choice == "No":
+            return False
+        return True
+
+
+class HighPassFilterCutoffStep(Step):
+    noun = "temporal filter"
+    display_strs = ["High-pass width in seconds"]
+    suggestion = (125.0,)
+
+    def setup(self, ctx):
+        self.result = None
+
+        self._append_view(TextView(f"Apply a {self.noun} to the design matrix?"))
+
+        self.valset = set()
+
+        for feature in ctx.spec.features:
+            if hasattr(feature, "high_pass_filter_cutoff"):
+                self.valset.add(feature.high_pass_filter_cutoff)
+
+        suggestion = self.suggestion
+        if len(self.valset) > 0:
+            suggestion = (first(self.valset),)
+
+        self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
+            self.display_strs, ["Skip"], initial_values=suggestion
+        )
+
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.result = self.input_view()
+        if self.result is None:  # was cancelled
+            return False
+        return True
+
+    def next(self, ctx):
+        if self.result is not None:
+            ctx.spec.features[-1].high_pass_filter_cutoff = first(self.result.values())  # only one value
+
+        next_step_type = AddAnotherContrastStep
+
+        if len(self.valset) == 1 and self.result not in self.valset:
+            return ConfirmInconsistentStep(self.app, f"{self.noun} values", next_step_type)(ctx)
+
+        return next_step_type(self.app)(ctx)
 
 
 class ContrastValuesStep(Step):
@@ -212,7 +275,7 @@ class MatEventsStep(EventsStep):
     next_step_type = CheckUnitsStep
 
     def _transform_extension(self, ext):
-        assert ext == "mat"
+        assert ext == ".mat"
         return ext
 
 
@@ -222,14 +285,14 @@ class TxtEventsStep(EventsStep):
     required_in_path_entities = ["condition"]
 
     def _transform_extension(self, ext):
-        return "txt"
+        return ".txt"
 
 
 class TsvEventsStep(EventsStep):
     schema = TsvEventsFileSchema
 
     def _transform_extension(self, ext):
-        return "tsv"
+        return ".tsv"
 
 
 class EventsTypeStep(BranchStep):

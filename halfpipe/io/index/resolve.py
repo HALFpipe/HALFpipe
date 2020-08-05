@@ -19,6 +19,7 @@ bids.config.set_option("extension_initial_dot", True)  # noqa
 from bids import BIDSLayout
 
 from ...model import FileSchema, entities, entity_longnames
+from ...utils import splitext
 
 file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}
@@ -59,6 +60,7 @@ class ResolvedSpec:
             filedict = file_schema.dump(fileobj)
 
             filedict["path"] = filepath
+            _, filedict["extension"] = splitext(filepath)
 
             tagdict.update(filedict.get("tags", {}))
             filedict["tags"] = tagdict
@@ -87,7 +89,7 @@ class ResolvedSpec:
             for k, v in entitydict.items():
                 entity = entity_shortnames[k] if k in entity_shortnames else k
                 if entity in entities:
-                    tags[entity] = v
+                    tags[entity] = str(v)
 
             filedict = {
                 "datatype": entitydict.get("datatype"),
@@ -105,8 +107,8 @@ class ResolvedSpec:
                 self.specfileobj_by_filepaths[resolved_fileobj.path] = fileobj
 
                 resolved_files.append(resolved_fileobj)
-            except marshmallow.exceptions.ValidationError:
-                pass
+            except marshmallow.exceptions.ValidationError as e:
+                logging.getLogger("halfpipe.ui").warning(f'Ignored validation error in "{filepath}": %s', e, stack_info=True)
 
         return resolved_files
 

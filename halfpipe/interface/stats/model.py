@@ -11,8 +11,8 @@ import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
-from ..utils import first
-from ..io import loadspreadsheet
+from ...utils import first
+from ...io import loadspreadsheet
 
 
 def _check_multicollinearity(matrix):

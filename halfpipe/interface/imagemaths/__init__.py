@@ -3,7 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .addmeans import AddMeans
+from .blurinmask import BlurInMask
+from .maxintensity import MaxIntensity
 from .merge import Merge, MergeMask
 from .resample import Resample
+from .zscore import ZScore
 
-__all__ = [AddMeans, Merge, MergeMask, Resample]
+__all__ = [AddMeans, BlurInMask, MaxIntensity, Merge, MergeMask, Resample, ZScore]

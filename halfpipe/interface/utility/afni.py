@@ -12,8 +12,8 @@ import pandas as pd
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
-from ..utils import readtsv, splitext
-from ..io import loadspreadsheet
+from ...utils import splitext
+from ...io import loadmatrix, loadspreadsheet
 
 
 class ToAFNIInputSpec(TraitedSpec):
@@ -74,7 +74,7 @@ class FromAFNI(SimpleInterface):
             self._results["out_file"] = in_file
 
         else:
-            in_array = readtsv(in_file).T
+            in_array = loadmatrix(in_file).T
 
             out_df = pd.DataFrame(data=in_array, columns=self.inputs.variable_names)
 

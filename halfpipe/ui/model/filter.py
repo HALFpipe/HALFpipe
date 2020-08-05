@@ -58,10 +58,15 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
             return self.next_step_type(self.app)(ctx)
 
     class FdPercFilterStep(BaseCutoffFilterStep):
-        header_str = "Specify the maximum allowed proportion of frames above the framewise displacement threshold of 0.2 mm"
         filter_field = "fd_perc"
         number_input_args = {"number": 0.1, "min": 0, "max": 1}
         next_step_type = cutoff_filter_next_step_type
+
+        def setup(self, ctx):
+            fd_thres = ctx.spec.global_settings.get("fd_thres")
+            self.header_str = f"Specify the maximum allowed proportion of frames " + \
+                f"above the framewise displacement threshold of {fd_thres:.1f} mm"
+            super(FdPercFilterStep, self).setup(ctx)
 
     class FdMeanFilterStep(BaseCutoffFilterStep):
         header_str = "Specify the maximum allowed mean framewise displacement in mm"
