@@ -92,7 +92,6 @@ class ResultdictDatasink(SimpleInterface):
 
         resultdict_schema = ResultdictSchema()
 
-        base_directory = Path(self.base_directory)
         reports_directory = base_directory / "reports"
 
         indexhtml_path = reports_directory / "index.html"

@@ -89,10 +89,11 @@ class MakeResultdicts(IOBase):
 
         resultdicts = []
         for valuetupl in valuetupls:
-            resultdict = {
-                "tags": dict(**self.inputs.tags),
-                "metadata": dict(**self.inputs.metadata),
-            }
+            resultdict = dict(tags=dict(), metadata=dict())
+            if isdefined(self.inputs.tags) and isinstance(self.inputs.tags, dict):
+                resultdict["tags"] = dict(**self.inputs.tags)
+            if isdefined(self.inputs.metadata) and isinstance(self.inputs.metadata, dict):
+                resultdict["metadata"] = dict(**self.inputs.metadata)
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 if f == "images":
                     m = composite_attr.fullmatch(k)

@@ -59,5 +59,5 @@ class Resample(FixHeaderApplyTransforms):
         if self.resample:
             outputs = super(Resample, self)._list_outputs()
         else:
-            outputs["output_image"] = self.input.input_image
+            outputs["output_image"] = self.inputs.input_image
         return outputs

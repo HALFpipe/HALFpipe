@@ -43,7 +43,7 @@ class FillNA(SimpleInterface):
     output_spec = TsvOutputSpec
 
     def _run_interface(self, runtime):
-        in_file = self.input.in_tsv
+        in_file = self.inputs.in_tsv
 
         if isdefined(in_file):
             replace_with = self.inputs.replace_with

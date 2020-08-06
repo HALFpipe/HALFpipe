@@ -45,7 +45,8 @@ def init_workflow(workdir):
     workflow.config["execution"].update(
         {
             "crashdump_dir": workflow.base_dir,
-            "poll_sleep_duration": 0.1,
+            "crashfile_format": "txt",
+            "poll_sleep_duration": 0.75,
             "use_relative_paths": False,
             "check_version": False,
         }

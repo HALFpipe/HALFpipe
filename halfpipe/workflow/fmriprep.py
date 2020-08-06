@@ -157,7 +157,7 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = database.tags(boldfilepath)
 
-            self.connect(hierarchy, inputnode, subject_id=subject_id)
+            self.connect(hierarchy, inputnode, sourcefile=boldfilepath)
 
     def connect(self, nodehierarchy, node, sourcefile=None, subject_id=None, **kwargs):
         """

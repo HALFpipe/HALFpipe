@@ -139,13 +139,13 @@ def add_carpetplot(workflow, memcalc):
     )
     workflow.connect(inputnode, "movpar_file", fdisp, "in_file")
 
-    dvnode = pe.Node(
+    computedvars = pe.Node(
         nac.ComputeDVARS(save_plot=False, save_all=True),
-        name="ComputeDVARS",
+        name="computedvars",
         mem_gb=memcalc.series_std_gb * 3,
     )
-    workflow.connect(inputnode, "bold_std", dvnode, "in_file")
-    workflow.connect(inputnode, "bold_mask_std", dvnode, "in_mask")
+    workflow.connect(inputnode, "bold_std", computedvars, "in_file")
+    workflow.connect(inputnode, "bold_mask_std", computedvars, "in_mask")
 
     outliers = pe.Node(
         afni.OutlierCount(fraction=True, out_file="outliers.out"),
@@ -182,7 +182,7 @@ def add_carpetplot(workflow, memcalc):
 
     workflow.connect(spikes_bg, "out_tsz", bigplot, "in_spikes_bg")
     workflow.connect(fdisp, "out_file", bigplot, "fd")
-    workflow.connect(dvnode, "out_all", bigplot, "dvars")
+    workflow.connect(computedvars, "out_all", bigplot, "dvars")
     workflow.connect(outliers, "out_file", bigplot, "outliers")
 
     workflow.connect(bigplot, "out_file", make_resultdicts, "carpetplot")
