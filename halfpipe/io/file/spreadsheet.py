@@ -52,6 +52,8 @@ def loadspreadsheet(fname, ftype=None):
             df = pd.read_excel(fname, engine="odf")
         else:
             df = pd.read_table(fname, sep=None, engine="python")
+        if df is not None:
+            return df
     except Exception:
         pass
     df = pd.DataFrame(loadmatrix(fname))

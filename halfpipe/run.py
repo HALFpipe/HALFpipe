@@ -17,6 +17,7 @@ debug = False
 def _main():
     from argparse import ArgumentParser
     from multiprocessing import cpu_count
+    from pprint import pformat
 
     ap = ArgumentParser(
         description=f"ENIGMA Halfpipe {__version__} is a user-friendly interface "
@@ -239,6 +240,7 @@ def _main():
             runnercls = getattr(nip, runnername)
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
+        logger.info(f'Using plugin arguments\n{pformat(plugin_args)}')
         runner = runnercls(plugin_args=plugin_args)
 
         execgraphstorun = []

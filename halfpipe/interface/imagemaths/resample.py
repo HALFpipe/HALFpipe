@@ -11,9 +11,7 @@ import nibabel as nib
 from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
 
-from nipype.interfaces.base import (
-    traits,
-)
+from nipype.interfaces.base import traits, InputMultiPath, File
 
 from ...resource import get as getresource
 
@@ -22,6 +20,13 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
     input_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
     reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
+    transforms = traits.Either(
+        InputMultiPath(File(exists=True)),
+        "identity",
+        argstr="%s",
+        mandatory=False,
+        desc="will be overwritten",
+    )
 
 
 class Resample(FixHeaderApplyTransforms):
@@ -32,7 +37,8 @@ class Resample(FixHeaderApplyTransforms):
 
         input_image = nib.load(self.inputs.input_image)
         reference_image = nib.load(self.inputs.reference_image)
-        input_matches_reference = input_image.shape[:3] == reference_image.shape[:3] and np.allclose(
+        input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
+        input_matches_reference = input_matches_reference and np.allclose(
             input_image.affine, reference_image.affine, atol=1e-2  # tolerance of 0.01 mm
         )
 
@@ -49,9 +55,7 @@ class Resample(FixHeaderApplyTransforms):
 
         if not input_matches_reference or transforms != "identity" or not self.inputs.lazy:
             self.resample = True
-            runtime = super(Resample, self)._run_interface(
-                runtime, correct_return_codes
-            )
+            runtime = super(Resample, self)._run_interface(runtime, correct_return_codes)
 
         return runtime
 

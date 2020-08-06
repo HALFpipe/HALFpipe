@@ -29,5 +29,6 @@ class BlurInMask(afni.BlurInMask):
         if self.blur:
             outputs = super(BlurInMask, self)._list_outputs()
         else:
+            outputs = self._outputs().get()
             outputs["out_file"] = self.inputs.in_file
         return outputs

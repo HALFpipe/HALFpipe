@@ -37,7 +37,8 @@ def _make_path(type, tags, suffix, **kwargs):
         path = path.joinpath(f"figures")
 
     filename = f"{suffix}.nii.gz"
-    for tagname, tagval in reversed(kwargs.items()):  # reverse because we are prepending
+    kwtags = list(kwargs.items())
+    for tagname, tagval in reversed(kwtags):  # reverse because we are prepending
         if tagval is not None:
             tagval = formatlikebids(tagval)
             filename = f"{tagname}-{tagval}_{filename}"
@@ -46,7 +47,7 @@ def _make_path(type, tags, suffix, **kwargs):
         if tagval is not None:
             filename = f"{entity}-{tagval}_{filename}"
 
-    return path
+    return path / filename
 
 
 def _copy_file(inpath, outpath):
@@ -88,7 +89,7 @@ class ResultdictDatasink(SimpleInterface):
     always_run = True
 
     def _run_interface(self, runtime):
-        base_directory = self.inputs.base_directory
+        base_directory = Path(self.inputs.base_directory)
 
         resultdict_schema = ResultdictSchema()
 
@@ -134,8 +135,7 @@ class ResultdictDatasink(SimpleInterface):
             # reports
 
             for key, inpath in reports.items():
-                outpath = Path(self.base_directory)
-                outpath = outpath.joinpath(_make_path("report", tags, key))
+                outpath = reports_directory / _make_path("report", tags, key)
                 _copy_file(inpath, outpath)
 
                 hash = None
