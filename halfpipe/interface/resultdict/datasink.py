@@ -20,7 +20,7 @@ from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
 
 
-def _make_path(type, tags, suffix, **kwargs):
+def _make_path(sourcefile, type, tags, suffix, **kwargs):
     path = Path()
 
     assert type in ["report", "image"]
@@ -30,13 +30,14 @@ def _make_path(type, tags, suffix, **kwargs):
         if tagval is not None:
             path = path.joinpath(f"{entity}-{tagval}")
 
-    if type == "func":
+    if type == "image":
         path = path.joinpath(f"func")
 
     if type == "report":
         path = path.joinpath(f"figures")
 
-    filename = f"{suffix}.nii.gz"
+    _, ext = splitext(sourcefile)
+    filename = f"{suffix}{ext}"  # keep original extension
     kwtags = list(kwargs.items())
     for tagname, tagval in reversed(kwtags):  # reverse because we are prepending
         if tagval is not None:
@@ -93,6 +94,7 @@ class ResultdictDatasink(SimpleInterface):
 
         resultdict_schema = ResultdictSchema()
 
+        derivatives_directory = base_directory / "derivatives" / "halfpipe"
         reports_directory = base_directory / "reports"
 
         indexhtml_path = reports_directory / "index.html"
@@ -118,13 +120,13 @@ class ResultdictDatasink(SimpleInterface):
             for key, inpath in images.items():
                 outpath = None
                 if key in ["effect", "variance", "z", "dof"]:  # apply rule
-                    outpath = base_directory / _make_path("image", tags, "statmap", stat=key)
+                    outpath = derivatives_directory / _make_path(inpath, "image", tags, "statmap", stat=key)
                 else:
-                    outpath = base_directory / _make_path("image", tags, key)
+                    outpath = derivatives_directory / _make_path(inpath, "image", tags, key)
                 _copy_file(inpath, outpath)
 
                 stem, _ = splitext(outpath)
-                with open(f"{stem}.json", "w") as fp:
+                with open(outpath.parent / f"{stem}.json", "w") as fp:
                     fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 
                 if key == "bold":
@@ -135,7 +137,7 @@ class ResultdictDatasink(SimpleInterface):
             # reports
 
             for key, inpath in reports.items():
-                outpath = reports_directory / _make_path("report", tags, key)
+                outpath = reports_directory / _make_path(inpath, "report", tags, key)
                 _copy_file(inpath, outpath)
 
                 hash = None

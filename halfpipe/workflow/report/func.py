@@ -176,7 +176,7 @@ def add_carpetplot(workflow, memcalc):
 
     bigplot = pe.Node(FMRISummary(), name="BigPlot", mem_gb=memcalc.series_std_gb * 3.5)
     bigplot.inputs.fd_thres = mriqcconfig.workflow.fd_thres
-    bigplot.inputs.in_segm = get_template("MNI152NLin2009cAsym", resolution=1, desc="carpet", suffix="dseg")
+    bigplot.inputs.in_segm = get_template("MNI152NLin2009cAsym", resolution=2, desc="carpet", suffix="dseg")
     workflow.connect(inputnode, "bold_std", bigplot, "in_func")
     workflow.connect(inputnode, "bold_mask_std", bigplot, "in_mask")
 

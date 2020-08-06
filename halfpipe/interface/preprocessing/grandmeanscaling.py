@@ -38,7 +38,7 @@ class GrandMeanScaling(Transformer):
     def _transform(self, array):
         if self.scaling_factor is None:  # scaling factor is determined by first file
             self.scaling_factor = (
-                self.inputs.grand_mean
+                self.inputs.mean
                 / array.mean()
             )
 

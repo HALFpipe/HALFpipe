@@ -51,6 +51,7 @@ def init_ica_aroma_components_wf(
                 ("bold_split", None),
                 ("repetition_time", None),
                 ("skip_vols", None),
+                ("movpar_file", None),
                 ("xforms", None),
                 ("std_dseg", "ravel"),
             ]
