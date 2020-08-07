@@ -55,7 +55,7 @@ class FeatureFactory(Factory):
         kwargs = dict(feature=feature, workdir=self.workdir, memcalc=self.memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
-            condition_files = database.associations(sourcefile, datatype="func", suffix="events")
+            condition_files = list(database.associations(sourcefile, datatype="func", suffix="events"))
             condition_units = database.metadatavalset("units", condition_files)
             if len(condition_units) == 0:
                 condition_units = "secs"

@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 
 from ...io import loadspreadsheet
+from ...utils import ravel
 
 
 class FillNAInputSpec(TraitedSpec):
@@ -97,10 +98,14 @@ class MergeColumns(IOBase):
 
         out_df = None
 
+        in_files = []
         for i in range(self._numinputs):
             in_file = getattr(self.inputs, "in%d" % (i + 1))
             if not isdefined(in_file):
                 continue
+            in_files.append(in_file)
+        in_files = ravel(in_files)
+        for in_file in in_files:
             in_df = loadspreadsheet(in_file)
             if in_df.size == 0:
                 continue

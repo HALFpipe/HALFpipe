@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from marshmallow import EXCLUDE
 
 from nipype.interfaces.base import (
     traits,
@@ -17,6 +18,7 @@ from ...model import ResultdictSchema
 from ...utils import ravel, lenforeach
 
 composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
+resultdict_entities = set(ResultdictSchema().fields["tags"].nested().fields.keys())
 
 
 class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
@@ -91,7 +93,11 @@ class MakeResultdicts(IOBase):
         for valuetupl in valuetupls:
             resultdict = dict(tags=dict(), metadata=dict())
             if isdefined(self.inputs.tags) and isinstance(self.inputs.tags, dict):
-                resultdict["tags"] = dict(**self.inputs.tags)
+                resultdict["tags"] = {
+                    k: v
+                    for k, v in self.inputs.tags.items()
+                    if k in resultdict_entities
+                }
             if isdefined(self.inputs.metadata) and isinstance(self.inputs.metadata, dict):
                 resultdict["metadata"] = dict(**self.inputs.metadata)
             for f, k, v in zip(fieldnames, keys, valuetupl):
@@ -108,7 +114,7 @@ class MakeResultdicts(IOBase):
                     resultdict[f] = dict()
                 if v is not None:
                     resultdict[f][k] = v
-            resultdicts.append(ResultdictSchema().load(resultdict))
+            resultdicts.append(ResultdictSchema().load(resultdict, unknown=EXCLUDE))
 
         outputs["resultdicts"] = resultdicts
 

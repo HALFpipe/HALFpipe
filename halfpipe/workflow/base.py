@@ -34,6 +34,7 @@ def init_workflow(workdir, **kwargs):
 
     spec = loadspec(workdir=workdir)
     assert spec is not None, "A spec file could not be loaded"
+    logger.info(f"Initializing file database")
     database = Database(spec)
     uuid = uuid5(spec.uuid, database.sha1)
 

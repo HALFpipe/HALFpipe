@@ -199,7 +199,7 @@ def _main():
 
         plugin_args = {
             "workdir": workdir,
-            "workflowdir": Path(workdir) / constants.workflowdir,
+            "workflowdir": str(Path(workdir) / constants.workflowdir),
             "debug": debug,
             "verbose": verbose,
             "watchdog": args.watchdog,

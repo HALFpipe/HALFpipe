@@ -144,6 +144,7 @@ def init_ica_aroma_components_wf(
     ica_aroma_wf.remove_nodes([add_nonsteady, ds_report_ica_aroma])
 
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
+    workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
     workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
 
@@ -194,11 +195,11 @@ def init_ica_aroma_regression_wf(
     #
     loadaromanoiseics = pe.Node(
         interface=niu.Function(
-            input_names=["aroma_noise_ics"], output_names=["aroma_noise_ics"], function=loadints,
+            input_names=["in_file"], output_names=["aroma_noise_ics"], function=loadints,
         ),
         name="loadaromanoiseics",
     )
-    workflow.connect(inputnode, "aroma_noise_ics", loadaromanoiseics, "aroma_noise_ics")
+    workflow.connect(inputnode, "aroma_noise_ics", loadaromanoiseics, "in_file")
 
     # add aroma_confounds to the matrix
     select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
