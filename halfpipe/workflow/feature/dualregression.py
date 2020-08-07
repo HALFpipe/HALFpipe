@@ -22,6 +22,7 @@ from ...interface import (
 from ...utils import formatlikebids
 
 from ..memory import MemoryCalculator
+from ..constants import constants
 
 
 def _contrasts(map_timeseries_file=None, confounds_file=None):
@@ -133,8 +134,9 @@ def init_dualregression_wf(
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     #
+    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="LanczosWindowedSinc", reference_space="MNI152NLin2009cAsym"),
+        Resample(interpolation="LanczosWindowedSinc", **reference_dict),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
@@ -142,7 +144,6 @@ def init_dualregression_wf(
     )
     workflow.connect(inputnode, "map_files", resample, "input_image")
     workflow.connect(inputnode, "map_spaces", resample, "input_space")
-    workflow.connect(inputnode, "bold", resample, "reference_image")
 
     # Delete zero voxels for the maps
     applymask = pe.MapNode(
@@ -210,7 +211,7 @@ def init_dualregression_wf(
     workflow.connect(inputnode, "bold", makedofvolume, "bold_file")
     workflow.connect(fillna, "out_no_header", makedofvolume, "design")
 
-    for glmattr, resultattr in (("cope", "effect"), ("varcb", "variance", ("z", "z"))):
+    for glmattr, resultattr in (("cope", "effect"), ("varcb", "variance"), ("z", "z")):
         split = pe.MapNode(
             fsl.Split(dimension="t"), iterfield="in_file", name=f"split{resultattr}images"
         )

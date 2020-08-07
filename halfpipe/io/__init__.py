@@ -11,6 +11,7 @@ from .file import (
     loadmatrix,
     loadpicklelzma,
     dumppicklelzma,
+    make_cachefilepath,
     cacheobj,
     uncacheobj,
 )
@@ -36,6 +37,7 @@ __all__ = [
     loadmatrix,
     loadpicklelzma,
     dumppicklelzma,
+    make_cachefilepath,
     cacheobj,
     uncacheobj,
     BidsDatabase,

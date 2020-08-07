@@ -2,12 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    BaseInterfaceInputSpec,
-    isdefined
-)
+import numpy as np
+import logging
+
+from nipype.interfaces.base import traits, TraitedSpec, BaseInterfaceInputSpec, isdefined
 
 from ..transformer import Transformer
 
@@ -37,10 +35,13 @@ class GrandMeanScaling(Transformer):
 
     def _transform(self, array):
         if self.scaling_factor is None:  # scaling factor is determined by first file
-            self.scaling_factor = (
-                self.inputs.mean
-                / array.mean()
-            )
+            arraymean = np.nanmean(array)
+            if arraymean == 0:
+                logging.getLogger("halfpipe").warn(
+                    f'File "{self.inputs.files[0]}" has a grand mean of 0. Skipping grand mean scaling'
+                )
+                self.scaling_factor = 1.0
+            self.scaling_factor = self.inputs.mean / arraymean
 
         array2 = array * self.scaling_factor
 

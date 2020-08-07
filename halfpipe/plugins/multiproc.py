@@ -35,7 +35,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._taskresult = {}
         self._task_obj = {}
         self._taskid = 0
-        self._rc = ReferenceCounter()
+        self._rc = None
 
         # Cache current working directory and make sure we
         # change to it when workers are set up
@@ -70,12 +70,15 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self._stats = None
         self._keep = plugin_args.get("keep", "all")
+        if self._keep != "all":
+            self._rc = ReferenceCounter(plugin_args["workflowdir"])
 
     def _task_finished_cb(self, jobid, cached=False):
-        try:
-            self._rc.put(self.procs[jobid].result, jobid=jobid)
-        except Exception:
-            pass  # node doesn't have a result
+        if self._rc is not None:
+            try:
+                self._rc.put(self.procs[jobid].result, jobid=jobid)
+            except Exception:
+                pass  # node doesn't have a result
         super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)
 
     def _async_callback(self, args):
@@ -102,9 +105,10 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                     continue  # always keep outputs
                 self.refidx[idx, idx] = -1
                 outdir = self.procs[idx].output_dir()
-                self._rc.pop(idx)
-                if not self._rc.can_delete(outdir):
-                    continue
+                if self._rc is not None:
+                    self._rc.pop(idx)
+                    if not self._rc.can_delete(outdir):
+                        continue
                 logger.info(
                     ("[node dependencies finished] " "removing node: %s from directory %s")
                     % (self.procs[idx]._id, outdir)

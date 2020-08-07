@@ -18,6 +18,10 @@ class GlobalSettingsSchema(Schema):
         validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), default="ants", required=True
     )
 
+    run_mriqc = fields.Boolean(default=False, required=True)
+    run_fmriprep = fields.Boolean(default=True, required=True)
+    run_halfpipe = fields.Boolean(default=True, required=True)
+
     fd_thres = fields.Float(default=0.5, required=True)
 
     anat_only = fields.Boolean(default=False, required=True)
@@ -27,8 +31,6 @@ class GlobalSettingsSchema(Schema):
     run_reconall = fields.Boolean(default=False, required=True)
     t2s_coreg = fields.Boolean(default=False, required=True)
     medial_surface_nan = fields.Boolean(default=False, required=True)
-
-    output_spaces = fields.Str(default="MNI152NLin2009cAsym:res-2", required=True)
 
     bold2t1w_dof = fields.Integer(default=9, required=True, validate=validate.OneOf([6, 9, 12]))
     fmap_bspline = fields.Boolean(default=True, required=True)

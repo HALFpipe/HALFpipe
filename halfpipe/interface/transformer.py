@@ -62,9 +62,9 @@ class Transformer(SimpleInterface):
                 assert np.allclose(mask_img.affine, in_img.affine)
                 mask_fdata = mask_img.get_fdata(dtype=np.float64)
                 mask_bin = np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
-                self.mask = np.ravel(mask_bin)
+                self.mask = mask_bin
                 assert self.mask.size == array.shape[0]
-                array = array[self.mask, :]
+                array = array[np.ravel(self.mask), :]
 
         else:
             in_df = loadspreadsheet(in_file)

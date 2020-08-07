@@ -11,7 +11,7 @@ from .condition import (
 )
 from .spreadsheet import loadspreadsheet, loadmatrix
 
-from .pickle import loadpicklelzma, dumppicklelzma, cacheobj, uncacheobj
+from .pickle import loadpicklelzma, dumppicklelzma, make_cachefilepath, cacheobj, uncacheobj
 
 __all__ = [
     DictListFile,
@@ -22,6 +22,7 @@ __all__ = [
     loadmatrix,
     loadpicklelzma,
     dumppicklelzma,
+    make_cachefilepath,
     cacheobj,
     uncacheobj,
 ]

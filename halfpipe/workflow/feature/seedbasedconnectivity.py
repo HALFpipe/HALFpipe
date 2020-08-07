@@ -20,6 +20,7 @@ from ...interface import (
 )
 
 from ..memory import MemoryCalculator
+from ..constants import constants
 from ...utils import formatlikebids
 
 
@@ -117,8 +118,9 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
+    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="MultiLabel", reference_space="MNI152NLin2009cAsym"),
+        Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
@@ -126,7 +128,6 @@ def init_seedbasedconnectivity_wf(
     )
     workflow.connect(inputnode, "seed_files", resample, "input_image")
     workflow.connect(inputnode, "seed_spaces", resample, "input_space")
-    workflow.connect(inputnode, "bold", resample, "reference_image")
 
     # Delete zero voxels for the seeds
     applymask = pe.MapNode(

@@ -11,6 +11,7 @@ from fmriprep.cli.workflow import build_workflow
 
 from .factory import Factory
 from .report import init_anat_report_wf, init_func_report_wf
+from .constants import constants
 
 from ..utils import deepcopyfactory
 
@@ -56,22 +57,7 @@ class FmriprepFactory(Factory):
         bidsdatabase = self.bidsdatabase
         workflow = self.workflow
         uuidstr = str(workflow.uuid)[:8]
-
-        for boldfilepath in boldfilepaths:
-            t1ws = database.associations(boldfilepath, datatype="anat")
-            if t1ws is None:
-                continue
-            bidsdatabase.put(boldfilepath)
-            for filepath in t1ws:
-                bidsdatabase.put(filepath)
-            fmaps = database.associations(boldfilepath, datatype="fmap")
-            if fmaps is None:
-                continue
-            for filepath in fmaps:
-                bidsdatabase.put(filepath)
-
         bids_dir = Path(workdir) / "rawdata"
-        bidsdatabase.write(bids_dir)
 
         # init fmriprep config
         output_dir = Path(workdir) / "derivatives"
@@ -87,10 +73,14 @@ class FmriprepFactory(Factory):
         bidssubjects = list(bidssubjects)
 
         ignore = ["sbref"]
-        if spec.global_settings.get("slice_timing") is not True:
+        if spec.global_settings["slice_timing"] is not True:
             ignore.append("slicetiming")
 
-        skull_strip_t1w = spec.global_settings.get("skull_strip_algorithm") in ["ants", "auto"]
+        skull_strip_t1w = {
+            "none": "skip",
+            "auto": "auto",
+            "ants": "force"
+        }[spec.global_settings["skull_strip_algorithm"]]
 
         config.from_dict(
             {
@@ -101,27 +91,27 @@ class FmriprepFactory(Factory):
                 "ignore": ignore,
                 "use_aroma": False,
                 "skull_strip_t1w": skull_strip_t1w,
-                "anat_only": spec.global_settings.get("anat_only"),
-                "write_graph": spec.global_settings.get("write_graph"),
-                "hires": spec.global_settings.get("hires"),
-                "run_reconall": spec.global_settings.get("run_reconall"),
-                "t2s_coreg": spec.global_settings.get("t2s_coreg"),
-                "medial_surface_nan": spec.global_settings.get("medial_surface_nan"),
-                "output_spaces": spec.global_settings.get("output_spaces"),
-                "bold2t1w_dof": spec.global_settings.get("bold2t1w_dof"),
-                "fmap_bspline": spec.global_settings.get("fmap_bspline"),
-                "force_syn": spec.global_settings.get("force_syn"),
-                "longitudinal": spec.global_settings.get("longitudinal"),
-                "regressors_all_comps": spec.global_settings.get("regressors_all_comps"),
-                "regressors_dvars_th": spec.global_settings.get("regressors_dvars_th"),
-                "regressors_fd_th": spec.global_settings.get("regressors_fd_th"),
-                "skull_strip_fixed_seed": spec.global_settings.get("skull_strip_fixed_seed"),
-                "skull_strip_template": spec.global_settings.get("skull_strip_template"),
-                "aroma_err_on_warn": spec.global_settings.get("aroma_err_on_warn"),
-                "aroma_melodic_dim": spec.global_settings.get("aroma_melodic_dim"),
+                "anat_only": spec.global_settings["anat_only"],
+                "write_graph": spec.global_settings["write_graph"],
+                "hires": spec.global_settings["hires"],
+                "run_reconall": spec.global_settings["run_reconall"],
+                "t2s_coreg": spec.global_settings["t2s_coreg"],
+                "medial_surface_nan": spec.global_settings["medial_surface_nan"],
+                "output_spaces": f"{constants.reference_space}:res-{constants.reference_res}",
+                "bold2t1w_dof": spec.global_settings["bold2t1w_dof"],
+                "fmap_bspline": spec.global_settings["fmap_bspline"],
+                "force_syn": spec.global_settings["force_syn"],
+                "longitudinal": spec.global_settings["longitudinal"],
+                "regressors_all_comps": spec.global_settings["regressors_all_comps"],
+                "regressors_dvars_th": spec.global_settings["regressors_dvars_th"],
+                "regressors_fd_th": spec.global_settings["regressors_fd_th"],
+                "skull_strip_fixed_seed": spec.global_settings["skull_strip_fixed_seed"],
+                "skull_strip_template": spec.global_settings["skull_strip_template"],
+                "aroma_err_on_warn": spec.global_settings["aroma_err_on_warn"],
+                "aroma_melodic_dim": spec.global_settings["aroma_melodic_dim"],
             }
         )
-        nipype_dir = Path(workdir) / "nipype"
+        nipype_dir = Path(workdir) / constants.workflowdir
         nipype_dir.mkdir(parents=True, exist_ok=True)
         config_file = nipype_dir / f"fmriprep.config.{uuidstr}.toml"
         config.to_filename(config_file)
@@ -194,27 +184,27 @@ class FmriprepFactory(Factory):
 
         # anat only
         anat_wf = wf.get_node("anat_preproc_wf")
-        if anat_wf is not None:
-            _connect([*hierarchy, anat_wf])
-            return
+        if anat_wf is None:
+            # func first
+            _connect(hierarchy)
 
-        # func and anat
-        _connect(hierarchy)
+            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "bold_reference_wf", "bold_reg_wf", "bold_sdc_wf"]:
+                bold_wf = wf.get_node(name)
+                if bold_wf is not None:
+                    _connect([*hierarchy, bold_wf])
 
-        for name in ["bold_bold_trans_wf", "bold_hmc_wf", "bold_reference_wf", "bold_reg_wf", "bold_sdc_wf"]:
-            bold_wf = wf.get_node(name)
-            if bold_wf is not None:
-                _connect([*hierarchy, bold_wf])
+            if "bold_split" in inputattrs:
+                splitnode = wf.get_node("split_opt_comb")
+                if splitnode is None:
+                    splitnode = wf.get_node("bold_split")
+                self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
+                connected_attrs.add("bold_split")
 
-        if "bold_split" in inputattrs:
-            splitnode = wf.get_node("split_opt_comb")
-            if splitnode is None:
-                splitnode = wf.get_node("bold_split")
-            self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
-            connected_attrs.add("bold_split")
-
-        while wf.get_node("anat_preproc_wf") is None:
-            hierarchy.pop()
-            wf = hierarchy[-1]
-        wf = wf.get_node("anat_preproc_wf")
-        _connect([*hierarchy, wf])
+            while wf.get_node("anat_preproc_wf") is None:
+                hierarchy.pop()
+                wf = hierarchy[-1]
+            anat_wf = wf.get_node("anat_preproc_wf")
+        anat_norm_wf = anat_wf.get_node("anat_norm_wf")
+        _connect([*hierarchy, anat_wf, anat_norm_wf])
+        _connect([*hierarchy, anat_wf])
+        return

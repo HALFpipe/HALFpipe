@@ -116,9 +116,9 @@ def init_taskbased_wf(
     if feature is not None:
         condition_names = feature.conditions
         for contrast in feature.contrasts:
-            contrast_values = [contrast.values.get(c, 0.0) for c in condition_names]
+            contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
             contrasts.append(
-                [contrast.name, contrast.type.upper(), condition_names, contrast_values]
+                [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
             )
 
     # generate design from first level specification
@@ -135,8 +135,8 @@ def init_taskbased_wf(
 
     # generate required input files for FILMGLS from design
     modelgen = pe.MapNode(fsl.FEATModel(), name="modelgen", iterfield=["fsf_file", "ev_files"])
-    workflow.connect(level1design, "fsf_files", level1design, "fsf_file")
-    workflow.connect(level1design, "ev_files", level1design, "ev_files")
+    workflow.connect(level1design, "fsf_files", modelgen, "fsf_file")
+    workflow.connect(level1design, "ev_files", modelgen, "ev_files")
 
     # calculate range of image values to determine cutoff value
     stats = pe.Node(fsl.ImageStats(op_string="-R"), name="stats")
@@ -145,7 +145,7 @@ def init_taskbased_wf(
         niu.Function(input_names=["stat"], output_names=["min_val"], function=firstfloat),
         name="cutoff",
     )
-    workflow.connect(stats, "out_stat", firstfloat, "stat")
+    workflow.connect(stats, "out_stat", cutoff, "stat")
 
     # actually estimate the first level model
     modelestimate = pe.Node(

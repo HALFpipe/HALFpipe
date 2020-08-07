@@ -26,6 +26,7 @@ from ...interface import (
 from ...resource import get as getresource
 from ...utils import firststr, loadints
 
+from ..constants import constants
 from ..memory import MemoryCalculator
 
 
@@ -42,11 +43,12 @@ def init_ica_aroma_components_wf(
     """
     workflow = pe.Workflow(name=name)
 
-    strfields = ["bold_file", "bold_mask", "anat2std_xfm", "itk_bold_to_t1", "out_warp"]
+    strfields = ["bold_file", "bold_mask", "itk_bold_to_t1", "out_warp"]
     inputnode = pe.Node(
         Exec(
             fieldtpls=[
                 ("tags", None),
+                ("anat2std_xfm", None),
                 *[(field, "firststr") for field in strfields],
                 ("bold_split", None),
                 ("repetition_time", None),
@@ -82,7 +84,7 @@ def init_ica_aroma_components_wf(
     mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm", run_without_submitting=True)
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in1")
     mergexfm.inputs.in2 = getresource(
-        "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5"
+        f"tpl_MNI152NLin6Asym_from_{constants.reference_space}_mode_image_xfm.h5"
     )
 
     compxfm = pe.Node(
@@ -98,6 +100,9 @@ def init_ica_aroma_components_wf(
     )
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
+    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist")
+    workflow.connect(compxfm, "output_image", compxfmlist, "in1")
+
     #
     bold_std_trans_wf = init_bold_std_trans_wf(
         freesurfer=False,
@@ -112,7 +117,7 @@ def init_ica_aroma_components_wf(
     bold_std_trans_wf_inputnode = bold_std_trans_wf.get_node("inputnode")
     bold_std_trans_wf_inputnode.inputs.templates = ["MNI152NLin6Asym"]
 
-    workflow.connect(compxfm, "output_image", bold_std_trans_wf, "inputnode.anat2std_xfm")
+    workflow.connect(compxfmlist, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.name_source")
     workflow.connect(inputnode, "bold_split", bold_std_trans_wf, "inputnode.bold_split")
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.hmc_xforms")

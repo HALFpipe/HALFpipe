@@ -55,15 +55,15 @@ class FeatureFactory(Factory):
         kwargs = dict(feature=feature, workdir=self.workdir, memcalc=self.memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
-            condition_files = database.get_associations(sourcefile, datatype="func", suffix="events")
+            condition_files = database.associations(sourcefile, datatype="func", suffix="events")
             condition_units = database.metadatavalset("units", condition_files)
             if len(condition_units) == 0:
                 condition_units = "secs"
             else:
                 condition_units, = condition_units
-            if "txt" in database.get_tagval_set("extension", filepaths=condition_files):
+            if "txt" in database.tagvalset("extension", filepaths=condition_files):
                 condition_files = [
-                    (condition_file, database.get_tagval(condition_file, "condition"))
+                    (condition_file, database.tagval(condition_file, "condition"))
                     for condition_file in condition_files
                 ]
             kwargs["condition_files"] = condition_files

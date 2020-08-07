@@ -9,6 +9,7 @@ from nipype.algorithms import confounds as nac
 from ...interface import ConnectivityMeasure, Resample, CalcMean, MakeResultdicts, ResultdictDatasink
 
 from ..memory import MemoryCalculator
+from ..constants import constants
 from ...utils import formatlikebids
 
 
@@ -72,15 +73,15 @@ def init_atlasbasedconnectivity_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
+    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="MultiLabel", reference_space="MNI152NLin2009cAsym"),
+        Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
         iterfield=["input_image", "input_space"],
         mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(inputnode, "atlas_files", resample, "input_image")
     workflow.connect(inputnode, "atlas_spaces", resample, "input_space")
-    workflow.connect(inputnode, "bold", resample, "reference_image")
 
     #
     connectivitymeasure = pe.MapNode(

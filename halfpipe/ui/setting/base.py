@@ -64,6 +64,9 @@ def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namef
                     entity_str = humanize(entity_str)
                     options.append(TextElement(entity_str, color=entity_colors[entity]))
 
+                    if None in tagvals_set:
+                        tagvals_set.remove(None)
+
                     tagvals = sorted(list(tagvals_set))
 
                     row = [f'"{tagval}"' for tagval in tagvals]

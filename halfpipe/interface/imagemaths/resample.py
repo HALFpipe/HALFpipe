@@ -10,8 +10,9 @@ import nibabel as nib
 
 from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
+from templateflow.api import get as get_template
 
-from nipype.interfaces.base import traits, InputMultiPath, File
+from nipype.interfaces.base import traits, InputMultiPath, File, isdefined
 
 from ...resource import get as getresource
 
@@ -19,7 +20,16 @@ from ...resource import get as getresource
 class ResampleInputSpec(ApplyTransformsInputSpec):
     input_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
     reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
+    reference_res = traits.Int(mandatory=False)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
+
+    # overrides
+    reference_image = File(
+        argstr="--reference-image %s",
+        mandatory=False,
+        desc="reference image space that you wish to warp INTO",
+        exists=True,
+    )
     transforms = traits.Either(
         InputMultiPath(File(exists=True)),
         "identity",
@@ -35,15 +45,20 @@ class Resample(FixHeaderApplyTransforms):
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         self.resample = False
 
+        input_space = self.inputs.input_space
+        reference_space = self.inputs.reference_space
+        reference_res = self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
+
+        if not isdefined(self.inputs.reference_image):
+            if reference_res is not None:
+                self.inputs.reference_image = get_template(reference_space, resolution=reference_res, desc="brain", suffix="mask")
+
         input_image = nib.load(self.inputs.input_image)
         reference_image = nib.load(self.inputs.reference_image)
         input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
         input_matches_reference = input_matches_reference and np.allclose(
             input_image.affine, reference_image.affine, atol=1e-2  # tolerance of 0.01 mm
         )
-
-        input_space = self.inputs.input_space
-        reference_space = self.inputs.reference_space
 
         transforms = "identity"
         if input_space != reference_space:

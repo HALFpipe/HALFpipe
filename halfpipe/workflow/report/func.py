@@ -24,6 +24,7 @@ from ...interface import (
     ResultdictDatasink
 )
 
+from ..constants import constants
 from ..memory import MemoryCalculator
 
 
@@ -88,10 +89,10 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
-    tsnr = pe.Node(interface=nac.TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
+    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
     workflow.connect(inputnode, "bold_std", tsnr, "in_file")
 
-    tsnr_rpt = pe.Node(interface=PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
+    tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "tsnr_file", tsnr_rpt, "in_file")
     workflow.connect(inputnode, "bold_mask_std", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
@@ -100,17 +101,18 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     add_carpetplot(workflow, memcalc)
 
     #
+    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
+    reference_dict["input_space"] = reference_dict["reference_space"]
     resample = pe.Node(
-        interface=Resample(interpolation="MultiLabel", input_space="MNI152NLin2009cAsym", reference_space="MNI152NLin2009cAsym"),
+        Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
         mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(inputnode, "std_dseg", resample, "input_image")
-    workflow.connect(inputnode, "bold_std", resample, "reference_image")
 
     # vals
     vals = pe.Node(
-        interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb
+        Vals(), name="vals", mem_gb=memcalc.series_std_gb
     )
     workflow.connect(inputnode, "confounds", vals, "confounds")
 
@@ -118,7 +120,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     workflow.connect(vals, "fd_perc", make_resultdicts, "fd_perc")
 
     calcmean = pe.Node(
-        interface=CalcMean(), name="calcmean", mem_gb=memcalc.series_std_gb
+        CalcMean(), name="calcmean", mem_gb=memcalc.series_std_gb
     )
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
     workflow.connect(resample, "output_image", calcmean, "dseg")

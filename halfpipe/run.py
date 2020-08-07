@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from os import path as op
+from pathlib import Path
 import sys
 import logging
 
@@ -36,13 +36,11 @@ def _main():
     basegroup.add_argument("--watchdog", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
-    steps = ["spec-ui", "workflow", "run", "run-subjectlevel", "run-grouplevel"]
+    steps = ["spec-ui", "workflow", "run"]
     for step in steps:
         steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
-        steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
+        steponlygroup.add_argument(f"--only-{step}", action="store_true", default=False)
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
-        if "run" not in step:
-            steponlygroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     workflowgroup = ap.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
@@ -57,21 +55,16 @@ def _main():
         help="generate one subject-level workflow per subject",
     )
     chunkinggroup.add_argument(
-        "--use-slurm",
+        "--use-cluster",
         action="store_true",
         default=False,
-        help="generate workflow suitable for running on a SLURM cluster",
-    )
-    chunkinggroup.add_argument(
-        "--use-sge",
-        action="store_true",
-        default=False,
-        help="generate workflow suitable for running on an SGE cluster",
+        help="generate workflow suitable for running on a cluster",
     )
 
     rungroup = ap.add_argument_group("run", "")
     rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
-    rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
+    rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
+    rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
@@ -103,21 +96,9 @@ def _main():
     should_run = {step: True for step in steps}
 
     for step in steps:
-        attrname = f"{step}-only".replace("-", "_")
+        attrname = f"only-{step}".replace("-", "_")
         if getattr(args, attrname) is True:
             should_run = {step0: step0 == step for step0 in steps}
-            break
-
-    for step in steps:
-        if "run" in step:
-            continue
-        attrname = f"stop-after-{step}".replace("-", "_")
-        if getattr(args, attrname) is True:
-            state = True
-            for step0 in steps:
-                should_run[step0] = state
-                if step0 == step:
-                    state = False
             break
 
     for step in steps:
@@ -127,9 +108,11 @@ def _main():
 
     workdir = args.workdir
     if workdir is not None:  # resolve workdir in fs_root
-        abspath = op.abspath(workdir)
+        from os.path import normpath
+
+        abspath = str(Path(workdir).resolve())
         if not abspath.startswith(args.fs_root):
-            abspath = op.normpath(args.fs_root + abspath)
+            abspath = normpath(args.fs_root + abspath)
         workdir = abspath
 
     if should_run["spec-ui"]:
@@ -140,7 +123,7 @@ def _main():
         workdir = init_spec_ui(workdir=workdir, debug=debug)
 
     assert workdir is not None, "Missing working directory"
-    assert op.isdir(workdir), "Working directory does not exist"
+    assert Path(workdir).is_dir(), "Working directory does not exist"
 
     import logging
     from .logger import Logger
@@ -150,7 +133,8 @@ def _main():
     logger = logging.getLogger("halfpipe")
 
     if not verbose and not debug:
-        logger.warning(
+        logger.log(
+            25,
             f'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
             'Detailed logs information will only be available in the "log.txt" file in the working directory. '
         )
@@ -182,16 +166,17 @@ def _main():
                 8 if args.nipype_n_procs > 16 else (4 if args.nipype_n_procs > 8 else 1)
             )
             logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
-
         execgraphs = init_workflow(
-            workdir
+            workdir,
+            n_chunks=args.n_chunks,
+            subject_chunks=args.subject_chunks or args.use_cluster
         )
+        if args.use_cluster:
+            from .cluster import create_example_script
 
-    if (
-        not should_run["run"]
-        and not should_run["run-subjectlevel"]
-        and not should_run["run-grouplevel"]
-    ):
+            create_example_script(workdir, execgraphs)
+
+    if not should_run["run"] or args.use_cluster:
         logger.info(f"Did not run step: run")
     else:
         logger.info(f"Running step: run")
@@ -210,9 +195,11 @@ def _main():
 
         import nipype.pipeline.plugins as nip
         import halfpipe.plugins as ppp
+        from .workflow.constants import constants
 
         plugin_args = {
             "workdir": workdir,
+            "workflowdir": Path(workdir) / constants.workflowdir,
             "debug": debug,
             "verbose": verbose,
             "watchdog": args.watchdog,
@@ -246,24 +233,22 @@ def _main():
         execgraphstorun = []
         if len(execgraphs) > 1:
             n_subjectlevel_chunks = len(execgraphs) - 1
-            if not should_run["run-subjectlevel"]:
+            if args.only_model_chunk:
                 logger.info(f"Will not run subjectlevel chunks")
-            elif args.chunk_index is not None:
+                logger.info(f"Will run model chunk")
+                execgraphstorun.append(execgraphs[-1])
+            elif args.only_chunk_index is not None:
                 zerobasedchunkindex = args.chunk_index - 1
                 assert zerobasedchunkindex < n_subjectlevel_chunks
                 logger.info(
                     f"Will run subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
                 )
+                logger.info(f"Will not run model chunk")
                 execgraphstorun.append(execgraphs[zerobasedchunkindex])
             else:
                 logger.info(f"Will run all {n_subjectlevel_chunks} subjectlevel chunks")
-                execgraphstorun.extend(execgraphs[:-1])
-
-            if not should_run["run-grouplevel"]:
-                logger.info(f"Will not run grouplevel chunk")
-            else:
                 logger.info(f"Will run grouplevel chunk")
-                execgraphstorun.append(execgraphs[-1])
+                execgraphstorun.extend(execgraphs[:-1])
         elif len(execgraphs) == 1:
             execgraphstorun.append(execgraphs[0])
         else:

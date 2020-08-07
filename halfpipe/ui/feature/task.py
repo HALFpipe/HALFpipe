@@ -220,7 +220,7 @@ class ConditionsSelectStep(Step):
         self._append_view(TextView("Select conditions to add to the model"))
 
         conditions = ctx.spec.features[-1].conditions
-        self.options = [self._format_variable(condition) for condition in conditions]
+        self.options = [_format_variable(condition) for condition in conditions]
         self.str_by_varname = dict(zip(conditions, self.options))
 
         self.input_view = MultipleChoiceInputView(self.options, checked=[*self.options])
@@ -241,7 +241,7 @@ class ConditionsSelectStep(Step):
                 is_selected = self.result[self.str_by_varname[condition]]
                 if is_selected:
                     conditions.append(condition)
-            ctx.spec.features[-1].conditions = condition
+            ctx.spec.features[-1].conditions = conditions
 
         return ContrastNameStep(self.app)(ctx)
 

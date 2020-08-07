@@ -19,11 +19,11 @@ class LoadResult(SimpleInterface):
     input_spec = TraitedSpec
     output_spec = DynamicTraitedSpec
 
-    def __init__(self, node, attrs, **inputs):
+    def __init__(self, node, **inputs):
         super(LoadResult, self).__init__(**inputs)
         cwd = node.output_dir()
         self._resultfilepath = op.join(cwd, "result_%s.pklz" % node.name)
-        self._attrs = attrs
+        self._attrs = node.outputs.copyable_trait_names()
 
     def _add_output_traits(self, base):
         return add_traits(base, self._attrs)

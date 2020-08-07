@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from os.path import relpath
 
 from ..utils import findpaths
 
@@ -15,11 +16,13 @@ def iterpath(path):
 
 
 class ReferenceCounter:
-    def __init__(self):
+    def __init__(self, cwd):
+        self.cwd = Path(cwd).resolve()
         self.files = {}
         self.sets = []
 
     def addpath(self, path, jobid):
+        path = Path(relpath(path, start=self.cwd))
         curfiles = self.files
         for elem in iterpath(path.resolve()):
             if elem not in curfiles:
@@ -33,7 +36,9 @@ class ReferenceCounter:
     def put(self, result, jobid=0):
         paths = findpaths(result)
         while len(paths) > 0:
-            path = Path(paths.pop())
+            path = Path(paths.pop()).resolve()
+            if not path.startswith(self.cwd):
+                continue
             if path.is_dir():
                 paths.extend(path.iterdir())
             else:

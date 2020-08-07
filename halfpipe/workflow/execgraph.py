@@ -12,7 +12,7 @@ import networkx as nx
 import nipype.pipeline.engine as pe
 
 from ..interface import LoadResult
-from ..utils import first, hexdigest
+from ..utils import hexdigest
 from ..io import IndexedFile, cacheobj, uncacheobj
 
 max_chunk_size = 50  # subjects
@@ -54,8 +54,9 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     subjectworkflows = dict()
     for node in execgraph.nodes():
         subjectname = None
-        if node._hierarchy.startswith("nipype.fmriprep_wf"):
-            subjectname = node._hierarchy.split(".")[2]
+        hierarchy = node._hierarchy.split(".")
+        if hierarchy[1] in ["fmriprep_wf", "reports_wf", "settings_wf", "features_wf"]:
+            subjectname = hierarchy[2]
         if subjectname is not None:
             if subjectname not in subjectworkflows:
                 subjectworkflows[subjectname] = set()
@@ -90,17 +91,24 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
             execgraphs.append(execgraph.subgraph(nodes).copy())
 
         subjectlevelnodes = set.union(*subjectworkflows.values())
-        for (u, v, c) in nx.edge_boundary(execgraph, subjectlevelnodes, data=True):
-            attrs = [first(inattr) for inattr, outattr in c["connect"]]
-            uhex = hexdigest(u.fullname)[:8]
-            newu = pe.Node(LoadResult(u, attrs), name=f"loadresult_{uhex}")
-            newu.config = u.config
-            execgraph.remove_node(u)
+        grouplevelnodes = set(execgraph.nodes()) - subjectlevelnodes
+        newnodes = dict()
+        for (v, u, c) in nx.edge_boundary(execgraph.reverse(), grouplevelnodes, data=True):
+            newu = newnodes.get(u.fullname)
+            if newu is None:
+                uhex = hexdigest(u.fullname)[:8]
+                newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}")
+                newu.config = u.config
+                newnodes[u.fullname] = newu
             execgraph.add_edge(newu, v, attr_dict=c)
+
         execgraph.remove_nodes_from(subjectlevelnodes)
 
         execgraphs.append(execgraph)
         assert len(execgraphs) == n_chunks + 1
+
+        for execgraph in execgraphs:
+            execgraph.uuid = uuid
 
         logger.info(f"Finished execgraph split")
         cacheobj(workdir, typestr, execgraphs, uuid=uuid)

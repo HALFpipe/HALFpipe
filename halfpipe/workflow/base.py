@@ -4,10 +4,12 @@
 
 from uuid import uuid5
 import logging
+from pathlib import Path
 
 from nipype.pipeline import engine as pe
 
 from .factory import FactoryContext
+from .mriqc import MriqcFactory
 from .fmriprep import FmriprepFactory
 from .setting import SettingFactory
 from .feature import FeatureFactory
@@ -15,12 +17,13 @@ from .model import ModelFactory
 
 from .execgraph import init_execgraph
 from .memory import MemoryCalculator
+from .constants import constants
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
 from ..utils import deepcopyfactory
 
 
-def init_workflow(workdir):
+def init_workflow(workdir, **kwargs):
     """
     initialize nipype workflow
 
@@ -30,15 +33,16 @@ def init_workflow(workdir):
     logger = logging.getLogger("halfpipe")
 
     spec = loadspec(workdir=workdir)
+    assert spec is not None, "A spec file could not be loaded"
     database = Database(spec)
     uuid = uuid5(spec.uuid, database.sha1)
 
     workflow = uncacheobj(workdir, "workflow", uuid)
     if workflow is not None:
-        return init_execgraph(workdir, workflow)
+        return init_execgraph(workdir, workflow, **kwargs)
 
     # create parent workflow
-    workflow = pe.Workflow(name="nipype", base_dir=workdir)
+    workflow = pe.Workflow(name=constants.workflowdir, base_dir=workdir)
     workflow.uuid = uuid
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow: {uuidstr}")
@@ -61,12 +65,35 @@ def init_workflow(workdir):
     feature_factory = FeatureFactory(ctx, setting_factory)
     model_factory = ModelFactory(ctx, feature_factory)
 
-    # setup preprocessing
+    # create bids
     boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
-    fmriprep_factory.setup(workdir, boldfilepaths)
-    setting_factory.setup()
-    feature_factory.setup()
-    model_factory.setup()
+    for boldfilepath in boldfilepaths:
+        t1ws = database.associations(boldfilepath, datatype="anat")
+        if t1ws is None:
+            continue
+        bidsdatabase.put(boldfilepath)
+        for filepath in t1ws:
+            bidsdatabase.put(filepath)
+        fmaps = database.associations(boldfilepath, datatype="fmap")
+        if fmaps is None:
+            continue
+        for filepath in fmaps:
+            bidsdatabase.put(filepath)
+
+    bids_dir = Path(workdir) / "rawdata"
+    bidsdatabase.write(bids_dir)
+
+    # setup preprocessing
+    if spec.global_settings.get("run_mriqc") is True:
+        mriqc_factory = MriqcFactory(ctx)
+        mriqc_factory.setup(workdir, boldfilepaths)
+    if spec.global_settings.get("run_fmriprep") is True:
+        fmriprep_factory.setup(workdir, boldfilepaths)
+
+        if spec.global_settings.get("run_halfpipe") is True:
+            setting_factory.setup()
+            feature_factory.setup()
+            model_factory.setup()
 
     config_factory = deepcopyfactory(workflow.config)
     for node in workflow._get_all_nodes():
@@ -75,4 +102,4 @@ def init_workflow(workdir):
     logger.info(f"Finished workflow: {uuidstr}")
 
     cacheobj(workdir, "workflow", workflow)
-    return init_execgraph(workdir, workflow)
+    return init_execgraph(workdir, workflow, **kwargs)

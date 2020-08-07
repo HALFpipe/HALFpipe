@@ -80,7 +80,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     )
 
     #
-    if model.filters is not None:
+    if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
         kwargs = dict(filterdicts=model.filters, requireoneofimages=["effect", "reho", "falff", "alff"])
         if hasattr(model, "spreadsheet"):
             if model.spreadsheet is not None and variables is not None:
