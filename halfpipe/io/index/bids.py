@@ -111,8 +111,6 @@ class BidsDatabase:
 
         # sidecar files
         for bidspath, filepath in self.filepaths_by_bidspaths.items():
-            bidspath = Path(bidsdir) / bidspath
-
             schema = FileSchema
             while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
                 v = self.database.tagval(filepath, schema.type_field)
@@ -136,11 +134,17 @@ class BidsDatabase:
                 if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
                     sub = self.database.tagval(filepath, "sub")
                     filters = dict(datatype="func", suffix="bold", sub=sub)
-                    bidsmetadata["IntendedFor"] = list(self.database.associations(filepath, **filters))
+                    subject = self.tagval(bidspath, "subject")
+                    subjectdir = f"sub-{subject}"
+                    bidsmetadata["IntendedFor"] = list()
+                    for afilepath in self.database.associations(filepath, **filters):
+                        abidspath = self.tobids(afilepath)
+                        if abidspath is not None:  # only include files in the BidsDatabase
+                            bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))
 
             if len(bidsmetadata) > 0:
                 basename, _ = splitext(bidspath)
-                sidecarpath = bidspath.parent / f"{basename}.json"
+                sidecarpath = Path(bidsdir) / Path(bidspath).parent / f"{basename}.json"
                 bidspaths.add(sidecarpath)
                 with open(sidecarpath, "w") as f:  # always overwrite to be safe
                     json.dump(bidsmetadata, f, indent=4)
