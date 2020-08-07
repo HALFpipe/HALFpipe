@@ -7,6 +7,7 @@ from os.path import relpath
 from inflection import camelize
 import json
 
+from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
 from ...utils import formatlikebids, splitext, cleaner
 
@@ -79,19 +80,27 @@ class BidsDatabase:
             raise ValueError("Will not write to symlink")
         bidsdir.mkdir(parents=True, exist_ok=True)
 
+        bidspaths = set()
+
         dataset_description = {
             "Name": self.database.sha1,
             "BIDSVersion": bidsversion,
             "DatasetType": "raw"
         }
-        with open(bidsdir / "dataset_description.json", "w") as f:
+        dataset_description_path = bidsdir / "dataset_description.json"
+        with open(dataset_description_path, "w") as f:
             json.dump(dataset_description, f, indent=4)
+        bidspaths.add(dataset_description_path)
 
+        # image files
         for bidspath, filepath in self.filepaths_by_bidspaths.items():
             bidspath = Path(bidsdir) / bidspath
+            bidspaths.add(bidspath)
             bidspath.parent.mkdir(parents=True, exist_ok=True)
+
             if bidspath.is_file():
                 continue  # ignore real files
+
             elif bidspath.is_symlink():
                 if bidspath.resolve() == Path(filepath).resolve():
                     continue  # nothing to be done
@@ -99,14 +108,20 @@ class BidsDatabase:
                     bidspath.unlink()  # symlink points to different file
             relfilepath = relpath(filepath, start=bidspath.parent)
             bidspath.symlink_to(relfilepath)
+
+        # sidecar files
+        for bidspath, filepath in self.filepaths_by_bidspaths.items():
+            bidspath = Path(bidsdir) / bidspath
+
             schema = FileSchema
             while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
                 v = self.database.tagval(filepath, schema.type_field)
                 schema = schema.type_schemas[v]
             instance = schema()
+
+            bidsmetadata = dict()
             if "metadata" in instance.fields:
                 metadata_keys = list(instance.fields["metadata"].nested().fields.keys())
-                bidsmetadata = dict()
                 task = self.database.tagval(filepath, "task")
                 if task is not None:
                     bidsmetadata["TaskName"] = task
@@ -116,8 +131,22 @@ class BidsDatabase:
                     if v is not None:
                         bidsk = camelize(k)
                         bidsmetadata[bidsk] = v
-                if len(bidsmetadata) > 0:
-                    basename, _ = splitext(bidspath)
-                    sidecarpath = bidspath.parent / f"{basename}.json"
-                    with open(sidecarpath, "w") as f:
-                        json.dump(bidsmetadata, f, indent=4)
+
+            if len(bidsmetadata) > 0:
+                basename, _ = splitext(bidspath)
+                sidecarpath = bidspath.parent / f"{basename}.json"
+                bidspaths.add(sidecarpath)
+                with open(sidecarpath, "w") as f:  # always overwrite to be safe
+                    json.dump(bidsmetadata, f, indent=4)
+
+        # remove unnecessary files
+        files_to_keep = set()
+        for bidspath in bidspaths:
+            relbidspath = relpath(bidspath, start=bidsdir)
+            # use relative paths to limit parents to bidsdir
+            files_to_keep.add(relbidspath)
+            files_to_keep.update(map(str, Path(relbidspath).parents))
+        for filepath in _rlistdir(bidsdir, False):
+            relfilepath = relpath(filepath, start=bidsdir)
+            if relfilepath not in files_to_keep:
+                Path(filepath).unlink()

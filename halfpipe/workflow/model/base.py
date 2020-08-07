@@ -45,6 +45,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     make_resultdicts_a = pe.Node(
         MakeResultdicts(tagkeys=["model"], imagekeys=["design_matrix", "contrast_matrix"]),
         name="make_resultdicts_a",
+        run_without_submitting=True
     )
     if model is not None:
         make_resultdicts_a.inputs.model = model.name
@@ -54,6 +55,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             imagekeys=statmaps
         ),
         name="make_resultdicts_b",
+        run_without_submitting=True
     )
     if model is not None:
         make_resultdicts_b.inputs.model = model.name
@@ -70,13 +72,13 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     workflow.connect(merge_resultdicts_b, "out", resultdict_datasink, "indicts")
 
     #
-    merge_resultdicts_a = pe.Node(niu.Merge(numinputs), name="merge_resultdicts_a")
+    merge_resultdicts_a = pe.Node(niu.Merge(numinputs), name="merge_resultdicts_a", run_without_submitting=True)
     for i in range(1, numinputs + 1):
         workflow.connect(inputnode, f"in{i:d}", merge_resultdicts_a, f"in{i:d}")
 
     #
     aggregateresultdicts = pe.Node(
-        AggregateResultdicts(numinputs=1, across=model.across), name=f"aggregateresultdicts",
+        AggregateResultdicts(numinputs=1, across=model.across), name=f"aggregateresultdicts", run_without_submitting=True
     )
 
     #
@@ -85,7 +87,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         if hasattr(model, "spreadsheet"):
             if model.spreadsheet is not None and variables is not None:
                 kwargs.update(dict(spreadsheet=model.spreadsheet, variableobjs=variables))
-        filterresultsdicts = pe.Node(FilterResultdicts(**kwargs), name="filterresultsdicts")
+        filterresultsdicts = pe.Node(FilterResultdicts(**kwargs), name="filterresultsdicts", run_without_submitting=True)
         workflow.connect(merge_resultdicts_a, "out", filterresultsdicts, "indicts")
         workflow.connect(filterresultsdicts, "resultdicts", aggregateresultdicts, "in1")
     else:
@@ -94,7 +96,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     #
     ravelresultdicts = pe.Node(
         niu.Function(input_names=["in_list"], output_names=["out_list"], function=ravel),
-        name="ravelresultdicts"
+        name="ravelresultdicts",
+        run_without_submitting=True
     )
     workflow.connect(aggregateresultdicts, "resultdicts", ravelresultdicts, "in_list")
 
@@ -104,6 +107,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         ExtractFromResultdict(keys=[model.across, *statmaps], aliases=aliases),
         iterfield="indict",
         name="extractfromresultdict",
+        run_without_submitting=True
     )
     workflow.connect(ravelresultdicts, "out_list", extractfromresultdict, "indict")
 
@@ -132,12 +136,13 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
         countimages = pe.Node(
             niu.Function(input_names=["in_list"], output_names=["image_count"], function=lenforeach),
-            name="countimages"
+            name="countimages",
+            run_without_submitting=True
         )
         workflow.connect(extractfromresultdict, "effect", countimages, "in_list")
 
         model = pe.MapNode(
-            InterceptOnlyModel(), name="model", iterfield="n_copes", mem_gb=memcalc.min_gb,
+            InterceptOnlyModel(), name="model", iterfield="n_copes", mem_gb=memcalc.min_gb, run_without_submitting=True
         )
         workflow.connect(countimages, "image_count", model, "n_copes")
 
@@ -153,6 +158,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             name="model",
             iterfield="subjects",
             mem_gb=memcalc.min_gb,
+            run_without_submitting=True
         )
         workflow.connect(extractfromresultdict, "subject", model, "subjects")
 
@@ -196,6 +202,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         FilterList(fields=["contrast_names", *statmaps], pattern=r"^_"),
         iterfield=["keys", "contrast_names", *statmaps],
         name="filtercons",
+        run_without_submitting=True
     )
     workflow.connect(model, "contrast_names", filtercons, "keys")
     workflow.connect(model, "contrast_names", filtercons, "contrast_names")
@@ -211,11 +218,11 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect(filtercons, s, make_resultdicts_b, s)
 
     #
-    design_tsv = pe.Node(MergeColumns(1), name="design_tsv")
+    design_tsv = pe.Node(MergeColumns(1), name="design_tsv", run_without_submitting=True)
     workflow.connect(multipleregressdesign, "design_mat", design_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", design_tsv, "column_names1")
 
-    contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
+    contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv", run_without_submitting=True)
     workflow.connect(model, "contrast_names", contrast_tsv, "row_index")
     workflow.connect(multipleregressdesign, "design_con", contrast_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", contrast_tsv, "column_names1")

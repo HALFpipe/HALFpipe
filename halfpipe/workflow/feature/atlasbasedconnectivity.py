@@ -59,6 +59,7 @@ def init_atlasbasedconnectivity_wf(
             metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r"]
         ),
         name="make_resultdicts",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "atlas_names", make_resultdicts, "atlas")

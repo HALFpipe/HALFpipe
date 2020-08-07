@@ -23,6 +23,7 @@ def init_setting_output_wf(workdir=None, settingname=None):
             imagekeys=["preproc_bold", "confounds_regressors", "brain_mask", "confoundcorr_bold"]
         ),
         name="make_resultdicts",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "bold", make_resultdicts, "preproc_bold")

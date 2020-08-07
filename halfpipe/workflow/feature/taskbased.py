@@ -68,6 +68,7 @@ def init_taskbased_wf(
     make_resultdicts_a = pe.Node(
         MakeResultdicts(tagkeys=["feature"], imagekeys=["design_matrix", "contrast_matrix"]),
         name="make_resultdicts_a",
+        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts_a.inputs.feature = feature.name
@@ -79,6 +80,7 @@ def init_taskbased_wf(
             metadatakeys=["sources"],
         ),
         name="make_resultdicts_b",
+        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts_b.inputs.feature = feature.name
@@ -96,11 +98,11 @@ def init_taskbased_wf(
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     # parse condition files into three (ordered) lists
-    parseconditionfile = pe.Node(ParseConditionFile(), name="parseconditionfile")
+    parseconditionfile = pe.Node(ParseConditionFile(), name="parseconditionfile", run_without_submitting=True)
     workflow.connect(inputnode, "condition_names", parseconditionfile, "condition_names")
     workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
 
-    fillna = pe.Node(FillNA(), name="fillna")
+    fillna = pe.Node(FillNA(), name="fillna", run_without_submitting=True)
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
 
     # first level model specification
@@ -160,7 +162,7 @@ def init_taskbased_wf(
 
     # make dof volume
     makedofvolume = pe.MapNode(
-        MakeDofVolume(), iterfield=["dof_file", "copes"], name="makedofvolume",
+        MakeDofVolume(), iterfield=["dof_file", "copes"], name="makedofvolume", run_without_submitting=True
     )
     workflow.connect(modelestimate, "copes", makedofvolume, "copes")
     workflow.connect(modelestimate, "dof_file", makedofvolume, "dof_file")
@@ -172,14 +174,14 @@ def init_taskbased_wf(
     workflow.connect(inputnode, "mask", make_resultdicts_b, "mask")
 
     #
-    mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames")
+    mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames", run_without_submitting=True)
     mergecolumnnames.inputs.in1 = condition_names
     workflow.connect(fillna, "column_names", mergecolumnnames, "in2")
-    design_tsv = pe.Node(MergeColumns(1), name="design_tsv")
+    design_tsv = pe.Node(MergeColumns(1), name="design_tsv", run_without_submitting=True)
     workflow.connect(modelgen, "design_file", design_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", design_tsv, "column_names1")
 
-    contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
+    contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv", run_without_submitting=True)
     contrast_tsv.inputs.row_index = list(map(firststr, contrasts))
     workflow.connect(modelgen, "con_file", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")

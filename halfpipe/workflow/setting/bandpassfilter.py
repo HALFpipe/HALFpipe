@@ -78,6 +78,7 @@ def init_bandpass_filter_wf(bandpass_filter=None, name=None, suffix=None, memcal
                 function=_calc_sigma,
             ),
             name="calcsigma",
+            run_without_submitting=True
         )
         workflow.connect(inputnode, "low", calcsigma, "lp_width")
         workflow.connect(inputnode, "high", calcsigma, "hp_width")

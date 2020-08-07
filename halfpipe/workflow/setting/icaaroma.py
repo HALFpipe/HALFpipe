@@ -59,6 +59,7 @@ def init_ica_aroma_components_wf(
             ]
         ),
         name="inputnode",
+        run_without_submitting=True
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -71,6 +72,7 @@ def init_ica_aroma_components_wf(
     make_resultdicts = pe.Node(
         MakeResultdicts(reportkeys=["ica_aroma"], valkeys=["aroma_noise_frac"]),
         name="make_resultdicts",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
@@ -100,7 +102,7 @@ def init_ica_aroma_components_wf(
     )
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
-    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist")
+    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist", run_without_submitting=True)
     workflow.connect(compxfm, "output_image", compxfmlist, "in1")
 
     #
@@ -161,7 +163,7 @@ def init_ica_aroma_components_wf(
     workflow.connect(ica_aroma_wf, "outputnode.aroma_confounds", outputnode, "aroma_confounds")
     workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
 
-    vals = pe.Node(interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb)
+    vals = pe.Node(interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
     workflow.connect(outputnode, "aroma_metadata", vals, "aroma_metadata")
     workflow.connect(vals, "aroma_noise_frac", make_resultdicts, "aroma_noise_frac")
 

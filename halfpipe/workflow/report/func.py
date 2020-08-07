@@ -44,17 +44,18 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
         "movpar_file",
         "skip_vols",
         "confounds",
+        "std_dseg",
         *fmriprepreportdatasinks,
     ]
     inputnode = pe.Node(
         Exec(
             fieldtpls=[
                 ("tags", None),
-                *[(field, "firststr") for field in strfields],
-                ("std_dseg", "ravel"),
+                *[(field, "firststr") for field in strfields]
             ]
         ),
         name="inputnode",
+        run_without_submitting=True
     )
 
     #
@@ -64,6 +65,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
             valkeys=["mean_gm_tsnr", "fd_mean", "fd_perc", "dummy"],
         ),
         name="make_resultdicts",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy")
@@ -112,7 +114,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
 
     # vals
     vals = pe.Node(
-        Vals(), name="vals", mem_gb=memcalc.series_std_gb
+        Vals(), name="vals", mem_gb=memcalc.series_std_gb, run_without_submitting=True
     )
     workflow.connect(inputnode, "confounds", vals, "confounds")
 

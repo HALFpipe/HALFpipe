@@ -40,7 +40,7 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     workflow.connect(inputnode, "confounds", outputnode, "confounds")
     workflow.connect(inputnode, "mask", outputnode, "mask")
 
-    selectcolumns = pe.Node(SelectColumns(), name="selectcolumns")
+    selectcolumns = pe.Node(SelectColumns(), name="selectcolumns", run_without_submitting=True)
     workflow.connect(inputnode, "confounds", selectcolumns, "in_file")
     workflow.connect(inputnode, "confound_names", selectcolumns, "column_names")
 
@@ -70,7 +70,8 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
 
     removeheader = pe.Node(
         MergeColumns(1),
-        name="removeheader"
+        name="removeheader",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "confounds_selected", removeheader, "in1")
 

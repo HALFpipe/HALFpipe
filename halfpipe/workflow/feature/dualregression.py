@@ -104,6 +104,7 @@ def init_dualregression_wf(
     make_resultdicts_a = pe.Node(
         MakeResultdicts(tagkeys=["feature", "map"], imagekeys=["design_matrix", "contrast_matrix"]),
         name="make_resultdicts_a",
+        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts_a.inputs.feature = feature.name
@@ -116,6 +117,7 @@ def init_dualregression_wf(
             metadatakeys=["sources", "mean_t_s_n_r"],
         ),
         name="make_resultdicts_b",
+        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts_b.inputs.feature = feature.name
@@ -125,7 +127,7 @@ def init_dualregression_wf(
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 
     #
-    merge_resultdicts = pe.Node(niu.Merge(2), name="merge_resultdicts")
+    merge_resultdicts = pe.Node(niu.Merge(2), name="merge_resultdicts", run_without_submitting=True)
     workflow.connect(make_resultdicts_a, "resultdicts", merge_resultdicts, "in1")
     workflow.connect(make_resultdicts_b, "resultdicts", merge_resultdicts, "in2")
     resultdict_datasink = pe.Node(
@@ -174,6 +176,7 @@ def init_dualregression_wf(
         ),
         iterfield="map_timeseries_file",
         name="contrasts",
+        run_without_submitting=True
     )
     workflow.connect(spatialglm, "out_file", contrasts, "map_timeseries_file")
     workflow.connect(inputnode, "confounds_selected", contrasts, "confounds_file")

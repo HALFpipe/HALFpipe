@@ -34,12 +34,14 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
             ]
         ),
         name="inputnode",
+        run_without_submitting=True
     )
 
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(reportkeys=["skull_strip_report", "t1_norm_rpt", *fmriprepreports]),
         name="make_resultdicts",
+        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
