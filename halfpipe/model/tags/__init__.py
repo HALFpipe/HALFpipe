@@ -8,7 +8,7 @@
 
 from .anat import AnatTagsSchema
 from .func import FuncTagsSchema, BoldTagsSchema, TxtEventsTagsSchema
-from .fmap import FmapTagsSchema
+from .fmap import FmapTagsSchema, EPIFmapTagsSchema
 from .ref import RefTagsSchema
 from .resultdict import ResultdictTagsSchema
 
@@ -20,6 +20,7 @@ __all__ = [
     BoldTagsSchema,
     TxtEventsTagsSchema,
     FmapTagsSchema,
+    EPIFmapTagsSchema,
     RefTagsSchema,
     ResultdictTagsSchema,
     entities,

@@ -82,7 +82,7 @@ class Database:
                 if tagval is None or tagval != from_tagval:
                     continue
                 for v in vlist:
-                    to_entity, to_tagval = k.split(".")
+                    to_entity, to_tagval = v.split(".")
                     add_tag_to_index(filepath, to_entity, to_tagval)
 
     def tags(self, filepath):
@@ -176,15 +176,15 @@ class Database:
         return True
 
     def associations(self, filepath, **filters):
-        tagdict = self.tags(filepath)
-        if tagdict is None:
-            return
         res = self.get(**filters)
         for entity in reversed(entities):  # from high to low priority
-            tagval = tagdict.get(entity)
-            if tagval is None:
+            if entity not in self.filepaths_by_tags:
                 continue
-            cur_set = res & self.filepaths_by_tags[entity][tagval]
+            cur_set = set()
+            for k, filepaths in self.filepaths_by_tags[entity].items():
+                if filepath in filepaths:
+                    cur_set |= set(filepaths)
+            cur_set &= res
             if len(cur_set) > 0:
                 res = cur_set
             if len(cur_set) == 1:

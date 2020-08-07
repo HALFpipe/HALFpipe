@@ -7,6 +7,7 @@
 """
 
 import marshmallow
+from marshmallow import EXCLUDE
 import json
 from pathlib import Path
 from inflection import underscore
@@ -26,7 +27,7 @@ class SidecarMetadataLoader:
             return cls.cache[fname]
 
         stem, _ = splitext(fname)
-        sidecarfile = f"{stem}.json"
+        sidecarfile = Path(fname).parent / f"{stem}.json"
 
         if not Path(sidecarfile).is_file():
             return
@@ -55,7 +56,7 @@ class SidecarMetadataLoader:
 
             in_data = {underscore(k): v for k, v in in_data.items()}
 
-            sidecar = MetadataSchema().load(in_data)
+            sidecar = MetadataSchema().load(in_data, unknown=EXCLUDE)
         except marshmallow.exceptions.ValidationError:
             return
 

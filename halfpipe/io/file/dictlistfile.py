@@ -39,8 +39,8 @@ class DictListFile:
 
     @classmethod
     @lru_cache(maxsize=128)
-    def cached(cls, filename, header="report('", footer="');"):
-        return cls(filename, header=header, footer=footer)
+    def cached(cls, filename, **kwargs):
+        return cls(filename, **kwargs)
 
     def __enter__(self):
         self.lock.acquire()

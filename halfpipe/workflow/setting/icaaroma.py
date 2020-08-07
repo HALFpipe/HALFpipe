@@ -35,6 +35,20 @@ if not spaces.is_cached():
     spaces.checkpoint()
 
 
+def _aroma_column_names(melodic_mix=None, aroma_noise_ics=None):
+    import numpy as np
+    from halfpipe.utils import ncol
+
+    ncomponents = ncol(melodic_mix)
+    leading_zeros = int(np.ceil(np.log10(ncomponents)))
+    column_names = []
+    for i in range(1, ncomponents + 1):
+        if i in aroma_noise_ics:
+            column_names.append(f"aroma_noise_{i:0{leading_zeros}d}")
+        else:
+            column_names.append(f"aroma_signal_{i:0{leading_zeros}d}")
+
+
 def init_ica_aroma_components_wf(
     workdir=None, name="ica_aroma_components_wf", memcalc=MemoryCalculator()
 ):
@@ -63,7 +77,7 @@ def init_ica_aroma_components_wf(
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["aroma_noise_ics", "melodic_mix", "aroma_confounds", "aroma_metadata"]
+            fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata"]
         ),
         name="outputnode",
     )
@@ -161,7 +175,6 @@ def init_ica_aroma_components_wf(
 
     workflow.connect(ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics")
     workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", outputnode, "melodic_mix")
-    workflow.connect(ica_aroma_wf, "outputnode.aroma_confounds", outputnode, "aroma_confounds")
     workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
 
     vals = pe.Node(interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
@@ -184,7 +197,7 @@ def init_ica_aroma_regression_wf(
     #
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["files", "mask", "aroma_confounds", "melodic_mix", "aroma_noise_ics"]
+            fields=["files", "mask", "melodic_mix", "aroma_noise_ics"]
         ),
         name="inputnode",
     )
@@ -193,21 +206,34 @@ def init_ica_aroma_regression_wf(
     workflow.connect(inputnode, "mask", outputnode, "mask")
 
     #
-    loadaromanoiseics = pe.Node(
+    aromanoiseics = pe.Node(
         interface=niu.Function(
             input_names=["in_file"], output_names=["aroma_noise_ics"], function=loadints,
         ),
-        name="loadaromanoiseics",
+        name="aromanoiseics",
+        run_without_submitting=True
     )
-    workflow.connect(inputnode, "aroma_noise_ics", loadaromanoiseics, "in_file")
+    workflow.connect(inputnode, "aroma_noise_ics", aromanoiseics, "in_file")
 
-    # add aroma_confounds to the matrix
+    #
+    aromacolumnnames = pe.Node(
+        interface=niu.Function(
+            input_names=["melodic_mix", "aroma_noise_ics"], output_names=["column_names"], function=_aroma_column_names,
+        ),
+        name="loadaromanoiseics",
+        run_without_submitting=True
+    )
+    workflow.connect(inputnode, "melodic_mix", aromacolumnnames, "melodic_mix")
+    workflow.connect(aromanoiseics, "aroma_noise_ics", aromacolumnnames, "aroma_noise_ics")
+
+    # add melodic_mix to the matrix
     select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
     workflow.connect(inputnode, "files", select, "in_list")
 
     merge_columns = pe.Node(MergeColumns(2), name="merge_columns", run_without_submitting=True)
     workflow.connect(select, "match_list", merge_columns, "in1")
-    workflow.connect(inputnode, "aroma_confounds", merge_columns, "in2")
+    workflow.connect(inputnode, "melodic_mix", merge_columns, "in2")
+    workflow.connect(aromacolumnnames, "column_names", merge_columns, "column_names2")
 
     merge = pe.Node(niu.Merge(2), name="merge", run_without_submitting=True)
     workflow.connect(select, "other_list", merge, "in1")
@@ -224,7 +250,7 @@ def init_ica_aroma_regression_wf(
     workflow.connect(inputnode, "files", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
-    workflow.connect(loadaromanoiseics, "aroma_noise_ics", filter_regressor, "filter_columns")
+    workflow.connect(aromanoiseics, "aroma_noise_ics", filter_regressor, "filter_columns")
 
     workflow.connect(filter_regressor, "out_file", outputnode, "files")
 

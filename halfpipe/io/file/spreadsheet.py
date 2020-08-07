@@ -7,6 +7,7 @@
 """
 
 from functools import lru_cache
+import warnings
 import csv
 
 import numpy as np
@@ -29,62 +30,68 @@ def has_header(fname):
 @lru_cache(maxsize=128)
 def loadspreadsheet(fname, ftype=None):
     df = None
-    try:
-        if ftype is None:
-            _, ftype = splitext(fname)
-        if ftype == ".txt":
-            df = pd.read_table(fname)
-        elif ftype == ".json":
-            df = pd.read_json(fname)
-        elif ftype == ".csv":
-            if not has_header(fname):
-                df = pd.read_csv(fname, header=None)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        try:
+            if ftype is None:
+                _, ftype = splitext(fname)
+            if ftype == ".txt":
+                df = pd.read_table(fname)
+            elif ftype == ".json":
+                df = pd.read_json(fname)
+            elif ftype == ".csv":
+                if not has_header(fname):
+                    df = pd.read_csv(fname, header=None)
+                else:
+                    df = pd.read_csv(fname)
+            elif ftype == ".tsv":
+                if not has_header(fname):
+                    df = pd.read_csv(fname, sep="\t", header=None)
+                else:
+                    df = pd.read_csv(fname, sep="\t")
+            elif ftype == ".xls":
+                df = pd.read_excel(fname)
+            elif ftype == ".ods":
+                df = pd.read_excel(fname, engine="odf")
             else:
-                df = pd.read_csv(fname)
-        elif ftype == ".tsv":
-            if not has_header(fname):
-                df = pd.read_csv(fname, sep="\t", header=None)
-            else:
-                df = pd.read_csv(fname, sep="\t")
-        elif ftype == ".xls":
-            df = pd.read_excel(fname)
-        elif ftype == ".ods":
-            df = pd.read_excel(fname, engine="odf")
-        else:
-            df = pd.read_table(fname, sep=None, engine="python")
-        if df is not None:
-            return df
-    except Exception:
-        pass
-    df = pd.DataFrame(loadmatrix(fname))
-    return df
+                df = pd.read_table(fname, sep=None, engine="python")
+            if df is not None:
+                return df
+        except Exception:
+            pass
+        return pd.DataFrame(loadmatrix(fname))
 
 
 @lru_cache(maxsize=128)
 def loadmatrix(in_file, dtype=float, **kwargs):
     kwargs = dict(**kwargs, missing_values="NaN,n/a,NA", autostrip=True)
-    try:
-        in_array = np.genfromtxt(in_file, **kwargs)
-        if not np.all(np.isnan(in_array)) and in_array.size > 0:
-            return in_array.astype(dtype)
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(in_file, skip_header=1, **kwargs)
-        if not np.all(np.isnan(in_array)) and in_array.size > 0:
-            return in_array.astype(dtype)
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(in_file, delimiter=",", **kwargs)
-        if not np.all(np.isnan(in_array)) and in_array.size > 0:
-            return in_array.astype(dtype)
-    except ValueError:
-        pass
-    try:
-        in_array = np.genfromtxt(in_file, delimiter=",", skip_header=1, **kwargs)
-        if not np.all(np.isnan(in_array)) and in_array.size > 0:
-            return in_array.astype(dtype)
-    except ValueError:
-        pass
-    return loadmatrix(in_file, dtype=dtype, comments="/")
+    exception = ValueError()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        try:
+            in_array = np.genfromtxt(in_file, **kwargs)
+            if not np.all(np.isnan(in_array)) and in_array.size > 0:
+                return in_array.astype(dtype)
+        except Exception as e:
+            exception = e
+        try:
+            in_array = np.genfromtxt(in_file, skip_header=1, **kwargs)
+            if not np.all(np.isnan(in_array)) and in_array.size > 0:
+                return in_array.astype(dtype)
+        except Exception as e:
+            exception = e
+        try:
+            in_array = np.genfromtxt(in_file, delimiter=",", **kwargs)
+            if not np.all(np.isnan(in_array)) and in_array.size > 0:
+                return in_array.astype(dtype)
+        except Exception as e:
+            exception = e
+        try:
+            in_array = np.genfromtxt(in_file, delimiter=",", skip_header=1, **kwargs)
+            if not np.all(np.isnan(in_array)) and in_array.size > 0:
+                return in_array.astype(dtype)
+        except Exception as e:
+            exception = e
+    if kwargs.get("comments") != "/":
+        return loadmatrix(in_file, dtype=dtype, comments="/")
+    raise exception

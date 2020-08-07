@@ -10,7 +10,7 @@ from marshmallow import fields, validate
 from marshmallow_oneofschema import OneOfSchema
 
 from .base import File, BaseFileSchema
-from ..tags import FmapTagsSchema
+from ..tags import FmapTagsSchema, EPIFmapTagsSchema
 from ..metadata import PEDirMetadataSchema, TEMetadataSchema, PhaseDiffMetadataSchema
 
 
@@ -27,6 +27,7 @@ class BaseFmapFileSchema(BaseFileSchema):
 
 class EPIFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(default="epi", validate=validate.Equal("epi"))
+    tags = fields.Nested(EPIFmapTagsSchema, default=dict())
     metadata = fields.Nested(PEDirMetadataSchema)
 
 

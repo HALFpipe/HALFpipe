@@ -21,7 +21,7 @@ def regfilt(array, design, comps, aggressive=False):
 
     # setup
 
-    data = array.T
+    data = array
     m, n = data.shape
 
     mean_r = data.mean(axis=0)
@@ -36,7 +36,7 @@ def regfilt(array, design, comps, aggressive=False):
     logging.getLogger("halfpipe").info(f"Calculating maps")
 
     unmix_matrix = np.linalg.pinv(design)
-    maps = unmix_matrix.dot(data)
+    maps = unmix_matrix @ data
 
     noisedes = design[:, zero_based_comps]
     noisemaps = maps[zero_based_comps, :].T
@@ -44,13 +44,13 @@ def regfilt(array, design, comps, aggressive=False):
     logging.getLogger("halfpipe").info(f"Calculating filtered data")
 
     if aggressive:
-        new_data = data - noisedes.dot(np.linalg.pinv(noisedes).dot(data))
+        new_data = data - noisedes @ (np.linalg.pinv(noisedes) @ data)
     else:
-        new_data = data - noisedes.dot(noisemaps.T)
+        new_data = data - noisedes @ noisemaps.T
 
     new_data += mean_r[None, :]
 
-    temp_vol = new_data.T
+    temp_vol = new_data
 
     return temp_vol
 
@@ -78,7 +78,7 @@ class FilterRegressor(Transformer):
             filter_columns = list(range(1, design.shape[1] + 1))
 
         array2 = regfilt(
-            array, design, filter_columns, mask=mask, aggressive=self.inputs.aggressive
+            array, design, filter_columns, aggressive=self.inputs.aggressive
         )
 
         return array2

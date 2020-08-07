@@ -132,6 +132,12 @@ class BidsDatabase:
                         bidsk = camelize(k)
                         bidsmetadata[bidsk] = v
 
+            if self.database.tagval(filepath, "datatype") == "fmap":
+                if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
+                    sub = self.database.tagval(filepath, "sub")
+                    filters = dict(datatype="func", suffix="bold", sub=sub)
+                    bidsmetadata["IntendedFor"] = list(self.database.associations(filepath, **filters))
+
             if len(bidsmetadata) > 0:
                 basename, _ = splitext(bidspath)
                 sidecarpath = bidspath.parent / f"{basename}.json"

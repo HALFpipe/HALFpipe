@@ -59,7 +59,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
             self._append_view(TextView(f"Remove {self.noun}?"))
 
             self.confs = set(
-                tuple(sorted(setting["confounds_removal"]))
+                tuple(sorted(
+                    setting["confounds_removal"] + ["ICA-AROMA"] if setting.get("ica_aroma") is True else []
+                ))
                 for setting in ctx.spec.settings
                 if "confounds_removal" in setting
             )

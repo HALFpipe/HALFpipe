@@ -59,7 +59,7 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
     next_step_type = CheckBoldPhaseEncodingDirectionStep
 
     def _should_skip(self, ctx):
-        filepaths = [*ctx.database.get(filedict)]
+        filepaths = [*ctx.database.get(**filedict)]
         suffixvalset = ctx.database.tagvalset("suffix", filepaths=filepaths)
         return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff", "fieldmap"])
 
@@ -102,7 +102,7 @@ class AcqToTaskMappingStep(Step):
             options = [f'"{acqval}"' for acqval in self.acqvals]
             values = [f"{taskval}" for taskval in self.taskvals]
 
-            checked = [[] for _ in self.options]
+            checked = [[] for _ in options]
             checked[0].extend(values)
 
             self.input_view = MultiMultipleChoiceInputView(
@@ -141,9 +141,7 @@ class AcqToTaskMappingStep(Step):
 
         if self.is_first_run or not self.is_predefined:
             self.is_first_run = False
-            return next_step_type(self.app)(ctx)
-        else:
-            return
+            return CheckBoldEffectiveEchoSpacingStep(self.app)(ctx)
 
 
 class HasMoreFmapStep(YesNoStep):

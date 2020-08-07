@@ -132,7 +132,7 @@ class MergeColumns(IOBase):
         out_df.to_csv(
             outputs["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
         )
-        outputs["column_names"] = list(out_df.columns)
+        outputs["column_names"] = list(map(str, out_df.columns))
 
         return outputs
 

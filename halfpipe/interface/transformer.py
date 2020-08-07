@@ -66,7 +66,7 @@ class Transformer(SimpleInterface):
                 )
                 self.mask = mask_bin
                 assert self.mask.size == array.shape[0]
-                array = array[np.ravel(self.mask), :]
+                array = array[np.ravel(self.mask), :].T
 
         else:
             in_df = loadspreadsheet(in_file)
@@ -85,11 +85,11 @@ class Transformer(SimpleInterface):
             in_img = self.in_img
 
             if self.mask is not None:
-                m, n = array2.shape
+                m, n = array2.T.shape
                 out_array = np.zeros((*in_img.shape[:3], n))
-                out_array[self.mask, :] = array2
+                out_array[self.mask, :] = array2.T
             else:
-                out_array = array2.reshape((*in_img.shape[:3], -1))
+                out_array = array2.T.reshape((*in_img.shape[:3], -1))
 
             out_img = new_img_like(in_img, out_array)
             nib.save(out_img, out_file)
@@ -110,7 +110,7 @@ class Transformer(SimpleInterface):
 
         in_file = self.inputs.in_file
 
-        array = self._load(in_file)
+        array = self._load(in_file)  # observations x variables
 
         array2 = self._transform(array)
 

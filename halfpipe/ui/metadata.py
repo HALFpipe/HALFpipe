@@ -37,6 +37,8 @@ def display_str(x):
         return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
     elif x == "MNI152NLin2009cAsym":
         return "MNI ICBM 2009c Nonlinear Asymmetric"
+    elif x == "slice_encoding_direction":
+        return "slice acquisition direction"
     return humanize(x)
 
 
@@ -55,7 +57,7 @@ class SetMetadataStep(Step):
         self.next_step_type = next_step_type
 
     def setup(self, ctx):
-        humankey = humanize(self.key).lower()
+        humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
         field = self.field
@@ -155,7 +157,7 @@ class CheckMetadataStep(Step):
             self.is_missing = True
             return
 
-        humankey = humanize(self.key).lower()
+        humankey = display_str(self.key).lower()
 
         if self.filters is None:
             filepaths = [

@@ -178,7 +178,8 @@ class ResultdictDatasink(SimpleInterface):
 
         if len(valdicts) > 0:
             valspath = reports_directory / "reportvals.js"
-            with DictListFile.cached(valspath) as valsfile:
+            valsfile = DictListFile.cached(valspath)
+            with valsfile:
                 for valdict in valdicts:
                     valsfile.put(valdict)
                 valsfile.to_table()
@@ -192,7 +193,8 @@ class ResultdictDatasink(SimpleInterface):
 
         if len(preprocdicts) > 0:
             preprocpath = reports_directory / "reportpreproc.js"
-            with DictListFile.cached(preprocpath) as preprocfile:
+            preprocfile = DictListFile.cached(preprocpath)
+            with preprocfile:
                 for preprocdict in preprocdicts:
                     preprocfile.put(preprocdict)
                 preprocfile.to_table()
