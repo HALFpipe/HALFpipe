@@ -96,7 +96,7 @@ class Transformer(SimpleInterface):
             in_df = self.in_df
 
             out_df = in_df
-            out_df.values = array2
+            np.copyto(out_df.values, array2)
             out_df.to_csv(
                 out_file, sep="\t", index=False, na_rep="n/a", header=True
             )

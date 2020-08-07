@@ -41,7 +41,8 @@ class GrandMeanScaling(Transformer):
                     f'File "{self.inputs.files[0]}" has a grand mean of 0. Skipping grand mean scaling'
                 )
                 self.scaling_factor = 1.0
-            self.scaling_factor = self.inputs.mean / arraymean
+            else:
+                self.scaling_factor = self.inputs.mean / arraymean
 
         array2 = array * self.scaling_factor
 
