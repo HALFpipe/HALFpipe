@@ -42,6 +42,8 @@ def init_taskbased_wf(
         niu.IdentityInterface(
             fields=[
                 "tags",
+                "vals",
+                "metadata",
                 "bold",
                 "mask",
                 "repetition_time",
@@ -73,6 +75,8 @@ def init_taskbased_wf(
     if feature is not None:
         make_resultdicts_a.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts_a, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts_a, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts_a, "metadata")
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["feature", "contrast"],
@@ -85,6 +89,8 @@ def init_taskbased_wf(
     if feature is not None:
         make_resultdicts_b.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts_b, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts_b, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts_b, "metadata")
 
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 

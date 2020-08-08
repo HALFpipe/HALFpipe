@@ -131,36 +131,37 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
 
     # create models
-    if model.type in ["fe", "me"]:  # intercept only design
+    if model.type in ["fe", "me"]:  # intercept only model
         run_mode = dict(fe="fe", me="flame1")[model.type]
 
-        countimages = pe.Node(
+        countimages = pe.MapNode(
             niu.Function(input_names=["in_list"], output_names=["image_count"], function=lenforeach),
+            iterfield="in_list",
             name="countimages",
             run_without_submitting=True
         )
         workflow.connect(extractfromresultdict, "effect", countimages, "in_list")
 
-        model = pe.MapNode(
-            InterceptOnlyModel(), name="model", iterfield="n_copes", mem_gb=memcalc.min_gb, run_without_submitting=True
+        modelspec = pe.MapNode(
+            InterceptOnlyModel(), name="modelspec", iterfield="n_copes", mem_gb=memcalc.min_gb, run_without_submitting=True
         )
-        workflow.connect(countimages, "image_count", model, "n_copes")
+        workflow.connect(countimages, "image_count", modelspec, "n_copes")
 
-    elif model.type in ["lme"]:
+    elif model.type in ["lme"]:  # glm
         run_mode = "flame1"
 
-        model = pe.MapNode(
+        modelspec = pe.MapNode(
             LinearModel(
                 spreadsheet=model.spreadsheet,
                 contrastobjs=model.contrasts,
                 variableobjs=variables,
             ),
-            name="model",
+            name="modelspec",
             iterfield="subjects",
             mem_gb=memcalc.min_gb,
             run_without_submitting=True
         )
-        workflow.connect(extractfromresultdict, "subject", model, "subjects")
+        workflow.connect(extractfromresultdict, "subject", modelspec, "subjects")
 
     # prepare design matrix
     multipleregressdesign = pe.MapNode(
@@ -169,8 +170,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         iterfield=["regressors", "contrasts"],
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(model, "regressors", multipleregressdesign, "regressors")
-    workflow.connect(model, "contrasts", multipleregressdesign, "contrasts")
+    workflow.connect(modelspec, "regressors", multipleregressdesign, "regressors")
+    workflow.connect(modelspec, "contrasts", multipleregressdesign, "contrasts")
 
     #
     flameo = pe.MapNode(
@@ -204,8 +205,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         name="filtercons",
         run_without_submitting=True
     )
-    workflow.connect(model, "contrast_names", filtercons, "keys")
-    workflow.connect(model, "contrast_names", filtercons, "contrast_names")
+    workflow.connect(modelspec, "contrast_names", filtercons, "keys")
+    workflow.connect(modelspec, "contrast_names", filtercons, "contrast_names")
     workflow.connect(mergemask, "merged_file", filtercons, "mask")
     workflow.connect(flameo, "copes", filtercons, "effect")
     workflow.connect(flameo, "var_copes", filtercons, "varcope")
@@ -218,12 +219,13 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect(filtercons, s, make_resultdicts_b, s)
 
     #
-    design_tsv = pe.Node(MergeColumns(1), name="design_tsv", run_without_submitting=True)
+    design_tsv = pe.MapNode(MergeColumns(1), iterfield=["row_index", "in1", "column_names1"], name="design_tsv", run_without_submitting=True)
+    workflow.connect(extractfromresultdict, model.across, design_tsv, "row_index")
     workflow.connect(multipleregressdesign, "design_mat", design_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", design_tsv, "column_names1")
 
-    contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv", run_without_submitting=True)
-    workflow.connect(model, "contrast_names", contrast_tsv, "row_index")
+    contrast_tsv = pe.Node(MergeColumns(1), iterfield=["in1", "column_names1", "row_index"], name="contrast_tsv", run_without_submitting=True)
+    workflow.connect(modelspec, "contrast_names", contrast_tsv, "row_index")
     workflow.connect(multipleregressdesign, "design_con", contrast_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", contrast_tsv, "column_names1")
 

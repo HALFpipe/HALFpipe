@@ -102,7 +102,11 @@ class DictListFile:
             matches = True
             equals = True
             for key, value in curdict.items():
-                valmatches = key in indict and indict[key] == curdict[key]
+                def _compare(a, b):
+                    if isinstance(a, float) and isinstance(b, float):
+                        return np.isclose(a, b)
+                    return a == b
+                valmatches = key in indict and _compare(indict[key], curdict[key])
                 if key in entities:
                     matches = matches and valmatches
                 equals = equals and valmatches
@@ -112,7 +116,7 @@ class DictListFile:
                 break
         self.is_dirty = True
         if matches:
-            self.dictlist[i] = indict
-            logger.info(f"Updating {self.filename} entry {curdict} with {indict}")
+            self.dictlist[i].update(indict)
+            logger.debug(f"Updating {self.filename} entry {curdict} with {indict}")
         else:
             self.dictlist.append(indict)

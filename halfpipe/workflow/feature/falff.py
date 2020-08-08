@@ -39,7 +39,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["tags", "bold", "mask", "fwhm"]), name="inputnode",
+        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]), name="inputnode",
     )
     unfiltered_inputnode = pe.Node(
         niu.IdentityInterface(fields=["bold", "mask"]), name="unfiltered_inputnode",
@@ -54,6 +54,8 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
         MakeResultdicts(imagekeys=["alff", "falff"]), name="make_resultdicts", run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 

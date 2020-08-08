@@ -12,21 +12,14 @@ def add_setting_adapter(workflow):
     inputnode = workflow.get_node("inputnode")
 
     #
-    select = pe.Node(
-        Select(regex=r".+\.tsv"), name="select", run_without_submitting=True
-    )
+    select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
     workflow.connect(inputnode, "files", select, "in_list")
 
     #
     adapter = pe.Node(
-        Exec(
-            fieldtpls=[
-                ("bold", "firststr"),
-                ("confounds", "firststr")
-            ]
-        ),
+        Exec(fieldtpls=[("bold", "firststr"), ("confounds", "firststr")]),
         name="adapter",
-        run_without_submitting=True
+        run_without_submitting=True,
     )  # discard any extra files, keep only first match
     workflow.connect(select, "match_list", adapter, "confounds")
     workflow.connect(select, "other_list", adapter, "bold")
@@ -40,16 +33,12 @@ def init_setting_adapter_wf(suffix=None):
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
 
-    inputnode = pe.Node(
-        niu.IdentityInterface(fields=["files", "mask"]), name="inputnode",
-    )
+    inputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="inputnode",)
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold", "confounds", "mask"]
-        ),
-        name="outputnode",
+        niu.IdentityInterface(fields=["bold", "confounds", "mask", "vals"]), name="outputnode",
     )
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     adapter = add_setting_adapter(workflow)
     workflow.connect(adapter, "bold", outputnode, "bold")

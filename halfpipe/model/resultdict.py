@@ -28,6 +28,7 @@ def validate_file(v):
 class ResultdictImagesSchema(Schema):
     # according to https://fmriprep.org/en/stable/outputs.html
     bold = fields.Raw(validate=validate_file)
+    mask = fields.Raw(validate=validate_file)
 
     # according to https://github.com/poldracklab/fitlins/blob/0.6.2/fitlins/workflows/base.py
     effect = fields.Raw(validate=validate_file)

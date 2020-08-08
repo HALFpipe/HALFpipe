@@ -22,9 +22,13 @@ class CalcMeanInputSpec(TraitedSpec):
     parcellation = File(exists=True)
     dseg = File(exists=True)
 
+    vals = traits.Dict(traits.Str(), traits.Any())
+    key = traits.Str()
+
 
 class CalcMeanOutputSpec(TraitedSpec):
     mean = traits.Either(traits.Float(), traits.List(traits.Float))
+    vals = traits.Dict(traits.Str(), traits.Any())
 
 
 class CalcMean(SimpleInterface):
@@ -49,18 +53,25 @@ class CalcMean(SimpleInterface):
             self._results["mean"] = first(meansignals(
                 in_file, mask_file, min_n_voxels=0
             ).ravel())
+        vals = dict()
+        self._results["vals"] = vals
+        if isdefined(self.inputs.vals):
+            vals.update(self.inputs.vals)
+        if isdefined(self.inputs.key):
+            vals[self.inputs.key] = self._results["mean"]
         return runtime
 
 
 class ValsInputSpec(TraitedSpec):
+    vals = traits.Dict(traits.Str(), traits.Any())
     confounds = File(exists=True)
     aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True)
+    fd_thres = traits.Float()
+    dummy = traits.Int()
 
 
 class ValsOutputSpec(TraitedSpec):
-    fd_mean = traits.Float()
-    fd_perc = traits.Float()
-    aroma_noise_frac = traits.Float()
+    vals = traits.Dict(traits.Str(), traits.Any())
 
 
 class Vals(SimpleInterface):
@@ -68,15 +79,19 @@ class Vals(SimpleInterface):
     output_spec = ValsOutputSpec
 
     def _run_interface(self, runtime):
+        vals = dict()
+        self._results["vals"] = vals
         if isdefined(self.inputs.confounds):
             df_confounds = loadspreadsheet(self.inputs.confounds)
-            self._results["fd_mean"] = df_confounds["framewise_displacement"].mean()
-            self._results["fd_perc"] = (df_confounds["framewise_displacement"] > 0.2).mean()
-
+            vals["fd_mean"] = df_confounds["framewise_displacement"].mean()
+            if isdefined(self.inputs.fd_thres):
+                vals["fd_perc"] = (df_confounds["framewise_displacement"] > self.inputs.fd_thres).mean()
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
-            self._results["aroma_noise_frac"] = np.asarray(
+            vals["aroma_noise_frac"] = np.asarray(
                 [val["MotionNoise"] is True for val in aroma_metadata.values()]
             ).mean()
+        if isdefined(self.inputs.dummy):
+            vals["dummy"] = self.inputs.dummy
 
         return runtime

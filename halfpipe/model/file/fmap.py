@@ -36,7 +36,7 @@ class PhaseDiffFmapFileSchema(BaseFmapFileSchema):
     metadata = fields.Nested(PhaseDiffMetadataSchema)
 
 
-class PhaseFmapFileSchema(BaseFileSchema):
+class PhaseFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(validate=validate.OneOf(["phase1", "phase2"]))
     metadata = fields.Nested(TEMetadataSchema)
 

@@ -15,7 +15,7 @@ def init_setting_output_wf(workdir=None, settingname=None):
     name = f"setting_output_{formatlikebids(settingname)}_wf"
     workflow = pe.Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["tags", "bold", "confounds", "mask"]), name="inputnode")
+    inputnode = pe.Node(niu.IdentityInterface(fields=["tags", "bold", "confounds", "mask", "vals"]), name="inputnode")
 
     #
     make_resultdicts = pe.Node(
@@ -26,6 +26,7 @@ def init_setting_output_wf(workdir=None, settingname=None):
         run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "bold", make_resultdicts, "preproc_bold")
     workflow.connect(inputnode, "confounds", make_resultdicts, "confounds_regressors")
     workflow.connect(inputnode, "mask", make_resultdicts, "brain_mask")

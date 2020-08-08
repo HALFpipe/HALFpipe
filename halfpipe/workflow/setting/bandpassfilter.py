@@ -27,7 +27,9 @@ def _tproject_out_file_name(in_file):
     return f"{stem}_tproject{ext}"
 
 
-def init_bandpass_filter_wf(bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator()):
+def init_bandpass_filter_wf(
+    bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator()
+):
     """
 
     """
@@ -45,25 +47,25 @@ def init_bandpass_filter_wf(bandpass_filter=None, name=None, suffix=None, memcal
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["files", "mask", "low", "high", "repetition_time"]
-        ),
+        niu.IdentityInterface(fields=["files", "mask", "low", "high", "vals", "repetition_time"]),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["files", "mask"]
-        ),
-        name="outputnode",
+        niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode",
     )
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     if low is not None:
         inputnode.inputs.low = low
+    else:
+        inputnode.inputs.low = -1.0
 
     if high is not None:
         inputnode.inputs.high = high
+    else:
+        inputnode.inputs.high = -1.0
 
     addmeans = pe.MapNode(AddMeans(), iterfield=["in_file", "mean_file"], name="addmeans")
     workflow.connect(inputnode, "files", addmeans, "mean_file")
@@ -78,7 +80,7 @@ def init_bandpass_filter_wf(bandpass_filter=None, name=None, suffix=None, memcal
                 function=_calc_sigma,
             ),
             name="calcsigma",
-            run_without_submitting=True
+            run_without_submitting=True,
         )
         workflow.connect(inputnode, "low", calcsigma, "lp_width")
         workflow.connect(inputnode, "high", calcsigma, "hp_width")
@@ -103,14 +105,16 @@ def init_bandpass_filter_wf(bandpass_filter=None, name=None, suffix=None, memcal
             ),
             iterfield="in_file",
             name="tprojectoutfilename",
-            run_without_submitting=True
+            run_without_submitting=True,
         )
 
         bandpassarg = pe.Node(niu.Merge(2), name="bandpassarg", run_without_submitting=True)
         workflow.connect(inputnode, "low", bandpassarg, "in1")
         workflow.connect(inputnode, "high", bandpassarg, "in2")
 
-        tproject = pe.MapNode(afni.TProject(polort=1), iterfield=["in_file", "out_file"], name="tproject")
+        tproject = pe.MapNode(
+            afni.TProject(polort=1), iterfield=["in_file", "out_file"], name="tproject"
+        )
         workflow.connect(toafni, "out_file", tproject, "in_file")
         workflow.connect(bandpassarg, "out", tproject, "bandpass")
         workflow.connect(inputnode, "repetition_time", tproject, "TR")

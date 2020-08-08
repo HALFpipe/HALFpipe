@@ -128,7 +128,6 @@ def _main():
     import logging
     from .logger import Logger
 
-    # if not Logger.is_setup:
     Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("halfpipe")
 
@@ -175,6 +174,8 @@ def _main():
             from .cluster import create_example_script
 
             create_example_script(workdir, execgraphs)
+
+    Logger.setup(workdir, debug=debug, verbose=verbose)  # re-run setup to override fmriprep/nipype logging config
 
     if not should_run["run"] or args.use_cluster:
         logger.info(f"Did not run step: run")

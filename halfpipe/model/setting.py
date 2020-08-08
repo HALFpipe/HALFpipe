@@ -83,11 +83,7 @@ class BandpassFilterSettingSchema(OneOfSchema):
         return obj.get("type")
 
 
-class SettingSchema(Schema):
-    name = fields.Str()
-
-    filters = fields.List(fields.Nested(FilterSchema))
-
+class BaseSettingSchema(Schema):
     ica_aroma = fields.Bool(default=True, allow_none=True)  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True
@@ -95,6 +91,12 @@ class SettingSchema(Schema):
     grand_mean_scaling = fields.Nested(GrandMeanScalingSettingSchema, allow_none=True)
     bandpass_filter = fields.Nested(BandpassFilterSettingSchema, allow_none=True)
     confounds_removal = fields.List(fields.Str(), default=[])
+
+
+class SettingSchema(BaseSettingSchema):
+    name = fields.Str()
+
+    filters = fields.List(fields.Nested(FilterSchema))
 
     output_image = fields.Boolean(default=False)
 

@@ -18,7 +18,7 @@ from marshmallow import (
 )
 from inflection import underscore
 
-from .setting import SettingSchema
+from .setting import BaseSettingSchema
 from .variable import VariableSchema
 
 
@@ -118,7 +118,7 @@ class SpreadsheetMetadataSchema(Schema):
             raise ValidationError("Duplicate variable name")
 
 
-class ResultdictMetadataSchema(SettingSchema):
+class ResultdictMetadataSchema(BaseSettingSchema):
     sources = fields.List(fields.Str())
     raw_sources = fields.List(fields.Str())
     sampling_frequency = fields.Float()

@@ -30,6 +30,8 @@ def init_atlasbasedconnectivity_wf(
         niu.IdentityInterface(
             fields=[
                 "tags",
+                "vals",
+                "metadata",
                 "bold",
                 "mask",
                 "repetition_time",
@@ -62,6 +64,8 @@ def init_atlasbasedconnectivity_wf(
         run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
     workflow.connect(inputnode, "atlas_names", make_resultdicts, "atlas")
     workflow.connect(inputnode, "repetition_time", make_resultdicts, "sampling_frequency")
 
@@ -103,9 +107,7 @@ def init_atlasbasedconnectivity_wf(
     tsnr = pe.Node(interface=nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
-    calcmean = pe.Node(
-        interface=CalcMean(), name="calcmean", mem_gb=memcalc.series_std_gb
-    )
+    calcmean = pe.MapNode(CalcMean(), iterfield="parcellation", name="calcmean", mem_gb=memcalc.series_std_gb)
     workflow.connect(resample, "output_image", calcmean, "parcellation")
     workflow.connect(inputnode, "mask", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")

@@ -121,6 +121,7 @@ class FmriprepFactory(Factory):
         fmriprep_wf = retval["workflow"]
         workflow.add_nodes([fmriprep_wf])
 
+        # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=self.workdir, memcalc=self.memcalc))
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
@@ -141,6 +142,7 @@ class FmriprepFactory(Factory):
             hierarchy = self._get_hierarchy("reports_wf", sourcefile=boldfilepath)
 
             wf = func_report_wf_factory()
+            assert wf.name == "func_report_wf"  # check name for line 206
             hierarchy[-1].add_nodes([wf])
             hierarchy.append(wf)
 
@@ -199,6 +201,11 @@ class FmriprepFactory(Factory):
                     splitnode = wf.get_node("bold_split")
                 self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
                 connected_attrs.add("bold_split")
+
+            reporthierarchy = self._get_hierarchy("reports_wf", sourcefile=sourcefile, subject_id=subject_id)
+            func_report_wf = reporthierarchy[-1].get_node("func_report_wf")  # this is not part of fmriprep
+            if func_report_wf is not None:
+                _connect([*reporthierarchy, func_report_wf])
 
             while wf.get_node("anat_preproc_wf") is None:
                 hierarchy.pop()

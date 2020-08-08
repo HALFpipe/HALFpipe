@@ -80,12 +80,18 @@ class Factory:
         raise NotImplementedError()
 
     def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode):
+        if isinstance(outputnode, str):
+            outputnode = outputhierarchy[-1].get_node(outputnode)
+        if isinstance(inputnode, str):
+            inputnode = inputhierarchy[-1].get_node(inputnode)
+
         inputattrs = set(inputnode.inputs.copyable_trait_names())
         outputattrs = set(outputnode.outputs.copyable_trait_names())
         attrs = inputattrs & outputattrs  # find common attr names
 
         for attr in attrs:
             self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
+        return attrs
 
     def connect_attr(self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr):
         inputhierarchy = [*inputhierarchy]  # make copies

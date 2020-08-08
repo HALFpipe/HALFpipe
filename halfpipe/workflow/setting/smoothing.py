@@ -25,11 +25,12 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator(), name=None, suffix=N
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(fields=["files", "mask", "fwhm"]), name="inputnode",
+        interface=niu.IdentityInterface(fields=["files", "mask", "vals", "fwhm"]), name="inputnode",
     )
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=["files", "mask"]), name="outputnode")
+    outputnode = pe.Node(interface=niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)

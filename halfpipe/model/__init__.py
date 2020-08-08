@@ -30,6 +30,7 @@ from .file import (
 )
 from .setting import (
     SettingSchema,
+    BaseSettingSchema,
     SmoothingSettingSchema,
     BandpassFilterSettingSchema,
     GrandMeanScalingSettingSchema,
@@ -74,6 +75,7 @@ __all__ = [
     RefFileSchema,
     FileSchema,
     SettingSchema,
+    BaseSettingSchema,
     SmoothingSettingSchema,
     BandpassFilterSettingSchema,
     GrandMeanScalingSettingSchema,

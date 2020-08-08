@@ -28,6 +28,8 @@ for schema in __all__:  # automatically add other entities
     for key in instance.fields.keys():
         if key not in entities:
             entities.insert(0, key)
+entities.remove("desc")
+entities.insert(0, "desc")  # desc should be last
 entities = tuple(entities)
 
 entity_longnames = {

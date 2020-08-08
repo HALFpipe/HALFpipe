@@ -26,19 +26,20 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
 
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold", "confounds", "confound_names", "mask"]
+            fields=["bold", "confounds", "confound_names", "mask", "vals"]
         ),
         name="inputnode",
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold", "confounds_selected", "confounds", "mask"]
+            fields=["bold", "confounds_selected", "confounds", "mask", "vals"]
         ),
         name="outputnode",
     )
     workflow.connect(inputnode, "bold", outputnode, "bold")
     workflow.connect(inputnode, "confounds", outputnode, "confounds")
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     selectcolumns = pe.Node(SelectColumns(), name="selectcolumns", run_without_submitting=True)
     workflow.connect(inputnode, "confounds", selectcolumns, "in_file")
@@ -58,15 +59,16 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold", "confounds_selected", "confounds", "mask"]), name="inputnode",
+        niu.IdentityInterface(fields=["bold", "confounds_selected", "confounds", "mask", "vals"]), name="inputnode",
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["bold", "confounds", "mask"]
+            fields=["bold", "confounds", "mask", "vals"]
         ),
         name="outputnode",
     )
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     removeheader = pe.Node(
         MergeColumns(1),

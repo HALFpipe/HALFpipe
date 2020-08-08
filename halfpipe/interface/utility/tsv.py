@@ -63,7 +63,7 @@ class FillNA(SimpleInterface):
                 )
             else:
                 self._results["out_no_header"] = in_file
-                self._results["column_names"] = list(df.columns)
+                self._results["column_names"] = list(map(str, df.columns))
 
         return runtime
 
@@ -98,26 +98,26 @@ class MergeColumns(IOBase):
 
         out_df = None
 
-        in_files = []
         for i in range(self._numinputs):
-            in_file = getattr(self.inputs, "in%d" % (i + 1))
-            if not isdefined(in_file):
-                continue
-            in_files.append(in_file)
-        in_files = ravel(in_files)
-        for in_file in in_files:
-            in_df = loadspreadsheet(in_file)
-            if in_df.size == 0:
-                continue
+            in_files = getattr(self.inputs, "in%d" % (i + 1))
             column_names = getattr(self.inputs, "column_names%d" % (i + 1))
-            if isdefined(column_names):
-                if not isinstance(column_names, (list, tuple)):
-                    column_names = [column_names]
-                in_df.columns = column_names
-            if out_df is None:
-                out_df = in_df
-            else:
-                out_df = pd.concat((out_df, in_df), axis=1)
+            if not isdefined(in_files):
+                continue
+            if isinstance(in_files, str):
+                in_files = [in_files]
+            in_files = ravel(in_files)
+            for in_file in in_files:
+                in_df = loadspreadsheet(in_file)
+                if in_df.size == 0:
+                    continue
+                if isdefined(column_names):
+                    if not isinstance(column_names, (list, tuple)):
+                        column_names = [column_names]
+                    in_df.columns = column_names
+                if out_df is None:
+                    out_df = in_df
+                else:
+                    out_df = pd.concat((out_df, in_df), axis=1)
 
         index = self.inputs.row_index is not False
         if isinstance(self.inputs.row_index, list):
@@ -173,6 +173,6 @@ class SelectColumns(SimpleInterface):
         dataframe.to_csv(
             self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
         )
-        self._results["column_names"] = list(dataframe.columns)
+        self._results["column_names"] = list(map(str, dataframe.columns))
 
         return runtime

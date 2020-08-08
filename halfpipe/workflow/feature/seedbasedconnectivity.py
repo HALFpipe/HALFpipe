@@ -73,6 +73,8 @@ def init_seedbasedconnectivity_wf(
         niu.IdentityInterface(
             fields=[
                 "tags",
+                "vals",
+                "metadata",
                 "bold",
                 "mask",
                 "confounds_selected",
@@ -108,6 +110,8 @@ def init_seedbasedconnectivity_wf(
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
     workflow.connect(inputnode, "seed_names", make_resultdicts, "seed")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
@@ -206,7 +210,7 @@ def init_seedbasedconnectivity_wf(
     tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
-    calcmean = pe.Node(CalcMean(), name="calcmean", mem_gb=memcalc.series_std_gb)
+    calcmean = pe.MapNode(CalcMean(), iterfield="mask", name="calcmean", mem_gb=memcalc.series_std_gb)
     workflow.connect(resample, "output_image", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 

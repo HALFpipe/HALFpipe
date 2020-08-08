@@ -5,7 +5,7 @@
 from calamities import (
     TextView,
     SpacerView,
-    MultiMultipleChoiceInputView,
+    MultiSingleChoiceInputView,
 )
 
 from ..pattern import FilePatternStep, FilePatternSummaryStep
@@ -95,19 +95,13 @@ class AcqToTaskMappingStep(Step):
             self.taskvals = sorted(list(taskvalset))
 
             self.is_predefined = False
-            self._append_view(
-                TextView("Which field map acquisitions should be used for which tasks?")
-            )
+            self._append_view(TextView(f"Found {len(self.acqvals)} field map acquisitions"))
+            self._append_view(TextView("Assign field map acquisitions to tasks"))
 
-            options = [f'"{acqval}"' for acqval in self.acqvals]
-            values = [f"{taskval}" for taskval in self.taskvals]
+            self.options = [f'"{taskval}"' for taskval in self.taskvals]
+            self.values = [f"{acqval}" for acqval in self.acqvals]
 
-            checked = [[] for _ in options]
-            checked[0].extend(values)
-
-            self.input_view = MultiMultipleChoiceInputView(
-                options, values, checked=checked, enforce_unique=True
-            )
+            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values])
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -129,12 +123,15 @@ class AcqToTaskMappingStep(Step):
 
             specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
 
-            value = {
-                f"acq.{acq}": [
-                    f"task.{task}" for task, is_selected in taskdict.items() if is_selected
-                ]
-                for acq, taskdict in zip(self.acqvals, self.result)
-            }
+            acq_by_value = dict(zip(self.values, self.acqvals))
+
+            value = dict()
+            for option, task in zip(self.options, self.taskvals):
+                acq = acq_by_value[self.result[option]]
+                key = f"acq.{acq}"
+                if key not in value:
+                    value[key] = []
+                value[key].append(f"task.{task}")
 
             for specfileobj in specfileobjs:
                 specfileobj.intended_for = value
@@ -227,14 +224,14 @@ def get_magnitude_steps(m_next_step_type):
 
         next_step_type = m_next_step_type
 
-    class MagnitudeStep(Magnitude2Step):
-        filetype_str = "magnitude image"
-
-    class Magnitude1Step(MagnitudeStep):
+    class Magnitude1Step(Magnitude2Step):
         filetype_str = "first set of magnitude image"
         filedict = {**filedict, "suffix": "magnitude1"}
 
         next_step_type = Magnitude2Step
+
+    class MagnitudeStep(Magnitude1Step):
+        filetype_str = "magnitude image"
 
     class MagnitudeTypeStep(BranchStep):
         is_vertical = True

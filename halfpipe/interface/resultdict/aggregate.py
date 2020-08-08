@@ -16,6 +16,9 @@ def _aggregate_if_possible(inval):
     if isinstance(inval, (list, tuple)):
         if all(isinstance(val, float) for val in inval):
             return np.asarray(inval).mean()
+        if len(set(inval)) == 1:
+            (aggval,) = inval
+            return aggval
     return inval
 
 

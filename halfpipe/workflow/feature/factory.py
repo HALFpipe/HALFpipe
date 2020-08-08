@@ -13,7 +13,7 @@ from .taskbased import init_taskbased_wf
 
 from ..factory import Factory
 
-from ...model import FeatureSchema
+from ...model import FeatureSchema, BaseSettingSchema
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -124,6 +124,10 @@ class FeatureFactory(Factory):
                 if m.group("prefix") is not None:
                     settingnamefield = f'{m.group("prefix")}{settingnamefield}'
                 settingname = getattr(feature, settingnamefield)
+                if hasattr(node.inputs, "metadata"):
+                    for setting in self.spec.settings:
+                        if setting["name"] == settingname:
+                            node.inputs.metadata = BaseSettingSchema().dump(setting)
                 self.setting_factory.connect(hierarchy, node, sourcefile, settingname, confounds_action=confounds_action)
 
         return vwf

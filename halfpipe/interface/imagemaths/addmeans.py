@@ -26,6 +26,7 @@ class AddMeans(Transformer):
         array = self._load(in_file)
         array2 = array + mean_r[:, None]
 
-        self._dump(array2)
+        out_file = self._dump(array2)
+        self._results["out_file"] = out_file
 
         return runtime

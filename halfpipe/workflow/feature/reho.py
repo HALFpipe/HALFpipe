@@ -27,7 +27,7 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["tags", "bold", "mask", "fwhm"]), name="inputnode",
+        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]), name="inputnode",
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
@@ -39,6 +39,8 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
         MakeResultdicts(imagekeys=["reho"]), name="make_resultdicts", run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+    workflow.connect(inputnode, "vals", make_resultdicts, "vals")
+    workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 

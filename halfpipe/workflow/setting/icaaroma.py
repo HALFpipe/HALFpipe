@@ -48,6 +48,8 @@ def _aroma_column_names(melodic_mix=None, aroma_noise_ics=None):
         else:
             column_names.append(f"aroma_signal_{i:0{leading_zeros}d}")
 
+    return column_names
+
 
 def init_ica_aroma_components_wf(
     workdir=None, name="ica_aroma_components_wf", memcalc=MemoryCalculator()
@@ -62,6 +64,7 @@ def init_ica_aroma_components_wf(
         Exec(
             fieldtpls=[
                 ("tags", None),
+                ("vals", None),
                 ("anat2std_xfm", None),
                 *[(field, "firststr") for field in strfields],
                 ("bold_split", None),
@@ -77,14 +80,14 @@ def init_ica_aroma_components_wf(
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata"]
+            fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata", "aromavals"]
         ),
         name="outputnode",
     )
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(reportkeys=["ica_aroma"], valkeys=["aroma_noise_frac"]),
+        MakeResultdicts(reportkeys=["ica_aroma"]),
         name="make_resultdicts",
         run_without_submitting=True
     )
@@ -176,10 +179,13 @@ def init_ica_aroma_components_wf(
     workflow.connect(ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics")
     workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", outputnode, "melodic_mix")
     workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
+    workflow.connect(ica_aroma_wf, "ica_aroma.out_report", make_resultdicts, "ica_aroma")
 
-    vals = pe.Node(interface=Vals(), name="vals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
-    workflow.connect(outputnode, "aroma_metadata", vals, "aroma_metadata")
-    workflow.connect(vals, "aroma_noise_frac", make_resultdicts, "aroma_noise_frac")
+    aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
+    workflow.connect(inputnode, "vals", aromavals, "vals")
+    workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", aromavals, "aroma_metadata")
+    workflow.connect(aromavals, "vals", make_resultdicts, "vals")
+    workflow.connect(aromavals, "vals", outputnode, "aromavals")
 
     return workflow
 
@@ -197,13 +203,14 @@ def init_ica_aroma_regression_wf(
     #
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["files", "mask", "melodic_mix", "aroma_noise_ics"]
+            fields=["files", "aromavals", "mask", "melodic_mix", "aroma_noise_ics"]
         ),
         name="inputnode",
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask"]), name="outputnode",)
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
+    workflow.connect(inputnode, "aromavals", outputnode, "vals")
 
     #
     aromanoiseics = pe.Node(
@@ -237,7 +244,7 @@ def init_ica_aroma_regression_wf(
 
     merge = pe.Node(niu.Merge(2), name="merge", run_without_submitting=True)
     workflow.connect(select, "other_list", merge, "in1")
-    workflow.connect(merge_columns, "out_file", merge, "in2")
+    workflow.connect(merge_columns, "out_with_header", merge, "in2")
 
     #
     filter_regressor = pe.MapNode(
@@ -247,7 +254,7 @@ def init_ica_aroma_regression_wf(
         mem_gb=memcalc.series_std_gb,
     )
 
-    workflow.connect(inputnode, "files", filter_regressor, "in_file")
+    workflow.connect(merge, "out", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
     workflow.connect(aromanoiseics, "aroma_noise_ics", filter_regressor, "filter_columns")

@@ -219,7 +219,6 @@ class Logger:
                 logger.addHandler(handler)
 
         logging.getLogger("halfpipe.ui").removeHandler(stdout_handler)  # only log to file
-
         logging.getLogger("nipype.workflow").addHandler(
             JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
         )
