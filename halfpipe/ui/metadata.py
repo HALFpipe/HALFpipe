@@ -43,12 +43,13 @@ def display_str(x):
 
 
 class SetMetadataStep(Step):
-    def __init__(self, app, filters, schema, key, suggestion, next_step_type):
+    def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
         super(SetMetadataStep, self).__init__(app)
 
         self.schema = schema
         self.key = key
         self.field = _get_field(self.schema, self.key)
+        self.appendstr = appendstr
 
         self.suggestion = suggestion
 
@@ -63,9 +64,9 @@ class SetMetadataStep(Step):
         field = self.field
 
         if isinstance(field, fields.List):
-            header_str = f"Import {humankey} values"
+            header_str = f"Import {humankey} values{self.appendstr}"
         else:
-            header_str = f"Specify {humankey}"
+            header_str = f"Specify {humankey}{self.appendstr}"
 
         if unit is not None:
             header_str += f" in {unit}"
@@ -243,4 +244,5 @@ class CheckMetadataStep(Step):
                     self.key,
                     self.suggestion,
                     self.next_step_type,
+                    appendstr=self.appendstr
                 )(ctx)

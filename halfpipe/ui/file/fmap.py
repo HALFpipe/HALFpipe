@@ -98,7 +98,7 @@ class AcqToTaskMappingStep(Step):
 
             self.is_predefined = False
             self._append_view(TextView(f"Found {len(self.acqvals)} field map acquisitions"))
-            self._append_view(TextView("Assign field map acquisitions to tasks"))
+            self._append_view(TextView("Assign field maps to tasks"))
 
             self.options = [f'"{taskval}"' for taskval in self.taskvals]
             self.values = [f"{acqval}" for acqval in self.acqvals]

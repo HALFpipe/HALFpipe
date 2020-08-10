@@ -72,10 +72,11 @@ def regfilt(array, design, comps, calculate_mask=True, aggressive=False):
 
     new_data += mean_r[None, :]
 
-    temp_vol = np.zeros_like(array)
-    temp_vol[:, mask_vec] = new_data
-
-    return temp_vol
+    if calculate_mask is True:
+        temp_vol = np.zeros_like(array)
+        temp_vol[:, mask_vec] = new_data
+    else:
+        temp_vol = new_data
 
     return temp_vol
 

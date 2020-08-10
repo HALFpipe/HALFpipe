@@ -17,4 +17,4 @@ class AddAnotherFeatureStep(YesNoStep):
     no_step_type = ImageOutputStep
 
 
-SettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep)
+SettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, noun="feature")

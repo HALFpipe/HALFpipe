@@ -60,10 +60,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
 
             self.confs = set(
                 tuple(sorted(
-                    setting["confounds_removal"] + ["ICA-AROMA"] if setting.get("ica_aroma") is True else []
+                    setting.get("confounds_removal", []) + ["ICA-AROMA"] if setting.get("ica_aroma") is True else []
                 ))
-                for setting in ctx.spec.settings
-                if "confounds_removal" in setting
+                for setting in ctx.spec.settings[:-1]  # omit current
             )
 
             suggestion = ["ICA-AROMA"]
