@@ -140,6 +140,7 @@ class CheckMetadataStep(Step):
     schema = None
 
     key = None
+    appendstr = ""
 
     filters = None
 
@@ -189,7 +190,7 @@ class CheckMetadataStep(Step):
         else:
             self.is_missing = False
 
-            self._append_view(TextView(f"Check {humankey} values"))
+            self._append_view(TextView(f"Check {humankey} values{self.appendstr}"))
 
             uniquevals, counts = np.unique(vals, return_counts=True)
             order = np.argsort(counts)

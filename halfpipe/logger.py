@@ -219,6 +219,9 @@ class Logger:
                 logger.addHandler(handler)
 
         logging.getLogger("halfpipe.ui").removeHandler(stdout_handler)  # only log to file
-        logging.getLogger("nipype.workflow").addHandler(
-            JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
-        )
+        logging.getLogger("py.warnings").removeHandler(stdout_handler)  # only log to file
+        if workdir is not None:
+            logging.getLogger("py.warnings").removeHandler(err_log_handler)
+            logging.getLogger("nipype.workflow").addHandler(
+                JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
+            )

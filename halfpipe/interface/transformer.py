@@ -53,7 +53,7 @@ class Transformer(SimpleInterface):
 
             n = nvol(in_img)
             in_fdata = in_img.get_fdata(dtype=np.float64)
-            array = in_fdata.reshape((-1, n))
+            array = in_fdata.reshape((-1, n)).T
 
             mask_file = self.inputs.mask
             if isdefined(mask_file):
@@ -65,8 +65,8 @@ class Transformer(SimpleInterface):
                     np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
                 )
                 self.mask = mask_bin
-                assert self.mask.size == array.shape[0]
-                array = array[np.ravel(self.mask), :].T
+                assert self.mask.size == array.shape[1]
+                array = array[:, np.ravel(self.mask)]
 
         else:
             in_df = loadspreadsheet(in_file)

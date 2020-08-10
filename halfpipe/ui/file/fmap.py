@@ -45,6 +45,7 @@ class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
     schema = BoldFileSchema
 
     key = "phase_encoding_direction"
+    appendstr = " for the functional data"
     filters = bold_filedict
 
     next_step_type = next_step_type
@@ -54,6 +55,7 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
     schema = BoldFileSchema
 
     key = "effective_echo_spacing"
+    appendstr = " for the functional data"
     filters = bold_filedict
 
     next_step_type = CheckBoldPhaseEncodingDirectionStep

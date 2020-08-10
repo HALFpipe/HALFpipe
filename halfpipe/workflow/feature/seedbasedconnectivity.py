@@ -181,6 +181,7 @@ def init_seedbasedconnectivity_wf(
     # the result is the seed connectivity map
     glm = pe.MapNode(
         fsl.GLM(
+            out_file="beta.nii.gz",
             out_cope="cope.nii.gz",
             out_varcb_name="varcope.nii.gz",
             out_z_name="zstat.nii.gz",

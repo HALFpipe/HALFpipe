@@ -250,7 +250,7 @@ class ConfoundsSelectFactory(LookupFactory):
                 name=f"no_confounds_select_wf",
                 suffix=suffix
             )
-        return init_confounds_select_wf(confound_names=confound_names, suffix=suffix)
+        return init_confounds_select_wf(confound_names=list(confound_names), suffix=suffix)
 
     def _tpl(self, setting):
         confounds_removal = setting.get("confounds_removal")

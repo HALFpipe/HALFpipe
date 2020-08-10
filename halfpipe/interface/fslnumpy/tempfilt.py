@@ -13,7 +13,7 @@ from nipype.interfaces.base import (
 from ..transformer import Transformer, TransformerInputSpec
 
 
-def bandpass_temporal_filter(in_array, hp_sigma, lp_sigma):
+def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
     """
     numpy translation of fsl newimagefuns.h bandpass_temporal_filter
     """
@@ -46,8 +46,8 @@ def bandpass_temporal_filter(in_array, hp_sigma, lp_sigma):
         for t in range(-lp_mask_size_minus, lp_mask_size_plus + 1):
             lp_exp[t] /= total
 
-    array = in_array.T
     m, sourcetsize = array.shape
+    print(f"Data matrix size : {m} x {sourcetsize}")
     array2 = np.zeros_like(array)
 
     if hp_sigma > 0:
@@ -98,7 +98,7 @@ def bandpass_temporal_filter(in_array, hp_sigma, lp_sigma):
 
         np.copyto(array, array2)
 
-    return array.T
+    return array
 
 
 class TemporalFilterInputSpec(TransformerInputSpec):
@@ -113,6 +113,10 @@ class TemporalFilter(Transformer):
         lowpass_sigma = self.inputs.lowpass_sigma
         highpass_sigma = self.inputs.highpass_sigma
 
+        array = array.T  # need to transpose
+
         array2 = bandpass_temporal_filter(array, highpass_sigma, lowpass_sigma)
+
+        array2 = array2.T  # restore
 
         return array2

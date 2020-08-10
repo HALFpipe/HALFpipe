@@ -14,11 +14,9 @@ from ..memory import MemoryCalculator
 def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     if name is None:
         if confound_names is not None:
-            name = f"confounds_select_{hexdigest(confound_names)}_wf"
+            name = f"confounds_select_{hexdigest(confound_names)[:8]}_wf"
         else:
             name = f"confounds_select_wf"
-        if suffix is not None:
-            name = f"{name}_{suffix}"
     if suffix is not None:
         name = f"{name}_{suffix}"
 
@@ -40,6 +38,9 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     workflow.connect(inputnode, "confounds", outputnode, "confounds")
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
+
+    if confound_names is not None:
+        inputnode.inputs.confound_names = confound_names
 
     selectcolumns = pe.Node(SelectColumns(), name="selectcolumns", run_without_submitting=True)
     workflow.connect(inputnode, "confounds", selectcolumns, "in_file")

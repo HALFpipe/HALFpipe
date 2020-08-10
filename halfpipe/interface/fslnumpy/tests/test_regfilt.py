@@ -54,5 +54,9 @@ def test_FilterRegressor():
     os.chdir(cur_dir)
     rmtree(temp_dir)
 
+    delta = r0 - r1
+    print(r0[np.where(delta == delta.max())[:3]])
+    print(r1[np.where(delta == delta.max())[:3]])
+
     print(np.mean(np.abs(r0 - r1)))
     assert np.allclose(r0, r1)

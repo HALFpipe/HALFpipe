@@ -9,6 +9,7 @@
 from functools import lru_cache
 import warnings
 import csv
+import re
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,8 @@ def has_header(fname):
         data = csvfile.read(1024)
         if data.startswith("/"):
             return False
+        if re.match("^[a-zA-Z]+", data) is not None:
+            return True
         try:
             return csv.Sniffer().has_header(data)
         except Exception:

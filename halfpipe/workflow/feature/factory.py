@@ -68,21 +68,26 @@ class FeatureFactory(Factory):
         kwargs = dict(feature=feature, workdir=self.workdir, memcalc=self.memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
+
             condition_files = list(database.associations(sourcefile, datatype="func", suffix="events"))
-            condition_units = database.metadatavalset("units", condition_files)
-            if len(condition_units) == 0:
-                condition_units = "secs"
-            else:
-                condition_units, = condition_units
-            if "txt" in database.tagvalset("extension", filepaths=condition_files):
+            raw_sources = [*raw_sources, *condition_files]
+            if ".txt" in database.tagvalset("extension", filepaths=condition_files):
                 condition_files = [
                     (condition_file, database.tagval(condition_file, "condition"))
                     for condition_file in condition_files
                 ]
+
+            condition_units = database.metadatavalset("units", condition_files)
+            if len(condition_units) == 0:
+                condition_units = "seconds"
+            else:
+                (condition_units,) = condition_units
+            if condition_units == "seconds":
+                condition_units = "secs"
+
             kwargs["condition_files"] = condition_files
             kwargs["condition_units"] = condition_units
             vwf = init_taskbased_wf(**kwargs)
-            raw_sources = [*raw_sources, *condition_files]
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
             kwargs["seed_files"] = []

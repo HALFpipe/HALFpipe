@@ -36,7 +36,7 @@ def _format_variable(variable):
 
 def _find_bold_filepaths(ctx):
     database = ctx.database
-    bold_filepaths = database.get(**{"datatype": "func", "suffix": "bold"})
+    bold_filepaths = database.get(datatype="func", suffix="bold")
     if bold_filepaths is None:
         return
 
@@ -56,8 +56,13 @@ def _find_and_parse_condition_files(ctx):
     database = ctx.database
     bold_filepaths = _find_bold_filepaths(ctx)
 
+    filters = dict(datatype="func", suffix="events")
+    taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
+    if len(taskset) == 1:
+        (filters["task"],) = taskset
+
     eventfile_dict = {
-        filepath: database.associations(filepath, **{"datatype": "func", "suffix": "events"})
+        filepath: database.associations(filepath, **filters)
         for filepath in bold_filepaths.copy()
     }
 
@@ -321,7 +326,7 @@ class EventsStep(FilePatternStep):
             if self.fileobj.tags.get("task") is None:
                 if "task" not in get_entities_in_path(self.fileobj.path):
                     (self.fileobj.tags["task"],) = self.taskset
-        super(EventsStep, self).next(ctx)
+        return super(EventsStep, self).next(ctx)
 
     def _transform_extension(self, ext):
         raise NotImplementedError()

@@ -92,10 +92,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
                 self.options[name] for name, is_selected in self.valuedict.items() if is_selected
             ]
             ica_aroma = "ICA-AROMA" in confoundnames
-            confoundnames = [name for name in confoundnames if name != "ICA-AROMA"]
-            if len(confoundnames) > 0:
-                ctx.spec.settings[-1]["ica_aroma"] = ica_aroma
-                ctx.spec.settings[-1]["confounds_removal"] = confoundnames
+            ctx.spec.settings[-1]["ica_aroma"] = ica_aroma
+            settingconfoundnames = [name for name in confoundnames if name != "ICA-AROMA"]
+            if len(settingconfoundnames) > 0:
+                ctx.spec.settings[-1]["confounds_removal"] = settingconfoundnames
 
             if oncompletefn is not None:
                 oncompletefn(ctx)
