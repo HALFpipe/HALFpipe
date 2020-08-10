@@ -20,6 +20,11 @@ from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
 
 
+def _make_plot(tags, key, sourcefile):
+    if key == "z":
+    elif key == "matrix":
+
+
 def _make_path(sourcefile, type, tags, suffix, **kwargs):
     path = Path()
 
@@ -56,9 +61,10 @@ def _copy_file(inpath, outpath):
     if outpath.exists():
         if os.stat(inpath).st_mtime > os.stat(outpath).st_mtime:
             logging.getLogger("halfpipe").debug(f'Not overwriting file "{outpath}"')
-            return
+            return False
         logging.getLogger("halfpipe").info(f'Overwriting file "{outpath}"')
     copyfile(inpath, outpath)
+    return True
 
 
 def _find_sources(inpath):
@@ -115,6 +121,7 @@ class ResultdictDatasink(SimpleInterface):
 
         resultdict_schema = ResultdictSchema()
 
+        grouplevel_directory = base_directory / "grouplevel"
         derivatives_directory = base_directory / "derivatives" / "halfpipe"
         reports_directory = base_directory / "reports"
 
@@ -139,12 +146,17 @@ class ResultdictDatasink(SimpleInterface):
             # images
 
             for key, inpath in images.items():
-                outpath = None
+                outpath = derivatives_directory
+                if "sub" not in tags:
+                    outpath = grouplevel_directory
                 if key in ["effect", "variance", "z", "dof"]:  # apply rule
-                    outpath = derivatives_directory / _make_path(inpath, "image", tags, "statmap", stat=key)
+                    outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
                 else:
-                    outpath = derivatives_directory / _make_path(inpath, "image", tags, key)
-                _copy_file(inpath, outpath)
+                    outpath = outpath / _make_path(inpath, "image", tags, key)
+                was_updated = _copy_file(inpath, outpath)
+
+                if was_updated:
+                    _make_plot(tags, key, outpath)
 
                 if key in ["effect", "reho", "falff", "alff", "bold"]:
                     stem, extension = splitext(outpath)

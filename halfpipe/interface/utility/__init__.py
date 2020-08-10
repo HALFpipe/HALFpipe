@@ -7,6 +7,7 @@ from .ops import Exec, Filter, FilterList, Select
 from .afni import ToAFNI, FromAFNI
 from .cache import LoadResult
 from .tsv import FillNA, MergeColumns, SelectColumns
+from .vest import Unvest
 
 __all__ = [
     Exec,
@@ -19,4 +20,5 @@ __all__ = [
     FillNA,
     MergeColumns,
     SelectColumns,
+    Unvest
 ]

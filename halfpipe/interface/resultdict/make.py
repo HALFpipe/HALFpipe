@@ -8,7 +8,6 @@ from nipype.interfaces.base import (
     traits,
     isdefined,
     DynamicTraitedSpec,
-    BaseInterfaceInputSpec,
 )
 from nipype.interfaces.io import add_traits, IOBase
 
@@ -20,25 +19,20 @@ composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
 resultdict_entities = set(ResultdictSchema().fields["tags"].nested().fields.keys())
 
 
-class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    tags = traits.Dict(traits.Str(), traits.Any())
-    metadata = traits.Dict(traits.Str(), traits.Any())
-    vals = traits.Dict(traits.Str(), traits.Any())
-
-
 class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
 
 
 class MakeResultdicts(IOBase):
-    input_spec = MakeResultdictsInputSpec
+    input_spec = DynamicTraitedSpec
     output_spec = MakeResultdictsOutputSpec
 
     def __init__(
-        self, tagkeys=[], valkeys=[], imagekeys=[], reportkeys=[], metadatakeys=[], **inputs
+        self, dictkeys=["tags", "metadata", "vals"], tagkeys=[], valkeys=[], imagekeys=[], reportkeys=[], metadatakeys=[], **inputs
     ):
         super(MakeResultdicts, self).__init__(**inputs)
-        add_traits(self.inputs, [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys])
+        add_traits(self.inputs, [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys])
+        self._dictkeys = dictkeys
         self._keys = {
             "tags": tagkeys,
             "vals": valkeys,
@@ -56,6 +50,11 @@ class MakeResultdicts(IOBase):
             for key in keys
             if isdefined(getattr(self.inputs, key))
         ]
+        inputs.extend([
+            (fieldname, None, getattr(self.inputs, fieldname))
+            for fieldname in self._dictkeys
+            if isdefined(getattr(self.inputs, fieldname))
+        ])
         if len(inputs) == 0:
             outputs["resultdicts"] = []
             return outputs
@@ -75,7 +74,7 @@ class MakeResultdicts(IOBase):
                     if nbroadcast is None:
                         nbroadcast = lens
                     else:
-                        assert lens == nbroadcast
+                        assert lens == nbroadcast, "Inconsistent input lengths"
 
         # broadcast values if necessary
         for i in range(len(values)):
@@ -95,25 +94,28 @@ class MakeResultdicts(IOBase):
                         f"Can't broadcast lists of lengths {len(values[i]):d} and {maxlen:d}"
                     )
 
+        # flatten
+        for i in range(len(values)):
+            values[i] = ravel(values[i])
+
         # make resultdicts
         resultdicts = []
         for valuetupl in zip(*values):
             resultdict = dict(tags=dict(), metadata=dict(), images=dict(), vals=dict())
-            if isdefined(self.inputs.tags):
-                resultdict["tags"] = {
-                    k: v
-                    for k, v in self.inputs.tags.items()
-                    if k in resultdict_entities
-                }
-            if isdefined(self.inputs.metadata):
-                resultdict["metadata"].update(self.inputs.metadata)
-            if isdefined(self.inputs.vals):
-                resultdict["vals"].update(self.inputs.vals)
+            for f, k, v in zip(fieldnames, keys, valuetupl):
+                if k is None:
+                    resultdict[f].update(v)
+            # filter tags
+            resultdict["tags"] = {
+                k: v
+                for k, v in resultdict["tags"].items()
+                if k in resultdict_entities
+            }
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 # actually add
                 if f not in resultdict:
                     resultdict[f] = dict()
-                if v is not None:
+                if k is not None and v is not None:
                     resultdict[f][k] = v
             resultdicts.append(resultdict)
 

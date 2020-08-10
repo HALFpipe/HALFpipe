@@ -28,6 +28,7 @@ ResultdictTagsSchema = Schema.from_dict(
             "stat",
             "setting",
             "feature",
+            "model",
             "seed",
             "component",
             "atlas",

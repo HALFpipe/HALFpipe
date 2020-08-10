@@ -114,12 +114,4 @@ def init_atlasbasedconnectivity_wf(
 
     workflow.connect(calcmean, "mean", make_resultdicts, "mean_t_s_n_r")
 
-    #
-    # mergesources = pe.MapNode(niu.Merge(3), iterfield="in3", name="mergesources")
-    # workflow.connect(inputnode, "bold", mergesources, "in1")
-    # workflow.connect(inputnode, "mask", mergesources, "in2")
-    # workflow.connect(resample, "output_image", mergesources, "in3")
-    #
-    # workflow.connect(mergesources, "out", make_resultdicts, "sources")
-
     return workflow

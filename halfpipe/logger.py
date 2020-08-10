@@ -6,6 +6,7 @@ from os import path as op
 import sys
 import logging
 import time
+import re
 
 import fasteners
 
@@ -149,6 +150,28 @@ def remove_handlers(logger):
             c = c.parent
 
 
+class NoDTypeWarningsFilter(logging.Filter):
+    regex = re.compile(r"Changing (.+) dtype from (.+) to (.+)")
+
+    def filter(self, record):
+        return self.regex.search(record.getMessage()) is None
+
+
+class PyWarningsFilter(logging.Filter):
+    messages_to_filter = frozenset(
+        (
+            "WARNING: the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.",
+            "WARNING: cmp not installed",
+            "WARNING: dist() and linux_distribution() functions are deprecated in Python 3.5",
+            "WARNING: The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
+            "WARNING: This has not been fully tested. Please report any failures."
+        )
+    )
+
+    def filter(self, record):
+        return record.getMessage() not in self.messages_to_filter
+
+
 class Logger:
     is_setup = False
 
@@ -219,9 +242,9 @@ class Logger:
                 logger.addHandler(handler)
 
         logging.getLogger("halfpipe.ui").removeHandler(stdout_handler)  # only log to file
-        logging.getLogger("py.warnings").removeHandler(stdout_handler)  # only log to file
         if workdir is not None:
-            logging.getLogger("py.warnings").removeHandler(err_log_handler)
             logging.getLogger("nipype.workflow").addHandler(
                 JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
             )
+        logging.getLogger("nipype.interface").addFilter(NoDTypeWarningsFilter())
+        logging.getLogger("py.warnings").addFilter(PyWarningsFilter())

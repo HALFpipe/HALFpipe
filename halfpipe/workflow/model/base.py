@@ -18,7 +18,8 @@ from ...interface import (
     FilterResultdicts,
     AggregateResultdicts,
     ResultdictDatasink,
-    MergeColumns
+    MergeColumns,
+    Unvest
 )
 
 from ...utils import ravel, formatlikebids, lenforeach
@@ -208,7 +209,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     workflow.connect(modelspec, "contrast_names", filtercons, "contrast_names")
     workflow.connect(mergemask, "merged_file", filtercons, "mask")
     workflow.connect(flameo, "copes", filtercons, "effect")
-    workflow.connect(flameo, "var_copes", filtercons, "varcope")
+    workflow.connect(flameo, "var_copes", filtercons, "variance")
     workflow.connect(flameo, "zstats", filtercons, "z")
     workflow.connect(flameo, "tdof", filtercons, "dof")
 
@@ -218,14 +219,18 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect(filtercons, s, make_resultdicts_b, s)
 
     #
+    design_unvest = pe.MapNode(Unvest(), iterfield=["in_vest"], name="design_unvest", run_without_submitting=True)
+    workflow.connect(multipleregressdesign, "design_mat", design_unvest, "in_vest")
     design_tsv = pe.MapNode(MergeColumns(1), iterfield=["row_index", "in1", "column_names1"], name="design_tsv", run_without_submitting=True)
     workflow.connect(extractfromresultdict, model.across, design_tsv, "row_index")
-    workflow.connect(multipleregressdesign, "design_mat", design_tsv, "in1")
+    workflow.connect(design_unvest, "out_no_header", design_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", design_tsv, "column_names1")
 
-    contrast_tsv = pe.Node(MergeColumns(1), iterfield=["in1", "column_names1", "row_index"], name="contrast_tsv", run_without_submitting=True)
+    contrast_unvest = pe.MapNode(Unvest(), iterfield=["in_vest"], name="contrast_unvest", run_without_submitting=True)
+    workflow.connect(multipleregressdesign, "design_con", contrast_unvest, "in_vest")
+    contrast_tsv = pe.MapNode(MergeColumns(1), iterfield=["in1", "column_names1", "row_index"], name="contrast_tsv", run_without_submitting=True)
     workflow.connect(modelspec, "contrast_names", contrast_tsv, "row_index")
-    workflow.connect(multipleregressdesign, "design_con", contrast_tsv, "in1")
+    workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(multipleregressdesign, "regs", contrast_tsv, "column_names1")
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")

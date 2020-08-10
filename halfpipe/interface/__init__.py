@@ -28,6 +28,7 @@ from .utility import (
     FillNA,
     MergeColumns,
     SelectColumns,
+    Unvest
 )
 
 __all__ = [
@@ -68,4 +69,5 @@ __all__ = [
     FillNA,
     MergeColumns,
     SelectColumns,
+    Unvest
 ]

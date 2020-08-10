@@ -15,8 +15,9 @@ from ...interface import (
     ResultdictDatasink,
     MakeDofVolume,
     MergeColumns,
+    Unvest
 )
-from ...utils import firstfloat, firststr, formatlikebids
+from ...utils import firstfloat, firststr, formatlikebids, ravel
 
 from ..memory import MemoryCalculator
 
@@ -142,9 +143,9 @@ def init_taskbased_wf(
     workflow.connect(modelspec, "session_info", level1design, "session_info")
 
     # generate required input files for FILMGLS from design
-    modelgen = pe.MapNode(fsl.FEATModel(), name="modelgen", iterfield=["fsf_file", "ev_files"])
-    workflow.connect(level1design, "fsf_files", modelgen, "fsf_file")
-    workflow.connect(level1design, "ev_files", modelgen, "ev_files")
+    modelgen = pe.Node(fsl.FEATModel(), name="modelgen")
+    workflow.connect([(level1design, modelgen, [(("fsf_files", firststr), "fsf_file")])])
+    workflow.connect([(level1design, modelgen, [(("ev_files", ravel), "ev_files")])])
 
     # calculate range of image values to determine cutoff value
     stats = pe.Node(fsl.ImageStats(op_string="-R"), name="stats")
@@ -158,8 +159,7 @@ def init_taskbased_wf(
     # actually estimate the first level model
     modelestimate = pe.Node(
         fsl.FILMGLS(smooth_autocorr=True, mask_size=5),
-        name="modelestimate",
-        iterfield=["design_file", "in_file", "tcon_file"],
+        name="modelestimate"
     )
     workflow.connect(inputnode, "bold", modelestimate, "in_file")
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
@@ -167,7 +167,7 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", modelestimate, "tcon_file")
 
     # make dof volume
-    makedofvolume = pe.MapNode(
+    makedofvolume = pe.Node(
         MakeDofVolume(), iterfield=["dof_file", "copes"], name="makedofvolume", run_without_submitting=True
     )
     workflow.connect(modelestimate, "copes", makedofvolume, "copes")
@@ -183,23 +183,23 @@ def init_taskbased_wf(
     mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames", run_without_submitting=True)
     mergecolumnnames.inputs.in1 = condition_names
     workflow.connect(fillna, "column_names", mergecolumnnames, "in2")
+
+    design_unvest = pe.Node(Unvest(), name="design_unvest", run_without_submitting=True)
+    workflow.connect(modelgen, "design_file", design_unvest, "in_vest")
+
     design_tsv = pe.Node(MergeColumns(1), name="design_tsv", run_without_submitting=True)
-    workflow.connect(modelgen, "design_file", design_tsv, "in1")
+    workflow.connect(design_unvest, "out_no_header", design_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", design_tsv, "column_names1")
+
+    contrast_unvest = pe.Node(Unvest(), name="contrast_unvest", run_without_submitting=True)
+    workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv", run_without_submitting=True)
     contrast_tsv.inputs.row_index = list(map(firststr, contrasts))
-    workflow.connect(modelgen, "con_file", contrast_tsv, "in1")
+    workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
-
-    #
-    # mergesources = pe.Node(niu.Merge(2), name="mergesources")
-    # workflow.connect(inputnode, "bold", mergesources, "in1")
-    # workflow.connect(inputnode, "mask", mergesources, "in2")
-    #
-    # workflow.connect(mergesources, "out", make_resultdicts_b, "sources")
 
     return workflow

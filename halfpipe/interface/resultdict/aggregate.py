@@ -92,8 +92,6 @@ class AggregateResultdicts(IOBase):
                 aggdicts[t] = dict()
 
             for f, nested in resultdict.items():
-                if f == "tags":
-                    continue
                 if f not in aggdicts[t]:
                     aggdicts[t][f] = dict()
                 for k, v in nested.items():
@@ -106,10 +104,9 @@ class AggregateResultdicts(IOBase):
             tagdict = dict(tagtupl)
             resultdict = dict(tags=tagdict, vals=dict())
             resultdict.update(listdict)  # create combined resultdict
-            for key in resultdict["vals"].keys():  # calculate mean of floats
-                resultdict["vals"][key] = _aggregate_if_possible(resultdict["vals"][key])
-            for key in resultdict["metadata"].keys():  # calculate mean of floats
-                resultdict["metadata"][key] = _aggregate_if_possible(resultdict["metadata"][key])
+            for f in ["tags", "metadata", "vals"]:
+                for key in resultdict[f].keys():
+                    resultdict[f][key] = _aggregate_if_possible(resultdict[f][key])
             resultdicts.append(ResultdictSchema().load(resultdict))
 
         outputs["resultdicts"] = resultdicts

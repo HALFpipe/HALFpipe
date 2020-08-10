@@ -22,7 +22,7 @@ def has_header(fname):
         data = csvfile.read(1024)
         if data.startswith("/"):
             return False
-        if re.match("^[a-zA-Z]+", data) is not None:
+        if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
             return True
         try:
             return csv.Sniffer().has_header(data)

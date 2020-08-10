@@ -111,11 +111,4 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(split, "out1", make_resultdicts, "alff")
     workflow.connect(split, "out2", make_resultdicts, "falff")
 
-    #
-    # mergesources = pe.Node(niu.Merge(2), name="mergesources")
-    # workflow.connect(inputnode, "bold", mergesources, "in1")
-    # workflow.connect(inputnode, "mask", mergesources, "in2")
-    #
-    # workflow.connect(mergesources, "out", make_resultdicts, "sources")
-
     return workflow
