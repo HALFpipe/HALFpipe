@@ -240,7 +240,7 @@ def init_ica_aroma_regression_wf(
 
     #
     filter_regressor = pe.MapNode(
-        FilterRegressor(),
+        FilterRegressor(mask=False),
         iterfield="in_file",
         name="filter_regressor",
         mem_gb=memcalc.series_std_gb,

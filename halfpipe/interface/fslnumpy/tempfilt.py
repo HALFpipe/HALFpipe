@@ -47,7 +47,6 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
             lp_exp[t] /= total
 
     m, sourcetsize = array.shape
-    print(f"Data matrix size : {m} x {sourcetsize}")
     array2 = np.zeros_like(array)
 
     if hp_sigma > 0:
@@ -108,6 +107,8 @@ class TemporalFilterInputSpec(TransformerInputSpec):
 
 class TemporalFilter(Transformer):
     input_spec = TemporalFilterInputSpec
+
+    suffix = "bptf"
 
     def _transform(self, array):
         lowpass_sigma = self.inputs.lowpass_sigma

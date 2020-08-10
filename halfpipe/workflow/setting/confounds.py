@@ -79,7 +79,7 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     workflow.connect(inputnode, "confounds_selected", removeheader, "in1")
 
     filter_regressor_b = pe.Node(
-        FilterRegressor(aggressive=True, filter_all=True),
+        FilterRegressor(aggressive=True, filter_all=True, calculate_mask=False),
         name="filter_regressor_b",
         mem_gb=memcalc.series_std_gb
     )
@@ -90,7 +90,7 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     workflow.connect(filter_regressor_b, "out_file", outputnode, "bold")
 
     filter_regressor_c = pe.Node(
-        FilterRegressor(aggressive=True, filter_all=True),
+        FilterRegressor(aggressive=True, filter_all=True, mask=False),
         name="filter_regressor_c",
         mem_gb=memcalc.min_gb
     )

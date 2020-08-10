@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
-from os import path as op
+from pathlib import Path
 
 import numpy as np
 import nibabel as nib
@@ -56,7 +56,7 @@ class Transformer(SimpleInterface):
             array = in_fdata.reshape((-1, n)).T
 
             mask_file = self.inputs.mask
-            if isdefined(mask_file):
+            if isdefined(mask_file) and isinstance(mask_file, str) and Path(mask_file).is_file():
                 mask_img = nib.load(mask_file)
                 assert nvol(mask_img) == 1
                 assert np.allclose(mask_img.affine, in_img.affine)
@@ -79,7 +79,7 @@ class Transformer(SimpleInterface):
     def _dump(self, array2):
         stem, ext = self.stem, self.ext
 
-        out_file = op.abspath(f"{stem}_{self.suffix}{ext}")
+        out_file = str(Path(f"{stem}_{self.suffix}{ext}").resolve())
 
         if ext in [".nii", ".nii.gz"]:
             in_img = self.in_img
