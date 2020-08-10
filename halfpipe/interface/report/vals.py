@@ -12,7 +12,7 @@ from nipype.interfaces.base import (
     isdefined,
 )
 
-from ...utils import first
+from ...utils import firstfloat
 from ...io import meansignals, loadspreadsheet
 
 
@@ -50,7 +50,7 @@ class CalcMean(SimpleInterface):
                 in_file, self.inputs.parcellation, mask_file=mask_file, min_n_voxels=0
             ).ravel()
         elif mask_file is not None:
-            self._results["mean"] = first(meansignals(
+            self._results["mean"] = firstfloat(meansignals(
                 in_file, mask_file, min_n_voxels=0
             ).ravel())
         vals = dict()

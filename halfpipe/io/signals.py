@@ -45,6 +45,6 @@ def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_n_v
 
     result = np.full((in_data.shape[3], nlabel), np.nan)
     for i, img in enumerate(np.moveaxis(in_data, 3, 0)):
-        result[i, indices - 1] = mean(img, labels=labels, index=indices)
+        result[i, indices - 1] = mean(img, labels=labels.reshape(img.shape), index=indices)
 
     return result

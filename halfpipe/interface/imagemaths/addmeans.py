@@ -16,15 +16,17 @@ class AddMeansInputSpec(TransformerInputSpec):
 class AddMeans(Transformer):
     input_spec = AddMeansInputSpec
 
+    suffix = "addmean"
+
     def _run_interface(self, runtime):
         in_file = self.inputs.in_file
         mean_file = self.inputs.mean_file
 
         mean_data = self._load(mean_file)
-        mean_r = mean_data.mean(axis=1)
+        mean_r = mean_data.mean(axis=0)
 
         array = self._load(in_file)
-        array2 = array + mean_r[:, None]
+        array2 = array + mean_r
 
         out_file = self._dump(array2)
         self._results["out_file"] = out_file

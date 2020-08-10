@@ -134,9 +134,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     if model.type in ["fe", "me"]:  # intercept only model
         run_mode = dict(fe="fe", me="flame1")[model.type]
 
-        countimages = pe.MapNode(
+        countimages = pe.Node(
             niu.Function(input_names=["arrarr"], output_names=["image_count"], function=lenforeach),
-            iterfield="arrarr",
             name="countimages",
             run_without_submitting=True
         )

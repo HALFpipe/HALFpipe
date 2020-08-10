@@ -46,7 +46,7 @@ def _contrasts(design_file=None):
     contrast_df.to_csv(
         out_with_header,
         sep="\t",
-        index=False,
+        index=True,
         na_rep="n/a",
         header=True,
         quoting=csv.QUOTE_NONNUMERIC,

@@ -39,7 +39,10 @@ def loadspreadsheet(fname, ftype=None):
             if ftype is None:
                 _, ftype = splitext(fname)
             if ftype == ".txt":
-                df = pd.read_table(fname)
+                if not has_header(fname):
+                    df = pd.read_table(fname, header=None)
+                else:
+                    df = pd.read_table(fname)
             elif ftype == ".json":
                 df = pd.read_json(fname)
             elif ftype == ".csv":

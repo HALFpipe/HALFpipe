@@ -15,6 +15,7 @@ from templateflow.api import get as get_template
 from nipype.interfaces.base import traits, InputMultiPath, File, isdefined
 
 from ...resource import get as getresource
+from ...utils import nvol
 
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
@@ -59,6 +60,12 @@ class Resample(FixHeaderApplyTransforms):
         input_matches_reference = input_matches_reference and np.allclose(
             input_image.affine, reference_image.affine, atol=1e-2  # tolerance of 0.01 mm
         )
+
+        self.inputs.dimension = 3
+
+        input_image_nvol = nvol(input_image)
+        if input_image_nvol > 0:
+            self.inputs.input_image_type = 3  # time series
 
         transforms = "identity"
         if input_space != reference_space:
