@@ -40,6 +40,7 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
         "skip_vols",
         "confounds",
         "std_dseg",
+        "method",
         *fmriprepreportdatasinks,
     ]
     inputnode = pe.Node(
@@ -58,13 +59,15 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports]
+            reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports],
+            valkeys=["dummy", "sdc_method"]
         ),
         name="make_resultdicts",
         run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy")
+    workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
 
     #
     resultdict_datasink = pe.Node(
@@ -120,6 +123,6 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
     workflow.connect(resample, "output_image", calcmean, "dseg")
 
     workflow.connect(calcmean, "vals", make_resultdicts, "vals")
-    workflow.connect(calcmean, "vals", outputnode, "vals")
+    workflow.connect(make_resultdicts, "vals", outputnode, "vals")
 
     return workflow

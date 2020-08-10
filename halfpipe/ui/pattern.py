@@ -7,10 +7,9 @@ from calamities import (
     SpacerView,
     FilePatternInputView,
     TextInputView,
-    get_entities_in_path,
     TextElement,
 )
-from calamities.pattern import tag_parse
+from calamities.pattern import tag_parse, get_entities_in_path
 
 import logging
 
@@ -49,6 +48,99 @@ class FilePatternSummaryStep(Step):
             return self.next_step_type(self.app)(ctx)
         else:
             return
+
+
+class AskForMissingEntities(Step):
+    def __init__(
+        self,
+        app,
+        entity_display_aliases,
+        ask_if_missing_entities,
+        suggest_file_stem,
+        next_step_type,
+    ):
+        super(AskForMissingEntities, self).__init__(app)
+
+        self.entity_display_aliases = entity_display_aliases
+        self.ask_if_missing_entities = ask_if_missing_entities
+        self.suggest_file_stem = suggest_file_stem
+
+        self.entity = None
+        self.entity_str = None
+        self.tagval = None
+
+        self.next_step_type = next_step_type
+
+    def setup(self, ctx):
+        self.is_first_run = True
+
+        entites_in_path = get_entities_in_path(ctx.spec.files[-1].path)
+
+        tags = ctx.spec.files[-1].tags
+        while len(self.ask_if_missing_entities) > 0:
+            entity = self.ask_if_missing_entities.pop(0)
+
+            if entity in entites_in_path:
+                continue
+
+            if tags.get(entity) is not None:
+                continue
+
+            self.entity = entity
+            break
+
+        if self.entity is not None:
+            self.entity_str = self.entity
+            if self.entity_str in self.entity_display_aliases:
+                self.entity_str = self.entity_display_aliases[self.entity_str]
+
+            self._append_view(TextView(f"No {self.entity_str} name was specified"))
+            self._append_view(TextView(f"Specify the {self.entity_str} name"))
+
+            suggestion = ""
+            if self.suggest_file_stem:
+                suggestion, _ = splitext(ctx.spec.files[-1].path)
+
+            self.input_view = TextInputView(
+                text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
+            )
+
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        if self.entity is None:
+            return self.is_first_run
+        else:
+            self.tagval = self.input_view()
+            if self.tagval is None:
+                return False
+            return True
+
+    def next(self, ctx):
+        if self.tagval is not None:
+            ctx.spec.files[-1].tags[self.entity] = self.tagval
+
+        if self.entity is not None or self.is_first_run:
+            self.is_first_run = False
+
+            if len(self.ask_if_missing_entities) > 0:
+                return AskForMissingEntities(
+                    self.app,
+                    {**self.entity_display_aliases},
+                    [*self.ask_if_missing_entities],
+                    self.suggest_file_stem,
+                    self.next_step_type,
+                )(ctx)
+
+            else:
+                ctx.database.put(
+                    ctx.spec.files[-1]
+                )  # we've got all tags, so we can add the fileobj to the index
+
+                return self.next_step_type(self.app)(ctx)
+
+        return
 
 
 class FilePatternStep(Step):
@@ -172,96 +264,3 @@ class FilePatternStep(Step):
             self.suggest_file_stem,
             self.next_step_type,
         )(ctx)
-
-
-class AskForMissingEntities(Step):
-    def __init__(
-        self,
-        app,
-        entity_display_aliases,
-        ask_if_missing_entities,
-        suggest_file_stem,
-        next_step_type,
-    ):
-        super(AskForMissingEntities, self).__init__(app)
-
-        self.entity_display_aliases = entity_display_aliases
-        self.ask_if_missing_entities = ask_if_missing_entities
-        self.suggest_file_stem = suggest_file_stem
-
-        self.entity = None
-        self.entity_str = None
-        self.tagval = None
-
-        self.next_step_type = next_step_type
-
-    def setup(self, ctx):
-        self.is_first_run = True
-
-        entites_in_path = get_entities_in_path(ctx.spec.files[-1].path)
-
-        tags = ctx.spec.files[-1].tags
-        while len(self.ask_if_missing_entities) > 0:
-            entity = self.ask_if_missing_entities.pop(0)
-
-            if entity in entites_in_path:
-                continue
-
-            if tags.get(entity) is not None:
-                continue
-
-            self.entity = entity
-            break
-
-        if self.entity is not None:
-            self.entity_str = self.entity
-            if self.entity_str in self.entity_display_aliases:
-                self.entity_str = self.entity_display_aliases[self.entity_str]
-
-            self._append_view(TextView(f"No {self.entity_str} name was specified"))
-            self._append_view(TextView(f"Specify the {self.entity_str} name"))
-
-            suggestion = ""
-            if self.suggest_file_stem:
-                suggestion, _ = splitext(ctx.spec.files[-1].path)
-
-            self.input_view = TextInputView(
-                text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
-            )
-
-            self._append_view(self.input_view)
-            self._append_view(SpacerView(1))
-
-    def run(self, ctx):
-        if self.entity is None:
-            return self.is_first_run
-        else:
-            self.tagval = self.input_view()
-            if self.tagval is None:
-                return False
-            return True
-
-    def next(self, ctx):
-        if self.tagval is not None:
-            ctx.spec.files[-1].tags[self.entity] = self.tagval
-
-        if self.entity is not None or self.is_first_run:
-            self.is_first_run = False
-
-            if len(self.ask_if_missing_entities) > 0:
-                return AskForMissingEntities(
-                    self.app,
-                    {**self.entity_display_aliases},
-                    [*self.ask_if_missing_entities],
-                    self.suggest_file_stem,
-                    self.next_step_type,
-                )(ctx)
-
-            else:
-                ctx.database.put(
-                    ctx.spec.files[-1]
-                )  # we've got all tags, so we can add the fileobj to the index
-
-                return self.next_step_type(self.app)(ctx)
-
-        return

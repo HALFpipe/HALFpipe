@@ -99,7 +99,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 continue
             if self.proc_done[idx] and (not self.proc_pending[idx]):
                 name = self.procs[idx].fullname
-                if self._keep == "some" and "preproc_wf" in name:
+                if self._keep == "some" and ("fmriprep_wf" in name or "ica_aroma_components_wf" in name):
                     continue  # keep fmriprep if keep is "some"
                 if "outputnode" in name:
                     continue  # always keep outputs

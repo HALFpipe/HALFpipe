@@ -147,7 +147,7 @@ class SmoothingFactory(LookupFactory):
     def _prototype(self, tpl):
         fwhm, suffix = tpl
         if fwhm is None or float(fwhm) <= 0 or np.isclose(float(fwhm), 0):
-            return init_bypass_wf(attrs=["files", "mask"], name="no_smoothing_wf", suffix=suffix)
+            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix)
         return init_smoothing_wf(fwhm=fwhm, memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
@@ -165,7 +165,7 @@ class GrandMeanScalingFactory(LookupFactory):
     def _prototype(self, tpl):
         mean, suffix = tpl
         if mean is None:
-            return init_bypass_wf(attrs=["files", "mask"], name="no_grand_mean_scaling_wf", suffix=suffix)
+            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_grand_mean_scaling_wf", suffix=suffix)
         return init_grand_mean_scaling_wf(mean=mean, memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
@@ -187,7 +187,7 @@ class ICAAROMARegressionFactory(LookupFactory):
     def _prototype(self, tpl):
         ica_aroma, suffix = tpl
         if ica_aroma is not True:
-            return init_bypass_wf(attrs=["files", "mask"], name="no_ica_aroma_regression_wf", suffix=suffix)
+            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_ica_aroma_regression_wf", suffix=suffix)
         return init_ica_aroma_regression_wf(memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
@@ -205,7 +205,7 @@ class BandpassFilterFactory(LookupFactory):
     def _prototype(self, tpl):
         bandpass_filter, suffix = tpl
         if bandpass_filter is None:
-            return init_bypass_wf(attrs=["files", "mask"], name="no_bandpass_filter_wf", suffix=suffix)
+            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_bandpass_filter_wf", suffix=suffix)
         return init_bandpass_filter_wf(bandpass_filter=bandpass_filter, memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
@@ -245,7 +245,7 @@ class ConfoundsSelectFactory(LookupFactory):
         confound_names, suffix = tpl
         if confound_names is None:
             return init_bypass_wf(
-                attrs=["bold", "confounds", "mask"],
+                attrs=["bold", "confounds", "mask", "vals"],
                 unconnected_attrs=["confounds_matrix"],
                 name=f"no_confounds_select_wf",
                 suffix=suffix
@@ -267,7 +267,7 @@ class ConfoundsRegressionFactory(LookupFactory):
         has_confounds, suffix = tpl
         if has_confounds is not True:
             return init_bypass_wf(
-                attrs=["bold", "confounds_matrix", "confounds", "mask"],
+                attrs=["bold", "confounds_selected", "confounds", "mask", "vals"],
                 name=f"no_confounds_regression_wf",
                 suffix=suffix
             )
@@ -315,7 +315,7 @@ class SettingFactory(Factory):
                     ret |= self.database.applyfilters(filepaths, filters)
         return ret
 
-    def setup(self):
+    def setup(self, raw_sources_dict=dict()):
         self.ica_aroma_components_factory.setup()
         self.fmriprep_adapter_factory.setup()
         self.smoothing_factory.setup()
@@ -347,7 +347,10 @@ class SettingFactory(Factory):
                 tags = {"setting": setting["name"]}
                 tags.update(self.database.tags(sourcefile))
                 inputnode.inputs.tags = tags
-
+                if raw_sources_dict.get(sourcefile) is not None:
+                    inputnode.inputs.metadata = {
+                        "raw_sources": raw_sources_dict.get(sourcefile)
+                    }
                 self.connect(hierarchy, inputnode, sourcefile, settingname=setting["name"], confounds_action="regression")
 
     def get(self, sourcefile, settingname, confounds_action=None):

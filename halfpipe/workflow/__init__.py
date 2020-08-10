@@ -3,5 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .base import init_workflow
+from .execgraph import init_execgraph
 
-__all__ = [init_workflow]
+__all__ = [init_workflow, init_execgraph]

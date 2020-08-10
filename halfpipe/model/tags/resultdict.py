@@ -31,6 +31,7 @@ ResultdictTagsSchema = Schema.from_dict(
             "seed",
             "component",
             "atlas",
+            "contrast",
             "desc",
         ]
     }

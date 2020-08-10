@@ -20,7 +20,7 @@ def _calc_sigma(lp_width=None, hp_width=None, repetition_time=None):
     return lp_sigma, hp_sigma
 
 
-def _tproject_out_file_name(in_file):
+def _out_file_name(in_file):
     from halfpipe.utils import splitext
 
     stem, ext = splitext(in_file)
@@ -97,16 +97,15 @@ def init_bandpass_filter_wf(
         toafni = pe.MapNode(ToAFNI(), iterfield="in_file", name="toafni")
         workflow.connect(inputnode, "files", toafni, "in_file")
 
-        tprojectoutfilename = pe.MapNode(
+        makeoutfname = pe.MapNode(
             niu.Function(
-                input_names=["in_file"],
-                output_names=["out_file"],
-                function=_tproject_out_file_name,
+                input_names=["in_file"], output_names=["out_file"], function=_out_file_name,
             ),
             iterfield="in_file",
             name="tprojectoutfilename",
             run_without_submitting=True,
         )
+        workflow.connect(toafni, "out_file", makeoutfname, "in_file")
 
         bandpassarg = pe.Node(niu.Merge(2), name="bandpassarg", run_without_submitting=True)
         workflow.connect(inputnode, "low", bandpassarg, "in1")
@@ -118,7 +117,7 @@ def init_bandpass_filter_wf(
         workflow.connect(toafni, "out_file", tproject, "in_file")
         workflow.connect(bandpassarg, "out", tproject, "bandpass")
         workflow.connect(inputnode, "repetition_time", tproject, "TR")
-        workflow.connect(tprojectoutfilename, "out_file", tproject, "out_file")
+        workflow.connect(makeoutfname, "out_file", tproject, "out_file")
 
         fromafni = pe.MapNode(FromAFNI(), iterfield=["in_file", "metadata"], name="fromafni")
         workflow.connect(toafni, "metadata", fromafni, "metadata")

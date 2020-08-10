@@ -95,11 +95,11 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
     #
     ravelresultdicts = pe.Node(
-        niu.Function(input_names=["in_list"], output_names=["out_list"], function=ravel),
+        niu.Function(input_names=["obj"], output_names=["out_list"], function=ravel),
         name="ravelresultdicts",
         run_without_submitting=True
     )
-    workflow.connect(aggregateresultdicts, "resultdicts", ravelresultdicts, "in_list")
+    workflow.connect(aggregateresultdicts, "resultdicts", ravelresultdicts, "obj")
 
     #
     aliases = dict(effect=["reho", "falff", "alff"])
@@ -135,12 +135,12 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         run_mode = dict(fe="fe", me="flame1")[model.type]
 
         countimages = pe.MapNode(
-            niu.Function(input_names=["in_list"], output_names=["image_count"], function=lenforeach),
-            iterfield="in_list",
+            niu.Function(input_names=["arrarr"], output_names=["image_count"], function=lenforeach),
+            iterfield="arrarr",
             name="countimages",
             run_without_submitting=True
         )
-        workflow.connect(extractfromresultdict, "effect", countimages, "in_list")
+        workflow.connect(extractfromresultdict, "effect", countimages, "arrarr")
 
         modelspec = pe.MapNode(
             InterceptOnlyModel(), name="modelspec", iterfield="n_copes", mem_gb=memcalc.min_gb, run_without_submitting=True

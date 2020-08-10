@@ -15,7 +15,6 @@ from .setting import SettingFactory
 from .feature import FeatureFactory
 from .model import ModelFactory
 
-from .execgraph import init_execgraph
 from .memory import MemoryCalculator
 from .constants import constants
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
@@ -23,7 +22,7 @@ from ..model import loadspec
 from ..utils import deepcopyfactory
 
 
-def init_workflow(workdir, **kwargs):
+def init_workflow(workdir):
     """
     initialize nipype workflow
 
@@ -40,7 +39,7 @@ def init_workflow(workdir, **kwargs):
 
     workflow = uncacheobj(workdir, "workflow", uuid)
     if workflow is not None:
-        return init_execgraph(workdir, workflow, **kwargs)
+        return workflow
 
     # create parent workflow
     workflow = pe.Workflow(name=constants.workflowdir, base_dir=workdir)
@@ -68,18 +67,19 @@ def init_workflow(workdir, **kwargs):
 
     # create bids
     boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
+    associated_filepaths_dict = dict()
     for boldfilepath in boldfilepaths:
         t1ws = database.associations(boldfilepath, datatype="anat")
         if t1ws is None:
             continue
-        bidsdatabase.put(boldfilepath)
-        for filepath in t1ws:
-            bidsdatabase.put(filepath)
+        associated_filepaths = [boldfilepath]
+        associated_filepaths.extend(t1ws)
         fmaps = database.associations(boldfilepath, datatype="fmap")
-        if fmaps is None:
-            continue
-        for filepath in fmaps:
+        if fmaps is not None:
+            associated_filepaths.extend(fmaps)
+        for filepath in associated_filepaths:
             bidsdatabase.put(filepath)
+        associated_filepaths_dict[boldfilepath] = associated_filepaths
 
     bids_dir = Path(workdir) / "rawdata"
     bidsdatabase.write(bids_dir)
@@ -92,8 +92,8 @@ def init_workflow(workdir, **kwargs):
         fmriprep_factory.setup(workdir, boldfilepaths)
 
         if spec.global_settings.get("run_halfpipe") is True:
-            setting_factory.setup()
-            feature_factory.setup()
+            setting_factory.setup(associated_filepaths_dict)
+            feature_factory.setup(associated_filepaths_dict)
             model_factory.setup()
 
     config_factory = deepcopyfactory(workflow.config)
@@ -103,4 +103,4 @@ def init_workflow(workdir, **kwargs):
     logger.info(f"Finished workflow: {uuidstr}")
 
     cacheobj(workdir, "workflow", workflow)
-    return init_execgraph(workdir, workflow, **kwargs)
+    return workflow

@@ -15,7 +15,7 @@ import re
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
 from ...io import DictListFile
-from ...model import ResultdictSchema, entities
+from ...model import FuncTagsSchema, ResultdictSchema, entities
 from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
 
@@ -76,6 +76,27 @@ def _find_sources(inpath):
     return inputpaths, hash
 
 
+def _format_metadata_value(obj):
+    if not isinstance(obj, dict):
+        return obj
+    return {
+        _format_metadata_key(k): _format_metadata_value(v)
+        for k, v in obj.items()
+    }
+
+
+def _format_metadata_key(key):  # camelize
+    if key == "ica_aroma":
+        return "ICAAROMA"
+    if key == "fwhm":
+        return "FWHM"
+    if key == "hp_width":
+        return "HighPassWidth"
+    if key == "lp_width":
+        return "LowPassWidth"
+    return camelize(key)
+
+
 class ResultdictDatasinkInputSpec(TraitedSpec):
     base_directory = traits.Directory(
         desc="Path to the base directory for storing data.", mandatory=True
@@ -113,7 +134,7 @@ class ResultdictDatasink(SimpleInterface):
             reports = resultdict["reports"]
             vals = resultdict["vals"]
 
-            metadata = {camelize(k): v for k, v in metadata.items()}
+            metadata = _format_metadata_value(metadata)
 
             # images
 
@@ -125,14 +146,16 @@ class ResultdictDatasink(SimpleInterface):
                     outpath = derivatives_directory / _make_path(inpath, "image", tags, key)
                 _copy_file(inpath, outpath)
 
-                stem, _ = splitext(outpath)
-                with open(outpath.parent / f"{stem}.json", "w") as fp:
-                    fp.write(json.dumps(metadata, sort_keys=True, indent=4))
+                if key in ["effect", "reho", "falff", "alff", "bold"]:
+                    stem, extension = splitext(outpath)
+                    if extension in [".nii", ".nii.gz"]:
+                        with open(outpath.parent / f"{stem}.json", "w") as fp:
+                            fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 
-                if key == "bold":
-                    outdict = dict(**tags)
-                    outdict.update({"status": "done"})
-                    preprocdicts.append(outdict)
+                        if key == "bold":
+                            outdict = dict(**tags)
+                            outdict.update({"status": "done"})
+                            preprocdicts.append(outdict)
 
             # reports
 
@@ -170,7 +193,7 @@ class ResultdictDatasink(SimpleInterface):
             # vals
 
             if len(vals) > 0:
-                outdict = dict(**tags)
+                outdict = FuncTagsSchema().dump(tags)
                 outdict.update(vals)
                 valdicts.append(outdict)
 

@@ -148,6 +148,7 @@ class FmriprepFactory(Factory):
 
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = database.tags(boldfilepath)
+            inputnode.inputs.fd_thres = spec.global_settings["fd_thres"]
 
             self.connect(hierarchy, inputnode, sourcefile=boldfilepath)
 
@@ -190,7 +191,7 @@ class FmriprepFactory(Factory):
             # func first
             _connect(hierarchy)
 
-            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "bold_reference_wf", "bold_reg_wf", "bold_sdc_wf"]:
+            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "bold_reference_wf", "bold_reg_wf", "sdc_estimate_wf", "sdc_bypass_wf"]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])

@@ -155,7 +155,7 @@ def _main():
         logger.info(f"Did not run step: workflow")
     else:
         logger.info(f"Running step: workflow")
-        from .workflow import init_workflow
+        from .workflow import init_workflow, init_execgraph
 
         if args.nipype_omp_nthreads is not None and args.nipype_omp_nthreads > 0:
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
@@ -165,8 +165,11 @@ def _main():
                 8 if args.nipype_n_procs > 16 else (4 if args.nipype_n_procs > 8 else 1)
             )
             logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
-        execgraphs = init_workflow(
+        workflow = init_workflow(workdir)
+        Logger.setup(workdir, debug=debug, verbose=verbose)  # re-run setup to override fmriprep/nipype logging config
+        execgraphs = init_execgraph(
             workdir,
+            workflow,
             n_chunks=args.n_chunks,
             subject_chunks=args.subject_chunks or args.use_cluster
         )
@@ -174,8 +177,6 @@ def _main():
             from .cluster import create_example_script
 
             create_example_script(workdir, execgraphs)
-
-    Logger.setup(workdir, debug=debug, verbose=verbose)  # re-run setup to override fmriprep/nipype logging config
 
     if not should_run["run"] or args.use_cluster:
         logger.info(f"Did not run step: run")

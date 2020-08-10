@@ -5,10 +5,7 @@
 from .dictlistfile import DictListFile
 from .indexedfile import IndexedFile
 
-from .condition import (
-    find_and_parse_condition_files,
-    parse_condition_file,
-)
+from .condition import parse_condition_file
 from .spreadsheet import loadspreadsheet, loadmatrix
 
 from .pickle import loadpicklelzma, dumppicklelzma, make_cachefilepath, cacheobj, uncacheobj
@@ -16,7 +13,6 @@ from .pickle import loadpicklelzma, dumppicklelzma, make_cachefilepath, cacheobj
 __all__ = [
     DictListFile,
     IndexedFile,
-    find_and_parse_condition_files,
     parse_condition_file,
     loadspreadsheet,
     loadmatrix,

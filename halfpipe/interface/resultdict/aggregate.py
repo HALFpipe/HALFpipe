@@ -13,11 +13,17 @@ from ...utils import ravel
 
 
 def _aggregate_if_possible(inval):
-    if isinstance(inval, (list, tuple)):
+    if isinstance(inval, (list, tuple)) and len(inval) > 0:
         if all(isinstance(val, float) for val in inval):
             return np.asarray(inval).mean()
-        if len(set(inval)) == 1:
-            (aggval,) = inval
+        if all(isinstance(val, list) for val in inval):
+            return _aggregate_if_possible(ravel(inval))
+        if all(isinstance(val, (dict)) for val in inval):
+            tpllist = [tuple(sorted(val.items())) for val in inval]
+            return dict(_aggregate_if_possible(tpllist))
+        invalset = set(inval)
+        if len(invalset) == 1:
+            (aggval,) = invalset
             return aggval
     return inval
 
@@ -56,10 +62,9 @@ class AggregateResultdicts(IOBase):
         if isdefined(self.inputs.include):
             include = self.inputs.include
 
-        aggdicts = {}
+        aggdicts = dict()
         for resultdict in inputs:
             resultdict = ResultdictSchema().load(resultdict)
-
             tags = resultdict["tags"]
 
             if across not in tags:
@@ -71,7 +76,7 @@ class AggregateResultdicts(IOBase):
             ):
                 continue
 
-            tagtupl = tuple(
+            t = tuple(
                 (key, value)
                 for key, value in tags.items()
                 if key != across
@@ -81,28 +86,30 @@ class AggregateResultdicts(IOBase):
                 # This is important for example if we want have aggregated unequal numbers
                 # of runs across subjects, but we still want to compare across subjects
             )
+            t = tuple(sorted(t))
 
-            if tagtupl not in aggdicts:
-                aggdicts[tagtupl] = {}
-
-            aggdict = aggdicts[tagtupl]
+            if t not in aggdicts:
+                aggdicts[t] = dict()
 
             for f, nested in resultdict.items():
                 if f == "tags":
                     continue
-                if f not in aggdict:
-                    aggdict[f] = dict()
+                if f not in aggdicts[t]:
+                    aggdicts[t][f] = dict()
                 for k, v in nested.items():
-                    if k not in aggdict:
-                        aggdict[f][k] = []
-                    aggdict[f][k].append(v)
+                    if k not in aggdicts[t][f]:
+                        aggdicts[t][f][k] = list()
+                    aggdicts[t][f][k].append(v)
 
         resultdicts = []
-        for tagtupl, listdict in aggdict.items():
-            resultdict = dict(tagtupl)
+        for tagtupl, listdict in aggdicts.items():
+            tagdict = dict(tagtupl)
+            resultdict = dict(tags=tagdict, vals=dict())
             resultdict.update(listdict)  # create combined resultdict
-            for key in resultdict.keys():  # calculate mean of floats
-                resultdict[key] = _aggregate_if_possible(resultdict[key])
+            for key in resultdict["vals"].keys():  # calculate mean of floats
+                resultdict["vals"][key] = _aggregate_if_possible(resultdict["vals"][key])
+            for key in resultdict["metadata"].keys():  # calculate mean of floats
+                resultdict["metadata"][key] = _aggregate_if_possible(resultdict["metadata"][key])
             resultdicts.append(ResultdictSchema().load(resultdict))
 
         outputs["resultdicts"] = resultdicts

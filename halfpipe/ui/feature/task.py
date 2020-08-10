@@ -14,6 +14,7 @@ from calamities import (
     MultipleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView
 )
+from calamities.pattern import get_entities_in_path
 
 from ..step import Step, BranchStep, YesNoStep
 from ..pattern import FilePatternStep
@@ -23,8 +24,8 @@ from ...utils import first, ravel
 from ..setting import get_setting_init_steps
 from .loop import SettingValsStep
 
-from ...io import find_and_parse_condition_files
-from ...model import TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
+from ...io import parse_condition_file
+from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
 
 next_step_type = SettingValsStep
 
@@ -33,8 +34,50 @@ def _format_variable(variable):
     return f'"{variable}"'
 
 
+def _find_bold_filepaths(ctx):
+    database = ctx.database
+    bold_filepaths = database.get(**{"datatype": "func", "suffix": "bold"})
+    if bold_filepaths is None:
+        return
+
+    filters = ctx.spec.settings[-1].get("filters")
+    bold_filepaths = set(bold_filepaths)
+
+    if filters is not None:
+        bold_filepaths = database.applyfilters(bold_filepaths, filters)
+
+    return bold_filepaths
+
+
+def _find_and_parse_condition_files(ctx):
+    """
+    returns generator for tuple event file paths, conditions, onsets, durations
+    """
+    database = ctx.database
+    bold_filepaths = _find_bold_filepaths(ctx)
+
+    eventfile_dict = {
+        filepath: database.associations(filepath, **{"datatype": "func", "suffix": "events"})
+        for filepath in bold_filepaths.copy()
+    }
+
+    eventfile_set = set(eventfile_dict.values())
+    if len(eventfile_set) == 0 or None in eventfile_set:
+        return
+
+    for in_any in eventfile_set:
+        if isinstance(in_any, str):
+            fileobj = File(path=database.fileobj(in_any), tags=database.tags(in_any))
+        elif isinstance(in_any, (tuple, list, set)):
+            fileobj = [database.fileobj(filepath) for filepath in in_any]
+            assert all(f is not None for f in fileobj)
+        else:
+            raise ValueError(f'Unknown event file "{in_any}"')
+        yield (in_any, *parse_condition_file(in_any=fileobj))
+
+
 def _get_conditions(ctx):
-    out_list = list(find_and_parse_condition_files(ctx.database, filters=ctx.spec.settings[-1].get("filters")))
+    out_list = list(_find_and_parse_condition_files(ctx))
     if out_list is None or len(out_list) == 0:
         return
 
@@ -220,6 +263,7 @@ class ConditionsSelectStep(Step):
         self._append_view(TextView("Select conditions to add to the model"))
 
         conditions = ctx.spec.features[-1].conditions
+        assert len(conditions) > 0, "No conditions found"
         self.options = [_format_variable(condition) for condition in conditions]
         self.str_by_varname = dict(zip(conditions, self.options))
 
@@ -264,6 +308,20 @@ class EventsStep(FilePatternStep):
     required_in_path_entities = []
 
     next_step_type = ConditionsSelectStep
+
+    def setup(self, ctx):
+        bold_filepaths = _find_bold_filepaths(ctx)
+        self.taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
+        if len(self.taskset) > 1:
+            self.required_in_path_entities = ["task"]
+        super(EventsStep, self).setup(ctx)
+
+    def next(self, ctx):
+        if len(self.taskset) == 1:
+            if self.fileobj.tags.get("task") is None:
+                if "task" not in get_entities_in_path(self.fileobj.path):
+                    (self.fileobj.tags["task"],) = self.taskset
+        super(EventsStep, self).next(ctx)
 
     def _transform_extension(self, ext):
         raise NotImplementedError()
@@ -312,14 +370,14 @@ class EventsTypeStep(BranchStep):
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
-        ):
+        ):  # load conditions if not available
             _get_conditions(ctx)
 
         if (
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
-        ):
+        ):  # check if load was successful
             self.should_run = True
             super(EventsTypeStep, self).setup(ctx)
 

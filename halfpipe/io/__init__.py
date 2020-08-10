@@ -5,7 +5,6 @@
 from .file import (
     DictListFile,
     IndexedFile,
-    find_and_parse_condition_files,
     parse_condition_file,
     loadspreadsheet,
     loadmatrix,
@@ -31,7 +30,6 @@ from .signals import meansignals
 __all__ = [
     DictListFile,
     IndexedFile,
-    find_and_parse_condition_files,
     parse_condition_file,
     loadspreadsheet,
     loadmatrix,

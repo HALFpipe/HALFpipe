@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
-from marshmallow import EXCLUDE
 
 from nipype.interfaces.base import (
     traits,
@@ -15,7 +14,7 @@ from nipype.interfaces.io import add_traits, IOBase
 
 from .base import ResultdictsOutputSpec
 from ...model import ResultdictSchema
-from ...utils import ravel, deepcopy
+from ...utils import first, ravel, deepcopy
 
 composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
 resultdict_entities = set(ResultdictSchema().fields["tags"].nested().fields.keys())
@@ -27,9 +26,13 @@ class MakeResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
 
 
+class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
+    vals = traits.Dict(traits.Str(), traits.Any())
+
+
 class MakeResultdicts(IOBase):
     input_spec = MakeResultdictsInputSpec
-    output_spec = ResultdictsOutputSpec
+    output_spec = MakeResultdictsOutputSpec
 
     def __init__(
         self, tagkeys=[], valkeys=[], imagekeys=[], reportkeys=[], metadatakeys=[], **inputs
@@ -112,15 +115,14 @@ class MakeResultdicts(IOBase):
                     resultdict[f] = dict()
                 if v is not None:
                     resultdict[f][k] = v
-            resultdicts.append(ResultdictSchema().load(resultdict, unknown=EXCLUDE))
+            resultdicts.append(resultdict)
 
         # apply composite attr rule
         for i in range(len(resultdicts)):
-            images = resultdicts[i]["images"]
-            for k, v in images.items():
+            newimages = dict()
+            for k, v in resultdicts[i]["images"].items():
                 m = composite_attr.fullmatch(k)
                 if m is not None:  # apply rule
-                    del images[k]
                     newresultsdict = deepcopy(resultdicts[i])
                     k = m.group("attr")
                     if k in ["ortho"]:
@@ -129,7 +131,15 @@ class MakeResultdicts(IOBase):
                         newresultsdict["tags"]["desc"] = m.group("tag")
                     newresultsdict["images"] = {k: v}
                     resultdicts.append(newresultsdict)
+                else:
+                    newimages[k] = v
+            resultdicts[i]["images"] = newimages
+
+        # validate
+        for i in range(len(resultdicts)):
+            resultdicts[i] = ResultdictSchema().load(resultdicts[i])
 
         outputs["resultdicts"] = resultdicts
+        outputs["vals"] = first(resultdicts)["vals"]
 
         return outputs

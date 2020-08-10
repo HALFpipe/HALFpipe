@@ -39,13 +39,26 @@ class FeatureFactory(Factory):
                 return True
         return False
 
-    def setup(self):
+    def setup(self, raw_sources_dict=dict()):
         self.wfs = dict()
-        for sourcefile in self.sourcefiles:
-            for feature in self.spec.features:
-                self.create(sourcefile, feature)
 
-    def create(self, sourcefile, feature):
+        def _find_setting(feature):
+            for setting in self.spec.settings:
+                if setting["name"] == feature.setting:
+                    return setting
+
+        for feature in self.spec.features:
+            featuresourcefiles = self.sourcefiles
+            filters = _find_setting(feature).get("filters")
+            if filters is not None and len(filters) > 0:
+                featuresourcefiles = self.database.applyfilters(
+                    featuresourcefiles, filters
+                )
+            for sourcefile in featuresourcefiles:
+                sourcefile_raw_sources = raw_sources_dict.get(sourcefile)
+                self.create(sourcefile, feature, raw_sources=sourcefile_raw_sources)
+
+    def create(self, sourcefile, feature, raw_sources=[]):
         hierarchy = self._get_hierarchy("features_wf", sourcefile=sourcefile)
         wf = hierarchy[-1]
 
@@ -69,6 +82,7 @@ class FeatureFactory(Factory):
             kwargs["condition_files"] = condition_files
             kwargs["condition_units"] = condition_units
             vwf = init_taskbased_wf(**kwargs)
+            raw_sources = [*raw_sources, *condition_files]
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
             kwargs["seed_files"] = []
@@ -127,7 +141,10 @@ class FeatureFactory(Factory):
                 if hasattr(node.inputs, "metadata"):
                     for setting in self.spec.settings:
                         if setting["name"] == settingname:
-                            node.inputs.metadata = BaseSettingSchema().dump(setting)
+                            metadict = BaseSettingSchema().dump(setting)
+                            if raw_sources is not None:
+                                metadict["raw_sources"] = raw_sources
+                            node.inputs.metadata = metadict
                 self.setting_factory.connect(hierarchy, node, sourcefile, settingname, confounds_action=confounds_action)
 
         return vwf

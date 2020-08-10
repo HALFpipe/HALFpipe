@@ -110,10 +110,11 @@ class FilterResultdicts(SimpleInterface):
                 if cutoff is None or not isinstance(cutoff, float):
                     raise ValueError(f'Invalid cutoff "{cutoff}"')
 
+                filterfield = filterdict.get("field")
                 outdicts = [
                     outdict
                     for outdict in outdicts
-                    if _aggregate_if_needed(outdict.get("vals").get(filtertype, np.inf)) < cutoff
+                    if _aggregate_if_needed(outdict.get("vals").get(filterfield, np.inf)) < cutoff
                 ]
 
         if isdefined(self.inputs.requireoneofimages):

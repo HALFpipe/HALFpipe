@@ -81,6 +81,8 @@ class Vals(SimpleInterface):
     def _run_interface(self, runtime):
         vals = dict()
         self._results["vals"] = vals
+        if isdefined(self.inputs.vals):
+            vals.update(self.inputs.vals)
         if isdefined(self.inputs.confounds):
             df_confounds = loadspreadsheet(self.inputs.confounds)
             vals["fd_mean"] = df_confounds["framewise_displacement"].mean()
