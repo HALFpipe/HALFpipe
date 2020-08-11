@@ -8,7 +8,6 @@
 
 from functools import lru_cache
 import warnings
-import csv
 import re
 
 import numpy as np
@@ -24,10 +23,8 @@ def has_header(fname):
             return False
         if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
             return True
-        try:
-            return csv.Sniffer().has_header(data)
-        except Exception:
-            return False  # default
+        # return csv.Sniffer().has_header(data)
+        return False  # default
 
 
 @lru_cache(maxsize=128)

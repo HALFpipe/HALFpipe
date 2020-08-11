@@ -13,14 +13,14 @@ From: poldracklab/fmriprep:20.1.1
   . /halfpipe
 
 %post
-  BUILD=39
+  BUILD=40
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \
     cd /halfpipe && \
     pip install --upgrade pip && \
-    pip uninstall --yes fmriprep niworkflows nipype && \
+    pip uninstall --yes fmriprep niworkflows nipype patsy && \
     pip install . && \
     python postsetup.py' fmriprep
   

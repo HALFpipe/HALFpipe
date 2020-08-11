@@ -71,7 +71,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._stats = None
         self._keep = plugin_args.get("keep", "all")
         if self._keep != "all":
-            self._rc = ReferenceCounter(plugin_args["workflowdir"])
+            self._rc = ReferenceCounter()
 
     def _task_finished_cb(self, jobid, cached=False):
         if self._rc is not None:

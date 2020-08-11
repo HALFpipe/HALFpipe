@@ -7,14 +7,17 @@ from os import path as op
 from pathlib import Path
 import logging
 from shutil import copyfile
-from inflection import camelize
 import hashlib
 import json
 import re
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
+from inflection import camelize
 
-from ...io import DictListFile
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
+# from niworkflows.viz.utils import compose_view, extract_svg
+# from nilearn.plotting import plot_glass_brain
+
+from ...io import DictListFile, loadspreadsheet
 from ...model import FuncTagsSchema, ResultdictSchema, entities
 from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
@@ -22,7 +25,9 @@ from ...resource import get as getresource
 
 def _make_plot(tags, key, sourcefile):
     if key == "z":
+        pass
     elif key == "matrix":
+        df = loadspreadsheet(sourcefile)  # noqa
 
 
 def _make_path(sourcefile, type, tags, suffix, **kwargs):

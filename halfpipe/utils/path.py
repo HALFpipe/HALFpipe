@@ -12,6 +12,7 @@ def findpaths(obj):
     while len(stack) > 0:
         obj = stack.pop()
         if isinstance(obj, InterfaceResult):
+            stack.append(obj.inputs.__dict__)
             stack.append(obj.outputs.__dict__)
         elif isinstance(obj, dict):
             stack.extend(obj.values())

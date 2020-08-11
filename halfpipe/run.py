@@ -197,11 +197,9 @@ def _main():
 
         import nipype.pipeline.plugins as nip
         import halfpipe.plugins as ppp
-        from .workflow.constants import constants
 
         plugin_args = {
             "workdir": workdir,
-            "workflowdir": str(Path(workdir) / constants.workflowdir),
             "debug": debug,
             "verbose": verbose,
             "watchdog": args.watchdog,

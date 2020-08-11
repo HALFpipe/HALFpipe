@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from os.path import relpath
 
 from ..utils import findpaths
 
@@ -16,33 +15,28 @@ def iterpath(path):
 
 
 class ReferenceCounter:
-    def __init__(self, cwd):
-        self.cwd = Path(cwd).resolve()
+    def __init__(self):
         self.files = {}
         self.sets = []
 
     def addpath(self, path, jobid):
-        path = Path(relpath(path, start=self.cwd))
+        if not isinstance(path, Path):
+            path = Path(path)
+
         curfiles = self.files
         for elem in iterpath(path.resolve()):
             if elem not in curfiles:
                 curfiles[elem] = {}
             curfiles = curfiles[elem]
-        if 0 not in curfiles or not isinstance(curfiles[0], set):
-            curfiles[0] = set()
-            self.sets.append(curfiles[0])
-        curfiles[0].add(jobid)
+
+        if None not in curfiles or not isinstance(curfiles[None], set):
+            curfiles[None] = set()  # None key is the jobid set
+            self.sets.append(curfiles[None])
+        curfiles[None].add(jobid)
 
     def put(self, result, jobid=0):
-        paths = findpaths(result)
-        while len(paths) > 0:
-            path = Path(paths.pop()).resolve()
-            if not path.startswith(self.cwd):
-                continue
-            if path.is_dir():
-                paths.extend(path.iterdir())
-            else:
-                self.addpath(path, jobid)
+        for path in findpaths(result):
+            self.addpath(path, jobid)
 
     def pop(self, jobid):
         for s in self.sets:
@@ -52,18 +46,28 @@ class ReferenceCounter:
     def can_delete(self, path):
         if not isinstance(path, Path):
             path = Path(path)
+
         curfiles = self.files
-        for elem in iterpath(path):
+        for elem in iterpath(path):  # traverse the parents of the path
             if elem not in curfiles:
-                return True
+                return True  # the file is not being tracked
+
+            if None in curfiles:   # None key is the jobid set
+                if len(curfiles[None]) > 0:  # there are still dependent jobids
+                    return False
+
             curfiles = curfiles[elem]
+
         filesstack = [curfiles]
-        while len(filesstack) > 0:
-            files = filesstack.pop()
-            for k, v in files.items():
-                if k == 0:
-                    if len(v) > 0:
-                        return False
-                else:
-                    filesstack.append(v)
+        while len(filesstack) > 0:  # traverse the children of the path
+            curfiles = filesstack.pop()
+
+            if None in curfiles:
+                if len(curfiles[None]) > 0:  # as before
+                    return False
+
+            for k, v in curfiles.items():
+                if k is not None:
+                    filesstack.append(v)  # subfolders or files
+
         return True

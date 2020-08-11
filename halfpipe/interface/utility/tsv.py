@@ -28,8 +28,8 @@ class FillNAInputSpec(TraitedSpec):
 
 
 class TsvOutputSpec(TraitedSpec):
-    out_with_header = File(exists=True, desc="output tsv file")
-    out_no_header = File(exists=True, desc="output tsv file")
+    out_with_header = File(exists=True, desc="output tsv file with a header")
+    out_no_header = File(exists=True, desc="output tsv file without header")
     column_names = traits.List(
         traits.Str, desc="list of column names in order"
     )
@@ -124,14 +124,15 @@ class MergeColumns(IOBase):
             index = True
             out_df.index = self.inputs.row_index
 
-        outputs["out_with_header"] = Path.cwd() / "merge_with_header.tsv"
-        out_df.to_csv(
-            outputs["out_with_header"], sep="\t", index=index, na_rep="n/a", header=True
-        )
-        outputs["out_no_header"] = Path.cwd() / "merge_no_header.tsv"
-        out_df.to_csv(
-            outputs["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
-        )
+        out_with_header = Path.cwd() / "merge_with_header.tsv"
+        out_no_header = Path.cwd() / "merge_no_header.tsv"
+
+        kwargs = dict(sep="\t", na_rep="n/a")
+        out_df.to_csv(out_with_header, index=index, header=True, **kwargs)
+        out_df.to_csv(out_no_header, index=False, header=False, **kwargs)
+
+        outputs["out_with_header"] = out_with_header
+        outputs["out_no_header"] = out_no_header
         outputs["column_names"] = list(map(str, out_df.columns))
 
         return outputs

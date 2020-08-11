@@ -12,7 +12,7 @@ COPY . /halfpipe/
 
 RUN cd /halfpipe && \
     pip install --upgrade pip && \
-    pip uninstall --yes fmriprep niworkflows nipype && \
+    pip uninstall --yes fmriprep niworkflows nipype patsy && \
     pip install . && \
     python postsetup.py && \
     rm -rf ~/.cache/pip && \
