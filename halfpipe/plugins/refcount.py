@@ -3,8 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+import logging
 
 from ..utils import findpaths
+
+logger = logging.getLogger("halfpipe")
 
 
 def iterpath(path):
@@ -36,6 +39,7 @@ class ReferenceCounter:
 
     def put(self, result, jobid=0):
         for path in findpaths(result):
+            logger.debug(f"Tracking reference \"{jobid}\" to \"{path}\"")
             self.addpath(path, jobid)
 
     def pop(self, jobid):

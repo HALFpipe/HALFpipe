@@ -7,6 +7,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -42,7 +44,7 @@ class ToAFNI(SimpleInterface):
         else:
             in_df = loadspreadsheet(in_file)
 
-            out_file = f"{stem}.1D"
+            out_file = Path.cwd() / f"{stem}.1D"
             np.savetxt(out_file, in_df.values.T, delimiter=" ")
 
             self._results["out_file"] = out_file
@@ -78,7 +80,7 @@ class FromAFNI(SimpleInterface):
 
             out_df = pd.DataFrame(data=in_array, columns=self.inputs.variable_names)
 
-            out_file = f"{stem}.tsv"
+            out_file = Path.cwd() / f"{stem}.tsv"
             out_df.to_csv(
                 out_file, sep="\t", index=False, na_rep="n/a", header=True
             )
