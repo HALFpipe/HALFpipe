@@ -28,6 +28,9 @@ for schema in __all__:  # automatically add other entities
     for key in instance.fields.keys():
         if key not in entities:
             entities.insert(0, key)
+for entity in ["model", "feature", "setting"]:
+    entities.remove(entity)
+    entities.insert(0, entity)  # model should come before feature and setting
 for entity in ["seed", "component", "atlas", "contrast", "desc"]:
     entities.remove(entity)
     entities.insert(0, entity)  # these should be last

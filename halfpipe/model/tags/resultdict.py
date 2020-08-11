@@ -25,14 +25,14 @@ ResultdictTagsSchema = Schema.from_dict(
         entity: fields.Raw(validate=validate_tags)
         for entity in [
             *FuncTagsSchema().fields.keys(),
-            "stat",
             "setting",
-            "feature",
             "model",
+            "feature",
             "seed",
             "component",
             "atlas",
             "contrast",
+            "stat",
             "desc",
         ]
     }

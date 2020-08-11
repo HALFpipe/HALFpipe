@@ -125,6 +125,7 @@ class ResultdictMetadataSchema(BaseSettingSchema):
     repetition_time = fields.Float()
     skull_stripped = fields.Bool()
     mean_t_s_n_r = fields.Raw()
+    critical_z = fields.Raw()
 
 
 MetadataSchema = Schema.from_dict(

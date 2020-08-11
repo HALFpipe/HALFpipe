@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
+from nipype.interfaces import utility as niu, fsl
 
 from ...interface import (
     InterceptOnlyModel,
@@ -25,6 +25,12 @@ from ...interface import (
 from ...utils import ravel, formatlikebids, lenforeach
 
 from ..memory import MemoryCalculator
+
+
+def _critical_z(resels=None, critical_p=0.05):
+    from scipy.stats import norm
+
+    return norm.isf(critical_p / resels)
 
 
 def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc=MemoryCalculator()):
@@ -53,7 +59,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
-            imagekeys=statmaps
+            imagekeys=statmaps,
+            metadatakeys=["critical_z"]
         ),
         name="make_resultdicts_b",
         run_without_submitting=True
@@ -235,5 +242,20 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
+
+    #
+    if model.type in ["lme", "me"]:  # is a group model
+        smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
+        workflow.connect(filtercons, "z", smoothest, "zstat_file")
+        workflow.connect(filtercons, "mask", smoothest, "mask_file")
+
+        criticalz = pe.MapNode(
+            niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),
+            iterfield=["resels"],
+            name="criticalz",
+            run_without_submitting=True
+        )
+        workflow.connect(smoothest, "resels", criticalz, "resels")
+        workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
 
     return workflow
