@@ -15,17 +15,18 @@ from nipype.interfaces.base import (
     TraitedSpec,
     BaseInterfaceInputSpec,
     traits,
+    File
 )
 
 from ..io import meansignals
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
-    in_file = traits.File(
+    in_file = File(
         desc="Image file(s) from where to extract the data", exists=True, mandatory=True
     )
-    mask_file = traits.File(desc="Mask file", exists=True, mandatory=True)
-    atlas_file = traits.File(
+    mask_file = File(desc="Mask file", exists=True, mandatory=True)
+    atlas_file = File(
         desc="Atlas image file defining the connectivity ROIs", exists=True, mandatory=True,
     )
 
@@ -34,9 +35,9 @@ class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
 
 
 class ConnectivityMeasureOutputSpec(TraitedSpec):
-    time_series = traits.File(desc="Numpy text file with the timeseries matrix")
-    covariance = traits.File(desc="Numpy text file with the connectivity matrix")
-    correlation = traits.File(desc="Numpy text file with the connectivity matrix")
+    time_series = File(desc="Numpy text file with the timeseries matrix")
+    covariance = File(desc="Numpy text file with the connectivity matrix")
+    correlation = File(desc="Numpy text file with the connectivity matrix")
 
 
 class ConnectivityMeasure(BaseInterface):

@@ -10,25 +10,25 @@ from nipype.interfaces.fsl.model import (
     FLAMEOInputSpec as NipypeFLAMEOInputSpec,
     FLAMEO as NipypeFLAMEO,
 )
-from nipype.interfaces.base import traits, isdefined
+from nipype.interfaces.base import traits, isdefined, File
 from nipype.utils.misc import human_order_sorted
 
 
 class FLAMEOInputSpec(NipypeFLAMEOInputSpec):
     var_cope_file = traits.Either(
-        traits.File(exists=True),
+        File(exists=True),
         traits.Bool(),
         argstr="--varcopefile=%s",
         desc="varcope weightings data file",
     )
     dof_var_cope_file = traits.Either(
-        traits.File(exists=True),
+        File(exists=True),
         traits.Bool(),
         argstr="--dofvarcopefile=%s",
         desc="dof data file for varcope data",
     )
     f_con_file = traits.Either(
-        traits.File(exists=True),
+        File(exists=True),
         traits.Bool(),
         argstr="--fcontrastsfile=%s",
         desc="ascii matrix specifying f-contrasts",

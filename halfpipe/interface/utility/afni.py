@@ -12,18 +12,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File, isdefined
 
 from ...utils import splitext
 from ...io import loadmatrix, loadspreadsheet
 
 
 class ToAFNIInputSpec(TraitedSpec):
-    in_file = traits.File(exists=True, mandatory=True)
+    in_file = File(exists=True, mandatory=True)
 
 
 class ToAFNIOutputSpec(TraitedSpec):
-    out_file = traits.File(exists=True)
+    out_file = File(exists=True)
     metadata = traits.Any()
 
 
@@ -45,7 +45,10 @@ class ToAFNI(SimpleInterface):
             in_df = loadspreadsheet(in_file)
 
             out_file = Path.cwd() / f"{stem}.1D"
-            np.savetxt(out_file, in_df.values.T, delimiter=" ")
+
+            array = in_df.values.T
+            np.nan_to_num(array, copy=False)
+            np.savetxt(out_file, array, delimiter=" ")
 
             self._results["out_file"] = out_file
             self._results["metadata"] = list(in_df.columns)
@@ -54,12 +57,12 @@ class ToAFNI(SimpleInterface):
 
 
 class FromAFNIInputSpec(TraitedSpec):
-    in_file = traits.File(exists=True)
+    in_file = File(exists=True)
     metadata = traits.Any()
 
 
 class FromAFNIOutputSpec(TraitedSpec):
-    out_file = traits.File(exists=True)
+    out_file = File(exists=True)
 
 
 class FromAFNI(SimpleInterface):
@@ -78,7 +81,11 @@ class FromAFNI(SimpleInterface):
         else:
             in_array = loadmatrix(in_file).T
 
-            out_df = pd.DataFrame(data=in_array, columns=self.inputs.variable_names)
+            column_names = None
+            if isdefined(self.inputs.metadata):
+                column_names = list(self.inputs.metadata)
+
+            out_df = pd.DataFrame(data=in_array, columns=column_names)
 
             out_file = Path.cwd() / f"{stem}.tsv"
             out_df.to_csv(

@@ -151,10 +151,10 @@ def init_taskbased_wf(
     stats = pe.Node(fsl.ImageStats(op_string="-R"), name="stats")
     workflow.connect(inputnode, "bold", stats, "in_file")
     cutoff = pe.Node(
-        niu.Function(input_names=["stat"], output_names=["min_val"], function=firstfloat),
+        niu.Function(input_names=["obj"], output_names=["min_val"], function=firstfloat),
         name="cutoff",
     )
-    workflow.connect(stats, "out_stat", cutoff, "stat")
+    workflow.connect(stats, "out_stat", cutoff, "obj")
 
     # actually estimate the first level model
     modelestimate = pe.Node(

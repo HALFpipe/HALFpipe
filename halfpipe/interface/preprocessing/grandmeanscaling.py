@@ -5,19 +5,19 @@
 import numpy as np
 import logging
 
-from nipype.interfaces.base import traits, TraitedSpec, BaseInterfaceInputSpec, isdefined
+from nipype.interfaces.base import traits, TraitedSpec, BaseInterfaceInputSpec, isdefined, File
 
 from ..transformer import Transformer
 
 
 class GrandMeanScalingInputSpec(BaseInterfaceInputSpec):
-    files = traits.List(traits.File(exists=True), mandatory=True)
-    mask = traits.File(exists=True, desc="3D brain mask")
+    files = traits.List(File(exists=True), mandatory=True)
+    mask = File(exists=True, desc="3D brain mask")
     mean = traits.Float(mandatory=True, desc="grand mean scale value")
 
 
 class GrandMeanScalingOutputSpec(TraitedSpec):
-    files = traits.List(traits.File(exists=True))
+    files = traits.List(File(exists=True))
 
 
 class GrandMeanScaling(Transformer):
@@ -50,6 +50,7 @@ class GrandMeanScaling(Transformer):
 
     def _run_interface(self, runtime):
         in_files = self.inputs.files
+        self.scaling_factor = None
 
         if not isdefined(in_files):
             return runtime
@@ -60,7 +61,6 @@ class GrandMeanScaling(Transformer):
             self.in_img = None
             array = self._load(in_file)
 
-            self.scaling_factor = None
             array2 = self._transform(array)
 
             out_file = self._dump(array2)

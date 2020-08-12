@@ -114,6 +114,8 @@ class TemporalFilter(Transformer):
         lowpass_sigma = self.inputs.lowpass_sigma
         highpass_sigma = self.inputs.highpass_sigma
 
+        np.nan_to_num(array, copy=False)  # nans create problems further down the line
+
         array = array.T  # need to transpose
 
         array2 = bandpass_temporal_filter(array, highpass_sigma, lowpass_sigma)

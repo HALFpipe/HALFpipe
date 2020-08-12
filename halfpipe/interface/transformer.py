@@ -14,7 +14,8 @@ from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
     isdefined,
-    traits
+    traits,
+    File,
 )
 
 from ..io import loadspreadsheet
@@ -22,12 +23,12 @@ from ..utils import splitext, nvol
 
 
 class TransformerInputSpec(TraitedSpec):
-    in_file = traits.File(desc="File to filter", exists=True, mandatory=True)
-    mask = traits.File(desc="mask to use for volumes", exists=True)
+    in_file = File(desc="File to filter", exists=True, mandatory=True)
+    mask = File(desc="mask to use for volumes", exists=True)
 
 
 class TransformerOutputSpec(TraitedSpec):
-    out_file = traits.File()
+    out_file = File()
 
 
 class Transformer(SimpleInterface):

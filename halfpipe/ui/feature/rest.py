@@ -162,7 +162,7 @@ def on_falff_setting(ctx):
 
 
 ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
-ReHoSettingInitStep = get_setting_init_steps(next_step_type, settingdict=settingdict)
+ReHoSettingInitStep = get_setting_init_steps(ReHoSettingValsStep, settingdict=settingdict)
 
 FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
 FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)

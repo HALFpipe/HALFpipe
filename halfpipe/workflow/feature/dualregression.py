@@ -34,30 +34,30 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
     import csv
 
     map_timeseries_df = loadspreadsheet(map_timeseries_file)
-    confounds_df = loadspreadsheet(confounds_file)
-    m, n = map_timeseries_df.shape
-    k, n = confounds_df.shape
+    _, m = map_timeseries_df.shape
+
+    k = 0
+    if confounds_file is not None:
+        confounds_df = loadspreadsheet(confounds_file)
+        _, k = confounds_df.shape
 
     contrast_mat = np.zeros((m, m + k))
-    contrast_mat[:m, :m] = 1
+    contrast_mat[:m, :m] = np.eye(m)
 
     leading_zeros = int(np.ceil(np.log10(m)))
     map_component_names = [f"{i:0{leading_zeros}d}" for i in range(1, m + 1)]
 
-    contrast_columns = [*map_component_names, *confounds_df.columns]
+    if confounds_file is not None:
+        contrast_columns = [*map_component_names, *confounds_df.columns]
+    else:
+        contrast_columns = [*map_component_names]
     contrast_df = pd.DataFrame(contrast_mat, index=map_component_names, columns=contrast_columns)
 
+    kwargs = dict(sep="\t", na_rep="n/a", quoting=csv.QUOTE_NONNUMERIC,)
     out_with_header = Path.cwd() / "merge_with_header.tsv"
-    contrast_df.to_csv(
-        out_with_header,
-        sep="\t",
-        index=True,
-        na_rep="n/a",
-        header=True,
-        quoting=csv.QUOTE_NONNUMERIC,
-    )
+    contrast_df.to_csv(out_with_header, index=True, header=True, **kwargs)
     out_no_header = Path.cwd() / "merge_no_header.tsv"
-    contrast_df.to_csv(out_no_header, sep="\t", index=False, na_rep="n/a", header=False)
+    contrast_df.to_csv(out_no_header, index=False, header=False, **kwargs)
     return str(out_with_header), str(out_no_header), map_component_names
 
 
@@ -188,6 +188,7 @@ def init_dualregression_wf(
     workflow.connect(inputnode, "confounds_selected", contrasts, "confounds_file")
 
     workflow.connect(contrasts, "out_with_header", make_resultdicts_a, "contrast_matrix")
+    workflow.connect(contrasts, "map_component_names", make_resultdicts_b, "component")
 
     design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design")
     workflow.connect(spatialglm, "out_file", design, "in1")

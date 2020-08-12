@@ -27,7 +27,7 @@ class CalcMeanInputSpec(TraitedSpec):
 
 
 class CalcMeanOutputSpec(TraitedSpec):
-    mean = traits.Either(traits.Float(), traits.List(traits.Float))
+    mean = traits.Either(traits.Float(), traits.List(traits.Float()))
     vals = traits.Dict(traits.Str(), traits.Any())
 
 
@@ -46,9 +46,9 @@ class CalcMean(SimpleInterface):
                 in_file, self.inputs.dseg, mask_file=mask_file, min_n_voxels=0
             ).ravel()
         elif isdefined(self.inputs.parcellation):
-            self._results["mean"] = meansignals(
+            self._results["mean"] = list(meansignals(
                 in_file, self.inputs.parcellation, mask_file=mask_file, min_n_voxels=0
-            ).ravel()
+            ).ravel())
         elif mask_file is not None:
             self._results["mean"] = firstfloat(meansignals(
                 in_file, mask_file, min_n_voxels=0

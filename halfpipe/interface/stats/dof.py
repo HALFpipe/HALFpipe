@@ -7,23 +7,23 @@ from os import path as op
 import numpy as np
 import nibabel as nib
 
-from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, isdefined
+from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, isdefined, File
 from nilearn.image import new_img_like
 
 from ...utils import firststr, nvol, ncol
 
 
 class MakeDofVolumeInputSpec(TraitedSpec):
-    dof_file = traits.File(desc="", exists=True)
-    copes = traits.List(traits.File(exists=True))
+    dof_file = File(desc="", exists=True)
+    copes = traits.List(File(exists=True))
 
-    bold_file = traits.File(exists=True, desc="input file")
+    bold_file = File(exists=True, desc="input file")
     num_regressors = traits.Range(low=1, desc="number of regressors")
-    design = traits.File(desc="", exists=True)
+    design = File(desc="", exists=True)
 
 
 class MakeDofVolumeOutputSpec(TraitedSpec):
-    out_file = traits.File(exists=True)
+    out_file = File(exists=True)
 
 
 class MakeDofVolume(BaseInterface):

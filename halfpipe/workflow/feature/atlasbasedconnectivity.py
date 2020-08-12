@@ -56,13 +56,15 @@ def init_atlasbasedconnectivity_wf(
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            tagkeys=["atlas"],
+            tagkeys=["feature", "atlas"],
             imagekeys=["timeseries", "covariance_matrix", "correlation_matrix"],
             metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r"]
         ),
         name="make_resultdicts",
         run_without_submitting=True
     )
+    if feature is not None:
+        make_resultdicts.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")

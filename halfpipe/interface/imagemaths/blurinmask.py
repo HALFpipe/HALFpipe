@@ -17,8 +17,8 @@ class BlurInMask(afni.BlurInMask):
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         self.blur = False
 
-        if not np.isclose(self.inputs.fwhm, 0, atol=1e-2) or self.inputs.fwhm < 0:
-            self.resample = True
+        if not np.isclose(self.inputs.fwhm, 0, atol=1e-2) or self.inputs.fwhm > 0:
+            self.blur = True
             runtime = super(BlurInMask, self)._run_interface(
                 runtime, correct_return_codes
             )

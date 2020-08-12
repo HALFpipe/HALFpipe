@@ -56,8 +56,16 @@ def loadspreadsheet(fname, ftype=None):
                 df = pd.read_excel(fname)
             elif ftype == ".ods":
                 df = pd.read_excel(fname, engine="odf")
+            elif ftype == "":
+                if not has_header(fname):
+                    df = pd.read_table(fname, header=None, sep=r"\s+")
+                else:
+                    df = pd.read_table(fname, sep=r"\s+")
             else:
-                df = pd.read_table(fname, sep=None, engine="python")
+                if not has_header(fname):
+                    df = pd.read_table(fname, header=None, sep=None, engine="python")
+                else:
+                    df = pd.read_table(fname, sep=None, engine="python")
             if df is not None:
                 return df
         except Exception:

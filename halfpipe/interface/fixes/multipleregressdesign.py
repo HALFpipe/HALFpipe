@@ -5,19 +5,19 @@
 import os
 from pathlib import Path
 
-from nipype.interfaces.base import traits, TraitedSpec
+from nipype.interfaces.base import traits, TraitedSpec, File
 from nipype.interfaces import fsl
 
 
 class MultipleRegressDesignOutputSpec(TraitedSpec):
-    design_mat = traits.Either(traits.File(exists=True, desc="design matrix file"), traits.Bool())
+    design_mat = traits.Either(File(exists=True, desc="design matrix file"), traits.Bool())
     design_con = traits.Either(
-        traits.File(exists=True, desc="design t-contrast file"), traits.Bool()
+        File(exists=True, desc="design t-contrast file"), traits.Bool()
     )
     design_fts = traits.Either(
-        traits.File(exists=True, desc="design f-contrast file"), traits.Bool()
+        File(exists=True, desc="design f-contrast file"), traits.Bool()
     )
-    design_grp = traits.Either(traits.File(exists=True, desc="design group file"), traits.Bool())
+    design_grp = traits.Either(File(exists=True, desc="design group file"), traits.Bool())
     regs = traits.List(traits.Str())
 
 

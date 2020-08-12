@@ -27,6 +27,10 @@ def _out_file_name(in_file):
     return f"{stem}_tproject{ext}"
 
 
+def _bandpass_arg(low, high):
+    return (float(low), float(high))
+
+
 def init_bandpass_filter_wf(
     bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator()
 ):
@@ -107,9 +111,15 @@ def init_bandpass_filter_wf(
         )
         workflow.connect(toafni, "out_file", makeoutfname, "in_file")
 
-        bandpassarg = pe.Node(niu.Merge(2), name="bandpassarg", run_without_submitting=True)
-        workflow.connect(inputnode, "low", bandpassarg, "in1")
-        workflow.connect(inputnode, "high", bandpassarg, "in2")
+        bandpassarg = pe.Node(
+            niu.Function(
+                input_names=["low", "high"], output_names=["out"], function=_bandpass_arg,
+            ),
+            name="bandpassarg",
+            run_without_submitting=True,
+        )  # cannot use merge here as we need a tuple
+        workflow.connect(inputnode, "low", bandpassarg, "low")
+        workflow.connect(inputnode, "high", bandpassarg, "high")
 
         tproject = pe.MapNode(
             afni.TProject(polort=1), iterfield=["in_file", "out_file"], name="tproject"

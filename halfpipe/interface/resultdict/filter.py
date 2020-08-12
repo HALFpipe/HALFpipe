@@ -13,6 +13,7 @@ from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     SimpleInterface,
     isdefined,
+    File
 )
 
 
@@ -43,11 +44,11 @@ class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
     filterdicts = traits.List(traits.Any(), desc="filter list", mandatory=True)
     variableobjs = traits.List(traits.Any(), desc="variable list")
-    spreadsheet = traits.File(desc="spreadsheet")
+    spreadsheet = File(desc="spreadsheet")
     requireoneofimages = traits.List(
         traits.Str(), desc="only keep resultdicts that have at least one of these keys"
     )
-    excludefiles = traits.List(traits.File())
+    excludefiles = traits.List(File())
 
 
 class FilterResultdicts(SimpleInterface):

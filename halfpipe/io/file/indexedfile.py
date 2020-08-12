@@ -62,7 +62,7 @@ class IndexedFile:
             fp.write(padded)
 
     @staticmethod
-    def init_indexed_js_object_file(filename, functionname, keynames, maxlen, defaultvalue=""):
+    def init_indexed_js_object_file(filename, functionname, keynames, maxlen, values=dict()):
         append_comma = True
         indexdict = dict()
         lastkey = None
@@ -70,14 +70,16 @@ class IndexedFile:
         with open(filename, "wb") as fp:
             fp.write(f"{functionname}('{{ ".encode())
             fp.write("\\\n".encode())
-            placeholder = _quote(defaultvalue, maxlen, append_comma).encode()
             for i, keyname in enumerate(keynames):
+                value = values.get(keyname, "")
                 if i == len(keynames) - 1:  # last iteration
-                    placeholder = _quote(defaultvalue, maxlen, False).encode()
+                    valuebytes = _quote(value, maxlen, False).encode()
                     lastkey = keyname
+                else:
+                    valuebytes = _quote(value, maxlen, append_comma).encode()
                 fp.write(f'  "{keyname}": '.encode())
                 indexdict[keyname] = fp.tell()
-                fp.write(placeholder)
+                fp.write(valuebytes)
                 fp.write(" \\\n".encode())
             fp.write("}');\n".encode())
         index_file = f"{filename}.index.pickle.xz"

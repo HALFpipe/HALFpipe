@@ -36,8 +36,10 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(imagekeys=["reho"]), name="make_resultdicts", run_without_submitting=True
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho"]), name="make_resultdicts", run_without_submitting=True
     )
+    if feature is not None:
+        make_resultdicts.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")

@@ -15,6 +15,7 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
     isdefined,
+    File
 )
 
 from ...utils import niftidim, first
@@ -24,13 +25,13 @@ dimensions = ["x", "y", "z", "t"]
 
 class MergeInputSpec(TraitedSpec):
     in_files = traits.List(
-        traits.File(desc="Image file(s) to resample", exists=True), mandatory=True
+        File(desc="Image file(s) to resample", exists=True), mandatory=True
     )
     dimension = traits.Enum(*dimensions, desc="dimension along which to merge", mandatory=True)
 
 
 class MergeOutputSpec(TraitedSpec):
-    merged_file = traits.Either(traits.File(), traits.Bool())
+    merged_file = traits.Either(File(), traits.Bool())
 
 
 class Merge(SimpleInterface):
@@ -83,7 +84,7 @@ class Merge(SimpleInterface):
 
 class MergeMaskInputSpec(TraitedSpec):
     in_files = traits.List(
-        traits.File(desc="Image file(s) to resample", exists=True), mandatory=True
+        File(desc="Image file(s) to resample", exists=True), mandatory=True
     )
 
 

@@ -115,14 +115,17 @@ class FeatureFactory(Factory):
             database.fillmetadata("space", kwargs["atlas_files"])
             kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
             vwf = init_atlasbasedconnectivity_wf(**kwargs)
-        elif feature.type == "reho":
-            confounds_action = "regression"
-            vwf = init_reho_wf(**kwargs)
-        elif feature.type == "falff":
-            confounds_action = "regression"
-            vwf = init_falff_wf(**kwargs)
         else:
-            raise ValueError(f"Unknown feature type \"{feature.type}\"")
+            if hasattr(feature, "smoothing"):
+                kwargs["fwhm"] = feature.smoothing.get("fwhm")
+            if feature.type == "reho":
+                confounds_action = "regression"
+                vwf = init_reho_wf(**kwargs)
+            elif feature.type == "falff":
+                confounds_action = "regression"
+                vwf = init_falff_wf(**kwargs)
+            else:
+                raise ValueError(f"Unknown feature type \"{feature.type}\"")
 
         wf.add_nodes([vwf])
         hierarchy.append(vwf)

@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from os import path as op
+from pathlib import Path
 
 from nipype.pipeline.engine.utils import load_resultfile
 from nipype.interfaces.base import (
@@ -21,8 +21,7 @@ class LoadResult(SimpleInterface):
 
     def __init__(self, node, **inputs):
         super(LoadResult, self).__init__(**inputs)
-        cwd = node.output_dir()
-        self._resultfilepath = op.join(cwd, "result_%s.pklz" % node.name)
+        self._resultfilepath = Path(node.output_dir()) / ("result_%s.pklz" % node.name)
         self._attrs = node.outputs.copyable_trait_names()
 
     def _add_output_traits(self, base):
@@ -31,7 +30,8 @@ class LoadResult(SimpleInterface):
     def _run_interface(self, runtime):
         outputs = self.output_spec().get()
 
-        assert op.isfile(self._resultfilepath)
+        if not self._resultfilepath.is_file():
+            return runtime
 
         result = load_resultfile(self._resultfilepath)
         try:

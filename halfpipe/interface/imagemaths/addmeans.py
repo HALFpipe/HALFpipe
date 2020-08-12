@@ -4,13 +4,15 @@
 """
 """
 
-from nipype.interfaces.base import traits
+import numpy as np
+
+from nipype.interfaces.base import File
 
 from ..transformer import Transformer, TransformerInputSpec
 
 
 class AddMeansInputSpec(TransformerInputSpec):
-    mean_file = traits.File(exists=True, mandatory=True)
+    mean_file = File(exists=True, mandatory=True)
 
 
 class AddMeans(Transformer):
@@ -23,7 +25,7 @@ class AddMeans(Transformer):
         mean_file = self.inputs.mean_file
 
         mean_data = self._load(mean_file)
-        mean_r = mean_data.mean(axis=0)
+        mean_r = np.nanmean(mean_data, axis=0)
 
         array = self._load(in_file)
         array2 = array + mean_r

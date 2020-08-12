@@ -6,7 +6,7 @@ import sys
 from itertools import product
 import logging
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
 import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
@@ -183,7 +183,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
 
 
 class LinearModelInputSpec(TraitedSpec):
-    spreadsheet = traits.File(exist=True, mandatory=True)
+    spreadsheet = File(exist=True, mandatory=True)
     contrastobjs = traits.List(desc="contrast list", mandatory=True)
     variableobjs = traits.List(desc="variable list", mandatory=True)
     subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)

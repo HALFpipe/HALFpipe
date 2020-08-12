@@ -41,15 +41,10 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     reportjsfilename = op.join(workdir, "reports", "reportexec.js")
-    allnodenames = set(node.fullname for node in execgraph.nodes())
-    try:
-        indexedfileobj = IndexedFile(reportjsfilename)
-        assert allnodenames.issubset(indexedfileobj.file_index.indexdict.keys())
-    except Exception:
-        logger.info(f"Initializing reportexec.js")
-        IndexedFile.init_indexed_js_object_file(
-            reportjsfilename, "report", allnodenames, 10
-        )  # TODO don't overwrite current values
+    allnodenames = sorted([node.fullname for node in execgraph.nodes()])
+    IndexedFile.init_indexed_js_object_file(
+        reportjsfilename, "report", allnodenames, 10
+    )  # TODO read current values
 
     subjectworkflows = dict()
     for node in execgraph.nodes():
@@ -62,57 +57,50 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
                 subjectworkflows[subjectname] = set()
             subjectworkflows[subjectname].add(node)
 
-    if (
-        subject_chunks
-        or (n_chunks is not None and n_chunks > 1)
-        or len(subjectworkflows) > max_chunk_size
-    ):
-        if n_chunks is None:
-            n_chunks = -(-len(subjectworkflows) // max_chunk_size)
-            logger.info(f"Will create chunks due to max_chunk_size")
+    if n_chunks is None:
+        n_chunks = -(-len(subjectworkflows) // max_chunk_size)
 
-        if subject_chunks:
-            n_chunks = len(subjectworkflows)
+    if subject_chunks:
+        n_chunks = len(subjectworkflows)
 
-        typestr = f"execgraph.{n_chunks:02d}_chunks"
-        execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
-        if execgraphs is not None:
-            return execgraphs
-
-        logger.info(f"Initializing execgraph split with {n_chunks} chunks")
-
-        execgraphs = []
-        chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)
-        partitioniter = iter(subjectworkflows.values())
-        for chunk in chunks:
-            nodes = set.union(
-                *islice(partitioniter, len(chunk))
-            )  # take len(chunk) subjects and create union
-            execgraphs.append(execgraph.subgraph(nodes).copy())
-
-        subjectlevelnodes = set.union(*subjectworkflows.values())
-        grouplevelnodes = set(execgraph.nodes()) - subjectlevelnodes
-        newnodes = dict()
-        for (v, u, c) in nx.edge_boundary(execgraph.reverse(), grouplevelnodes, data=True):
-            newu = newnodes.get(u.fullname)
-            if newu is None:
-                uhex = hexdigest(u.fullname)[:8]
-                newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}")
-                newu.config = u.config
-                newnodes[u.fullname] = newu
-            execgraph.add_edge(newu, v, attr_dict=c)
-
-        execgraph.remove_nodes_from(subjectlevelnodes)
-
-        execgraphs.append(execgraph)
-        assert len(execgraphs) == n_chunks + 1
-
-        for execgraph in execgraphs:
-            execgraph.uuid = uuid
-
-        logger.info(f"Finished execgraph split")
-        cacheobj(workdir, typestr, execgraphs, uuid=uuid)
-
+    digits = int(np.ceil(np.log10(len(subjectworkflows))))
+    typestr = f"execgraph.{n_chunks:0{digits}d}_chunks"
+    execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
+    if execgraphs is not None:
         return execgraphs
-    else:
-        return [execgraph]
+
+    logger.info(f"Initializing execgraph split with {n_chunks} chunks")
+
+    execgraphs = []
+    chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)
+    partitioniter = iter(subjectworkflows.values())
+    for chunk in chunks:
+        nodes = set.union(
+            *islice(partitioniter, len(chunk))
+        )  # take len(chunk) subjects and create union
+        execgraphs.append(execgraph.subgraph(nodes).copy())
+
+    subjectlevelnodes = set.union(*subjectworkflows.values())
+    grouplevelnodes = set(execgraph.nodes()) - subjectlevelnodes
+    newnodes = dict()
+    for (v, u, c) in nx.edge_boundary(execgraph.reverse(), grouplevelnodes, data=True):
+        newu = newnodes.get(u.fullname)
+        if newu is None:
+            uhex = hexdigest(u.fullname)[:8]
+            newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}")
+            newu.config = u.config
+            newnodes[u.fullname] = newu
+        execgraph.add_edge(newu, v, attr_dict=c)
+
+    execgraph.remove_nodes_from(subjectlevelnodes)
+
+    execgraphs.append(execgraph)
+    assert len(execgraphs) == n_chunks + 1
+
+    for execgraph in execgraphs:
+        execgraph.uuid = uuid
+
+    logger.info(f"Finished execgraph split")
+    cacheobj(workdir, typestr, execgraphs, uuid=uuid)
+
+    return execgraphs

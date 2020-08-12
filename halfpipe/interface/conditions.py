@@ -2,16 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch, File
 
 from ..io import parse_condition_file
 
 
 class ParseConditionFileInputSpec(TraitedSpec):
     in_any = traits.Either(
-        traits.File(),
-        traits.List(traits.File()),
-        traits.List(traits.Tuple(traits.Str(), traits.File())),
+        File(),
+        traits.List(File()),
+        traits.List(traits.Tuple(traits.Str(), File())),
     )
     condition_names = traits.List(traits.Str(), desc="filter conditions")
 

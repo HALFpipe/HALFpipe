@@ -20,20 +20,25 @@ def validate_tags(v):
     raise ValidationError("Need to be either a string or a (nested) list of strings")
 
 
+resultdict_entities = [
+    # levels of analysis
+    "model",
+    "feature",
+    "setting",
+    # types of features
+    "seed",
+    "map",
+    "atlas",
+    # file descriptors
+    "component",
+    "contrast",
+    "stat",
+    "desc",
+]
+
 ResultdictTagsSchema = Schema.from_dict(
     {
         entity: fields.Raw(validate=validate_tags)
-        for entity in [
-            *FuncTagsSchema().fields.keys(),
-            "setting",
-            "model",
-            "feature",
-            "seed",
-            "component",
-            "atlas",
-            "contrast",
-            "stat",
-            "desc",
-        ]
+        for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
     }
 )
