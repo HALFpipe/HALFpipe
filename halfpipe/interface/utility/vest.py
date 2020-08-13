@@ -11,8 +11,8 @@ from nipype.interfaces.base import (
     isdefined,
 )
 import pandas as pd
+import numpy as np
 
-from ...io import loadmatrix
 from ...utils import splitext
 
 
@@ -36,18 +36,10 @@ class Unvest(SimpleInterface):
         in_file = self.inputs.in_vest
 
         if isdefined(in_file):
-            stem, _ = splitext(in_file)
-
-            matrix = loadmatrix(in_file, comments="/")
-
-            if matrix.ndim == 0:
-                matrix = matrix[None]
-
-            if matrix.ndim == 1:
-                matrix = matrix[:, None]
-
+            matrix = np.loadtxt(in_file, comments="/", ndmin=2)
             dataframe = pd.DataFrame(matrix)
 
+            stem, _ = splitext(in_file)
             self._results["out_no_header"] = Path.cwd() / f"{stem}_no_header.tsv"
             dataframe.to_csv(
                 self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False

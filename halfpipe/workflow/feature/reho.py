@@ -4,11 +4,10 @@
 
 import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
-from nipype.interfaces import afni
 
 from ..memory import MemoryCalculator
 from ...utils import formatlikebids
-from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, BlurInMask
+from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, BlurInMask, ReHo
 
 
 def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator()):
@@ -33,16 +32,21 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
+    elif feature is not None and hasattr(feature, "smoothing"):
+        inputnode.inputs.fwhm = feature.smoothing.get("fwhm")
+    else:
+        inputnode.inputs.fwhm = 0  # skip
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho"]), name="make_resultdicts", run_without_submitting=True
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]), name="make_resultdicts", run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
+    workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
@@ -54,7 +58,7 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     #
     reho = pe.Node(
-        interface=afni.ReHo(neighborhood="vertices", out_file="reho.nii"),
+        interface=ReHo(neighborhood="vertices", out_file="reho.nii"),
         name="reho",
         mem_gb=memcalc.series_std_gb * 2,
     )

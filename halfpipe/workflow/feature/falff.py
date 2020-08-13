@@ -48,16 +48,19 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
+    elif feature is not None and hasattr(feature, "smoothing"):
+        inputnode.inputs.fwhm = feature.smoothing.get("fwhm")
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff"]), name="make_resultdicts", run_without_submitting=True
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]), name="make_resultdicts", run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
+    workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 

@@ -47,7 +47,7 @@ class IndexedFile:
 
     def set(self, key, value):
         if key not in self.file_index.indexdict:
-            logging.getLogger("halfpipe").warning(
+            logging.getLogger("halfpipe").debug(
                 f'Key "{key}" not found for IndexedFile "{self.filename}"'
             )
             return

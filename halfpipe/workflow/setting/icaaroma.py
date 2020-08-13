@@ -124,7 +124,7 @@ def init_ica_aroma_components_wf(
     #
     bold_std_trans_wf = init_bold_std_trans_wf(
         freesurfer=False,
-        mem_gb=memcalc.series_std_gb,
+        mem_gb=memcalc.series_std_gb * 0.5,  # correction factor
         omp_nthreads=config.nipype.omp_nthreads,
         spaces=spaces,
         name="bold_std_trans_wf",

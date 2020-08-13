@@ -105,8 +105,12 @@ class AggregateResultdicts(IOBase):
             resultdict = dict(tags=tagdict, vals=dict())
             resultdict.update(listdict)  # create combined resultdict
             for f in ["tags", "metadata", "vals"]:
-                for key in resultdict[f].keys():
-                    resultdict[f][key] = _aggregate_if_possible(resultdict[f][key])
+                for key, value in resultdict[f].items():
+                    if key in ["confounds_removal"]:  # convert fields that should stay a list to tuple
+                        value = [tuple(v) for v in value]
+                    resultdict[f][key] = _aggregate_if_possible(value)
+                    if key in ["confounds_removal"]:
+                        value = list(value)  # convert back
             resultdicts.append(ResultdictSchema().load(resultdict))
 
         outputs["resultdicts"] = resultdicts

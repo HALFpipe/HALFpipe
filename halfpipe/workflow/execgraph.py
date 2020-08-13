@@ -4,7 +4,7 @@
 
 import logging
 from itertools import islice
-from os import path as op
+from pathlib import Path
 
 import numpy as np
 import networkx as nx
@@ -13,7 +13,7 @@ import nipype.pipeline.engine as pe
 
 from ..interface import LoadResult
 from ..utils import hexdigest
-from ..io import IndexedFile, cacheobj, uncacheobj
+from ..io import IndexedFile, DictListFile, cacheobj, uncacheobj
 
 max_chunk_size = 50  # subjects
 
@@ -40,11 +40,17 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         logger.info(f"Finished execgraph: {uuidstr}")
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
-    reportjsfilename = op.join(workdir, "reports", "reportexec.js")
+    # init reports
+    reports_directory = Path(workdir) / "reports"
+    reportjsfilename = reports_directory / "reportexec.js"
     allnodenames = sorted([node.fullname for node in execgraph.nodes()])
     IndexedFile.init_indexed_js_object_file(
         reportjsfilename, "report", allnodenames, 10
     )  # TODO read current values
+    for ftype in ["imgs", "vals", "preproc"]:
+        preprocpath = reports_directory / f"report{ftype}.js"
+        with DictListFile.cached(preprocpath) as dlf:
+            dlf.is_dirty = True
 
     subjectworkflows = dict()
     for node in execgraph.nodes():

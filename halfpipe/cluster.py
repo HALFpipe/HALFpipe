@@ -31,7 +31,7 @@ singularity run \
 --workdir {cwd} \
 --only-run \
 --execgraph-file {execgraph_file} \
---chunk-index ${{SLURM_ARRAY_TASK_ID}} \
+--only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \
 --nipype-n-procs 2 \
 --verbose
 

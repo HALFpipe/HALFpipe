@@ -100,6 +100,8 @@ class ResolvedSpec:
                 "metadata": obj.get_metadata()
             }
 
+            # TODO IntendedFor
+
             try:
                 resolved_fileobj = file_schema.load(filedict, unknown=EXCLUDE)
 

@@ -164,7 +164,8 @@ class PyWarningsFilter(logging.Filter):
             "WARNING: cmp not installed",
             "WARNING: dist() and linux_distribution() functions are deprecated in Python 3.5",
             "WARNING: The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
-            "WARNING: This has not been fully tested. Please report any failures."
+            "WARNING: This has not been fully tested. Please report any failures.",
+            "WARNING: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working"
         )
     )
 
