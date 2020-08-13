@@ -108,6 +108,8 @@ class LookupFactory(Factory):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.database.fillmetadata("repetition_time", [sourcefile])
             inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
+        if hasattr(inputnode.inputs, "tags"):
+            inputnode.inputs.tags = self.database.tags(sourcefile)
         self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, settingname=settingname)
 
     def get(self, sourcefile, settingname):
@@ -188,7 +190,7 @@ class ICAAROMARegressionFactory(LookupFactory):
         ica_aroma, suffix = tpl
         if ica_aroma is not True:
             return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_ica_aroma_regression_wf", suffix=suffix)
-        return init_ica_aroma_regression_wf(memcalc=self.memcalc, suffix=suffix)
+        return init_ica_aroma_regression_wf(workdir=self.workdir, memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
         ica_aroma = setting.get("ica_aroma") is True

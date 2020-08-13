@@ -4,8 +4,9 @@
 
 from pathlib import Path
 from os.path import relpath
-from inflection import camelize
 import json
+
+from inflection import camelize
 
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
@@ -100,7 +101,6 @@ class BidsDatabase:
 
             if bidspath.is_file():
                 continue  # ignore real files
-
             elif bidspath.is_symlink():
                 if bidspath.resolve() == Path(filepath).resolve():
                     continue  # nothing to be done
@@ -146,8 +146,13 @@ class BidsDatabase:
                 basename, _ = splitext(bidspath)
                 sidecarpath = Path(bidsdir) / Path(bidspath).parent / f"{basename}.json"
                 bidspaths.add(sidecarpath)
-                with open(sidecarpath, "w") as f:  # always overwrite to be safe
-                    json.dump(bidsmetadata, f, indent=4)
+                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=True)
+                if sidecarpath.is_file():
+                    with open(sidecarpath, "r") as f:
+                        if jsonstr == f.read():
+                            continue
+                with open(sidecarpath, "w") as f:
+                    f.write(jsonstr)
 
         # remove unnecessary files
         files_to_keep = set()

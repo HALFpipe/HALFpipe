@@ -94,7 +94,7 @@ def init_ica_aroma_components_wf(
 
     #
     resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
+        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink", run_without_submitting=True
     )
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
@@ -124,7 +124,7 @@ def init_ica_aroma_components_wf(
     #
     bold_std_trans_wf = init_bold_std_trans_wf(
         freesurfer=False,
-        mem_gb=memcalc.series_std_gb * 0.5,  # correction factor
+        mem_gb=memcalc.series_std_gb,
         omp_nthreads=config.nipype.omp_nthreads,
         spaces=spaces,
         name="bold_std_trans_wf",
@@ -184,7 +184,7 @@ def init_ica_aroma_components_wf(
 
 
 def init_ica_aroma_regression_wf(
-    name="ica_aroma_regression_wf", memcalc=MemoryCalculator(), suffix=None
+    workdir=None, name="ica_aroma_regression_wf", memcalc=MemoryCalculator(), suffix=None
 ):
     """
 
@@ -196,13 +196,27 @@ def init_ica_aroma_regression_wf(
     #
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=["files", "vals", "mask", "melodic_mix", "aroma_metadata", "aroma_noise_ics"]
+            fields=["files", "mask", "tags", "vals", "melodic_mix", "aroma_metadata", "aroma_noise_ics"]
         ),
         name="inputnode",
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode",)
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
+
+    #
+    make_resultdicts = pe.Node(
+        MakeResultdicts(),
+        name="make_resultdicts",
+        run_without_submitting=True
+    )
+    workflow.connect(inputnode, "tags", make_resultdicts, "tags")
+
+    #
+    resultdict_datasink = pe.Node(
+        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink", run_without_submitting=True
+    )
+    workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
     aromanoiseics = pe.Node(
@@ -262,5 +276,6 @@ def init_ica_aroma_regression_wf(
     workflow.connect(inputnode, "vals", aromavals, "vals")
     workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")
     workflow.connect(aromavals, "vals", outputnode, "vals")
+    workflow.connect(aromavals, "vals", make_resultdicts, "vals")
 
     return workflow

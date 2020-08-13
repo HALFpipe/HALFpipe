@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 
 from nipype.pipeline import engine as pe
+from fmriprep import config
 
 from .factory import FactoryContext
 from .mriqc import MriqcFactory
@@ -99,6 +100,9 @@ def init_workflow(workdir):
     config_factory = deepcopyfactory(workflow.config)
     for node in workflow._get_all_nodes():
         node.config = config_factory()
+        node.overwrite = None
+        if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
+            node._mem_gb = memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
 
     logger.info(f"Finished workflow: {uuidstr}")
 

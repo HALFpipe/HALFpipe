@@ -136,6 +136,8 @@ def init_taskbased_wf(
             contrasts.append(
                 [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
             )
+    contrast_names = list(map(firststr, contrasts))
+    make_resultdicts_b.inputs.contrast = contrast_names
 
     # generate design from first level specification
     level1design = pe.Node(
@@ -201,7 +203,7 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv", run_without_submitting=True)
-    contrast_tsv.inputs.row_index = list(map(firststr, contrasts))
+    contrast_tsv.inputs.row_index = contrast_names
     workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
