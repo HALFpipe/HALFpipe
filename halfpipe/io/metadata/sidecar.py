@@ -42,8 +42,10 @@ class SidecarMetadataLoader:
         try:
             in_data = cls.loadjson(fname)
 
-            # data transformations
+            if in_data is None:
+                return
 
+            # data transformations
             try:
                 # get effective echo spacing even if not explicitly specified
                 in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=fname)
@@ -57,9 +59,7 @@ class SidecarMetadataLoader:
                     )
 
             # parse
-
             in_data = {underscore(k): v for k, v in in_data.items()}
-
             sidecar = MetadataSchema().load(in_data, unknown=EXCLUDE)
         except marshmallow.exceptions.ValidationError:
             return
