@@ -149,7 +149,7 @@ def _main():
     if not should_run["spec-ui"]:
         logger.info(f"Did not run step: spec")
 
-    execgraph = None
+    execgraphs = None
 
     if not should_run["workflow"]:
         logger.info(f"Did not run step: workflow")
@@ -183,7 +183,7 @@ def _main():
     else:
         logger.info(f"Running step: run")
         if execgraphs is None:
-            from .utils import loadpicklelzma
+            from .io import loadpicklelzma
 
             assert (
                 args.execgraph_file is not None
@@ -228,27 +228,26 @@ def _main():
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
         logger.info(f'Using plugin arguments\n{pformat(plugin_args)}')
-        runner = runnercls(plugin_args=plugin_args)
 
         execgraphstorun = []
         if len(execgraphs) > 1:
             n_subjectlevel_chunks = len(execgraphs) - 1
             if args.only_model_chunk:
-                logger.info(f"Will not run subjectlevel chunks")
+                logger.info(f"Will not run subject level chunks")
                 logger.info(f"Will run model chunk")
                 execgraphstorun.append(execgraphs[-1])
             elif args.only_chunk_index is not None:
-                zerobasedchunkindex = args.chunk_index - 1
+                zerobasedchunkindex = args.only_chunk_index - 1
                 assert zerobasedchunkindex < n_subjectlevel_chunks
                 logger.info(
-                    f"Will run subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
+                    f"Will run subject level chunk {args.only_chunk_index} of {n_subjectlevel_chunks}"
                 )
                 logger.info(f"Will not run model chunk")
                 execgraphstorun.append(execgraphs[zerobasedchunkindex])
             else:
-                logger.info(f"Will run all {n_subjectlevel_chunks} subjectlevel chunks")
-                logger.info(f"Will run grouplevel chunk")
-                execgraphstorun.extend(execgraphs[:-1])
+                logger.info(f"Will run all {n_subjectlevel_chunks} subject level chunks")
+                logger.info(f"Will run model chunk")
+                execgraphstorun.extend(execgraphs)
         elif len(execgraphs) == 1:
             execgraphstorun.append(execgraphs[0])
         else:
@@ -260,6 +259,7 @@ def _main():
 
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
+            runner = runnercls(plugin_args=plugin_args)
             runner.run(execgraph, updatehash=False, config=first(execgraph.nodes()).config)
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")

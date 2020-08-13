@@ -77,11 +77,12 @@ class FeatureFactory(Factory):
                     for condition_file in condition_files
                 ]
 
-            condition_units = database.metadatavalset("units", condition_files)
-            if len(condition_units) == 0:
-                condition_units = "seconds"
-            else:
+            condition_units = None
+            condition_units_set = database.metadatavalset("units", condition_files)
+            if len(condition_units_set) == 0:
                 (condition_units,) = condition_units
+            if condition_units is None:
+                condition_units = "secs"  # default value
             if condition_units == "seconds":
                 condition_units = "secs"
 
@@ -115,17 +116,14 @@ class FeatureFactory(Factory):
             database.fillmetadata("space", kwargs["atlas_files"])
             kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
             vwf = init_atlasbasedconnectivity_wf(**kwargs)
+        elif feature.type == "reho":
+            confounds_action = "regression"
+            vwf = init_reho_wf(**kwargs)
+        elif feature.type == "falff":
+            confounds_action = "regression"
+            vwf = init_falff_wf(**kwargs)
         else:
-            if hasattr(feature, "smoothing"):
-                kwargs["fwhm"] = feature.smoothing.get("fwhm")
-            if feature.type == "reho":
-                confounds_action = "regression"
-                vwf = init_reho_wf(**kwargs)
-            elif feature.type == "falff":
-                confounds_action = "regression"
-                vwf = init_falff_wf(**kwargs)
-            else:
-                raise ValueError(f"Unknown feature type \"{feature.type}\"")
+            raise ValueError(f"Unknown feature type \"{feature.type}\"")
 
         wf.add_nodes([vwf])
         hierarchy.append(vwf)

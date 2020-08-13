@@ -92,6 +92,13 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._rt.set_node_complete(self.procs[jobid], unmark)
         super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)
 
+    def _async_callback(self, args):
+        try:
+            result = args.result()
+            self._taskresult[result["taskid"]] = result
+        except Exception as e:
+            logging.getLogger("halfpipe").exception(f"Exception for {args}: %s", e)
+
     def _remove_node_dirs(self):
         """Removes directories whose outputs have already been used up
         """

@@ -129,6 +129,7 @@ def init_dualregression_wf(
     workflow.connect(inputnode, "vals", make_resultdicts_b, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts_b, "metadata")
     workflow.connect(inputnode, "map_names", make_resultdicts_b, "map")
+    workflow.connect(inputnode, "mask", make_resultdicts_b, "mask")
 
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 
@@ -229,7 +230,6 @@ def init_dualregression_wf(
         workflow.connect(temporalglm, f"out_{glmattr}", split, "in_file")
         workflow.connect(split, "out_files", make_resultdicts_b, resultattr)
     workflow.connect(makedofvolume, "out_file", make_resultdicts_b, "dof")
-    workflow.connect(inputnode, "mask", make_resultdicts_b, "mask")
 
     #
     tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)

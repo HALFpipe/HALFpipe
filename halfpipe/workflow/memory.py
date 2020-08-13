@@ -17,7 +17,6 @@ class MemoryCalculator:
         if bold_file is not None:
             bold_shape = nb.load(bold_file).shape
         self.volume_gb = np.product(bold_shape[:3]) * 8 / 2 ** 30
-        bold_tlen = 1
         if len(bold_shape) > 3:
             bold_tlen = bold_shape[3]
         self.series_gb = self.volume_gb * bold_tlen

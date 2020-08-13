@@ -60,6 +60,7 @@ class DictListFile:
                 self.dictlist = json.loads(jsonstr)
             except json.decoder.JSONDecodeError as e:
                 logging.getLogger("halfpipe").warning("JSONDecodeError %s", e)
+        return self
 
     def __exit__(self, *args):
         if self.is_dirty:

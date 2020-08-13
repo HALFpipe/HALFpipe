@@ -5,5 +5,6 @@
 from .applytransforms import ApplyTransforms
 from .flameo import FLAMEO
 from .multipleregressdesign import MultipleRegressDesign
+from .reho import ReHo
 
-__all__ = [ApplyTransforms, FLAMEO, MultipleRegressDesign]
+__all__ = [ApplyTransforms, FLAMEO, MultipleRegressDesign, ReHo]

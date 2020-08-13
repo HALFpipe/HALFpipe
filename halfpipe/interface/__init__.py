@@ -4,7 +4,7 @@
 
 from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
-from .fixes import ApplyTransforms, FLAMEO, MultipleRegressDesign
+from .fixes import ApplyTransforms, FLAMEO, MultipleRegressDesign, ReHo
 from .fslnumpy import FilterRegressor, TemporalFilter
 from .imagemaths import AddMeans, BlurInMask, MaxIntensity, Merge, MergeMask, Resample, ZScore
 from .preprocessing import GrandMeanScaling
@@ -37,6 +37,7 @@ __all__ = [
     ApplyTransforms,
     FLAMEO,
     MultipleRegressDesign,
+    ReHo,
     FilterRegressor,
     TemporalFilter,
     AddMeans,

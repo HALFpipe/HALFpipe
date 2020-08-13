@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import numpy as np
+
 import nipype.algorithms.modelgen as model
 
 from nipype.pipeline import engine as pe
@@ -92,6 +94,7 @@ def init_taskbased_wf(
     workflow.connect(inputnode, "tags", make_resultdicts_b, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts_b, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts_b, "metadata")
+    workflow.connect(inputnode, "mask", make_resultdicts_b, "mask")
 
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 
@@ -114,6 +117,10 @@ def init_taskbased_wf(
 
     # first level model specification
     modelspec = pe.Node(model.SpecifyModel(), name="modelspec")
+    if hasattr(model, "high_pass_filter_cutoff"):
+        modelspec.inputs.high_pass_filter_cutoff = model.high_pass_filter_cutoff
+    else:
+        modelspec.inputs.high_pass_filter_cutoff = np.inf
     workflow.connect(inputnode, "bold", modelspec, "functional_runs")
     workflow.connect(inputnode, "condition_units", modelspec, "input_units")
     workflow.connect(inputnode, "repetition_time", modelspec, "time_repetition")
@@ -177,7 +184,6 @@ def init_taskbased_wf(
     workflow.connect(modelestimate, "varcopes", make_resultdicts_b, "variance")
     workflow.connect(modelestimate, "zstats", make_resultdicts_b, "z")
     workflow.connect(makedofvolume, "out_file", make_resultdicts_b, "dof")
-    workflow.connect(inputnode, "mask", make_resultdicts_b, "mask")
 
     #
     mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames", run_without_submitting=True)

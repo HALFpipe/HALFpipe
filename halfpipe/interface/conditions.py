@@ -30,7 +30,7 @@ class ParseConditionFile(SimpleInterface):
         conditions, onsets, durations = parse_condition_file(in_any=self.inputs.in_any)
 
         if isdefined(self.inputs.condition_names):
-            conditions_selected = self.inputs.condition_names
+            conditions_selected = [str(name) for name in self.inputs.condition_names]  # need a traits-free representation for bunch
             onsets_selected, durations_selected = [], []
             for condition_name in conditions_selected:
                 if condition_name not in conditions:

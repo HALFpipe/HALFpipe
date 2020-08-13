@@ -113,6 +113,7 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
     workflow.connect(inputnode, "seed_names", make_resultdicts, "seed")
+    workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
@@ -205,7 +206,6 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(glm, "out_varcb", make_resultdicts, "variance")
     workflow.connect(glm, "out_z", make_resultdicts, "z")
     workflow.connect(makedofvolume, "out_file", make_resultdicts, "dof")
-    workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
     #
     tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)

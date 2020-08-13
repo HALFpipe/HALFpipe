@@ -15,7 +15,7 @@ from ...utils import firststr, nvol, ncol
 
 class MakeDofVolumeInputSpec(TraitedSpec):
     dof_file = File(desc="", exists=True)
-    copes = traits.List(File(exists=True))
+    copes = traits.Either(traits.List(File(exists=True)), File(exists=True))
 
     bold_file = File(exists=True, desc="input file")
     num_regressors = traits.Range(low=1, desc="number of regressors")
