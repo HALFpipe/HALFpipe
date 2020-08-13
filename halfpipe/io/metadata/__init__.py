@@ -4,6 +4,12 @@
 
 from .direction import canonicalize_direction_code, direction_code_str
 from .slicetiming import slice_timing_str
-from .base import MetadataLoader
+from .base import MetadataLoader, SidecarMetadataLoader
 
-__all__ = [canonicalize_direction_code, direction_code_str, MetadataLoader, slice_timing_str]
+__all__ = [
+    canonicalize_direction_code,
+    direction_code_str,
+    MetadataLoader,
+    SidecarMetadataLoader,
+    slice_timing_str,
+]

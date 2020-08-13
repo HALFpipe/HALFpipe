@@ -21,6 +21,7 @@ from .metadata import (
     canonicalize_direction_code,
     direction_code_str,
     MetadataLoader,
+    SidecarMetadataLoader,
     slice_timing_str,
 )
 
@@ -44,6 +45,7 @@ __all__ = [
     canonicalize_direction_code,
     direction_code_str,
     MetadataLoader,
+    SidecarMetadataLoader,
     slice_timing_str,
     meansignals,
 ]

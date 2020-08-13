@@ -22,10 +22,7 @@ class SidecarMetadataLoader:
     cache = dict()
 
     @classmethod
-    def load(cls, fname):
-        if fname in cls.cache:
-            return cls.cache[fname]
-
+    def loadjson(cls, fname):
         stem, _ = splitext(fname)
         sidecarfile = Path(fname).parent / f"{stem}.json"
 
@@ -35,8 +32,15 @@ class SidecarMetadataLoader:
         with open(sidecarfile, "r") as fp:
             jsn = fp.read()
 
+        return json.loads(jsn)
+
+    @classmethod
+    def load(cls, fname):
+        if fname in cls.cache:
+            return cls.cache[fname]
+
         try:
-            in_data = json.loads(jsn)
+            in_data = cls.loadjson(fname)
 
             # data transformations
 

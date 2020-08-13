@@ -64,10 +64,10 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
 def _copy_file(inpath, outpath):
     outpath.parent.mkdir(exist_ok=True, parents=True)
     if outpath.exists():
-        if os.stat(inpath).st_mtime > os.stat(outpath).st_mtime:
+        if os.stat(inpath).st_mtime >= os.stat(outpath).st_mtime:
             logging.getLogger("halfpipe").debug(f'Not overwriting file "{outpath}"')
             return False
-        logging.getLogger("halfpipe").info(f'Overwriting file "{outpath}"')
+        logging.getLogger("halfpipe").debug(f'Overwriting file "{outpath}"')
     copyfile(inpath, outpath)
     return True
 

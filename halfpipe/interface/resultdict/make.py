@@ -28,10 +28,20 @@ class MakeResultdicts(IOBase):
     output_spec = MakeResultdictsOutputSpec
 
     def __init__(
-        self, dictkeys=["tags", "metadata", "vals"], tagkeys=[], valkeys=[], imagekeys=[], reportkeys=[], metadatakeys=[], **inputs
+        self,
+        dictkeys=["tags", "metadata", "vals"],
+        tagkeys=[],
+        valkeys=[],
+        imagekeys=[],
+        reportkeys=[],
+        metadatakeys=[],
+        simplekeys=[],
+        **inputs,
     ):
         super(MakeResultdicts, self).__init__(**inputs)
-        add_traits(self.inputs, [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys])
+        add_traits(
+            self.inputs, [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys]
+        )
         self._dictkeys = dictkeys
         self._keys = {
             "tags": tagkeys,
@@ -40,6 +50,7 @@ class MakeResultdicts(IOBase):
             "reports": reportkeys,
             "metadata": metadatakeys,
         }
+        self._simplekeys = simplekeys
 
     def _list_outputs(self):
         outputs = self._outputs().get()
@@ -48,13 +59,15 @@ class MakeResultdicts(IOBase):
             (fieldname, key, getattr(self.inputs, key))
             for fieldname, keys in self._keys.items()
             for key in keys
-            if isdefined(getattr(self.inputs, key))
+            if isdefined(getattr(self.inputs, key)) and key not in self._simplekeys
         ]
-        inputs.extend([
-            (fieldname, None, getattr(self.inputs, fieldname))
-            for fieldname in self._dictkeys
-            if isdefined(getattr(self.inputs, fieldname))
-        ])
+        inputs.extend(
+            [
+                (fieldname, None, getattr(self.inputs, fieldname))
+                for fieldname in self._dictkeys
+                if isdefined(getattr(self.inputs, fieldname))
+            ]
+        )
         if len(inputs) == 0:
             outputs["resultdicts"] = []
             return outputs
@@ -64,7 +77,10 @@ class MakeResultdicts(IOBase):
         # determine broadcasting rule
         maxlen = 1
         nbroadcast = None
-        for value in values:
+        for i in range(len(values)):
+            if keys[i] in self._listkeys:
+                continue
+            value = values[i]
             if isinstance(value, (list, tuple)):
                 if all(isinstance(elem, (list, tuple)) for elem in value):
                     size = len(ravel(value))
@@ -87,7 +103,11 @@ class MakeResultdicts(IOBase):
             if len(values[i]) == 0:
                 values[i] = [None] * maxlen
             if len(values[i]) != maxlen:
-                if nbroadcast is not None and len(values[i]) < maxlen and len(values[i]) == len(nbroadcast):
+                if (
+                    nbroadcast is not None
+                    and len(values[i]) < maxlen
+                    and len(values[i]) == len(nbroadcast)
+                ):
                     values[i] = ravel([[v] * m for m, v in zip(nbroadcast, values[i])])
                 else:
                     raise ValueError(
@@ -96,6 +116,8 @@ class MakeResultdicts(IOBase):
 
         # flatten
         for i in range(len(values)):
+            if keys in self._nobroadcastkeys:
+                continue
             values[i] = ravel(values[i])
 
         # make resultdicts
@@ -107,9 +129,7 @@ class MakeResultdicts(IOBase):
                     resultdict[f].update(v)
             # filter tags
             resultdict["tags"] = {
-                k: v
-                for k, v in resultdict["tags"].items()
-                if k in resultdict_entities
+                k: v for k, v in resultdict["tags"].items() if k in resultdict_entities
             }
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 # actually add
@@ -136,6 +156,15 @@ class MakeResultdicts(IOBase):
                 else:
                     newimages[k] = v
             resultdicts[i]["images"] = newimages
+
+        # simple keys
+        for f, keys in self._keys.items():
+            for k in keys:
+                if k in self._simplekeys:
+                    v = getattr(self.inputs, k)
+                    if isdefined(v):
+                        for i in range(len(resultdicts)):
+                            resultdicts[i][f][k] = v
 
         # validate
         for i in range(len(resultdicts)):

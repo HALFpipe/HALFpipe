@@ -58,7 +58,8 @@ def init_atlasbasedconnectivity_wf(
         MakeResultdicts(
             tagkeys=["feature", "atlas"],
             imagekeys=["timeseries", "covariance_matrix", "correlation_matrix"],
-            metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r"]
+            metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r"],
+            simplekeys=["mean_t_s_n_r"]
         ),
         name="make_resultdicts",
         run_without_submitting=True

@@ -100,6 +100,8 @@ def init_workflow(workdir):
     config_factory = deepcopyfactory(workflow.config)
     for node in workflow._get_all_nodes():
         node.config = config_factory()
+        if node.name in ["split"]:
+            node.config["execution"]["hash_method"] = "content"
         node.overwrite = None
         if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
             node._mem_gb = memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads

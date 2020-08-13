@@ -11,6 +11,7 @@ from inflection import camelize
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
 from ...utils import formatlikebids, splitext, cleaner
+# from ..metadata import SidecarMetadataLoader
 
 from bids.layout import Config
 from bids.layout.writing import build_path
@@ -137,7 +138,7 @@ class BidsDatabase:
                     subject = self.tagval(bidspath, "subject")
                     subjectdir = f"sub-{subject}"
                     bidsmetadata["IntendedFor"] = list()
-                    for afilepath in self.database.associations(filepath, **filters):
+                    for afilepath in sorted(self.database.associations(filepath, **filters)):
                         abidspath = self.tobids(afilepath)
                         if abidspath is not None:  # only include files in the BidsDatabase
                             bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))

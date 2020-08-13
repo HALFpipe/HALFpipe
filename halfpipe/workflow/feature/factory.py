@@ -69,7 +69,7 @@ class FeatureFactory(Factory):
         if feature.type == "task_based":
             confounds_action = "select"
 
-            condition_files = list(database.associations(sourcefile, datatype="func", suffix="events"))
+            condition_files = sorted(list(database.associations(sourcefile, datatype="func", suffix="events")))
             raw_sources = [*raw_sources, *condition_files]
             if ".txt" in database.tagvalset("extension", filepaths=condition_files):
                 condition_files = [
@@ -149,7 +149,7 @@ class FeatureFactory(Factory):
                         if setting["name"] == settingname:
                             metadict = BaseSettingSchema().dump(setting)
                             if raw_sources is not None:
-                                metadict["raw_sources"] = raw_sources
+                                metadict["raw_sources"] = sorted(raw_sources)
                             node.inputs.metadata = metadict
                 self.setting_factory.connect(hierarchy, node, sourcefile, settingname, confounds_action=confounds_action)
 
