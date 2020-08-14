@@ -64,7 +64,7 @@ class Filter(IOBase):
 
 
 class FilterListInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    keys = traits.List(traits.Str(), mandatory=True)
+    keys = traits.List(traits.Any(), mandatory=True)
     pattern = traits.Str(mandatory=True)
 
 

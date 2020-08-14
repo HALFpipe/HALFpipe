@@ -119,7 +119,9 @@ class ModelAggregateStep(Step):
         self.feature_entities = dict()
         for obj in featureobjs:
             filters = setting_filters[obj.setting]
-            feature_filepaths = ctx.database.applyfilters([*filepaths], filters)
+            feature_filepaths = [*filepaths]
+            if filters is not None and len(filters) > 0:
+                feature_filepaths = ctx.database.applyfilters(feature_filepaths, filters)
             self.feature_entities[obj.name], _ = ctx.database.multitagvalset(
                 aggregate_order, filepaths=feature_filepaths
             )

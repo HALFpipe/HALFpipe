@@ -34,8 +34,8 @@ class SpreadsheetColumnTypeStep(Step):
         self.choice = None
 
         already_used = set(
-            name
-            for name, variable in ctx.spec.files[-1].metadata["variables"].items()
+            variable["name"]
+            for variable in ctx.spec.files[-1].metadata["variables"]
             if variable["type"] == "id"
         )  # omit id column
 
@@ -80,13 +80,13 @@ class SpreadsheetColumnTypeStep(Step):
                 varname = self.varname_by_str[variable_str]
                 vartype = value.lower()
 
-                vardict = {"type": vartype}
+                vardict = {"type": vartype, "name": varname}
 
                 if vartype == "categorical":
                     vardict["levels"] = self.df[varname].astype(str).unique().tolist()
 
                 var = VariableSchema().load(vardict)
-                ctx.spec.files[-1].metadata["variables"][varname] = var
+                ctx.spec.files[-1].metadata["variables"].append(var)
 
         ctx.database.put(
             ctx.spec.files[-1]
@@ -107,18 +107,18 @@ class SpreadsheetIdColumnStep(Step):
             ctx.spec.files[-1].metadata = dict()
 
         if ctx.spec.files[-1].metadata.get("variables") is None:
-            ctx.spec.files[-1].metadata["variables"] = dict()
+            ctx.spec.files[-1].metadata["variables"] = []
 
         if any(
             variable["type"] == "id"
-            for variable in ctx.spec.files[-1].metadata["variables"].values()
+            for variable in ctx.spec.files[-1].metadata["variables"]
         ):
             self.should_run = False
 
         if self.should_run:
             self._append_view(TextView("Specify the column containing subject names"))
 
-            already_used = set(ctx.spec.files[-1].metadata["variables"].keys())
+            already_used = set(v["name"] for v in ctx.spec.files[-1].metadata["variables"])
 
             df = loadspreadsheet(ctx.spec.files[-1].path)
             columns = [column for column in df if column not in already_used]
@@ -143,8 +143,8 @@ class SpreadsheetIdColumnStep(Step):
     def next(self, ctx):
         if self.choice is not None:
             varname = self.varname_by_str[self.choice]
-            var = VariableSchema().load({"type": "id"})
-            ctx.spec.files[-1].metadata["variables"][varname] = var
+            var = VariableSchema().load({"type": "id", "name": varname})
+            ctx.spec.files[-1].metadata["variables"].append(var)
 
         if self.should_run or self.is_first_run:
             self.is_first_run = False

@@ -94,7 +94,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         kwargs = dict(filterdicts=model.filters, requireoneofimages=["effect", "reho", "falff", "alff"])
         if hasattr(model, "spreadsheet"):
             if model.spreadsheet is not None and variables is not None:
-                kwargs.update(dict(spreadsheet=model.spreadsheet, variableobjs=variables))
+                kwargs.update(dict(spreadsheet=model.spreadsheet, variabledicts=variables))
         filterresultsdicts = pe.Node(FilterResultdicts(**kwargs), name="filterresultsdicts", run_without_submitting=True)
         workflow.connect(merge_resultdicts_a, "out", filterresultsdicts, "indicts")
         workflow.connect(filterresultsdicts, "resultdicts", aggregateresultdicts, "in1")
@@ -161,7 +161,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             LinearModel(
                 spreadsheet=model.spreadsheet,
                 contrastobjs=model.contrasts,
-                variableobjs=variables,
+                variabledicts=variables,
             ),
             name="modelspec",
             iterfield="subjects",
@@ -246,8 +246,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     #
     if model.type in ["lme", "me"]:  # is a group model
         smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
-        workflow.connect(filtercons, "z", smoothest, "zstat_file")
-        workflow.connect(filtercons, "mask", smoothest, "mask_file")
+        workflow.connect([(filtercons, smoothest, [(("z", ravel), "zstat_file")])])
+        workflow.connect([(filtercons, smoothest, [(("mask", ravel), "mask_file")])])
 
         criticalz = pe.MapNode(
             niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),

@@ -23,19 +23,19 @@ def _aggregate_if_needed(inval):
     return float(inval)
 
 
-def _get_categorical_dict(filepath, variableobjs):
+def _get_categorical_dict(filepath, variabledicts):
     rawdataframe = loadspreadsheet(filepath)
-    for variableobj in variableobjs:
-        if variableobj.get("type") == "id":
-            id_column = variableobj.get("name")
+    for variabledict in variabledicts:
+        if variabledict.get("type") == "id":
+            id_column = variabledict.get("name")
             break
 
     rawdataframe = rawdataframe.set_index(id_column)
 
     categorical_columns = []
-    for variableobj in variableobjs:
-        if variableobj.get("type") == "categorical":
-            categorical_columns.append(variableobj.get("name"))
+    for variabledict in variabledicts:
+        if variabledict.get("type") == "categorical":
+            categorical_columns.append(variabledict.get("name"))
 
     return rawdataframe[categorical_columns].to_dict()
 
@@ -43,7 +43,7 @@ def _get_categorical_dict(filepath, variableobjs):
 class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
     filterdicts = traits.List(traits.Any(), desc="filter list", mandatory=True)
-    variableobjs = traits.List(traits.Any(), desc="variable list")
+    variabledicts = traits.List(traits.Any(), desc="variable list")
     spreadsheet = File(desc="spreadsheet")
     requireoneofimages = traits.List(
         traits.Str(), desc="only keep resultdicts that have at least one of these keys"
@@ -70,9 +70,9 @@ class FilterResultdicts(SimpleInterface):
             if filtertype == "group":
                 if categorical_dict is None:
                     assert isdefined(self.inputs.spreadsheet)
-                    assert isdefined(self.inputs.variableobjs)
+                    assert isdefined(self.inputs.variabledicts)
                     categorical_dict = _get_categorical_dict(
-                        self.inputs.spreadsheet, self.inputs.variableobjs
+                        self.inputs.spreadsheet, self.inputs.variabledicts
                     )
 
                 variable = filterdict.get("variable")

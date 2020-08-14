@@ -168,6 +168,6 @@ def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("halfpi
             if op.isfile(newspecpath):
                 logger.warn("Found specpath timestampstr collision, overwriting")
             os.replace(specpath, newspecpath)
-    jsn = SpecSchema().dumps(spec, many=False, indent=4)
+    jsn = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=True)
     with open(specpath, "w") as f:
         f.write(jsn)

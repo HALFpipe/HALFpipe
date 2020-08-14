@@ -39,13 +39,13 @@ def _check_multicollinearity(matrix):
         )
 
 
-def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subjects=None):
+def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjects=None):
     rawdataframe = loadspreadsheet(spreadsheet)
 
     id_column = None
-    for variableobj in variableobjs:
-        if variableobj.type == "id":
-            id_column = variableobj.name
+    for variabledict in variabledicts:
+        if variabledict["type"] == "id":
+            id_column = ["name"]
             break
 
     assert id_column is not None, "Missing id column, cannot specify model"
@@ -56,13 +56,13 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
     continuous_columns = []
     categorical_columns = []
     columns_in_order = []
-    for variableobj in variableobjs:
-        if variableobj.type == "continuous":
-            continuous_columns.append(variableobj.name)
-            columns_in_order.append(variableobj.name)
-        elif variableobj.type == "categorical":
-            categorical_columns.append(variableobj.name)
-            columns_in_order.append(variableobj.name)
+    for variabledict in variabledicts:
+        if variabledict["type"] == "continuous":
+            continuous_columns.append(variabledict["name"])
+            columns_in_order.append(variabledict["name"])
+        elif variabledict.type == "categorical":
+            categorical_columns.append(variabledict["name"])
+            columns_in_order.append(variabledict["name"])
 
     # separate
     continuous = rawdataframe[continuous_columns]
@@ -185,7 +185,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variableobjs=None, subject
 class LinearModelInputSpec(TraitedSpec):
     spreadsheet = File(exist=True, mandatory=True)
     contrastobjs = traits.List(desc="contrast list", mandatory=True)
-    variableobjs = traits.List(desc="variable list", mandatory=True)
+    variabledicts = traits.List(desc="variable list", mandatory=True)
     subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
 
 
@@ -205,7 +205,7 @@ class LinearModel(SimpleInterface):
         regressors, contrasts, contrast_names = _group_model(
             spreadsheet=self.inputs.spreadsheet,
             contrastobjs=self.inputs.contrastobjs,
-            variableobjs=self.inputs.variableobjs,
+            variabledicts=self.inputs.variabledicts,
             subjects=self.inputs.subjects,
         )
         self._results["regressors"] = regressors

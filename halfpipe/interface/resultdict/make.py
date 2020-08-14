@@ -78,19 +78,19 @@ class MakeResultdicts(IOBase):
         maxlen = 1
         nbroadcast = None
         for i in range(len(values)):
-            if keys[i] in self._listkeys:
-                continue
             value = values[i]
             if isinstance(value, (list, tuple)):
                 if all(isinstance(elem, (list, tuple)) for elem in value):
                     size = len(ravel(value))
-                    if size > maxlen:
-                        maxlen = size
                     lens = tuple(len(elem) for elem in value)
                     if nbroadcast is None:
                         nbroadcast = lens
                     else:
                         assert lens == nbroadcast, "Inconsistent input lengths"
+                else:
+                    size = len(value)
+                if size > maxlen:
+                    maxlen = size
 
         # broadcast values if necessary
         for i in range(len(values)):
@@ -98,7 +98,7 @@ class MakeResultdicts(IOBase):
                 values[i] = list(values[i])
             if not isinstance(values[i], list):
                 values[i] = [values[i]]
-            if len(values[i]) == 1:  # simple broadcasting
+            if len(values[i]) == 1:  # broadcasting
                 values[i] *= maxlen
             if len(values[i]) == 0:
                 values[i] = [None] * maxlen
@@ -116,7 +116,7 @@ class MakeResultdicts(IOBase):
 
         # flatten
         for i in range(len(values)):
-            if keys in self._nobroadcastkeys:
+            if keys in self._simplekeys:
                 continue
             values[i] = ravel(values[i])
 

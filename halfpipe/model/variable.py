@@ -12,6 +12,7 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 class BaseVariableSchema(Schema):
+    name = fields.Str()
     type = fields.Str(validate=validate.OneOf(["id", "continuous"]))
 
 

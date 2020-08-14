@@ -42,11 +42,13 @@ class Merge(SimpleInterface):
         self._merged_file = None
 
         if not isdefined(self.inputs.in_files):
+            self._results["merged_file"] = False
             return runtime
 
         in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
 
         if len(in_imgs) == 0:
+            self._results["merged_file"] = False
             return runtime
 
         idim = dimensions.index(self.inputs.dimension)
@@ -96,11 +98,13 @@ class MergeMask(SimpleInterface):
         self._merged_file = None
 
         if not isdefined(self.inputs.in_files):
+            self._results["merged_file"] = False
             return runtime
 
         in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
 
         if len(in_imgs) == 0:
+            self._results["merged_file"] = False
             return runtime
 
         outshape = first(in_imgs).shape

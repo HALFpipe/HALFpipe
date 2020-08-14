@@ -31,12 +31,13 @@ next_step_type = AddAnotherModelStep
 
 def apply_filters_to_variables(filters, variables):
     variables = deepcopy(variables)
+    variablesdict = {v["name"]: v for v in variables}
     for filt in filters:
         if filt["type"] == "group":
             action = filt["action"]
             filterlevels = set(filt["levels"])
-            if filt["variable"] in variables:
-                variable = variables[filt["variable"]]
+            if filt["variable"] in variablesdict:
+                variable = variablesdict[filt["variable"]]
                 varlevels = set(str(level) for level in variable["levels"])
                 if action == "include":
                     varlevels &= filterlevels
@@ -46,8 +47,8 @@ def apply_filters_to_variables(filters, variables):
                     level for level in variable["levels"] if level in varlevels
                 ]  # maintain order
     variables = [
-        {"name": name, **variable}
-        for name, variable in variables.items()
+        variablesdict[variable["name"]]
+        for variable in variables
         if variable["type"] != "categorical" or len(variable["levels"]) > 1
     ]
     return variables
@@ -152,12 +153,15 @@ class AddInteractionTerms(YesNoStep):
     no_step_type = next_step_type
 
     def _should_run(self, ctx):
-        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
-        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
+        contrastvariables = set(
+            ravel(
+                contrast["variable"]
+                for contrast in ctx.spec.models[-1].contrasts
+                if contrast.get("type") == "infer"
+            )
+        )  # names of all variables added to the model in the previous step
 
-        number_of_variables = sum(1 for variable in self.variables if variable["type"] != "id")
-
-        if number_of_variables > 1:
+        if len(contrastvariables) > 1:
             return True
         else:
             self.choice = "No"
@@ -291,13 +295,34 @@ class HaveContrastsStep(YesNoStep):
     yes_step_type = ContrastNameStep
     no_step_type = AddInteractionTerms
 
+    header_str = "Specify additional contrasts for categorical variables?"
+
+    def _should_run(self, ctx):
+        variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        variables = apply_filters_to_variables(ctx.spec.models[-1].filters, variables)
+        contrastvariables = set(
+            ravel(
+                contrast["variable"]
+                for contrast in ctx.spec.models[-1].contrasts
+                if contrast.get("type") == "infer"
+            )
+        )  # names of all variables added to the model in the previous step
+        variables = [
+            variable
+            for variable in variables
+            if variable["type"] == "categorical" and variable["name"] in contrastvariables
+        ]
+        if len(variables) == 0:
+            self.choice = "No"
+            return False
+        return True
+
     def setup(self, ctx):
         instruction_str0 = "Contrasts for the mean across all subjects, and for all variables "
         self._append_view(TextView(instruction_str0))
         self._append_view(TextView("will be generated automatically"))
         self._append_view(SpacerView(1))
 
-        self._append_view(TextView("Specify additional contrasts for categorical variables?"))
         super(HaveContrastsStep, self).setup(ctx)
 
 

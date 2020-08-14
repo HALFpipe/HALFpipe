@@ -44,6 +44,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
     # init reports
     reports_directory = Path(workdir) / "reports"
+    reports_directory.mkdir(parents=True, exist_ok=True)
 
     indexhtml_path = reports_directory / "index.html"
     copyfile(getresource("index.html"), indexhtml_path)

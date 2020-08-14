@@ -235,6 +235,8 @@ def get_magnitude_steps(m_next_step_type):
     class MagnitudeStep(Magnitude1Step):
         filetype_str = "magnitude image"
 
+        next_step_type = m_next_step_type
+
     class MagnitudeTypeStep(BranchStep):
         is_vertical = True
         header_str = "Specify the type of the magnitude images"
