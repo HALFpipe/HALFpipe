@@ -1,5 +1,7 @@
 # Welcome to ENIGMA Halfpipe!
 
+[![https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg](https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg)](https://singularity-hub.org/collections/4508) [![https://img.shields.io/docker/cloud/build/mindandbrain/halfpipe](https://img.shields.io/docker/cloud/build/mindandbrain/halfpipe)](https://hub.docker.com/repository/docker/mindandbrain/halfpipe/tags)
+
 `ENIGMA Halfpipe` is a user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
 group analysis. 
