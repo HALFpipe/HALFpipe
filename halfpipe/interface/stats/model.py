@@ -51,6 +51,8 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
     assert id_column is not None, "Missing id column, cannot specify model"
 
     rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
+    if all(str(id).startswith("sub-") for id in rawdataframe[id_column]):  # for bids
+        rawdataframe[id_column] = [str(id).replace("sub-", "") for id in rawdataframe[id_column]]
     rawdataframe = rawdataframe.set_index(id_column)
 
     continuous_columns = []

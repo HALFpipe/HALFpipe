@@ -259,10 +259,13 @@ def _main():
 
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
-            runner = runnercls(plugin_args=plugin_args)
-            firstnode = first(execgraph.nodes())
-            if firstnode is not None:
-                runner.run(execgraph, updatehash=False, config=firstnode.config)
+            try:
+                runner = runnercls(plugin_args=plugin_args)
+                firstnode = first(execgraph.nodes())
+                if firstnode is not None:
+                    runner.run(execgraph, updatehash=False, config=firstnode.config)
+            except Exception as e:
+                logger.warning(f"Ignoring exception in chunk {i+1}: %s", e)
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 
