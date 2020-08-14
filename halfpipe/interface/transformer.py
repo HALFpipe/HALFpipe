@@ -14,7 +14,6 @@ from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
     isdefined,
-    traits,
     File,
 )
 

@@ -9,7 +9,6 @@ import numpy as np
 
 from nipype.interfaces.base import traits, isdefined, File
 
-from ...io import loadmatrix
 from ..transformer import Transformer, TransformerInputSpec
 
 
@@ -95,7 +94,7 @@ class FilterRegressor(Transformer):
     suffix = "regfilt"
 
     def _transform(self, array):
-        design = loadmatrix(self.inputs.design_file, dtype=np.float64)
+        design = np.loadtxt(self.inputs.design_file, dtype=np.float64, ndmin=2)
 
         filter_all = self.inputs.filter_all
 

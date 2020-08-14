@@ -10,9 +10,7 @@ def loadints(in_file):
 
 
 def ncol(in_file):
-    from halfpipe.io import loadmatrix
+    import numpy as np
 
-    array = loadmatrix(in_file)
-    if array.ndim == 1:
-        return 1
+    array = np.loadtxt(in_file, ndmin=2)
     return array.shape[1]
