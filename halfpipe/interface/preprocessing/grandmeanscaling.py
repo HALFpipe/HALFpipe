@@ -37,7 +37,7 @@ class GrandMeanScaling(Transformer):
         if self.scaling_factor is None:  # scaling factor is determined by first file
             arraymean = np.nanmean(array)
             if arraymean == 0:
-                logging.getLogger("halfpipe").warn(
+                logging.getLogger("halfpipe").warning(
                     f'File "{self.inputs.files[0]}" has a grand mean of 0. Skipping grand mean scaling'
                 )
                 self.scaling_factor = 1.0

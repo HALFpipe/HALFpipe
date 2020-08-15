@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
+import pandas as pd
 
 from .base import ResultdictsOutputSpec
 from ...io import ExcludeDatabase, loadspreadsheet
@@ -30,6 +31,9 @@ def _get_categorical_dict(filepath, variabledicts):
             id_column = variabledict.get("name")
             break
 
+    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
+    if all(str(id).startswith("sub-") for id in rawdataframe[id_column]):  # for bids
+        rawdataframe[id_column] = [str(id).replace("sub-", "") for id in rawdataframe[id_column]]
     rawdataframe = rawdataframe.set_index(id_column)
 
     categorical_columns = []

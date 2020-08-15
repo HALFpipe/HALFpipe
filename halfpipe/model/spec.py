@@ -161,12 +161,12 @@ def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("halfpi
     if op.isfile(specpath):
         spectomove = loadspec(specpath=specpath)
         if spectomove is None:
-            logger.warn("Overwriting invalid spec file")
+            logger.warning("Overwriting invalid spec file")
         else:
             newspecpath = op.join(workdir, f"spec.{spectomove.timestampstr}.json")
             logger.info(f'Moving previous spec file from "{specpath}" to "{newspecpath}"')
             if op.isfile(newspecpath):
-                logger.warn("Found specpath timestampstr collision, overwriting")
+                logger.warning("Found specpath timestampstr collision, overwriting")
             os.replace(specpath, newspecpath)
     jsn = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=True)
     with open(specpath, "w") as f:

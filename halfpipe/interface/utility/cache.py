@@ -5,15 +5,11 @@
 from pathlib import Path
 
 from nipype.pipeline.engine.utils import load_resultfile
-from nipype.interfaces.base import (
-    TraitedSpec,
-    SimpleInterface,
-    DynamicTraitedSpec,
-)
-from nipype.interfaces.io import add_traits
+from nipype.interfaces.base import TraitedSpec, DynamicTraitedSpec
+from nipype.interfaces.io import IOBase, add_traits
 
 
-class LoadResult(SimpleInterface):
+class LoadResult(IOBase):
     """ load a result from cache """
 
     input_spec = TraitedSpec
@@ -27,11 +23,11 @@ class LoadResult(SimpleInterface):
     def _add_output_traits(self, base):
         return add_traits(base, self._attrs)
 
-    def _run_interface(self, runtime):
+    def _list_outputs(self):
         outputs = self.output_spec().get()
 
         if not self._resultfilepath.is_file():
-            return runtime
+            return outputs
 
         result = load_resultfile(self._resultfilepath)
         try:
@@ -42,4 +38,4 @@ class LoadResult(SimpleInterface):
         for attr in self._attrs:
             outputs[attr] = cachedoutputs[attr]
 
-        return runtime
+        return outputs

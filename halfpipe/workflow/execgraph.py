@@ -16,6 +16,7 @@ from ..interface import LoadResult
 from ..utils import hexdigest
 from ..io import IndexedFile, DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
+from .constants import constants
 
 max_chunk_size = 50  # subjects
 
@@ -94,17 +95,26 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         )  # take len(chunk) subjects and create union
         execgraphs.append(execgraph.subgraph(nodes).copy())
 
+    # make safe load
     subjectlevelnodes = set.union(*subjectworkflows.values())
-    grouplevelnodes = set(execgraph.nodes()) - subjectlevelnodes
+    modelnodes = set(execgraph.nodes()) - subjectlevelnodes
+
+    modeldir = Path(workdir) / constants.workflowdir / "models_wf"
+    modeldir.mkdir(parents=True, exist_ok=True)
+
     newnodes = dict()
-    for (v, u, c) in nx.edge_boundary(execgraph.reverse(), grouplevelnodes, data=True):
+    for (v, u, c) in nx.edge_boundary(execgraph.reverse(), modelnodes, data=True):
         newu = newnodes.get(u.fullname)
         if newu is None:
             uhex = hexdigest(u.fullname)[:8]
-            newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}")
+            newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}", base_dir=modeldir)
             newu.config = u.config
             newnodes[u.fullname] = newu
+        newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
         execgraph.add_edge(newu, v, attr_dict=c)
+        for outattr, inattr in c["connect"]:
+            newu.needed_outputs = [*newu.needed_outputs, outattr]
+            v.input_source[inattr] = (newuresultfile, outattr)
 
     execgraph.remove_nodes_from(subjectlevelnodes)
 

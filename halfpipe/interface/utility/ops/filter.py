@@ -92,8 +92,11 @@ class FilterList(IOBase):
 
         for field in self._fields:
             valuelist = getattr(self.inputs, field)
-            if not isdefined(valuelist):
-                continue
+            if not isdefined(valuelist):  # require all inputs
+                return outputs
+
+        for field in self._fields:
+            valuelist = getattr(self.inputs, field)
             if not isinstance(valuelist, list):
                 valuelist = [valuelist]
             outputs[field] = [

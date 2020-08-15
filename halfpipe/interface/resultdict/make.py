@@ -73,6 +73,20 @@ class MakeResultdicts(IOBase):
             return outputs
 
         fieldnames, keys, values = map(list, zip(*inputs))
+        
+        # remove undefined
+        undefined_indices = set()
+        for i in range(len(values)):
+            value = values[i]
+            if isinstance(value, list):
+                for j, v in enumerate(value):
+                    if not isdefined(v):
+                        undefined_indices.add(j)
+        for i in range(len(values)):
+            value = values[i]
+            if isinstance(value, list):
+                for j in sorted(undefined_indices, reverse=True):
+                    del value[j]
 
         # determine broadcasting rule
         maxlen = 1
@@ -86,7 +100,7 @@ class MakeResultdicts(IOBase):
                     if nbroadcast is None:
                         nbroadcast = lens
                     else:
-                        assert lens == nbroadcast, "Inconsistent input lengths"
+                        nbroadcast = tuple(max(a, b) for a, b in zip(lens, nbroadcast))
                 else:
                     size = len(value)
                 if size > maxlen:
@@ -102,7 +116,7 @@ class MakeResultdicts(IOBase):
                 values[i] *= maxlen
             if len(values[i]) == 0:
                 values[i] = [None] * maxlen
-            if len(values[i]) != maxlen:
+            if len(values[i]) != maxlen and len(ravel(values[i])) != maxlen:
                 if (
                     nbroadcast is not None
                     and len(values[i]) < maxlen

@@ -69,7 +69,7 @@ class FillNA(SimpleInterface):
 
 
 class MergeColumnsInputSpec(DynamicTraitedSpec):
-    row_index = traits.Either(traits.List(traits.Str), traits.Bool(), default=False, usedefault=True)
+    row_index = traits.Any(default=False, usedefault=True)
 
 
 class MergeColumns(IOBase):

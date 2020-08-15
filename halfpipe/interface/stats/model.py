@@ -11,14 +11,13 @@ import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
-from ...utils import first
 from ...io import loadspreadsheet
 
 
 def _check_multicollinearity(matrix):
     # taken from CPAC
 
-    sys.stdout.write("Checking for multicollinearity in the model..\n")
+    logging.getLogger("halfpipe").info("Checking for multicollinearity in the model..")
 
     U, s, V = np.linalg.svd(matrix)
 
@@ -26,26 +25,26 @@ def _check_multicollinearity(matrix):
     min_singular = np.min(s)
 
     logging.getLogger("halfpipe").info(
-        "max_singular={} min_singular={} rank={}\n".format(
+        "max_singular={} min_singular={} rank={}".format(
             max_singular, min_singular, np.linalg.matrix_rank(matrix)
         )
     )
 
     if min_singular == 0:
         logging.getLogger("halfpipe").warning(
-            "[!] CPAC warns: Detected multicollinearity in the "
+            "[!] halfpipe warns: Detected multicollinearity in the "
             + "computed group-level analysis model. Please double-"
             "check your model design."
         )
 
 
-def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjects=None):
+def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subjects=None):
     rawdataframe = loadspreadsheet(spreadsheet)
 
     id_column = None
     for variabledict in variabledicts:
         if variabledict["type"] == "id":
-            id_column = ["name"]
+            id_column = variabledict["name"]
             break
 
     assert id_column is not None, "Missing id column, cannot specify model"
@@ -62,7 +61,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
         if variabledict["type"] == "continuous":
             continuous_columns.append(variabledict["name"])
             columns_in_order.append(variabledict["name"])
-        elif variabledict.type == "categorical":
+        elif variabledict["type"] == "categorical":
             categorical_columns.append(variabledict["name"])
             columns_in_order.append(variabledict["name"])
 
@@ -100,10 +99,10 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
 
     # generate rhs
     rhs = [Term([])]  # force intercept
-    for contrastobj in contrastobjs:
-        if contrastobj.type == "infer":
+    for contrastdict in contrastdicts:
+        if contrastdict["type"] == "infer":
             # for every term in the model a contrast of type infer needs to be specified
-            rhs.append(Term([LookupFactor(name) for name in contrastobj.variable]))
+            rhs.append(Term([LookupFactor(name) for name in contrastdict["variable"]]))
 
     # specify patsy design matrix
     modelDesc = ModelDesc(lhs, rhs)
@@ -128,9 +127,9 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
         contrastMat = pd.DataFrame(contrast.coefs, columns=dmat.columns)
         contrastMats.append((field, contrastMat))
 
-    for contrastobj in contrastobjs:
-        if contrastobj.type == "t":
-            (variable,) = contrastobj.variable
+    for contrastdict in contrastdicts:
+        if contrastdict["type"] == "t":
+            (variable,) = contrastdict["variable"]
             variableLevels = dataframe[variable].unique()
             # Generate the lsmeans matrix where there is one row for each
             # factor level. Each row is a contrast vector.
@@ -141,7 +140,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
             lsmeans = pd.DataFrame(index=variableLevels, columns=dmat.columns)
             for level in variableLevels:
                 lsmeans.loc[level, :] = refDmat.loc[grid[variable] == level, :].mean()
-            valueDict = contrastobj.values
+            valueDict = contrastdict["values"]
             names = [name for name in valueDict.keys() if name in variableLevels]
             values = [valueDict[name] for name in names]
             # If we wish to test the mean of each group against zero,
@@ -152,7 +151,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
             # combination of the lsmeans contrasts.
             contrastVector = lsmeans.loc[names, :].mul(values, axis=0).sum()
             contrastMat = pd.DataFrame([contrastVector], columns=dmat.columns)
-            contrastMats.append((contrastobj.name, contrastMat))
+            contrastMats.append((contrastdict["name"], contrastMat))
 
     npts, nevs = dmat.shape
 
@@ -186,7 +185,7 @@ def _group_model(spreadsheet=None, contrastobjs=None, variabledicts=None, subjec
 
 class LinearModelInputSpec(TraitedSpec):
     spreadsheet = File(exist=True, mandatory=True)
-    contrastobjs = traits.List(desc="contrast list", mandatory=True)
+    contrastdicts = traits.List(desc="contrast list", mandatory=True)
     variabledicts = traits.List(desc="variable list", mandatory=True)
     subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
 
@@ -206,7 +205,7 @@ class LinearModel(SimpleInterface):
     def _run_interface(self, runtime):
         regressors, contrasts, contrast_names = _group_model(
             spreadsheet=self.inputs.spreadsheet,
-            contrastobjs=self.inputs.contrastobjs,
+            contrastdicts=self.inputs.contrastdicts,
             variabledicts=self.inputs.variabledicts,
             subjects=self.inputs.subjects,
         )
@@ -230,6 +229,6 @@ class InterceptOnlyModel(SimpleInterface):
     def _run_interface(self, runtime):
         self._results["regressors"] = {"intercept": [1.0] * self.inputs.n_copes}
         self._results["contrasts"] = [["intercept", "T", ["intercept"], [1]]]
-        self._results["contrast_names"] = list(map(first, self._results["contrasts"]))
+        self._results["contrast_names"] = ["intercept"]
 
         return runtime

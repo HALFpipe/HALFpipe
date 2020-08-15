@@ -124,20 +124,6 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     workflow.connect(extractfromresultdict, "tags", make_resultdicts_b, "tags")
     workflow.connect(extractfromresultdict, "metadata", make_resultdicts_b, "metadata")
 
-    #
-    mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
-    mergemask = pe.MapNode(MergeMask(), name="mergemask", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
-
-    mergeeffect = pe.MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
-
-    mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
-
-    mergedof = pe.MapNode(Merge(dimension="t"), name="mergedof", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
-
     # create models
     if model.type in ["fe", "me"]:  # intercept only model
         run_mode = dict(fe="fe", me="flame1")[model.type]
@@ -160,7 +146,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         modelspec = pe.MapNode(
             LinearModel(
                 spreadsheet=model.spreadsheet,
-                contrastobjs=model.contrasts,
+                contrastdicts=model.contrasts,
                 variabledicts=variables,
             ),
             name="modelspec",
@@ -168,7 +154,21 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             mem_gb=memcalc.min_gb,
             run_without_submitting=True
         )
-        workflow.connect(extractfromresultdict, "subject", modelspec, "subjects")
+        workflow.connect(extractfromresultdict, "sub", modelspec, "subjects")
+
+    #
+    mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
+    mergemask = pe.MapNode(MergeMask(), name="mergemask", **mergenodeargs)
+    workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
+
+    mergeeffect = pe.MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
+    workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
+
+    mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
+    workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
+
+    mergedof = pe.MapNode(Merge(dimension="t"), name="mergedof", **mergenodeargs)
+    workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
 
     # prepare design matrix
     multipleregressdesign = pe.MapNode(
@@ -243,19 +243,19 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
 
+    # TODO fix this
+    # if model.type in ["lme", "me"]:  # is a group model
+    #     smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
+    #     workflow.connect([(filtercons, smoothest, [(("z", ravel), "zstat_file")])])
+    #     workflow.connect([(filtercons, smoothest, [(("mask", ravel), "mask_file")])])
     #
-    if model.type in ["lme", "me"]:  # is a group model
-        smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
-        workflow.connect([(filtercons, smoothest, [(("z", ravel), "zstat_file")])])
-        workflow.connect([(filtercons, smoothest, [(("mask", ravel), "mask_file")])])
-
-        criticalz = pe.MapNode(
-            niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),
-            iterfield=["resels"],
-            name="criticalz",
-            run_without_submitting=True
-        )
-        workflow.connect(smoothest, "resels", criticalz, "resels")
-        workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
+    #     criticalz = pe.MapNode(
+    #         niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),
+    #         iterfield=["resels"],
+    #         name="criticalz",
+    #         run_without_submitting=True
+    #     )
+    #     workflow.connect(smoothest, "resels", criticalz, "resels")
+    #     workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
 
     return workflow

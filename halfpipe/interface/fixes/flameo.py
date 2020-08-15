@@ -15,6 +15,12 @@ from nipype.utils.misc import human_order_sorted
 
 
 class FLAMEOInputSpec(NipypeFLAMEOInputSpec):
+    cope_file = traits.Either(
+        File(exists=True),
+        traits.Bool(),
+        argstr="--copefile=%s",
+        desc="cope regressor data file"
+    )
     var_cope_file = traits.Either(
         File(exists=True),
         traits.Bool(),
@@ -33,6 +39,12 @@ class FLAMEOInputSpec(NipypeFLAMEOInputSpec):
         argstr="--fcontrastsfile=%s",
         desc="ascii matrix specifying f-contrasts",
     )
+    mask_file = traits.Either(
+        File(exists=True),
+        traits.Bool(),
+        argstr="--maskfile=%s",
+        desc="mask file"
+    )
 
 
 class FLAMEO(NipypeFLAMEO):
@@ -43,8 +55,22 @@ class FLAMEO(NipypeFLAMEO):
             return None
         return super(FLAMEO, self)._format_arg(name, trait_spec, value)
 
+    def _run_interface(self, runtime, correct_return_codes=(0,)):
+        self.flameo = False
+
+        if isdefined(self.inputs.cope_file) and self.inputs.cope_file is not False:
+            if isdefined(self.inputs.mask_file) and self.inputs.mask_file is not False:
+                self.flameo = True
+                runtime = super(FLAMEO, self)._run_interface(runtime)
+
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
+
+        if self.flameo is False:
+            return outputs
+
         pth = op.join(os.getcwd(), self.inputs.log_dir)
 
         pes = human_order_sorted(glob(os.path.join(pth, "pe[0-9]*.*")))

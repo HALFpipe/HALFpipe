@@ -52,5 +52,5 @@ def cacheobj(workdir, typestr, obj, uuid=None):
         uuid = getattr(obj, "uuid", None)
     path = Path(workdir) / make_cachefilepath(typestr, uuid)
     if path.exists():
-        logging.getLogger("halfpipe").warn(f"Overwrite {path}")
+        logging.getLogger("halfpipe").warning(f"Overwrite {path}")
     dumppicklelzma(path, obj)

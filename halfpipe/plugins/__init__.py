@@ -3,6 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .multiproc import MultiProcPlugin
-# from .linear import LinearPlugin
+from .linear import LinearPlugin
 
 __all__ = [MultiProcPlugin]
