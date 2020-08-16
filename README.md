@@ -194,6 +194,8 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
 
 ## 3.	Running on a high-performance computing cluster
 
+> TODO
+
 --n-chunks N_CHUNKS number of subject-level workflow chunks to generate --subject-chunks generate one subject-level workflow per subject --use-cluster generate workflow suitable for running on a cluster
 
 run:
@@ -256,6 +258,11 @@ The following output paths are specified with the same convention as file inputs
 ### Adjust nipype `--nipype-<omp-nthreads|memory-gb|n-procs|run-plugin>`
 
 ### Lifecycle flags `--<only|skip>-<spec-ui|workflow|run>`
+
+A HALFpipe run is divided internally into four stages, spec-ui, workflow, execgraph and run.
+* The `spec-ui` stage is where you specify things in the user interface. It creates the spec.json file. To only run this stage, use the option `--spec-ui-only`. To skip this stage 
+* The `workflow` stage is where HALFpipe uses the spec.json data to search for all the files that match what was input in the user interface. It then generates a nipype workflow that is saved to the working directory as a file called `workflow.{uuid}.pickle.xz`. This usually takes a couple of minuted and cannot be parallelized. The uuid is a unique identifier generated from the spec file and the input files. It is re-calculated every time we run this stage. The uuid algorithm produces a different output if there are any changes (such as when new input files for new subjects become available, or the spec.json is changed to add a new analysis). Otherwise, it stays the same. Therefore, if a workflow file with the calculated uuid exists, then we do not need to run this stage. We can simple re-use the workflow from the existing file, and save some time. This stage has the corresponding option `--workflow-only`.
+* The execgraph stage is where nipype validates the workflow that was generated in the previous stage and prepares it for execution. This also cannot be parallelized, and may take tens of minutes until around two hours for a thousand subjects. In this stage, we can also decide to split the execution into chunks, for example with the option `--subject-chunks` that creates one chunk per subject plus a group-level chunk.  The result is cached as a file in the working directory called `execgraph.{n_chunks}_chunks.{uuid}.pickle.xz`. The uuid part is used in the same way as before, so that we do not repeat this stage unless necessary.
 
 ### Working directory `--workdir`
 
