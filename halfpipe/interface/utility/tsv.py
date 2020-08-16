@@ -119,7 +119,7 @@ class MergeColumns(IOBase):
                 else:
                     out_df = pd.concat((out_df, in_df), axis=1)
 
-        index = self.inputs.row_index is not False
+        index = isdefined(self.inputs.row_index) and self.inputs.row_index is not False
         if isinstance(self.inputs.row_index, list):
             index = True
             out_df.index = self.inputs.row_index

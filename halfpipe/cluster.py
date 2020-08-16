@@ -12,14 +12,12 @@ from .io import make_cachefilepath
 
 script_template = """#!/bin/bash
 #SBATCH --job-name=halfpipe
-#SBATCH --output=batch.log.txt
+#SBATCH --output=halfpipe.log.txt
 
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=5888M
-
-#SBATCH --partition=medium
 
 #SBATCH --array=1-{n_chunks}
 

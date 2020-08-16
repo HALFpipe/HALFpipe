@@ -102,18 +102,12 @@ def _get_conditions(ctx):
     ctx.spec.features[-1].conditions = ordered_conditions
 
 
-class AddAnotherContrastStep(YesNoStep):
-    header_str = "Add another contrast?"
-    yes_step_type = None  # add later, because not yet defined
-    no_step_type = next_step_type
-
-
 class ConfirmInconsistentStep(YesNoStep):
     no_step_type = None
 
-    def __init__(self, app, noun, next_step_type):
+    def __init__(self, app, noun, this_next_step_type):
         self.header_str = f"Do you really want to use inconsistent {noun} across features?"
-        self.yes_step_type = next_step_type
+        self.yes_step_type = this_next_step_type
         super(ConfirmInconsistentStep, self).__init__(app)
 
     def run(self, ctx):
@@ -162,12 +156,18 @@ class HighPassFilterCutoffStep(Step):
         if self.result is not None:
             ctx.spec.features[-1].high_pass_filter_cutoff = first(self.result.values())  # only one value
 
-        next_step_type = AddAnotherContrastStep
+        this_next_step_type = next_step_type
 
         if len(self.valset) == 1 and self.result not in self.valset:
-            return ConfirmInconsistentStep(self.app, f"{self.noun} values", next_step_type)(ctx)
+            return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
 
-        return next_step_type(self.app)(ctx)
+        return this_next_step_type(self.app)(ctx)
+
+
+class AddAnotherContrastStep(YesNoStep):
+    header_str = "Add another contrast?"
+    yes_step_type = None  # add later, because not yet defined
+    no_step_type = HighPassFilterCutoffStep
 
 
 class ContrastValuesStep(Step):

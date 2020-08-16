@@ -11,9 +11,9 @@ from ...utils import first
 
 
 class DatabaseMetadataLoader:
-    def __init__(self, database, provider):
+    def __init__(self, database, loader):
         self.database = database
-        self.provider = provider
+        self.loader = loader
 
     def fill(self, fileobj, key):
         if self.database is None:
@@ -35,14 +35,24 @@ class DatabaseMetadataLoader:
                 filepath = fileobj.path
                 magnitude1 = self.database.associations(filepath, suffix="magnitude1")
                 magnitude2 = self.database.associations(filepath, suffix="magnitude2")
-                if len(magnitude1) > 0 and len(magnitude2) > 0:
-                    m1 = self.database.fileobj(first(magnitude1))
-                    m2 = self.database.fileobj(first(magnitude2))
-                    if self.provider.fill(m1, "echo_time") and self.provider.fill(m2, "echo_time"):
-                        e1 = m1.metadata.get("echo_time")
-                        e2 = m2.metadata.get("echo_time")
-                        if e1 is not None and e2 is not None:
-                            value = abs(e1 - e2)
+                if magnitude1 is not None and magnitude2 is not None:
+                    if len(magnitude1) > 0 and len(magnitude2) > 0:  # two magnitude files
+                        m1 = self.database.fileobj(first(magnitude1))
+                        m2 = self.database.fileobj(first(magnitude2))
+                        if self.loader.fill(m1, "echo_time") and self.loader.fill(m2, "echo_time"):
+                            e1 = m1.metadata.get("echo_time")
+                            e2 = m2.metadata.get("echo_time")
+                            if e1 is not None and e2 is not None:
+                                value = abs(e1 - e2)
+
+        if key == "echo_time":  # calculate from associated file
+            if fileobj.datatype == "fmap" and fileobj.suffix.startwith("phase"):
+                suffix = dict(phase1="magnitude1", phase2="magnitude2")[fileobj.suffix]
+                magnitude = self.database.associations(filepath, suffix=suffix)
+                if magnitude is not None and len(magnitude) > 0:
+                    m = self.database.fileobj(first(magnitude))
+                    if self.loader.fill(m, "echo_time"):
+                        value = m.metadata.get("echo_time")
 
         if value is None:
             return False

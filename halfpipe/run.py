@@ -31,9 +31,7 @@ def _main():
         "--workdir", type=str, help="directory where output and intermediate files are stored",
     )
     basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
-    basegroup.add_argument("--debug", action="store_true", default=False)
     basegroup.add_argument("--verbose", action="store_true", default=False)
-    basegroup.add_argument("--watchdog", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
     steps = ["spec-ui", "workflow", "run"]
@@ -82,6 +80,10 @@ def _main():
         help="print the version number and exit",
         default=False,
     )
+
+    debuggroup = ap.add_argument_group("debug", "")
+    debuggroup.add_argument("--debug", action="store_true", default=False)
+    debuggroup.add_argument("--watchdog", action="store_true", default=False)
 
     args = ap.parse_args()
     global debug

@@ -10,7 +10,7 @@ from nipype.pipeline.plugins.base import logger, report_crash, report_nodes_not_
 from nipype.pipeline.engine.utils import topological_sort
 
 
-class LinearPlugin(nip.LinearPlugin):
+class DebugPlugin(nip.LinearPlugin):
     """Execute workflow in series
     """
 
