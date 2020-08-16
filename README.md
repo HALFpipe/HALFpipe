@@ -94,77 +94,103 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
      1. `Add more BOLD image files?`
         - `Yes` Loop back to 2
 1. `Do slice timing?`
-  - `Yes`
+    - `Yes`
      1. `Check slice acquisition direction values`
      1. `Check slice timing values`
-  - `No` Skip this step
+    - `No` Skip this step
 1. `Specify field maps?` If the data was imported from a BIDS directory, this step will be omitted.
-  - `Yes`
-    1. `Specify the type of the field maps`
-      - EPI (blip-up blip-down)
-          1. `Specify the path of the blip-up blip-down EPI image files`
-      - Phase difference and magnitude (used by Siemens scanners)
-          1. `Specify the path of the magnitude image files`
-          1. `Specify the path of the phase/phase difference image files`
-          1. `Specify echo time difference in seconds`
-      - Scanner-computed field map and magnitude (used by GE / Philips scanners)
-          1. `Specify the path of the magnitude image files`
-          1. `Specify the path of the field map image files`
-    1. `Add more field maps?` Loop back to 1
-    1. `Specify effective echo spacing for the functional data in seconds`
-    1. `Specify phase encoding direction for the functional data`
- - `No` Skip this step
+    - `Yes`
+      1. `Specify the type of the field maps`
+        - EPI (blip-up blip-down)
+            1. `Specify the path of the blip-up blip-down EPI image files`
+        - Phase difference and magnitude (used by Siemens scanners)
+            1. `Specify the path of the magnitude image files`
+            1. `Specify the path of the phase/phase difference image files`
+            1. `Specify echo time difference in seconds`
+        - Scanner-computed field map and magnitude (used by GE / Philips scanners)
+            1. `Specify the path of the magnitude image files`
+            1. `Specify the path of the field map image files`
+      1. `Add more field maps?` Loop back to 1
+      1. `Specify effective echo spacing for the functional data in seconds`
+      1. `Specify phase encoding direction for the functional data`
+    - `No` Skip this step
 
 ### Features
 
 1. `Specify first-level features?`
-  - `Yes`
-    1. `Specify the feature type`
-       - `Task-based`
-         1. `Specify feature name`
-         1. `Specify images to use`
-         1. `Specify the event file type`
-           - `SPM multiple conditions` A MATLAB .mat file containing three arrays: `names` (condition), `onsets` and `durations`
-           - `FSL 3-column` One text file for each condition. Each file has its corresponding condition in the filename. The first column specifies the event onset, the second the duration. The third column of the files is ignored, so parametric modulation is not supported
-           - `BIDS TSV` A tab-separated table with named columns `trial_type` (condition), `onset` and `duration`
-         1. `Specify the path of the event files` 
-         1. `Select conditions to add to the model`
-         1. `Specify contrasts`
-            1. `Specify contrast name`
-            1. `Specify contrast values`
-            1. `Add another contrast?`
-               - `Yes` Loop back to 1
-               - `No` Continue
-         1. `Apply a temporal filter to the design matrix?` Whereas the temporal filter of the input image and any confound regressors that may be added to the design matrix is determined by the preprocessing settings that follow in 10, a separate temporal filter can be specified for the events
-         1. `Apply smoothing?`
-            - `Yes`
-               1. `Specify smoothing FWHM in mm`
-            - `No` Continue
-         1. `Grand mean scaling will be applied with a mean of 10000.000000`
-         1. `Temporal filtering will be applied using a gaussian-weighted filter`\
-            `Specify the filter width in seconds`
-         1. `Remove confounds?`
-       - `Seed-based connectivity`
-         1. `Specify feature name`
-         1. `Specify images to use`
-         1. `Specify binary seed mask file(s)`
-            1. `Specify the path of the binary seed mask image files`
-            1. `Check space values`
-            1. `Add binary seed mask image file`
-       - `Dual regression`
-         1. `Specify feature name`
-         1. `Specify images to use`
-       - `Atlas-based connectivity matrix`
-         1. `Specify feature name`
-         1. `Specify images to use`
-       - `ReHo`
-         1. `Specify feature name`
-         1. `Specify images to use`
-       - `fALFF`
-         1. `Specify feature name`
-         1. `Specify images to use`
+    - `Yes`
+      1. `Specify the feature type`
+         - `Task-based`
+           1. `Specify feature name`
+           1. `Specify images to use`
+           1. `Specify the event file type`
+             - `SPM multiple conditions` A MATLAB .mat file containing three arrays: `names` (condition), `onsets` and `durations`
+             - `FSL 3-column` One text file for each condition. Each file has its corresponding condition in the filename. The first column specifies the event onset, the second the duration. The third column of the files is ignored, so parametric modulation is not supported
+             - `BIDS TSV` A tab-separated table with named columns `trial_type` (condition), `onset` and `duration`
+           1. `Specify the path of the event files` 
+           1. `Select conditions to add to the model`
+           1. `Specify contrasts`
+              1. `Specify contrast name`
+              1. `Specify contrast values`
+              1. `Add another contrast?`
+                 - `Yes` Loop back to 1
+                 - `No` Continue
+           1. `Apply a temporal filter to the design matrix?` Whereas the temporal filter of the input image and any confound regressors that may be added to the design matrix is determined by the preprocessing settings that follow in 10, a separate temporal filter can be specified for the events
+           1. `Apply smoothing?`
+              - `Yes`
+                 1. `Specify smoothing FWHM in mm`
+              - `No` Continue
+           1. `Grand mean scaling will be applied with a mean of 10000.000000`
+           1. `Temporal filtering will be applied using a gaussian-weighted filter`\
+              `Specify the filter width in seconds`
+           1. `Remove confounds?`
+         - `Seed-based connectivity`
+           1. `Specify feature name`
+           1. `Specify images to use`
+           1. `Specify binary seed mask file(s)`
+              1. `Specify the path of the binary seed mask image files`
+              1. `Check space values`
+              1. `Add binary seed mask image file`
+         - `Dual regression`
+           1. `Specify feature name`
+           1. `Specify images to use`
+         - `Atlas-based connectivity matrix`
+           1. `Specify feature name`
+           1. `Specify images to use`
+         - `ReHo`
+           1. `Specify feature name`
+           1. `Specify images to use`
+         - `fALFF`
+           1. `Specify feature name`
+           1. `Specify images to use`
+    - `No` Skip this step
+1. `Add another first-level feature?`
+     - `Yes` Loop back to 1
+     - `No` Continue
+1. `Output a preprocessed image?`
+     - `Yes`
+       1. `Specify setting name`
+       1. `Specify images to use`
+       1. `Apply smoothing?`
+          - `Yes`
+             1. `Specify smoothing FWHM in mm`
+          - `No` Continue
+       1. `Do grand mean scaling?`
+          - `Yes`
+             1. `Specify grand mean`
+          - `No` Continue
+       1. `Apply a temporal filter?`
+          - `Yes`
+             1. `Specify the type of temporal filter`
+                - `Gaussian-weighted`
+                - `Frequency-based`
+          - `No` Continue
+       1. `Remove confounds?`
+     - `No` Continue
 
 ### Models
+
+> TODO
 
 ## 3.	Running on a high-performance computing cluster
 
