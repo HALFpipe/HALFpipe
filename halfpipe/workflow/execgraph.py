@@ -104,14 +104,18 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
     newnodes = dict()
     for (v, u, c) in nx.edge_boundary(execgraph.reverse(), modelnodes, data=True):
+        u.keep = True  # don't allow results to be deleted
+
         newu = newnodes.get(u.fullname)
         if newu is None:
             uhex = hexdigest(u.fullname)[:8]
             newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}", base_dir=modeldir)
             newu.config = u.config
             newnodes[u.fullname] = newu
-        newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
+
         execgraph.add_edge(newu, v, attr_dict=c)
+
+        newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
         for outattr, inattr in c["connect"]:
             newu.needed_outputs = [*newu.needed_outputs, outattr]
             v.input_source[inattr] = (newuresultfile, outattr)

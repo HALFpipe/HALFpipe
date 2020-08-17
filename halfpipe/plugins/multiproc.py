@@ -87,7 +87,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 unmark = False  # keep fmriprep if keep is "some"
             if self._keep == "some" and "ica_aroma_components_wf" in name:
                 unmark = False
-            if "features_wf" in name and "datasink" in name:
+            if hasattr(self.procs[jobid], "keep") and self.procs[jobid].keep is True:
                 unmark = False  # always keep feature outputs
             self._rt.set_node_complete(self.procs[jobid], unmark)
         super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)

@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+import logging
 
 import numpy as np
 import nibabel as nib
@@ -89,7 +90,8 @@ class NiftiheaderMetadataLoader:
 
         if key == "slice_timing":
             try:
-                if np.isclose(header.get_slice_duration(), 0.0):
+                slice_duration = header.get_slice_duration()
+                if np.isclose(slice_duration, 0.0):
                     if self.fill(fileobj, "repetition_time"):
                         if self.fill(fileobj, "slice_encoding_direction"):
                             slice_dim = ["i", "j", "k"].index(
@@ -99,8 +101,17 @@ class NiftiheaderMetadataLoader:
                             slice_duration = fileobj.metadata.get("repetition_time") / n_slices
                             header.set_slice_duration(slice_duration)
                 slice_times = header.get_slice_times()
+                slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
                 if not np.allclose(slice_times, 0.0):
                     value = slice_times
+                    if self.fill(fileobj, "repetition_time"):
+                        max_slice_time = max(value)
+                        tr = fileobj.metadata.get("repetition_time")
+                        if not np.allclose(max_slice_time, tr):
+                            logging.getLogger("halfpipe").warning(
+                                f"Maximum slice time {max_slice_time:f} does not match repetition time {tr:f}\n"
+                                f'Image file "{fileobj.path}" has a slice_duration of {slice_duration:f} ms'
+                            )
             except nib.spatialimages.HeaderDataError:
                 return False
 

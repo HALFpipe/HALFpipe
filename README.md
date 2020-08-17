@@ -195,13 +195,31 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
 
 ## 3.	Running on a high-performance computing cluster
 
-> TODO
+1. Log in to your cluster's head node
 
---n-chunks N_CHUNKS number of subject-level workflow chunks to generate --subject-chunks generate one subject-level workflow per subject --use-cluster generate workflow suitable for running on a cluster
+1. Request an interactive job. Refer to your cluster's documentation for how to do this
 
-run:
+> A common issue with remote work via secure shell is that the connection usually breaks after a few hours. For batch jobs this is not an issue, but for interactive jobs this can be quite frustrating. When the connection is lost, the node you were connected to will automatically quit all programs you were running.
+  To circumvent this potential problem, you can run interactive jobs within `screen` or `tmux` (whichever is available). These commands allow you to open sessions in the terminal that will continue running in the background even when you close or disconnect. Here's a quick overview of how to use the commands (more in-depth documentation is available for example at http://www.dayid.org/comp/tm.html).
+  1. Open a new screen/tmux session on the head node by running either `screen` or `tmux`
+  1. Request an interactive job from within the session, for example with `srun --pty bash -i`
+  1. Run the command that you want to run
+  1. Detach from the screen/tmux session, meaning disconnecting with the ability to re-connect later \
+     For screen, this is done by first pressing `Control+a`, then letting go, and then pressing `d` on the keyboard. \
+     For tmux, it's `Control+b` instead of `Control+a`. \
+     Note that this is always control, even if you're on a mac.
+  1. Close your connection to the head node with `Control+d`. `screen`/`tmux` will remain running in the background
+  1. Later, connect again to the head node. Run `screen -r` or `tmux attach` to check back on the interactive job. If everything went well and the command you wanted to run finished, close the interactive job with `Control+d` and then the `screen`/`tmux` session with `Control+d` again. \
+     If the command hasn't finished yet, detach as before and come back later
 
---execgraph-file EXECGRAPH_FILE manually select execgraph file --only-chunk-index ONLY_CHUNK_INDEX select which chunk to run --only-model-chunk
+1. 
+     
+     --n-chunks N_CHUNKS number of subject-level workflow chunks to generate --subject-chunks generate one subject-level workflow per subject --use-cluster generate workflow suitable for running on a cluster
+
+     run:
+
+     --execgraph-file EXECGRAPH_FILE manually select execgraph file --only-chunk-index ONLY_CHUNK_INDEX select which chunk to run --only-model-chunk
+
 
 ## 4. Quality checks
 
@@ -262,7 +280,7 @@ The following output paths are specified with the same convention as file inputs
 - Just like for features \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-brain_mask.nii.gz` 
   
-- Filtered confounds time series \
+- Filtered confounds time series, where all filters that are applied to the BOLD image are applied to the regressors as well.  \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-confounds_regressors.tsv`
 
 ### Models
@@ -277,16 +295,25 @@ The following output paths are specified with the same convention as file inputs
 
 ### Control command line logging `--verbose`
 
+By default, only errors and warnings will be output to the command line. This makes it easier to see when something goes wrong, because there is less output. However, if you want to be able to inspect what is being run, you can add the `--verbose` flag to the end of the command used to call `HALFpipe`. 
+
+Verbose logs are always written to the `log.txt` file in the working directory, so going back and inspecting this log is always possible, even if the `--verbose` flag was not specified.
+
 ### Automatically remove unneeded files `--keep`
+
+As `HALFpipe` allows the user to run multiple variations 
 
 ### Adjust nipype `--nipype-<omp-nthreads|memory-gb|n-procs|run-plugin>`
 
-### Lifecycle flags `--<only|skip>-<spec-ui|workflow|run>`
+
+
+### Lifecycle flags `--<only|skip>-<spec-ui|workflow|run|model-chunk>`
 
 A `HALFpipe` run is divided internally into four stages, spec-ui, workflow, execgraph and run.
-* The `spec-ui` stage is where you specify things in the user interface. It creates the spec.json file. To only run this stage, use the option `--spec-ui-only`. To skip this stage 
-* The `workflow` stage is where `HALFpipe` uses the spec.json data to search for all the files that match what was input in the user interface. It then generates a nipype workflow that is saved to the working directory as a file called `workflow.{uuid}.pickle.xz`. This usually takes a couple of minuted and cannot be parallelized. The uuid is a unique identifier generated from the spec file and the input files. It is re-calculated every time we run this stage. The uuid algorithm produces a different output if there are any changes (such as when new input files for new subjects become available, or the spec.json is changed to add a new analysis). Otherwise, it stays the same. Therefore, if a workflow file with the calculated uuid exists, then we do not need to run this stage. We can simple re-use the workflow from the existing file, and save some time. This stage has the corresponding option `--workflow-only`.
-* The execgraph stage is where nipype validates the workflow that was generated in the previous stage and prepares it for execution. This also cannot be parallelized, and may take tens of minutes until around two hours for a thousand subjects. In this stage, we can also decide to split the execution into chunks, for example with the option `--subject-chunks` that creates one chunk per subject plus a group-level chunk.  The result is cached as a file in the working directory called `execgraph.{n_chunks}_chunks.{uuid}.pickle.xz`. The uuid part is used in the same way as before, so that we do not repeat this stage unless necessary.
+* The `spec-ui` stage is where you specify things in the user interface. It creates the `spec.json` file that contains all the information needed to run `HALFpipe`. To only run this stage, use the option `--only-spec-ui`. To skip this stage, use the option `--skip-spec-ui`
+* The `workflow` stage is where `HALFpipe` uses the `spec.json` data to search for all the files that match what was input in the user interface. It then generates a `nipype` workflow for preprocessing, feature extraction and group models. `nipype` then validates the workflow and prepares it for execution. This usually takes a couple of minutes and cannot be parallelized. For hundreds of subjects, this may even take a few hours. This stage has the corresponding option `--only-workflow` and `--skip-workflow`.
+  - This stage saves several intermediate files. These are named `workflow.{uuid}.pickle.xz`, `execgraph.{uuid}.pickle.xz` and `execgraph.{n_chunks}_chunks.{uuid}.pickle.xz`. The `uuid` in the file name is a unique identifier generated from the `spec.json` file and the input files. It is re-calculated every time we run this stage. The uuid algorithm produces a different output if there are any changes (such as when new input files for new subjects become available, or the `spec.json` is changed, for example to add a new feature or group model). Otherwise, the `uuid` stays the same. Therefore, if a workflow file with the calculated `uuid` already exists, then we do not need to run this stage. We can simple re-use the workflow from the existing file, and save some time.
+  - In this stage, we can also decide to split the execution into chunks. The flag `--subject-chunks` creates one chunk per subject. The flag `--use-cluster` automatically activates `--subject-chunks`. The flag `--n-chunks` allows the user to specify a specific number of chunks. This is useful if the execution should be spread over a set number of computers. In addition to these, a model chunk is generated. 
 
 ### Working directory `--workdir`
 
@@ -298,8 +325,8 @@ The `HALFpipe` container, or really most containers, contain the entire base sys
 
 ### Beta 2 (August 16th 2020)
 
--	**Slice timing:** Upon user request, `HALFpipe` now exposes `fmriprep`’s slice timing option. In `fmriprep`, this option is set once when starting. As such, it is currently not possible to either a) do slice timing for only part of the images or b) simultaneously output a slice timed and a non-slice timed preprocessed image. For both of these cases we recommend doing multiple runs of `HALFpipe`, and to repeat quality control for both.
--	**Metadata loading and verification:** A lot of different metadata is required for the correct functioning of `HALFpipe`. Usually, the way metadata is stored has some user-specific idiosyncrasies and conventions that can be difficult to automate around. For this reason, we have decided to prompt the user to verify and/or enter any and every metadata value. To streamline this process, `HALFpipe` attempts to load metadata a) from a “sidecar” JSON file placed next to the target file, or b) from the NIFTI header. If neither is possible, the user is prompted to manually enter the required parameter.
+-	**Slice timing:** Upon user request, `HALFpipe` now exposes `fmriprep`’s slice timing option. In `fmriprep`, this option is set once when starting. As such, it is currently not possible to either a) do slice timing for only part of the images or b) simultaneously output a slice timed and a non-slice timed preprocessed image. For both of these cases we recommend doing multiple runs of `HALFpipe`, and to repeat quality control for both
+-	**Metadata loading and verification:** A lot of different metadata is required for the correct functioning of `HALFpipe`. Usually, the way metadata is stored has some user-specific idiosyncrasies and conventions that can be difficult to automate around. For this reason, we have decided to prompt the user to verify and/or enter any and every metadata value. To streamline this process, `HALFpipe` attempts to load metadata a) from a “sidecar” JSON file placed next to the target file, or b) from the NIFTI header. If neither is possible, the user is prompted to manually enter the required parameter
 -	**Output multiple preprocessed image files:** The user interface now supports outputting different preprocessed image files with different settings. For these files, we expose the full breadth of settings available in `HALFpipe`. Specifically, these are:
     1. *Grand mean scaling*
     1. *Spatial smoothing*, implemented using AFNI `3dBlurInMask` 
@@ -308,16 +335,16 @@ The `HALFpipe` container, or really most containers, contain the entire base sys
        - *Frequency-based*, implemented using AFNI `3dTproject`
     1. *ICA-AROMA*, using a custom implementation of the algorithm used by FSL `fsl_regfilt`
     1. *Confounds regression*, using a custom implementation of the algorithm used by FSL `fsl_regfilt -a`
--	**Simpler use on cluster systems:** We added the command line option `—use-cluster`. When this command line option is added to the end of the command, we automatically a) divide the workflow into one subject chunks and b) instead of running, output a template cluster submit script called “submit.slurm.sh”. This script is made for SLURM clusters, but can easily be adapted to other systems.
--	**Output files now follow the BIDS derivatives naming scheme:** We value interoperability with other software. [`HALFpipe` outputs](#) can now be automatically be parsed by software that accepts BIDS derivatives.
--	**Additional output files:** For every statistical map, we place a BIDS-conforming JSON file containing a summary of the preprocessing settings, and a list of the raw data files that were used for the analysis (`RawSources`).
+-	**Simpler use on cluster systems:** We added the command line option `—use-cluster`. When this command line option is added to the end of the command, we automatically a) divide the workflow into one subject chunks and b) instead of running, output a template cluster submit script called `submit.slurm.sh`. This script is made for SLURM clusters, but can easily be adapted to other systems
+-	**Output files now follow the BIDS derivatives naming scheme:** We value interoperability with other software. [`HALFpipe` outputs](#) can now be automatically be parsed by software that accepts BIDS derivatives
+-	**Additional output files:** For every statistical map, we place a BIDS-conforming JSON file containing a summary of the preprocessing settings, and a list of the raw data files that were used for the analysis (`RawSources`)
     * *Task-based:* Design matrix, contrast matrix
     * *Seed-based connectivity:* Design matrix, contrast matrix, mean tSNR of the seed region (`MeanTSNR`)
     * *Dual regression:* Design matrix, contrast matrix, mean tSNR of the component (`MeanTSNR`)
     * *Atlas-based connectivity matrix:* List of mean tSNR values of the atlas region (`MeanTSNR`)
     * *Group models:* Design matrix, contrast matrix
--	**Improved confounds handling:** [Lindquist et al. (2018)](https://doi.org/10.1101/407676) find that in preprocessing pipelines, "later preprocessing steps can reintroduce artifacts previously removed from the data in prior preprocessing steps". This happens because individual preprocessing steps are not necessarily orthogonal. To circumvent this issue they recommend "sequential orthogonalization of covariates/linear filters performed in series." We have now implemented this strategy in `HALFpipe`. All preprocessing steps (filters) that are applied to the image file will be equally applied to the 
--	**Recovering from errors:** Even if one subject fails, group statistics will still be run and available. This can be useful when data quality issues make specific preprocessing steps fail.
+-	**Improved confounds handling:** [Lindquist et al. (2018)](https://doi.org/10.1101/407676) find that in preprocessing pipelines, "later preprocessing steps can reintroduce artifacts previously removed from the data in prior preprocessing steps". This happens because individual preprocessing steps are not necessarily orthogonal. To circumvent this issue they recommend "sequential orthogonalization of covariates/linear filters performed in series." We have now implemented this strategy in `HALFpipe`
+-	**Recovering from errors:** Even if one subject fails, group statistics will still be run and available. This can be useful when data quality issues make specific preprocessing steps fail
 
 ## 9. Contact
 

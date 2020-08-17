@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu, fsl
+from nipype.interfaces import utility as niu
 
 from ...interface import (
     InterceptOnlyModel,
