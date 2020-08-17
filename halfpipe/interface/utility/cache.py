@@ -15,6 +15,8 @@ class LoadResult(IOBase):
     input_spec = TraitedSpec
     output_spec = DynamicTraitedSpec
 
+    always_run = True
+
     def __init__(self, node, **inputs):
         super(LoadResult, self).__init__(**inputs)
         self._resultfilepath = Path(node.output_dir()) / ("result_%s.pklz" % node.name)
