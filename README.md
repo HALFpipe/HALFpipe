@@ -7,7 +7,7 @@ Welcome to ENIGMA `HALFpipe`!
 
 > **NOTE:** ENIGMA `HALFpipe` is pre-release software and not yet considered production-ready.
 >
-> If you would like to beta test and provide feedback, thank you! We recommend starting out with Beta 2, as this has many new features. If you have used Beta 1 before, please carefully read the [changes section](#). If you encounter issues, please see the [troubleshooting](#) section of this document. 
+> If you would like to beta test and provide feedback, thank you! We recommend starting out with Beta 2, as this has many new features. If you have used Beta 1 before, please carefully read the [changes section](#8-changes). If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
 >  
 > Beta 1 has proven to work in a variety of environments in the past weeks of beta testing and remains available for comparison.
 >
@@ -28,9 +28,9 @@ Welcome to ENIGMA `HALFpipe`!
 
 The first step is to install one of the supported container platforms. If you're using a high-performance computing cluster, more often than not[`Singularity`](https://sylabs.io) will already be available.
 
-If not, we recommend using the latest version of[`Singularity`](https://sylabs.io).However, it can be somewhat cumbersome to install, as it needs to be built from source.
+If not, we recommend using the latest version of[`Singularity`](https://sylabs.io). However, it can be somewhat cumbersome to install, as it needs to be built from source.
 
-The [`NeuroDebian`](https://neuro.debian.net/) package repository provides an older version of [`Singularity`](https://sylabs.io/guides/2.6/user-guide/) for[some](https://neuro.debian.net/pkgs/singularity-container.html) Linux distributions.
+The [`NeuroDebian`](https://neuro.debian.net/) package repository provides an older version of [`Singularity`](https://sylabs.io/guides/2.6/user-guide/) for [some](https://neuro.debian.net/pkgs/singularity-container.html) Linux distributions.
 
 In contrast to `Singularity`, `Docker` always requires elevated privileges to run containers. In other words, every user running a `Docker` container automatically has administrator privileges on the computer they're using. Therefore, it is inherently a bad choice for multi-user environments, where the access of individual users should be limited. `Docker` is the only option that is compatible with `Mac OS X`.
 
@@ -50,9 +50,9 @@ The second step is to download the `HALFpipe` to your computer. This requires ap
 | Singularity        | 2.x     | `singularity pull docker://mindandbrain/halfpipe` |
 | Docker             |         | `docker pull mindandbrain/halfpipe`               |
 
-`Singularity` version `3.x` creates a container image file called`halfpipe_latest.sif` in the directory where you run the `pull` command. For `Singularity` version `2.x` the file is named`mindandbrain-halfpipe-master-latest.simg`. Whenever you want to use the container, you need pass `Singularity` the path to this file.
+`Singularity` version `3.x` creates a container image file called `halfpipe_latest.sif` in the directory where you run the `pull` command. For `Singularity` version `2.x` the file is named `mindandbrain-halfpipe-master-latest.simg`. Whenever you want to use the container, you need pass `Singularity` the path to this file.
 
-> **NOTE:** `Singularity` may store a copy of the container in its cache directory. The cache directory is located by default in your home directory at `~/.singularity`. If you need to save disk space, you can safely delete this directory after downloading, i.e. by running `rm -rf ~/.singularity`. Alternatively, you could move the cache directory somewhere with more free disk space using a symlink. This way, files will automatically be stored there in the future. For example, if you have a lot of free disk space in `/mnt/storage`, then you could first run `mv ~/.singularity /mnt/storage` to move the cache directory, and then `ln -s /mnt/storage/.singularity ~/.singularity` to create the symlonk.
+> **NOTE:** `Singularity` may store a copy of the container in its cache directory. The cache directory is located by default in your home directory at `~/.singularity`. If you need to save disk space in your home directory, you can safely delete the cache directory after downloading, i.e. by running `rm -rf ~/.singularity`. Alternatively, you could move the cache directory somewhere with more free disk space using a symlink. This way, files will automatically be stored there in the future. For example, if you have a lot of free disk space in `/mnt/storage`, then you could first run `mv ~/.singularity /mnt/storage` to move the cache directory, and then `ln -s /mnt/storage/.singularity ~/.singularity` to create the symlink.
 
 `Docker` will store the container in its storage base directory, so it does not matter from which directory you run the `pull` command.
 
@@ -79,7 +79,11 @@ The user interface asks a series of questions about your data and the analyses y
 
 ### Files
 
-To run `fmriprep` preprocessing, at least a T1-weighted structural image and a BOLD image file is required. To automatically 
+To run preprocessing, at least a T1-weighted structural image and a BOLD image file is required. Preprocessing and data analysis proceeds automatically. However, to be able to run automatically, data files need to be input in a way suitable for automation. 
+
+For this kind of automation, `HALFpipe` needs to know the relationships between files, such as which files belong to the same subject. However, even though it would be obvious for a human, a program cannot easily assign a file name to a subject, and this will be true as long as there are differences in naming between different researchers or labs. One researcher may name the same file `subject_01_rest.nii.gz` and another `subject_01/scan_rest.nii.gz`. 
+
+In `HALFpipe`, we solve this issue by inputting file names in a specific way. For example, instead of `subject_01/scan_rest.nii.gz`, `HALFpipe` expects you to input `{subject}/scan_rest.nii.gz`. `HALFpipe` can then match all files on disk that match this naming schema, and extract the subject ID `subject_01`. Using the extracted subject ID, other files can now be matched to this image. If all input files are available in BIDS format, then this step can be skipped.
 
 1. `Specify working directory` All intermediate and outputs of `HALFpipe` will be placed in the working directory. Keep in mind to choose a location with sufficient free disk space, as intermediates can be multiple gigabytes in size for each subject.
 1. `Is the data available in BIDS format?`
@@ -136,7 +140,7 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
               1. `Add another contrast?`
                  - `Yes` Loop back to 1
                  - `No` Continue
-           1. `Apply a temporal filter to the design matrix?` Whereas the temporal filter of the input image and any confound regressors that may be added to the design matrix is determined by the preprocessing settings that follow in 10, a separate temporal filter can be specified for the events
+           1. `Apply a temporal filter to the design matrix?` A separate temporal filter can be specified for the design matrix. In contrast, the temporal filtering of the input image and any confound regressors added to the design matrix is specified in 10. In general, the two settings should match
            1. `Apply smoothing?`
               - `Yes`
                  1. `Specify smoothing FWHM in mm`
@@ -155,15 +159,19 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
          - `Dual regression`
            1. `Specify feature name`
            1. `Specify images to use`
+           1. TODO
          - `Atlas-based connectivity matrix`
            1. `Specify feature name`
            1. `Specify images to use`
+           1. TODO
          - `ReHo`
            1. `Specify feature name`
            1. `Specify images to use`
+           1. TODO
          - `fALFF`
            1. `Specify feature name`
            1. `Specify images to use`
+           1. TODO
     - `No` Skip this step
 1. `Add another first-level feature?`
      - `Yes` Loop back to 1
@@ -212,18 +220,18 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
   1. Later, connect again to the head node. Run `screen -r` or `tmux attach` to check back on the interactive job. If everything went well and the command you wanted to run finished, close the interactive job with `Control+d` and then the `screen`/`tmux` session with `Control+d` again. \
      If the command hasn't finished yet, detach as before and come back later
 
-1. 
+1. In the interactive job, run the `HALFpipe` user interface, but add the flag `--use-cluster` to the end of the command. \
+   For example, `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --use-cluster`
+
+1. As soon as you finish specifying all your data, features and models in the user interface, `HALFpipe` will now generate everything needed to run on the cluster. For hundreds of subjects, this can take up to a few hours.
+
+1. When `HALFpipe` exits, edit the generated submit script `submit.slurm.sh` according to your cluster's documentation and then run it. This submit script will calculate everything except group statistics.
      
-     --n-chunks N_CHUNKS number of subject-level workflow chunks to generate --subject-chunks generate one subject-level workflow per subject --use-cluster generate workflow suitable for running on a cluster
-
-     run:
-
-     --execgraph-file EXECGRAPH_FILE manually select execgraph file --only-chunk-index ONLY_CHUNK_INDEX select which chunk to run --only-model-chunk
-
+1. As soon as all processing has been completed, you can run group statistics. This is usually very fast, so you can do this in an interactive session. Run `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --only-model-chunk` and then select `Run without modification` in the user interface. 
 
 ## 4. Quality checks
 
-
+> TODO
 
 ## 5. Outputs
 
@@ -239,8 +247,6 @@ To run `fmriprep` preprocessing, at least a T1-weighted structural image and a B
 - The untouched `fmriprep` derivatives. Some files have been omitted to save disk space \
   `fmriprep` is very strict about only processing data that is compliant with the BIDS standard. As such, we may need to format subjects names for compliance. For example, an input subject named `subject_01` will appear as `subject01` in the `fmriprep` derivatives. \
   `derivatives/fmriprep`
-
-The following output paths are specified with the same convention as file inputs to `HALFpipe`. There is one addition. If
 
 ### Features
 
@@ -280,16 +286,22 @@ The following output paths are specified with the same convention as file inputs
 - Just like for features \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-brain_mask.nii.gz` 
   
-- Filtered confounds time series, where all filters that are applied to the BOLD image are applied to the regressors as well.  \
+- Filtered confounds time series, where all filters that are applied to the BOLD image are applied to the regressors as well. Note that this means that when grand mean scaling is active, confounds time series are also scaled, meaning that values such as `framewise displacement` can not be interpreted in terms of their original units anymore. \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-confounds_regressors.tsv`
 
 ### Models
 
-
+- `grouplevel/...`
 
 ## 6. Troubleshooting
 
-
+- If an error occurs, this will be output to the command line and simultaneously to the `err.txt` file in the working directory
+- If the error occurs while running, usually a text file detailing the error will be placed in the working directory. These are text files and their file names start with `crash`
+  - Usually, the last line of these text files contains the error message. Please read this carefully, as may allow you to understand the error
+  - For example, consider the following error message: \
+    `ValueError: shape (64, 64, 33) for image 1 not compatible with first image shape (64, 64, 34) with axis == None` \
+    This error message may seem cryptic at first. However, looking at the message more closely, it suggests that two input images have different, incompatible dimensions. In this case, `HALFpipe` correctly recognized this issue, and there is no need for concern. The images in question will simply be excluded from preprocessing and/or analysis
+  - In some cases, the cause of the error can be a bug in the `HALFpipe` code. In this case, please submit an [issue](https://github.com/mindandbrain/halfpipe/issues/new/choose) or contact us via [e-mail](#9-contact).
 
 ## 7. Command line flags
 
@@ -305,17 +317,20 @@ As `HALFpipe` allows the user to run multiple variations
 
 ### Adjust nipype `--nipype-<omp-nthreads|memory-gb|n-procs|run-plugin>`
 
-
+> TODO
 
 ### Lifecycle flags `--<only|skip>-<spec-ui|workflow|run|model-chunk>`
 
-A `HALFpipe` run is divided internally into four stages, spec-ui, workflow, execgraph and run.
-* The `spec-ui` stage is where you specify things in the user interface. It creates the `spec.json` file that contains all the information needed to run `HALFpipe`. To only run this stage, use the option `--only-spec-ui`. To skip this stage, use the option `--skip-spec-ui`
-* The `workflow` stage is where `HALFpipe` uses the `spec.json` data to search for all the files that match what was input in the user interface. It then generates a `nipype` workflow for preprocessing, feature extraction and group models. `nipype` then validates the workflow and prepares it for execution. This usually takes a couple of minutes and cannot be parallelized. For hundreds of subjects, this may even take a few hours. This stage has the corresponding option `--only-workflow` and `--skip-workflow`.
+A `HALFpipe` run is divided internally into three stages, spec-ui, workflow, and run.
+1. The `spec-ui` stage is where you specify things in the user interface. It creates the `spec.json` file that contains all the information needed to run `HALFpipe`. To only run this stage, use the option `--only-spec-ui`. To skip this stage, use the option `--skip-spec-ui`
+1. The `workflow` stage is where `HALFpipe` uses the `spec.json` data to search for all the files that match what was input in the user interface. It then generates a `nipype` workflow for preprocessing, feature extraction and group models. `nipype` then validates the workflow and prepares it for execution. This usually takes a couple of minutes and cannot be parallelized. For hundreds of subjects, this may even take a few hours. This stage has the corresponding option `--only-workflow` and `--skip-workflow`.
   - This stage saves several intermediate files. These are named `workflow.{uuid}.pickle.xz`, `execgraph.{uuid}.pickle.xz` and `execgraph.{n_chunks}_chunks.{uuid}.pickle.xz`. The `uuid` in the file name is a unique identifier generated from the `spec.json` file and the input files. It is re-calculated every time we run this stage. The uuid algorithm produces a different output if there are any changes (such as when new input files for new subjects become available, or the `spec.json` is changed, for example to add a new feature or group model). Otherwise, the `uuid` stays the same. Therefore, if a workflow file with the calculated `uuid` already exists, then we do not need to run this stage. We can simple re-use the workflow from the existing file, and save some time.
   - In this stage, we can also decide to split the execution into chunks. The flag `--subject-chunks` creates one chunk per subject. The flag `--use-cluster` automatically activates `--subject-chunks`. The flag `--n-chunks` allows the user to specify a specific number of chunks. This is useful if the execution should be spread over a set number of computers. In addition to these, a model chunk is generated. 
+1. The `run` stage loads the `execgraph.{n_chunks}_chunks.{uuid}.pickle.xz` file generated in the previous step and runs it. This file usually contains two chunks, one for the subject level preprocessing and feature extraction ("subject level chunk"), and one for group statistics ("model chunk"). To run a specific chunk, you can use the flags `--only-chunk-index ...` and `--only-model-chunk`.
 
 ### Working directory `--workdir`
+
+> TODO
 
 ### Data file system root `--fs-root`
 
@@ -326,7 +341,7 @@ The `HALFpipe` container, or really most containers, contain the entire base sys
 ### Beta 2 (August 16th 2020)
 
 -	**Slice timing:** Upon user request, `HALFpipe` now exposes `fmriprep`’s slice timing option. In `fmriprep`, this option is set once when starting. As such, it is currently not possible to either a) do slice timing for only part of the images or b) simultaneously output a slice timed and a non-slice timed preprocessed image. For both of these cases we recommend doing multiple runs of `HALFpipe`, and to repeat quality control for both
--	**Metadata loading and verification:** A lot of different metadata is required for the correct functioning of `HALFpipe`. Usually, the way metadata is stored has some user-specific idiosyncrasies and conventions that can be difficult to automate around. For this reason, we have decided to prompt the user to verify and/or enter any and every metadata value. To streamline this process, `HALFpipe` attempts to load metadata a) from a “sidecar” JSON file placed next to the target file, or b) from the NIFTI header. If neither is possible, the user is prompted to manually enter the required parameter
+-	**Metadata loading and verification:** A lot of different metadata is required for the correct functioning of `HALFpipe`. Usually, the way metadata is stored has some user-specific idiosyncrasies and conventions that can be difficult to automate around. For this reason, we have decided to prompt the user to verify and/or enter any and every metadata value. To streamline this process, `HALFpipe` attempts to load metadata a) from a "sidecar" JSON file placed next to the target file, or b) from the NIFTI header. If neither is possible, the user is prompted to manually enter the required parameter
 -	**Output multiple preprocessed image files:** The user interface now supports outputting different preprocessed image files with different settings. For these files, we expose the full breadth of settings available in `HALFpipe`. Specifically, these are:
     1. *Grand mean scaling*
     1. *Spatial smoothing*, implemented using AFNI `3dBlurInMask` 
@@ -335,15 +350,15 @@ The `HALFpipe` container, or really most containers, contain the entire base sys
        - *Frequency-based*, implemented using AFNI `3dTproject`
     1. *ICA-AROMA*, using a custom implementation of the algorithm used by FSL `fsl_regfilt`
     1. *Confounds regression*, using a custom implementation of the algorithm used by FSL `fsl_regfilt -a`
--	**Simpler use on cluster systems:** We added the command line option `—use-cluster`. When this command line option is added to the end of the command, we automatically a) divide the workflow into one subject chunks and b) instead of running, output a template cluster submit script called `submit.slurm.sh`. This script is made for SLURM clusters, but can easily be adapted to other systems
--	**Output files now follow the BIDS derivatives naming scheme:** We value interoperability with other software. [`HALFpipe` outputs](#) can now be automatically be parsed by software that accepts BIDS derivatives
+-	**Simpler use on cluster systems:** We added the command line option `—-use-cluster`. When this command line option is added to the end of the command, we automatically a) divide the workflow into one subject chunks and b) instead of running, output a template cluster submit script called `submit.slurm.sh`. This script is made for SLURM clusters, but can easily be adapted to other systems
+-	**Output files now follow the BIDS derivatives naming scheme:** We value interoperability with other software. [`HALFpipe` outputs](#5-outputs) can now be automatically be parsed by software that accepts BIDS derivatives
 -	**Additional output files:** For every statistical map, we place a BIDS-conforming JSON file containing a summary of the preprocessing settings, and a list of the raw data files that were used for the analysis (`RawSources`)
     * *Task-based:* Design matrix, contrast matrix
     * *Seed-based connectivity:* Design matrix, contrast matrix, mean tSNR of the seed region (`MeanTSNR`)
     * *Dual regression:* Design matrix, contrast matrix, mean tSNR of the component (`MeanTSNR`)
     * *Atlas-based connectivity matrix:* List of mean tSNR values of the atlas region (`MeanTSNR`)
     * *Group models:* Design matrix, contrast matrix
--	**Improved confounds handling:** [Lindquist et al. (2018)](https://doi.org/10.1101/407676) find that in preprocessing pipelines, "later preprocessing steps can reintroduce artifacts previously removed from the data in prior preprocessing steps". This happens because individual preprocessing steps are not necessarily orthogonal. To circumvent this issue they recommend "sequential orthogonalization of covariates/linear filters performed in series." We have now implemented this strategy in `HALFpipe`
+-	**Improved confounds handling:** [Lindquist et al. (2018)](https://doi.org/10.1101/407676) find that in preprocessing pipelines, "later preprocessing steps can reintroduce artifacts previously removed from the data in prior preprocessing steps". This happens because individual preprocessing steps are not necessarily orthogonal. To circumvent this issue they recommend "sequential orthogonalization of covariates/linear filters performed in series." We have now implemented this strategy in `HALFpipe`. Note that this means that when grand mean scaling is active, confounds time series are also scaled, meaning that values such as `framewise displacement` can not be interpreted as millimeters anymore.
 -	**Recovering from errors:** Even if one subject fails, group statistics will still be run and available. This can be useful when data quality issues make specific preprocessing steps fail
 
 ## 9. Contact
