@@ -119,16 +119,17 @@ class MergeColumns(IOBase):
                 else:
                     out_df = pd.concat((out_df, in_df), axis=1)
 
-        index = isdefined(self.inputs.row_index) and self.inputs.row_index is not False
-        if isinstance(self.inputs.row_index, list):
-            index = True
+        row_index = self.inputs.row_index
+        use_index = isdefined(row_index) and row_index is True
+        if isinstance(row_index, list):
+            use_index = True
             out_df.index = self.inputs.row_index
 
         out_with_header = Path.cwd() / "merge_with_header.tsv"
         out_no_header = Path.cwd() / "merge_no_header.tsv"
 
         kwargs = dict(sep="\t", na_rep="n/a")
-        out_df.to_csv(out_with_header, index=index, header=True, **kwargs)
+        out_df.to_csv(out_with_header, index=use_index, header=True, **kwargs)
         out_df.to_csv(out_no_header, index=False, header=False, **kwargs)
 
         outputs["out_with_header"] = out_with_header

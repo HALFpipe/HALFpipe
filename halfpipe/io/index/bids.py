@@ -11,7 +11,6 @@ from inflection import camelize
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
 from ...utils import formatlikebids, splitext, cleaner
-# from ..metadata import SidecarMetadataLoader
 
 from bids.layout import Config
 from bids.layout.writing import build_path
@@ -87,7 +86,7 @@ class BidsDatabase:
         dataset_description = {
             "Name": self.database.sha1,
             "BIDSVersion": bidsversion,
-            "DatasetType": "raw"
+            "DatasetType": "raw",
         }
         dataset_description_path = bidsdir / "dataset_description.json"
         with open(dataset_description_path, "w") as f:
