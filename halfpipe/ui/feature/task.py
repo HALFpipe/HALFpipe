@@ -131,9 +131,12 @@ class HighPassFilterCutoffStep(Step):
 
         self.valset = set()
 
-        for feature in ctx.spec.features:
-            if hasattr(feature, "high_pass_filter_cutoff"):
-                self.valset.add(feature.high_pass_filter_cutoff)
+        for feature in ctx.spec.features[:-1]:
+            if feature.type == "task_based":
+                if hasattr(feature, "high_pass_filter_cutoff"):
+                    self.valset.add(feature.high_pass_filter_cutoff)
+                else:
+                    self.valset.add("Skip")
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
@@ -153,12 +156,17 @@ class HighPassFilterCutoffStep(Step):
         return True
 
     def next(self, ctx):
+        value = None
         if self.result is not None:
-            ctx.spec.features[-1].high_pass_filter_cutoff = first(self.result.values())  # only one value
+            value = first(self.result.values())
+            if isinstance(value, float):
+                ctx.spec.features[-1].high_pass_filter_cutoff = value
+            elif value == "Skip":
+                pass
 
         this_next_step_type = next_step_type
 
-        if len(self.valset) == 1 and self.result not in self.valset:
+        if len(self.valset) == 1 and value not in self.valset:
             return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
 
         return this_next_step_type(self.app)(ctx)

@@ -214,7 +214,7 @@ class Logger:
         elif verbose:
             stdout_handler.setLevel(logging.INFO)
         else:
-            stdout_handler.setLevel(logging.WARNING)
+            stdout_handler.setLevel(25)
         handlers.append(stdout_handler)
 
         formatter = Formatter()

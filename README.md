@@ -69,7 +69,7 @@ You should now see the user interface.
 
 #### Background
 
-Containers are by default isolated from the host computer. This adds security, but also means that the container cannot access the data it needs for analysis. `HALFpipe` expects all inputs (e.g., image files and spreadsheets) and outputs (the working directory) to be places in the path`/ext` (see also [`--fs-root`](#--fs-root)). Using the option `--bind /:/ext`, we instruct `Singularity` to map all of the host file system (`/`) to that path (`/ext`). You can also run `HALFpipe` and only map only part of the host file system, but keep in mind that any directories that are not mapped will not be visible later.
+Containers are by default isolated from the host computer. This adds security, but also means that the container cannot access the data it needs for analysis. `HALFpipe` expects all inputs (e.g., image files and spreadsheets) and outputs (the working directory) to be places in the path`/ext` (see also [`--fs-root`](#data-file-system-root---fs-root)). Using the option `--bind /:/ext`, we instruct `Singularity` to map all of the host file system (`/`) to that path (`/ext`). You can also run `HALFpipe` and only map only part of the host file system, but keep in mind that any directories that are not mapped will not be visible later.
 
 `Singularity` passes the host shell environment to the container by default. This means that in some cases, the host computer's configuration can interfere with the software. To avoid this, we need to pass the option `--cleanenv`.`Docker` does not pass the host shell environment by default, so we don't need to pass an option.
 

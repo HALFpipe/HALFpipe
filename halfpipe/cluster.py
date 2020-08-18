@@ -42,7 +42,7 @@ def create_example_script(workdir, execgraphs):
     assert n_chunks > 1
     execgraph_file = make_cachefilepath(f"execgraph.{n_chunks:02d}_chunks", uuid)
     data = {
-        "n_chunks": n_chunks + 1,  # one-based indexing
+        "n_chunks": n_chunks,  # one-based indexing
         "singularity_container": os.environ["SINGULARITY_CONTAINER"],
         "cwd": str(Path(workdir).resolve()),
         "execgraph_file": str(Path(workdir).resolve() / execgraph_file)

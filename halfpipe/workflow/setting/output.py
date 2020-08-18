@@ -5,7 +5,7 @@
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 
-from niworkflows.interfaces.plotting import ConfoundsCorrelationPlot
+# from niworkflows.interfaces.plotting import ConfoundsCorrelationPlot
 
 from ...interface import MakeResultdicts, ResultdictDatasink
 from ...utils import formatlikebids
@@ -41,14 +41,14 @@ def init_setting_output_wf(workdir=None, settingname=None):
     )
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
+    # TODO fix this
+    # conf_corr_plot = pe.Node(
+    #     ConfoundsCorrelationPlot(reference_column="global_signal", max_dim=70),
+    #     name="conf_corr_plot",
+    # )
+    # workflow.connect(inputnode, "confounds", conf_corr_plot, "confounds_file")
     #
-    conf_corr_plot = pe.Node(
-        ConfoundsCorrelationPlot(reference_column="global_signal", max_dim=70),
-        name="conf_corr_plot",
-    )
-    workflow.connect(inputnode, "confounds", conf_corr_plot, "confounds_file")
-
-    #
-    workflow.connect(conf_corr_plot, "out_file", make_resultdicts, "confoundcorr_bold")
+    # #
+    # workflow.connect(conf_corr_plot, "out_file", make_resultdicts, "confoundcorr_bold")
 
     return workflow

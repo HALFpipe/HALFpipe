@@ -122,7 +122,6 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
 
         def setup(self, ctx):
             self._append_view(TextView(f"Specify the {self.noun} in {self.unit}"))
-            self._append_view(TextView(f"Put a value < 0 to skip that filter"))
 
             suggestion = [*self.suggestion]
 

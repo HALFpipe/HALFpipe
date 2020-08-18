@@ -13,7 +13,7 @@ From: poldracklab/fmriprep:20.1.1
   . /halfpipe
 
 %post
-  BUILD=69
+  BUILD=70
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
