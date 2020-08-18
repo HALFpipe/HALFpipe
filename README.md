@@ -213,19 +213,6 @@ Models are statistical analyses that are carried out on the features.
 
 1. Request an interactive job. Refer to your cluster's documentation for how to do this
 
-> A common issue with remote work via secure shell is that the connection may break after a few hours. For batch jobs this is not an issue, but for interactive jobs this can be quite frustrating. When the connection is lost, the node you were connected to will automatically quit all programs you were running.
-  To prevent this, you can run interactive jobs within `screen` or `tmux` (whichever is available). These commands allow you to open sessions in the terminal that will continue running in the background even when you close or disconnect. Here's a quick overview of how to use the commands (more in-depth documentation is available for example at http://www.dayid.org/comp/tm.html).
-  1. Open a new screen/tmux session on the head node by running either `screen` or `tmux`
-  1. Request an interactive job from within the session, for example with `srun --pty bash -i`
-  1. Run the command that you want to run
-  1. Detach from the screen/tmux session, meaning disconnecting with the ability to re-connect later \
-     For screen, this is done by first pressing `Control+a`, then letting go, and then pressing `d` on the keyboard. \
-     For tmux, it's `Control+b` instead of `Control+a`. \
-     Note that this is always `Control`, even if you're on a mac.
-  1. Close your connection to the head node with `Control+d`. `screen`/`tmux` will remain running in the background
-  1. Later, connect again to the head node. Run `screen -r` or `tmux attach` to check back on the interactive job. If everything went well and the command you wanted to run finished, close the interactive job with `Control+d` and then the `screen`/`tmux` session with `Control+d` again. \
-     If the command hasn't finished yet, detach as before and come back later
-
 1. In the interactive job, run the `HALFpipe` user interface, but add the flag `--use-cluster` to the end of the command. \
    For example, `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --use-cluster`
 
@@ -234,6 +221,19 @@ Models are statistical analyses that are carried out on the features.
 1. When `HALFpipe` exits, edit the generated submit script `submit.slurm.sh` according to your cluster's documentation and then run it. This submit script will calculate everything except group statistics.
      
 1. As soon as all processing has been completed, you can run group statistics. This is usually very fast, so you can do this in an interactive session. Run `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --only-model-chunk` and then select `Run without modification` in the user interface. 
+
+> A common issue with remote work via secure shell is that the connection may break after a few hours. For batch jobs this is not an issue, but for interactive jobs this can be quite frustrating. When the connection is lost, the node you were connected to will automatically quit all programs you were running.
+> To prevent this, you can run interactive jobs within `screen` or `tmux` (whichever is available). These commands allow you to open sessions in the terminal that will continue running in the background even when you close or disconnect. Here's a quick overview of how to use the commands (more in-depth documentation is available for example at http://www.dayid.org/comp/tm.html).
+>    1. Open a new screen/tmux session on the head node by running either `screen` or `tmux`
+>    1. Request an interactive job from within the session, for example with `srun --pty bash -i`
+>    1. Run the command that you want to run
+>    1. Detach from the screen/tmux session, meaning disconnecting with the ability to re-connect later \
+>       For screen, this is done by first pressing `Control+a`, then letting go, and then pressing `d` on the keyboard. \
+>       For tmux, it's `Control+b` instead of `Control+a`. \
+>       Note that this is always `Control`, even if you're on a mac.
+>    1. Close your connection to the head node with `Control+d`. `screen`/`tmux` will remain running in the background
+>    1. Later, connect again to the head node. Run `screen -r` or `tmux attach` to check back on the interactive job. If everything went well and the command you wanted to run finished, close the interactive job with `Control+d` and then the `screen`/`tmux` session with `Control+d` again. \
+>    If the command hasn't finished yet, detach as before and come back later
 
 ## 4. Quality checks
 
