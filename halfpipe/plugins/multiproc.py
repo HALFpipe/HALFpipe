@@ -8,12 +8,10 @@ from concurrent.futures import ProcessPoolExecutor
 import logging
 import shutil
 
-import numpy as np
-
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 
-from .refcount import ReferenceCounter
+from .reftracer import PathReferenceTracer
 from ..logger import Logger
 from ..watchdog import start_watchdog_daemon
 
@@ -35,7 +33,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._taskresult = {}
         self._task_obj = {}
         self._taskid = 0
-        self._rc = ReferenceCounter()
+        self._rt = None
 
         # Cache current working directory and make sure we
         # change to it when workers are set up
@@ -70,12 +68,28 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self._stats = None
         self._keep = plugin_args.get("keep", "all")
+        if self._keep != "all":
+            self._rt = PathReferenceTracer()
+
+    def _generate_dependency_list(self, graph):
+        if self._rt is not None:
+            for node in graph.nodes:
+                self._rt.add_node(node)
+            for node in graph.nodes:
+                self._rt.set_node_pending(node)
+        super(MultiProcPlugin, self)._generate_dependency_list(graph)
 
     def _task_finished_cb(self, jobid, cached=False):
-        try:
-            self._rc.put(self.procs[jobid].result, jobid=jobid)
-        except Exception:
-            pass  # node doesn't have a result
+        if self._rt is not None:
+            name = self.procs[jobid].fullname
+            unmark = True  # try to delete this when dependencies finish
+            if self._keep == "some" and "fmriprep_wf" in name:
+                unmark = False  # keep fmriprep if keep is "some"
+            if self._keep == "some" and "ica_aroma_components_wf" in name:
+                unmark = False
+            if hasattr(self.procs[jobid], "keep") and self.procs[jobid].keep is True:
+                unmark = False  # always keep feature outputs
+            self._rt.set_node_complete(self.procs[jobid], unmark)
         super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)
 
     def _async_callback(self, args):
@@ -88,25 +102,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
     def _remove_node_dirs(self):
         """Removes directories whose outputs have already been used up
         """
-        if self._keep == "all":
-            return
-        indices = np.nonzero((self.refidx.sum(axis=1) == 0).__array__())[0]
-        for idx in indices:
-            if idx in self.mapnodesubids:
-                continue
-            if self.proc_done[idx] and (not self.proc_pending[idx]):
-                name = self.procs[idx].fullname
-                if self._keep == "some" and "preproc_wf" in name:
-                    continue  # keep fmriprep if keep is "some"
-                if "outputnode" in name:
-                    continue  # always keep outputs
-                self.refidx[idx, idx] = -1
-                outdir = self.procs[idx].output_dir()
-                self._rc.pop(idx)
-                if not self._rc.can_delete(outdir):
-                    continue
-                logger.info(
-                    ("[node dependencies finished] " "removing node: %s from directory %s")
-                    % (self.procs[idx]._id, outdir)
-                )
-                shutil.rmtree(outdir, ignore_errors=True)
+        if self._rt is not None:
+            for path in self._rt.collect():
+                logger.info(f"[node dependencies finished] removing directory {str(path)}")
+                shutil.rmtree(path, ignore_errors=True)

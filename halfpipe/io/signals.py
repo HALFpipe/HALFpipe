@@ -14,7 +14,7 @@ from scipy.ndimage.measurements import mean
 from ..utils import nvol
 
 
-def img_to_signals(in_file, atlas_file, mask_file=None, background_label=0, min_n_voxels=50):
+def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_n_voxels=50):
     in_img = nib.load(in_file)
 
     atlas_img = nib.load(atlas_file)
@@ -45,6 +45,6 @@ def img_to_signals(in_file, atlas_file, mask_file=None, background_label=0, min_
 
     result = np.full((in_data.shape[3], nlabel), np.nan)
     for i, img in enumerate(np.moveaxis(in_data, 3, 0)):
-        result[i, indices - 1] = mean(img, labels=labels, index=indices)
+        result[i, indices - 1] = mean(img, labels=labels.reshape(img.shape), index=indices)
 
     return result

@@ -11,11 +11,12 @@ from ..utils import first
 
 
 class MemoryCalculator:
-    def __init__(self, bold_file=None, bold_shape=[72, 72, 72], bold_tlen=200):
-        if bold_file:
+    def __init__(self, database=None, bold_file=None, bold_shape=[72, 72, 72], bold_tlen=200):
+        if database is not None:
+            bold_file = first(database.get(datatype="func", suffix="bold"))
+        if bold_file is not None:
             bold_shape = nb.load(bold_file).shape
         self.volume_gb = np.product(bold_shape[:3]) * 8 / 2 ** 30
-        bold_tlen = 1
         if len(bold_shape) > 3:
             bold_tlen = bold_shape[3]
         self.series_gb = self.volume_gb * bold_tlen
@@ -37,9 +38,3 @@ class MemoryCalculator:
                 self.min_gb,
             )
         )
-
-
-def memcalc_from_database(database):
-    return MemoryCalculator(
-        bold_file=first(database.get(datatype="func", suffix="bold"))
-    )

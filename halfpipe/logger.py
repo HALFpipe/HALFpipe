@@ -6,13 +6,14 @@ from os import path as op
 import sys
 import logging
 import time
+import re
 
 import fasteners
 
 from .io import IndexedFile
 
 
-fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:7}] {message}"
+fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:9}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
 
 black, red, green, yellow, blue, magenta, cyan, white = range(8)
@@ -25,6 +26,7 @@ blueseq = colorseq.format(30 + white, 40 + blue)
 colors = {
     "DEBUG": blueseq,
     "INFO": blueseq,
+    "IMPORTANT": yellowseq,
     "WARNING": yellowseq,
     "CRITICAL": redseq,
     "ERROR": redseq,
@@ -148,6 +150,29 @@ def remove_handlers(logger):
             c = c.parent
 
 
+class NoDTypeWarningsFilter(logging.Filter):
+    regex = re.compile(r"Changing (.+) dtype from (.+) to (.+)")
+
+    def filter(self, record):
+        return self.regex.search(record.getMessage()) is None
+
+
+class PyWarningsFilter(logging.Filter):
+    messages_to_filter = frozenset(
+        (
+            "WARNING: the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.",
+            "WARNING: cmp not installed",
+            "WARNING: dist() and linux_distribution() functions are deprecated in Python 3.5",
+            "WARNING: The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
+            "WARNING: This has not been fully tested. Please report any failures.",
+            "WARNING: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working"
+        )
+    )
+
+    def filter(self, record):
+        return record.getMessage() not in self.messages_to_filter
+
+
 class Logger:
     is_setup = False
 
@@ -162,6 +187,8 @@ class Logger:
 
         import nipype  # noqa
 
+        logging.captureWarnings(True)
+
         loggernames = [
             "halfpipe",
             "halfpipe.ui",
@@ -170,6 +197,7 @@ class Logger:
             "nipype.utils",
             "nipype.filemanip",
             "nipype.interface",
+            "py.warnings"
         ]
 
         for loggername in loggernames:
@@ -186,7 +214,7 @@ class Logger:
         elif verbose:
             stdout_handler.setLevel(logging.INFO)
         else:
-            stdout_handler.setLevel(logging.WARNING)
+            stdout_handler.setLevel(25)
         handlers.append(stdout_handler)
 
         formatter = Formatter()
@@ -215,7 +243,9 @@ class Logger:
                 logger.addHandler(handler)
 
         logging.getLogger("halfpipe.ui").removeHandler(stdout_handler)  # only log to file
-
-        logging.getLogger("nipype.workflow").addHandler(
-            JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
-        )
+        if workdir is not None:
+            logging.getLogger("nipype.workflow").addHandler(
+                JSReportHandler(op.join(workdir, "reports", "reportexec.js"))
+            )
+        logging.getLogger("nipype.interface").addFilter(NoDTypeWarningsFilter())
+        logging.getLogger("py.warnings").addFilter(PyWarningsFilter())

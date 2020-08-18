@@ -2,18 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from os import path as op
+from pathlib import Path
 import sys
-import pkg_resources
 import logging
 
 from . import __version__
 
-from fmriprep import config  # noqa
-
-configfilename = pkg_resources.resource_filename("halfpipe", "data/config.toml")
-config.load(configfilename)
+from fmriprep import config
 
 global debug
 debug = False
@@ -22,6 +17,7 @@ debug = False
 def _main():
     from argparse import ArgumentParser
     from multiprocessing import cpu_count
+    from pprint import pformat
 
     ap = ArgumentParser(
         description=f"ENIGMA Halfpipe {__version__} is a user-friendly interface "
@@ -35,34 +31,18 @@ def _main():
         "--workdir", type=str, help="directory where output and intermediate files are stored",
     )
     basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
-    basegroup.add_argument("--debug", action="store_true", default=False)
     basegroup.add_argument("--verbose", action="store_true", default=False)
-    basegroup.add_argument("--watchdog", action="store_true", default=False)
 
     stepgroup = ap.add_argument_group("steps", "")
-    steps = ["spec-ui", "workflow", "execgraph", "run", "run-subjectlevel", "run-grouplevel"]
+    steps = ["spec-ui", "workflow", "run"]
     for step in steps:
         steponlygroup = stepgroup.add_mutually_exclusive_group(required=False)
-        steponlygroup.add_argument(f"--{step}-only", action="store_true", default=False)
+        steponlygroup.add_argument(f"--only-{step}", action="store_true", default=False)
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
-        if "run" not in step:
-            steponlygroup.add_argument(f"--stop-after-{step}", action="store_true", default=False)
 
     workflowgroup = ap.add_argument_group("workflow", "")
-
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
-    workflowgroup.add_argument(
-        "--skull-strip-algorithm",
-        choices=["none", "ants"],
-        default="ants",
-        help="specify how to perform skull stripping",
-    )
-    workflowgroup.add_argument("--no-compose-transforms", action="store_true", default=False)
-    workflowgroup.add_argument("--freesurfer", action="store_true", default=False)
-
-    execgraphgroup = ap.add_argument_group("execgraph", "")
-    execgraphgroup.add_argument("--workflow-file", type=str, help="manually select workflow file")
-    chunkinggroup = execgraphgroup.add_mutually_exclusive_group(required=False)
+    chunkinggroup = workflowgroup.add_mutually_exclusive_group(required=False)
     chunkinggroup.add_argument(
         "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
     )
@@ -72,10 +52,17 @@ def _main():
         default=False,
         help="generate one subject-level workflow per subject",
     )
+    chunkinggroup.add_argument(
+        "--use-cluster",
+        action="store_true",
+        default=False,
+        help="generate workflow suitable for running on a cluster",
+    )
 
     rungroup = ap.add_argument_group("run", "")
     rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
-    rungroup.add_argument("--chunk-index", type=int, help="select which subjectlevel chunk to run")
+    rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
+    rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
@@ -94,6 +81,10 @@ def _main():
         default=False,
     )
 
+    debuggroup = ap.add_argument_group("debug", "")
+    debuggroup.add_argument("--debug", action="store_true", default=False)
+    debuggroup.add_argument("--watchdog", action="store_true", default=False)
+
     args = ap.parse_args()
     global debug
     debug = args.debug
@@ -107,21 +98,9 @@ def _main():
     should_run = {step: True for step in steps}
 
     for step in steps:
-        attrname = f"{step}-only".replace("-", "_")
+        attrname = f"only-{step}".replace("-", "_")
         if getattr(args, attrname) is True:
             should_run = {step0: step0 == step for step0 in steps}
-            break
-
-    for step in steps:
-        if "run" in step:
-            continue
-        attrname = f"stop-after-{step}".replace("-", "_")
-        if getattr(args, attrname) is True:
-            state = True
-            for step0 in steps:
-                should_run[step0] = state
-                if step0 == step:
-                    state = False
             break
 
     for step in steps:
@@ -131,9 +110,11 @@ def _main():
 
     workdir = args.workdir
     if workdir is not None:  # resolve workdir in fs_root
-        abspath = op.abspath(workdir)
+        from os.path import normpath
+
+        abspath = str(Path(workdir).resolve())
         if not abspath.startswith(args.fs_root):
-            abspath = op.normpath(args.fs_root + abspath)
+            abspath = normpath(args.fs_root + abspath)
         workdir = abspath
 
     if should_run["spec-ui"]:
@@ -144,17 +125,17 @@ def _main():
         workdir = init_spec_ui(workdir=workdir, debug=debug)
 
     assert workdir is not None, "Missing working directory"
-    assert op.isdir(workdir), "Working directory does not exist"
+    assert Path(workdir).is_dir(), "Working directory does not exist"
 
     import logging
     from .logger import Logger
 
-    # if not Logger.is_setup:
     Logger.setup(workdir, debug=debug, verbose=verbose)
     logger = logging.getLogger("halfpipe")
 
-    if not verbose:
-        logger.warning(
+    if not verbose and not debug:
+        logger.log(
+            25,
             f'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
             'Detailed logs information will only be available in the "log.txt" file in the working directory. '
         )
@@ -170,63 +151,43 @@ def _main():
     if not should_run["spec-ui"]:
         logger.info(f"Did not run step: spec")
 
-    workflow = None
+    execgraphs = None
 
     if not should_run["workflow"]:
         logger.info(f"Did not run step: workflow")
     else:
         logger.info(f"Running step: workflow")
-        from .workflow import init_workflow
+        from .workflow import init_workflow, init_execgraph
 
         if args.nipype_omp_nthreads is not None and args.nipype_omp_nthreads > 0:
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
             logger.info(f"Using config.nipype.omp_nthreads={config.nipype.omp_nthreads} from args")
+        elif args.use_cluster:
+            config.nipype.omp_nthreads = 2
         else:
             config.nipype.omp_nthreads = (
                 8 if args.nipype_n_procs > 16 else (4 if args.nipype_n_procs > 8 else 1)
             )
             logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
-
-        workflow = init_workflow(
-            workdir,
-            no_compose_transforms=args.no_compose_transforms,
-            freesurfer=args.freesurfer,
-            skull_strip_algorithm=args.skull_strip_algorithm,
-        )
-
-    execgraphs = None
-
-    if not should_run["execgraph"]:
-        logger.info(f"Did not run step: execgraph")
-    else:
-        logger.info(f"Running step: execgraph")
-        from .execgraph import init_execgraph
-
-        if workflow is None:
-            from .utils import loadpicklelzma
-
-            assert (
-                args.workflow_file is not None
-            ), "Missing required --workflow-file input for step execgraph"
-            workflow = loadpicklelzma(args.workflow_file)
-            logger.info(f'Using workflow defined in file "{args.workflow_file}"')
-        else:
-            logger.info(f"Using workflow from previous step")
-
+        workflow = init_workflow(workdir)
+        Logger.setup(workdir, debug=debug, verbose=verbose)  # re-run setup to override fmriprep/nipype logging config
         execgraphs = init_execgraph(
-            workdir, workflow, n_chunks=args.n_chunks, subject_chunks=args.subject_chunks
+            workdir,
+            workflow,
+            n_chunks=args.n_chunks,
+            subject_chunks=args.subject_chunks or args.use_cluster
         )
+        if args.use_cluster:
+            from .cluster import create_example_script
 
-    if (
-        not should_run["run"]
-        and not should_run["run-subjectlevel"]
-        and not should_run["run-grouplevel"]
-    ):
+            create_example_script(workdir, execgraphs)
+
+    if not should_run["run"] or args.use_cluster:
         logger.info(f"Did not run step: run")
     else:
         logger.info(f"Running step: run")
         if execgraphs is None:
-            from .utils import loadpicklelzma
+            from .io import loadpicklelzma
 
             assert (
                 args.execgraph_file is not None
@@ -254,11 +215,12 @@ def _main():
             plugin_args["n_procs"] = args.nipype_n_procs
         if args.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = args.nipype_memory_gb
-        elif "SLURM_MEM_PER_CPU" in os.environ and "SLURM_CPUS_PER_TASK" in os.environ:
-            memory_mb = float(os.environ["SLURM_MEM_PER_CPU"]) * float(
-                os.environ["SLURM_CPUS_PER_TASK"]
-            )
-            plugin_args["memory_gb"] = memory_mb / 1024.0
+        else:
+            from .memory import memorylimit
+
+            memory_gb = memorylimit()
+            if memory_gb is not None:
+                plugin_args["memory_gb"] = memory_gb
 
         runnername = f"{args.nipype_run_plugin}Plugin"
         if hasattr(ppp, runnername):
@@ -269,29 +231,27 @@ def _main():
             runnercls = getattr(nip, runnername)
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
-        runner = runnercls(plugin_args=plugin_args)
+        logger.info(f'Using plugin arguments\n{pformat(plugin_args)}')
 
         execgraphstorun = []
         if len(execgraphs) > 1:
             n_subjectlevel_chunks = len(execgraphs) - 1
-            if not should_run["run-subjectlevel"]:
-                logger.info(f"Will not run subjectlevel chunks")
-            elif args.chunk_index is not None:
-                zerobasedchunkindex = args.chunk_index - 1
+            if args.only_model_chunk:
+                logger.info(f"Will not run subject level chunks")
+                logger.info(f"Will run model chunk")
+                execgraphstorun.append(execgraphs[-1])
+            elif args.only_chunk_index is not None:
+                zerobasedchunkindex = args.only_chunk_index - 1
                 assert zerobasedchunkindex < n_subjectlevel_chunks
                 logger.info(
-                    f"Will run subjectlevel chunk {args.chunk_index} of {n_subjectlevel_chunks}"
+                    f"Will run subject level chunk {args.only_chunk_index} of {n_subjectlevel_chunks}"
                 )
+                logger.info(f"Will not run model chunk")
                 execgraphstorun.append(execgraphs[zerobasedchunkindex])
             else:
-                logger.info(f"Will run all {n_subjectlevel_chunks} subjectlevel chunks")
-                execgraphstorun.extend(execgraphs[:-1])
-
-            if not should_run["run-grouplevel"]:
-                logger.info(f"Will not run grouplevel chunk")
-            else:
-                logger.info(f"Will run grouplevel chunk")
-                execgraphstorun.append(execgraphs[-1])
+                logger.info(f"Will run all {n_subjectlevel_chunks} subject level chunks")
+                logger.info(f"Will run model chunk")
+                execgraphstorun.extend(execgraphs)
         elif len(execgraphs) == 1:
             execgraphstorun.append(execgraphs[0])
         else:
@@ -303,7 +263,13 @@ def _main():
 
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
-            runner.run(execgraph, updatehash=False, config=first(execgraph.nodes()).config)
+            try:
+                runner = runnercls(plugin_args=plugin_args)
+                firstnode = first(execgraph.nodes())
+                if firstnode is not None:
+                    runner.run(execgraph, updatehash=False, config=firstnode.config)
+            except Exception as e:
+                logger.warning(f"Ignoring exception in chunk {i+1}: %s", e)
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 

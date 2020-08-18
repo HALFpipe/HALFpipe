@@ -19,81 +19,39 @@ from calamities.config import config as calamities_config
 
 from .step import Step
 from .. import __version__
-from ..spec import SpecSchema, loadspec, savespec
-from ..database import Database
+from ..model import SpecSchema, loadspec, savespec
+from ..io import Database
 from ..logger import Logger
 
-from .bids import BIDSStep
-from .firstlevel import FirstLevelAnalysisStep
-from .higherlevel import GroupLevelAnalysisStep
+from .file import BidsStep
+from .feature import FeaturesStep
+from .model import ModelsStep
 
 
 class Context:
     def __init__(self):
-        self.spec = SpecSchema().load(
-            {
-                "analyses": [
-                    {
-                        "type": "image_output",
-                        "tags": {
-                            "space": "mni",
-                            "confounds_removed": {"names": ["aroma_motion_[0-9]+"]},
-                            "band_pass_filtered": {"type": "gaussian", "high": 125.0},
-                        },
-                        "level": "first",
-                        "name": "ImageOutput",
-                    }
-                ],
-            },
-            partial=True,
-        )
+        spec_schema = SpecSchema()
+        self.spec = spec_schema.load(spec_schema.dump({}), partial=True)  # initialize with defaults
+        self.database = Database(self.spec)
+
         self.workdir = None
         self.use_existing_spec = False
-        self.database = Database()
         self.debug = False
-        self._spreadsheet_file = None
 
-    def spreadsheet_file():
-        doc = "The spreadsheet_file property."
+        self.already_checked = set()
 
-        def fget(self):
-            if self._spreadsheet_file is not None:
-                return self._spreadsheet_file
-            if self.spec.analyses is not None and len(self.spec.analyses) > 0:
-                spreadsheet_files = [
-                    analysis.spreadsheet
-                    for analysis in self.spec.analyses
-                    if analysis.spreadsheet is not None
-                ]
-                if len(spreadsheet_files) > 0:
-                    return spreadsheet_files[0]
-
-        def fset(self, value):
-            self._spreadsheet_file = value
-
-        def fdel(self):
-            del self._spreadsheet_file
-
-        return locals()
-
-    spreadsheet_file = property(**spreadsheet_file())
-
-    def add_file_obj(self, file_obj):
-        self.database.add_file_obj(file_obj)
-        self.spec.files.append(file_obj)
+    def put(self, fileobj):
+        self.database.put(fileobj)
         return len(self.spec.files) - 1
-
-    def add_analysis_obj(self, analysis_obj):
-        self.spec.analyses.append(analysis_obj)
-        return len(self.spec.analyses) - 1
 
 
 class UseExistingSpecStep(Step):
     options = [
-        "Continue with existing spec file without modification",
-        "Start over with empty spec",
-        "Keep files from existing spec file, start over at subject-level analysis spec",
-        "Keep files and first level analyses from existing spec file, start over at group-level analysis spec",
+        "Run without modification",
+        "Start over at beginning",
+        "Start over at features",
+        "Start over at models",
+        "Add another model",
     ]
 
     def setup(self, ctx):
@@ -102,7 +60,15 @@ class UseExistingSpecStep(Step):
         self.choice = None
         if self.existing_spec is not None:
             self._append_view(TextView("Found spec file in working directory"))
-            self.input_view = SingleChoiceInputView(self.options, isVertical=True)
+
+            options = self.options[:3]
+
+            if len(self.existing_spec.features) > 0:
+                options.append(self.options[3])
+            if len(self.existing_spec.models) > 0:
+                options.append(self.options[4])
+
+            self.input_view = SingleChoiceInputView(options, isVertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -118,27 +84,35 @@ class UseExistingSpecStep(Step):
     def next(self, ctx):
         if self.is_first_run or self.existing_spec is not None:
             self.is_first_run = False
-            if self.choice == self.options[0]:
+
+            if self.choice is None:
+                return BidsStep(self.app)(ctx)
+
+            choice_index = self.options.index(self.choice)
+
+            files = self.existing_spec.files
+            settings = self.existing_spec.settings
+            features = self.existing_spec.features
+            models = self.existing_spec.models
+
+            if choice_index > 1:
+                for fileobj in files:
+                    ctx.put(fileobj)
+            if choice_index > 2:
+                ctx.spec.settings = settings
+                ctx.spec.features = features
+
+            if choice_index == 0:
                 ctx.use_existing_spec = True
                 return ctx
-            elif self.choice == self.options[2]:
-                for fileobj in self.existing_spec.files:
-                    ctx.add_file_obj(fileobj)
-                return FirstLevelAnalysisStep(self.app)(ctx)
-            elif self.choice == self.options[3]:
-                for fileobj in self.existing_spec.files:
-                    ctx.add_file_obj(fileobj)
-                ctx.spec.analyses = []  # reset default analyses
-                for analysisobj in self.existing_spec.analyses:
-                    if analysisobj.level == "first":
-                        ctx.add_analysis_obj(analysisobj)
-                    elif (
-                        hasattr(analysisobj, "spreadsheet") and analysisobj.spreadsheet is not None
-                    ):
-                        ctx.spreadsheet_file = analysisobj.spreadsheet
-                return GroupLevelAnalysisStep(self.app)(ctx)
-            else:
-                return BIDSStep(self.app)(ctx)
+            elif choice_index == 1:
+                return BidsStep(self.app)(ctx)
+            elif choice_index == 2:
+                return FeaturesStep(self.app)(ctx)
+            elif choice_index > 2:
+                if choice_index == 4:
+                    ctx.spec.models = models
+                return ModelsStep(self.app)(ctx)
         else:
             return
 

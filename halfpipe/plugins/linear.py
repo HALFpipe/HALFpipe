@@ -6,11 +6,11 @@
 
 import os
 from nipype.pipeline import plugins as nip
-from nipype.engine.base import logger, report_crash, report_nodes_not_run, str2bool
-from nipype.engine.utils import topological_sort
+from nipype.pipeline.plugins.base import logger, report_crash, report_nodes_not_run, str2bool
+from nipype.pipeline.engine.utils import topological_sort
 
 
-class LinearPlugin(nip.LinearPlugin):
+class DebugPlugin(nip.LinearPlugin):
     """Execute workflow in series
     """
 
@@ -44,6 +44,9 @@ class LinearPlugin(nip.LinearPlugin):
                     self._status_callback(node, "start")
                 node.run(updatehash=updatehash)
             except Exception:
+                import pdb
+
+                pdb.post_mortem()
                 endstatus = "exception"
                 # bare except, but i really don't know where a
                 # node might fail
