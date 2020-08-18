@@ -21,16 +21,16 @@ script_template = """#!/bin/bash
 
 #SBATCH --array=1-{n_chunks}
 
-singularity run \
---no-home \
---cleanenv \
---bind /:/ext \
-{singularity_container} \
---workdir {cwd} \
---only-run \
---execgraph-file {execgraph_file} \
---only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \
---nipype-n-procs 2 \
+singularity run \\
+--no-home \\
+--cleanenv \\
+--bind /:/ext \\
+{singularity_container} \\
+--workdir {cwd} \\
+--only-run \\
+--execgraph-file {execgraph_file} \\
+--only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
+--nipype-n-procs 2 \\
 --verbose
 
 """

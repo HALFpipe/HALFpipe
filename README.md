@@ -11,6 +11,8 @@ Welcome to ENIGMA `HALFpipe`!
 >  
 > Beta 1 has proven to work in a variety of environments in the past weeks of beta testing and remains available for comparison.
 >
+> To use a specific version, please use the following command to download HALFpipe.
+>
 > | Version                   | Installation                                                                                             |
 > |---------------------------|----------------------------------------------------------------------------------------------------------|
 > | Beta 2 (August 16th 2020) | `singularity pull docker://mindandbrain/halfpipe:1.0.0b2`<br>`docker pull mindandbrain/halfpipe:1.0.0b2` |
@@ -122,6 +124,8 @@ In `HALFpipe`, we solve this issue by inputting file names in a specific way. Fo
 
 ### Features
 
+Features are analyses that are carried out on the preprocessed data, in other words, first-level analyses.
+
 1. `Specify first-level features?`
     - `Yes`
       1. `Specify the feature type`
@@ -198,6 +202,8 @@ In `HALFpipe`, we solve this issue by inputting file names in a specific way. Fo
      - `No` Continue
 
 ### Models
+
+Models are statistical analyses that are carried out on the features.
 
 > TODO
 
@@ -313,7 +319,9 @@ Verbose logs are always written to the `log.txt` file in the working directory, 
 
 ### Automatically remove unneeded files `--keep`
 
-As `HALFpipe` allows the user to run multiple variations 
+`HALFpipe` creates many intermediate files. In environments with limited disk capacity, this can be problematic. On the other hand, keeping intermediate files is useful, because once computed, intermediate files do not need to be re-calculated should `HALFpipe` be run again, for example with different setting. However, to limit disk usage, `HALFpipe` can delete intermediate files as soon as they are not needed anymore. This behavior is controlled with the `--keep` flag.
+ 
+The default option `--keep some` keeps all intermediate files from `fmriprep`. As these take the longest to compute, we believe this is a good tradeoff between disk space and computer time. `--keep all` turns of all deletion of intermediate files. `--keep none` deletes as much as possible.
 
 ### Adjust nipype `--nipype-<omp-nthreads|memory-gb|n-procs|run-plugin>`
 

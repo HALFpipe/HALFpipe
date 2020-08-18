@@ -57,14 +57,13 @@ class FillNA(SimpleInterface):
 
                 df.replace([np.inf, -np.inf], np.nan, inplace=True)
                 df.fillna(replace_with, inplace=True)
-                self._results["out_no_header"] = Path.cwd() / "fillna_no_header.tsv"
-                df.to_csv(
-                    self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
-                )
-            else:
-                self._results["out_no_header"] = in_file
-                self._results["column_names"] = list(map(str, df.columns))
 
+            self._results["out_no_header"] = Path.cwd() / "fillna_no_header.tsv"
+            df.to_csv(
+                self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+            )
+
+            self._results["column_names"] = list(map(str, df.columns))
         return runtime
 
 
