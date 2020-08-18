@@ -162,6 +162,8 @@ def _main():
         if args.nipype_omp_nthreads is not None and args.nipype_omp_nthreads > 0:
             config.nipype.omp_nthreads = args.nipype_omp_nthreads
             logger.info(f"Using config.nipype.omp_nthreads={config.nipype.omp_nthreads} from args")
+        elif args.use_cluster:
+            config.nipype.omp_nthreads = 2
         else:
             config.nipype.omp_nthreads = (
                 8 if args.nipype_n_procs > 16 else (4 if args.nipype_n_procs > 8 else 1)
