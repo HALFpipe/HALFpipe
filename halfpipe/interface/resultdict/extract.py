@@ -19,6 +19,7 @@ class ExtractFromResultdictInputSpec(BaseInterfaceInputSpec):
 class ExtractFromResultdictOutputSpec(DynamicTraitedSpec):
     tags = traits.Dict(traits.Str(), traits.Any())
     metadata = traits.Dict(traits.Str(), traits.Any())
+    vals = traits.Dict(traits.Str(), traits.Any())
 
 
 class ExtractFromResultdict(IOBase):
@@ -63,5 +64,6 @@ class ExtractFromResultdict(IOBase):
 
         outputs["tags"] = resultdict.get("tags")
         outputs["metadata"] = resultdict.get("metadata")
+        outputs["vals"] = resultdict.get("vals")
 
         return outputs

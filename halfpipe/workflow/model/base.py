@@ -121,8 +121,10 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
     workflow.connect(extractfromresultdict, "tags", make_resultdicts_a, "tags")
     workflow.connect(extractfromresultdict, "metadata", make_resultdicts_a, "metadata")
+    workflow.connect(extractfromresultdict, "vals", make_resultdicts_b, "vals")
     workflow.connect(extractfromresultdict, "tags", make_resultdicts_b, "tags")
     workflow.connect(extractfromresultdict, "metadata", make_resultdicts_b, "metadata")
+    workflow.connect(extractfromresultdict, "vals", make_resultdicts_b, "vals")
 
     # create models
     if model.type in ["fe", "me"]:  # intercept only model
