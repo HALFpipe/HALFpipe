@@ -170,7 +170,10 @@ class PyWarningsFilter(logging.Filter):
     )
 
     def filter(self, record):
-        return record.getMessage() not in self.messages_to_filter
+        message = record.getMessage()
+        if message.startswith("WARNING: genfromtxt: Empty input file:"):
+            return False
+        return message not in self.messages_to_filter
 
 
 class Logger:

@@ -4,6 +4,7 @@
 
 from pathlib import Path
 from os.path import relpath
+from shutil import rmtree
 import json
 
 from inflection import camelize
@@ -11,6 +12,7 @@ from inflection import camelize
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
 from ...utils import formatlikebids, splitext, cleaner
+from ..metadata import canonicalize_direction_code
 
 from bids.layout import Config
 from bids.layout.writing import build_path
@@ -127,7 +129,11 @@ class BidsDatabase:
                     self.database.fillmetadata(k, [filepath])
                     v = self.database.metadata(filepath, k)
                     if v is not None:
+                        # transform metadata
                         bidsk = camelize(k)
+                        if k.endswith("direction"):
+                            v = canonicalize_direction_code(v, filepath)
+                        # add to sidecar
                         bidsmetadata[bidsk] = v
 
             if self.database.tagval(filepath, "datatype") == "fmap":
@@ -164,4 +170,8 @@ class BidsDatabase:
         for filepath in _rlistdir(bidsdir, False):
             relfilepath = relpath(filepath, start=bidsdir)
             if relfilepath not in files_to_keep:
-                Path(filepath).unlink()
+                p = Path(filepath)
+                if not p.is_dir():
+                    p.unlink()
+                else:
+                    rmtree(p)
