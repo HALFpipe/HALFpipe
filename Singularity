@@ -20,7 +20,7 @@ From: poldracklab/fmriprep:20.1.1
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \
     cd /halfpipe && \
     pip install --upgrade pip && \
-    pip uninstall --yes fmriprep niworkflows nipype patsy && \
+    pip uninstall --yes fmriprep niworkflows nipype statsmodels patsy && \
     pip install . && \
     python postsetup.py' fmriprep
   
