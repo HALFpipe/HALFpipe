@@ -14,7 +14,51 @@ filetype_str = "BOLD image"
 filedict = {"datatype": "func", "suffix": "bold"}
 schema = BoldFileSchema
 
-next_step_type = FmapStep
+
+def get_slice_timing_steps(next_step_type):
+    class CheckBoldSliceTimingStep(CheckMetadataStep):
+        schema = BoldFileSchema
+
+        key = "slice_timing"
+        filters = filedict
+
+        def __init__(self, app, **kwargs):
+            super(CheckBoldSliceTimingStep, self).__init__(app, **kwargs)
+            self.next_step_type = next_step_type
+
+        def _should_skip(self, ctx):
+            if self.key in ctx.already_checked:
+                return True
+            ctx.already_checked.add(self.key)
+            return False
+
+    class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
+        schema = BoldFileSchema
+
+        key = "slice_encoding_direction"
+        filters = filedict
+
+        next_step_type = CheckBoldSliceTimingStep
+
+        def _should_skip(self, ctx):
+            if self.key in ctx.already_checked:
+                return True
+            ctx.already_checked.add(self.key)
+            return False
+
+    class DoSliceTimingStep(YesNoStep):
+        header_str = "Do slice timing?"
+        yes_step_type = CheckBoldSliceEncodingDirectionStep
+        no_step_type = next_step_type
+
+        def next(self, ctx):
+            if self.choice == "Yes":
+                ctx.spec.global_settings["slice_timing"] = True
+            else:
+                ctx.spec.global_settings["slice_timing"] = False
+            return super(DoSliceTimingStep, self).next(ctx)
+
+    return DoSliceTimingStep
 
 
 class BoldSummaryStep(FilePatternSummaryStep):
@@ -22,56 +66,13 @@ class BoldSummaryStep(FilePatternSummaryStep):
     filedict = filedict
     schema = schema
 
-    next_step_type = FmapSummaryStep
-
-
-class CheckBoldSliceTimingStep(CheckMetadataStep):
-    schema = BoldFileSchema
-
-    key = "slice_timing"
-    filters = filedict
-
-    next_step_type = next_step_type
-
-    def _should_skip(self, ctx):
-        if self.key in ctx.already_checked:
-            return True
-        ctx.already_checked.add(self.key)
-        return False
-
-
-class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
-    schema = BoldFileSchema
-
-    key = "slice_encoding_direction"
-    filters = filedict
-
-    next_step_type = CheckBoldSliceTimingStep
-
-    def _should_skip(self, ctx):
-        if self.key in ctx.already_checked:
-            return True
-        ctx.already_checked.add(self.key)
-        return False
-
-
-class DoSliceTimingStep(YesNoStep):
-    header_str = "Do slice timing?"
-    yes_step_type = CheckBoldSliceEncodingDirectionStep
-    no_step_type = next_step_type
-
-    def next(self, ctx):
-        if self.choice == "Yes":
-            ctx.spec.global_settings["slice_timing"] = True
-        else:
-            ctx.spec.global_settings["slice_timing"] = False
-        return super(DoSliceTimingStep, self).next(ctx)
+    next_step_type = get_slice_timing_steps(FmapSummaryStep)
 
 
 class HasMoreBoldStep(YesNoStep):
     header_str = f"Add more {filetype_str} files?"
     yes_step_type = None  # add later, because not yet defined
-    no_step_type = DoSliceTimingStep
+    no_step_type = get_slice_timing_steps(FmapStep)
 
 
 class CheckRepetitionTimeStep(CheckMetadataStep):
