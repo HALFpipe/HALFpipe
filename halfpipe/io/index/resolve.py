@@ -100,6 +100,11 @@ class ResolvedSpec:
                 "metadata": obj.get_metadata()
             }
 
+            if filedict["extension"] is not None:
+                extension = filedict["extension"]
+                if not extension.startswith("."):
+                    filedict["extension"] = f".{extension}"
+
             # TODO IntendedFor
 
             try:
