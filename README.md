@@ -48,7 +48,7 @@ The second step is to download the `HALFpipe` to your computer. This requires ap
 
 | Container platform | Version | Installation                                      |
 |--------------------|---------|---------------------------------------------------|
-| Singularity        | 3.x     | `singularity pull shub://mindandbrain/halfpipe`   |
+| Singularity        | 3.x     | `singularity pull shub://mindandbrain/Halfpipe`   |
 | Singularity        | 2.x     | `singularity pull docker://mindandbrain/halfpipe` |
 | Docker             |         | `docker pull mindandbrain/halfpipe`               |
 
