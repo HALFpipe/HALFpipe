@@ -21,10 +21,13 @@ def _aggregate_if_possible(inval):
         if all(isinstance(val, (dict)) for val in inval):
             tpllist = [tuple(sorted(val.items())) for val in inval]
             return dict(_aggregate_if_possible(tpllist))
-        invalset = set(inval)
-        if len(invalset) == 1:
-            (aggval,) = invalset
-            return aggval
+        try:
+            invalset = set(inval)
+            if len(invalset) == 1:
+                (aggval,) = invalset
+                return aggval
+        except TypeError:  # cannot make set from inval type
+            pass
     return inval
 
 
