@@ -114,7 +114,13 @@ class AggregateResultdicts(IOBase):
                     resultdict[f][key] = _aggregate_if_possible(value)
                     if key in ["confounds_removal"]:
                         value = list(value)  # convert back
-            resultdicts.append(ResultdictSchema().load(resultdict))
+            schema = ResultdictSchema()
+            validation_errors = schema.validate(resultdict)
+            for f in ["tags", "metadata", "vals"]:
+                if f in validation_errors:
+                    for key in validation_errors[f]:
+                        del resultdict[f][key]  # remove invalid fields
+            resultdicts.append(schema.load(resultdict))
 
         outputs["resultdicts"] = resultdicts
 

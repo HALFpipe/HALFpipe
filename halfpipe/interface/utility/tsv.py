@@ -120,7 +120,7 @@ class MergeColumns(IOBase):
 
         row_index = self.inputs.row_index
         use_index = isdefined(row_index) and row_index is True
-        if isinstance(row_index, list):
+        if isinstance(row_index, list) and len(row_index) == len(out_df.index):
             use_index = True
             out_df.index = self.inputs.row_index
 
