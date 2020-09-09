@@ -15,6 +15,7 @@ from calamities import (
     MultipleChoiceInputView,
     SingleChoiceInputView,
     MultiNumberInputView,
+    MultiSingleChoiceInputView,
 )
 
 from itertools import combinations, chain
@@ -24,7 +25,7 @@ from ...utils import ravel
 from ..step import Step, YesNoStep
 from .loop import AddAnotherModelStep
 from .utils import format_column
-from ...model import InferredTypeContrastSchema, TContrastSchema
+from ...model import InferredTypeContrastSchema, TContrastSchema, MissingFilterSchema
 
 next_step_type = AddAnotherModelStep
 
@@ -326,6 +327,52 @@ class HaveContrastsStep(YesNoStep):
         super(HaveContrastsStep, self).setup(ctx)
 
 
+class VariableMissingActionStep(Step):
+    values = ["Listwise deletion", "Mean substitution"]
+
+    def setup(self, ctx):
+        self._append_view(TextView("Specify the action for missing values"))
+
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
+        self.variables = [variable for variable in self.variables if variable["type"] != "id"]
+
+        varnames = [variable["name"] for variable in self.variables]
+        options = [format_column(varname) for varname in varnames]
+
+        self.varname_by_str = dict(zip(options, varnames))
+
+        self.input_view = MultiSingleChoiceInputView(options, self.values)
+
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.choice = self.input_view()
+        if self.choice is None:
+            return False
+        return True
+
+    def next(self, ctx):
+        if self.choice is not None:
+            for variable_str, value in self.choice.items():
+                varname = self.varname_by_str[variable_str]
+
+                if self.values.index(value) == 0:  # listwise deletion
+                    # create filter
+                    ctx.spec.models[-1].filters.append(
+                        MissingFilterSchema().load(
+                            {
+                                "action": "exclude",
+                                "type": "missing",
+                                "variable": varname,
+                            }
+                        )
+                    )
+
+        return HaveContrastsStep(self.app)(ctx)
+
+
 class VariableSelectStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the variables to add to the model"))
@@ -366,4 +413,4 @@ class VariableSelectStep(Step):
                 )
                 ctx.spec.models[-1].contrasts.append(contrast)
 
-        return HaveContrastsStep(self.app)(ctx)
+        return VariableMissingActionStep(self.app)(ctx)

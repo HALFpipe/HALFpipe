@@ -26,6 +26,12 @@ class GroupFilterSchema(Schema):
     levels = fields.List(fields.Str(), required=True)
 
 
+class MissingFilterSchema(Schema):
+    type = fields.Str(default="missing", validate=validate.Equal("missing"), required=True)
+    action = fields.Str(validate=validate.OneOf(["include", "exclude"]), required=True)
+    variable = fields.Str(required=True)
+
+
 class TagFilterSchema(Schema):
     type = fields.Str(default="tag", validate=validate.Equal("tag"))
     action = fields.Str(validate=validate.OneOf(["include", "exclude"]))
@@ -39,6 +45,7 @@ class FilterSchema(OneOfSchema):
     type_schemas = {
         "cutoff": CutoffFilterSchema,
         "group": GroupFilterSchema,
+        "missing": MissingFilterSchema,
         "tag": TagFilterSchema,
     }
 

@@ -24,24 +24,29 @@ def _aggregate_if_needed(inval):
     return float(inval)
 
 
-def _get_categorical_dict(filepath, variabledicts):
-    rawdataframe = loadspreadsheet(filepath)
+def _get_dataframe(filepath, variabledicts):
+    dataframe = loadspreadsheet(filepath)
+
     for variabledict in variabledicts:
         if variabledict.get("type") == "id":
             id_column = variabledict.get("name")
             break
 
-    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
-    if all(str(id).startswith("sub-") for id in rawdataframe[id_column]):  # for bids
-        rawdataframe[id_column] = [str(id).replace("sub-", "") for id in rawdataframe[id_column]]
-    rawdataframe = rawdataframe.set_index(id_column)
+    dataframe[id_column] = pd.Series(dataframe[id_column], dtype=str)
+    if all(str(id).startswith("sub-") for id in dataframe[id_column]):  # for bids
+        dataframe[id_column] = [str(id).replace("sub-", "") for id in dataframe[id_column]]
+    dataframe = dataframe.set_index(id_column)
 
+    return dataframe
+
+
+def _get_categorical_dict(dataframe, variabledicts):
     categorical_columns = []
     for variabledict in variabledicts:
         if variabledict.get("type") == "categorical":
             categorical_columns.append(variabledict.get("name"))
 
-    return rawdataframe[categorical_columns].to_dict()
+    return dataframe[categorical_columns].to_dict()
 
 
 class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
@@ -65,6 +70,10 @@ class FilterResultdicts(SimpleInterface):
         resultdict_schema = ResultdictSchema()
         outdicts = [resultdict_schema.load(outdict) for outdict in outdicts]  # validate
 
+        dataframe = None
+        if isdefined(self.inputs.spreadsheet) and isdefined(self.inputs.variabledicts):
+            dataframe = _get_dataframe(self.inputs.spreadsheet, self.inputs.variabledicts)
+
         categorical_dict = None
 
         for filterdict in self.inputs.filterdicts:
@@ -73,11 +82,8 @@ class FilterResultdicts(SimpleInterface):
             filtertype = filterdict.get("type")
             if filtertype == "group":
                 if categorical_dict is None:
-                    assert isdefined(self.inputs.spreadsheet)
-                    assert isdefined(self.inputs.variabledicts)
-                    categorical_dict = _get_categorical_dict(
-                        self.inputs.spreadsheet, self.inputs.variabledicts
-                    )
+                    assert dataframe is not None
+                    categorical_dict = _get_categorical_dict(dataframe, self.inputs.variabledicts)
 
                 variable = filterdict.get("variable")
                 if variable not in categorical_dict:
@@ -88,7 +94,7 @@ class FilterResultdicts(SimpleInterface):
                     continue
 
                 variable_dict = categorical_dict[variable]
-                selectedsubjects = set(
+                selectedsubjects = frozenset(
                     subject for subject, value in variable_dict.items() if value in levels
                 )
 
@@ -106,6 +112,24 @@ class FilterResultdicts(SimpleInterface):
                     ]
                 else:
                     raise ValueError(f'Invalid action "{action}"')
+
+            elif filtertype == "missing":
+
+                assert dataframe is not None
+
+                variable = filterdict.get("variable")
+                if variable not in dataframe.columns:
+                    continue
+
+                assert action == "exclude"
+
+                selectedsubjects = frozenset(pd.notnull(dataframe[variable]).index)
+
+                outdicts = [
+                    outdict
+                    for outdict in outdicts
+                    if outdict.get("tags").get("sub") not in selectedsubjects
+                ]
 
             elif filtertype == "cutoff":
 

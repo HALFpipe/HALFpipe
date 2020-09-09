@@ -37,7 +37,7 @@ from .setting import (
 )
 from .metadata import MetadataSchema, direction_codes, axis_codes, space_codes
 from .resultdict import ResultdictSchema
-from .filter import FilterSchema, GroupFilterSchema, TagFilterSchema
+from .filter import FilterSchema, GroupFilterSchema, TagFilterSchema, MissingFilterSchema
 from .contrast import TContrastSchema, InferredTypeContrastSchema
 from .model import (
     Model,
@@ -89,6 +89,7 @@ __all__ = [
     GroupFilterSchema,
     TagFilterSchema,
     TContrastSchema,
+    MissingFilterSchema,
     InferredTypeContrastSchema,
     Model,
     ModelSchema,

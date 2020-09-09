@@ -18,6 +18,8 @@ from calamities import (
 
 import logging
 
+import pandas as pd
+
 from ..step import Step
 from .filter import SubjectGroupFilterStep
 from ...model import VariableSchema, SpreadsheetFileSchema
@@ -83,7 +85,10 @@ class SpreadsheetColumnTypeStep(Step):
                 vardict = {"type": vartype, "name": varname}
 
                 if vartype == "categorical":
-                    vardict["levels"] = self.df[varname].astype(str).unique().tolist()
+                    levels = self.df[varname]
+                    levels = levels[pd.notnull(levels)]
+                    levels = levels.astype(str).unique().tolist()
+                    vardict["levels"] = levels
 
                 var = VariableSchema().load(vardict)
                 ctx.spec.files[-1].metadata["variables"].append(var)
