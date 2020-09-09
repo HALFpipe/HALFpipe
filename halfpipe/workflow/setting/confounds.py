@@ -5,7 +5,7 @@
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
-from ...interface import SelectColumns, MergeColumns, FilterRegressor
+from ...interface import SelectColumns, FilterRegressor, FillNA
 from ...utils import hexdigest
 
 from ..memory import MemoryCalculator
@@ -16,7 +16,7 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
         if confound_names is not None:
             name = f"confounds_select_{hexdigest(confound_names)[:8]}_wf"
         else:
-            name = f"confounds_select_wf"
+            name = "confounds_select_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"
 
@@ -71,12 +71,8 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
 
-    removeheader = pe.Node(
-        MergeColumns(1),
-        name="removeheader",
-        run_without_submitting=True
-    )
-    workflow.connect(inputnode, "confounds_selected", removeheader, "in1")
+    fillna = pe.Node(FillNA(), name="fillna", run_without_submitting=True)
+    workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
 
     filter_regressor_b = pe.Node(
         FilterRegressor(aggressive=True, filter_all=True, mask=False),
@@ -85,7 +81,7 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     )
     workflow.connect(inputnode, "bold", filter_regressor_b, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor_b, "mask")
-    workflow.connect(removeheader, "out_no_header", filter_regressor_b, "design_file")
+    workflow.connect(fillna, "out_no_header", filter_regressor_b, "design_file")
 
     workflow.connect(filter_regressor_b, "out_file", outputnode, "bold")
 
@@ -95,7 +91,7 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
         mem_gb=memcalc.min_gb
     )
     workflow.connect(inputnode, "confounds", filter_regressor_c, "in_file")
-    workflow.connect(removeheader, "out_no_header", filter_regressor_c, "design_file")
+    workflow.connect(fillna, "out_no_header", filter_regressor_c, "design_file")
 
     workflow.connect(filter_regressor_c, "out_file", outputnode, "confounds")
 
