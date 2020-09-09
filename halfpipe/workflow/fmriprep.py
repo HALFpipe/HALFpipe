@@ -191,7 +191,7 @@ class FmriprepFactory(Factory):
             # func first
             _connect(hierarchy)
 
-            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "bold_reference_wf", "bold_reg_wf", "sdc_estimate_wf", "sdc_bypass_wf"]:
+            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "final_boldref_wf", "bold_reg_wf", "sdc_estimate_wf", "sdc_bypass_wf"]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
