@@ -186,7 +186,7 @@ class CheckMetadataStep(Step):
                         sts = np.array2string(val, max_line_width=16384)
                     vals[i] = sts
 
-        if all(val is None for val in vals):
+        if any(val is None for val in vals):
             self.is_missing = True
         else:
             self.is_missing = False
@@ -215,9 +215,9 @@ class CheckMetadataStep(Step):
                 self._append_view(TextView(f" {column1[i]:>{column1width}} - {display} {unit}"))
 
             if len(order) > 10:
-                self._append_view(TextView(f"..."))
+                self._append_view(TextView("..."))
 
-            self._append_view(TextView(f"Proceed with these values?"))
+            self._append_view(TextView("Proceed with these values?"))
             self.input_view = SingleChoiceInputView(["Yes", "No"], isVertical=False)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
