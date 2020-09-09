@@ -12,7 +12,7 @@ from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
 from templateflow.api import get as get_template
 
-from nipype.interfaces.base import traits, InputMultiPath, File, isdefined
+from nipype.interfaces.base import traits, InputMultiObject, File, isdefined
 
 from ...resource import get as getresource
 from ...utils import nvol
@@ -31,12 +31,12 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
         desc="reference image space that you wish to warp INTO",
         exists=True,
     )
-    transforms = traits.Either(
-        InputMultiPath(File(exists=True)),
-        "identity",
+    transforms = InputMultiObject(
+        traits.Either(File(exists=True), "identity"),
         argstr="%s",
-        mandatory=False,
-        desc="will be overwritten",
+        mandatory=True,
+        desc="transform files: will be applied in reverse order. For "
+        "example, the last specified transform will be applied first.",
     )
 
 
@@ -67,7 +67,7 @@ class Resample(FixHeaderApplyTransforms):
         if input_image_nvol > 0:
             self.inputs.input_image_type = 3  # time series
 
-        transforms = "identity"
+        transforms = ["identity"]
         if input_space != reference_space:
             xfm = getresource(f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5")
             assert Path(xfm).is_file()
@@ -75,7 +75,7 @@ class Resample(FixHeaderApplyTransforms):
 
         self.inputs.transforms = transforms
 
-        if not input_matches_reference or transforms != "identity" or not self.inputs.lazy:
+        if not input_matches_reference or set(transforms) != set(["identity"]) or not self.inputs.lazy:
             self.resample = True
             runtime = super(Resample, self)._run_interface(runtime, correct_return_codes)
 

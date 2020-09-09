@@ -169,6 +169,13 @@ class FmriprepFactory(Factory):
             outputattrs = set(outputnode.outputs.copyable_trait_names())
             attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
 
+            actually_connected_attrs = set()
+            for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
+                _, infields = zip(*datadict.get("connect", []))
+                actually_connected_attrs.update(infields)
+
+            attrs &= actually_connected_attrs
+
             for attr in attrs:
                 fouthierarchy, foutputnode, fattr = _follow_to_datasink(hierarchy, outputnode, attr)
                 self.connect_attr(fouthierarchy, foutputnode, fattr, nodehierarchy, node, attr)
@@ -190,6 +197,12 @@ class FmriprepFactory(Factory):
         if anat_wf is None:
             # func first
             _connect(hierarchy)
+
+            if "skip_vols" in inputattrs:
+                initial_boldref_wf = wf.get_node("initial_boldref_wf")
+                outputnode = initial_boldref_wf.get_node("outputnode")
+                self.connect_attr([*hierarchy, initial_boldref_wf], outputnode, "skip_vols", nodehierarchy, node, "skip_vols")
+                connected_attrs.add("skip_vols")
 
             for name in ["bold_bold_trans_wf", "bold_hmc_wf", "final_boldref_wf", "bold_reg_wf", "sdc_estimate_wf", "sdc_bypass_wf"]:
                 bold_wf = wf.get_node(name)
