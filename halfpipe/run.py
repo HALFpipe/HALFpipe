@@ -88,7 +88,7 @@ def _main():
     args = ap.parse_args()
     global debug
     debug = args.debug
-    config.execution.debug = debug
+    config.execution.debug = ["all"] if debug else []
     verbose = args.verbose
 
     if args.version is True:

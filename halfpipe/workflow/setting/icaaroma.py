@@ -129,7 +129,6 @@ def init_ica_aroma_components_wf(
         spaces=spaces,
         name="bold_std_trans_wf",
         use_compression=not config.execution.low_mem,
-        use_fieldwarp=True,
     )
 
     bold_std_trans_wf_inputnode = bold_std_trans_wf.get_node("inputnode")
@@ -148,7 +147,6 @@ def init_ica_aroma_components_wf(
         mem_gb=memcalc.series_std_gb,
         metadata={"RepetitionTime": np.nan},
         omp_nthreads=config.nipype.omp_nthreads,
-        use_fieldwarp=True,
         err_on_aroma_warn=config.workflow.aroma_err_on_warn,
         aroma_melodic_dim=config.workflow.aroma_melodic_dim,
         name="ica_aroma_wf",
