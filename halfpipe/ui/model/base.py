@@ -15,7 +15,7 @@ from calamities import (
     SingleChoiceInputView,
 )
 
-from inflection import humanize
+from inflection import humanize, underscore
 
 
 from ..utils import forbidden_chars
@@ -71,7 +71,8 @@ def _get_fe_aggregate(ctx, inputname, across):
         for entity in across
     ]
     acrossstr = " then ".join([p.plural(display_str) for display_str in display_strs])
-    basename = formatlikebids(f"aggregate {inputname} across {acrossstr}")
+    inputname_with_spaces = humanize(underscore(inputname))
+    basename = formatlikebids(f"aggregate {inputname_with_spaces} across {acrossstr}")
 
     entity = across.pop()
 
