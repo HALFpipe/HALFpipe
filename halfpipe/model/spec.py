@@ -35,8 +35,8 @@ entity_aliases = {"direction": "phase_encoding_direction"}
 timestampfmt = "%Y-%m-%d_%H-%M"
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
 
-schema_version = "2.1.0"
-compatible_schema_versions = ["2.0.0", "2.1.0"]
+schema_version = "3.0"
+compatible_schema_versions = ["3.0"]
 
 
 class SpecSchema(Schema):

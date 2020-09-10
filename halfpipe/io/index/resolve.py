@@ -79,6 +79,10 @@ class ResolvedSpec:
     def _resolve_bids(self, fileobj):
         layout = BIDSLayout(fileobj.path, absolute_paths=True)
 
+        basemetadata = dict()
+        if hasattr(fileobj, "metadata") and isinstance(fileobj.metadata, dict):
+            basemetadata = fileobj.metadata
+
         resolved_files = []
 
         for filepath, obj in layout.get_files().items():
@@ -97,7 +101,7 @@ class ResolvedSpec:
                 "extension": entitydict.get("extension"),
                 "path": filepath,
                 "tags": tags,
-                "metadata": obj.get_metadata()
+                "metadata": {**basemetadata, **obj.get_metadata()}
             }
 
             if filedict["extension"] is not None:

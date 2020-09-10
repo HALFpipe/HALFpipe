@@ -30,8 +30,8 @@ class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
         desc="Atlas image file defining the connectivity ROIs", exists=True, mandatory=True,
     )
 
-    background_label = traits.Int(desc="", default=0,)
-    min_n_voxels = traits.Int(desc="", default=50,)
+    background_label = traits.Int(desc="", default=0, usedefault=True)
+    min_region_coverage = traits.Float(desc="", default=0.8, usedefault=True)
 
 
 class ConnectivityMeasureOutputSpec(TraitedSpec):
@@ -50,7 +50,7 @@ class ConnectivityMeasure(BaseInterface):
             self.inputs.atlas_file,
             mask_file=self.inputs.mask_file,
             background_label=self.inputs.background_label,
-            min_n_voxels=self.inputs.min_n_voxels,
+            min_region_coverage=self.inputs.min_region_coverage,
         )
 
         df = pd.DataFrame(self._time_series)

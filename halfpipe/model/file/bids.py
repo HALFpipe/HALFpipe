@@ -8,7 +8,9 @@
 
 from marshmallow import fields, validate
 from .base import BaseFileSchema
+from ..metadata import BoldMetadataSchema
 
 
 class BidsFileSchema(BaseFileSchema):
     datatype = fields.Str(default="bids", validate=validate.Equal("bids"))
+    metadata = fields.Nested(BoldMetadataSchema)

@@ -43,7 +43,7 @@ class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(default="task_based", validate=validate.Equal("task_based"))
     conditions = fields.List(fields.Str())
     contrasts = fields.List(fields.Nested(TContrastSchema))
-    high_pass_filter_cutoff = fields.Float(default=125.)
+    high_pass_filter_cutoff = fields.Float(default=125.0, validate=validate.Range(min=0.0))
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
@@ -63,6 +63,7 @@ class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
         default="atlas_based_connectivity", validate=validate.Equal("atlas_based_connectivity")
     )
     atlases = fields.List(fields.Str())
+    min_region_coverage = fields.Float(default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class ReHoFeatureSchema(BaseFeatureSchema):

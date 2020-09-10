@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .direction import canonicalize_direction_code, direction_code_str
-from .slicetiming import slice_timing_str
+from .slicetiming import slice_timing_str, str_slice_timing
 from .base import MetadataLoader, SidecarMetadataLoader
 
 __all__ = [
@@ -12,4 +12,5 @@ __all__ = [
     MetadataLoader,
     SidecarMetadataLoader,
     slice_timing_str,
+    str_slice_timing,
 ]

@@ -43,15 +43,15 @@ class CalcMean(SimpleInterface):
 
         if isdefined(self.inputs.dseg):  # get grey matter only
             _, self._results["mean"], _ = meansignals(
-                in_file, self.inputs.dseg, mask_file=mask_file, min_n_voxels=0
+                in_file, self.inputs.dseg, mask_file=mask_file, min_region_coverage=0
             ).ravel()
         elif isdefined(self.inputs.parcellation):
             self._results["mean"] = list(meansignals(
-                in_file, self.inputs.parcellation, mask_file=mask_file, min_n_voxels=0
+                in_file, self.inputs.parcellation, mask_file=mask_file, min_region_coverage=0
             ).ravel())
         elif mask_file is not None:
             self._results["mean"] = firstfloat(meansignals(
-                in_file, mask_file, min_n_voxels=0
+                in_file, mask_file, min_region_coverage=0
             ).ravel())
         vals = dict()
         self._results["vals"] = vals

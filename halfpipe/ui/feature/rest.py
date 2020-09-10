@@ -10,6 +10,7 @@ from calamities import (
     TextView,
     SpacerView,
     CombinedMultipleAndSingleChoiceInputView,
+    NumberInputView
 )
 
 from .loop import AddAnotherFeatureStep, SettingValsStep
@@ -20,7 +21,7 @@ from ..step import Step
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
 from ...model import RefFileSchema
-from ...utils import formatlikebids, deepcopy
+from ...utils import formatlikebids, deepcopy, first
 
 next_step_type = SettingValsStep
 
@@ -119,8 +120,53 @@ SeedBasedConnectivityRefStep = get_ref_steps(
     "seed", "seeds", "binary seed mask", next_step_type
 )
 DualRegressionRefStep = get_ref_steps("map", "maps", "spatial map", next_step_type)
+
+
+class AtlasBasedMinRegionCoverageStep(Step):
+    noun = "minimum atlas region coverage"
+    suggestion = 0.8
+
+    def setup(self, ctx):
+        self.result = None
+
+        self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
+        self._append_view(TextView("Atlas region signals that do not reach the requirement are set to n/a"))
+
+        self.valset = set()
+
+        for feature in ctx.spec.features[:-1]:
+            if feature.type == "atlas_based_connectivity":
+                if hasattr(feature, "min_region_coverage"):
+                    self.valset.add(feature.min_region_coverage)
+
+        suggestion = self.suggestion
+        if len(self.valset) > 0:
+            suggestion = first(self.valset)
+
+        self.input_view = NumberInputView(
+            number=suggestion, min=0, max=1.0
+        )
+
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.result = self.input_view()
+        if self.result is None:  # was cancelled
+            return False
+        return True
+
+    def next(self, ctx):
+        if self.result is not None and isinstance(self.result, float):
+            ctx.spec.features[-1].min_region_coverage = self.result
+
+        this_next_step_type = next_step_type
+
+        return this_next_step_type(self.app)(ctx)
+
+
 AtlasBasedConnectivityRefStep = get_ref_steps(
-    "atlas", "atlases", "atlas", next_step_type
+    "atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep
 )
 
 SeedBasedConnectivitySettingInitStep = get_setting_init_steps(

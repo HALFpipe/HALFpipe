@@ -14,7 +14,7 @@ from scipy.ndimage.measurements import mean
 from ..utils import nvol
 
 
-def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_n_voxels=50):
+def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_region_coverage=0.5):
     in_img = nib.load(in_file)
 
     atlas_img = nib.load(atlas_file)
@@ -24,19 +24,27 @@ def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_n_v
     labels = np.asanyarray(atlas_img.dataobj).astype(np.int32)
     nlabel = labels.max()
 
+    assert background_label <= nlabel
+
+    indices = np.arange(0, nlabel + 1, dtype=np.int32)
+
     if mask_file is not None:
         mask_img = nib.load(mask_file)
         assert nvol(mask_img) == 1
         assert mask_img.shape[:3] == in_img.shape[:3]
         assert np.allclose(mask_img.affine, in_img.affine)
         mask_data = np.asanyarray(mask_img.dataobj).astype(np.bool)
+
+        pre_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)
         labels[np.logical_not(mask_data)] = background_label
+        post_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)
+
+        region_coverage = post_counts.astype(np.float64) / pre_counts.astype(np.float64)
+        indices = indices[region_coverage >= min_region_coverage]
+
+    indices = np.setdiff1d(indices, [background_label])
 
     assert np.all(labels >= 0)
-
-    indices, counts = np.unique(labels, return_counts=True)
-    indices = indices[counts >= min_n_voxels]
-    indices = np.setdiff1d(indices, [background_label])
 
     in_data = in_img.get_fdata()
     if in_data.ndim == 3:

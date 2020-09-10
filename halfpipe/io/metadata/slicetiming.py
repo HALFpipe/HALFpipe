@@ -7,9 +7,30 @@
 """
 
 import numpy as np
+
 from itertools import zip_longest
 
 from ...utils import removenone, ravel
+
+
+def _get_slice_orders(n_slices):
+    a = n_slices // 2
+    b = n_slices - a
+
+    sequential = np.arange(n_slices)
+    interleave_even = removenone(ravel(zip_longest(sequential[:b], sequential[b:])))
+    interleave_odd = removenone(ravel(zip_longest(sequential[b:], sequential[:b])))
+
+    orders = {
+        "sequential increasing": sequential,
+        "sequential decreasing": sequential[::-1],
+        "alternating increasing even first": interleave_even,
+        "alternating increasing odd first": interleave_odd,
+        "alternating decreasing even first": interleave_even[::-1],
+        "alternating decreasing odd first": interleave_odd[::-1],
+    }
+
+    return orders
 
 
 def slice_timing_str(slice_times):
@@ -24,21 +45,8 @@ def slice_timing_str(slice_times):
     (multiband_factor,) = counts
 
     order = inverse[: len(values)]
-    a = len(order) // 2
-    b = len(order) - a
 
-    sequential = np.arange(len(order))
-    interleave_even = removenone(ravel(zip_longest(sequential[:b], sequential[b:])))
-    interleave_odd = removenone(ravel(zip_longest(sequential[b:], sequential[:b])))
-
-    orders = {
-        "sequential increasing": sequential,
-        "sequential decreasing": sequential[::-1],
-        "alternating increasing even first": interleave_even,
-        "alternating increasing odd first": interleave_odd,
-        "alternating decreasing even first": interleave_even[::-1],
-        "alternating decreasing odd first": interleave_odd[::-1],
-    }
+    orders = _get_slice_orders(len(order))
 
     for name, indices in orders.items():
         if np.allclose(order, indices):
@@ -48,3 +56,9 @@ def slice_timing_str(slice_times):
                 return name
 
     return "unknown"
+
+
+def str_slice_timing(order_str, n_slices, slice_duration):
+    orders = _get_slice_orders(n_slices)
+
+    return list(np.array(orders[order_str], dtype=np.float64) * slice_duration)

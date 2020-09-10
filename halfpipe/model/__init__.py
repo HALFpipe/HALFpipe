@@ -35,7 +35,7 @@ from .setting import (
     BandpassFilterSettingSchema,
     GrandMeanScalingSettingSchema,
 )
-from .metadata import MetadataSchema, direction_codes, axis_codes, space_codes
+from .metadata import MetadataSchema, direction_codes, axis_codes, space_codes, slice_order_strs
 from .resultdict import ResultdictSchema
 from .filter import FilterSchema, GroupFilterSchema, TagFilterSchema, MissingFilterSchema
 from .contrast import TContrastSchema, InferredTypeContrastSchema
@@ -84,6 +84,7 @@ __all__ = [
     direction_codes,
     axis_codes,
     space_codes,
+    slice_order_strs,
     ResultdictSchema,
     FilterSchema,
     GroupFilterSchema,

@@ -15,8 +15,13 @@ from inflection import humanize
 from marshmallow import fields
 
 from .step import Step
-from ..io import direction_code_str, slice_timing_str, loadspreadsheet
-from ..model import space_codes
+from ..io import (
+    direction_code_str,
+    slice_timing_str,
+    str_slice_timing,
+    loadspreadsheet
+)
+from ..model import space_codes, slice_order_strs
 
 
 def _get_field(schema, key):
@@ -42,6 +47,69 @@ def display_str(x):
     return humanize(x)
 
 
+class ImportMetadataStep(Step):
+    def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
+        super(ImportMetadataStep, self).__init__(app)
+
+        self.schema = schema
+        self.key = key
+        self.field = _get_field(self.schema, self.key)
+        self.appendstr = appendstr
+
+        self.suggestion = suggestion
+
+        self.filters = filters
+
+        self.next_step_type = next_step_type
+
+    def setup(self, ctx):
+        humankey = display_str(self.key).lower()
+
+        unit = _get_unit(self.schema, self.key)
+        field = self.field
+
+        assert isinstance(field, fields.List)
+
+        header_str = f"Import {humankey} values{self.appendstr}"
+        if unit is not None:
+            header_str += f" in {unit}"
+        header_str += " from a file"
+
+        self._append_view(TextView(header_str))
+
+        self.input_view = FileInputView()
+
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.result = self.input_view()
+        if self.result is None:
+            return False
+        return True
+
+    def next(self, ctx):
+        if self.result is not None:
+            value = self.result
+
+            value = list(np.ravel(np.asarray(loadspreadsheet(value))))
+
+            value = self.field.deserialize(value)
+
+            if self.filters is None:
+                specfileobjs = [ctx.spec.files[-1]]
+            else:
+                filepaths = ctx.database.get(**self.filters)
+                specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
+
+            for specfileobj in specfileobjs:
+                if not hasattr(specfileobj, "metadata"):
+                    specfileobj.metadata = dict()
+                specfileobj.metadata[self.key] = value
+
+        return self.next_step_type(self.app)(ctx)
+
+
 class SetMetadataStep(Step):
     def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
         super(SetMetadataStep, self).__init__(app)
@@ -63,23 +131,19 @@ class SetMetadataStep(Step):
         unit = _get_unit(self.schema, self.key)
         field = self.field
 
-        if isinstance(field, fields.List):
-            header_str = f"Import {humankey} values{self.appendstr}"
-        else:
-            header_str = f"Specify {humankey}{self.appendstr}"
-
-        if unit is not None:
+        header_str = f"Specify {humankey}{self.appendstr}"
+        if unit is not None and self.key != "slice_timing":
             header_str += f" in {unit}"
-
-        if isinstance(field, fields.List):
-            header_str += " from a file"
 
         self._append_view(TextView(header_str))
 
         self.aliases = {}
 
-        if field.validate is not None and hasattr(field.validate, "choices"):
-            choices = [*field.validate.choices]
+        if field.validate is not None and hasattr(field.validate, "choices") or self.key == "slice_timing":
+            if self.key == "slice_timing":
+                choices = [*slice_order_strs, "import from file"]
+            else:
+                choices = [*field.validate.choices]
             if set(space_codes).issubset(choices):
                 choices = [*space_codes]
                 if self.key == "slice_encoding_direction":
@@ -96,9 +160,6 @@ class SetMetadataStep(Step):
 
         elif isinstance(field, fields.Float):
             self.input_view = NumberInputView()
-
-        elif isinstance(field, fields.List):
-            self.input_view = FileInputView()
 
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
@@ -118,8 +179,21 @@ class SetMetadataStep(Step):
 
             if value in self.aliases:
                 value = self.aliases[value]
-            elif isinstance(self.input_view, FileInputView):
-                value = list(np.ravel(np.asarray(loadspreadsheet(value))))
+
+            if self.key == "slice_timing":
+                if value == "import from file":
+                    return ImportMetadataStep(
+                        self.app,
+                        self.filters,
+                        self.schema,
+                        self.key,
+                        self.suggestion,
+                        self.next_step_type,
+                        appendstr=self.appendstr
+                    )(ctx)
+                else:  # a code was specified
+                    self.key = "slice_timing_code"
+                    self.field = _get_field(self.schema, self.key)
 
             value = self.field.deserialize(value)
 
@@ -184,6 +258,8 @@ class CheckMetadataStep(Step):
                     sts = slice_timing_str(val)
                     if sts == "unknown":
                         sts = np.array2string(val, max_line_width=16384)
+                    else:
+                        sts = humanize(sts)
                     vals[i] = sts
 
         if any(val is None for val in vals):

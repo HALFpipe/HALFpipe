@@ -12,7 +12,7 @@ import re
 from calamities.pattern import tag_glob
 
 from ...model import direction_codes, axis_codes, space_codes
-from .niftiheader import NiftiheaderMetadataLoader
+from .niftiheader import NiftiheaderLoader
 
 
 def get_axcodes_set(pat):
@@ -22,7 +22,7 @@ def get_axcodes_set(pat):
     axcodes_set = set()
 
     for filepath in filepaths:
-        header, _ = NiftiheaderMetadataLoader.load(filepath)
+        header, _ = NiftiheaderLoader.load(filepath)
         axcodes_set.add(nib.aff2axcodes(header.get_qform()))
 
     return axcodes_set

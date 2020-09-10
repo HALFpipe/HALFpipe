@@ -23,6 +23,7 @@ from .metadata import (
     MetadataLoader,
     SidecarMetadataLoader,
     slice_timing_str,
+    str_slice_timing,
 )
 
 from .signals import meansignals
@@ -47,5 +48,6 @@ __all__ = [
     MetadataLoader,
     SidecarMetadataLoader,
     slice_timing_str,
+    str_slice_timing,
     meansignals,
 ]

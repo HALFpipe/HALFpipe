@@ -130,9 +130,14 @@ class BidsDatabase:
                     v = self.database.metadata(filepath, k)
                     if v is not None:
                         # transform metadata
-                        bidsk = camelize(k)
                         if k.endswith("direction"):
                             v = canonicalize_direction_code(v, filepath)
+                        if k == "slice_timing_code":
+                            if not self.database.fillmetadata("slice_timing", [filepath]):
+                                continue
+                            k = "slice_timing"
+                            v = self.database.metadata(filepath, k)
+                        bidsk = camelize(k)
                         # add to sidecar
                         bidsmetadata[bidsk] = v
 

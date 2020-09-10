@@ -6,7 +6,7 @@
 
 """
 
-from .niftiheader import NiftiheaderMetadataLoader
+from .niftimetadata import NiftiheaderMetadataLoader
 from .sidecar import SidecarMetadataLoader
 from .database import DatabaseMetadataLoader
 

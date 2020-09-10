@@ -33,6 +33,15 @@ space_codes = [
 ]
 direction_codes = [*axis_codes, *space_codes]
 
+slice_order_strs = [
+    "sequential increasing",
+    "sequential decreasing",
+    "alternating increasing even first",
+    "alternating increasing odd first",
+    "alternating decreasing even first",
+    "alternating decreasing odd first",
+]
+
 
 class BaseMetadataSchema(Schema):
     class Meta:
@@ -78,12 +87,15 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition.",
         unit="seconds",
     )
+    slice_timing_code = fields.Str(validate=validate.OneOf(slice_order_strs))
     slice_encoding_direction = fields.Str(description="", validate=validate.OneOf(direction_codes))
 
     @validates_schema
     def validate_slice_timing(self, data, **kwargs):
         if "slice_timing" not in data or "repetition_time" not in data:
             return  # nothing to validate
+        if "slice_timing_code" in data and data["slice_timing_code"] is not None:
+            raise ValidationError("Cannot specify both slice_timing and slice_timing_code at the same time")
         if isinstance(data["slice_timing"], list):
             if max(data["slice_timing"]) >= data["repetition_time"]:
                 raise ValidationError("SliceTiming values must be smaller than RepetitionTime")
