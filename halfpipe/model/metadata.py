@@ -53,7 +53,9 @@ class PEDirMetadataSchema(BaseMetadataSchema):
 
 class TEMetadataSchema(BaseMetadataSchema):
     echo_time = fields.Float(
-        description="The echo time (TE) for the acquisition, specified in seconds.", unit="seconds"
+        description="The echo time (TE) for the acquisition, specified in seconds.",
+        unit="seconds",
+        validate=validate.Range(min=0.0)
     )
 
 
@@ -62,12 +64,14 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         description="The time in seconds between the beginning of an acquisition of one "
         "volume and the beginning of acquisition of the volume following it (TR).",
         unit="seconds",
+        validate=validate.Range(min=0.0)
     )
     effective_echo_spacing = fields.Float(
         description='The "effective" sampling interval, specified in seconds, between lines '
         "in the phase-encoding direction, defined based on the size of the reconstructed "
         "image in the phase direction.",
         unit="seconds",
+        validate=validate.Range(min=0.0)
     )
     slice_timing = fields.List(
         fields.Float(),
@@ -89,6 +93,7 @@ class PhaseDiffMetadataSchema(BaseMetadataSchema):
     echo_time_difference = fields.Float(
         description="The echo time difference between the acquisitions, specified in seconds.",
         unit="seconds",
+        validate=validate.Range(min=0.0)
     )
 
 
