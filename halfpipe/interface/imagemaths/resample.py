@@ -24,7 +24,7 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
     reference_res = traits.Int(mandatory=False)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
 
-    # overrides
+    # make not mandatory as these inputs will be computed from other inputs
     reference_image = File(
         argstr="--reference-image %s",
         mandatory=False,
@@ -34,7 +34,7 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
     transforms = InputMultiObject(
         traits.Either(File(exists=True), "identity"),
         argstr="%s",
-        mandatory=True,
+        mandatory=False,
         desc="transform files: will be applied in reverse order. For "
         "example, the last specified transform will be applied first.",
     )
