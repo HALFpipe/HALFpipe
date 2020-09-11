@@ -44,8 +44,11 @@ def init_atlasbasedconnectivity_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
+    min_region_coverage = 0
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
+        if hasattr(feature, "min_region_coverage"):
+            min_region_coverage = feature.min_region_coverage
 
     if atlas_files is not None:
         inputnode.inputs.atlas_files = atlas_files
@@ -93,7 +96,7 @@ def init_atlasbasedconnectivity_wf(
 
     #
     connectivitymeasure = pe.MapNode(
-        ConnectivityMeasure(background_label=0, min_n_voxels=50),
+        ConnectivityMeasure(background_label=0, min_region_coverage=min_region_coverage),
         name="connectivitymeasure",
         iterfield=["atlas_file"],
         mem_gb=memcalc.series_std_gb,
