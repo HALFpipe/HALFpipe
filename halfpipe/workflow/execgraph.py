@@ -24,7 +24,7 @@ max_chunk_size = 50  # subjects
 class DontRunRunner:
     plugin_args = dict()
 
-    def run(*args, **kwargs):
+    def run(*args, **kwargs):  # noqa
         pass
 
 
@@ -61,6 +61,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         with DictListFile.cached(report_fname) as dlf:
             dlf.is_dirty = True  # force write
 
+    # split workflow
     subjectworkflows = dict()
     for node in execgraph.nodes():
         subjectname = None
