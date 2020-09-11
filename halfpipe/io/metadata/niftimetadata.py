@@ -54,7 +54,7 @@ class NiftiheaderMetadataLoader:
 
                 repetition_time = None
                 if self.fill(fileobj, "repetition_time"):
-                    repetition_time = fileobj.metadata.get("repetition_time") * 1000
+                    repetition_time = fileobj.metadata.get("repetition_time") * 1000  # needs to be in milliseconds
 
                 nifti_slice_duration = header.get_slice_duration()
                 if n_slices is not None and repetition_time is not None:
@@ -75,11 +75,11 @@ class NiftiheaderMetadataLoader:
                 slice_timing_code = fileobj.metadata.get("slice_timing_code")
                 if slice_timing_code is None:
                     slice_times = header.get_slice_times()
-                    slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
-                    if not np.allclose(slice_times, 0.0):
-                        value = slice_times
                 else:
-                    value = str_slice_timing(slice_timing_code, n_slices, nifti_slice_duration)
+                    slice_times = str_slice_timing(slice_timing_code, n_slices, nifti_slice_duration)
+                slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
+                if not np.allclose(slice_times, 0.0):
+                    value = slice_times
             except nib.spatialimages.HeaderDataError:
                 return False
 
