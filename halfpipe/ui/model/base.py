@@ -312,14 +312,15 @@ class HasModelStep(YesNoStep):
 
     def _should_run(self, ctx):
         if (
-            not hasattr(ctx.spec, "features")
-            or ctx.spec.features is None
-            or len(ctx.spec.features) == 0
+            hasattr(ctx.spec, "features")
+            and ctx.spec.features is not None
         ):
-            self.choice = "No"
-            return False
+            for feature in ctx.spec.features:
+                if hasattr(feature, "type") and feature.type != "atlas_based_connectivity":
+                    return True
 
-        return True
+        self.choice = "No"
+        return False
 
 
 AddAnotherModelStep.yes_step_type = ModelTypeStep
