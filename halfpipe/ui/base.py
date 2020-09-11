@@ -50,6 +50,7 @@ class UseExistingSpecStep(Step):
         "Run without modification",
         "Start over at beginning",
         "Start over at features",
+        "Add another feature",
         "Start over at models",
         "Add another model",
     ]
@@ -107,10 +108,10 @@ class UseExistingSpecStep(Step):
                 return ctx
             elif choice_index == 1:
                 return BidsStep(self.app)(ctx)
-            elif choice_index == 2:
+            elif choice_index in frozenset([2, 3]):
                 return FeaturesStep(self.app)(ctx)
-            elif choice_index > 2:
-                if choice_index == 4:
+            elif choice_index in frozenset([4, 5]):
+                if choice_index == 5:
                     ctx.spec.models = models
                 return ModelsStep(self.app)(ctx)
         else:
