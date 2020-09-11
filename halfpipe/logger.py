@@ -165,7 +165,7 @@ class PyWarningsFilter(logging.Filter):
             "WARNING: dist() and linux_distribution() functions are deprecated in Python 3.5",
             "WARNING: The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
             "WARNING: This has not been fully tested. Please report any failures.",
-            "WARNING: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working"
+            "WARNING: future versions will not create a writeable array from broadcast_array. Set the writable flag explicitly to avoid this warning.",
         )
     )
 
@@ -173,12 +173,15 @@ class PyWarningsFilter(logging.Filter):
         message = record.getMessage()
         if message.startswith("WARNING: genfromtxt: Empty input file:"):
             return False
+        if "Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working" in message:
+            return False
         return message not in self.messages_to_filter
 
 
 class Logger:
     is_setup = False
 
+    @staticmethod
     def setup(workdir, debug=False, verbose=False):
         """
         Add new logging handler to nipype to output to log directory

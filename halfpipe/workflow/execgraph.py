@@ -24,7 +24,7 @@ max_chunk_size = 50  # subjects
 class DontRunRunner:
     plugin_args = dict()
 
-    def run(*args, **kwargs):  # noqa
+    def run(self, *args, **kwargs):
         pass
 
 
