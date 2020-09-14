@@ -50,7 +50,11 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     #
     statmaps = ["effect", "variance", "z", "dof", "mask"]
     make_resultdicts_a = pe.Node(
-        MakeResultdicts(tagkeys=["model"], imagekeys=["design_matrix", "contrast_matrix"]),
+        MakeResultdicts(
+            tagkeys=["model", "contrast"],
+            imagekeys=["design_matrix", "contrast_matrix"],
+            deletekeys=["contrast"],
+        ),
         name="make_resultdicts_a",
         run_without_submitting=True
     )
@@ -86,7 +90,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
     #
     aggregateresultdicts = pe.Node(
-        AggregateResultdicts(numinputs=1, across=model.across), name=f"aggregateresultdicts", run_without_submitting=True
+        AggregateResultdicts(numinputs=1, across=model.across), name="aggregateresultdicts", run_without_submitting=True
     )
 
     #

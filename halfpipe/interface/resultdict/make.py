@@ -36,6 +36,7 @@ class MakeResultdicts(IOBase):
         reportkeys=[],
         metadatakeys=[],
         simplekeys=[],
+        deletekeys=[],
         **inputs,
     ):
         super(MakeResultdicts, self).__init__(**inputs)
@@ -51,21 +52,23 @@ class MakeResultdicts(IOBase):
             "metadata": metadatakeys,
         }
         self._simplekeys = simplekeys
+        self._deletekeys = deletekeys
 
     def _list_outputs(self):
         outputs = self._outputs().get()
 
         inputs = [
-            (fieldname, key, getattr(self.inputs, key))
-            for fieldname, keys in self._keys.items()
-            for key in keys
-            if isdefined(getattr(self.inputs, key)) and key not in self._simplekeys
+            (fieldname, None, getattr(self.inputs, fieldname))
+            for fieldname in self._dictkeys
+            if isdefined(getattr(self.inputs, fieldname))
+
         ]
         inputs.extend(
             [
-                (fieldname, None, getattr(self.inputs, fieldname))
-                for fieldname in self._dictkeys
-                if isdefined(getattr(self.inputs, fieldname))
+                (fieldname, key, getattr(self.inputs, key))
+                for fieldname, keys in self._keys.items()
+                for key in keys
+                if isdefined(getattr(self.inputs, key)) and key not in self._simplekeys
             ]
         )
         if len(inputs) == 0:
@@ -73,7 +76,7 @@ class MakeResultdicts(IOBase):
             return outputs
 
         fieldnames, keys, values = map(list, zip(*inputs))
-        
+
         # remove undefined
         undefined_indices = set()
         for i in range(len(values)):
@@ -171,7 +174,7 @@ class MakeResultdicts(IOBase):
                     newimages[k] = v
             resultdicts[i]["images"] = newimages
 
-        # simple keys
+        # simple keys and delete keys
         for f, keys in self._keys.items():
             for k in keys:
                 if k in self._simplekeys:
@@ -179,6 +182,10 @@ class MakeResultdicts(IOBase):
                     if isdefined(v):
                         for i in range(len(resultdicts)):
                             resultdicts[i][f][k] = v
+                if k in self._deletekeys:
+                    for i in range(len(resultdicts)):
+                        if k in resultdicts[i][f]:
+                            del resultdicts[i][f][k]
 
         # validate
         for i in range(len(resultdicts)):
