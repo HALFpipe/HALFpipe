@@ -110,11 +110,11 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     _check_multicollinearity(dmat)
 
     # prepare lsmeans
-    uniqueValuesForcategorical = [
+    uniqueValuesForCategorical = [
         (0.0,) if pd.api.types.is_numeric_dtype(dataframe[f].dtype) else dataframe[f].unique()
         for f in dataframe.columns
     ]
-    grid = pd.DataFrame(list(product(*uniqueValuesForcategorical)), columns=dataframe.columns)
+    grid = pd.DataFrame(list(product(*uniqueValuesForCategorical)), columns=dataframe.columns)
     refDmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
 
     # data frame to store contrasts

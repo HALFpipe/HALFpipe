@@ -17,7 +17,7 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from niworkflows.viz.utils import compose_view, extract_svg
 # from nilearn.plotting import plot_glass_brain
 
-from ...io import DictListFile, loadspreadsheet
+from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities
 from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
@@ -27,7 +27,7 @@ def _make_plot(tags, key, sourcefile):
     if key == "z":
         pass
     elif key == "matrix":
-        df = loadspreadsheet(sourcefile)  # noqa
+        pass
 
 
 def _make_path(sourcefile, type, tags, suffix, **kwargs):
@@ -41,10 +41,10 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
             path = path.joinpath(f"{entity}-{tagval}")
 
     if type == "image":
-        path = path.joinpath(f"func")
+        path = path.joinpath("func")
 
     if type == "report":
-        path = path.joinpath(f"figures")
+        path = path.joinpath("figures")
 
     _, ext = splitext(sourcefile)
     filename = f"{suffix}{ext}"  # keep original extension
@@ -169,10 +169,10 @@ class ResultdictDatasink(SimpleInterface):
                         with open(outpath.parent / f"{stem}.json", "w") as fp:
                             fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 
-                        if key == "bold":
-                            outdict = dict(**tags)
-                            outdict.update({"status": "done"})
-                            preprocdicts.append(outdict)
+                        # any of these files means preprocessing is finished
+                        outdict = dict(**tags)
+                        outdict.update({"status": "done"})
+                        preprocdicts.append(outdict)
 
             # reports
 

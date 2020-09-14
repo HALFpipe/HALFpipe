@@ -82,7 +82,7 @@ def init_taskbased_wf(
     workflow.connect(inputnode, "metadata", make_resultdicts_a, "metadata")
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
-            tagkeys=["feature", "contrast"],
+            tagkeys=["feature", "taskcontrast"],
             imagekeys=["effect", "variance", "z", "dof", "mask"],
             metadatakeys=["sources"],
         ),
@@ -137,7 +137,7 @@ def init_taskbased_wf(
                 [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
             )
     contrast_names = list(map(firststr, contrasts))
-    make_resultdicts_b.inputs.contrast = contrast_names
+    make_resultdicts_b.inputs.taskcontrast = contrast_names
 
     # generate design from first level specification
     level1design = pe.Node(

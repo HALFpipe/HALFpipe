@@ -123,12 +123,14 @@ class FilterResultdicts(SimpleInterface):
 
                 assert action == "exclude"
 
-                selectedsubjects = frozenset(pd.notnull(dataframe[variable]).index)
+                isfinite = pd.notnull(dataframe[variable])
+
+                selectedsubjects = frozenset(isfinite.index[isfinite])
 
                 outdicts = [
                     outdict
                     for outdict in outdicts
-                    if outdict.get("tags").get("sub") not in selectedsubjects
+                    if outdict.get("tags").get("sub") in selectedsubjects
                 ]
 
             elif filtertype == "cutoff":

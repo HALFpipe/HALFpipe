@@ -6,6 +6,8 @@
 
 """
 
+from collections import OrderedDict
+
 from marshmallow import Schema, ValidationError, fields
 
 from .func import FuncTagsSchema
@@ -29,6 +31,7 @@ resultdict_entities = [
     "seed",
     "map",
     "atlas",
+    "taskcontrast",
     # file descriptors
     "component",
     "contrast",
@@ -37,8 +40,8 @@ resultdict_entities = [
 ]
 
 ResultdictTagsSchema = Schema.from_dict(
-    {
-        entity: fields.Raw(validate=validate_tags)
+    OrderedDict([
+        (entity, fields.Raw(validate=validate_tags))
         for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
-    }
+    ])
 )
