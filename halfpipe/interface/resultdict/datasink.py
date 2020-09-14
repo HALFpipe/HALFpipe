@@ -18,7 +18,7 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from nilearn.plotting import plot_glass_brain
 
 from ...io import DictListFile
-from ...model import FuncTagsSchema, ResultdictSchema, entities
+from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
 from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
 
@@ -169,10 +169,13 @@ class ResultdictDatasink(SimpleInterface):
                         with open(outpath.parent / f"{stem}.json", "w") as fp:
                             fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 
-                        # any of these files means preprocessing is finished
-                        outdict = dict(**tags)
-                        outdict.update({"status": "done"})
-                        preprocdicts.append(outdict)
+                # any file means that preprocessing finished
+                outdict = dict(**tags)
+                for k in resultdict_entities:
+                    if k in outdict:
+                        del outdict[k]
+                outdict.update({"status": "done"})
+                preprocdicts.append(outdict)
 
             # reports
 

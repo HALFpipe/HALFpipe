@@ -8,7 +8,7 @@
 
 from .exclude import ExcludeSchema, rating_indices
 from .spec import SpecSchema, loadspec, savespec
-from .tags import BoldTagsSchema, FuncTagsSchema, entities, entity_longnames
+from .tags import BoldTagsSchema, FuncTagsSchema, entities, entity_longnames, resultdict_entities
 from .file import (
     File,
     BidsFileSchema,
@@ -59,6 +59,7 @@ __all__ = [
     FuncTagsSchema,
     entities,
     entity_longnames,
+    resultdict_entities,
     File,
     BidsFileSchema,
     AnatFileSchema,

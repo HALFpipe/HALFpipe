@@ -10,7 +10,7 @@ from .anat import AnatTagsSchema
 from .func import FuncTagsSchema, BoldTagsSchema, TxtEventsTagsSchema
 from .fmap import FmapTagsSchema, EPIFmapTagsSchema
 from .ref import RefTagsSchema
-from .resultdict import ResultdictTagsSchema
+from .resultdict import ResultdictTagsSchema, resultdict_entities
 
 from .schema import entities, entity_longnames
 
@@ -23,6 +23,7 @@ __all__ = [
     EPIFmapTagsSchema,
     RefTagsSchema,
     ResultdictTagsSchema,
+    resultdict_entities,
     entities,
     entity_longnames,
 ]
