@@ -79,8 +79,9 @@ class NiftiheaderMetadataLoader:
             except nib.spatialimages.HeaderDataError:
                 return False
 
-        elif key == "slice_encoding_direction" and slice_dim is not None:
-            value = ["i", "j", "k"][slice_dim]
+        elif key == "slice_encoding_direction":
+            if slice_dim is not None:
+                value = ["i", "j", "k"][slice_dim]
 
         elif key == "repetition_time":
             if "repetition_time" in descripdict:

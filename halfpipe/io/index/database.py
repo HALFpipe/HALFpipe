@@ -237,13 +237,14 @@ class Database:
             return first(tmplstrset)
 
     def fillmetadata(self, key, filepaths):
-        success = True
+        found_all = True
         for filepath in filepaths:
             fileobj = self.fileobj(filepath)
             if fileobj is None:
                 raise ValueError(f"Unknown filepath \"{filepath}\"")
-            success = success and self.metadata_loader.fill(fileobj, key)
-        return success
+            found = self.metadata_loader.fill(fileobj, key)
+            found_all = found_all and found
+        return found
 
     def metadata(self, filepath, key):
         fileobj = self.fileobj(filepath)
