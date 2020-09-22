@@ -8,26 +8,20 @@
 
 import numpy as np
 
-from itertools import zip_longest
-
-from ...utils import removenone, ravel
-
 
 def _get_slice_orders(n_slices):
-    a = n_slices // 2
-    b = n_slices - a
-
     sequential = np.arange(n_slices)
-    interleave_even = removenone(ravel(zip_longest(sequential[:b], sequential[b:])))
-    interleave_odd = removenone(ravel(zip_longest(sequential[b:], sequential[:b])))
+
+    even = np.arange(0, n_slices, 2)
+    odd = np.arange(1, n_slices, 2)
 
     orders = {
         "sequential increasing": sequential,
         "sequential decreasing": sequential[::-1],
-        "alternating increasing even first": interleave_even,
-        "alternating increasing odd first": interleave_odd,
-        "alternating decreasing even first": interleave_even[::-1],
-        "alternating decreasing odd first": interleave_odd[::-1],
+        "alternating increasing even first": [*even, *odd],
+        "alternating increasing odd first": [*odd, *even],
+        "alternating decreasing even first": [*even, *odd][::-1],
+        "alternating decreasing odd first": [*odd, *even][::-1],
     }
 
     return orders
