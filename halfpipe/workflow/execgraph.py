@@ -79,8 +79,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     if subject_chunks:
         n_chunks = len(subjectworkflows)
 
-    digits = int(np.ceil(np.log10(len(subjectworkflows))))
-    typestr = f"execgraph.{n_chunks:0{digits}d}_chunks"
+    typestr = f"execgraph.{n_chunks:d}_chunks"
     execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
     if execgraphs is not None:
         return execgraphs
@@ -129,7 +128,7 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     for execgraph in execgraphs:
         execgraph.uuid = uuid
 
-    logger.info(f"Finished execgraph split")
+    logger.info("Finished execgraph split")
     cacheobj(workdir, typestr, execgraphs, uuid=uuid)
 
     return execgraphs
