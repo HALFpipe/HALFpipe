@@ -257,6 +257,7 @@ class CheckMetadataStep(Step):
                 if val is not None:
                     sts = slice_timing_str(val)
                     if sts == "unknown":
+                        val = np.asarray(val)
                         sts = np.array2string(val, max_line_width=16384)
                     else:
                         sts = humanize(sts)
