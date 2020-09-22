@@ -18,7 +18,6 @@ from .step import Step
 from ..io import (
     direction_code_str,
     slice_timing_str,
-    str_slice_timing,
     loadspreadsheet
 )
 from ..model import space_codes, slice_order_strs
@@ -265,39 +264,43 @@ class CheckMetadataStep(Step):
 
         if any(val is None for val in vals):
             self.is_missing = True
+            self._append_view(TextView(f"Missing {humankey} values"))
+
+            vals = [val if val is not None else "missing" for val in vals]
         else:
             self.is_missing = False
-
             self._append_view(TextView(f"Check {humankey} values{self.appendstr}"))
 
-            uniquevals, counts = np.unique(vals, return_counts=True)
-            order = np.argsort(counts)
+        uniquevals, counts = np.unique(vals, return_counts=True)
+        order = np.argsort(counts)
 
-            column1 = []
-            for i in range(min(10, len(order))):
-                column1.append(f"{counts[i]} images")
-            column1width = max(len(s) for s in column1)
+        column1 = []
+        for i in range(min(10, len(order))):
+            column1.append(f"{counts[i]} images")
+        column1width = max(len(s) for s in column1)
 
-            unit = _get_unit(self.schema, self.key)
-            if unit is None:
-                unit = ""
+        unit = _get_unit(self.schema, self.key)
+        if unit is None:
+            unit = ""
 
-            if self.key == "slice_timing":
-                unit = ""
+        if self.key == "slice_timing":
+            unit = ""
 
-            for i in range(min(10, len(order))):
-                display = display_str(f"{uniquevals[i]}")
-                if self.suggestion is None:
-                    self.suggestion = display
-                self._append_view(TextView(f" {column1[i]:>{column1width}} - {display} {unit}"))
+        for i in range(min(10, len(order))):
+            display = display_str(f"{uniquevals[i]}")
+            if self.suggestion is None:
+                self.suggestion = display
+            self._append_view(TextView(f" {column1[i]:>{column1width}} - {display} {unit}"))
 
-            if len(order) > 10:
-                self._append_view(TextView("..."))
+        if len(order) > 10:
+            self._append_view(TextView("..."))
 
+        if self.is_missing is False:
             self._append_view(TextView("Proceed with these values?"))
             self.input_view = SingleChoiceInputView(["Yes", "No"], isVertical=False)
             self._append_view(self.input_view)
-            self._append_view(SpacerView(1))
+
+        self._append_view(SpacerView(1))
 
     def run(self, ctx):
         if self.is_missing:
