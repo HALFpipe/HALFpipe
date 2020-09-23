@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: poldracklab/fmriprep:20.1.1
+From: poldracklab/fmriprep:20.2.0rc1
 
 %environment
   export HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe"
@@ -13,14 +13,14 @@ From: poldracklab/fmriprep:20.1.1
   . /halfpipe
 
 %post
-  BUILD=124
+  BUILD=126
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \
     cd /halfpipe && \
     pip install --upgrade pip && \
-    pip uninstall --yes fmriprep niworkflows nipype statsmodels patsy && \
+    pip uninstall --yes fmriprep smriprep mriqc niworkflows nipype statsmodels patsy && \
     pip install . && \
     python postsetup.py' fmriprep
   
