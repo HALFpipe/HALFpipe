@@ -42,6 +42,8 @@ slice_order_strs = [
     "alternating decreasing odd first",
 ]
 
+templates = ["MNI152NLin2009cAsym", "MNI152NLin6Asym"]
+
 
 class BaseMetadataSchema(Schema):
     class Meta:
@@ -118,7 +120,7 @@ class EventsMetadataSchema(BaseMetadataSchema):
 
 class RefMetadataSchema(Schema):
     space = fields.Str(
-        validate=validate.OneOf(["MNI152NLin2009cAsym", "MNI152NLin6Asym"]),
+        validate=validate.OneOf(templates),
         description="The space in which the image is provided.",
     )
 
