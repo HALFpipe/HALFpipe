@@ -44,7 +44,10 @@ class NiftiheaderMetadataLoader:
 
         value = None
 
-        _, _, slice_dim = header.get_dim_info()
+        if hasattr(header, "get_dim_info"):
+            _, _, slice_dim = header.get_dim_info()
+        else:
+            slice_dim = None
 
         if key == "slice_timing":
             try:
@@ -104,7 +107,7 @@ class NiftiheaderMetadataLoader:
                 value = descripdict["echo_time"]
 
         elif key == "space":
-            origin = np.array([header["qoffset_x"], header["qoffset_y"], header["qoffset_z"]])
+            origin = header.get_best_affine()[0:3, 3]
             for name, template_origin_set in template_origin_sets.items():
                 for o in template_origin_set:
                     delta = np.abs(o) - np.abs(
