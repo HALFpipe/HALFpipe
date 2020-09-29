@@ -131,7 +131,7 @@ class JSReportHandler(logging.Handler):
             and nodestatus is not None
         ):
             if self.indexed_file_obj is None:
-                logging.getLogger("halfpipe").warning(f"Missing indexed_file_obj to log nodestatus")
+                logging.getLogger("halfpipe").warning("Missing indexed_file_obj to log nodestatus")
             else:
                 self.indexed_file_obj.set(self.cur_nodename, nodestatus)
 
@@ -166,6 +166,7 @@ class PyWarningsFilter(logging.Filter):
             "WARNING: The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
             "WARNING: This has not been fully tested. Please report any failures.",
             "WARNING: future versions will not create a writeable array from broadcast_array. Set the writable flag explicitly to avoid this warning.",
+            "WARNING: The ability to pass arguments to BIDSLayout that control indexing is likely to be removed in future; possibly as early as PyBIDS 0.14. This includes the `config_filename`, `ignore`, `force_index`, and `index_metadata` arguments. The recommended usage pattern is to initialize a new BIDSLayoutIndexer with these arguments, and pass it to the BIDSLayout via the `indexer` argument.",
         )
     )
 
