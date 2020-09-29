@@ -39,14 +39,16 @@ def meansignals(in_file, atlas_file, mask_file=None, background_label=0, min_reg
         mask_data = np.asanyarray(mask_img.dataobj).astype(np.bool)
 
         pre_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)
-        pre_counts = pre_counts[:nlabel + 1]
+        pre_counts = pre_counts[:nlabel + 1].astype(np.float64)
 
         labels[np.logical_not(mask_data)] = background_label
 
         post_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)
-        post_counts = post_counts[:nlabel + 1]
+        post_counts = post_counts[:nlabel + 1].astype(np.float64)
 
-        region_coverage = post_counts.astype(np.float64) / pre_counts.astype(np.float64)
+        region_coverage = post_counts / pre_counts
+        region_coverage[np.isclose(pre_counts, 0)] = 0
+
         out_region_coverage = list(region_coverage[indices != background_label])
         assert len(out_region_coverage) == nlabel
 
