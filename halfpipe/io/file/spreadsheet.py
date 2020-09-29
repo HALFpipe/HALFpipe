@@ -24,7 +24,6 @@ def has_header(fname):
             return False
         if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
             return True
-        # return csv.Sniffer().has_header(data)
         return False  # default
 
 
