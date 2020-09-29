@@ -181,7 +181,10 @@ class MakeResultdicts(IOBase):
                     v = getattr(self.inputs, k)
                     if isdefined(v):
                         for i in range(len(resultdicts)):
-                            resultdicts[i][f][k] = v
+                            if isinstance(v, list):
+                                resultdicts[i][f][k] = v[i]
+                            else:
+                                resultdicts[i][f][k] = v
                 if k in self._deletekeys:
                     for i in range(len(resultdicts)):
                         if k in resultdicts[i][f]:

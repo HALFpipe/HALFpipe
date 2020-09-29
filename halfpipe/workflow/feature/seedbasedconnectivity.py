@@ -47,11 +47,13 @@ def _mask_seeds(min_seed_coverage=0.8, seed_names=None, seed_files=None, mask_fi
         seed = np.asanyarray(seed_img.dataobj).astype(np.bool)
         seed = np.squeeze(seed)
 
+        unmasked_seed_n_voxels = np.count_nonzero(seed)
+
         seed = np.logical_and(seed, mask)
 
-        seed_n_voxels = np.count_nonzero(seed)
+        masked_seed_n_voxels = np.count_nonzero(seed)
 
-        coverage = float(seed_n_voxels) / float(mask_n_voxels)
+        coverage = float(masked_seed_n_voxels) / float(unmasked_seed_n_voxels)
 
         if coverage < min_seed_coverage:
             continue
