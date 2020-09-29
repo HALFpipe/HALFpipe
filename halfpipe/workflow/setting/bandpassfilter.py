@@ -90,7 +90,12 @@ def init_bandpass_filter_wf(
         workflow.connect(inputnode, "high", calcsigma, "hp_width")
         workflow.connect(inputnode, "repetition_time", calcsigma, "repetition_time")
 
-        temporalfilter = pe.MapNode(TemporalFilter(), iterfield="in_file", name="temporalfilter")
+        temporalfilter = pe.MapNode(
+            TemporalFilter(),
+            iterfield="in_file",
+            name="temporalfilter",
+            mem_gb=memcalc.series_std_gb
+        )
         workflow.connect(calcsigma, "lp_sigma", temporalfilter, "lowpass_sigma")
         workflow.connect(calcsigma, "hp_sigma", temporalfilter, "highpass_sigma")
         workflow.connect(inputnode, "files", temporalfilter, "in_file")
@@ -122,7 +127,10 @@ def init_bandpass_filter_wf(
         workflow.connect(inputnode, "high", bandpassarg, "high")
 
         tproject = pe.MapNode(
-            afni.TProject(polort=1), iterfield=["in_file", "out_file"], name="tproject"
+            afni.TProject(polort=1),
+            iterfield=["in_file", "out_file"],
+            name="tproject",
+            mem_gb=memcalc.series_std_gb * 2
         )
         workflow.connect(toafni, "out_file", tproject, "in_file")
         workflow.connect(bandpassarg, "out", tproject, "bandpass")

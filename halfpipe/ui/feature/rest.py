@@ -116,8 +116,51 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
     return SelectStep
 
 
+class MinSeedCoverageStep(Step):
+    noun = "minimum seed coverage"
+    suggestion = 0.8
+
+    def setup(self, ctx):
+        self.result = None
+
+        self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
+        self._append_view(TextView("Functional images that do not meet the requirement will be skipped"))
+
+        self.valset = set()
+
+        for feature in ctx.spec.features[:-1]:
+            if feature.type == "seed_based_connectivity":
+                if hasattr(feature, "min_seed_coverage"):
+                    self.valset.add(feature.min_region_coverage)
+
+        suggestion = self.suggestion
+        if len(self.valset) > 0:
+            suggestion = first(self.valset)
+
+        self.input_view = NumberInputView(
+            number=suggestion, min=0, max=1.0
+        )
+
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx):
+        self.result = self.input_view()
+        if self.result is None:  # was cancelled
+            return False
+        return True
+
+    def next(self, ctx):
+        if self.result is not None and isinstance(self.result, float):
+            ctx.spec.features[-1].min_seed_coverage = self.result
+
+        this_next_step_type = next_step_type
+
+        return this_next_step_type(self.app)(ctx)
+
+
 SeedBasedConnectivityRefStep = get_ref_steps(
-    "seed", "seeds", "binary seed mask", next_step_type
+    "seed", "seeds", "binary seed mask", MinSeedCoverageStep
 )
 DualRegressionRefStep = get_ref_steps("map", "maps", "spatial map", next_step_type)
 
@@ -169,9 +212,10 @@ AtlasBasedConnectivityRefStep = get_ref_steps(
     "atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep
 )
 
+
 SeedBasedConnectivitySettingInitStep = get_setting_init_steps(
     SeedBasedConnectivityRefStep,
-    settingdict={"bandpass_filter": {"type": "gaussian"}, "grand_mean_scaling": {"mean": 10000.0}},
+    settingdict={"grand_mean_scaling": {"mean": 10000.0}},
 )
 DualRegressionSettingInitStep = get_setting_init_steps(
     DualRegressionRefStep,

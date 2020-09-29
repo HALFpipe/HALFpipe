@@ -38,6 +38,7 @@ class ConnectivityMeasureOutputSpec(TraitedSpec):
     time_series = File(desc="Numpy text file with the timeseries matrix")
     covariance = File(desc="Numpy text file with the connectivity matrix")
     correlation = File(desc="Numpy text file with the connectivity matrix")
+    region_coverage = traits.List(traits.Float)
 
 
 class ConnectivityMeasure(BaseInterface):
@@ -45,12 +46,13 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime):
-        self._time_series = meansignals(
+        self._time_series, self._region_coverage = meansignals(
             self.inputs.in_file,
             self.inputs.atlas_file,
             mask_file=self.inputs.mask_file,
             background_label=self.inputs.background_label,
             min_region_coverage=self.inputs.min_region_coverage,
+            output_coverage=True
         )
 
         df = pd.DataFrame(self._time_series)
@@ -75,4 +77,7 @@ class ConnectivityMeasure(BaseInterface):
         outputs["time_series"] = time_series_file
         outputs["covariance"] = covariance_file
         outputs["correlation"] = correlation_file
+
+        outputs["region_coverage"] = self._region_coverage
+
         return outputs

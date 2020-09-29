@@ -51,6 +51,7 @@ class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
         default="seed_based_connectivity", validate=validate.Equal("seed_based_connectivity")
     )
     seeds = fields.List(fields.Str())
+    min_seed_coverage = fields.Float(default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class DualRegressionFeatureSchema(BaseFeatureSchema):

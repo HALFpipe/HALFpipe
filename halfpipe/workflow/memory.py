@@ -21,7 +21,7 @@ class MemoryCalculator:
             bold_tlen = bold_shape[3]
         self.series_gb = self.volume_gb * bold_tlen
 
-        std_bold_shape = [91, 109, 91, bold_tlen]  # template size
+        std_bold_shape = [97, 115, 97, bold_tlen]  # template size
 
         self.volume_std_gb = np.product(std_bold_shape[:-1]) * 8 / 2 ** 30
         self.series_std_gb = self.volume_std_gb * bold_tlen
