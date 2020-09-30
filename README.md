@@ -7,14 +7,13 @@ Welcome to ENIGMA `HALFpipe`!
 
 > **NOTE:** ENIGMA `HALFpipe` is pre-release software and not yet considered production-ready.
 >
-> If you would like to beta test and provide feedback, thank you! We recommend starting out with Beta 2, as this has many new features. If you have used Beta 1 before, please carefully read the [changes section](#8-changes). If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
+> If you would like to beta test and provide feedback, thank you! We recommend using Beta 4, as this has many new features. If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
 >  
-> Beta 1 has proven to work in a variety of environments in the past weeks of beta testing and remains available for comparison.
->
 > To use a specific version, please use the following command to download HALFpipe.
 >
 > | Version                      | Installation                                                                                             |
 > |------------------------------|----------------------------------------------------------------------------------------------------------|
+> | Beta 4 (September 30th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
 > | Beta 3 (September 14th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b3`<br>`docker pull mindandbrain/halfpipe:1.0.0b3`   |
 > | Beta 2 (August 16th 2020)    | `singularity pull docker://mindandbrain/halfpipe:1.0.0b2`<br>`docker pull mindandbrain/halfpipe:1.0.0b2` |
 > | Beta 1 (June 30th 2020)      | `singularity pull docker://mindandbrain/halfpipe:1.0.0b1`<br>`docker pull mindandbrain/halfpipe:1.0.0b1` |
@@ -308,7 +307,7 @@ Models are statistical analyses that are carried out on the features.
   - For example, consider the following error message: \
     `ValueError: shape (64, 64, 33) for image 1 not compatible with first image shape (64, 64, 34) with axis == None` \
     This error message may seem cryptic at first. However, looking at the message more closely, it suggests that two input images have different, incompatible dimensions. In this case, `HALFpipe` correctly recognized this issue, and there is no need for concern. The images in question will simply be excluded from preprocessing and/or analysis
-  - In some cases, the cause of the error can be a bug in the `HALFpipe` code. In this case, please submit an [issue](https://github.com/mindandbrain/halfpipe/issues/new/choose) or contact us via [e-mail](#9-contact).
+  - In some cases, the cause of the error can be a bug in the `HALFpipe` code. Please check that no similar issue has been reported [here on GitHub](https://github.com/mindandbrain/Halfpipe/issues). In this case, please submit an [issue](https://github.com/mindandbrain/halfpipe/issues/new/choose).
 
 ## 7. Command line flags
 
