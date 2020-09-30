@@ -4,6 +4,7 @@
 
 import os
 from pathlib import Path
+from math import ceil
 
 import logging
 
@@ -44,7 +45,7 @@ def create_example_script(workdir, execgraphs):
 
     n_cpus = 2
     mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
-    mem_per_cpu = f"{mem_gb / n_cpus * 1536:d}M"  # fudge factor
+    mem_per_cpu = f"{ceil(mem_gb / n_cpus * 1536):d}M"  # fudge factor
 
     data = {
         "n_chunks": n_chunks,  # one-based indexing
