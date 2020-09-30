@@ -65,14 +65,16 @@ class ConnectivityMeasure(BaseInterface):
     def _list_outputs(self):
         outputs = self.output_spec().get()
 
-        time_series_file = op.abspath("timeseries.txt")
-        np.savetxt(time_series_file, self._time_series, fmt="%.10f")
+        argdict = dict(fmt="%.10f", delimiter="\t")
 
-        covariance_file = op.abspath("covariance.txt")
-        np.savetxt(covariance_file, self._cov_mat, fmt="%.10f")
+        time_series_file = op.abspath("timeseries.tsv")
+        np.savetxt(time_series_file, self._time_series, **argdict)
 
-        correlation_file = op.abspath("correlation.txt")
-        np.savetxt(correlation_file, self._corr_mat, fmt="%.10f")
+        covariance_file = op.abspath("covariance.tsv")
+        np.savetxt(covariance_file, self._cov_mat, **argdict)
+
+        correlation_file = op.abspath("correlation.tsv")
+        np.savetxt(correlation_file, self._corr_mat, **argdict)
 
         outputs["time_series"] = time_series_file
         outputs["covariance"] = covariance_file

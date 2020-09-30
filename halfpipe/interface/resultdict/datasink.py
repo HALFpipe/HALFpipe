@@ -163,9 +163,9 @@ class ResultdictDatasink(SimpleInterface):
                 if was_updated:
                     _make_plot(tags, key, outpath)
 
-                if key in ["effect", "reho", "falff", "alff", "bold"]:
+                if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                     stem, extension = splitext(outpath)
-                    if extension in [".nii", ".nii.gz"]:
+                    if extension in [".nii", ".nii.gz", ".tsv"]:
                         with open(outpath.parent / f"{stem}.json", "w") as fp:
                             fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 

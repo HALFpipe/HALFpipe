@@ -17,58 +17,12 @@ from ...interface import (
     CalcMean,
     MakeResultdicts,
     ResultdictDatasink,
+    MaskCoverage,
 )
 
 from ..memory import MemoryCalculator
 from ..constants import constants
 from ...utils import formatlikebids
-
-
-def _mask_seeds(min_seed_coverage=0.8, seed_names=None, seed_files=None, mask_file=None):
-    from pathlib import Path
-
-    import numpy as np
-    import nibabel as nib
-
-    from nilearn.image import new_img_like
-
-    mask_img = nib.load(mask_file)
-    mask = np.asanyarray(mask_img.dataobj).astype(np.bool)
-    mask = np.squeeze(mask)
-
-    mask_n_voxels = np.count_nonzero(mask)
-
-    out_seed_names = []
-    out_seed_files = []
-    out_coverage = []
-
-    for seed_name, seed_file in zip(seed_names, seed_files):
-        seed_img = nib.load(seed_file)
-        seed = np.asanyarray(seed_img.dataobj).astype(np.bool)
-        seed = np.squeeze(seed)
-
-        unmasked_seed_n_voxels = np.count_nonzero(seed)
-
-        seed = np.logical_and(seed, mask)
-
-        masked_seed_n_voxels = np.count_nonzero(seed)
-
-        coverage = float(masked_seed_n_voxels) / float(unmasked_seed_n_voxels)
-
-        if coverage < min_seed_coverage:
-            continue
-
-        out_seed_names.append(seed_name)
-        out_coverage.append(coverage)
-
-        out_seed_file = Path.cwd() / Path(seed_file).name
-
-        out_seed_img = new_img_like(seed_img, seed)
-        nib.save(out_seed_img, out_seed_file)
-
-        out_seed_files.append(out_seed_file)
-
-    return out_seed_names, out_seed_files, out_coverage
 
 
 def _contrasts(design_file=None):
@@ -186,35 +140,29 @@ def init_seedbasedconnectivity_wf(
 
     # Delete zero voxels for the seeds
     maskseeds = pe.Node(
-        niu.Function(
-            input_names=["min_seed_coverage", "seed_names", "seed_files", "mask_file"],
-            output_names=["seed_names", "seed_files", "seed_coverage"],
-            function=_mask_seeds
-        ),
+        MaskCoverage(keys=["names"], min_coverage=min_seed_coverage),
         name="maskseeds",
         mem_gb=memcalc.volume_std_gb,
     )
-    maskseeds.inputs.min_seed_coverage = min_seed_coverage
-
     workflow.connect(inputnode, "mask", maskseeds, "mask_file")
 
-    workflow.connect(inputnode, "seed_names", maskseeds, "seed_names")
-    workflow.connect(resample, "output_image", maskseeds, "seed_files")
+    workflow.connect(inputnode, "seed_names", maskseeds, "names")
+    workflow.connect(resample, "output_image", maskseeds, "in_files")
 
-    workflow.connect(maskseeds, "seed_names", make_resultdicts, "seed")
-    workflow.connect(maskseeds, "seed_coverage", make_resultdicts, "coverage")
+    workflow.connect(maskseeds, "names", make_resultdicts, "seed")
+    workflow.connect(maskseeds, "coverage", make_resultdicts, "coverage")
 
     # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
         fsl.ImageMeants(), name="meants", iterfield="mask", mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(inputnode, "bold", meants, "in_file")
-    workflow.connect(maskseeds, "seed_files", meants, "mask")
+    workflow.connect(maskseeds, "out_files", meants, "mask")
 
     #
     design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design", run_without_submitting=True)
     workflow.connect(meants, "out_file", design, "in1")
-    workflow.connect(maskseeds, "seed_names", design, "column_names1")
+    workflow.connect(maskseeds, "names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")
 
     workflow.connect(design, "out_with_header", make_resultdicts, "design_matrix")

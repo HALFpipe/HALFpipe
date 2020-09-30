@@ -35,7 +35,7 @@ class MakeResultdicts(IOBase):
         imagekeys=[],
         reportkeys=[],
         metadatakeys=[],
-        simplekeys=[],
+        nobroadcastkeys=[],
         deletekeys=[],
         **inputs,
     ):
@@ -51,7 +51,7 @@ class MakeResultdicts(IOBase):
             "reports": reportkeys,
             "metadata": metadatakeys,
         }
-        self._simplekeys = simplekeys
+        self._nobroadcastkeys = nobroadcastkeys
         self._deletekeys = deletekeys
 
     def _list_outputs(self):
@@ -68,7 +68,7 @@ class MakeResultdicts(IOBase):
                 (fieldname, key, getattr(self.inputs, key))
                 for fieldname, keys in self._keys.items()
                 for key in keys
-                if isdefined(getattr(self.inputs, key)) and key not in self._simplekeys
+                if isdefined(getattr(self.inputs, key))
             ]
         )
         if len(inputs) == 0:
@@ -95,6 +95,9 @@ class MakeResultdicts(IOBase):
         maxlen = 1
         nbroadcast = None
         for i in range(len(values)):
+            if keys[i] in self._nobroadcastkeys:
+                continue
+
             value = values[i]
             if isinstance(value, (list, tuple)):
                 if all(isinstance(elem, (list, tuple)) for elem in value):
@@ -133,8 +136,9 @@ class MakeResultdicts(IOBase):
 
         # flatten
         for i in range(len(values)):
-            if keys in self._simplekeys:
+            if keys[i] in self._nobroadcastkeys:
                 continue
+
             values[i] = ravel(values[i])
 
         # make resultdicts
@@ -174,17 +178,9 @@ class MakeResultdicts(IOBase):
                     newimages[k] = v
             resultdicts[i]["images"] = newimages
 
-        # simple keys and delete keys
+        # delete keys
         for f, keys in self._keys.items():
             for k in keys:
-                if k in self._simplekeys:
-                    v = getattr(self.inputs, k)
-                    if isdefined(v):
-                        for i in range(len(resultdicts)):
-                            if isinstance(v, list):
-                                resultdicts[i][f][k] = v[i]
-                            else:
-                                resultdicts[i][f][k] = v
                 if k in self._deletekeys:
                     for i in range(len(resultdicts)):
                         if k in resultdicts[i][f]:
