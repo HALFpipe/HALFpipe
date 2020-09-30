@@ -51,7 +51,7 @@ def _get_categorical_dict(dataframe, variabledicts):
 
 class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
-    filterdicts = traits.List(traits.Any(), desc="filter list", mandatory=True)
+    filterdicts = traits.List(traits.Any(), desc="filter list")
     variabledicts = traits.List(traits.Any(), desc="variable list")
     spreadsheet = File(desc="spreadsheet")
     requireoneofimages = traits.List(
@@ -76,7 +76,11 @@ class FilterResultdicts(SimpleInterface):
 
         categorical_dict = None
 
-        for filterdict in self.inputs.filterdicts:
+        filterdicts = []
+        if isdefined(self.inputs.filterdicts):
+            filterdicts = self.inputs.filterdicts
+
+        for filterdict in filterdicts:
             action = filterdict.get("action")
 
             filtertype = filterdict.get("type")

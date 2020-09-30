@@ -66,6 +66,7 @@ def _main():
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
+    rungroup.add_argument("--nipype-resource-monitor", action="store_true", default=False)
     rungroup.add_argument(
         "--keep",
         choices=["all", "some", "none"],
@@ -136,7 +137,7 @@ def _main():
     if not verbose and not debug:
         logger.log(
             25,
-            f'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
+            'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
             'Detailed logs information will only be available in the "log.txt" file in the working directory. '
         )
 
@@ -149,14 +150,14 @@ def _main():
         start_watchdog_daemon()
 
     if not should_run["spec-ui"]:
-        logger.info(f"Did not run step: spec")
+        logger.info("Did not run step: spec")
 
     execgraphs = None
 
     if not should_run["workflow"]:
-        logger.info(f"Did not run step: workflow")
+        logger.info("Did not run step: workflow")
     else:
-        logger.info(f"Running step: workflow")
+        logger.info("Running step: workflow")
         from .workflow import init_workflow, init_execgraph
 
         if args.nipype_omp_nthreads is not None and args.nipype_omp_nthreads > 0:
@@ -183,9 +184,9 @@ def _main():
             create_example_script(workdir, execgraphs)
 
     if not should_run["run"] or args.use_cluster:
-        logger.info(f"Did not run step: run")
+        logger.info("Did not run step: run")
     else:
-        logger.info(f"Running step: run")
+        logger.info("Running step: run")
         if execgraphs is None:
             from .io import loadpicklelzma
 
@@ -197,7 +198,11 @@ def _main():
                 execgraphs = [execgraphs]
             logger.info(f'Using execgraphs defined in file "{args.execgraph_file}"')
         else:
-            logger.info(f"Using execgraphs from previous step")
+            logger.info("Using execgraphs from previous step")
+
+        if args.nipype_resource_monitor is True:
+            from nipype import config as nipypeconfig
+            nipypeconfig.enable_resource_monitor()
 
         import nipype.pipeline.plugins as nip
         import halfpipe.plugins as ppp

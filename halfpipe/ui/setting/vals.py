@@ -220,7 +220,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
             if type == "gaussian":
                 self.yes_step_type = GaussianWeightedBandpassSettingStep
 
-                message = f"Temporal filtering will be applied using a gaussian-weighted filter"
+                message = "Temporal filtering will be applied using a gaussian-weighted filter"
                 self._append_view(TextView(message))
 
                 lp_sigma, hp_sigma = (
@@ -242,7 +242,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
             elif type == "frequency_based":
                 self.yes_step_type = FrequencyBasedBandpassSettingStep
 
-                message = f"Temporal filtering will be applied using a frequency-based filter"
+                message = "Temporal filtering will be applied using a frequency-based filter"
                 self._append_view(TextView(message))
 
                 low, high = bandpass_filter.get("low"), bandpass_filter.get("high")
@@ -320,14 +320,14 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
             if grand_mean_scaling is None:
                 self.choice = "No"
 
-                message = f"No grand mean scaling will be done"
+                message = "No grand mean scaling will be done"
                 self._append_view(TextView(message))
                 self._append_view(SpacerView(1))
 
             else:
                 mean = grand_mean_scaling.get("mean")
 
-                message = f"Grand mean scaling will be applied"
+                message = "Grand mean scaling will be applied"
 
                 if mean is not None:
                     self.choice = "No"
@@ -394,14 +394,14 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
             if smoothing is None:
                 self.choice = "No"
 
-                message = f"No smoothing will be applied"
+                message = "No smoothing will be applied"
                 self._append_view(TextView(message))
                 self._append_view(SpacerView(1))
 
             else:
                 fwhm = smoothing.get("fwhm")
 
-                message = f"Smoothing will be applied"
+                message = "Smoothing will be applied"
 
                 if fwhm is not None:
                     self.choice = "No"

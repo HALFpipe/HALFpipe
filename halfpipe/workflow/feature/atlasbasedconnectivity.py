@@ -44,7 +44,7 @@ def init_atlasbasedconnectivity_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    min_region_coverage = 0
+    min_region_coverage = 1
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
         if hasattr(feature, "min_region_coverage"):
@@ -61,8 +61,8 @@ def init_atlasbasedconnectivity_wf(
         MakeResultdicts(
             tagkeys=["feature", "atlas"],
             imagekeys=["timeseries", "covariance_matrix", "correlation_matrix"],
-            metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r"],
-            simplekeys=["mean_t_s_n_r"]
+            metadatakeys=["sources", "sampling_frequency", "mean_t_s_n_r", "coverage"],
+            nobroadcastkeys=["mean_t_s_n_r", "coverage"],
         ),
         name="make_resultdicts",
         run_without_submitting=True
@@ -108,6 +108,7 @@ def init_atlasbasedconnectivity_wf(
     workflow.connect(connectivitymeasure, "time_series", make_resultdicts, "timeseries")
     workflow.connect(connectivitymeasure, "covariance", make_resultdicts, "covariance_matrix")
     workflow.connect(connectivitymeasure, "correlation", make_resultdicts, "correlation_matrix")
+    workflow.connect(connectivitymeasure, "region_coverage", make_resultdicts, "coverage")
 
     #
     tsnr = pe.Node(interface=nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)

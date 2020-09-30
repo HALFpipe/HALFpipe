@@ -67,7 +67,11 @@ class NiftiheaderLoader:
             return
 
         header = nbimg.header.copy()
-        descripdict = parsedescrip(header)
+
+        try:
+            descripdict = parsedescrip(header)
+        except Exception:
+            descripdict = dict()
 
         cls.cache[niftifile] = header, descripdict
         return header, descripdict

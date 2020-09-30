@@ -17,6 +17,7 @@ from ...interface import (
     CalcMean,
     MakeResultdicts,
     ResultdictDatasink,
+    MaskCoverage,
 )
 
 from ..memory import MemoryCalculator
@@ -87,8 +88,11 @@ def init_seedbasedconnectivity_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
+    min_seed_coverage = 1
     if feature is not None:
         inputnode.inputs.seed_names = feature.seeds
+        if hasattr(feature, "min_seed_coverage"):
+            min_seed_coverage = feature.min_seed_coverage
 
     if seed_files is not None:
         inputnode.inputs.seed_files = seed_files
@@ -102,7 +106,7 @@ def init_seedbasedconnectivity_wf(
         MakeResultdicts(
             tagkeys=["feature", "seed"],
             imagekeys=[*statmaps, "design_matrix", "contrast_matrix"],
-            metadatakeys=["mean_t_s_n_r"],
+            metadatakeys=["mean_t_s_n_r", "coverage"],
         ),
         name="make_resultdicts",
         run_without_submitting=True
@@ -112,7 +116,6 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
-    workflow.connect(inputnode, "seed_names", make_resultdicts, "seed")
     workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
@@ -136,26 +139,30 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(inputnode, "seed_spaces", resample, "input_space")
 
     # Delete zero voxels for the seeds
-    applymask = pe.MapNode(
-        fsl.ApplyMask(),
-        name="applymask",
-        iterfield="in_file",
+    maskseeds = pe.Node(
+        MaskCoverage(keys=["names"], min_coverage=min_seed_coverage),
+        name="maskseeds",
         mem_gb=memcalc.volume_std_gb,
     )
-    workflow.connect(inputnode, "mask", applymask, "mask_file")
-    workflow.connect(resample, "output_image", applymask, "in_file")
+    workflow.connect(inputnode, "mask", maskseeds, "mask_file")
+
+    workflow.connect(inputnode, "seed_names", maskseeds, "names")
+    workflow.connect(resample, "output_image", maskseeds, "in_files")
+
+    workflow.connect(maskseeds, "names", make_resultdicts, "seed")
+    workflow.connect(maskseeds, "coverage", make_resultdicts, "coverage")
 
     # calculate the mean time series of the region defined by each mask
     meants = pe.MapNode(
         fsl.ImageMeants(), name="meants", iterfield="mask", mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(inputnode, "bold", meants, "in_file")
-    workflow.connect(applymask, "out_file", meants, "mask")
+    workflow.connect(maskseeds, "out_files", meants, "mask")
 
     #
     design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design", run_without_submitting=True)
     workflow.connect(meants, "out_file", design, "in1")
-    workflow.connect(inputnode, "seed_names", design, "column_names1")
+    workflow.connect(maskseeds, "names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")
 
     workflow.connect(design, "out_with_header", make_resultdicts, "design_matrix")
