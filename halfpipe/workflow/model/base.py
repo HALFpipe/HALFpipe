@@ -94,16 +94,15 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     )
 
     #
+    filterkwargs = dict(requireoneofimages=["effect", "reho", "falff", "alff"])
     if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
-        kwargs = dict(filterdicts=model.filters, requireoneofimages=["effect", "reho", "falff", "alff"])
-        if hasattr(model, "spreadsheet"):
-            if model.spreadsheet is not None and variables is not None:
-                kwargs.update(dict(spreadsheet=model.spreadsheet, variabledicts=variables))
-        filterresultsdicts = pe.Node(FilterResultdicts(**kwargs), name="filterresultsdicts", run_without_submitting=True)
-        workflow.connect(merge_resultdicts_a, "out", filterresultsdicts, "indicts")
-        workflow.connect(filterresultsdicts, "resultdicts", aggregateresultdicts, "in1")
-    else:
-        workflow.connect(merge_resultdicts_a, "out", aggregateresultdicts, "in1")
+        filterkwargs.update(dict(filterdicts=model.filters))
+    if hasattr(model, "spreadsheet"):
+        if model.spreadsheet is not None and variables is not None:
+            filterkwargs.update(dict(spreadsheet=model.spreadsheet, variabledicts=variables))
+    filterresultsdicts = pe.Node(FilterResultdicts(**filterkwargs), name="filterresultsdicts", run_without_submitting=True)
+    workflow.connect(merge_resultdicts_a, "out", filterresultsdicts, "indicts")
+    workflow.connect(filterresultsdicts, "resultdicts", aggregateresultdicts, "in1")
 
     #
     ravelresultdicts = pe.Node(
