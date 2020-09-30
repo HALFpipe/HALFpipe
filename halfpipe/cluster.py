@@ -16,8 +16,8 @@ script_template = """#!/bin/bash
 
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=5888M
+#SBATCH --cpus-per-task={n_cpus}
+#SBATCH --mem-per-cpu={mem_per_cpu}
 
 #SBATCH --array=1-{n_chunks}
 
@@ -41,11 +41,18 @@ def create_example_script(workdir, execgraphs):
     n_chunks = len(execgraphs) - 1  # omit model chunk
     assert n_chunks > 1
     execgraph_file = make_cachefilepath(f"execgraph.{n_chunks:d}_chunks", uuid)
+
+    n_cpus = 2
+    mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
+    mem_per_cpu = f"{mem_gb / n_cpus * 1536:d}M"  # fudge factor
+
     data = {
         "n_chunks": n_chunks,  # one-based indexing
         "singularity_container": os.environ["SINGULARITY_CONTAINER"],
         "cwd": str(Path(workdir).resolve()),
-        "execgraph_file": str(Path(workdir).resolve() / execgraph_file)
+        "execgraph_file": str(Path(workdir).resolve() / execgraph_file),
+        "n_cpus": n_cpus,
+        "mem_per_cpu": mem_per_cpu,
     }
     st = script_template.format(**data)
     stpath = "submit.slurm.sh"
