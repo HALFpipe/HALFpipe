@@ -268,8 +268,9 @@ def init_ica_aroma_regression_wf(
     # We cannot do this in the ica_aroma_components_wf, as having two iterable node
     # with the same name downstream from each other leads nipype to consider them equal
     # even if a joinnode is inbetween
-    # Specifically, as both ica_aroma_components_wf and fmriprep's func_preproc_wf use
+    # Specifically, both ica_aroma_components_wf and fmriprep's func_preproc_wf use
     # the bold_std_trans_wf that has the iterable node "iterablesource"
+    # This way there is no dependency
     aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
     workflow.connect(inputnode, "vals", aromavals, "vals")
     workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")

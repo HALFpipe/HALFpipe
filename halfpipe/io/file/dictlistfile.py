@@ -18,6 +18,13 @@ from ...model import entities
 logger = logging.getLogger("halfpipe")
 
 
+def _compare(a, b):
+    if isinstance(a, float) and isinstance(b, float):
+        return np.isclose(a, b)
+    else:
+        return a == b
+
+
 class DictListFile:
     def __init__(self, filename, header="report('", footer="');"):
         self.filename = Path(filename)
@@ -66,7 +73,7 @@ class DictListFile:
         if self.is_dirty:
             with open(str(self.filename), "w") as fp:
                 fp.write(self.header.decode())
-                jsonstr = json.dumps(self.dictlist, indent=4, ensure_ascii=False)
+                jsonstr = json.dumps(self.dictlist, indent=4, sort_keys=True, ensure_ascii=False)
                 for line in jsonstr.splitlines():
                     fp.write(line)
                     fp.write("\\\n")
@@ -97,25 +104,28 @@ class DictListFile:
     def put(self, indict):
         assert self.dictlist is not None
 
+        intags = {
+            k: v for k, v in indict.items() if k in entities
+        }
+
         matches = False
 
         for i, curdict in enumerate(self.dictlist):
-            matches = True
-            equals = True
-            for key, value in curdict.items():
-                def _compare(a, b):
-                    if isinstance(a, float) and isinstance(b, float):
-                        return np.isclose(a, b)
-                    return a == b
-                valmatches = key in indict and _compare(indict[key], curdict[key])
-                if key in entities:
-                    matches = matches and valmatches
-                equals = equals and valmatches
-            if equals:
-                return
-            if matches:
+            curtags = {
+                k: v for k, v in curdict.items() if k in entities
+            }
+
+            if set(intags.items()) == set(curtags.items()):
+                if set(indict.keys()) == set(curdict.keys()):
+                    if all(_compare(v, curdict[k]) for k, v in indict.items()):
+                        return  # update not needed
+
+                matches = True
+
                 break
-        self.is_dirty = True
+
+        self.is_dirty = True  # will need to write out file
+
         if matches:
             self.dictlist[i].update(indict)
             logger.debug(f"Updating {self.filename} entry {curdict} with {indict}")

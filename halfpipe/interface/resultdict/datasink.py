@@ -212,7 +212,7 @@ class ResultdictDatasink(SimpleInterface):
 
             # vals
 
-            if len(vals) > 0:
+            if len(vals) > 0 and "model" not in tags:  # only for first level
                 outdict = FuncTagsSchema().dump(tags)
                 outdict.update(vals)
                 valdicts.append(outdict)
