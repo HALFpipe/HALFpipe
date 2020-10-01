@@ -13,7 +13,7 @@ Welcome to ENIGMA `HALFpipe`!
 >
 > | Version                      | Installation                                                                                             |
 > |------------------------------|----------------------------------------------------------------------------------------------------------|
-> | Beta 4 (September 30th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
+> | Beta 4 (October 1st 2020)    | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
 > | Beta 3 (September 14th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b3`<br>`docker pull mindandbrain/halfpipe:1.0.0b3`   |
 > | Beta 2 (August 16th 2020)    | `singularity pull docker://mindandbrain/halfpipe:1.0.0b2`<br>`docker pull mindandbrain/halfpipe:1.0.0b2` |
 > | Beta 1 (June 30th 2020)      | `singularity pull docker://mindandbrain/halfpipe:1.0.0b1`<br>`docker pull mindandbrain/halfpipe:1.0.0b1` |
