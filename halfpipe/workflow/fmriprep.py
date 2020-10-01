@@ -16,24 +16,24 @@ from .constants import constants
 from ..utils import deepcopyfactory
 
 
-def _follow_to_datasink(hierarchy, node, attr):
-    wf = hierarchy[-1]
-    for _, target, data in wf._graph.out_edges([node], data=True):
-        connect = data.get("connect", dict())
-        for inattr, outattr in connect:
-            if inattr == attr:
-                if isinstance(target, pe.Workflow):
-                    nodename, attrname = outattr.split(".")
-                    res = _follow_to_datasink(
-                        [*hierarchy, target], target.get_node(nodename), attrname
-                    )  # recursion
-                    if res is not None:
-                        _, resnode, _ = res
-                        if resnode.name.startswith("ds_"):
-                            return res
-                if target.name.startswith("ds_") and outattr == "in_file":
-                    return hierarchy, target, "out_file"
-    return hierarchy, node, attr
+# def _follow_to_datasink(hierarchy, node, attr):
+#     wf = hierarchy[-1]
+#     for _, target, data in wf._graph.out_edges([node], data=True):
+#         connect = data.get("connect", dict())
+#         for inattr, outattr in connect:
+#             if inattr == attr:
+#                 if isinstance(target, pe.Workflow):
+#                     nodename, attrname = outattr.split(".")
+#                     res = _follow_to_datasink(
+#                         [*hierarchy, target], target.get_node(nodename), attrname
+#                     )  # recursion
+#                     if res is not None:
+#                         _, resnode, _ = res
+#                         if resnode.name.startswith("ds_"):
+#                             return res
+#                 if target.name.startswith("ds_") and outattr == "in_file":
+#                     return hierarchy, target, "out_file"
+#     return hierarchy, node, attr
 
 
 def _find_child(hierarchy, name):
@@ -177,8 +177,7 @@ class FmriprepFactory(Factory):
             attrs &= actually_connected_attrs
 
             for attr in attrs:
-                fouthierarchy, foutputnode, fattr = _follow_to_datasink(hierarchy, outputnode, attr)
-                self.connect_attr(fouthierarchy, foutputnode, fattr, nodehierarchy, node, attr)
+                self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
                 connected_attrs.add(attr)
 
             while len(dsattrs) > 0:
