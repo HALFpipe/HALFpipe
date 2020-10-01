@@ -5,6 +5,7 @@
 import os
 from pathlib import Path
 from ._version import get_versions
+from tempfile import mkdtemp
 
 __version__ = get_versions()["version"]
 del get_versions
@@ -19,3 +20,5 @@ templateflow_home = Path("/home/fmriprep/.cache/templateflow")
 if templateflow_home.is_dir():
     os.environ["TEMPLATEFLOW_HOME"] = str(templateflow_home)
 del halfpipe_resource_dir, templateflow_home
+
+os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warning
