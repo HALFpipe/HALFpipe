@@ -22,6 +22,8 @@ from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_enti
 from ...utils import splitext, findpaths, first, formatlikebids
 from ...resource import get as getresource
 
+logger = logging.getLogger("halfpipe")
+
 
 def _make_plot(tags, key, sourcefile):
     if key == "z":
@@ -64,10 +66,10 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
 def _copy_file(inpath, outpath):
     outpath.parent.mkdir(exist_ok=True, parents=True)
     if outpath.exists():
-        if os.stat(inpath).st_mtime >= os.stat(outpath).st_mtime:
-            logging.getLogger("halfpipe").debug(f'Not overwriting file "{outpath}"')
+        if os.stat(inpath).st_mtime <= os.stat(outpath).st_mtime:
+            logger.debug(f'Not overwriting file "{outpath}"')
             return False
-        logging.getLogger("halfpipe").debug(f'Overwriting file "{outpath}"')
+        logger.debug(f'Overwriting file "{outpath}"')
     copyfile(inpath, outpath)
     return True
 
