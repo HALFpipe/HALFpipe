@@ -236,14 +236,14 @@ def _main():
             runnercls = getattr(nip, runnername)
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
-        logger.info(f'Using plugin arguments\n{pformat(plugin_args)}')
+        logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
         execgraphstorun = []
         if len(execgraphs) > 1:
             n_subjectlevel_chunks = len(execgraphs) - 1
             if args.only_model_chunk:
-                logger.info(f"Will not run subject level chunks")
-                logger.info(f"Will run model chunk")
+                logger.info("Will not run subject level chunks")
+                logger.info("Will run model chunk")
                 execgraphstorun.append(execgraphs[-1])
             elif args.only_chunk_index is not None:
                 zerobasedchunkindex = args.only_chunk_index - 1
@@ -251,11 +251,11 @@ def _main():
                 logger.info(
                     f"Will run subject level chunk {args.only_chunk_index} of {n_subjectlevel_chunks}"
                 )
-                logger.info(f"Will not run model chunk")
+                logger.info("Will not run model chunk")
                 execgraphstorun.append(execgraphs[zerobasedchunkindex])
             else:
                 logger.info(f"Will run all {n_subjectlevel_chunks} subject level chunks")
-                logger.info(f"Will run model chunk")
+                logger.info("Will run model chunk")
                 execgraphstorun.extend(execgraphs)
         elif len(execgraphs) == 1:
             execgraphstorun.append(execgraphs[0])
