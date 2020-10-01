@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
@@ -94,7 +96,10 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     )
 
     #
-    filterkwargs = dict(requireoneofimages=["effect", "reho", "falff", "alff"])
+    filterkwargs = dict(
+        requireoneofimages=["effect", "reho", "falff", "alff"],
+        excludefiles=str(Path(workdir) / "exclude*.json"),
+    )
     if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
         filterkwargs.update(dict(filterdicts=model.filters))
     if hasattr(model, "spreadsheet"):

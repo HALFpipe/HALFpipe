@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from glob import glob
+
 import numpy as np
 import pandas as pd
 
@@ -53,11 +55,11 @@ class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
     filterdicts = traits.List(traits.Any(), desc="filter list")
     variabledicts = traits.List(traits.Any(), desc="variable list")
-    spreadsheet = File(desc="spreadsheet")
+    spreadsheet = File(desc="spreadsheet", exists=True)
     requireoneofimages = traits.List(
         traits.Str(), desc="only keep resultdicts that have at least one of these keys"
     )
-    excludefiles = traits.List(File())
+    excludefiles = traits.Str()
 
 
 class FilterResultdicts(SimpleInterface):
@@ -165,7 +167,9 @@ class FilterResultdicts(SimpleInterface):
                 ]
 
         if isdefined(self.inputs.excludefiles):
-            database = ExcludeDatabase.cached(self.inputs.excludefiles)
+            excludefiles = glob(self.inputs.excludefiles)
+            excludefiles = tuple(sorted(excludefiles))  # make hashable
+            database = ExcludeDatabase.cached(excludefiles)
             outdicts = [
                 outdict for outdict in outdicts if database.get(**outdict.get("tags")) is False
             ]
