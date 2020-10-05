@@ -60,11 +60,12 @@ class ExcludeDatabase:
     def __init__(self, excludefiles):
         exclude_schema = ExcludeSchema(many=True)
 
+        dicthierarchy = dict()
+
         for excludefile in excludefiles:
             with open(excludefile, "r") as fp:
                 entries = exclude_schema.loads(fp.read())
 
-            dicthierarchy = dict()
             for entry in entries:
                 for i, entity in enumerate(entities):  # order determines entity precedence
                     if entity in entry:
