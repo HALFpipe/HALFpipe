@@ -144,11 +144,20 @@ class BidsDatabase:
             if self.database.tagval(filepath, "datatype") == "fmap":
                 if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
                     sub = self.database.tagval(filepath, "sub")
-                    filters = dict(datatype="func", suffix="bold", sub=sub)
                     subject = self.tagval(bidspath, "subject")
+
                     subjectdir = f"sub-{subject}"
+
                     bidsmetadata["IntendedFor"] = list()
-                    for afilepath in sorted(self.database.associations(filepath, **filters)):
+
+                    filters = dict(datatype="func", suffix="bold", sub=sub)
+                    afilepaths = self.database.associations(filepath, **filters)
+                    if afilepaths is None:
+                        continue  # only write if we can find a functional image
+
+                    afilepaths = sorted(afilepaths)
+
+                    for afilepath in afilepaths:
                         abidspath = self.tobids(afilepath)
                         if abidspath is not None:  # only include files in the BidsDatabase
                             bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))

@@ -34,7 +34,7 @@ def init_workflow(workdir):
 
     spec = loadspec(workdir=workdir)
     assert spec is not None, "A spec file could not be loaded"
-    logger.info(f"Initializing file database")
+    logger.info("Initializing file database")
     database = Database(spec)
     uuid = uuid5(spec.uuid, database.sha1)
 
@@ -70,12 +70,15 @@ def init_workflow(workdir):
     boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
     associated_filepaths_dict = dict()
     for boldfilepath in boldfilepaths:
-        t1ws = database.associations(boldfilepath, datatype="anat")
+        sub = database.tagval(boldfilepath, "sub")
+        filters = dict(sub=sub)  # enforce same subject
+
+        t1ws = database.associations(boldfilepath, datatype="anat", **filters)
         if t1ws is None:
             continue
         associated_filepaths = [boldfilepath]
         associated_filepaths.extend(t1ws)
-        fmaps = database.associations(boldfilepath, datatype="fmap")
+        fmaps = database.associations(boldfilepath, datatype="fmap", **filters)
         if fmaps is not None:
             associated_filepaths.extend(fmaps)
         for filepath in associated_filepaths:
