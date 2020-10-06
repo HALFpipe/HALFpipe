@@ -20,5 +20,5 @@ class AddAnotherFeatureStep(YesNoStep):
 SettingValsStep = get_setting_vals_steps(
     AddAnotherFeatureStep,
     noun="feature",
-    vals_header_str="Specify preprocessing settings"
+    vals_header_str="Specify preprocessing setting"
 )
