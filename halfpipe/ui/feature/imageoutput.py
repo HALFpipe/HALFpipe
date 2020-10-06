@@ -14,21 +14,27 @@ next_step_type = ModelsStep
 
 
 class AddAnotherImageOutputStep(YesNoStep):
-    header_str = f"Output another preprocessed image?"
+    header_str = "Output another preprocessed image?"
     yes_step_type = None  # add later
     no_step_type = next_step_type
 
 
-ImageOutputSettingValsStep = get_setting_vals_steps(AddAnotherImageOutputStep)
+ImageOutputSettingValsStep = get_setting_vals_steps(
+    AddAnotherImageOutputStep,
+    noun="image"
+)
 
 ImageOutputSettingInitStep = get_setting_init_steps(
-    ImageOutputSettingValsStep, settingdict={"output_image": True}, namefun=None
+    ImageOutputSettingValsStep,
+    settingdict={"output_image": True},
+    namefun=None,
+    noun="image"
 )
 
 AddAnotherImageOutputStep.yes_step_type = ImageOutputSettingInitStep
 
 
 class ImageOutputStep(YesNoStep):
-    header_str = f"Output a preprocessed image?"
+    header_str = "Output a preprocessed image?"
     yes_step_type = ImageOutputSettingInitStep
     no_step_type = next_step_type
