@@ -51,6 +51,10 @@ def parse_direction_str(s):
     raise ValueError(f'Unknown phase encoding direction string "{s}"')
 
 
+def invert_location(d):
+    return {"r": "l", "l": "r", "p": "a", "a": "p", "s": "i", "i": "s"}[d]
+
+
 def canonicalize_direction_code(pedir_code, pat):
     canonical_pedir_code = pedir_code
     if pedir_code not in axis_codes:
@@ -77,10 +81,12 @@ def direction_code_str(pedir_code, pat):
         assert len(axcodes_set) == 1, "Inconsistent axis orientations"
         (axcodes,) = axcodes_set
 
-        pedir_to = axcodes[["i", "j", "k"].index(pedir_code[0])].lower()
-        pedir_from = {"r": "l", "l": "r", "p": "a", "a": "p", "s": "i", "i": "s"}[pedir_to]
+        location_to = axcodes[["i", "j", "k"].index(pedir_code[0])].lower()
+        if pedir_code.endswith("-"):
+            location_to = invert_location(location_to)
+        location_from = invert_location(location_to)
 
-        pedir_code = f"{pedir_from}{pedir_to}"
+        pedir_code = f"{location_from}{location_to}"
 
     assert pedir_code in space_codes, "Unknown phase encoding direction code"
 
