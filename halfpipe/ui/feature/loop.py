@@ -12,9 +12,13 @@ from .imageoutput import ImageOutputStep
 
 
 class AddAnotherFeatureStep(YesNoStep):
-    header_str = f"Add another first-level feature?"
+    header_str = "Add another first-level feature?"
     yes_step_type = None  # add later
     no_step_type = ImageOutputStep
 
 
-SettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, noun="feature")
+SettingValsStep = get_setting_vals_steps(
+    AddAnotherFeatureStep,
+    noun="feature",
+    vals_header_str="Specify preprocessing settings"
+)

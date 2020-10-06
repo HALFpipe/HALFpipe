@@ -23,7 +23,7 @@ from ...model import (
 from ...utils import first, inflect_engine as p
 
 
-def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
+def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None, oncompletefn=None):
     class ConfirmInconsistentStep(YesNoStep):
         no_step_type = None
 
@@ -412,6 +412,13 @@ def get_setting_vals_steps(next_step_type, noun="setting", oncompletefn=None):
                 self._append_view(SpacerView(1))
 
             return False
+
+        def setup(self, ctx):
+            if vals_header_str is not None:
+                self._append_view(TextView(vals_header_str))
+                self._append_view(SpacerView(1))
+
+            super(DoSmoothingStep, self).setup(ctx)
 
         def next(self, ctx):
             if "smoothing" in ctx.spec.settings[-1]:
