@@ -290,7 +290,10 @@ class CheckMetadataStep(Step):
             display = display_str(f"{uniquevals[i]}")
             if self.suggestion is None:
                 self.suggestion = display
-            self._append_view(TextView(f" {column1[i]:>{column1width}} - {display} {unit}"))
+            tablerow = f" {column1[i]:>{column1width}} - {display}"
+            if uniquevals[i] != "missing":
+                tablerow = f"{tablerow} {unit}"
+            self._append_view(TextView(tablerow))
 
         if len(order) > 10:
             self._append_view(TextView("..."))
