@@ -67,23 +67,33 @@ def init_workflow(workdir):
     model_factory = ModelFactory(ctx, feature_factory)
 
     # create bids
-    boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
+    factoryboldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
+
+    boldfilepaths = []
     associated_filepaths_dict = dict()
-    for boldfilepath in boldfilepaths:
+
+    for boldfilepath in factoryboldfilepaths:
         sub = database.tagval(boldfilepath, "sub")
         filters = dict(sub=sub)  # enforce same subject
 
         t1ws = database.associations(boldfilepath, datatype="anat", **filters)
+
         if t1ws is None:
             continue
+
         associated_filepaths = [boldfilepath]
         associated_filepaths.extend(t1ws)
+
         fmaps = database.associations(boldfilepath, datatype="fmap", **filters)
         if fmaps is not None:
             associated_filepaths.extend(fmaps)
+
         for filepath in associated_filepaths:
             bidsdatabase.put(filepath)
+
         associated_filepaths_dict[boldfilepath] = associated_filepaths
+
+        boldfilepaths.append(boldfilepath)
 
     bids_dir = Path(workdir) / "rawdata"
     bidsdatabase.write(bids_dir)

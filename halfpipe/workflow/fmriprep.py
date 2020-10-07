@@ -46,9 +46,20 @@ class FmriprepFactory(Factory):
         subjects = set()
         bidssubjects = set()
         for boldfilepath in boldfilepaths:
-            subjects.add(database.tagval(boldfilepath, "sub"))
+            subject = database.tagval(boldfilepath, "sub")
+
+            if subject is None:
+                continue
+
             bidspath = bidsdatabase.tobids(boldfilepath)
-            bidssubjects.add(bidsdatabase.tagval(bidspath, "subject"))
+            bidssubject = bidsdatabase.tagval(bidspath, "subject")
+
+            if bidssubject is None:
+                continue
+
+            subjects.add(subject)
+            bidssubjects.add(bidssubject)
+
         subjects = list(subjects)
         bidssubjects = list(bidssubjects)
 
