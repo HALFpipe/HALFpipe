@@ -22,6 +22,8 @@ from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
 from ..utils import deepcopyfactory, nvol
 
+logger = logging.getLogger("halfpipe")
+
 
 def init_workflow(workdir):
     """
@@ -29,8 +31,6 @@ def init_workflow(workdir):
 
     :param spec
     """
-
-    logger = logging.getLogger("halfpipe")
 
     spec = loadspec(workdir=workdir)
     assert spec is not None, "A spec file could not be loaded"
@@ -66,6 +66,48 @@ def init_workflow(workdir):
     feature_factory = FeatureFactory(ctx, setting_factory)
     model_factory = ModelFactory(ctx, feature_factory)
 
+    boldfilepaths, associated_filepaths_dict = collect_boldfiles(
+        database, setting_factory, feature_factory
+    )
+
+    # write out
+
+    for associated_filepaths in associated_filepaths_dict.values():
+        for filepath in associated_filepaths:
+            bidsdatabase.put(filepath)
+
+    bids_dir = Path(workdir) / "rawdata"
+    bidsdatabase.write(bids_dir)
+
+    # setup preprocessing
+    if spec.global_settings.get("run_mriqc") is True:
+        mriqc_factory = MriqcFactory(ctx)
+        mriqc_factory.setup(workdir, boldfilepaths)
+    if spec.global_settings.get("run_fmriprep") is True:
+        fmriprep_factory.setup(workdir, boldfilepaths)
+
+        if spec.global_settings.get("run_halfpipe") is True:
+            setting_factory.setup(associated_filepaths_dict)
+            feature_factory.setup(associated_filepaths_dict)
+            model_factory.setup()
+
+    config_factory = deepcopyfactory(workflow.config)
+    for node in workflow._get_all_nodes():
+        node.config = config_factory()
+        if node.name in ["split"]:
+            node.config["execution"]["hash_method"] = "content"
+        node.overwrite = None
+        if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
+            node._mem_gb = memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
+
+    logger.info(f"Finished workflow: {uuidstr}")
+
+    cacheobj(workdir, "workflow", workflow)
+    return workflow
+
+
+def collect_boldfiles(database, setting_factory, feature_factory):
+
     # find bold files
 
     boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
@@ -96,6 +138,7 @@ def init_workflow(workdir):
     tmpbidsdatabase = BidsDatabase(database)
     bidsdict = dict()
     for boldfilepath in boldfilepaths:
+        # check for duplicate tags via bids path as this contains all tags by definition
         tmpbidsdatabase.put(boldfilepath)
         bidspath = tmpbidsdatabase.tobids(boldfilepath)
         assert bidspath is not None
@@ -141,39 +184,6 @@ def init_workflow(workdir):
             if boldfilepath != selectedboldfilepath:
                 del associated_filepaths_dict[boldfilepath]
 
-    # write out
-
-    for associated_filepaths in associated_filepaths_dict.values():
-        for filepath in associated_filepaths:
-            bidsdatabase.put(filepath)
-
     boldfilepaths = [b for b in boldfilepaths if b in associated_filepaths_dict]
 
-    bids_dir = Path(workdir) / "rawdata"
-    bidsdatabase.write(bids_dir)
-
-    # setup preprocessing
-    if spec.global_settings.get("run_mriqc") is True:
-        mriqc_factory = MriqcFactory(ctx)
-        mriqc_factory.setup(workdir, boldfilepaths)
-    if spec.global_settings.get("run_fmriprep") is True:
-        fmriprep_factory.setup(workdir, boldfilepaths)
-
-        if spec.global_settings.get("run_halfpipe") is True:
-            setting_factory.setup(associated_filepaths_dict)
-            feature_factory.setup(associated_filepaths_dict)
-            model_factory.setup()
-
-    config_factory = deepcopyfactory(workflow.config)
-    for node in workflow._get_all_nodes():
-        node.config = config_factory()
-        if node.name in ["split"]:
-            node.config["execution"]["hash_method"] = "content"
-        node.overwrite = None
-        if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
-            node._mem_gb = memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
-
-    logger.info(f"Finished workflow: {uuidstr}")
-
-    cacheobj(workdir, "workflow", workflow)
-    return workflow
+    return boldfilepaths, associated_filepaths_dict
