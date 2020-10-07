@@ -74,7 +74,7 @@ class NiftiheaderMetadataLoader:
                     slice_duration = repetition_time / n_slices
                     if nifti_slice_duration * n_slices < repetition_time - 2 * slice_duration:  # fudge factor
                         logging.getLogger("halfpipe").info(
-                            f'Unexpected nifti slice_duration of {nifti_slice_duration:f} ms in header for file "{fileobj.path}"\n'
+                            f'Unexpected nifti slice_duration of {nifti_slice_duration:f} ms in header for file "{fileobj.path}"'
                         )
                         header.set_slice_duration(slice_duration)
                     if np.isclose(nifti_slice_duration, 0.0):
