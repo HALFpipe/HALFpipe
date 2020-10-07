@@ -336,6 +336,14 @@ class VariableMissingActionStep(Step):
         self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
         self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
         self.variables = [variable for variable in self.variables if variable["type"] != "id"]
+        contrastvariables = set(
+            ravel(
+                contrast["variable"]
+                for contrast in ctx.spec.models[-1].contrasts
+                if contrast.get("type") == "infer"
+            )
+        )
+        self.variables = [variable for variable in self.variables if variable["name"] in contrastvariables]
 
         varnames = [variable["name"] for variable in self.variables]
         options = [format_column(varname) for varname in varnames]
