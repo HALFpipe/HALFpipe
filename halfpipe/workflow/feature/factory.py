@@ -48,14 +48,16 @@ class FeatureFactory(Factory):
                     return setting
 
         for feature in self.spec.features:
-            featuresourcefiles = self.sourcefiles
+            sourcefiles = set(raw_sources_dict.keys())
+
             filters = _find_setting(feature).get("filters")
             if filters is not None and len(filters) > 0:
-                featuresourcefiles = self.database.applyfilters(
-                    featuresourcefiles, filters
+                sourcefiles = self.database.applyfilters(
+                    sourcefiles, filters
                 )
-            for sourcefile in featuresourcefiles:
-                sourcefile_raw_sources = raw_sources_dict.get(sourcefile)
+
+            for sourcefile in sourcefiles:
+                sourcefile_raw_sources = raw_sources_dict[sourcefile]
                 self.create(sourcefile, feature, raw_sources=sourcefile_raw_sources)
 
     def create(self, sourcefile, feature, raw_sources=[]):

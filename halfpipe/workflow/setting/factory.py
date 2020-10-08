@@ -329,15 +329,18 @@ class SettingFactory(Factory):
         self.confounds_select_factory.setup()
         self.confounds_regression_factory.setup()
 
-        filepaths = set(self.database.get(datatype="func", suffix="bold"))
         for setting in self.spec.settings:
             setting_output_wf_factory = deepcopyfactory(init_setting_output_wf(workdir=self.workdir, settingname=setting["name"]))
+
             if setting.get("output_image") is not True:
-                continue
-            sourcefiles = filepaths
+                continue  # create lazily in FeatureFactory
+
+            sourcefiles = set(raw_sources_dict.keys())
+
             filters = setting.get("filters")
             if filters is not None and len(filters) > 0:
                 sourcefiles = self.database.applyfilters(sourcefiles, filters)
+
             for sourcefile in sourcefiles:
                 hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
 
@@ -351,7 +354,7 @@ class SettingFactory(Factory):
                 inputnode.inputs.tags = tags
                 if raw_sources_dict.get(sourcefile) is not None:
                     inputnode.inputs.metadata = {
-                        "raw_sources": raw_sources_dict.get(sourcefile)
+                        "raw_sources": raw_sources_dict[sourcefile]
                     }
                 self.connect(hierarchy, inputnode, sourcefile, settingname=setting["name"], confounds_action="regression")
 
