@@ -82,6 +82,8 @@ def _find_and_parse_condition_files(ctx):
 
 
 def _get_conditions(ctx):
+    ctx.spec.features[-1].conditions = []  # create attribute
+
     out_list = list(_find_and_parse_condition_files(ctx))
     if out_list is None or len(out_list) == 0:
         return
