@@ -23,4 +23,5 @@ pint
 seaborn
 svgutils
 tabulate
+chardet
 calamities

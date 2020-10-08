@@ -12,65 +12,89 @@ import re
 
 import numpy as np
 import pandas as pd
+import chardet
 
 from ...utils import splitext
 
 
-def has_header(fname):
-    with open(fname, "r") as csvfile:
+def find_encoding(fname):
+    with open(fname, "rb") as csvfile:
         data = csvfile.read(1024)
-        data = re.sub(r"[^\x00-\x7f]", "", data)  # remove unicode characters, e.g. BOM
-        if data.startswith("/"):
-            return False
-        if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
-            return True
-        return False  # default
+    return chardet.detect(data)["encoding"]
+
+
+def has_header(fname):
+    encoding = find_encoding(fname)
+    with open(fname, "r", encoding=encoding) as csvfile:
+        data = csvfile.read(1024)
+    data = re.sub(r"[^\x00-\x7f]", "", data)  # remove unicode characters, e.g. BOM
+    if data.startswith("/"):
+        return False
+    if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
+        return True
+    return False  # default
 
 
 @lru_cache(maxsize=128)
 def loadspreadsheet(fname, ftype=None):
     df = None
+
+    if ftype is None:
+        _, ftype = splitext(fname)
+
+    kwargs = dict()
+
+    if ftype not in [".xls", ".xlsx", ".odf"]:
+        encoding = find_encoding(fname)
+        kwargs.update(dict(encoding=encoding))
+
     with warnings.catch_warnings():
         warnings.simplefilter("error")
+
         try:
-            if ftype is None:
-                _, ftype = splitext(fname)
             if ftype == ".txt":
                 if not has_header(fname):
-                    df = pd.read_table(fname, header=None)
+                    df = pd.read_table(fname, header=None, **kwargs)
                 else:
-                    df = pd.read_table(fname)
+                    df = pd.read_table(fname, **kwargs)
+
             elif ftype == ".json":
-                df = pd.read_json(fname)
+                df = pd.read_json(fname, **kwargs)
+
             elif ftype == ".csv":
                 if not has_header(fname):
-                    df = pd.read_csv(fname, header=None)
+                    df = pd.read_csv(fname, header=None, **kwargs)
                 else:
-                    df = pd.read_csv(fname)
+                    df = pd.read_csv(fname, **kwargs)
+
             elif ftype == ".tsv":
                 if not has_header(fname):
-                    df = pd.read_csv(fname, sep="\t", header=None)
+                    df = pd.read_csv(fname, sep="\t", header=None, **kwargs)
                 else:
-                    df = pd.read_csv(fname, sep="\t")
-            elif ftype == ".xls":
-                df = pd.read_excel(fname)
+                    df = pd.read_csv(fname, sep="\t", **kwargs)
+
+            elif ftype in [".xls", ".xlsx"]:
+                df = pd.read_excel(fname, **kwargs)
+
             elif ftype == ".ods":
-                df = pd.read_excel(fname, engine="odf")
-            elif ftype == "":
+                df = pd.read_excel(fname, engine="odf", **kwargs)
+
+            elif ftype == "":  # no extension
                 if not has_header(fname):
-                    df = pd.read_table(fname, header=None, sep=r"\s+")
+                    df = pd.read_table(fname, header=None, sep=r"\s+", **kwargs)
                 else:
-                    df = pd.read_table(fname, sep=r"\s+")
+                    df = pd.read_table(fname, sep=r"\s+", **kwargs)
+
             else:
                 if not has_header(fname):
-                    df = pd.read_table(fname, header=None, sep=None, engine="python")
+                    df = pd.read_table(fname, header=None, sep=None, engine="python", **kwargs)
                 else:
-                    df = pd.read_table(fname, sep=None, engine="python")
-            if df is not None:
-                return df
+                    df = pd.read_table(fname, sep=None, engine="python", **kwargs)
+
         except Exception:
-            pass
-        return pd.DataFrame(loadmatrix(fname))
+            df = pd.DataFrame(loadmatrix(fname, **kwargs))
+
+    return df
 
 
 @lru_cache(maxsize=128)
@@ -104,5 +128,5 @@ def loadmatrix(in_file, dtype=float, **kwargs):
         except Exception as e:
             exception = e
     if kwargs.get("comments") != "/":
-        return loadmatrix(in_file, dtype=dtype, comments="/")
+        return loadmatrix(in_file, dtype=dtype, comments="/", **kwargs)
     raise exception
