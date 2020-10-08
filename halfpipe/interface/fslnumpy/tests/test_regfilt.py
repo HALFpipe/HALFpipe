@@ -3,8 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
-from tempfile import TemporaryDirectory
-from pathlib import Path
 import os
 from random import seed
 
@@ -15,48 +13,42 @@ from halfpipe.interface import FilterRegressor
 from nipype.interfaces import fsl
 
 
-def test_FilterRegressor():
+def test_FilterRegressor(tmp_path):
     seed(a=0x5e6128c4)
 
-    cur_dir = os.getcwd()
+    os.chdir(str(tmp_path))
 
-    with TemporaryDirectory(prefix="test_FilterRegressor_") as temp_dir:
-        temp_dir = Path(temp_dir)
-        os.chdir(temp_dir)
+    array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
 
-        array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
+    img = nib.Nifti1Image(array, np.eye(4))
+    in_file = "img.nii.gz"
+    nib.save(img, in_file)
 
-        img = nib.Nifti1Image(array, np.eye(4))
-        in_file = "img.nii.gz"
-        nib.save(img, in_file)
+    x = array.reshape((-1, array.shape[-1]))
+    u, s, vh = np.linalg.svd(x, full_matrices=False)
+    design = vh[:10, :].T  # first ten pca components
+    design_file = "design.txt"
+    np.savetxt(design_file, design)
 
-        x = array.reshape((-1, array.shape[-1]))
-        u, s, vh = np.linalg.svd(x, full_matrices=False)
-        design = vh[:10, :].T  # first ten pca components
-        design_file = "design.txt"
-        np.savetxt(design_file, design)
+    instance = FilterRegressor()
+    instance.inputs.in_file = in_file
+    instance.inputs.design_file = design_file
+    instance.inputs.filter_columns = [1, 2, 3]
+    result = instance.run()
 
-        instance = FilterRegressor()
-        instance.inputs.in_file = in_file
-        instance.inputs.design_file = design_file
-        instance.inputs.filter_columns = [1, 2, 3]
-        result = instance.run()
+    r0 = nib.load(result.outputs.out_file).get_fdata()
 
-        r0 = nib.load(result.outputs.out_file).get_fdata()
+    instance = fsl.FilterRegressor()
+    instance.inputs.in_file = in_file
+    instance.inputs.design_file = design_file
+    instance.inputs.filter_columns = [1, 2, 3]
+    result = instance.run()
 
-        instance = fsl.FilterRegressor()
-        instance.inputs.in_file = in_file
-        instance.inputs.design_file = design_file
-        instance.inputs.filter_columns = [1, 2, 3]
-        result = instance.run()
+    r1 = nib.load(result.outputs.out_file).get_fdata()
 
-        r1 = nib.load(result.outputs.out_file).get_fdata()
+    # delta = r0 - r1
+    # print(r0[np.where(delta == delta.max())[:3]])
+    # print(r1[np.where(delta == delta.max())[:3]])
+    # print(np.mean(np.abs(r0 - r1)))
 
-        # delta = r0 - r1
-        # print(r0[np.where(delta == delta.max())[:3]])
-        # print(r1[np.where(delta == delta.max())[:3]])
-        # print(np.mean(np.abs(r0 - r1)))
-
-        assert np.allclose(r0, r1)
-
-    os.chdir(cur_dir)
+    assert np.allclose(r0, r1)

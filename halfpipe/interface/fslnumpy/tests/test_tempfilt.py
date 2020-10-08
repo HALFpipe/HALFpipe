@@ -3,8 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
-from tempfile import TemporaryDirectory
-from pathlib import Path
 import os
 from random import seed
 
@@ -15,36 +13,30 @@ from halfpipe.interface import TemporalFilter
 from nipype.interfaces import fsl
 
 
-def test_TemporalFilter():
+def test_TemporalFilter(tmp_path):
     seed(a=0x4d3c732f)
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
     img = nib.Nifti1Image(array, np.eye(4))
 
-    cur_dir = os.getcwd()
+    os.chdir(str(tmp_path))
 
-    with TemporaryDirectory(prefix="test_TemporalFilter_") as temp_dir:
-        temp_dir = Path(temp_dir)
-        os.chdir(temp_dir)
+    in_file = "img.nii.gz"
+    nib.save(img, in_file)
 
-        in_file = "img.nii.gz"
-        nib.save(img, in_file)
+    instance = TemporalFilter()
+    instance.inputs.in_file = in_file
+    instance.inputs.lowpass_sigma = 12
+    instance.inputs.highpass_sigma = 125
+    result = instance.run()
 
-        instance = TemporalFilter()
-        instance.inputs.in_file = in_file
-        instance.inputs.lowpass_sigma = 12
-        instance.inputs.highpass_sigma = 125
-        result = instance.run()
+    r0 = nib.load(result.outputs.out_file).get_fdata()
 
-        r0 = nib.load(result.outputs.out_file).get_fdata()
+    instance = fsl.TemporalFilter()
+    instance.inputs.in_file = in_file
+    instance.inputs.lowpass_sigma = 12
+    instance.inputs.highpass_sigma = 125
+    result = instance.run()
 
-        instance = fsl.TemporalFilter()
-        instance.inputs.in_file = in_file
-        instance.inputs.lowpass_sigma = 12
-        instance.inputs.highpass_sigma = 125
-        result = instance.run()
-
-        r1 = nib.load(result.outputs.out_file).get_fdata()
-        assert np.allclose(r0, r1)
-
-    os.chdir(cur_dir)
+    r1 = nib.load(result.outputs.out_file).get_fdata()
+    assert np.allclose(r0, r1)
