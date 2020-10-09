@@ -91,7 +91,7 @@ class Transformer(SimpleInterface):
             else:
                 out_array = array2.T.reshape((*in_img.shape[:3], -1))
 
-            out_img = new_img_like(in_img, out_array)
+            out_img = new_img_like(in_img, out_array, copy_header=True)
             nib.save(out_img, out_file)
 
         else:

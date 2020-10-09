@@ -74,9 +74,9 @@ class Merge(SimpleInterface):
 
         outarr = np.moveaxis(movd_outarr, 0, idim)
 
-        outimg = new_img_like(first(in_imgs), outarr)
+        outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
 
-        merged_file = op.abspath(f"merged.nii.gz")
+        merged_file = op.abspath("merged.nii.gz")
         nib.save(outimg, merged_file)
 
         self._results["merged_file"] = merged_file
@@ -113,9 +113,9 @@ class MergeMask(SimpleInterface):
         in_data = [np.asanyarray(in_img.dataobj).astype(np.bool) for in_img in in_imgs]
         outarr = np.logical_and.reduce(in_data)
 
-        outimg = new_img_like(first(in_imgs), outarr)
+        outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
 
-        merged_file = op.abspath(f"merged.nii.gz")
+        merged_file = op.abspath("merged.nii.gz")
         nib.save(outimg, merged_file)
 
         self._results["merged_file"] = merged_file

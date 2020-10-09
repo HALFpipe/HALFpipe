@@ -86,7 +86,7 @@ class MaskCoverage(IOBase):
 
             out_file = Path.cwd() / f"{stem}_masked.nii.gz"
 
-            out_img = new_img_like(in_img, out_bool)
+            out_img = new_img_like(in_img, out_bool, copy_header=True)
             nib.save(out_img, out_file)
 
             self._out_files.append(out_file)
