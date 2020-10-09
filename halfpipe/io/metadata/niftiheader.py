@@ -2,11 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import logging
 import re
 
 import nibabel as nib
 
 import pint
+
+logger = logging.getLogger("halfpipe")
 
 ureg = pint.UnitRegistry()
 
@@ -63,8 +66,9 @@ class NiftiheaderLoader:
 
         try:
             nbimg = nib.load(niftifile, mmap=False, keep_file_open=False)
-        except Exception:
-            return
+        except Exception as e:
+            logger.warning(f'Caught error loading file "{niftifile}"', e)
+            return None, None
 
         header = nbimg.header.copy()
 
