@@ -117,8 +117,8 @@ def init_taskbased_wf(
 
     # first level model specification
     modelspec = pe.Node(model.SpecifyModel(), name="modelspec")
-    if hasattr(model, "high_pass_filter_cutoff"):
-        modelspec.inputs.high_pass_filter_cutoff = model.high_pass_filter_cutoff
+    if hasattr(feature, "high_pass_filter_cutoff"):
+        modelspec.inputs.high_pass_filter_cutoff = feature.high_pass_filter_cutoff
     else:
         modelspec.inputs.high_pass_filter_cutoff = np.inf
     workflow.connect(inputnode, "bold", modelspec, "functional_runs")
