@@ -13,7 +13,7 @@ From: poldracklab/fmriprep:20.2.0
   . /halfpipe
 
 %post
-  BUILD=194
+  BUILD=195
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
@@ -24,7 +24,7 @@ From: poldracklab/fmriprep:20.2.0
     pip install . && \
     python postsetup.py' fmriprep
   
-  rm -rf ~/.cache/pip
+  rm -rf /halfpipe ~/.cache/pip
 
 %runscript
   exec /usr/local/miniconda/bin/halfpipe "$@"
