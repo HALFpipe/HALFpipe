@@ -12,14 +12,14 @@ from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 
 from .reftracer import PathReferenceTracer
-from ..logger import Logger
+from ..logging import setup_logging
 from ..watchdog import start_watchdog_daemon
 
 logger = logging.getLogger("nipype.workflow")
 
 
 def initializer(workdir, debug, verbose, watchdog):
-    Logger.setup(workdir, debug=debug, verbose=verbose)
+    setup_logging(workdir, debug=debug, verbose=verbose)
     if watchdog is True:
         start_watchdog_daemon()
 

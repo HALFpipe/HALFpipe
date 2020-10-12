@@ -8,8 +8,6 @@ import logging
 
 from . import __version__
 
-from fmriprep import config
-
 global debug
 debug = False
 
@@ -89,7 +87,7 @@ def _main():
     args = ap.parse_args()
     global debug
     debug = args.debug
-    config.execution.debug = ["all"] if debug else []
+
     verbose = args.verbose
 
     if args.version is True:
@@ -117,6 +115,9 @@ def _main():
         if not abspath.startswith(args.fs_root):
             abspath = normpath(args.fs_root + abspath)
         workdir = abspath
+
+    from fmriprep import config
+    config.execution.debug = ["all"] if debug else []
 
     if should_run["spec-ui"]:
         from .ui import init_spec_ui

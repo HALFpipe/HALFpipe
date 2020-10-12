@@ -10,8 +10,8 @@ from functools import lru_cache
 import pandas as pd
 import numpy as np
 
-import fasteners
 from tabulate import tabulate
+from flufl.lock import Lock
 
 from ...model import entities
 
@@ -31,7 +31,7 @@ class DictListFile:
         self.filename.parent.mkdir(parents=True, exist_ok=True)
 
         lockfilename = f"{filename}.lock"
-        self.lock = fasteners.InterProcessLock(str(lockfilename))
+        self.lock = Lock(str(lockfilename))
 
         if isinstance(header, str):
             header = header.encode()
@@ -50,7 +50,7 @@ class DictListFile:
         return cls(filename, **kwargs)
 
     def __enter__(self):
-        self.lock.acquire()
+        self.lock.lock()
 
         self.dictlist = []
         self.is_dirty = False
@@ -66,7 +66,7 @@ class DictListFile:
                 jsonstr = jsonstr.replace("\\\n", "")
                 self.dictlist = json.loads(jsonstr)
             except json.decoder.JSONDecodeError as e:
-                logging.getLogger("halfpipe").warning("JSONDecodeError %s", e)
+                logger.warning("JSONDecodeError %s", e)
         return self
 
     def __exit__(self, *args):
@@ -79,7 +79,7 @@ class DictListFile:
                     fp.write("\\\n")
                 fp.write(self.footer.decode())
         try:
-            self.lock.release()
+            self.lock.unlock()
         except RuntimeError:
             pass
         self.dictlist = None

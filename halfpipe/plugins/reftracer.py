@@ -29,6 +29,7 @@ class PathReferenceTracer:
         path = self.resolve(path)
         pathset = set(path.parents)
         pathset.add(path)
+        # yield any tracked folders that contain the target path
         yield from pathset & self.black
         yield from pathset & self.grey
 
@@ -86,18 +87,19 @@ class PathReferenceTracer:
             result = node.result  # load result from file
         except Exception as ex:
             logger.info(f"Node {node} does not have result: ", ex)
+            return
 
         stack = [*findpaths(result)]
         while len(stack) > 0:
             path = self.resolve(stack.pop())
 
-            find = set(self.find(path))
+            found = set(self.find(path))
 
-            if len(find) == 0:
+            if len(found) == 0:
                 continue  # this path is not being traced, for example because it is an external file
 
-            for frompath in find:
-                self.add_ref(frompath, topath)  # add new dependencies
+            for frompath in found:
+                self.add_ref(frompath, topath)  # add result file as dependency
 
             if path.is_dir():
                 stack.extend(path.iterdir())

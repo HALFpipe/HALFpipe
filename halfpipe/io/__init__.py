@@ -5,14 +5,17 @@
 from .file import (
     DictListFile,
     IndexedFile,
-    parse_condition_file,
-    loadspreadsheet,
-    loadmatrix,
     loadpicklelzma,
     dumppicklelzma,
     make_cachefilepath,
     cacheobj,
     uncacheobj,
+)
+
+from .parse import (
+    parse_condition_file,
+    loadspreadsheet,
+    loadmatrix,
 )
 
 from .index import BidsDatabase, ExcludeDatabase, Database
