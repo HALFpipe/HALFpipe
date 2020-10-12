@@ -100,7 +100,10 @@ class NiftiheaderMetadataLoader:
             if "repetition_time" in descripdict:
                 value = descripdict["repetition_time"]
             else:
-                value = float(header.get_zooms()[3])
+                zooms = header.get_zooms()
+
+                if zooms is not None and len(zooms) >= 4:
+                    value = float(zooms[3])
 
         elif key == "echo_time":
             if "echo_time" in descripdict:
