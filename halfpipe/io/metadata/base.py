@@ -13,9 +13,9 @@ from .database import DatabaseMetadataLoader
 
 class MetadataLoader:
     def __init__(self, database):
-        self.providers = [
+        self.loaders = [
             SidecarMetadataLoader(),
-            NiftiheaderMetadataLoader(),
+            NiftiheaderMetadataLoader(self),
             DatabaseMetadataLoader(database, self),
         ]
 
@@ -24,7 +24,7 @@ class MetadataLoader:
             fileobj.metadata = dict()
         if fileobj.metadata.get("key") is not None:
             return True
-        for provider in self.providers:
-            if provider.fill(fileobj, key):
+        for loader in self.loaders:
+            if loader.fill(fileobj, key):
                 return True
         return False

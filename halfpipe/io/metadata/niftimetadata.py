@@ -15,6 +15,8 @@ from .direction import canonicalize_direction_code
 from .slicetiming import str_slice_timing
 from ...model import axis_codes, templates
 
+logger = logging.getLogger("halfpipe")
+
 template_origin_sets = {
     template: set(
         tuple(value["origin"])
@@ -30,6 +32,9 @@ class NiftiheaderMetadataLoader:
     @classmethod
     def load(cls, niftifile):
         return NiftiheaderLoader.load(niftifile)
+
+    def __init__(self, loader):
+        self.loader = loader
 
     def fill(self, fileobj, key):
         if key in fileobj.metadata:
@@ -52,13 +57,19 @@ class NiftiheaderMetadataLoader:
         if key == "slice_timing":
             try:
                 n_slices = None
-                if self.fill(fileobj, "slice_encoding_direction"):
+
+                if self.loader.fill(fileobj, "slice_encoding_direction"):
+
                     slice_encoding_direction = fileobj.metadata.get("slice_encoding_direction")
+
                     if slice_encoding_direction not in axis_codes:
                         slice_encoding_direction = canonicalize_direction_code(
                             slice_encoding_direction, fileobj.path
                         )
-                    assert slice_encoding_direction in axis_codes
+
+                    assert slice_encoding_direction in axis_codes, \
+                        f'Unknown slice_encoding_direction "{slice_encoding_direction}"'
+
                     slice_dim = ["i", "j", "k"].index(
                         slice_encoding_direction[0]
                     )
@@ -66,14 +77,16 @@ class NiftiheaderMetadataLoader:
                     n_slices = header.get_data_shape()[slice_dim]
 
                 repetition_time = None
-                if self.fill(fileobj, "repetition_time"):
-                    repetition_time = fileobj.metadata.get("repetition_time") * 1000  # needs to be in milliseconds
+                if not self.loader.fill(fileobj, "repetition_time"):
+                    logger.info(f'Could not get repetition_time for "{fileobj.path}"')
+                    return False
+                repetition_time = fileobj.metadata["repetition_time"] * 1000  # needs to be in milliseconds
 
                 nifti_slice_duration = header.get_slice_duration()
                 if n_slices is not None and repetition_time is not None:
                     slice_duration = repetition_time / n_slices
                     if nifti_slice_duration * n_slices < repetition_time - 2 * slice_duration:  # fudge factor
-                        logging.getLogger("halfpipe").info(
+                        logger.info(
                             f'Unexpected nifti slice_duration of {nifti_slice_duration:f} ms in header for file "{fileobj.path}"'
                         )
                         header.set_slice_duration(slice_duration)
@@ -102,8 +115,29 @@ class NiftiheaderMetadataLoader:
             else:
                 zooms = header.get_zooms()
 
-                if zooms is not None and len(zooms) >= 4:
-                    value = float(zooms[3])
+                if zooms is None or len(zooms) < 4:
+                    return False
+
+                value = float(zooms[3])
+
+                units = header.get_xyzt_units()
+                if units is not None and len(units) == 2:
+                    xyz_unit, t_unit = units
+
+                    if t_unit == "msec":
+                        value /= 1e3
+                    elif t_unit == "usec":
+                        value /= 1e6
+                    elif t_unit != "sec":
+                        logger.info(
+                            f'Unknown repetition_time units "{t_unit}" specified. '
+                            f'Assuming {value:f} seconds for "{fileobj.path}"'
+                        )
+                else:
+                    logger.info(
+                        f'Missing units for repetition_time. '
+                        f'Assuming {value:f} seconds for "{fileobj.path}"'
+                    )
 
         elif key == "echo_time":
             if "echo_time" in descripdict:
