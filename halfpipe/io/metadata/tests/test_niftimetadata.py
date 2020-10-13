@@ -14,7 +14,7 @@ from halfpipe.model import File
 from halfpipe.io.metadata.niftimetadata import NiftiheaderMetadataLoader
 
 
-def test_NiftiheaderMetadataLoader_3d_zooms(tmp_path):
+def test_NiftiheaderMetadataLoader_3d_repetition_time(tmp_path):
     size = (2, 3, 4)
 
     fname = str(tmp_path / "test.nii")
