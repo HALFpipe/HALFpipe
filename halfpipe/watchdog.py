@@ -5,19 +5,25 @@
 import sys
 import time
 import logging
-import threading
-import traceback
+from traceback import format_stack
+from threading import main_thread, Thread
+
+logger = logging.getLogger("halfpipe.watchdog")
 
 
-def start_watchdog_daemon():
-    def watchdog():
-        logger = logging.getLogger("halfpipe")
-        mainthread = threading.main_thread()
+class Watchdog:
+
+    def __init__(self, interval=60):
+        self.interval = interval
+
+        thread = Thread(target=self.loop, daemon=True, name="watchdog")
+        thread.start()
+
+    def loop(self):
+        mainthread = main_thread()
+
         while True:
-            time.sleep(60)
+            time.sleep(self.interval)
             frame = sys._current_frames()[mainthread.ident]
-            msg = "".join(traceback.format_stack(frame))
-            logger.info("Watchdog traceback: \n" + msg)
-
-    watchdogthread = threading.Thread(target=watchdog, daemon=True, name="watchdog")
-    watchdogthread.start()
+            stacktrace = "".join(format_stack(frame))
+            logger.info(f"Watchdog traceback: \n {stacktrace}")
