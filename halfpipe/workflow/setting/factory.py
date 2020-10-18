@@ -16,7 +16,7 @@ from .output import init_setting_output_wf
 from ..factory import Factory
 from ..bypass import init_bypass_wf
 
-from ...utils import deepcopyfactory
+from ...utils import deepcopyfactory, hexdigest
 
 alphabet = "abcdefghijklmnopqrstuvwxzy"
 
@@ -28,7 +28,7 @@ class ICAAROMAComponentsFactory(Factory):
         self.previous_factory = fmriprep_factory
 
     def setup(self):
-        prototype = init_ica_aroma_components_wf(workdir=self.workdir, memcalc=self.memcalc)
+        prototype = init_ica_aroma_components_wf(workdir=str(self.workdir), memcalc=self.memcalc)
         self.wf_name = prototype.name
         self.wf_factory = deepcopyfactory(prototype)
 
@@ -71,9 +71,10 @@ class LookupFactory(Factory):
 
         if hasattr(self.previous_factory, "by_settingname"):
             prevtpls.extend(set(self.previous_factory.by_settingname.values()))
-            _, prevsuffixes = zip(*prevtpls)
-            prevsuffixes = [s if s is not None else "" for s in prevsuffixes]
-            newsuffixes = [*map("".join, zip(prevsuffixes, alphabet))]
+
+            # 2**16 values for suffix should be sufficient to avoid collisions
+            newsuffixes = [hexdigest(tpl)[:4] for tpl in prevtpls]
+
             newsuffix_by_prevtpl = dict(zip(prevtpls, newsuffixes))
 
         suffixes = []
@@ -190,7 +191,7 @@ class ICAAROMARegressionFactory(LookupFactory):
         ica_aroma, suffix = tpl
         if ica_aroma is not True:
             return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_ica_aroma_regression_wf", suffix=suffix)
-        return init_ica_aroma_regression_wf(workdir=self.workdir, memcalc=self.memcalc, suffix=suffix)
+        return init_ica_aroma_regression_wf(workdir=str(self.workdir), memcalc=self.memcalc, suffix=suffix)
 
     def _tpl(self, setting):
         ica_aroma = setting.get("ica_aroma") is True
@@ -330,7 +331,7 @@ class SettingFactory(Factory):
         self.confounds_regression_factory.setup()
 
         for setting in self.spec.settings:
-            setting_output_wf_factory = deepcopyfactory(init_setting_output_wf(workdir=self.workdir, settingname=setting["name"]))
+            setting_output_wf_factory = deepcopyfactory(init_setting_output_wf(workdir=str(self.workdir), settingname=setting["name"]))
 
             if setting.get("output_image") is not True:
                 continue  # create lazily in FeatureFactory
