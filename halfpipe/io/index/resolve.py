@@ -109,6 +109,9 @@ class ResolvedSpec:
                 if not extension.startswith("."):
                     filedict["extension"] = f".{extension}"
 
+            if filedict["datatype"] is None:
+                continue  # catch README and dataset_description.json etc
+
             # TODO IntendedFor
 
             try:
