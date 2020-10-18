@@ -16,7 +16,7 @@ from .output import init_setting_output_wf
 from ..factory import Factory
 from ..bypass import init_bypass_wf
 
-from ...utils import deepcopyfactory, hexdigest
+from ...utils import deepcopyfactory, b32digest
 
 alphabet = "abcdefghijklmnopqrstuvwxzy"
 
@@ -73,7 +73,7 @@ class LookupFactory(Factory):
             prevtpls.extend(set(self.previous_factory.by_settingname.values()))
 
             # 2**16 values for suffix should be sufficient to avoid collisions
-            newsuffixes = [hexdigest(tpl)[:4] for tpl in prevtpls]
+            newsuffixes = [b32digest(tpl)[:4] for tpl in prevtpls]
 
             newsuffix_by_prevtpl = dict(zip(prevtpls, newsuffixes))
 

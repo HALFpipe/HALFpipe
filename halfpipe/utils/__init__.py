@@ -4,7 +4,7 @@
 
 from .copy import deepcopyfactory, deepcopy
 from .format import formatlist, cleaner, formatlikebids
-from .hash import hexdigest
+from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol
 from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach
@@ -20,7 +20,7 @@ __all__ = [
     inflect_engine,
     deepcopyfactory, deepcopy,
     formatlist, cleaner, formatlikebids,
-    hexdigest,
+    hexdigest, b32digest,
     niftidim, nvol,
     loadints, ncol,
     first, second, firstfloat, firststr, ravel, removenone, lenforeach,

@@ -4,9 +4,19 @@
 
 
 def hexdigest(obj):
-    import hashlib
+    from hashlib import sha1
     import json
 
-    m = hashlib.sha1()
+    m = sha1()
     m.update(json.dumps(obj, sort_keys=True).encode())
     return m.hexdigest()
+
+
+def b32digest(obj):
+    from hashlib import sha1
+    import json
+    from base64 import b32encode
+
+    m = sha1()
+    m.update(json.dumps(obj, sort_keys=True).encode())
+    return b32encode(m.digest()).decode("utf-8").replace("=", "").lower()

@@ -13,7 +13,7 @@ import networkx as nx
 import nipype.pipeline.engine as pe
 
 from ..interface import LoadResult
-from ..utils import hexdigest
+from ..utils import b32digest
 from ..io import IndexedFile, DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
@@ -108,8 +108,8 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
         newu = newnodes.get(u.fullname)
         if newu is None:
-            uhex = hexdigest(u.fullname)[:8]
-            newu = pe.Node(LoadResult(u), name=f"loadresult_{uhex}", base_dir=modeldir)
+            udigest = b32digest(u.fullname)[:8]
+            newu = pe.Node(LoadResult(u), name=f"loadresult_{udigest}", base_dir=modeldir)
             newu.config = u.config
             newnodes[u.fullname] = newu
 

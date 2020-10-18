@@ -6,7 +6,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
 from ...interface import SelectColumns, FilterRegressor, FillNA
-from ...utils import hexdigest
+from ...utils import b32digest
 
 from ..memory import MemoryCalculator
 
@@ -14,7 +14,7 @@ from ..memory import MemoryCalculator
 def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     if name is None:
         if confound_names is not None:
-            name = f"confounds_select_{hexdigest(confound_names)[:8]}_wf"
+            name = f"confounds_select_{b32digest(confound_names)[:4]}_wf"
         else:
             name = "confounds_select_wf"
     if suffix is not None:
