@@ -93,11 +93,11 @@ def parse_args(args=None, namespace=None):
 
     from ..logging import Context as LoggingContext
 
-    LoggingContext.setsilent(silent=False)
+    LoggingContext.enablePrint()
 
     debug = opts.debug
     if debug:
-        LoggingContext.enabledebug()
+        LoggingContext.enableDebug()
 
     from fmriprep import config
 
@@ -105,7 +105,7 @@ def parse_args(args=None, namespace=None):
 
     verbose = opts.verbose
     if verbose:
-        LoggingContext.enableverbose()
+        LoggingContext.enableVerbose()
 
     should_run = {step: True for step in steps}
 
@@ -129,6 +129,7 @@ def parse_args(args=None, namespace=None):
             abspath = normpath(opts.fs_root + abspath)
         workdir = abspath
 
-        LoggingContext.setworkdir(workdir)
+        LoggingContext.setWorkdir(workdir)
+    opts.workdir = workdir
 
     return opts, should_run

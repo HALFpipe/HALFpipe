@@ -12,16 +12,18 @@ from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 
 from .reftracer import PathReferenceTracer
-from ..logging import setup_logging
-from ..watchdog import start_watchdog_daemon
+from ..logging import Context
 
 logger = logging.getLogger("nipype.workflow")
 
 
-def initializer(workdir, debug, verbose, watchdog):
-    setup_logging(workdir, debug=debug, verbose=verbose)
+def initializer(workdir, loggingargs, watchdog):
+    from ..logging import setup as setuplogging
+    setuplogging(**loggingargs)
+
     if watchdog is True:
-        start_watchdog_daemon()
+        from ..watchdog import Watchdog
+        Watchdog()
 
     os.chdir(workdir)
 
@@ -54,15 +56,15 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._cwd,
         )
 
-        debug = plugin_args.get("debug", False)
-        verbose = plugin_args.get("verbose", False)
-        watchdog = plugin_args.get("watchdog", False)
-
         mp_context = mp.get_context("forkserver")  # force forkserver
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
             initializer=initializer,
-            initargs=(self._cwd, debug, verbose, watchdog),
+            initargs=(
+                self._cwd,
+                Context.loggingargs(),
+                plugin_args.get("watchdog", False),
+            ),
             mp_context=mp_context,
         )
 

@@ -13,9 +13,9 @@ def run(opts, should_run):
     workdir = opts.workdir
     if workdir is not None:
         workdir = Path(workdir)
-        if not workdir.is_dir():
-            workdir.mkdir(exist_ok=True, parents=True)
+        workdir.mkdir(exist_ok=True, parents=True)
 
+    logger.info(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:
         from ..ui import init_spec_ui
         from calamities.config import config as calamities_config
@@ -34,29 +34,23 @@ def run(opts, should_run):
         )
 
     from .. import __version__
-    logger.info(f"Version: {__version__}")
-
-    logger.info(f"Debug: {opts.debug}")
+    logger.info(f"halfpipe.__version__={__version__}")
+    logger.info(f"debug={opts.debug}")
 
     if opts.watchdog is True:
         from ..watchdog import Watchdog
 
         Watchdog()
 
-    if not should_run["spec-ui"]:
-        logger.info("Did not run step: spec-ui")
-
     execgraphs = None
 
-    if not should_run["workflow"]:
-        logger.info("Did not run step: workflow")
-    else:
-        logger.info("Running step: workflow")
+    logger.info(f'should_run["workflow"]={should_run["workflow"]}')
+    if should_run["workflow"]:
         from fmriprep import config
 
         if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
             config.nipype.omp_nthreads = opts.nipype_omp_nthreads
-            logger.info(f"Using config.nipype.omp_nthreads={config.nipype.omp_nthreads} from args")
+            omp_nthreads_origin = "command line arguments"
 
         else:  # default value
             if opts.use_cluster:
@@ -70,7 +64,9 @@ def run(opts, should_run):
                     omp_nthreads = 8
                 config.nipype.omp_nthreads = omp_nthreads
 
-            logger.info(f"Inferred config.nipype.omp_nthreads={config.nipype.omp_nthreads}")
+            omp_nthreads_origin = "inferred"
+
+        logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
 
         from ..workflow import init_workflow, init_execgraph
 
@@ -183,10 +179,14 @@ def run(opts, should_run):
 
 
 def main():
+    from ..logging import (
+        setupcontext as setuplogging,
+        teardown as teardownlogging
+    )
+
     debug = False
 
     try:
-        from ..logging import setup as setuplogging
         setuplogging()
 
         from .parser import parse_args
@@ -196,12 +196,12 @@ def main():
 
         run(opts, should_run)
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger("halfpipe")
+        print(e)
         logger.exception("Exception: %s", e)
 
         if debug:
             import pdb
 
             pdb.post_mortem()
+    finally:
+        teardownlogging()

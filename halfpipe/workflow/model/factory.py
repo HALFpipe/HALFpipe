@@ -48,7 +48,7 @@ class ModelFactory(Factory):
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
 
-        kwargs = dict(model=model, variables=variables, workdir=self.workdir, memcalc=self.memcalc)
+        kwargs = dict(model=model, variables=variables, workdir=str(self.workdir), memcalc=self.memcalc)
         vwf = init_model_wf(numinputs=len(inputs), **kwargs)
         wf.add_nodes([vwf])
         hierarchy.append(vwf)

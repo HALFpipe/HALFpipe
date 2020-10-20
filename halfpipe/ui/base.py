@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-from os import path as op
 from pathlib import Path
 import logging
 
@@ -21,7 +20,7 @@ from .step import Step
 from .. import __version__
 from ..model import SpecSchema, loadspec, savespec
 from ..io import Database
-from ..logger import Logger
+from ..logging import Context as LoggingContext
 
 from .file import BidsStep
 from .feature import FeaturesStep
@@ -122,6 +121,7 @@ class WorkingDirectoryStep(Step):
     def setup(self, ctx):
         self.predefined_workdir = True
         self.is_first_run = True
+
         if ctx.workdir is None:
             self._append_view(TextView("Specify working directory"))
             self.workdir_input_view = DirectoryInputView(exists=False)
@@ -135,16 +135,19 @@ class WorkingDirectoryStep(Step):
         else:
             workdir = self.workdir_input_view()
             try:
-                os.makedirs(workdir, exist_ok=True)
+                workdir = Path(workdir)
+                workdir.mkdir(parents=True, exist_ok=True)
                 ctx.workdir = workdir
                 return True
             except Exception:
                 return False
 
     def next(self, ctx):
-        if ctx.workdir is not None and op.isdir(ctx.workdir):
-            if not Logger.is_setup:
-                Logger.setup(ctx.workdir, debug=ctx.debug)
+        if ctx.workdir is not None:
+            assert isinstance(ctx.workdir, Path)
+            assert ctx.workdir.is_dir()
+            LoggingContext.setWorkdir(ctx.workdir)
+
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
             return UseExistingSpecStep(self.app)(ctx)
@@ -176,11 +179,13 @@ class FirstStep(Step):
 
 
 def init_spec_ui(workdir=None, debug=False):
-    fs_root = calamities_config.fs_root
+    LoggingContext.disablePrint()
+
+    fs_root = Path(calamities_config.fs_root)
 
     cur_dir = str(Path.cwd())
-    new_dir = op.join(fs_root, cur_dir[1:])
-    if op.isdir(new_dir):
+    new_dir = fs_root / cur_dir[1:]
+    if new_dir.is_dir():
         os.chdir(new_dir)
     else:
         os.chdir(fs_root)
@@ -193,6 +198,8 @@ def init_spec_ui(workdir=None, debug=False):
 
     with app:
         ctx = FirstStep(app)(ctx)
+
+    LoggingContext.enablePrint()
 
     if ctx is not None:
         assert ctx.workdir is not None

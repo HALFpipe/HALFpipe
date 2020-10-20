@@ -77,7 +77,7 @@ class FmriprepFactory(Factory):
             {
                 "bids_dir": bids_dir,
                 "output_dir": output_dir,
-                "log_dir": workdir,
+                "log_dir": str(workdir),
                 "participant_label": bidssubjects,
                 "ignore": ignore,
                 "use_aroma": False,
@@ -113,7 +113,7 @@ class FmriprepFactory(Factory):
         workflow.add_nodes([fmriprep_wf])
 
         # halfpipe-specific report workflows
-        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=self.workdir, memcalc=self.memcalc))
+        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(self.workdir), memcalc=self.memcalc))
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
 
@@ -128,7 +128,7 @@ class FmriprepFactory(Factory):
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
-        func_report_wf_factory = deepcopyfactory(init_func_report_wf(workdir=self.workdir, memcalc=self.memcalc))
+        func_report_wf_factory = deepcopyfactory(init_func_report_wf(workdir=str(self.workdir), memcalc=self.memcalc))
         for boldfilepath in boldfilepaths:
             hierarchy = self._get_hierarchy("reports_wf", sourcefile=boldfilepath)
 

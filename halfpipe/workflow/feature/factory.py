@@ -67,7 +67,7 @@ class FeatureFactory(Factory):
         database = self.database
 
         vwf = None
-        kwargs = dict(feature=feature, workdir=self.workdir, memcalc=self.memcalc)
+        kwargs = dict(feature=feature, workdir=str(self.workdir), memcalc=self.memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
 
