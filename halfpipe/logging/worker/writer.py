@@ -11,8 +11,6 @@ from pathlib import Path
 
 from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, sleep
 
-from concurrent.futures import ThreadPoolExecutor
-
 from flufl.lock import Lock
 
 from .message import Message
@@ -43,43 +41,42 @@ class Writer:
     async def start(self):
         loop = get_running_loop()
 
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            try:
-                while True:
-                    await self.canWrite.wait()
+        try:
+            while True:
+                await self.canWrite.wait()
 
-                    if not self.check():
-                        self.canWrite.clear()
+                if not self.check():
+                    self.canWrite.clear()
 
-                        continue
+                    continue
 
-                    try:
-                        message = await self.queue.get()
+                try:
+                    message = await self.queue.get()
 
-                        if not self.filterMessage(message):
-                            continue  # avoid acquiring the lock
+                    if not self.filterMessage(message):
+                        continue  # avoid acquiring the lock
 
-                        await loop.run_in_executor(pool, self.acquire)
+                    await loop.run_in_executor(None, self.acquire)
 
-                        while True:
-                            if not self.filterMessage(message):
-                                continue
+                    while True:
+                        if self.filterMessage(message):
+                            await loop.run_in_executor(
+                                None, self.emit, message.msg, message.levelno
+                            )
 
-                            await loop.run_in_executor(pool, self.emit, message.msg, message.levelno)
+                        try:  # handle any other records while we have the lock
+                            message = self.queue.get_nowait()
+                        except QueueEmpty:
+                            break
 
-                            try:  # handle any other records while we have the lock
-                                message = self.queue.get_nowait()
-                            except QueueEmpty:
-                                break
+                    await loop.run_in_executor(None, self.release)
 
-                        await loop.run_in_executor(pool, self.release)
+                    await sleep(1.0)  # rate limit
+                except Exception:
+                    self.canWrite.clear()
 
-                        await sleep(1.0)  # rate limit
-                    except Exception:
-                        self.canWrite.clear()
-
-            except CancelledError:
-                pass
+        except CancelledError:
+            pass
 
     def check(self) -> bool:
         return True
@@ -97,14 +94,14 @@ class Writer:
 
 class PrintWriter(Writer):
     def emit(self, msg: str, levelno: int):
-        if levelno >= logging.WARNING:
-            sys.stderr.write(msg + self.terminator)
-        else:
-            sys.stdout.write(msg + self.terminator)
+        # if levelno >= logging.WARNING:
+        #     sys.stderr.write(msg + self.terminator)
+        # else:
+        sys.stdout.write(msg + self.terminator)
 
     def release(self):
         sys.stdout.flush()
-        sys.stderr.flush()
+        # sys.stderr.flush()
 
 
 class FileWriter(Writer):

@@ -32,33 +32,49 @@ class Formatter(logging.Formatter):
 
     def format(self, record):
         formatted = super(Formatter, self).format(record)
+
         lines = formatted.splitlines(True)
+
+        lines = [line for line in lines if line.strip("\r\n\t ")]  # remove empty lines
+
         if len(lines) == 0 or len(lines) == 1:
             return formatted
+
         else:
-            line = lines[0]
-            lines[0] = f"{line}"
+
+            lines[0] = f"{lines[0]}"
             for i in range(1, len(lines) - 1):
-                line = lines[i]
-                lines[i] = f"│ {line}"
-            line = lines[-1]
-            lines[-1] = f"└─{line}"
+                lines[i] = f"│ {lines[i]}"
+
+            lines[-1] = f"└─{lines[-1]}"
+
+            if lines[-1][-1] == "\n":
+                lines[-1] = lines[-1][:-1]
+
             return "".join(lines)
 
 
 class ColorFormatter(Formatter):
     def format(self, record):
         formatted = super(ColorFormatter, self).format(record)
+
         levelname = record.levelname
+
         if levelname in colors:
             color = colors[levelname]
+
             lines = formatted.splitlines(True)
+
             for i in range(len(lines)):
                 line = lines[i]
+
                 newlinechr = ""
                 if line[-1] == "\n":
                     newlinechr = line[-1]
                     line = line[:-1]
+
                 lines[i] = f"{color}{line}{fillseq}{resetseq}{newlinechr}"
+
             return "".join(lines)
+
         return formatted

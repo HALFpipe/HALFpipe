@@ -15,8 +15,10 @@ def run(opts, should_run):
         workdir = Path(workdir)
         workdir.mkdir(exist_ok=True, parents=True)
 
-    logger.info(f'should_run["spec-ui"]={should_run["spec-ui"]}')
+    logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:
+        logger.info("Stage: spec-ui")
+
         from ..ui import init_spec_ui
         from calamities.config import config as calamities_config
 
@@ -34,18 +36,22 @@ def run(opts, should_run):
         )
 
     from .. import __version__
-    logger.info(f"halfpipe.__version__={__version__}")
-    logger.info(f"debug={opts.debug}")
+
+    logger.info(f"Halfpipe version {__version__}")
+
+    logger.debug(f"debug={opts.debug}")
 
     if opts.watchdog is True:
-        from ..watchdog import Watchdog
+        from ..watchdog import init_watchdog
 
-        Watchdog()
+        init_watchdog()
 
     execgraphs = None
 
-    logger.info(f'should_run["workflow"]={should_run["workflow"]}')
+    logger.debug(f'should_run["workflow"]={should_run["workflow"]}')
     if should_run["workflow"]:
+        logger.info("Stage: workflow")
+
         from fmriprep import config
 
         if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
@@ -84,10 +90,12 @@ def run(opts, should_run):
 
             create_example_script(workdir, execgraphs)
 
-    if not should_run["run"] or opts.use_cluster:
-        logger.info("Did not run step: run")
-    else:
-        logger.info("Running step: run")
+    logger.debug(f'should_run["run"]={should_run["run"]}')
+    logger.debug(f"opts.use_cluster={opts.use_cluster}")
+
+    if should_run["run"] or not opts.use_cluster:
+        logger.info("Stage: run")
+
         if execgraphs is None:
             from ..io import loadpicklelzma
 
@@ -127,23 +135,29 @@ def run(opts, should_run):
                 plugin_args["memory_gb"] = memory_gb
 
         runnername = f"{opts.nipype_run_plugin}Plugin"
+
         if hasattr(ppp, runnername):
             logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
             runnercls = getattr(ppp, runnername)
+
         elif hasattr(nip, runnername):
             logger.warning(f'Using unsupported nipype_run_plugin "{runnername}"')
             runnercls = getattr(nip, runnername)
+
         else:
             raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
+
         logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
         execgraphstorun = []
+
         if len(execgraphs) > 1:
             n_subjectlevel_chunks = len(execgraphs) - 1
             if opts.only_model_chunk:
                 logger.info("Will not run subject level chunks")
                 logger.info("Will run model chunk")
                 execgraphstorun.append(execgraphs[-1])
+
             elif opts.only_chunk_index is not None:
                 zerobasedchunkindex = opts.only_chunk_index - 1
                 assert zerobasedchunkindex < n_subjectlevel_chunks
@@ -152,12 +166,15 @@ def run(opts, should_run):
                 )
                 logger.info("Will not run model chunk")
                 execgraphstorun.append(execgraphs[zerobasedchunkindex])
+
             else:
                 logger.info(f"Will run all {n_subjectlevel_chunks} subject level chunks")
                 logger.info("Will run model chunk")
                 execgraphstorun.extend(execgraphs)
+
         elif len(execgraphs) == 1:
             execgraphstorun.append(execgraphs[0])
+
         else:
             raise ValueError("No execgraphs")
 
@@ -167,13 +184,16 @@ def run(opts, should_run):
 
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
+
             try:
                 runner = runnercls(plugin_args=plugin_args)
                 firstnode = first(execgraph.nodes())
                 if firstnode is not None:
                     runner.run(execgraph, updatehash=False, config=firstnode.config)
+
             except Exception as e:
                 logger.warning(f"Ignoring exception in chunk {i+1}: %s", e)
+
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
 
@@ -196,7 +216,6 @@ def main():
 
         run(opts, should_run)
     except Exception as e:
-        print(e)
         logger.exception("Exception: %s", e)
 
         if debug:

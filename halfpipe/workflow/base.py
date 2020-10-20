@@ -46,7 +46,7 @@ def init_workflow(workdir):
     workflow = pe.Workflow(name=constants.workflowdir, base_dir=workdir)
     workflow.uuid = uuid
     uuidstr = str(uuid)[:8]
-    logger.info(f"Initializing new workflow: {uuidstr}")
+    logger.info(f"Initializing new workflow {uuidstr}")
     workflow.config["execution"].update(
         {
             "crashdump_dir": workflow.base_dir,
@@ -100,7 +100,7 @@ def init_workflow(workdir):
         if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
             node._mem_gb = memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
 
-    logger.info(f"Finished workflow: {uuidstr}")
+    logger.info(f"Finished workflow {uuidstr}")
 
     cacheobj(workdir, "workflow", workflow)
     return workflow

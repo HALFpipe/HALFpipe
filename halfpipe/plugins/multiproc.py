@@ -22,8 +22,9 @@ def initializer(workdir, loggingargs, watchdog):
     setuplogging(**loggingargs)
 
     if watchdog is True:
-        from ..watchdog import Watchdog
-        Watchdog()
+        from ..watchdog import init_watchdog
+
+        init_watchdog()
 
     os.chdir(workdir)
 

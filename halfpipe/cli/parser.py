@@ -102,6 +102,11 @@ def parse_args(args=None, namespace=None):
 
         setuplogging(LoggingContext.queue(), levelno=logging.DEBUG)
 
+    if opts.watchdog is True:
+        from ..watchdog import init_watchdog
+
+        init_watchdog()
+
     from fmriprep import config
 
     config.execution.debug = ["all"] if debug else []

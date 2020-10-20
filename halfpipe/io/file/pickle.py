@@ -5,6 +5,7 @@
 import logging
 import lzma
 import pickle
+from traits.trait_errors import TraitError
 from pathlib import Path
 
 
@@ -14,6 +15,8 @@ def loadpicklelzma(filepath):
             return pickle.load(fptr)
     except lzma.LZMAError:
         pass
+    except TraitError:
+        pass  # this can happen when trait type checks are re-run during unpickling
 
 
 def dumppicklelzma(filepath, obj):
