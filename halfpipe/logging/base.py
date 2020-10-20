@@ -47,12 +47,15 @@ def setup(queue, levelno=logging.INFO):
         logger.propagate = False
 
     queuehandler = QueueHandler(queue)
-    queuehandler.setLevel(levelno)
     queuehandler.setFormatter(ColorFormatter())
 
     for loggername in loggernames:
         logger = logging.getLogger(loggername)
         logger.addHandler(queuehandler)
+
+    for loggername in loggernames:
+        logger = logging.getLogger(loggername)
+        logger.setLevel(levelno)
 
     logging.getLogger("nipype.interface").addFilter(DTypeWarningsFilter())
     logging.getLogger("py.warnings").addFilter(PyWarningsFilter())

@@ -2,14 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import sys
-
 import logging
-from pathlib import Path
-from multiprocessing import SimpleQueue
+from multiprocessing import get_context
 from threading import RLock
 
-from .worker import Worker, MessageSchema
+from .worker import run as runWorker, MessageSchema
 
 schema = MessageSchema()
 
@@ -31,8 +28,8 @@ class Context(object):
     def teardown(cls):
         with cls._instance_rlock:
             if cls._instance is not None:
-                # cls._instance.loop.teardown()
-                pass
+                obj = schema.dump({"type": "teardown"})
+                cls.queue().put(obj)
 
     @classmethod
     def queue(cls):
@@ -42,12 +39,8 @@ class Context(object):
     def loggingargs(cls):
         return dict(
             queue=cls.queue(),
-            levelno=logging.getLogger("halfpipe").handlers[0].level
+            levelno=logging.getLogger("halfpipe").level
         )
-
-    @classmethod
-    def enableDebug(cls):
-        pass
 
     @classmethod
     def enableVerbose(cls):
@@ -70,19 +63,9 @@ class Context(object):
         cls.queue().put(obj)
 
     def __init__(self):
-        self.queue = SimpleQueue()
+        ctx = get_context("forkserver")
 
-        worker = Worker(self.queue)
+        self.queue = ctx.SimpleQueue()
+
+        worker = ctx.Process(target=runWorker, args=(self.queue,))
         worker.start()
-
-        # self.stdoutwriter = StreamWriter(queuepublisher, sys.stdout)
-        # queuepublisher.subscribe(self.stdoutwriter.queue, 25)
-        # self.loop.run_coroutine_threadsafe(self.stdoutwriter.start)
-
-        # self.logtxthandler = FileWriter()
-        # queuepublisher.subscribe(self.logtxthandler.queue, logging.DEBUG)
-        # self.loop.run_coroutine_threadsafe(self.logtxthandler.start)
-
-        # self.errtxthandler = FileWriter()
-        # queuepublisher.subscribe(self.errtxthandler.queue, logging.WARNING)
-        # self.loop.run_coroutine_threadsafe(self.errtxthandler.start)

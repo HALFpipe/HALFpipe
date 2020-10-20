@@ -97,7 +97,10 @@ def parse_args(args=None, namespace=None):
 
     debug = opts.debug
     if debug:
-        LoggingContext.enableDebug()
+        import logging
+        from ..logging import setup as setuplogging
+
+        setuplogging(LoggingContext.queue(), levelno=logging.DEBUG)
 
     from fmriprep import config
 
