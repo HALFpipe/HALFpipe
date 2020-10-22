@@ -61,7 +61,7 @@ class MakeDofVolume(BaseInterface):
 
         outimg = new_img_like(ref_img, outarr, copy_header=True)
 
-        self._out_file = op.abspath(f"dof_file.nii.gz")
+        self._out_file = op.abspath("dof_file.nii.gz")
         nib.save(outimg, self._out_file)
 
         return runtime

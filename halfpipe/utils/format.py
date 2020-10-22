@@ -3,10 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def formatlist(l):
+def formatlist(in_list):
     from halfpipe.utils import inflect_engine
 
-    return inflect_engine.join([f'"{v}"' for v in l], conj="or")
+    return inflect_engine.join([f'"{v}"' for v in in_list], conj="or")
 
 
 def cleaner(name):

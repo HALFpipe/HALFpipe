@@ -95,7 +95,7 @@ class BoldStep(FilePatternStep):
 
 
 class FirstBoldStep(BoldStep):
-    header_str = f"Specify functional data"
+    header_str = "Specify functional data"
 
 
 HasMoreBoldStep.yes_step_type = BoldStep

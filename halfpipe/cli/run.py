@@ -190,8 +190,6 @@ def run(opts, should_run):
                 firstnode = first(execgraph.nodes())
                 if firstnode is not None:
                     runner.run(execgraph, updatehash=False, config=firstnode.config)
-
-                import pdb; pdb.set_trace()
             except Exception as e:
                 logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
 

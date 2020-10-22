@@ -28,7 +28,7 @@ def add_setting_adapter(workflow):
 
 
 def init_setting_adapter_wf(suffix=None):
-    name = f"setting_adapter_wf"
+    name = "setting_adapter_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)

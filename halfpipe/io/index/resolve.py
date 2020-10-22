@@ -13,13 +13,13 @@ import marshmallow.exceptions
 
 from calamities.pattern import tag_glob, tag_parse, get_entities_in_path
 
-import bids
-
-bids.config.set_option("extension_initial_dot", True)  # noqa
-from bids import BIDSLayout
-
 from ...model import FileSchema, entities, entity_longnames
 from ...utils import splitext
+
+import bids
+
+bids.config.set_option("extension_initial_dot", True)
+from bids import BIDSLayout  # noqa: E402
 
 file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}

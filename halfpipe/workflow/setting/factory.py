@@ -250,7 +250,7 @@ class ConfoundsSelectFactory(LookupFactory):
             return init_bypass_wf(
                 attrs=["bold", "confounds", "mask", "vals"],
                 unconnected_attrs=["confounds_matrix"],
-                name=f"no_confounds_select_wf",
+                name="no_confounds_select_wf",
                 suffix=suffix
             )
         return init_confounds_select_wf(confound_names=list(confound_names), suffix=suffix)
@@ -271,7 +271,7 @@ class ConfoundsRegressionFactory(LookupFactory):
         if has_confounds is not True:
             return init_bypass_wf(
                 attrs=["bold", "confounds_selected", "confounds", "mask", "vals"],
-                name=f"no_confounds_regression_wf",
+                name="no_confounds_regression_wf",
                 suffix=suffix
             )
         return init_confounds_regression_wf(memcalc=self.memcalc, suffix=suffix)

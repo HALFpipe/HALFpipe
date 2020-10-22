@@ -107,7 +107,7 @@ class IndexedFile:
                 fp.write(f'    "{valuekeyname}": '.encode())
                 indexdict[keytupls] = fp.tell()
                 fp.write(placeholder)
-                fp.write(f" \\\n".encode())
+                fp.write(" \\\n".encode())
                 fp.write("  }".encode())
             fp.write(" \\\n]');\n".encode())
         index_file = f"{filename}.index.pickle.xz"

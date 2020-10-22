@@ -119,7 +119,7 @@ class FeatureTypeStep(Step):
 
 
 class FeaturesStep(YesNoStep):
-    header_str = f"Specify first-level features?"
+    header_str = "Specify first-level features?"
     yes_step_type = FeatureTypeStep
     no_step_type = ImageOutputStep
 

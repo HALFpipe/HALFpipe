@@ -18,7 +18,7 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator(), name=None, suffix=N
         if fwhm is not None:
             name = f"smoothing_{int(float(fwhm) * 1e3):d}_wf"
         else:
-            name = f"smoothing_wf"
+            name = "smoothing_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"
 

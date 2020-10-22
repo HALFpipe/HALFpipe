@@ -144,7 +144,7 @@ class AcqToTaskMappingStep(Step):
 
 
 class HasMoreFmapStep(YesNoStep):
-    header_str = f"Add more field maps?"
+    header_str = "Add more field maps?"
     yes_step_type = None  # add later, because not yet defined
     no_step_type = AcqToTaskMappingStep
 
@@ -273,7 +273,7 @@ class FmapTypeStep(BranchStep):
 
 
 class HasFmapStep(YesNoStep):
-    header_str = f"Specify field maps?"
+    header_str = "Specify field maps?"
     yes_step_type = FmapTypeStep
     no_step_type = next_step_type
 

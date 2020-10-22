@@ -18,7 +18,7 @@ def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator(), name=None,
             mean = float(mean)
             name = f"grand_mean_scaling_{int(mean):d}_wf"
         else:
-            name = f"grand_mean_scaling_wf"
+            name = "grand_mean_scaling_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"
 

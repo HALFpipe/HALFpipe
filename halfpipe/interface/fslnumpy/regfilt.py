@@ -54,7 +54,7 @@ def regfilt(array, design, comps, calculate_mask=True, aggressive=False):
 
     # dofilter
 
-    logging.getLogger("halfpipe").info(f"Calculating maps")
+    logging.getLogger("halfpipe").info("Calculating maps")
 
     unmix_matrix = np.linalg.pinv(design)
     maps = unmix_matrix @ data
@@ -62,7 +62,7 @@ def regfilt(array, design, comps, calculate_mask=True, aggressive=False):
     noisedes = design[:, zero_based_comps]
     noisemaps = maps[zero_based_comps, :].T
 
-    logging.getLogger("halfpipe").info(f"Calculating filtered data")
+    logging.getLogger("halfpipe").info("Calculating filtered data")
 
     if aggressive:
         new_data = data - noisedes @ (np.linalg.pinv(noisedes) @ data)
