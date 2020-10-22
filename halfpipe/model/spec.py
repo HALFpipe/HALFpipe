@@ -142,7 +142,7 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
     if not op.isfile(specpath):
         return
 
-    logger.info(f"Loading spec file: {specpath}")
+    logger.info(f"Loading spec file {specpath}")
     with open(specpath, "r") as f:
         jsn = f.read()
 

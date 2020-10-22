@@ -37,7 +37,7 @@ def uncacheobj(workdir, typestr, uuid, typedisplaystr=None):
             objuuid = getattr(obj, "uuid")
             if objuuid is None or objuuid != uuid:
                 return
-        logging.getLogger("halfpipe").info(f"Using cached {typedisplaystr} from {path}")
+        logging.getLogger("halfpipe").info(f"Cached {typedisplaystr} from {path}")
         return obj
 
 

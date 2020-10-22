@@ -191,8 +191,12 @@ def run(opts, should_run):
                 if firstnode is not None:
                     runner.run(execgraph, updatehash=False, config=firstnode.config)
 
+                import pdb; pdb.set_trace()
             except Exception as e:
-                logger.warning(f"Ignoring exception in chunk {i+1}: %s", e)
+                logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
+
+                if opts.debug:
+                    raise e
 
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
@@ -216,7 +220,7 @@ def main():
 
         run(opts, should_run)
     except Exception as e:
-        logger.exception("Exception: %s", e)
+        logger.exception("Exception: %s", e, exc_info=True)
 
         if debug:
             import pdb
@@ -224,3 +228,11 @@ def main():
             pdb.post_mortem()
     finally:
         teardownlogging()
+
+        # clean up orphan processes
+
+        from multiprocessing import get_context
+
+        ctx = get_context("forkserver")
+        for p in ctx.active_children():
+            p.terminate()

@@ -5,6 +5,7 @@
 
 def findpaths(obj):
     from pathlib import Path
+    from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
 
     paths = []
@@ -13,7 +14,9 @@ def findpaths(obj):
         obj = stack.pop()
         if isinstance(obj, InterfaceResult):
             stack.append(obj.inputs)
-            stack.append(obj.outputs.__dict__)
+            stack.append(obj.outputs)
+        elif isinstance(obj, BaseTraitedSpec):
+            stack.append(obj.get_traitsfree())
         elif isinstance(obj, dict):
             stack.extend(obj.values())
         elif isinstance(obj, str):

@@ -37,10 +37,10 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     execgraph = uncacheobj(workdir, "execgraph", uuid)
     if execgraph is None:
         # create execgraph
-        logger.info(f"Initializing new execgraph: {uuidstr}")
+        logger.info(f"Initializing new execgraph {uuidstr}")
         execgraph = workflow.run(plugin=DontRunRunner())
         execgraph.uuid = uuid
-        logger.info(f"Finished execgraph: {uuidstr}")
+        logger.info(f"Finished execgraph {uuidstr}")
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     # init reports

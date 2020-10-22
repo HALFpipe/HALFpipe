@@ -54,6 +54,7 @@ class Writer:
                     message = await self.queue.get()
 
                     if not self.filterMessage(message):
+                        self.queue.task_done()
                         continue  # avoid acquiring the lock
 
                     await loop.run_in_executor(None, self.acquire)
@@ -63,6 +64,7 @@ class Writer:
                             await loop.run_in_executor(
                                 None, self.emit, message.msg, message.levelno
                             )
+                        self.queue.task_done()
 
                         try:  # handle any other records while we have the lock
                             message = self.queue.get_nowait()

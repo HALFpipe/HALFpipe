@@ -70,6 +70,10 @@ async def listen(queue):
             printWriter.canWrite.clear()
 
         elif message.type == "teardown":
+            # make sure that all writers have finished writing
+            await gather(*[subscriber.join() for subscriber in subscribers])
+
+            # then cancel all tasks
             tasks = [t for t in all_tasks() if t is not current_task()]
 
             [task.cancel() for task in tasks]
@@ -78,3 +82,5 @@ async def listen(queue):
             loop.stop()
 
             break
+
+        queue.task_done()

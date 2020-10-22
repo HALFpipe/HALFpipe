@@ -28,8 +28,15 @@ class Context(object):
     def teardown(cls):
         with cls._instance_rlock:
             if cls._instance is not None:
+                # wait for queue to empty
+                cls.queue().join()
+
+                # send message with teardown command
                 obj = schema.dump({"type": "teardown"})
                 cls.queue().put(obj)
+
+                # wait up to one second
+                cls.instance().worker.join(1.0)
 
     @classmethod
     def queue(cls):
@@ -65,7 +72,7 @@ class Context(object):
     def __init__(self):
         ctx = get_context("forkserver")
 
-        self.queue = ctx.SimpleQueue()
+        self.queue = ctx.JoinableQueue()
 
-        worker = ctx.Process(target=runWorker, args=(self.queue,))
-        worker.start()
+        self.worker = ctx.Process(target=runWorker, args=(self.queue,))
+        self.worker.start()

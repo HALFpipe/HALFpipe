@@ -14,11 +14,13 @@ fillseq = "\x1b[K"
 colorseq = "\x1b[{:d};{:d}m"
 redseq = colorseq.format(30 + white, 40 + red)
 yellowseq = colorseq.format(30 + black, 40 + yellow)
+greenseq = colorseq.format(30 + white, 40 + green)
 blueseq = colorseq.format(30 + white, 40 + blue)
+greyseq = colorseq.format(30 + white, 100 + black)
 colors = {
-    "DEBUG": blueseq,
+    "DEBUG": greyseq,
     "INFO": blueseq,
-    "IMPORTANT": yellowseq,
+    "IMPORTANT": greenseq,
     "WARNING": yellowseq,
     "CRITICAL": redseq,
     "ERROR": redseq,
