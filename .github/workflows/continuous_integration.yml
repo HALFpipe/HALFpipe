@@ -17,6 +17,8 @@ jobs:
     # Docker Hub image that `container-job` executes in
     # Use latest
     container: mindandbrain/halfpipe:latest
+    
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v2
