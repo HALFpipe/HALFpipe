@@ -37,5 +37,4 @@ def test_findpaths(tmp_path, obj):
     assert set(findpaths(obj)) == set([A, B])
 
     for fname in [A, B]:
-        Path(fname).unlink(missing_ok=True)
-
+        Path(fname).unlink()
