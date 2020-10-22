@@ -108,6 +108,6 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         if self._rt is not None:
             paths = [*self._rt.collect()]
             if len(paths) > 0:
-                logger.info("[node dependencies finished] removing\n" + "\n".join(paths))
+                logger.info("[node dependencies finished] removing\n" + "\n".join(map(str, paths)))
                 for path in paths:
                     shutil.rmtree(path, ignore_errors=True)
