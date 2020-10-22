@@ -106,6 +106,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         """Removes directories whose outputs have already been used up
         """
         if self._rt is not None:
-            for path in self._rt.collect():
-                logger.info(f"[node dependencies finished] removing directory {str(path)}")
+            paths = [*self._rt.collect()]
+            logger.info("[node dependencies finished] removing \n" + "\n".join(paths))
+            for path in paths:
                 shutil.rmtree(path, ignore_errors=True)

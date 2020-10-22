@@ -38,6 +38,9 @@ class PyWarningsFilter(Filter):
         "Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.",
         "`rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.",
         "was deprecated in Matplotlib 3.3 and will be removed two minor releases later.",
+        "The label function will be deprecated in a future version. Use Tick.label1 instead.",
+        "The behaviour of affine_transform with a one-dimensional array supplied for the matrix parameter has changed in scipy 0.18.0.",
+        "No contour levels were found within the data range.",
     ]
 
     def filter(self, record):
