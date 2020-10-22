@@ -16,6 +16,7 @@ A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
 B = "/tmp/b.txt"
 
 
+@pytest.mark.timeout(60)
 @pytest.mark.parametrize(
     "obj",
     [

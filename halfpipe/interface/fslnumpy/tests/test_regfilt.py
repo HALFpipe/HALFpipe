@@ -3,6 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
+
+import pytest
+
 import os
 from random import seed
 
@@ -13,6 +16,7 @@ from halfpipe.interface import FilterRegressor
 from nipype.interfaces import fsl
 
 
+@pytest.mark.timeout(60)
 def test_FilterRegressor(tmp_path):
     seed(a=0x5e6128c4)
 

@@ -18,6 +18,7 @@ def add(a, b):
     return a + b
 
 
+@pytest.mark.timeout(60)
 @pytest.mark.parametrize("node_order_str", ["mpp", "forward", "backward"])
 def test_PathReferenceTracer(tmp_path, node_order_str):
     import nipype.interfaces.utility as niu
@@ -144,6 +145,7 @@ def select(a, b):
     return b
 
 
+@pytest.mark.timeout(60)
 def test_PathReferenceTracer_indirect_refs(tmp_path):
     from nipype import config
     import nipype.interfaces.utility as niu
