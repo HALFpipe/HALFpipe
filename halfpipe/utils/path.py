@@ -17,6 +17,8 @@ def findpaths(obj):
             stack.append(obj.outputs)
         elif isinstance(obj, BaseTraitedSpec):
             stack.append(obj.get_traitsfree())
+        elif hasattr(obj, "__dict__"):
+            stack.append(obj.__dict__)
         elif isinstance(obj, dict):
             stack.extend(obj.values())
         elif isinstance(obj, str):
