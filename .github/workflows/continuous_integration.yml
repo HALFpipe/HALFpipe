@@ -11,14 +11,13 @@ on:
 
 jobs:
   build:
-    # Containers must run in Linux based operating systems
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     # Docker Hub image that `container-job` executes in
     # Use latest
     container: mindandbrain/halfpipe:latest
     
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v2
@@ -40,10 +39,6 @@ jobs:
         shell: python
         run: |
           import pytest
-          import logging
-          logging.basicConfig(level=logging.DEBUG) 
-          from halfpipe.watchdog import init_watchdog 
-          init_watchdog()
           pytest.main(["--cov", "--cov-report=xml"])
 
       - name: Upload coverage to Codecov

@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 
 from halfpipe.workflow.execgraph import DontRunRunner
-from halfpipe.plugins.multiproc import MultiProcPlugin
 from halfpipe.plugins.reftracer import PathReferenceTracer
 
 
@@ -19,8 +18,7 @@ def add(a, b):
 
 
 @pytest.mark.timeout(60)
-@pytest.mark.parametrize("node_order_str", ["mpp", "forward", "backward"])
-def test_PathReferenceTracer(tmp_path, node_order_str):
+def test_PathReferenceTracer(tmp_path):
     import nipype.interfaces.utility as niu
     import nipype.pipeline.engine as pe
 
@@ -61,27 +59,12 @@ def test_PathReferenceTracer(tmp_path, node_order_str):
     y = get_node("y")
     z = get_node("z")
 
-    if node_order_str == "mpp":
-        mpp = MultiProcPlugin(plugin_args=dict(keep="none"))
-        mpp._generate_dependency_list(execgraph)
+    rt = PathReferenceTracer()
 
-        rt = mpp._rt
-    else:
-        from nipype.pipeline.engine.utils import topological_sort
-
-        rt = PathReferenceTracer()
-
-        nodes, _ = topological_sort(execgraph)
-
-        if node_order_str == "forward":
-            pass
-        elif node_order_str == "backward":
-            nodes = nodes[::-1]
-
-        for node in nodes:
-            rt.add_node(node)
-        for node in nodes:
-            rt.set_node_pending(node)
+    for node in execgraph.nodes:
+        rt.add_node(node)
+    for node in execgraph.nodes:
+        rt.set_node_pending(node)
 
     xrf = rt.node_resultfile_path(x)
     yrf = rt.node_resultfile_path(y)
@@ -202,10 +185,12 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
     y = get_node("y")
     z = get_node("z")
 
-    mpp = MultiProcPlugin(plugin_args=dict(keep="none"))
-    mpp._generate_dependency_list(execgraph)
+    rt = PathReferenceTracer()
 
-    rt = mpp._rt
+    for node in execgraph.nodes:
+        rt.add_node(node)
+    for node in execgraph.nodes:
+        rt.set_node_pending(node)
 
     xrf = rt.node_resultfile_path(x)
     yrf = rt.node_resultfile_path(y)

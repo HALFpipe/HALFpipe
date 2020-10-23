@@ -123,7 +123,7 @@ class PathReferenceTracer:
         try:
             result = load_resultfile(topath)  # load result from file
         except Exception as ex:
-            logger.info(f"Node {node} does not have result: ", ex)
+            logger.info(f"{node.name} does not have result: %s", ex)
             return
 
         stack = [*findpaths(getattr(result, "outputs"))]
