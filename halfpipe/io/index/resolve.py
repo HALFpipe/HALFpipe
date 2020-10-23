@@ -122,7 +122,9 @@ class ResolvedSpec:
 
                 resolved_files.append(resolved_fileobj)
             except marshmallow.exceptions.ValidationError as e:
-                logging.getLogger("halfpipe.ui").warning(f'Ignored validation error in "{filepath}": %s', e, stack_info=True)
+                logging.getLogger("halfpipe.ui").warning(
+                    f'Ignored validation error for "{filepath}": %s', e, stack_info=False
+                )
 
         return resolved_files
 
