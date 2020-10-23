@@ -50,4 +50,6 @@ class PyWarningsFilter(Filter):
             if message_to_filter in message:
                 setLevel(record, levelno=logging.DEBUG)
 
+        record.stack_info = True  # we want to know what caused the warnings
+
         return True

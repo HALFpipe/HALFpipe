@@ -10,6 +10,9 @@ from .listener import listen
 def run(queue):
     loop = get_event_loop()
 
+    from halfpipe.logging import setup as setuplogging
+    setuplogging(queue)
+
     try:
         loop.create_task(listen(queue))
         loop.run_forever()
