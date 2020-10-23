@@ -100,6 +100,7 @@ class FmriprepFactory(Factory):
                 "skull_strip_template": spec.global_settings["skull_strip_template"],
                 "aroma_err_on_warn": spec.global_settings["aroma_err_on_warn"],
                 "aroma_melodic_dim": spec.global_settings["aroma_melodic_dim"],
+                "sloppy": spec.global_settings["sloppy"],
             }
         )
         nipype_dir = Path(workdir) / constants.workflowdir
