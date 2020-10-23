@@ -41,6 +41,7 @@ class PyWarningsFilter(Filter):
         "The label function will be deprecated in a future version. Use Tick.label1 instead.",
         "The behaviour of affine_transform with a one-dimensional array supplied for the matrix parameter has changed in scipy 0.18.0.",
         "No contour levels were found within the data range.",
+        "Support for setting the 'mathtext.fallback_to_cm' rcParam is deprecated since 3.3 and will be removed two minor releases later; use 'mathtext.fallback : 'cm' instead.",
     ]
 
     def filter(self, record):
