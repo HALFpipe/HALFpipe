@@ -16,12 +16,12 @@ jobs:
     
     steps:
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag halfpipe:${{ GITHUB_RUN_NUMBER }}
+      run: docker build . --file Dockerfile --tag halfpipe:${GITHUB_RUN_NUMBER}
      
   test:
     runs-on: ubuntu-20.04
 
-    container: halfpipe:${{ GITHUB_RUN_NUMBER }}
+    container: halfpipe:${GITHUB_RUN_NUMBER}
     
     timeout-minutes: 20
 
