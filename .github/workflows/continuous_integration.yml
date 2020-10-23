@@ -18,7 +18,7 @@ jobs:
     # Use latest
     container: mindandbrain/halfpipe:latest
     
-    timeout-minutes: 60
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v2
@@ -40,6 +40,10 @@ jobs:
         shell: python
         run: |
           import pytest
+          import logging
+          logging.basicConfig(level=logging.DEBUG) 
+          from halfpipe.watchdog import init_watchdog 
+          init_watchdog()
           pytest.main(["--cov", "--cov-report=xml"])
 
       - name: Upload coverage to Codecov
