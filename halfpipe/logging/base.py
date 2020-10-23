@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
+import warnings
 from types import MethodType
 
 from .context import Context
@@ -29,7 +30,21 @@ def setupcontext():
 
 
 def setup(queue, levelno=logging.INFO):
-    logging.captureWarnings(True)
+    warnings_showwarning = warnings.showwarning
+
+    def showWarning(message, category, filename, lineno, file=None, line=None):
+        """
+        Adapted from cpython/Lib/logging/__init__.py
+        """
+        if file is not None:
+            if warnings_showwarning is not None:
+                warnings_showwarning(message, category, filename, lineno, file, line)
+        else:
+            s = warnings.formatwarning(message, category, filename, lineno, line)
+            logger = logging.getLogger("py.warnings")
+            logger.warning("%s", s, stack_info=True)
+
+    warnings.showwarning = showWarning
 
     queuehandler = QueueHandler(queue)
     queuehandler.setFormatter(ColorFormatter())

@@ -4,14 +4,12 @@
 
 import logging
 from abc import abstractmethod
-import re
-
 
 from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, sleep
 
+from ..message import Message
 
-from .message import Message
-
+logger = logging.getLogger("halfpipe")
 
 
 class Writer:
@@ -73,6 +71,7 @@ class Writer:
 
                     await sleep(self.delay)  # rate limit
                 except Exception:
+                    logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
                     self.canWrite.clear()
 
         except CancelledError:

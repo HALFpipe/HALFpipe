@@ -22,14 +22,14 @@ class AdaptiveLock:
     def __init__(self):
         self.method = "hard_links"
 
-        self.lock = None
+        self.lock_instance = None
 
     def lock(self, lock_file):
         if self.method == "hard_links":
-            self.lock = FluflLock(lock_file, lifetime=60)  # seconds after which the lock is broken
+            self.lock_instance = FluflLock(lock_file, lifetime=60)  # seconds after which the lock is broken
 
             try:
-                self.lock.lock(timeout=self.timeout)  # try for a long time
+                self.lock_instance.lock(timeout=self.timeout)  # try for a long time
                 return
             except TimeoutError:
                 pass
@@ -47,9 +47,9 @@ class AdaptiveLock:
             self.method = "fcntl"
 
         if self.method == "fcntl":
-            self.lock = FcntlLock(lock_file)
+            self.lock_instance = FcntlLock(lock_file)
 
-            acquired = self.lock.acquire(timeout=self.timeout)
+            acquired = self.lock_instance.acquire(timeout=self.timeout)
 
             if acquired:
                 return
@@ -61,13 +61,14 @@ class AdaptiveLock:
             )
 
             self.method = None
+            self.delay = 10.0  # use a large delay to make write collisions unlikely
 
     def unlock(self):
         if self.method == "hard_links":
-            self.lock.unlock(unconditionally=True)  # do not raise errors in unlock
-            self.lock = None
+            self.lock_instance.unlock(unconditionally=True)  # do not raise errors in unlock
+            self.lock_instance = None
         elif self.method == "fcntl":
-            self.lock.release()
+            self.lock_instance.release()
 
 
 class FileWriter(Writer, AdaptiveLock):
@@ -97,3 +98,5 @@ class FileWriter(Writer, AdaptiveLock):
 
     def release(self):
         self.stream.close()
+
+        self.unlock()

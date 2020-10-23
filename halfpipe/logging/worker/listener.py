@@ -15,6 +15,9 @@ schema = MessageSchema()
 
 
 async def listen(queue):
+    from halfpipe.logging import setup as setuplogging
+    setuplogging(queue)
+
     loop = get_running_loop()
 
     printWriter = PrintWriter(levelno=25)  # fmriprep's IMPORTANT
