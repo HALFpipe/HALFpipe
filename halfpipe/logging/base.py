@@ -11,6 +11,8 @@ from .handler import QueueHandler
 from .formatter import ColorFormatter
 from .filter import DTypeWarningsFilter, PyWarningsFilter
 
+warn = warnings.warn
+
 loggernames = [
     "halfpipe",
     "halfpipe.ui",
@@ -24,28 +26,18 @@ loggernames = [
 ]
 
 
+def showwarning(message, category, filename, lineno, file=None, line=None):
+    s = warnings.formatwarning(message, category, filename, lineno, line)
+    logger = logging.getLogger("py.warnings")
+    logger.warning(f"{s}", stack_info=True)
+
+
 def setupcontext():
     queue = Context.queue()
     setup(queue)
 
 
 def setup(queue, levelno=logging.INFO):
-    warnings_showwarning = warnings.showwarning
-
-    def showWarning(message, category, filename, lineno, file=None, line=None):
-        """
-        Adapted from cpython/Lib/logging/__init__.py
-        """
-        if file is not None:
-            if warnings_showwarning is not None:
-                warnings_showwarning(message, category, filename, lineno, file, line)
-        else:
-            s = warnings.formatwarning(message, category, filename, lineno, line)
-            logger = logging.getLogger("py.warnings")
-            logger.warning("%s", s, stack_info=True)
-
-    warnings.showwarning = showWarning
-
     queuehandler = QueueHandler(queue)
     queuehandler.setFormatter(ColorFormatter())
     queuehandler.setLevel(levelno)
@@ -71,6 +63,10 @@ def setup(queue, levelno=logging.INFO):
             logger.addHandler(queuehandler)
 
             logger.setLevel(levelno)
+
+        # monkey patch warnings module to overwrite mriqc monkey patching
+        warnings.warn = warn
+        warnings.showwarning = showwarning
 
         logging.getLogger("nipype.interface").addFilter(DTypeWarningsFilter())
         logging.getLogger("py.warnings").addFilter(PyWarningsFilter())
