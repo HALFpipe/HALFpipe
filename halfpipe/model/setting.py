@@ -48,6 +48,8 @@ class GlobalSettingsSchema(Schema):
     aroma_err_on_warn = fields.Boolean(default=False, required=True)
     aroma_melodic_dim = fields.Int(default=-200, required=True)
 
+    sloppy = fields.Boolean(default=False, required=True)
+
 
 class SmoothingSettingSchema(Schema):
     fwhm = fields.Float(validate=validate.Range(min=0.0), required=True)
