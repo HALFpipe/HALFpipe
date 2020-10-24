@@ -37,8 +37,8 @@ class Writer:
     async def start(self):
         loop = get_running_loop()
 
-        try:
-            while True:
+        while True:
+            try:
                 await self.canWrite.wait()
 
                 if not self.check():
@@ -46,36 +46,37 @@ class Writer:
 
                     continue
 
-                try:
-                    message = await self.queue.get()
+                message = await self.queue.get()
 
-                    if not self.filterMessage(message):
-                        self.queue.task_done()
-                        continue  # avoid acquiring the lock
+                if not self.filterMessage(message):
+                    self.queue.task_done()
+                    continue  # avoid acquiring the lock
 
-                    await loop.run_in_executor(None, self.acquire)
+                await loop.run_in_executor(None, self.acquire)
 
-                    while True:
-                        if self.filterMessage(message):
-                            await loop.run_in_executor(
-                                None, self.emit, message.msg, message.levelno
-                            )
-                        self.queue.task_done()
+                while True:
+                    if self.filterMessage(message):
+                        await loop.run_in_executor(
+                            None, self.emit, message.msg, message.levelno
+                        )
+                    self.queue.task_done()
 
-                        try:  # handle any other records while we have the lock
-                            message = self.queue.get_nowait()
-                        except QueueEmpty:
-                            break
+                    try:  # handle any other records while we have the lock
+                        message = self.queue.get_nowait()
+                    except QueueEmpty:
+                        break
 
-                    await loop.run_in_executor(None, self.release)
+                await loop.run_in_executor(None, self.release)
 
-                    await sleep(self.delay)  # rate limit
-                except Exception:
-                    logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
-                    self.canWrite.clear()
+                await sleep(self.delay)  # rate limit
 
-        except CancelledError:
-            pass
+            except CancelledError:
+                break  # exit the writer
+
+            except Exception:  # catch all
+                logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
+
+                self.canWrite.clear()
 
     def check(self) -> bool:
         return True
