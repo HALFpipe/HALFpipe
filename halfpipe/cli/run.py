@@ -95,7 +95,7 @@ def run(opts, should_run):
     logger.debug(f'should_run["run"]={should_run["run"]}')
     logger.debug(f"opts.use_cluster={opts.use_cluster}")
 
-    if should_run["run"] or not opts.use_cluster:
+    if should_run["run"] and not opts.use_cluster:
         logger.info("Stage: run")
 
         if execgraphs is None:
