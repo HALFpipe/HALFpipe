@@ -51,4 +51,7 @@ class PyWarningsFilter(Filter):
             if message_to_filter in message:
                 setLevel(record, levelno=logging.DEBUG)
 
+        if "invalid value encountered in" in message:  # make sqrt and division errors less visible
+            setLevel(record, levelno=logging.INFO)
+
         return True
