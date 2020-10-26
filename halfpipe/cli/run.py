@@ -10,6 +10,21 @@ logger = logging.getLogger("halfpipe")
 
 
 def run(opts, should_run):
+    # print info
+
+    from .. import __version__
+
+    logger.info(f"Halfpipe version {__version__}")
+
+    if not opts.verbose:
+        logger.log(
+            25,
+            'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
+            'Detailed logs information will only be available in the "log.txt" file in the working directory. '
+        )
+
+    logger.debug(f"debug={opts.debug}")
+
     workdir = opts.workdir
     if workdir is not None:
         workdir = Path(workdir)
@@ -28,19 +43,6 @@ def run(opts, should_run):
     assert workdir is not None, "Missing working directory"
     assert Path(workdir).is_dir(), "Working directory does not exist"
 
-    if not opts.verbose:
-        logger.log(
-            25,
-            'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
-            'Detailed logs information will only be available in the "log.txt" file in the working directory. '
-        )
-
-    from .. import __version__
-
-    logger.info(f"Halfpipe version {__version__}")
-
-    logger.debug(f"debug={opts.debug}")
-
     if opts.watchdog is True:
         from ..watchdog import init_watchdog
 
@@ -58,17 +60,17 @@ def run(opts, should_run):
             config.nipype.omp_nthreads = opts.nipype_omp_nthreads
             omp_nthreads_origin = "command line arguments"
 
-        else:  # default value
-            if opts.use_cluster:
-                config.nipype.omp_nthreads = 2
+        elif opts.use_cluster:
+            config.nipype.omp_nthreads = 2
+            omp_nthreads_origin = "from --use-cluster"
 
-            else:
-                omp_nthreads = opts.nipype_n_procs // 4
-                if omp_nthreads < 1:
-                    omp_nthreads = 1
-                if omp_nthreads > 8:
-                    omp_nthreads = 8
-                config.nipype.omp_nthreads = omp_nthreads
+        else:
+            omp_nthreads = opts.nipype_n_procs // 4
+            if omp_nthreads < 1:
+                omp_nthreads = 1
+            if omp_nthreads > 8:
+                omp_nthreads = 8
+            config.nipype.omp_nthreads = omp_nthreads
 
             omp_nthreads_origin = "inferred"
 
