@@ -71,7 +71,12 @@ def init_bandpass_filter_wf(
     else:
         inputnode.inputs.high = -1.0
 
-    addmeans = pe.MapNode(AddMeans(), iterfield=["in_file", "mean_file"], name="addmeans")
+    addmeans = pe.MapNode(
+        AddMeans(),
+        iterfield=["in_file", "mean_file"],
+        name="addmeans",
+        mem_gb=memcalc.series_std_gb * 2
+    )
     workflow.connect(inputnode, "files", addmeans, "mean_file")
 
     workflow.connect(addmeans, "out_file", outputnode, "files")
