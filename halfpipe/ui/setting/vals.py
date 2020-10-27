@@ -58,11 +58,17 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
         def setup(self, ctx):
             self._append_view(TextView(f"Remove {self.noun}?"))
 
+            featuresettings = set(
+                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+            )
+
             self.confs = set(
                 tuple(sorted(
                     setting.get("confounds_removal", []) + ["ICA-AROMA"] if setting.get("ica_aroma") is True else []
                 ))
-                for setting in ctx.spec.settings[:-1]  # omit current
+                for setting in ctx.spec.settings[:-1]
+                # only include active settings
+                if setting.get("output_image", False)  or setting["name"] in featuresettings
             )
 
             suggestion = ["ICA-AROMA"]
@@ -125,6 +131,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
             suggestion = [*self.suggestion]
 
+            featuresettings = set(
+                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+            )
+
             self.valsets = {}
             for i, key in enumerate(self.keys):
                 if key not in self.valsets:
@@ -133,6 +143,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 valset = self.valsets[key]
 
                 for setting in ctx.spec.settings:
+                    if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                        continue
+
                     bandpass_filter = setting.get("bandpass_filter")
                     if bandpass_filter is not None and key in bandpass_filter:
                         valset.add(bandpass_filter[key])
@@ -268,8 +281,15 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
             suggestion = 10000.0
 
+            featuresettings = set(
+                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+            )
+
             self.means = set()
             for setting in ctx.spec.settings:
+                if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                    continue
+
                 grand_mean_scaling = setting.get("grand_mean_scaling")
                 if grand_mean_scaling is not None:
                     mean = grand_mean_scaling.get("mean")
@@ -345,17 +365,29 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
         def setup(self, ctx):
             self._append_view(TextView(f"Specify {self.noun} in mm"))
+
             suggestion = 6.0
+
+            featuresettings = set(
+                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+            )
+
             self.fwhms = set()
             for setting in ctx.spec.settings:
+                if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                    continue
+
                 smoothing = setting.get("smoothing")
                 if smoothing is not None:
                     fwhm = smoothing["fwhm"]
                     self.fwhms.add(fwhm)
+
             if len(self.fwhms) > 0:
                 suggestion = float(first(self.fwhms))
+
             self.input_view = NumberInputView(number=suggestion, min=0)
             self._append_view(self.input_view)
+
             self._append_view(SpacerView(1))
 
         def run(self, ctx):
