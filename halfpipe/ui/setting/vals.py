@@ -63,13 +63,13 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             )
 
             self.confs = set(
-                tuple(
-                    sorted(setting.get("confounds_removal", []) +
-                    (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
+                frozenset(
+                    setting.get("confounds_removal", [])
+                    + (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
                 )
                 for setting in ctx.spec.settings[:-1]
                 # only include active settings
-                if setting.get("output_image", False)  or setting["name"] in featuresettings
+                if setting.get("output_image", False) or setting["name"] in featuresettings
             )
 
             suggestion = ["ICA-AROMA"]
@@ -97,8 +97,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             confoundnames = [
                 self.options[name] for name, is_selected in self.valuedict.items() if is_selected
             ]
+
             ica_aroma = "ICA-AROMA" in confoundnames
             ctx.spec.settings[-1]["ica_aroma"] = ica_aroma
+
             settingconfoundnames = [name for name in confoundnames if name != "ICA-AROMA"]
             if len(settingconfoundnames) > 0:
                 ctx.spec.settings[-1]["confounds_removal"] = settingconfoundnames
@@ -111,7 +113,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             if (
                 len(self.confs) == 1
                 and len(confoundnames) > 0
-                and tuple(sorted(confoundnames)) not in self.confs
+                and frozenset(confoundnames) not in self.confs
             ):
                 return ConfirmInconsistentStep(self.app, self.noun, this_next_step_type)(ctx)
 
