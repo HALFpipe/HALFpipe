@@ -63,9 +63,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             )
 
             self.confs = set(
-                tuple(sorted(
-                    setting.get("confounds_removal", []) + ["ICA-AROMA"] if setting.get("ica_aroma") is True else []
-                ))
+                tuple(
+                    sorted(setting.get("confounds_removal", []) +
+                    (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
+                )
                 for setting in ctx.spec.settings[:-1]
                 # only include active settings
                 if setting.get("output_image", False)  or setting["name"] in featuresettings
