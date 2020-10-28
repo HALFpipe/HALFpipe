@@ -130,8 +130,9 @@ class MinSeedCoverageStep(Step):
 
         for feature in ctx.spec.features[:-1]:
             if feature.type == "seed_based_connectivity":
-                if hasattr(feature, "min_seed_coverage"):
-                    self.valset.add(feature.min_region_coverage)
+                min_seed_coverage = getattr(feature, "min_seed_coverage", None)
+                if min_seed_coverage is not None:
+                    self.valset.add(min_seed_coverage)
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
@@ -179,8 +180,9 @@ class AtlasBasedMinRegionCoverageStep(Step):
 
         for feature in ctx.spec.features[:-1]:
             if feature.type == "atlas_based_connectivity":
-                if hasattr(feature, "min_region_coverage"):
-                    self.valset.add(feature.min_region_coverage)
+                min_region_coverage = getattr(feature, "min_region_coverage", None)
+                if min_region_coverage is not None:
+                    self.valset.add(min_region_coverage)
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
