@@ -7,12 +7,13 @@ Welcome to ENIGMA `HALFpipe`!
 
 > **NOTE:** ENIGMA `HALFpipe` is pre-release software and not yet considered production-ready.
 >
-> If you would like to beta test and provide feedback, thank you! We recommend using Beta 4, as this has many new features. If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
+> If you would like to beta test and provide feedback, thank you! We recommend using Beta 5, as this has many improvements to stability. If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
 >  
 > To use a specific version, please use the following command to download HALFpipe.
 >
 > | Version                      | Installation                                                                                             |
 > |------------------------------|----------------------------------------------------------------------------------------------------------|
+> | Beta 5 (October 29th 2020)   | `singularity pull shub://mindandbrain/halfpipe:1.0.0b5`<br>`docker pull mindandbrain/halfpipe:1.0.0b5`   |
 > | Beta 4 (October 1st 2020)    | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
 > | Beta 3 (September 14th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b3`<br>`docker pull mindandbrain/halfpipe:1.0.0b3`   |
 > | Beta 2 (August 16th 2020)    | `singularity pull docker://mindandbrain/halfpipe:1.0.0b2`<br>`docker pull mindandbrain/halfpipe:1.0.0b2` |
@@ -48,7 +49,7 @@ The second step is to download the `HALFpipe` to your computer. This requires ap
 
 | Container platform | Version | Installation                                      |
 |--------------------|---------|---------------------------------------------------|
-| Singularity        | 3.x     | `singularity pull shub://mindandbrain/Halfpipe`   |
+| Singularity        | 3.x     | `singularity pull shub://mindandbrain/halfpipe`   |
 | Singularity        | 2.x     | `singularity pull docker://mindandbrain/halfpipe` |
 | Docker             |         | `docker pull mindandbrain/halfpipe`               |
 
