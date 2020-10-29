@@ -7,9 +7,11 @@ Welcome to ENIGMA `HALFpipe`!
 
 > **NOTE:** ENIGMA `HALFpipe` is pre-release software and not yet considered production-ready.
 >
-> If you would like to beta test and provide feedback, thank you! We recommend using Beta 5, as this has many improvements to stability. If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
+> If you would like to beta test and provide feedback, thank you! We recommend using Beta 5, as this has many improvements to stability. For a detailed lost of changes, please see the [changelog](CHANGELOG.md).
+>
+> If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
 >  
-> To use a specific version, please use the following command to download HALFpipe.
+> To use a specific beta version, please use the following command to download HALFpipe.
 >
 > | Version                      | Installation                                                                                             |
 > |------------------------------|----------------------------------------------------------------------------------------------------------|
