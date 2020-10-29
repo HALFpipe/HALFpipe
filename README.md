@@ -345,32 +345,7 @@ A `HALFpipe` run is divided internally into three stages, spec-ui, workflow, and
 
 The `HALFpipe` container, or really most containers, contain the entire base system needed to run
 
-## 8. Changes
-
-### Beta 2 (August 16th 2020)
-
--	**Slice timing:** Upon user request, `HALFpipe` now exposes `fmriprep`’s slice timing option. In `fmriprep`, this option is set once when starting. As such, it is currently not possible to either a) do slice timing for only part of the images or b) simultaneously output a slice timed and a non-slice timed preprocessed image. For both of these cases we recommend doing multiple runs of `HALFpipe`, and to repeat quality control for both
--	**Metadata loading and verification:** A lot of different metadata is required for the correct functioning of `HALFpipe`. Usually, the way metadata is stored has some user-specific idiosyncrasies and conventions that can be difficult to automate around. For this reason, we have decided to prompt the user to verify and/or enter any and every metadata value. To streamline this process, `HALFpipe` attempts to load metadata a) from a "sidecar" JSON file placed next to the target file, or b) from the NIFTI header. If neither is possible, the user is prompted to manually enter the required parameter
--	**Output multiple preprocessed image files:** The user interface now supports outputting different preprocessed image files with different settings. For these files, we expose the full breadth of settings available in `HALFpipe`. Specifically, these are:
-    1. *Grand mean scaling*
-    1. *Spatial smoothing*, implemented using AFNI `3dBlurInMask` 
-    1. *Temporal filtering*
-       - *Gaussian-weighted*, using a custom implementation of the algorithm used by FSL `fslmaths -bptf`. This algorithm is explained in the "Trend Removal" section of [Marchini & Ripley (2000)](https://doi.org/10.1006/nimg.2000.0628)
-       - *Frequency-based*, implemented using AFNI `3dTproject`
-    1. *ICA-AROMA*, using a custom implementation of the algorithm used by FSL `fsl_regfilt`
-    1. *Confounds regression*, using a custom implementation of the algorithm used by FSL `fsl_regfilt -a`
--	**Simpler use on cluster systems:** We added the command line option `—-use-cluster`. When this command line option is added to the end of the command, we automatically a) divide the workflow into one subject chunks and b) instead of running, output a template cluster submit script called `submit.slurm.sh`. This script is made for SLURM clusters, but can easily be adapted to other systems
--	**Output files now follow the BIDS derivatives naming scheme:** We value interoperability with other software. [`HALFpipe` outputs](#5-outputs) can now be automatically be parsed by software that accepts BIDS derivatives
--	**Additional output files:** For every statistical map, we place a BIDS-conforming JSON file containing a summary of the preprocessing settings, and a list of the raw data files that were used for the analysis (`RawSources`)
-    * *Task-based:* Design matrix, contrast matrix
-    * *Seed-based connectivity:* Design matrix, contrast matrix, mean tSNR of the seed region (`MeanTSNR`)
-    * *Dual regression:* Design matrix, contrast matrix, mean tSNR of the component (`MeanTSNR`)
-    * *Atlas-based connectivity matrix:* List of mean tSNR values of the atlas region (`MeanTSNR`)
-    * *Group models:* Design matrix, contrast matrix
--	**Improved confounds handling:** [Lindquist et al. (2018)](https://doi.org/10.1101/407676) find that in preprocessing pipelines, "later preprocessing steps can reintroduce artifacts previously removed from the data in prior preprocessing steps". This happens because individual preprocessing steps are not necessarily orthogonal. To circumvent this issue they recommend "sequential orthogonalization of covariates/linear filters performed in series." We have now implemented this strategy in `HALFpipe`. Note that this means that when grand mean scaling is active, confounds time series are also scaled, meaning that values such as `framewise displacement` can not be interpreted as millimeters anymore.
--	**Recovering from errors:** Even if one subject fails, group statistics will still be run and available. This can be useful when data quality issues make specific preprocessing steps fail
-
-## 9. Contact
+## 8. Contact
 
 For questions or support, please submit an [issue](https://github.com/mindandbrain/halfpipe/issues/new/choose) or contact us via e-mail.
 
