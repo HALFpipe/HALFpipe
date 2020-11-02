@@ -67,9 +67,11 @@ def _copy_file(inpath, outpath):
     outpath.parent.mkdir(exist_ok=True, parents=True)
     if outpath.exists():
         if os.stat(inpath).st_mtime <= os.stat(outpath).st_mtime:
-            logger.debug(f'Not overwriting file "{outpath}"')
+            logger.info(f'Not overwriting file "{outpath}"')
             return False
-        logger.debug(f'Overwriting file "{outpath}"')
+        logger.info(f'Overwriting file "{outpath}"')
+    else:
+        logger.info(f'Creating file "{outpath}"')
     copyfile(inpath, outpath)
     return True
 
