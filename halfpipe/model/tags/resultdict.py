@@ -23,18 +23,22 @@ def validate_tags(v):
 
 
 resultdict_entities = [
-    # levels of analysis
-    "model",
+    # first level tag
     "feature",
     "setting",
-    # types of features
+    # seed connectivity
     "seed",
+    # dual regression
     "map",
-    "atlas",
-    "taskcontrast",
-    # file descriptors
     "component",
+    # atlas
+    "atlas",
+    # task
+    "taskcontrast",
+    # higher level tag
+    "model",
     "contrast",
+    # file descriptors
     "stat",
     "desc",
 ]
