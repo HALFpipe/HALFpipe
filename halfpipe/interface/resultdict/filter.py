@@ -48,7 +48,8 @@ def _get_categorical_dict(dataframe, variabledicts):
         if variabledict.get("type") == "categorical":
             categorical_columns.append(variabledict.get("name"))
 
-    return dataframe[categorical_columns].to_dict()
+    categorical_dataframe = dataframe[categorical_columns].astype(str)
+    return categorical_dataframe.to_dict()
 
 
 class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
