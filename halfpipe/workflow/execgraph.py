@@ -108,8 +108,8 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
         newu = newnodes.get(u.fullname)
         if newu is None:
-            udigest = b32digest(u.fullname)[:8]
-            newu = pe.Node(LoadResult(u), name=f"loadresult_{udigest}", base_dir=modeldir)
+            udigest = b32digest(u.fullname)[:4]
+            newu = pe.Node(LoadResult(u), name=f"load_result_{udigest}", base_dir=modeldir)
             newu.config = u.config
             newnodes[u.fullname] = newu
 
