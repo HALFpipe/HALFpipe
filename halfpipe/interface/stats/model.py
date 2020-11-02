@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import sys
 from itertools import product
 import logging
 
@@ -13,9 +12,11 @@ from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
 from ...io import loadspreadsheet
 
+logger = logging.getLogger("halfpipe")
+
 
 def _check_multicollinearity(matrix):
-    # taken from CPAC
+    # taken from C-PAC
 
     logging.getLogger("halfpipe").info("Checking for multicollinearity in the model..")
 
@@ -24,14 +25,13 @@ def _check_multicollinearity(matrix):
     max_singular = np.max(s)
     min_singular = np.min(s)
 
-    logging.getLogger("halfpipe").info(
-        "max_singular={} min_singular={} rank={}".format(
-            max_singular, min_singular, np.linalg.matrix_rank(matrix)
-        )
+    logger.info(
+        f"max_singular={max_singular} min_singular={min_singular} "
+        f"rank={np.linalg.matrix_rank(matrix)}"
     )
 
     if min_singular == 0:
-        logging.getLogger("halfpipe").warning(
+        logger.warning(
             "[!] halfpipe warns: Detected multicollinearity in the "
             + "computed group-level analysis model. Please double-"
             "check your model design."
@@ -156,7 +156,10 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     npts, nevs = dmat.shape
 
     if nevs >= npts:
-        sys.stdout.write("Reverting to simple intercept only design. nevs >= npts\n")
+        logger.warning(
+            "Reverting to simple intercept only design. \n"
+            f"nevs ({nevs}) >= npts ({npts})"
+        )
         return (
             {"intercept": [1.0] * len(subjects)},
             [["mean", "T", ["intercept"], [1]]],
@@ -166,19 +169,26 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     regressors = {d: dmat[d].tolist() for d in dmat.columns}
     contrasts = []
     contrast_names = []
-    for contrastName, contrastMat in contrastMats:
+
+    for contrastName, contrastMat in contrastMats:  # t contrasts
         if contrastMat.shape[0] == 1:
             contrastVec = contrastMat.squeeze()
             contrasts.append((contrastName, "T", list(contrastVec.keys()), list(contrastVec)))
+
             contrast_names.append(contrastName)
-    for contrastName, contrastMat in contrastMats:
+
+    for contrastName, contrastMat in contrastMats:  # f contrasts
         if contrastMat.shape[0] > 1:
-            tcontrasts = []
+
+            tcontrasts = []  # an f contrast consists of multiple t contrasts
             for i, contrastVec in contrastMat.iterrows():
                 tname = f"{contrastName}_{i:d}"
                 tcontrasts.append((tname, "T", list(contrastVec.keys()), list(contrastVec)))
-            contrasts.append((contrastName, "F", tcontrasts))
-            contrast_names.append(contrastName)
+
+            contrasts.extend(tcontrasts)  # add t contrasts to the model
+            contrasts.append((contrastName, "F", tcontrasts))  # then add the f contrast
+
+            contrast_names.append(contrastName)  # we only care about the f contrast
 
     return regressors, contrasts, contrast_names
 
