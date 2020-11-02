@@ -193,10 +193,10 @@ def run(opts, should_run):
                 if firstnode is not None:
                     runner.run(execgraph, updatehash=False, config=firstnode.config)
             except Exception as e:
-                logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
-
                 if opts.debug:
                     raise e
+                else:
+                    logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
 
             if len(execgraphs) > 1:
                 logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
