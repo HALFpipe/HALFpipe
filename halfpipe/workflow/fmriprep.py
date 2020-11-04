@@ -78,6 +78,7 @@ class FmriprepFactory(Factory):
                 "bids_dir": bids_dir,
                 "output_dir": output_dir,
                 "log_dir": str(workdir),
+                "work_dir": str(workdir / ".fmriprep"),
                 "participant_label": bidssubjects,
                 "ignore": ignore,
                 "use_aroma": False,
