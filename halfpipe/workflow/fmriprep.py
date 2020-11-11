@@ -43,6 +43,9 @@ class FmriprepFactory(Factory):
         output_dir = Path(workdir) / "derivatives"
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        fmriprep_dir = output_dir / "fmriprep"
+        fmriprep_dir.mkdir(parents=True, exist_ok=True)
+
         subjects = set()
         bidssubjects = set()
         for boldfilepath in boldfilepaths:
@@ -77,6 +80,8 @@ class FmriprepFactory(Factory):
             {
                 "bids_dir": bids_dir,
                 "output_dir": output_dir,
+                "fmriprep_dir": fmriprep_dir,
+                "output_layout": "legacy",
                 "log_dir": str(workdir),
                 "work_dir": str(workdir / ".fmriprep"),
                 "participant_label": bidssubjects,
