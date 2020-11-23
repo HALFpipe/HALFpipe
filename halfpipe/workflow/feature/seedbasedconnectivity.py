@@ -219,7 +219,7 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
     calcmean = pe.MapNode(CalcMean(), iterfield="mask", name="calcmean", mem_gb=memcalc.series_std_gb)
-    workflow.connect(resample, "output_image", calcmean, "mask")
+    workflow.connect(maskseeds, "out_files", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
     workflow.connect(calcmean, "mean", make_resultdicts, "mean_t_s_n_r")
