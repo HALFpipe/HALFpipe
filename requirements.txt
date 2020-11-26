@@ -1,5 +1,6 @@
 numpy
 scipy
+mpmath >= 1.1.0
 pandas >= 0.24.0
 patsy >= 0.5.1
 statsmodels >= 0.12.0

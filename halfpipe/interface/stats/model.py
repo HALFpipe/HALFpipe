@@ -3,6 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from itertools import product
+from collections import OrderedDict
+
 import logging
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
@@ -166,7 +168,8 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
             ["mean"],
         )
 
-    regressors = {d: dmat[d].tolist() for d in dmat.columns}
+    regressors = dmat.to_dict(orient="list", into=OrderedDict)
+
     contrasts = []
     contrast_names = []
 
@@ -195,15 +198,33 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
 
 class LinearModelInputSpec(TraitedSpec):
     spreadsheet = File(exist=True, mandatory=True)
-    contrastdicts = traits.List(desc="contrast list", mandatory=True)
-    variabledicts = traits.List(desc="variable list", mandatory=True)
-    subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
+    contrastdicts = traits.List(
+        traits.Dict(traits.Str, traits.Float), mandatory=True
+    )
+    variabledicts = traits.List(
+        traits.Dict(traits.Str, traits.Any), mandatory=True
+    )
+    subjects = traits.List(traits.Str, mandatory=True)
 
 
 class ModelOutputSpec(TraitedSpec):
-    regressors = traits.Any()
-    contrasts = traits.Any()
-    contrast_names = traits.List(traits.Str(), desc="contrast names list")
+    regressors = traits.Dict(
+        traits.Str,
+        traits.List(traits.Float),
+    )
+    contrasts = traits.List(
+        traits.Either(
+            traits.Tuple(traits.Str, traits.Enum("T"), traits.List(traits.Str),
+                         traits.List(traits.Float)),
+            traits.Tuple(traits.Str, traits.Enum("F"),
+                         traits.List(
+                             traits.Tuple(traits.Str, traits.Enum("T"),
+                                          traits.List(traits.Str),
+                                          traits.List(traits.Float)),
+            ))
+        ),
+    )
+    contrast_names = traits.List(traits.Str())
 
 
 class LinearModel(SimpleInterface):
