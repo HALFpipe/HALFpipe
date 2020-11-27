@@ -25,7 +25,6 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
             ]
         ),
         name="inputnode",
-        run_without_submitting=True
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
 
@@ -36,7 +35,7 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
 
     #
     merge = pe.Node(
-        niu.Merge(2), name="merge", run_without_submitting=True
+        niu.Merge(2), name="merge"
     )
     workflow.connect(applymask, "out_file", merge, "in1")
     workflow.connect(inputnode, "confounds", merge, "in2")

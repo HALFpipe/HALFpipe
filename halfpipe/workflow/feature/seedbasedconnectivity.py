@@ -109,7 +109,6 @@ def init_seedbasedconnectivity_wf(
             metadatakeys=["mean_t_s_n_r", "coverage"],
         ),
         name="make_resultdicts",
-        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
@@ -160,7 +159,7 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(maskseeds, "out_files", meants, "mask")
 
     #
-    design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design", run_without_submitting=True)
+    design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design")
     workflow.connect(meants, "out_file", design, "in1")
     workflow.connect(maskseeds, "names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")
@@ -175,7 +174,6 @@ def init_seedbasedconnectivity_wf(
         ),
         iterfield="design_file",
         name="contrasts",
-        run_without_submitting=True
     )
     workflow.connect(design, "out_with_header", contrasts, "design_file")
 
@@ -205,7 +203,7 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(contrasts, "out_no_header", glm, "contrasts")
 
     # make dof volume
-    makedofvolume = pe.MapNode(MakeDofVolume(), iterfield=["design"], name="makedofvolume", run_without_submitting=True)
+    makedofvolume = pe.MapNode(MakeDofVolume(), iterfield=["design"], name="makedofvolume")
     workflow.connect(inputnode, "bold", makedofvolume, "bold_file")
     workflow.connect(fillna, "out_no_header", makedofvolume, "design")
 
