@@ -89,7 +89,6 @@ def init_bandpass_filter_wf(
                 function=_calc_sigma,
             ),
             name="calcsigma",
-            run_without_submitting=True,
         )
         workflow.connect(inputnode, "low", calcsigma, "lp_width")
         workflow.connect(inputnode, "high", calcsigma, "hp_width")
@@ -117,7 +116,6 @@ def init_bandpass_filter_wf(
             ),
             iterfield="in_file",
             name="tprojectoutfilename",
-            run_without_submitting=True,
         )
         workflow.connect(toafni, "out_file", makeoutfname, "in_file")
 
@@ -126,7 +124,6 @@ def init_bandpass_filter_wf(
                 input_names=["low", "high"], output_names=["out"], function=_bandpass_arg,
             ),
             name="bandpassarg",
-            run_without_submitting=True,
         )  # cannot use merge here as we need a tuple
         workflow.connect(inputnode, "low", bandpassarg, "low")
         workflow.connect(inputnode, "high", bandpassarg, "high")

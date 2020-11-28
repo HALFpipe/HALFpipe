@@ -42,7 +42,7 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     if confound_names is not None:
         inputnode.inputs.confound_names = confound_names
 
-    selectcolumns = pe.Node(SelectColumns(), name="selectcolumns", run_without_submitting=True)
+    selectcolumns = pe.Node(SelectColumns(), name="selectcolumns")
     workflow.connect(inputnode, "confounds", selectcolumns, "in_file")
     workflow.connect(inputnode, "confound_names", selectcolumns, "column_names")
 
@@ -71,7 +71,7 @@ def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, me
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
 
-    fillna = pe.Node(FillNA(), name="fillna", run_without_submitting=True)
+    fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
 
     filter_regressor_b = pe.Node(

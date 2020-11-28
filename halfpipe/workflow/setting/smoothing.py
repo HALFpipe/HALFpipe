@@ -36,7 +36,7 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator(), name=None, suffix=N
         inputnode.inputs.fwhm = float(fwhm)
 
     select = pe.Node(
-        Select(regex=r".+\.nii(\.gz)?"), name="select", run_without_submitting=True
+        Select(regex=r".+\.nii(\.gz)?"), name="select"
     )  # smooth only spatial files
     workflow.connect(inputnode, "files", select, "in_list")
 
@@ -48,7 +48,7 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator(), name=None, suffix=N
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
     merge = pe.Node(
-        niu.Merge(2), name="merge", run_without_submitting=True
+        niu.Merge(2), name="merge"
     )
     workflow.connect(smooth, "out_file", merge, "in1")
     workflow.connect(select, "other_list", merge, "in2")

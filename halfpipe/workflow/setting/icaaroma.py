@@ -75,7 +75,6 @@ def init_ica_aroma_components_wf(
             ]
         ),
         name="inputnode",
-        run_without_submitting=True
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -88,18 +87,17 @@ def init_ica_aroma_components_wf(
     make_resultdicts = pe.Node(
         MakeResultdicts(reportkeys=["ica_aroma"]),
         name="make_resultdicts",
-        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
     #
     resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink", run_without_submitting=True
+        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
     )
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm", run_without_submitting=True)
+    mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm")
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in1")
     mergexfm.inputs.in2 = getresource(
         f"tpl_MNI152NLin6Asym_from_{constants.reference_space}_mode_image_xfm.h5"
@@ -118,7 +116,7 @@ def init_ica_aroma_components_wf(
     )
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
-    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist", run_without_submitting=True)
+    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist")
     workflow.connect(compxfm, "output_image", compxfmlist, "in1")
 
     #
@@ -206,13 +204,12 @@ def init_ica_aroma_regression_wf(
     make_resultdicts = pe.Node(
         MakeResultdicts(),
         name="make_resultdicts",
-        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
     #
     resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink", run_without_submitting=True
+        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
     )
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
@@ -222,7 +219,6 @@ def init_ica_aroma_regression_wf(
             input_names=["in_file"], output_names=["aroma_noise_ics"], function=loadints,
         ),
         name="aromanoiseics",
-        run_without_submitting=True
     )
     workflow.connect(inputnode, "aroma_noise_ics", aromanoiseics, "in_file")
 
@@ -232,21 +228,20 @@ def init_ica_aroma_regression_wf(
             input_names=["melodic_mix", "aroma_noise_ics"], output_names=["column_names"], function=_aroma_column_names,
         ),
         name="loadaromanoiseics",
-        run_without_submitting=True
     )
     workflow.connect(inputnode, "melodic_mix", aromacolumnnames, "melodic_mix")
     workflow.connect(aromanoiseics, "aroma_noise_ics", aromacolumnnames, "aroma_noise_ics")
 
     # add melodic_mix to the matrix
-    select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
+    select = pe.Node(Select(regex=r".+\.tsv"), name="select")
     workflow.connect(inputnode, "files", select, "in_list")
 
-    merge_columns = pe.Node(MergeColumns(2), name="merge_columns", run_without_submitting=True)
+    merge_columns = pe.Node(MergeColumns(2), name="merge_columns")
     workflow.connect(select, "match_list", merge_columns, "in1")
     workflow.connect(inputnode, "melodic_mix", merge_columns, "in2")
     workflow.connect(aromacolumnnames, "column_names", merge_columns, "column_names2")
 
-    merge = pe.Node(niu.Merge(2), name="merge", run_without_submitting=True)
+    merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(select, "other_list", merge, "in1")
     workflow.connect(merge_columns, "out_with_header", merge, "in2")
 
@@ -271,7 +266,7 @@ def init_ica_aroma_regression_wf(
     # Specifically, both ica_aroma_components_wf and fmriprep's func_preproc_wf use
     # the bold_std_trans_wf that has the iterable node "iterablesource"
     # This way there is no dependency
-    aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.series_std_gb, run_without_submitting=True)
+    aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.series_std_gb)
     workflow.connect(inputnode, "vals", aromavals, "vals")
     workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")
     workflow.connect(aromavals, "vals", outputnode, "vals")
