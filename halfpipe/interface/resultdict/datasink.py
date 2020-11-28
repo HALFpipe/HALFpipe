@@ -58,6 +58,7 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
     for entity in entities:  # is already reversed
         tagval = tags.get(entity)
         if tagval is not None:
+            tagval = formatlikebids(tagval)
             filename = f"{entity}-{tagval}_{filename}"
 
     return path / filename
