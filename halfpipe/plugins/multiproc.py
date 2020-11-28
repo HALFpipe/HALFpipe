@@ -3,13 +3,19 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import multiprocessing as mp
-from concurrent.futures import ProcessPoolExecutor
+import sys
+import gc
 import logging
 import shutil
+from traceback import format_exception
+
+import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor
 
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
+
+from matplotlib import pyplot as plt
 
 from .reftracer import PathReferenceTracer
 from ..logging import Context
@@ -27,6 +33,42 @@ def initializer(workdir, loggingargs, watchdog):
         init_watchdog()
 
     os.chdir(workdir)
+
+
+# Run node
+def run_node(node, updatehash, taskid):
+    """Function to execute node.run(), catch and log any errors and
+    return the result dictionary
+    Parameters
+    ----------
+    node : nipype Node instance
+        the node to run
+    updatehash : boolean
+        flag for updating hash
+    taskid : int
+        an identifier for this task
+    Returns
+    -------
+    result : dictionary
+        dictionary containing the node runtime results and stats
+    """
+
+    # Init variables
+    result = dict(result=None, traceback=None, taskid=taskid)
+
+    # Try and execute the node via node.run()
+    try:
+        result["result"] = node.run(updatehash=updatehash)
+    except Exception:  # catch all here
+        result["traceback"] = format_exception(*sys.exc_info())
+        result["result"] = node.result
+
+    # Avoid matplotlib memory leak
+    plt.close("all")
+    gc.collect()
+
+    # Return the result dictionary
+    return result
 
 
 class MultiProcPlugin(nip.MultiProcPlugin):
@@ -73,6 +115,22 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._keep = plugin_args.get("keep", "all")
         if self._keep != "all":
             self._rt = PathReferenceTracer()
+
+    def _submit_job(self, node, updatehash=False):
+        self._taskid += 1
+
+        # Don't allow streaming outputs
+        if getattr(node.interface, "terminal_output", "") == "stream":
+            node.interface.terminal_output = "allatonce"
+
+        result_future = self.pool.submit(run_node, node, updatehash, self._taskid)
+        result_future.add_done_callback(self._async_callback)
+        self._task_obj[self._taskid] = result_future
+
+        logger.debug(
+            "[MultiProc] Submitted task %s (taskid=%d).", node.fullname, self._taskid
+        )
+        return self._taskid
 
     def _generate_dependency_list(self, graph):
         if self._rt is not None:
