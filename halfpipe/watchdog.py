@@ -24,7 +24,7 @@ def init_watchdog(interval=60):
             stacktrace = "".join(format_stack(frame))
 
             rows = summary.summarize(muppy.get_objects())
-            memtrace = summary.format_(rows)
+            memtrace = "\n".join(summary.format_(rows))
 
             logger.info(
                 "Watchdog traceback:\n"
