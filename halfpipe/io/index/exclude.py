@@ -92,7 +92,8 @@ class ExcludeDatabase:
         query_str = " ".join([f'{k}="{v}"' for k, v in kwargs.items()])
 
         logging.getLogger("halfpipe").warning(
-            f'Will include observation ({query_str}) for analysis even though rating is "{rating_str}"'
+            f'Will include observation ({query_str}) for analysis '
+            f'even though quality rating is "{rating_str}"'
         )
 
         return False  # no, don't exclude
