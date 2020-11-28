@@ -25,4 +25,5 @@ seaborn
 svgutils
 tabulate
 chardet
+pympler >= 0.9
 calamities
