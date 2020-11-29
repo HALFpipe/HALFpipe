@@ -85,15 +85,17 @@ class BidsDatabase:
 
         bidspaths = set()
 
+        dataset_description_path = bidsdir / "dataset_description.json"
+        bidspaths.add(dataset_description_path)
+
         dataset_description = {
             "Name": self.database.sha1,
             "BIDSVersion": bidsversion,
             "DatasetType": "raw",
         }
-        dataset_description_path = bidsdir / "dataset_description.json"
+
         with open(dataset_description_path, "w") as f:
             json.dump(dataset_description, f, indent=4)
-        bidspaths.add(dataset_description_path)
 
         # image files
         for bidspath, filepath in self.filepaths_by_bidspaths.items():
@@ -181,6 +183,7 @@ class BidsDatabase:
             # use relative paths to limit parents to bidsdir
             files_to_keep.add(relbidspath)
             files_to_keep.update(map(str, Path(relbidspath).parents))
+
         for filepath in _rlistdir(bidsdir, False):
             relfilepath = relpath(filepath, start=bidsdir)
             if relfilepath not in files_to_keep:
