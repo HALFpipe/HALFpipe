@@ -9,7 +9,7 @@ from pathlib import Path
 
 from nipype.interfaces.base.support import Bunch
 
-from halfpipe.utils import findpaths
+from ..path import findpaths
 
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir

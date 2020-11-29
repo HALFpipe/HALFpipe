@@ -9,8 +9,8 @@ import pytest
 import os
 from pathlib import Path
 
-from halfpipe.workflow.execgraph import DontRunRunner
-from halfpipe.plugins.reftracer import PathReferenceTracer
+from ...workflow.execgraph import DontRunRunner
+from ..reftracer import PathReferenceTracer
 
 
 def add(a, b):

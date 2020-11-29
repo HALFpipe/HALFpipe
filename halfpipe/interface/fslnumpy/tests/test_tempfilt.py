@@ -12,7 +12,7 @@ from random import seed
 import nibabel as nib
 import numpy as np
 
-from halfpipe.interface import TemporalFilter
+from ..tempfilt import TemporalFilter
 from nipype.interfaces import fsl
 
 

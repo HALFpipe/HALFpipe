@@ -13,15 +13,14 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
-from halfpipe.tests.resource import setup as setuptestresources
-from halfpipe.resource import get as getresource
+from ....tests.resource import setup as setuptestresources
+from ....resource import get as getresource
 
-from halfpipe.interface import FLAME1
+from ..flame1 import FLAME1
 from nipype.interfaces import fsl
 
-from halfpipe.interface.imagemaths.merge import _merge, _merge_mask
-from halfpipe.interface.stats.model import _group_model
-from halfpipe.io import loadspreadsheet
+from ...imagemaths.merge import _merge, _merge_mask
+from ...stats.model import _group_model
 
 
 @pytest.fixture(scope="module")

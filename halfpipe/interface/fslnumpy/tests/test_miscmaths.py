@@ -9,7 +9,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from halfpipe.interface.fslnumpy.miscmaths import t2z_convert, f2z_convert
+from ..miscmaths import t2z_convert, f2z_convert
 
 
 def t2z_convert_numpy(t, dof):
