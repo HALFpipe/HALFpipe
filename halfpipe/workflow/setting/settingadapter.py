@@ -12,14 +12,13 @@ def add_setting_adapter(workflow):
     inputnode = workflow.get_node("inputnode")
 
     #
-    select = pe.Node(Select(regex=r".+\.tsv"), name="select", run_without_submitting=True)
+    select = pe.Node(Select(regex=r".+\.tsv"), name="select")
     workflow.connect(inputnode, "files", select, "in_list")
 
     #
     adapter = pe.Node(
         Exec(fieldtpls=[("bold", "firststr"), ("confounds", "firststr")]),
         name="adapter",
-        run_without_submitting=True,
     )  # discard any extra files, keep only first match
     workflow.connect(select, "match_list", adapter, "confounds")
     workflow.connect(select, "other_list", adapter, "bold")

@@ -52,7 +52,6 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
             ]
         ),
         name="inputnode",
-        run_without_submitting=True
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
@@ -63,7 +62,6 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
             valkeys=["dummy", "sdc_method"]
         ),
         name="make_resultdicts",
-        run_without_submitting=True
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy")
@@ -110,7 +108,7 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
 
     # vals
     confvals = pe.Node(
-        Vals(), name="vals", mem_gb=memcalc.series_std_gb, run_without_submitting=True
+        Vals(), name="vals", mem_gb=memcalc.series_std_gb
     )
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
     workflow.connect(inputnode, "confounds", confvals, "confounds")

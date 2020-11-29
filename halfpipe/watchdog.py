@@ -8,6 +8,8 @@ import logging
 from traceback import format_stack
 from threading import main_thread, Thread
 
+from pympler import muppy, summary
+
 logger = logging.getLogger("halfpipe.watchdog")
 
 
@@ -17,9 +19,18 @@ def init_watchdog(interval=60):
 
         while True:
             time.sleep(interval)
+
             frame = sys._current_frames()[mainthread.ident]
             stacktrace = "".join(format_stack(frame))
-            logger.info(f"Watchdog traceback: \n {stacktrace}")
+
+            rows = summary.summarize(muppy.get_objects())
+            memtrace = "\n".join(summary.format_(rows))
+
+            logger.info(
+                "Watchdog traceback:\n"
+                f"{stacktrace}\n"
+                f"{memtrace}"
+            )
 
     thread = Thread(target=loop, args=(interval,), daemon=True, name="watchdog")
     thread.start()
