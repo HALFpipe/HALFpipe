@@ -5,7 +5,7 @@
 from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
 from .fixes import ApplyTransforms, FLAMEO, MultipleRegressDesign, ReHo
-from .fslnumpy import FilterRegressor, TemporalFilter
+from .fslnumpy import FLAME1, FilterRegressor, TemporalFilter
 from .imagemaths import AddMeans, BlurInMask, MaskCoverage, MaxIntensity, Merge, MergeMask, Resample, ZScore
 from .preprocessing import GrandMeanScaling
 from .report import PlotEpi, PlotRegistration, Vals, CalcMean
@@ -16,7 +16,7 @@ from .resultdict import (
     ExtractFromResultdict,
     ResultdictDatasink,
 )
-from .stats import MakeDofVolume, InterceptOnlyModel, LinearModel
+from .stats import DesignTsv, MakeDofVolume, InterceptOnlyModel, LinearModel
 from .utility import (
     Exec,
     Filter,
@@ -38,6 +38,7 @@ __all__ = [
     FLAMEO,
     MultipleRegressDesign,
     ReHo,
+    FLAME1,
     FilterRegressor,
     TemporalFilter,
     AddMeans,
@@ -58,6 +59,7 @@ __all__ = [
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
+    DesignTsv,
     MakeDofVolume,
     InterceptOnlyModel,
     LinearModel,

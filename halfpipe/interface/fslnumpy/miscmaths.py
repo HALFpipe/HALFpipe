@@ -5,8 +5,12 @@
 """
 
 import math
+import logging
+from pprint import pformat
 
 from mpmath import mpf, workdps, sqrt, erfinv, gamma, hyper, pi, power, betainc
+
+logger = logging.getLogger("halfpipe")
 
 
 def adaptive_precision(func):
@@ -14,21 +18,27 @@ def adaptive_precision(func):
     ensure that the wrapped is run with sufficient precision
     """
 
-    def wrapper(*args, **kwargs):
-        dps = 2 ** 5
+    def wrapper(*args):
+        if any(math.isnan(a) for a in args):
+            return math.nan  # skip computation
+
+        if math.isinf(args[0]):  # first argument is always the statistic
+            return args[0]
+
+        dps = 2 ** 4
 
         zprev = None
 
-        while dps <= 2 ** 16:
+        while dps <= 2 ** 16:  # avoid infinite loop
             with workdps(dps):
                 z = math.inf
 
                 try:
-                    z = float(
-                        func(*args, **kwargs)
-                    )
+                    z = float(func(*args))
                 except ValueError:
                     pass
+                except ZeroDivisionError:
+                    return math.nan
 
                 if zprev is not None:
                     if math.isfinite(z):
@@ -39,7 +49,9 @@ def adaptive_precision(func):
 
                 zprev = z
 
-        raise ValueError("Convergence failure")
+        if not math.isnan(z):
+            logger.warning(f"Convergence failure for adaptive_precision with args {pformat(args)}")
+        return float(z)
 
     return wrapper
 
@@ -49,7 +61,7 @@ def t2z_convert(t, nu):
     t = mpf(t)
     nu = mpf(nu)
 
-    z = sqrt(mpf("2")) * erfinv(
+    z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
         mpf("2") * t
         * gamma((mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2"))
         * hyper(
@@ -69,9 +81,12 @@ def f2z_convert(x, d1, d2):
     d1 = mpf(d1)
     d2 = mpf(d2)
 
-    z = sqrt(mpf("2")) * erfinv(
+    if x < mpf("0") or d1 < mpf("0") or d2 < mpf("0"):
+        return mpf("0")
+
+    z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
         -mpf("1") + mpf("2")
-        * betainc(
+        * betainc(  # F distribution cdf
             d1 / mpf("2"),
             d2 / mpf("2"),
             x2=d1 * x / (d1 * x + d2),

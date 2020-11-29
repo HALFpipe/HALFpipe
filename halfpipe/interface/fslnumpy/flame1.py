@@ -6,11 +6,14 @@
 
 from collections import OrderedDict
 from pathlib import Path
+import multiprocessing as mp
 
 import numpy as np
 import pandas as pd
 import nibabel as nib
 from scipy import optimize
+
+from tqdm import tqdm
 
 from nilearn.image import new_img_like
 
@@ -23,7 +26,11 @@ from nipype.interfaces.base import (
     SimpleInterface
 )
 
+from ...io import parse_design
+from ..stats import DesignSpec
 from .miscmaths import t2z_convert, f2z_convert
+
+mp_context = mp.get_context("forkserver")
 
 
 def calcgam(beta, y, z, s):
@@ -43,17 +50,20 @@ def calcgam(beta, y, z, s):
 def marg_posterior_energy(x, y, z, s):
     ex = np.exp(x)  # ex is variance
 
-    if ex <= 0:
+    if ex < 0 or np.isclose(ex, 0):
         return np.inf  # this 1e32 in the original code
 
-    gam, _, iU, ziUz = calcgam(ex, y, z, s)
+    try:
+        gam, _, iU, ziUz = calcgam(ex, y, z, s)
+    except np.linalg.LinAlgError:
+        return np.inf
 
     _, iU_logdet = np.linalg.slogdet(iU)
     _, ziUz_logdet = np.linalg.slogdet(ziUz)
 
     ret = -(
         0.5 * iU_logdet - 0.5 * ziUz_logdet
-        - 0.5 * np.asscalar(y.T @ iU @ y - gam.T @ ziUz @ gam)
+        - 0.5 * float(y.T @ iU @ y - gam.T @ ziUz @ gam)
     )
 
     return ret
@@ -88,20 +98,25 @@ def flame_stage1_onvoxel(y, z, s):
 
 
 def t_ols_contrast(mn, covariance, dof, tcontrast):
-    varcope = np.asscalar(
+    varcope = float(
         tcontrast @ covariance @ tcontrast.T
     )
 
-    cope = np.asscalar(tcontrast @ mn)
+    cope = float(tcontrast @ mn)
 
-    t = cope / np.sqrt(varcope)
+    if np.isnan(cope) or np.isnan(varcope) or np.isclose(varcope, 0) or varcope < 0:
+        t = np.nan  # avoid warnings
+
+    else:
+        t = cope / np.sqrt(varcope)
+
     z = t2z_convert(t, dof)
 
     return cope, varcope, t, z
 
 
 def f_ols_contrast(mn, covariance, dof1, dof2, fcontrast):
-    f = np.asscalar(mn.T @ fcontrast.T @ np.linalg.inv(fcontrast @ covariance @ fcontrast.T) @ fcontrast @ mn / dof1)
+    f = float(mn.T @ fcontrast.T @ np.linalg.inv(fcontrast @ covariance @ fcontrast.T) @ fcontrast @ mn / dof1)
 
     z = f2z_convert(f, dof1, dof2)
 
@@ -129,36 +144,17 @@ def flame1_contrast(mn, covariance, npts, cmat):
         return dict(f=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z)
 
 
-class FLAME1InputSpec(TraitedSpec):
+class FLAME1InputSpec(DesignSpec):
     cope_files = InputMultiPath(
         File(exists=True),
         mandatory=True,
     )
     var_cope_files = InputMultiPath(
         File(exists=True),
-        mandatory=True,
+        mandatory=False,
     )
     mask_files = InputMultiPath(
         File(exists=True),
-        mandatory=True,
-    )
-
-    regressors = traits.Dict(
-        traits.Str,
-        traits.List(traits.Float),
-        mandatory=True,
-    )
-    contrasts = traits.List(
-        traits.Either(
-            traits.Tuple(traits.Str, traits.Enum("T"), traits.List(traits.Str),
-                         traits.List(traits.Float)),
-            traits.Tuple(traits.Str, traits.Enum("F"),
-                         traits.List(
-                             traits.Tuple(traits.Str, traits.Enum("T"),
-                                          traits.List(traits.Str),
-                                          traits.List(traits.Float)),
-            ))
-        ),
         mandatory=True,
     )
 
@@ -184,53 +180,21 @@ class FLAME1(SimpleInterface):
     input_spec = FLAME1InputSpec
     output_spec = FLAME1OutputSpec
 
-    def _parse_design(self):
-        dmat = pd.DataFrame.from_dict(self.inputs.regressors)
-
-        cmatdict = OrderedDict()
-
-        def makecmat(conditions, weights):
-            cmat = pd.Series(data=weights, index=conditions)[dmat.columns]
-            cmat = cmat.to_numpy(dtype=np.float64)[np.newaxis, :]
-
-            return cmat
-
-        for contrast in self.inputs.contrasts:
-            name, statistic, cdata = contrast
-
-            cmat = None
-
-            if statistic == "F":
-                tcmats = list()
-
-                for tname, _, conditions, weights in cdata:
-                    tcmat = makecmat(conditions, weights)
-
-                    if tname in cmatdict:
-                        assert np.allclose(cmatdict[tname], tcmat)
-                        del cmatdict[tname]
-
-                    tcmats.append(tcmat)
-
-                cmat = np.concatenate(tcmats, axis=0)
-
-            elif statistic == "T":
-                conditions, weights = cdata
-                cmat = makecmat(conditions, weights)
-
-            if cmat is not None:
-                cmatdict[name] = cmat
-
-        return dmat, cmatdict
-
     def _run_interface(self, runtime):
         cope_files = self.inputs.cope_files
         var_cope_files = self.inputs.var_cope_files
         mask_files = self.inputs.mask_files
 
-        cope_data = [nib.load(f).get_fdata() for f in cope_files]
-        var_cope_data = [nib.load(f).get_fdata() for f in var_cope_files]
-        mask_data = [np.asanyarray(nib.load(f).dataobj).astype(np.bool) for f in mask_files]
+        cope_data = [
+            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in cope_files
+        ]
+        var_cope_data = [
+            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
+        ]
+        mask_data = [
+            np.asanyarray(nib.load(f).dataobj).astype(np.bool)[:, :, :, np.newaxis]
+            for f in mask_files
+        ]
 
         copes = np.concatenate(cope_data, axis=3)
         var_copes = np.concatenate(var_cope_data, axis=3)
@@ -238,39 +202,50 @@ class FLAME1(SimpleInterface):
 
         shape = copes[..., 0].shape
 
-        dmat, cmatdict = self._parse_design()
+        dmat, cmatdict = parse_design(self.inputs.regressors, self.inputs.contrasts)
+
+        nevs = dmat.columns.size
 
         res = OrderedDict((name, dict()) for name in cmatdict.keys())
 
-        def ensure_column_vector(x):
-            return np.ravel(x)[np.newaxis, :]
+        masks = np.logical_and(masks, np.isfinite(copes))
+        masks = np.logical_and(masks, np.isfinite(var_copes))
+        masks = np.logical_and(masks, dmat.notna().all(axis=1))
 
-        for c in np.ndindex(*shape):
-            m = masks[c]
-            m = np.logical_and(m, copes[c].isfinite())
-            m = np.logical_and(m, var_copes[c].isfinite())
-            m = np.logical_and(m, dmat.notna().all(axis=1))
+        import pdb; pdb.set_trace()
 
-            y = ensure_column_vector(copes[c][m])
+        def ensure_row_vector(x):
+            return np.ravel(x)[:, np.newaxis]
 
-            npts = len(y)
+        with tqdm(total=np.prod(shape), unit="voxels") as pbar:
+            for c in np.ndindex(*shape):
+                pbar.update()
 
-            if npts == 0:
-                continue
+                m = masks[c]
+                npts = np.count_nonzero(m)
 
-            s = ensure_column_vector(var_copes[c][m])
+                if npts < nevs + 1:  # need at least one degree of freedom
+                    continue
 
-            z = dmat.loc[m, :].to_numpy(dtype=np.float64)
+                y = ensure_row_vector(copes[c][m])
+                s = ensure_row_vector(var_copes[c][m])
+                z = dmat.loc[m, :].to_numpy(dtype=np.float64)
 
-            mn, covariance = flame_stage1_onvoxel(y, z, s)
+                try:
+                    mn, covariance = flame_stage1_onvoxel(y, z, s)
+                except np.linalg.LinAlgError:
+                    continue
 
-            for name, cmat in cmatdict.items():
-                r = flame1_contrast(mn, covariance, npts, cmat)
+                for name, cmat in cmatdict.items():
+                    try:
+                        r = flame1_contrast(mn, covariance, npts, cmat)
 
-                res[name][c] = r
+                        res[name][c] = r
+                    except np.linalg.LinAlgError:
+                        continue
 
         for stat_name in ["cope", "var_cope", "tdof", "zstat"]:
-            self._results[f"{stat_name}s"] = [None for _ in range(len(res))]
+            self._results[f"{stat_name}s"] = [False for _ in range(len(res))]
 
         ref_img = nib.load(cope_files[0])
 

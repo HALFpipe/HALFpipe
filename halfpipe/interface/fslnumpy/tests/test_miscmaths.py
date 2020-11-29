@@ -52,3 +52,14 @@ def test_f2z_convert_numpy(f, d1, d2):
 ])
 def test_f2z_convert_large(f, d1, d2):
     assert np.isfinite(f2z_convert(f, d1, d2))
+
+
+@pytest.mark.timeout(1)
+def test_nonfinite():
+    assert t2z_convert(np.inf, 1) == np.inf
+    assert t2z_convert(-np.inf, 1) == -np.inf
+    assert np.isnan(t2z_convert(np.nan, 1))
+
+    assert f2z_convert(np.inf, 1, 1) == np.inf
+    assert f2z_convert(-np.inf, 1, 1) == -np.inf
+    assert np.isnan(f2z_convert(np.nan, 1, 1))
