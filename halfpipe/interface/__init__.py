@@ -16,7 +16,7 @@ from .resultdict import (
     ExtractFromResultdict,
     ResultdictDatasink,
 )
-from .stats import DesignTsv, MakeDofVolume, InterceptOnlyModel, LinearModel
+from .stats import MakeDesignTsv, MakeDofVolume, InterceptOnlyModel, LinearModel
 from .utility import (
     Exec,
     Filter,
@@ -59,7 +59,7 @@ __all__ = [
     AggregateResultdicts,
     ExtractFromResultdict,
     ResultdictDatasink,
-    DesignTsv,
+    MakeDesignTsv,
     MakeDofVolume,
     InterceptOnlyModel,
     LinearModel,

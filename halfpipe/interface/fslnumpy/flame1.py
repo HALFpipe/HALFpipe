@@ -212,7 +212,7 @@ class FLAME1(SimpleInterface):
         masks = np.logical_and(masks, np.isfinite(var_copes))
         masks = np.logical_and(masks, dmat.notna().all(axis=1))
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         def ensure_row_vector(x):
             return np.ravel(x)[:, np.newaxis]
