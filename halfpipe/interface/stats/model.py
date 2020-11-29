@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
+from .design import DesignSpec
 from ...io import loadspreadsheet
 
 logger = logging.getLogger("halfpipe")
@@ -41,7 +42,7 @@ def _check_multicollinearity(matrix):
 
 
 def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subjects=None):
-    rawdataframe = loadspreadsheet(spreadsheet)
+    rawdataframe = loadspreadsheet(spreadsheet, dtype=object)
 
     id_column = None
     for variabledict in variabledicts:
@@ -75,6 +76,9 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     # also sets order
     continuous = continuous.loc[subjects, :]
     categorical = categorical.loc[subjects, :]
+
+    # change type to numeric
+    continuous = continuous.astype(np.float64)
 
     # Demean continuous for flameo
     continuous -= continuous.mean()
@@ -164,7 +168,7 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
         )
         return (
             {"intercept": [1.0] * len(subjects)},
-            [["mean", "T", ["intercept"], [1]]],
+            [["mean", "T", ["Intercept"], [1]]],
             ["mean"],
         )
 
@@ -207,23 +211,7 @@ class LinearModelInputSpec(TraitedSpec):
     subjects = traits.List(traits.Str, mandatory=True)
 
 
-class ModelOutputSpec(TraitedSpec):
-    regressors = traits.Dict(
-        traits.Str,
-        traits.List(traits.Float),
-    )
-    contrasts = traits.List(
-        traits.Either(
-            traits.Tuple(traits.Str, traits.Enum("T"), traits.List(traits.Str),
-                         traits.List(traits.Float)),
-            traits.Tuple(traits.Str, traits.Enum("F"),
-                         traits.List(
-                             traits.Tuple(traits.Str, traits.Enum("T"),
-                                          traits.List(traits.Str),
-                                          traits.List(traits.Float)),
-            ))
-        ),
-    )
+class ModelOutputSpec(DesignSpec):
     contrast_names = traits.List(traits.Str())
 
 
@@ -258,8 +246,8 @@ class InterceptOnlyModel(SimpleInterface):
     output_spec = ModelOutputSpec
 
     def _run_interface(self, runtime):
-        self._results["regressors"] = {"intercept": [1.0] * self.inputs.n_copes}
-        self._results["contrasts"] = [["intercept", "T", ["intercept"], [1]]]
-        self._results["contrast_names"] = ["intercept"]
+        self._results["regressors"] = {"Intercept": [1.0] * self.inputs.n_copes}
+        self._results["contrasts"] = [["Intercept", "T", ["Intercept"], [1]]]
+        self._results["contrast_names"] = ["Intercept"]
 
         return runtime

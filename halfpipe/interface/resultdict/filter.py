@@ -31,7 +31,7 @@ def _aggregate_if_needed(inval):
 
 
 def _get_dataframe(filepath, variabledicts):
-    dataframe = loadspreadsheet(filepath)
+    dataframe = loadspreadsheet(filepath, dtype=object)
 
     for variabledict in variabledicts:
         if variabledict.get("type") == "id":
