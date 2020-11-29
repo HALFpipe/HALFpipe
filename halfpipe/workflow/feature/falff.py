@@ -53,7 +53,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]), name="make_resultdicts", run_without_submitting=True
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]), name="make_resultdicts"
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
@@ -95,7 +95,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(stddev_unfiltered, "out_file", falff, "in_file_c")
 
     #
-    merge = pe.Node(niu.Merge(2), name="merge", run_without_submitting=True)
+    merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(stddev_filtered, "out_file", merge, "in1")
     workflow.connect(falff, "out_file", merge, "in2")
 
@@ -110,7 +110,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(smooth, "out_file", zscore, "in_file")
     workflow.connect(inputnode, "mask", zscore, "mask")
 
-    split = pe.Node(niu.Split(splits=[1, 1]), name="split", run_without_submitting=True)
+    split = pe.Node(niu.Split(splits=[1, 1]), name="split")
     workflow.connect(zscore, "out_file", split, "inlist")
 
     workflow.connect(split, "out1", make_resultdicts, "alff")

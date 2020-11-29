@@ -39,7 +39,7 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]), name="make_resultdicts", run_without_submitting=True
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]), name="make_resultdicts"
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name

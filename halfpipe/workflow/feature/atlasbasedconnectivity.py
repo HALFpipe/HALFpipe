@@ -65,7 +65,6 @@ def init_atlasbasedconnectivity_wf(
             nobroadcastkeys=["mean_t_s_n_r", "coverage"],
         ),
         name="make_resultdicts",
-        run_without_submitting=True
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
