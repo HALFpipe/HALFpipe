@@ -52,12 +52,12 @@ def marg_posterior_energy(x, y, z, s):
     ex = np.exp(x)  # ex is variance
 
     if ex < 0 or np.isclose(ex, 0):
-        return np.inf  # this 1e32 in the original code
+        return 1e32  # very large value
 
     try:
         gam, _, iU, ziUz = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
-        return np.inf
+        return 1e32
 
     _, iU_logdet = np.linalg.slogdet(iU)
     _, ziUz_logdet = np.linalg.slogdet(ziUz)
