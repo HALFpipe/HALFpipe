@@ -264,30 +264,37 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
     ref_img = nib.load(cope_files[0])
 
     for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
-        rdf = pd.DataFrame.from_records(voxel_results[contrast_name])
+        contrast_results = voxel_results[contrast_name]
 
-        for stat_name, series in rdf.iterrows():
-            coordinates = series.index.to_list()
+        for map_name in ["mask", "zstat"]:  # make sure that we always get a mask and a zstat
+            if map_name not in contrast_results:
+                contrast_results[map_name] = dict()
+
+        rdf = pd.DataFrame.from_records(contrast_results)
+
+        for map_name, series in rdf.iterrows():
+            coordinates = series.index.tolist()
             values = series.values
 
-            if stat_name == "mask":
+            if map_name == "mask":
                 arr = np.zeros(shape, dtype=np.bool)
 
             else:
                 arr = np.full(shape, np.nan)
 
-            arr[(*zip(*coordinates),)] = values
+            if len(coordinates) > 0:
+                arr[(*zip(*coordinates),)] = values
 
             img = new_img_like(ref_img, arr, copy_header=True)
 
-            fname = Path.cwd() / f"{stat_name}_{i+1}_{contrast_name}.nii.gz"
+            fname = Path.cwd() / f"{map_name}_{i+1}_{contrast_name}.nii.gz"
             nib.save(img, fname)
 
-            if stat_name in ["tdof"]:
-                output_name = stat_name
+            if map_name in ["tdof"]:
+                output_name = map_name
 
             else:
-                output_name = f"{stat_name}s"
+                output_name = f"{map_name}s"
 
             if output_name in output_files:
                 output_files[output_name][i] = fname
@@ -323,7 +330,7 @@ class FLAME1OutputSpec(TraitedSpec):
         traits.Either(File(exists=True), traits.Bool)
     )
     zstats = traits.List(
-        traits.Either(File(exists=True), traits.Bool)
+        File(exists=True)
     )
     fstats = traits.List(
         traits.Either(File(exists=True), traits.Bool)
@@ -332,7 +339,7 @@ class FLAME1OutputSpec(TraitedSpec):
         traits.Either(File(exists=True), traits.Bool)
     )
     masks = traits.List(
-        traits.Either(File(exists=True), traits.Bool)
+        File(exists=True)
     )
 
 

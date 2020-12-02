@@ -203,7 +203,8 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
 class LinearModelInputSpec(TraitedSpec):
     spreadsheet = File(exist=True, mandatory=True)
     contrastdicts = traits.List(
-        traits.Dict(traits.Str, traits.Float), mandatory=True
+        traits.Dict(traits.Str, traits.Any),
+        mandatory=True
     )
     variabledicts = traits.List(
         traits.Dict(traits.Str, traits.Any), mandatory=True
@@ -211,7 +212,9 @@ class LinearModelInputSpec(TraitedSpec):
     subjects = traits.List(traits.Str, mandatory=True)
 
 
-class ModelOutputSpec(DesignSpec):
+class ModelOutputSpec(TraitedSpec):
+    regressors = traits.Dict(traits.Str, traits.Any)
+    contrasts = traits.List()
     contrast_names = traits.List(traits.Str())
 
 

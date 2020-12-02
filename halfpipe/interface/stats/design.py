@@ -2,11 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 import pandas as pd
+import numpy as np
 
 from nipype.interfaces.base import TraitedSpec, SimpleInterface, traits, File
 
 from ...io import parse_design
+from ...utils import ravel
 
 
 class DesignSpec(TraitedSpec):
@@ -46,3 +50,20 @@ class MakeDesignTsv(SimpleInterface):
     def _run_interface(self, runtime):
         dmat, cmatdict = parse_design(self.inputs.regressors, self.inputs.contrasts)
 
+        dmat.index = self.inputs.row_index
+
+        self._results["design_tsv"] = Path.cwd() / "design.tsv"
+        dmat.to_csv(
+            self._results["design_tsv"], sep="\t", index=True, na_rep="n/a", header=True
+        )
+
+        cmat = pd.DataFrame(
+            np.concatenate([*cmatdict.values()], axis=0),
+            index=ravel([[k] * v.shape[0] for k, v in cmatdict.items()]),
+            columns=dmat.columns
+        )
+
+        self._results["contrasts_tsv"] = Path.cwd() / "contrasts.tsv"
+        cmat.to_csv(
+            self._results["contrasts_tsv"], sep="\t", index=True, na_rep="n/a", header=True
+        )

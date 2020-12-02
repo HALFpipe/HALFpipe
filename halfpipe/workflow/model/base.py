@@ -234,12 +234,12 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")
 
         # mask output
-        workflow.connect(modelfit, "mask", make_resultdicts_b, "mask")
+        workflow.connect(modelfit, "masks", make_resultdicts_b, "mask")
 
         # random field theory
         smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
         workflow.connect([(modelfit, smoothest, [(("zstats", ravel), "zstat_file")])])
-        workflow.connect([(modelfit, smoothest, [(("mask", ravel), "mask_file")])])
+        workflow.connect([(modelfit, smoothest, [(("masks", ravel), "mask_file")])])
 
         criticalz = pe.MapNode(
             niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),
@@ -258,8 +258,10 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     # make tsv files for design and contrast matrices
     maketsv = pe.MapNode(
         MakeDesignTsv(),
+        iterfield=["regressors", "contrasts"],
         name="maketsv"
     )
+    workflow.connect(extractfromresultdict, model.across, maketsv, "row_index")
     workflow.connect(modelspec, "regressors", maketsv, "regressors")
     workflow.connect(modelspec, "contrasts", maketsv, "contrasts")
 
