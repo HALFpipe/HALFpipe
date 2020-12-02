@@ -14,6 +14,8 @@ import pandas as pd
 import nibabel as nib
 from scipy import optimize
 
+from tqdm import tqdm
+
 from nilearn.image import new_img_like
 
 from nipype.interfaces.base import (
@@ -241,7 +243,7 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
     # run voxelwise
     voxel_results = dict()
     with cm:
-        for x in it:
+        for x in tqdm(it, unit="voxels"):
             if x is None:
                 continue
 
