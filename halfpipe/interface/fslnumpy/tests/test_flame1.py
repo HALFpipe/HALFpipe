@@ -8,7 +8,6 @@ import pytest
 
 import os
 import tarfile
-from pathlib import Path
 
 import nibabel as nib
 import numpy as np
@@ -17,10 +16,14 @@ from ....tests.resource import setup as setuptestresources
 from ....resource import get as getresource
 
 from ..flame1 import FLAME1
+from ...fixes import FLAMEO as FSLFLAMEO
+
 from nipype.interfaces import fsl
+from nipype.pipeline import engine as pe
 
 from ...imagemaths.merge import _merge, _merge_mask
 from ...stats.model import _group_model
+from ....utils import first
 
 
 @pytest.fixture(scope="module")
@@ -54,10 +57,12 @@ def wakemandg_hensonrn(tmp_path_factory):
     return data
 
 
-# @pytest.mark.timeout(3600)
-def test_FLAME1(tmp_path, wakemandg_hensonrn):
+@pytest.mark.timeout(7200)
+@pytest.mark.parametrize("use_var_cope", [False, True])
+def test_FLAME1(tmp_path, wakemandg_hensonrn, use_var_cope):
     os.chdir(str(tmp_path))
 
+    # prepare
     cope_files = wakemandg_hensonrn["stat-effect_statmap"]
     var_cope_files = wakemandg_hensonrn["stat-variance_statmap"]
     mask_files = wakemandg_hensonrn["mask"]
@@ -79,13 +84,90 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn):
         ]
     )
 
-    instance = FLAME1()
+    # run FSL
+    merge_cope_file = _merge(cope_files, "t")
+    merge_var_cope_file = _merge(var_cope_files, "t")
+    merge_mask_file = _merge_mask(mask_files)
 
-    instance.inputs.cope_files = cope_files
-    instance.inputs.var_cope_files = var_cope_files
-    instance.inputs.mask_files = mask_files
+    workflow = pe.Workflow("comparison", base_dir=str(tmp_path))
 
-    instance.inputs.regressors = regressors
-    instance.inputs.contrasts = contrasts
+    multipleregressdesign = pe.Node(
+        fsl.MultipleRegressDesign(
+            regressors=regressors,
+            contrasts=contrasts,
+        ),
+        name="multipleregressdesign",
+    )
+
+    flameo = pe.Node(
+        FSLFLAMEO(
+            run_mode="flame1",
+            cope_file=merge_cope_file,
+            mask_file=merge_mask_file,
+        ),
+        name="flameo"
+    )
+
+    if use_var_cope:
+        flameo.inputs.var_cope_file = merge_var_cope_file
+
+    workflow.connect(multipleregressdesign, "design_mat", flameo, "design_file")
+    workflow.connect(multipleregressdesign, "design_con", flameo, "t_con_file")
+    workflow.connect(multipleregressdesign, "design_fts", flameo, "f_con_file")
+    workflow.connect(multipleregressdesign, "design_grp", flameo, "cov_split_file")
+
+    execgraph = workflow.run()
+
+    # retrieve flameo again
+    for node in execgraph.nodes():
+        if node.name == "flameo":
+            flameo = node
+
+    result = flameo.result
+
+    r0 = dict(
+        cope=result.outputs.copes[0],
+        tstat=result.outputs.tstats[0],
+        fstat=first(result.outputs.fstats),
+        tdof=result.outputs.tdof[0],
+    )
+
+    # run halfpipe
+    instance = FLAME1(
+        cope_files=cope_files,
+        mask_files=mask_files,
+        regressors=regressors,
+        contrasts=contrasts,
+    )
+
+    if use_var_cope:
+        instance.inputs.var_cope_files = var_cope_files
 
     result = instance.run()
+
+    r1 = dict(
+        cope=result.outputs.copes[0],
+        tstat=result.outputs.tstats[0],
+        fstat=result.outputs.fstats[2],
+        tdof=result.outputs.tdof[0],
+    )
+
+    # compare
+    mask = nib.load(merge_mask_file).get_fdata() > 0
+
+    for k in set(r0.keys()) & set(r1.keys()):
+        a0 = nib.load(r0[k]).get_fdata()[mask]
+        a1 = nib.load(r1[k]).get_fdata()[mask]
+
+        # weak criteria, determined post-hoc
+        # we don't expect exactly identical results, because FSL and numpy
+        # use different numerics code and we use double precision while FSL
+        # uses single precision floating point
+        # so these assertions are here to verify that the small differences
+        # will not get any larger with future changes or optimizations
+
+        # no more than one percent of voxels can be more than one percent different
+        assert np.isclose(a0, a1, rtol=1e-2).mean() > 0.99, f"Too many diverging voxels for {k}"
+
+        # mean error average needs to be below 0.05
+        assert np.abs(a0 - a1).mean() < 0.05, f"Too high mean error average for {k}"

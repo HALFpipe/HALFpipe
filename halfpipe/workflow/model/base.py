@@ -16,7 +16,8 @@ from ...interface import (
     MakeResultdicts,
     FilterList,
     MultipleRegressDesign,
-    FLAMEO,
+    FLAMEO as FSLFLAMEO,
+    FLAME1,
     FilterResultdicts,
     AggregateResultdicts,
     ResultdictDatasink,
@@ -148,6 +149,55 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         )
         workflow.connect(countimages, "image_count", modelspec, "n_copes")
 
+        #
+        mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
+        mergemask = pe.MapNode(MergeMask(), name="mergemask", **mergenodeargs)
+        workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
+
+        mergeeffect = pe.MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
+        workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
+
+        mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
+        workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
+
+        mergedof = pe.MapNode(Merge(dimension="t"), name="mergedof", **mergenodeargs)
+        workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
+
+        # prepare design matrix
+        multipleregressdesign = pe.MapNode(
+            MultipleRegressDesign(),
+            name="multipleregressdesign",
+            iterfield=["regressors", "contrasts"],
+            mem_gb=memcalc.min_gb,
+        )
+        workflow.connect(modelspec, "regressors", multipleregressdesign, "regressors")
+        workflow.connect(modelspec, "contrasts", multipleregressdesign, "contrasts")
+
+        #
+        flameo = pe.MapNode(
+            FSLFLAMEO(run_mode=run_mode),
+            name="flameo",
+            mem_gb=memcalc.volume_std_gb * 100,
+            iterfield=[
+                "mask_file",
+                "cope_file",
+                "var_cope_file",
+                "dof_var_cope_file",
+                "design_file",
+                "t_con_file",
+                "f_con_file",
+                "cov_split_file",
+            ],
+        )
+        workflow.connect(mergemask, "merged_file", flameo, "mask_file")
+        workflow.connect(mergeeffect, "merged_file", flameo, "cope_file")
+        workflow.connect(mergevariance, "merged_file", flameo, "var_cope_file")
+        workflow.connect(mergedof, "merged_file", flameo, "dof_var_cope_file")
+        workflow.connect(multipleregressdesign, "design_mat", flameo, "design_file")
+        workflow.connect(multipleregressdesign, "design_con", flameo, "t_con_file")
+        workflow.connect(multipleregressdesign, "design_fts", flameo, "f_con_file")
+        workflow.connect(multipleregressdesign, "design_grp", flameo, "cov_split_file")
+
     elif model.type in ["lme"]:  # glm
         run_mode = "flame1"
 
@@ -162,55 +212,6 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             mem_gb=memcalc.min_gb,
         )
         workflow.connect(extractfromresultdict, "sub", modelspec, "subjects")
-
-    #
-    mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
-    mergemask = pe.MapNode(MergeMask(), name="mergemask", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
-
-    mergeeffect = pe.MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
-
-    mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
-
-    mergedof = pe.MapNode(Merge(dimension="t"), name="mergedof", **mergenodeargs)
-    workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
-
-    # prepare design matrix
-    multipleregressdesign = pe.MapNode(
-        MultipleRegressDesign(),
-        name="multipleregressdesign",
-        iterfield=["regressors", "contrasts"],
-        mem_gb=memcalc.min_gb,
-    )
-    workflow.connect(modelspec, "regressors", multipleregressdesign, "regressors")
-    workflow.connect(modelspec, "contrasts", multipleregressdesign, "contrasts")
-
-    #
-    flameo = pe.MapNode(
-        FLAMEO(run_mode=run_mode),
-        name="flameo",
-        mem_gb=memcalc.volume_std_gb * 100,
-        iterfield=[
-            "mask_file",
-            "cope_file",
-            "var_cope_file",
-            "dof_var_cope_file",
-            "design_file",
-            "t_con_file",
-            "f_con_file",
-            "cov_split_file",
-        ],
-    )
-    workflow.connect(mergemask, "merged_file", flameo, "mask_file")
-    workflow.connect(mergeeffect, "merged_file", flameo, "cope_file")
-    workflow.connect(mergevariance, "merged_file", flameo, "var_cope_file")
-    workflow.connect(mergedof, "merged_file", flameo, "dof_var_cope_file")
-    workflow.connect(multipleregressdesign, "design_mat", flameo, "design_file")
-    workflow.connect(multipleregressdesign, "design_con", flameo, "t_con_file")
-    workflow.connect(multipleregressdesign, "design_fts", flameo, "f_con_file")
-    workflow.connect(multipleregressdesign, "design_grp", flameo, "cov_split_file")
 
     #
     filtercons = pe.MapNode(

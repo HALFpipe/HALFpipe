@@ -30,7 +30,15 @@ def _merge_fname(in_files):
     ])
     if len(prefix) > 0:
         prefix += "_"
-    return f"{prefix}merge.nii.gz"
+
+    fname = Path.cwd() / f"{prefix}merge.nii.gz"
+
+    count = 1
+    while fname.exists():
+        fname = Path.cwd() / f"{prefix}{count}_merge.nii.gz"
+        count += 1
+
+    return fname
 
 
 def _merge(in_files, dimension):
@@ -61,7 +69,7 @@ def _merge(in_files, dimension):
 
     outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
 
-    merged_file = Path.cwd() / _merge_fname(in_files)
+    merged_file = _merge_fname(in_files)
     nib.save(outimg, merged_file)
 
     return merged_file
@@ -78,7 +86,7 @@ def _merge_mask(in_files):
 
     outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
 
-    merged_file = Path.cwd() / _merge_fname(in_files)
+    merged_file = _merge_fname(in_files)
     nib.save(outimg, merged_file)
 
     return merged_file

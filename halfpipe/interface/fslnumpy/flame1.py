@@ -20,9 +20,9 @@ from nilearn.image import new_img_like
 from nipype.interfaces.base import (
     traits,
     TraitedSpec,
+    isdefined,
     File,
     InputMultiPath,
-    OutputMultiPath,
     SimpleInterface
 )
 
@@ -85,7 +85,7 @@ def flame_stage1_onvoxel(y, z, s):
     y /= norm
     s /= np.square(norm)
 
-    assert np.all(s > 0)  # variance needs to be positive
+    assert not np.any(s < 0), "Variance needs to be non-negative"
 
     beta = solveforbeta(y, z, s)
 
@@ -132,7 +132,9 @@ def flame1_contrast(mn, covariance, npts, cmat):
         tdoflower = npts - nevs
         cope, varcope, t, z = t_ols_contrast(mn, covariance, tdoflower, cmat)
 
-        return dict(cope=cope, varcope=varcope, tdof=tdoflower, t=t, zstat=z)
+        mask = np.isfinite(z)
+
+        return dict(cope=cope, varcope=varcope, tdof=tdoflower, tstat=t, zstat=z, mask=mask)
 
     elif n > 1:
         fdof1 = n
@@ -141,7 +143,9 @@ def flame1_contrast(mn, covariance, npts, cmat):
 
         f, z = f_ols_contrast(mn, covariance, fdof1, fdof2lower, cmat)
 
-        return dict(f=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z)
+        mask = np.isfinite(z)
+
+        return dict(fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
 
 
 class FLAME1InputSpec(DesignSpec):
@@ -162,17 +166,26 @@ class FLAME1InputSpec(DesignSpec):
 
 
 class FLAME1OutputSpec(TraitedSpec):
-    copes = OutputMultiPath(
-        File(exists=True), desc="Contrast estimates for each contrast"
+    copes = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
     )
-    var_copes = OutputMultiPath(
-        File(exists=True), desc="Variance estimates for each contrast"
+    var_copes = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
     )
-    tdofs = OutputMultiPath(
-        File(exists=True), desc="temporal dof file for each contrast"
+    tdof = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
     )
-    zstats = OutputMultiPath(
-        File(exists=True), desc="z-stat file for each contrast"
+    zstats = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
+    )
+    fstats = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
+    )
+    tstats = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
+    )
+    masks = traits.List(
+        traits.Either(File(exists=True), traits.Bool)
     )
 
 
@@ -188,17 +201,21 @@ class FLAME1(SimpleInterface):
         cope_data = [
             nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in cope_files
         ]
-        var_cope_data = [
-            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
-        ]
+        copes = np.concatenate(cope_data, axis=3)
+
         mask_data = [
             np.asanyarray(nib.load(f).dataobj).astype(np.bool)[:, :, :, np.newaxis]
             for f in mask_files
         ]
-
-        copes = np.concatenate(cope_data, axis=3)
-        var_copes = np.concatenate(var_cope_data, axis=3)
         masks = np.concatenate(mask_data, axis=3)
+
+        if isdefined(var_cope_files):
+            var_cope_data = [
+                nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
+            ]
+            var_copes = np.concatenate(var_cope_data, axis=3)
+        else:
+            var_copes = np.zeros_like(copes)
 
         shape = copes[..., 0].shape
 
@@ -244,8 +261,8 @@ class FLAME1(SimpleInterface):
                     except np.linalg.LinAlgError:
                         continue
 
-        for stat_name in ["cope", "var_cope", "tdof", "zstat"]:
-            self._results[f"{stat_name}s"] = [False for _ in range(len(res))]
+        for output_name in ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]:
+            self._results[output_name] = [False for _ in range(len(res))]
 
         ref_img = nib.load(cope_files[0])
 
@@ -256,7 +273,12 @@ class FLAME1(SimpleInterface):
                 coordinates = series.index.to_list()
                 values = series.values
 
-                arr = np.full(shape, np.nan)
+                if stat_name == "mask":
+                    arr = np.zeros(shape, dtype=np.bool)
+
+                else:
+                    arr = np.full(shape, np.nan)
+
                 arr[(*zip(*coordinates),)] = values
 
                 img = new_img_like(ref_img, arr, copy_header=True)
@@ -264,5 +286,13 @@ class FLAME1(SimpleInterface):
                 fname = Path.cwd() / f"{stat_name}_{i+1}_{contrast_name}.nii.gz"
                 nib.save(img, fname)
 
-                if f"{stat_name}s" in self._results:
-                    self._results[f"{stat_name}s"][i] = fname
+                if stat_name in ["tdof"]:
+                    output_name = stat_name
+
+                else:
+                    output_name = f"{stat_name}s"
+
+                if output_name in self._results:
+                    self._results[output_name][i] = fname
+
+        return runtime
