@@ -188,6 +188,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         mask_files=mask_files,
         regressors=regressors,
         contrasts=contrasts,
+        n_procs=2,
     )
 
     if use_var_cope:

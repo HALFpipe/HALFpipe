@@ -4,16 +4,15 @@
 """
 """
 
-from collections import OrderedDict
+import os
 from pathlib import Path
-import multiprocessing as mp
+from multiprocessing import get_context
+from contextlib import nullcontext
 
 import numpy as np
 import pandas as pd
 import nibabel as nib
 from scipy import optimize
-
-from tqdm import tqdm
 
 from nilearn.image import new_img_like
 
@@ -30,7 +29,7 @@ from ...io import parse_design
 from ..stats import DesignSpec
 from .miscmaths import t2z_convert, f2z_convert
 
-mp_context = mp.get_context("forkserver")
+ctx = get_context("forkserver")
 
 
 def calcgam(beta, y, z, s):
@@ -148,6 +147,152 @@ def flame1_contrast(mn, covariance, npts, cmat):
         return dict(fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
 
 
+def voxel_calc(voxel_data):
+    c, y, z, s, cmatdict = voxel_data
+
+    npts = y.size
+
+    try:
+        mn, covariance = flame_stage1_onvoxel(y, z, s)
+    except np.linalg.LinAlgError:
+        return
+
+    voxel_result = dict()
+
+    for name, cmat in cmatdict.items():
+        try:
+            r = flame1_contrast(mn, covariance, npts, cmat)
+
+            if name not in voxel_result:
+                voxel_result[name] = dict()
+
+            voxel_result[name][c] = r
+        except np.linalg.LinAlgError:
+            continue
+
+    return voxel_result
+
+
+def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n_procs=1):
+
+    # load data
+    cope_data = [
+        nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in cope_files
+    ]
+    copes = np.concatenate(cope_data, axis=3)
+
+    mask_data = [
+        np.asanyarray(nib.load(f).dataobj).astype(np.bool)[:, :, :, np.newaxis]
+        for f in mask_files
+    ]
+    masks = np.concatenate(mask_data, axis=3)
+
+    if var_cope_files is not None:
+        var_cope_data = [
+            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
+        ]
+        var_copes = np.concatenate(var_cope_data, axis=3)
+    else:
+        var_copes = np.zeros_like(copes)
+
+    shape = copes[..., 0].shape
+
+    dmat, cmatdict = parse_design(regressors, contrasts)
+
+    nevs = dmat.columns.size
+
+    masks = np.logical_and(masks, np.isfinite(copes))
+    masks = np.logical_and(masks, np.isfinite(var_copes))
+    masks = np.logical_and(masks, dmat.notna().all(axis=1))
+
+    # prepare voxelwise
+    def gen_voxel_data():
+        def ensure_row_vector(x):
+            return np.ravel(x)[:, np.newaxis]
+
+        for c in np.ndindex(*shape):
+            m = masks[c]
+            npts = np.count_nonzero(m)
+
+            if npts < nevs + 1:  # need at least one degree of freedom
+                continue
+
+            y = ensure_row_vector(copes[c][m])
+            s = ensure_row_vector(var_copes[c][m])
+            z = dmat.loc[m, :].to_numpy(dtype=np.float64)
+
+            yield c, y, z, s, cmatdict
+
+    prev_os_environ = os.environ.copy()
+    os.environ.update({
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+    })
+
+    voxel_data = gen_voxel_data()
+    if n_procs < 2:
+        cm = nullcontext()
+        it = map(voxel_calc, voxel_data)
+    else:
+        cm = ctx.Pool(processes=n_procs)
+        it = cm.imap_unordered(voxel_calc, voxel_data)
+
+    # run voxelwise
+    voxel_results = dict()
+    with cm:
+        for x in it:
+            if x is None:
+                continue
+
+            for k, v in x.items():
+                if k not in voxel_results:
+                    voxel_results[k] = dict()
+
+                voxel_results[k].update(v)
+
+    os.environ.update(prev_os_environ)
+
+    output_files = dict()
+
+    # write outputs
+    for output_name in ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]:
+        output_files[output_name] = [False for _ in range(len(voxel_results))]
+
+    ref_img = nib.load(cope_files[0])
+
+    for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
+        rdf = pd.DataFrame.from_records(voxel_results[contrast_name])
+
+        for stat_name, series in rdf.iterrows():
+            coordinates = series.index.to_list()
+            values = series.values
+
+            if stat_name == "mask":
+                arr = np.zeros(shape, dtype=np.bool)
+
+            else:
+                arr = np.full(shape, np.nan)
+
+            arr[(*zip(*coordinates),)] = values
+
+            img = new_img_like(ref_img, arr, copy_header=True)
+
+            fname = Path.cwd() / f"{stat_name}_{i+1}_{contrast_name}.nii.gz"
+            nib.save(img, fname)
+
+            if stat_name in ["tdof"]:
+                output_name = stat_name
+
+            else:
+                output_name = f"{stat_name}s"
+
+            if output_name in output_files:
+                output_files[output_name][i] = fname
+
+    return output_files
+
+
 class FLAME1InputSpec(DesignSpec):
     cope_files = InputMultiPath(
         File(exists=True),
@@ -162,7 +307,7 @@ class FLAME1InputSpec(DesignSpec):
         mandatory=True,
     )
 
-    n_procs = traits.Int(default_value=1)
+    n_procs = traits.Int(1, usedefault=True)
 
 
 class FLAME1OutputSpec(TraitedSpec):
@@ -194,105 +339,20 @@ class FLAME1(SimpleInterface):
     output_spec = FLAME1OutputSpec
 
     def _run_interface(self, runtime):
-        cope_files = self.inputs.cope_files
         var_cope_files = self.inputs.var_cope_files
-        mask_files = self.inputs.mask_files
 
-        cope_data = [
-            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in cope_files
-        ]
-        copes = np.concatenate(cope_data, axis=3)
+        if not isdefined(var_cope_files):
+            var_cope_files = None
 
-        mask_data = [
-            np.asanyarray(nib.load(f).dataobj).astype(np.bool)[:, :, :, np.newaxis]
-            for f in mask_files
-        ]
-        masks = np.concatenate(mask_data, axis=3)
-
-        if isdefined(var_cope_files):
-            var_cope_data = [
-                nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
-            ]
-            var_copes = np.concatenate(var_cope_data, axis=3)
-        else:
-            var_copes = np.zeros_like(copes)
-
-        shape = copes[..., 0].shape
-
-        dmat, cmatdict = parse_design(self.inputs.regressors, self.inputs.contrasts)
-
-        nevs = dmat.columns.size
-
-        res = OrderedDict((name, dict()) for name in cmatdict.keys())
-
-        masks = np.logical_and(masks, np.isfinite(copes))
-        masks = np.logical_and(masks, np.isfinite(var_copes))
-        masks = np.logical_and(masks, dmat.notna().all(axis=1))
-
-        # import pdb; pdb.set_trace()
-
-        def ensure_row_vector(x):
-            return np.ravel(x)[:, np.newaxis]
-
-        with tqdm(total=np.prod(shape), unit="voxels") as pbar:
-            for c in np.ndindex(*shape):
-                pbar.update()
-
-                m = masks[c]
-                npts = np.count_nonzero(m)
-
-                if npts < nevs + 1:  # need at least one degree of freedom
-                    continue
-
-                y = ensure_row_vector(copes[c][m])
-                s = ensure_row_vector(var_copes[c][m])
-                z = dmat.loc[m, :].to_numpy(dtype=np.float64)
-
-                try:
-                    mn, covariance = flame_stage1_onvoxel(y, z, s)
-                except np.linalg.LinAlgError:
-                    continue
-
-                for name, cmat in cmatdict.items():
-                    try:
-                        r = flame1_contrast(mn, covariance, npts, cmat)
-
-                        res[name][c] = r
-                    except np.linalg.LinAlgError:
-                        continue
-
-        for output_name in ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]:
-            self._results[output_name] = [False for _ in range(len(res))]
-
-        ref_img = nib.load(cope_files[0])
-
-        for i, (contrast_name, r) in enumerate(res.items()):
-            rdf = pd.DataFrame.from_records(r)
-
-            for stat_name, series in rdf.iterrows():
-                coordinates = series.index.to_list()
-                values = series.values
-
-                if stat_name == "mask":
-                    arr = np.zeros(shape, dtype=np.bool)
-
-                else:
-                    arr = np.full(shape, np.nan)
-
-                arr[(*zip(*coordinates),)] = values
-
-                img = new_img_like(ref_img, arr, copy_header=True)
-
-                fname = Path.cwd() / f"{stat_name}_{i+1}_{contrast_name}.nii.gz"
-                nib.save(img, fname)
-
-                if stat_name in ["tdof"]:
-                    output_name = stat_name
-
-                else:
-                    output_name = f"{stat_name}s"
-
-                if output_name in self._results:
-                    self._results[output_name][i] = fname
+        self._results.update(
+            flame1(
+                cope_files=self.inputs.cope_files,
+                var_cope_files=var_cope_files,
+                mask_files=self.inputs.mask_files,
+                regressors=self.inputs.regressors,
+                contrasts=self.inputs.contrasts,
+                n_procs=self.inputs.n_procs,
+            )
+        )
 
         return runtime
