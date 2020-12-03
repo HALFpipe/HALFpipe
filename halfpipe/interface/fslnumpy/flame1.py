@@ -175,7 +175,7 @@ def voxel_calc(voxel_data):
     return voxel_result
 
 
-def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n_procs=1):
+def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, num_threads=1):
 
     # load data
     cope_data = [
@@ -233,11 +233,11 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
     })
 
     voxel_data = gen_voxel_data()
-    if n_procs < 2:
+    if num_threads < 2:
         cm = nullcontext()
         it = map(voxel_calc, voxel_data)
     else:
-        cm = ctx.Pool(processes=n_procs)
+        cm = ctx.Pool(processes=num_threads)
         it = cm.imap_unordered(voxel_calc, voxel_data)
 
     # run voxelwise
@@ -266,11 +266,13 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
     for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
         contrast_results = voxel_results[contrast_name]
 
-        for map_name in ["mask", "zstat"]:  # make sure that we always get a mask and a zstat
-            if map_name not in contrast_results:
-                contrast_results[map_name] = dict()
-
         rdf = pd.DataFrame.from_records(contrast_results)
+
+        if "mask" not in rdf.index:  # ensure that we always output a mask
+            rdf = rdf.append(pd.Series(data=False, index=rdf.columns, name="mask"))
+
+        if "zstat" not in rdf.index:  # ensure that we always output a zstat
+            rdf = rdf.append(pd.Series(data=np.nan, index=rdf.columns, name="zstat"))
 
         for map_name, series in rdf.iterrows():
             coordinates = series.index.tolist()
@@ -316,7 +318,7 @@ class FLAME1InputSpec(DesignSpec):
         mandatory=True,
     )
 
-    n_procs = traits.Int(1, usedefault=True)
+    num_threads = traits.Int(1, usedefault=True)
 
 
 class FLAME1OutputSpec(TraitedSpec):
@@ -360,7 +362,7 @@ class FLAME1(SimpleInterface):
                 mask_files=self.inputs.mask_files,
                 regressors=self.inputs.regressors,
                 contrasts=self.inputs.contrasts,
-                n_procs=self.inputs.n_procs,
+                num_threads=self.inputs.num_threads,
             )
         )
 
