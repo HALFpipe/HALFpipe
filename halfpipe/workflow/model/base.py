@@ -61,7 +61,6 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     # setup outputs
-    statmaps = ["effect", "variance", "z", "dof", "mask"]
     make_resultdicts_a = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
@@ -70,27 +69,31 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         ),
         name="make_resultdicts_a",
     )
-    if model is not None:
-        make_resultdicts_a.inputs.model = model.name
+
+    statmaps = ["effect", "variance", "z", "dof", "mask"]
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
             imagekeys=statmaps,
-            metadatakeys=["critical_z"]
+            metadatakeys=["critical_z"],
+            missingvalues=[None, False],  # need to use False because traits doesn't support NoneType
         ),
         name="make_resultdicts_b",
     )
+
     if model is not None:
+        make_resultdicts_a.inputs.model = model.name
         make_resultdicts_b.inputs.model = model.name
 
     # only output statistical map (_b) result dicts because the design matrix (_a) is
     # not relevant for higher level analyses
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 
-    # copy out all results
+    # copy out results
     merge_resultdicts_b = pe.Node(niu.Merge(2), name="merge_resultdicts_b")
     workflow.connect(make_resultdicts_a, "resultdicts", merge_resultdicts_b, "in1")
     workflow.connect(make_resultdicts_b, "resultdicts", merge_resultdicts_b, "in2")
+
     resultdict_datasink = pe.Node(
         ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
     )
@@ -167,6 +170,8 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
     else:
         raise ValueError()
+
+    workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast")
 
     # run models
     if model.type in ["fe"]:
@@ -264,7 +269,6 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect(smoothest, "resels", criticalz, "resels")
         workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
 
-    # outputs
     workflow.connect(modelfit, "copes", make_resultdicts_b, "effect")
     workflow.connect(modelfit, "var_copes", make_resultdicts_b, "variance")
     workflow.connect(modelfit, "zstats", make_resultdicts_b, "z")

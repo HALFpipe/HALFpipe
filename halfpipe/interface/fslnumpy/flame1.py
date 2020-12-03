@@ -135,7 +135,7 @@ def flame1_contrast(mn, covariance, npts, cmat):
 
         mask = np.isfinite(z)
 
-        return dict(cope=cope, varcope=varcope, tdof=tdoflower, tstat=t, zstat=z, mask=mask)
+        return dict(cope=cope, var_cope=varcope, tdof=tdoflower, tstat=t, zstat=z, mask=mask)
 
     elif n > 1:
         fdof1 = n
