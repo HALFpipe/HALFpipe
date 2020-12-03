@@ -13,7 +13,7 @@ COPY . /halfpipe/
 RUN cd /halfpipe && \
     pip install --upgrade pip && \
     pip uninstall --yes fmriprep smriprep mriqc niworkflows nipype statsmodels patsy matplotlib && \
-    pip install --use-feature=2020-resolver . && \
+    pip install . && \
     python postsetup.py && \
     rm -rf ~/.cache/pip && \
     cd .. && rm -rf /halfpipe
