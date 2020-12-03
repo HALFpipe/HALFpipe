@@ -16,6 +16,6 @@ RUN cd /halfpipe && \
     pip install . && \
     python postsetup.py && \
     rm -rf ~/.cache/pip && \
-    cd .. && rm -rf /halfpipe
+    cd .. && rm -rf /halfpipe/*
     
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
