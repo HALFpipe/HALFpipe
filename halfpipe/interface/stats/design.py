@@ -67,3 +67,5 @@ class MakeDesignTsv(SimpleInterface):
         cmat.to_csv(
             self._results["contrasts_tsv"], sep="\t", index=True, na_rep="n/a", header=True
         )
+
+        return runtime

@@ -8,6 +8,8 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from fmriprep import config
+
 from ...interface import (
     InterceptOnlyModel,
     LinearModel,
@@ -26,6 +28,16 @@ from ...interface import (
 from ...utils import ravel, formatlikebids, lenforeach
 
 from ..memory import MemoryCalculator
+
+
+def _fe_run_mode(var_cope_file):
+    from pathlib import Path
+
+    if isinstance(var_cope_file, (Path, str)) and Path(var_cope_file).exists():
+        return "fe"
+
+    else:
+        return "ols"
 
 
 def _critical_z(resels=None, critical_p=0.05):
@@ -170,8 +182,12 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
         workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
 
-        mergedof = pe.MapNode(Merge(dimension="t"), name="mergedof", **mergenodeargs)
-        workflow.connect(extractfromresultdict, "dof", mergedof, "in_files")
+        fe_run_mode = pe.MapNode(
+            niu.Function(input_names=["var_cope_file"], output_names=["run_mode"], function=_fe_run_mode),
+            iterfield=["var_cope_file"],
+            name="fe_run_mode",
+        )
+        workflow.connect(mergevariance, "merged_file", fe_run_mode, "var_cope_file")
 
         # prepare design matrix
         multipleregressdesign = pe.MapNode(
@@ -185,27 +201,25 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
 
         # use FSL implementation
         modelfit = pe.MapNode(
-            FSLFLAMEO(run_mode="fe"),
+            FSLFLAMEO(),
             name="modelfit",
             mem_gb=memcalc.volume_std_gb * 100,
             iterfield=[
+                "run_mode",
                 "mask_file",
                 "cope_file",
                 "var_cope_file",
-                "dof_var_cope_file",
                 "design_file",
                 "t_con_file",
-                "f_con_file",
                 "cov_split_file",
             ],
         )
+        workflow.connect(fe_run_mode, "run_mode", modelfit, "run_mode")
         workflow.connect(mergemask, "merged_file", modelfit, "mask_file")
         workflow.connect(mergeeffect, "merged_file", modelfit, "cope_file")
         workflow.connect(mergevariance, "merged_file", modelfit, "var_cope_file")
-        workflow.connect(mergedof, "merged_file", modelfit, "dof_var_cope_file")
         workflow.connect(multipleregressdesign, "design_mat", modelfit, "design_file")
         workflow.connect(multipleregressdesign, "design_con", modelfit, "t_con_file")
-        workflow.connect(multipleregressdesign, "design_fts", modelfit, "f_con_file")
         workflow.connect(multipleregressdesign, "design_grp", modelfit, "cov_split_file")
 
         # mask output
@@ -217,6 +231,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         modelfit = pe.MapNode(
             FLAME1(),
             name="modelfit",
+            n_procs=config.nipype.omp_nthreads,
             mem_gb=memcalc.volume_std_gb * 100,
             iterfield=[
                 "mask_files",
@@ -258,7 +273,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
     # make tsv files for design and contrast matrices
     maketsv = pe.MapNode(
         MakeDesignTsv(),
-        iterfield=["regressors", "contrasts"],
+        iterfield=["regressors", "contrasts", "row_index"],
         name="maketsv"
     )
     workflow.connect(extractfromresultdict, model.across, maketsv, "row_index")
