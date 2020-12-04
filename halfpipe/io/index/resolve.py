@@ -77,7 +77,7 @@ class ResolvedSpec:
         return resolved_files
 
     def _resolve_bids(self, fileobj):
-        layout = BIDSLayout(fileobj.path, absolute_paths=True)
+        layout = BIDSLayout(fileobj.path, absolute_paths=True, validate=False)
 
         basemetadata = dict()
         if hasattr(fileobj, "metadata") and isinstance(fileobj.metadata, dict):

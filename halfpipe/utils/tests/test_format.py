@@ -14,6 +14,7 @@ from ..format import formatlikebids
         ("seedCorr", "seedCorr"),
         ("faces>shapes", "facesGtShapes"),
         ("faces-vs-shapes", "facesVsShapes"),
+        ("fALFF", "fALFF"),
     ]
 )
 def test_format(a, b):
