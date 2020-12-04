@@ -29,4 +29,5 @@ svgutils
 tabulate
 chardet >= 3.0.4
 pympler >= 0.9
+stackprinter >= 0.2.5
 calamities

@@ -3,11 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import sys
 import gc
 import logging
 import shutil
-from traceback import format_exception
+from stackprinter import format_current_exception
 
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor
@@ -60,7 +59,7 @@ def run_node(node, updatehash, taskid):
     try:
         result["result"] = node.run(updatehash=updatehash)
     except Exception:  # catch all here
-        result["traceback"] = format_exception(*sys.exc_info())
+        result["traceback"] = format_current_exception()
         result["result"] = node.result
 
     # Avoid matplotlib memory leak

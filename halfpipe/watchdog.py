@@ -5,7 +5,7 @@
 import sys
 import time
 import logging
-from traceback import format_stack
+from stackprinter import format_thread
 from threading import main_thread, Thread
 
 from pympler import muppy, summary
@@ -20,8 +20,7 @@ def init_watchdog(interval=60):
         while True:
             time.sleep(interval)
 
-            frame = sys._current_frames()[mainthread.ident]
-            stacktrace = "".join(format_stack(frame))
+            stacktrace = "".join(format_thread(mainthread))
 
             rows = summary.summarize(muppy.get_objects())
             memtrace = "\n".join(summary.format_(rows))

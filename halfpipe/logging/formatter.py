@@ -5,6 +5,8 @@
 import logging
 import time
 
+import stackprinter
+
 fmt = "[{asctime},{msecs:04.0f}] [{name:16}] [{levelname:9}] {message}"
 datefmt = "%Y-%m-%d %H:%M:%S"
 
@@ -31,6 +33,11 @@ class Formatter(logging.Formatter):
     def __init__(self):
         super(Formatter, self).__init__(fmt=fmt, datefmt=datefmt, style="{")
         self.converter = time.localtime
+
+    def formatException(self, exc_info):
+        msg = stackprinter.format(exc_info)
+        msg_indented = '    ' + '\n    '.join(msg.split('\n')).strip()
+        return msg_indented
 
     def format(self, record):
         formatted = super(Formatter, self).format(record)
