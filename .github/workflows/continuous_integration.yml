@@ -19,13 +19,6 @@ jobs:
     timeout-minutes: 240
 
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install .[tests]
-          
       - name: Install FreeSurfer license file
         shell: bash
         env:
@@ -33,18 +26,27 @@ jobs:
         run: |
           echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      
       - name: Cache data
         uses: actions/cache@v2
         with:
           path: /home
           key: ${{ runner.os }}-home
+
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[tests] 
+
+      - name: Lint with flake8
+        shell: bash
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
  
       - name: Test with pytest with coverage
         shell: python
