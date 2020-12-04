@@ -28,8 +28,10 @@ jobs:
           
       - name: Install FreeSurfer license file
         shell: bash
+        env:
+          FREESURFER_LICENSE_BASE64: ${{ secrets.FREESURFER_LICENSE_BASE64 }}
         run: |
-          echo ${{ secrets.FREESURFER_LICENSE_BASE64 }} | base64 -d > ${FREESURFER_HOME}/license.txt
+          echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
 
       - name: Lint with flake8
         run: |
