@@ -37,22 +37,24 @@ def bids_data(tmp_path_factory):
     os.chdir(str(tmp_path))
 
     setuptestresources()
-    inputpath = getresource("bids_data.zip")
+    input_path = getresource("bids_data.zip")
 
-    with ZipFile(inputpath) as fp:
+    with ZipFile(input_path) as fp:
         fp.extractall(tmp_path)
 
-    funcpath = tmp_path / "sub-1012" / "func"
+    bids_data_path = tmp_path / "bids_data"
 
-    Path(funcpath / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
+    func_path = bids_data_path / "sub-1012" / "func"
 
-    boldfile = funcpath / "sub-1012_task-rest_bold.nii.gz"
-    boldimg = nib.load(boldfile)
-    bolddata = boldimg.get_fdata()[..., :64]  # we don't need so many volumes for testing
-    boldimg = new_img_like(boldimg, bolddata, copy_header=True)
-    nib.save(boldimg, boldfile)
+    Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
 
-    return tmp_path
+    bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
+    bold_img = nib.load(bold_file)
+    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
+    bold_img = new_img_like(bold_img, bold_data, copy_header=True)
+    nib.save(bold_img, bold_file)
+
+    return bids_data_path
 
 
 @pytest.fixture(scope="module")
