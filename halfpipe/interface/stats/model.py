@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
-from .design import DesignSpec
 from ...io import loadspreadsheet
 
 logger = logging.getLogger("halfpipe")

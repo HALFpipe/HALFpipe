@@ -27,7 +27,7 @@ from ..base import init_workflow
 from ..execgraph import init_execgraph
 from ...io import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
-from ...utils import first, nvol
+from ...utils import nvol
 
 
 @pytest.fixture(scope="module")
