@@ -9,7 +9,10 @@ import pytest
 import os
 from zipfile import ZipFile
 from pathlib import Path
+from random import seed
 
+import pandas as pd
+import numpy as np
 import nibabel as nib
 from nilearn.image import new_img_like
 
@@ -22,8 +25,9 @@ from nilearn.datasets import fetch_atlas_harvard_oxford
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
+from ...io import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
-from ...utils import first
+from ...utils import first, nvol
 
 
 @pytest.fixture(scope="module")
@@ -39,6 +43,56 @@ def bids_data(tmp_path_factory):
         fp.extractall(tmp_path)
 
     return tmp_path
+
+
+@pytest.fixture(scope="module")
+def task_events(tmp_path_factory, bids_data):
+    tmp_path = tmp_path_factory.mktemp(basename="task_events")
+
+    os.chdir(str(tmp_path))
+
+    seed(a=0x5e6128c4)
+
+    spec_schema = SpecSchema()
+    spec = spec_schema.load(spec_schema.dump({}), partial=True)
+
+    spec.files = list(map(FileSchema().load, [
+        dict(datatype="bids", path=str(bids_data)),
+    ]))
+
+    database = Database(spec)
+
+    boldfilespaths = database.get(datatype="func", suffix="bold")
+
+    assert database.fillmetadata("repetition_time", boldfilespaths)
+
+    scan_duration = min(nvol(b) * database.metadata(b, "repetition_time") for b in boldfilespaths)
+
+    onsets = []
+    durations = []
+
+    t = 0.0
+    d = 5.0
+    while True:
+        t += d
+        t += np.abs(np.random.randn()) + 1.0  # jitter
+
+        if t < scan_duration:
+            onsets.append(t)
+            durations.append(d)
+        else:
+            break
+
+    trial_type = [["a", "b"][x] for x in np.random.randint(0, high=1 + 1, size=len(durations))]
+
+    events = pd.DataFrame(dict(onsets=onsets, durations=durations, trial_type=trial_type))
+
+    events_fname = Path.cwd() / "events.tsv"
+    events.to_csv(
+        events_fname, sep="\t", index=False, header=True
+    )
+
+    return events_fname
 
 
 @pytest.fixture(scope="module")
@@ -62,12 +116,20 @@ def pcc_mask(tmp_path_factory):
     return pcc_mask_fname
 
 
-def test_feature_extraction(tmp_path, bids_data, pcc_mask):
+def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump({}), partial=True)
 
     spec.files = list(map(FileSchema().load, [
         dict(datatype="bids", path=str(bids_data)),
+        dict(
+            datatype="func",
+            suffix="events",
+            extension=".tsv",
+            tags=dict(task="rest"),
+            path=str(task_events),
+            metadata=dict(units="seconds"),
+        ),
         dict(
             datatype="ref",
             suffix="map",
@@ -93,7 +155,7 @@ def test_feature_extraction(tmp_path, bids_data, pcc_mask):
                 desc="400Parcels17Networks",
                 suffix="dseg",
             )),
-            metadata=dict(space="MNI152NLin6Asym"),
+            metadata=dict(space="MNI152NLin2009cAsym"),
         ),
     ]))
 
@@ -105,7 +167,7 @@ def test_feature_extraction(tmp_path, bids_data, pcc_mask):
 
     spec.settings = list(map(SettingSchema().load, [
         dict(
-            name="dualRegAndSeedCorrSetting",
+            name="dualRegAndSeedCorrAndTaskBasedSetting",
             output_image=False,
             bandpass_filter=dict(type="gaussian", hp_width=125.0),
             smoothing=dict(fwhm=6.0),
@@ -127,16 +189,26 @@ def test_feature_extraction(tmp_path, bids_data, pcc_mask):
 
     spec.features = list(map(FeatureSchema().load, [
         dict(
+            name="taskBased",
+            type="task_based",
+            high_pass_filter_cutoff=125.0,
+            conditions=["a", "b"],
+            contrasts=[
+                dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
+            ],
+            setting="dualRegAndSeedCorrAndTaskBasedSetting",
+        ),
+        dict(
             name="seedCorr",
             type="seed_based_connectivity",
             seeds=["pcc"],
-            setting="dualRegAndSeedCorrSetting"
+            setting="dualRegAndSeedCorrAndTaskBasedSetting"
         ),
         dict(
             name="dualReg",
             type="dual_regression",
             maps=["smith09"],
-            setting="dualRegAndSeedCorrSetting"
+            setting="dualRegAndSeedCorrAndTaskBasedSetting"
         ),
         dict(
             name="corrMatrix",
@@ -164,14 +236,13 @@ def test_feature_extraction(tmp_path, bids_data, pcc_mask):
     savespec(spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
-    execgraphs = init_execgraph(tmp_path, workflow)
+    workflow_args = dict(
+        stop_on_first_crash=True,
+    )
+    workflow.config["execution"].update(workflow_args)
 
+    execgraphs = init_execgraph(tmp_path, workflow)
     execgraph = execgraphs[0]
 
-    runner = nip.LinearPlugin(plugin_args=dict(
-        stop_on_first_crash=True,
-    ))
-
-    firstnode = first(execgraph.nodes())
-
-    runner.run(execgraph, updatehash=False, config=firstnode.config)
+    runner = nip.LinearPlugin(plugin_args=workflow_args)
+    runner.run(execgraph, updatehash=False, config=workflow.config)
