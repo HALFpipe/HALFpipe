@@ -16,7 +16,7 @@ jobs:
     # Use latest
     container: mindandbrain/halfpipe:latest
     
-    timeout-minutes: 240
+    timeout-minutes: 360
 
     steps:
       - name: Install FreeSurfer license file
