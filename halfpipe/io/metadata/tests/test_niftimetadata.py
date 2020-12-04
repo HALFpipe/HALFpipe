@@ -12,8 +12,8 @@ import numpy as np
 
 import nibabel as nib
 
-from halfpipe.model import File
-from halfpipe.io.metadata.niftimetadata import NiftiheaderMetadataLoader
+from ....model import File
+from ..niftimetadata import NiftiheaderMetadataLoader
 
 
 @pytest.mark.timeout(60)

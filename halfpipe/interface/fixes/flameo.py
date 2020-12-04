@@ -48,6 +48,10 @@ class FLAMEOInputSpec(NipypeFLAMEOInputSpec):
 
 
 class FLAMEO(NipypeFLAMEO):
+    """
+    Modified to be more robust to filtered out (missing) input files
+    These are indicated by the value False
+    """
     input_spec = FLAMEOInputSpec
 
     def _format_arg(self, name, trait_spec, value):

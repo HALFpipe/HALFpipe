@@ -15,12 +15,17 @@ def cleaner(name):
 
 def formatlikebids(name):
     import re
-    from inflection import parameterize, camelize, underscore
+    from inflection import titleize, parameterize, camelize, underscore
 
-    formatted_name = name
+    formatted_name = titleize(name)  # convert camel case into words
+
+    # replace gt and lt characters because these are confusing in bash later on
     formatted_name = formatted_name.replace("<>", " vs ")
     formatted_name = formatted_name.replace(">", " gt ")
     formatted_name = formatted_name.replace("<", " lt ")
-    formatted_name = re.sub(" +", " ", formatted_name)
-    formatted_name = camelize(underscore(parameterize(formatted_name)), False)
+
+    formatted_name = re.sub(r"\s+", " ", formatted_name)  # remove repeated whitespace
+
+    formatted_name = camelize(underscore(parameterize(formatted_name)), False)  # format
+
     return formatted_name

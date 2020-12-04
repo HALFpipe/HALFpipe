@@ -42,7 +42,7 @@ class Transformer(SimpleInterface):
     def _transform(self, array):
         raise NotImplementedError()
 
-    def _load(self, in_file):
+    def _load(self, in_file, mask_file=None):
         stem, ext = splitext(in_file)
         self.stem, self.ext = stem, ext
 
@@ -55,7 +55,8 @@ class Transformer(SimpleInterface):
             in_fdata = in_img.get_fdata(dtype=np.float64)
             array = in_fdata.reshape((-1, n)).T
 
-            mask_file = self.inputs.mask
+            if mask_file is None:
+                mask_file = self.inputs.mask
             if isdefined(mask_file) and isinstance(mask_file, str) and Path(mask_file).is_file():
                 mask_img = nib.load(mask_file)
                 assert nvol(mask_img) == 1

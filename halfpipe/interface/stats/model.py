@@ -3,6 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from itertools import product
+from collections import OrderedDict
+
 import logging
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
@@ -10,6 +12,7 @@ import pandas as pd
 import numpy as np
 from patsy import ModelDesc, dmatrix, Term, LookupFactor
 
+from .design import DesignSpec
 from ...io import loadspreadsheet
 
 logger = logging.getLogger("halfpipe")
@@ -39,7 +42,7 @@ def _check_multicollinearity(matrix):
 
 
 def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subjects=None):
-    rawdataframe = loadspreadsheet(spreadsheet)
+    rawdataframe = loadspreadsheet(spreadsheet, dtype=object)
 
     id_column = None
     for variabledict in variabledicts:
@@ -73,6 +76,9 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     # also sets order
     continuous = continuous.loc[subjects, :]
     categorical = categorical.loc[subjects, :]
+
+    # change type to numeric
+    continuous = continuous.astype(np.float64)
 
     # Demean continuous for flameo
     continuous -= continuous.mean()
@@ -162,11 +168,12 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
         )
         return (
             {"intercept": [1.0] * len(subjects)},
-            [["mean", "T", ["intercept"], [1]]],
+            [["mean", "T", ["Intercept"], [1]]],
             ["mean"],
         )
 
-    regressors = {d: dmat[d].tolist() for d in dmat.columns}
+    regressors = dmat.to_dict(orient="list", into=OrderedDict)
+
     contrasts = []
     contrast_names = []
 
@@ -195,15 +202,20 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
 
 class LinearModelInputSpec(TraitedSpec):
     spreadsheet = File(exist=True, mandatory=True)
-    contrastdicts = traits.List(desc="contrast list", mandatory=True)
-    variabledicts = traits.List(desc="variable list", mandatory=True)
-    subjects = traits.List(traits.Str(), desc="subject list", mandatory=True)
+    contrastdicts = traits.List(
+        traits.Dict(traits.Str, traits.Any),
+        mandatory=True
+    )
+    variabledicts = traits.List(
+        traits.Dict(traits.Str, traits.Any), mandatory=True
+    )
+    subjects = traits.List(traits.Str, mandatory=True)
 
 
 class ModelOutputSpec(TraitedSpec):
-    regressors = traits.Any()
-    contrasts = traits.Any()
-    contrast_names = traits.List(traits.Str(), desc="contrast names list")
+    regressors = traits.Dict(traits.Str, traits.Any)
+    contrasts = traits.List()
+    contrast_names = traits.List(traits.Str())
 
 
 class LinearModel(SimpleInterface):
@@ -237,8 +249,8 @@ class InterceptOnlyModel(SimpleInterface):
     output_spec = ModelOutputSpec
 
     def _run_interface(self, runtime):
-        self._results["regressors"] = {"intercept": [1.0] * self.inputs.n_copes}
-        self._results["contrasts"] = [["intercept", "T", ["intercept"], [1]]]
-        self._results["contrast_names"] = ["intercept"]
+        self._results["regressors"] = {"Intercept": [1.0] * self.inputs.n_copes}
+        self._results["contrasts"] = [["Intercept", "T", ["Intercept"], [1]]]
+        self._results["contrast_names"] = ["Intercept"]
 
         return runtime

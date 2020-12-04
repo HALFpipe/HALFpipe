@@ -3,10 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .condition import parse_condition_file
+from .design import parse_design
 from .spreadsheet import loadspreadsheet, loadmatrix
 
 __all__ = [
     parse_condition_file,
+    parse_design,
     loadspreadsheet,
     loadmatrix,
 ]

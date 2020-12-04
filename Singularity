@@ -13,7 +13,7 @@ From: poldracklab/fmriprep:20.2.0
   . /halfpipe
 
 %post
-  BUILD=294
+  BUILD=329
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
@@ -21,10 +21,10 @@ From: poldracklab/fmriprep:20.2.0
     cd /halfpipe && \
     pip install --upgrade pip && \
     pip uninstall --yes fmriprep smriprep mriqc niworkflows nipype statsmodels patsy matplotlib && \
-    pip install --use-feature=2020-resolver . && \
+    pip install . && \
     python postsetup.py' fmriprep
   
-  rm -rf /halfpipe ~/.cache/pip
+  rm -rf /halfpipe/* ~/.cache/pip
 
 %runscript
   exec /usr/local/miniconda/bin/halfpipe "$@"

@@ -3,7 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
-from os import path as op
+from pathlib import Path
+from os.path import commonprefix
 
 import numpy as np
 import nibabel as nib
@@ -21,6 +22,74 @@ from nipype.interfaces.base import (
 from ...utils import niftidim, first
 
 dimensions = ["x", "y", "z", "t"]
+
+
+def _merge_fname(in_files):
+    prefix = commonprefix([
+        Path(f).name for f in in_files
+    ])
+    if len(prefix) > 0:
+        prefix += "_"
+
+    fname = Path.cwd() / f"{prefix}merge.nii.gz"
+
+    count = 1
+    while fname.exists():
+        fname = Path.cwd() / f"{prefix}{count}_merge.nii.gz"
+        count += 1
+
+    return fname
+
+
+def _merge(in_files, dimension):
+    in_imgs = [nib.load(f) for f in in_files]
+
+    idim = dimensions.index(dimension)
+
+    sizes = [niftidim(in_img, idim) for in_img in in_imgs]
+
+    outshape = list(first(in_imgs).shape)
+    while len(outshape) < idim + 1:
+        outshape.append(1)
+
+    outshape[idim] = sum(sizes)
+
+    movd_shape = [outshape[idim], *outshape[:idim], *outshape[idim + 1 :]]
+    movd_outarr = np.zeros(movd_shape, dtype=np.float64)
+
+    i = 0
+    for in_img, size in zip(in_imgs, sizes):
+        in_data = in_img.get_fdata()
+        while len(in_data.shape) < idim + 1:
+            in_data = np.expand_dims(in_data, len(in_data.shape))
+        movd_outarr[i : i + size] = np.moveaxis(in_data, idim, 0)
+        i += size
+
+    outarr = np.moveaxis(movd_outarr, 0, idim)
+
+    outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
+
+    merged_file = _merge_fname(in_files)
+    nib.save(outimg, merged_file)
+
+    return merged_file
+
+
+def _merge_mask(in_files):
+    in_imgs = [nib.load(in_file) for in_file in in_files]
+
+    outshape = first(in_imgs).shape
+    assert all(in_img.shape == outshape for in_img in in_imgs), "Mask shape mismatch"
+
+    in_data = [np.asanyarray(in_img.dataobj).astype(np.bool) for in_img in in_imgs]
+    outarr = np.logical_and.reduce(in_data)
+
+    outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
+
+    merged_file = _merge_fname(in_files)
+    nib.save(outimg, merged_file)
+
+    return merged_file
 
 
 class MergeInputSpec(TraitedSpec):
@@ -41,45 +110,15 @@ class Merge(SimpleInterface):
     def _run_interface(self, runtime):
         self._merged_file = None
 
-        if not isdefined(self.inputs.in_files):
+        in_files = self.inputs.in_files
+
+        if not isdefined(in_files) or len(in_files) == 0:
             self._results["merged_file"] = False
             return runtime
 
-        in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
+        merged_file = _merge(in_files, self.inputs.dimension)
 
-        if len(in_imgs) == 0:
-            self._results["merged_file"] = False
-            return runtime
-
-        idim = dimensions.index(self.inputs.dimension)
-
-        sizes = [niftidim(in_img, idim) for in_img in in_imgs]
-
-        outshape = list(first(in_imgs).shape)
-        while len(outshape) < idim + 1:
-            outshape.append(1)
-
-        outshape[idim] = sum(sizes)
-
-        movd_shape = [outshape[idim], *outshape[:idim], *outshape[idim + 1 :]]
-        movd_outarr = np.zeros(movd_shape, dtype=np.float64)
-
-        i = 0
-        for in_img, size in zip(in_imgs, sizes):
-            in_data = in_img.get_fdata()
-            while len(in_data.shape) < idim + 1:
-                in_data = np.expand_dims(in_data, len(in_data.shape))
-            movd_outarr[i : i + size] = np.moveaxis(in_data, idim, 0)
-            i += size
-
-        outarr = np.moveaxis(movd_outarr, 0, idim)
-
-        outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
-
-        merged_file = op.abspath("merged.nii.gz")
-        nib.save(outimg, merged_file)
-
-        self._results["merged_file"] = merged_file
+        self._results["merged_file"] = str(merged_file)
 
         return runtime
 
@@ -97,27 +136,14 @@ class MergeMask(SimpleInterface):
     def _run_interface(self, runtime):
         self._merged_file = None
 
-        if not isdefined(self.inputs.in_files):
+        in_files = self.inputs.in_files
+
+        if not isdefined(in_files) or len(in_files) == 0:
             self._results["merged_file"] = False
             return runtime
 
-        in_imgs = [nib.load(in_file) for in_file in self.inputs.in_files]
+        merged_file = _merge_mask(in_files)
 
-        if len(in_imgs) == 0:
-            self._results["merged_file"] = False
-            return runtime
-
-        outshape = first(in_imgs).shape
-        assert all(in_img.shape == outshape for in_img in in_imgs)
-
-        in_data = [np.asanyarray(in_img.dataobj).astype(np.bool) for in_img in in_imgs]
-        outarr = np.logical_and.reduce(in_data)
-
-        outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
-
-        merged_file = op.abspath("merged.nii.gz")
-        nib.save(outimg, merged_file)
-
-        self._results["merged_file"] = merged_file
+        self._results["merged_file"] = str(merged_file)
 
         return runtime

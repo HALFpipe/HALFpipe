@@ -36,13 +36,13 @@ def has_header(fname):
 
 
 @lru_cache(maxsize=128)
-def loadspreadsheet(fname, ftype=None):
+def loadspreadsheet(fname, dtype=None, ftype=None):
     df = None
 
     if ftype is None:
         _, ftype = splitext(fname)
 
-    kwargs = dict()
+    kwargs = dict(dtype=dtype)
 
     if ftype not in [".xls", ".xlsx", ".odf"]:
         encoding = find_encoding(fname)

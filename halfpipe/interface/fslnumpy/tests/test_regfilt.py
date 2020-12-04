@@ -12,7 +12,7 @@ from random import seed
 import nibabel as nib
 import numpy as np
 
-from halfpipe.interface import FilterRegressor
+from ..regfilt import FilterRegressor
 from nipype.interfaces import fsl
 
 

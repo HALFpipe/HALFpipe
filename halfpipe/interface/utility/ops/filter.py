@@ -69,6 +69,10 @@ class FilterListInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
 
 
 class FilterList(IOBase):
+    """
+    Exclude list elements from all inputs where keys[i] matches the pattern
+    """
+
     input_spec = FilterListInputSpec
     output_spec = DynamicTraitedSpec
 

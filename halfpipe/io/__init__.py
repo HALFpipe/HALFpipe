@@ -14,6 +14,7 @@ from .file import (
 
 from .parse import (
     parse_condition_file,
+    parse_design,
     loadspreadsheet,
     loadmatrix,
 )
@@ -36,6 +37,7 @@ __all__ = [
     DictListFile,
     IndexedFile,
     parse_condition_file,
+    parse_design,
     loadspreadsheet,
     loadmatrix,
     loadpicklelzma,

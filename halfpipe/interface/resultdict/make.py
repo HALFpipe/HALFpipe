@@ -37,6 +37,7 @@ class MakeResultdicts(IOBase):
         metadatakeys=[],
         nobroadcastkeys=[],
         deletekeys=[],
+        missingvalues=[None],
         **inputs,
     ):
         super(MakeResultdicts, self).__init__(**inputs)
@@ -53,6 +54,7 @@ class MakeResultdicts(IOBase):
         }
         self._nobroadcastkeys = nobroadcastkeys
         self._deletekeys = deletekeys
+        self._missingvalues = missingvalues
 
     def _list_outputs(self):
         outputs = self._outputs().get()
@@ -156,7 +158,7 @@ class MakeResultdicts(IOBase):
                 # actually add
                 if f not in resultdict:
                     resultdict[f] = dict()
-                if k is not None and v is not None:
+                if k is not None and v not in self._missingvalues:
                     resultdict[f][k] = v
             resultdicts.append(resultdict)
 

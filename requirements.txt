@@ -1,28 +1,33 @@
 numpy
 scipy
+mpmath >= 1.1.0
 pandas >= 0.24.0
 patsy >= 0.5.1
 statsmodels >= 0.12.0
+scikit-learn >= 0.23.2
 odfpy
 nibabel >= 3.0.0
 nipype >= 1.5.1
+nitime >= 0.8.1
 fmriprep == 20.2.1
 smriprep == 0.7.1
 sdcflows == 1.3.3
 mriqc == 0.15.3
 niworkflows == 1.3.2
-templateflow >= 0.6.3
+templateflow >= 0.7.0
 pybids >= 0.11.1
 flufl.lock >= 5.0.1
 fasteners >= 0.15
 inflect
 inflection
-marshmallow >= 3.7.0
+marshmallow >= 3.9.1
 marshmallow-oneofschema
-matplotlib
+matplotlib >= 3.3.1
 pint
 seaborn
 svgutils
 tabulate
-chardet
+chardet >= 3.0.4
+pympler >= 0.9
+stackprinter >= 0.2.5
 calamities
