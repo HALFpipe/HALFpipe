@@ -90,3 +90,7 @@ def lenforeach(arrarr):
     length of each sub-list
     """
     return list(map(len, arrarr))
+
+
+def ceildiv(a, b):
+    return -(-a // b)

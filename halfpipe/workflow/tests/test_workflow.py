@@ -27,7 +27,7 @@ from ..base import init_workflow
 from ..execgraph import init_execgraph
 from ...io import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
-from ...utils import nvol
+from ...utils import nvol, ceildiv
 
 
 @pytest.fixture(scope="module")
@@ -80,8 +80,8 @@ def task_events(tmp_path_factory, bids_data):
 
     scan_duration = min(nvol(b) * database.metadata(b, "repetition_time") for b in boldfilespaths)
 
-    onsets = []
-    durations = []
+    onset = []
+    duration = []
 
     t = 0.0
     d = 5.0
@@ -90,14 +90,15 @@ def task_events(tmp_path_factory, bids_data):
         t += np.abs(np.random.randn()) + 1.0  # jitter
 
         if t < scan_duration:
-            onsets.append(t)
-            durations.append(d)
+            onset.append(t)
+            duration.append(d)
         else:
             break
 
-    trial_type = [["a", "b"][x] for x in np.random.randint(0, high=1 + 1, size=len(durations))]
+    n = len(duration)
+    trial_type = list(np.random.permutation(["a", "b"] * ceildiv(n, 2)))[:n]
 
-    events = pd.DataFrame(dict(onsets=onsets, durations=durations, trial_type=trial_type))
+    events = pd.DataFrame(dict(onset=onset, duration=duration, trial_type=trial_type))
 
     events_fname = Path.cwd() / "events.tsv"
     events.to_csv(

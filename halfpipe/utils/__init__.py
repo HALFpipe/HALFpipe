@@ -7,7 +7,7 @@ from .format import formatlist, cleaner, formatlikebids
 from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol
-from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach
+from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
 from .path import findpaths, splitext
 
 from inflect import engine
@@ -23,6 +23,6 @@ __all__ = [
     hexdigest, b32digest,
     niftidim, nvol,
     loadints, ncol,
-    first, second, firstfloat, firststr, ravel, removenone, lenforeach,
+    first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv,
     findpaths, splitext
 ]
