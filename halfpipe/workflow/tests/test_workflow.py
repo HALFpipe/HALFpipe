@@ -18,6 +18,7 @@ from nipype.pipeline import plugins as nip
 from ...tests.resource import setup as setuptestresources
 from ...resource import get as getresource
 from templateflow.api import get as gettemplate
+from nilearn.datasets import fetch_atlas_harvard_oxford
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
@@ -47,7 +48,7 @@ def pcc_mask(tmp_path_factory):
     os.chdir(str(tmp_path))
 
     atlas_img = nib.load(
-        Path(os.environ["FSLDIR"]) / "data" / "atlases" / "HarvardOxford" / "HarvardOxford-cort-prob-2mm.nii.gz"
+        fetch_atlas_harvard_oxford("cort-prob-2mm")["maps"]
     )
     atlas = atlas_img.get_fdata()
 
