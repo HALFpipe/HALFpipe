@@ -98,7 +98,7 @@ def parse_condition_file(in_any=None):
     elif isinstance(in_any, str):
         try:
             return parse_mat_condition_file(in_any)
-        except ValueError:
+        except (ValueError, IndexError):
             return parse_tsv_condition_file(in_any)
     elif isinstance(in_any, File):
         fileobj = in_any
