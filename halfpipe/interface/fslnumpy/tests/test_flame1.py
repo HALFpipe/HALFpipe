@@ -16,7 +16,7 @@ import numpy as np
 from ....tests.resource import setup as setuptestresources
 from ....resource import get as getresource
 
-from ..flame1 import FLAME1
+from ..flame1 import flame1
 from ...fixes import FLAMEO as FSLFLAMEO
 
 from nipype.interfaces import fsl, ants
@@ -183,24 +183,25 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     )
 
     # run halfpipe
-    instance = FLAME1(
+    if use_var_cope:
+        var_cope_files_or_none = var_cope_files
+    else:
+        var_cope_files_or_none = None
+
+    result = flame1(
         cope_files=cope_files,
+        var_cope_files=var_cope_files_or_none,
         mask_files=mask_files,
         regressors=regressors,
         contrasts=contrasts,
-        n_procs=2,
+        num_threads=1,
     )
 
-    if use_var_cope:
-        instance.inputs.var_cope_files = var_cope_files
-
-    result = instance.run()
-
     r1 = dict(
-        cope=result.outputs.copes[0],
-        tstat=result.outputs.tstats[0],
-        fstat=result.outputs.fstats[2],
-        tdof=result.outputs.tdof[0],
+        cope=result["copes"][0],
+        tstat=result["tstats"][0],
+        fstat=result["fstats"][2],
+        tdof=result["tdof"][0],
     )
 
     # compare
