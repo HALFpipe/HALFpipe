@@ -37,10 +37,20 @@ def bids_data(tmp_path_factory):
     os.chdir(str(tmp_path))
 
     setuptestresources()
-    inputtarpath = getresource("bids_data.zip")
+    inputpath = getresource("bids_data.zip")
 
-    with ZipFile(inputtarpath) as fp:
+    with ZipFile(inputpath) as fp:
         fp.extractall(tmp_path)
+
+    funcpath = tmp_path / "sub-1012" / "func"
+
+    Path(funcpath / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
+
+    boldfile = funcpath / "sub-1012_task-rest_bold.nii.gz"
+    boldimg = nib.load(boldfile)
+    bolddata = boldimg.get_fdata()[..., :64]  # we don't need so many volumes for testing
+    boldimg = new_img_like(boldimg, bolddata, copy_header=True)
+    nib.save(boldimg, boldfile)
 
     return tmp_path
 
