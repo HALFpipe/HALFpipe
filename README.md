@@ -27,9 +27,6 @@ on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) and
 > | Beta 6 (December 8th 2020)   | `singularity pull shub://mindandbrain/halfpipe:1.0.0b6`<br>`docker pull mindandbrain/halfpipe:1.0.0b6`   |
 > | Beta 5 (October 29th 2020)   | `singularity pull shub://mindandbrain/halfpipe:1.0.0b5`<br>`docker pull mindandbrain/halfpipe:1.0.0b5`   |
 > | Beta 4 (October 1st 2020)    | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
-> | Beta 3 (September 14th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b3`<br>`docker pull mindandbrain/halfpipe:1.0.0b3`   |
-> | Beta 2 (August 16th 2020)    | `singularity pull docker://mindandbrain/halfpipe:1.0.0b2`<br>`docker pull mindandbrain/halfpipe:1.0.0b2` |
-> | Beta 1 (June 30th 2020)      | `singularity pull docker://mindandbrain/halfpipe:1.0.0b1`<br>`docker pull mindandbrain/halfpipe:1.0.0b1` |
 
 ## Table of Contents
 
