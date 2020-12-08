@@ -1,20 +1,30 @@
-Welcome to ENIGMA `HALFpipe`!
-===========================
+Welcome to ENIGMA `HALFpipe`
+============================
 
 [![https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg](https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg)](https://singularity-hub.org/collections/4508) [![https://img.shields.io/docker/cloud/build/mindandbrain/halfpipe](https://img.shields.io/docker/cloud/build/mindandbrain/halfpipe)](https://hub.docker.com/repository/docker/mindandbrain/halfpipe/tags?ordering=last_updated) [![https://github.com/mindandbrain/halfpipe/workflows/continuous%20integration/badge.svg](https://github.com/mindandbrain/halfpipe/workflows/continuous%20integration/badge.svg)](https://github.com/mindandbrain/halfpipe/actions?query=workflow%3A%22continuous+integration%22) [![codecov](https://codecov.io/gh/mindandbrain/halfpipe/branch/master/graph/badge.svg)](https://codecov.io/gh/mindandbrain/halfpipe)
 
-`HALFpipe` is a user-friendly software that facilitates reproducible analysis of fMRI data, including preprocessing, single-subject, and group analysis. It provides state-of-the-art preprocessing using [`fmriprep`](https://fmriprep.readthedocs.io/), but removes the necessity to convert data to the [`BIDS`](https://bids-specification.readthedocs.io/en/stable/) format. Common resting-state and task-based fMRI features can then be calculated on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) and [`nipype`](https://nipype.readthedocs.io/) for statistics.
+`HALFpipe` is a user-friendly software that facilitates reproducible analysis of
+fMRI data, including preprocessing, single-subject, and group analysis. It provides
+state-of-the-art preprocessing using [`fmriprep`](https://fmriprep.readthedocs.io/),
+but removes the necessity to convert data to the [`BIDS`](https://bids-specification.readthedocs.io/en/stable/)
+format. Common resting-state and task-based fMRI features can then be calculated
+on the fly using [`FSL`](http://fsl.fmrib.ox.ac.uk/) and
+[`nipype`](https://nipype.readthedocs.io/) for statistics.
 
 > **NOTE:** ENIGMA `HALFpipe` is pre-release software and not yet considered production-ready.
 >
-> If you would like to beta test and provide feedback, thank you! We recommend using Beta 5, as this has many improvements to stability. For a detailed lost of changes, please see the [changelog](CHANGELOG.md).
+> If you would like to beta test and provide feedback, thank you! We recommend
+> using Beta 6, as this has all new features and all the latest bug fixes.
+> For a detailed list of changes, please see the [changelog](CHANGELOG.md).
 >
-> If you encounter issues, please see the [troubleshooting](#6-troubleshooting) section of this document. 
->  
+> If you encounter issues, please see the [troubleshooting](#6-troubleshooting)
+> section of this document.
+>
 > To use a specific beta version, please use the following command to download HALFpipe.
 >
 > | Version                      | Installation                                                                                             |
 > |------------------------------|----------------------------------------------------------------------------------------------------------|
+> | Beta 6 (December 8th 2020)   | `singularity pull shub://mindandbrain/halfpipe:1.0.0b6`<br>`docker pull mindandbrain/halfpipe:1.0.0b6`   |
 > | Beta 5 (October 29th 2020)   | `singularity pull shub://mindandbrain/halfpipe:1.0.0b5`<br>`docker pull mindandbrain/halfpipe:1.0.0b5`   |
 > | Beta 4 (October 1st 2020)    | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b4`<br>`docker pull mindandbrain/halfpipe:1.0.0b4`   |
 > | Beta 3 (September 14th 2020) | `singularity pull shub://mindandbrain/Halfpipe:1.0.0b3`<br>`docker pull mindandbrain/halfpipe:1.0.0b3`   |
@@ -27,17 +37,30 @@ Welcome to ENIGMA `HALFpipe`!
 
 ## 1. Getting started
 
-`HALFpipe` is distributed as a container, meaning that all required software comes bundled in a monolithic file, the container. This allows for easy installation on new systems, and makes data analysis more reproducible, because software versions are guaranteed to be the same for all users.
+`HALFpipe` is distributed as a container, meaning that all required software
+comes bundled in a monolithic file, the container. This allows for easy
+installation on new systems, and makes data analysis more reproducible,
+because software versions are guaranteed to be the same for all users.
 
 ### Container platform
 
-The first step is to install one of the supported container platforms. If you're using a high-performance computing cluster, more often than not[`Singularity`](https://sylabs.io) will already be available.
+The first step is to install one of the supported container platforms. If you're
+using a high-performance computing cluster, more often than not [`Singularity`](https://sylabs.io)
+will already be available.
 
-If not, we recommend using the latest version of[`Singularity`](https://sylabs.io). However, it can be somewhat cumbersome to install, as it needs to be built from source.
+If not, we recommend using the latest version of[`Singularity`](https://sylabs.io).
+However, it can be somewhat cumbersome to install, as it needs to be built from source.
 
-The [`NeuroDebian`](https://neuro.debian.net/) package repository provides an older version of [`Singularity`](https://sylabs.io/guides/2.6/user-guide/) for [some](https://neuro.debian.net/pkgs/singularity-container.html) Linux distributions.
+The [`NeuroDebian`](https://neuro.debian.net/) package repository provides an
+older version of [`Singularity`](https://sylabs.io/guides/2.6/user-guide/)
+for [some](https://neuro.debian.net/pkgs/singularity-container.html) Linux distributions.
 
-In contrast to `Singularity`, `Docker` always requires elevated privileges to run containers. In other words, every user running a `Docker` container automatically has administrator privileges on the computer they're using. Therefore, it is inherently a bad choice for multi-user environments, where the access of individual users should be limited. `Docker` is the only option that is compatible with `Mac OS X`.
+In contrast to `Singularity`, `Docker` always requires elevated privileges to
+run containers. In other words, every user running a `Docker` container
+automatically has administrator privileges on the computer they're using.
+Therefore, it is inherently a bad choice for multi-user environments, where
+the access of individual users should be limited. `Docker` is the only option
+that is compatible with `Mac OS X`.
 
 | Container platform | Version   | Installation                                                     |
 |--------------------|-----------|------------------------------------------------------------------|
@@ -47,7 +70,8 @@ In contrast to `Singularity`, `Docker` always requires elevated privileges to ru
 
 ### Download
 
-The second step is to download the `HALFpipe` to your computer. This requires approximately 5 gigabytes of storage.
+The second step is to download the `HALFpipe` to your computer. This requires
+approximately 5 gigabytes of storage.
 
 | Container platform | Version | Installation                                      |
 |--------------------|---------|---------------------------------------------------|
@@ -55,11 +79,26 @@ The second step is to download the `HALFpipe` to your computer. This requires ap
 | Singularity        | 2.x     | `singularity pull docker://mindandbrain/halfpipe` |
 | Docker             |         | `docker pull mindandbrain/halfpipe`               |
 
-`Singularity` version `3.x` creates a container image file called `halfpipe_latest.sif` in the directory where you run the `pull` command. For `Singularity` version `2.x` the file is named `mindandbrain-halfpipe-master-latest.simg`. Whenever you want to use the container, you need pass `Singularity` the path to this file.
+`Singularity` version `3.x` creates a container image file called
+`halfpipe_latest.sif` in the directory where you run the `pull` command.
+For `Singularity` version `2.x` the file is named `mindandbrain-halfpipe-master-latest.simg`.
+Whenever you want to use the container, you need pass `Singularity` the path to
+this file.
 
-> **NOTE:** `Singularity` may store a copy of the container in its cache directory. The cache directory is located by default in your home directory at `~/.singularity`. If you need to save disk space in your home directory, you can safely delete the cache directory after downloading, i.e. by running `rm -rf ~/.singularity`. Alternatively, you could move the cache directory somewhere with more free disk space using a symlink. This way, files will automatically be stored there in the future. For example, if you have a lot of free disk space in `/mnt/storage`, then you could first run `mv ~/.singularity /mnt/storage` to move the cache directory, and then `ln -s /mnt/storage/.singularity ~/.singularity` to create the symlink.
+> **NOTE:** `Singularity` may store a copy of the container in its cache
+> directory. The cache directory is located by default in your home
+> directory at `~/.singularity`. If you need to save disk space in your
+> home directory, you can safely delete the cache directory after downloading,
+> i.e. by running `rm -rf ~/.singularity`. Alternatively, you could move the
+> cache directory somewhere with more free disk space using a symlink.
+> This way, files will automatically be stored there in the future.
+> For example, if you have a lot of free disk space in `/mnt/storage`,
+> then you could first run `mv ~/.singularity /mnt/storage` to move the
+> cache directory, and then `ln -s /mnt/storage/.singularity ~/.singularity`
+> to create the symlink.
 
-`Docker` will store the container in its storage base directory, so it does not matter from which directory you run the `pull` command.
+`Docker` will store the container in its storage base directory, so it does not
+matter from which directory you run the `pull` command.
 
 ### Running
 
@@ -74,23 +113,53 @@ You should now see the user interface.
 
 #### Background
 
-Containers are by default isolated from the host computer. This adds security, but also means that the container cannot access the data it needs for analysis. `HALFpipe` expects all inputs (e.g., image files and spreadsheets) and outputs (the working directory) to be places in the path`/ext` (see also [`--fs-root`](#data-file-system-root---fs-root)). Using the option `--bind /:/ext`, we instruct `Singularity` to map all of the host file system (`/`) to that path (`/ext`). You can also run `HALFpipe` and only map only part of the host file system, but keep in mind that any directories that are not mapped will not be visible later.
+Containers are by default isolated from the host computer. This adds security,
+but also means that the container cannot access the data it needs for analysis.
+`HALFpipe` expects all inputs (e.g., image files and spreadsheets) and outputs
+(the working directory) to be places in the path`/ext` (see also [`--fs-root`](#data-file-system-root---fs-root)).
+Using the option `--bind /:/ext`, we instruct `Singularity` to map all of the
+host file system (`/`) to that path (`/ext`). You can also run `HALFpipe` and
+only map only part of the host file system, but keep in mind that any
+directories that are not mapped will not be visible later.
 
-`Singularity` passes the host shell environment to the container by default. This means that in some cases, the host computer's configuration can interfere with the software. To avoid this, we need to pass the option `--cleanenv`.`Docker` does not pass the host shell environment by default, so we don't need to pass an option.
+`Singularity` passes the host shell environment to the container by default.
+This means that in some cases, the host computer's configuration can interfere
+with the software. To avoid this, we need to pass the option `--cleanenv`.
+`Docker` does not pass the host shell environment by default, so we don't
+need to pass an option.
 
 ## 2. User interface
 
-The user interface asks a series of questions about your data and the analyses you want to run. In each question, you can press `Control+C` to cancel the current question and go back to the previous one. `Control+D` exits the program without saving. Note that these keyboard shortcuts are the same on Mac.
+The user interface asks a series of questions about your data and the analyses
+you want to run. In each question, you can press `Control+C` to cancel the
+current question and go back to the previous one. `Control+D` exits the program
+without saving. Note that these keyboard shortcuts are the same on Mac.
 
 ### Files
 
-To run preprocessing, at least a T1-weighted structural image and a BOLD image file is required. Preprocessing and data analysis proceeds automatically. However, to be able to run automatically, data files need to be input in a way suitable for automation. 
+To run preprocessing, at least a T1-weighted structural image and a BOLD image
+file is required. Preprocessing and data analysis proceeds automatically. However,
+to be able to run automatically, data files need to be input in a way suitable
+for automation. 
 
-For this kind of automation, `HALFpipe` needs to know the relationships between files, such as which files belong to the same subject. However, even though it would be obvious for a human, a program cannot easily assign a file name to a subject, and this will be true as long as there are differences in naming between different researchers or labs. One researcher may name the same file `subject_01_rest.nii.gz` and another `subject_01/scan_rest.nii.gz`. 
+For this kind of automation, `HALFpipe` needs to know the relationships between
+files, such as which files belong to the same subject. However, even though it
+would be obvious for a human, a program cannot easily assign a file name to a subject,
+and this will be true as long as there are differences in naming between different
+researchers or labs. One researcher may name the same file `subject_01_rest.nii.gz`
+and another `subject_01/scan_rest.nii.gz`. 
 
-In `HALFpipe`, we solve this issue by inputting file names in a specific way. For example, instead of `subject_01/scan_rest.nii.gz`, `HALFpipe` expects you to input `{subject}/scan_rest.nii.gz`. `HALFpipe` can then match all files on disk that match this naming schema, and extract the subject ID `subject_01`. Using the extracted subject ID, other files can now be matched to this image. If all input files are available in BIDS format, then this step can be skipped.
+In `HALFpipe`, we solve this issue by inputting file names in a specific way.
+For example, instead of `subject_01/scan_rest.nii.gz`, `HALFpipe` expects you
+to input `{subject}/scan_rest.nii.gz`. `HALFpipe` can then match all files on
+disk that match this naming schema, and extract the subject ID `subject_01`.
+Using the extracted subject ID, other files can now be matched to this image.
+If all input files are available in BIDS format, then this step can be skipped.
 
-1. `Specify working directory` All intermediate and outputs of `HALFpipe` will be placed in the working directory. Keep in mind to choose a location with sufficient free disk space, as intermediates can be multiple gigabytes in size for each subject.
+1. `Specify working directory` All intermediate and outputs of `HALFpipe` will
+   be placed in the working directory. Keep in mind to choose a location with
+   sufficient free disk space, as intermediates can be multiple gigabytes in size
+   for each subject.
 1. `Is the data available in BIDS format?`
    - `Yes`
         1. `Specify the path of the BIDS directory`
@@ -108,7 +177,8 @@ In `HALFpipe`, we solve this issue by inputting file names in a specific way. Fo
         1. `Check slice acquisition direction values`
         1. `Check slice timing values`
     - `No` Skip this step
-1. `Specify field maps?` If the data was imported from a BIDS directory, this step will be omitted.
+1. `Specify field maps?` If the data was imported from a BIDS directory, this
+   step will be omitted.
     - `Yes`
         1. `Specify the type of the field maps`
             - EPI (blip-up blip-down)
@@ -127,7 +197,8 @@ In `HALFpipe`, we solve this issue by inputting file names in a specific way. Fo
 
 ### Features
 
-Features are analyses that are carried out on the preprocessed data, in other words, first-level analyses.
+Features are analyses that are carried out on the preprocessed data, in other
+words, first-level analyses.
 
 1. `Specify first-level features?`
     - `Yes`
@@ -136,10 +207,15 @@ Features are analyses that are carried out on the preprocessed data, in other wo
            1. `Specify feature name`
            1. `Specify images to use`
            1. `Specify the event file type`
-             - `SPM multiple conditions` A MATLAB .mat file containing three arrays: `names` (condition), `onsets` and `durations`
-             - `FSL 3-column` One text file for each condition. Each file has its corresponding condition in the filename. The first column specifies the event onset, the second the duration. The third column of the files is ignored, so parametric modulation is not supported
-             - `BIDS TSV` A tab-separated table with named columns `trial_type` (condition), `onset` and `duration`
-           1. `Specify the path of the event files` 
+             - `SPM multiple conditions` A MATLAB .mat file containing three 
+               arrays: `names` (condition), `onsets` and `durations`
+             - `FSL 3-column` One text file for each condition. Each file has
+               its corresponding condition in the filename. The first column
+               specifies the event onset, the second the duration. The third
+               column of the files is ignored, so parametric modulation is not supported
+             - `BIDS TSV` A tab-separated table with named columns `trial_type`
+               (condition), `onset` and `duration`
+           1. `Specify the path of the event files`
            1. `Select conditions to add to the model`
            1. `Specify contrasts`
               1. `Specify contrast name`
@@ -147,7 +223,11 @@ Features are analyses that are carried out on the preprocessed data, in other wo
               1. `Add another contrast?`
                  - `Yes` Loop back to 1
                  - `No` Continue
-           1. `Apply a temporal filter to the design matrix?` A separate temporal filter can be specified for the design matrix. In contrast, the temporal filtering of the input image and any confound regressors added to the design matrix is specified in 10. In general, the two settings should match
+           1. `Apply a temporal filter to the design matrix?` A separate
+              temporal filter can be specified for the design matrix. In
+              contrast, the temporal filtering of the input image and any
+              confound regressors added to the design matrix is specified
+              in 10. In general, the two settings should match
            1. `Apply smoothing?`
               - `Yes`
                  1. `Specify smoothing FWHM in mm`
@@ -214,28 +294,54 @@ Models are statistical analyses that are carried out on the features.
 
 1. Log in to your cluster's head node
 
-1. Request an interactive job. Refer to your cluster's documentation for how to do this
+1. Request an interactive job. Refer to your cluster's documentation for how to
+   do this
 
-1. In the interactive job, run the `HALFpipe` user interface, but add the flag `--use-cluster` to the end of the command. \
+1. In the interactive job, run the `HALFpipe` user interface, but add the flag
+   `--use-cluster` to the end of the command. \
    For example, `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --use-cluster`
 
-1. As soon as you finish specifying all your data, features and models in the user interface, `HALFpipe` will now generate everything needed to run on the cluster. For hundreds of subjects, this can take up to a few hours.
+1. As soon as you finish specifying all your data, features and models in the
+   user interface, `HALFpipe` will now generate everything needed to run on
+   the cluster. For hundreds of subjects, this can take up to a few hours.
 
-1. When `HALFpipe` exits, edit the generated submit script `submit.slurm.sh` according to your cluster's documentation and then run it. This submit script will calculate everything except group statistics.
-     
-1. As soon as all processing has been completed, you can run group statistics. This is usually very fast, so you can do this in an interactive session. Run `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --only-model-chunk` and then select `Run without modification` in the user interface. 
+1. When `HALFpipe` exits, edit the generated submit script `submit.slurm.sh`
+   according to your cluster's documentation and then run it. This submit
+   script will calculate everything except group statistics.
 
-> A common issue with remote work via secure shell is that the connection may break after a few hours. For batch jobs this is not an issue, but for interactive jobs this can be quite frustrating. When the connection is lost, the node you were connected to will automatically quit all programs you were running.
-> To prevent this, you can run interactive jobs within `screen` or `tmux` (whichever is available). These commands allow you to open sessions in the terminal that will continue running in the background even when you close or disconnect. Here's a quick overview of how to use the commands (more in-depth documentation is available for example at http://www.dayid.org/comp/tm.html).
->    1. Open a new screen/tmux session on the head node by running either `screen` or `tmux`
->    1. Request an interactive job from within the session, for example with `srun --pty bash -i`
+1. As soon as all processing has been completed, you can run group statistics.
+   This is usually very fast, so you can do this in an interactive session.
+   Run `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --only-model-chunk`
+   and then select `Run without modification` in the user interface.
+
+> A common issue with remote work via secure shell is that the connection may
+> break after a few hours. For batch jobs this is not an issue, but for
+> interactive jobs this can be quite frustrating. When the connection is
+> lost, the node you were connected to will automatically quit all
+> programs you were running.
+> To prevent this, you can run interactive jobs within `screen` or `tmux`
+> (whichever is available). These commands allow you to open sessions
+> in the terminal that will continue running in the background even
+> when you close or disconnect. Here's a quick overview of how to use
+> the commands (more in-depth documentation is available for example at [http://www.dayid.org/comp/tm.html]).
+>
+>    1. Open a new screen/tmux session on the head node by running either
+>       `screen` or `tmux`
+>    1. Request an interactive job from within the session, for example with
+>       `srun --pty bash -i`
 >    1. Run the command that you want to run
->    1. Detach from the screen/tmux session, meaning disconnecting with the ability to re-connect later \
->       For screen, this is done by first pressing `Control+a`, then letting go, and then pressing `d` on the keyboard. \
+>    1. Detach from the screen/tmux session, meaning disconnecting with the
+>       ability to re-connect later \
+>       For screen, this is done by first pressing `Control+a`, then letting go,
+>       and then pressing `d` on the keyboard. \
 >       For tmux, it's `Control+b` instead of `Control+a`. \
 >       Note that this is always `Control`, even if you're on a mac.
->    1. Close your connection to the head node with `Control+d`. `screen`/`tmux` will remain running in the background
->    1. Later, connect again to the head node. Run `screen -r` or `tmux attach` to check back on the interactive job. If everything went well and the command you wanted to run finished, close the interactive job with `Control+d` and then the `screen`/`tmux` session with `Control+d` again. \
+>    1. Close your connection to the head node with `Control+d`. `screen`/`tmux`
+>       will remain running in the background
+>    1. Later, connect again to the head node. Run `screen -r` or `tmux attach`
+>       to check back on the interactive job. If everything went well and the
+>       command you wanted to run finished, close the interactive job with
+>       `Control+d` and then the `screen`/`tmux` session with `Control+d` again.
 >    If the command hasn't finished yet, detach as before and come back later
 
 ## 4. Quality checks
@@ -244,38 +350,44 @@ Models are statistical analyses that are carried out on the features.
 
 ## 5. Outputs
 
-- A visual report page \
-  `reports/index.html`
+- A visual report page `reports/index.html`
 
-- A table with image quality metrics \
-  `reports/reportvals.txt`
-  
-- A table containing the preprocessing status \
-  `reports/reportpreproc.txt`
+- A table with image quality metrics `reports/reportvals.txt`
 
-- The untouched `fmriprep` derivatives. Some files have been omitted to save disk space \
-  `fmriprep` is very strict about only processing data that is compliant with the BIDS standard. As such, we may need to format subjects names for compliance. For example, an input subject named `subject_01` will appear as `subject01` in the `fmriprep` derivatives. \
+- A table containing the preprocessing status `reports/reportpreproc.txt`
+
+- The untouched `fmriprep` derivatives. Some files have been omitted to save
+  disk space `fmriprep` is very strict about only processing data that is compliant with
+  the BIDS standard. As such, we may need to format subjects names for compliance.
+  For example, an input subject named `subject_01` will appear as `subject01` in
+  the `fmriprep` derivatives.
   `derivatives/fmriprep`
 
 ### Features
 
-- For task-based, seed-based connectivity and dual regression features, `HALFpipe` outputs the statistical maps for the effect, the variance, the degrees of freedom of the variance and the z-statistic. In FSL, the effect and variance are also called `cope` and `varcope` \
+- For task-based, seed-based connectivity and dual regression features,
+  `HALFpipe` outputs the statistical maps for the effect, the variance,
+  the degrees of freedom of the variance and the z-statistic. In FSL, the
+  effect and variance are also called `cope` and `varcope` \
   `derivatives/halfpipe/sub-.../func/..._stat-effect_statmap.nii.gz` \
   `derivatives/halfpipe/sub-.../func/..._stat-variance_statmap.nii.gz` \
   `derivatives/halfpipe/sub-.../func/..._stat-dof_statmap.nii.gz` \
   `derivatives/halfpipe/sub-.../func/..._stat-z_statmap.nii.gz` \
-  The design and contrast matrix used for the final model will be outputted alongside the statistical maps \
+  The design and contrast matrix used for the final model will be outputted
+  alongside the statistical maps \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-design_matrix.tsv` \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-contrast_matrix.tsv`
 
-- ReHo and fALFF are not calculated based on a linear model. As such, only one statistical map of the z-scaled values will be output \
+- ReHo and fALFF are not calculated based on a linear model. As such, only one
+  statistical map of the z-scaled values will be output \
   `derivatives/halfpipe/sub-.../func/..._alff.nii.gz` \
   `derivatives/halfpipe/sub-.../func/..._falff.nii.gz` \
   `derivatives/halfpipe/sub-.../func/..._reho.nii.gz`
-  
-- For every feature, a JSON file containing a summary of the preprocessing settings, and a list of the raw data files that were used for the analysis (`RawSources`) \
+
+- For every feature, a JSON file containing a summary of the preprocessing
+- settings, and a list of the raw data files that were used for the analysis (`RawSources`) \
   `derivatives/halfpipe/sub-.../func/....json`
-    
+
 - For every feature, the corresponding brain mask is output beside the statistical maps. Masks do not differ between different features calculated, they are only copied out repeatedly for convenience \
   `derivatives/halfpipe/sub-.../func/...desc-brain_mask.nii.gz` 
 
@@ -288,13 +400,13 @@ Models are statistical analyses that are carried out on the features.
 
 - Masked, preprocessed BOLD image \
   `derivatives/halfpipe/sub-.../func/..._bold.nii.gz`
-  
+
 - Just like for features \
   `derivatives/halfpipe/sub-.../func/..._bold.json`
-  
+
 - Just like for features \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-brain_mask.nii.gz` 
-  
+
 - Filtered confounds time series, where all filters that are applied to the BOLD image are applied to the regressors as well. Note that this means that when grand mean scaling is active, confounds time series are also scaled, meaning that values such as `framewise displacement` can not be interpreted in terms of their original units anymore. \
   `derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-confounds_regressors.tsv`
 
