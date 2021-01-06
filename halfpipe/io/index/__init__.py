@@ -6,4 +6,4 @@ from .bids import BidsDatabase
 from .exclude import ExcludeDatabase
 from .database import Database
 
-__all__ = [BidsDatabase, ExcludeDatabase, Database]
+__all__ = ["BidsDatabase", "ExcludeDatabase", "Database"]

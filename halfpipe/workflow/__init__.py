@@ -5,4 +5,4 @@
 from .base import init_workflow
 from .execgraph import init_execgraph
 
-__all__ = [init_workflow, init_execgraph]
+__all__ = ["init_workflow", "init_execgraph"]

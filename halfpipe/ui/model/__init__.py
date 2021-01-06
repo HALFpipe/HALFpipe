@@ -4,4 +4,4 @@
 
 from .base import ModelsStep
 
-__all__ = [ModelsStep]
+__all__ = ["ModelsStep"]

@@ -5,4 +5,4 @@
 from .base import get_setting_init_steps
 from .vals import get_setting_vals_steps
 
-__all__ = [get_setting_init_steps, get_setting_vals_steps]
+__all__ = ["get_setting_init_steps", "get_setting_vals_steps"]

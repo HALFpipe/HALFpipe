@@ -4,4 +4,4 @@
 
 from .factory import ModelFactory
 
-__all__ = [ModelFactory]
+__all__ = ["ModelFactory"]

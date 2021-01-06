@@ -4,4 +4,4 @@
 
 from .bids import BidsStep
 
-__all__ = [BidsStep]
+__all__ = ["BidsStep"]

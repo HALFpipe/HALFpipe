@@ -10,4 +10,13 @@ from .merge import Merge, MergeMask
 from .resample import Resample
 from .zscore import ZScore
 
-__all__ = [AddMeans, BlurInMask, MaskCoverage, MaxIntensity, Merge, MergeMask, Resample, ZScore]
+__all__ = [
+    "AddMeans",
+    "BlurInMask",
+    "MaskCoverage",
+    "MaxIntensity",
+    "Merge",
+    "MergeMask",
+    "Resample",
+    "ZScore",
+]

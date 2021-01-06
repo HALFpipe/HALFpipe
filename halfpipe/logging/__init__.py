@@ -5,4 +5,4 @@
 from .base import setupcontext, setup, teardown
 from .context import Context
 
-__all__ = [setupcontext, setup, teardown, Context]
+__all__ = ["setupcontext", "setup", "teardown", "Context"]

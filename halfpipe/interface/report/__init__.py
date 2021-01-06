@@ -5,4 +5,4 @@
 from .imageplot import PlotEpi, PlotRegistration
 from .vals import Vals, CalcMean
 
-__all__ = [PlotEpi, PlotRegistration, Vals, CalcMean]
+__all__ = ["PlotEpi", "PlotRegistration", "Vals", "CalcMean"]

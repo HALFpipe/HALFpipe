@@ -3,16 +3,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .dictlistfile import DictListFile
-from .indexedfile import IndexedFile
 
 from .pickle import loadpicklelzma, dumppicklelzma, make_cachefilepath, cacheobj, uncacheobj
 
 __all__ = [
-    DictListFile,
-    IndexedFile,
-    loadpicklelzma,
-    dumppicklelzma,
-    make_cachefilepath,
-    cacheobj,
-    uncacheobj,
+    "DictListFile",
+    "loadpicklelzma",
+    "dumppicklelzma",
+    "make_cachefilepath",
+    "cacheobj",
+    "uncacheobj",
 ]

@@ -4,4 +4,4 @@
 
 from .grandmeanscaling import GrandMeanScaling
 
-__all__ = [GrandMeanScaling]
+__all__ = ["GrandMeanScaling"]

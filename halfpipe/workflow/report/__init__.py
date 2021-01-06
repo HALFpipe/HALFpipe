@@ -6,4 +6,4 @@ from .anat import init_anat_report_wf
 from .func import init_func_report_wf
 
 
-__all__ = [init_anat_report_wf, init_func_report_wf]
+__all__ = ["init_anat_report_wf", "init_func_report_wf"]

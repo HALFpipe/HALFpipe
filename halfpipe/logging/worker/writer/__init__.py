@@ -5,4 +5,4 @@
 from .print import PrintWriter
 from .file import FileWriter
 
-__all__ = [PrintWriter, FileWriter]
+__all__ = ["PrintWriter", "FileWriter"]

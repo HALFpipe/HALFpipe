@@ -4,4 +4,4 @@
 
 from .factory import SettingFactory
 
-__all__ = [SettingFactory]
+__all__ = ["SettingFactory"]
