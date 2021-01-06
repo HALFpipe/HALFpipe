@@ -110,7 +110,9 @@ class DictListFile:
 
         matches = False
 
-        for i, curdict in enumerate(self.dictlist):
+        for i in range(len(self.dictlist)):
+            curdict = self.dictlist[i]
+
             curtags = {
                 k: v for k, v in curdict.items() if k in entities
             }

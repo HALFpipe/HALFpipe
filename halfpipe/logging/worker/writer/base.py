@@ -74,7 +74,10 @@ class Writer:
                 break  # exit the writer
 
             except Exception:  # catch all
-                logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
+                logging.warning(
+                    f"Caught exception in {self.__class__.__name__}. Stopping",
+                    exc_info=True
+                )
 
                 self.canWrite.clear()
 

@@ -5,6 +5,7 @@
 import logging
 from marshmallow import ValidationError
 from pathlib import Path
+from copy import deepcopy
 
 from asyncio import get_running_loop, all_tasks, current_task, gather
 
@@ -47,7 +48,8 @@ async def listen(queue):
 
         if message.type == "log":
             for subscriber in subscribers:
-                await subscriber.put(message)
+                messagecopy = deepcopy(message)  # allow subscribers to modify message
+                await subscriber.put(messagecopy)
 
         elif message.type == "set_workdir":
             workdir = message.workdir

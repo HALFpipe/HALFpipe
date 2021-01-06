@@ -34,7 +34,7 @@ if not HALFPIPE_RESOURCE_DIR.exists() or not list(HALFPIPE_RESOURCE_DIR.iterdir(
     HALFPIPE_RESOURCE_DIR.mkdir(exist_ok=True, parents=True)
 
 
-def download(url, target=None):
+def download(url: str, target=None) -> str:
     import requests
     from tqdm import tqdm
     import io
@@ -59,33 +59,36 @@ def download(url, target=None):
 
     res = None
     if isinstance(fp, io.BytesIO):
-        res = fp.getvalue()
+        res = fp.getvalue().decode()
 
     t.close()
     fp.close()
 
+    assert res is not None, f"Error downloading {url}"
+
     return res
 
 
-def get(filename=None):
+def get(filename=None) -> str:
     if filename in TF_RESOURCES:
         return TF_RESOURCES[filename]
 
-    if filename in ONLINE_RESOURCES:
-        filepath = HALFPIPE_RESOURCE_DIR / filename
-        if filepath.exists():
-            return filepath
+    assert filename in ONLINE_RESOURCES, f"Resource {filename} not found"
 
-        resource = ONLINE_RESOURCES[filename]
+    filepath = HALFPIPE_RESOURCE_DIR / filename
+    if filepath.exists():
+        return filepath
 
-        if isinstance(resource, tuple):
-            import json
+    resource = ONLINE_RESOURCES[filename]
 
-            accval = json.loads(download(resource[0]))
-            for key in resource[1:]:
-                accval = accval[key]
-            resource = accval
+    if isinstance(resource, tuple):
+        import json
 
-        download(resource, target=filepath)
+        accval = json.loads(download(resource[0]))
+        for key in resource[1:]:
+            accval = accval[key]
+        resource = accval
 
-        return str(filepath)
+    download(resource, target=filepath)
+
+    return str(filepath)

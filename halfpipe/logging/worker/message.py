@@ -9,7 +9,8 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 class Message:
-    def __init__(self, **kwargs):
+    def __init__(self, type, **kwargs):
+        self.type = type
         for k, v in kwargs.items():
             setattr(self, k, v)
 
