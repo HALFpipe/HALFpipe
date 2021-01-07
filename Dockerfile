@@ -1,6 +1,6 @@
-ARG FMRIPREP_VERSION=20.2.0
+ARG FMRIPREP_VERSION=20.2.1
 
-FROM poldracklab/fmriprep:${FMRIPREP_VERSION}
+FROM nipreps/fmriprep:${FMRIPREP_VERSION}
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe" \
