@@ -9,9 +9,9 @@ from .filter import FilterResultdicts
 from .make import MakeResultdicts
 
 __all__ = [
-    AggregateResultdicts,
-    ResultdictDatasink,
-    ExtractFromResultdict,
-    FilterResultdicts,
-    MakeResultdicts,
+    "AggregateResultdicts",
+    "ResultdictDatasink",
+    "ExtractFromResultdict",
+    "FilterResultdicts",
+    "MakeResultdicts",
 ]

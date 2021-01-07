@@ -5,4 +5,4 @@
 from .multiproc import MultiProcPlugin
 from .linear import DebugPlugin
 
-__all__ = [MultiProcPlugin, DebugPlugin]
+__all__ = ["MultiProcPlugin", "DebugPlugin"]

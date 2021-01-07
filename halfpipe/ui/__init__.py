@@ -4,4 +4,4 @@
 
 from .base import init_spec_ui
 
-__all__ = [init_spec_ui]
+__all__ = ["init_spec_ui"]

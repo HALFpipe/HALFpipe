@@ -20,9 +20,16 @@ from .memory import MemoryCalculator
 from .constants import constants
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
-from ..utils import deepcopyfactory, nvol
+from ..utils import deepcopyfactory, nvol, first
 
 logger = logging.getLogger("halfpipe")
+
+
+class IdentifiableWorkflow(pe.Workflow):
+    def __init__(self, name, base_dir=None, uuid=None):
+        super(IdentifiableWorkflow, self).__init__(name, base_dir=base_dir)
+
+        self.uuid = uuid
 
 
 def init_workflow(workdir):
@@ -43,8 +50,7 @@ def init_workflow(workdir):
         return workflow
 
     # create parent workflow
-    workflow = pe.Workflow(name=constants.workflowdir, base_dir=workdir)
-    workflow.uuid = uuid
+    workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
     workflow.config["execution"].update(
@@ -182,9 +188,12 @@ def collect_boldfiles(database, setting_factory, feature_factory):
         message_strs = [
             f'Found {len(boldfilepathset)-1:d} file with identical tags to {selectedboldfilepath}":'
         ]
+
+        boldfilepath = first(boldfilepathset)
         for boldfilepath in boldfilepathset:
             if boldfilepath != selectedboldfilepath:
                 message_strs.append(f'Excluding file "{boldfilepath}"')
+
         if nvoldict[boldfilepath] < maxnvol:
             message_strs.append("Decision criterion was: Image with the longest duration")
         else:

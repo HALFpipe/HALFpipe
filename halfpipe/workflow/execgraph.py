@@ -14,7 +14,7 @@ import nipype.pipeline.engine as pe
 
 from ..interface import LoadResult
 from ..utils import b32digest
-from ..io import IndexedFile, DictListFile, cacheobj, uncacheobj
+from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
 
@@ -34,9 +34,10 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
     uuid = workflow.uuid
     uuidstr = str(uuid)[:8]
 
+    # create or load execgraph
+
     execgraph = uncacheobj(workdir, "execgraph", uuid)
     if execgraph is None:
-        # create execgraph
         logger.info(f"Initializing new execgraph {uuidstr}")
         execgraph = workflow.run(plugin=DontRunRunner())
         execgraph.uuid = uuid
@@ -44,24 +45,20 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     # init reports
+
     reports_directory = Path(workdir) / "reports"
     reports_directory.mkdir(parents=True, exist_ok=True)
 
     indexhtml_path = reports_directory / "index.html"
     copyfile(getresource("index.html"), indexhtml_path)
 
-    reportexec_fname = reports_directory / "reportexec.js"
-    allnodenames = sorted([node.fullname for node in execgraph.nodes()])
-    IndexedFile.init_indexed_js_object_file(
-        reportexec_fname, "report", allnodenames, 10
-    )  # TODO read current values
-
-    for ftype in ["imgs", "vals", "preproc"]:
+    for ftype in ["imgs", "vals", "preproc", "error"]:
         report_fname = reports_directory / f"report{ftype}.js"
         with DictListFile.cached(report_fname) as dlf:
             dlf.is_dirty = True  # force write
 
     # split workflow
+
     subjectworkflows = dict()
     for node in execgraph.nodes():
         subjectname = None
@@ -75,7 +72,6 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
 
     if n_chunks is None:
         n_chunks = -(-len(subjectworkflows) // max_chunk_size)
-
     if subject_chunks:
         n_chunks = len(subjectworkflows)
 

@@ -6,4 +6,10 @@ from .design import DesignSpec, MakeDesignTsv
 from .dof import MakeDofVolume
 from .model import InterceptOnlyModel, LinearModel
 
-__all__ = [DesignSpec, MakeDesignTsv, MakeDofVolume, InterceptOnlyModel, LinearModel]
+__all__ = [
+    "DesignSpec",
+    "MakeDesignTsv",
+    "MakeDofVolume",
+    "InterceptOnlyModel",
+    "LinearModel",
+]

@@ -7,10 +7,10 @@ from .slicetiming import slice_timing_str, str_slice_timing
 from .base import MetadataLoader, SidecarMetadataLoader
 
 __all__ = [
-    canonicalize_direction_code,
-    direction_code_str,
-    MetadataLoader,
-    SidecarMetadataLoader,
-    slice_timing_str,
-    str_slice_timing,
+    "canonicalize_direction_code",
+    "direction_code_str",
+    "MetadataLoader",
+    "SidecarMetadataLoader",
+    "slice_timing_str",
+    "str_slice_timing",
 ]

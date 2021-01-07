@@ -4,4 +4,4 @@
 
 from .factory import FeatureFactory
 
-__all__ = [FeatureFactory]
+__all__ = ["FeatureFactory"]

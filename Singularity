@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: poldracklab/fmriprep:20.2.0
+From: nipreps/fmriprep:20.2.1
 
 %environment
   export HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe"
@@ -13,7 +13,7 @@ From: poldracklab/fmriprep:20.2.0
   . /halfpipe
 
 %post
-  BUILD=354
+  BUILD=378
 
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   

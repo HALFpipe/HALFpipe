@@ -6,4 +6,4 @@ from .flame1 import FLAME1
 from .regfilt import FilterRegressor
 from .tempfilt import TemporalFilter
 
-__all__ = [FLAME1, FilterRegressor, TemporalFilter]
+__all__ = ["FLAME1", "FilterRegressor", "TemporalFilter"]

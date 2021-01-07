@@ -3,13 +3,15 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
+import sys
 from marshmallow import ValidationError
 from pathlib import Path
+from copy import deepcopy
 
 from asyncio import get_running_loop, all_tasks, current_task, gather
 
 from .message import Message, MessageSchema
-from .writer import PrintWriter, FileWriter
+from .writer import PrintWriter, FileWriter, ReportErrorWriter
 
 schema = MessageSchema()
 
@@ -23,8 +25,9 @@ async def listen(queue):
     printWriter = PrintWriter(levelno=25)  # fmriprep's IMPORTANT
     logWriter = FileWriter(levelno=logging.DEBUG)
     errWriter = FileWriter(levelno=logging.WARNING)
+    reportErrWriter = ReportErrorWriter(levelno=logging.ERROR)
 
-    writers = [printWriter, logWriter, errWriter]
+    writers = [printWriter, logWriter, errWriter, reportErrWriter]
 
     [loop.create_task(writer.start()) for writer in writers]
 
@@ -36,21 +39,23 @@ async def listen(queue):
         # from pprint import pprint
         # pprint(schema.dump(message))
 
-        if isinstance(message, Message):
-            if len(schema.validate(message)) > 0:
-                continue  # ignore invalid
-        else:
+        if not isinstance(message, Message):
             try:
                 message = schema.load(message)
             except ValidationError:
                 continue  # ignore invalid
 
+        assert isinstance(message, Message)
+
         if message.type == "log":
             for subscriber in subscribers:
-                await subscriber.put(message)
+                messagecopy = deepcopy(message)  # allow subscribers to modify message
+                await subscriber.put(messagecopy)
 
         elif message.type == "set_workdir":
             workdir = message.workdir
+
+            assert isinstance(workdir, (Path, str))
 
             if not isinstance(workdir, Path):
                 workdir = Path(workdir)
@@ -62,6 +67,9 @@ async def listen(queue):
 
             errWriter.filename = workdir / "err.txt"
             errWriter.canWrite.set()
+
+            reportErrWriter.filename = workdir / "reports" / "reporterror.js"
+            reportErrWriter.canWrite.set()
 
         elif message.type == "enable_verbose":
             printWriter.levelno = logging.DEBUG

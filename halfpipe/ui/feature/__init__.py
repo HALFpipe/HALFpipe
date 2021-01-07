@@ -4,4 +4,4 @@
 
 from .base import FeaturesStep
 
-__all__ = [FeaturesStep]
+__all__ = ["FeaturesStep"]

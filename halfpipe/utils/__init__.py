@@ -11,18 +11,37 @@ from .ops import first, second, firstfloat, firststr, ravel, removenone, lenfore
 from .path import findpaths, splitext
 
 from inflect import engine
+import logging
 
 
 inflect_engine = engine()
 del engine
 
+logger = logging.getLogger("halfpipe")
+del logging
+
 __all__ = [
-    inflect_engine,
-    deepcopyfactory, deepcopy,
-    formatlist, cleaner, formatlikebids,
-    hexdigest, b32digest,
-    niftidim, nvol,
-    loadints, ncol,
-    first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv,
-    findpaths, splitext
+    "inflect_engine",
+    "logger",
+    "deepcopyfactory",
+    "deepcopy",
+    "formatlist",
+    "cleaner",
+    "formatlikebids",
+    "hexdigest",
+    "b32digest",
+    "niftidim",
+    "nvol",
+    "loadints",
+    "ncol",
+    "first",
+    "second",
+    "firstfloat",
+    "firststr",
+    "ravel",
+    "removenone",
+    "lenforeach",
+    "ceildiv",
+    "findpaths",
+    "splitext",
 ]

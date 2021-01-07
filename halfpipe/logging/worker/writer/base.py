@@ -2,14 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
 from abc import abstractmethod
 
 from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, sleep
 
-from ..message import Message
+import logging
+import sys
 
-logger = logging.getLogger("halfpipe")
+from ..message import Message
 
 
 class Writer:
@@ -56,9 +56,7 @@ class Writer:
 
                 while True:
                     if self.filterMessage(message):
-                        await loop.run_in_executor(
-                            None, self.emit, message.msg, message.levelno
-                        )
+                        await loop.run_in_executor(None, self.emitmessage, message)
                     self.queue.task_done()
 
                     try:  # handle any other records while we have the lock
@@ -74,15 +72,29 @@ class Writer:
                 break  # exit the writer
 
             except Exception:  # catch all
-                logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
+                self.exception()
 
-                self.canWrite.clear()
+    def exception(self):
+        logging.warning(
+            f"Caught exception in {self.__class__.__name__}. Stopping",
+            exc_info=True
+        )
+        self.canWrite.clear()
 
     def check(self) -> bool:
         return True
 
     def acquire(self):
         pass
+
+    def emitmessage(self, message: Message):
+        msg = message.msg
+        levelno = message.levelno
+
+        assert isinstance(msg, str)
+        assert isinstance(levelno, int)
+
+        self.emit(msg, levelno)
 
     @abstractmethod
     def emit(self, msg: str, levelno: int):

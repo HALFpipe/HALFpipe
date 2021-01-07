@@ -10,15 +10,15 @@ from .tsv import FillNA, MergeColumns, SelectColumns
 from .vest import Unvest
 
 __all__ = [
-    Exec,
-    Filter,
-    FilterList,
-    Select,
-    ToAFNI,
-    FromAFNI,
-    LoadResult,
-    FillNA,
-    MergeColumns,
-    SelectColumns,
-    Unvest
+    "Exec",
+    "Filter",
+    "FilterList",
+    "Select",
+    "ToAFNI",
+    "FromAFNI",
+    "LoadResult",
+    "FillNA",
+    "MergeColumns",
+    "SelectColumns",
+    "Unvest",
 ]

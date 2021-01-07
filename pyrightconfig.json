@@ -1,0 +1,6 @@
+{
+    "ignore": [
+        "versioneer.py",
+        "halfpipe/_version.py"
+    ]
+}

@@ -6,4 +6,4 @@ from .exec import Exec
 from .filter import Filter, FilterList
 from .select import Select
 
-__all__ = [Exec, Filter, FilterList, Select]
+__all__ = ["Exec", "Filter", "FilterList", "Select"]

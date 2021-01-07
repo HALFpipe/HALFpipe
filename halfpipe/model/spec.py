@@ -6,6 +6,7 @@
 
 """
 
+from typing import Optional
 import logging
 import os
 from os import path as op
@@ -74,17 +75,17 @@ class SpecSchema(Schema):
         descSets = {"seed": set(), "map": set()}
         if not isinstance(data["files"], list):
             return  # validation error will be raised independently
-        for file in data["files"]:
+        for fileobj in data["files"]:
 
-            if not isinstance(file, File):
+            if not isinstance(fileobj, File):
                 raise ValidationError("List elements need to be File objects")
 
-            if hasattr(file, "tags"):
-                desc = file.tags.get("desc")
-                if file.suffix in descSets:
-                    descSet = descSets[file.suffix]
+            if hasattr(fileobj, "tags"):
+                desc = fileobj.tags.get("desc")
+                if fileobj.suffix in descSets:
+                    descSet = descSets[fileobj.suffix]
                     if desc in descSet:
-                        raise ValidationError(f"{humanize(file.suffix)} names need to be unique")
+                        raise ValidationError(f"{humanize(fileobj.suffix)} names need to be unique")
 
                     descSet.add(desc)
 
@@ -107,9 +108,12 @@ class SpecSchema(Schema):
 
 
 class Spec:
-    def __init__(self, **kwargs):
-        assert "timestamp" in kwargs
-        assert "files" in kwargs
+    def __init__(self, timestamp, files, **kwargs):
+        self.timestamp = timestamp
+        self.files = files
+
+        self.global_settings = dict()
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -122,7 +126,7 @@ class Spec:
         return uuid.uuid5(namespace, hexdigest(SpecSchema().dump(self)))
 
     def validate(self):
-        SpecSchema().validate(self)
+        SpecSchema().validate(self.__dict__)
 
     def put(self, fileobj):
         for file in self.files:
@@ -131,7 +135,7 @@ class Spec:
         self.files.append(fileobj)
 
 
-def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogger("halfpipe")):
+def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogger("halfpipe")) -> Optional[Spec]:
     if specpath is None:
         assert workdir is not None
         if timestamp is not None:
@@ -148,12 +152,13 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
 
     try:
         spec = SpecSchema().loads(jsn, many=False)
+
         return spec
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f'Ignored validation error in "{specpath}": %s', e, stack_info=True)
 
 
-def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):
+def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):
     os.makedirs(workdir, exist_ok=True)
     if specpath is None:
         assert workdir is not None

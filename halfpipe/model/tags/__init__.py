@@ -15,15 +15,15 @@ from .resultdict import ResultdictTagsSchema, resultdict_entities
 from .schema import entities, entity_longnames
 
 __all__ = [
-    AnatTagsSchema,
-    FuncTagsSchema,
-    BoldTagsSchema,
-    TxtEventsTagsSchema,
-    FmapTagsSchema,
-    EPIFmapTagsSchema,
-    RefTagsSchema,
-    ResultdictTagsSchema,
-    resultdict_entities,
-    entities,
-    entity_longnames,
+    "AnatTagsSchema",
+    "FuncTagsSchema",
+    "BoldTagsSchema",
+    "TxtEventsTagsSchema",
+    "FmapTagsSchema",
+    "EPIFmapTagsSchema",
+    "RefTagsSchema",
+    "ResultdictTagsSchema",
+    "resultdict_entities",
+    "entities",
+    "entity_longnames",
 ]
