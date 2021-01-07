@@ -9,8 +9,32 @@ on:
       - master
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Lint with flake8
+        shell: bash
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "15.x"
+
+      - name: Lint with Pyright
+        shell: bash
+        run: |
+          npm install -g pyright
+          pyright
+
+  test:
+    runs-on: ubuntu-latest
     
     # Docker Hub image that `container-job` executes in
     # Use latest
@@ -32,31 +56,11 @@ jobs:
           path: /home
           key: ${{ runner.os }}-home
 
-      - uses: actions/checkout@v2
-
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install .[tests] 
-
-      - name: Lint with flake8
-        shell: bash
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - uses: actions/setup-node@v1
-        with:
-          node-version: "15.x"
-
-      - name: Lint with Pyright
-        shell: bash
-        run: |
-          npm install -g pyright
-          pyright
 
       - name: Test with pytest with coverage
         shell: python
