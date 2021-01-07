@@ -7,6 +7,7 @@ from abc import abstractmethod
 from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, sleep
 
 import logging
+import sys
 
 from ..message import Message
 
@@ -71,12 +72,14 @@ class Writer:
                 break  # exit the writer
 
             except Exception:  # catch all
-                logging.warning(
-                    f"Caught exception in {self.__class__.__name__}. Stopping",
-                    exc_info=True
-                )
+                self.exception()
 
-                self.canWrite.clear()
+    def exception(self):
+        logging.warning(
+            f"Caught exception in {self.__class__.__name__}. Stopping",
+            exc_info=True
+        )
+        self.canWrite.clear()
 
     def check(self) -> bool:
         return True

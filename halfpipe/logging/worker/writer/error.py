@@ -15,6 +15,11 @@ crash_file_match = re.compile(r"Node: (?P<fullname>nipype\.[^\s]+)").match
 
 class ReportErrorWriter(FileWriter):
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.dictlistfile = None
+
     def filterMessage(self, message):
         msg = message.msg
 
@@ -36,12 +41,15 @@ class ReportErrorWriter(FileWriter):
         return False
 
     def acquire(self):
-        DictListFile.cached(self.filename).__enter__()
+        if self.dictlistfile is None:
+            self.dictlistfile = DictListFile.cached(self.filename)
+
+        self.dictlistfile.__enter__()
 
     def emitmessage(self, message):
-        DictListFile.cached(self.filename).put(dict(
+        self.dictlistfile.put(dict(
             node=message.node
         ))
 
     def release(self):
-        DictListFile.cached(self.filename).__exit__()
+        self.dictlistfile.__exit__()

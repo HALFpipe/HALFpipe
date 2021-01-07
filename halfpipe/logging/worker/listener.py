@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
+import sys
 from marshmallow import ValidationError
 from pathlib import Path
 from copy import deepcopy
@@ -45,9 +46,6 @@ async def listen(queue):
                 continue  # ignore invalid
 
         assert isinstance(message, Message)
-
-        if len(schema.validate(message)) > 0:
-            continue  # ignore invalid
 
         if message.type == "log":
             for subscriber in subscribers:

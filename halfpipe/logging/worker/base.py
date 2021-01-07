@@ -4,6 +4,8 @@
 
 from asyncio import get_event_loop
 
+import stackprinter
+
 from .listener import listen
 
 
@@ -15,5 +17,7 @@ def run(queue):
         loop.run_forever()
     except KeyboardInterrupt:
         pass
+    except Exception:
+        stackprinter.show()
     finally:
         loop.close()
