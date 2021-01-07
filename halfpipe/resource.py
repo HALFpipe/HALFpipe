@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
 from os import getenv
 from pathlib import Path
 from templateflow import api
@@ -24,7 +26,7 @@ if not HALFPIPE_RESOURCE_DIR.exists() or not list(HALFPIPE_RESOURCE_DIR.iterdir(
     HALFPIPE_RESOURCE_DIR.mkdir(exist_ok=True, parents=True)
 
 
-def download(url: str, target=None) -> str:
+def download(url: str, target=None) -> Optional[str]:
     import requests
     from tqdm import tqdm
     import io
@@ -54,8 +56,6 @@ def download(url: str, target=None) -> str:
     t.close()
     fp.close()
 
-    assert res is not None, f"Error downloading {url}"
-
     return res
 
 
@@ -74,7 +74,10 @@ def get(filename=None) -> str:
     if isinstance(resource, tuple):
         import json
 
-        accval = json.loads(download(resource[0]))
+        jsonstr = download(resource[0])
+        assert isinstance(jsonstr, str)
+
+        accval = json.loads(jsonstr)
         for key in resource[1:]:
             accval = accval[key]
         resource = accval
