@@ -42,6 +42,7 @@ pywarnings_to_ignore = [
     "No contour levels were found within the data range.",
     "Support for setting the 'mathtext.fallback_to_cm' rcParam is deprecated since 3.3 and will be removed two minor releases later; use 'mathtext.fallback : 'cm' instead.",
     "VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated.",
+    "FutureWarning: Index.ravel returning ndarray is deprecated; in a future version this will return a view on self.",
 ]
 
 
