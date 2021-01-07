@@ -51,6 +51,8 @@ jobs:
     timeout-minutes: 360
 
     steps:
+      - uses: actions/checkout@v2
+  
       - name: Install FreeSurfer license file
         shell: bash
         env:
