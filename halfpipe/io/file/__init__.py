@@ -4,10 +4,13 @@
 
 from .dictlistfile import DictListFile
 
+from .lock import AdaptiveLock
+
 from .pickle import loadpicklelzma, dumppicklelzma, make_cachefilepath, cacheobj, uncacheobj
 
 __all__ = [
     "DictListFile",
+    "AdaptiveLock",
     "loadpicklelzma",
     "dumppicklelzma",
     "make_cachefilepath",

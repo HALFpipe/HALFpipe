@@ -10,24 +10,14 @@ DEFAULT_HALFPIPE_RESOURCE_DIR = Path.home() / ".cache" / "halfpipe"
 HALFPIPE_RESOURCE_DIR = Path(getenv("HALFPIPE_RESOURCE_DIR", str(DEFAULT_HALFPIPE_RESOURCE_DIR)))
 
 ONLINE_RESOURCES = {
-    "index.html": (
-        "https://api.github.com/repos/mindandbrain/qualitycheck/releases/latest",
-        "assets",
-        0,
-        "browser_download_url",
-    ),
+    "index.html": "https://github.com/mindandbrain/qualitycheck/releases/download/0.2.2/index.html",
     "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534327",
     "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534330",
     "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://api.figshare.com/v2/file/download/22447958",
 }
 
 MNI152NLin2009cAsym_xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
-# MNI152NLin2009cAsym_from_MNI152NLin6Asym_xfmpath = next(
-#     xfmpath for xfmpath in MNI152NLin2009cAsym_xfmpaths if "MNI152NLin6Asym" in str(xfmpath)
-# )
-TF_RESOURCES = {
-    # "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": MNI152NLin2009cAsym_from_MNI152NLin6Asym_xfmpath
-}
+TF_RESOURCES = dict()
 
 
 if not HALFPIPE_RESOURCE_DIR.exists() or not list(HALFPIPE_RESOURCE_DIR.iterdir()):

@@ -2,7 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from .print import PrintWriter
+from .error import ReportErrorWriter
 from .file import FileWriter
+from .print import PrintWriter
 
-__all__ = ["PrintWriter", "FileWriter"]
+
+__all__ = ["ReportErrorWriter", "PrintWriter", "FileWriter"]

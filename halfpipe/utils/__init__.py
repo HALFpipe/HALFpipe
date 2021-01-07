@@ -11,13 +11,18 @@ from .ops import first, second, firstfloat, firststr, ravel, removenone, lenfore
 from .path import findpaths, splitext
 
 from inflect import engine
+import logging
 
 
 inflect_engine = engine()
 del engine
 
+logger = logging.getLogger("halfpipe")
+del logging
+
 __all__ = [
     "inflect_engine",
+    "logger",
     "deepcopyfactory",
     "deepcopy",
     "formatlist",

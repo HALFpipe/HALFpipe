@@ -111,6 +111,9 @@ class Spec:
     def __init__(self, timestamp, files, **kwargs):
         self.timestamp = timestamp
         self.files = files
+
+        self.global_settings = dict()
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -123,7 +126,7 @@ class Spec:
         return uuid.uuid5(namespace, hexdigest(SpecSchema().dump(self)))
 
     def validate(self):
-        SpecSchema().validate(self)
+        SpecSchema().validate(self.__dict__)
 
     def put(self, fileobj):
         for file in self.files:
@@ -149,12 +152,13 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
 
     try:
         spec = SpecSchema().loads(jsn, many=False)
+
         return spec
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f'Ignored validation error in "{specpath}": %s', e, stack_info=True)
 
 
-def savespec(spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):
+def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):
     os.makedirs(workdir, exist_ok=True)
     if specpath is None:
         assert workdir is not None

@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-import logging
 import json
 from functools import lru_cache
 
@@ -11,11 +10,10 @@ import pandas as pd
 import numpy as np
 
 from tabulate import tabulate
-from flufl.lock import Lock
 
+from .lock import AdaptiveLock
 from ...model import entities
-
-logger = logging.getLogger("halfpipe")
+from ...utils import logger
 
 
 def _compare(a, b):
@@ -30,8 +28,8 @@ class DictListFile:
         self.filename = Path(filename)
         self.filename.parent.mkdir(parents=True, exist_ok=True)
 
-        lockfilename = f"{filename}.lock"
-        self.lock = Lock(str(lockfilename))
+        self.lockfilename = f"{filename}.lock"
+        self.lock = AdaptiveLock()
 
         if isinstance(header, str):
             header = header.encode()
@@ -50,7 +48,7 @@ class DictListFile:
         return cls(filename, **kwargs)
 
     def __enter__(self):
-        self.lock.lock()
+        self.lock.lock(self.lockfilename)
 
         self.dictlist = []
         self.is_dirty = False
@@ -89,12 +87,13 @@ class DictListFile:
         dataframe = pd.DataFrame.from_records(dictlist)
         dataframe = dataframe.replace({np.nan: ""})
 
-        columnsinorder = [entity for entity in reversed(entities) if entity in dataframe]
-        columnsinorder.extend(sorted([column for column in dataframe if column not in entities]))
+        columns = list(map(str, dataframe.columns))
+        columnsinorder = [entity for entity in reversed(entities) if entity in columns]
+        columnsinorder.extend(sorted([column for column in columns if column not in entities]))
 
         dataframe = dataframe[columnsinorder]
 
-        table_str = tabulate(dataframe, headers="keys", showindex=False)
+        table_str = tabulate(dataframe, headers="keys", showindex=False)  # type: ignore
 
         table_filename = self.filename.parent / f"{self.filename.stem}.txt"
         with open(str(table_filename), "w") as fp:
@@ -124,12 +123,12 @@ class DictListFile:
 
                 matches = True
 
+                self.dictlist[i].update(indict)
+                logger.debug(f"Updating {self.filename} entry {curdict} with {indict}")
+
                 break
 
-        self.is_dirty = True  # will need to write out file
-
-        if matches:
-            self.dictlist[i].update(indict)
-            logger.debug(f"Updating {self.filename} entry {curdict} with {indict}")
-        else:
+        if not matches:
             self.dictlist.append(indict)
+
+        self.is_dirty = True  # will need to write out file

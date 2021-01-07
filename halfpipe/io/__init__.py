@@ -4,6 +4,7 @@
 
 from .file import (
     DictListFile,
+    AdaptiveLock,
     loadpicklelzma,
     dumppicklelzma,
     make_cachefilepath,
@@ -34,6 +35,7 @@ from .signals import meansignals
 
 __all__ = [
     "DictListFile",
+    "AdaptiveLock",
     "IndexedFile",
     "parse_condition_file",
     "parse_design",

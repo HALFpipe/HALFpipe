@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
 import logging
 
 from marshmallow import Schema, fields, validate, post_load
@@ -9,8 +11,11 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 class Message:
-    def __init__(self, type, **kwargs):
+    def __init__(self, type: str, **kwargs):
         self.type = type
+        self.levelno: Optional[int] = None
+        self.msg: Optional[str] = None
+        self.workdir = None
         for k, v in kwargs.items():
             setattr(self, k, v)
 
