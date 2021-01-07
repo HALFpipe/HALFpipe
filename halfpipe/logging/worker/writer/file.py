@@ -13,7 +13,7 @@ from ....io import AdaptiveLock
 
 logger = logging.getLogger("halfpipe")
 
-escapeCodesRegex = re.compile(r"\x1b\[.*?(m|K)")
+escape_codes_regex = re.compile(r"\x1b\[.*?(m|K)")
 
 
 class FileWriter(Writer, AdaptiveLock):
@@ -40,7 +40,7 @@ class FileWriter(Writer, AdaptiveLock):
         self.stream = open(self.filename, mode="a", encoding="utf-8")
 
     def emit(self, msg: str, levelno: int):
-        msg = escapeCodesRegex.sub("", msg)
+        msg = escape_codes_regex.sub("", msg)
         self.stream.write(msg + self.terminator)
 
     def release(self):

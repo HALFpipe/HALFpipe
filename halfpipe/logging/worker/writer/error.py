@@ -4,12 +4,12 @@
 
 import re
 
-from .file import FileWriter
+from .file import FileWriter, escape_codes_regex
 from ....io import DictListFile
 
 
-could_not_run_match = re.compile(r"could not run node: (?P<fullname>nipype\.[^\s]+)").fullmatch
-crash_info_match = re.compile(r"Saving crash info to (?P<crash_file_path>.+)").match
+could_not_run_match = re.compile(r"could not run node: (?P<fullname>nipype\.[^\s]+)").search
+crash_info_match = re.compile(r"Saving crash info to (?P<crash_file_path>.+)").search
 crash_file_match = re.compile(r"Node: (?P<fullname>nipype\.[^\s]+)").match
 
 
@@ -22,6 +22,7 @@ class ReportErrorWriter(FileWriter):
 
     def filterMessage(self, message):
         msg = message.msg
+        msg = escape_codes_regex.sub("", msg)
 
         match = could_not_run_match(msg)
         if match is not None:

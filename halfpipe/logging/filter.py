@@ -48,8 +48,8 @@ pywarnings_to_ignore = [
 
 class PyWarningsFilter(Filter):
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name=name)
+    def __init__(self) -> None:
+        super().__init__(name="pywarnings_filter")
 
         escaped = list(map(str, map(re.escape, pywarnings_to_ignore)))
         regex_str = "|".join(escaped)
