@@ -131,6 +131,9 @@ def pcc_mask(tmp_path_factory):
 
 @pytest.mark.timeout(4 * 3600)
 def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
+    from pprint import pprint
+    pprint(dict(os.environ))
+
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump({}), partial=True)
 
