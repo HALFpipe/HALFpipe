@@ -46,7 +46,7 @@ jobs:
     
     # Docker Hub image that `container-job` executes in
     # Use latest
-    container: mindandbrain/halfpipe:latest
+    container: mindandbrain/halfpipe:1.0.0b6
     
     timeout-minutes: 360
 
@@ -55,10 +55,8 @@ jobs:
   
       - name: Install FreeSurfer license file
         shell: bash
-        env:
-          FREESURFER_LICENSE_BASE64: ${{ secrets.FREESURFER_LICENSE_BASE64 }}
         run: |
-          echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
+          echo "${{ secrets.FREESURFER_LICENSE_BASE64 }}" | base64 --decode > ${FREESURFER_HOME}/license.txt
           mri_convert /usr/local/miniconda/lib/python3.7/site-packages/niworkflows/data/sentinel.nii.gz out.mgz
 
       - name: Cache data
