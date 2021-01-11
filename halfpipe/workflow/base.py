@@ -3,10 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from uuid import uuid5
-import logging
 from pathlib import Path
 
 from nipype.pipeline import engine as pe
+from nipype.interfaces import freesurfer as fs
 from fmriprep import config
 
 from .factory import FactoryContext
@@ -20,9 +20,7 @@ from .memory import MemoryCalculator
 from .constants import constants
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
-from ..utils import deepcopyfactory, nvol, first
-
-logger = logging.getLogger("halfpipe")
+from ..utils import logger, deepcopyfactory, nvol, first
 
 
 class IdentifiableWorkflow(pe.Workflow):
@@ -103,6 +101,7 @@ def init_workflow(workdir):
             model_factory.setup()
 
     config_factory = deepcopyfactory(workflow.config)
+    uses_freesurfer = False
     for node in workflow._get_all_nodes():
 
         node.config = config_factory()
@@ -114,8 +113,24 @@ def init_workflow(workdir):
                 memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
             )  # decrease memory prediction
 
+        if isinstance(node.interface, fs.FSCommand):
+            uses_freesurfer = True
+
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
+
+    if uses_freesurfer:
+        from niworkflows.utils.misc import check_valid_fs_license
+
+        if not check_valid_fs_license():
+            logger.error(
+                "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
+                "Halfpipe looked for an existing license file at several paths, in this order: \n"
+                '1) a "license.txt" file in your Halfpipe working directory \n'
+                '2) command line argument "--fs-license-file" \n'
+                "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
+            )
+            return
 
     logger.info(f"Finished workflow {uuidstr}")
 

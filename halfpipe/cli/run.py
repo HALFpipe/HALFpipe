@@ -2,11 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
+
 from pprint import pformat
 from pathlib import Path
-import logging
 
-logger = logging.getLogger("halfpipe")
+from ..utils import first, logger
 
 
 def run(opts, should_run):
@@ -43,10 +44,21 @@ def run(opts, should_run):
     assert workdir is not None, "Missing working directory"
     assert Path(workdir).is_dir(), "Working directory does not exist"
 
-    if opts.watchdog is True:
-        from ..watchdog import init_watchdog
+    if opts.fs_license_file and Path(opts.fs_license_file).is_file():
+        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
+    else:
+        from glob import glob
 
-        init_watchdog()
+        license_files = list(glob(str(
+            Path(workdir) / "*license*"
+        )))
+
+        if len(license_files) > 0:
+            license_file = str(first(license_files))
+            os.environ["FS_LICENSE"] = license_file
+
+    if os.environ.get("FS_LICENSE") is not None:
+        logger.debug(f'Using FreeSurfer license "{os.environ["FS_LICENSE"]}"')
 
     execgraphs = None
 
@@ -80,12 +92,18 @@ def run(opts, should_run):
 
         workflow = init_workflow(workdir)
 
+        if workflow is None:
+            return
+
         execgraphs = init_execgraph(
             workdir,
             workflow,
             n_chunks=opts.n_chunks,
             subject_chunks=opts.subject_chunks or opts.use_cluster
         )
+
+        if execgraphs is None:
+            return
 
         if opts.use_cluster:
             from ..cluster import create_example_script
@@ -182,8 +200,6 @@ def run(opts, should_run):
 
         n_execgraphstorun = len(execgraphstorun)
         for i, execgraph in enumerate(execgraphstorun):
-            from ..utils import first
-
             if len(execgraphs) > 1:
                 logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
 
