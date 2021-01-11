@@ -22,7 +22,7 @@ from ..logging import Context
 logger = logging.getLogger("nipype.workflow")
 
 
-def initializer(workdir, loggingargs, watchdog):
+def initializer(workdir, loggingargs, watchdog, host_env):
     from ..logging import setup as setuplogging
     setuplogging(**loggingargs)
 
@@ -30,6 +30,8 @@ def initializer(workdir, loggingargs, watchdog):
         from ..watchdog import init_watchdog
 
         init_watchdog()
+
+    os.environ.update(host_env)
 
     os.chdir(workdir)
 
@@ -106,6 +108,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 self._cwd,
                 Context.loggingargs(),
                 plugin_args.get("watchdog", False),
+                dict(os.environ),
             ),
             mp_context=mp_context,
         )
