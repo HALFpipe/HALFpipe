@@ -58,7 +58,8 @@ jobs:
         env:
           FREESURFER_LICENSE_BASE64: ${{ secrets.FREESURFER_LICENSE_BASE64 }}
         run: |
-          echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
+          mkdir -p /tmp/freesurfer
+          echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > /tmp/freesurfer/license.txt
 
       - name: Cache data
         uses: actions/cache@v2
@@ -74,6 +75,8 @@ jobs:
 
       - name: Test with pytest with coverage
         shell: python
+        env:
+          FS_LICENSE: "/tmp/freesurfer/license.txt"
         run: |
           import sys
           import pytest
