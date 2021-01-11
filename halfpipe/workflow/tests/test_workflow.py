@@ -255,6 +255,8 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
     )
     workflow.config["execution"].update(workflow_args)
 
+    print(os.environ)
+
     execgraphs = init_execgraph(tmp_path, workflow)
     execgraph = execgraphs[0]
 
