@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from multiprocessing import cpu_count
 
 from .. import __version__
+from ..utils import logger
 
 steps = ["spec-ui", "workflow", "run"]
 
@@ -23,7 +24,7 @@ def _build_parser():
     basegroup.add_argument(
         "--workdir", type=str, help="directory where output and intermediate files are stored",
     )
-    basegroup.add_argument("--fs-root", default="/ext", help="path to the file system root")
+    basegroup.add_argument("--fs-root", help="path to the file system root")
     basegroup.add_argument("--verbose", action="store_true", default=False)
 
     stepgroup = parser.add_argument_group("steps", "")
@@ -127,6 +128,25 @@ def parse_args(args=None, namespace=None):
         attrname = f"skip-{step}".replace("-", "_")
         if getattr(opts, attrname) is True:
             should_run[step] = False
+
+    if opts.fs_root is None:
+        fs_root_candidates = [
+            "/ext/host_mnt",  # Docker for Mac/Windows
+            "/mnt/host_mnt",
+            "/ext",  # Singularity when using documentation-provided bind flag
+            "/mnt",
+            "/"
+        ]
+
+        for fs_root_candidate in fs_root_candidates:
+            try:
+                if next(Path(fs_root_candidate).iterdir()) is not None:
+                    opts.fs_root = fs_root_candidate
+                    break
+            except (FileNotFoundError, StopIteration):
+                continue
+
+        logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
 
     workdir = opts.workdir
     if workdir is not None:  # resolve workdir in fs_root
