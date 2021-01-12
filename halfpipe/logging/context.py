@@ -58,11 +58,13 @@ class Context(object):
     def enablePrint(cls):
         obj = schema.dump({"type": "enable_print"})
         cls.queue().put(obj)
+        cls.queue().join()
 
     @classmethod
     def disablePrint(cls):
         obj = schema.dump({"type": "disable_print"})
         cls.queue().put(obj)
+        cls.queue().join()
 
     @classmethod
     def setWorkdir(cls, workdir):
