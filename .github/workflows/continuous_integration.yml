@@ -56,7 +56,7 @@ jobs:
       - name: Install FreeSurfer license file
         shell: bash
         env:
-          FREESURFER_LICENSE_BASE64: ${{ secrets.FREESURFER_LICENSE_BASE64 }}
+          FREESURFER_LICENSE_BASE64: "bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg=="
         run: |
           echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
 
@@ -84,6 +84,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           fail_ci_if_error: true
