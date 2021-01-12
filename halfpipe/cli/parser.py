@@ -35,6 +35,8 @@ def _build_parser():
 
     workflowgroup = parser.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
+    workflowgroup.add_argument("--fs-license-file")
+
     chunkinggroup = workflowgroup.add_mutually_exclusive_group(required=False)
     chunkinggroup.add_argument(
         "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"

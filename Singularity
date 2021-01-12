@@ -13,8 +13,6 @@ From: nipreps/fmriprep:20.2.1
   . /halfpipe
 
 %post
-  BUILD=383
-
   chmod -R a+rwx /halfpipe /usr/local/miniconda
   
   su -c 'export PATH=/usr/local/miniconda/bin:$PATH && \

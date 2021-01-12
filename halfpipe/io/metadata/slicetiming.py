@@ -12,8 +12,8 @@ import numpy as np
 def _get_slice_orders(n_slices):
     sequential = np.arange(n_slices)
 
-    even = np.arange(0, n_slices, 2)
-    odd = np.arange(1, n_slices, 2)
+    even = np.arange(1, n_slices, 2)
+    odd = np.arange(0, n_slices, 2)  # odd/even in one-based
 
     orders = {
         "sequential increasing": sequential,

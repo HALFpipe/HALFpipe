@@ -139,10 +139,24 @@ class SetMetadataStep(Step):
         self.aliases = {}
 
         if field.validate is not None and hasattr(field.validate, "choices") or self.key == "slice_timing":
+            choices = None
+            display_choices = None
+
             if self.key == "slice_timing":
                 choices = [*slice_order_strs, "import from file"]
-            else:
+                display_choices = [
+                    "Sequential increasing (1, 2, ...)",
+                    "Sequential decreasing (... 2, 1)",
+                    "Alternating increasing even first (2, 4, ... 1, 3, ...)",
+                    "Alternating increasing odd first (1, 3, ... 2, 4, ...)",
+                    "Alternating decreasing even first (... 3, 1, ... 4, 2)",
+                    "Alternating decreasing odd first (... 4, 2, ... 3, 1)",
+                    "Import from file"
+                ]
+
+            if choices is None:
                 choices = [*field.validate.choices]
+
             if set(space_codes).issubset(choices):
                 choices = [*space_codes]
                 if self.key == "slice_encoding_direction":
@@ -150,7 +164,8 @@ class SetMetadataStep(Step):
                 display_choices = [
                     display_str(direction_code_str(choice, None)) for choice in choices
                 ]
-            else:
+
+            if display_choices is None:
                 display_choices = [display_str(choice) for choice in choices]
 
             self.aliases = dict(zip(display_choices, choices))

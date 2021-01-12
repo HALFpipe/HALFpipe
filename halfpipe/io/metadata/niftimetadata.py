@@ -54,12 +54,11 @@ class NiftiheaderMetadataLoader:
         else:
             slice_dim = None
 
-        if key == "slice_timing":
-            try:
+        try:
+            if key == "slice_timing":
                 n_slices = None
 
                 if self.loader.fill(fileobj, "slice_encoding_direction"):
-
                     slice_encoding_direction = fileobj.metadata.get("slice_encoding_direction")
 
                     if slice_encoding_direction not in axis_codes:
@@ -102,57 +101,58 @@ class NiftiheaderMetadataLoader:
                 slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
                 if not np.allclose(slice_times, 0.0):
                     value = slice_times
-            except nib.spatialimages.HeaderDataError:
-                return False
 
-        elif key == "slice_encoding_direction":
-            if slice_dim is not None:
-                value = ["i", "j", "k"][slice_dim]
+            elif key == "slice_encoding_direction":
+                if slice_dim is not None:
+                    value = ["i", "j", "k"][slice_dim]
 
-        elif key == "repetition_time":
-            if "repetition_time" in descripdict:
-                value = descripdict["repetition_time"]
-            else:
-                zooms = header.get_zooms()
+            elif key == "repetition_time":
+                if "repetition_time" in descripdict:
+                    value = descripdict["repetition_time"]
+                else:
+                    zooms = header.get_zooms()
 
-                if zooms is None or len(zooms) < 4:
-                    return False
+                    if zooms is None or len(zooms) < 4:
+                        return False
 
-                value = float(zooms[3])
+                    value = float(zooms[3])
 
-                units = header.get_xyzt_units()
-                if units is not None and len(units) == 2:
-                    xyz_unit, t_unit = units
+                    units = header.get_xyzt_units()
+                    if units is not None and len(units) == 2:
+                        xyz_unit, t_unit = units
 
-                    if t_unit == "msec":
-                        value /= 1e3
-                    elif t_unit == "usec":
-                        value /= 1e6
-                    elif t_unit != "sec":
+                        if t_unit == "msec":
+                            value /= 1e3
+                        elif t_unit == "usec":
+                            value /= 1e6
+                        elif t_unit != "sec":
+                            logger.info(
+                                f'Unknown repetition_time units "{t_unit}" specified. '
+                                f'Assuming {value:f} seconds for "{fileobj.path}"'
+                            )
+                    else:
                         logger.info(
-                            f'Unknown repetition_time units "{t_unit}" specified. '
+                            f'Missing units for repetition_time. '
                             f'Assuming {value:f} seconds for "{fileobj.path}"'
                         )
-                else:
-                    logger.info(
-                        f'Missing units for repetition_time. '
-                        f'Assuming {value:f} seconds for "{fileobj.path}"'
-                    )
 
-        elif key == "echo_time":
-            if "echo_time" in descripdict:
-                value = descripdict["echo_time"]
+            elif key == "echo_time":
+                if "echo_time" in descripdict:
+                    value = descripdict["echo_time"]
 
-        elif key == "space":
-            origin = header.get_best_affine()[0:3, 3]
-            for name, template_origin_set in template_origin_sets.items():
-                for o in template_origin_set:
-                    delta = np.abs(o) - np.abs(
-                        origin
-                    )  # use absolute values as we don't care about orientation
-                    if np.sqrt(np.square(delta).mean()) < 1:
-                        value = name
-                        break
+            elif key == "space":
+                origin = header.get_best_affine()[0:3, 3]
+                for name, template_origin_set in template_origin_sets.items():
+                    for o in template_origin_set:
+                        delta = np.abs(o) - np.abs(
+                            origin
+                        )  # use absolute values as we don't care about orientation
+                        if np.sqrt(np.square(delta).mean()) < 1:
+                            value = name
+                            break
+
+        except nib.spatialimages.HeaderDataError:
+            return False
 
         if value is None:
             return False
