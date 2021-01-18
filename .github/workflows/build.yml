@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.CR_PAT }}
 
       - name: Set up build tag
-        id: setup_build_tag
+        id: build_tag
         shell: bash
         run: |
           VERSION=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
@@ -53,5 +53,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.setup_build_tag.outputs.tag }}
-            ghcr.io/${{ steps.setup_build_tag.outputs.tag }}
+            ${{ steps.build_tag.outputs.tag }}
+            ghcr.io/${{ steps.build_tag.outputs.tag }}
