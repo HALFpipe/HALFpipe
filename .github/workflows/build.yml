@@ -54,8 +54,9 @@ jobs:
           if [[ "$VERSION" == "master" ]]; then
             VERSION=latest
           fi
-          TAG=$(echo "${GITHUB_REPOSITORY}:${VERSION}" | tr '[:upper:]' '[:lower:]')
-          echo "::set-output name=tag::${TAG}"
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          echo "::set-output name=repo::${REPO}"
+          echo "::set-output name=tag::${REPO}:${VERSION}"
 
       - name: Debug
         shell: bash
@@ -70,9 +71,9 @@ jobs:
           push: true
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64          
-          # cache-from: type=local,src=/opt/buildx-cache
-          # cache-to: type=local,mode=max,dest=/opt/buildx-cache
+          platforms: linux/amd64
+          cache-from: type=registry,ref=${{ steps.build_tag.outputs.repo }}:latest
+          cache-to: type=inline
           tags: |
             ${{ steps.build_tag.outputs.tag }}
-            ghcr.io/${{ steps.build_tag.outputs.tag }}
+            ghcr.io/${{ steps.build_tag.outputs.repo }}
