@@ -39,8 +39,9 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
-          echo env
+          env
           VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
           if [[ "$VERSION" == "master" ]]; then
             VERSION=latest
