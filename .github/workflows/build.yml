@@ -39,15 +39,13 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
-          env
           VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
           if [[ "$VERSION" == "master" ]]; then
             VERSION=latest
           fi
           TAG=$(echo "${GITHUB_REPOSITORY}:${VERSION}" | tr '[:upper:]' '[:lower:]')
-          echo "::set-output tag=${TAG}"
+          echo "::set-output name=tag::${TAG}"
 
       - name: Build and push
         id: docker_build
