@@ -1,0 +1,94 @@
+name: build
+
+on:
+  push:
+    branches: 
+      - master
+  release:
+    types:
+      - published
+      - edited
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Start deployment
+        uses: bobheadxi/deployments@v0.4.3
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: prod
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: name/app
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1 
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Set up build tag
+        id: build_tag
+        shell: bash
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
+          if [[ "$VERSION" == "master" ]]; then
+            VERSION=latest
+          fi
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          echo "::set-output name=repo::${REPO}"
+          echo "::set-output name=tag::${REPO}:${VERSION}"
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          cache-from: type=registry,ref=${{ steps.build_tag.outputs.repo }}:latest
+          cache-to: type=inline
+          tags: |
+            ${{ steps.build_tag.outputs.tag }}
+            ghcr.io/${{ steps.build_tag.outputs.tag }}
+          labels: |
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Update deployment
+        uses: bobheadxi/deployments@v0.4.3
+        if: always()
+        with:
+          step: finish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}

@@ -125,8 +125,8 @@ def init_workflow(workdir):
         if not check_valid_fs_license():
             logger.error(
                 "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
-                "Halfpipe looked for an existing license file at several paths, in this order: \n"
-                '1) a "license.txt" file in your Halfpipe working directory \n'
+                "HALFpipe looked for an existing license file at several paths, in this order: \n"
+                '1) a "license.txt" file in your HALFpipe working directory \n'
                 '2) command line argument "--fs-license-file" \n'
                 "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
             )

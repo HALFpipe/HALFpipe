@@ -157,13 +157,13 @@ class WorkingDirectoryStep(Step):
 
 class FirstStep(Step):
     def setup(self, ctx):
-        self._append_view(GiantTextView("Halfpipe"))
+        self._append_view(GiantTextView("HALFpipe"))
         self._append_view(SpacerView(2))
-        self._append_view(TextView("Welcome to ENIGMA Halfpipe!"))
+        self._append_view(TextView("Welcome to ENIGMA HALFpipe!"))
         self._append_view(TextView(f"You are using version {__version__}"))
         self._append_view(SpacerView(1))
         self._append_view(TextView("Please report any problems or leave suggestions at"))
-        self._append_view(TextView("https://github.com/mindandbrain/halfpipe/issues"))
+        self._append_view(TextView("https://github.com/HALFpipe/HALFpipe/issues"))
         self._append_view(SpacerView(1))
         self.is_first_run = True
 

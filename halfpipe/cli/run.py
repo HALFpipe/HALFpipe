@@ -15,7 +15,7 @@ def run(opts, should_run):
 
     from .. import __version__
 
-    logger.info(f"Halfpipe version {__version__}")
+    logger.info(f"HALFpipe version {__version__}")
 
     if not opts.verbose:
         logger.log(
