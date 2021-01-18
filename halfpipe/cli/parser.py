@@ -13,7 +13,7 @@ steps = ["spec-ui", "workflow", "run"]
 
 def _build_parser():
     parser = ArgumentParser(
-        description=f"ENIGMA Halfpipe {__version__} is a user-friendly interface "
+        description=f"ENIGMA HALFpipe {__version__} is a user-friendly interface "
         "for performing reproducible analysis of fMRI data, including preprocessing, "
         "single-subject feature extraction, and group analysis."
     )
