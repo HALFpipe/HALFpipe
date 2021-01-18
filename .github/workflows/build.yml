@@ -14,6 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Start deployment
+        uses: bobheadxi/deployments@v0.4.3
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: prod
+
       - uses: actions/checkout@v2
 
       - name: Set up QEMU
@@ -63,3 +71,12 @@ jobs:
           tags: |
             ${{ steps.build_tag.outputs.tag }}
             ghcr.io/${{ steps.build_tag.outputs.tag }}
+
+      - name: Update deployment
+        uses: bobheadxi/deployments@v0.4.3
+        if: always()
+        with:
+          step: finish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
