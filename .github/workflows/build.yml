@@ -58,7 +58,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
-          cache-from: type=registry,ref=ghcr.io/${{ steps.build_tag.outputs.repo }}:latest
+          cache-from: type=registry,ref=${{ steps.build_tag.outputs.repo }}:latest
           cache-to: type=inline
           tags: |
             ${{ steps.build_tag.outputs.tag }}
