@@ -36,12 +36,16 @@ jobs:
       - name: Set up build tag
         id: build_tag
         shell: bash
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          VERSION=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
+          echo env
+          VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
           if [[ "$VERSION" == "master" ]]; then
             VERSION=latest
           fi
-          TAG=$(echo "${{ github.repository }}:${VERSION}" | tr '[:upper:]' '[:lower:]')
+          TAG=$(echo "${GITHUB_REPOSITORY}:${VERSION}" | tr '[:upper:]' '[:lower:]')
           echo "::set-output tag=${TAG}"
 
       - name: Build and push
