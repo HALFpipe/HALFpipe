@@ -72,13 +72,6 @@ jobs:
             ${{ steps.build_tag.outputs.tag }}
             ghcr.io/${{ steps.build_tag.outputs.tag }}
 
-      - name: Update description on Docker Hub
-        uses: peter-evans/dockerhub-description@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ steps.build_tag.outputs.repo }}
-
       - name: Update deployment
         uses: bobheadxi/deployments@v0.4.3
         if: always()
