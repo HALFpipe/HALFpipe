@@ -35,6 +35,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /opt/buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Set up build tag
         id: build_tag
         shell: bash
@@ -49,13 +57,11 @@ jobs:
           TAG=$(echo "${GITHUB_REPOSITORY}:${VERSION}" | tr '[:upper:]' '[:lower:]')
           echo "::set-output name=tag::${TAG}"
 
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /opt/buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+      - name: Debug
+        shell: bash
+        run: |
+          df -h
+          env
 
       - name: Build and push
         id: docker_build
