@@ -22,7 +22,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           env: prod
 
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: name/app
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -71,6 +78,11 @@ jobs:
           tags: |
             ${{ steps.build_tag.outputs.tag }}
             ghcr.io/${{ steps.build_tag.outputs.tag }}
+          labels: |
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Update deployment
         uses: bobheadxi/deployments@v0.4.3

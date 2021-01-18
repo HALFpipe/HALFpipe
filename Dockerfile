@@ -1,9 +1,6 @@
 ARG FMRIPREP_VERSION=20.2.1
 FROM nipreps/fmriprep:${FMRIPREP_VERSION}
 
-LABEL org.opencontainers.image.source https://github.com/HALFpipe/HALFpipe
-LABEL org.opencontainers.image.documentation="https://github.com/HALFpipe/HALFpipe/blob/master/README.md"
-
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe" \
     TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
