@@ -26,7 +26,6 @@ using [`FSL`](http://fsl.fmrib.ox.ac.uk/) and
   - [Container platform](#container-platform)
   - [Download](#download)
   - [Running](#running)
-    - [Background](#background)
 - [User interface](#user-interface)
   - [Files](#files)
   - [Features](#features)
@@ -89,11 +88,11 @@ is compatible with `Mac OS X`.
 The second step is to download the `HALFpipe` to your computer. This requires
 approximately 5 gigabytes of storage.
 
-| Container platform | Version | Installation                                  |
-| ------------------ | ------- | --------------------------------------------- |
-| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe` or the commands for version 2.x
-| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe` or `singularity pull docker://ghcr.io/halfpipe/halfpipe`
-| Docker             |         | `docker pull halfpipe/halfpipe` or `docker pull ghcr.io/halfpipe/halfpipe`
+| Container platform | Version | Installation                                                                                           |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------ |
+| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe` or the commands for version 2.x                            |
+| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe` or `singularity pull docker://ghcr.io/halfpipe/halfpipe` |
+| Docker             |         | `docker pull halfpipe/halfpipe`                                                                        |
 
 `Singularity` version `3.x` creates a container image file called
 `HALFpipe_latest.sif` in the directory where you run the `pull` command. For
@@ -231,7 +230,8 @@ words, first-level analyses.
             the event onset, the second the duration. The third column of the
             files is ignored, so parametric modulation is not supported
           - `BIDS TSV` A tab-separated table with named columns `trial_type`
-            (condition), `onset` and `duration`. While BIDS supports defining additional columns, `HALFpipe` will currently ignore these
+            (condition), `onset` and `duration`. While BIDS supports defining
+            additional columns, `HALFpipe` will currently ignore these
           1. `Specify the path of the event files`
           1. `Select conditions to add to the model`
           1. `Specify contrasts`
