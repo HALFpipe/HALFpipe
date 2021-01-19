@@ -91,12 +91,12 @@ approximately 5 gigabytes of storage.
 
 | Container platform | Version | Installation                                  |
 | ------------------ | ------- | --------------------------------------------- |
-| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe`   |
-| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe` |
-| Docker             |         | `docker pull halfpipe/halfpipe`               |
+| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe` or the commands for version 2.x
+| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe` or `singularity pull docker://ghcr.io/halfpipe/halfpipe`
+| Docker             |         | `docker pull halfpipe/halfpipe` or `docker pull ghcr.io/halfpipe/halfpipe`
 
 `Singularity` version `3.x` creates a container image file called
-`halfpipe_latest.sif` in the directory where you run the `pull` command. For
+`HALFpipe_latest.sif` in the directory where you run the `pull` command. For
 `Singularity` version `2.x` the file is named
 `halfpipe-halfpipe-master-latest.simg`. Whenever you want to use the container,
 you need pass `Singularity` the path to this file.
