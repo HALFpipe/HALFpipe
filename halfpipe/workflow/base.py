@@ -7,6 +7,7 @@ from pathlib import Path
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import freesurfer as fs
+from niworkflows.interfaces.bids import BIDSFreeSurferDir
 from fmriprep import config
 
 from .factory import FactoryContext
@@ -89,6 +90,7 @@ def init_workflow(workdir):
     bidsdatabase.write(bids_dir)
 
     # setup preprocessing
+
     if spec.global_settings.get("run_mriqc") is True:
         mriqc_factory = MriqcFactory(ctx)
         mriqc_factory.setup(workdir, boldfilepaths)
@@ -99,6 +101,8 @@ def init_workflow(workdir):
             setting_factory.setup(associated_filepaths_dict)
             feature_factory.setup(associated_filepaths_dict)
             model_factory.setup()
+
+    # patch workflow
 
     config_factory = deepcopyfactory(workflow.config)
     uses_freesurfer = False
@@ -116,8 +120,26 @@ def init_workflow(workdir):
         if isinstance(node.interface, fs.FSCommand):
             uses_freesurfer = True
 
+        elif isinstance(node.interface, BIDSFreeSurferDir):
+            parent = workflow.get_node("fmriprep_wf")
+
+            assert node in parent._graph.nodes()  # make sure that we got the correct parent
+
+            result = node.run()  # need to evaluate this node beforehand
+
+            out_edges = list(parent._graph.out_edges(node, data=True))
+            for _, v, d in out_edges:  # manually propagate output
+                (out_attr, in_attr), = d["connect"]
+
+                parent.disconnect(node, out_attr, v, in_attr)
+                sub_node_name, in_attr = in_attr.split(".")
+                sub_node = v.get_node(sub_node_name)
+                setattr(sub_node.inputs, in_attr, result.outputs.get()[out_attr])
+
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
+
+    # check license
 
     if uses_freesurfer:
         from niworkflows.utils.misc import check_valid_fs_license

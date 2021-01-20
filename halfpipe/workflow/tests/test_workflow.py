@@ -129,10 +129,10 @@ def pcc_mask(tmp_path_factory):
     return pcc_mask_fname
 
 
-@pytest.mark.timeout(4 * 3600)
-def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
+@pytest.fixture(scope="module")
+def mock_spec(bids_data, task_events, pcc_mask):
     spec_schema = SpecSchema()
-    spec = spec_schema.load(spec_schema.dump({}), partial=True)
+    spec = spec_schema.load(spec_schema.dump({}), partial=True)  # get defaults
 
     spec.files = list(map(FileSchema().load, [
         dict(datatype="bids", path=str(bids_data)),
@@ -245,9 +245,30 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         ),
     ]))
 
-    spec.global_settings = dict(sloppy=True)
+    spec.global_settings.update(dict(sloppy=True))
 
-    savespec(spec, workdir=tmp_path)
+    return spec
+
+
+@pytest.mark.timeout(4 * 3600)
+def test_with_reconall(tmp_path, mock_spec):
+    spec.global_settings.update(dict(run_reconall=True))
+
+    savespec(mock_spec, workdir=tmp_path)
+
+    workflow = init_workflow(tmp_path)
+    workflow_args = dict(
+        stop_on_first_crash=True,
+    )
+    workflow.config["execution"].update(workflow_args)
+
+    execgraphs = init_execgraph(tmp_path, workflow)
+    execgraph = execgraphs[0]
+
+
+@pytest.mark.timeout(4 * 3600)
+def test_feature_extraction(tmp_path, mock_spec):
+    savespec(mock_spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
     workflow_args = dict(

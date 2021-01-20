@@ -64,7 +64,8 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         subjectname = None
         hierarchy = node._hierarchy.split(".")
         if hierarchy[1] in ["fmriprep_wf", "reports_wf", "settings_wf", "features_wf"]:
-            subjectname = hierarchy[2]
+            if len(hierarchy) > 2:
+                subjectname = hierarchy[2]
         if subjectname is not None:
             if subjectname not in subjectworkflows:
                 subjectworkflows[subjectname] = set()
