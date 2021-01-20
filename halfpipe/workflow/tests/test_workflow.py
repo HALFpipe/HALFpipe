@@ -290,7 +290,7 @@ def mock_spec(bids_data, task_events, pcc_mask):
 
 @pytest.mark.timeout(4 * 3600)
 def test_with_reconall(tmp_path, mock_spec):
-    spec.global_settings.update(dict(run_reconall=True))
+    mock_spec.global_settings.update(dict(run_reconall=True))
 
     savespec(mock_spec, workdir=tmp_path)
 
