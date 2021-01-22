@@ -106,6 +106,12 @@ def _group_model(spreadsheet=None, contrastdicts=None, variabledicts=None, subje
     rhs = [Term([])]  # force intercept
     for contrastdict in contrastdicts:
         if contrastdict["type"] == "infer":
+            if not columns_var_gt_0[contrastdict["variable"]].all():
+                logger.warning(
+                    f'Not adding term "{contrastdict["variable"]}" from model '
+                    "because it has zero variance"
+                )
+                continue
             # for every term in the model a contrast of type infer needs to be specified
             rhs.append(Term([LookupFactor(name) for name in contrastdict["variable"]]))
 
