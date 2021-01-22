@@ -102,6 +102,7 @@ class FmriprepFactory(Factory):
                 "write_graph": spec.global_settings["write_graph"],
                 "hires": spec.global_settings["hires"],
                 "run_reconall": spec.global_settings["run_reconall"],
+                "cifti_output": False,  # we do this in halfpipe
                 "t2s_coreg": spec.global_settings["t2s_coreg"],
                 "medial_surface_nan": spec.global_settings["medial_surface_nan"],
                 "output_spaces": f"{constants.reference_space}:res-{constants.reference_res}",
