@@ -47,7 +47,7 @@ jobs:
     
     # Docker Hub image that `container-job` executes in
     # Use latest
-    container: mindandbrain/halfpipe:latest
+    container: ghcr.io/halfpipe/halfpipe:latest
     
     timeout-minutes: 360
 
