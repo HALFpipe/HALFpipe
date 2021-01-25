@@ -87,6 +87,7 @@ class FmriprepFactory(Factory):
                 "participant_label": bidssubjects,
                 "ignore": ignore,
                 "use_aroma": False,
+                "dummy_scans": 0,  # force user to take care of this manually
                 "skull_strip_t1w": skull_strip_t1w,
                 "anat_only": spec.global_settings["anat_only"],
                 "write_graph": spec.global_settings["write_graph"],
