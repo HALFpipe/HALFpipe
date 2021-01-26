@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: halfpipe/halfpipe:1.0.0
+From: ghcr.io/halfpipe/halfpipe:1.0.0
 
 %environment
   export HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe"
