@@ -494,8 +494,9 @@ occurs. You should only use `--debug` if you know what you're doing.
 `HALFpipe` saves intermediate files for each pipeline step. This speeds up
 re-running with different settings, or resuming after a job after it was
 cancelled. The intermediate file are saved by the
-[`nipype`](https://nipype.readthedocs.io/) workflow engine. `nipype` saves the
-intermediate files in the `nipype` folder in the working directory.
+[`nipype`](https://nipype.readthedocs.io/) workflow engine, which is what
+`HALFpipe` uses internally. `nipype` saves the intermediate files in the
+`nipype` folder in the working directory.
 
 In environments with limited disk capacity, this can be problematic. To limit
 disk usage, `HALFpipe` can delete intermediate files as soon as they are not
@@ -505,7 +506,7 @@ The default option `--keep some` keeps all intermediate files from fMRIPrep and
 MELODIC, which would take the longest to re-run. We believe this is a good
 tradeoff between disk space and computer time. `--keep all` turns of all
 deletion of intermediate files. `--keep none` deletes as much as possible,
-meaning that almost no additional disk space will be used.
+meaning that the smallest amount possible of disk space will be used.
 
 ### Configure nipype
 
