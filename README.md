@@ -88,11 +88,10 @@ is compatible with `Mac OS X`.
 The second step is to download the `HALFpipe` to your computer. This requires
 approximately 5 gigabytes of storage.
 
-| Container platform | Version | Installation                                                                                                       |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe:1.0.1` or the commands for version 2.x                                  |
-| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe:1.0.1` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.0.1` |
-| Docker             |         | `docker pull halfpipe/halfpipe:1.0.1`                                                                              |
+| Container platform | Installation                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Singularity        | `singularity pull docker://halfpipe/halfpipe:1.0.1` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.0.1` |
+| Docker             | `docker pull halfpipe/halfpipe:1.0.1`                                                                              |
 
 `Singularity` version `3.x` creates a container image file called
 `HALFpipe_{version}.sif` in the directory where you run the `pull` command. For
