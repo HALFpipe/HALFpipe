@@ -2,14 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
 import re
 
 import nibabel as nib
 
 import pint
 
-logger = logging.getLogger("halfpipe")
+from ...utils import logger, splitext
 
 ureg = pint.UnitRegistry()
 
@@ -26,7 +25,7 @@ def parsedescrip(header):
         groupdict = match.groupdict()
 
         varname = groupdict.get("varname")
-        value = groupdict.get("value")
+        value = match.group("value")
         unit = groupdict.get("unit")
 
         varname = varname.lower()
@@ -39,7 +38,10 @@ def parsedescrip(header):
                 else:
                     unit = "ms"
 
-            quantity = value * ureg(unit)
+            base_quantity = ureg(unit)
+            assert isinstance(base_quantity, pint.Quantity)
+
+            quantity = unit * base_quantity
 
             descripdict["echo_time"] = quantity.m_as(ureg.seconds)
         elif varname == "tr":
@@ -49,7 +51,10 @@ def parsedescrip(header):
                 else:
                     unit = "s"
 
-            quantity = value * ureg(unit)
+            base_quantity = ureg(unit)
+            assert isinstance(base_quantity, pint.Quantity)
+
+            quantity = unit * base_quantity
 
             descripdict["repetition_time"] = quantity.m_as(ureg.seconds)
 
@@ -63,6 +68,11 @@ class NiftiheaderLoader:
     def load(cls, niftifile):
         if niftifile in cls.cache:
             return cls.cache[niftifile]
+
+        _, ext = splitext(niftifile)
+
+        if ext in [".mat"]:
+            return None, None
 
         try:
             nbimg = nib.load(niftifile, mmap=False, keep_file_open=False)
