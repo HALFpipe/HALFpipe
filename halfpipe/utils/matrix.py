@@ -14,3 +14,15 @@ def ncol(in_file):
 
     array = np.loadtxt(in_file, ndmin=2)
     return array.shape[1]
+
+
+def atleast_4d(ary):
+    import numpy as np
+
+    ary = np.atleast_3d(ary)
+
+    if ary.ndim == 3:
+        return ary[:, :, :, np.newaxis]
+
+    else:
+        return ary
