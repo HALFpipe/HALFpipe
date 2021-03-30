@@ -189,12 +189,13 @@ class SetMetadataStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
+            key = self.key
             value = self.result
 
             if value in self.aliases:
                 value = self.aliases[value]
 
-            if self.key == "slice_timing":
+            if key == "slice_timing":
                 if value == "import from file":
                     return ImportMetadataStep(
                         self.app,
@@ -206,8 +207,8 @@ class SetMetadataStep(Step):
                         appendstr=self.appendstr
                     )(ctx)
                 else:  # a code was specified
-                    self.key = "slice_timing_code"
-                    self.field = _get_field(self.schema, self.key)
+                    key = "slice_timing_code"
+                    self.field = _get_field(self.schema, key)
 
             value = self.field.deserialize(value)
 
@@ -220,7 +221,7 @@ class SetMetadataStep(Step):
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
-                specfileobj.metadata[self.key] = value
+                specfileobj.metadata[key] = value
 
         return self.next_step_type(self.app)(ctx)
 

@@ -6,7 +6,7 @@ from .copy import deepcopyfactory, deepcopy
 from .format import formatlist, cleaner, formatlikebids
 from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
-from .matrix import loadints, ncol
+from .matrix import loadints, ncol, atleast_4d
 from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
 from .path import findpaths, splitext
 
@@ -34,6 +34,7 @@ __all__ = [
     "nvol",
     "loadints",
     "ncol",
+    "atleast_4d",
     "first",
     "second",
     "firstfloat",

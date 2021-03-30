@@ -29,6 +29,7 @@ from nipype.interfaces.base import (
 
 from ...io import parse_design
 from ..stats import DesignSpec
+from ...utils import atleast_4d
 from .miscmaths import t2z_convert, f2z_convert
 
 ctx = get_context("forkserver")
@@ -175,23 +176,29 @@ def voxel_calc(voxel_data):
     return voxel_result
 
 
-def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, num_threads=1):
-
-    # load data
+def load_data(cope_files, mask_files, regressors, contrasts, var_cope_files):
     cope_data = [
-        nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in cope_files
+        atleast_4d(
+            nib.load(f).get_fdata()
+        )
+        for f in cope_files
     ]
     copes = np.concatenate(cope_data, axis=3)
 
     mask_data = [
-        np.asanyarray(nib.load(f).dataobj).astype(np.bool)[:, :, :, np.newaxis]
+        atleast_4d(
+            np.asanyarray(nib.load(f).dataobj).astype(np.bool)
+        )
         for f in mask_files
     ]
     masks = np.concatenate(mask_data, axis=3)
 
     if var_cope_files is not None:
         var_cope_data = [
-            nib.load(f).get_fdata()[:, :, :, np.newaxis] for f in var_cope_files
+            atleast_4d(
+                nib.load(f).get_fdata()
+            )
+            for f in var_cope_files
         ]
         var_copes = np.concatenate(var_cope_data, axis=3)
     else:
@@ -225,14 +232,16 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
 
             yield c, y, z, s, cmatdict
 
-    prev_os_environ = os.environ.copy()
-    os.environ.update({
-        "MKL_NUM_THREADS": "1",
-        "NUMEXPR_NUM_THREADS": "1",
-        "OMP_NUM_THREADS": "1",
-    })
-
     voxel_data = gen_voxel_data()
+
+    return shape, dmat, cmatdict, voxel_data
+
+
+def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, num_threads=1):
+    shape, dmat, cmatdict, voxel_data = load_data(
+        cope_files, mask_files, regressors, contrasts, var_cope_files
+    )
+
     if num_threads < 2:
         cm = nullcontext()
         it = map(voxel_calc, voxel_data)
@@ -252,8 +261,6 @@ def flame1(cope_files, mask_files, regressors, contrasts, var_cope_files=None, n
                     voxel_results[k] = dict()
 
                 voxel_results[k].update(v)
-
-    os.environ.update(prev_os_environ)
 
     output_files = dict()
 
@@ -349,14 +356,24 @@ class FLAME1(SimpleInterface):
     input_spec = FLAME1InputSpec
     output_spec = FLAME1OutputSpec
 
+    def _run_stat(self, **kwargs):
+        return flame1(**kwargs)
+
     def _run_interface(self, runtime):
         var_cope_files = self.inputs.var_cope_files
 
         if not isdefined(var_cope_files):
             var_cope_files = None
 
+        prev_os_environ = os.environ.copy()
+        os.environ.update({
+            "MKL_NUM_THREADS": "1",
+            "NUMEXPR_NUM_THREADS": "1",
+            "OMP_NUM_THREADS": "1",
+        })
+
         self._results.update(
-            flame1(
+            self._run_stat(
                 cope_files=self.inputs.cope_files,
                 var_cope_files=var_cope_files,
                 mask_files=self.inputs.mask_files,
@@ -365,5 +382,7 @@ class FLAME1(SimpleInterface):
                 num_threads=self.inputs.num_threads,
             )
         )
+
+        os.environ.update(prev_os_environ)
 
         return runtime
