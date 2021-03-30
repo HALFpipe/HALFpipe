@@ -40,10 +40,13 @@ def _fe_run_mode(var_cope_file):
         return "ols"
 
 
-def _critical_z(resels=None, critical_p=0.05):
+def _critical_z(voxels=None, resels=None, critical_p=0.05):
     from scipy.stats import norm
 
-    return norm.isf(critical_p / resels)
+    voxels = float(voxels)
+    resels = float(resels)
+
+    return norm.isf(critical_p / (voxels / resels))
 
 
 def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc=MemoryCalculator()):
@@ -262,12 +265,20 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect([(modelfit, smoothest, [(("masks", ravel), "mask_file")])])
 
         criticalz = pe.MapNode(
-            niu.Function(input_names=["resels"], output_names=["critical_z"], function=_critical_z),
+            niu.Function(
+                input_names=["voxels", "resels"],
+                output_names=["critical_z"],
+                function=_critical_z
+            ),
             iterfield=["resels"],
             name="criticalz",
         )
+        workflow.connect(smoothest, "voxels", criticalz, "voxels")
         workflow.connect(smoothest, "resels", criticalz, "resels")
         workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
+
+    else:
+        raise ValueError()
 
     workflow.connect(modelfit, "copes", make_resultdicts_b, "effect")
     workflow.connect(modelfit, "var_copes", make_resultdicts_b, "variance")
