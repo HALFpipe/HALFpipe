@@ -11,6 +11,7 @@ from inflection import camelize
 
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
+from ...model.utils import get_nested_schema_field_names
 from ...utils import formatlikebids, splitext, cleaner
 from ..metadata import canonicalize_direction_code
 
@@ -123,7 +124,7 @@ class BidsDatabase:
 
             bidsmetadata = dict()
             if "metadata" in instance.fields:
-                metadata_keys = list(instance.fields["metadata"].nested().fields.keys())
+                metadata_keys = get_nested_schema_field_names(instance, "metadata")
                 task = self.database.tagval(filepath, "task")
                 if task is not None:
                     bidsmetadata["TaskName"] = task

@@ -13,26 +13,11 @@ from calamities.pattern import tag_parse, get_entities_in_path
 
 import logging
 
-from marshmallow import fields, Schema
-
 from .step import Step
 from ..model import FileSchema, entities, entity_longnames as entity_display_aliases
+from ..model.utils import get_schema_entities
 from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import splitext, inflect_engine as p
-
-
-def _get_entities(schema):
-    tags_field = schema().fields["tags"]
-
-    assert isinstance(tags_field, fields.Nested)
-
-    tags_schema = tags_field.nested
-
-    assert isinstance(tags_schema, Schema)
-
-    entities = tags_schema.fields.keys()
-
-    return entities
 
 
 class FilePatternSummaryStep(Step):
@@ -47,7 +32,7 @@ class FilePatternSummaryStep(Step):
     def setup(self, ctx):
         self.is_first_run = True
 
-        entities = _get_entities(self.schema)
+        entities = get_schema_entities(self.schema)
 
         filepaths = ctx.database.get(**self.filedict)
         message = messagefun(ctx.database, self.filetype_str, filepaths, entities, self.entity_display_aliases)
@@ -186,7 +171,7 @@ class FilePatternStep(Step):
 
         self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
 
-        schema_entities = _get_entities(self.schema)
+        schema_entities = get_schema_entities(self.schema)
         schema_entities = [
             entity for entity in reversed(entities) if entity in schema_entities
         ]  # keep order

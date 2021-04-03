@@ -15,4 +15,4 @@ from ..metadata import SpreadsheetMetadataSchema
 class SpreadsheetFileSchema(BaseFileSchema):
     datatype = fields.Str(default="spreadsheet", validate=validate.Equal("spreadsheet"))
 
-    metadata = fields.Nested(SpreadsheetMetadataSchema, default=dict())
+    metadata = fields.Nested(SpreadsheetMetadataSchema(), default=dict())

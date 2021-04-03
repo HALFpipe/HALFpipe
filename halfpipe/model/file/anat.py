@@ -18,7 +18,7 @@ class T1wFileSchema(BaseFileSchema):
     suffix = fields.Str(default="T1w", validate=validate.Equal("T1w"))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
-    tags = fields.Nested(AnatTagsSchema, default=dict())
+    tags = fields.Nested(AnatTagsSchema(), default=dict())
 
 
 class AnatFileSchema(OneOfSchema):

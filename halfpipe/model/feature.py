@@ -41,9 +41,14 @@ class BaseFeatureSchema(Schema):
 
 class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(default="task_based", validate=validate.Equal("task_based"))
+
     conditions = fields.List(fields.Str())
     contrasts = fields.List(fields.Nested(TContrastSchema))
+
     high_pass_filter_cutoff = fields.Float(default=125.0, validate=validate.Range(min=0.0))
+
+    orthogonalize = fields.Dict(keys=fields.Str(), values=fields.List(fields.Str()), default=dict())
+    hrf_derivs = fields.Bool(default=False)
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):

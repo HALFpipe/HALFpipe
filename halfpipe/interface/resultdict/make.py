@@ -13,10 +13,11 @@ from nipype.interfaces.io import add_traits, IOBase
 
 from .base import ResultdictsOutputSpec
 from ...model import ResultdictSchema
+from ...model.utils import get_schema_entities
 from ...utils import first, ravel, deepcopy
 
 composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
-resultdict_entities = set(ResultdictSchema().fields["tags"].nested().fields.keys())
+resultdict_entities = set(get_schema_entities(ResultdictSchema))
 
 
 class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
