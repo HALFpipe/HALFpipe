@@ -273,7 +273,7 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
             iterfield=["resels"],
             name="criticalz",
         )
-        workflow.connect(smoothest, "voxels", criticalz, "voxels")
+        workflow.connect(smoothest, "volume", criticalz, "voxels")
         workflow.connect(smoothest, "resels", criticalz, "resels")
         workflow.connect(criticalz, "critical_z", make_resultdicts_b, "critical_z")
 
