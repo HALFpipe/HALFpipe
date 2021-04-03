@@ -13,10 +13,26 @@ from calamities.pattern import tag_parse, get_entities_in_path
 
 import logging
 
+from marshmallow import fields, Schema
+
 from .step import Step
 from ..model import FileSchema, entities, entity_longnames as entity_display_aliases
 from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import splitext, inflect_engine as p
+
+
+def _get_entities(schema):
+    tags_field = schema().fields["tags"]
+
+    assert isinstance(tags_field, fields.Nested)
+
+    tags_schema = tags_field.nested
+
+    assert isinstance(tags_schema, Schema)
+
+    entities = tags_schema.fields.keys()
+
+    return entities
 
 
 class FilePatternSummaryStep(Step):
@@ -31,10 +47,10 @@ class FilePatternSummaryStep(Step):
     def setup(self, ctx):
         self.is_first_run = True
 
-        entities = self.schema().fields["tags"].nested().fields.keys()
+        entities = _get_entities(self.schema)
 
         filepaths = ctx.database.get(**self.filedict)
-        message = messagefun(ctx.database, self.filetype_str, filepaths, entities)
+        message = messagefun(ctx.database, self.filetype_str, filepaths, entities, self.entity_display_aliases)
 
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
@@ -147,6 +163,8 @@ class FilePatternStep(Step):
     suggest_file_stem = False
     entity_display_aliases = entity_display_aliases
 
+    header_str = None
+
     filetype_str = "file"
     filedict = {}
     schema = FileSchema
@@ -168,7 +186,7 @@ class FilePatternStep(Step):
 
         self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
 
-        schema_entities = self.schema().fields["tags"].nested().fields.keys()
+        schema_entities = _get_entities(self.schema)
         schema_entities = [
             entity for entity in reversed(entities) if entity in schema_entities
         ]  # keep order
@@ -227,7 +245,7 @@ class FilePatternStep(Step):
                 groupdict = match.groupdict()
                 if groupdict.get("tag_name") in inv:
                     _path += path[i : match.start("tag_name")]
-                    _path += inv[groupdict.get("tag_name")]
+                    _path += inv[match.group("tag_name")]
                     i = match.end("tag_name")
 
             _path += path[i:]
