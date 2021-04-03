@@ -26,6 +26,11 @@ def formatlikebids(name):
 
     formatted_name = re.sub(r"\s+", " ", formatted_name)  # remove repeated whitespace
 
-    formatted_name = camelize(underscore(parameterize(formatted_name)), False)  # format
+    uppercase_first_letter = name[0].isupper()
+
+    formatted_name = camelize(
+        underscore(parameterize(formatted_name)),
+        uppercase_first_letter
+    )  # format
 
     return formatted_name
