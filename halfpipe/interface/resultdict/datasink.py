@@ -5,7 +5,6 @@
 import os
 from os import path as op
 from pathlib import Path
-import logging
 from shutil import copyfile
 import hashlib
 import json
@@ -19,10 +18,8 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
 from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
-from ...utils import splitext, findpaths, first, formatlikebids
+from ...utils import splitext, findpaths, first, formatlikebids, logger
 from ...resource import get as getresource
-
-logger = logging.getLogger("halfpipe")
 
 
 def _make_plot(tags, key, sourcefile):
@@ -199,11 +196,18 @@ class ResultdictDatasink(SimpleInterface):
                 file_hash = None
                 sources = metadata.get("sources")
 
+                if sources is None:
+                    sources = list()
+
                 try:
                     found_sources, file_hash = _find_sources(inpath)
-                    sources.extend(found_sources)
-                except Exception:
-                    pass
+
+                    if isinstance(found_sources, list):
+                        sources.extend(found_sources)
+                except Exception as e:
+                    logger.warning(f'Could not get sources for "{inpath}": %s', e, stack_info=True)
+
+                assert len(sources) > 0
 
                 if file_hash is None:
                     md5 = hashlib.md5()

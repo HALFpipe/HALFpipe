@@ -16,6 +16,15 @@ from .constants import constants
 from ..utils import deepcopyfactory
 
 
+def _find_input(hierarchy, node, attr):
+    wf = hierarchy[-1]
+    for u, _, datadict in wf._graph.in_edges(nbunch=node, data=True):
+        for in_attr, out_attr in datadict["connect"]:
+            if out_attr == attr:
+                return hierarchy, u, in_attr
+    raise ValueError()
+
+
 def _find_child(hierarchy, name):
     wf = hierarchy[-1]
     for node in wf._graph.nodes():
@@ -183,7 +192,13 @@ class FmriprepFactory(Factory):
                 attr = dsattrs.pop()
                 childtpl = _find_child(hierarchy, attr)
                 if childtpl is not None:
-                    self.connect_attr(*childtpl, "out_file", nodehierarchy, node, attr)
+                    childhierarchy, childnode = childtpl
+                    childhierarchy, childnode, childattr = _find_input(
+                        childhierarchy, childnode, "in_file"
+                    )
+                    self.connect_attr(
+                        childhierarchy, childnode, childattr, nodehierarchy, node, attr
+                    )
                     connected_attrs.add(attr)
 
         hierarchy = self._get_hierarchy("fmriprep_wf", sourcefile=sourcefile, subject_id=subject_id)
