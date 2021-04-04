@@ -41,13 +41,15 @@ def _fe_run_mode(var_cope_file):
 
 
 def _critical_z(voxels=None, resels=None, critical_p=0.05):
+    import numpy as np
     from scipy.stats import norm
 
-    voxels = float(voxels)
-    resels = float(resels)
+    voxels = np.array(voxels)
+    resels = np.array(resels)
 
-    return norm.isf(critical_p / (voxels / resels))
+    critical_z_array = norm.isf(critical_p / (voxels / resels))
 
+    return critical_z_array.tolist()
 
 def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc=MemoryCalculator()):
     name = f"{formatlikebids(model.name)}_wf"
@@ -264,13 +266,12 @@ def init_model_wf(workdir=None, numinputs=1, model=None, variables=None, memcalc
         workflow.connect([(modelfit, smoothest, [(("zstats", ravel), "zstat_file")])])
         workflow.connect([(modelfit, smoothest, [(("masks", ravel), "mask_file")])])
 
-        criticalz = pe.MapNode(
+        criticalz = pe.Node(
             niu.Function(
                 input_names=["voxels", "resels"],
                 output_names=["critical_z"],
                 function=_critical_z
             ),
-            iterfield=["resels"],
             name="criticalz",
         )
         workflow.connect(smoothest, "volume", criticalz, "voxels")
