@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+
 """
-Nipype interfaces to calculate connectivity measures using nilearn.
-Adapted from https://github.com/Neurita/pypes
+Inspired by https://github.com/Neurita/pypes
 """
+
 from os import path as op
 
 import numpy as np
@@ -55,10 +56,10 @@ class ConnectivityMeasure(BaseInterface):
             output_coverage=True
         )
 
-        df = pd.DataFrame(self._time_series)
+        df: pd.DataFrame = pd.DataFrame(self._time_series)
 
-        self._cov_mat = np.asarray(df.cov())
-        self._corr_mat = np.asarray(df.corr())
+        self._cov_mat = df.cov().values
+        self._corr_mat = df.corr().values
 
         return runtime
 
