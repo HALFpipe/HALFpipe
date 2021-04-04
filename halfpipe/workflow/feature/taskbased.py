@@ -60,8 +60,8 @@ def init_taskbased_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    if feature is not None:
-        inputnode.inputs.condition_names = feature.conditions
+    assert feature is not None
+    inputnode.inputs.condition_names = feature.conditions
 
     if condition_files is not None:
         inputnode.inputs.condition_files = condition_files
@@ -127,13 +127,13 @@ def init_taskbased_wf(
 
     # transform contrasts dictionary to nipype list data structure
     contrasts = []
-    if feature is not None:
-        condition_names = feature.conditions
-        for contrast in feature.contrasts:
-            contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
-            contrasts.append(
-                [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
-            )
+    condition_names = feature.conditions
+    for contrast in feature.contrasts:
+        contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
+        contrasts.append(
+            [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
+        )
+
     contrast_names = list(map(firststr, contrasts))
     make_resultdicts_b.inputs.taskcontrast = contrast_names
 
@@ -142,7 +142,7 @@ def init_taskbased_wf(
         fsl.Level1Design(
             contrasts=contrasts,
             model_serial_correlations=True,
-            bases={"dgamma": {"derivs": False}},
+            bases={"dgamma": {"derivs": feature.hrf_derivs}},
         ),
         name="level1design",
     )
