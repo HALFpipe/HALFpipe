@@ -48,7 +48,8 @@ class DatabaseMetadataLoader:
                                 value = abs(e1 - e2)
 
         if key == "echo_time":  # calculate from associated file
-            if fileobj.datatype == "fmap" and fileobj.suffix.startwith("phase"):
+            if fileobj.datatype == "fmap" and fileobj.suffix.startswith("phase"):
+                filepath = fileobj.path
                 suffix = dict(phase1="magnitude1", phase2="magnitude2")[fileobj.suffix]
                 magnitude = self.database.associations(filepath, suffix=suffix)
                 if magnitude is not None and len(magnitude) > 0:
