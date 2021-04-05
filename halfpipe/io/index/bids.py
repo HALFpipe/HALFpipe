@@ -25,6 +25,12 @@ bidsconfig = Config.load("bids")
 bidsversion = "1.4.0"
 
 
+def format_tagval(entity, v):
+    if entity == "sub" or entity == "subject":
+        return cleaner(v)
+    return formatlikebids(v)
+
+
 class BidsDatabase:
     def __init__(self, database):
         self.database = database
@@ -33,11 +39,6 @@ class BidsDatabase:
         self.filepaths_by_bidspaths = dict()
 
         self.bidstags_by_bidspaths = dict()
-
-    def _format_tagval(self, entity, v):
-        if entity == "sub" or entity == "subject":
-            return cleaner(v)
-        return formatlikebids(v)
 
     def put(self, filepath):
         if self.bidspaths_by_filepaths.get(filepath) is not None:
@@ -49,7 +50,7 @@ class BidsDatabase:
             if bidsentity in entity_longnames:
                 bidsentity = entity_longnames[bidsentity]
             if k in entities:
-                bidstags[bidsentity] = self._format_tagval(k, v)
+                bidstags[bidsentity] = format_tagval(k, v)
             else:
                 if k == "suffix" and tags.get("datatype") == "fmap":
                     k = "fmap"
