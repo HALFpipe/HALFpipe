@@ -50,12 +50,13 @@ class DatabaseMetadataLoader:
         if key == "echo_time":  # calculate from associated file
             if fileobj.datatype == "fmap" and fileobj.suffix.startswith("phase"):
                 filepath = fileobj.path
-                suffix = dict(phase1="magnitude1", phase2="magnitude2")[fileobj.suffix]
-                magnitude = self.database.associations(filepath, suffix=suffix)
-                if magnitude is not None and len(magnitude) > 0:
-                    m = self.database.fileobj(first(magnitude))
-                    if self.loader.fill(m, "echo_time"):
-                        value = m.metadata.get("echo_time")
+                suffix = dict(phase1="magnitude1", phase2="magnitude2").get(fileobj.suffix)
+                if suffix is not None:
+                    magnitude = self.database.associations(filepath, suffix=suffix)
+                    if magnitude is not None and len(magnitude) > 0:
+                        m = self.database.fileobj(first(magnitude))
+                        if self.loader.fill(m, "echo_time"):
+                            value = m.metadata.get("echo_time")
 
         if value is None:
             return False
