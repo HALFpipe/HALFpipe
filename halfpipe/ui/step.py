@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from abc import abstractmethod
+from typing import Optional
 
 from calamities import TextView, SpacerView, TextElement, SingleChoiceInputView
 
@@ -18,7 +20,7 @@ class Step:
 
     def __call__(self, ctx):
         try:
-            if not self.was_setup:
+            if self.was_setup is False:
                 self.setup(ctx)
                 self.was_setup = True
             if len(self.views) > 0:
@@ -42,18 +44,25 @@ class Step:
             self.teardown()
             raise e  # go back to previous step
 
+    @abstractmethod
     def setup(self, ctx):
+        _, _ = self, ctx  # unused
         raise NotImplementedError
 
+    @abstractmethod
     def teardown(self):
         for view in reversed(self.views):
             logging.getLogger("halfpipe.ui").debug(f'Removing view "{view}"')
             self.app.layout.remove(view)
 
+    @abstractmethod
     def run(self, ctx):
+        _, _ = self, ctx  # unused
         raise NotImplementedError
 
+    @abstractmethod
     def next(self, ctx):
+        _, _ = self, ctx  # unused
         raise NotImplementedError
 
     def _append_view(self, view):
@@ -63,7 +72,15 @@ class Step:
 
 
 class BranchStep(Step):
+    header_str: Optional[str] = None
+
+    is_vertical = False
+
+    options = dict()
+
     def _should_run(self, ctx):
+        _, _ = self, ctx  # unused
+
         return True
 
     def setup(self, ctx):
@@ -84,6 +101,7 @@ class BranchStep(Step):
             self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # for overload
         if not self.should_run:
             return self.is_first_run
         else:
@@ -106,6 +124,9 @@ class BranchStep(Step):
 
 class YesNoStep(BranchStep):
     is_vertical = False
+
+    yes_step_type = None
+    no_step_type = None
 
     def __init__(self, app, **kwargs):
         super(YesNoStep, self).__init__(app, **kwargs)

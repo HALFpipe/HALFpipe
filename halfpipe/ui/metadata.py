@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import List
+
 from calamities import (
     TextView,
     SpacerView,
@@ -11,6 +13,7 @@ from calamities import (
 )
 
 import numpy as np
+import pandas as pd
 from inflection import humanize
 from marshmallow import fields
 
@@ -62,6 +65,7 @@ class ImportMetadataStep(Step):
         self.next_step_type = next_step_type
 
     def setup(self, ctx):
+        _ = ctx  # unused
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -82,6 +86,7 @@ class ImportMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # unused
         self.result = self.input_view()
         if self.result is None:
             return False
@@ -89,11 +94,13 @@ class ImportMetadataStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            value = self.result
+            filepath = self.result
 
-            value = list(np.ravel(np.asarray(loadspreadsheet(value))))
+            spreadsheet: pd.DataFrame = loadspreadsheet(filepath)
+            valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+            valuelist: List = list(valuearray.tolist())
 
-            value = self.field.deserialize(value)
+            value = self.field.deserialize(valuelist)
 
             if self.filters is None:
                 specfileobjs = [ctx.spec.files[-1]]
@@ -125,6 +132,7 @@ class SetMetadataStep(Step):
         self.next_step_type = next_step_type
 
     def setup(self, ctx):
+        _ = ctx  # unused
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -182,6 +190,8 @@ class SetMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # unused
+
         self.result = self.input_view()
         if self.result is None:
             return False
@@ -237,6 +247,7 @@ class CheckMetadataStep(Step):
     next_step_type = None
 
     def _should_skip(self, ctx):
+        _, _ = self, ctx  # unused
         return False
 
     def setup(self, ctx):
@@ -272,7 +283,7 @@ class CheckMetadataStep(Step):
                 if val is not None:
                     sts = slice_timing_str(val)
                     if sts == "unknown":
-                        val = np.asarray(val)
+                        val = np.array(val)
                         sts = np.array2string(val, max_line_width=16384)
                     else:
                         sts = humanize(sts)
@@ -286,6 +297,8 @@ class CheckMetadataStep(Step):
         else:
             self.is_missing = False
             self._append_view(TextView(f"Check {humankey} values{self.appendstr}"))
+
+        assert isinstance(vals, List)
 
         uniquevals, counts = np.unique(vals, return_counts=True)
         order = np.argsort(counts)
@@ -322,6 +335,8 @@ class CheckMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # unused
+
         if self.is_missing:
             return self.is_first_run
         else:

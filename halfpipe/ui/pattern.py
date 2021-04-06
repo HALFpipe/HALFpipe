@@ -41,6 +41,7 @@ class FilePatternSummaryStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # unused
         return self.is_first_run
 
     def next(self, ctx):
@@ -110,6 +111,7 @@ class AskForMissingEntities(Step):
             self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        _ = ctx  # unused
         if self.entity is None:
             return self.is_first_run
         else:
@@ -160,9 +162,12 @@ class FilePatternStep(Step):
     next_step_type = None
 
     def _transform_extension(self, ext):
+        _ = self  # unused
         return ext
 
     def setup(self, ctx):
+        _ = ctx  # unused
+
         self.file_obj = None
 
         if hasattr(self, "header_str") and self.header_str is not None:
@@ -198,7 +203,7 @@ class FilePatternStep(Step):
         if len(optional_entity_strs) > 0:
             entity_instruction_strs.append(f"You can also use {p.join(optional_entity_strs)}")
 
-        entity_instruction_views = [TextView("") for str in entity_instruction_strs]
+        entity_instruction_views = [TextView("") for _ in entity_instruction_strs]
         for view in entity_instruction_views:
             self._append_view(view)
 
