@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Type
 
 from calamities import TextView, SpacerView, TextElement, SingleChoiceInputView
 
@@ -46,7 +46,6 @@ class Step:
 
     @abstractmethod
     def setup(self, ctx):
-        _, _ = self, ctx  # unused
         raise NotImplementedError
 
     @abstractmethod
@@ -57,18 +56,19 @@ class Step:
 
     @abstractmethod
     def run(self, ctx):
-        _, _ = self, ctx  # unused
         raise NotImplementedError
 
     @abstractmethod
     def next(self, ctx):
-        _, _ = self, ctx  # unused
         raise NotImplementedError
 
     def _append_view(self, view):
         logging.getLogger("halfpipe.ui").debug(f'Adding view "{view}"')
         view.appendto(self.app.layout)
         self.views.append(view)
+
+
+StepType = Type[Step]
 
 
 class BranchStep(Step):
@@ -79,8 +79,6 @@ class BranchStep(Step):
     options = dict()
 
     def _should_run(self, ctx):
-        _, _ = self, ctx  # unused
-
         return True
 
     def setup(self, ctx):
@@ -101,7 +99,6 @@ class BranchStep(Step):
             self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # for overload
         if not self.should_run:
             return self.is_first_run
         else:

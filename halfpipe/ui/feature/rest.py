@@ -6,6 +6,8 @@
 
 """
 
+from typing import Optional
+
 from calamities import (
     TextView,
     SpacerView,
@@ -17,7 +19,7 @@ from .loop import AddAnotherFeatureStep, SettingValsStep
 
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
-from ..step import Step
+from ..step import Step, StepType
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
 from ...model import RefFileSchema
@@ -32,7 +34,7 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
 
         key = "space"
 
-        next_step_type = None
+        next_step_type: Optional[StepType] = None
 
     class AddStep(FilePatternStep):
         filetype_str = f"{dsp_str} image"

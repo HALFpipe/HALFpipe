@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
 from calamities import (
     TextView,
     SpacerView,
@@ -20,6 +22,7 @@ from ..feature import FeaturesStep
 
 from ..step import (
     Step,
+    StepType,
     BranchStep,
     YesNoStep,
 )
@@ -145,7 +148,7 @@ class AcqToTaskMappingStep(Step):
 
 class HasMoreFmapStep(YesNoStep):
     header_str = "Add more field maps?"
-    yes_step_type = None  # add later, because not yet defined
+    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = AcqToTaskMappingStep
 
 

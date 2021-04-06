@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional, Type
+
 from calamities import (
     TextView,
     SpacerView,
@@ -14,7 +16,12 @@ from calamities.pattern import tag_parse, get_entities_in_path
 import logging
 
 from .step import Step
-from ..model import FileSchema, entities, entity_longnames as entity_display_aliases
+from ..model import (
+    File,
+    FileSchema,
+    entities,
+    entity_longnames as entity_display_aliases
+)
 from ..model.utils import get_schema_entities
 from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import splitext, inflect_engine as p
@@ -41,7 +48,6 @@ class FilePatternSummaryStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # unused
         return self.is_first_run
 
     def next(self, ctx):
@@ -111,7 +117,6 @@ class AskForMissingEntities(Step):
             self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # unused
         if self.entity is None:
             return self.is_first_run
         else:
@@ -154,7 +159,7 @@ class FilePatternStep(Step):
 
     filetype_str = "file"
     filedict = {}
-    schema = FileSchema
+    schema: Type[FileSchema] = FileSchema
 
     ask_if_missing_entities = []
     required_in_path_entities = []
@@ -162,13 +167,10 @@ class FilePatternStep(Step):
     next_step_type = None
 
     def _transform_extension(self, ext):
-        _ = self  # unused
         return ext
 
     def setup(self, ctx):
-        _ = ctx  # unused
-
-        self.file_obj = None
+        self.fileobj: Optional[File] = None
 
         if hasattr(self, "header_str") and self.header_str is not None:
             self._append_view(TextView(self.header_str))
@@ -207,21 +209,21 @@ class FilePatternStep(Step):
         for view in entity_instruction_views:
             self._append_view(view)
 
-        self.file_pattern_input_view = FilePatternInputView(
+        self.input_view = FilePatternInputView(
             schema_entities,
             entity_colors_list=entity_colors_list,
             required_entities=self.required_in_path_entities,
         )
-        self._append_view(self.file_pattern_input_view)
+        self._append_view(self.input_view)
 
         for str, view in zip(entity_instruction_strs, entity_instruction_views):
-            view.text = self.file_pattern_input_view._tokenize(str, addBrackets=False)
+            view.text = self.input_view._tokenize(str, addBrackets=False)
 
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
         while True:
-            path = self.file_pattern_input_view()
+            path = self.input_view()
             if path is None:
                 return False
 
@@ -245,19 +247,19 @@ class FilePatternStep(Step):
 
             try:
                 filedict = {**self.filedict, "path": path, "tags": {}}
-
                 _, ext = splitext(path)
                 filedict["extension"] = self._transform_extension(ext)
 
-                self.fileobj = self.schema().load(filedict)
+                loadresult = self.schema().load(filedict)
+                assert isinstance(loadresult, File), "Invalid schema load result"
+                self.fileobj = loadresult
+
                 return True
-
             except Exception as e:
-
                 logging.getLogger("halfpipe.ui").exception("Exception: %s", e)
 
                 error_color = self.app.layout.color.red
-                self.file_pattern_input_view.show_message(TextElement(str(e), color=error_color))
+                self.input_view.show_message(TextElement(str(e), color=error_color))
 
                 if ctx.debug:
                     raise

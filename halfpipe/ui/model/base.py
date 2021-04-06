@@ -6,7 +6,6 @@
 
 """
 
-
 from calamities import (
     TextView,
     SpacerView,
@@ -22,7 +21,7 @@ from ..utils import forbidden_chars
 from ..step import Step, YesNoStep
 from ...model import Model, FixedEffectsModelSchema
 from ..pattern import entity_display_aliases
-from ...utils import inflect_engine as p, formatlikebids, first
+from ...utils import inflect_engine as p, formatlikebids
 from .loop import AddAnotherModelStep
 from .filter import MEModelMotionFilterStep
 from .spreadsheet import SpreadsheetStep
@@ -38,10 +37,11 @@ def _resolve_across(ctx, inputname):
     for obj in ctx.spec.models:
         if inputname == obj.name:
             in_across = set(
-                tuple(_resolve_across(ctx, obj_inputname)) for obj_inputname in obj.inputs
+                tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs
             )
             assert len(in_across) == 1, "Cannot resolve across"
-            return [*first(in_across), obj.across]
+            (in_across,) = in_across
+            return [*in_across, obj.across]
     raise ValueError(f'Input "{inputname}" not found')
 
 
@@ -86,12 +86,13 @@ def _get_fe_aggregate(ctx, inputname, across):
         aggregatename = f"{basename}{i}"
         i += 1
 
-    model_obj = FixedEffectsModelSchema().load(
+    modelobj = FixedEffectsModelSchema().load(
         {"name": aggregatename, "inputs": [inputname], "type": "fe", "across": entity}
     )
-    ctx.spec.models.insert(-1, model_obj)
+    assert isinstance(modelobj, Model)
+    ctx.spec.models.insert(-1, modelobj)
 
-    return model_obj.name
+    return modelobj.name
 
 
 class ModelAggregateStep(Step):

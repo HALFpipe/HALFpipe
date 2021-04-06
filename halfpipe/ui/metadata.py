@@ -65,7 +65,6 @@ class ImportMetadataStep(Step):
         self.next_step_type = next_step_type
 
     def setup(self, ctx):
-        _ = ctx  # unused
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -86,7 +85,6 @@ class ImportMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # unused
         self.result = self.input_view()
         if self.result is None:
             return False
@@ -132,7 +130,6 @@ class SetMetadataStep(Step):
         self.next_step_type = next_step_type
 
     def setup(self, ctx):
-        _ = ctx  # unused
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -190,8 +187,6 @@ class SetMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # unused
-
         self.result = self.input_view()
         if self.result is None:
             return False
@@ -247,7 +242,6 @@ class CheckMetadataStep(Step):
     next_step_type = None
 
     def _should_skip(self, ctx):
-        _, _ = self, ctx  # unused
         return False
 
     def setup(self, ctx):
@@ -335,8 +329,6 @@ class CheckMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        _ = ctx  # unused
-
         if self.is_missing:
             return self.is_first_run
         else:

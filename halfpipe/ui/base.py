@@ -158,14 +158,12 @@ class WorkingDirectoryStep(Step):
 
 class FirstStep(Step):
     def _welcome_text(self):
-        _ = self  # unused
         return [
             "Welcome to ENIGMA HALFpipe!",
             f"You are using version {__version__}"
         ]
 
     def setup(self, ctx):
-        _ = ctx  # unused
         self._append_view(GiantTextView("HALFpipe"))
         self._append_view(SpacerView(2))
         for line in self._welcome_text():
@@ -177,7 +175,6 @@ class FirstStep(Step):
         self.is_first_run = True
 
     def run(self, ctx):
-        _ = ctx  # unused
         return self.is_first_run
 
     def next(self, ctx):

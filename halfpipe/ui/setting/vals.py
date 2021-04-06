@@ -20,7 +20,7 @@ from ...model import (
     BandpassFilterSettingSchema,
     GrandMeanScalingSettingSchema,
 )
-from ...utils import first, inflect_engine as p
+from ...utils import inflect_engine as p
 
 
 def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None, oncompletefn=None):
@@ -75,8 +75,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             suggestion = ["ICA-AROMA"]
 
             if len(self.confs) > 0:
+                anyconf = next(iter(self.confs))
                 inverse_options = {v: k for k, v in self.options.items()}
-                suggestion = [inverse_options[s] for s in first(self.confs) if s in inverse_options]
+                suggestion = [inverse_options[s] for s in anyconf if s in inverse_options]
 
             self.input_view = MultipleChoiceInputView(
                 list(self.options.keys()), checked=suggestion, isVertical=True
@@ -154,7 +155,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                         valset.add(bandpass_filter[key])
 
                 if len(valset) > 0:
-                    suggestion[i] = first(valset)
+                    suggestion[i] = next(iter(valset))
 
             self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
                 self.display_strs, ["Skip"], initial_values=suggestion
@@ -300,7 +301,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                         self.means.add(mean)
 
             if len(self.means) > 0:
-                suggestion = float(first(self.means))
+                suggestion = float(next(iter(self.means)))
 
             self.input_view = NumberInputView(number=suggestion, min=0)
 
@@ -386,7 +387,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                     self.fwhms.add(fwhm)
 
             if len(self.fwhms) > 0:
-                suggestion = float(first(self.fwhms))
+                suggestion = float(next(iter(self.fwhms)))
 
             self.input_view = NumberInputView(number=suggestion, min=0)
             self._append_view(self.input_view)
