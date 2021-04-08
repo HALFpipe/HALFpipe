@@ -30,4 +30,5 @@ tabulate
 chardet >= 4.0.0
 pympler >= 0.9
 stackprinter >= 0.2.5
-calamities @ git+https://github.com/hippocampusgirl/calamities.git@0.0.11
+more-itertools >= 8.7.0
+calamities @ git+https://github.com/hippocampusgirl/calamities.git@0.0.12
