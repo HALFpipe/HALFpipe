@@ -105,10 +105,23 @@ def init_taskbased_wf(
     )
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
+    # transform contrasts dictionary to nipype list data structure
+    contrasts = []
+    condition_names = feature.conditions
+    for contrast in feature.contrasts:
+        contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
+        contrasts.append(
+            [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
+        )
+
     # parse condition files into three (ordered) lists
-    parseconditionfile = pe.Node(ParseConditionFile(), name="parseconditionfile")
+    parseconditionfile = pe.Node(
+        ParseConditionFile(contrasts=contrasts),
+        name="parseconditionfile",
+    )
     workflow.connect(inputnode, "condition_names", parseconditionfile, "condition_names")
     workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
+    workflow.connect(parseconditionfile, "contrasts_names", make_resultdicts_b, "taskcontrast")
 
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
@@ -125,27 +138,15 @@ def init_taskbased_wf(
     workflow.connect(fillna, "out_no_header", modelspec, "realignment_parameters")
     workflow.connect(parseconditionfile, "subject_info", modelspec, "subject_info")
 
-    # transform contrasts dictionary to nipype list data structure
-    contrasts = []
-    condition_names = feature.conditions
-    for contrast in feature.contrasts:
-        contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
-        contrasts.append(
-            [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
-        )
-
-    contrast_names = list(map(firststr, contrasts))
-    make_resultdicts_b.inputs.taskcontrast = contrast_names
-
     # generate design from first level specification
     level1design = pe.Node(
         fsl.Level1Design(
-            contrasts=contrasts,
             model_serial_correlations=True,
             bases={"dgamma": {"derivs": feature.hrf_derivs}},
         ),
         name="level1design",
     )
+    workflow.connect(parseconditionfile, "contrasts", level1design, "contrasts")
     workflow.connect(inputnode, "repetition_time", level1design, "interscan_interval")
     workflow.connect(modelspec, "session_info", level1design, "session_info")
 
@@ -201,7 +202,7 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
-    contrast_tsv.inputs.row_index = contrast_names
+    workflow.connect(parseconditionfile, "contrasts_names", contrast_tsv, "row_index")
     workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
