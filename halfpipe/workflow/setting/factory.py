@@ -360,6 +360,7 @@ class SettingFactory(Factory):
                 self.connect(hierarchy, inputnode, sourcefile, settingname=setting["name"], confounds_action="regression")
 
     def get(self, sourcefile, settingname, confounds_action=None):
+        self.ica_aroma_components_factory.get(sourcefile)  # make sure ica aroma components are always calculated
         if confounds_action == "select":
             return self.confounds_select_factory.get(sourcefile, settingname)
         elif confounds_action == "regression":
