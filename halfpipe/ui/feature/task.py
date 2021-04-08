@@ -6,6 +6,7 @@
 
 """
 
+from abc import abstractmethod
 from typing import Sequence, Optional
 
 from calamities import (
@@ -51,12 +52,14 @@ def find_bold_filepaths(ctx):
     return bold_filepaths
 
 
-def find_and_parse_condition_files(ctx):
+def find_and_parse_condition_files(ctx, bold_filepaths=None):
     """
     returns generator for tuple event file paths, conditions, onsets, durations
     """
     database = ctx.database
-    bold_filepaths = find_bold_filepaths(ctx)
+
+    if bold_filepaths is None:
+        bold_filepaths = find_bold_filepaths(ctx)
 
     filters = dict(datatype="func", suffix="events")
     taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
@@ -93,7 +96,7 @@ def get_conditions(ctx):
     _, conditions_list, _, _ = zip(*out_list)
 
     conditionssets = [set(conditions) for conditions in conditions_list]
-    conditions = set.intersection(*conditionssets)
+    conditions = set.union(*conditionssets)
 
     if len(conditions) == 0:
         return
@@ -341,6 +344,7 @@ class EventsStep(FilePatternStep):
                     (self.fileobj.tags["task"],) = self.taskset
         return super(EventsStep, self).next(ctx)
 
+    @abstractmethod
     def _transform_extension(self, ext):
         raise NotImplementedError()
 
@@ -388,7 +392,7 @@ class EventsTypeStep(BranchStep):
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
-        ):  # load conditions if not available
+        ):  # try to load conditions if not available
             get_conditions(ctx)
 
         if (

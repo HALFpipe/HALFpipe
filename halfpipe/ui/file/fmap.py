@@ -41,7 +41,7 @@ class FmapSummaryStep(FilePatternSummaryStep):
     filedict = filedict
     schema = BaseFmapFileSchema
 
-    next_step_type = next_step_type
+    next_step_type: StepType = next_step_type
 
 
 class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):

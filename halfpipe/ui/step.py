@@ -21,7 +21,7 @@ class Step:
     def __call__(self, ctx):
         try:
             if self.was_setup is False:
-                self.setup(ctx)
+                self.setup(ctx)  # run only once
                 self.was_setup = True
             if len(self.views) > 0:
                 self.views[0].focus()  # make sure entire step is visible

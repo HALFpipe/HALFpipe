@@ -14,6 +14,9 @@ from calamities import (
     MultiCombinedNumberAndSingleChoiceInputView
 )
 
+from collections import OrderedDict
+from more_itertools import unique_everseen
+
 from ..step import Step, BranchStep, YesNoStep
 from ...model import (
     SmoothingSettingSchema,
@@ -62,7 +65,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
             )
 
-            self.confs = set(
+            self.confs = list(unique_everseen(
                 frozenset(
                     setting.get("confounds_removal", [])
                     + (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
@@ -70,14 +73,13 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 for setting in ctx.spec.settings[:-1]
                 # only include active settings
                 if setting.get("output_image", False) or setting["name"] in featuresettings
-            )
+            ))
 
             suggestion = ["ICA-AROMA"]
 
             if len(self.confs) > 0:
-                anyconf = next(iter(self.confs))
                 inverse_options = {v: k for k, v in self.options.items()}
-                suggestion = [inverse_options[s] for s in anyconf if s in inverse_options]
+                suggestion = [inverse_options[s] for s in self.confs[-1] if s in inverse_options]
 
             self.input_view = MultipleChoiceInputView(
                 list(self.options.keys()), checked=suggestion, isVertical=True
@@ -139,11 +141,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
             )
 
-            self.valsets = {}
-            for i, key in enumerate(self.keys):
-                if key not in self.valsets:
-                    self.valsets[key] = set()
+            self.valsets = OrderedDict()
 
+            for i, key in enumerate(self.keys):
+                self.valsets[key] = list()
                 valset = self.valsets[key]
 
                 for setting in ctx.spec.settings:
@@ -152,10 +153,12 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
                     bandpass_filter = setting.get("bandpass_filter")
                     if bandpass_filter is not None and key in bandpass_filter:
-                        valset.add(bandpass_filter[key])
+                        valset.append(bandpass_filter[key])
+
+                valset = list(unique_everseen(valset))
 
                 if len(valset) > 0:
-                    suggestion[i] = next(iter(valset))
+                    suggestion[i] = valset[-1]
 
             self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
                 self.display_strs, ["Skip"], initial_values=suggestion
@@ -289,7 +292,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
             )
 
-            self.means = set()
+            self.means = list()
             for setting in ctx.spec.settings:
                 if not setting.get("output_image", False) and setting["name"] not in featuresettings:
                     continue
@@ -298,10 +301,12 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 if grand_mean_scaling is not None:
                     mean = grand_mean_scaling.get("mean")
                     if mean is not None:
-                        self.means.add(mean)
+                        self.means.append(mean)
+
+            self.means = list(unique_everseen(self.means))
 
             if len(self.means) > 0:
-                suggestion = float(next(iter(self.means)))
+                suggestion = float(self.means[-1])
 
             self.input_view = NumberInputView(number=suggestion, min=0)
 
@@ -376,7 +381,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
             )
 
-            self.fwhms = set()
+            self.fwhms = list()
             for setting in ctx.spec.settings:
                 if not setting.get("output_image", False) and setting["name"] not in featuresettings:
                     continue
@@ -384,10 +389,12 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 smoothing = setting.get("smoothing")
                 if smoothing is not None:
                     fwhm = smoothing["fwhm"]
-                    self.fwhms.add(fwhm)
+                    self.fwhms.append(fwhm)
+
+            self.fwhms = list(unique_everseen(self.fwhms))
 
             if len(self.fwhms) > 0:
-                suggestion = float(next(iter(self.fwhms)))
+                suggestion = float(self.fwhms[-1])
 
             self.input_view = NumberInputView(number=suggestion, min=0)
             self._append_view(self.input_view)

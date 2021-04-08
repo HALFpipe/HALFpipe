@@ -27,7 +27,10 @@ from ..model import space_codes, slice_order_strs
 
 
 def _get_field(schema, key):
-    instance = schema()
+    if isinstance(schema, type):
+        instance = schema()
+    else:
+        instance = schema
     if "metadata" in instance.fields:
         return _get_field(instance.fields["metadata"].nested, key)
     return instance.fields.get(key)
