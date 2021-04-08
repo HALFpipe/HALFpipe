@@ -39,7 +39,6 @@ class BidsDatabase:
             return  # already added
 
         tags = self.database.tags(filepath)
-        print((filepath, tags))
 
         bidstags = dict()
         for k, v in tags.items():
