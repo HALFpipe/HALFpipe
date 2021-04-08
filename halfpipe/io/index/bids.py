@@ -12,7 +12,7 @@ from inflection import camelize
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
 from ...model.utils import get_nested_schema_field_names
-from ...utils import formatlikebids, splitext, cleaner
+from ...utils import formatlikebids, splitext
 from ..metadata import canonicalize_direction_code
 
 from bids.layout import Config
@@ -23,12 +23,6 @@ bids.config.set_option("extension_initial_dot", True)
 bidsconfig = Config.load("bids")
 
 bidsversion = "1.4.0"
-
-
-def format_tagval(entity, v):
-    if entity == "sub" or entity == "subject":
-        return cleaner(v)
-    return formatlikebids(v)
 
 
 class BidsDatabase:
@@ -43,18 +37,23 @@ class BidsDatabase:
     def put(self, filepath):
         if self.bidspaths_by_filepaths.get(filepath) is not None:
             return  # already added
+
         tags = self.database.tags(filepath)
+        print((filepath, tags))
+
         bidstags = dict()
         for k, v in tags.items():
             bidsentity = k
             if bidsentity in entity_longnames:
                 bidsentity = entity_longnames[bidsentity]
+
             if k in entities:
-                bidstags[bidsentity] = format_tagval(k, v)
+                bidstags[bidsentity] = formatlikebids(v)
             else:
                 if k == "suffix" and tags.get("datatype") == "fmap":
                     k = "fmap"
                 bidstags[k] = v
+
         bidspath = build_path(bidstags, bidsconfig.default_path_patterns)
         self.bidspaths_by_filepaths[filepath] = str(bidspath)
         self.filepaths_by_bidspaths[bidspath] = str(filepath)
@@ -126,9 +125,13 @@ class BidsDatabase:
             bidsmetadata = dict()
             if "metadata" in instance.fields:
                 metadata_keys = get_nested_schema_field_names(instance, "metadata")
+
+                # manual conversion
                 task = self.database.tagval(filepath, "task")
                 if task is not None:
                     bidsmetadata["TaskName"] = task
+
+                # automated
                 for k in metadata_keys:
                     self.database.fillmetadata(k, [filepath])
                     v = self.database.metadata(filepath, k)
@@ -148,6 +151,7 @@ class BidsDatabase:
             if self.database.tagval(filepath, "datatype") == "fmap":
                 if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
                     sub = self.database.tagval(filepath, "sub")
+                    ses = self.database.tagval(filepath, "ses")
                     subject = self.tagval(bidspath, "subject")
 
                     subjectdir = f"sub-{subject}"
@@ -155,6 +159,8 @@ class BidsDatabase:
                     bidsmetadata["IntendedFor"] = list()
 
                     filters = dict(datatype="func", suffix="bold", sub=sub)
+                    if ses is not None:
+                        filters.update(dict(ses=ses))
                     afilepaths = self.database.associations(filepath, **filters)
                     if afilepaths is None:
                         continue  # only write if we can find a functional image
