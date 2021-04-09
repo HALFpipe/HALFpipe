@@ -17,7 +17,8 @@ def formatlikebids(name):
     import re
     from inflection import parameterize, camelize, underscore
 
-    formatted_name = re.sub(r"([A-Z])", r" \1", name)  # convert camel case into words
+    formatted_name = camelize(name)  # convert underscores to camel case
+    formatted_name = re.sub(r"([A-Z])", r" \1", formatted_name)  # convert camel case into words
 
     # replace gt and lt characters because these are confusing in bash later on
     formatted_name = formatted_name.replace("<>", " vs ")
