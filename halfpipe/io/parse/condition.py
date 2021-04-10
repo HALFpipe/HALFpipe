@@ -7,7 +7,8 @@ from scipy.io import loadmat
 import pandas as pd
 
 from ...model import File
-from ...utils import first
+from ...utils import first, logger
+from .spreadsheet import loadspreadsheet
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -71,9 +72,14 @@ def parse_txt_condition_files(filepaths, conditions):
     durations = []
     for filepath, condition in zip(filepaths, conditions):
         assert condition is not None
-        data = np.loadtxt(filepath)
-        onsets.append(data[:, 0].tolist())
-        durations.append(data[:, 1].tolist())
+        try:
+            data = loadspreadsheet(filepath).values
+            onsets.append(data[:, 0].tolist())
+            durations.append(data[:, 1].tolist())
+        except Exception as e:  # unreadable or empty file
+            logger.warning(f'Cannot read condition file "{filepath}"', exc_info=e)
+            onsets.append([])  # fail gracefully
+            durations.append([])
     return conditions, onsets, durations
 
 

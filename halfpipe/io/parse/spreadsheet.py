@@ -36,13 +36,15 @@ def has_header(fname):
 
 
 @lru_cache(maxsize=128)
-def loadspreadsheet(fname, dtype=None, ftype=None):
+def loadspreadsheet(fname, dtype=None, ftype=None, **kwargs) -> pd.DataFrame:
     df = None
 
     if ftype is None:
         _, ftype = splitext(fname)
 
-    kwargs = dict(dtype=dtype)
+    kwargs.update(dict(
+        dtype=dtype,
+    ))
 
     if ftype not in [".xls", ".xlsx", ".odf"]:
         encoding = find_encoding(fname)
@@ -94,12 +96,13 @@ def loadspreadsheet(fname, dtype=None, ftype=None):
         except Exception:
             df = pd.DataFrame(loadmatrix(fname, **kwargs))
 
+    assert isinstance(df, pd.DataFrame)
     return df
 
 
 @lru_cache(maxsize=128)
 def loadmatrix(in_file, dtype=float, **kwargs):
-    kwargs = dict(**kwargs, missing_values="NaN,n/a,NA", autostrip=True)
+    kwargs.update(dict(missing_values="NaN,n/a,NA", autostrip=True))
     exception = ValueError()
     with warnings.catch_warnings():
         warnings.simplefilter("error")

@@ -113,7 +113,7 @@ def run_hooks_from_dir(workdir: Path):
             module = zi.load_module(plugin.name)
 
         if module is not None:
-            hook = getattr(module, "hook")
+            hook = getattr(module, "hook", None)
             if hook is not None:
                 hook()
 

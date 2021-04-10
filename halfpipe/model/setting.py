@@ -22,8 +22,6 @@ class GlobalSettingsSchema(Schema):
     run_fmriprep = fields.Boolean(default=True)
     run_halfpipe = fields.Boolean(default=True)
 
-    enable_heterogeneity = fields.Boolean(default=False)
-
     fd_thres = fields.Float(default=0.5)
 
     anat_only = fields.Boolean(default=False)

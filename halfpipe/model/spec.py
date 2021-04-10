@@ -43,6 +43,7 @@ compatible_schema_versions = ["3.0"]
 class SpecSchema(Schema):
     class Meta:
         unknown = RAISE
+        ordered = True
 
     halfpipe_version = fields.Str(default=halfpipe_version)
     schema_version = fields.Str(

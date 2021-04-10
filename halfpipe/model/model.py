@@ -20,12 +20,13 @@ from marshmallow_oneofschema import OneOfSchema
 
 from .contrast import ModelContrastSchema
 from .filter import FilterSchema
+from ..stats import algorithms
 
 
 class Model:
-    def __init__(self, **kwargs):
-        assert "name" in kwargs
-        assert "type" in kwargs
+    def __init__(self, name, type, **kwargs):
+        self.name = name
+        self.type = type
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -59,6 +60,12 @@ class FixedEffectsModelSchema(BaseModelSchema):
 class MixedEffectsModelSchema(BaseModelSchema):
     type = fields.Str(default="me", validate=validate.Equal("me"))
     across = fields.Str(default="sub", validate=validate.Equal("sub"))
+
+    algorithms = fields.List(
+        fields.Str(validate=validate.OneOf(algorithms.keys())),
+        default=["flame1"],
+        missing=["flame1"],
+    )
 
 
 class LinearMixedEffectsModelSchema(MixedEffectsModelSchema):

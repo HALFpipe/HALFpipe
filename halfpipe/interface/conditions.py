@@ -37,6 +37,8 @@ class ParseConditionFileOutputSpec(TraitedSpec):
             traits.List(traits.Float),
         ),
     )
+
+    condition_names = traits.List(traits.Str)
     contrast_names = traits.List(traits.Str)
 
 
@@ -72,6 +74,8 @@ class ParseConditionFile(SimpleInterface):
             ]
         )
 
+        self._results["condition_names"] = conditions
+
         if isdefined(self.inputs.contrasts):  # filter contrasts based on parsed conditions
             contrasts = self.inputs.contrasts
 
@@ -93,7 +97,7 @@ class ParseConditionFile(SimpleInterface):
                     ]
                 )
                 newcontrasts.append(
-                    (name, type, contrast_conditions, contrast_values)
+                    (name, type, list(contrast_conditions), list(contrast_values))
                 )
 
             self._results["contrast_names"] = [

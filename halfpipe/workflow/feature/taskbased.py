@@ -2,6 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
+from pathlib import Path
+
 import numpy as np
 
 import nipype.algorithms.modelgen as model
@@ -22,6 +25,26 @@ from ...interface import (
 from ...utils import firstfloat, firststr, formatlikebids, ravel
 
 from ..memory import MemoryCalculator
+
+
+def _add_td_conditions(hrf, condition_names):
+    if hrf == "dgamma":
+        return condition_names
+
+    elif hrf == "dgamma_with_derivs":
+        suffixes = ["", "TD"]
+
+    elif hrf == "flobs":
+        suffixes = ["", "FN2", "FN3"]  #
+
+    else:
+        raise ValueError(f'Unknown HRF "{hrf}"')
+
+    return [
+        f"{c}{suffix}"
+        for c in condition_names
+        for suffix in suffixes
+    ]
 
 
 def init_taskbased_wf(
@@ -121,7 +144,7 @@ def init_taskbased_wf(
     )
     workflow.connect(inputnode, "condition_names", parseconditionfile, "condition_names")
     workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
-    workflow.connect(parseconditionfile, "contrasts_names", make_resultdicts_b, "taskcontrast")
+    workflow.connect(parseconditionfile, "contrast_names", make_resultdicts_b, "taskcontrast")
 
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
@@ -139,10 +162,21 @@ def init_taskbased_wf(
     workflow.connect(parseconditionfile, "subject_info", modelspec, "subject_info")
 
     # generate design from first level specification
+    if feature.hrf == "dgamma":
+        bases = dict(dgamma=dict())
+    elif feature.hrf == "dgamma_with_derivs":
+        bases = dict(dgamma=dict(derivs=True))
+    elif feature.hrf == "flobs":
+        bfcustompath = Path(os.environ["FSLDIR"]) / "etc" / "default_flobs.flobs" / "hrfbasisfns.txt"
+        assert bfcustompath.is_file()
+        bases = dict(custom=dict(bfcustompath=str(bfcustompath)))
+    else:
+        raise ValueError(f'HRF "{feature.hrf}" is not yet implemented')
+
     level1design = pe.Node(
         fsl.Level1Design(
             model_serial_correlations=True,
-            bases={"dgamma": {"derivs": feature.hrf_derivs}},
+            bases=bases,
         ),
         name="level1design",
     )
@@ -173,6 +207,7 @@ def init_taskbased_wf(
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
     workflow.connect(modelgen, "design_file", modelestimate, "design_file")
     workflow.connect(modelgen, "con_file", modelestimate, "tcon_file")
+    workflow.connect(modelgen, "fcon_file", modelestimate, "fcon_file")
 
     # make dof volume
     makedofvolume = pe.Node(
@@ -188,9 +223,25 @@ def init_taskbased_wf(
 
     #
     mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames")
-    mergecolumnnames.inputs.in1 = condition_names
     workflow.connect(fillna, "column_names", mergecolumnnames, "in2")
 
+    if feature.hrf != "dgamma":
+        add_td_conditions = pe.Node(
+            niu.Function(
+                input_names=["hrf", "condition_names"],
+                output_names=["condition_names"],
+                function=_add_td_conditions,
+            ),
+            name="add_td_conditions",
+        )
+        add_td_conditions.inputs.hrf = feature.hrf
+        workflow.connect(parseconditionfile, "condition_names", add_td_conditions, "condition_names")
+
+        workflow.connect(add_td_conditions, "condition_names", mergecolumnnames, "in1")
+    else:
+        workflow.connect(parseconditionfile, "condition_names", mergecolumnnames, "in1")
+
+    #
     design_unvest = pe.Node(Unvest(), name="design_unvest")
     workflow.connect(modelgen, "design_file", design_unvest, "in_vest")
 
@@ -202,11 +253,12 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
-    workflow.connect(parseconditionfile, "contrasts_names", contrast_tsv, "row_index")
+    workflow.connect(parseconditionfile, "contrast_names", contrast_tsv, "row_index")
     workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
+
 
     return workflow

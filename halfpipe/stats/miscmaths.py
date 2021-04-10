@@ -8,7 +8,18 @@ import math
 import logging
 from pprint import pformat
 
-from mpmath import mpf, workdps, sqrt, erfinv, gamma, hyper, pi, power, betainc
+from mpmath import (
+    mpf,
+    workdps,
+    sqrt,
+    erfinv,
+    gamma,
+    gammainc,
+    hyper,
+    pi,
+    power,
+    betainc,
+)
 
 logger = logging.getLogger("halfpipe")
 
@@ -27,6 +38,7 @@ def adaptive_precision(func):
 
         dps = 2 ** 4
 
+        z = math.inf
         zprev = None
 
         while dps <= 2 ** 16:  # avoid infinite loop
@@ -50,7 +62,9 @@ def adaptive_precision(func):
                 zprev = z
 
         if not math.isnan(z):
-            logger.warning(f"Convergence failure for adaptive_precision with args {pformat(args)}")
+            logger.warning(
+                f"Convergence failure for adaptive_precision with args {pformat(args)}"
+            )
         return float(z)
 
     return wrapper
@@ -62,7 +76,8 @@ def t2z_convert(t, nu):
     nu = mpf(nu)
 
     z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
-        mpf("2") * t
+        mpf("2")
+        * t
         * gamma((mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2"))
         * hyper(
             (mpf("1") / mpf("2"), (mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2")),
@@ -85,13 +100,29 @@ def f2z_convert(x, d1, d2):
         return mpf("0")
 
     z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
-        -mpf("1") + mpf("2")
+        -mpf("1")
+        + mpf("2")
         * betainc(  # F distribution cdf
-            d1 / mpf("2"),
-            d2 / mpf("2"),
-            x2=d1 * x / (d1 * x + d2),
-            regularized=True
+            d1 / mpf("2"), d2 / mpf("2"), x2=d1 * x / (d1 * x + d2), regularized=True
         )
+    )
+
+    return z
+
+
+@adaptive_precision
+def chisq2z_convert(x, k):
+    x = mpf(x)
+    k = mpf(k)
+
+    if x < mpf("0") or k < mpf("0"):
+        return mpf("0")
+
+    z = sqrt(mpf("2")) * erfinv(
+        -mpf("1")
+        + mpf("2")
+        * gammainc((mpf("1") / mpf("2")) * k, 0, (mpf("1") / mpf("2")) * x)
+        / gamma((mpf("1") / mpf("2")) * k)
     )
 
     return z

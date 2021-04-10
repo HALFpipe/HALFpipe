@@ -165,6 +165,9 @@ class FmriprepFactory(Factory):
         connect equally names attrs
         preferentially use datasinked outputs
         """
+
+        _ = kwargs  # ignore kwargs
+
         connected_attrs = set()
 
         inputattrs = set(node.inputs.copyable_trait_names())

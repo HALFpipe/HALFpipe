@@ -55,9 +55,12 @@ def firststr(obj):
 
 
 def ravel(obj):
+
     if isinstance(obj, (str, dict)):
         return obj
+
     try:
+
         ret = []
         for val in obj:
             raveled_val = ravel(val)
@@ -68,12 +71,15 @@ def ravel(obj):
                 except TypeError:
                     pass
             ret.append(raveled_val)
+
         return ret
+
     except TypeError:
         return obj
     except StopIteration:
         return []  # empty input
-    return ret
+    except Exception:
+        return []
 
 
 def removenone(obj):
