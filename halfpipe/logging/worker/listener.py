@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
-import sys
 from marshmallow import ValidationError
 from pathlib import Path
 from copy import deepcopy

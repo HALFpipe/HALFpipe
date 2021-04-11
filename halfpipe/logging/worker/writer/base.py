@@ -7,7 +7,6 @@ from abc import abstractmethod
 from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, sleep
 
 import logging
-import sys
 
 from ..message import Message
 
