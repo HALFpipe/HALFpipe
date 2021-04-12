@@ -15,7 +15,8 @@ from calamities import (
     TextView,
     SpacerView,
     MultipleChoiceInputView,
-    MultiCombinedNumberAndSingleChoiceInputView
+    MultiCombinedNumberAndSingleChoiceInputView,
+    CombinedMultipleAndSingleChoiceInputView
 )
 from calamities.pattern import get_entities_in_path
 
@@ -270,6 +271,8 @@ AddAnotherContrastStep.yes_step_type = ContrastNameStep
 
 
 class ConditionsSelectStep(Step):
+    add_file_str = "Add event file"
+
     def setup(self, ctx):
         self.result = None
 
@@ -287,7 +290,12 @@ class ConditionsSelectStep(Step):
         self.options = [format_variable(condition) for condition in conditions]
         self.str_by_varname = dict(zip(conditions, self.options))
 
-        self.input_view = MultipleChoiceInputView(self.options, checked=[*self.options])
+        self.input_view = CombinedMultipleAndSingleChoiceInputView(
+            self.options,
+            [self.add_file_str],
+            checked=[*self.options],
+            isVertical=True,
+        )
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -300,12 +308,17 @@ class ConditionsSelectStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            conditions = []
-            for condition in ctx.spec.features[-1].conditions:
-                is_selected = self.result[self.str_by_varname[condition]]
-                if is_selected:
-                    conditions.append(condition)
-            ctx.spec.features[-1].conditions = conditions
+            if isinstance(self.result, dict):
+                conditions = []
+                for condition in ctx.spec.features[-1].conditions:
+                    is_selected = self.result[self.str_by_varname[condition]]
+                    if is_selected:
+                        conditions.append(condition)
+                ctx.spec.features[-1].conditions = conditions
+            elif self.result == self.add_file_str:
+                return EventsTypeStep(self.app, force_run=True)(ctx)
+            else:
+                raise ValueError()
 
         return ContrastNameStep(self.app)(ctx)
 
@@ -384,6 +397,10 @@ class EventsTypeStep(BranchStep):
         "BIDS TSV": TsvEventsStep,
     }
 
+    def __init__(self, app, force_run: bool = False):
+        super(EventsTypeStep, self).__init__(app)
+        self.force_run = force_run
+
     def setup(self, ctx):
         self.is_first_run = True
         self.should_run = False
@@ -399,6 +416,7 @@ class EventsTypeStep(BranchStep):
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
+            or self.force_run
         ):  # check if load was successful
             self.should_run = True
             super(EventsTypeStep, self).setup(ctx)

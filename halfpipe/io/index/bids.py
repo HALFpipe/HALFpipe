@@ -6,6 +6,7 @@ from pathlib import Path
 from os.path import relpath
 from shutil import rmtree
 import json
+from collections import OrderedDict
 
 from inflection import camelize
 
@@ -121,7 +122,7 @@ class BidsDatabase:
                 schema = schema.type_schemas[v]
             instance = schema()
 
-            bidsmetadata = dict()
+            bidsmetadata = OrderedDict()
             if "metadata" in instance.fields:
                 metadata_keys = get_nested_schema_field_names(instance, "metadata")
 
@@ -171,11 +172,15 @@ class BidsDatabase:
                         if abidspath is not None:  # only include files in the BidsDatabase
                             bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))
 
+                    if len(bidsmetadata["IntendedFor"]) == 0:
+                        bidsmetadata = dict()
+                        bidspaths.discard(filepath)
+
             if len(bidsmetadata) > 0:
                 basename, _ = splitext(bidspath)
                 sidecarpath = Path(bidsdir) / Path(bidspath).parent / f"{basename}.json"
                 bidspaths.add(sidecarpath)
-                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=True)
+                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=False)
                 if sidecarpath.is_file():
                     with open(sidecarpath, "r") as f:
                         if jsonstr == f.read():

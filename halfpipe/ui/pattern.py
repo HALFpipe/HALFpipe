@@ -26,6 +26,8 @@ from ..model.utils import get_schema_entities
 from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import splitext, inflect_engine as p
 
+logger = logging.getLogger("halfpipe.ui")
+
 
 class FilePatternSummaryStep(Step):
     entity_display_aliases = entity_display_aliases
@@ -224,8 +226,11 @@ class FilePatternStep(Step):
     def run(self, ctx):
         while True:
             path = self.input_view()
+
             if path is None:
                 return False
+
+            logger.debug(f'FilePatternStep pattern is "{path}"')
 
             # remove display aliases
 
@@ -256,7 +261,7 @@ class FilePatternStep(Step):
 
                 return True
             except Exception as e:
-                logging.getLogger("halfpipe.ui").exception("Exception: %s", e)
+                logger.exception("Exception: %s", e)
 
                 error_color = self.app.layout.color.red
                 self.input_view.show_message(TextElement(str(e), color=error_color))

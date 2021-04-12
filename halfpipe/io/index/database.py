@@ -79,11 +79,15 @@ class Database:
             for k, newvaluelist in intended_for.items():
                 from_entity, from_tagval = k.split(".")
 
+                if from_tagval == "null":
+                    from_tagval = None
+
                 tagval = tagdict.get(from_entity)
-                if tagval is None or tagval != from_tagval:
+                if tagval != from_tagval:
                     continue
 
-                del tagdict[from_entity]  # not indexable by old tag
+                if from_entity in tagdict:
+                    del tagdict[from_entity]  # not indexable by old tag
 
                 for v in newvaluelist:
                     to_entity, to_tagval = v.split(".")
