@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
+from typing import Callable
 
 import math
 import logging
@@ -24,7 +25,7 @@ from mpmath import (
 logger = logging.getLogger("halfpipe")
 
 
-def adaptive_precision(func):
+def adaptive_precision(func) -> Callable[..., float]:
     """
     ensure that the wrapped is run with sufficient precision
     """
@@ -71,7 +72,7 @@ def adaptive_precision(func):
 
 
 @adaptive_precision
-def t2z_convert(t, nu):
+def t2z_convert(t: float, nu: int):
     t = mpf(t)
     nu = mpf(nu)
 
@@ -91,7 +92,7 @@ def t2z_convert(t, nu):
 
 
 @adaptive_precision
-def f2z_convert(x, d1, d2):
+def f2z_convert(x: float, d1: int, d2: int):
     x = mpf(x)
     d1 = mpf(d1)
     d2 = mpf(d2)
@@ -111,7 +112,7 @@ def f2z_convert(x, d1, d2):
 
 
 @adaptive_precision
-def chisq2z_convert(x, k):
+def chisq2z_convert(x: float, k: int):
     x = mpf(x)
     k = mpf(k)
 

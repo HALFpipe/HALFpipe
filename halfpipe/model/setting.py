@@ -6,13 +6,17 @@
 
 """
 
-from marshmallow import Schema, fields, validate, pre_load, post_dump
+from marshmallow import Schema, fields, validate, pre_load, post_dump, RAISE
 from marshmallow_oneofschema import OneOfSchema
 
 from .filter import FilterSchema
 
 
 class GlobalSettingsSchema(Schema):
+    class Meta:
+        unknown = RAISE
+        ordered = True
+
     slice_timing = fields.Boolean(default=False)
     skull_strip_algorithm = fields.Str(
         validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), default="ants"
@@ -93,6 +97,10 @@ class BandpassFilterSettingSchema(OneOfSchema):
 
 
 class BaseSettingSchema(Schema):
+    class Meta:
+        unknown = RAISE
+        ordered = True
+
     ica_aroma = fields.Bool(default=True, allow_none=True)  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True

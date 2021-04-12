@@ -13,6 +13,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from ...interface.fixes import Level1Design
 from ...interface import (
     ParseConditionFile,
     MakeResultdicts,
@@ -169,12 +170,15 @@ def init_taskbased_wf(
     elif feature.hrf == "flobs":
         bfcustompath = Path(os.environ["FSLDIR"]) / "etc" / "default_flobs.flobs" / "hrfbasisfns.txt"
         assert bfcustompath.is_file()
-        bases = dict(custom=dict(bfcustompath=str(bfcustompath)))
+        bases = dict(custom=dict(
+            bfcustompath=str(bfcustompath),
+            basisfnum=3,
+        ))
     else:
         raise ValueError(f'HRF "{feature.hrf}" is not yet implemented')
 
     level1design = pe.Node(
-        fsl.Level1Design(
+        Level1Design(
             model_serial_correlations=True,
             bases=bases,
         ),

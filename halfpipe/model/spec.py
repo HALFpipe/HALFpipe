@@ -49,15 +49,14 @@ class SpecSchema(Schema):
     schema_version = fields.Str(
         default=schema_version, validate=validate.OneOf(compatible_schema_versions), required=True
     )
-
     timestamp = fields.DateTime(default=dt.now(), format=timestampfmt, required=True)
+
+    global_settings = fields.Nested(GlobalSettingsSchema, default={})
 
     files = fields.List(fields.Nested(FileSchema), default=[], required=True)
     settings = fields.List(fields.Nested(SettingSchema), default=[], required=True)
     features = fields.List(fields.Nested(FeatureSchema), default=[], required=True)
     models = fields.List(fields.Nested(ModelSchema), default=[], required=True)
-
-    global_settings = fields.Nested(GlobalSettingsSchema, default={})
 
     @validates_schema
     def validate_analyses(self, data, **kwargs):
@@ -174,6 +173,6 @@ def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("
             if op.isfile(newspecpath):
                 logger.warning("Found specpath timestampstr collision, overwriting")
             os.replace(specpath, newspecpath)
-    jsn = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=True)
+    jsn = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=False)
     with open(specpath, "w") as f:
         f.write(jsn)

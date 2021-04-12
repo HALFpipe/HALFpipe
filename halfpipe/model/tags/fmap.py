@@ -6,14 +6,15 @@
 
 """
 
+from .base import AcqTagsSchema
 from .func import FuncTagsSchema
 
 
-class FmapTagsSchema(FuncTagsSchema):
+class FmapTagsSchema(FuncTagsSchema, AcqTagsSchema):
     pass
 
 
-class EPIFmapTagsSchema(FuncTagsSchema):
+class EPIFmapTagsSchema(FmapTagsSchema):
     pass
 
 

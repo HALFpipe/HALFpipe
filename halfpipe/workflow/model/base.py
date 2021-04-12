@@ -26,10 +26,23 @@ from ...interface import (
     ResultdictDatasink,
     MakeDesignTsv,
 )
-
 from ...utils import ravel, formatlikebids, lenforeach
-
 from ..memory import MemoryCalculator
+from ...stats import algorithms
+
+modelfit_outputs = frozenset([
+    output
+    for a in algorithms.values()
+    for output in a.outputs
+])
+modelfit_exclude = frozenset(["fstats", "tstats"])
+modelfit_aliases = dict(
+    copes="effect",
+    var_copes="variance",
+    zstats="z",
+    tdof="dof",
+    masks="mask",
+)
 
 
 def _fe_run_mode(var_cope_file):
@@ -75,11 +88,10 @@ def init_model_wf(
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     # setup outputs
-    heterogeneitymaps = ["h", "i2", "pseudor2", "chisq", "chisqdof"]
     make_resultdicts_a = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
-            imagekeys=["design_matrix", "contrast_matrix", *heterogeneitymaps],
+            imagekeys=["design_matrix", "contrast_matrix", *modelfit_outputs],
             deletekeys=["contrast"],
         ),
         name="make_resultdicts_a",
@@ -289,19 +301,6 @@ def init_model_wf(
         raise ValueError()
 
     # connect modelfit outputs
-    modelfit_exclude = frozenset(["fstats", "tstats"])
-    modelfit_aliases = dict(
-        copes="effect",
-        var_copes="variance",
-        zstats="z",
-        tdof="dof",
-        masks="mask",
-    )
-    workflow.connect(modelfit, "copes", make_resultdicts_b, "effect")
-    workflow.connect(modelfit, "var_copes", make_resultdicts_b, "variance")
-    workflow.connect(modelfit, "zstats", make_resultdicts_b, "z")
-    workflow.connect(modelfit, "tdof", make_resultdicts_b, "dof")
-
     for k, _ in modelfit.outputs.items():
         if k in modelfit_exclude:
             continue
@@ -309,7 +308,10 @@ def init_model_wf(
         attr = k
         if k in modelfit_aliases:
             attr = modelfit_aliases[k]
-        workflow.connect(modelfit, k, make_resultdicts_a, attr)
+        if attr in statmaps:
+            workflow.connect(modelfit, k, make_resultdicts_b, attr)
+        else:
+            workflow.connect(modelfit, k, make_resultdicts_a, attr)
 
     # make tsv files for design and contrast matrices
     maketsv = pe.MapNode(

@@ -8,6 +8,7 @@ import pytest
 
 import os
 from zipfile import ZipFile
+import tarfile
 from pathlib import Path
 from random import seed
 
@@ -21,7 +22,6 @@ from nipype.pipeline import plugins as nip
 from ...tests.resource import setup as setuptestresources
 from ...resource import get as getresource
 from templateflow.api import get as gettemplate
-from nilearn.datasets import fetch_atlas_harvard_oxford
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
@@ -78,7 +78,10 @@ def task_events(tmp_path_factory, bids_data):
 
     assert database.fillmetadata("repetition_time", boldfilespaths)
 
-    scan_duration = min(nvol(b) * database.metadata(b, "repetition_time") for b in boldfilespaths)
+    scan_duration = min(
+        nvol(b) * database.metadata(b, "repetition_time")
+        for b in boldfilespaths
+    )
 
     onset = []
     duration = []
@@ -109,13 +112,40 @@ def task_events(tmp_path_factory, bids_data):
 
 
 @pytest.fixture(scope="module")
-def pcc_mask(tmp_path_factory):
+def atlas_harvard_oxford(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
+
+    os.chdir(str(tmp_path))
+
+    inputtarpath = getresource("HarvardOxford.tgz")
+
+    with tarfile.open(inputtarpath) as fp:
+        fp.extractall(tmp_path)
+
+    maps = {
+        m: (
+            tmp_path / "data" / "atlases"
+            / "HarvardOxford"
+            / f"HarvardOxford-{m}.nii.gz"
+        )
+        for m in (
+            "cort-prob-1mm",
+            "cort-prob-2mm",
+            "sub-prob-1mm",
+            "sub-prob-2mm"
+        )
+    }
+    return maps
+
+
+@pytest.fixture(scope="module")
+def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
 
     atlas_img = nib.load(
-        fetch_atlas_harvard_oxford("cort-prob-2mm")["maps"]
+        atlas_harvard_oxford["cort-prob-2mm"]
     )
     atlas = atlas_img.get_fdata()
 

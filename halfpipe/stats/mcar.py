@@ -18,7 +18,7 @@ from .heterogeneity import Heterogeneity
 
 
 class MCARTest(ModelAlgorithm):
-    outputs = ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]
+    outputs = ["mcar", "mcardof"]
 
     @staticmethod
     def voxel_calc(
@@ -50,4 +50,5 @@ class MCARTest(ModelAlgorithm):
 
     @staticmethod
     def write_outputs(ref_file: Path, cmatdict: Dict, voxel_results: Dict) -> Dict:
+        import pdb; pdb.set_trace()
         return Heterogeneity.write_outputs(ref_file, cmatdict, voxel_results)

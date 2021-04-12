@@ -15,6 +15,7 @@ from nilearn.image import new_img_like
 
 from .flame1 import calcgam, solveforbeta
 from .base import listwise_deletion, ModelAlgorithm
+from .miscmaths import chisq2z_convert
 
 
 def calc_i2(y, z, s):
@@ -87,6 +88,7 @@ def het_onvoxel(y, z, s):
     ll_me = log_prob(beta, y, z, s)
 
     chisq = -2.0 * (ll_fe - ll_me)
+    zstat = chisq2z_convert(chisq, 1)
 
     pseudor2 = 1 - ll_me / ll_fe
     if pseudor2 < 0:  # ensure range
@@ -96,11 +98,11 @@ def het_onvoxel(y, z, s):
 
     h, i2 = calc_i2(y, z, s)
 
-    return h, i2, pseudor2, chisq
+    return h, i2, pseudor2, chisq, zstat
 
 
 class Heterogeneity(ModelAlgorithm):
-    outputs = ["h", "i2", "pseudor2", "hetchisq"]
+    outputs = ["h", "i2", "hpseudor2", "hchisq", "hzstat"]
 
     @staticmethod
     def voxel_calc(
@@ -113,12 +115,12 @@ class Heterogeneity(ModelAlgorithm):
         y, z, s = listwise_deletion(y, z, s)
 
         try:
-            h, i2, pseudor2, chisq = het_onvoxel(y, z, s)
+            h, i2, pseudor2, chisq, zstat = het_onvoxel(y, z, s)
         except np.linalg.LinAlgError:
             return
 
         voxel_dict: Dict[str, float] = dict(
-            h=h, i2=i2, pseudor2=pseudor2, chisq=chisq
+            h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hzstat=zstat,
         )
 
         voxel_result = {coordinate: voxel_dict}
@@ -147,6 +149,6 @@ class Heterogeneity(ModelAlgorithm):
             fname = Path.cwd() / f"{map_name}.nii.gz"
             nib.save(img, fname)
 
-            output_files[map_name] = fname
+            output_files[map_name] = str(fname)
 
         return output_files

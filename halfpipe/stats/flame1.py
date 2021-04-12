@@ -234,6 +234,6 @@ class FLAME1(ModelAlgorithm):
                     output_name = f"{map_name}s"
 
                 if output_name in output_files:
-                    output_files[output_name][i] = fname
+                    output_files[output_name][i] = str(fname)
 
         return output_files

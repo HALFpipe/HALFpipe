@@ -74,7 +74,7 @@ class ParseConditionFile(SimpleInterface):
             ]
         )
 
-        self._results["condition_names"] = conditions
+        self._results["condition_names"] = list(conditions)
 
         if isdefined(self.inputs.contrasts):  # filter contrasts based on parsed conditions
             contrasts = self.inputs.contrasts

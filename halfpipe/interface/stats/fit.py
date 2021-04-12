@@ -34,6 +34,12 @@ class ModelFitInputSpec(DesignSpec):
         mandatory=True,
     )
 
+    algorithms_to_run = traits.List(
+        traits.Enum(*algorithms.keys()),
+        value=["flame1"],
+        usedefault=True,
+    )
+
     num_threads = traits.Int(1, usedefault=True)
 
 
@@ -41,15 +47,14 @@ class ModelFit(IOBase):
     input_spec = ModelFitInputSpec
     output_spec = DynamicTraitedSpec
 
-    def __init__(self, algorithms_to_run=["flame1"], **inputs):
+    def __init__(self, **inputs):
         super(ModelFit, self).__init__(**inputs)
-        self._algorithms_to_run = algorithms_to_run
         self._results = dict()
 
     def _add_output_traits(self, base):
         fieldnames = [
             output
-            for a in self._algorithms_to_run
+            for a in self.inputs.algorithms_to_run
             for output in algorithms[a].outputs
         ]
         return add_traits(base, fieldnames)
@@ -78,7 +83,7 @@ class ModelFit(IOBase):
                 regressors=self.inputs.regressors,
                 contrasts=self.inputs.contrasts,
 
-                algorithms_to_run=self._algorithms_to_run,
+                algorithms_to_run=self.inputs.algorithms_to_run,
 
                 num_threads=self.inputs.num_threads,
             )
