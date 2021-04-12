@@ -6,49 +6,60 @@
 
 """
 
-from marshmallow import Schema, fields, validate, post_dump
+from marshmallow import Schema, fields, validate, pre_load, post_dump, RAISE
 from marshmallow_oneofschema import OneOfSchema
 
 from .filter import FilterSchema
 
 
 class GlobalSettingsSchema(Schema):
-    slice_timing = fields.Boolean(default=False, required=True)
+    class Meta:
+        unknown = RAISE
+        ordered = True
+
+    slice_timing = fields.Boolean(default=False)
     skull_strip_algorithm = fields.Str(
-        validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), default="ants", required=True
+        validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), default="ants"
     )
 
-    run_mriqc = fields.Boolean(default=False, required=True)
-    run_fmriprep = fields.Boolean(default=True, required=True)
-    run_halfpipe = fields.Boolean(default=True, required=True)
+    run_mriqc = fields.Boolean(default=False)
+    run_fmriprep = fields.Boolean(default=True)
+    run_halfpipe = fields.Boolean(default=True)
 
-    fd_thres = fields.Float(default=0.5, required=True)
+    fd_thres = fields.Float(default=0.5)
 
-    anat_only = fields.Boolean(default=False, required=True)
-    write_graph = fields.Boolean(default=False, required=True)
+    anat_only = fields.Boolean(default=False)
+    write_graph = fields.Boolean(default=False)
 
-    hires = fields.Boolean(default=False, required=True)
-    run_reconall = fields.Boolean(default=False, required=True)
-    t2s_coreg = fields.Boolean(default=False, required=True)
-    medial_surface_nan = fields.Boolean(default=False, required=True)
+    hires = fields.Boolean(default=False)
+    run_reconall = fields.Boolean(default=False)
+    t2s_coreg = fields.Boolean(default=False)
+    medial_surface_nan = fields.Boolean(default=False)
 
-    bold2t1w_dof = fields.Integer(default=9, required=True, validate=validate.OneOf([6, 9, 12]))
-    fmap_bspline = fields.Boolean(default=True, required=True)
-    force_syn = fields.Boolean(default=False, required=True, validate=validate.Equal(False))
+    bold2t1w_dof = fields.Integer(default=9, validate=validate.OneOf([6, 9, 12]))
+    fmap_bspline = fields.Boolean(default=True)
+    force_syn = fields.Boolean(default=False, validate=validate.Equal(False))
 
-    longitudinal = fields.Boolean(default=False, required=True)
+    longitudinal = fields.Boolean(default=False)
 
-    regressors_all_comps = fields.Boolean(default=False, required=True)
-    regressors_dvars_th = fields.Float(default=1.5, required=True)
-    regressors_fd_th = fields.Float(default=0.5, required=True)
+    regressors_all_comps = fields.Boolean(default=False)
+    regressors_dvars_th = fields.Float(default=1.5)
+    regressors_fd_th = fields.Float(default=0.5)
 
-    skull_strip_fixed_seed = fields.Boolean(default=False, required=True)
-    skull_strip_template = fields.Str(default="OASIS30ANTs", required=True)
+    skull_strip_fixed_seed = fields.Boolean(default=False)
+    skull_strip_template = fields.Str(default="OASIS30ANTs")
 
-    aroma_err_on_warn = fields.Boolean(default=False, required=True)
-    aroma_melodic_dim = fields.Int(default=-200, required=True)
+    aroma_err_on_warn = fields.Boolean(default=False)
+    aroma_melodic_dim = fields.Int(default=-200)
 
-    sloppy = fields.Boolean(default=False, required=True)
+    sloppy = fields.Boolean(default=False)
+
+    @pre_load
+    def fill_default_values(self, in_data, **kwargs):
+        for k, v in self.fields.items():
+            if k not in in_data:
+                in_data[k] = v.default
+        return in_data
 
 
 class SmoothingSettingSchema(Schema):
@@ -86,6 +97,10 @@ class BandpassFilterSettingSchema(OneOfSchema):
 
 
 class BaseSettingSchema(Schema):
+    class Meta:
+        unknown = RAISE
+        ordered = True
+
     ica_aroma = fields.Bool(default=True, allow_none=True)  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True

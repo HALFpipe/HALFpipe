@@ -7,102 +7,19 @@
 import pytest
 
 import os
-import tarfile
-from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 
-from ....tests.resource import setup as setuptestresources
-from ....resource import get as getresource
+from ..fit import fit
+from ...interface.fixes import FLAMEO as FSLFLAMEO
 
-from ..flame1 import flame1
-from ...fixes import FLAMEO as FSLFLAMEO
-
-from nipype.interfaces import fsl, ants
+from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
-from templateflow.api import get as get_template
 
-from ...imagemaths.merge import _merge, _merge_mask
-from ...stats.model import _group_model
-from ....utils import first
-
-
-@pytest.fixture(scope="module")
-def wakemandg_hensonrn(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn")
-
-    os.chdir(str(tmp_path))
-
-    setuptestresources()
-    inputtarpath = getresource("wakemandg_hensonrn_statmaps.tar.gz")
-
-    with tarfile.open(inputtarpath) as fp:
-        fp.extractall(tmp_path)
-
-    subjects = [f"{i+1:02d}" for i in range(16)]
-    suffixes = ["stat-effect_statmap", "stat-variance_statmap", "mask"]
-
-    data = {
-        suffix: [
-            tmp_path / f"sub-{subject}_task-faces_feature-taskBased_taskcontrast-facesGtScrambled_model-aggregateTaskBasedAcrossRuns_contrast-intercept_{suffix}.nii.gz"
-            for subject in subjects
-        ]
-        for suffix in suffixes
-    }
-
-    data.update({
-        "subjects": subjects,
-        "spreadsheet": tmp_path / "subjects_age_sex.csv",
-    })
-
-    return data
-
-
-@pytest.fixture(scope="module")
-def mni_downsampled(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="mni_downsampled")
-
-    os.chdir(str(tmp_path))
-
-    tpl = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="mask")
-
-    result = ants.ResampleImageBySpacing(
-        dimension=3,
-        input_image=tpl,
-        out_spacing=(6, 6, 6)
-    ).run()
-
-    return result.outputs.output_image
-
-
-@pytest.fixture(scope="module")
-def wakemandg_hensonrn_downsampled(tmp_path_factory, wakemandg_hensonrn, mni_downsampled):
-    tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn_downsampled")
-
-    os.chdir(str(tmp_path))
-
-    data = dict()
-
-    def _downsample(in_file):
-        result = ants.ApplyTransforms(
-            dimension=3,
-            input_image_type=0,
-            input_image=in_file,
-            reference_image=mni_downsampled,
-            interpolation="NearestNeighbor",
-            transforms=["identity"]
-        ).run()
-
-        return result.outputs.output_image
-
-    for k, v in wakemandg_hensonrn.items():
-        if isinstance(v, list):
-            data[k] = [_downsample(f) if Path(f).exists() else f for f in v]
-        else:
-            data[k] = v
-
-    return data
+from ...interface.imagemaths.merge import _merge, _merge_mask
+from ..design import group_design
+from ...utils import first
 
 
 @pytest.mark.timeout(600)
@@ -120,7 +37,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     subjects = data["subjects"]
     spreadsheet_file = data["spreadsheet"]
 
-    regressors, contrasts, _ = _group_model(
+    regressors, contrasts, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
         variabledicts=[
@@ -130,8 +47,8 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         ],
         contrastdicts=[
             {"variable": ["Age"], "type": "infer"},
-            {"variable": ["ReactionTime"], "type": "infer"}
-        ]
+            {"variable": ["ReactionTime"], "type": "infer"},
+        ],
     )
 
     # run FSL
@@ -155,7 +72,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
             cope_file=merge_cope_file,
             mask_file=merge_mask_file,
         ),
-        name="flameo"
+        name="flameo",
     )
 
     if use_var_cope:
@@ -188,12 +105,13 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     else:
         var_cope_files_or_none = None
 
-    result = flame1(
+    result = fit(
         cope_files=cope_files,
         var_cope_files=var_cope_files_or_none,
         mask_files=mask_files,
         regressors=regressors,
         contrasts=contrasts,
+        algorithms_to_run=["flame1"],
         num_threads=1,
     )
 
@@ -219,7 +137,9 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         # will not get any larger with future changes or optimizations
 
         # no more than one percent of voxels can be more than one percent different
-        assert np.isclose(a0, a1, rtol=1e-2).mean() > 0.99, f"Too many diverging voxels for {k}"
+        assert (
+            float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.99
+        ), f"Too many diverging voxels for {k}"
 
         # mean error average needs to be below 0.05
-        assert np.abs(a0 - a1).mean() < 0.05, f"Too high mean error average for {k}"
+        assert float(np.abs(a0 - a1).mean()) < 0.05, f"Too high mean error average for {k}"

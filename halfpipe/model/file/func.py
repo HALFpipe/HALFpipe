@@ -19,34 +19,34 @@ class BoldFileSchema(BaseFileSchema):
     suffix = fields.Str(default="bold", validate=validate.Equal("bold"))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
-    tags = fields.Nested(BoldTagsSchema, default=dict())
-    metadata = fields.Nested(BoldMetadataSchema)
+    tags = fields.Nested(BoldTagsSchema(), default=dict())
+    metadata = fields.Nested(BoldMetadataSchema())
 
 
 class BaseEventsFileSchema(BaseFileSchema):
     datatype = fields.Str(default="func", validate=validate.Equal("func"))
     suffix = fields.Str(default="events", validate=validate.Equal("events"))
 
-    tags = fields.Nested(FuncTagsSchema, default=dict())
+    tags = fields.Nested(FuncTagsSchema(), default=dict())
 
 
 class MatEventsFileSchema(BaseEventsFileSchema):
     extension = fields.Str(validate=validate.OneOf([".mat"]))
 
-    metadata = fields.Nested(EventsMetadataSchema)
+    metadata = fields.Nested(EventsMetadataSchema())
 
 
 class TsvEventsFileSchema(BaseEventsFileSchema):
     extension = fields.Str(validate=validate.OneOf([".tsv"]))
 
-    metadata = fields.Nested(EventsMetadataSchema, default={"units": "seconds"})
+    metadata = fields.Nested(EventsMetadataSchema(), default={"units": "seconds"})
 
 
 class TxtEventsFileSchema(BaseEventsFileSchema):
     extension = fields.Str(validate=validate.OneOf([".txt"]))
 
-    tags = fields.Nested(TxtEventsTagsSchema, default=dict())
-    metadata = fields.Nested(EventsMetadataSchema, default={"units": "seconds"})
+    tags = fields.Nested(TxtEventsTagsSchema(), default=dict())
+    metadata = fields.Nested(EventsMetadataSchema(), default={"units": "seconds"})
 
 
 class EventsFileSchema(OneOfSchema):

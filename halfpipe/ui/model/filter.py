@@ -6,6 +6,8 @@
 
 """
 
+from typing import Optional
+
 from calamities import (
     TextView,
     SpacerView,
@@ -13,7 +15,7 @@ from calamities import (
     MultiMultipleChoiceInputView,
 )
 
-from ..step import Step, YesNoStep
+from ..step import Step, YesNoStep, StepType
 from ...model import (
     FilterSchema,
     GroupFilterSchema,
@@ -27,6 +29,11 @@ from .utils import format_column
 def get_cutoff_filter_steps(cutoff_filter_next_step_type):
     class BaseCutoffFilterStep(Step):
         number_input_args = dict()
+
+        header_str: Optional[str] = None
+        filter_field: Optional[str] = None
+
+        next_step_type: Optional[StepType] = None
 
         def setup(self, ctx):
             self._append_view(TextView(self.header_str))

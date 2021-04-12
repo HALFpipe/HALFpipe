@@ -21,6 +21,7 @@ from .constants import constants
 from ..io import Database, BidsDatabase, cacheobj, uncacheobj
 from ..model import loadspec
 from ..utils import logger, deepcopyfactory, nvol, first
+from .. import __version__
 
 
 class IdentifiableWorkflow(pe.Workflow):
@@ -41,7 +42,8 @@ def init_workflow(workdir):
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")
     database = Database(spec)
-    uuid = uuid5(spec.uuid, database.sha1)
+    # uuid depends on the spec file, the files found and the version of the program
+    uuid = uuid5(spec.uuid, database.sha1 + __version__)
 
     workflow = uncacheobj(workdir, "workflow", uuid)
     if workflow is not None:

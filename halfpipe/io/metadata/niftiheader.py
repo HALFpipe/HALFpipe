@@ -2,14 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
+from typing import Optional, Tuple, Dict
+
 import re
 
 import nibabel as nib
 
 import pint
 
-logger = logging.getLogger("halfpipe")
+from ...utils import logger, splitext
 
 ureg = pint.UnitRegistry()
 
@@ -26,11 +27,13 @@ def parsedescrip(header):
         groupdict = match.groupdict()
 
         varname = groupdict.get("varname")
-        value = groupdict.get("value")
+        value = match.group("value")
         unit = groupdict.get("unit")
 
         varname = varname.lower()
         value = float(value)
+
+        key = None
 
         if varname == "te":
             if unit is None:
@@ -39,9 +42,8 @@ def parsedescrip(header):
                 else:
                     unit = "ms"
 
-            quantity = value * ureg(unit)
+            key = "echo_time"
 
-            descripdict["echo_time"] = quantity.m_as(ureg.seconds)
         elif varname == "tr":
             if unit is None:
                 if value > 100:  # heuristic
@@ -49,9 +51,15 @@ def parsedescrip(header):
                 else:
                     unit = "s"
 
-            quantity = value * ureg(unit)
+            key = "repetition_time"
 
-            descripdict["repetition_time"] = quantity.m_as(ureg.seconds)
+        if key is not None:
+            base_quantity = ureg(unit)
+            assert isinstance(base_quantity, pint.Quantity)
+
+            quantity = value * base_quantity
+
+            descripdict[key] = quantity.m_as(ureg.seconds)
 
     return descripdict
 
@@ -60,21 +68,27 @@ class NiftiheaderLoader:
     cache = dict()
 
     @classmethod
-    def load(cls, niftifile):
+    def load(cls, niftifile) -> Tuple[Optional[nib.Nifti1Header], Optional[Dict]]:
         if niftifile in cls.cache:
             return cls.cache[niftifile]
+
+        _, ext = splitext(niftifile)
+
+        if ext in [".mat"]:
+            return None, None
 
         try:
             nbimg = nib.load(niftifile, mmap=False, keep_file_open=False)
         except Exception as e:
-            logger.warning(f'Caught error loading file "{niftifile}"', e)
+            logger.warning(f'Caught error loading file "{niftifile}"', e, exc_info=True)
             return None, None
 
         header = nbimg.header.copy()
 
         try:
             descripdict = parsedescrip(header)
-        except Exception:
+        except Exception as e:
+            logger.info(f'Could not parse nii file descrip for "{niftifile:s}: %s"', e, exc_info=True)
             descripdict = dict()
 
         cls.cache[niftifile] = header, descripdict

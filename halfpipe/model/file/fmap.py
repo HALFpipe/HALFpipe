@@ -19,7 +19,7 @@ class BaseFmapFileSchema(BaseFileSchema):
     suffix = fields.Str(validate=validate.OneOf(["magnitude1", "magnitude2", "fieldmap"]))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
-    tags = fields.Nested(FmapTagsSchema, default=dict())
+    tags = fields.Nested(FmapTagsSchema(), default=dict())
     intended_for = fields.Dict(
         keys=fields.Str(), values=fields.List(fields.Str()), description="mapping of acq to task"
     )
@@ -28,17 +28,17 @@ class BaseFmapFileSchema(BaseFileSchema):
 class EPIFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(default="epi", validate=validate.Equal("epi"))
     tags = fields.Nested(EPIFmapTagsSchema, default=dict())
-    metadata = fields.Nested(PEDirMetadataSchema)
+    metadata = fields.Nested(PEDirMetadataSchema())
 
 
 class PhaseDiffFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(default="phasediff", validate=validate.Equal("phasediff"))
-    metadata = fields.Nested(PhaseDiffMetadataSchema)
+    metadata = fields.Nested(PhaseDiffMetadataSchema())
 
 
 class PhaseFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(validate=validate.OneOf(["phase1", "phase2"]))
-    metadata = fields.Nested(TEMetadataSchema)
+    metadata = fields.Nested(TEMetadataSchema())
 
 
 class FmapFileSchema(OneOfSchema):

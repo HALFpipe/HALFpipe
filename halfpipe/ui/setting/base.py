@@ -13,7 +13,7 @@ from calamities import (
     TextElement,
     MultiMultipleChoiceInputView,
 )
-from inflection import humanize
+from inflection import humanize, underscore
 
 from ..step import Step
 from ..pattern import entity_display_aliases
@@ -23,7 +23,8 @@ from ...utils import formatlikebids
 
 
 def feature_namefun(ctx):
-    name = formatlikebids(f"{ctx.spec.features[-1].name} setting")
+    featurename = underscore(ctx.spec.features[-1].name)
+    name = formatlikebids(f"{featurename} setting")
     ctx.spec.features[-1].setting = name
     return name
 

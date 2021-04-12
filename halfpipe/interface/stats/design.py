@@ -2,70 +2,63 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
+from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
 
-import pandas as pd
-import numpy as np
-
-from nipype.interfaces.base import TraitedSpec, SimpleInterface, traits, File
-
-from ...io import parse_design
-from ...utils import ravel
+from ...stats.design import group_design
 
 
-class DesignSpec(TraitedSpec):
-    regressors = traits.Dict(
-        traits.Str,
-        traits.List(traits.Float),
+class GroupDesignInputSpec(TraitedSpec):
+    spreadsheet = File(exist=True, mandatory=True)
+    contrastdicts = traits.List(
+        traits.Dict(traits.Str, traits.Any),
         mandatory=True,
     )
-    contrasts = traits.List(
-        traits.Either(
-            traits.Tuple(traits.Str, traits.Enum("T"), traits.List(traits.Str),
-                         traits.List(traits.Float)),
-            traits.Tuple(traits.Str, traits.Enum("F"),
-                         traits.List(
-                             traits.Tuple(traits.Str, traits.Enum("T"),
-                                          traits.List(traits.Str),
-                                          traits.List(traits.Float)),
-            ))
-        ),
+    variabledicts = traits.List(
+        traits.Dict(traits.Str, traits.Any),
         mandatory=True,
     )
+    subjects = traits.List(traits.Str, mandatory=True)
 
 
-class MakeDesignTsvInputSpec(DesignSpec):
-    row_index = traits.List(traits.Any, mandatory=True)
+class DesignOutputSpec(TraitedSpec):
+    regressors = traits.Dict(traits.Str, traits.Any)
+    contrasts = traits.List()
+    contrast_names = traits.List(traits.Str())
 
 
-class MakeDesignTsvOutputSpec(TraitedSpec):
-    design_tsv = File(exists=True)
-    contrasts_tsv = File(exists=True)
+class GroupDesign(SimpleInterface):
+    """ interface to construct a group design """
 
-
-class MakeDesignTsv(SimpleInterface):
-    input_spec = MakeDesignTsvInputSpec
-    output_spec = MakeDesignTsvOutputSpec
+    input_spec = GroupDesignInputSpec
+    output_spec = DesignOutputSpec
 
     def _run_interface(self, runtime):
-        dmat, cmatdict = parse_design(self.inputs.regressors, self.inputs.contrasts)
-
-        dmat.index = self.inputs.row_index
-
-        self._results["design_tsv"] = Path.cwd() / "design.tsv"
-        dmat.to_csv(
-            self._results["design_tsv"], sep="\t", index=True, na_rep="n/a", header=True
+        regressors, contrasts, contrast_names = group_design(
+            spreadsheet=self.inputs.spreadsheet,
+            contrastdicts=self.inputs.contrastdicts,
+            variabledicts=self.inputs.variabledicts,
+            subjects=self.inputs.subjects,
         )
+        self._results["regressors"] = regressors
+        self._results["contrasts"] = contrasts
+        self._results["contrast_names"] = contrast_names
 
-        cmat = pd.DataFrame(
-            np.concatenate([*cmatdict.values()], axis=0),
-            index=ravel([[k] * v.shape[0] for k, v in cmatdict.items()]),
-            columns=dmat.columns
-        )
+        return runtime
 
-        self._results["contrasts_tsv"] = Path.cwd() / "contrasts.tsv"
-        cmat.to_csv(
-            self._results["contrasts_tsv"], sep="\t", index=True, na_rep="n/a", header=True
-        )
+
+class InterceptOnlyDesignInputSpec(TraitedSpec):
+    n_copes = traits.Range(low=1, desc="number of inputs")
+
+
+class InterceptOnlyDesign(SimpleInterface):
+    """ interface to construct a group design """
+
+    input_spec = InterceptOnlyDesignInputSpec
+    output_spec = DesignOutputSpec
+
+    def _run_interface(self, runtime):
+        self._results["regressors"] = {"Intercept": [1.0] * self.inputs.n_copes}
+        self._results["contrasts"] = [["Intercept", "T", ["Intercept"], [1]]]
+        self._results["contrast_names"] = ["Intercept"]
 
         return runtime

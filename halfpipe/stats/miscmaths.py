@@ -3,17 +3,29 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
+from typing import Callable
 
 import math
 import logging
 from pprint import pformat
 
-from mpmath import mpf, workdps, sqrt, erfinv, gamma, hyper, pi, power, betainc
+from mpmath import (
+    mpf,
+    workdps,
+    sqrt,
+    erfinv,
+    gamma,
+    gammainc,
+    hyper,
+    pi,
+    power,
+    betainc,
+)
 
 logger = logging.getLogger("halfpipe")
 
 
-def adaptive_precision(func):
+def adaptive_precision(func) -> Callable[..., float]:
     """
     ensure that the wrapped is run with sufficient precision
     """
@@ -27,6 +39,7 @@ def adaptive_precision(func):
 
         dps = 2 ** 4
 
+        z = math.inf
         zprev = None
 
         while dps <= 2 ** 16:  # avoid infinite loop
@@ -50,19 +63,22 @@ def adaptive_precision(func):
                 zprev = z
 
         if not math.isnan(z):
-            logger.warning(f"Convergence failure for adaptive_precision with args {pformat(args)}")
+            logger.warning(
+                f"Convergence failure for adaptive_precision with args {pformat(args)}"
+            )
         return float(z)
 
     return wrapper
 
 
 @adaptive_precision
-def t2z_convert(t, nu):
+def t2z_convert(t: float, nu: int):
     t = mpf(t)
     nu = mpf(nu)
 
     z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
-        mpf("2") * t
+        mpf("2")
+        * t
         * gamma((mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2"))
         * hyper(
             (mpf("1") / mpf("2"), (mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2")),
@@ -76,7 +92,7 @@ def t2z_convert(t, nu):
 
 
 @adaptive_precision
-def f2z_convert(x, d1, d2):
+def f2z_convert(x: float, d1: int, d2: int):
     x = mpf(x)
     d1 = mpf(d1)
     d2 = mpf(d2)
@@ -85,13 +101,29 @@ def f2z_convert(x, d1, d2):
         return mpf("0")
 
     z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
-        -mpf("1") + mpf("2")
+        -mpf("1")
+        + mpf("2")
         * betainc(  # F distribution cdf
-            d1 / mpf("2"),
-            d2 / mpf("2"),
-            x2=d1 * x / (d1 * x + d2),
-            regularized=True
+            d1 / mpf("2"), d2 / mpf("2"), x2=d1 * x / (d1 * x + d2), regularized=True
         )
+    )
+
+    return z
+
+
+@adaptive_precision
+def chisq2z_convert(x: float, k: int):
+    x = mpf(x)
+    k = mpf(k)
+
+    if x < mpf("0") or k < mpf("0"):
+        return mpf("0")
+
+    z = sqrt(mpf("2")) * erfinv(
+        -mpf("1")
+        + mpf("2")
+        * gammainc((mpf("1") / mpf("2")) * k, 0, (mpf("1") / mpf("2")) * x)
+        / gamma((mpf("1") / mpf("2")) * k)
     )
 
     return z

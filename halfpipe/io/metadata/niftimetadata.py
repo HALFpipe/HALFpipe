@@ -3,9 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
+from math import isclose, sqrt
 
 import numpy as np
-import nibabel as nib
+from nibabel.spatialimages import HeaderDataError
 
 from templateflow import api
 
@@ -29,8 +30,8 @@ template_origin_sets = {
 class NiftiheaderMetadataLoader:
     cache = dict()
 
-    @classmethod
-    def load(cls, niftifile):
+    @staticmethod
+    def load(niftifile):
         return NiftiheaderLoader.load(niftifile)
 
     def __init__(self, loader):
@@ -53,6 +54,9 @@ class NiftiheaderMetadataLoader:
             _, _, slice_dim = header.get_dim_info()
         else:
             slice_dim = None
+
+        if header is None or descripdict is None:
+            return False
 
         try:
             if key == "slice_timing":
@@ -89,7 +93,7 @@ class NiftiheaderMetadataLoader:
                             f'Unexpected nifti slice_duration of {nifti_slice_duration:f} ms in header for file "{fileobj.path}"'
                         )
                         header.set_slice_duration(slice_duration)
-                    if np.isclose(nifti_slice_duration, 0.0):
+                    if isclose(nifti_slice_duration, 0.0):
                         header.set_slice_duration(slice_duration)
                 nifti_slice_duration = header.get_slice_duration()
 
@@ -99,7 +103,7 @@ class NiftiheaderMetadataLoader:
                 else:
                     slice_times = str_slice_timing(slice_timing_code, n_slices, nifti_slice_duration)
                 slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
-                if not np.allclose(slice_times, 0.0):
+                if not all(isclose(slice_time, 0.0) for slice_time in slice_times):
                     value = slice_times
 
             elif key == "slice_encoding_direction":
@@ -119,7 +123,7 @@ class NiftiheaderMetadataLoader:
 
                     units = header.get_xyzt_units()
                     if units is not None and len(units) == 2:
-                        xyz_unit, t_unit = units
+                        _, t_unit = units
 
                         if t_unit == "msec":
                             value /= 1e3
@@ -141,17 +145,21 @@ class NiftiheaderMetadataLoader:
                     value = descripdict["echo_time"]
 
             elif key == "space":
-                origin = header.get_best_affine()[0:3, 3]
+                affine = header.get_best_affine()
+                if not isinstance(affine, np.ndarray):
+                    return False
+                origin = affine[0:3, 3]
                 for name, template_origin_set in template_origin_sets.items():
                     for o in template_origin_set:
+                        o = np.array(o)
                         delta = np.abs(o) - np.abs(
                             origin
                         )  # use absolute values as we don't care about orientation
-                        if np.sqrt(np.square(delta).mean()) < 1:
+                        if sqrt(np.square(delta).mean()) < 1:
                             value = name
                             break
 
-        except nib.spatialimages.HeaderDataError:
+        except HeaderDataError:
             return False
 
         if value is None:

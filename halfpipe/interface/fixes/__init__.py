@@ -5,5 +5,6 @@
 from .applytransforms import ApplyTransforms
 from .flameo import FLAMEO
 from .reho import ReHo
+from .level1design import Level1Design
 
-__all__ = ["ApplyTransforms", "FLAMEO", "ReHo"]
+__all__ = ["ApplyTransforms", "FLAMEO", "ReHo", "Level1Design"]

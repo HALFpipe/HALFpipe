@@ -118,10 +118,11 @@ class FeatureTypeStep(Step):
         return FeatureNameStep(self.app)(ctx)
 
 
-class FeaturesStep(YesNoStep):
+class SpecifyFeaturesStep(YesNoStep):
     header_str = "Specify first-level features?"
     yes_step_type = FeatureTypeStep
     no_step_type = ImageOutputStep
 
 
 AddAnotherFeatureStep.yes_step_type = FeatureTypeStep
+FeaturesStep = SpecifyFeaturesStep

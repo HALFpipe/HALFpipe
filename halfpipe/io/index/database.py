@@ -50,9 +50,11 @@ class Database:
         def add_tag_to_index(filepath, entity, tagval):
             if tagval is None:
                 return
+
             if entity not in self.filepaths_by_tags:
                 self.filepaths_by_tags[entity] = dict()
             tagvaldict = self.filepaths_by_tags[entity]
+
             if tagval not in tagvaldict:
                 tagvaldict[tagval] = set()
             tagvaldict[tagval].add(filepath)
@@ -63,27 +65,36 @@ class Database:
         if hasattr(fileobj, "tags"):
             tags = fileobj.tags
 
-        tagdict = dict(datatype=fileobj.datatype, **tags)
+        tagdict = dict(datatype=fileobj.datatype)
+        tagdict.update(tags)
         if hasattr(fileobj, "suffix"):
-            tagdict["suffix"] = fileobj.suffix
+            tagdict.update(dict(suffix=fileobj.suffix))
         if hasattr(fileobj, "extension"):
-            tagdict["extension"] = fileobj.extension
+            tagdict.update(dict(extension=fileobj.extension))
 
-        self.tags_by_filepaths[filepath] = tagdict
-
-        for tagname, tagval in tagdict.items():
-            add_tag_to_index(filepath, tagname, tagval)
+        self.tags_by_filepaths[filepath] = dict(**tagdict)
 
         if hasattr(fileobj, "intended_for"):
             intended_for = fileobj.intended_for
-            for k, vlist in intended_for.items():
+            for k, newvaluelist in intended_for.items():
                 from_entity, from_tagval = k.split(".")
+
+                if from_tagval == "null":
+                    from_tagval = None
+
                 tagval = tagdict.get(from_entity)
-                if tagval is None or tagval != from_tagval:
+                if tagval != from_tagval:
                     continue
-                for v in vlist:
+
+                if from_entity in tagdict:
+                    del tagdict[from_entity]  # not indexable by old tag
+
+                for v in newvaluelist:
                     to_entity, to_tagval = v.split(".")
                     add_tag_to_index(filepath, to_entity, to_tagval)
+
+        for tagname, tagval in tagdict.items():
+            add_tag_to_index(filepath, tagname, tagval)
 
     def tags(self, filepath):
         """
@@ -181,7 +192,7 @@ class Database:
             if entity not in self.filepaths_by_tags:
                 continue
             cur_set = set()
-            for k, filepaths in self.filepaths_by_tags[entity].items():
+            for _, filepaths in self.filepaths_by_tags[entity].items():
                 if filepath in filepaths:
                     cur_set |= set(filepaths)
             cur_set &= res
@@ -237,6 +248,7 @@ class Database:
             return first(tmplstrset)
 
     def fillmetadata(self, key, filepaths):
+        found = False
         found_all = True
         for filepath in filepaths:
             fileobj = self.fileobj(filepath)

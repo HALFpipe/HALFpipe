@@ -36,9 +36,9 @@ def run(opts, should_run):
         logger.info("Stage: spec-ui")
 
         from ..ui import init_spec_ui
-        from calamities.config import config as calamities_config
+        from calamities.config import Config as CalamitiesConfig
 
-        calamities_config.fs_root = opts.fs_root
+        CalamitiesConfig.fs_root = opts.fs_root
         workdir = init_spec_ui(workdir=workdir, debug=opts.debug)
 
     assert workdir is not None, "Missing working directory"
