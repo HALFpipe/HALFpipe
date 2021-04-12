@@ -22,7 +22,8 @@ loggernames = [
     "nipype.utils",
     "nipype.filemanip",
     "nipype.interface",
-    "py.warnings"
+    "py.warnings",
+    "calamities",
 ]
 
 

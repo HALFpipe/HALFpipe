@@ -9,7 +9,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from ..miscmaths import t2z_convert, f2z_convert
+from ..miscmaths import t2z_convert, f2z_convert, chisq2z_convert
 
 
 def t2z_convert_numpy(t, dof):
@@ -21,6 +21,13 @@ def t2z_convert_numpy(t, dof):
 
 def f2z_convert_numpy(f, dof1, dof2):
     p = stats.f.cdf(f, dof1, dof2)
+    z = stats.norm.ppf(p)
+
+    return z
+
+
+def chisq2z_convert_numpy(x, k):
+    p = stats.chi2.cdf(x, k)
     z = stats.norm.ppf(p)
 
     return z
@@ -46,6 +53,18 @@ def test_f2z_convert_numpy(f, d1, d2):
     assert np.isclose(f2z_convert(f, d1, d2), f2z_convert_numpy(f, d1, d2))
 
 
+@pytest.mark.parametrize("x", np.linspace(1, 7, num=5))
+@pytest.mark.parametrize("k", [2, 10, 30])
+def test_chisq2z_convert_numpy(x, k):
+    assert np.isclose(chisq2z_convert(x, k), chisq2z_convert_numpy(x, k))
+
+
+@pytest.mark.parametrize("x", np.logspace(1, 3, num=5))
+@pytest.mark.parametrize("k", [2, 10, 30])
+def test_chisq2z_convert_large(x, k):
+    assert np.isfinite(chisq2z_convert(x, k))
+
+
 @pytest.mark.parametrize("f", np.logspace(2, 4, num=5))
 @pytest.mark.parametrize("d1,d2", [
     (10, 20), (10, 100)
@@ -63,3 +82,7 @@ def test_nonfinite():
     assert f2z_convert(np.inf, 1, 1) == np.inf
     assert f2z_convert(-np.inf, 1, 1) == -np.inf
     assert np.isnan(f2z_convert(np.nan, 1, 1))
+
+    assert chisq2z_convert(np.inf, 1) == np.inf
+    assert chisq2z_convert(-np.inf, 1) == -np.inf
+    assert np.isnan(chisq2z_convert(np.nan, 1))

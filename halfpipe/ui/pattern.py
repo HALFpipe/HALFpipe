@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional, Type
+
 from calamities import (
     TextView,
     SpacerView,
@@ -14,9 +16,17 @@ from calamities.pattern import tag_parse, get_entities_in_path
 import logging
 
 from .step import Step
-from ..model import FileSchema, entities, entity_longnames as entity_display_aliases
+from ..model import (
+    File,
+    FileSchema,
+    entities,
+    entity_longnames as entity_display_aliases
+)
+from ..model.utils import get_schema_entities
 from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import splitext, inflect_engine as p
+
+logger = logging.getLogger("halfpipe.ui")
 
 
 class FilePatternSummaryStep(Step):
@@ -31,10 +41,10 @@ class FilePatternSummaryStep(Step):
     def setup(self, ctx):
         self.is_first_run = True
 
-        entities = self.schema().fields["tags"].nested().fields.keys()
+        entities = get_schema_entities(self.schema)
 
         filepaths = ctx.database.get(**self.filedict)
-        message = messagefun(ctx.database, self.filetype_str, filepaths, entities)
+        message = messagefun(ctx.database, self.filetype_str, filepaths, entities, self.entity_display_aliases)
 
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
@@ -147,9 +157,11 @@ class FilePatternStep(Step):
     suggest_file_stem = False
     entity_display_aliases = entity_display_aliases
 
+    header_str = None
+
     filetype_str = "file"
     filedict = {}
-    schema = FileSchema
+    schema: Type[FileSchema] = FileSchema
 
     ask_if_missing_entities = []
     required_in_path_entities = []
@@ -160,7 +172,7 @@ class FilePatternStep(Step):
         return ext
 
     def setup(self, ctx):
-        self.file_obj = None
+        self.fileobj: Optional[File] = None
 
         if hasattr(self, "header_str") and self.header_str is not None:
             self._append_view(TextView(self.header_str))
@@ -168,7 +180,7 @@ class FilePatternStep(Step):
 
         self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
 
-        schema_entities = self.schema().fields["tags"].nested().fields.keys()
+        schema_entities = get_schema_entities(self.schema)
         schema_entities = [
             entity for entity in reversed(entities) if entity in schema_entities
         ]  # keep order
@@ -195,27 +207,30 @@ class FilePatternStep(Step):
         if len(optional_entity_strs) > 0:
             entity_instruction_strs.append(f"You can also use {p.join(optional_entity_strs)}")
 
-        entity_instruction_views = [TextView("") for str in entity_instruction_strs]
+        entity_instruction_views = [TextView("") for _ in entity_instruction_strs]
         for view in entity_instruction_views:
             self._append_view(view)
 
-        self.file_pattern_input_view = FilePatternInputView(
+        self.input_view = FilePatternInputView(
             schema_entities,
             entity_colors_list=entity_colors_list,
             required_entities=self.required_in_path_entities,
         )
-        self._append_view(self.file_pattern_input_view)
+        self._append_view(self.input_view)
 
         for str, view in zip(entity_instruction_strs, entity_instruction_views):
-            view.text = self.file_pattern_input_view._tokenize(str, addBrackets=False)
+            view.text = self.input_view._tokenize(str, addBrackets=False)
 
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
         while True:
-            path = self.file_pattern_input_view()
+            path = self.input_view()
+
             if path is None:
                 return False
+
+            logger.debug(f'FilePatternStep pattern is "{path}"')
 
             # remove display aliases
 
@@ -227,7 +242,7 @@ class FilePatternStep(Step):
                 groupdict = match.groupdict()
                 if groupdict.get("tag_name") in inv:
                     _path += path[i : match.start("tag_name")]
-                    _path += inv[groupdict.get("tag_name")]
+                    _path += inv[match.group("tag_name")]
                     i = match.end("tag_name")
 
             _path += path[i:]
@@ -237,19 +252,19 @@ class FilePatternStep(Step):
 
             try:
                 filedict = {**self.filedict, "path": path, "tags": {}}
-
                 _, ext = splitext(path)
                 filedict["extension"] = self._transform_extension(ext)
 
-                self.fileobj = self.schema().load(filedict)
+                loadresult = self.schema().load(filedict)
+                assert isinstance(loadresult, File), "Invalid schema load result"
+                self.fileobj = loadresult
+
                 return True
-
             except Exception as e:
-
-                logging.getLogger("halfpipe.ui").exception("Exception: %s", e)
+                logger.exception("Exception: %s", e)
 
                 error_color = self.app.layout.color.red
-                self.file_pattern_input_view.show_message(TextElement(str(e), color=error_color))
+                self.input_view.show_message(TextElement(str(e), color=error_color))
 
                 if ctx.debug:
                     raise

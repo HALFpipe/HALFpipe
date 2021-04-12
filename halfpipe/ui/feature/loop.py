@@ -6,14 +6,16 @@
 
 """
 
-from ..step import YesNoStep
+from typing import Optional
+
+from ..step import YesNoStep, StepType
 from ..setting import get_setting_vals_steps
 from .imageoutput import ImageOutputStep
 
 
 class AddAnotherFeatureStep(YesNoStep):
     header_str = "Add another first-level feature?"
-    yes_step_type = None  # add later
+    yes_step_type: Optional[StepType] = None  # add later
     no_step_type = ImageOutputStep
 
 

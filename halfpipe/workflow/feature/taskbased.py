@@ -2,6 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
+from pathlib import Path
+
 import numpy as np
 
 import nipype.algorithms.modelgen as model
@@ -10,6 +13,7 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
+from ...interface.fixes import Level1Design
 from ...interface import (
     ParseConditionFile,
     MakeResultdicts,
@@ -22,6 +26,26 @@ from ...interface import (
 from ...utils import firstfloat, firststr, formatlikebids, ravel
 
 from ..memory import MemoryCalculator
+
+
+def _add_td_conditions(hrf, condition_names):
+    if hrf == "dgamma":
+        return condition_names
+
+    elif hrf == "dgamma_with_derivs":
+        suffixes = ["", "TD"]
+
+    elif hrf == "flobs":
+        suffixes = ["", "FN2", "FN3"]  #
+
+    else:
+        raise ValueError(f'Unknown HRF "{hrf}"')
+
+    return [
+        f"{c}{suffix}"
+        for c in condition_names
+        for suffix in suffixes
+    ]
 
 
 def init_taskbased_wf(
@@ -60,8 +84,8 @@ def init_taskbased_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    if feature is not None:
-        inputnode.inputs.condition_names = feature.conditions
+    assert feature is not None
+    inputnode.inputs.condition_names = feature.conditions
 
     if condition_files is not None:
         inputnode.inputs.condition_files = condition_files
@@ -105,10 +129,23 @@ def init_taskbased_wf(
     )
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
+    # transform contrasts dictionary to nipype list data structure
+    contrasts = []
+    condition_names = feature.conditions
+    for contrast in feature.contrasts:
+        contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
+        contrasts.append(
+            [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
+        )
+
     # parse condition files into three (ordered) lists
-    parseconditionfile = pe.Node(ParseConditionFile(), name="parseconditionfile")
+    parseconditionfile = pe.Node(
+        ParseConditionFile(contrasts=contrasts),
+        name="parseconditionfile",
+    )
     workflow.connect(inputnode, "condition_names", parseconditionfile, "condition_names")
     workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
+    workflow.connect(parseconditionfile, "contrast_names", make_resultdicts_b, "taskcontrast")
 
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
@@ -125,27 +162,29 @@ def init_taskbased_wf(
     workflow.connect(fillna, "out_no_header", modelspec, "realignment_parameters")
     workflow.connect(parseconditionfile, "subject_info", modelspec, "subject_info")
 
-    # transform contrasts dictionary to nipype list data structure
-    contrasts = []
-    if feature is not None:
-        condition_names = feature.conditions
-        for contrast in feature.contrasts:
-            contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
-            contrasts.append(
-                [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
-            )
-    contrast_names = list(map(firststr, contrasts))
-    make_resultdicts_b.inputs.taskcontrast = contrast_names
-
     # generate design from first level specification
+    if feature.hrf == "dgamma":
+        bases = dict(dgamma=dict())
+    elif feature.hrf == "dgamma_with_derivs":
+        bases = dict(dgamma=dict(derivs=True))
+    elif feature.hrf == "flobs":
+        bfcustompath = Path(os.environ["FSLDIR"]) / "etc" / "default_flobs.flobs" / "hrfbasisfns.txt"
+        assert bfcustompath.is_file()
+        bases = dict(custom=dict(
+            bfcustompath=str(bfcustompath),
+            basisfnum=3,
+        ))
+    else:
+        raise ValueError(f'HRF "{feature.hrf}" is not yet implemented')
+
     level1design = pe.Node(
-        fsl.Level1Design(
-            contrasts=contrasts,
+        Level1Design(
             model_serial_correlations=True,
-            bases={"dgamma": {"derivs": False}},
+            bases=bases,
         ),
         name="level1design",
     )
+    workflow.connect(parseconditionfile, "contrasts", level1design, "contrasts")
     workflow.connect(inputnode, "repetition_time", level1design, "interscan_interval")
     workflow.connect(modelspec, "session_info", level1design, "session_info")
 
@@ -172,6 +211,7 @@ def init_taskbased_wf(
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
     workflow.connect(modelgen, "design_file", modelestimate, "design_file")
     workflow.connect(modelgen, "con_file", modelestimate, "tcon_file")
+    workflow.connect(modelgen, "fcon_file", modelestimate, "fcon_file")
 
     # make dof volume
     makedofvolume = pe.Node(
@@ -187,9 +227,25 @@ def init_taskbased_wf(
 
     #
     mergecolumnnames = pe.Node(niu.Merge(2), name="mergecolumnnames")
-    mergecolumnnames.inputs.in1 = condition_names
     workflow.connect(fillna, "column_names", mergecolumnnames, "in2")
 
+    if feature.hrf != "dgamma":
+        add_td_conditions = pe.Node(
+            niu.Function(
+                input_names=["hrf", "condition_names"],
+                output_names=["condition_names"],
+                function=_add_td_conditions,
+            ),
+            name="add_td_conditions",
+        )
+        add_td_conditions.inputs.hrf = feature.hrf
+        workflow.connect(parseconditionfile, "condition_names", add_td_conditions, "condition_names")
+
+        workflow.connect(add_td_conditions, "condition_names", mergecolumnnames, "in1")
+    else:
+        workflow.connect(parseconditionfile, "condition_names", mergecolumnnames, "in1")
+
+    #
     design_unvest = pe.Node(Unvest(), name="design_unvest")
     workflow.connect(modelgen, "design_file", design_unvest, "in_vest")
 
@@ -201,11 +257,12 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
-    contrast_tsv.inputs.row_index = contrast_names
+    workflow.connect(parseconditionfile, "contrast_names", contrast_tsv, "row_index")
     workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
+
 
     return workflow

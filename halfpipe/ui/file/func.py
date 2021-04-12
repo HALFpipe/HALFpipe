@@ -2,11 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
 
 from ...model import BoldFileSchema
 
 from ..pattern import FilePatternStep, FilePatternSummaryStep
-from ..step import YesNoStep
+from ..step import YesNoStep, StepType
 from ..metadata import CheckMetadataStep
 from .fmap import FmapStep, FmapSummaryStep
 
@@ -15,7 +16,7 @@ filedict = {"datatype": "func", "suffix": "bold"}
 schema = BoldFileSchema
 
 
-def get_slice_timing_steps(next_step_type):
+def get_slice_timing_steps(next_step_type) -> StepType:
     class CheckBoldSliceTimingStep(CheckMetadataStep):
         schema = BoldFileSchema
 
@@ -71,8 +72,8 @@ class BoldSummaryStep(FilePatternSummaryStep):
 
 class HasMoreBoldStep(YesNoStep):
     header_str = f"Add more {filetype_str} files?"
-    yes_step_type = None  # add later, because not yet defined
-    no_step_type = get_slice_timing_steps(FmapStep)
+    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
+    no_step_type: StepType = get_slice_timing_steps(FmapStep)
 
 
 class CheckRepetitionTimeStep(CheckMetadataStep):

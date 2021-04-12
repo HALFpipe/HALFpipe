@@ -88,14 +88,13 @@ is compatible with `Mac OS X`.
 The second step is to download the `HALFpipe` to your computer. This requires
 approximately 5 gigabytes of storage.
 
-| Container platform | Version | Installation                                                                                           |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------------ |
-| Singularity        | 3.x     | `singularity pull shub://HALFpipe/HALFpipe` or the commands for version 2.x                            |
-| Singularity        | 2.x     | `singularity pull docker://halfpipe/halfpipe` or `singularity pull docker://ghcr.io/halfpipe/halfpipe` |
-| Docker             |         | `docker pull halfpipe/halfpipe`                                                                        |
+| Container platform | Installation                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Singularity        | `singularity pull docker://halfpipe/halfpipe:1.0.1` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.0.1` |
+| Docker             | `docker pull halfpipe/halfpipe:1.0.1`                                                                              |
 
 `Singularity` version `3.x` creates a container image file called
-`HALFpipe_latest.sif` in the directory where you run the `pull` command. For
+`HALFpipe_{version}.sif` in the directory where you run the `pull` command. For
 `Singularity` version `2.x` the file is named
 `halfpipe-halfpipe-master-latest.simg`. Whenever you want to use the container,
 you need pass `Singularity` the path to this file.
@@ -116,12 +115,14 @@ matter from which directory you run the `pull` command.
 
 ### Running
 
-The third step is to run the downloaded container.
+The third step is to run the downloaded container. You may need to replace
+`halfpipe_1.0.1.sif` with the actual path and filename where `Singularity`
+downloaded your container.
 
-| Container platform | Command                                                                  |
-| ------------------ | ------------------------------------------------------------------------ |
-| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif` |
-| Docker             | `docker run --interactive --tty --volume /:/ext halfpipe/halfpipe`       |
+| Container platform | Command                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.0.1.sif` |
+| Docker             | `docker run --interactive --tty --volume /:/ext halfpipe/halfpipe`      |
 
 You should now see the user interface.
 
@@ -489,18 +490,22 @@ occurs. You should only use `--debug` if you know what you're doing.
 --keep
 ```
 
-`HALFpipe` creates many intermediate files. In environments with limited disk
-capacity, this can be problematic. On the other hand, keeping intermediate files
-is useful, because once computed, intermediate files do not need to be
-re-calculated should `HALFpipe` be run again, for example with different
-setting. However, to limit disk usage, `HALFpipe` can delete intermediate files
-as soon as they are not needed anymore. This behavior is controlled with the
-`--keep` flag.
+`HALFpipe` saves intermediate files for each pipeline step. This speeds up
+re-running with different settings, or resuming after a job after it was
+cancelled. The intermediate file are saved by the
+[`nipype`](https://nipype.readthedocs.io/) workflow engine, which is what
+`HALFpipe` uses internally. `nipype` saves the intermediate files in the
+`nipype` folder in the working directory.
 
-The default option `--keep some` keeps all intermediate files from `fmriprep`.
-As these take the longest to compute, we believe this is a good tradeoff between
-disk space and computer time. `--keep all` turns of all deletion of intermediate
-files. `--keep none` deletes as much as possible.
+In environments with limited disk capacity, this can be problematic. To limit
+disk usage, `HALFpipe` can delete intermediate files as soon as they are not
+needed anymore. This behavior is controlled with the `--keep` flag.
+
+The default option `--keep some` keeps all intermediate files from fMRIPrep and
+MELODIC, which would take the longest to re-run. We believe this is a good
+tradeoff between disk space and computer time. `--keep all` turns of all
+deletion of intermediate files. `--keep none` deletes as much as possible,
+meaning that the smallest amount possible of disk space will be used.
 
 ### Configure nipype
 

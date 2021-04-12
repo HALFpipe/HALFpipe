@@ -6,17 +6,21 @@
 
 """
 
+from abc import abstractmethod
+from typing import Sequence, Optional
+
 from calamities import (
     MultiNumberInputView,
     TextInputView,
     TextView,
     SpacerView,
     MultipleChoiceInputView,
-    MultiCombinedNumberAndSingleChoiceInputView
+    MultiCombinedNumberAndSingleChoiceInputView,
+    CombinedMultipleAndSingleChoiceInputView
 )
 from calamities.pattern import get_entities_in_path
 
-from ..step import Step, BranchStep, YesNoStep
+from ..step import Step, BranchStep, StepType, YesNoStep
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..utils import forbidden_chars
@@ -30,11 +34,11 @@ from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFi
 next_step_type = SettingValsStep
 
 
-def _format_variable(variable):
+def format_variable(variable):
     return f'"{variable}"'
 
 
-def _find_bold_filepaths(ctx):
+def find_bold_filepaths(ctx):
     database = ctx.database
     bold_filepaths = database.get(datatype="func", suffix="bold")
     if bold_filepaths is None:
@@ -49,12 +53,14 @@ def _find_bold_filepaths(ctx):
     return bold_filepaths
 
 
-def _find_and_parse_condition_files(ctx):
+def find_and_parse_condition_files(ctx, bold_filepaths=None):
     """
     returns generator for tuple event file paths, conditions, onsets, durations
     """
     database = ctx.database
-    bold_filepaths = _find_bold_filepaths(ctx)
+
+    if bold_filepaths is None:
+        bold_filepaths = find_bold_filepaths(ctx)
 
     filters = dict(datatype="func", suffix="events")
     taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
@@ -72,8 +78,8 @@ def _find_and_parse_condition_files(ctx):
 
     for in_any in eventfile_set:
         if isinstance(in_any, str):
-            fileobj = File(path=database.fileobj(in_any), tags=database.tags(in_any))
-        elif isinstance(in_any, (tuple, list, set)):
+            fileobj = database.fileobj(in_any)
+        elif isinstance(in_any, Sequence):
             fileobj = [database.fileobj(filepath) for filepath in in_any]
             assert all(f is not None for f in fileobj)
         else:
@@ -81,17 +87,17 @@ def _find_and_parse_condition_files(ctx):
         yield (in_any, *parse_condition_file(in_any=fileobj))
 
 
-def _get_conditions(ctx):
+def get_conditions(ctx):
     ctx.spec.features[-1].conditions = []  # create attribute
 
-    out_list = list(_find_and_parse_condition_files(ctx))
+    out_list = list(find_and_parse_condition_files(ctx))
     if out_list is None or len(out_list) == 0:
         return
 
-    event_filepaths, conditions_list, onsets_list, durations_list = zip(*out_list)
+    _, conditions_list, _, _ = zip(*out_list)
 
     conditionssets = [set(conditions) for conditions in conditions_list]
-    conditions = set.intersection(*conditionssets)
+    conditions = set.union(*conditionssets)
 
     if len(conditions) == 0:
         return
@@ -176,7 +182,7 @@ class HighPassFilterCutoffStep(Step):
 
 class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"
-    yes_step_type = None  # add later, because not yet defined
+    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = HighPassFilterCutoffStep
 
 
@@ -194,7 +200,7 @@ class ContrastValuesStep(Step):
         self._append_view(TextView("Specify contrast values"))
 
         conditions = ctx.spec.features[-1].conditions
-        self.options = [_format_variable(condition) for condition in conditions]
+        self.options = [format_variable(condition) for condition in conditions]
         self.varname_by_str = dict(zip(self.options, conditions))
 
         self.input_view = MultiNumberInputView(self.options)
@@ -265,6 +271,8 @@ AddAnotherContrastStep.yes_step_type = ContrastNameStep
 
 
 class ConditionsSelectStep(Step):
+    add_file_str = "Add event file"
+
     def setup(self, ctx):
         self.result = None
 
@@ -273,16 +281,21 @@ class ConditionsSelectStep(Step):
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
         ):
-            _get_conditions(ctx)
+            get_conditions(ctx)
 
         self._append_view(TextView("Select conditions to add to the model"))
 
         conditions = ctx.spec.features[-1].conditions
         assert len(conditions) > 0, "No conditions found"
-        self.options = [_format_variable(condition) for condition in conditions]
+        self.options = [format_variable(condition) for condition in conditions]
         self.str_by_varname = dict(zip(conditions, self.options))
 
-        self.input_view = MultipleChoiceInputView(self.options, checked=[*self.options])
+        self.input_view = CombinedMultipleAndSingleChoiceInputView(
+            self.options,
+            [self.add_file_str],
+            checked=[*self.options],
+            isVertical=True,
+        )
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -295,12 +308,17 @@ class ConditionsSelectStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            conditions = []
-            for condition in ctx.spec.features[-1].conditions:
-                is_selected = self.result[self.str_by_varname[condition]]
-                if is_selected:
-                    conditions.append(condition)
-            ctx.spec.features[-1].conditions = conditions
+            if isinstance(self.result, dict):
+                conditions = []
+                for condition in ctx.spec.features[-1].conditions:
+                    is_selected = self.result[self.str_by_varname[condition]]
+                    if is_selected:
+                        conditions.append(condition)
+                ctx.spec.features[-1].conditions = conditions
+            elif self.result == self.add_file_str:
+                return EventsTypeStep(self.app, force_run=True)(ctx)
+            else:
+                raise ValueError()
 
         return ContrastNameStep(self.app)(ctx)
 
@@ -325,7 +343,7 @@ class EventsStep(FilePatternStep):
     next_step_type = ConditionsSelectStep
 
     def setup(self, ctx):
-        bold_filepaths = _find_bold_filepaths(ctx)
+        bold_filepaths = find_bold_filepaths(ctx)
         self.taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
         if len(self.taskset) > 1:
             self.required_in_path_entities = ["task"]
@@ -333,11 +351,13 @@ class EventsStep(FilePatternStep):
 
     def next(self, ctx):
         if len(self.taskset) == 1:
+            assert isinstance(self.fileobj, File)
             if self.fileobj.tags.get("task") is None:
                 if "task" not in get_entities_in_path(self.fileobj.path):
                     (self.fileobj.tags["task"],) = self.taskset
         return super(EventsStep, self).next(ctx)
 
+    @abstractmethod
     def _transform_extension(self, ext):
         raise NotImplementedError()
 
@@ -377,6 +397,10 @@ class EventsTypeStep(BranchStep):
         "BIDS TSV": TsvEventsStep,
     }
 
+    def __init__(self, app, force_run: bool = False):
+        super(EventsTypeStep, self).__init__(app)
+        self.force_run = force_run
+
     def setup(self, ctx):
         self.is_first_run = True
         self.should_run = False
@@ -385,13 +409,14 @@ class EventsTypeStep(BranchStep):
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
-        ):  # load conditions if not available
-            _get_conditions(ctx)
+        ):  # try to load conditions if not available
+            get_conditions(ctx)
 
         if (
             not hasattr(ctx.spec.features[-1], "conditions")
             or ctx.spec.features[-1].conditions is None
             or len(ctx.spec.features[-1].conditions) == 0
+            or self.force_run
         ):  # check if load was successful
             self.should_run = True
             super(EventsTypeStep, self).setup(ctx)

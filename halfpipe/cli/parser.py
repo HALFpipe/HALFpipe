@@ -151,15 +151,10 @@ def parse_args(args=None, namespace=None):
         logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
 
     workdir = opts.workdir
-    if workdir is not None:  # resolve workdir in fs_root
-        from os.path import normpath
+    if workdir is not None:
+        from ..workdir import init_workdir
 
-        abspath = str(Path(workdir).resolve())
-        if not abspath.startswith(opts.fs_root):
-            abspath = normpath(opts.fs_root + abspath)
-        workdir = abspath
-
-        LoggingContext.setWorkdir(workdir)
+        workdir = init_workdir(workdir, opts.fs_root)
     opts.workdir = workdir
 
     return opts, should_run

@@ -32,7 +32,7 @@ def makenamesuggestion(*words, index=None):
     return suggestion
 
 
-def messagefun(database, filetype, filepaths, tagnames):
+def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases=dict()):
     message = ""
     if filepaths is not None:
         message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
@@ -43,7 +43,7 @@ def messagefun(database, filetype, filepaths, tagnames):
                 if tagvalset is not None:
                     n_by_tag[tagname] = len(tagvalset)
             tagmessages = [
-                p.inflect(f"{n} plural('{tagname}', {n})")
+                p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
                 for tagname, n in n_by_tag.items()
                 if n > 0
             ]

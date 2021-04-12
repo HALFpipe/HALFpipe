@@ -5,7 +5,6 @@
 import os
 from os import path as op
 from pathlib import Path
-import logging
 from shutil import copyfile
 import hashlib
 import json
@@ -19,10 +18,8 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
 from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
-from ...utils import splitext, findpaths, first, formatlikebids
+from ...utils import splitext, findpaths, first, formatlikebids, logger
 from ...resource import get as getresource
-
-logger = logging.getLogger("halfpipe")
 
 
 def _make_plot(tags, key, sourcefile):
@@ -40,6 +37,7 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
     for entity in ["sub", "ses"]:
         tagval = tags.get(entity)
         if tagval is not None:
+            tagval = formatlikebids(tagval)
             path = path.joinpath(f"{entity}-{tagval}")
 
     if type == "image":
@@ -78,18 +76,23 @@ def _copy_file(inpath, outpath):
 
 
 def _find_sources(inpath):
-    hash = None
+    file_hash = None
     inputpaths = None
     for parent in Path(inpath).parents:
+
         hashfile = first(parent.glob("_0x*.json"))
-        if hashfile is not None:
+
+        if isinstance(hashfile, Path):
+
             match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
             if match is not None:
-                hash = match.group("hash")
+                file_hash = match.group("hash")
+
             with open(hashfile, "r") as fp:
                 inputpaths = findpaths(json.load(fp))
                 break
-    return inputpaths, hash
+
+    return inputpaths, file_hash
 
 
 def _format_metadata_value(obj):
@@ -145,6 +148,8 @@ class ResultdictDatasink(SimpleInterface):
         for indict in self.inputs.indicts:
             resultdict = resultdict_schema.dump(indict)
 
+            assert isinstance(resultdict, dict)
+
             tags = resultdict["tags"]
             metadata = resultdict["metadata"]
             images = resultdict["images"]
@@ -188,22 +193,32 @@ class ResultdictDatasink(SimpleInterface):
                 outpath = reports_directory / _make_path(inpath, "report", tags, key)
                 _copy_file(inpath, outpath)
 
-                hash = None
+                file_hash = None
                 sources = metadata.get("sources")
 
                 if sources is None:
-                    sources, hash = _find_sources(inpath)
+                    sources = list()
 
-                if hash is None:
+                try:
+                    found_sources, file_hash = _find_sources(inpath)
+
+                    if isinstance(found_sources, list):
+                        sources.extend(found_sources)
+                except Exception as e:
+                    logger.warning(f'Could not get sources for "{inpath}": %s', e, stack_info=True)
+
+                assert len(sources) > 0
+
+                if file_hash is None:
                     md5 = hashlib.md5()
                     with open(inpath, "rb") as fp:
                         md5.update(fp.read())
-                    hash = md5.hexdigest()
+                    file_hash = md5.hexdigest()
 
                 outdict = dict(**tags)
 
                 path = str(op.relpath(outpath, start=reports_directory))
-                outdict.update({"desc": key, "path": path, "hash": hash})
+                outdict.update({"desc": key, "path": path, "hash": file_hash})
 
                 if sources is not None:
                     outdict["sourcefiles"] = []
@@ -211,7 +226,9 @@ class ResultdictDatasink(SimpleInterface):
                         source = Path(source)
                         if base_directory in source.parents:
                             source = op.relpath(source, start=reports_directory)
-                        outdict["sourcefiles"].append(str(source))
+                        source_str = str(source)
+                        if source_str not in outdict["sourcefiles"]:
+                            outdict["sourcefiles"].append(source_str)
 
                 imgdicts.append(outdict)
 
@@ -219,6 +236,9 @@ class ResultdictDatasink(SimpleInterface):
 
             if len(vals) > 0 and "model" not in tags:  # only for first level
                 outdict = FuncTagsSchema().dump(tags)
+
+                assert isinstance(outdict, dict)
+
                 outdict.update(vals)
                 valdicts.append(outdict)
 

@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from math import isclose
+
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch, File
 
 from ..io import parse_condition_file
@@ -12,12 +14,32 @@ class ParseConditionFileInputSpec(TraitedSpec):
         File(),
         traits.List(File()),
         traits.List(traits.Tuple(traits.Str(), File())),
+        mandatory=True,
     )
     condition_names = traits.List(traits.Str(), desc="filter conditions")
+    contrasts = traits.List(
+        traits.Tuple(
+            traits.Str,
+            traits.Enum("T"),
+            traits.List(traits.Str),
+            traits.List(traits.Float),
+        ),
+    )
 
 
 class ParseConditionFileOutputSpec(TraitedSpec):
     subject_info = traits.Any()
+    contrasts = traits.List(
+        traits.Tuple(
+            traits.Str,
+            traits.Enum("T"),
+            traits.List(traits.Str),
+            traits.List(traits.Float),
+        ),
+    )
+
+    condition_names = traits.List(traits.Str)
+    contrast_names = traits.List(traits.Str)
 
 
 class ParseConditionFile(SimpleInterface):
@@ -43,6 +65,44 @@ class ParseConditionFile(SimpleInterface):
                 onsets_selected.append(condition_onsets)
                 durations_selected.append(condition_durations)
             conditions, onsets, durations = conditions_selected, onsets_selected, durations_selected
+
+        conditions, onsets, durations = zip(  # filter conditions with zero events
+            *[
+                (condition, onset, duration)
+                for condition, onset, duration in zip(conditions, onsets, durations)
+                if len(onset) == len(duration) and len(onset) > 0
+            ]
+        )
+
+        self._results["condition_names"] = list(conditions)
+
+        if isdefined(self.inputs.contrasts):  # filter contrasts based on parsed conditions
+            contrasts = self.inputs.contrasts
+
+            newcontrasts = list()
+            self._results["contrasts"] = newcontrasts
+
+            for name, type, contrast_conditions, contrast_values in contrasts:
+                if any(
+                    c not in conditions and not isclose(v, 0)
+                    for c, v in zip(contrast_conditions, contrast_values)
+                ):
+                    continue  # cannot use this contrast
+
+                contrast_conditions, contrast_values = zip(
+                    *[
+                        (c, v)
+                        for c, v in zip(contrast_conditions, contrast_values)
+                        if c in conditions
+                    ]
+                )
+                newcontrasts.append(
+                    (name, type, list(contrast_conditions), list(contrast_values))
+                )
+
+            self._results["contrast_names"] = [
+                name for name, _, _, _ in newcontrasts
+            ]
 
         self._results["subject_info"] = Bunch(
             conditions=conditions, onsets=onsets, durations=durations

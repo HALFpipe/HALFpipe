@@ -47,6 +47,13 @@ class ResultdictImagesSchema(Schema):
     matrix = fields.Raw(validate=validate_file)
     regressors = fields.Raw(validate=validate_file)
 
+    # heterogeneity
+    h = fields.Raw(validate=validate_file)
+    i2 = fields.Raw(validate=validate_file)
+    pseudor2 = fields.Raw(validate=validate_file)
+    chisq = fields.Raw(validate=validate_file)
+    chisqdof = fields.Raw(validate=validate_file)
+
 
 def validate_val(v):
     if isinstance(v, float) or isinstance(v, str):
@@ -60,9 +67,9 @@ class ResultdictSchema(Schema):
     class Meta:
         unknown = RAISE
 
-    tags = fields.Nested(ResultdictTagsSchema, default=dict())
-    metadata = fields.Nested(ResultdictMetadataSchema, default=dict())
-    images = fields.Nested(ResultdictImagesSchema, default=dict())
+    tags = fields.Nested(ResultdictTagsSchema(), default=dict())
+    metadata = fields.Nested(ResultdictMetadataSchema(), default=dict())
+    images = fields.Nested(ResultdictImagesSchema(), default=dict())
     reports = fields.Dict(
         keys=fields.Str(), values=fields.Raw(validate=validate_file), default=dict()
     )

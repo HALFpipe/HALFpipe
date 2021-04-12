@@ -14,12 +14,13 @@ from calamities import (
     App,
     SingleChoiceInputView,
 )
-from calamities.config import config as calamities_config
+from calamities.config import Config as CalamitiesConfig
 
 from .step import Step
 from .. import __version__
 from ..model import SpecSchema, loadspec, savespec
 from ..io import Database
+from ..workdir import init_workdir
 from ..logging import Context as LoggingContext
 
 from .file import BidsStep
@@ -146,7 +147,7 @@ class WorkingDirectoryStep(Step):
         if ctx.workdir is not None:
             assert isinstance(ctx.workdir, Path)
             assert ctx.workdir.is_dir()
-            LoggingContext.setWorkdir(ctx.workdir)
+            init_workdir(ctx.workdir)
 
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
@@ -156,11 +157,17 @@ class WorkingDirectoryStep(Step):
 
 
 class FirstStep(Step):
+    def _welcome_text(self):
+        return [
+            "Welcome to ENIGMA HALFpipe!",
+            f"You are using version {__version__}"
+        ]
+
     def setup(self, ctx):
         self._append_view(GiantTextView("HALFpipe"))
         self._append_view(SpacerView(2))
-        self._append_view(TextView("Welcome to ENIGMA HALFpipe!"))
-        self._append_view(TextView(f"You are using version {__version__}"))
+        for line in self._welcome_text():
+            self._append_view(TextView(line))
         self._append_view(SpacerView(1))
         self._append_view(TextView("Please report any problems or leave suggestions at"))
         self._append_view(TextView("https://github.com/HALFpipe/HALFpipe/issues"))
@@ -181,7 +188,7 @@ class FirstStep(Step):
 def init_spec_ui(workdir=None, debug=False):
     LoggingContext.disablePrint()
 
-    fs_root = Path(calamities_config.fs_root)
+    fs_root = Path(CalamitiesConfig.fs_root)
 
     cur_dir = str(Path.cwd())
     new_dir = fs_root / cur_dir[1:]

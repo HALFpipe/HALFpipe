@@ -2,6 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
+from operator import attrgetter
+from itertools import product
+
 from calamities import (
     TextView,
     SpacerView,
@@ -15,11 +20,13 @@ from ...model import (
     EPIFmapFileSchema,
     BaseFmapFileSchema,
     BoldFileSchema,
+    entities,
+    entity_longnames,
 )
 from ..feature import FeaturesStep
-
 from ..step import (
     Step,
+    StepType,
     BranchStep,
     YesNoStep,
 )
@@ -38,7 +45,7 @@ class FmapSummaryStep(FilePatternSummaryStep):
     filedict = filedict
     schema = BaseFmapFileSchema
 
-    next_step_type = next_step_type
+    next_step_type: StepType = next_step_type
 
 
 class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
@@ -72,38 +79,51 @@ class AcqToTaskMappingStep(Step):
 
         self.result = None
 
-        filepaths = ctx.database.get(**filedict)
+        fmapfilepaths = ctx.database.get(**filedict)
+        fmaptags = sorted(set(
+            frozenset(
+                (k, v)
+                for k, v in ctx.database.tags(f).items()
+                if k not in ["sub"] and k in entities and v is not None
+            )
+            for f in fmapfilepaths
+        ))
+        self.fmaptags = fmaptags
+
         boldfilepaths = ctx.database.get(**bold_filedict)
+        boldtags = sorted(set(
+            frozenset(
+                (k, v)
+                for k, v in ctx.database.tags(f).items()
+                if k not in ["sub"] and k in entities and v is not None
+            )
+            for f in boldfilepaths
+        ))
+        self.boldtags = boldtags
 
-        acqvalset = ctx.database.tagvalset("acq", filepaths=filepaths)
-        fmaptaskvalset = ctx.database.tagvalset("task", filepaths=filepaths)
-
-        taskvalset = ctx.database.tagvalset("task", filepaths=boldfilepaths)
-
-        if (
-            acqvalset is not None
-            and len(acqvalset) > 0
-            and (fmaptaskvalset is None or len(fmaptaskvalset) == 0)
-        ):
-            if None in acqvalset:
-                acqvalset.remove(None)
-            self.acqvals = sorted(list(acqvalset))
-
-            if None in fmaptaskvalset:
-                fmaptaskvalset.remove(None)
-
-            if None in taskvalset:
-                taskvalset.remove(None)
-            self.taskvals = sorted(list(taskvalset))
+        if len(fmaptags) > 0:
+            def _format_tags(tagset):
+                tagdict = dict(tagset)
+                return ", ".join(
+                    f'{e} "{tagdict[e]}"' if e not in entity_longnames
+                    else f'{entity_longnames[e]} "{tagdict[e]}"'
+                    for e in entities
+                    if e in tagdict and tagdict[e] is not None
+                )
 
             self.is_predefined = False
-            self._append_view(TextView(f"Found {len(self.acqvals)} field map acquisitions"))
-            self._append_view(TextView("Assign field maps to tasks"))
+            self._append_view(TextView("Assign field maps to functional images"))
 
-            self.options = [f'"{taskval}"' for taskval in self.taskvals]
-            self.values = [f"{acqval}" for acqval in self.acqvals]
+            self.options = [_format_tags(t).capitalize() for t in boldtags]
+            self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
+            selected_indices = [
+                self.fmaptags.index(o) if o in fmaptags else 0
+                for o in boldtags
+            ]
 
-            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values])
+            self.input_view = MultiSingleChoiceInputView(
+                [*self.options], [*self.values], selectedIndices=selected_indices
+            )
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -121,22 +141,66 @@ class AcqToTaskMappingStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            filepaths = ctx.database.get(**filedict)
+            bold_fmap_tag_dict = {
+                boldtagset:
+                self.fmaptags[
+                    self.values.index(self.result[option])
+                ]
+                for option, boldtagset in zip(self.options, self.boldtags)
+            }
 
-            specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
+            fmap_bold_tag_dict = dict()
+            for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
+                if fmaptagset not in fmap_bold_tag_dict:
+                    fmap_bold_tag_dict[fmaptagset] = boldtagset
+                else:
+                    fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
 
-            acq_by_value = dict(zip(self.values, self.acqvals))
+            for specfileobj in ctx.spec.files:
+                if specfileobj.datatype != "fmap":
+                    continue
 
-            value = dict()
-            for option, task in zip(self.options, self.taskvals):
-                acq = acq_by_value[self.result[option]]
-                key = f"acq.{acq}"
-                if key not in value:
-                    value[key] = []
-                value[key].append(f"task.{task}")
+                fmaplist = ctx.database.resolved_spec.fileobjs_by_specfilepaths[
+                    specfileobj.path
+                ]
 
-            for specfileobj in specfileobjs:
-                specfileobj.intended_for = value
+                fmaptags = set(
+                    frozenset(
+                        (k, v)
+                        for k, v in ctx.database.tags(f).items()
+                        if k not in ["sub"] and k in entities and v is not None
+                    )
+                    for f in map(attrgetter("path"), fmaplist)
+                )
+
+                def _expand_fmaptags(tagset):
+                    if any(a == "acq" for a, _ in tagset):
+                        return tagset
+                    else:
+                        return tagset | frozenset([("acq", "null")])
+
+                mappings = set(
+                    (a, b)
+                    for fmap in fmaptags
+                    for a, b in product(
+                        fmap_bold_tag_dict.get(fmap, list()),
+                        _expand_fmaptags(fmap),
+                    )
+                    if a[0] != b[0]
+                    and "sub" not in (a[0], b[0])
+                )
+
+                intended_for = dict()
+                for functag, fmaptag in mappings:
+                    entity, val = functag
+                    funcstr = f"{entity}.{val}"
+                    entity, val = fmaptag
+                    fmapstr = f"{entity}.{val}"
+                    if fmapstr not in intended_for:
+                        intended_for[fmapstr] = list()
+                    intended_for[fmapstr].append(funcstr)
+
+                specfileobj.intended_for = intended_for
 
         if self.is_first_run or not self.is_predefined:
             self.is_first_run = False
@@ -145,7 +209,7 @@ class AcqToTaskMappingStep(Step):
 
 class HasMoreFmapStep(YesNoStep):
     header_str = "Add more field maps?"
-    yes_step_type = None  # add later, because not yet defined
+    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = AcqToTaskMappingStep
 
 

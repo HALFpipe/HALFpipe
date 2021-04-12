@@ -6,6 +6,8 @@
 
 """
 
+from typing import List, Optional
+
 from copy import deepcopy
 
 from calamities import (
@@ -22,7 +24,7 @@ from itertools import combinations, chain
 
 from ..utils import forbidden_chars
 from ...utils import ravel
-from ..step import Step, YesNoStep
+from ..step import Step, StepType, YesNoStep
 from .loop import AddAnotherModelStep
 from .utils import format_column
 from ...model import InferredTypeContrastSchema, TContrastSchema, MissingFilterSchema
@@ -56,7 +58,7 @@ def apply_filters_to_variables(filters, variables):
 
 
 class InteractionTermsStep(Step):
-    def __init__(self, app, variables):
+    def __init__(self, app, variables: List[str]):
         super(InteractionTermsStep, self).__init__(app)
         self.variables = variables
 
@@ -66,7 +68,9 @@ class InteractionTermsStep(Step):
         nvar = len(self.variables)
 
         terms = list(
-            chain.from_iterable(combinations(self.variables, i) for i in range(2, nvar + 1))
+            chain.from_iterable(
+                combinations(self.variables, i) for i in range(2, nvar + 1)
+            )
         )
 
         self.term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
@@ -99,7 +103,7 @@ class InteractionTermsStep(Step):
 
 class InteractionVariablesStep(Step):
     def setup(self, ctx):
-        self.choice = None
+        self.choice: Optional[List[str]] = None
 
         self._append_view(
             TextView("Specify the variables for which to calculate interaction terms")
@@ -145,6 +149,8 @@ class InteractionVariablesStep(Step):
         return True
 
     def next(self, ctx):
+        if self.choice is None:
+            self.choice = []
         return InteractionTermsStep(self.app, self.choice)(ctx)
 
 
@@ -171,7 +177,7 @@ class AddInteractionTerms(YesNoStep):
 
 class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"
-    yes_step_type = None  # add later, because not yet defined
+    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = AddInteractionTerms
 
 
@@ -184,6 +190,7 @@ class ContrastValuesStep(Step):
         self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
         self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
 
+        variable = None
         for variable in self.variables:
             if variable["name"] == varname:
                 break

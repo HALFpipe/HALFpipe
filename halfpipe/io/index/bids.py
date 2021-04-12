@@ -6,12 +6,14 @@ from pathlib import Path
 from os.path import relpath
 from shutil import rmtree
 import json
+from collections import OrderedDict
 
 from inflection import camelize
 
 from calamities.pattern.glob import _rlistdir
 from ...model import FileSchema, entity_longnames, entities
-from ...utils import formatlikebids, splitext, cleaner
+from ...model.utils import get_nested_schema_field_names
+from ...utils import formatlikebids, splitext
 from ..metadata import canonicalize_direction_code
 
 from bids.layout import Config
@@ -33,26 +35,25 @@ class BidsDatabase:
 
         self.bidstags_by_bidspaths = dict()
 
-    def _format_tagval(self, entity, v):
-        if entity == "sub" or entity == "subject":
-            return cleaner(v)
-        return formatlikebids(v)
-
     def put(self, filepath):
         if self.bidspaths_by_filepaths.get(filepath) is not None:
             return  # already added
+
         tags = self.database.tags(filepath)
+
         bidstags = dict()
         for k, v in tags.items():
             bidsentity = k
             if bidsentity in entity_longnames:
                 bidsentity = entity_longnames[bidsentity]
+
             if k in entities:
-                bidstags[bidsentity] = self._format_tagval(k, v)
+                bidstags[bidsentity] = formatlikebids(v)
             else:
                 if k == "suffix" and tags.get("datatype") == "fmap":
                     k = "fmap"
                 bidstags[k] = v
+
         bidspath = build_path(bidstags, bidsconfig.default_path_patterns)
         self.bidspaths_by_filepaths[filepath] = str(bidspath)
         self.filepaths_by_bidspaths[bidspath] = str(filepath)
@@ -121,12 +122,16 @@ class BidsDatabase:
                 schema = schema.type_schemas[v]
             instance = schema()
 
-            bidsmetadata = dict()
+            bidsmetadata = OrderedDict()
             if "metadata" in instance.fields:
-                metadata_keys = list(instance.fields["metadata"].nested().fields.keys())
+                metadata_keys = get_nested_schema_field_names(instance, "metadata")
+
+                # manual conversion
                 task = self.database.tagval(filepath, "task")
                 if task is not None:
                     bidsmetadata["TaskName"] = task
+
+                # automated
                 for k in metadata_keys:
                     self.database.fillmetadata(k, [filepath])
                     v = self.database.metadata(filepath, k)
@@ -146,6 +151,7 @@ class BidsDatabase:
             if self.database.tagval(filepath, "datatype") == "fmap":
                 if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
                     sub = self.database.tagval(filepath, "sub")
+                    ses = self.database.tagval(filepath, "ses")
                     subject = self.tagval(bidspath, "subject")
 
                     subjectdir = f"sub-{subject}"
@@ -153,6 +159,8 @@ class BidsDatabase:
                     bidsmetadata["IntendedFor"] = list()
 
                     filters = dict(datatype="func", suffix="bold", sub=sub)
+                    if ses is not None:
+                        filters.update(dict(ses=ses))
                     afilepaths = self.database.associations(filepath, **filters)
                     if afilepaths is None:
                         continue  # only write if we can find a functional image
@@ -164,11 +172,15 @@ class BidsDatabase:
                         if abidspath is not None:  # only include files in the BidsDatabase
                             bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))
 
+                    if len(bidsmetadata["IntendedFor"]) == 0:
+                        bidsmetadata = dict()
+                        bidspaths.discard(filepath)
+
             if len(bidsmetadata) > 0:
                 basename, _ = splitext(bidspath)
                 sidecarpath = Path(bidsdir) / Path(bidspath).parent / f"{basename}.json"
                 bidspaths.add(sidecarpath)
-                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=True)
+                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=False)
                 if sidecarpath.is_file():
                     with open(sidecarpath, "r") as f:
                         if jsonstr == f.read():

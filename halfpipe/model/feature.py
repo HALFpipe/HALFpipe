@@ -41,9 +41,13 @@ class BaseFeatureSchema(Schema):
 
 class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(default="task_based", validate=validate.Equal("task_based"))
+
     conditions = fields.List(fields.Str())
     contrasts = fields.List(fields.Nested(TContrastSchema))
-    high_pass_filter_cutoff = fields.Float(default=125.0, validate=validate.Range(min=0.0))
+
+    high_pass_filter_cutoff = fields.Float(default=125.0, missing=125., validate=validate.Range(min=0.0))
+
+    hrf = fields.Str(default="dgamma", missing="dgamma", validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]))
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):

@@ -6,14 +6,15 @@
 
 """
 
-from .base import ScanTagsSchema, DirTagsSchema, AcqTagsSchema
+from .base import AcqTagsSchema
+from .func import FuncTagsSchema
 
 
-class FmapTagsSchema(ScanTagsSchema, AcqTagsSchema):
+class FmapTagsSchema(FuncTagsSchema, AcqTagsSchema):
     pass
 
 
-class EPIFmapTagsSchema(FmapTagsSchema, DirTagsSchema):
+class EPIFmapTagsSchema(FmapTagsSchema):
     pass
 
 
