@@ -5,7 +5,7 @@ ENV PATH="/usr/local/miniconda/bin:$PATH" \
     HALFPIPE_RESOURCE_DIR="/home/fmriprep/.cache/halfpipe" \
     TEMPLATEFLOW_HOME="/home/fmriprep/.cache/templateflow"
 
-RUN pip uninstall --yes fmriprep smriprep mriqc niworkflows nipype statsmodels patsy
+RUN pip uninstall --yes fmriprep smriprep mriqc niworkflows nipype statsmodels patsy matplotlib
 
 RUN mkdir /ext /halfpipe 
 

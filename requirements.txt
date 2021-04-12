@@ -24,6 +24,7 @@ inflection
 marshmallow >= 3.10.0
 marshmallow-oneofschema
 pint
+matplotlib ~= 3.3
 seaborn
 svgutils
 tabulate
