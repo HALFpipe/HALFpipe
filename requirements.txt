@@ -22,7 +22,6 @@ inflect
 inflection
 marshmallow >= 3.10.0
 marshmallow-oneofschema
-matplotlib >= 3.3.3
 pint
 seaborn
 svgutils
@@ -31,4 +30,4 @@ chardet >= 4.0.0
 pympler >= 0.9
 stackprinter >= 0.2.5
 more-itertools >= 8.7.0
-calamities @ git+https://github.com/hippocampusgirl/calamities.git@0.0.13
+calamities ~= 0.0.13
