@@ -178,18 +178,20 @@ class ResolvedSpec:
             self.specfileobj_by_filepaths[file.path] = file
             resolved_files.append(file)
 
-        mappings = set.union(
-            *[
-                set(
-                    (a, b)
-                    for fmap in fmaplist
-                    for a, b in product(func, fmap)
-                    if a[0] != b[0]
-                    and "sub" not in (a[0], b[0])
-                )
-                for func, fmaplist in func_fmap_tag_dict.items()
-            ]
-        )
+        mappings = set()
+
+        mapping_sets = [
+            set(
+                (a, b)
+                for fmap in fmaplist
+                for a, b in product(func, fmap)
+                if a[0] != b[0]
+                and "sub" not in (a[0], b[0])
+            )
+            for func, fmaplist in func_fmap_tag_dict.items()
+        ]
+        if len(mapping_sets) > 0:
+            mappings.update(*mapping_sets)
 
         intended_for = dict()
         for functag, fmaptag in mappings:
