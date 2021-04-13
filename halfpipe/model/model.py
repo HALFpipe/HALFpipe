@@ -64,8 +64,8 @@ class MixedEffectsModelSchema(BaseModelSchema):
 
     algorithms = fields.List(
         fields.Str(validate=validate.OneOf(algorithms.keys())),
-        default=["flame1"],
-        missing=["flame1"],
+        default=["flame1", "mcartest", "heterogeneity"],
+        missing=["flame1", "mcartest", "heterogeneity"],
     )
 
 
