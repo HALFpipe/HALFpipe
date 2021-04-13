@@ -43,6 +43,7 @@ pywarnings_to_ignore = [
     "Support for setting the 'mathtext.fallback_to_cm' rcParam is deprecated since 3.3 and will be removed two minor releases later; use 'mathtext.fallback : 'cm' instead.",
     "VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated.",
     "FutureWarning: Index.ravel returning ndarray is deprecated; in a future version this will return a view on self.",
+    "FutureWarning: Fetchers from the nilearn.datasets module will be updated in version 0.9 to return python strings instead of bytes and Pandas dataframes instead of Numpy arrays",
 ]
 
 
