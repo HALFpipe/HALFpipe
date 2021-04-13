@@ -79,7 +79,7 @@ is compatible with `Mac OS X`.
 
 | Container platform | Version   | Installation                                                       |
 | ------------------ | --------- | ------------------------------------------------------------------ |
-| **Singularity**    | **3.5.3** | **See <https://sylabs.io/guides/3.5/user-guide/quick_start.html**> |
+| **Singularity**    | **3.5.3** | **See <https://sylabs.io/guides/3.5/user-guide/quick_start.html>** |
 | Singularity        | 2.6.1     | `sudo apt install singularity-container`                           |
 | Docker             |           | See <https://docs.docker.com/engine/install/>                      |
 
@@ -364,7 +364,7 @@ Models are statistical analyses that are carried out on the features.
 
 ## Quality checks
 
-> TODO
+Please see the manual at <https://docs.google.com/document/d/1evDkVaoXqSaxulp5eSxVqgaxro7yZl-gao70D0S2dH8>
 
 ## Outputs
 

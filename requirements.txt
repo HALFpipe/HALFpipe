@@ -1,5 +1,5 @@
-numpy
-scipy
+numpy >= 1.20
+scipy >= 1.6.2
 mpmath >= 1.1.0
 pandas >= 1.2.0
 patsy @ git+https://github.com/pydata/patsy.git
@@ -8,6 +8,7 @@ scikit-learn >= 0.24.0
 nilearn >= 0.7.1
 odfpy
 nibabel >= 3.2.1
+indexed-gzip >= 1.5.3
 nipype == 1.6.0
 nitime @ git+https://github.com/nipy/nitime.git@rel/0.8.1
 fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.1+halfpipe.2
@@ -24,6 +25,7 @@ inflection
 marshmallow >= 3.10.0
 marshmallow-oneofschema
 pint
+matplotlib ~= 3.3
 seaborn
 svgutils
 tabulate

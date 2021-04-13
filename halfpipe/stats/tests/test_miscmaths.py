@@ -6,6 +6,8 @@
 
 import pytest
 
+import math
+
 import numpy as np
 from scipy import stats
 
@@ -36,13 +38,13 @@ def chisq2z_convert_numpy(x, k):
 @pytest.mark.parametrize("t", np.linspace(-7, 7, num=5))
 @pytest.mark.parametrize("dof", [2, 10, 30])
 def test_t2z_convert_numpy(t, dof):
-    assert np.isclose(t2z_convert(t, dof), t2z_convert_numpy(t, dof))
+    assert math.isclose(t2z_convert(t, dof), t2z_convert_numpy(t, dof))
 
 
 @pytest.mark.parametrize("t", np.logspace(1, 4, num=5))
 @pytest.mark.parametrize("dof", [2, 10, 30])
 def test_t2z_convert_large(t, dof):
-    assert np.isfinite(t2z_convert(t, dof))
+    assert math.isfinite(t2z_convert(t, dof))
 
 
 @pytest.mark.parametrize("f", np.linspace(1e-3, 7, num=5))
@@ -50,19 +52,19 @@ def test_t2z_convert_large(t, dof):
     (1, 1), (2, 1), (5, 2), (10, 1), (10, 100)
 ])
 def test_f2z_convert_numpy(f, d1, d2):
-    assert np.isclose(f2z_convert(f, d1, d2), f2z_convert_numpy(f, d1, d2))
+    assert math.isclose(f2z_convert(f, d1, d2), f2z_convert_numpy(f, d1, d2))
 
 
 @pytest.mark.parametrize("x", np.linspace(1, 7, num=5))
 @pytest.mark.parametrize("k", [2, 10, 30])
 def test_chisq2z_convert_numpy(x, k):
-    assert np.isclose(chisq2z_convert(x, k), chisq2z_convert_numpy(x, k))
+    assert math.isclose(chisq2z_convert(x, k), chisq2z_convert_numpy(x, k))
 
 
 @pytest.mark.parametrize("x", np.logspace(1, 3, num=5))
 @pytest.mark.parametrize("k", [2, 10, 30])
 def test_chisq2z_convert_large(x, k):
-    assert np.isfinite(chisq2z_convert(x, k))
+    assert math.isfinite(chisq2z_convert(x, k))
 
 
 @pytest.mark.parametrize("f", np.logspace(2, 4, num=5))
@@ -70,19 +72,19 @@ def test_chisq2z_convert_large(x, k):
     (10, 20), (10, 100)
 ])
 def test_f2z_convert_large(f, d1, d2):
-    assert np.isfinite(f2z_convert(f, d1, d2))
+    assert math.isfinite(f2z_convert(f, d1, d2))
 
 
 @pytest.mark.timeout(1)
 def test_nonfinite():
     assert t2z_convert(np.inf, 1) == np.inf
     assert t2z_convert(-np.inf, 1) == -np.inf
-    assert np.isnan(t2z_convert(np.nan, 1))
+    assert math.isnan(t2z_convert(np.nan, 1))
 
     assert f2z_convert(np.inf, 1, 1) == np.inf
     assert f2z_convert(-np.inf, 1, 1) == -np.inf
-    assert np.isnan(f2z_convert(np.nan, 1, 1))
+    assert math.isnan(f2z_convert(np.nan, 1, 1))
 
     assert chisq2z_convert(np.inf, 1) == np.inf
     assert chisq2z_convert(-np.inf, 1) == -np.inf
-    assert np.isnan(chisq2z_convert(np.nan, 1))
+    assert math.isnan(chisq2z_convert(np.nan, 1))

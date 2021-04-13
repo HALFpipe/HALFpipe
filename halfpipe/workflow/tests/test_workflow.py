@@ -16,8 +16,8 @@ import pandas as pd
 import numpy as np
 import nibabel as nib
 from nilearn.image import new_img_like
-
 from nipype.pipeline import plugins as nip
+from fmriprep import config
 
 from ...tests.resource import setup as setuptestresources
 from ...resource import get as getresource
@@ -99,7 +99,9 @@ def task_events(tmp_path_factory, bids_data):
             break
 
     n = len(duration)
-    trial_type = list(np.random.permutation(["a", "b"] * ceildiv(n, 2)))[:n]
+    trial_type = list(
+        np.random.permutation(["a", "b"] * ceildiv(n, 2))
+    )[:n]
 
     events = pd.DataFrame(dict(onset=onset, duration=duration, trial_type=trial_type))
 
@@ -275,9 +277,13 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         ),
     ]))
 
-    spec.global_settings = dict(sloppy=True)
+    spec.global_settings = dict(
+        sloppy=True,
+    )
 
     savespec(spec, workdir=tmp_path)
+
+    config.nipype.omp_nthreads = 4
 
     workflow = init_workflow(tmp_path)
     workflow_args = dict(
