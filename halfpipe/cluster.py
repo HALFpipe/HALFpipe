@@ -38,7 +38,7 @@ singularity run \\
 --execgraph-file {execgraph_file} \\
 --only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
 --nipype-n-procs 2 \\
---verbose
+--verbose {extra_args}
 
 """,
     torque="""#!/bin/bash
@@ -69,7 +69,7 @@ singularity run \\
 --execgraph-file {execgraph_file} \\
 --only-chunk-index ${{PBS_ARRAY_INDEX}} \\
 --nipype-n-procs 2 \\
---verbose
+--verbose {extra_args}
 
 
 """,
@@ -101,13 +101,13 @@ singularity run \\
 --execgraph-file {execgraph_file} \\
 --only-chunk-index ${{SGE_TASK_ID}} \\
 --nipype-n-procs 2 \\
---verbose
+--verbose {extra_args}
 
 """,
 )
 
 
-def create_example_script(workdir, execgraphs):
+def create_example_script(workdir, execgraphs, opts):
     uuid = execgraphs[0].uuid
     n_chunks = len(execgraphs) - 1  # omit model chunk
     assert n_chunks > 1
@@ -117,14 +117,19 @@ def create_example_script(workdir, execgraphs):
     nipype_max_mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
     mem_mb = f"{ceil(nipype_max_mem_gb / n_cpus * 1536):d}"  # fudge factor
 
-    data = {
-        "n_chunks": n_chunks,  # one-based indexing
-        "singularity_container": os.environ["SINGULARITY_CONTAINER"],
-        "cwd": str(Path(workdir).resolve()),
-        "execgraph_file": str(Path(workdir).resolve() / execgraph_file),
-        "n_cpus": n_cpus,
-        "mem_mb": mem_mb,
-    }
+    extra_args = f"--keep {opts.keep}"
+    if opts.fs_license_file is not None:
+        extra_args += f" --fs-license-file {opts.fs_license_file}"
+
+    data = dict(
+        n_chunks=n_chunks,  # one-based indexing
+        singularity_container=os.environ["SINGULARITY_CONTAINER"],
+        cwd=str(Path(workdir).resolve()),
+        execgraph_file=str(Path(workdir).resolve() / execgraph_file),
+        n_cpus=n_cpus,
+        mem_mb=mem_mb,
+        extra_args=extra_args,
+    )
 
     for cluster_type, script_template in script_templates.items():
         st = script_template.format(**data)
