@@ -71,7 +71,14 @@ class FeatureFactory(Factory):
         if feature.type == "task_based":
             confounds_action = "select"
 
-            condition_files = sorted(list(database.associations(sourcefile, datatype="func", suffix="events")))
+            condition_files = sorted(set(
+                database.associations(
+                    sourcefile,
+                    task=database.tagval(sourcefile, "task"),  # enforce same task
+                    datatype="func",
+                    suffix="events",
+                )
+            ))
             raw_sources = [*raw_sources, *condition_files]
             if ".txt" in database.tagvalset("extension", filepaths=condition_files):
                 condition_files = [

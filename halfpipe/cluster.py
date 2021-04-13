@@ -8,19 +8,25 @@ from math import ceil
 
 import logging
 
-from .utils import first
 from .io import make_cachefilepath
 
-script_template = """#!/bin/bash
+script_templates = dict(
+    slurm="""#!/bin/bash
+#
+#
 #SBATCH --job-name=halfpipe
 #SBATCH --output=halfpipe.log.txt
-
+#
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={n_cpus}
-#SBATCH --mem-per-cpu={mem_per_cpu}
-
+#SBATCH --mem-per-cpu={mem_mb}M
+#
 #SBATCH --array=1-{n_chunks}
+
+if ! [ -x "$(command -v singularity)" ]; then
+module load singularity
+fi
 
 singularity run \\
 --no-home \\
@@ -32,31 +38,102 @@ singularity run \\
 --execgraph-file {execgraph_file} \\
 --only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
 --nipype-n-procs 2 \\
---verbose
+--verbose {extra_args}
 
-"""
+""",
+    torque="""#!/bin/bash
+#
+#
+#PBS -N halfpipe
+#PBS -j oe
+#PBS -o halfpipe.log.txt
+#$ -cwd
+#
+#PBS -l nodes=1:ppn=2
+#PBS -l walltime=24:00:00
+#PBS -l mem={mem_mb}mb
+#
+#PBS -J 1-{n_chunks}
+
+if ! [ -x "$(command -v singularity)" ]; then
+module load singularity
+fi
+
+singularity run \\
+--no-home \\
+--cleanenv \\
+--bind /:/ext \\
+{singularity_container} \\
+--workdir {cwd} \\
+--only-run \\
+--execgraph-file {execgraph_file} \\
+--only-chunk-index ${{PBS_ARRAY_INDEX}} \\
+--nipype-n-procs 2 \\
+--verbose {extra_args}
 
 
-def create_example_script(workdir, execgraphs):
-    uuid = first(execgraphs).uuid
+""",
+    sge="""#!/bin/bash
+#
+#
+#$ -N halfpipe
+#$ -j y
+#$ -o halfpipe.log.txt
+#$ -cwd
+#
+#$ -pe smp 2
+#$ -l h_rt=24:0:0
+#$ -l mem={mem_mb}M
+#
+#$ -t 1-{n_chunks}
+
+if ! [ -x "$(command -v singularity)" ]; then
+module load singularity
+fi
+
+singularity run \\
+--no-home \\
+--cleanenv \\
+--bind /:/ext \\
+{singularity_container} \\
+--workdir {cwd} \\
+--only-run \\
+--execgraph-file {execgraph_file} \\
+--only-chunk-index ${{SGE_TASK_ID}} \\
+--nipype-n-procs 2 \\
+--verbose {extra_args}
+
+""",
+)
+
+
+def create_example_script(workdir, execgraphs, opts):
+    uuid = execgraphs[0].uuid
     n_chunks = len(execgraphs) - 1  # omit model chunk
     assert n_chunks > 1
     execgraph_file = make_cachefilepath(f"execgraph.{n_chunks:d}_chunks", uuid)
 
     n_cpus = 2
-    mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
-    mem_per_cpu = f"{ceil(mem_gb / n_cpus * 1536):d}M"  # fudge factor
+    nipype_max_mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
+    mem_mb = f"{ceil(nipype_max_mem_gb / n_cpus * 1536):d}"  # fudge factor
 
-    data = {
-        "n_chunks": n_chunks,  # one-based indexing
-        "singularity_container": os.environ["SINGULARITY_CONTAINER"],
-        "cwd": str(Path(workdir).resolve()),
-        "execgraph_file": str(Path(workdir).resolve() / execgraph_file),
-        "n_cpus": n_cpus,
-        "mem_per_cpu": mem_per_cpu,
-    }
-    st = script_template.format(**data)
-    stpath = "submit.slurm.sh"
-    logging.getLogger("halfpipe").log(25, f'A submission script template was created at "{stpath}"')
-    with open(Path(workdir) / stpath, "w") as f:
-        f.write(st)
+    extra_args = f"--keep {opts.keep}"
+    if opts.fs_license_file is not None:
+        extra_args += f" --fs-license-file {opts.fs_license_file}"
+
+    data = dict(
+        n_chunks=n_chunks,  # one-based indexing
+        singularity_container=os.environ["SINGULARITY_CONTAINER"],
+        cwd=str(Path(workdir).resolve()),
+        execgraph_file=str(Path(workdir).resolve() / execgraph_file),
+        n_cpus=n_cpus,
+        mem_mb=mem_mb,
+        extra_args=extra_args,
+    )
+
+    for cluster_type, script_template in script_templates.items():
+        st = script_template.format(**data)
+        stpath = f"submit.{cluster_type}.sh"
+        logging.getLogger("halfpipe").log(25, f'A submission script template was created at "{stpath}"')
+        with open(Path(workdir) / stpath, "w") as f:
+            f.write(st)
