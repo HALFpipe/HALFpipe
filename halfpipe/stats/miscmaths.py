@@ -97,7 +97,7 @@ def f2z_convert(x: float, d1: int, d2: int):
     d1 = mpf(d1)
     d2 = mpf(d2)
 
-    if x < mpf("0") or d1 < mpf("0") or d2 < mpf("0"):
+    if x <= mpf("0") or d1 <= mpf("0") or d2 <= mpf("0"):
         return mpf("0")
 
     z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
@@ -116,7 +116,7 @@ def chisq2z_convert(x: float, k: int):
     x = mpf(x)
     k = mpf(k)
 
-    if x < mpf("0") or k < mpf("0"):
+    if x <= mpf("0") or k <= mpf("0"):
         return mpf("0")
 
     z = sqrt(mpf("2")) * erfinv(
