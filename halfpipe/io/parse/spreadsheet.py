@@ -54,13 +54,7 @@ def loadspreadsheet(fname, dtype=None, ftype=None, **kwargs) -> pd.DataFrame:
         warnings.simplefilter("error")
 
         try:
-            if ftype == ".txt":
-                if not has_header(fname):
-                    df = pd.read_table(fname, header=None, **kwargs)
-                else:
-                    df = pd.read_table(fname, **kwargs)
-
-            elif ftype == ".json":
+            if ftype == ".json":
                 df = pd.read_json(fname, **kwargs)
 
             elif ftype == ".csv":
@@ -81,13 +75,7 @@ def loadspreadsheet(fname, dtype=None, ftype=None, **kwargs) -> pd.DataFrame:
             elif ftype == ".ods":
                 df = pd.read_excel(fname, engine="odf", **kwargs)
 
-            elif ftype == "":  # no extension
-                if not has_header(fname):
-                    df = pd.read_table(fname, header=None, sep=r"\s+", **kwargs)
-                else:
-                    df = pd.read_table(fname, sep=r"\s+", **kwargs)
-
-            else:
+            else:  # infer delimiter
                 if not has_header(fname):
                     df = pd.read_table(fname, header=None, sep=None, engine="python", **kwargs)
                 else:
