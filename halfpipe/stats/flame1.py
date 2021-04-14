@@ -179,7 +179,7 @@ class FLAME1(ModelAlgorithm):
         return voxel_result
 
     @staticmethod
-    def write_outputs(ref_file: Path, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
         output_files = dict()
 
         for output_name in [
@@ -193,8 +193,7 @@ class FLAME1(ModelAlgorithm):
         ]:
             output_files[output_name] = [False for _ in range(len(voxel_results))]
 
-        ref_img = nib.load(ref_file)
-        shape = ref_img.shape
+        shape = ref_img.shape[:3]
 
         for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]

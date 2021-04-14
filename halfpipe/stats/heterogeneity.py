@@ -127,10 +127,9 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @staticmethod
-    def write_outputs(ref_file: Path, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
         output_files = dict()
 
-        ref_img = nib.load(ref_file)
         shape: Tuple[int, int, int] = ref_img.shape
 
         rdf = pd.DataFrame.from_records(voxel_results)
