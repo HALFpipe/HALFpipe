@@ -82,8 +82,10 @@ def run(opts, should_run):
     assert workdir is not None, "Missing working directory"
     assert Path(workdir).is_dir(), "Working directory does not exist"
 
-    if opts.fs_license_file and Path(opts.fs_license_file).is_file():
-        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
+    if opts.fs_license_file is not None:
+        fs_license_file = resolve(opts.fs_license_file, opts.fs_root)
+        if fs_license_file.is_file():
+            os.environ["FS_LICENSE"] = str(fs_license_file)
     else:
         license_files = list(glob(str(
             Path(workdir) / "*license*"
@@ -170,6 +172,7 @@ def run(opts, should_run):
             "raise_insufficient": False,
             "keep": opts.keep,
         }
+
         if opts.nipype_n_procs is not None:
             plugin_args["n_procs"] = opts.nipype_n_procs
 
