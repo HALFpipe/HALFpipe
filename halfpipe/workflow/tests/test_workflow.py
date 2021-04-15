@@ -180,6 +180,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="map",
+            extension=".nii.gz",
             tags=dict(desc="smith09"),
             path=str(getresource("PNAS_Smith09_rsn10.nii.gz")),
             metadata=dict(space="MNI152NLin6Asym"),
@@ -187,6 +188,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="seed",
+            extension=".nii.gz",
             tags=dict(desc="pcc"),
             path=str(pcc_mask),
             metadata=dict(space="MNI152NLin6Asym"),
@@ -194,6 +196,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="atlas",
+            extension=".nii.gz",
             tags=dict(desc="schaefer2018"),
             path=str(gettemplate(
                 "MNI152NLin2009cAsym",
