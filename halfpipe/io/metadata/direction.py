@@ -11,7 +11,7 @@ import re
 
 from calamities.pattern import tag_glob
 
-from ...model import direction_codes, axis_codes, space_codes
+from ...model.metadata import direction_codes, axis_codes, space_codes
 from .niftiheader import NiftiheaderLoader
 
 

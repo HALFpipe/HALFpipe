@@ -27,7 +27,7 @@ class BaseFmapFileSchema(BaseFileSchema):
 
 class EPIFmapFileSchema(BaseFmapFileSchema):
     suffix = fields.Str(default="epi", validate=validate.Equal("epi"))
-    tags = fields.Nested(EPIFmapTagsSchema, default=dict())
+    tags = fields.Nested(EPIFmapTagsSchema(), default=dict())
     metadata = fields.Nested(PEDirMetadataSchema())
 
 

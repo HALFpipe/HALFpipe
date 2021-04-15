@@ -8,7 +8,7 @@ import numpy as np
 from scipy.io import loadmat
 import pandas as pd
 
-from ...model import File
+from ...model.file import File
 from ...utils import first, logger
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}

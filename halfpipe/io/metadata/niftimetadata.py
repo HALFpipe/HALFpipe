@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
 from math import isclose, sqrt
 
 import numpy as np
@@ -14,9 +13,8 @@ from .niftiheader import NiftiheaderLoader
 
 from .direction import canonicalize_direction_code
 from .slicetiming import str_slice_timing
-from ...model import axis_codes, templates
-
-logger = logging.getLogger("halfpipe")
+from ...model.metadata import axis_codes, templates
+from ...utils import logger
 
 template_origin_sets = {
     template: set(

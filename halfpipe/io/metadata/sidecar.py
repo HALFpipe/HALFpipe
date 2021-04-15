@@ -14,7 +14,7 @@ from inflection import underscore
 
 from sdcflows.interfaces.fmap import get_ees
 
-from ...model import MetadataSchema
+from ...model.metadata import MetadataSchema
 from ...utils import splitext
 
 

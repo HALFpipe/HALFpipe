@@ -19,8 +19,6 @@ from .parse import (
     loadmatrix,
 )
 
-from .index import BidsDatabase, ExcludeDatabase, Database
-
 from .metadata import (
     canonicalize_direction_code,
     direction_code_str,
@@ -46,9 +44,6 @@ __all__ = [
     "make_cachefilepath",
     "cacheobj",
     "uncacheobj",
-    "BidsDatabase",
-    "ExcludeDatabase",
-    "Database",
     "canonicalize_direction_code",
     "direction_code_str",
     "MetadataLoader",

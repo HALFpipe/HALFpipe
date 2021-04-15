@@ -9,8 +9,10 @@ import numpy as np
 import pandas as pd
 
 from .base import ResultdictsOutputSpec
-from ...io import ExcludeDatabase, loadspreadsheet
-from ...model import ResultdictSchema, entities, entity_longnames
+from ...io.index import ExcludeDatabase
+from ...io.parse import loadspreadsheet
+from ...model.resultdict import ResultdictSchema
+from ...model.tags import entities, entity_longnames
 from ...utils import inflect_engine
 
 from nipype.interfaces.base import (

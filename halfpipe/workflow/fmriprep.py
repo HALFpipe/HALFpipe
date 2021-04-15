@@ -82,7 +82,7 @@ class FmriprepFactory(Factory):
         skull_strip_t1w = {
             "none": "skip",
             "auto": "auto",
-            "ants": "force"
+            "ants": "force",
         }[spec.global_settings["skull_strip_algorithm"]]
 
         config.from_dict(

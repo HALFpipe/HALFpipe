@@ -25,7 +25,7 @@ from templateflow.api import get as gettemplate
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
-from ...io import Database
+from ...io.index import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
 from ...utils import nvol, ceildiv
 

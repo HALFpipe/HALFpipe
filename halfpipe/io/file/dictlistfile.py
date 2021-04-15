@@ -12,7 +12,7 @@ import numpy as np
 from tabulate import tabulate
 
 from .lock import AdaptiveLock
-from ...model import entities
+from ...model.tags import entities
 from ...utils import logger
 
 

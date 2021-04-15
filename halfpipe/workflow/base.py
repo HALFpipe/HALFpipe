@@ -18,8 +18,9 @@ from .model import ModelFactory
 
 from .memory import MemoryCalculator
 from .constants import constants
-from ..io import Database, BidsDatabase, cacheobj, uncacheobj
-from ..model import loadspec
+from ..io.index import Database, BidsDatabase
+from ..io.file import cacheobj, uncacheobj
+from ..model.spec import loadspec
 from ..utils import logger, deepcopyfactory, nvol, first
 from .. import __version__
 

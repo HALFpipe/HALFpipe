@@ -84,7 +84,7 @@ class AcqToTaskMappingStep(Step):
             frozenset(
                 (k, v)
                 for k, v in ctx.database.tags(f).items()
-                if k not in ["sub"] and k in entities and v is not None
+                if k not in ["sub", "dir"] and k in entities and v is not None
             )
             for f in fmapfilepaths
         ))

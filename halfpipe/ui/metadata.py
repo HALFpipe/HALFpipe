@@ -97,8 +97,16 @@ class ImportMetadataStep(Step):
         if self.result is not None:
             filepath = self.result
 
-            spreadsheet: pd.DataFrame = loadspreadsheet(filepath)
-            valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+            spreadsheet = pd.read_table(
+                filepath,
+                sep="\s+",
+                header=None,
+                names=["slice_times"],
+                index_col=False,
+                usecols=[0],
+                dtype=float,
+            )
+            valuearray = np.ravel(spreadsheet.slice_times.values).astype(np.float64)
             valuelist: List = list(valuearray.tolist())
 
             value = self.field.deserialize(valuelist)
