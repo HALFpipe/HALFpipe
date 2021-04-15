@@ -5,10 +5,10 @@
 from typing import Union
 
 from pathlib import Path
-from os.path import normpath
 
 from .logging import Context as LoggingContext
 from .hooks import run_hooks_from_dir
+from .utils import resolve
 
 
 def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) -> Path:
@@ -20,13 +20,7 @@ def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) ->
 
     fs_root = str(fs_root)
 
-    # resolve workdir in fs_root
-    abspath = str(Path(workdir).resolve())
-
-    if not abspath.startswith(fs_root):
-        abspath = normpath(fs_root + abspath)
-
-    workdir = Path(abspath)
+    workdir = resolve(workdir, fs_root)
 
     workdir.mkdir(parents=True, exist_ok=True)
 

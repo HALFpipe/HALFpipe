@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Union
+
 import logging
 from pathlib import Path
 from shutil import copyfile
@@ -12,6 +14,7 @@ import networkx as nx
 
 import nipype.pipeline.engine as pe
 
+from .base import IdentifiableWorkflow
 from ..interface import LoadResult
 from ..utils import b32digest
 from ..io import DictListFile, cacheobj, uncacheobj
@@ -34,7 +37,7 @@ def extract_subject_name(hierarchy):
         return m.group("subjectname")
 
 
-def init_execgraph(workdir, workflow) -> OrderedDict:
+def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) -> OrderedDict:
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
@@ -104,10 +107,18 @@ def init_execgraph(workdir, workflow) -> OrderedDict:
                 newu.needed_outputs = [*newu.needed_outputs, outattr]
                 v.input_source[inattr] = (newuresultfile, outattr)
 
-        subject_graphs = {
-            s: execgraph.subgraph(nodes).copy()
-            for s, nodes in subject_nodes.items()
-        }
+        subject_graphs = OrderedDict(
+            sorted(
+                [
+                    (
+                        workflow.bids_to_sub_id_map.get(s, s),
+                        execgraph.subgraph(nodes).copy(),
+                    )
+                    for s, nodes in subject_nodes.items()
+                ],
+                key=lambda t: t[0],
+            )
+        )
         execgraph.remove_nodes_from(all_subject_nodes)
         model_graph = execgraph
 

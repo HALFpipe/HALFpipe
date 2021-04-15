@@ -3,6 +3,21 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
+def resolve(path, fs_root):
+    from pathlib import Path
+    from os.path import normpath
+
+    fs_root = str(fs_root)
+
+    # resolve workdir in fs_root
+    abspath = str(Path(path).resolve())
+
+    if not abspath.startswith(fs_root):
+        abspath = normpath(fs_root + abspath)
+
+    return Path(abspath)
+
+
 def findpaths(obj):
     from pathlib import Path
     from nipype.interfaces.base.specs import BaseTraitedSpec
