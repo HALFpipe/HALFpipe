@@ -11,6 +11,7 @@ from zipfile import ZipFile
 import tarfile
 from pathlib import Path
 from random import seed
+from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -291,8 +292,8 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
     )
     workflow.config["execution"].update(workflow_args)
 
-    execgraphs = init_execgraph(tmp_path, workflow)
-    execgraph = execgraphs[0]
+    graphs: OrderedDict = init_execgraph(tmp_path, workflow)
+    graph = next(iter(graphs.values()))
 
     runner = nip.LinearPlugin(plugin_args=workflow_args)
-    runner.run(execgraph, updatehash=False, config=workflow.config)
+    runner.run(graph, updatehash=False, config=workflow.config)

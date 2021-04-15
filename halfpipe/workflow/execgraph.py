@@ -34,7 +34,7 @@ def extract_subject_name(hierarchy):
         return m.group("subjectname")
 
 
-def init_execgraph(workdir, workflow):
+def init_execgraph(workdir, workflow) -> OrderedDict:
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
