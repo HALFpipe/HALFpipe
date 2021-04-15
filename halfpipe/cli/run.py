@@ -10,6 +10,7 @@ from pprint import pformat
 from pathlib import Path
 from fnmatch import fnmatch
 from glob import glob
+from math import ceil
 
 import numpy as np
 import networkx as nx
@@ -215,7 +216,7 @@ def run(opts, should_run):
             if opts.subject_chunks or opts.use_cluster:
                 n_chunks = len(subject_graphs)
             else:
-                n_chunks = 1
+                n_chunks = ceil(len(subject_graphs) / float(opts.max_chunk_size))
 
         subjectlevel_chunks = []
         graphs_iter = iter(subject_graphs.values())

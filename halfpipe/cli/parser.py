@@ -61,6 +61,7 @@ def _build_parser():
     rungroup.add_argument("--subject-list", type=str, help="select subjects that match")
 
     rungroup.add_argument("--n-chunks", type=int, help="merge subject workflows to n chunks")
+    rungroup.add_argument("--max-chunk-size", type=int, help="maximum number of subjects per chunk", default=64)
     rungroup.add_argument("--subject-chunks", action="store_true", default=False)
     rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
