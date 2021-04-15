@@ -49,6 +49,7 @@ pywarnings_to_ignore = [
     "`np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.",
     "numpy.ufunc size changed, may indicate binary incompatibility.",
     "RequestsDependencyWarning",
+    "In future, it will be an error for 'np.bool_' scalars to be interpreted as an index",
 ]
 
 
