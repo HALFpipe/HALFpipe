@@ -99,7 +99,7 @@ def parse_txt_condition_files(filepaths, conditions):
                 data_frame = pd.read_table(
                     StringIO(data),
                     sep=None,
-                    header=0,
+                    header=None,
                     names=["onset", "duration"],
                     index_col=False,
                     usecols=[0, 1],
