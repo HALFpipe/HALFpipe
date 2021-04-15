@@ -39,7 +39,7 @@ class MCARTest(ModelAlgorithm):
 
         try:
             result = model.fit(disp=False, warn_convergence=False)
-        except PerfectSeparationError:
+        except (PerfectSeparationError, np.linalg.LinAlgError):
             return
 
         voxel_dict = dict(mcar=result.llr, mcardof=result.df_model)
