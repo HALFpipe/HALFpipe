@@ -28,7 +28,7 @@ from ...utils import first, ravel
 from ..setting import get_setting_init_steps
 from .loop import SettingValsStep
 
-from ...io import parse_condition_file
+from ...io.parse.condition import parse_condition_file
 from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
 
 next_step_type = SettingValsStep

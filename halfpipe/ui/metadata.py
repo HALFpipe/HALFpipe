@@ -18,11 +18,7 @@ from inflection import humanize
 from marshmallow import fields
 
 from .step import Step
-from ..io import (
-    direction_code_str,
-    slice_timing_str,
-    loadspreadsheet
-)
+from ..io.metadata import direction_code_str, slice_timing_str
 from ..model import space_codes, slice_order_strs
 
 
