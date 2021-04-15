@@ -23,12 +23,13 @@ def find_encoding(fname):
     return chardet.detect(data)["encoding"]
 
 
-def has_header(fname):
-    encoding = find_encoding(fname)
+def has_header(fname, encoding=None):
+    if encoding is None:
+        encoding = find_encoding(fname)
     with open(fname, "r", encoding=encoding) as csvfile:
         data = csvfile.read(1024)
     data = re.sub(r"[^\x00-\x7f]", "", data)  # remove unicode characters, e.g. BOM
-    if data.startswith("/"):
+    if data.startswith("/"):  # fsl vest formal
         return False
     if re.match(r"^\s*[\'\"]?[a-zA-Z]+", data) is not None:
         return True
@@ -46,7 +47,8 @@ def loadspreadsheet(fname, dtype=None, ftype=None, **kwargs) -> pd.DataFrame:
         dtype=dtype,
     ))
 
-    if ftype not in [".xls", ".xlsx", ".odf"]:
+    encoding = None
+    if ftype not in [".xls", ".xlsx", ".ods"]:
         encoding = find_encoding(fname)
         kwargs.update(dict(encoding=encoding))
 
@@ -54,32 +56,28 @@ def loadspreadsheet(fname, dtype=None, ftype=None, **kwargs) -> pd.DataFrame:
         warnings.simplefilter("error")
 
         try:
-            if ftype == ".json":
-                df = pd.read_json(fname, **kwargs)
-
-            elif ftype == ".csv":
-                if not has_header(fname):
-                    df = pd.read_csv(fname, header=None, **kwargs)
-                else:
-                    df = pd.read_csv(fname, **kwargs)
-
-            elif ftype == ".tsv":
-                if not has_header(fname):
-                    df = pd.read_csv(fname, sep="\t", header=None, **kwargs)
-                else:
-                    df = pd.read_csv(fname, sep="\t", **kwargs)
-
-            elif ftype in [".xls", ".xlsx"]:
+            if ftype in [".xls", ".xlsx"]:
                 df = pd.read_excel(fname, **kwargs)
 
             elif ftype == ".ods":
                 df = pd.read_excel(fname, engine="odf", **kwargs)
 
-            else:  # infer delimiter
-                if not has_header(fname):
-                    df = pd.read_table(fname, header=None, sep=None, engine="python", **kwargs)
-                else:
-                    df = pd.read_table(fname, sep=None, engine="python", **kwargs)
+            elif ftype == ".json":
+                df = pd.read_json(fname, **kwargs)
+
+            else:  # some kind of delimited format
+                table_args = dict(**kwargs)
+                if not has_header(fname, encoding=encoding):
+                    table_args.update(dict(header=None))
+
+                if ftype == ".txt":
+                    df = pd.read_table(fname, delim_whitespace=True, **table_args)
+                elif ftype == ".csv":
+                    df = pd.read_csv(fname, **table_args)
+                elif ftype == ".tsv":
+                    df = pd.read_csv(fname, sep="\t", **table_args)
+                else:  # infer delimiter
+                    df = pd.read_table(fname, sep=None, engine="python", **table_args)
 
         except Exception:
             df = pd.DataFrame(loadmatrix(fname, **kwargs))
