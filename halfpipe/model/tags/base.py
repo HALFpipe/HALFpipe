@@ -27,7 +27,7 @@ class SubTagsSchema(BaseTagsSchema):
 
 
 class DirTagsSchema(BaseTagsSchema):
-    dir = fields.Str(description="")
+    dir = fields.Str()
 
 
 class AcqTagsSchema(BaseTagsSchema):
@@ -39,7 +39,7 @@ class RunTagsSchema(BaseTagsSchema):
 
 
 class ScanTagsSchema(SubTagsSchema, RunTagsSchema):
-    ses = fields.Str(description="")
+    ses = fields.Str()
 
 
 __all__ = [SubTagsSchema, ScanTagsSchema, AcqTagsSchema, DirTagsSchema]

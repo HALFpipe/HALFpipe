@@ -20,8 +20,6 @@ from .parse import (
 )
 
 from .metadata import (
-    canonicalize_direction_code,
-    direction_code_str,
     MetadataLoader,
     SidecarMetadataLoader,
     slice_timing_str,
@@ -44,8 +42,6 @@ __all__ = [
     "make_cachefilepath",
     "cacheobj",
     "uncacheobj",
-    "canonicalize_direction_code",
-    "direction_code_str",
     "MetadataLoader",
     "SidecarMetadataLoader",
     "slice_timing_str",

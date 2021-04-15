@@ -5,10 +5,10 @@
 from pathlib import Path
 import json
 from functools import lru_cache
+from math import isclose
 
 import pandas as pd
 import numpy as np
-
 from tabulate import tabulate
 
 from .lock import AdaptiveLock
@@ -18,7 +18,7 @@ from ...utils import logger
 
 def _compare(a, b):
     if isinstance(a, float) and isinstance(b, float):
-        return np.isclose(a, b)
+        return isclose(a, b)
     else:
         return a == b
 

@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from nilearn.image import new_img_like
 
 from .flame1 import calcgam, solveforbeta
 from .base import listwise_deletion, ModelAlgorithm
@@ -128,6 +127,8 @@ class Heterogeneity(ModelAlgorithm):
 
     @staticmethod
     def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+        from nilearn.image import new_img_like
+
         output_files = dict()
 
         shape: Tuple[int, int, int] = ref_img.shape

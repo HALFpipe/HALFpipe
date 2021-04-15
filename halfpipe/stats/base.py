@@ -8,8 +8,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
-from pathlib import Path
-
 import numpy as np
 import nibabel as nib
 

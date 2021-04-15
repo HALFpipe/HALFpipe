@@ -8,13 +8,12 @@
 from typing import Dict, Optional, Tuple
 
 from pathlib import Path
+from math import isnan, isclose, isfinite
 
 import numpy as np
-from math import isnan, isclose, isfinite
 import pandas as pd
 import nibabel as nib
 from scipy import optimize
-from nilearn.image import new_img_like
 
 from .miscmaths import t2z_convert, f2z_convert
 from .base import ModelAlgorithm, listwise_deletion
@@ -180,6 +179,8 @@ class FLAME1(ModelAlgorithm):
 
     @staticmethod
     def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+        from nilearn.image import new_img_like
+
         output_files = dict()
 
         for output_name in [
