@@ -5,7 +5,7 @@
 import re
 
 from .file import FileWriter, escape_codes_regex
-from ....io import DictListFile
+from ....io.file.dictlistfile import DictListFile
 
 
 could_not_run_match = re.compile(r"could not run node: (?P<fullname>nipype\.[^\s]+)").search

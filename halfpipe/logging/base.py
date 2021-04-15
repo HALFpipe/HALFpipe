@@ -2,14 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
-import warnings
 from types import MethodType
 
-from .context import Context
-from .handler import QueueHandler
-from .formatter import ColorFormatter
-from .filter import DTypeWarningsFilter, PyWarningsFilter
+import logging
+import warnings
+
+warnings.filterwarnings("ignore")  # catch all warnings while loading modules
+
+from .context import Context  # noqa: E402
+from .handler import QueueHandler  # noqa: E402
+from .formatter import ColorFormatter  # noqa: E402
+from .filter import DTypeWarningsFilter, PyWarningsFilter  # noqa: E402
 
 warn = warnings.warn
 
@@ -42,6 +45,8 @@ def setup(queue, levelno=logging.INFO):
     queuehandler = QueueHandler(queue)
     queuehandler.setFormatter(ColorFormatter())
     queuehandler.setLevel(levelno)
+
+    warnings.resetwarnings()
 
     def removeHandlers(logger):
         c = logger

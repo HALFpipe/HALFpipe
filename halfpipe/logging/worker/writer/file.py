@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 
 from .base import Writer
-from ....io import AdaptiveLock
+from ....io.file.lock import AdaptiveLock
 
 logger = logging.getLogger("halfpipe")
 
