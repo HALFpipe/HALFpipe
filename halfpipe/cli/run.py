@@ -3,12 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import OrderedDict
-from argparse import Namespace
-from itertools import islice
+
 import os
 from pprint import pformat
 from pathlib import Path
-from fnmatch import fnmatch
+
 from glob import glob
 from math import ceil
 
@@ -16,38 +15,6 @@ import numpy as np
 import networkx as nx
 
 from ..utils import first, logger, resolve
-
-
-def _filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> OrderedDict:
-    for pattern in opts.subject_exclude:
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
-            if not fnmatch(n, pattern)
-        ])
-
-    for pattern in opts.subject_include:
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
-            if fnmatch(n, pattern)
-        ])
-
-    if opts.subject_list is not None:
-        subject_list_path = resolve(opts.subject_list, opts.fs_root)
-
-        with open(subject_list_path, "r") as f:
-            subject_set = frozenset(
-                s.strip() for s in f.readlines()
-            )
-
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
-            if n in subject_set
-        ])
-
-    return subject_graphs
 
 
 def run(opts, should_run):
@@ -127,7 +94,8 @@ def run(opts, should_run):
 
         logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
 
-        from ..workflow import init_workflow, init_execgraph
+        from ..workflow.base import init_workflow
+        from ..workflow.execgraph import filter_subject_graphs, init_execgraph
 
         workflow = init_workflow(workdir)
 
@@ -209,7 +177,7 @@ def run(opts, should_run):
         assert last_graph_name == "model", "Last graph needs to be model chunk"
 
         subject_graphs = OrderedDict([*reversed_graph_items_iter])
-        subject_graphs = _filter_subject_graphs(subject_graphs, opts)
+        subject_graphs = filter_subject_graphs(subject_graphs, opts)
 
         n_chunks = opts.n_chunks
         if n_chunks is None:

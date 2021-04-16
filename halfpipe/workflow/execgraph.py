@@ -9,6 +9,8 @@ from pathlib import Path
 from shutil import copyfile
 import re
 from collections import OrderedDict
+from fnmatch import fnmatch
+from argparse import Namespace
 
 import networkx as nx
 
@@ -22,6 +24,38 @@ from ..resource import get as getresource
 from .constants import constants
 
 max_chunk_size = 50  # subjects
+
+
+def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> OrderedDict:
+    for pattern in opts.subject_exclude:
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if not fnmatch(n, pattern)
+        ])
+
+    for pattern in opts.subject_include:
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if fnmatch(n, pattern)
+        ])
+
+    if opts.subject_list is not None:
+        subject_list_path = resolve(opts.subject_list, opts.fs_root)
+
+        with open(subject_list_path, "r") as f:
+            subject_set = frozenset(
+                s.strip() for s in f.readlines()
+            )
+
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if n in subject_set
+        ])
+
+    return subject_graphs
 
 
 class DontRunRunner:
