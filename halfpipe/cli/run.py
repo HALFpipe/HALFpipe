@@ -96,7 +96,7 @@ def run(opts, should_run):
         logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
 
         from ..workflow.base import init_workflow
-        from ..workflow.execgraph import filter_subject_graphs, init_execgraph
+        from ..workflow.execgraph import init_execgraph
 
         workflow = init_workflow(workdir)
 
@@ -176,6 +176,8 @@ def run(opts, should_run):
         reversed_graph_items_iter = iter(reversed(graphs.items()))
         last_graph_name, model_chunk = next(reversed_graph_items_iter)
         assert last_graph_name == "model", "Last graph needs to be model chunk"
+
+        from ..workflow.execgraph import filter_subject_graphs
 
         subject_graphs = OrderedDict([*reversed_graph_items_iter])
         subject_graphs = filter_subject_graphs(subject_graphs, opts)
