@@ -31,8 +31,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -63,8 +62,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -96,8 +94,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -145,7 +142,12 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         v = getattr(opts, arg, None)
         if v is not None:
             k = arg.replace("_", "-")
-            extra_args += f"\\\n--{k} {v}"
+            if isinstance(v, str):
+                extra_args += f"\\\n--{k} {v} "
+            elif isinstance(v, list):
+                for d in v:
+                    assert isinstance(d, str)
+                    extra_args += f"\\\n--{k} '{d}' "
 
     bool_arg_names = [
         "nipype_resource_monitor",
@@ -156,7 +158,7 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         v = getattr(opts, arg, None)
         if v is True:
             k = arg.replace("_", "-")
-            extra_args += f"\\\n--{k}"
+            extra_args += f"\\\n--{k} "
 
     data = dict(
         n_chunks=n_chunks,  # one-based indexing
@@ -167,7 +169,11 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         mem_gb=mem_gb,
         mem_mb=mem_mb,
         extra_args=extra_args,
+        bind_args="",
     )
+
+    if opts.fs_root != "/":
+        data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
 
     stpaths = []
     for cluster_type, script_template in script_templates.items():
