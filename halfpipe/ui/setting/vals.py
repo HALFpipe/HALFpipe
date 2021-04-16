@@ -68,7 +68,11 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             self.confs = list(unique_everseen(
                 frozenset(
                     setting.get("confounds_removal", [])
-                    + (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
+                    + (
+                        ["ICA-AROMA"]
+                        if setting.get("ica_aroma") is True
+                        else []
+                    )
                 )
                 for setting in ctx.spec.settings[:-1]
                 # only include active settings
