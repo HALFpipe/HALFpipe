@@ -7,9 +7,7 @@
 """
 
 import pytest
-
 import numpy as np
-
 import nibabel as nib
 
 from ....model import File
