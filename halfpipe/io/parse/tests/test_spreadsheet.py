@@ -6,7 +6,13 @@
 
 """
 
+from typing import List, Union
+
 from pathlib import Path
+from random import choice, random
+from string import ascii_letters, digits
+from collections import OrderedDict
+from math import isclose
 
 import pytest
 import numpy as np
@@ -30,6 +36,78 @@ vest_str = """/NumWaves       2
 4.388237e-02    -3.310538e-02
 
 """
+
+@pytest.mark.parametrize("extension,delimiter", [
+    (".tsv", "\t"),
+    (".csv", ","),
+    (".csv", ";"),
+    (".txt", " "),
+    (".txt", "  "),
+    (".txt", "\t"),
+    (".txt", ","),
+    (".txt", ";"),
+    ("", " "),
+    ("", "  "),
+    ("", "\t"),
+    ("", ","),
+    ("", ";"),
+])
+@pytest.mark.parametrize("header,index,n_str_columns,n_float_columns", [
+    (True, True, 10, 0),
+    (True, True, 10, 10),
+    (True, False, 10, 0),
+    (True, False, 10, 10),
+    (False, False, 10, 10),
+])
+def test_loadspreadsheet_dtypes(
+    tmp_path: Path,
+    extension: str,
+    delimiter: str,
+    header: bool,
+    n_str_columns: int,
+    n_float_columns: int,
+    index: bool,
+):
+    file_name = tmp_path / f"data{extension}"
+
+    def random_str(length: int = 30):
+        return "".join(
+            choice([*ascii_letters, *digits]) for n in range(length)
+        )
+
+    n_rows = 10
+
+    records: OrderedDict[str, List[Union[str, float]]] = OrderedDict([
+        (f"x{i}", [random_str(5) for _ in range(n_rows)])
+        for i in range(n_str_columns)
+    ])
+
+    records.update(OrderedDict([
+        (f"y{i}", [random() for _ in range(n_rows)])
+        for i in range(n_float_columns)
+    ]))
+
+    data_frame = pd.DataFrame.from_records(records)
+    data_frame.index = [f"row{i:d}" for i in range(1, n_rows + 1)]
+
+    data_frame_str = data_frame.to_csv(sep="\1", header=header, index=index)
+    data_frame_str = data_frame_str.replace("\1", delimiter)
+
+    with open(file_name, "w") as file_pointer:
+        file_pointer.write(data_frame_str)
+
+    spreadsheet = loadspreadsheet(file_name)
+
+    if header:
+        assert all(
+            a == b
+            for a, b in zip(data_frame.columns, spreadsheet.columns)
+        )
+
+    assert all(
+        isclose(a, b) if isinstance(a, float) else a == b
+        for a, b in zip(data_frame.values.ravel(), spreadsheet.values.ravel())
+    )
 
 
 @pytest.fixture(scope="module", params=[

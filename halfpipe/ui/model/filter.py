@@ -101,7 +101,7 @@ class SubjectGroupFilterStep(Step):
         self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
         self.variables = [
             variable.copy()
-            for variable in ctx.spec.files[-1].metadata["variables"]
+            for variable in self.variables
             if variable["type"] == "categorical"
         ]
 

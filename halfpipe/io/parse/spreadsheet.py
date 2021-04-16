@@ -128,9 +128,13 @@ def loadspreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
                     )))
                     for file_line in file_lines[:10]
                 ]
-                if scores[0] >= min(scores[1:]):
-                    # the first line a similar amount of floats as subsequent lines
-                    kwargs["header"] = None
+                if min(scores[1:]) > 0.:
+                    # check if there are at least some float values, without
+                    # which this heuristic would be pointless
+                    if scores[0] >= min(scores[1:]):
+                        # the first line does not have a lower amount of floats
+                        # than subsequent lines
+                        kwargs["header"] = None
 
             file_io = io.StringIO(cleaned_file_str)
             data_frame = pd.read_csv(file_io, engine="python", **kwargs)

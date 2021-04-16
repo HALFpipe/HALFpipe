@@ -5,10 +5,11 @@
 import os
 from pathlib import Path
 from math import ceil
-from typing import OrderedDict
+from collections import OrderedDict
 
 from .io import make_cachefilepath
 from .utils import logger, inflect_engine as p
+from .workflow.execgraph import filter_subject_graphs
 
 script_templates = dict(
     slurm="""#!/bin/bash
@@ -30,8 +31,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -62,8 +62,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -95,8 +94,7 @@ fi
 
 singularity run \\
 --no-home \\
---cleanenv \\
---bind /:/ext \\
+--cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
@@ -111,13 +109,23 @@ singularity run \\
 
 
 def create_example_script(workdir, graphs: OrderedDict, opts):
-    uuid = next(iter(graphs)).uuid
-    n_chunks = len(graphs) - 1  # omit model chunk
-    assert n_chunks > 1
-    graphs_file = make_cachefilepath(f"graphs.{n_chunks:d}_chunks", uuid)
+    first_workflow = next(iter(graphs.values()))
+    uuid = first_workflow.uuid
+
+    reversed_graph_items_iter = iter(reversed(graphs.items()))
+    last_graph_name, _ = next(reversed_graph_items_iter)
+    assert last_graph_name == "model", "Last graph needs to be model chunk"
+
+    subject_graphs = OrderedDict([*reversed_graph_items_iter])
+    subject_graphs = filter_subject_graphs(subject_graphs, opts)
+
+    n_chunks = len(subject_graphs)
+    assert n_chunks > 0
+
+    graphs_file = make_cachefilepath("graphs", uuid)
 
     n_cpus = 2
-    nipype_max_mem_gb = max(node.mem_gb for graph in graphs for node in graph.nodes)
+    nipype_max_mem_gb = max(node.mem_gb for graph in graphs.values() for node in graph.nodes)
     mem_mb = ceil(nipype_max_mem_gb / n_cpus * 1536)  # fudge factor
     mem_gb = float(mem_mb) / 1024.
 
@@ -134,7 +142,12 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         v = getattr(opts, arg, None)
         if v is not None:
             k = arg.replace("_", "-")
-            extra_args += f"\\\n--{k} {v}"
+            if isinstance(v, str):
+                extra_args += f"\\\n--{k} {v} "
+            elif isinstance(v, list):
+                for d in v:
+                    assert isinstance(d, str)
+                    extra_args += f"\\\n--{k} '{d}' "
 
     bool_arg_names = [
         "nipype_resource_monitor",
@@ -145,7 +158,7 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         v = getattr(opts, arg, None)
         if v is True:
             k = arg.replace("_", "-")
-            extra_args += f"\\\n--{k}"
+            extra_args += f"\\\n--{k} "
 
     data = dict(
         n_chunks=n_chunks,  # one-based indexing
@@ -156,7 +169,11 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
         mem_gb=mem_gb,
         mem_mb=mem_mb,
         extra_args=extra_args,
+        bind_args="",
     )
+
+    if opts.fs_root != "/":
+        data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
 
     stpaths = []
     for cluster_type, script_template in script_templates.items():
