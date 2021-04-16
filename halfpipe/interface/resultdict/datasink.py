@@ -205,9 +205,7 @@ class ResultdictDatasink(SimpleInterface):
                     if isinstance(found_sources, list):
                         sources.extend(found_sources)
                 except Exception as e:
-                    logger.warning(f'Could not get sources for "{inpath}": %s', e, stack_info=True)
-
-                assert len(sources) > 0
+                    logger.warning(f'Could not get sources for "{inpath}"', exc_info=e)
 
                 if file_hash is None:
                     md5 = hashlib.md5()

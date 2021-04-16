@@ -5,7 +5,8 @@
 from functools import lru_cache
 import logging
 
-from ...model import ExcludeSchema, entities, rating_indices
+from ...model.exclude import ExcludeSchema, rating_indices
+from ...model.tags import entities
 
 
 def _agg_hierarchy(dicthierarchy, entities=[], **kwargs):

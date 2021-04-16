@@ -15,7 +15,8 @@ from marshmallow import EXCLUDE
 import marshmallow.exceptions
 from calamities.pattern import tag_glob, tag_parse, get_entities_in_path
 
-from ...model import FileSchema, entities, entity_longnames, File
+from ...model.file import FileSchema, File
+from ...model.tags import entities, entity_longnames
 from ...utils import splitext, logger, findpaths
 
 import bids.config
@@ -120,6 +121,7 @@ class ResolvedSpec:
             tagdict.update(
                 filedict.get("tags", dict())
             )
+
             filedict["tags"] = tagdict
 
             filedict["tmplstr"] = tmplstr

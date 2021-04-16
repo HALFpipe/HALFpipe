@@ -16,7 +16,7 @@ class FuncTagsSchema(ScanTagsSchema, DirTagsSchema):
 
 
 class BoldTagsSchema(FuncTagsSchema):
-    echo = fields.Str(description="")
+    echo = fields.Str()
 
 
 class TxtEventsTagsSchema(FuncTagsSchema):

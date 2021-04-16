@@ -12,6 +12,7 @@ from marshmallow import Schema, RAISE, fields, ValidationError
 
 from .metadata import ResultdictMetadataSchema
 from .tags import ResultdictTagsSchema
+from ..stats.algorithms import algorithms
 
 
 def validate_file(v):
@@ -25,34 +26,40 @@ def validate_file(v):
     raise ValidationError("Need to be either a file or a list of files")
 
 
-class ResultdictImagesSchema(Schema):
+image_types = frozenset([
     # according to https://fmriprep.org/en/stable/outputs.html
-    bold = fields.Raw(validate=validate_file)
-    mask = fields.Raw(validate=validate_file)
+    "bold",
+    "mask",
 
     # according to https://github.com/poldracklab/fitlins/blob/0.6.2/fitlins/workflows/base.py
-    effect = fields.Raw(validate=validate_file)
-    variance = fields.Raw(validate=validate_file)
-    z = fields.Raw(validate=validate_file)
-    dof = fields.Raw(validate=validate_file)
+    "effect",
+    "variance",
+    "z",
+    "dof",
 
     # according to https://github.com/bids-standard/bids-specification/blob/derivatives/src/05-derivatives/05-functional-derivatives.md
-    tsnr = fields.Raw(validate=validate_file)
-    alff = fields.Raw(validate=validate_file)
-    falff = fields.Raw(validate=validate_file)
-    reho = fields.Raw(validate=validate_file)
-    timeseries = fields.Raw(validate=validate_file)
+    "tsnr",
+    "alff",
+    "falff",
+    "reho",
+    "timeseries",
 
     #
-    matrix = fields.Raw(validate=validate_file)
-    regressors = fields.Raw(validate=validate_file)
+    "matrix",
+    "regressors",
 
-    # heterogeneity
-    h = fields.Raw(validate=validate_file)
-    i2 = fields.Raw(validate=validate_file)
-    pseudor2 = fields.Raw(validate=validate_file)
-    chisq = fields.Raw(validate=validate_file)
-    chisqdof = fields.Raw(validate=validate_file)
+    #
+    *[
+        output
+        for algorithm in algorithms.values()
+        for output in algorithm.outputs
+    ],
+])
+
+ResultdictImagesSchema = Schema.from_dict({
+    image_type: fields.Raw(validate=validate_file)
+    for image_type in image_types
+})
 
 
 def validate_val(v):

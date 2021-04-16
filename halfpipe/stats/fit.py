@@ -127,10 +127,12 @@ def fit(
 
                     voxel_results[a][k].update(v)
 
+    ref_image = nib.squeeze_image(nib.load(cope_files[0]))
+
     output_files = dict()
     for a, v in voxel_results.items():
         output_files.update(
-            algorithms[a].write_outputs(cope_files[0], cmatdict, v)
+            algorithms[a].write_outputs(ref_image, cmatdict, v)
         )
 
     return output_files

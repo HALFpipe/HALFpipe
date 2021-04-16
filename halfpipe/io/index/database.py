@@ -10,7 +10,7 @@ from hashlib import sha1
 
 from .resolve import ResolvedSpec
 from ..metadata import MetadataLoader
-from ...model import entities
+from ...model.tags import entities
 from ...utils import first
 
 

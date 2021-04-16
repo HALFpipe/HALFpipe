@@ -21,6 +21,9 @@ def get_nested_schema_field_names(schema, key: str):
 
     nested_schema = nested_field.nested
 
+    if isinstance(nested_schema, type):
+        nested_schema = nested_schema()
+
     assert isinstance(nested_schema, Schema)
 
     field_names = list(nested_schema.fields.keys())

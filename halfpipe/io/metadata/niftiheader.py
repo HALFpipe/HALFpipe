@@ -7,7 +7,6 @@ from typing import Optional, Tuple, Dict
 import re
 
 import nibabel as nib
-
 import pint
 
 from ...utils import logger, splitext

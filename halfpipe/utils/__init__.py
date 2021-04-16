@@ -8,7 +8,7 @@ from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol, atleast_4d
 from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
-from .path import findpaths, splitext
+from .path import findpaths, splitext, resolve
 
 from inflect import engine
 import logging
@@ -45,4 +45,5 @@ __all__ = [
     "ceildiv",
     "findpaths",
     "splitext",
+    "resolve",
 ]

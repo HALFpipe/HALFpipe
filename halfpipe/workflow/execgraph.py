@@ -2,16 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Union
+
 import logging
-from itertools import islice
 from pathlib import Path
 from shutil import copyfile
+import re
+from collections import OrderedDict
 
-import numpy as np
 import networkx as nx
 
 import nipype.pipeline.engine as pe
 
+from .base import IdentifiableWorkflow
 from ..interface import LoadResult
 from ..utils import b32digest
 from ..io import DictListFile, cacheobj, uncacheobj
@@ -28,21 +31,17 @@ class DontRunRunner:
         pass
 
 
-def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
+def extract_subject_name(hierarchy):
+    m = re.fullmatch(r"single_subject_(?P<subjectname>.+)_wf", hierarchy[2])
+    if m is not None:
+        return m.group("subjectname")
+
+
+def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) -> OrderedDict:
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
     uuidstr = str(uuid)[:8]
-
-    # create or load execgraph
-
-    execgraph = uncacheobj(workdir, "execgraph", uuid)
-    if execgraph is None:
-        logger.info(f"Initializing new execgraph {uuidstr}")
-        execgraph = workflow.run(plugin=DontRunRunner())
-        execgraph.uuid = uuid
-        logger.info(f"Finished execgraph {uuidstr}")
-        cacheobj(workdir, "execgraph", execgraph, uuid=uuid)
 
     # init reports
 
@@ -57,74 +56,81 @@ def init_execgraph(workdir, workflow, n_chunks=None, subject_chunks=None):
         with DictListFile.cached(report_fname) as dlf:
             dlf.is_dirty = True  # force write
 
-    # split workflow
-
-    subjectworkflows = dict()
-    for node in execgraph.nodes():
-        subjectname = None
-        hierarchy = node._hierarchy.split(".")
-        if hierarchy[1] in ["fmriprep_wf", "reports_wf", "settings_wf", "features_wf"]:
-            subjectname = hierarchy[2]
-        if subjectname is not None:
-            if subjectname not in subjectworkflows:
-                subjectworkflows[subjectname] = set()
-            subjectworkflows[subjectname].add(node)
-
-    if n_chunks is None:
-        n_chunks = -(-len(subjectworkflows) // max_chunk_size)
-    if subject_chunks:
-        n_chunks = len(subjectworkflows)
-
-    typestr = f"execgraph.{n_chunks:d}_chunks"
-    execgraphs = uncacheobj(workdir, typestr, uuid, typedisplaystr="execgraph split")
-    if execgraphs is not None:
-        return execgraphs
-
-    logger.info(f"Initializing execgraph split with {n_chunks} chunks")
-
-    execgraphs = []
-    chunks = np.array_split(np.arange(len(subjectworkflows)), n_chunks)
-    partitioniter = iter(subjectworkflows.values())
-    for chunk in chunks:
-        nodes = set.union(
-            *islice(partitioniter, len(chunk))
-        )  # take len(chunk) subjects and create union
-        execgraphs.append(execgraph.subgraph(nodes).copy())
-
-    # make safe load
-    subjectlevelnodes = set.union(*subjectworkflows.values())
-    modelnodes = set(execgraph.nodes()) - subjectlevelnodes
+    # init dirs
 
     modeldir = Path(workdir) / constants.workflowdir / "models_wf"
     modeldir.mkdir(parents=True, exist_ok=True)
 
-    newnodes = dict()
-    for (v, u, c) in nx.edge_boundary(execgraph.reverse(), modelnodes, data=True):
-        u.keep = True  # don't allow results to be deleted
+    # create or load execgraph
 
-        newu = newnodes.get(u.fullname)
-        if newu is None:
-            udigest = b32digest(u.fullname)[:4]
-            newu = pe.Node(LoadResult(u), name=f"load_result_{udigest}", base_dir=modeldir)
-            newu.config = u.config
-            newnodes[u.fullname] = newu
+    graphs = uncacheobj(workdir, "graphs", uuid)
+    if graphs is None:
+        logger.info(f'Initializing execution graph for workflow "{uuidstr}"')
 
-        execgraph.add_edge(newu, v, attr_dict=c)
-
-        newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
-        for outattr, inattr in c["connect"]:
-            newu.needed_outputs = [*newu.needed_outputs, outattr]
-            v.input_source[inattr] = (newuresultfile, outattr)
-
-    execgraph.remove_nodes_from(subjectlevelnodes)
-
-    execgraphs.append(execgraph)
-    assert len(execgraphs) == n_chunks + 1
-
-    for execgraph in execgraphs:
+        execgraph = workflow.run(plugin=DontRunRunner())
         execgraph.uuid = uuid
 
-    logger.info("Finished execgraph split")
-    cacheobj(workdir, typestr, execgraphs, uuid=uuid)
+        logger.info("Splitting execution graph")
 
-    return execgraphs
+        subject_nodes = dict()
+        for node in execgraph.nodes():
+
+            hierarchy = node._hierarchy.split(".")
+            assert len(hierarchy) >= 3
+
+            subject_name = extract_subject_name(hierarchy)
+
+            if subject_name is not None:
+                if subject_name not in subject_nodes:
+                    subject_nodes[subject_name] = set()
+                subject_nodes[subject_name].add(node)
+
+        # make safe load
+        all_subject_nodes = set.union(*subject_nodes.values())
+        model_nodes = set(execgraph.nodes()) - all_subject_nodes
+
+        newnodes = dict()
+        for (v, u, c) in nx.edge_boundary(execgraph.reverse(), model_nodes, data=True):
+            u.keep = True  # don't allow results to be deleted
+
+            newu = newnodes.get(u.fullname)
+            if newu is None:
+                udigest = b32digest(u.fullname)[:4]
+                newu = pe.Node(LoadResult(u), name=f"load_result_{udigest}", base_dir=modeldir)
+                newu.config = u.config
+                newnodes[u.fullname] = newu
+
+            execgraph.add_edge(newu, v, attr_dict=c)
+
+            newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
+            for outattr, inattr in c["connect"]:
+                newu.needed_outputs = [*newu.needed_outputs, outattr]
+                v.input_source[inattr] = (newuresultfile, outattr)
+
+        subject_graphs = OrderedDict(
+            sorted(
+                [
+                    (
+                        workflow.bids_to_sub_id_map.get(s, s),
+                        execgraph.subgraph(nodes).copy(),
+                    )
+                    for s, nodes in subject_nodes.items()
+                ],
+                key=lambda t: t[0],
+            )
+        )
+        execgraph.remove_nodes_from(all_subject_nodes)
+        model_graph = execgraph
+
+        graphs = OrderedDict([
+            *subject_graphs.items(),
+            ("model", model_graph),
+        ])
+
+        for graph in graphs.values():
+            graph.uuid = uuid
+
+        logger.info(f'Finished graphs for workflow "{uuidstr}"')
+        cacheobj(workdir, "graphs", graphs, uuid=uuid)
+
+    return graphs

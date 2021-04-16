@@ -12,9 +12,7 @@ import json
 from pathlib import Path
 from inflection import underscore
 
-from sdcflows.interfaces.fmap import get_ees
-
-from ...model import MetadataSchema
+from ...model.metadata import MetadataSchema
 from ...utils import splitext
 
 
@@ -47,6 +45,7 @@ class SidecarMetadataLoader:
 
             # data transformations
             try:
+                from sdcflows.interfaces.fmap import get_ees
                 # get effective echo spacing even if not explicitly specified
                 in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=fname)
             except Exception:

@@ -6,15 +6,14 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Tuple
-
-from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+import nibabel as nib
 
 
 class ModelAlgorithm(ABC):
-    outputs = []
+    outputs: List[str] = []
 
     @staticmethod
     @abstractmethod
@@ -29,7 +28,7 @@ class ModelAlgorithm(ABC):
 
     @staticmethod
     @abstractmethod
-    def write_outputs(ref_file: Path, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
         raise NotImplementedError()
 
 

@@ -2,17 +2,56 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import OrderedDict
+from argparse import Namespace
+from itertools import islice
 import os
-
 from pprint import pformat
 from pathlib import Path
+from fnmatch import fnmatch
+from glob import glob
+from math import ceil
 
-from ..utils import first, logger
+import numpy as np
+import networkx as nx
+
+from ..utils import first, logger, resolve
+
+
+def _filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> OrderedDict:
+    for pattern in opts.subject_exclude:
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if not fnmatch(n, pattern)
+        ])
+
+    for pattern in opts.subject_include:
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if fnmatch(n, pattern)
+        ])
+
+    if opts.subject_list is not None:
+        subject_list_path = resolve(opts.subject_list, opts.fs_root)
+
+        with open(subject_list_path, "r") as f:
+            subject_set = frozenset(
+                s.strip() for s in f.readlines()
+            )
+
+        subject_graphs = OrderedDict([
+            (n, v)
+            for n, v in subject_graphs.items()
+            if n in subject_set
+        ])
+
+    return subject_graphs
 
 
 def run(opts, should_run):
-    # print info
-
+    # log some basic information
     from .. import __version__
 
     logger.info(f"HALFpipe version {__version__}")
@@ -44,11 +83,11 @@ def run(opts, should_run):
     assert workdir is not None, "Missing working directory"
     assert Path(workdir).is_dir(), "Working directory does not exist"
 
-    if opts.fs_license_file and Path(opts.fs_license_file).is_file():
-        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
+    if opts.fs_license_file is not None:
+        fs_license_file = resolve(opts.fs_license_file, opts.fs_root)
+        if fs_license_file.is_file():
+            os.environ["FS_LICENSE"] = str(fs_license_file)
     else:
-        from glob import glob
-
         license_files = list(glob(str(
             Path(workdir) / "*license*"
         )))
@@ -60,7 +99,7 @@ def run(opts, should_run):
     if os.environ.get("FS_LICENSE") is not None:
         logger.debug(f'Using FreeSurfer license "{os.environ["FS_LICENSE"]}"')
 
-    execgraphs = None
+    graphs = None
 
     logger.debug(f'should_run["workflow"]={should_run["workflow"]}')
     if should_run["workflow"]:
@@ -95,20 +134,15 @@ def run(opts, should_run):
         if workflow is None:
             return
 
-        execgraphs = init_execgraph(
-            workdir,
-            workflow,
-            n_chunks=opts.n_chunks,
-            subject_chunks=opts.subject_chunks or opts.use_cluster
-        )
+        graphs = init_execgraph(workdir, workflow)
 
-        if execgraphs is None:
+        if graphs is None:
             return
 
         if opts.use_cluster:
             from ..cluster import create_example_script
 
-            create_example_script(workdir, execgraphs)
+            create_example_script(workdir, graphs, opts)
 
     logger.debug(f'should_run["run"]={should_run["run"]}')
     logger.debug(f"opts.use_cluster={opts.use_cluster}")
@@ -116,25 +150,21 @@ def run(opts, should_run):
     if should_run["run"] and not opts.use_cluster:
         logger.info("Stage: run")
 
-        if execgraphs is None:
+        if graphs is None:
             from ..io import loadpicklelzma
 
             assert (
-                opts.execgraph_file is not None
-            ), "Missing required --execgraph-file input for step run"
-            execgraphs = loadpicklelzma(opts.execgraph_file)
-            if not isinstance(execgraphs, list):
-                execgraphs = [execgraphs]
-            logger.info(f'Using execgraphs defined in file "{opts.execgraph_file}"')
+                opts.graphs_file is not None
+            ), "Missing required --graphs-file input for step run"
+            graphs = loadpicklelzma(opts.graphs_file)
+            assert isinstance(graphs, OrderedDict)
+            logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
         else:
-            logger.info("Using execgraphs from previous step")
+            logger.info("Using graphs from previous step")
 
         if opts.nipype_resource_monitor is True:
             from nipype import config as nipypeconfig
             nipypeconfig.enable_resource_monitor()
-
-        import nipype.pipeline.plugins as nip
-        import halfpipe.plugins as ppp
 
         plugin_args = {
             "workdir": workdir,
@@ -143,8 +173,10 @@ def run(opts, should_run):
             "raise_insufficient": False,
             "keep": opts.keep,
         }
+
         if opts.nipype_n_procs is not None:
             plugin_args["n_procs"] = opts.nipype_n_procs
+
         if opts.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = opts.nipype_memory_gb
         else:
@@ -155,6 +187,9 @@ def run(opts, should_run):
                 plugin_args["memory_gb"] = memory_gb
 
         runnername = f"{opts.nipype_run_plugin}Plugin"
+
+        import nipype.pipeline.plugins as nip
+        import halfpipe.plugins as ppp
 
         if hasattr(ppp, runnername):
             logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
@@ -169,57 +204,92 @@ def run(opts, should_run):
 
         logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
-        execgraphstorun = []
+        reversed_graph_items_iter = iter(reversed(graphs.items()))
+        last_graph_name, model_chunk = next(reversed_graph_items_iter)
+        assert last_graph_name == "model", "Last graph needs to be model chunk"
 
-        if len(execgraphs) > 1:
-            n_subjectlevel_chunks = len(execgraphs) - 1
-            if opts.only_model_chunk:
-                logger.info("Will not run subject level chunks")
-                logger.info("Will run model chunk")
-                execgraphstorun.append(execgraphs[-1])
+        subject_graphs = OrderedDict([*reversed_graph_items_iter])
+        subject_graphs = _filter_subject_graphs(subject_graphs, opts)
 
-            elif opts.only_chunk_index is not None:
-                zerobasedchunkindex = opts.only_chunk_index - 1
-                assert zerobasedchunkindex < n_subjectlevel_chunks
-                logger.info(
-                    f"Will run subject level chunk {opts.only_chunk_index} of {n_subjectlevel_chunks}"
-                )
-                logger.info("Will not run model chunk")
-                execgraphstorun.append(execgraphs[zerobasedchunkindex])
-
+        n_chunks = opts.n_chunks
+        if n_chunks is None:
+            if opts.subject_chunks or opts.use_cluster:
+                n_chunks = len(subject_graphs)
             else:
-                logger.info(f"Will run all {n_subjectlevel_chunks} subject level chunks")
-                logger.info("Will run model chunk")
-                execgraphstorun.extend(execgraphs)
+                n_chunks = ceil(len(subject_graphs) / float(opts.max_chunk_size))
 
-        elif len(execgraphs) == 1:
-            execgraphstorun.append(execgraphs[0])
+        subjectlevel_chunks = []
+        graphs_iter = iter(subject_graphs.values())
+
+        index_arrays = np.array_split(np.arange(len(subject_graphs)), n_chunks)
+        for index_array in index_arrays:
+            graph_list = list(islice(graphs_iter, len(index_array)))
+            subjectlevel_chunks.append(
+                nx.compose_all(graph_list)
+            )  # take len(index_array) subjects and compose
+
+        chunks_to_run = list()
+
+        if opts.only_chunk_index is not None:
+            zero_based_chunk_index = opts.only_chunk_index - 1
+            if zero_based_chunk_index >= n_chunks or zero_based_chunk_index < 0:
+                logger.info(f"Not running chunk {opts.only_chunk_index} as is not defined")
+                return
+
+            logger.info(
+                f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}"
+            )
+            logger.info("Will not run model chunk")
+
+            chunks_to_run.append(
+                subjectlevel_chunks[zero_based_chunk_index]
+            )
+
+        elif opts.only_model_chunk:
+            logger.info("Will not run subject level chunks")
+            logger.info("Will run model chunk")
+
+            chunks_to_run.append(model_chunk)
+
+        elif len(subjectlevel_chunks) > 0:
+            if len(subjectlevel_chunks) > 1:
+                logger.info(f"Will run all {n_chunks} subject level chunks")
+            else:
+                logger.info("Will run the subject level chunk")
+            logger.info("Will run model chunk")
+
+            chunks_to_run.extend(subjectlevel_chunks)
+            chunks_to_run.append(model_chunk)
 
         else:
-            raise ValueError("No execgraphs")
+            raise ValueError("No graphs to run")
 
-        n_execgraphstorun = len(execgraphstorun)
-        for i, execgraph in enumerate(execgraphstorun):
-            if len(execgraphs) > 1:
-                logger.info(f"Running chunk {i+1} of {n_execgraphstorun}")
+        from nipype.pipeline import engine as pe
+
+        for i, chunk in enumerate(chunks_to_run):
+            if len(chunks_to_run) > 1:
+                logger.info(f"Running chunk {i+1} of {len(chunks_to_run)}")
 
             try:
+                assert isinstance(chunk, nx.DiGraph)
+
                 runner = runnercls(plugin_args=plugin_args)
-                firstnode = first(execgraph.nodes())
+                firstnode = first(chunk.nodes())
+                assert isinstance(firstnode, pe.Node)
                 if firstnode is not None:
-                    runner.run(execgraph, updatehash=False, config=firstnode.config)
+                    runner.run(chunk, updatehash=False, config=firstnode.config)
             except Exception as e:
                 if opts.debug:
                     raise e
                 else:
                     logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
 
-            if len(execgraphs) > 1:
-                logger.info(f"Completed chunk {i+1} of {n_execgraphstorun}")
+            if len(chunks_to_run) > 1:
+                logger.info(f"Completed chunk {i+1} of {len(chunks_to_run)}")
 
 
 def main():
-    from ..logging import (
+    from ..logging.base import (
         setupcontext as setuplogging,
         teardown as teardownlogging
     )

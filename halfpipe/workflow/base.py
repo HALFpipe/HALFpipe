@@ -18,8 +18,9 @@ from .model import ModelFactory
 
 from .memory import MemoryCalculator
 from .constants import constants
-from ..io import Database, BidsDatabase, cacheobj, uncacheobj
-from ..model import loadspec
+from ..io.index import Database, BidsDatabase
+from ..io.file import cacheobj, uncacheobj
+from ..model.spec import loadspec
 from ..utils import logger, deepcopyfactory, nvol, first
 from .. import __version__
 
@@ -29,6 +30,7 @@ class IdentifiableWorkflow(pe.Workflow):
         super(IdentifiableWorkflow, self).__init__(name, base_dir=base_dir)
 
         self.uuid = uuid
+        self.bids_to_sub_id_map = dict()
 
 
 def init_workflow(workdir):
@@ -49,28 +51,25 @@ def init_workflow(workdir):
     if workflow is not None:
         return workflow
 
-    # create parent workflow
-    workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
-    uuidstr = str(uuid)[:8]
-    logger.info(f"Initializing new workflow {uuidstr}")
-    workflow.config["execution"].update(
-        {
-            "crashdump_dir": workflow.base_dir,
-            "crashfile_format": "txt",
-
-            "hash_method": "content",
-
-            "poll_sleep_duration": 0.75,
-
-            "use_relative_paths": False,
-
-            "check_version": False,
-        }
-    )
-
-    # create factories
+    #
     bidsdatabase = BidsDatabase(database)
     memcalc = MemoryCalculator(database)
+
+    # create parent workflow
+    uuidstr = str(uuid)[:8]
+    logger.info(f"Initializing new workflow {uuidstr}")
+
+    workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
+    workflow.config["execution"].update(dict(
+        crashdump_dir=workflow.base_dir,
+        crashfile_format="txt",
+        hash_method="content",
+        poll_sleep_duration=0.75,
+        use_relative_paths=False,
+        check_version=False,
+    ))
+
+    # create factories
     ctx = FactoryContext(workdir, spec, bidsdatabase, workflow, memcalc)
     fmriprep_factory = FmriprepFactory(ctx)
     setting_factory = SettingFactory(ctx, fmriprep_factory)
@@ -82,10 +81,16 @@ def init_workflow(workdir):
     )
 
     # write out
-
     for associated_filepaths in associated_filepaths_dict.values():
         for filepath in associated_filepaths:
             bidsdatabase.put(filepath)
+
+    for boldfilepath in associated_filepaths_dict.keys():
+        sub = database.tagval(boldfilepath, "sub")
+        bidssub = bidsdatabase.tagval(
+            bidsdatabase.tobids(boldfilepath), "sub"
+        )
+        workflow.bids_to_sub_id_map[bidssub] = sub
 
     bids_dir = Path(workdir) / "rawdata"
     bidsdatabase.write(bids_dir)
@@ -102,6 +107,7 @@ def init_workflow(workdir):
             feature_factory.setup(associated_filepaths_dict)
             model_factory.setup()
 
+    # patch workflow
     config_factory = deepcopyfactory(workflow.config)
     uses_freesurfer = False
     for node in workflow._get_all_nodes():
@@ -121,6 +127,7 @@ def init_workflow(workdir):
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
 
+    # check
     if uses_freesurfer:
         from niworkflows.utils.misc import check_valid_fs_license
 
@@ -160,6 +167,10 @@ def collect_boldfiles(database, setting_factory, feature_factory):
             continue
 
         associated_filepaths = [boldfilepath, *t1ws]
+
+        session = database.tagval(boldfilepath, "ses")
+        if session is not None:  # enforce fmaps from same session
+            filters.update(dict(ses=session))
 
         fmaps = database.associations(boldfilepath, datatype="fmap", **filters)
         if fmaps is not None:

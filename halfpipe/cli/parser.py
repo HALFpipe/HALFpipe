@@ -36,18 +36,7 @@ def _build_parser():
     workflowgroup = parser.add_argument_group("workflow", "")
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument("--fs-license-file")
-
-    chunkinggroup = workflowgroup.add_mutually_exclusive_group(required=False)
-    chunkinggroup.add_argument(
-        "--n-chunks", type=int, help="number of subject-level workflow chunks to generate"
-    )
-    chunkinggroup.add_argument(
-        "--subject-chunks",
-        action="store_true",
-        default=False,
-        help="generate one subject-level workflow per subject",
-    )
-    chunkinggroup.add_argument(
+    workflowgroup.add_argument(
         "--use-cluster",
         action="store_true",
         default=False,
@@ -55,9 +44,28 @@ def _build_parser():
     )
 
     rungroup = parser.add_argument_group("run", "")
-    rungroup.add_argument("--execgraph-file", type=str, help="manually select execgraph file")
+    rungroup.add_argument("--graphs-file", type=str, help="manually select graphs file")
+
+    rungroup.add_argument(
+        "--subject-include",
+        action="append",
+        default=[],
+        help="include only subjects that match"
+    )
+    rungroup.add_argument(
+        "--subject-exclude",
+        action="append",
+        default=[],
+        help="exclude subjects that match"
+    )
+    rungroup.add_argument("--subject-list", type=str, help="select subjects that match")
+
+    rungroup.add_argument("--n-chunks", type=int, help="merge subject workflows to n chunks")
+    rungroup.add_argument("--max-chunk-size", type=int, help="maximum number of subjects per chunk", default=64)
+    rungroup.add_argument("--subject-chunks", action="store_true", default=False)
     rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
+
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
@@ -156,5 +164,8 @@ def parse_args(args=None, namespace=None):
 
         workdir = init_workdir(workdir, opts.fs_root)
     opts.workdir = workdir
+
+    if opts.use_cluster:
+        opts.subject_chunks = True
 
     return opts, should_run

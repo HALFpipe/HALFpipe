@@ -11,6 +11,7 @@ from zipfile import ZipFile
 import tarfile
 from pathlib import Path
 from random import seed
+from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -25,7 +26,7 @@ from templateflow.api import get as gettemplate
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
-from ...io import Database
+from ...io.index import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
 from ...utils import nvol, ceildiv
 
@@ -179,6 +180,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="map",
+            extension=".nii.gz",
             tags=dict(desc="smith09"),
             path=str(getresource("PNAS_Smith09_rsn10.nii.gz")),
             metadata=dict(space="MNI152NLin6Asym"),
@@ -186,6 +188,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="seed",
+            extension=".nii.gz",
             tags=dict(desc="pcc"),
             path=str(pcc_mask),
             metadata=dict(space="MNI152NLin6Asym"),
@@ -193,6 +196,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         dict(
             datatype="ref",
             suffix="atlas",
+            extension=".nii.gz",
             tags=dict(desc="schaefer2018"),
             path=str(gettemplate(
                 "MNI152NLin2009cAsym",
@@ -291,8 +295,8 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
     )
     workflow.config["execution"].update(workflow_args)
 
-    execgraphs = init_execgraph(tmp_path, workflow)
-    execgraph = execgraphs[0]
+    graphs: OrderedDict = init_execgraph(tmp_path, workflow)
+    graph = next(iter(graphs.values()))
 
     runner = nip.LinearPlugin(plugin_args=workflow_args)
-    runner.run(execgraph, updatehash=False, config=workflow.config)
+    runner.run(graph, updatehash=False, config=workflow.config)

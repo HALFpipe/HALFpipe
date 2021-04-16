@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def niftidim(input, idim):
+def niftidim(input, idim: int) -> int:
     if isinstance(input, str):
         import nibabel as nib
 
@@ -14,7 +14,7 @@ def niftidim(input, idim):
         return 1
 
 
-def nvol(input):
+def nvol(input) -> int:
     from halfpipe.utils import niftidim
 
     return niftidim(input, 3)

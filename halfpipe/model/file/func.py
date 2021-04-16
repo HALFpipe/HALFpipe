@@ -6,12 +6,15 @@
 
 """
 
-from marshmallow import fields, validate
+from pathlib import Path
+
+from marshmallow import fields, validate, pre_load
 from marshmallow_oneofschema import OneOfSchema
 
 from .base import File, BaseFileSchema
 from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
 from ..metadata import BoldMetadataSchema, EventsMetadataSchema
+from ...io.metadata.direction import parse_direction_str, canonicalize_direction_code
 
 
 class BoldFileSchema(BaseFileSchema):
@@ -20,7 +23,33 @@ class BoldFileSchema(BaseFileSchema):
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
     tags = fields.Nested(BoldTagsSchema(), default=dict())
-    metadata = fields.Nested(BoldMetadataSchema())
+    metadata = fields.Nested(BoldMetadataSchema(), default=dict())
+
+    @pre_load
+    def move_dir_tag_to_metadata(self, in_data, **kwargs):
+        path = Path(in_data["path"])
+        if not path.is_file():  # this obj does not refer to a specific file
+            return in_data
+
+        metadata = in_data.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = dict()
+            in_data["metadata"] = metadata
+
+        tags = in_data.get("tags")
+        if isinstance(tags, dict):
+            direction = tags.get("dir")
+            if isinstance(direction, str):
+                try:
+                    pedir_code = parse_direction_str(direction)
+                    metadata["phase_encoding_direction"] = canonicalize_direction_code(
+                        pedir_code, path,
+                    )
+                    del tags["dir"]
+                except Exception:
+                    pass
+
+        return in_data
 
 
 class BaseEventsFileSchema(BaseFileSchema):

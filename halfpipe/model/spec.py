@@ -152,10 +152,10 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
 
     try:
         spec = SpecSchema().loads(jsn, many=False)
-
+        assert isinstance(spec, Spec)
         return spec
     except marshmallow.exceptions.ValidationError as e:
-        logger.warning(f'Ignored validation error in "{specpath}": %s', e, stack_info=True)
+        logger.warning(f'Ignored validation error in "{specpath}"', exc_info=e)
 
 
 def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):

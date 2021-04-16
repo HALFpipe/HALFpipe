@@ -5,10 +5,10 @@
 import os
 from pathlib import Path
 from math import ceil
-
-import logging
+from typing import OrderedDict
 
 from .io import make_cachefilepath
+from .utils import logger, inflect_engine as p
 
 script_templates = dict(
     slurm="""#!/bin/bash
@@ -20,7 +20,7 @@ script_templates = dict(
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={n_cpus}
-#SBATCH --mem-per-cpu={mem_mb}M
+#SBATCH --mem-per-cpu={mem_mb:d}M
 #
 #SBATCH --array=1-{n_chunks}
 
@@ -35,7 +35,8 @@ singularity run \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
---execgraph-file {execgraph_file} \\
+--graphs-file {graphs_file} \\
+--subject-chunks \\
 --only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
 --nipype-n-procs 2 \\
 --verbose {extra_args}
@@ -51,7 +52,7 @@ singularity run \\
 #
 #PBS -l nodes=1:ppn=2
 #PBS -l walltime=24:00:00
-#PBS -l mem={mem_mb}mb
+#PBS -l mem={mem_mb:d}mb
 #
 #PBS -J 1-{n_chunks}
 
@@ -66,7 +67,8 @@ singularity run \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
---execgraph-file {execgraph_file} \\
+--graphs-file {graphs_file} \\
+--subject-chunks \\
 --only-chunk-index ${{PBS_ARRAY_INDEX}} \\
 --nipype-n-procs 2 \\
 --verbose {extra_args}
@@ -83,7 +85,7 @@ singularity run \\
 #
 #$ -pe smp 2
 #$ -l h_rt=24:0:0
-#$ -l mem={mem_mb}M
+#$ -l mem={mem_mb:d}M
 #
 #$ -t 1-{n_chunks}
 
@@ -98,42 +100,72 @@ singularity run \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
---execgraph-file {execgraph_file} \\
+--graphs-file {graphs_file} \\
+--subject-chunks \\
 --only-chunk-index ${{SGE_TASK_ID}} \\
 --nipype-n-procs 2 \\
---verbose {extra_args}
+--nipype-memory-gb {mem_gb} {extra_args}
 
 """,
 )
 
 
-def create_example_script(workdir, execgraphs, opts):
-    uuid = execgraphs[0].uuid
-    n_chunks = len(execgraphs) - 1  # omit model chunk
+def create_example_script(workdir, graphs: OrderedDict, opts):
+    uuid = next(iter(graphs)).uuid
+    n_chunks = len(graphs) - 1  # omit model chunk
     assert n_chunks > 1
-    execgraph_file = make_cachefilepath(f"execgraph.{n_chunks:d}_chunks", uuid)
+    graphs_file = make_cachefilepath(f"graphs.{n_chunks:d}_chunks", uuid)
 
     n_cpus = 2
-    nipype_max_mem_gb = max(node.mem_gb for execgraph in execgraphs for node in execgraph.nodes)
-    mem_mb = f"{ceil(nipype_max_mem_gb / n_cpus * 1536):d}"  # fudge factor
+    nipype_max_mem_gb = max(node.mem_gb for graph in graphs for node in graph.nodes)
+    mem_mb = ceil(nipype_max_mem_gb / n_cpus * 1536)  # fudge factor
+    mem_gb = float(mem_mb) / 1024.
 
-    extra_args = f"--keep {opts.keep}"
-    if opts.fs_license_file is not None:
-        extra_args += f" --fs-license-file {opts.fs_license_file}"
+    extra_args = ""
+
+    str_arg_names = [
+        "keep",
+        "subject_exclude",
+        "subject_include",
+        "subject_list",
+        "fs_license_file",
+    ]
+    for arg in str_arg_names:
+        v = getattr(opts, arg, None)
+        if v is not None:
+            k = arg.replace("_", "-")
+            extra_args += f"\\\n--{k} {v}"
+
+    bool_arg_names = [
+        "nipype_resource_monitor",
+        "watchdog",
+        "verbose",
+    ]
+    for arg in bool_arg_names:
+        v = getattr(opts, arg, None)
+        if v is True:
+            k = arg.replace("_", "-")
+            extra_args += f"\\\n--{k}"
 
     data = dict(
         n_chunks=n_chunks,  # one-based indexing
         singularity_container=os.environ["SINGULARITY_CONTAINER"],
         cwd=str(Path(workdir).resolve()),
-        execgraph_file=str(Path(workdir).resolve() / execgraph_file),
+        graphs_file=str(Path(workdir).resolve() / graphs_file),
         n_cpus=n_cpus,
+        mem_gb=mem_gb,
         mem_mb=mem_mb,
         extra_args=extra_args,
     )
 
+    stpaths = []
     for cluster_type, script_template in script_templates.items():
         st = script_template.format(**data)
+
         stpath = f"submit.{cluster_type}.sh"
-        logging.getLogger("halfpipe").log(25, f'A submission script template was created at "{stpath}"')
+        stpaths.append(f'"{stpath}"')
+
         with open(Path(workdir) / stpath, "w") as f:
             f.write(st)
+
+    logger.log(25, f"Cluster submission script templates were created at {p.join(stpaths)}")

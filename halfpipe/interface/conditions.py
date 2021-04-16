@@ -66,13 +66,15 @@ class ParseConditionFile(SimpleInterface):
                 durations_selected.append(condition_durations)
             conditions, onsets, durations = conditions_selected, onsets_selected, durations_selected
 
-        conditions, onsets, durations = zip(  # filter conditions with zero events
-            *[
-                (condition, onset, duration)
-                for condition, onset, duration in zip(conditions, onsets, durations)
-                if len(onset) == len(duration) and len(onset) > 0
-            ]
-        )
+        filtered_conditions = [  # filter conditions with zero events
+            (condition, onset, duration)
+            for condition, onset, duration in zip(conditions, onsets, durations)
+            if len(onset) == len(duration) and len(onset) > 0
+        ]
+
+        assert len(filtered_conditions) > 0, "No events found"
+
+        conditions, onsets, durations = zip(*filtered_conditions)
 
         self._results["condition_names"] = list(conditions)
 

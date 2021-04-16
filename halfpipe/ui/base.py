@@ -19,7 +19,7 @@ from calamities.config import Config as CalamitiesConfig
 from .step import Step
 from .. import __version__
 from ..model import SpecSchema, loadspec, savespec
-from ..io import Database
+from ..io.index import Database
 from ..workdir import init_workdir
 from ..logging import Context as LoggingContext
 

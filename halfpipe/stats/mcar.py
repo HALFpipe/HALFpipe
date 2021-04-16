@@ -7,9 +7,8 @@
 
 from typing import Dict, Optional, Tuple
 
-from pathlib import Path
-
 import numpy as np
+import nibabel as nib
 import statsmodels.api as sm
 from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
@@ -40,7 +39,7 @@ class MCARTest(ModelAlgorithm):
 
         try:
             result = model.fit(disp=False, warn_convergence=False)
-        except PerfectSeparationError:
+        except (PerfectSeparationError, np.linalg.LinAlgError):
             return
 
         voxel_dict = dict(mcar=result.llr, mcardof=result.df_model)
@@ -49,6 +48,5 @@ class MCARTest(ModelAlgorithm):
         return voxel_result
 
     @staticmethod
-    def write_outputs(ref_file: Path, cmatdict: Dict, voxel_results: Dict) -> Dict:
-        import pdb; pdb.set_trace()
-        return Heterogeneity.write_outputs(ref_file, cmatdict, voxel_results)
+    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+        return Heterogeneity.write_outputs(ref_img, cmatdict, voxel_results)

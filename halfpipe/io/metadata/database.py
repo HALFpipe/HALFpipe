@@ -6,10 +6,8 @@
 
 """
 
-import logging
-
 from .direction import canonicalize_direction_code, parse_direction_str
-from ...utils import first
+from ...utils import first, logger
 
 
 class DatabaseMetadataLoader:
@@ -24,13 +22,16 @@ class DatabaseMetadataLoader:
         value = None
 
         if key == "phase_encoding_direction":
-            dir = fileobj.tags.get("dir")
-            if dir is not None:
+            direction = fileobj.tags.get("dir")
+            if direction is not None:
                 try:
-                    pedir_code = parse_direction_str(dir)
+                    pedir_code = parse_direction_str(direction)
                     value = canonicalize_direction_code(pedir_code, fileobj.path)
                 except Exception as e:
-                    logging.getLogger("halfpipe").warning("Ignored exception when loading phase_encoding_direction:", e)
+                    logger.warning(
+                        "Ignored exception when loading phase_encoding_direction:",
+                        exc_info=e,
+                    )
 
         if key == "echo_time_difference":  # calculate from associated files
             if fileobj.datatype == "fmap" and fileobj.suffix == "phasediff":

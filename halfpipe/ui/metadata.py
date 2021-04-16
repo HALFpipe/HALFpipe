@@ -18,11 +18,7 @@ from inflection import humanize
 from marshmallow import fields
 
 from .step import Step
-from ..io import (
-    direction_code_str,
-    slice_timing_str,
-    loadspreadsheet
-)
+from ..io.metadata import direction_code_str, slice_timing_str
 from ..model import space_codes, slice_order_strs
 
 
@@ -97,8 +93,16 @@ class ImportMetadataStep(Step):
         if self.result is not None:
             filepath = self.result
 
-            spreadsheet: pd.DataFrame = loadspreadsheet(filepath)
-            valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+            spreadsheet = pd.read_table(
+                filepath,
+                sep="\s+",
+                header=None,
+                names=["slice_times"],
+                index_col=False,
+                usecols=[0],
+                dtype=float,
+            )
+            valuearray = np.ravel(spreadsheet.slice_times.values).astype(np.float64)
             valuelist: List = list(valuearray.tolist())
 
             value = self.field.deserialize(valuelist)

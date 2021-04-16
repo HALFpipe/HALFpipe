@@ -10,12 +10,13 @@ from marshmallow import Schema, fields, post_load, RAISE
 
 
 class File:
-    def __init__(self, path, datatype, **kwargs):
+    def __init__(self, path, datatype, suffix=None, extension=None, **kwargs):
         self.path = path
         self.datatype = datatype
+        self.suffix = suffix
+        self.extension = extension
 
         self.tags = dict()
-        self.suffix = None
 
         for k, v in kwargs.items():
             setattr(self, k, v)
