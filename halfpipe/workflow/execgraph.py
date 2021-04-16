@@ -18,7 +18,7 @@ import nipype.pipeline.engine as pe
 
 from .base import IdentifiableWorkflow
 from ..interface import LoadResult
-from ..utils import b32digest
+from ..utils import b32digest, resolve
 from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants

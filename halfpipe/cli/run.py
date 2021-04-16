@@ -7,6 +7,7 @@ from collections import OrderedDict
 import os
 from pprint import pformat
 from pathlib import Path
+from itertools import islice
 
 from glob import glob
 from math import ceil
