@@ -7,6 +7,7 @@
 
 from typing import List, Dict, Optional, Tuple
 
+import os
 from pathlib import Path
 from multiprocessing import get_context
 from contextlib import nullcontext
@@ -18,8 +19,16 @@ from tqdm import tqdm
 from ..io import parse_design
 from ..utils import atleast_4d
 from .algorithms import algorithms
+from ..logging import Context
 
 ctx = get_context("forkserver")
+
+
+def initializer(loggingargs, host_env):
+    from ..logging import setup as setuplogging
+    setuplogging(**loggingargs)
+
+    os.environ.update(host_env)
 
 
 def voxel_calc(voxel_data):
@@ -101,7 +110,14 @@ def fit(
         cm = nullcontext()
         it = map(voxel_calc, voxel_data)
     else:
-        cm = ctx.Pool(processes=num_threads)
+        cm = ctx.Pool(
+            processes=num_threads,
+            initializer=initializer,
+            initargs=(
+                Context.loggingargs(),
+                dict(os.environ),
+            ),
+        )
         it = cm.imap_unordered(voxel_calc, voxel_data)
 
     # run

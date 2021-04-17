@@ -35,17 +35,16 @@ class MCARTest(ModelAlgorithm):
         if np.all(ismissing) or np.all(isavailable):
             return  # zero variance
 
-        model = sm.Logit(ismissing, z, missing="drop")
-
         try:
+            model = sm.Logit(ismissing, z, missing="drop")
             result = model.fit(disp=False, warn_convergence=False)
+
+            voxel_dict = dict(mcar=result.llr, mcardof=result.df_model)
+
+            voxel_result = {coordinate: voxel_dict}
+            return voxel_result
         except (PerfectSeparationError, np.linalg.LinAlgError):
-            return
-
-        voxel_dict = dict(mcar=result.llr, mcardof=result.df_model)
-
-        voxel_result = {coordinate: voxel_dict}
-        return voxel_result
+            pass
 
     @staticmethod
     def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
