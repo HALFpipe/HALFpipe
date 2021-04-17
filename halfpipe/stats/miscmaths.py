@@ -64,7 +64,8 @@ def adaptive_precision(func) -> Callable[..., float]:
 
         if not math.isnan(z):
             logger.warning(
-                f"Convergence failure for adaptive_precision with args {pformat(args)}"
+                f"Convergence failure for adaptive_precision with args {pformat(args)}",
+                stack_info=True,
             )
         return float(z)
 

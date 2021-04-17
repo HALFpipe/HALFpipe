@@ -149,9 +149,9 @@ def run(opts, should_run):
         if opts.nipype_memory_gb is not None:
             plugin_args["memory_gb"] = opts.nipype_memory_gb
         else:
-            from ..memory import memorylimit
+            from ..memory import memory_limit
 
-            memory_gb = memorylimit()
+            memory_gb = memory_limit()
             if memory_gb is not None:
                 plugin_args["memory_gb"] = memory_gb
 

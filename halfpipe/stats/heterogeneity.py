@@ -87,6 +87,8 @@ def het_onvoxel(y, z, s):
     ll_me = log_prob(beta, y, z, s)
 
     chisq = -2.0 * (ll_fe - ll_me)
+    if abs(chisq) > 1e10:  # convergence failure
+        return
     zstat = chisq2z_convert(chisq, 1)
 
     pseudor2 = 1 - ll_me / ll_fe
@@ -101,7 +103,7 @@ def het_onvoxel(y, z, s):
 
 
 class Heterogeneity(ModelAlgorithm):
-    outputs = ["h", "i2", "hpseudor2", "hchisq", "hzstat"]
+    outputs = ["h", "i2", "hpseudor2", "hchisq", "hz"]
 
     @staticmethod
     def voxel_calc(
@@ -114,12 +116,16 @@ class Heterogeneity(ModelAlgorithm):
         y, z, s = listwise_deletion(y, z, s)
 
         try:
-            h, i2, pseudor2, chisq, zstat = het_onvoxel(y, z, s)
+            voxel_tuple = het_onvoxel(y, z, s)
+
+            if voxel_tuple is None:
+                return
         except np.linalg.LinAlgError:
             return
 
+        h, i2, pseudor2, chisq, zstat = voxel_tuple
         voxel_dict: Dict[str, float] = dict(
-            h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hzstat=zstat,
+            h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hz=zstat,
         )
 
         voxel_result = {coordinate: voxel_dict}

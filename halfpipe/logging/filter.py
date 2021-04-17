@@ -68,7 +68,10 @@ class PyWarningsFilter(Filter):
         if self.regex.search(message) is not None:
             setLevel(record, levelno=logging.DEBUG)
 
-        if "invalid value encountered in" in message:  # make sqrt and division errors less visible
+        if (
+            "invalid value encountered in" in message
+            or "divide by zero encountered in" in message
+        ):  # make sqrt and division errors less visible
             setLevel(record, levelno=logging.INFO)
 
         return True

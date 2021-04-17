@@ -14,10 +14,11 @@ from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
 from .base import ModelAlgorithm
 from .heterogeneity import Heterogeneity
+from .miscmaths import chisq2z_convert
 
 
 class MCARTest(ModelAlgorithm):
-    outputs = ["mcar", "mcardof"]
+    outputs = ["mcarchisq", "mcardof", "mcarz"]
 
     @staticmethod
     def voxel_calc(
@@ -35,17 +36,19 @@ class MCARTest(ModelAlgorithm):
         if np.all(ismissing) or np.all(isavailable):
             return  # zero variance
 
-        model = sm.Logit(ismissing, z, missing="drop")
-
         try:
+            model = sm.Logit(ismissing.ravel().astype(float), z, missing="drop")
             result = model.fit(disp=False, warn_convergence=False)
+
+            chisq = result.llr
+            dof = result.df_model
+            zstat = chisq2z_convert(chisq, dof)
+
+            voxel_dict = dict(mcarchisq=chisq, mcardof=dof, mcarz=zstat)
+            voxel_result = {coordinate: voxel_dict}
+            return voxel_result
         except (PerfectSeparationError, np.linalg.LinAlgError):
-            return
-
-        voxel_dict = dict(mcar=result.llr, mcardof=result.df_model)
-
-        voxel_result = {coordinate: voxel_dict}
-        return voxel_result
+            pass
 
     @staticmethod
     def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
