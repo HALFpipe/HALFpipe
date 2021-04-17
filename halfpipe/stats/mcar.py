@@ -18,7 +18,7 @@ from .miscmaths import chisq2z_convert
 
 
 class MCARTest(ModelAlgorithm):
-    outputs = ["mcarchisq", "mcardof"]
+    outputs = ["mcarchisq", "mcardof", "mcarz"]
 
     @staticmethod
     def voxel_calc(

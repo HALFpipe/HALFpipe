@@ -144,8 +144,9 @@ def fit(
 
                     voxel_results[a][k].update(v)
 
-    if isinstance(cm, Pool):
-        cm.terminate()
+        if isinstance(cm, Pool):
+            cm.close()
+            cm.join()
 
     ref_image = nib.squeeze_image(nib.load(cope_files[0]))
 
