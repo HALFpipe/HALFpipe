@@ -186,10 +186,10 @@ def ulimit_memory_limit():
         return
 
     memory_limit_keys = [
-        "max memory size",  # -m old
-        "resident set size",  # -m new
-        "virtual memory",  # -v old
-        "address space",  # -v new
+        "max memory size",  # -m bash
+        "resident set size",  # -m zsh
+        "virtual memory",  # -v bash
+        "address space",  # -v zsh
         "data seg size",  # -d
     ]
     memory_limit_re = "(?:" + "|".join(memory_limit_keys) + ")"
