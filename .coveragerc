@@ -5,3 +5,5 @@ source = halfpipe
 omit =
     */tests/*
     setup.py
+    .*version.*
+    *_version.py
