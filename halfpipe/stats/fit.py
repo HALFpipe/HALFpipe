@@ -10,6 +10,7 @@ from typing import List, Dict, Optional, Tuple
 import os
 from pathlib import Path
 from multiprocessing import get_context
+from multiprocessing.pool import Pool
 from contextlib import nullcontext
 
 import numpy as np
@@ -142,6 +143,9 @@ def fit(
                         voxel_results[a][k] = dict()
 
                     voxel_results[a][k].update(v)
+
+    if isinstance(cm, Pool):
+        cm.terminate()
 
     ref_image = nib.squeeze_image(nib.load(cope_files[0]))
 
