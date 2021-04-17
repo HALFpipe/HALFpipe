@@ -210,7 +210,7 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
     ]))
 
     setting_base = dict(
-        confounds_removal=[],
+        confounds_removal=["(trans|rot)_[xyz]"],
         grand_mean_scaling=dict(mean=10000.0),
         ica_aroma=True,
     )
