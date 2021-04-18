@@ -94,7 +94,7 @@ class ImportMetadataStep(Step):
             filepath = self.result
 
             spreadsheet = loadspreadsheet(filepath)
-            valuearray = np.ravel(spreadsheet.slice_times.values).astype(np.float64)
+            valuearray = spreadsheet.values.ravel().astype(np.float64)
             valuelist: List = list(valuearray.tolist())
 
             value = self.field.deserialize(valuelist)
