@@ -90,8 +90,8 @@ approximately 5 gigabytes of storage.
 
 | Container platform | Installation                                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Singularity        | `singularity pull docker://halfpipe/halfpipe:1.0.1` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.0.1` |
-| Docker             | `docker pull halfpipe/halfpipe:1.0.1`                                                                              |
+| Singularity        | `singularity pull docker://halfpipe/halfpipe:1.1.0` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.1.0` |
+| Docker             | `docker pull halfpipe/halfpipe:1.1.0`                                                                              |
 
 `Singularity` version `3.x` creates a container image file called
 `HALFpipe_{version}.sif` in the directory where you run the `pull` command. For
@@ -121,7 +121,7 @@ downloaded your container.
 
 | Container platform | Command                                                                 |
 | ------------------ | ----------------------------------------------------------------------- |
-| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.0.1.sif` |
+| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.1.0.sif` |
 | Docker             | `docker run --interactive --tty --volume /:/ext halfpipe/halfpipe`      |
 
 You should now see the user interface.
