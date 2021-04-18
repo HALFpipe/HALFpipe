@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.1.0 (April 18th 2021)
+
+With many thanks to @jstaph for contributions
+
+### New features and enhancements
+
+- Create high-performance computing cluster submission scripts for Torque/PBS
+  and SGE cluster as well (#71)
+- Calculate additional statistics such as heterogeneity
+  (<https://doi.org/fzx69f>) and a test that data is
+  missing-completely-at-random via logistic regression (#67)
+- Always enable ICA-AROMA even when its outputs are not required for feature
+  extraction so that its report image is always available for quality assessment
+  (#75)
+- Support loading presets or plugins that may make it easier to do harmonized
+  analyses across many sites (#8)
+- Support adding derivatives of the HRF to task-based GLM design matrices
+- Support detecting the amount of available memory when running as a cluster
+  job, or when running as a container with a memory limit such as when using
+  Docker on Mac
+
+### Maintenance
+
+- Add type hints to code. This allows a type checker like `pyright` to suggest
+  possible error sources ahead of time, making programming more efficient
+- Add `openpyxl` and `xlsxwriter` dependencies to support reading/writing Excel
+  XLSX files
+- Update `numpy`, `scipy` and `nilearn` versions
+- Add additional automated tests
+
+### Bug fuxes
+
+- Fix importing slice timing information from a file after going back to the
+  prompt via undo (#55)
+- Fix a warning when loading task event timings from a MAT-file.
+  NiftiheaderLoader tried to load metadata for it like it would for a NIfTI file
+  (#56)
+- Fix `numpy` array broadcasting error when loading data from 3D NIfTI files
+  that have been somehow marked as being four-dimensional
+- Fix misunderstanding of the output value `resels` of FSL's `smoothest`
+  command. The value refers to the size of a resel, not the number of them in
+  the image. The helper function `_critical_z` now taked this into account now.
+  (nipy/nipype#3316)
+- Fix naming of output files in `derivatives/halfpipe` and `grouplevel` folder
+  so that capitalization is consistent with original IDs and names (#57)
+- Fix the summary display after `BIDS` import to show the number of "subjects"
+  and not the number of "subs"
+- Fix getting the required metadata fields for an image type by implementing a
+  helper function
+- Fix outputting source files for the quality check web app (#62)
+- Fix assigning field maps to specific functional images, which is done by a
+  mapping between field map taks and functional image tags. The mapping is
+  automatically inferred for BIDS datasets and manually specified otherwise
+  (#66)
+- Force re-calculation of `nipype` workflows after `HALFpipe` update so that
+  changes from the new version are applied in existing working directories as
+  well
+- Do not fail task-based feature extraction if no events are available for a
+  particular condition for a particular subject (#58)
+- Force using a recent version of the `indexed_gzip` dependency to avoid error
+  (#85)
+- Improve loading delimited data in `loadspreadsheet` function
+
 ## 1.0.1 (January 27th 2021)
 
 ### Maintenance
@@ -139,12 +202,12 @@
   both images have the same number of volumes, the one with the alphabetically
   last file name will be used.
 
-## Maintenance
+### Maintenance
 
 - Apply pylint code style rules.
 - Refactor automated tests to use pytest fixtures.
 
-## Bug fixes
+### Bug fixes
 
 - Log all warning messages but reduce the severity level of warnings that are
   known to be benign.
