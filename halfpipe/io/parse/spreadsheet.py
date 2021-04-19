@@ -38,7 +38,11 @@ def loadspreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
     with open(file_name, "rb") as file_pointer:
         file_bytes: bytes = file_pointer.read()
 
-    if extension in [".xls", ".xlsx"]:
+    if len(file_bytes) == 0:
+        # empty file means empty data frame
+        return pd.DataFrame()
+
+    elif extension in [".xls", ".xlsx"]:
         file_io = io.BytesIO(file_bytes)
         return pd.read_excel(file_io, **kwargs)
 
@@ -48,6 +52,10 @@ def loadspreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
 
     else:
         encoding = chardet.detect(file_bytes)["encoding"]
+
+        if encoding is None:
+            encoding = "utf8"
+
         kwargs["encoding"] = encoding
 
         file_str = file_bytes.decode(encoding)
