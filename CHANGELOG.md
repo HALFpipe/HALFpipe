@@ -30,7 +30,7 @@ With many thanks to @jstaph for contributions
 - Update `numpy`, `scipy` and `nilearn` versions
 - Add additional automated tests
 
-### Bug fuxes
+### Bug fixes
 
 - Fix importing slice timing information from a file after going back to the
   prompt via undo (#55)
@@ -62,6 +62,7 @@ With many thanks to @jstaph for contributions
 - Force using a recent version of the `indexed_gzip` dependency to avoid error
   (#85)
 - Improve loading delimited data in `loadspreadsheet` function
+- Fix slice timing calculation in user interface
 
 ## 1.0.1 (January 27th 2021)
 
