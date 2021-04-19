@@ -39,22 +39,20 @@ class ExtractFromResultdict(IOBase):
 
         resultdict_schema = ResultdictSchema()
         resultdict = resultdict_schema.load(self.inputs.indict)
+        assert isinstance(resultdict, dict)
 
         outdict = dict()
 
-        def _extract(keys):
-            for inkey in keys:
-                for f, v in resultdict.items():
-                    if inkey in v:
-                        outdict[key] = v[inkey]
-                        del v[inkey]
-                        return
-
         for key in self._keys:
-            keys = [key]
+            key_and_aliases = [key]
             if key in self._aliases:
-                keys.extend(self._aliases[key])
-            _extract(keys)
+                key_and_aliases.extend(self._aliases[key])
+            for key_or_alias in key_and_aliases:
+                for v in resultdict.values():
+                    if key_or_alias in v:
+                        outdict[key] = v[key_or_alias]
+                        del v[key_or_alias]
+                        return
 
         for key in self._keys:
             if key in outdict:

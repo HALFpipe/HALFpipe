@@ -8,6 +8,7 @@ scikit-learn >= 0.24.0
 nilearn >= 0.7.1
 odfpy
 openpyxl
+xlsxwriter
 nibabel >= 3.2.1
 indexed-gzip >= 1.5.3
 nipype == 1.6.0
