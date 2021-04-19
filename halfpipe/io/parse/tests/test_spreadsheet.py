@@ -13,6 +13,8 @@ from random import choice, random
 from string import ascii_letters, digits
 from collections import OrderedDict
 from math import isclose
+import io
+import codecs
 
 import pytest
 import numpy as np
@@ -154,6 +156,12 @@ def data_frame(request):
     ("//", 2),
 ])
 @pytest.mark.parametrize("n_trailing_spaces", [0, 2])
+@pytest.mark.parametrize("encoding,bom", [
+    ("utf-8", False),
+    ("utf-16-le", True),
+    ("utf-16-le", False),
+    ("utf-16-be", True),
+])
 def test_loadspreadsheet_delimited(
     tmp_path: Path,
     data_frame: pd.DataFrame,
@@ -166,6 +174,8 @@ def test_loadspreadsheet_delimited(
     comment_prefix: str,
     n_comment_lines: int,
     n_trailing_spaces: int,
+    encoding: str,
+    bom: bool,
 ):
     file_name = tmp_path / f"data{extension}"
 
@@ -185,24 +195,33 @@ def test_loadspreadsheet_delimited(
 
     trailing_spaces_str = " " * n_trailing_spaces
 
-    with open(file_name, "w") as file_pointer:
-        file_pointer.write(comment_str)
+    string_io = io.StringIO()
+    string_io.write(comment_str)
 
-        for _ in range(blank_lines_before_header):
-            file_pointer.write("\n")
+    for _ in range(blank_lines_before_header):
+        string_io.write("\n")
 
-        if header:
-            file_pointer.write(header_str)
-            file_pointer.write(trailing_spaces_str)
-            file_pointer.write("\n")
+    if header:
+        string_io.write(header_str)
+        string_io.write(trailing_spaces_str)
+        string_io.write("\n")
 
-        for _ in range(blank_lines_after_header):
-            file_pointer.write("\n")
+    for _ in range(blank_lines_after_header):
+        string_io.write("\n")
 
-        for data_line in data_lines:
-            file_pointer.write(data_line)
-            file_pointer.write(trailing_spaces_str)
-            file_pointer.write("\n")
+    for data_line in data_lines:
+        string_io.write(data_line)
+        string_io.write(trailing_spaces_str)
+        string_io.write("\n")
+
+    with open(file_name, "wb") as file_pointer:
+        if bom is True:
+            file_pointer.write({
+                "utf-8": codecs.BOM_UTF8,
+                "utf-16-le": codecs.BOM_UTF16_LE,
+                "utf-16-be": codecs.BOM_UTF16_BE,
+            }[encoding])
+        file_pointer.write(string_io.getvalue().encode(encoding))
 
     spreadsheet = loadspreadsheet(file_name)
 
