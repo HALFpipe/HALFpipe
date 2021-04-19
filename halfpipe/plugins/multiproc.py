@@ -118,6 +118,9 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         if self._keep != "all":
             self._rt = PathReferenceTracer()
 
+    def _postrun_check(self):
+        self.pool.shutdown(wait=False)  # do not block
+
     def _submit_job(self, node, updatehash=False):
         self._taskid += 1
 
