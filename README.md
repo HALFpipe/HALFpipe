@@ -90,7 +90,7 @@ approximately 5 gigabytes of storage.
 
 | Container platform | Installation                                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Singularity        | `singularity pull docker://halfpipe/halfpipe:1.1.0` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.1.0` |
+| Singularity        | <https://charitede-my.sharepoint.com/:f:/g/personal/lea_waller_charite_de/EukRziExhTVBrEAai2oEpi8B2jsnn7P3YQuFo2pycKp6-g> or `singularity pull docker://halfpipe/halfpipe:1.1.0` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.1.0` |
 | Docker             | `docker pull halfpipe/halfpipe:1.1.0`                                                                              |
 
 `Singularity` version `3.x` creates a container image file called
