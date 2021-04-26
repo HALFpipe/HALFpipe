@@ -118,6 +118,9 @@ class MergeColumns(IOBase):
                 else:
                     out_df = pd.concat((out_df, in_df), axis=1)
 
+        if out_df is None:
+            out_df = pd.DataFrame()  # empty data frame
+
         row_index = self.inputs.row_index
         use_index = isdefined(row_index) and row_index is True
         if isinstance(row_index, list) and len(row_index) == len(out_df.index):
