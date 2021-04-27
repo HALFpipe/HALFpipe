@@ -9,6 +9,7 @@ from .image import niftidim, nvol
 from .matrix import loadints, ncol, atleast_4d
 from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
 from .path import findpaths, splitext, resolve, isempty
+from .time import timestampfmt, timestampstr
 
 from inflect import engine
 import logging
@@ -47,4 +48,6 @@ __all__ = [
     "splitext",
     "resolve",
     "isempty",
+    "timestampfmt",
+    "timestampstr",
 ]

@@ -30,10 +30,9 @@ from .file import File, FileSchema
 from .setting import SettingSchema, GlobalSettingsSchema
 from .feature import FeatureSchema
 from .model import ModelSchema
-from ..utils import hexdigest
+from ..utils import hexdigest, timestampfmt
 
 entity_aliases = {"direction": "phase_encoding_direction"}
-timestampfmt = "%Y-%m-%d_%H-%M"
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
 
 schema_version = "3.0"

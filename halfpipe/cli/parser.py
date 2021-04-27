@@ -87,6 +87,7 @@ def _build_parser():
 
     debuggroup = parser.add_argument_group("debug", "")
     debuggroup.add_argument("--debug", action="store_true", default=False)
+    debuggroup.add_argument("--profile", action="store_true", default=False)
     debuggroup.add_argument("--watchdog", action="store_true", default=False)
 
     return parser
@@ -139,7 +140,7 @@ def parse_args(args=None, namespace=None):
         if getattr(opts, attrname) is True:
             should_run[step] = False
 
-    if isempty(opts.fs_root) is True:
+    if opts.fs_root is not None and isempty(opts.fs_root) is True:
         logger.info(f'Current fs_root "{opts.fs_root}" is empty, ignoring')
 
         opts.fs_root = None
