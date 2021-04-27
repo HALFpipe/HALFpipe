@@ -68,3 +68,16 @@ def splitext(fname):
     basename = str(Path(fname).name)
     stem = Path(basename.rstrip(".gz")).stem
     return stem, basename[len(stem) :]
+
+
+def isempty(path):
+    from pathlib import Path
+
+    path = Path(path)
+    try:
+        if next(path.iterdir()) is not None:  # dir is not empty
+            return False
+    except (FileNotFoundError, StopIteration):
+        pass
+
+    return True
