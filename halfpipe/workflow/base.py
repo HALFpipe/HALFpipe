@@ -127,6 +127,9 @@ def init_workflow(workdir):
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
 
+    logger.info(f"Finished workflow {uuidstr}")
+    cacheobj(workdir, "workflow", workflow)
+
     # check
     if uses_freesurfer:
         from niworkflows.utils.misc import check_valid_fs_license
@@ -141,9 +144,6 @@ def init_workflow(workdir):
             )
             return
 
-    logger.info(f"Finished workflow {uuidstr}")
-
-    cacheobj(workdir, "workflow", workflow)
     return workflow
 
 
