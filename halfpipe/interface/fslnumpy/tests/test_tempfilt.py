@@ -22,6 +22,7 @@ def test_TemporalFilter(tmp_path):
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
     img = nib.Nifti1Image(array, np.eye(4))
+    img.header.set_data_dtype(np.float64)
 
     os.chdir(str(tmp_path))
 

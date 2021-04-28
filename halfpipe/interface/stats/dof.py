@@ -60,6 +60,7 @@ class MakeDofVolume(BaseInterface):
         outarr = np.full(outshape, dof)
 
         outimg = new_img_like(ref_img, outarr, copy_header=True)
+        outimg.header.set_data_dtype(np.float64)
 
         self._out_file = op.abspath("dof_file.nii.gz")
         nib.save(outimg, self._out_file)

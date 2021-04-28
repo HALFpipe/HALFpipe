@@ -25,6 +25,7 @@ def test_FilterRegressor(tmp_path):
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
 
     img = nib.Nifti1Image(array, np.eye(4))
+    img.header.set_data_dtype(np.float64)
     in_file = "img.nii.gz"
     nib.save(img, in_file)
 
