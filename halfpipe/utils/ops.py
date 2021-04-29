@@ -91,10 +91,13 @@ def removenone(obj):
     return ret
 
 
-def lenforeach(arrarr):
+def lenforeach(arrarr=None):
     """
     length of each sub-list
     """
+    if arrarr is None:
+        return []
+
     return list(map(len, arrarr))
 
 
