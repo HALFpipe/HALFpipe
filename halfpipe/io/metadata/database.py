@@ -6,7 +6,10 @@
 
 """
 
+import numpy as np
+
 from .direction import canonicalize_direction_code, parse_direction_str
+from ..parse.spreadsheet import loadspreadsheet
 from ...utils import first, logger
 
 
@@ -58,6 +61,19 @@ class DatabaseMetadataLoader:
                         m = self.database.fileobj(first(magnitude))
                         if self.loader.fill(m, "echo_time"):
                             value = m.metadata.get("echo_time")
+
+        if key == "slice_timing":
+            slice_timing_file = fileobj.metadata.get("slice_timing_file")
+            if slice_timing_file is not None:
+                try:
+                    spreadsheet = loadspreadsheet(slice_timing_file)
+                    valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+                    value = list(valuearray.tolist())
+                except Exception as e:
+                    logger.warning(
+                        f'Ignored exception when loading slice_timing_file "{slice_timing_file}":',
+                        exc_info=e,
+                    )
 
         if value is None:
             return False

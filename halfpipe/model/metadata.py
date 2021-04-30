@@ -90,6 +90,7 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         unit="seconds",
     )
     slice_timing_code = fields.Str(validate=validate.OneOf(slice_order_strs))
+    slice_timing_file = fields.Str()
     slice_encoding_direction = fields.Str(description="", validate=validate.OneOf(direction_codes))
 
     @validates_schema

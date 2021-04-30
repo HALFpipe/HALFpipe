@@ -13,13 +13,15 @@ from calamities import (
 )
 
 import numpy as np
-import pandas as pd
 from inflection import humanize
 from marshmallow import fields
 
 from .step import Step
+from ..io.parse import loadspreadsheet
 from ..io.metadata import direction_code_str, slice_timing_str
+from ..io.metadata.niftiheader import NiftiheaderLoader
 from ..model import space_codes, slice_order_strs
+from ..utils import logger
 
 
 def _get_field(schema, key):
@@ -48,12 +50,13 @@ def display_str(x):
     return humanize(x)
 
 
-class ImportMetadataStep(Step):
-    def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
-        super(ImportMetadataStep, self).__init__(app)
+class SliceTimingFileStep(Step):
+    key = "slice_timing_file"
+
+    def __init__(self, app, filters, schema, suggestion, next_step_type, appendstr=""):
+        super(SliceTimingFileStep, self).__init__(app)
 
         self.schema = schema
-        self.key = key
         self.field = _get_field(self.schema, self.key)
         self.appendstr = appendstr
 
@@ -71,6 +74,28 @@ class ImportMetadataStep(Step):
 
         assert isinstance(field, fields.List)
 
+        if self.filters is None:
+            specfileobj = ctx.spec.files[-1]
+            self.specfileobjs = [specfileobj]
+
+            resolved_spec = ctx.database.resolved_spec
+            fileobjs_by_specfilepaths = resolved_spec.fileobjs_by_specfilepaths
+            self.filepaths = [
+                fileobj.path
+                for fileobj in fileobjs_by_specfilepaths[specfileobj.path]
+            ]
+        else:
+            self.filepaths = ctx.database.get(**self.filters)
+            self.specfileobjs = set(
+                ctx.database.specfileobj(filepath)
+                for filepath in self.filepaths
+            )
+
+        for field in ["slice_encoding_direction", "repetition_time"]:
+            ctx.database.fillmetadata(
+                field, self.filepaths
+            )  # should have already been done, but can't hurt
+
         header_str = f"Import {humankey} values{self.appendstr}"
         if unit is not None:
             header_str += f" in {unit}"
@@ -84,39 +109,57 @@ class ImportMetadataStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
-        self.result = self.input_view()
-        if self.result is None:
-            return False
-        return True
+        while True:
+            self.result = self.input_view()
+
+            if self.result is None:
+                return False
+
+            # validate
+
+            filepath = self.result
+            try:
+                spreadsheet = loadspreadsheet(filepath)
+                valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+                valuelist = list(valuearray.tolist())
+                value = self.field.deserialize(valuelist)
+            except Exception as e:
+                logger.warning(f'Failed to read slice timing from "{filepath}"', exc_info=e)
+                continue  # try again for correct file
+
+            for filepath in self.filepaths:
+                slice_encoding_axis = ["i", "j", "k"].index(
+                    ctx.database.metadata(filepath, "slice_encoding_direction")[0]
+                )
+                repetition_time = ctx.database.metadata(filepath, "repetition_time")
+
+                header, _ = NiftiheaderLoader.load(filepath)
+                if header is not None:
+                    n_slices = header.get_data_shape()[slice_encoding_axis]
+                    if n_slices != len(value):
+                        logger.warning(
+                            f'Slice timing from "{filepath}" has {len(value):d} values, but "{filepath}" has {n_slices:d} slices'
+                        )
+                        continue  # try again for correct file
+
+                for i, time in enumerate(value):
+                    if time > repetition_time:
+                        logger.warning(
+                            f"Invalid time for slice {i+1:d}: "
+                            f'{time:f} seconds is greater than repetition_time of file "{filepath}" ({repetition_time:f} seconds)'
+                        )
+                        continue  # try again
+
+            return True
 
     def next(self, ctx):
         if self.result is not None:
             filepath = self.result
 
-            spreadsheet = pd.read_table(
-                filepath,
-                sep="\s+",
-                header=None,
-                names=["slice_times"],
-                index_col=False,
-                usecols=[0],
-                dtype=float,
-            )
-            valuearray = np.ravel(spreadsheet.slice_times.values).astype(np.float64)
-            valuelist: List = list(valuearray.tolist())
-
-            value = self.field.deserialize(valuelist)
-
-            if self.filters is None:
-                specfileobjs = [ctx.spec.files[-1]]
-            else:
-                filepaths = ctx.database.get(**self.filters)
-                specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
-
-            for specfileobj in specfileobjs:
+            for specfileobj in self.specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
-                specfileobj.metadata[self.key] = value
+                specfileobj.metadata[self.key] = filepath
 
         return self.next_step_type(self.app)(ctx)
 
@@ -209,11 +252,10 @@ class SetMetadataStep(Step):
 
             if key == "slice_timing":
                 if value == "import from file":
-                    return ImportMetadataStep(
+                    return SliceTimingFileStep(
                         self.app,
                         self.filters,
                         self.schema,
-                        self.key,
                         self.suggestion,
                         self.next_step_type,
                         appendstr=self.appendstr
