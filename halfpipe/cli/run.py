@@ -45,7 +45,7 @@ def run(opts, should_run):
         from ..ui import init_spec_ui
         from calamities.config import Config as CalamitiesConfig
 
-        CalamitiesConfig.fs_root = opts.fs_root
+        CalamitiesConfig.fs_root = str(opts.fs_root)
         workdir = init_spec_ui(workdir=workdir, debug=opts.debug)
 
     assert workdir is not None, "Missing working directory"
