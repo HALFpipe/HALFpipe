@@ -53,6 +53,9 @@ def slice_timing_str(slice_times):
 
 
 def str_slice_timing(order_str, n_slices, slice_duration):
-    orders = _get_slice_orders(n_slices)
+    order = _get_slice_orders(n_slices)[order_str]
 
-    return list(np.array(orders[order_str], dtype=np.float64) * slice_duration)
+    timings = np.zeros((n_slices,))
+    timings[order] = np.arange(n_slices) * slice_duration
+
+    return list(timings)

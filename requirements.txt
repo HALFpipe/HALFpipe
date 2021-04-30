@@ -9,6 +9,7 @@ nilearn >= 0.7.1
 odfpy
 xlrd >= 1.0.0
 openpyxl
+xlsxwriter
 nibabel >= 3.2.1
 indexed-gzip >= 1.5.3
 nipype == 1.6.0

@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List
-
 from calamities import (
     TextView,
     SpacerView,
@@ -341,7 +339,7 @@ class CheckMetadataStep(Step):
             self.is_missing = False
             self._append_view(TextView(f"Check {humankey} values{self.appendstr}"))
 
-        assert isinstance(vals, List)
+        assert isinstance(vals, list)
 
         uniquevals, counts = np.unique(vals, return_counts=True)
         order = np.argsort(counts)

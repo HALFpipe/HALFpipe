@@ -47,7 +47,7 @@ def test_t2z_convert_large(t, dof):
     assert math.isfinite(t2z_convert(t, dof))
 
 
-@pytest.mark.parametrize("f", np.linspace(1e-3, 7, num=5))
+@pytest.mark.parametrize("f", np.linspace(1e-3, 7, num=10))
 @pytest.mark.parametrize("d1,d2", [
     (1, 1), (2, 1), (5, 2), (10, 1), (10, 100)
 ])
@@ -55,7 +55,7 @@ def test_f2z_convert_numpy(f, d1, d2):
     assert math.isclose(f2z_convert(f, d1, d2), f2z_convert_numpy(f, d1, d2))
 
 
-@pytest.mark.parametrize("x", np.linspace(1, 7, num=5))
+@pytest.mark.parametrize("x", np.linspace(1e-3, 7, num=10))
 @pytest.mark.parametrize("k", [2, 10, 30])
 def test_chisq2z_convert_numpy(x, k):
     assert math.isclose(chisq2z_convert(x, k), chisq2z_convert_numpy(x, k))

@@ -19,16 +19,19 @@ def init_watchdog(interval=60):
         while True:
             time.sleep(interval)
 
-            stacktrace = "".join(format_thread(mainthread))
+            try:
+                stacktrace = "".join(format_thread(mainthread))
 
-            rows = summary.summarize(muppy.get_objects())
-            memtrace = "\n".join(summary.format_(rows))
+                rows = summary.summarize(muppy.get_objects())
+                memtrace = "\n".join(summary.format_(rows))
 
-            logger.info(
-                "Watchdog traceback:\n"
-                f"{stacktrace}\n"
-                f"{memtrace}"
-            )
+                logger.info(
+                    "Watchdog traceback:\n"
+                    f"{stacktrace}\n"
+                    f"{memtrace}"
+                )
+            except Exception as e:
+                logger.error("Error in watchdog", exc_info=e)
 
     thread = Thread(target=loop, args=(interval,), daemon=True, name="watchdog")
     thread.start()
