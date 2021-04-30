@@ -25,6 +25,7 @@ RUN conda update --yes conda && \
     "statsmodels>=0.12.2" \
     "scikit-learn>=0.24.0" \
     "openpyxl" \
+    "xlrd>=1.0.0" \
     "mpmath>=1.1.0" \
     "inflect" \
     "inflection" \
