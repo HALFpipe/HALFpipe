@@ -151,6 +151,7 @@ class Heterogeneity(ModelAlgorithm):
                 arr[(*zip(*coordinates),)] = values
 
             img = new_img_like(ref_img, arr, copy_header=True)
+            img.header.set_data_dtype(np.float64)
 
             fname = Path.cwd() / f"{map_name}.nii.gz"
             nib.save(img, fname)

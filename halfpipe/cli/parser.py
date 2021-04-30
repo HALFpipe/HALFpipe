@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from multiprocessing import cpu_count
 
 from .. import __version__
-from ..utils import logger
+from ..utils import logger, isempty
 
 steps = ["spec-ui", "workflow", "run"]
 
@@ -87,6 +87,7 @@ def _build_parser():
 
     debuggroup = parser.add_argument_group("debug", "")
     debuggroup.add_argument("--debug", action="store_true", default=False)
+    debuggroup.add_argument("--profile", action="store_true", default=False)
     debuggroup.add_argument("--watchdog", action="store_true", default=False)
 
     return parser
@@ -139,22 +140,31 @@ def parse_args(args=None, namespace=None):
         if getattr(opts, attrname) is True:
             should_run[step] = False
 
+    if opts.fs_root is not None and isempty(opts.fs_root) is True:
+        logger.info(f'Current fs_root "{opts.fs_root}" is empty, ignoring')
+
+        opts.fs_root = None
+
     if opts.fs_root is None:
-        fs_root_candidates = [
-            "/ext/host_mnt",  # Docker for Mac/Windows
-            "/mnt/host_mnt",
+        fs_root_candidates = list(map(Path, [
             "/ext",  # Singularity when using documentation-provided bind flag
             "/mnt",
+            "/host"
             "/"
+        ]))
+
+        fs_root_candidates = [
+            *[  # prepend fix for Docker for Mac/Windows
+                fs_root_candidate / "host_mnt"
+                for fs_root_candidate in fs_root_candidates
+            ],
+            *fs_root_candidates
         ]
 
         for fs_root_candidate in fs_root_candidates:
-            try:
-                if next(Path(fs_root_candidate).iterdir()) is not None:
-                    opts.fs_root = fs_root_candidate
-                    break
-            except (FileNotFoundError, StopIteration):
-                continue
+            if isempty(fs_root_candidate) is False:  # dir is not empty
+                opts.fs_root = fs_root_candidate
+                break
 
         logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
 

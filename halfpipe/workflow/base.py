@@ -61,6 +61,7 @@ def init_workflow(workdir):
 
     workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
     workflow.config["execution"].update(dict(
+        create_report=False,
         crashdump_dir=workflow.base_dir,
         crashfile_format="txt",
         hash_method="content",
@@ -127,6 +128,9 @@ def init_workflow(workdir):
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
 
+    logger.info(f"Finished workflow {uuidstr}")
+    cacheobj(workdir, "workflow", workflow)
+
     # check
     if uses_freesurfer:
         from niworkflows.utils.misc import check_valid_fs_license
@@ -141,9 +145,6 @@ def init_workflow(workdir):
             )
             return
 
-    logger.info(f"Finished workflow {uuidstr}")
-
-    cacheobj(workdir, "workflow", workflow)
     return workflow
 
 

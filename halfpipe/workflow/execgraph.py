@@ -11,10 +11,12 @@ import re
 from collections import OrderedDict
 from fnmatch import fnmatch
 from argparse import Namespace
+from copy import deepcopy
 
 import networkx as nx
 
 import nipype.pipeline.engine as pe
+from nipype.pipeline.engine.utils import merge_dict
 
 from .base import IdentifiableWorkflow
 from ..interface import LoadResult
@@ -58,13 +60,6 @@ def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> Order
     return subject_graphs
 
 
-class DontRunRunner:
-    plugin_args = dict()
-
-    def run(self, *args, **kwargs):
-        pass
-
-
 def extract_subject_name(hierarchy):
     m = re.fullmatch(r"single_subject_(?P<subjectname>.+)_wf", hierarchy[2])
     if m is not None:
@@ -101,30 +96,29 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
     if graphs is None:
         logger.info(f'Initializing execution graph for workflow "{uuidstr}"')
 
-        execgraph = workflow.run(plugin=DontRunRunner())
-        execgraph.uuid = uuid
+        workflow._generate_flatgraph()
+        flatgraph = workflow._graph
 
-        logger.info("Splitting execution graph")
+        workflow._set_needed_outputs(flatgraph)
+
+        logger.info("Splitting graph")
 
         subject_nodes = dict()
-        for node in execgraph.nodes():
-
+        for node in flatgraph:
             hierarchy = node._hierarchy.split(".")
             assert len(hierarchy) >= 3
-
             subject_name = extract_subject_name(hierarchy)
-
             if subject_name is not None:
                 if subject_name not in subject_nodes:
                     subject_nodes[subject_name] = set()
                 subject_nodes[subject_name].add(node)
 
-        # make safe load
         all_subject_nodes = set.union(*subject_nodes.values())
-        model_nodes = set(execgraph.nodes()) - all_subject_nodes
+        model_nodes = set(flatgraph.nodes) - all_subject_nodes
 
+        # make safe load
         newnodes = dict()
-        for (v, u, c) in nx.edge_boundary(execgraph.reverse(), model_nodes, data=True):
+        for (v, u, c) in nx.edge_boundary(flatgraph.reverse(), model_nodes, data=True):
             u.keep = True  # don't allow results to be deleted
 
             newu = newnodes.get(u.fullname)
@@ -134,32 +128,37 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
                 newu.config = u.config
                 newnodes[u.fullname] = newu
 
-            execgraph.add_edge(newu, v, attr_dict=c)
+            flatgraph.add_edge(newu, v, **c)
 
             newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
             for outattr, inattr in c["connect"]:
                 newu.needed_outputs = [*newu.needed_outputs, outattr]
                 v.input_source[inattr] = (newuresultfile, outattr)
 
-        subject_graphs = OrderedDict(
-            sorted(
-                [
-                    (
-                        workflow.bids_to_sub_id_map.get(s, s),
-                        execgraph.subgraph(nodes).copy(),
-                    )
-                    for s, nodes in subject_nodes.items()
-                ],
-                key=lambda t: t[0],
-            )
-        )
-        execgraph.remove_nodes_from(all_subject_nodes)
-        model_graph = execgraph
+        logger.info("Expanding subgraphs")
 
-        graphs = OrderedDict([
-            *subject_graphs.items(),
-            ("model", model_graph),
-        ])
+        graphs = OrderedDict()
+
+        def add_graph(s, graph):
+            graph = pe.generate_expanded_graph(graph)
+
+            for index, node in enumerate(graph):
+                node.config = merge_dict(deepcopy(workflow.config), node.config)
+                node.base_dir = workflow.base_dir
+                node.index = index
+
+            workflow._configure_exec_nodes(graph)
+
+            graphs[s] = graph
+
+        for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
+            s = workflow.bids_to_sub_id_map.get(s, s)
+
+            subgraph = flatgraph.subgraph(nodes).copy()
+            add_graph(s, subgraph)
+
+        flatgraph.remove_nodes_from(all_subject_nodes)
+        add_graph("model", flatgraph)
 
         for graph in graphs.values():
             graph.uuid = uuid

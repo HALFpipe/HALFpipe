@@ -46,30 +46,57 @@ class Transformer(SimpleInterface):
         stem, ext = splitext(in_file)
         self.stem, self.ext = stem, ext
 
+        if mask_file is None:
+            mask_file = self.inputs.mask
+
         self.mask = None
+
         if ext in [".nii", ".nii.gz"]:
+
             in_img = nib.load(in_file)
             self.in_img = in_img
 
-            n = nvol(in_img)
-            in_fdata = in_img.get_fdata(dtype=np.float64)
-            array = in_fdata.reshape((-1, n)).T
+            ndim = np.asanyarray(in_img.dataobj).ndim
+            if ndim == 3:
+                volumes = [in_img]
+            elif ndim == 4:
+                volumes = nib.four_to_three(in_img)
+            else:
+                raise ValueError(f'Unexpect number of dimensions {ndim:d} in "{in_file}"')
 
-            if mask_file is None:
-                mask_file = self.inputs.mask
+            volume_shape = volumes[0].shape
+            n_voxels = np.prod(volume_shape)
+
             if isdefined(mask_file) and isinstance(mask_file, str) and Path(mask_file).is_file():
-                mask_img = nib.load(mask_file)
+                mask_img = nib.squeeze_image(nib.load(mask_file))
+
                 assert nvol(mask_img) == 1
                 assert np.allclose(mask_img.affine, in_img.affine)
+
                 mask_fdata = mask_img.get_fdata(dtype=np.float64)
                 mask_bin = np.logical_not(
-                    np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
+                    np.logical_or(
+                        mask_fdata <= 0,
+                        np.isclose(mask_fdata, 0, atol=1e-2)
+                    )
                 )
-                self.mask = mask_bin
-                assert self.mask.size == array.shape[1]
-                array = array[:, np.ravel(self.mask)]
 
-        else:
+                self.mask = mask_bin
+                n_voxels = np.count_nonzero(mask_bin)
+
+            n_volumes = len(volumes)
+
+            array = np.zeros((n_volumes, n_voxels))
+
+            for i, volume in enumerate(volumes):
+                volume_data = volume.get_fdata()
+
+                if self.mask is not None:
+                    array[i, :] = volume_data[self.mask]
+                else:
+                    array[i, :] = np.ravel(volume_data)
+
+        else:  # a text file
             in_df = loadspreadsheet(in_file)
             self.in_df = in_df
 
@@ -93,6 +120,7 @@ class Transformer(SimpleInterface):
                 out_array = array2.T.reshape((*in_img.shape[:3], -1))
 
             out_img = new_img_like(in_img, out_array, copy_header=True)
+            out_img.header.set_data_dtype(np.float64)
             nib.save(out_img, out_file)
 
         else:

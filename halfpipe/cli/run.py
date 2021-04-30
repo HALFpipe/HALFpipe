@@ -15,7 +15,7 @@ from math import ceil
 import numpy as np
 import networkx as nx
 
-from ..utils import first, logger, resolve
+from ..utils import first, logger, resolve, timestampstr
 
 
 def run(opts, should_run):
@@ -45,11 +45,12 @@ def run(opts, should_run):
         from ..ui import init_spec_ui
         from calamities.config import Config as CalamitiesConfig
 
-        CalamitiesConfig.fs_root = opts.fs_root
+        CalamitiesConfig.fs_root = str(opts.fs_root)
         workdir = init_spec_ui(workdir=workdir, debug=opts.debug)
 
     assert workdir is not None, "Missing working directory"
     assert Path(workdir).is_dir(), "Working directory does not exist"
+    opts.workdir = workdir
 
     if opts.fs_license_file is not None:
         fs_license_file = resolve(opts.fs_license_file, opts.fs_root)
@@ -265,7 +266,11 @@ def main():
         teardown as teardownlogging
     )
 
+    opts = None
+    pr = None
+
     debug = False
+    profile = False
 
     try:
         setuplogging()
@@ -274,6 +279,12 @@ def main():
         opts, should_run = parse_args()
 
         debug = opts.debug
+        profile = opts.profile
+
+        if profile is True:
+            from cProfile import Profile
+            pr = Profile()
+            pr.enable()
 
         run(opts, should_run)
     except Exception as e:
@@ -284,6 +295,10 @@ def main():
 
             pdb.post_mortem()
     finally:
+        if profile and pr is not None:
+            pr.disable()
+            pr.dump_stats(Path(opts.workdir) / f"profile.{timestampstr():s}.prof")
+
         teardownlogging()
 
         # clean up orphan processes

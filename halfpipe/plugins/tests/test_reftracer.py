@@ -9,12 +9,18 @@ import pytest
 import os
 from pathlib import Path
 
-from ...workflow.execgraph import DontRunRunner
 from ..reftracer import PathReferenceTracer
 
 
 def add(a, b):
     return a + b
+
+
+class DontRunRunner:
+    plugin_args = dict()
+
+    def run(self, *args, **kwargs):
+        pass
 
 
 @pytest.mark.timeout(60)

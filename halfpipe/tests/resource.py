@@ -4,7 +4,7 @@
 
 from halfpipe import resource
 
-TESTS_ONLINE_RESOURCES = {
+test_online_resources = {
     "wakemandg_hensonrn_statmaps.tar.gz": "https://api.figshare.com/v2/file/download/25621988",
     "ds000108fixed.tar.gz": "https://osf.io/download/qh38c",
     "bids_data.zip": "https://osf.io/download/qrvu4",
@@ -14,4 +14,4 @@ TESTS_ONLINE_RESOURCES = {
 
 
 def setup():
-    resource.ONLINE_RESOURCES.update(TESTS_ONLINE_RESOURCES)
+    resource.online_resources.update(test_online_resources)
