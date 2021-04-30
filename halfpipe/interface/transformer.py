@@ -56,7 +56,13 @@ class Transformer(SimpleInterface):
             in_img = nib.load(in_file)
             self.in_img = in_img
 
-            volumes = nib.four_to_three(in_img)
+            ndim = np.asanyarray(in_img.dataobj).ndim
+            if ndim == 3:
+                volumes = [in_img]
+            elif ndim == 4:
+                volumes = nib.four_to_three(in_img)
+            else:
+                raise ValueError(f'Unexpect number of dimensions {ndim:d} in "{in_file}"')
 
             volume_shape = volumes[0].shape
             n_voxels = np.prod(volume_shape)
