@@ -7,23 +7,35 @@ from typing import Optional
 from os import getenv
 from pathlib import Path
 from templateflow import api
+import templateflow
 
-DEFAULT_HALFPIPE_RESOURCE_DIR = Path.home() / ".cache" / "halfpipe"
-HALFPIPE_RESOURCE_DIR = Path(getenv("HALFPIPE_RESOURCE_DIR", str(DEFAULT_HALFPIPE_RESOURCE_DIR)))
+default_resource_dir = Path.home() / ".cache" / "halfpipe"
+resource_dir = Path(
+    getenv("HALFPIPE_RESOURCE_DIR", str(default_resource_dir))
+)
+resource_dir.mkdir(exist_ok=True, parents=True)
 
-ONLINE_RESOURCES = {
-    "index.html": "https://github.com/HALFpipe/QualityCheck/releases/download/0.3.0/index.html",
-    "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534327",
-    "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534330",
-    "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://api.figshare.com/v2/file/download/22447958",
-}
+online_resources = dict([
+    (
+        "index.html",
+        "https://github.com/HALFpipe/QualityCheck/releases/download/0.3.0/index.html",
+    ),
+    (
+        "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
+        "https://api.figshare.com/v2/file/download/5534327",
+    ),
+    (
+        "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5",
+        "https://api.figshare.com/v2/file/download/5534330",
+    ),
+    (
+        "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz",
+        "https://api.figshare.com/v2/file/download/22447958",
+    ),
+])
 
-MNI152NLin2009cAsym_xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
-TF_RESOURCES = dict()
-
-
-if not HALFPIPE_RESOURCE_DIR.exists() or not list(HALFPIPE_RESOURCE_DIR.iterdir()):
-    HALFPIPE_RESOURCE_DIR.mkdir(exist_ok=True, parents=True)
+xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
+templateflow_resources = dict()
 
 
 def download(url: str, target=None) -> Optional[str]:
@@ -60,16 +72,16 @@ def download(url: str, target=None) -> Optional[str]:
 
 
 def get(filename=None) -> str:
-    if filename in TF_RESOURCES:
-        return TF_RESOURCES[filename]
+    if filename in templateflow_resources:
+        return templateflow_resources[filename]
 
-    assert filename in ONLINE_RESOURCES, f"Resource {filename} not found"
+    assert filename in online_resources, f"Resource {filename} not found"
 
-    filepath = HALFPIPE_RESOURCE_DIR / filename
+    filepath = resource_dir / filename
     if filepath.exists():
         return filepath
 
-    resource = ONLINE_RESOURCES[filename]
+    resource = online_resources[filename]
 
     if isinstance(resource, tuple):
         import json
@@ -85,3 +97,13 @@ def get(filename=None) -> str:
     download(resource, target=filepath)
 
     return str(filepath)
+
+
+if __name__ == "__main__":
+    spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
+    for space in spaces:
+        paths = api.get(space, atlas=None)
+        assert isinstance(paths, list)
+        assert len(paths) > 0
+    for filename in online_resources.keys():
+        get(filename=filename)

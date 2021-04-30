@@ -13,12 +13,24 @@ del get_versions
 os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"
 
-halfpipe_resource_dir = Path("/home/fmriprep/.cache/halfpipe")
-if halfpipe_resource_dir.is_dir():
-    os.environ["HALFPIPE_RESOURCE_DIR"] = str(halfpipe_resource_dir)
-templateflow_home = Path("/home/fmriprep/.cache/templateflow")
-if templateflow_home.is_dir():
-    os.environ["TEMPLATEFLOW_HOME"] = str(templateflow_home)
-del halfpipe_resource_dir, templateflow_home
+xdg_cache_home = Path("/home/fmriprep/.cache")
+if xdg_cache_home.is_dir():
+    # we are likely running in a container, so we make sure to reset
+    # important env variables
+    os.environ["XDG_CACHE_HOME"] = str(
+        xdg_cache_home
+    )  # where matplotlib looks for the font cache
+
+    halfpipe_resource_dir = xdg_cache_home / "halfpipe"
+    os.environ["HALFPIPE_RESOURCE_DIR"] = str(
+        halfpipe_resource_dir
+    )  # where halfpipe.resource.get looks for its cache
+
+    templateflow_home = xdg_cache_home / "templateflow"
+    os.environ["TEMPLATEFLOW_HOME"] = str(
+        templateflow_home
+    )  # where templateflow.api looks for its cache
+
+    del xdg_cache_home, halfpipe_resource_dir, templateflow_home
 
 os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warning
