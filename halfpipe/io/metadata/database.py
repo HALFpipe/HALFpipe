@@ -24,6 +24,12 @@ class DatabaseMetadataLoader:
 
         value = None
 
+        specfileobj = self.database.specfileobj(fileobj.path)
+        if specfileobj is not None:
+            metadata = getattr(specfileobj, "metadata", None)
+            if metadata is not None:
+                value = metadata.get(key)  # retrieve spec overrides
+
         if key == "phase_encoding_direction":
             direction = fileobj.tags.get("dir")
             if direction is not None:
