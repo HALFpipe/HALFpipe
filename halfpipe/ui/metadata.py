@@ -8,6 +8,7 @@ from calamities import (
     NumberInputView,
     SingleChoiceInputView,
     FileInputView,
+    TextElement,
 )
 
 import numpy as np
@@ -16,8 +17,12 @@ from marshmallow import fields
 
 from .step import Step
 from ..io.parse import loadspreadsheet
-from ..io.metadata import direction_code_str, slice_timing_str
+from ..io.metadata.slicetiming import slice_timing_str
 from ..io.metadata.niftiheader import NiftiheaderLoader
+from ..io.metadata.direction import (
+    direction_code_str,
+    canonicalize_direction_code,
+)
 from ..model import space_codes, slice_order_strs
 from ..utils import logger
 
@@ -49,7 +54,7 @@ def display_str(x):
 
 
 class SliceTimingFileStep(Step):
-    key = "slice_timing_file"
+    key = "slice_timing"
 
     def __init__(self, app, filters, schema, suggestion, next_step_type, appendstr=""):
         super(SliceTimingFileStep, self).__init__(app)
@@ -59,28 +64,27 @@ class SliceTimingFileStep(Step):
         self.appendstr = appendstr
 
         self.suggestion = suggestion
+        self.message = None
 
         self.filters = filters
 
         self.next_step_type = next_step_type
 
+    def _messagefun(self):
+        return self.message
+
     def setup(self, ctx):
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
-        field = self.field
-
-        assert isinstance(field, fields.List)
 
         if self.filters is None:
             specfileobj = ctx.spec.files[-1]
             self.specfileobjs = [specfileobj]
 
-            resolved_spec = ctx.database.resolved_spec
-            fileobjs_by_specfilepaths = resolved_spec.fileobjs_by_specfilepaths
             self.filepaths = [
                 fileobj.path
-                for fileobj in fileobjs_by_specfilepaths[specfileobj.path]
+                for fileobj in ctx.database.fromspecfileobj(specfileobj)
             ]
         else:
             self.filepaths = ctx.database.get(**self.filters)
@@ -90,9 +94,9 @@ class SliceTimingFileStep(Step):
             )
 
         for field in ["slice_encoding_direction", "repetition_time"]:
-            ctx.database.fillmetadata(
+            assert ctx.database.fillmetadata(
                 field, self.filepaths
-            )  # should have already been done, but can't hurt
+            ) is True  # should have already been done, but can't hurt
 
         header_str = f"Import {humankey} values{self.appendstr}"
         if unit is not None:
@@ -101,12 +105,14 @@ class SliceTimingFileStep(Step):
 
         self._append_view(TextView(header_str))
 
-        self.input_view = FileInputView()
+        self.input_view = FileInputView(messagefun=self._messagefun)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
     def run(self, ctx):
+        error_color = self.app.layout.color.red
+
         while True:
             self.result = self.input_view()
 
@@ -121,32 +127,41 @@ class SliceTimingFileStep(Step):
                 valuearray = np.ravel(spreadsheet.values).astype(np.float64)
                 valuelist = list(valuearray.tolist())
                 value = self.field.deserialize(valuelist)
+
+                for filepath in self.filepaths:
+                    slice_encoding_direction = ctx.database.metadata(
+                        filepath, "slice_encoding_direction"
+                    )
+                    slice_encoding_direction = canonicalize_direction_code(
+                        slice_encoding_direction, filepath
+                    )
+                    slice_encoding_axis = ["i", "j", "k"].index(
+                        slice_encoding_direction[0]
+                    )
+                    repetition_time = ctx.database.metadata(filepath, "repetition_time")
+
+                    header, _ = NiftiheaderLoader.load(filepath)
+                    if header is not None:
+                        n_slices = header.get_data_shape()[slice_encoding_axis]
+                        if n_slices != len(value):
+                            raise ValueError(
+                                f"Slice timing from file has {len(value):d} "
+                                f"values, but scans have {n_slices:d} slices"
+                            )
+
+                    for i, time in enumerate(value):
+                        if time > repetition_time:
+                            raise ValueError(
+                                f"Invalid time for slice {i+1:d}: "
+                                f"{time:f} seconds is greater than "
+                                f"repetition_time of images "
+                                f"({repetition_time:f} seconds)"
+                            )
+
             except Exception as e:
                 logger.warning(f'Failed to read slice timing from "{filepath}"', exc_info=e)
+                self.message = TextElement(str(e), color=error_color)
                 continue  # try again for correct file
-
-            for filepath in self.filepaths:
-                slice_encoding_axis = ["i", "j", "k"].index(
-                    ctx.database.metadata(filepath, "slice_encoding_direction")[0]
-                )
-                repetition_time = ctx.database.metadata(filepath, "repetition_time")
-
-                header, _ = NiftiheaderLoader.load(filepath)
-                if header is not None:
-                    n_slices = header.get_data_shape()[slice_encoding_axis]
-                    if n_slices != len(value):
-                        logger.warning(
-                            f'Slice timing from "{filepath}" has {len(value):d} values, but "{filepath}" has {n_slices:d} slices'
-                        )
-                        continue  # try again for correct file
-
-                for i, time in enumerate(value):
-                    if time > repetition_time:
-                        logger.warning(
-                            f"Invalid time for slice {i+1:d}: "
-                            f'{time:f} seconds is greater than repetition_time of file "{filepath}" ({repetition_time:f} seconds)'
-                        )
-                        continue  # try again
 
             return True
 
@@ -157,7 +172,7 @@ class SliceTimingFileStep(Step):
             for specfileobj in self.specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
-                specfileobj.metadata[self.key] = filepath
+                specfileobj.metadata["slice_timing_file"] = filepath
 
         return self.next_step_type(self.app)(ctx)
 
@@ -213,7 +228,7 @@ class SetMetadataStep(Step):
             if set(space_codes).issubset(choices):
                 choices = [*space_codes]
                 if self.key == "slice_encoding_direction":
-                    choices = list(reversed(choices))
+                    choices = list(reversed(choices))[:2]  # hide uncommon options
                 display_choices = [
                     display_str(direction_code_str(choice, None)) for choice in choices
                 ]
