@@ -160,9 +160,7 @@ class AcqToTaskMappingStep(Step):
                 if specfileobj.datatype != "fmap":
                     continue
 
-                fmaplist = ctx.database.resolved_spec.fileobjs_by_specfilepaths[
-                    specfileobj.path
-                ]
+                fmaplist = ctx.database.fromspecfileobj(specfileobj)
 
                 fmaptags = set(
                     frozenset(
