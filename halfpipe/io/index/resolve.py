@@ -127,6 +127,7 @@ class ResolvedSpec:
             filedict["tmplstr"] = tmplstr
 
             resolved_fileobj = file_schema.load(filedict)
+            assert isinstance(resolved_fileobj, File)
 
             self.fileobj_by_filepaths[filepath] = resolved_fileobj
             self.specfileobj_by_filepaths[resolved_fileobj.path] = fileobj
@@ -138,13 +139,19 @@ class ResolvedSpec:
     def _resolve_bids(self, fileobj: File) -> List[File]:
 
         # load using pybids
-        layout = BIDSLayout(fileobj.path, absolute_paths=True, validate=False)
+        layout = BIDSLayout(
+            root=fileobj.path,
+            reset_database=True,  # force reindex in case files have changed
+            absolute_paths=True,
+            validate=False,  # saved time
+        )
 
         # load override metadata
         basemetadata = dict()
         if hasattr(fileobj, "metadata"):
-            if isinstance(fileobj.metadata, dict):
-                basemetadata.update(fileobj.metadata)
+            metadata = getattr(fileobj, "metadata", None)
+            if isinstance(metadata, dict):
+                basemetadata.update(metadata)
 
         resolved_files = []
         func_fmap_tag_dict = dict()
