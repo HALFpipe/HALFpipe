@@ -104,6 +104,13 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
                 raise ValidationError("SliceTiming values must be smaller than RepetitionTime")
 
 
+class BIDSFmapMetadataSchema(BaseMetadataSchema):
+    intended_for = fields.List(
+        fields.Str(),
+        description="Contains one or more filenames with paths relative to the participant subfolder."
+    )
+
+
 class PhaseDiffMetadataSchema(BaseMetadataSchema):
     echo_time_difference = fields.Float(
         description="The echo time difference between the acquisitions, specified in seconds.",
@@ -157,6 +164,7 @@ MetadataSchema = Schema.from_dict(
             EventsMetadataSchema,
             RefMetadataSchema,
             BoldMetadataSchema,
+            BIDSFmapMetadataSchema,
         ]
         for k, v in schema().fields.items()
     }

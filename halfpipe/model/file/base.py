@@ -17,6 +17,7 @@ class File:
         self.extension = extension
 
         self.tags = dict()
+        self.intended_for = None
 
         for k, v in kwargs.items():
             setattr(self, k, v)
