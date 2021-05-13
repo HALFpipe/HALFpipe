@@ -76,22 +76,23 @@ class Database:
 
         if hasattr(fileobj, "intended_for"):
             intended_for = fileobj.intended_for
-            for k, newvaluelist in intended_for.items():
-                from_entity, from_tagval = k.split(".")
+            if intended_for is not None:
+                for k, newvaluelist in intended_for.items():
+                    from_entity, from_tagval = k.split(".")
 
-                if from_tagval == "null":
-                    from_tagval = None
+                    if from_tagval == "null":
+                        from_tagval = None
 
-                tagval = tagdict.get(from_entity)
-                if tagval != from_tagval:
-                    continue
+                    tagval = tagdict.get(from_entity)
+                    if tagval != from_tagval:
+                        continue
 
-                if from_entity in tagdict:
-                    del tagdict[from_entity]  # not indexable by old tag
+                    if from_entity in tagdict:
+                        del tagdict[from_entity]  # not indexable by old tag
 
-                for v in newvaluelist:
-                    to_entity, to_tagval = v.split(".")
-                    add_tag_to_index(filepath, to_entity, to_tagval)
+                    for v in newvaluelist:
+                        to_entity, to_tagval = v.split(".")
+                        add_tag_to_index(filepath, to_entity, to_tagval)
 
         for tagname, tagval in tagdict.items():
             add_tag_to_index(filepath, tagname, tagval)
