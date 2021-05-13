@@ -45,7 +45,7 @@ RUN pip install git+https://github.com/pydata/patsy.git
 
 # install dependencies and force reinstall of nipreps and nipype
 RUN cd /halfpipe && \
-    pip uninstall --yes fmriprep smriprep niworkflows nipype && \
+    pip uninstall --yes fmriprep smriprep niworkflows nipype pybids && \
     pip install -r requirements.txt
 
 # download all resources

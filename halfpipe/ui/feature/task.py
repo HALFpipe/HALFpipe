@@ -170,7 +170,9 @@ class HighPassFilterCutoffStep(Step):
             if isinstance(value, float):
                 ctx.spec.features[-1].high_pass_filter_cutoff = value
             elif value == "Skip":
-                pass
+                ctx.spec.features[-1].high_pass_filter_cutoff = None
+            else:
+                raise ValueError(f'Unknown high_pass_filter_cutoff value "{value}"')
 
         this_next_step_type = next_step_type
 
