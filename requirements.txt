@@ -37,4 +37,4 @@ pympler >= 0.9
 stackprinter >= 0.2.5
 line_profiler
 more-itertools >= 8.7.0
-calamities ~= 0.0.13
+calamities >= 0.0.14
