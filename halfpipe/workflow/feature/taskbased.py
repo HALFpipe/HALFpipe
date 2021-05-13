@@ -4,6 +4,7 @@
 
 import os
 from pathlib import Path
+from math import isfinite
 
 import numpy as np
 
@@ -152,10 +153,13 @@ def init_taskbased_wf(
 
     # first level model specification
     modelspec = pe.Node(model.SpecifyModel(), name="modelspec")
+
+    modelspec.inputs.high_pass_filter_cutoff = np.inf  # disable if missing
     if hasattr(feature, "high_pass_filter_cutoff"):
-        modelspec.inputs.high_pass_filter_cutoff = feature.high_pass_filter_cutoff
-    else:
-        modelspec.inputs.high_pass_filter_cutoff = np.inf
+        hpfc = feature.high_pass_filter_cutoff
+        if isinstance(hpfc, float) and isfinite(hpfc):
+            modelspec.inputs.high_pass_filter_cutoff = hpfc
+
     workflow.connect(inputnode, "bold", modelspec, "functional_runs")
     workflow.connect(inputnode, "condition_units", modelspec, "input_units")
     workflow.connect(inputnode, "repetition_time", modelspec, "time_repetition")
