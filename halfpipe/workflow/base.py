@@ -16,12 +16,14 @@ from .setting import SettingFactory
 from .feature import FeatureFactory
 from .model import ModelFactory
 
+from .collect import collect_bold_files
+from .convert import convert_all
 from .memory import MemoryCalculator
 from .constants import constants
 from ..io.index import Database, BidsDatabase
 from ..io.file import cacheobj, uncacheobj
 from ..model.spec import loadspec
-from ..utils import logger, deepcopyfactory, nvol, first
+from ..utils import logger, deepcopyfactory
 from .. import __version__
 
 
@@ -51,11 +53,13 @@ def init_workflow(workdir):
     if workflow is not None:
         return workflow
 
-    #
-    bidsdatabase = BidsDatabase(database)
+    # init classes that use the database
+
+    bids_database = BidsDatabase(database)
     memcalc = MemoryCalculator(database)
 
     # create parent workflow
+
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
 
@@ -71,44 +75,54 @@ def init_workflow(workdir):
     ))
 
     # create factories
-    ctx = FactoryContext(workdir, spec, bidsdatabase, workflow, memcalc)
+
+    ctx = FactoryContext(workdir, spec, bids_database, workflow, memcalc)
     fmriprep_factory = FmriprepFactory(ctx)
     setting_factory = SettingFactory(ctx, fmriprep_factory)
     feature_factory = FeatureFactory(ctx, setting_factory)
     model_factory = ModelFactory(ctx, feature_factory)
 
-    boldfilepaths, associated_filepaths_dict = collect_boldfiles(
+    bold_file_paths_dict = collect_bold_files(
         database, setting_factory, feature_factory
     )
 
     # write out
-    for associated_filepaths in associated_filepaths_dict.values():
-        for filepath in associated_filepaths:
-            bidsdatabase.put(filepath)
 
-    for boldfilepath in associated_filepaths_dict.keys():
-        sub = database.tagval(boldfilepath, "sub")
-        bidssub = bidsdatabase.tagval(
-            bidsdatabase.tobids(boldfilepath), "sub"
-        )
-        workflow.bids_to_sub_id_map[bidssub] = sub
+    convert_all(database, bids_database, bold_file_paths_dict)
+
+    for bold_file_path in bold_file_paths_dict.keys():
+        bids_path = bids_database.tobids(bold_file_path)
+
+        subject = database.tagval(bold_file_path, "sub")
+        bids_subject = bids_database.tagval(bids_path, "sub")
+
+        workflow.bids_to_sub_id_map[bids_subject] = subject
 
     bids_dir = Path(workdir) / "rawdata"
-    bidsdatabase.write(bids_dir)
+    bids_database.write(bids_dir)
 
     # setup preprocessing
+
     if spec.global_settings.get("run_mriqc") is True:
         mriqc_factory = MriqcFactory(ctx)
-        mriqc_factory.setup(workdir, boldfilepaths)
+        mriqc_factory.setup(
+            workdir,
+            list(bold_file_paths_dict.keys()),
+        )
+
     if spec.global_settings.get("run_fmriprep") is True:
-        fmriprep_factory.setup(workdir, boldfilepaths)
+        fmriprep_factory.setup(
+            workdir,
+            list(bold_file_paths_dict.keys()),
+        )
 
         if spec.global_settings.get("run_halfpipe") is True:
-            setting_factory.setup(associated_filepaths_dict)
-            feature_factory.setup(associated_filepaths_dict)
+            setting_factory.setup(bold_file_paths_dict)
+            feature_factory.setup(bold_file_paths_dict)
             model_factory.setup()
 
     # patch workflow
+
     config_factory = deepcopyfactory(workflow.config)
     uses_freesurfer = False
     for node in workflow._get_all_nodes():
@@ -146,93 +160,3 @@ def init_workflow(workdir):
             return
 
     return workflow
-
-
-def collect_boldfiles(database, setting_factory, feature_factory):
-
-    # find bold files
-
-    boldfilepaths = setting_factory.sourcefiles | feature_factory.sourcefiles
-
-    # filter
-
-    associated_filepaths_dict = dict()
-
-    for boldfilepath in boldfilepaths:
-        sub = database.tagval(boldfilepath, "sub")
-        filters = dict(sub=sub)  # enforce same subject
-
-        t1ws = database.associations(boldfilepath, datatype="anat", **filters)
-
-        if t1ws is None:  # remove bold files without T1w
-            continue
-
-        associated_filepaths = [boldfilepath, *t1ws]
-
-        session = database.tagval(boldfilepath, "ses")
-        if session is not None:  # enforce fmaps from same session
-            filters.update(dict(ses=session))
-
-        fmaps = database.associations(boldfilepath, datatype="fmap", **filters)
-        if fmaps is not None:
-            associated_filepaths.extend(fmaps)
-
-        associated_filepaths_dict[boldfilepath] = associated_filepaths
-
-    boldfilepaths = [b for b in boldfilepaths if b in associated_filepaths_dict]
-
-    tmpbidsdatabase = BidsDatabase(database)
-    bidsdict = dict()
-    for boldfilepath in boldfilepaths:
-        # check for duplicate tags via bids path as this contains all tags by definition
-        tmpbidsdatabase.put(boldfilepath)
-        bidspath = tmpbidsdatabase.tobids(boldfilepath)
-        assert bidspath is not None
-        if bidspath not in bidsdict:
-            bidsdict[bidspath] = set()
-        bidsdict[bidspath].add(boldfilepath)
-
-    for boldfilepathset in bidsdict.values():
-        if len(boldfilepathset) == 1:
-            continue
-
-        # remove duplicates by scan length
-        # this is a heuristic based on the idea that duplicate scans may be
-        # scans that were cancelled or had technical difficulties and therefore
-        # had to be restarted
-        nvoldict = {
-            boldfilepath: nvol(boldfilepath) for boldfilepath in boldfilepathset
-        }
-        maxnvol = max(nvoldict.values())
-        selected = set(k for k, v in nvoldict.items() if v == maxnvol)
-
-        if len(selected) > 1:
-            # if the heuristic above doesn't work, we just choose the alphabetically
-            # last one
-            last = sorted(selected)[-1]
-            selected = set([last])
-
-        (selectedboldfilepath,) = selected
-
-        message_strs = [
-            f'Found {len(boldfilepathset)-1:d} file with identical tags to {selectedboldfilepath}":'
-        ]
-
-        boldfilepath = first(boldfilepathset)
-        for boldfilepath in boldfilepathset:
-            if boldfilepath != selectedboldfilepath:
-                message_strs.append(f'Excluding file "{boldfilepath}"')
-
-        if nvoldict[boldfilepath] < maxnvol:
-            message_strs.append("Decision criterion was: Image with the longest duration")
-        else:
-            message_strs.append("Decision criterion was: Last image when sorting alphabetically")
-        logger.warning("\n".join(message_strs))
-
-        for boldfilepath in boldfilepathset:
-            if boldfilepath != selectedboldfilepath:
-                del associated_filepaths_dict[boldfilepath]
-
-    boldfilepaths = [b for b in boldfilepaths if b in associated_filepaths_dict]
-
-    return boldfilepaths, associated_filepaths_dict

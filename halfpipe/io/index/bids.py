@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Dict
+
 from pathlib import Path
 from os.path import relpath
 from shutil import rmtree
@@ -31,51 +33,114 @@ class BidsDatabase:
     def __init__(self, database):
         self.database = database
 
-        self.bidspaths_by_filepaths = dict()
-        self.filepaths_by_bidspaths = dict()
+        # indexed by bids_path
 
-        self.bidstags_by_bidspaths = dict()
+        self.file_paths: Dict[str, str] = dict()
+        self._tags: Dict[str, Dict] = dict()
+        self._metadata: Dict[str, Dict] = dict()
 
-    def put(self, filepath):
-        if self.bidspaths_by_filepaths.get(filepath) is not None:
-            return  # already added
+        # indexed by file_path
 
-        tags = self.database.tags(filepath)
+        self.bids_paths: Dict[str, str] = dict()
 
-        bidstags = dict()
+    def put(self, file_path: str) -> str:
+        bids_path = self.bids_paths.get(file_path)
+
+        if bids_path is not None:
+            return bids_path  # already added
+
+        tags = self.database.tags(file_path)
+
+        _tags = dict()
         for k, v in tags.items():
             bidsentity = k
             if bidsentity in entity_longnames:
                 bidsentity = entity_longnames[bidsentity]
 
             if k in entities:
-                bidstags[bidsentity] = formatlikebids(v)
+                _tags[bidsentity] = formatlikebids(v)
             else:
                 if k == "suffix" and tags.get("datatype") == "fmap":
                     k = "fmap"
-                bidstags[k] = v
+                _tags[k] = v
 
-        bidspath = build_path(bidstags, bidsconfig.default_path_patterns)
-        self.bidspaths_by_filepaths[filepath] = str(bidspath)
-        self.filepaths_by_bidspaths[bidspath] = str(filepath)
-        self.bidstags_by_bidspaths[bidspath] = bidstags
+        bids_path = str(
+            build_path(_tags, bidsconfig.default_path_patterns)
+        )
 
-    def tobids(self, filepath):
-        return self.bidspaths_by_filepaths.get(filepath)
+        self.bids_paths[file_path] = str(bids_path)
 
-    def frombids(self, bidspath):
-        return self.filepaths_by_bidspaths.get(bidspath)
+        self.file_paths[bids_path] = str(file_path)
 
-    def tags(self, bidspath):
+        self._tags[bids_path] = _tags
+
+        # traverse schemas to find subclass
+
+        schema = FileSchema
+        while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
+            v = self.database.tagval(file_path, schema.type_field)
+            schema = schema.type_schemas[v]
+
+        instance = schema()
+
+        metadata = OrderedDict()
+        if "metadata" in instance.fields:
+            # manual conversion
+
+            if self.database.tagval(file_path, "datatype") == "func":
+                task = self.database.tagval(file_path, "task")
+                if task is not None:
+                    metadata["TaskName"] = task
+
+            # automated conversion
+
+            metadata_keys = get_nested_schema_field_names(instance, "metadata")
+            for key in metadata_keys:
+                self.database.fillmetadata(key, [file_path])
+                value = self.database.metadata(file_path, key)
+
+                if value is not None:
+
+                    # transform metadata
+
+                    if key.endswith("direction"):
+                        value = canonicalize_direction_code(value, file_path)
+
+                    if key == "slice_timing_code":
+                        if not self.database.fillmetadata("slice_timing", [file_path]):
+                            continue
+
+                        key = "slice_timing"
+                        value = self.database.metadata(file_path, key)
+
+                    bids_key = camelize(key)
+
+                    # add to sidecar
+                    metadata[bids_key] = value
+
+        self._metadata[bids_path] = metadata
+
+        return bids_path
+
+    def tobids(self, file_path):
+        return self.bids_paths.get(file_path)
+
+    def frombids(self, bids_path):
+        return self.file_paths.get(bids_path)
+
+    def tags(self, bids_path):
         """
-        get a dictionary of entity -> value for a specific bidspath
+        get a dictionary of entity -> value for a specific bids_path
         """
-        return self.bidstags_by_bidspaths.get(bidspath)
+        return self._tags.get(bids_path)
 
-    def tagval(self, bidspath, entity):
-        if isinstance(bidspath, (list, tuple)):  # vectorize
-            return [self.tagval(fp, entity) for fp in bidspath]
-        tagdict = self.bidstags_by_bidspaths.get(bidspath)
+    def tagval(self, bids_path, entity):
+
+        if isinstance(bids_path, (list, tuple)):  # vectorize
+            return [self.tagval(fp, entity) for fp in bids_path]
+
+        tagdict = self._tags.get(bids_path)
+
         if tagdict is not None:
             return tagdict.get(entity)
 
@@ -85,10 +150,10 @@ class BidsDatabase:
             raise ValueError("Will not write to symlink")
         bidsdir.mkdir(parents=True, exist_ok=True)
 
-        bidspaths = set()
+        bids_paths = set()
 
         dataset_description_path = bidsdir / "dataset_description.json"
-        bidspaths.add(dataset_description_path)
+        bids_paths.add(dataset_description_path)
 
         dataset_description = {
             "Name": self.database.sha1,
@@ -100,107 +165,58 @@ class BidsDatabase:
             json.dump(dataset_description, f, indent=4)
 
         # image files
-        for bidspath, filepath in self.filepaths_by_bidspaths.items():
-            bidspath = Path(bidsdir) / bidspath
-            bidspaths.add(bidspath)
-            bidspath.parent.mkdir(parents=True, exist_ok=True)
 
-            if bidspath.is_file():
+        for bids_path, file_path in self.file_paths.items():
+            bids_path = Path(bidsdir) / bids_path
+            bids_paths.add(bids_path)
+            bids_path.parent.mkdir(parents=True, exist_ok=True)
+
+            if bids_path.is_file():
                 continue  # ignore real files
-            elif bidspath.is_symlink():
-                if bidspath.resolve() == Path(filepath).resolve():
+            elif bids_path.is_symlink():
+                if bids_path.resolve() == Path(file_path).resolve():
                     continue  # nothing to be done
                 else:
-                    bidspath.unlink()  # symlink points to different file
-            relfilepath = relpath(filepath, start=bidspath.parent)
-            bidspath.symlink_to(relfilepath)
+                    bids_path.unlink()  # symlink points to different file
+            relative_file_path = relpath(file_path, start=bids_path.parent)
+            bids_path.symlink_to(relative_file_path)
 
         # sidecar files
-        for bidspath, filepath in self.filepaths_by_bidspaths.items():
-            schema = FileSchema
-            while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
-                v = self.database.tagval(filepath, schema.type_field)
-                schema = schema.type_schemas[v]
-            instance = schema()
 
-            bidsmetadata = OrderedDict()
-            if "metadata" in instance.fields:
-                metadata_keys = get_nested_schema_field_names(instance, "metadata")
+        for bids_path in self.file_paths.keys():
+            metadata = self._metadata.get(bids_path)
 
-                # manual conversion
-                task = self.database.tagval(filepath, "task")
-                if task is not None:
-                    bidsmetadata["TaskName"] = task
+            if metadata is not None and len(metadata) > 0:
+                basename, _ = splitext(bids_path)
+                sidecar_path = Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
 
-                # automated
-                for k in metadata_keys:
-                    self.database.fillmetadata(k, [filepath])
-                    v = self.database.metadata(filepath, k)
-                    if v is not None:
-                        # transform metadata
-                        if k.endswith("direction"):
-                            v = canonicalize_direction_code(v, filepath)
-                        if k == "slice_timing_code":
-                            if not self.database.fillmetadata("slice_timing", [filepath]):
-                                continue
-                            k = "slice_timing"
-                            v = self.database.metadata(filepath, k)
-                        bidsk = camelize(k)
-                        # add to sidecar
-                        bidsmetadata[bidsk] = v
+                bids_paths.add(sidecar_path)
 
-            if self.database.tagval(filepath, "datatype") == "fmap":
-                if self.database.tagval(filepath, "suffix") not in ["magnitude1", "magnitude2"]:
-                    sub = self.database.tagval(filepath, "sub")
-                    ses = self.database.tagval(filepath, "ses")
-                    subject = self.tagval(bidspath, "subject")
-
-                    subjectdir = f"sub-{subject}"
-
-                    bidsmetadata["IntendedFor"] = list()
-
-                    filters = dict(datatype="func", suffix="bold", sub=sub)
-                    if ses is not None:
-                        filters.update(dict(ses=ses))
-                    afilepaths = self.database.associations(filepath, **filters)
-                    if afilepaths is None:
-                        continue  # only write if we can find a functional image
-
-                    afilepaths = sorted(afilepaths)
-
-                    for afilepath in afilepaths:
-                        abidspath = self.tobids(afilepath)
-                        if abidspath is not None:  # only include files in the BidsDatabase
-                            bidsmetadata["IntendedFor"].append(relpath(abidspath, start=subjectdir))
-
-                    if len(bidsmetadata["IntendedFor"]) == 0:
-                        bidsmetadata = dict()
-                        bidspaths.discard(filepath)
-
-            if len(bidsmetadata) > 0:
-                basename, _ = splitext(bidspath)
-                sidecarpath = Path(bidsdir) / Path(bidspath).parent / f"{basename}.json"
-                bidspaths.add(sidecarpath)
-                jsonstr = json.dumps(bidsmetadata, indent=4, sort_keys=False)
-                if sidecarpath.is_file():
-                    with open(sidecarpath, "r") as f:
+                jsonstr = json.dumps(metadata, indent=4, sort_keys=False)
+                if sidecar_path.is_file():
+                    with open(sidecar_path, "r") as f:
                         if jsonstr == f.read():
                             continue
-                with open(sidecarpath, "w") as f:
+
+                with open(sidecar_path, "w") as f:
                     f.write(jsonstr)
 
         # remove unnecessary files
-        files_to_keep = set()
-        for bidspath in bidspaths:
-            relbidspath = relpath(bidspath, start=bidsdir)
-            # use relative paths to limit parents to bidsdir
-            files_to_keep.add(relbidspath)
-            files_to_keep.update(map(str, Path(relbidspath).parents))
 
-        for filepath in _rlistdir(bidsdir, False):
-            relfilepath = relpath(filepath, start=bidsdir)
-            if relfilepath not in files_to_keep:
-                p = Path(filepath)
+        files_to_keep = set()
+        for bids_path in bids_paths:
+            relative_bids_path = relpath(bids_path, start=bidsdir)
+
+            # use relative paths to limit parents to bidsdir
+            files_to_keep.add(relative_bids_path)
+            files_to_keep.update(
+                map(str, Path(relative_bids_path).parents)
+            )
+
+        for file_path in _rlistdir(bidsdir, False):
+            relative_file_path = relpath(file_path, start=bidsdir)
+            if relative_file_path not in files_to_keep:
+                p = Path(file_path)
                 if not p.is_dir():
                     p.unlink()
                 else:

@@ -99,9 +99,6 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
             return  # nothing to validate
         if "slice_timing_code" in data and data["slice_timing_code"] is not None:
             raise ValidationError("Cannot specify both slice_timing and slice_timing_code at the same time")
-        if isinstance(data["slice_timing"], list):
-            if max(data["slice_timing"]) >= data["repetition_time"]:
-                raise ValidationError("SliceTiming values must be smaller than RepetitionTime")
 
 
 class BIDSFmapMetadataSchema(BaseMetadataSchema):
