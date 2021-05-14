@@ -5,11 +5,14 @@
 """
 
 """
+from typing import Dict
 
-import marshmallow
-from marshmallow import EXCLUDE
+from functools import lru_cache
 import json
 from pathlib import Path
+
+import marshmallow.exceptions
+from marshmallow import EXCLUDE
 from inflection import underscore
 
 from ...model.metadata import MetadataSchema
@@ -17,37 +20,32 @@ from ...utils import splitext
 
 
 class SidecarMetadataLoader:
-    cache = dict()
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def load_json(file_path) -> Dict:
+        stem, _ = splitext(file_path)
+        sidecar_file_path = Path(file_path).parent / f"{stem}.json"
+
+        if not Path(sidecar_file_path).is_file():
+            return dict()
+
+        with open(sidecar_file_path, "r") as sidecar_file_handle:
+            sidecar_file_contents = sidecar_file_handle.read()
+
+        return json.loads(sidecar_file_contents)
 
     @classmethod
-    def loadjson(cls, fname):
-        stem, _ = splitext(fname)
-        sidecarfile = Path(fname).parent / f"{stem}.json"
-
-        if not Path(sidecarfile).is_file():
-            return
-
-        with open(sidecarfile, "r") as fp:
-            jsn = fp.read()
-
-        return json.loads(jsn)
-
-    @classmethod
-    def load(cls, fname):
-        if fname in cls.cache:
-            return cls.cache[fname]
-
+    @lru_cache(maxsize=None)
+    def load(cls, file_path) -> Dict:
         try:
-            in_data = cls.loadjson(fname)
-
-            if in_data is None:
-                return
+            in_data = cls.load_json(file_path)
 
             # data transformations
+
             try:
                 from sdcflows.interfaces.fmap import get_ees
                 # get effective echo spacing even if not explicitly specified
-                in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=fname)
+                in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=file_path)
             except Exception:
                 pass
 
@@ -58,19 +56,17 @@ class SidecarMetadataLoader:
                     )
 
             # parse
+
             in_data = {underscore(k): v for k, v in in_data.items()}
             sidecar = MetadataSchema().load(in_data, unknown=EXCLUDE)
-        except marshmallow.exceptions.ValidationError:
-            return
 
-        cls.cache[fname] = sidecar
+        except marshmallow.exceptions.ValidationError:
+            return dict()
+
         return sidecar
 
     def fill(self, fileobj, key):
         sidecar = self.load(fileobj.path)
-
-        if sidecar is None:
-            return False
 
         value = sidecar.get(key)
 
@@ -78,4 +74,5 @@ class SidecarMetadataLoader:
             return False
 
         fileobj.metadata[key] = value
+
         return True
