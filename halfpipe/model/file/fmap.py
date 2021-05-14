@@ -48,6 +48,7 @@ class FmapFileSchema(OneOfSchema):
         "phasediff": PhaseDiffFmapFileSchema,
         "phase1": PhaseFmapFileSchema,
         "phase2": PhaseFmapFileSchema,
+        "magnitude": BaseFmapFileSchema,
         "magnitude1": BaseFmapFileSchema,
         "magnitude2": BaseFmapFileSchema,
         "fieldmap": BaseFmapFileSchema,
