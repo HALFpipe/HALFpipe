@@ -2,21 +2,73 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Dict
+from typing import List, Dict, Tuple, Union
 
 from itertools import zip_longest
 from math import isclose
 
 import numpy as np
 
-from ..io.index import BidsDatabase
+from ..io.index import Database, BidsDatabase
 from ..utils import logger, nvol, ravel
 from ..io.metadata.niftiheader import NiftiheaderLoader
 from ..io.metadata.sidecar import SidecarMetadataLoader
 
 
-def _format_matrix_comparison(*args):
+def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tuple[Tuple[str, str], ...]]:
+    sourcefile_subject = database.tagval(sourcefile, "sub")
 
+    candidates = database.associations(
+        sourcefile,
+        task=database.tagval(sourcefile, "task"),  # enforce same task
+        datatype="func",
+        suffix="events",
+    )
+
+    if candidates is None or len(candidates) == 0:
+        return
+
+    candidates = sorted(set(  # remove duplicates
+        candidates
+    ))
+
+    def match_subject(event_file):
+        subject = database.tagval(event_file, "sub")
+
+        if subject is not None:
+            return subject == sourcefile_subject
+        else:
+            return True
+
+    condition_files = list(filter(match_subject, candidates))
+
+    extensions = database.tagvalset("extension", filepaths=condition_files)
+    assert extensions is not None
+
+    if len(condition_files) == 0:
+        return  # we did not find any
+    elif len(condition_files) == 1:
+        if ".mat" in extensions or ".tsv" in extensions:
+            return condition_files[0]
+
+    if ".txt" in extensions:
+        condition_tuples: List[Tuple[str, str]] = list()
+
+        for condition_file in condition_files:
+            condition = database.tagval(condition_file, "condition")
+            assert isinstance(condition, str)
+            condition_tuples.append(
+                (condition_file, condition)
+            )
+
+        return (*condition_tuples,)
+
+    raise ValueError(
+        f'Cannot collect condition files for "{sourcefile}"'
+    )
+
+
+def _format_matrix_comparison(*args):
     lines = list(zip(*(
         np.array_str(a, precision=3, suppress_small=True).splitlines()
         for a in args
@@ -39,7 +91,7 @@ def _format_matrix_comparison(*args):
         yield s
 
 
-def collect_fieldmaps(database, bold_file_path, filters) -> List[str]:
+def collect_fieldmaps(database: Database, bold_file_path: str, filters: Dict) -> List[str]:
     candidates = database.associations(
         bold_file_path, datatype="fmap", **filters
     )
@@ -65,6 +117,8 @@ def collect_fieldmaps(database, bold_file_path, filters) -> List[str]:
     def match_metadata(candidate: str) -> bool:
         nonlocal message_log_method
 
+        was_logged = False
+
         header, _ = NiftiheaderLoader.load(candidate)
 
         # match only the first three dimensions
@@ -86,11 +140,11 @@ def collect_fieldmaps(database, bold_file_path, filters) -> List[str]:
         if not np.allclose(affine, bold_affine, atol=1e-1):
             message_log_method = logger.warning
             message_strs.append(
-                f'Excluding "{candidate}" because the field map affine differs '
+                f'Including "{candidate}" even though the field map affine differs '
                 "significantly from the bold affine matrix"
             )
+            was_logged = True
             message_strs.extend(_format_matrix_comparison(affine, bold_affine))
-            return False
 
         sidecar = SidecarMetadataLoader.load_json(candidate)
 
@@ -102,14 +156,16 @@ def collect_fieldmaps(database, bold_file_path, filters) -> List[str]:
             ):
                 message_log_method = logger.warning
                 message_strs.append(
-                    f'Including "{candidate}" even though shim settings differ significantly'
+                    f'Including "{candidate}" even though shim settings differ significantly '
                     f"({list(shim_setting)} != {list(bold_shim_setting)})"
                 )
-                return True
+                was_logged = True
 
-        message_strs.append(
-            f'Including "{candidate}"'
-        )
+        if not was_logged:
+            message_strs.append(
+                f'Including "{candidate}"'
+            )
+
         return True
 
     candidates = list(filter(match_metadata, candidates))

@@ -7,14 +7,13 @@
 """
 
 from abc import abstractmethod
-from typing import Sequence, Optional
+from typing import Optional
 
 from calamities import (
     MultiNumberInputView,
     TextInputView,
     TextView,
     SpacerView,
-    MultipleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView,
     CombinedMultipleAndSingleChoiceInputView
 )
@@ -30,6 +29,7 @@ from .loop import SettingValsStep
 
 from ...io.parse.condition import parse_condition_file
 from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
+from ...workflow.collect import collect_events
 
 next_step_type = SettingValsStep
 
@@ -67,24 +67,20 @@ def find_and_parse_condition_files(ctx, bold_filepaths=None):
     if len(taskset) == 1:
         (filters["task"],) = taskset
 
-    eventfile_dict = {
-        filepath: database.associations(filepath, **filters)
-        for filepath in bold_filepaths.copy()
-    }
+    eventfile_dict = dict()
+    for filepath in bold_filepaths:
+        events = collect_events(ctx.database, filepath)
+        if events is not None:
+            eventfile_dict[filepath] = events
 
     eventfile_set = set(eventfile_dict.values())
-    if len(eventfile_set) == 0 or None in eventfile_set:
+    if len(eventfile_set) == 0:
         return
 
     for in_any in eventfile_set:
         if isinstance(in_any, str):
-            fileobj = database.fileobj(in_any)
-        elif isinstance(in_any, Sequence):
-            fileobj = [database.fileobj(filepath) for filepath in in_any]
-            assert all(f is not None for f in fileobj)
-        else:
-            raise ValueError(f'Unknown event file "{in_any}"')
-        yield (in_any, *parse_condition_file(in_any=fileobj))
+            in_any = database.fileobj(in_any)
+        yield (in_any, *parse_condition_file(in_any=in_any))
 
 
 def get_conditions(ctx):

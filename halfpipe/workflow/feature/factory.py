@@ -12,8 +12,10 @@ from .seedbasedconnectivity import init_seedbasedconnectivity_wf
 from .taskbased import init_taskbased_wf
 
 from ..factory import Factory
+from ..collect import collect_events
 
 from ...model import FeatureSchema, BaseSettingSchema
+from ...utils import logger
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -28,6 +30,7 @@ class FeatureFactory(Factory):
         settingnames = set()
         for feature in self.spec.features:
             featuredict = instance.dump(feature)
+            assert isinstance(featuredict, dict)
             for k, v in featuredict.items():
                 if k.endswith("setting"):
                     settingnames.add(v)
@@ -71,25 +74,26 @@ class FeatureFactory(Factory):
         if feature.type == "task_based":
             confounds_action = "select"
 
-            condition_files = sorted(set(
-                database.associations(
-                    sourcefile,
-                    task=database.tagval(sourcefile, "task"),  # enforce same task
-                    datatype="func",
-                    suffix="events",
+            condition_files = collect_events(database, sourcefile)
+
+            if isinstance(condition_files, str):
+                condition_file_paths = [condition_files]
+            elif isinstance(condition_files, tuple):
+                condition_file_paths, _ = zip(*condition_files)
+            else:  # we did not find any condition files
+                logger.warning(
+                    f'Skipping feature "{feature.name}" for "{sourcefile}" '
+                    "because no event files could be found"
                 )
-            ))
-            raw_sources = [*raw_sources, *condition_files]
-            if ".txt" in database.tagvalset("extension", filepaths=condition_files):
-                condition_files = [
-                    (condition_file, database.tagval(condition_file, "condition"))
-                    for condition_file in condition_files
-                ]
+                return
+
+            raw_sources = [*raw_sources, *condition_file_paths]
 
             condition_units = None
-            condition_units_set = database.metadatavalset("units", condition_files)
-            if len(condition_units_set) == 0:
-                (condition_units,) = condition_units
+            condition_units_set = database.metadatavalset("units", condition_file_paths)
+            if condition_units_set is not None:
+                if len(condition_units_set) == 1:
+                    (condition_units,) = condition_units_set
             if condition_units is None:
                 condition_units = "secs"  # default value
             if condition_units == "seconds":
@@ -97,6 +101,7 @@ class FeatureFactory(Factory):
 
             kwargs["condition_files"] = condition_files
             kwargs["condition_units"] = condition_units
+
             vwf = init_taskbased_wf(**kwargs)
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
