@@ -90,8 +90,8 @@ approximately 5 gigabytes of storage.
 
 | Container platform | Installation                                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Singularity        | <https://charitede-my.sharepoint.com/:f:/g/personal/lea_waller_charite_de/EukRziExhTVBrEAai2oEpi8B2jsnn7P3YQuFo2pycKp6-g> or `singularity pull docker://halfpipe/halfpipe:1.1.0` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.1.0` |
-| Docker             | `docker pull halfpipe/halfpipe:1.1.0`                                                                              |
+| Singularity        | <https://charitede-my.sharepoint.com/:f:/g/personal/lea_waller_charite_de/EukRziExhTVBrEAai2oEpi8B2jsnn7P3YQuFo2pycKp6-g> or `singularity pull docker://halfpipe/halfpipe:1.1.1` or `singularity pull docker://ghcr.io/halfpipe/halfpipe:1.1.1` |
+| Docker             | `docker pull halfpipe/halfpipe:1.1.1`                                                                              |
 
 `Singularity` version `3.x` creates a container image file called
 `HALFpipe_{version}.sif` in the directory where you run the `pull` command. For
@@ -116,12 +116,12 @@ matter from which directory you run the `pull` command.
 ### Running
 
 The third step is to run the downloaded container. You may need to replace
-`halfpipe_1.0.1.sif` with the actual path and filename where `Singularity`
+`halfpipe_1.1.1.sif` with the actual path and filename where `Singularity`
 downloaded your container.
 
 | Container platform | Command                                                                 |
 | ------------------ | ----------------------------------------------------------------------- |
-| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.1.0.sif` |
+| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.1.1.sif` |
 | Docker             | `docker run --interactive --tty --volume /:/ext halfpipe/halfpipe`      |
 
 You should now see the user interface.
