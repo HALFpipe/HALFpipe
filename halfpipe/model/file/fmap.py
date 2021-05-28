@@ -21,7 +21,13 @@ class BaseFmapFileSchema(BaseFileSchema):
 
     tags = fields.Nested(FmapTagsSchema(), default=dict())
     intended_for = fields.Dict(
-        keys=fields.Str(), values=fields.List(fields.Str()), description="mapping of acq to task"
+        keys=fields.Str(),
+        values=fields.List(fields.Str()),
+        required=False,
+        default=None,
+        missing=None,
+        allow_none=True,
+        description="mapping of acq to task",
     )
 
 

@@ -149,7 +149,7 @@ def parse_args(args=None, namespace=None):
         fs_root_candidates = list(map(Path, [
             "/ext",  # Singularity when using documentation-provided bind flag
             "/mnt",
-            "/host"
+            "/host",
             "/"
         ]))
 
