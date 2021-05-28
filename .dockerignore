@@ -23,8 +23,6 @@ src/
 
 # git
 .gitignore
-.git/**/*
-.git
 
 # other
 work/**/*
