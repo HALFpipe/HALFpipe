@@ -146,9 +146,13 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
 
         # check for duplicate tags via bids path as this contains all tags by definition
 
-        _bids_database.put(bold_file_path)
+        bids_path = None
 
-        bids_path = _bids_database.tobids(bold_file_path)
+        try:
+            _bids_database.put(bold_file_path)
+            bids_path = _bids_database.tobids(bold_file_path)
+        except ValueError:
+            continue
 
         assert bids_path is not None
 

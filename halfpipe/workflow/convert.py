@@ -8,6 +8,7 @@ from pathlib import Path
 from operator import attrgetter
 
 from ..io.index import Database, BidsDatabase
+from ..utils import logger
 
 
 def convert_all(
@@ -16,7 +17,12 @@ def convert_all(
         bold_file_paths_dict: Dict[str, List[str]]
 ):
     for bold_file_path, associated_file_paths in bold_file_paths_dict.items():
-        bold_bids_path = bids_database.put(bold_file_path)
+
+        try:
+            bold_bids_path = bids_database.put(bold_file_path)
+        except ValueError as e:
+            logger.warning(f'Cannot convert "{bold_file_path}" to BIDS, skipping', exc_info=e)
+            continue
 
         bold_bids_path_obj = Path(bold_bids_path)
         bold_bids_path_parents = list(
@@ -32,7 +38,12 @@ def convert_all(
         ))
 
         for file_path in associated_file_paths:
-            bids_path = bids_database.put(file_path)
+
+            try:
+                bids_path = bids_database.put(file_path)
+            except ValueError as e:
+                logger.warning(f'Cannot convert "{file_path}" to BIDS, skipping', exc_info=e)
+                continue
 
             if database.tagval(file_path, "datatype") != "fmap":
                 continue
