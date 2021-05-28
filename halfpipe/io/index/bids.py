@@ -64,9 +64,12 @@ class BidsDatabase:
                     k = "fmap"
                 _tags[k] = v
 
-        bids_path = str(
-            build_path(_tags, bidsconfig.default_path_patterns)
-        )
+        bids_path_result = build_path(_tags, bidsconfig.default_path_patterns)
+
+        if bids_path_result is None:
+            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}"')
+
+        bids_path = str(bids_path_result)
 
         self.bids_paths[file_path] = str(bids_path)
 
@@ -167,6 +170,7 @@ class BidsDatabase:
         # image files
 
         for bids_path, file_path in self.file_paths.items():
+            assert bids_path is not None
             bids_path = Path(bidsdir) / bids_path
             bids_paths.add(bids_path)
             bids_path.parent.mkdir(parents=True, exist_ok=True)

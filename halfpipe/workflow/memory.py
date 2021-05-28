@@ -3,22 +3,28 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
-import nibabel as nb
 
 from fmriprep.config import DEFAULT_MEMORY_MIN_GB
 
-from ..utils import first
+from ..io.metadata.niftiheader import NiftiheaderLoader
 
 
 class MemoryCalculator:
     def __init__(self, database=None, bold_file=None, bold_shape=[72, 72, 72], bold_tlen=200):
+
         if database is not None:
-            bold_file = first(database.get(datatype="func", suffix="bold"))
+            bold_file = next(iter(
+                database.get(datatype="func", suffix="bold")
+            ))
+
         if bold_file is not None:
-            bold_shape = nb.load(bold_file).shape
-        self.volume_gb = np.product(bold_shape[:3]) * 8 / 2 ** 30
+            header, _ = NiftiheaderLoader.load(bold_file)
+            bold_shape = header.get_data_shape()
+
         if len(bold_shape) > 3:
             bold_tlen = bold_shape[3]
+
+        self.volume_gb = np.product(bold_shape[:3]) * 8 / 2 ** 30
         self.series_gb = self.volume_gb * bold_tlen
 
         std_bold_shape = [97, 115, 97, bold_tlen]  # template size

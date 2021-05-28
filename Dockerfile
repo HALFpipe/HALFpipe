@@ -35,8 +35,6 @@ RUN conda update --yes conda && \
     "line_profiler" \
     "more-itertools"
 
-COPY requirements.txt /halfpipe/
-
 # re-do font cache after update
 RUN python -c "from matplotlib import font_manager"
 
@@ -44,6 +42,7 @@ RUN python -c "from matplotlib import font_manager"
 RUN pip install git+https://github.com/pydata/patsy.git
 
 # install dependencies and force reinstall of nipreps and nipype
+COPY requirements.txt /halfpipe/
 RUN cd /halfpipe && \
     pip uninstall --yes fmriprep smriprep niworkflows nipype pybids && \
     pip install -r requirements.txt
