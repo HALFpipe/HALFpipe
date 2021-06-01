@@ -158,7 +158,8 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
             add_graph(s, subgraph)
 
         flatgraph.remove_nodes_from(all_subject_nodes)
-        add_graph("model", flatgraph)
+        if len(flatgraph.nodes) > 0:
+            add_graph("model", flatgraph)
 
         for graph in graphs.values():
             graph.uuid = uuid
