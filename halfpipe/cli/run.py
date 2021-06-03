@@ -62,7 +62,7 @@ def run(opts, should_run):
         )))
 
         if len(license_files) > 0:
-            license_file = str(first(license_files))
+            license_file = str(license_files[0])
             os.environ["FS_LICENSE"] = license_file
 
     if os.environ.get("FS_LICENSE") is not None:
@@ -247,8 +247,8 @@ def run(opts, should_run):
 
                 runner = runnercls(plugin_args=plugin_args)
                 firstnode = first(chunk.nodes())
-                assert isinstance(firstnode, pe.Node)
                 if firstnode is not None:
+                    assert isinstance(firstnode, pe.Node)
                     runner.run(chunk, updatehash=False, config=firstnode.config)
             except Exception as e:
                 if opts.debug:
