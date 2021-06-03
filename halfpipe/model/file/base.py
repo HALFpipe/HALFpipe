@@ -6,6 +6,7 @@
 
 """
 
+from typing import Dict, Optional
 from marshmallow import Schema, fields, post_load, RAISE
 
 
@@ -17,7 +18,7 @@ class File:
         self.extension = extension
 
         self.tags = dict()
-        self.intended_for = None
+        self.intended_for: Optional[Dict] = None
 
         for k, v in kwargs.items():
             setattr(self, k, v)

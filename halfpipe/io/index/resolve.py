@@ -70,9 +70,16 @@ def to_fileobj(obj: BIDSFile, basemetadata: Dict) -> Optional[File]:
         if isinstance(fileobj, File):
             return fileobj
     except marshmallow.exceptions.ValidationError as e:
+        log_method = logger.warning
+
         if extension == ".json":
-            return  # don't show a warning
-        logger.warning(
+            log_method = logger.debug  # silence
+        if datatype == "dwi":
+            log_method = logger.debug  # silence
+        if datatype == "anat":
+            log_method = logger.info  # T2w and FLAIR
+
+        log_method(
             f'Ignored validation error for "{path}": %s',
             e,
             exc_info=False,

@@ -30,16 +30,14 @@ module load singularity
 fi
 
 singularity run \\
---no-home \\
---cleanenv {bind_args} \\
+--containall {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
 --graphs-file {graphs_file} \\
 --subject-chunks \\
 --only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
---nipype-n-procs 2 \\
---verbose {extra_args}
+--nipype-n-procs 2 {extra_args}
 
 """,
     torque="""#!/bin/bash
@@ -61,16 +59,14 @@ module load singularity
 fi
 
 singularity run \\
---no-home \\
---cleanenv {bind_args} \\
+--containall {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
 --graphs-file {graphs_file} \\
 --subject-chunks \\
 --only-chunk-index ${{PBS_ARRAY_INDEX}} \\
---nipype-n-procs 2 \\
---verbose {extra_args}
+--nipype-n-procs 2 {extra_args}
 
 
 """,
@@ -93,8 +89,7 @@ module load singularity
 fi
 
 singularity run \\
---no-home \\
---cleanenv {bind_args} \\
+--containall {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
