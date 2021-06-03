@@ -121,7 +121,7 @@ downloaded your container.
 
 | Container platform | Command                                                                 |
 | ------------------ | ----------------------------------------------------------------------- |
-| Singularity        | `singularity run --no-home --cleanenv --bind /:/ext halfpipe_1.1.1.sif` |
+| Singularity        | `singularity run --containall --bind /:/ext halfpipe_1.1.1.sif`         |
 | Docker             | `docker run --interactive --tty --volume /:/ext halfpipe/halfpipe`      |
 
 You should now see the user interface.
@@ -140,7 +140,7 @@ mapped will not be visible later.
 
 `Singularity` passes the host shell environment to the container by default.
 This means that in some cases, the host computer's configuration can interfere
-with the software. To avoid this, we need to pass the option `--cleanenv`.
+with the software. To avoid this, we need to pass the option `--containall`.
 `Docker` does not pass the host shell environment by default, so we don't need
 to pass an option.
 
@@ -317,7 +317,7 @@ Models are statistical analyses that are carried out on the features.
 
 1. In the interactive job, run the `HALFpipe` user interface, but add the flag
    `--use-cluster` to the end of the command. \
-   For example, `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --use-cluster`
+   For example, `singularity run --containall --bind /:/ext halfpipe_latest.sif --use-cluster`
 
 1. As soon as you finish specifying all your data, features and models in the
    user interface, `HALFpipe` will now generate everything needed to run on the
@@ -329,7 +329,7 @@ Models are statistical analyses that are carried out on the features.
 
 1. As soon as all processing has been completed, you can run group statistics.
    This is usually very fast, so you can do this in an interactive session. Run
-   `singularity run --no-home --cleanenv --bind /:/ext halfpipe_latest.sif --only-model-chunk`
+   `singularity run --containall --bind /:/ext halfpipe_latest.sif --only-model-chunk`
    and then select `Run without modification` in the user interface.
 
 > A common issue with remote work via secure shell is that the connection may
