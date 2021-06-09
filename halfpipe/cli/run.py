@@ -174,13 +174,14 @@ def run(opts, should_run):
 
         logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
-        reversed_graph_items_iter = iter(reversed(graphs.items()))
-        last_graph_name, model_chunk = next(reversed_graph_items_iter)
-        assert last_graph_name == "model", "Last graph needs to be model chunk"
+        model_chunk = None
+        if "model" in graphs:
+            model_chunk = graphs["model"]
+            del graphs["model"]
 
         from ..workflow.execgraph import filter_subject_graphs
 
-        subject_graphs = OrderedDict([*reversed_graph_items_iter])
+        subject_graphs = OrderedDict(reversed(list(graphs.items())))
         subject_graphs = filter_subject_graphs(subject_graphs, opts)
 
         n_chunks = opts.n_chunks
