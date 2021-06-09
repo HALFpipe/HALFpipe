@@ -10,6 +10,7 @@ from typing import Any, List, Dict, Optional
 
 from itertools import product
 from pprint import pformat
+from os.path import basename
 
 from marshmallow import EXCLUDE
 import marshmallow.exceptions
@@ -78,6 +79,8 @@ def to_fileobj(obj: BIDSFile, basemetadata: Dict) -> Optional[File]:
             log_method = logger.debug  # silence
         if datatype == "anat":
             log_method = logger.info  # T2w and FLAIR
+        if basename(path).startswith("."):  # is hidden
+            log_method = logger.debug  # silence
 
         log_method(
             f'Ignored validation error for "{path}": %s',
