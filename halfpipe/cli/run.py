@@ -62,7 +62,7 @@ def run(opts, should_run):
         )))
 
         if len(license_files) > 0:
-            license_file = str(first(license_files))
+            license_file = str(license_files[0])
             os.environ["FS_LICENSE"] = license_file
 
     if os.environ.get("FS_LICENSE") is not None:
@@ -174,13 +174,14 @@ def run(opts, should_run):
 
         logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
-        reversed_graph_items_iter = iter(reversed(graphs.items()))
-        last_graph_name, model_chunk = next(reversed_graph_items_iter)
-        assert last_graph_name == "model", "Last graph needs to be model chunk"
+        model_chunk = None
+        if "model" in graphs:
+            model_chunk = graphs["model"]
+            del graphs["model"]
 
         from ..workflow.execgraph import filter_subject_graphs
 
-        subject_graphs = OrderedDict([*reversed_graph_items_iter])
+        subject_graphs = OrderedDict(reversed(list(graphs.items())))
         subject_graphs = filter_subject_graphs(subject_graphs, opts)
 
         n_chunks = opts.n_chunks
@@ -247,8 +248,8 @@ def run(opts, should_run):
 
                 runner = runnercls(plugin_args=plugin_args)
                 firstnode = first(chunk.nodes())
-                assert isinstance(firstnode, pe.Node)
                 if firstnode is not None:
+                    assert isinstance(firstnode, pe.Node)
                     runner.run(chunk, updatehash=False, config=firstnode.config)
             except Exception as e:
                 if opts.debug:

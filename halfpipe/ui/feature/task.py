@@ -328,6 +328,8 @@ class CheckUnitsStep(CheckMetadataStep):
 
     next_step_type = ConditionsSelectStep
 
+    show_summary = False
+
 
 class EventsStep(FilePatternStep):
     header_str = "Specify event data"

@@ -303,6 +303,8 @@ class CheckMetadataStep(Step):
 
     next_step_type = None
 
+    show_summary = True
+
     def _should_skip(self, ctx):
         return False
 
@@ -347,7 +349,9 @@ class CheckMetadataStep(Step):
 
         if any(val is None for val in vals):
             self.is_missing = True
-            self._append_view(TextView(f"Missing {humankey} values"))
+
+            if self.show_summary is True:
+                self._append_view(TextView(f"Missing {humankey} values"))
 
             vals = [val if val is not None else "missing" for val in vals]
         else:
@@ -371,24 +375,26 @@ class CheckMetadataStep(Step):
         if self.key == "slice_timing":
             unit = ""
 
-        for i in range(min(10, len(order))):
-            display = display_str(f"{uniquevals[i]}")
-            if self.suggestion is None:
-                self.suggestion = display
-            tablerow = f" {column1[i]:>{column1width}} - {display}"
-            if uniquevals[i] != "missing":
-                tablerow = f"{tablerow} {unit}"
-            self._append_view(TextView(tablerow))
+        if self.show_summary is True:
+            for i in range(min(10, len(order))):
+                display = display_str(f"{uniquevals[i]}")
+                if self.suggestion is None:
+                    self.suggestion = display
+                tablerow = f" {column1[i]:>{column1width}} - {display}"
+                if uniquevals[i] != "missing":
+                    tablerow = f"{tablerow} {unit}"
+                self._append_view(TextView(tablerow))
 
-        if len(order) > 10:
-            self._append_view(TextView("..."))
+            if len(order) > 10:
+                self._append_view(TextView("..."))
 
         if self.is_missing is False:
             self._append_view(TextView("Proceed with these values?"))
             self.input_view = SingleChoiceInputView(["Yes", "No"], isVertical=False)
             self._append_view(self.input_view)
 
-        self._append_view(SpacerView(1))
+        if self.show_summary is True or self.is_missing is False:
+            self._append_view(SpacerView(1))
 
     def run(self, ctx):
         if self.is_missing:
