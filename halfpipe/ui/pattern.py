@@ -112,7 +112,8 @@ class AskForMissingEntities(Step):
                 suggestion, _ = splitext(ctx.spec.files[-1].path)
 
             self.input_view = TextInputView(
-                text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
+                text=suggestion,
+                isokfun=lambda text: len(text) > 0 and forbidden_chars.search(text) is None,
             )
 
             self._append_view(self.input_view)
