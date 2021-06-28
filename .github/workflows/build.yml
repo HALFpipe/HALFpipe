@@ -93,10 +93,16 @@ jobs:
     container:
       image: quay.io/singularity/docker2singularity:${{ matrix.singularity_version }}
       options: --privileged
+      volumes:
+        - /:/host
 
     steps:
+      - name: Increase available disk space
+        shell: bash
+        run: |
+          rm -rf /host/{usr/share/dotnet,usr/local/lib/android,opt/ghc}
+
       - name: Convert to Singularity
-        id: docker2singularity
         shell: bash
         env:
           DOCKER_IMAGE_NAME: ${{ needs.docker_build.outputs.tag }}
