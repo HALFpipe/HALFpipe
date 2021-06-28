@@ -69,7 +69,7 @@ def init_workflow(workdir):
         crashdump_dir=workflow.base_dir,
         crashfile_format="txt",
         hash_method="content",
-        poll_sleep_duration=0.75,
+        poll_sleep_duration=2,
         use_relative_paths=False,
         check_version=False,
     ))
