@@ -116,7 +116,7 @@ jobs:
             ${DOCKER_IMAGE_NAME}
           echo "::set-output name=image::${SINGULARITY_IMAGE_FILE}"
 
-      - name: Upload to DigitalOcean
+      - name: Upload to server
         shell: bash
         env:
           DIGITALOCEAN_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
