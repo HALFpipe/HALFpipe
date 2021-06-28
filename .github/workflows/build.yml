@@ -114,7 +114,7 @@ jobs:
           DIGITALOCEAN_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
           DIGITALOCEAN_SECRET_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
           DIGITALOCEAN_REGION: ${{ secrets.DIGITALOCEAN_REGION }}
-          DIGITALOCEAN_SPACE_NAME: ${{ secreys.DIGITALOCEAN_SPACE_NAME }}
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
         run: |
           apk add python3  py3-pip
           pip3 install --upgrade pip
