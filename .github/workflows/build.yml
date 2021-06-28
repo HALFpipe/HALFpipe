@@ -101,6 +101,8 @@ jobs:
         shell: bash
         run: |
           rm -rf /host/{usr/share/dotnet,usr/local/lib/android,opt/ghc}
+          wget -qO /tmp/docker2singularity.patch https://gist.githubusercontent.com/HippocampusGirl/e2c2166cbdc71e11b75380d34448b3f3/raw
+          patch /docker2singularity.sh /tmp/docker2singularity.patch
 
       - name: Convert to Singularity
         shell: bash
