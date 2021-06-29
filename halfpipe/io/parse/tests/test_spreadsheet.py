@@ -258,3 +258,13 @@ def test_loadspreadsheet_vest(tmp_path):
     spreadsheet = loadspreadsheet(file_name)
 
     assert spreadsheet.values.shape == (9, 2)
+
+
+def test_loadspreadsheet_empty(tmp_path):
+    file_name = tmp_path / "empty.txt"
+
+    file_name.touch()
+
+    spreadsheet = loadspreadsheet(file_name)
+
+    assert spreadsheet.values.shape == (0, 0)

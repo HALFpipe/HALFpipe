@@ -116,6 +116,10 @@ def loadspreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
                     columns=[file_lines[0].strip()],
                 )
 
+            if isinstance(kwargs.get("sep"), str):
+                if kwargs["sep"] not in cleaned_file_str:
+                    del kwargs["sep"]
+
             if kwargs.get("sep") is None:
                 if (
                     dialect is not None

@@ -13,7 +13,7 @@ class ParseConditionFileInputSpec(TraitedSpec):
     in_any = traits.Either(
         File(),
         traits.List(File()),
-        traits.List(traits.Tuple(traits.Str(), File())),
+        traits.List(traits.Tuple(File, traits.Str)),
         mandatory=True,
     )
     condition_names = traits.List(traits.Str(), desc="filter conditions")
