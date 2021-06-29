@@ -121,16 +121,21 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
         for (v, u, c) in nx.edge_boundary(flatgraph.reverse(), model_nodes, data=True):
             u.keep = True  # don't allow results to be deleted
 
+            u.base_dir = workflow.base_dir  # make sure to use correct base path
+            u._output_dir = None  # reset this just in case
+
             newu = newnodes.get(u.fullname)
             if newu is None:
-                udigest = b32digest(u.fullname)[:4]
-                newu = pe.Node(LoadResult(u), name=f"load_result_{udigest}", base_dir=modeldir)
+                udigest = b32digest(u.fullname)[:8]
+                newu = pe.Node(LoadResult(u), name=f"load_{udigest}", base_dir=modeldir)
                 newu.config = u.config
                 newnodes[u.fullname] = newu
 
             flatgraph.add_edge(newu, v, **c)
 
-            newuresultfile = Path(newu.output_dir()) / f"result_{newu.name}.pklz"
+            output_dir = newu.output_dir()
+            assert isinstance(output_dir, str)
+            newuresultfile = Path(output_dir) / f"result_{newu.name}.pklz"
             for outattr, inattr in c["connect"]:
                 newu.needed_outputs = [*newu.needed_outputs, outattr]
                 v.input_source[inattr] = (newuresultfile, outattr)
