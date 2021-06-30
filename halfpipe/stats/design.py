@@ -116,7 +116,7 @@ def group_design(
         if contrastdict["type"] == "infer":
             if not columns_var_gt_0[contrastdict["variable"]].all():
                 logger.warning(
-                    f'Not adding term "{contrastdict["variable"]}" from model '
+                    f'Not adding term "{contrastdict["variable"]}" to design matrix '
                     "because it has zero variance"
                 )
                 continue
