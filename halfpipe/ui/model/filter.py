@@ -6,7 +6,7 @@
 
 """
 
-from typing import Optional
+from typing import Optional, List, Dict
 
 from calamities import (
     TextView,
@@ -105,6 +105,8 @@ class SubjectGroupFilterStep(Step):
             if variable["type"] == "categorical"
         ]
 
+        self.choice: Optional[List[Dict[str, bool]]] = None
+
         if len(self.variables) > 0:
             self.should_run = True
 
@@ -147,19 +149,21 @@ class SubjectGroupFilterStep(Step):
         if not hasattr(ctx.spec.models[-1], "filters") or ctx.spec.models[-1].filters is None:
             ctx.spec.models[-1].filters = []
 
-        for variable, checked in zip(self.variables, self.choice):
-            if not all(checked.values()):
-                levels = [str(k) for k, is_selected in checked.items() if is_selected]
-                ctx.spec.models[-1].filters.append(
-                    GroupFilterSchema().load(
-                        {
-                            "action": "include",
-                            "type": "group",
-                            "variable": variable["name"],
-                            "levels": levels,
-                        }
+        if len(self.variables) > 0:
+            assert self.choice is not None
+            for variable, checked in zip(self.variables, self.choice):
+                if not all(checked.values()):
+                    levels = [str(k) for k, is_selected in checked.items() if is_selected]
+                    ctx.spec.models[-1].filters.append(
+                        GroupFilterSchema().load(
+                            {
+                                "action": "include",
+                                "type": "group",
+                                "variable": variable["name"],
+                                "levels": levels,
+                            }
+                        )
                     )
-                )
 
         if self.should_run or self.is_first_run:
             self.is_first_run = False
