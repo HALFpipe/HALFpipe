@@ -94,7 +94,8 @@ jobs:
       image: quay.io/singularity/docker2singularity:${{ matrix.singularity_version }}
       options: --privileged
       volumes:
-        - /:/host
+        - /usr:/host/usr
+        - /opt:/host/opt
 
     steps:
       - name: Increase available disk space
