@@ -126,8 +126,12 @@ def run(opts, should_run):
             assert (
                 opts.graphs_file is not None
             ), "Missing required --graphs-file input for step run"
-            graphs = loadpicklelzma(opts.graphs_file)
+
+            graphs_file = resolve(opts.graphs_file, opts.fs_root)
+            graphs = loadpicklelzma(graphs_file)
+
             assert isinstance(graphs, OrderedDict)
+
             logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
         else:
             logger.info("Using graphs from previous step")

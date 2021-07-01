@@ -2,13 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union
+from typing import Union, Dict
 
 import logging
 from pathlib import Path
 from shutil import copyfile
 import re
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from fnmatch import fnmatch
 from argparse import Namespace
 from copy import deepcopy
@@ -16,11 +16,12 @@ from copy import deepcopy
 import networkx as nx
 
 import nipype.pipeline.engine as pe
+from nipype.interfaces import utility as niu
 from nipype.pipeline.engine.utils import merge_dict
 
+from ..fixes import Node
 from .base import IdentifiableWorkflow
-from ..interface import LoadResult
-from ..utils import b32digest, resolve
+from ..utils import resolve
 from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
@@ -66,6 +67,57 @@ def extract_subject_name(hierarchy):
         return m.group("subjectname")
 
 
+def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
+    stack = [
+        (u, v, source_info, field) for source_info, field in c["connect"]
+    ]
+
+    result = list()
+
+    while len(stack) > 0:
+        node, v, source_info, field = stack.pop(0)
+        if not isinstance(node.interface, niu.IdentityInterface):
+            result.append((node, v, source_info, field))
+            continue
+        assert not isinstance(source_info, tuple)
+        for u, _, k in graph.in_edges(node, data=True):
+            for u_source_info, node_field in k["connect"]:
+                if source_info == node_field:
+                    stack.append(
+                        (u, v, u_source_info, field)
+                    )
+
+    stack = result
+    result = list()
+
+    while len(stack) > 0:
+        u, node, source_info, field = stack.pop(0)
+        if not isinstance(node.interface, niu.IdentityInterface):
+            result.append((u, node, source_info, field))
+            continue
+        for _, v, k in graph.out_edges(node, data=True):
+            for node_source_info, v_field in k["connect"]:
+                if node_source_info == field:
+                    stack.append(
+                        (u, v, source_info, v_field)
+                    )
+
+    input_source_dict = defaultdict(dict)
+    for u, v, source_info, field in result:
+        u.keep = True  # don't allow results to be deleted
+
+        u._output_dir = None  # reset this just in case
+
+        output_dir = u.output_dir()
+        assert isinstance(output_dir, str)
+
+        result_file = Path(output_dir) / f"result_{u.name}.pklz"
+
+        input_source_dict[v][field] = (result_file, source_info)
+
+    return input_source_dict
+
+
 def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) -> OrderedDict:
     logger = logging.getLogger("halfpipe")
 
@@ -105,6 +157,8 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
 
         subject_nodes = dict()
         for node in flatgraph:
+            node.base_dir = workflow.base_dir  # make sure to use correct base path
+
             hierarchy = node._hierarchy.split(".")
             assert len(hierarchy) >= 3
             subject_name = extract_subject_name(hierarchy)
@@ -116,29 +170,12 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
         all_subject_nodes = set.union(*subject_nodes.values())
         model_nodes = set(flatgraph.nodes) - all_subject_nodes
 
-        # make safe load
-        newnodes = dict()
+        input_source_dict = defaultdict(dict)
         for (v, u, c) in nx.edge_boundary(flatgraph.reverse(), model_nodes, data=True):
-            u.keep = True  # don't allow results to be deleted
+            edge_input_source_dict = find_input_source(flatgraph, u, v, c)
 
-            u.base_dir = workflow.base_dir  # make sure to use correct base path
-            u._output_dir = None  # reset this just in case
-
-            newu = newnodes.get(u.fullname)
-            if newu is None:
-                udigest = b32digest(u.fullname)[:8]
-                newu = pe.Node(LoadResult(u), name=f"load_{udigest}", base_dir=modeldir)
-                newu.config = u.config
-                newnodes[u.fullname] = newu
-
-            flatgraph.add_edge(newu, v, **c)
-
-            output_dir = newu.output_dir()
-            assert isinstance(output_dir, str)
-            newuresultfile = Path(output_dir) / f"result_{newu.name}.pklz"
-            for outattr, inattr in c["connect"]:
-                newu.needed_outputs = [*newu.needed_outputs, outattr]
-                v.input_source[inattr] = (newuresultfile, outattr)
+            for v, input_sources in edge_input_source_dict.items():
+                input_source_dict[v].update(input_sources)
 
         logger.info("Expanding subgraphs")
 
@@ -153,6 +190,10 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
                 node.index = index
 
             workflow._configure_exec_nodes(graph)
+
+            for node in graph:
+                if node in input_source_dict:
+                    node.input_source.update(input_source_dict[node])
 
             graphs[s] = graph
 

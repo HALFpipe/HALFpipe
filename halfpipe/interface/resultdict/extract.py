@@ -47,12 +47,14 @@ class ExtractFromResultdict(IOBase):
             key_and_aliases = [key]
             if key in self._aliases:
                 key_and_aliases.extend(self._aliases[key])
-            for key_or_alias in key_and_aliases:
+
+            while key not in outdict and len(key_and_aliases) > 0:
+                key_or_alias = key_and_aliases.pop()
                 for v in resultdict.values():
                     if key_or_alias in v:
                         outdict[key] = v[key_or_alias]
                         del v[key_or_alias]
-                        return
+                        break
 
         for key in self._keys:
             if key in outdict:
