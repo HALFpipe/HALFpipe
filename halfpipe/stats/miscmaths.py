@@ -42,7 +42,7 @@ def adaptive_precision(func) -> Callable[..., float]:
         z = math.inf
         zprev = None
 
-        while dps <= 2 ** 13:  # avoid infinite loop
+        while dps <= 2 ** 16:  # avoid infinite loop
             with workdps(dps):
                 z = math.inf
 
