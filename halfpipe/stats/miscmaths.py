@@ -72,12 +72,17 @@ def adaptive_precision(func) -> Callable[..., float]:
     return wrapper
 
 
+def p2z_convert(p: mpf) -> mpf:
+    z = sqrt(mpf("2")) * erfinv(p)  # inverse normal cdf
+    return z
+
+
 @adaptive_precision
-def t2z_convert(t: float, nu: int):
+def t2z_convert(t: float, nu: int) -> mpf:
     t = mpf(t)
     nu = mpf(nu)
 
-    z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
+    p = (
         mpf("2")
         * t
         * gamma((mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2"))
@@ -89,7 +94,7 @@ def t2z_convert(t: float, nu: int):
         / (sqrt(pi) * sqrt(nu) * gamma((mpf("1") / mpf("2")) * nu))
     )
 
-    return z
+    return p2z_convert(p)
 
 
 @adaptive_precision
@@ -101,7 +106,7 @@ def f2z_convert(x: float, d1: int, d2: int):
     if x <= mpf("0") or d1 <= mpf("0") or d2 <= mpf("0"):
         return mpf("0")
 
-    z = sqrt(mpf("2")) * erfinv(  # inverse normal cdf
+    p = (
         -mpf("1")
         + mpf("2")
         * betainc(  # F distribution cdf
@@ -109,7 +114,7 @@ def f2z_convert(x: float, d1: int, d2: int):
         )
     )
 
-    return z
+    return p2z_convert(p)
 
 
 @adaptive_precision
@@ -120,11 +125,11 @@ def chisq2z_convert(x: float, k: int):
     if x <= mpf("0") or k <= mpf("0"):
         return mpf("0")
 
-    z = sqrt(mpf("2")) * erfinv(
+    p = (
         -mpf("1")
         + mpf("2")
         * gammainc((mpf("1") / mpf("2")) * k, 0, (mpf("1") / mpf("2")) * x)
         / gamma((mpf("1") / mpf("2")) * k)
     )
 
-    return z
+    return p2z_convert(p)

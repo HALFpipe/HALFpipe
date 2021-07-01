@@ -19,7 +19,7 @@ from .miscmaths import t2z_convert, f2z_convert
 from .base import ModelAlgorithm, listwise_deletion
 
 
-def calcgam(beta, y, z, s):
+def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     weights = s + beta
 
     iU = np.diag(1.0 / np.ravel(weights))
@@ -27,20 +27,19 @@ def calcgam(beta, y, z, s):
     tmp = z.T @ iU
     ziUz = tmp @ z
 
-    gamcovariance = np.linalg.inv(ziUz)
-    gam = gamcovariance @ tmp @ y
+    gam = np.linalg.lstsq(ziUz, tmp @ y, rcond=None)[0]
 
-    return gam, gamcovariance, iU, ziUz
+    return gam, iU, ziUz
 
 
 def marg_posterior_energy(x, y, z, s):
     ex = np.exp(x)  # ex is variance
 
-    if ex < 0 or np.isclose(ex, 0):
+    if ex < 0 or isclose(ex, 0.0):
         return 1e32  # very large value
 
     try:
-        gam, _, iU, ziUz = calcgam(ex, y, z, s)
+        gam, iU, ziUz = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
         return 1e32
 
@@ -76,16 +75,20 @@ def flame_stage1_onvoxel(y, z, s):
 
     beta = solveforbeta(y, z, s)
 
-    gam, gamcovariance, _, _ = calcgam(beta, y, z, s)
+    gam, _, ziUz = calcgam(beta, y, z, s)
 
     gam *= norm
-    gamcovariance *= np.square(norm)
+    ziUz /= np.square(norm)
 
-    return gam, gamcovariance
+    return gam, ziUz
 
 
-def t_ols_contrast(mn, covariance, dof, tcontrast):
-    varcope = float(tcontrast @ covariance @ tcontrast.T)
+def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
+    varcope = float(
+        tcontrast
+        @ np.linalg.lstsq(inverse_covariance,  tcontrast.T, rcond=None)[0]
+    )
+    # assert isclose(varcope, float(tcontrast @ np.linalg.inv(inverse_covariance) @ tcontrast.T))
 
     cope = float(tcontrast @ mn)
 
@@ -100,12 +103,18 @@ def t_ols_contrast(mn, covariance, dof, tcontrast):
     return cope, varcope, t, z
 
 
-def f_ols_contrast(mn, covariance, dof1, dof2, fcontrast):
+def f_ols_contrast(mn, inverse_covariance, dof1, dof2, fcontrast):
+    a = (
+        fcontrast
+        @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
+    )
+
+    b = np.linalg.lstsq(a, fcontrast, rcond=None)[0]
+
     f = float(
         mn.T
         @ fcontrast.T
-        @ np.linalg.inv(fcontrast @ covariance @ fcontrast.T)
-        @ fcontrast
+        @ b
         @ mn
         / dof1
     )
@@ -115,14 +124,14 @@ def f_ols_contrast(mn, covariance, dof1, dof2, fcontrast):
     return f, z
 
 
-def flame1_contrast(mn, covariance, npts, cmat):
+def flame1_contrast(mn, inverse_covariance, npts, cmat):
     nevs = len(mn)
 
     n, _ = cmat.shape
 
     if n == 1:
         tdoflower = npts - nevs
-        cope, varcope, t, z = t_ols_contrast(mn, covariance, tdoflower, cmat)
+        cope, varcope, t, z = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
 
         mask = isfinite(z)
 
@@ -135,7 +144,7 @@ def flame1_contrast(mn, covariance, npts, cmat):
 
         fdof2lower = npts - nevs
 
-        f, z = f_ols_contrast(mn, covariance, fdof1, fdof2lower, cmat)
+        f, z = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
 
         mask = isfinite(z)
 
@@ -158,7 +167,7 @@ class FLAME1(ModelAlgorithm):
         npts = y.size
 
         try:
-            mn, covariance = flame_stage1_onvoxel(y, z, s)
+            mn, inverse_covariance = flame_stage1_onvoxel(y, z, s)
         except np.linalg.LinAlgError:
             return
 
@@ -166,7 +175,7 @@ class FLAME1(ModelAlgorithm):
 
         for name, cmat in cmatdict.items():
             try:
-                r = flame1_contrast(mn, covariance, npts, cmat)
+                r = flame1_contrast(mn, inverse_covariance, npts, cmat)
 
                 if name not in voxel_result:
                     voxel_result[name] = dict()

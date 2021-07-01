@@ -29,8 +29,7 @@ def calc_i2(y, z, s):
     n, p = x.shape
 
     w0x = w0 @ x
-    xtw0x_1 = np.linalg.inv(x.T @ w0x)
-    hat = xtw0x_1 @ w0x.T
+    hat = np.linalg.lstsq(x.T @ w0x, w0x.T, rcond=None)[0]
     a0 = hat @ b
 
     r = b - x @ a0
@@ -57,7 +56,7 @@ def log_prob(x, y, z, s):
     ex = np.exp(x)  # ex is variance
 
     try:
-        gam, _, iU, _ = calcgam(ex, y, z, s)
+        gam, iU, _ = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
         return -1e32
 
