@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from ..io import parse_design
 from ..utils import atleast_4d
-from .algorithms import algorithms
+from .algorithms import algorithms, make_algorithms_set
 from ..logging import Context
 
 ctx = get_context("forkserver")
@@ -82,10 +82,7 @@ def fit(
     masks = np.logical_and(masks, np.isfinite(copes))
     masks = np.logical_and(masks, np.isfinite(var_copes))
 
-    # update algorithms
-    # remove duplicates and always run descriptive
-
-    algorithm_set = set(algorithms_to_run) | frozenset(["descriptive"])
+    algorithm_set = make_algorithms_set(algorithms_to_run)
 
     # prepare voxelwise generator
     def gen_voxel_data():

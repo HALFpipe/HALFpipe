@@ -5,7 +5,7 @@
 """
 """
 
-from typing import Dict, Type
+from typing import Dict, Set, Type, List
 
 from .base import ModelAlgorithm
 from .descriptive import Descriptive
@@ -19,3 +19,12 @@ algorithms: Dict[str, Type[ModelAlgorithm]] = dict(
     heterogeneity=Heterogeneity,
     mcartest=MCARTest,
 )
+
+
+def make_algorithms_set(algorithms_to_run: List[str]) -> Set[str]:
+    # update algorithms
+    # remove duplicates and always run descriptive
+
+    algorithm_set = set(algorithms_to_run) | frozenset(["descriptive"])
+
+    return algorithm_set
