@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
-from collections import defaultdict
 
 from nipype.interfaces.base import (
     traits,
@@ -148,7 +147,7 @@ class MakeResultdicts(IOBase):
         # make resultdicts
         resultdicts = []
         for valuetupl in zip(*values):
-            resultdict = defaultdict(dict)
+            resultdict = dict(tags=dict(), metadata=dict(), images=dict(), vals=dict())
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 if k is None:
                     resultdict[f].update(v)
