@@ -42,14 +42,14 @@ RUN python -c "from matplotlib import font_manager"
 RUN pip install git+https://github.com/pydata/patsy.git
 
 # install dependencies and force reinstall of nipreps and nipype
-COPY requirements.txt /halfpipe/
-RUN cd /halfpipe && \
+COPY requirements.txt /tmp/
+RUN cd /tmp && \
     pip uninstall --yes fmriprep smriprep niworkflows nipype pybids && \
     pip install -r requirements.txt
 
 # download all resources
-COPY halfpipe/resource.py /halfpipe/
-RUN cd /halfpipe && \
+COPY halfpipe/resource.py /tmp/
+RUN cd /tmp && \
     python resource.py
 
 # install halfpipe
@@ -58,6 +58,6 @@ RUN cd /halfpipe && \
     pip install . && \
     rm -rf ~/.cache/pip && \
     cd .. && \
-    rm -rf /halfpipe/*
+    rm -rf /halfpipe/* /tmp/*
     
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
