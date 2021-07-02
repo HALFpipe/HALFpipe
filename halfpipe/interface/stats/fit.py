@@ -17,7 +17,8 @@ from nipype.interfaces.base import (
 from nipype.interfaces.io import IOBase, add_traits
 
 from .tsv import DesignSpec
-from ...stats.fit import fit, algorithms
+from ...stats.fit import fit
+from ...stats.algorithms import algorithms, make_algorithms_set
 
 
 class ModelFitInputSpec(DesignSpec):
@@ -52,9 +53,10 @@ class ModelFit(IOBase):
         self._results = dict()
 
     def _add_output_traits(self, base):
+        algorithm_set = make_algorithms_set(self.inputs.algorithms_to_run)
         fieldnames = [
             output
-            for a in self.inputs.algorithms_to_run
+            for a in algorithm_set
             for output in algorithms[a].outputs
         ]
         return add_traits(base, fieldnames)

@@ -12,7 +12,7 @@ import nibabel as nib
 import statsmodels.api as sm
 from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
-from .base import ModelAlgorithm
+from .base import ModelAlgorithm, demean
 from .heterogeneity import Heterogeneity
 from .miscmaths import chisq2z_convert
 
@@ -28,6 +28,9 @@ class MCARTest(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: dict,
     ) -> Optional[Dict]:
+
+        z = demean(z)
+
         isavailable = np.logical_and(
             np.isfinite(y), np.isfinite(s)
         )

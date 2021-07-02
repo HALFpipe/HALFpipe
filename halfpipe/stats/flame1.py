@@ -7,6 +7,7 @@
 
 from typing import Dict, Optional, Tuple
 
+from collections import defaultdict
 from pathlib import Path
 from math import isnan, isclose, isfinite
 
@@ -16,7 +17,7 @@ import nibabel as nib
 from scipy import optimize
 
 from .miscmaths import t2z_convert, f2z_convert
-from .base import ModelAlgorithm, listwise_deletion
+from .base import ModelAlgorithm, listwise_deletion, demean
 
 
 def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -85,8 +86,7 @@ def flame_stage1_onvoxel(y, z, s):
 
 def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
     varcope = float(
-        tcontrast
-        @ np.linalg.lstsq(inverse_covariance,  tcontrast.T, rcond=None)[0]
+        tcontrast @ np.linalg.lstsq(inverse_covariance, tcontrast.T, rcond=None)[0]
     )
     # assert isclose(varcope, float(tcontrast @ np.linalg.inv(inverse_covariance) @ tcontrast.T))
 
@@ -104,20 +104,11 @@ def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
 
 
 def f_ols_contrast(mn, inverse_covariance, dof1, dof2, fcontrast):
-    a = (
-        fcontrast
-        @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
-    )
+    a = fcontrast @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
 
     b = np.linalg.lstsq(a, fcontrast, rcond=None)[0]
 
-    f = float(
-        mn.T
-        @ fcontrast.T
-        @ b
-        @ mn
-        / dof1
-    )
+    f = float(mn.T @ fcontrast.T @ b @ mn / dof1)
 
     z = f2z_convert(f, dof1, dof2)
 
@@ -151,6 +142,20 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
         return dict(fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
 
 
+def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
+    # filtering for design matrix is already done
+    # the nans that are left should be replaced with zeros
+    z = np.nan_to_num(z)
+
+    # remove observations with nan cope/varcope
+    y, z, s = listwise_deletion(y, z, s)
+
+    # finally demean the design matrix
+    z = demean(z)
+
+    return y, z, s
+
+
 class FLAME1(ModelAlgorithm):
     outputs = ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]
 
@@ -162,7 +167,7 @@ class FLAME1(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: dict,
     ) -> Optional[Dict]:
-        y, z, s = listwise_deletion(y, z, s)
+        y, z, s = flame1_prepare_data(y, z, s)
 
         npts = y.size
 
@@ -171,37 +176,27 @@ class FLAME1(ModelAlgorithm):
         except np.linalg.LinAlgError:
             return
 
-        voxel_result = dict()
+        voxel_result = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             try:
                 r = flame1_contrast(mn, inverse_covariance, npts, cmat)
-
-                if name not in voxel_result:
-                    voxel_result[name] = dict()
-
                 voxel_result[name][coordinate] = r
             except np.linalg.LinAlgError:
                 continue
 
         return voxel_result
 
-    @staticmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    @classmethod
+    def write_outputs(
+        cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+    ) -> Dict:
         from nilearn.image import new_img_like
 
         output_files = dict()
 
-        for output_name in [
-            "copes",
-            "var_copes",
-            "tdof",
-            "zstats",
-            "tstats",
-            "fstats",
-            "masks",
-        ]:
-            output_files[output_name] = [False for _ in range(len(voxel_results))]
+        for output_name in cls.outputs:
+            output_files[output_name] = [False] * len(cmatdict)
 
         shape = ref_img.shape[:3]
 

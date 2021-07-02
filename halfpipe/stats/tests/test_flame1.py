@@ -7,6 +7,7 @@
 import pytest
 
 import os
+from collections import OrderedDict
 
 import nibabel as nib
 import numpy as np
@@ -58,9 +59,15 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
 
     workflow = pe.Workflow("comparison", base_dir=str(tmp_path))
 
+    demeaned_regressors = OrderedDict()  # need to manually demean here
+    for variable_name, values in regressors.items():
+        if variable_name.lower() != "intercept":
+            values = (np.array(values) - np.nanmean(values)).tolist()
+        demeaned_regressors[variable_name] = values
+
     multipleregressdesign = pe.Node(
         fsl.MultipleRegressDesign(
-            regressors=regressors,
+            regressors=demeaned_regressors,
             contrasts=contrasts,
         ),
         name="multipleregressdesign",

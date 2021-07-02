@@ -155,7 +155,7 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
 
         logger.info("Splitting graph")
 
-        subject_nodes = dict()
+        subject_nodes = defaultdict(set)
         for node in flatgraph:
             node.base_dir = workflow.base_dir  # make sure to use correct base path
 
@@ -163,8 +163,6 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
             assert len(hierarchy) >= 3
             subject_name = extract_subject_name(hierarchy)
             if subject_name is not None:
-                if subject_name not in subject_nodes:
-                    subject_nodes[subject_name] = set()
                 subject_nodes[subject_name].add(node)
 
         all_subject_nodes = set.union(*subject_nodes.values())

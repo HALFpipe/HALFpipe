@@ -99,7 +99,7 @@ def init_model_wf(
         name="make_resultdicts_a",
     )
 
-    statmaps = ["effect", "variance", "z", "dof", "mask"]
+    statmaps = ["effect", "variance", "z", "dof", "mask", "mean", "sem"]
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],

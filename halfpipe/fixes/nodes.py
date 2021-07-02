@@ -57,6 +57,10 @@ class Node(pe.Node):
                 else:
                     raise
 
+            if self.allow_missing_input_source:
+                if outputs is None:
+                    continue
+
             if outputs is None:
                 raise RuntimeError(
                     """\

@@ -58,7 +58,7 @@ class Resample(FixHeaderApplyTransforms):
         reference_image = nib.load(self.inputs.reference_image)
         input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
         input_matches_reference = input_matches_reference and np.allclose(
-            input_image.affine, reference_image.affine, atol=1e-2  # tolerance of 0.01 mm
+            input_image.affine, reference_image.affine, atol=1e-2, rtol=1e-2  # tolerance of 0.01 mm
         )
 
         self.inputs.dimension = 3
@@ -83,7 +83,8 @@ class Resample(FixHeaderApplyTransforms):
 
     def _list_outputs(self):
         if self.resample:
-            outputs = super(Resample, self)._list_outputs()
+            return super(Resample, self)._list_outputs()
         else:
+            outputs = self.output_spec().get()
             outputs["output_image"] = self.inputs.input_image
-        return outputs
+            return outputs

@@ -7,6 +7,7 @@
 
 from typing import List, Dict, Optional, Tuple
 
+from collections import defaultdict
 import os
 from pathlib import Path
 from multiprocessing import get_context
@@ -19,7 +20,7 @@ from tqdm import tqdm
 
 from ..io import parse_design
 from ..utils import atleast_4d
-from .algorithms import algorithms
+from .algorithms import algorithms, make_algorithms_set
 from ..logging import Context
 
 ctx = get_context("forkserver")
@@ -33,10 +34,10 @@ def initializer(loggingargs, host_env):
 
 
 def voxel_calc(voxel_data):
-    algorithms_to_run, c, y, z, s, cmatdict = voxel_data
+    algorithm_set, c, y, z, s, cmatdict = voxel_data
 
     return {
-        a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithms_to_run
+        a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithm_set
     }
 
 
@@ -81,6 +82,8 @@ def fit(
     masks = np.logical_and(masks, np.isfinite(copes))
     masks = np.logical_and(masks, np.isfinite(var_copes))
 
+    algorithm_set = make_algorithms_set(algorithms_to_run)
+
     # prepare voxelwise generator
     def gen_voxel_data():
         def ensure_row_vector(x):
@@ -91,7 +94,7 @@ def fit(
             missing = np.logical_not(available)
 
             npts = np.count_nonzero(available)
-            if npts < nevs + 1:  # need at least one degree of freedom
+            if npts < nevs + 3:  # need at least three degrees of freedom
                 continue
 
             y = ensure_row_vector(copes[coordinate])
@@ -102,7 +105,7 @@ def fit(
 
             z = dmat.to_numpy(dtype=np.float64)
 
-            yield algorithms_to_run, coordinate, y, z, s, cmatdict
+            yield algorithm_set, coordinate, y, z, s, cmatdict
 
     voxel_data = gen_voxel_data()
 
@@ -122,7 +125,7 @@ def fit(
         it = cm.imap_unordered(voxel_calc, voxel_data)
 
     # run
-    voxel_results = dict()
+    voxel_results = defaultdict(lambda: defaultdict(dict))
     with cm:
         for x in tqdm(it, unit="voxels"):
             if x is None:
@@ -132,15 +135,9 @@ def fit(
                 if d is None:
                     continue
 
-                if a not in voxel_results:
-                    voxel_results[a] = dict()
-
                 for k, v in d.items():
                     if v is None:
                         continue
-
-                    if k not in voxel_results[a]:
-                        voxel_results[a][k] = dict()
 
                     voxel_results[a][k].update(v)
 
