@@ -57,7 +57,7 @@ COPY . /halfpipe/
 RUN cd /halfpipe && \
     pip install . && \
     rm -rf ~/.cache/pip && \
-    cd .. && \
+    cd && \
     rm -rf /halfpipe/* /tmp/*
     
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]

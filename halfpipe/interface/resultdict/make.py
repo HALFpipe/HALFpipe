@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from collections import defaultdict
 
 from nipype.interfaces.base import (
     traits,
@@ -16,8 +17,10 @@ from ...model import ResultdictSchema
 from ...model.utils import get_schema_entities
 from ...utils import ravel, deepcopy
 
+resultdict_schema = ResultdictSchema()
+resultdict_entities = set(get_schema_entities(resultdict_schema))
+
 composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
-resultdict_entities = set(get_schema_entities(ResultdictSchema))
 
 
 class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
@@ -147,7 +150,7 @@ class MakeResultdicts(IOBase):
         # make resultdicts
         resultdicts = []
         for valuetupl in zip(*values):
-            resultdict = dict(tags=dict(), metadata=dict(), images=dict(), vals=dict())
+            resultdict = defaultdict(dict)
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 if k is None:
                     resultdict[f].update(v)
@@ -189,7 +192,7 @@ class MakeResultdicts(IOBase):
 
         # validate
         for i in range(len(resultdicts)):
-            resultdicts[i] = ResultdictSchema().load(resultdicts[i])
+            resultdicts[i] = resultdict_schema.dump(resultdicts[i])
 
         outputs["resultdicts"] = resultdicts
         outputs["vals"] = resultdicts[0]["vals"]

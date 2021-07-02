@@ -101,13 +101,13 @@ class BaseSettingSchema(Schema):
         unknown = RAISE
         ordered = True
 
-    ica_aroma = fields.Bool(default=True, allow_none=True)  # none is allowed to signify that this step will be skipped
+    ica_aroma = fields.Bool(allow_none=True)  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped
     grand_mean_scaling = fields.Nested(GrandMeanScalingSettingSchema, allow_none=True)
     bandpass_filter = fields.Nested(BandpassFilterSettingSchema, allow_none=True)
-    confounds_removal = fields.List(fields.Str(), default=[])
+    confounds_removal = fields.List(fields.Str())
 
 
 class SettingSchema(BaseSettingSchema):
