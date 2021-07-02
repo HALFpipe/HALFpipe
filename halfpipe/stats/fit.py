@@ -34,10 +34,10 @@ def initializer(loggingargs, host_env):
 
 
 def voxel_calc(voxel_data):
-    algorithms_to_run, c, y, z, s, cmatdict = voxel_data
+    algorithm_set, c, y, z, s, cmatdict = voxel_data
 
     return {
-        a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithms_to_run
+        a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithm_set
     }
 
 
@@ -82,6 +82,11 @@ def fit(
     masks = np.logical_and(masks, np.isfinite(copes))
     masks = np.logical_and(masks, np.isfinite(var_copes))
 
+    # update algorithms
+    # remove duplicates and always run descriptive
+
+    algorithm_set = set(algorithms_to_run) | frozenset(["descriptive"])
+
     # prepare voxelwise generator
     def gen_voxel_data():
         def ensure_row_vector(x):
@@ -92,7 +97,7 @@ def fit(
             missing = np.logical_not(available)
 
             npts = np.count_nonzero(available)
-            if npts < nevs + 1:  # need at least one degree of freedom
+            if npts < nevs + 3:  # need at least three degrees of freedom
                 continue
 
             y = ensure_row_vector(copes[coordinate])
@@ -103,7 +108,7 @@ def fit(
 
             z = dmat.to_numpy(dtype=np.float64)
 
-            yield algorithms_to_run, coordinate, y, z, s, cmatdict
+            yield algorithm_set, coordinate, y, z, s, cmatdict
 
     voxel_data = gen_voxel_data()
 

@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 
-from .flame1 import calcgam, solveforbeta
-from .base import listwise_deletion, ModelAlgorithm
+from .flame1 import calcgam, solveforbeta, flame1_prepare_data
+from .base import ModelAlgorithm
 from .miscmaths import chisq2z_convert
 
 
@@ -112,7 +112,7 @@ class Heterogeneity(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: Dict,
     ) -> Optional[Dict]:
-        y, z, s = listwise_deletion(y, z, s)
+        y, z, s = flame1_prepare_data(y, z, s)
 
         try:
             voxel_tuple = het_onvoxel(y, z, s)

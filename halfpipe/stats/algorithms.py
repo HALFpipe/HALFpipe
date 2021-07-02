@@ -8,11 +8,13 @@
 from typing import Dict, Type
 
 from .base import ModelAlgorithm
+from .descriptive import Descriptive
 from .flame1 import FLAME1
 from .heterogeneity import Heterogeneity
 from .mcar import MCARTest
 
 algorithms: Dict[str, Type[ModelAlgorithm]] = dict(
+    descriptive=Descriptive,
     flame1=FLAME1,
     heterogeneity=Heterogeneity,
     mcartest=MCARTest,

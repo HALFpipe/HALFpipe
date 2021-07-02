@@ -87,12 +87,6 @@ def group_design(
     # change type to numeric
     continuous = continuous.astype(np.float64)
 
-    # Demean continuous for flameo
-    continuous -= continuous.mean()
-
-    # replace np.nan by 0 for demeaned_continuous file and regression models
-    continuous.fillna(0.0)
-
     # change type first to string then to category
     categorical = categorical.astype(str)
     categorical = categorical.astype("category")

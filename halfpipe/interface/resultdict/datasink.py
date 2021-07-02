@@ -164,7 +164,7 @@ class ResultdictDatasink(SimpleInterface):
                 outpath = derivatives_directory
                 if "sub" not in tags:
                     outpath = grouplevel_directory
-                if key in ["effect", "variance", "z", "dof"]:  # apply rule
+                if key in ["effect", "variance", "z", "dof", "mean", "sem"]:  # apply rule
                     outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
                 else:
                     outpath = outpath / _make_path(inpath, "image", tags, key)
