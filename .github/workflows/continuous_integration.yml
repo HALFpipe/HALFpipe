@@ -11,6 +11,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    container: ghcr.io/halfpipe/halfpipe:latest
 
     steps:
       - name: Checkout
@@ -44,9 +45,6 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    
-    # Docker Hub image that `container-job` executes in
-    # Use latest
     container: ghcr.io/halfpipe/halfpipe:latest
     
     timeout-minutes: 360
