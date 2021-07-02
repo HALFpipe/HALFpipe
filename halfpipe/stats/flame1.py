@@ -7,6 +7,7 @@
 
 from typing import Dict, Optional, Tuple
 
+from collections import defaultdict
 from pathlib import Path
 from math import isnan, isclose, isfinite
 
@@ -171,37 +172,27 @@ class FLAME1(ModelAlgorithm):
         except np.linalg.LinAlgError:
             return
 
-        voxel_result = dict()
+        voxel_result = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             try:
                 r = flame1_contrast(mn, inverse_covariance, npts, cmat)
-
-                if name not in voxel_result:
-                    voxel_result[name] = dict()
-
                 voxel_result[name][coordinate] = r
             except np.linalg.LinAlgError:
                 continue
 
         return voxel_result
 
-    @staticmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    @classmethod
+    def write_outputs(
+        cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+    ) -> Dict:
         from nilearn.image import new_img_like
 
         output_files = dict()
 
-        for output_name in [
-            "copes",
-            "var_copes",
-            "tdof",
-            "zstats",
-            "tstats",
-            "fstats",
-            "masks",
-        ]:
-            output_files[output_name] = [False for _ in range(len(voxel_results))]
+        for output_name in cls.outputs:
+            output_files[output_name] = [False] * len(voxel_results)
 
         shape = ref_img.shape[:3]
 

@@ -7,6 +7,7 @@
 
 from typing import List, Dict, Optional, Tuple
 
+from collections import defaultdict
 import os
 from pathlib import Path
 from multiprocessing import get_context
@@ -122,7 +123,7 @@ def fit(
         it = cm.imap_unordered(voxel_calc, voxel_data)
 
     # run
-    voxel_results = dict()
+    voxel_results = defaultdict(lambda: defaultdict(dict))
     with cm:
         for x in tqdm(it, unit="voxels"):
             if x is None:
@@ -132,15 +133,9 @@ def fit(
                 if d is None:
                     continue
 
-                if a not in voxel_results:
-                    voxel_results[a] = dict()
-
                 for k, v in d.items():
                     if v is None:
                         continue
-
-                    if k not in voxel_results[a]:
-                        voxel_results[a][k] = dict()
 
                     voxel_results[a][k].update(v)
 

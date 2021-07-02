@@ -8,6 +8,7 @@
 
 from typing import Any, List, Dict, Optional
 
+from collections import defaultdict
 from itertools import product
 from pprint import pformat
 from os.path import basename
@@ -18,7 +19,7 @@ from calamities.pattern import tag_glob, tag_parse, get_entities_in_path
 
 from ...model.file import FileSchema, File
 from ...model.tags import entities, entity_longnames
-from ...utils import splitext, logger, findpaths
+from ...utils import splitext, logger
 from ...io.metadata.sidecar import SidecarMetadataLoader
 
 import bids.config
@@ -201,12 +202,9 @@ class ResolvedSpec:
             for path in intended_for_paths:
                 intended_for_mapping[path] = tagset
 
-        tag_mapping = dict()
+        tag_mapping = defaultdict(list)
         for file in resolved_files:
             tagset = frozenset(file.tags.items())
-
-            if tagset not in tag_mapping:
-                tag_mapping[tagset] = list()
 
             for path, fmap_tagset in intended_for_mapping.items():
                 if not file.path.endswith(path):  # slow performance
@@ -228,16 +226,13 @@ class ResolvedSpec:
         if len(mapping_sets) > 0:
             mappings.update(*mapping_sets)
 
-        intended_for = dict()
+        intended_for = defaultdict(list)
         for functag, fmaptag in mappings:
             entity, val = functag
             funcstr = f"{entity}.{val}"
 
             entity, val = fmaptag
             fmapstr = f"{entity}.{val}"
-
-            if fmapstr not in intended_for:
-                intended_for[fmapstr] = list()
 
             intended_for[fmapstr].append(funcstr)
 

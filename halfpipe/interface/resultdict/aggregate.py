@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import defaultdict
+
 import numpy as np
 
 from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec, isdefined
@@ -65,9 +67,10 @@ class AggregateResultdicts(IOBase):
         if isdefined(self.inputs.include):
             include = self.inputs.include
 
-        aggdicts = dict()
+        aggdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         for resultdict in inputs:
             resultdict = ResultdictSchema().load(resultdict)
+            assert isinstance(resultdict, dict)
             tags = resultdict["tags"]
 
             if across not in tags:
@@ -91,15 +94,8 @@ class AggregateResultdicts(IOBase):
             )
             t = tuple(sorted(t))
 
-            if t not in aggdicts:
-                aggdicts[t] = dict()
-
             for f, nested in resultdict.items():
-                if f not in aggdicts[t]:
-                    aggdicts[t][f] = dict()
                 for k, v in nested.items():
-                    if k not in aggdicts[t][f]:
-                        aggdicts[t][f][k] = list()
                     aggdicts[t][f][k].append(v)
 
         resultdicts = []

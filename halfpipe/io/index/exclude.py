@@ -52,9 +52,6 @@ def _set_in_hierarchy(dicthierarchy, entities, entry):
                 return  # ignore lower precedence ratings
             dicthierarchy[tagval] = dict()  # overwrite parent with higher precedence child values
         _set_in_hierarchy(dicthierarchy[tagval], entities, entry)  # go down hierarchy
-        return
-
-    raise ValueError(f'Unexpected value "{dicthierarchy[tagval]}"')
 
 
 class ExcludeDatabase:
