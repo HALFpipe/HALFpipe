@@ -196,7 +196,7 @@ class FLAME1(ModelAlgorithm):
         output_files = dict()
 
         for output_name in cls.outputs:
-            output_files[output_name] = [False] * len(voxel_results)
+            output_files[output_name] = [False] * len(cmatdict)
 
         shape = ref_img.shape[:3]
 

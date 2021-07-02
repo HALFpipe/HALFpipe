@@ -61,8 +61,7 @@ class Descriptive(ModelAlgorithm):
         output_files = dict()
 
         for output_name in cls.outputs:
-            output_files[output_name] = [False] * len(voxel_results)
-
+            output_files[output_name] = [False] * len(cmatdict)
 
         for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]
