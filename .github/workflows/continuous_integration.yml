@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           npm install -g pyright
-          echo '{ "typeCheckingMode": "off" }' > pyrightconfig.json
+          node -p "JSON.stringify({...require(\"./pyrightconfig.json\"), typeCheckingMode: \"off\"}, null, 2)" > pyrightconfig.json
           pyright
 
   test:
