@@ -3,133 +3,124 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """
 """
-from typing import Callable
+
+from typing import Callable, Union
 
 import math
-import logging
-from pprint import pformat
 
-from mpmath import (
-    mpf,
-    workdps,
-    sqrt,
-    erfinv,
-    gamma,
-    gammainc,
-    hyper,
-    pi,
-    power,
-    betainc,
-)
-
-logger = logging.getLogger("halfpipe")
+from mpmath import mp, mpf, autoprec, mpmathify
 
 
-def adaptive_precision(func) -> Callable[..., float]:
-    """
-    ensure that the wrapped is run with sufficient precision
-    """
+def erfinv(a: mpf, tol: float = 1e-16) -> mpf:
+    if a == mpf("1") or a == mpf("-1") or abs(a) < 0.9:
+        return mp.erfinv(a)
 
-    def wrapper(*args):
-        if any(math.isnan(a) for a in args):
-            return math.nan  # skip computation
+    u = mp.ln(2 / mp.pi / (abs(a) - 1)**2)
+    x0 = mp.sign(a) * mp.sqrt(u - mp.ln(u)) / mp.sqrt(2)
 
-        if math.isinf(args[0]):  # first argument is always the statistic
-            return args[0]
+    def f(t):
+        return mp.erf(t) - a
 
-        dps = 2 ** 4
-
-        z = math.inf
-        zprev = None
-
-        while dps <= 2 ** 16:  # avoid infinite loop
-            with workdps(dps):
-                z = math.inf
-
-                try:
-                    z = float(func(*args))
-                except ValueError:
-                    pass
-                except ZeroDivisionError:
-                    return math.nan
-
-                if zprev is not None:
-                    if math.isfinite(z):
-                        if math.isclose(z, zprev):
-                            return float(z)
-
-                dps *= 2
-
-                zprev = z
-
-        if not math.isnan(z):
-            logger.warning(
-                f"Convergence failure for adaptive_precision with args {pformat(args)}",
-                stack_info=True,
-            )
-        return float(z)
-
-    return wrapper
+    return mp.findroot(f, x0, tol=tol)
 
 
-def p2z_convert(p: mpf) -> mpf:
-    z = sqrt(mpf("2")) * erfinv(p)  # inverse normal cdf
-    return z
+def normppf(p: mpf) -> mpf:
+    a = mpf("2") * p - mpf("1")
+    return mp.sqrt(mpf("2")) * erfinv(a)  # inverse normal cdf
 
 
-@adaptive_precision
-def t2z_convert(t: float, nu: int) -> mpf:
-    t = mpf(t)
-    nu = mpf(nu)
+def tcdf(x: mpf, nu: mpf) -> mpf:
+    a = (nu + mpf("1")) / mpf("2")
 
-    p = (
-        mpf("2")
-        * t
-        * gamma((mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2"))
-        * hyper(
-            (mpf("1") / mpf("2"), (mpf("1") / mpf("2")) * nu + mpf("1") / mpf("2")),
+    return (
+        mpf("1") / mpf("2")
+        + x
+        * mp.gamma(a)
+        * mp.hyper(
+            (mpf("1") / mpf("2"), a),
             (mpf("3") / mpf("2"),),
-            -power(t, mpf("2")) / nu,
+            -(x ** mpf("2")) / nu,
         )
-        / (sqrt(pi) * sqrt(nu) * gamma((mpf("1") / mpf("2")) * nu))
+        / (mp.sqrt(mp.pi) * mp.sqrt(nu) * mp.gamma(nu / mpf("2")))
     )
 
-    return p2z_convert(p)
 
-
-@adaptive_precision
-def f2z_convert(x: float, d1: int, d2: int):
-    x = mpf(x)
-    d1 = mpf(d1)
-    d2 = mpf(d2)
-
-    if x <= mpf("0") or d1 <= mpf("0") or d2 <= mpf("0"):
-        return mpf("0")
-
-    p = (
-        -mpf("1")
-        + mpf("2")
-        * betainc(  # F distribution cdf
-            d1 / mpf("2"), d2 / mpf("2"), x2=d1 * x / (d1 * x + d2), regularized=True
-        )
+def fcdf(x: mpf, d1: mpf, d2: mpf) -> mpf:
+    return mp.betainc(
+        d1 / mpf("2"),
+        d2 / mpf("2"),
+        x1=mpf("0"),
+        x2=d1 * x / (d1 * x + d2),
+        regularized=True,
     )
 
-    return p2z_convert(p)
+
+def chisqcdf(x: mpf, k: mpf) -> mpf:
+    a = k / mpf("2")
+
+    return mp.gammainc(a, 0, x / mpf("2")) / mp.gamma(a)
 
 
-@adaptive_precision
-def chisq2z_convert(x: float, k: int):
-    x = mpf(x)
-    k = mpf(k)
+def auto_convert(cdf: Callable, *args: Union[float, int]) -> float:
+    if any(math.isnan(a) for a in args):
+        return math.nan  # skip computation
+
+    if math.isinf(args[0]):  # first argument is always the statistic
+        return args[0]
+
+    prec = mp.prec
+
+    try:
+        # infer base precision
+
+        p = None
+
+        while mp.prec < 2 ** 14:
+            p = cdf(*map(mpmathify, args))
+
+            if not mp.almosteq(p, mpf("1")) and not mp.almosteq(p, mpf("0")):
+
+                # we have sufficient precision to represent the p-value
+
+                return float(
+                    autoprec(lambda: normppf(cdf(*map(mpf, args))))()
+                )
+
+            if mp.prec < 2 ** 12:
+                mp.prec += 2 ** 8
+            else:
+                mp.prec += mp.prec
+
+        # skip calculation
+
+        mp.prec = prec  # reset precision so that almosteq cannot fail
+
+        if mp.almosteq(p, mpf("1")):
+            return math.inf
+        elif mp.almosteq(p, mpf("0")):
+            return -math.inf
+
+        raise RuntimeError()  # should never be reached
+
+    finally:
+        mp.prec = prec
+
+
+def t2z_convert(x: float, nu: int) -> float:
+    return auto_convert(tcdf, x, nu)
+
+
+def f2z_convert(x: float, d1: int, d2: int) -> float:
+
+    if x <= 0 or d1 <= 0 or d2 <= 0:
+        return -math.inf
+
+    return auto_convert(fcdf, x, d1, d2)
+
+
+def chisq2z_convert(x: float, k: int) -> float:
 
     if x <= mpf("0") or k <= mpf("0"):
-        return mpf("0")
+        return -math.inf
 
-    p = (
-        -mpf("1")
-        + mpf("2")
-        * gammainc((mpf("1") / mpf("2")) * k, 0, (mpf("1") / mpf("2")) * x)
-        / gamma((mpf("1") / mpf("2")) * k)
-    )
-
-    return p2z_convert(p)
+    return auto_convert(chisqcdf, x, k)

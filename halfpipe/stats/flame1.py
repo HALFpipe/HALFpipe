@@ -14,7 +14,7 @@ from math import isnan, isclose, isfinite
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from scipy import optimize
+from scipy.optimize import minimize_scalar
 
 from .miscmaths import t2z_convert, f2z_convert
 from .base import ModelAlgorithm, listwise_deletion, demean
@@ -57,7 +57,7 @@ def marg_posterior_energy(x, y, z, s):
 
 
 def solveforbeta(y, z, s):
-    res = optimize.minimize_scalar(
+    res = minimize_scalar(
         marg_posterior_energy, args=(y, z, s), method="brent"
     )
     fu = res.x
