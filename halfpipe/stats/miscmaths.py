@@ -75,7 +75,7 @@ def auto_convert(cdf: Callable, *args: Union[float, int]) -> float:
 
         p = None
 
-        while mp.prec < 2 ** 14:
+        while mp.prec < 2 ** 13:
             p = cdf(*map(mpmathify, args))
 
             if not mp.almosteq(p, mpf("1")) and not mp.almosteq(p, mpf("0")):
@@ -89,7 +89,7 @@ def auto_convert(cdf: Callable, *args: Union[float, int]) -> float:
             if mp.prec < 2 ** 12:
                 mp.prec += 2 ** 8
             else:
-                mp.prec += mp.prec
+                mp.prec += 2 ** 12
 
         # skip calculation
 
