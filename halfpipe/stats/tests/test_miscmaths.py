@@ -85,7 +85,7 @@ def test_f2z_convert_large(f, d1, d2):
 # huge number tests
 
 @pytest.mark.parametrize("t", [
-    *np.logspace(5, 16, num=5),
+    *np.logspace(5, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("dof", [30])
@@ -97,8 +97,8 @@ def test_t2z_convert_huge(t, dof):
 
 @pytest.mark.parametrize("x", [
     sys.float_info.min,
-    *np.logspace(-16, -4, num=5),
-    *np.logspace(4, 16, num=5),
+    *np.logspace(-100, -4, num=10),
+    *np.logspace(4, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("k", [30])
@@ -109,8 +109,8 @@ def test_chisq2z_convert_huge(x, k):
 
 @pytest.mark.parametrize("f", [
     sys.float_info.min,
-    *np.logspace(-16, -4, num=5),
-    *np.logspace(5, 16, num=5),
+    *np.logspace(-100, -4, num=10),
+    *np.logspace(5, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("d1,d2", [
