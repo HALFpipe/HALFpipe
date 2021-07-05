@@ -30,19 +30,20 @@ def normppf(p: mpf) -> mpf:
 
 
 def tcdf(x: mpf, nu: mpf) -> mpf:
-    a = (nu + mpf("1")) / mpf("2")
+    x2 = x * x
+    z = nu / (nu + x2)
+    p = mp.betainc(
+        nu / mpf("2"),
+        mpf("1") / mpf("2"),
+        x1=mpf("0"),
+        x2=z,
+        regularized=True,
+    ) / mpf("2")
 
-    return (
-        mpf("1") / mpf("2")
-        + x
-        * mp.gamma(a)
-        * mp.hyper(
-            (mpf("1") / mpf("2"), a),
-            (mpf("3") / mpf("2"),),
-            -(x ** mpf("2")) / nu,
-        )
-        / (mp.sqrt(mp.pi) * mp.sqrt(nu) * mp.gamma(nu / mpf("2")))
-    )
+    if x > mpf("0"):
+        return mpf("1") - p
+    else:
+        return p
 
 
 def fcdf(x: mpf, d1: mpf, d2: mpf) -> mpf:
@@ -73,9 +74,9 @@ def auto_convert(cdf: Callable, *args: Union[float, int]) -> float:
     try:
         # infer base precision
 
-        p = None
+        p = cdf(*map(mpmathify, args))
 
-        while mp.prec < 2 ** 13:
+        while mp.prec < 2 ** 14:
             p = cdf(*map(mpmathify, args))
 
             if not mp.almosteq(p, mpf("1")) and not mp.almosteq(p, mpf("0")):
@@ -86,7 +87,7 @@ def auto_convert(cdf: Callable, *args: Union[float, int]) -> float:
                     autoprec(lambda: normppf(cdf(*map(mpf, args))))()
                 )
 
-            if mp.prec < 2 ** 12:
+            if mp.prec <= 2 ** 12:
                 mp.prec += 2 ** 8
             else:
                 mp.prec += 2 ** 12

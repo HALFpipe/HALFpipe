@@ -89,7 +89,7 @@ def test_f2z_convert_large(f, d1, d2):
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("dof", [30])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(120)
 def test_t2z_convert_huge(t, dof):
     z = t2z_convert(t, dof)
     assert math.isclose(z, -t2z_convert(-t, dof))  # symmetric
@@ -102,7 +102,7 @@ def test_t2z_convert_huge(t, dof):
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("k", [30])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(60)
 def test_chisq2z_convert_huge(x, k):
     assert isinstance(chisq2z_convert(x, k), float)
 
@@ -116,7 +116,7 @@ def test_chisq2z_convert_huge(x, k):
 @pytest.mark.parametrize("d1,d2", [
     (10, 100),
 ])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(60)
 def test_f2z_convert_huge(f, d1, d2):
     assert isinstance(f2z_convert(f, d1, d2), float)
 
