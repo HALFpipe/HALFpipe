@@ -34,7 +34,7 @@ from ...fixes import Node, MapNode
 modelfit_model_outputs = frozenset([
     output
     for a in algorithms.values()
-    for output in a.contrast_outputs
+    for output in a.model_outputs
 ])
 modelfit_contrast_outputs = frozenset([
     output
