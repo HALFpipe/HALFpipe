@@ -103,7 +103,7 @@ class ChisqDistribution(Distribution):
 def auto_convert(
     d: Type[Distribution],
     *args: Union[float, int],
-    max_prec: int = 2 ** 12
+    max_prec: int = 2 ** 13
 ) -> float:
     if any(math.isnan(a) for a in args):
         return math.nan  # skip computation
