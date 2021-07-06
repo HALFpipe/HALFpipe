@@ -127,7 +127,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         var_cope=result["var_copes"][0],
         tstat=result["tstats"][0],
         fstat=result["fstats"][2],
-        tdof=result["tdof"][0],
+        tdof=result["dof"][0],
     )
 
     # compare
