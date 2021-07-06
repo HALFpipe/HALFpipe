@@ -192,7 +192,7 @@ class MakeResultdicts(IOBase):
 
         # validate
         for i in range(len(resultdicts)):
-            resultdicts[i] = resultdict_schema.dump(resultdicts[i])
+            assert len(resultdict_schema.validate(resultdicts[i])) == 0
 
         outputs["resultdicts"] = resultdicts
         outputs["vals"] = resultdicts[0]["vals"]

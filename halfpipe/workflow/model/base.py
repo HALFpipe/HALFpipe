@@ -28,7 +28,7 @@ from ...interface import (
 )
 from ...utils import ravel, formatlikebids, lenforeach
 from ..memory import MemoryCalculator
-from ...stats import algorithms
+from ...stats.algorithms import algorithms, modelfit_aliases
 from ...fixes import Node, MapNode
 
 modelfit_model_outputs = frozenset([
@@ -42,14 +42,6 @@ modelfit_contrast_outputs = frozenset([
     for output in a.contrast_outputs
 ])
 modelfit_exclude = frozenset([])
-modelfit_aliases = dict(
-    copes="effect",
-    var_copes="variance",
-    zstats="z",
-    tstats="t",
-    fstats="f",
-    masks="mask",
-)
 
 
 def _fe_run_mode(var_cope_file):
