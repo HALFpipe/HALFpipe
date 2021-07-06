@@ -37,19 +37,14 @@ xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
 templateflow_resources = dict()
 
 
-def download(url: str, target: Optional[str] = None) -> Optional[str]:
+def urllib_download(url: str, target: str):
     from urllib.request import urlretrieve
     from tqdm import tqdm
-
-    if target is None:
-        raise NotImplementedError()
 
     class TqdmUpTo(tqdm):
         def update_to(self, b: int, bsize: int, tsize: int):
             self.total = tsize
             self.update(b * bsize - self.n)  # also sets self.n = b * bsize
-
-    print(f"Downloading {url}")
 
     with TqdmUpTo(
         unit="B",
@@ -59,6 +54,43 @@ def download(url: str, target: Optional[str] = None) -> Optional[str]:
         desc=url.split('/')[-1]
     ) as t:
         urlretrieve(url, filename=target, reporthook=t.update_to)
+
+
+def download(url: str, target: Optional[str] = None) -> Optional[str]:
+    import requests
+    from tqdm import tqdm
+    import io
+
+    if not url.startswith("http"):
+        assert isinstance(target, str)
+        return urllib_download(url, target)
+
+    if target is not None:
+        fp = open(target, "wb")
+    else:
+        fp = io.BytesIO()
+
+    print(f"Downloading {url}")
+
+    with requests.get(url, stream=True) as rq:
+        total_size = int(rq.headers.get("content-length", 0))
+        block_size = 1024
+
+        t = tqdm(total=total_size, unit="B", unit_scale=True)
+
+        for block in rq.iter_content(block_size):
+            if block:  # filter out keep-alive new chunks
+                t.update(len(block))
+                fp.write(block)
+
+    res = None
+    if isinstance(fp, io.BytesIO):
+        res = fp.getvalue().decode()
+
+    t.close()
+    fp.close()
+
+    return res
 
 
 def get(filename=None) -> str:
