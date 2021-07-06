@@ -4,10 +4,15 @@
 
 
 def firstfloat(obj):
+    import numpy as np
+    from typing import Iterable
+
     if isinstance(obj, float):
         return obj
+    elif isinstance(obj, (np.number, int)):
+        return float(obj)
 
-    if isinstance(obj, (tuple, list)):
+    elif isinstance(obj, Iterable):
         for elem in obj:
             elem = firstfloat(elem)
 
