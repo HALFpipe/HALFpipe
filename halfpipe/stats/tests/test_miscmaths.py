@@ -85,11 +85,11 @@ def test_f2z_convert_large(f, d1, d2):
 # huge number tests
 
 @pytest.mark.parametrize("t", [
-    *np.logspace(5, 16, num=5),
+    *np.logspace(5, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("dof", [30])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(120)
 def test_t2z_convert_huge(t, dof):
     z = t2z_convert(t, dof)
     assert math.isclose(z, -t2z_convert(-t, dof))  # symmetric
@@ -97,26 +97,26 @@ def test_t2z_convert_huge(t, dof):
 
 @pytest.mark.parametrize("x", [
     sys.float_info.min,
-    *np.logspace(-16, -4, num=5),
-    *np.logspace(4, 16, num=5),
+    *np.logspace(-100, -4, num=10),
+    *np.logspace(4, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("k", [30])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(120)
 def test_chisq2z_convert_huge(x, k):
     assert isinstance(chisq2z_convert(x, k), float)
 
 
 @pytest.mark.parametrize("f", [
     sys.float_info.min,
-    *np.logspace(-16, -4, num=5),
-    *np.logspace(5, 16, num=5),
+    *np.logspace(-100, -4, num=10),
+    *np.logspace(5, 100, num=10),
     sys.float_info.max,
 ])
 @pytest.mark.parametrize("d1,d2", [
     (10, 100),
 ])
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(120)
 def test_f2z_convert_huge(f, d1, d2):
     assert isinstance(f2z_convert(f, d1, d2), float)
 

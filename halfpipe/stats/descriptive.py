@@ -17,7 +17,7 @@ from .base import ModelAlgorithm, listwise_deletion
 
 
 class Descriptive(ModelAlgorithm):
-    outputs = ["mean", "sem"]
+    outputs = ["mean", "std"]
 
     @staticmethod
     def voxel_calc(
@@ -47,7 +47,7 @@ class Descriptive(ModelAlgorithm):
 
             voxel_result[name][coordinate] = dict(
                 mean=cmat @ zframe.mean(),
-                sem=cmat @ zframe.sem(),
+                std=cmat @ zframe.std(),
             )
 
         return voxel_result
