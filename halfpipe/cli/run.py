@@ -15,7 +15,7 @@ from math import ceil
 import numpy as np
 import networkx as nx
 
-from ..utils import first, logger, resolve, timestampstr
+from ..utils import logger, resolve, timestampstr
 
 
 def run(opts, should_run):
@@ -251,7 +251,7 @@ def run(opts, should_run):
                 assert isinstance(chunk, nx.DiGraph)
 
                 runner = runnercls(plugin_args=plugin_args)
-                firstnode = first(chunk.nodes())
+                firstnode = next(iter(chunk.nodes()))
                 if firstnode is not None:
                     assert isinstance(firstnode, pe.Node)
                     runner.run(chunk, updatehash=False, config=firstnode.config)

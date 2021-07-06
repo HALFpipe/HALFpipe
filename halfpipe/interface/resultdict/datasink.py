@@ -18,7 +18,7 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
 from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
-from ...utils import splitext, findpaths, first, formatlikebids, logger
+from ...utils import splitext, findpaths, formatlikebids, logger
 from ...resource import get as getresource
 
 
@@ -80,17 +80,20 @@ def _find_sources(inpath):
     inputpaths = None
     for parent in Path(inpath).parents:
 
-        hashfile = first(parent.glob("_0x*.json"))
+        hashfiles = list(parent.glob("_0x*.json"))
 
-        if isinstance(hashfile, Path):
+        if len(hashfiles) > 0:
+            hashfile = hashfiles[0]
 
-            match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
-            if match is not None:
-                file_hash = match.group("hash")
+            if isinstance(hashfile, Path):
 
-            with open(hashfile, "r") as fp:
-                inputpaths = findpaths(json.load(fp))
-                break
+                match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
+                if match is not None:
+                    file_hash = match.group("hash")
+
+                with open(hashfile, "r") as fp:
+                    inputpaths = findpaths(json.load(fp))
+                    break
 
     return inputpaths, file_hash
 
