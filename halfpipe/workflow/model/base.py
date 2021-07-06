@@ -41,12 +41,13 @@ modelfit_contrast_outputs = frozenset([
     for a in algorithms.values()
     for output in a.contrast_outputs
 ])
-modelfit_exclude = frozenset(["fstats", "tstats"])
+modelfit_exclude = frozenset([])
 modelfit_aliases = dict(
     copes="effect",
     var_copes="variance",
     zstats="z",
-    tdof="dof",
+    tstats="t",
+    fstats="f",
     masks="mask",
 )
 

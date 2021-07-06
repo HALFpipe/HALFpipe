@@ -123,7 +123,7 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
         mask = isfinite(z)
 
         return dict(
-            cope=cope, var_cope=varcope, tdof=tdoflower, tstat=t, zstat=z, mask=mask
+            cope=cope, var_cope=varcope, dof=tdoflower, tstat=t, zstat=z, mask=mask
         )
 
     elif n > 1:
@@ -135,7 +135,7 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
         mask = isfinite(z)
 
-        return dict(cope=cope, fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
+        return dict(cope=cope, fstat=f, dof=[fdof1, fdof2lower], zstat=z, mask=mask)
 
 
 def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
@@ -155,7 +155,7 @@ def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
 class FLAME1(ModelAlgorithm):
     model_outputs = []
     contrast_outputs = [
-        "copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"
+        "copes", "var_copes", "zstats", "tstats", "fstats", "dof", "masks"
     ]
 
     @staticmethod
@@ -212,7 +212,7 @@ class FLAME1(ModelAlgorithm):
                 out_name = f"{map_name}_{i+1}_{contrast_name}"
                 fname = cls.write_map(ref_img, out_name, series)
 
-                if map_name in ["tdof"]:
+                if map_name in frozenset(["dof"]):
                     output_name = map_name
 
                 else:
