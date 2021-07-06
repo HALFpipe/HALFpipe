@@ -19,7 +19,7 @@ from nipype.interfaces.base import (
     File
 )
 
-from ..io import meansignals
+from ..io.signals import mean_signals
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
@@ -47,7 +47,7 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime):
-        self._time_series, self._region_coverage = meansignals(
+        self._time_series, self._region_coverage = mean_signals(
             self.inputs.in_file,
             self.inputs.atlas_file,
             mask_file=self.inputs.mask_file,
