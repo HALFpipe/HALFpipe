@@ -81,7 +81,7 @@ def _merge_mask(in_files):
     outshape = in_imgs[0].shape
     assert all(in_img.shape == outshape for in_img in in_imgs), "Mask shape mismatch"
 
-    in_data = [np.asanyarray(in_img.dataobj).astype(np.bool) for in_img in in_imgs]
+    in_data = [np.asanyarray(in_img.dataobj).astype(bool) for in_img in in_imgs]
     outarr = np.logical_and.reduce(in_data)
 
     outimg = new_img_like(in_imgs[0], outarr, copy_header=True)

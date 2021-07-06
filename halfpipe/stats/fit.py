@@ -58,7 +58,7 @@ def fit(
     copes = np.concatenate(cope_data, axis=3)
 
     mask_data = [
-        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(np.bool))
+        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(bool))
         for f in mask_files
     ]
     masks = np.concatenate(mask_data, axis=3)
