@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 import numpy as np
 
 from nipype.pipeline import engine as pe
@@ -111,9 +113,9 @@ def init_ica_aroma_components_wf(
         ),
         name="compxfm",
     )
-    compxfm.inputs.reference_image = firststr(
-        get_template("MNI152NLin6Asym", resolution=1, suffix="T1w")
-    )
+    template_path = get_template("MNI152NLin6Asym", resolution=1, suffix="T1w", desc=None)
+    assert isinstance(template_path, Path)
+    compxfm.inputs.reference_image = str(template_path)
     workflow.connect(mergexfm, "out", compxfm, "transforms")
 
     compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist")
