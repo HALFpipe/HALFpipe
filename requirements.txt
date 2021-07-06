@@ -25,6 +25,7 @@ templateflow >= 0.7.1
 pybids >= 0.13.1
 flufl.lock >= 5.0.3
 fasteners >= 0.15
+requests >= 2.25.1
 inflect
 inflection
 marshmallow >= 3.10.0
