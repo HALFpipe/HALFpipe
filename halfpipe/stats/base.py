@@ -6,7 +6,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Sequence, Union, Dict, Generator, List, Optional, Tuple
+from typing import Dict, Generator, List, Optional, Tuple
 
 from pathlib import Path
 

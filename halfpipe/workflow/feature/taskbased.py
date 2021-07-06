@@ -270,5 +270,4 @@ def init_taskbased_wf(
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
 
-
     return workflow
