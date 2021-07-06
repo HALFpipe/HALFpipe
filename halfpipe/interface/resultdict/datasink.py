@@ -167,7 +167,7 @@ class ResultdictDatasink(SimpleInterface):
                 outpath = derivatives_directory
                 if "sub" not in tags:
                     outpath = grouplevel_directory
-                if key in ["effect", "variance", "z", "dof", "mean", "std"]:  # apply rule
+                if key in ["effect", "variance", "z", "dof"]:  # apply rule
                     outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
                 else:
                     outpath = outpath / _make_path(inpath, "image", tags, key)
@@ -178,7 +178,7 @@ class ResultdictDatasink(SimpleInterface):
 
                 if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                     stem, extension = splitext(outpath)
-                    if extension in [".nii", ".nii.gz", ".tsv"]:
+                    if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
                         with open(outpath.parent / f"{stem}.json", "w") as fp:
                             fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 
