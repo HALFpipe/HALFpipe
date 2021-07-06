@@ -16,8 +16,13 @@ def firstfloat(obj):
 
 
 def firststr(obj):
+    from pathlib import Path
+
     if isinstance(obj, str):
         return obj
+
+    if isinstance(obj, Path):
+        return str(obj)
 
     if isinstance(obj, (tuple, list)):
         for elem in obj:

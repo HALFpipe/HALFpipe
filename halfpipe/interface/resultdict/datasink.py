@@ -20,9 +20,10 @@ from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
 from ...utils import splitext, findpaths, formatlikebids, logger
 from ...resource import get as getresource
+from ...stats.algorithms import algorithms
 
 
-def _make_plot(tags, key, sourcefile):
+def _make_plot(tags, key, sourcefile, metadata):
     if key == "z":
         pass
     elif key == "matrix":
@@ -169,12 +170,17 @@ class ResultdictDatasink(SimpleInterface):
                     outpath = grouplevel_directory
                 if key in ["effect", "variance", "z", "dof"]:  # apply rule
                     outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
+                elif key in algorithms["heterogeneity"].model_outputs:
+                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="heterogeneity")
+                elif key in algorithms["mcartest"].model_outputs:
+                    key = re.sub(r"^mcar", "", key)
+                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="mcar")
                 else:
                     outpath = outpath / _make_path(inpath, "image", tags, key)
                 was_updated = _copy_file(inpath, outpath)
 
                 if was_updated:
-                    _make_plot(tags, key, outpath)
+                    _make_plot(tags, key, outpath, metadata)
 
                 if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                     stem, extension = splitext(outpath)

@@ -84,6 +84,9 @@ def fit(
 
     algorithm_set = make_algorithms_set(algorithms_to_run)
 
+    if dmat.shape[1] == 1:  # do not run if we do not have regressors
+        algorithm_set -= frozenset(["mcartest"])
+
     # prepare voxelwise generator
     def gen_voxel_data():
         def ensure_row_vector(x):

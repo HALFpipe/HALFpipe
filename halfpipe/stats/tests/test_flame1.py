@@ -23,7 +23,7 @@ from ..design import group_design
 
 
 @pytest.mark.timeout(600)
-@pytest.mark.parametrize("use_var_cope", [False, True])
+@pytest.mark.parametrize("use_var_cope", [True, False])
 def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     os.chdir(str(tmp_path))
 

@@ -49,11 +49,12 @@ image_types = frozenset([
     "regressors",
 
     #
-    *[
+    *(
         output
         for algorithm in algorithms.values()
-        for output in algorithm.outputs
-    ],
+        for outputs in [algorithm.model_outputs, algorithm.contrast_outputs]
+        for output in outputs
+    ),
 ])
 
 ResultdictImagesSchema = Schema.from_dict({

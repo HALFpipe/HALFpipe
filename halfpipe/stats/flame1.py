@@ -8,7 +8,6 @@
 from typing import Dict, Optional, Tuple
 
 from collections import defaultdict
-from pathlib import Path
 from math import isnan, isclose, isfinite
 
 import numpy as np
@@ -33,9 +32,7 @@ def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     return gam, iU, ziUz
 
 
-def marg_posterior_energy(x, y, z, s):
-    ex = np.exp(x)  # ex is variance
-
+def marg_posterior_energy(ex, y, z, s):
     if ex < 0 or isclose(ex, 0.0):
         return 1e32  # very large value
 
@@ -62,7 +59,7 @@ def solveforbeta(y, z, s):
     )
     fu = res.x
 
-    beta = max(1e-10, np.exp(fu))
+    beta = max(1e-10, fu)
 
     return beta
 
@@ -85,10 +82,8 @@ def flame_stage1_onvoxel(y, z, s):
 
 
 def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
-    varcope = float(
-        tcontrast @ np.linalg.lstsq(inverse_covariance, tcontrast.T, rcond=None)[0]
-    )
-    # assert isclose(varcope, float(tcontrast @ np.linalg.inv(inverse_covariance) @ tcontrast.T))
+    a = np.linalg.lstsq(inverse_covariance, tcontrast.T, rcond=None)[0]
+    varcope = float(tcontrast @ a)
 
     cope = float(tcontrast @ mn)
 
@@ -104,15 +99,16 @@ def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
 
 
 def f_ols_contrast(mn, inverse_covariance, dof1, dof2, fcontrast):
+    cope = fcontrast @ mn
+
     a = fcontrast @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
+    b = np.linalg.lstsq(a, cope, rcond=None)[0]
 
-    b = np.linalg.lstsq(a, fcontrast, rcond=None)[0]
-
-    f = float(mn.T @ fcontrast.T @ b @ mn / dof1)
+    f = float(cope.T @ b) / dof1
 
     z = f2z_convert(f, dof1, dof2)
 
-    return f, z
+    return cope, f, z
 
 
 def flame1_contrast(mn, inverse_covariance, npts, cmat):
@@ -135,11 +131,11 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
         fdof2lower = npts - nevs
 
-        f, z = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
+        cope, f, z = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
 
         mask = isfinite(z)
 
-        return dict(fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
+        return dict(cope=cope, fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
 
 
 def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
@@ -157,7 +153,10 @@ def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
 
 
 class FLAME1(ModelAlgorithm):
-    outputs = ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]
+    model_outputs = []
+    contrast_outputs = [
+        "copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"
+    ]
 
     @staticmethod
     def voxel_calc(
@@ -191,14 +190,10 @@ class FLAME1(ModelAlgorithm):
     def write_outputs(
         cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
     ) -> Dict:
-        from nilearn.image import new_img_like
-
         output_files = dict()
 
-        for output_name in cls.outputs:
+        for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(cmatdict)
-
-        shape = ref_img.shape[:3]
 
         for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]
@@ -214,23 +209,8 @@ class FLAME1(ModelAlgorithm):
                 )
 
             for map_name, series in rdf.iterrows():
-                coordinates = series.index.tolist()
-                values = series.values
-
-                if map_name == "mask":
-                    arr = np.zeros(shape, dtype=np.bool)
-
-                else:
-                    arr = np.full(shape, np.nan)
-
-                if len(coordinates) > 0:
-                    arr[(*zip(*coordinates),)] = values
-
-                img = new_img_like(ref_img, arr, copy_header=True)
-                img.header.set_data_dtype(np.float64)
-
-                fname = Path.cwd() / f"{map_name}_{i+1}_{contrast_name}.nii.gz"
-                nib.save(img, fname)
+                out_name = f"{map_name}_{i+1}_{contrast_name}"
+                fname = cls.write_map(ref_img, out_name, series)
 
                 if map_name in ["tdof"]:
                     output_name = map_name

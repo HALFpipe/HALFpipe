@@ -8,17 +8,17 @@
 from typing import Dict, Optional, Tuple
 
 import numpy as np
-import nibabel as nib
 import statsmodels.api as sm
 from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
-from .base import ModelAlgorithm, demean
+from .base import demean
 from .heterogeneity import Heterogeneity
 from .miscmaths import chisq2z_convert
 
 
-class MCARTest(ModelAlgorithm):
-    outputs = ["mcarchisq", "mcardof", "mcarz"]
+class MCARTest(Heterogeneity):
+    model_outputs = ["mcarchisq", "mcardof", "mcarz"]
+    contrast_outputs = []
 
     @staticmethod
     def voxel_calc(
@@ -52,7 +52,3 @@ class MCARTest(ModelAlgorithm):
             return voxel_result
         except (PerfectSeparationError, np.linalg.LinAlgError):
             pass
-
-    @staticmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
-        return Heterogeneity.write_outputs(ref_img, cmatdict, voxel_results)
