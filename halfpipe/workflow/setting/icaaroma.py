@@ -25,8 +25,8 @@ from ...interface import (
     Vals,
     FilterRegressor,
 )
-from ...resource import get as getresource
-from ...utils import firststr, loadints
+from ...resource import get as get_resource
+from ...utils import loadints
 
 from ..constants import constants
 from ..memory import MemoryCalculator
@@ -101,7 +101,7 @@ def init_ica_aroma_components_wf(
     #
     mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm")
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in1")
-    mergexfm.inputs.in2 = getresource(
+    mergexfm.inputs.in2 = get_resource(
         f"tpl_MNI152NLin6Asym_from_{constants.reference_space}_mode_image_xfm.h5"
     )
 
