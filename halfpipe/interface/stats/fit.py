@@ -54,11 +54,11 @@ class ModelFit(IOBase):
 
     def _add_output_traits(self, base):
         algorithm_set = make_algorithms_set(self.inputs.algorithms_to_run)
-        fieldnames = [
-            output
-            for a in algorithm_set
-            for output in algorithms[a].outputs
-        ]
+        fieldnames = list()
+        for a in algorithm_set:
+            algorithm = algorithms[a]
+            fieldnames.extend(algorithm.model_outputs)
+            fieldnames.extend(algorithm.contrast_outputs)
         return add_traits(base, fieldnames)
 
     def _list_outputs(self):

@@ -51,7 +51,7 @@ class MaskCoverage(IOBase):
 
     def _run_interface(self, runtime):
         mask_img = nib.load(self.inputs.mask_file)
-        mask = np.asanyarray(mask_img.dataobj).astype(np.bool)
+        mask = np.asanyarray(mask_img.dataobj).astype(bool)
         mask = np.squeeze(mask)
 
         min_coverage = self.inputs.min_coverage
@@ -64,7 +64,7 @@ class MaskCoverage(IOBase):
 
         for in_file in self.inputs.in_files:
             in_img = nib.load(in_file)
-            in_bool = np.asanyarray(in_img.dataobj).astype(np.bool)
+            in_bool = np.asanyarray(in_img.dataobj).astype(bool)
             in_bool = np.squeeze(in_bool)
 
             unmasked_n_voxels = np.count_nonzero(in_bool)

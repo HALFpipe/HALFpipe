@@ -23,7 +23,7 @@ from ..step import Step, BranchStep, StepType, YesNoStep
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..utils import forbidden_chars
-from ...utils import first, ravel
+from ...utils import ravel
 from ..setting import get_setting_init_steps
 from .loop import SettingValsStep
 
@@ -144,7 +144,7 @@ class HighPassFilterCutoffStep(Step):
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
-            suggestion = (first(self.valset),)
+            suggestion = (next(iter(self.valset)),)
 
         self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
             self.display_strs, ["Skip"], initial_values=suggestion
@@ -162,7 +162,7 @@ class HighPassFilterCutoffStep(Step):
     def next(self, ctx):
         value = None
         if self.result is not None:
-            value = first(self.result.values())
+            value = next(iter(self.result.values()))
             if isinstance(value, float):
                 ctx.spec.features[-1].high_pass_filter_cutoff = value
             elif value == "Skip":

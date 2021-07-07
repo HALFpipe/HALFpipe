@@ -20,11 +20,10 @@ from nipype.pipeline import engine as pe
 
 from ...interface.imagemaths.merge import _merge, _merge_mask
 from ..design import group_design
-from ...utils import first
 
 
 @pytest.mark.timeout(600)
-@pytest.mark.parametrize("use_var_cope", [False, True])
+@pytest.mark.parametrize("use_var_cope", [True, False])
 def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     os.chdir(str(tmp_path))
 
@@ -103,7 +102,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         cope=result.outputs.copes[0],
         var_cope=result.outputs.var_copes[0],
         tstat=result.outputs.tstats[0],
-        fstat=first(result.outputs.fstats),
+        fstat=result.outputs.fstats,
         tdof=result.outputs.tdof[0],
     )
 
@@ -128,7 +127,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         var_cope=result["var_copes"][0],
         tstat=result["tstats"][0],
         fstat=result["fstats"][2],
-        tdof=result["tdof"][0],
+        tdof=result["dof"][0],
     )
 
     # compare

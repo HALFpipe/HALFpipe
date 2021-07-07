@@ -10,7 +10,7 @@ import numpy as np
 
 from .direction import canonicalize_direction_code, parse_direction_str
 from ..parse.spreadsheet import loadspreadsheet
-from ...utils import first, logger
+from ...utils import logger
 
 
 class DatabaseMetadataLoader:
@@ -49,8 +49,12 @@ class DatabaseMetadataLoader:
                 magnitude2 = self.database.associations(filepath, suffix="magnitude2")
                 if magnitude1 is not None and magnitude2 is not None:
                     if len(magnitude1) > 0 and len(magnitude2) > 0:  # two magnitude files
-                        m1 = self.database.fileobj(first(magnitude1))
-                        m2 = self.database.fileobj(first(magnitude2))
+                        m1 = self.database.fileobj(
+                            next(iter(magnitude1))
+                        )
+                        m2 = self.database.fileobj(
+                            next(iter(magnitude2))
+                        )
                         if self.loader.fill(m1, "echo_time") and self.loader.fill(m2, "echo_time"):
                             e1 = m1.metadata.get("echo_time")
                             e2 = m2.metadata.get("echo_time")
@@ -64,7 +68,9 @@ class DatabaseMetadataLoader:
                 if suffix is not None:
                     magnitude = self.database.associations(filepath, suffix=suffix)
                     if magnitude is not None and len(magnitude) > 0:
-                        m = self.database.fileobj(first(magnitude))
+                        m = self.database.fileobj(
+                            next(iter(magnitude))
+                        )
                         if self.loader.fill(m, "echo_time"):
                             value = m.metadata.get("echo_time")
 

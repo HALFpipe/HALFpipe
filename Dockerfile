@@ -33,7 +33,8 @@ RUN conda update --yes conda && \
     "tabulate" \
     "chardet>=4.0" \
     "line_profiler" \
-    "more-itertools"
+    "more-itertools" \
+    "gmpy2>=2.0.8"
 
 # re-do font cache after update
 RUN python -c "from matplotlib import font_manager"

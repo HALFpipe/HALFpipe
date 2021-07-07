@@ -19,7 +19,7 @@ from nipype.interfaces.base import (
     File
 )
 
-from ...utils import niftidim, first
+from ...utils import niftidim
 
 dimensions = ["x", "y", "z", "t"]
 
@@ -48,7 +48,7 @@ def _merge(in_files, dimension):
 
     sizes = [niftidim(in_img, idim) for in_img in in_imgs]
 
-    outshape = list(first(in_imgs).shape)
+    outshape = list(in_imgs[0].shape)
     while len(outshape) < idim + 1:
         outshape.append(1)
 
@@ -67,7 +67,7 @@ def _merge(in_files, dimension):
 
     outarr = np.moveaxis(movd_outarr, 0, idim)
 
-    outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
+    outimg = new_img_like(in_imgs[0], outarr, copy_header=True)
 
     merged_file = _merge_fname(in_files)
     nib.save(outimg, merged_file)
@@ -78,13 +78,13 @@ def _merge(in_files, dimension):
 def _merge_mask(in_files):
     in_imgs = [nib.load(in_file) for in_file in in_files]
 
-    outshape = first(in_imgs).shape
+    outshape = in_imgs[0].shape
     assert all(in_img.shape == outshape for in_img in in_imgs), "Mask shape mismatch"
 
-    in_data = [np.asanyarray(in_img.dataobj).astype(np.bool) for in_img in in_imgs]
+    in_data = [np.asanyarray(in_img.dataobj).astype(bool) for in_img in in_imgs]
     outarr = np.logical_and.reduce(in_data)
 
-    outimg = new_img_like(first(in_imgs), outarr, copy_header=True)
+    outimg = new_img_like(in_imgs[0], outarr, copy_header=True)
 
     merged_file = _merge_fname(in_files)
     nib.save(outimg, merged_file)

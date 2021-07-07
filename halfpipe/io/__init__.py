@@ -26,8 +26,6 @@ from .metadata import (
     str_slice_timing,
 )
 
-from .signals import meansignals
-
 
 __all__ = [
     "DictListFile",
@@ -46,5 +44,4 @@ __all__ = [
     "SidecarMetadataLoader",
     "slice_timing_str",
     "str_slice_timing",
-    "meansignals",
 ]

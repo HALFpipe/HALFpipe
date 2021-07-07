@@ -15,6 +15,7 @@ from ...interface.stats import (
     GroupDesign,
     ModelFit,
 )
+from ...interface.resultdict.datasink import ResultdictDatasink
 from ...interface import (
     Merge,
     MergeMask,
@@ -23,27 +24,24 @@ from ...interface import (
     FLAMEO as FSLFLAMEO,
     FilterResultdicts,
     AggregateResultdicts,
-    ResultdictDatasink,
     MakeDesignTsv,
 )
 from ...utils import ravel, formatlikebids, lenforeach
 from ..memory import MemoryCalculator
-from ...stats import algorithms
+from ...stats.algorithms import algorithms, modelfit_aliases
 from ...fixes import Node, MapNode
 
-modelfit_outputs = frozenset([
+modelfit_model_outputs = frozenset([
     output
     for a in algorithms.values()
-    for output in a.outputs
+    for output in a.model_outputs
 ])
-modelfit_exclude = frozenset(["fstats", "tstats"])
-modelfit_aliases = dict(
-    copes="effect",
-    var_copes="variance",
-    zstats="z",
-    tdof="dof",
-    masks="mask",
-)
+modelfit_contrast_outputs = frozenset([
+    output
+    for a in algorithms.values()
+    for output in a.contrast_outputs
+])
+modelfit_exclude = frozenset([])
 
 
 def _fe_run_mode(var_cope_file):
@@ -93,13 +91,16 @@ def init_model_wf(
     make_resultdicts_a = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
-            imagekeys=["design_matrix", "contrast_matrix", *modelfit_outputs],
+            imagekeys=["design_matrix", "contrast_matrix", *modelfit_model_outputs],
             deletekeys=["contrast"],
         ),
         name="make_resultdicts_a",
     )
 
-    statmaps = ["effect", "variance", "z", "dof", "mask", "mean", "std"]
+    statmaps = [
+        modelfit_aliases[m] if m in modelfit_aliases else m
+        for m in modelfit_contrast_outputs
+    ]
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],

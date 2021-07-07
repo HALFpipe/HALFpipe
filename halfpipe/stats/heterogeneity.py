@@ -6,8 +6,6 @@
 
 from typing import Dict, Optional, Tuple
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import nibabel as nib
@@ -52,9 +50,7 @@ def calc_i2(y, z, s):
     return h, i2
 
 
-def log_prob(x, y, z, s):
-    ex = np.exp(x)  # ex is variance
-
+def log_prob(ex, y, z, s):
     try:
         gam, iU, _ = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
@@ -73,14 +69,14 @@ def log_prob(x, y, z, s):
     return ret
 
 
-def het_onvoxel(y, z, s):
+def heterogeneity_onvoxel(y, z, s):
     norm = np.std(y)
     y /= norm
     s /= np.square(norm)
 
     assert not np.any(s < 0), "Variance needs to be non-negative"
 
-    ll_fe = log_prob(-np.inf, y, z, s)
+    ll_fe = log_prob(0, y, z, s)
 
     beta = solveforbeta(y, z, s)  # flame1 model fit
     ll_me = log_prob(beta, y, z, s)
@@ -88,6 +84,7 @@ def het_onvoxel(y, z, s):
     chisq = -2.0 * (ll_fe - ll_me)
     if abs(chisq) > 1e10:  # convergence failure
         return
+
     zstat = chisq2z_convert(chisq, 1)
 
     pseudor2 = 1 - ll_me / ll_fe
@@ -98,11 +95,12 @@ def het_onvoxel(y, z, s):
 
     h, i2 = calc_i2(y, z, s)
 
-    return h, i2, pseudor2, chisq, zstat
+    return beta, h, i2, pseudor2, chisq, zstat
 
 
 class Heterogeneity(ModelAlgorithm):
-    outputs = ["h", "i2", "hpseudor2", "hchisq", "hz"]
+    model_outputs = ["hbeta", "h", "i2", "hpseudor2", "hchisq", "hz"]
+    contrast_outputs = []
 
     @staticmethod
     def voxel_calc(
@@ -115,46 +113,29 @@ class Heterogeneity(ModelAlgorithm):
         y, z, s = flame1_prepare_data(y, z, s)
 
         try:
-            voxel_tuple = het_onvoxel(y, z, s)
+            voxel_tuple = heterogeneity_onvoxel(y, z, s)
 
             if voxel_tuple is None:
                 return
         except np.linalg.LinAlgError:
             return
 
-        h, i2, pseudor2, chisq, zstat = voxel_tuple
+        hbeta, h, i2, pseudor2, chisq, zstat = voxel_tuple
         voxel_dict: Dict[str, float] = dict(
-            h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hz=zstat,
+            hbeta=hbeta, h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hz=zstat,
         )
 
         voxel_result = {coordinate: voxel_dict}
         return voxel_result
 
-    @staticmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
-        from nilearn.image import new_img_like
-
+    @classmethod
+    def write_outputs(cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
         output_files = dict()
-
-        shape: Tuple[int, int, int] = ref_img.shape
 
         rdf = pd.DataFrame.from_records(voxel_results)
 
         for map_name, series in rdf.iterrows():
-            coordinates = series.index.tolist()
-            values = series.values
-
-            arr = np.full(shape, np.nan)
-
-            if len(coordinates) > 0:
-                arr[(*zip(*coordinates),)] = values
-
-            img = new_img_like(ref_img, arr, copy_header=True)
-            img.header.set_data_dtype(np.float64)
-
-            fname = Path.cwd() / f"{map_name}.nii.gz"
-            nib.save(img, fname)
-
+            fname = cls.write_map(ref_img, map_name, series)
             output_files[map_name] = str(fname)
 
         return output_files

@@ -6,7 +6,6 @@ from typing import Optional, Dict
 
 from os import getenv
 from pathlib import Path
-from templateflow import api
 
 default_resource_dir = Path.home() / ".cache" / "halfpipe"
 resource_dir = Path(
@@ -33,23 +32,15 @@ online_resources: Dict[str, str] = dict([
     ),
 ])
 
-xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
-templateflow_resources = dict()
 
-
-def download(url: str, target: Optional[str] = None) -> Optional[str]:
+def urllib_download(url: str, target: str):
     from urllib.request import urlretrieve
     from tqdm import tqdm
-
-    if target is None:
-        raise NotImplementedError()
 
     class TqdmUpTo(tqdm):
         def update_to(self, b: int, bsize: int, tsize: int):
             self.total = tsize
             self.update(b * bsize - self.n)  # also sets self.n = b * bsize
-
-    print(f"Downloading {url}")
 
     with TqdmUpTo(
         unit="B",
@@ -61,10 +52,44 @@ def download(url: str, target: Optional[str] = None) -> Optional[str]:
         urlretrieve(url, filename=target, reporthook=t.update_to)
 
 
-def get(filename=None) -> str:
-    if filename in templateflow_resources:
-        return templateflow_resources[filename]
+def download(url: str, target: Optional[str] = None) -> Optional[str]:
+    import requests
+    from tqdm import tqdm
+    import io
 
+    if not url.startswith("http"):
+        assert isinstance(target, (str, Path))
+        return urllib_download(url, target)
+
+    if target is not None:
+        fp = open(target, "wb")
+    else:
+        fp = io.BytesIO()
+
+    print(f"Downloading {url}")
+
+    with requests.get(url, stream=True) as rq:
+        total_size = int(rq.headers.get("content-length", 0))
+        block_size = 1024
+
+        t = tqdm(total=total_size, unit="B", unit_scale=True)
+
+        for block in rq.iter_content(block_size):
+            if block:  # filter out keep-alive new chunks
+                t.update(len(block))
+                fp.write(block)
+
+    res = None
+    if isinstance(fp, io.BytesIO):
+        res = fp.getvalue().decode()
+
+    t.close()
+    fp.close()
+
+    return res
+
+
+def get(filename=None) -> str:
     assert filename in online_resources, f"Resource {filename} not found"
 
     filepath = resource_dir / filename
@@ -90,9 +115,10 @@ def get(filename=None) -> str:
 
 
 if __name__ == "__main__":
+    from templateflow import api
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
-        paths = api.get(space, atlas=None)
+        paths = api.get(space, atlas=None, resolution=[1, 2])
         assert isinstance(paths, list)
         assert len(paths) > 0
     for filename in online_resources.keys():

@@ -13,6 +13,16 @@ from .flame1 import FLAME1
 from .heterogeneity import Heterogeneity
 from .mcar import MCARTest
 
+# according to https://github.com/poldracklab/fitlins/blob/0.6.2/fitlins/workflows/base.py
+modelfit_aliases = dict(
+    copes="effect",
+    var_copes="variance",
+    zstats="z",
+    tstats="t",
+    fstats="f",
+    masks="mask",
+)
+
 algorithms: Dict[str, Type[ModelAlgorithm]] = dict(
     descriptive=Descriptive,
     flame1=FLAME1,

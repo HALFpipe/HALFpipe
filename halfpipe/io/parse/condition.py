@@ -9,7 +9,7 @@ from scipy.io import loadmat
 
 from ...model.file import File
 from .spreadsheet import loadspreadsheet
-from ...utils import first, logger, splitext
+from ...utils import logger, splitext
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -112,7 +112,8 @@ def parse_condition_file(in_any=None):
             return parse_txt_condition_files(filepaths, conditions)
 
         elif len(in_any) == 1:
-            return parse_condition_file(first(in_any))
+            (condition_file,) = in_any
+            return parse_condition_file(condition_file)
 
         else:
             raise ValueError("Cannot read condition files")

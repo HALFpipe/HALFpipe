@@ -76,11 +76,11 @@ def to_fileobj(obj: BIDSFile, basemetadata: Dict) -> Optional[File]:
 
         if extension == ".json":
             log_method = logger.debug  # silence
-        if datatype == "dwi":
+        elif datatype == "dwi":
             log_method = logger.debug  # silence
-        if datatype == "anat":
+        elif datatype == "anat":
             log_method = logger.info  # T2w and FLAIR
-        if basename(path).startswith("."):  # is hidden
+        elif basename(path).startswith("."):  # is hidden
             log_method = logger.debug  # silence
 
         log_method(

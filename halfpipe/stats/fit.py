@@ -58,7 +58,7 @@ def fit(
     copes = np.concatenate(cope_data, axis=3)
 
     mask_data = [
-        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(np.bool))
+        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(bool))
         for f in mask_files
     ]
     masks = np.concatenate(mask_data, axis=3)
@@ -83,6 +83,9 @@ def fit(
     masks = np.logical_and(masks, np.isfinite(var_copes))
 
     algorithm_set = make_algorithms_set(algorithms_to_run)
+
+    if dmat.shape[1] == 1:  # do not run if we do not have regressors
+        algorithm_set -= frozenset(["mcartest"])
 
     # prepare voxelwise generator
     def gen_voxel_data():

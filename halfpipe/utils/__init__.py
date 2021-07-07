@@ -7,7 +7,7 @@ from .format import formatlist, cleaner, formatlikebids
 from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol, atleast_4d
-from .ops import first, second, firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
+from .ops import firstfloat, firststr, ravel, removenone, lenforeach, ceildiv
 from .path import findpaths, splitext, resolve, isempty
 from .time import timestampfmt, timestampstr
 
@@ -36,8 +36,6 @@ __all__ = [
     "loadints",
     "ncol",
     "atleast_4d",
-    "first",
-    "second",
     "firstfloat",
     "firststr",
     "ravel",

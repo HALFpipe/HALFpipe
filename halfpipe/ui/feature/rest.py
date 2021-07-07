@@ -23,7 +23,7 @@ from ..step import Step, StepType
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
 from ...model import RefFileSchema
-from ...utils import formatlikebids, deepcopy, first
+from ...utils import formatlikebids, deepcopy
 
 next_step_type = SettingValsStep
 
@@ -138,7 +138,7 @@ class MinSeedCoverageStep(Step):
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
-            suggestion = first(self.valset)
+            suggestion = next(iter(self.valset))
 
         self.input_view = NumberInputView(
             number=suggestion, min=0, max=1.0
@@ -188,7 +188,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
 
         suggestion = self.suggestion
         if len(self.valset) > 0:
-            suggestion = first(self.valset)
+            suggestion = next(iter(self.valset))
 
         self.input_view = NumberInputView(
             number=suggestion, min=0, max=1.0
