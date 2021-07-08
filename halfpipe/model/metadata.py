@@ -143,8 +143,8 @@ class SpreadsheetMetadataSchema(Schema):
 
 
 class ResultdictMetadataSchema(BaseSettingSchema):
-    sources = fields.List(fields.Str())
-    raw_sources = fields.List(fields.Str())
+    sources = fields.List(fields.Str)
+    raw_sources = fields.List(fields.Str)
     sampling_frequency = fields.Float()
     repetition_time = fields.Float()
     skull_stripped = fields.Bool()

@@ -2,12 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
+from typing import Optional, Dict
 
 from os import getenv
 from pathlib import Path
-from templateflow import api
-import templateflow
 
 default_resource_dir = Path.home() / ".cache" / "halfpipe"
 resource_dir = Path(
@@ -15,7 +13,7 @@ resource_dir = Path(
 )
 resource_dir.mkdir(exist_ok=True, parents=True)
 
-online_resources = dict([
+online_resources: Dict[str, str] = dict([
     (
         "index.html",
         "https://github.com/HALFpipe/QualityCheck/releases/download/0.3.0/index.html",
@@ -34,14 +32,34 @@ online_resources = dict([
     ),
 ])
 
-xfmpaths = api.get("MNI152NLin2009cAsym", suffix="xfm")
-templateflow_resources = dict()
+
+def urllib_download(url: str, target: str):
+    from urllib.request import urlretrieve
+    from tqdm import tqdm
+
+    class TqdmUpTo(tqdm):
+        def update_to(self, b: int, bsize: int, tsize: int):
+            self.total = tsize
+            self.update(b * bsize - self.n)  # also sets self.n = b * bsize
+
+    with TqdmUpTo(
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        miniters=1,
+        desc=url.split('/')[-1]
+    ) as t:
+        urlretrieve(url, filename=target, reporthook=t.update_to)
 
 
-def download(url: str, target=None) -> Optional[str]:
+def download(url: str, target: Optional[str] = None) -> Optional[str]:
     import requests
     from tqdm import tqdm
     import io
+
+    if not url.startswith("http"):
+        assert isinstance(target, (str, Path))
+        return urllib_download(url, target)
 
     if target is not None:
         fp = open(target, "wb")
@@ -72,9 +90,6 @@ def download(url: str, target=None) -> Optional[str]:
 
 
 def get(filename=None) -> str:
-    if filename in templateflow_resources:
-        return templateflow_resources[filename]
-
     assert filename in online_resources, f"Resource {filename} not found"
 
     filepath = resource_dir / filename
@@ -100,9 +115,10 @@ def get(filename=None) -> str:
 
 
 if __name__ == "__main__":
+    from templateflow import api
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
-        paths = api.get(space, atlas=None)
+        paths = api.get(space, atlas=None, resolution=[1, 2])
         assert isinstance(paths, list)
         assert len(paths) > 0
     for filename in online_resources.keys():

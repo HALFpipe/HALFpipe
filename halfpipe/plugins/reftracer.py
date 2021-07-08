@@ -94,7 +94,7 @@ class PathReferenceTracer:
                 if frompath in self.black or frompath in self.grey:
                     self.add_ref(frompath, topath)
                 else:
-                    logger.warning(f'{node.name} has untracked input_source "{input_file}"')
+                    logger.debug(f'{node.name} has untracked input_source "{input_file}"')
 
     def set_node_complete(self, node, unmark: bool):
         topath = self.node_resultfile_path(node)

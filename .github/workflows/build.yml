@@ -10,18 +10,13 @@ on:
       - edited
 
 jobs:
-  main:
+  docker_build:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Start deployment
-        uses: bobheadxi/deployments@v0.4.3
-        id: deployment
-        with:
-          step: start
-          token: ${{ secrets.GITHUB_TOKEN }}
-          env: prod
+    outputs:
+      tag: ${{ steps.build_tag.outputs.tag }}
 
+    steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -32,9 +27,6 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v1
         with:
           images: name/app
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -86,11 +78,64 @@ jobs:
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.revision=${{ github.sha }}
 
-      - name: Update deployment
-        uses: bobheadxi/deployments@v0.4.3
-        if: always()
-        with:
-          step: finish
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: ${{ job.status }}
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+  singularity_build:
+    runs-on: ubuntu-latest
+
+    needs:
+      - docker_build
+
+    strategy:
+      matrix:
+        singularity_version:
+          - "latest"
+          - "v2.6"
+
+    container:
+      image: quay.io/singularity/docker2singularity:${{ matrix.singularity_version }}
+      options: --privileged
+      volumes:
+        - /usr:/host/usr
+        - /opt:/host/opt
+
+    steps:
+      - name: Increase available disk space
+        shell: bash
+        run: |
+          rm -rf /host/{usr/share/dotnet,usr/local/lib/android,opt/ghc}
+          wget -qO /tmp/docker2singularity.patch https://gist.githubusercontent.com/HippocampusGirl/e2c2166cbdc71e11b75380d34448b3f3/raw
+          patch /docker2singularity.sh /tmp/docker2singularity.patch
+
+      - name: Convert to Singularity
+        shell: bash
+        env:
+          DOCKER_IMAGE_NAME: ${{ needs.docker_build.outputs.tag }}
+        run: |
+          SINGULARITY_IMAGE_NAME=$(echo -n ${DOCKER_IMAGE_NAME} | tr -c '[:alnum:].' '-')
+          mkdir -p -v /output
+          docker-entrypoint.sh /docker2singularity.sh \
+            --name ${SINGULARITY_IMAGE_NAME} \
+            ${DOCKER_IMAGE_NAME}
+          echo "::set-output name=image::${SINGULARITY_IMAGE_FILE}"
+
+      - name: Upload to server
+        shell: bash
+        env:
+          DIGITALOCEAN_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
+          DIGITALOCEAN_SECRET_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
+          DIGITALOCEAN_REGION: ${{ secrets.DIGITALOCEAN_REGION }}
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+        run: |
+          apk add python3  py3-pip
+          pip3 install --upgrade pip
+          pip3 install s3cmd
+          s3cmd --stop-on-error \
+            --ssl --no-encrypt \
+            --access_key="${DIGITALOCEAN_ACCESS_KEY}" \
+            --secret_key="${DIGITALOCEAN_SECRET_KEY}" \
+            --host="${DIGITALOCEAN_REGION}.digitaloceanspaces.com" \
+            --host-bucket="%(bucket)s.${DIGITALOCEAN_REGION}.digitaloceanspaces.com" \
+            --dump-config \
+            > ${HOME}/.s3cfg
+          SINGULARITY_IMAGE_FILE=$(find "/output" -type f | head -n1)
+          s3cmd put ${SINGULARITY_IMAGE_FILE} s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
+          s3cmd setacl s3://${DIGITALOCEAN_SPACE_NAME}/singularity/$(basename ${SINGULARITY_IMAGE_FILE}) --acl-public

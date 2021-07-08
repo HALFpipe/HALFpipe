@@ -11,7 +11,6 @@ from hashlib import sha1
 from .resolve import ResolvedSpec
 from ..metadata import MetadataLoader
 from ...model.tags import entities
-from ...utils import first
 
 
 class Database:
@@ -246,7 +245,8 @@ class Database:
             return self.fileobj(filepaths).tmplstr
         tmplstrset = set(self.tmplstr(filepath) for filepath in filepaths)
         if len(tmplstrset) == 1:
-            return first(tmplstrset)
+            (tmplstr,) = tmplstrset
+            return tmplstr
 
     def fillmetadata(self, key, filepaths):
         found = False

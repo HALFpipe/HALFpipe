@@ -4,15 +4,8 @@
 
 from typing import List, Dict, Tuple, Union
 
-from itertools import zip_longest
-from math import isclose
-
-import numpy as np
-
 from ..io.index import Database, BidsDatabase
-from ..utils import logger, nvol, ravel
-from ..io.metadata.niftiheader import NiftiheaderLoader
-from ..io.metadata.sidecar import SidecarMetadataLoader
+from ..utils import logger, nvol
 
 
 def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tuple[Tuple[str, str], ...]]:
@@ -66,29 +59,6 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     raise ValueError(
         f'Cannot collect condition files for "{sourcefile}"'
     )
-
-
-def _format_matrix_comparison(*args):
-    lines = list(zip(*(
-        np.array_str(a, precision=3, suppress_small=True).splitlines()
-        for a in args
-    )))
-
-    max_str_len = max(len(a) for a in ravel(lines))
-
-    for i, line in enumerate(lines):
-        if i == len(lines) // 2:
-            delimiter = "!="
-        else:
-            delimiter = "  "
-
-        s = "    "
-        for j, a in enumerate(line):
-            if j > 0:
-                s += f" {delimiter} "
-            s += f"{a:{max_str_len}}"
-
-        yield s
 
 
 def collect_fieldmaps(database: Database, bold_file_path: str, filters: Dict) -> List[str]:

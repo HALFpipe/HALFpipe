@@ -18,11 +18,12 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 
 from ...io import DictListFile
 from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
-from ...utils import splitext, findpaths, first, formatlikebids, logger
+from ...utils import splitext, findpaths, formatlikebids, logger
 from ...resource import get as getresource
+from ...stats.algorithms import algorithms
 
 
-def _make_plot(tags, key, sourcefile):
+def _make_plot(tags, key, sourcefile, metadata):
     if key == "z":
         pass
     elif key == "matrix":
@@ -80,17 +81,20 @@ def _find_sources(inpath):
     inputpaths = None
     for parent in Path(inpath).parents:
 
-        hashfile = first(parent.glob("_0x*.json"))
+        hashfiles = list(parent.glob("_0x*.json"))
 
-        if isinstance(hashfile, Path):
+        if len(hashfiles) > 0:
+            hashfile = hashfiles[0]
 
-            match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
-            if match is not None:
-                file_hash = match.group("hash")
+            if isinstance(hashfile, Path):
 
-            with open(hashfile, "r") as fp:
-                inputpaths = findpaths(json.load(fp))
-                break
+                match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", hashfile.name)
+                if match is not None:
+                    file_hash = match.group("hash")
+
+                with open(hashfile, "r") as fp:
+                    inputpaths = findpaths(json.load(fp))
+                    break
 
     return inputpaths, file_hash
 
@@ -164,18 +168,23 @@ class ResultdictDatasink(SimpleInterface):
                 outpath = derivatives_directory
                 if "sub" not in tags:
                     outpath = grouplevel_directory
-                if key in ["effect", "variance", "z", "dof"]:  # apply rule
+                if key in ["effect", "variance", "z", "t", "f", "dof"]:  # apply rule
                     outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
+                elif key in algorithms["heterogeneity"].model_outputs:
+                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="heterogeneity")
+                elif key in algorithms["mcartest"].model_outputs:
+                    key = re.sub(r"^mcar", "", key)
+                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="mcar")
                 else:
                     outpath = outpath / _make_path(inpath, "image", tags, key)
                 was_updated = _copy_file(inpath, outpath)
 
                 if was_updated:
-                    _make_plot(tags, key, outpath)
+                    _make_plot(tags, key, outpath, metadata)
 
                 if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                     stem, extension = splitext(outpath)
-                    if extension in [".nii", ".nii.gz", ".tsv"]:
+                    if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
                         with open(outpath.parent / f"{stem}.json", "w") as fp:
                             fp.write(json.dumps(metadata, sort_keys=True, indent=4))
 

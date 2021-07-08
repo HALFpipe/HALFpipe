@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from collections import defaultdict
 
 from nipype.interfaces.base import (
     traits,
@@ -14,10 +15,12 @@ from nipype.interfaces.io import add_traits, IOBase
 from .base import ResultdictsOutputSpec
 from ...model import ResultdictSchema
 from ...model.utils import get_schema_entities
-from ...utils import first, ravel, deepcopy
+from ...utils import ravel, deepcopy
+
+resultdict_schema = ResultdictSchema()
+resultdict_entities = set(get_schema_entities(resultdict_schema))
 
 composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
-resultdict_entities = set(get_schema_entities(ResultdictSchema))
 
 
 class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
@@ -147,7 +150,7 @@ class MakeResultdicts(IOBase):
         # make resultdicts
         resultdicts = []
         for valuetupl in zip(*values):
-            resultdict = dict(tags=dict(), metadata=dict(), images=dict(), vals=dict())
+            resultdict = defaultdict(dict)
             for f, k, v in zip(fieldnames, keys, valuetupl):
                 if k is None:
                     resultdict[f].update(v)
@@ -156,9 +159,7 @@ class MakeResultdicts(IOBase):
                 k: v for k, v in resultdict["tags"].items() if k in resultdict_entities
             }
             for f, k, v in zip(fieldnames, keys, valuetupl):
-                # actually add
-                if f not in resultdict:
-                    resultdict[f] = dict()
+                # actually add values
                 if k is not None and v not in self._missingvalues:
                     resultdict[f][k] = v
             resultdicts.append(resultdict)
@@ -191,9 +192,9 @@ class MakeResultdicts(IOBase):
 
         # validate
         for i in range(len(resultdicts)):
-            resultdicts[i] = ResultdictSchema().load(resultdicts[i])
+            assert len(resultdict_schema.validate(resultdicts[i])) == 0
 
         outputs["resultdicts"] = resultdicts
-        outputs["vals"] = first(resultdicts)["vals"]
+        outputs["vals"] = resultdicts[0]["vals"]
 
         return outputs

@@ -7,19 +7,19 @@
 
 from typing import Dict, Optional, Tuple
 
-from pathlib import Path
+from collections import defaultdict
 from math import isnan, isclose, isfinite
 
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from scipy import optimize
+from scipy.optimize import minimize_scalar
 
 from .miscmaths import t2z_convert, f2z_convert
-from .base import ModelAlgorithm, listwise_deletion
+from .base import ModelAlgorithm, listwise_deletion, demean
 
 
-def calcgam(beta, y, z, s):
+def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     weights = s + beta
 
     iU = np.diag(1.0 / np.ravel(weights))
@@ -27,20 +27,17 @@ def calcgam(beta, y, z, s):
     tmp = z.T @ iU
     ziUz = tmp @ z
 
-    gamcovariance = np.linalg.inv(ziUz)
-    gam = gamcovariance @ tmp @ y
+    gam = np.linalg.lstsq(ziUz, tmp @ y, rcond=None)[0]
 
-    return gam, gamcovariance, iU, ziUz
+    return gam, iU, ziUz
 
 
-def marg_posterior_energy(x, y, z, s):
-    ex = np.exp(x)  # ex is variance
-
-    if ex < 0 or np.isclose(ex, 0):
+def marg_posterior_energy(ex, y, z, s):
+    if ex < 0 or isclose(ex, 0.0):
         return 1e32  # very large value
 
     try:
-        gam, _, iU, ziUz = calcgam(ex, y, z, s)
+        gam, iU, ziUz = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
         return 1e32
 
@@ -57,12 +54,12 @@ def marg_posterior_energy(x, y, z, s):
 
 
 def solveforbeta(y, z, s):
-    res = optimize.minimize_scalar(
+    res = minimize_scalar(
         marg_posterior_energy, args=(y, z, s), method="brent"
     )
     fu = res.x
 
-    beta = max(1e-10, np.exp(fu))
+    beta = max(1e-10, fu)
 
     return beta
 
@@ -76,16 +73,17 @@ def flame_stage1_onvoxel(y, z, s):
 
     beta = solveforbeta(y, z, s)
 
-    gam, gamcovariance, _, _ = calcgam(beta, y, z, s)
+    gam, _, ziUz = calcgam(beta, y, z, s)
 
     gam *= norm
-    gamcovariance *= np.square(norm)
+    ziUz /= np.square(norm)
 
-    return gam, gamcovariance
+    return gam, ziUz
 
 
-def t_ols_contrast(mn, covariance, dof, tcontrast):
-    varcope = float(tcontrast @ covariance @ tcontrast.T)
+def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
+    a = np.linalg.lstsq(inverse_covariance, tcontrast.T, rcond=None)[0]
+    varcope = float(tcontrast @ a)
 
     cope = float(tcontrast @ mn)
 
@@ -100,34 +98,32 @@ def t_ols_contrast(mn, covariance, dof, tcontrast):
     return cope, varcope, t, z
 
 
-def f_ols_contrast(mn, covariance, dof1, dof2, fcontrast):
-    f = float(
-        mn.T
-        @ fcontrast.T
-        @ np.linalg.inv(fcontrast @ covariance @ fcontrast.T)
-        @ fcontrast
-        @ mn
-        / dof1
-    )
+def f_ols_contrast(mn, inverse_covariance, dof1, dof2, fcontrast):
+    cope = fcontrast @ mn
+
+    a = fcontrast @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
+    b = np.linalg.lstsq(a, cope, rcond=None)[0]
+
+    f = float(cope.T @ b) / dof1
 
     z = f2z_convert(f, dof1, dof2)
 
-    return f, z
+    return cope, f, z
 
 
-def flame1_contrast(mn, covariance, npts, cmat):
+def flame1_contrast(mn, inverse_covariance, npts, cmat):
     nevs = len(mn)
 
     n, _ = cmat.shape
 
     if n == 1:
         tdoflower = npts - nevs
-        cope, varcope, t, z = t_ols_contrast(mn, covariance, tdoflower, cmat)
+        cope, varcope, t, z = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
 
         mask = isfinite(z)
 
         return dict(
-            cope=cope, var_cope=varcope, tdof=tdoflower, tstat=t, zstat=z, mask=mask
+            cope=cope, var_cope=varcope, dof=tdoflower, tstat=t, zstat=z, mask=mask
         )
 
     elif n > 1:
@@ -135,15 +131,32 @@ def flame1_contrast(mn, covariance, npts, cmat):
 
         fdof2lower = npts - nevs
 
-        f, z = f_ols_contrast(mn, covariance, fdof1, fdof2lower, cmat)
+        cope, f, z = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
 
         mask = isfinite(z)
 
-        return dict(fstat=f, fdof1=fdof1, fdof2=fdof2lower, zstat=z, mask=mask)
+        return dict(cope=cope, fstat=f, dof=[fdof1, fdof2lower], zstat=z, mask=mask)
+
+
+def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
+    # filtering for design matrix is already done
+    # the nans that are left should be replaced with zeros
+    z = np.nan_to_num(z)
+
+    # remove observations with nan cope/varcope
+    y, z, s = listwise_deletion(y, z, s)
+
+    # finally demean the design matrix
+    z = demean(z)
+
+    return y, z, s
 
 
 class FLAME1(ModelAlgorithm):
-    outputs = ["copes", "var_copes", "tdof", "zstats", "tstats", "fstats", "masks"]
+    model_outputs = []
+    contrast_outputs = [
+        "copes", "var_copes", "zstats", "tstats", "fstats", "dof", "masks"
+    ]
 
     @staticmethod
     def voxel_calc(
@@ -153,48 +166,34 @@ class FLAME1(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: dict,
     ) -> Optional[Dict]:
-        y, z, s = listwise_deletion(y, z, s)
+        y, z, s = flame1_prepare_data(y, z, s)
 
         npts = y.size
 
         try:
-            mn, covariance = flame_stage1_onvoxel(y, z, s)
+            mn, inverse_covariance = flame_stage1_onvoxel(y, z, s)
         except np.linalg.LinAlgError:
             return
 
-        voxel_result = dict()
+        voxel_result = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             try:
-                r = flame1_contrast(mn, covariance, npts, cmat)
-
-                if name not in voxel_result:
-                    voxel_result[name] = dict()
-
+                r = flame1_contrast(mn, inverse_covariance, npts, cmat)
                 voxel_result[name][coordinate] = r
             except np.linalg.LinAlgError:
                 continue
 
         return voxel_result
 
-    @staticmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
-        from nilearn.image import new_img_like
-
+    @classmethod
+    def write_outputs(
+        cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+    ) -> Dict:
         output_files = dict()
 
-        for output_name in [
-            "copes",
-            "var_copes",
-            "tdof",
-            "zstats",
-            "tstats",
-            "fstats",
-            "masks",
-        ]:
-            output_files[output_name] = [False for _ in range(len(voxel_results))]
-
-        shape = ref_img.shape[:3]
+        for output_name in cls.contrast_outputs:
+            output_files[output_name] = [False] * len(cmatdict)
 
         for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]
@@ -210,25 +209,10 @@ class FLAME1(ModelAlgorithm):
                 )
 
             for map_name, series in rdf.iterrows():
-                coordinates = series.index.tolist()
-                values = series.values
+                out_name = f"{map_name}_{i+1}_{contrast_name}"
+                fname = cls.write_map(ref_img, out_name, series)
 
-                if map_name == "mask":
-                    arr = np.zeros(shape, dtype=np.bool)
-
-                else:
-                    arr = np.full(shape, np.nan)
-
-                if len(coordinates) > 0:
-                    arr[(*zip(*coordinates),)] = values
-
-                img = new_img_like(ref_img, arr, copy_header=True)
-                img.header.set_data_dtype(np.float64)
-
-                fname = Path.cwd() / f"{map_name}_{i+1}_{contrast_name}.nii.gz"
-                nib.save(img, fname)
-
-                if map_name in ["tdof"]:
+                if map_name in frozenset(["dof"]):
                     output_name = map_name
 
                 else:

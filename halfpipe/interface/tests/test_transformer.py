@@ -40,7 +40,6 @@ def test_transformer_nii(tmp_path):
     tf.inputs.mask = ref_mask_file
 
     array = tf._load(test_file)
-    # import pdb; pdb.set_trace()
 
     out_file = tf._dump(array)
 

@@ -15,7 +15,7 @@ from math import ceil
 import numpy as np
 import networkx as nx
 
-from ..utils import first, logger, resolve, timestampstr
+from ..utils import logger, resolve, timestampstr
 
 
 def run(opts, should_run):
@@ -126,8 +126,12 @@ def run(opts, should_run):
             assert (
                 opts.graphs_file is not None
             ), "Missing required --graphs-file input for step run"
-            graphs = loadpicklelzma(opts.graphs_file)
+
+            graphs_file = resolve(opts.graphs_file, opts.fs_root)
+            graphs = loadpicklelzma(graphs_file)
+
             assert isinstance(graphs, OrderedDict)
+
             logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
         else:
             logger.info("Using graphs from previous step")
@@ -247,7 +251,7 @@ def run(opts, should_run):
                 assert isinstance(chunk, nx.DiGraph)
 
                 runner = runnercls(plugin_args=plugin_args)
-                firstnode = first(chunk.nodes())
+                firstnode = next(iter(chunk.nodes()))
                 if firstnode is not None:
                     assert isinstance(firstnode, pe.Node)
                     runner.run(chunk, updatehash=False, config=firstnode.config)

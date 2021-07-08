@@ -15,6 +15,7 @@ from ...interface.stats import (
     GroupDesign,
     ModelFit,
 )
+from ...interface.resultdict.datasink import ResultdictDatasink
 from ...interface import (
     Merge,
     MergeMask,
@@ -23,26 +24,24 @@ from ...interface import (
     FLAMEO as FSLFLAMEO,
     FilterResultdicts,
     AggregateResultdicts,
-    ResultdictDatasink,
     MakeDesignTsv,
 )
 from ...utils import ravel, formatlikebids, lenforeach
 from ..memory import MemoryCalculator
-from ...stats import algorithms
+from ...stats.algorithms import algorithms, modelfit_aliases
+from ...fixes import Node, MapNode
 
-modelfit_outputs = frozenset([
+modelfit_model_outputs = frozenset([
     output
     for a in algorithms.values()
-    for output in a.outputs
+    for output in a.model_outputs
 ])
-modelfit_exclude = frozenset(["fstats", "tstats"])
-modelfit_aliases = dict(
-    copes="effect",
-    var_copes="variance",
-    zstats="z",
-    tdof="dof",
-    masks="mask",
-)
+modelfit_contrast_outputs = frozenset([
+    output
+    for a in algorithms.values()
+    for output in a.contrast_outputs
+])
+modelfit_exclude = frozenset([])
 
 
 def _fe_run_mode(var_cope_file):
@@ -81,8 +80,9 @@ def init_model_wf(
         return workflow
 
     #
-    inputnode = pe.Node(
+    inputnode = Node(
         niu.IdentityInterface(fields=[f"in{i:d}" for i in range(1, numinputs + 1)]),
+        allow_missing_input_source=True,
         name="inputnode",
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
@@ -91,13 +91,16 @@ def init_model_wf(
     make_resultdicts_a = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
-            imagekeys=["design_matrix", "contrast_matrix", *modelfit_outputs],
+            imagekeys=["design_matrix", "contrast_matrix", *modelfit_model_outputs],
             deletekeys=["contrast"],
         ),
         name="make_resultdicts_a",
     )
 
-    statmaps = ["effect", "variance", "z", "dof", "mask"]
+    statmaps = [
+        modelfit_aliases[m] if m in modelfit_aliases else m
+        for m in modelfit_contrast_outputs
+    ]
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
@@ -127,7 +130,11 @@ def init_model_wf(
     workflow.connect(merge_resultdicts_b, "out", resultdict_datasink, "indicts")
 
     # merge inputs
-    merge_resultdicts_a = pe.Node(niu.Merge(numinputs), name="merge_resultdicts_a")
+    merge_resultdicts_a = Node(
+        niu.Merge(numinputs),
+        allow_missing_input_source=True,
+        name="merge_resultdicts_a",
+    )
     for i in range(1, numinputs + 1):
         workflow.connect(inputnode, f"in{i:d}", merge_resultdicts_a, f"in{i:d}")
 
@@ -156,9 +163,10 @@ def init_model_wf(
 
     # extract fields from the aggregated data structure
     aliases = dict(effect=["reho", "falff", "alff"])
-    extractfromresultdict = pe.MapNode(
+    extractfromresultdict = MapNode(
         ExtractFromResultdict(keys=[model.across, *statmaps], aliases=aliases),
         iterfield="indict",
+        allow_undefined_iterfield=True,
         name="extractfromresultdict",
     )
     workflow.connect(aggregateresultdicts, "resultdicts", extractfromresultdict, "indict")
@@ -177,13 +185,13 @@ def init_model_wf(
         )
         workflow.connect(extractfromresultdict, "effect", countimages, "arrarr")
 
-        modelspec = pe.MapNode(
+        modelspec = MapNode(
             InterceptOnlyDesign(), name="modelspec", iterfield="n_copes", mem_gb=memcalc.min_gb
         )
         workflow.connect(countimages, "image_count", modelspec, "n_copes")
 
     elif model.type in ["lme"]:  # glm
-        modelspec = pe.MapNode(
+        modelspec = MapNode(
             GroupDesign(
                 spreadsheet=model.spreadsheet,
                 contrastdicts=model.contrasts,
@@ -205,16 +213,16 @@ def init_model_wf(
 
         # need to merge
         mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
-        mergemask = pe.MapNode(MergeMask(), name="mergemask", **mergenodeargs)
+        mergemask = MapNode(MergeMask(), name="mergemask", **mergenodeargs)
         workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
 
-        mergeeffect = pe.MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
+        mergeeffect = MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
         workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
 
-        mergevariance = pe.MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
+        mergevariance = MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
         workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
 
-        fe_run_mode = pe.MapNode(
+        fe_run_mode = MapNode(
             niu.Function(input_names=["var_cope_file"], output_names=["run_mode"], function=_fe_run_mode),
             iterfield=["var_cope_file"],
             name="fe_run_mode",
@@ -222,7 +230,7 @@ def init_model_wf(
         workflow.connect(mergevariance, "merged_file", fe_run_mode, "var_cope_file")
 
         # prepare design matrix
-        multipleregressdesign = pe.MapNode(
+        multipleregressdesign = MapNode(
             fsl.MultipleRegressDesign(),
             name="multipleregressdesign",
             iterfield=["regressors", "contrasts"],
@@ -232,7 +240,7 @@ def init_model_wf(
         workflow.connect(modelspec, "contrasts", multipleregressdesign, "contrasts")
 
         # use FSL implementation
-        modelfit = pe.MapNode(
+        modelfit = MapNode(
             FSLFLAMEO(),
             name="modelfit",
             mem_gb=memcalc.volume_std_gb * 100,
@@ -260,7 +268,7 @@ def init_model_wf(
     elif model.type in ["me", "lme"]:
 
         # use custom implementation
-        modelfit = pe.MapNode(
+        modelfit = MapNode(
             ModelFit(algorithms_to_run=model.algorithms),
             name="modelfit",
             n_procs=config.nipype.omp_nthreads,
@@ -281,7 +289,7 @@ def init_model_wf(
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")
 
         # random field theory
-        smoothest = pe.MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
+        smoothest = MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
         workflow.connect([(modelfit, smoothest, [(("zstats", ravel), "zstat_file")])])
         workflow.connect([(modelfit, smoothest, [(("masks", ravel), "mask_file")])])
 
@@ -314,7 +322,7 @@ def init_model_wf(
             workflow.connect(modelfit, k, make_resultdicts_a, attr)
 
     # make tsv files for design and contrast matrices
-    maketsv = pe.MapNode(
+    maketsv = MapNode(
         MakeDesignTsv(),
         iterfield=["regressors", "contrasts", "row_index"],
         name="maketsv"

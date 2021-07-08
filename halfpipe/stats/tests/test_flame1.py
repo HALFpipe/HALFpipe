@@ -7,6 +7,7 @@
 import pytest
 
 import os
+from collections import OrderedDict
 
 import nibabel as nib
 import numpy as np
@@ -19,11 +20,10 @@ from nipype.pipeline import engine as pe
 
 from ...interface.imagemaths.merge import _merge, _merge_mask
 from ..design import group_design
-from ...utils import first
 
 
 @pytest.mark.timeout(600)
-@pytest.mark.parametrize("use_var_cope", [False, True])
+@pytest.mark.parametrize("use_var_cope", [True, False])
 def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     os.chdir(str(tmp_path))
 
@@ -58,9 +58,15 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
 
     workflow = pe.Workflow("comparison", base_dir=str(tmp_path))
 
+    demeaned_regressors = OrderedDict()  # need to manually demean here
+    for variable_name, values in regressors.items():
+        if variable_name.lower() != "intercept":
+            values = (np.array(values) - np.nanmean(values)).tolist()
+        demeaned_regressors[variable_name] = values
+
     multipleregressdesign = pe.Node(
         fsl.MultipleRegressDesign(
-            regressors=regressors,
+            regressors=demeaned_regressors,
             contrasts=contrasts,
         ),
         name="multipleregressdesign",
@@ -94,8 +100,9 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
 
     r0 = dict(
         cope=result.outputs.copes[0],
+        var_cope=result.outputs.var_copes[0],
         tstat=result.outputs.tstats[0],
-        fstat=first(result.outputs.fstats),
+        fstat=result.outputs.fstats,
         tdof=result.outputs.tdof[0],
     )
 
@@ -117,9 +124,10 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
 
     r1 = dict(
         cope=result["copes"][0],
+        var_cope=result["var_copes"][0],
         tstat=result["tstats"][0],
         fstat=result["fstats"][2],
-        tdof=result["tdof"][0],
+        tdof=result["dof"][0],
     )
 
     # compare
@@ -136,10 +144,17 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
         # so these assertions are here to verify that the small differences
         # will not get any larger with future changes or optimizations
 
-        # no more than one percent of voxels can be more than one percent different
+        # max difference of one percent
         assert (
-            float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.99
+            float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.995
         ), f"Too many diverging voxels for {k}"
 
-        # mean error average needs to be below 0.05
-        assert float(np.abs(a0 - a1).mean()) < 0.05, f"Too high mean error average for {k}"
+        if k not in frozenset(["var_cope"]):
+            assert np.all(
+                np.abs(a0 - a1)[
+                    np.logical_not(np.isclose(a0, a1, rtol=1e-2))
+                ] < 25
+            ), f"Difference in diverging voxels is too big for {k}"
+
+            # mean error average needs to be below 0.05
+            assert float(np.abs(a0 - a1).mean()) < 5e-2, f"Too high mean error average for {k}"

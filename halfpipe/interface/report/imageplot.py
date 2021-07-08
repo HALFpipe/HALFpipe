@@ -51,7 +51,7 @@ class PlotEpi(ReportingInterface):
         n_cuts = 7
         cuts = cuts_from_bbox(mask_img, cuts=n_cuts)
 
-        img_vals = in_img.get_fdata()[np.asanyarray(mask_img.dataobj).astype(np.bool)]
+        img_vals = in_img.get_fdata()[np.asanyarray(mask_img.dataobj).astype(bool)]
         vmin = img_vals.min()
         vmax = img_vals.max()
 

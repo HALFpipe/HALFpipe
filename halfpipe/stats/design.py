@@ -44,9 +44,9 @@ def _check_multicollinearity(matrix):
         )
 
 
-def group_design(
-    spreadsheet: Path, contrastdicts: List[Dict], variabledicts: List[Dict], subjects: List[str]
-) -> Tuple[Dict[str, List[float]], List[Tuple], List[str]]:
+def _prepare_data_frame(
+    spreadsheet: Path, variabledicts: List[Dict], subjects: List[str]
+) -> pd.DataFrame:
     rawdataframe: pd.DataFrame = loadspreadsheet(spreadsheet, dtype=object)
 
     id_column = None
@@ -87,12 +87,6 @@ def group_design(
     # change type to numeric
     continuous = continuous.astype(np.float64)
 
-    # Demean continuous for flameo
-    continuous -= continuous.mean()
-
-    # replace np.nan by 0 for demeaned_continuous file and regression models
-    continuous.fillna(0.0)
-
     # change type first to string then to category
     categorical = categorical.astype(str)
     categorical = categorical.astype("category")
@@ -103,6 +97,62 @@ def group_design(
     # maintain order
     dataframe = dataframe[columns_in_order]
 
+    return dataframe
+
+
+def _generate_rhs(contrastdicts, columns_var_gt_0) -> List[Term]:
+    rhs = [Term([])]  # force intercept
+    for contrastdict in contrastdicts:
+        if contrastdict["type"] == "infer":
+            if not columns_var_gt_0[contrastdict["variable"]].all():
+                logger.warning(
+                    f'Not adding term "{contrastdict["variable"]}" to design matrix '
+                    "because it has zero variance"
+                )
+                continue
+            # for every term in the model a contrast of type infer needs to be specified
+            rhs.append(Term([LookupFactor(name) for name in contrastdict["variable"]]))
+
+    return rhs
+
+
+def _make_contrasts(contrastMats: List[Tuple[str, pd.DataFrame]]):
+    contrasts: List[Tuple] = []
+    contrast_names = []
+
+    for contrastName, contrastMat in contrastMats:  # t contrasts
+        if contrastMat.shape[0] == 1:
+            contrastVec = contrastMat.squeeze()
+            contrasts.append(
+                (contrastName, "T", list(contrastVec.keys()), list(contrastVec))
+            )
+
+            contrast_names.append(contrastName)
+
+    for contrastName, contrastMat in contrastMats:  # f contrasts
+        if contrastMat.shape[0] > 1:
+
+            tcontrasts = []  # an f contrast consists of multiple t contrasts
+            for i, contrastVec in contrastMat.iterrows():
+                tname = f"{contrastName}_{i:d}"
+                tcontrasts.append(
+                    (tname, "T", list(contrastVec.keys()), list(contrastVec))
+                )
+
+            contrasts.extend(tcontrasts)  # add t contrasts to the model
+            contrasts.append((contrastName, "F", tcontrasts))  # then add the f contrast
+
+            contrast_names.append(contrastName)  # we only care about the f contrast
+
+    return contrasts, contrast_names
+
+
+def group_design(
+    spreadsheet: Path, contrastdicts: List[Dict], variabledicts: List[Dict], subjects: List[str]
+) -> Tuple[Dict[str, List[float]], List[Tuple], List[str]]:
+
+    dataframe = _prepare_data_frame(spreadsheet, variabledicts, subjects)
+
     # remove zero variance columns
     columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1  # does not count NA
     dataframe = dataframe.loc[:, columns_var_gt_0]
@@ -111,17 +161,7 @@ def group_design(
     lhs = []
 
     # generate rhs
-    rhs = [Term([])]  # force intercept
-    for contrastdict in contrastdicts:
-        if contrastdict["type"] == "infer":
-            if not columns_var_gt_0[contrastdict["variable"]].all():
-                logger.warning(
-                    f'Not adding term "{contrastdict["variable"]}" from model '
-                    "because it has zero variance"
-                )
-                continue
-            # for every term in the model a contrast of type infer needs to be specified
-            rhs.append(Term([LookupFactor(name) for name in contrastdict["variable"]]))
+    rhs = _generate_rhs(contrastdicts, columns_var_gt_0)
 
     # specify patsy design matrix
     modelDesc = ModelDesc(lhs, rhs)
@@ -141,7 +181,7 @@ def group_design(
     refDmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
 
     # data frame to store contrasts
-    contrastMats = []
+    contrastMats: List[Tuple[str, pd.DataFrame]] = []
 
     for field, columnslice in dmat.design_info.term_name_slices.items():
         constraint = {
@@ -194,32 +234,6 @@ def group_design(
         )
 
     regressors = dmat.to_dict(orient="list", into=OrderedDict)
-
-    contrasts: List[Tuple] = []
-    contrast_names = []
-
-    for contrastName, contrastMat in contrastMats:  # t contrasts
-        if contrastMat.shape[0] == 1:
-            contrastVec = contrastMat.squeeze()
-            contrasts.append(
-                (contrastName, "T", list(contrastVec.keys()), list(contrastVec))
-            )
-
-            contrast_names.append(contrastName)
-
-    for contrastName, contrastMat in contrastMats:  # f contrasts
-        if contrastMat.shape[0] > 1:
-
-            tcontrasts = []  # an f contrast consists of multiple t contrasts
-            for i, contrastVec in contrastMat.iterrows():
-                tname = f"{contrastName}_{i:d}"
-                tcontrasts.append(
-                    (tname, "T", list(contrastVec.keys()), list(contrastVec))
-                )
-
-            contrasts.extend(tcontrasts)  # add t contrasts to the model
-            contrasts.append((contrastName, "F", tcontrasts))  # then add the f contrast
-
-            contrast_names.append(contrastName)  # we only care about the f contrast
+    contrasts, contrast_names = _make_contrasts(contrastMats)
 
     return regressors, contrasts, contrast_names

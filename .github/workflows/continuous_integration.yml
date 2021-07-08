@@ -11,15 +11,11 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    container: ghcr.io/halfpipe/halfpipe:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
 
       - name: Lint with flake8
         shell: bash
@@ -39,14 +35,12 @@ jobs:
         shell: bash
         run: |
           npm install -g pyright
-          echo '{ "typeCheckingMode": "off" }' > pyrightconfig.json
+          mv pyrightconfig.json pyrightconfig.strict.json
+          node -p "JSON.stringify({...require(\"./pyrightconfig.strict.json\"), typeCheckingMode: \"off\"}, null, 2)" > pyrightconfig.json
           pyright
 
   test:
     runs-on: ubuntu-latest
-    
-    # Docker Hub image that `container-job` executes in
-    # Use latest
     container: ghcr.io/halfpipe/halfpipe:latest
     
     timeout-minutes: 360

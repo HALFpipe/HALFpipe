@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Union, List
+
 import os
 from pathlib import Path
 from math import isfinite
@@ -52,7 +54,7 @@ def _add_td_conditions(hrf, condition_names):
 def init_taskbased_wf(
     workdir=None,
     feature=None,
-    condition_files=None,
+    condition_files: Union[str, List] = None,
     condition_units=None,
     memcalc=MemoryCalculator(),
 ):
@@ -267,6 +269,5 @@ def init_taskbased_wf(
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
     workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
-
 
     return workflow

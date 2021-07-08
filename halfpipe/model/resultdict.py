@@ -12,7 +12,7 @@ from marshmallow import Schema, RAISE, fields, ValidationError
 
 from .metadata import ResultdictMetadataSchema
 from .tags import ResultdictTagsSchema
-from ..stats.algorithms import algorithms
+from ..stats.algorithms import algorithms, modelfit_aliases
 
 
 def validate_file(v):
@@ -31,11 +31,7 @@ image_types = frozenset([
     "bold",
     "mask",
 
-    # according to https://github.com/poldracklab/fitlins/blob/0.6.2/fitlins/workflows/base.py
-    "effect",
-    "variance",
-    "z",
-    "dof",
+    *modelfit_aliases.values(),
 
     # according to https://github.com/bids-standard/bids-specification/blob/derivatives/src/05-derivatives/05-functional-derivatives.md
     "tsnr",
@@ -49,11 +45,12 @@ image_types = frozenset([
     "regressors",
 
     #
-    *[
+    *(
         output
         for algorithm in algorithms.values()
-        for output in algorithm.outputs
-    ],
+        for outputs in [algorithm.model_outputs, algorithm.contrast_outputs]
+        for output in outputs
+    ),
 ])
 
 ResultdictImagesSchema = Schema.from_dict({

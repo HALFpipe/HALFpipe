@@ -3,55 +3,38 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def first(obj):
-    """
-    get first element from iterable or iterator
-    """
-    from collections.abc import Iterator
-
-    if isinstance(obj, str):  # don't want to get letters from strings
-        return obj
-
-    if isinstance(obj, Iterator):
-        iterator = obj
-    else:
-        try:
-            iterator = iter(obj)
-        except TypeError:
-            return obj
-
-    try:
-        return next(iterator)
-    except StopIteration:
-        return  # return None on empty list
-
-
-def second(obj):
-    """
-    get second element from iterable
-    """
-    try:
-        it = iter(obj)
-        next(it)
-        return next(it)
-    except TypeError:
-        return obj
-    except StopIteration:
-        return  # return None on empty list
-
-
 def firstfloat(obj):
-    from halfpipe.utils import ravel, first
+    import numpy as np
+    from typing import Iterable
 
-    obj = ravel(obj)
-    return float(first(obj))
+    if isinstance(obj, float):
+        return obj
+    elif isinstance(obj, (np.number, int)):
+        return float(obj)
+
+    elif isinstance(obj, Iterable):
+        for elem in obj:
+            elem = firstfloat(elem)
+
+            if isinstance(elem, float):
+                return elem
 
 
 def firststr(obj):
-    from halfpipe.utils import ravel, first
+    from pathlib import Path
 
-    obj = ravel(obj)
-    return str(first(obj))
+    if isinstance(obj, str):
+        return obj
+
+    if isinstance(obj, Path):
+        return str(obj)
+
+    if isinstance(obj, (tuple, list)):
+        for elem in obj:
+            elem = firststr(elem)
+
+            if isinstance(elem, str):
+                return elem
 
 
 def ravel(obj):

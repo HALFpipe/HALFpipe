@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Any, Dict
+
 import re
 
 from .atlasbasedconnectivity import init_atlasbasedconnectivity_wf
@@ -70,7 +72,7 @@ class FeatureFactory(Factory):
         database = self.database
 
         vwf = None
-        kwargs = dict(feature=feature, workdir=str(self.workdir), memcalc=self.memcalc)
+        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.workdir), memcalc=self.memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
 
@@ -79,7 +81,10 @@ class FeatureFactory(Factory):
             if isinstance(condition_files, str):
                 condition_file_paths = [condition_files]
             elif isinstance(condition_files, tuple):
+                condition_files = list(condition_files)
+
                 condition_file_paths, _ = zip(*condition_files)
+                condition_file_paths = list(condition_file_paths)
             else:  # we did not find any condition files
                 logger.warning(
                     f'Skipping feature "{feature.name}" for "{sourcefile}" '
@@ -99,10 +104,11 @@ class FeatureFactory(Factory):
             if condition_units == "seconds":
                 condition_units = "secs"
 
-            kwargs["condition_files"] = condition_files
-            kwargs["condition_units"] = condition_units
-
-            vwf = init_taskbased_wf(**kwargs)
+            vwf = init_taskbased_wf(
+                condition_files=condition_files,
+                condition_units=condition_units,
+                **kwargs
+            )
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
             kwargs["seed_files"] = []

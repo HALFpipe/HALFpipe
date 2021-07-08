@@ -2,14 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from io import StringIO
+from pathlib import Path
 
 import numpy as np
 from scipy.io import loadmat
-import pandas as pd
 
 from ...model.file import File
-from ...utils import first, logger
+from .spreadsheet import loadspreadsheet
+from ...utils import logger, splitext
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -19,14 +19,7 @@ def parse_tsv_condition_file(filepath):
     onsets = []
     durations = []
 
-    dtype = {
-        "subject_id": str,
-        "session_id": str,
-        "participant_id": str,
-        "trial_type": str,
-    }
-
-    data = pd.read_csv(filepath, sep="\t", na_values="n/a", dtype=dtype)
+    data = loadspreadsheet(filepath)
 
     groupby = data.groupby(by="trial_type")
 
@@ -53,11 +46,7 @@ def parse_mat_condition_file(filepath):
     onsets = []
     durations = []
 
-    try:
-        data = loadmat(filepath)
-    except NotImplementedError:
-        # with h5py
-        raise
+    data = loadmat(filepath)
 
     assert data is not None
 
@@ -88,27 +77,14 @@ def parse_txt_condition_files(filepaths, conditions):
         assert condition is not None
 
         try:
-            with open(filepath, "r") as f:
-                data = f.read()
+            data_frame = loadspreadsheet(filepath)
 
-            if len(data.strip()) == 0:
-                onsets.append([])  # no events
-                durations.append([])
+            data_frame.rename(columns=dict(
+                zip(list(data_frame.columns)[:2], ["onsets", "durations"])
+            ), inplace=True)
 
-            else:
-                data_frame = pd.read_table(
-                    StringIO(data),
-                    sep=None,
-                    header=None,
-                    names=["onset", "duration"],
-                    index_col=False,
-                    usecols=[0, 1],
-                    dtype=float,
-                    engine="python",
-                )
-
-                onsets.append(data_frame.onset.tolist())
-                durations.append(data_frame.duration.tolist())
+            onsets.append(data_frame.onsets.tolist())
+            durations.append(data_frame.durations.tolist())
 
         except Exception as e:  # unreadable or empty file
             logger.warning(f'Cannot read condition file "{filepath}"', exc_info=e)
@@ -136,15 +112,17 @@ def parse_condition_file(in_any=None):
             return parse_txt_condition_files(filepaths, conditions)
 
         elif len(in_any) == 1:
-            return parse_condition_file(first(in_any))
+            (condition_file,) = in_any
+            return parse_condition_file(condition_file)
 
         else:
             raise ValueError("Cannot read condition files")
 
-    elif isinstance(in_any, str):
-        try:
+    elif isinstance(in_any, (str, Path)):
+        _, extension = splitext(in_any)
+        if extension == ".mat":
             return parse_mat_condition_file(in_any)
-        except (ValueError, IndexError):
+        else:
             return parse_tsv_condition_file(in_any)
 
     elif isinstance(in_any, File):
