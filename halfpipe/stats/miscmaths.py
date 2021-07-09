@@ -107,8 +107,7 @@ def auto_convert(
 ) -> float:
     if any(math.isnan(a) for a in args):
         return math.nan  # skip computation
-
-    if math.isinf(args[0]):  # first argument is always the statistic
+    elif math.isinf(args[0]):  # first argument is always the statistic
         return args[0]
 
     prec = mp.prec

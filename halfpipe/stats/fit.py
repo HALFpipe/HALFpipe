@@ -5,7 +5,7 @@
 """
 """
 
-from typing import List, Dict, Optional, Tuple
+from typing import ContextManager, List, Dict, Optional, Tuple
 
 from collections import defaultdict
 import os
@@ -41,15 +41,14 @@ def voxel_calc(voxel_data):
     }
 
 
-def fit(
+def load_data(
     cope_files: List[Path],
     var_cope_files: Optional[List[Path]],
     mask_files: List[Path],
     regressors: Dict[str, List[float]],
     contrasts: List[Tuple],
     algorithms_to_run: List[str],
-    num_threads: int,
-) -> Dict:
+):
     # load data
     cope_data = [
         atleast_4d(nib.load(f).get_fdata())
@@ -110,11 +109,30 @@ def fit(
 
             yield algorithm_set, coordinate, y, z, s, cmatdict
 
-    voxel_data = gen_voxel_data()
+    return gen_voxel_data(), cmatdict
+
+
+def fit(
+    cope_files: List[Path],
+    var_cope_files: Optional[List[Path]],
+    mask_files: List[Path],
+    regressors: Dict[str, List[float]],
+    contrasts: List[Tuple],
+    algorithms_to_run: List[str],
+    num_threads: int,
+) -> Dict:
+    voxel_data, cmatdict = load_data(
+        cope_files,
+        var_cope_files,
+        mask_files,
+        regressors,
+        contrasts,
+        algorithms_to_run,
+    )
 
     # setup run
     if num_threads < 2:
-        cm = nullcontext()
+        cm: ContextManager = nullcontext()
         it = map(voxel_calc, voxel_data)
     else:
         cm = ctx.Pool(
