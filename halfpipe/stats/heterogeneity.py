@@ -6,98 +6,264 @@
 
 from typing import Dict, Optional, Tuple, List
 
+from math import inf, nan, pi, log
+
 import numpy as np
-from numpy.linalg.linalg import LinAlgError
+from scipy import optimize, special, stats
+
 import pandas as pd
 import nibabel as nib
 
-from .flame1 import calcgam, solveforbeta, flame1_prepare_data
+from .flame1 import flame1_prepare_data
 from .base import ModelAlgorithm
 
 
-def calc_i2(y, z, s):
-    """
-    Chen et al. 2012
-    """
+class MoM:
+    @staticmethod
+    def i2(y, z, s):
+        """
+        Chen et al. 2012
+        """
 
-    b = y
-    x = z
-    w0 = np.diag(1.0 / np.ravel(s))
+        b = y
+        x = z
+        w0 = np.diag(1.0 / np.ravel(s))
 
-    n, p = x.shape
+        n, p = x.shape
 
-    w0x = w0 @ x
-    hat = np.linalg.lstsq(x.T @ w0x, w0x.T, rcond=None)[0]
-    a0 = hat @ b
+        w0x = w0 @ x
+        hat = np.linalg.lstsq(x.T @ w0x, w0x.T, rcond=None)[0]
+        a0 = hat @ b
 
-    r = b - x @ a0
-    q = r.T @ w0 @ r
+        r = b - x @ a0
+        q = r.T @ w0 @ r
 
-    p0 = w0 - w0x @ hat
+        p0 = w0 - w0x @ hat
 
-    trp0 = np.trace(p0)
+        trp0 = np.trace(p0)
 
-    τ2 = (q - (n - p - 1)) / trp0
-    if τ2 < 0:
-        τ2 = 0
+        τ2 = (q - (n - p - 1)) / trp0
+        if τ2 < 0:
+            τ2 = 0
 
-    h2 = τ2 * trp0 / (n - p - 1) + 1
+        h2 = τ2 * trp0 / (n - p - 1) + 1
+        i2 = float((h2 - 1) / h2)
 
-    h = np.sqrt(h2)
-
-    i2 = float((h2 - 1) / h2)
-
-    return h, i2
-
-
-def log_prob(ex, y, z, s):
-    try:
-        gam, iU, _ = calcgam(ex, y, z, s)
-    except LinAlgError:
-        return -1e32
-
-    npts = y.size
-
-    r = y - z @ gam
-
-    _, iU_logdet = np.linalg.slogdet(iU)
-
-    he = float(r.T @ iU @ r)
-
-    ret = -0.5 * npts * np.log(2 * np.pi) + 0.5 * float(iU_logdet) - 0.5 * he
-
-    return ret
+        return i2
 
 
-def heterogeneity_onvoxel(y, z, s):
-    norm = np.std(y)
-    y /= norm
-    s /= np.square(norm)
+class ReML:
+    @staticmethod
+    def model(ϑ: float, x: Optional[np.ndarray], s: np.ndarray):
+        σg = ϑ
 
+        if σg < 0:
+            return None, None, None
+
+        vinv = np.diag(np.ravel(1. / (s + σg)))
+
+        if x is None:
+            return vinv, None, None
+
+        a = x.T @ vinv
+        b = a @ x
+
+        # projection matrix
+        p = vinv - a.T @ np.linalg.lstsq(b, a, rcond=None)[0]
+        return vinv, p, b
+
+    @classmethod
+    def fit(cls, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+        return optimize.minimize_scalar(
+            cls.neg_log_lik, args=(y, x, s), method="brent"
+        )
+
+    @classmethod
+    def neg_log_lik(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+        vinv, p, b = cls.model(ϑ, x, s)
+
+        if vinv is None:
+            return inf
+
+        _, log_det_vinv = np.linalg.slogdet(vinv)
+        neg_log_lik = -float(log_det_vinv) / 2
+
+        if p is None or b is None:
+            return neg_log_lik
+
+        _, log_det_xvinvx = np.linalg.slogdet(b)
+        neg_log_lik += float(log_det_xvinvx) / 2
+
+        neg_log_lik += float(y.T @ p @ y) / 2
+
+        return neg_log_lik
+
+    @classmethod
+    def jacobian(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+        _, p, b = cls.model(ϑ, x, s)
+
+        if p is None or b is None:
+            return nan
+
+        return float(np.trace(p) - y.T @ p @ p @ y)
+
+    @classmethod
+    def hessian(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+        _, p, b = cls.model(ϑ, x, s)
+
+        if p is None or b is None:
+            return nan
+
+        return float(y.T @ p @ p @ p @ y)
+
+
+class ML:
+    @staticmethod
+    def neg_log_lik(ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray, γ: np.ndarray):
+        σg = ϑ
+
+        if σg < 0:
+            return inf
+
+        vinv = np.diag(np.ravel(1. / (s + σg)))
+
+        n = y.size
+        neg_log_lik = n * np.log(2 * pi) / 2
+
+        _, log_det_vinv = np.linalg.slogdet(vinv)
+        neg_log_lik += -float(log_det_vinv) / 2
+
+        if x is None:
+            return neg_log_lik
+
+        r: np.ndarray = y - x @ γ
+        neg_log_lik += float(r.T @ vinv @ r) / 2
+
+        return neg_log_lik
+
+
+class InvGammaML:
+    @classmethod
+    def fit(cls, x: np.ndarray):
+        a, _, scale = stats.invgamma.fit(x, floc=0)
+        ϑ = np.array([a, scale])
+
+        return ϑ
+
+    @staticmethod
+    def neg_log_lik(ϑ: np.ndarray, x: np.ndarray):
+        a, b = ϑ
+
+        if a < 0 or b < 0:
+            return inf
+
+        n = x.size
+
+        u = np.sum(np.log(x))
+        v = np.sum(1 / x)
+
+        return (
+            -n * a * log(b)
+            + n * log(special.gamma(a))
+            + a * u
+            + u
+            + b * v
+        )
+
+    @staticmethod
+    def jacobian(ϑ: np.ndarray, x: np.ndarray):
+        a, b = ϑ
+
+        if a < 0 or b < 0:
+            return np.array([nan] * 2)
+
+        n = x.size
+
+        u = np.sum(np.log(x))
+        v = np.sum(1 / x)
+
+        return np.array([
+            -n * log(b) + n * special.digamma(a) + u,
+            -n * a / b + v,
+        ])
+
+    @staticmethod
+    def hessian(ϑ: np.ndarray, x: np.ndarray):
+        a, b = ϑ
+
+        if a < 0 or b < 0:
+            return np.array([[nan] * 2] * 2)
+
+        n = x.size
+
+        return n * np.array([
+            [special.polygamma(1, a), -1 / b],
+            [-1 / b, a / np.square(b)],
+        ])
+
+
+def het_on_voxel(y, z, s):
     assert not np.any(s < 0), "Variance needs to be non-negative"
 
-    ll_fe = log_prob(0, y, z, s)
+    # scale to avoid numerical issues
 
-    beta = solveforbeta(y, z, s)  # flame1 model fit
-    ll_me = log_prob(beta, y, z, s)
+    norm = np.std(y)
+    y_norm = y / norm
+    s_norm = s / (norm * norm)
 
-    chisq = -2.0 * (ll_fe - ll_me)
-    if abs(chisq) > 1e10:  # convergence failure
-        return
+    # calculate beta
 
-    pseudor2 = 1 - ll_me / ll_fe
-    if pseudor2 < 0:  # ensure range
-        pseudor2 = 0
-    elif pseudor2 > 1:
-        pseudor2 = 1
+    neg_log_lik_fe = ReML.neg_log_lik(0, y_norm, z, s_norm)
 
-    h, i2 = calc_i2(y, z, s)
+    res = ReML.fit(y_norm, z, s_norm)
+    neg_log_lik_me = res.fun
 
-    return beta, h, i2, pseudor2, chisq
+    var_res = 1 / ReML.hessian(res.x, y_norm, z, s_norm)
+    beta = np.array([res.x, var_res])
+    beta *= norm * norm
+
+    # calculate lrt
+
+    chisq = 2 * (neg_log_lik_fe - neg_log_lik_me)
+
+    pseudor2 = 1 - neg_log_lik_me / neg_log_lik_fe
+    pseudor2 = max(0, min(1, pseudor2))
+
+    # calculate other
+
+    i2 = MoM.i2(y_norm, z, s_norm)
+
+    ϑ = InvGammaML.fit(s)
+    var_ϑ = np.linalg.inv(InvGammaML.hessian(ϑ, s))
+    gamma = np.vstack([ϑ, var_ϑ])
+
+    n = s.size
+    u = np.sum(1 / s)
+    v = np.sum(1 / np.square(s))
+    νq = (n - 1) * u / (np.square(u) - v)
+    typical = float(νq)
+
+    return dict(
+        hetnorm=norm,
+        hetbeta=beta,
+        hetgamma=gamma,
+        hettypical=typical,
+        heti2=i2,
+        hetpseudor2=pseudor2,
+        hetchisq=chisq
+    )
 
 
 class Heterogeneity(ModelAlgorithm):
-    model_outputs: List[str] = ["beta", "h", "i2", "pseudor2", "chisq"]
+    model_outputs: List[str] = [
+        "hetnorm",
+        "hetbeta",
+        "hetgamma",
+        "hettypical",
+        "heti2",
+        "hetpseudor2",
+        "hetchisq",
+    ]
     contrast_outputs: List[str] = []
 
     @staticmethod
@@ -108,20 +274,16 @@ class Heterogeneity(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: Dict,
     ) -> Optional[Dict]:
+        _ = cmatdict
         y, z, s = flame1_prepare_data(y, z, s)
 
         try:
-            voxel_tuple = heterogeneity_onvoxel(y, z, s)
-
-            if voxel_tuple is None:
-                return None
-        except LinAlgError:
+            voxel_dict = het_on_voxel(y, z, s)
+        except (np.linalg.LinAlgError, AssertionError):
             return None
 
-        beta, h, i2, pseudor2, chisq = voxel_tuple
-        voxel_dict: Dict[str, float] = dict(
-            beta=beta, h=h, i2=i2, pseudor2=pseudor2, chisq=chisq,
-        )
+        if voxel_dict is None:
+            return None
 
         voxel_result = {coordinate: voxel_dict}
         return voxel_result

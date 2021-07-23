@@ -44,12 +44,15 @@ class ModelAlgorithm(ABC):
         shape: List[int] = list(ref_img.shape[:3])
 
         (k,) = set(
-            1 if isinstance(value, (int, float))
-            else len(value)
+            (1,) if isinstance(value, (int, float))
+            else (len(value),) if isinstance(value, (list, tuple))
+            else value.shape
             for value in values
         )
-        if k > 1:
-            shape.append(k)
+        shape.extend(k)
+
+        if len(shape) == 4 and shape[-1] == 1:
+            shape = shape[:3]  # squeeze
 
         if out_name.startswith("mask"):
             arr = np.full(shape, False)
@@ -57,10 +60,8 @@ class ModelAlgorithm(ABC):
         else:
             arr = np.full(shape, np.nan, dtype=np.float64)
 
-        if len(coordinates) > 0:
-            arr[(*zip(*coordinates),)] = np.squeeze(
-                np.vstack(list(map(np.ravel, values)))
-            )
+        for coordinate, value in zip(coordinates, values):
+            arr[coordinate] = value
 
         img = new_img_like(ref_img, arr, copy_header=True)
         img.header.set_data_dtype(np.float64)
