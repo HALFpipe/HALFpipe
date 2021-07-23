@@ -4,15 +4,15 @@
 """
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import numpy as np
+from numpy.linalg.linalg import LinAlgError
 import pandas as pd
 import nibabel as nib
 
 from .flame1 import calcgam, solveforbeta, flame1_prepare_data
 from .base import ModelAlgorithm
-from .miscmaths import chisq2z_convert
 
 
 def calc_i2(y, z, s):
@@ -53,7 +53,7 @@ def calc_i2(y, z, s):
 def log_prob(ex, y, z, s):
     try:
         gam, iU, _ = calcgam(ex, y, z, s)
-    except np.linalg.LinAlgError:
+    except LinAlgError:
         return -1e32
 
     npts = y.size
@@ -85,8 +85,6 @@ def heterogeneity_onvoxel(y, z, s):
     if abs(chisq) > 1e10:  # convergence failure
         return
 
-    zstat = chisq2z_convert(chisq, 1)
-
     pseudor2 = 1 - ll_me / ll_fe
     if pseudor2 < 0:  # ensure range
         pseudor2 = 0
@@ -95,12 +93,12 @@ def heterogeneity_onvoxel(y, z, s):
 
     h, i2 = calc_i2(y, z, s)
 
-    return beta, h, i2, pseudor2, chisq, zstat
+    return beta, h, i2, pseudor2, chisq
 
 
 class Heterogeneity(ModelAlgorithm):
-    model_outputs = ["hbeta", "h", "i2", "hpseudor2", "hchisq", "hz"]
-    contrast_outputs = []
+    model_outputs: List[str] = ["beta", "h", "i2", "pseudor2", "chisq"]
+    contrast_outputs: List[str] = []
 
     @staticmethod
     def voxel_calc(
@@ -116,13 +114,13 @@ class Heterogeneity(ModelAlgorithm):
             voxel_tuple = heterogeneity_onvoxel(y, z, s)
 
             if voxel_tuple is None:
-                return
-        except np.linalg.LinAlgError:
-            return
+                return None
+        except LinAlgError:
+            return None
 
-        hbeta, h, i2, pseudor2, chisq, zstat = voxel_tuple
+        beta, h, i2, pseudor2, chisq = voxel_tuple
         voxel_dict: Dict[str, float] = dict(
-            hbeta=hbeta, h=h, i2=i2, hpseudor2=pseudor2, hchisq=chisq, hz=zstat,
+            beta=beta, h=h, i2=i2, pseudor2=pseudor2, chisq=chisq,
         )
 
         voxel_result = {coordinate: voxel_dict}

@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import FrozenSet
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -41,7 +42,7 @@ modelfit_contrast_outputs = frozenset([
     for a in algorithms.values()
     for output in a.contrast_outputs
 ])
-modelfit_exclude = frozenset([])
+modelfit_exclude: FrozenSet[str] = frozenset([])
 
 
 def _fe_run_mode(var_cope_file):
