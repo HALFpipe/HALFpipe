@@ -34,7 +34,8 @@ RUN conda update --yes conda && \
     "chardet>=4.0" \
     "line_profiler" \
     "more-itertools" \
-    "gmpy2>=2.0.8"
+    "gmpy2>=2.0.8" \
+    "pysocks>=1.7.1"
 
 # re-do font cache after update
 RUN python -c "from matplotlib import font_manager"
