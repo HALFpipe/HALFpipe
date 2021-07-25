@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import List
 from collections import OrderedDict
 
 import os
@@ -205,7 +206,7 @@ def run(opts, should_run):
                 nx.compose_all(graph_list)
             )  # take len(index_array) subjects and compose
 
-        chunks_to_run = list()
+        chunks_to_run: List[nx.DiGraph] = list()
 
         if opts.only_chunk_index is not None:
             zero_based_chunk_index = opts.only_chunk_index - 1
@@ -226,7 +227,8 @@ def run(opts, should_run):
             logger.info("Will not run subject level chunks")
             logger.info("Will run model chunk")
 
-            chunks_to_run.append(model_chunk)
+            if model_chunk is not None:
+                chunks_to_run.append(model_chunk)
 
         elif len(subjectlevel_chunks) > 0:
             if len(subjectlevel_chunks) > 1:
@@ -236,7 +238,8 @@ def run(opts, should_run):
             logger.info("Will run model chunk")
 
             chunks_to_run.extend(subjectlevel_chunks)
-            chunks_to_run.append(model_chunk)
+            if model_chunk is not None:
+                chunks_to_run.append(model_chunk)
 
         else:
             raise ValueError("No graphs to run")

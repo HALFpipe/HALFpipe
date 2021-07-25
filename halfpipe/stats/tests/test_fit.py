@@ -51,5 +51,5 @@ def test_fit(tmp_path, wakemandg_hensonrn_downsampled):
     )
 
     assert len(result) > 0
-    assert "h" in result
+    assert "hetchisq" in result
     assert "mcarz" in result
