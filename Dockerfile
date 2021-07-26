@@ -13,41 +13,16 @@ RUN mkdir /ext /halfpipe && \
 # install dependencies and update some python packages under the
 # assumption that this doesn't lower reproducibility significantly
 # and because we require some recent additions in these packages
-RUN conda update --yes conda && \
-    conda install --yes \
-    "cffi>=1.12" \
-    "numpy>=1.20" \
-    "mkl>=2021" \
-    "mkl_fft>=1.3.0" \
-    "scipy>=1.6" \
-    "pandas>=1.2.4" \
-    "matplotlib>=3.3" \
-    "statsmodels>=0.12.2" \
-    "scikit-learn>=0.24.0" \
-    "openpyxl" \
-    "xlrd>=1.0.0" \
-    "mpmath>=1.1.0" \
-    "inflect" \
-    "inflection" \
-    "seaborn" \
-    "tabulate" \
-    "chardet>=4.0" \
-    "line_profiler" \
-    "more-itertools" \
-    "gmpy2>=2.0.8" \
-    "pysocks>=1.7.1"
+
+COPY requirements.txt install-requirements.sh /tmp/
+
+RUN cd /tmp && \
+    conda update --yes conda pip && \
+    pip install --upgrade pip && \
+    ./install-requirements.sh --requirements-file requirements.txt
 
 # re-do font cache after update
 RUN python -c "from matplotlib import font_manager"
-
-# force install of patsy dev version, as it contains an important fix
-RUN pip install git+https://github.com/pydata/patsy.git
-
-# install dependencies and force reinstall of nipreps and nipype
-COPY requirements.txt /tmp/
-RUN cd /tmp && \
-    pip install --upgrade pip pip-tools && \
-    pip install -r requirements.txt
 
 # download all resources
 COPY halfpipe/resource.py /tmp/
