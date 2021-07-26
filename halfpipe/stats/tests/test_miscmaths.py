@@ -134,3 +134,8 @@ def test_nonfinite():
     assert chisq2z_convert(np.inf, 1) == np.inf
     assert chisq2z_convert(-np.inf, 1) == -np.inf
     assert math.isnan(chisq2z_convert(np.nan, 1))
+
+
+def test_gmpy():
+    from mpmath.libmp import BACKEND
+    assert BACKEND == "gmpy"
