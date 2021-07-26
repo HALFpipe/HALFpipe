@@ -19,3 +19,7 @@ repos:
         name: pip-compile requirements.txt
         args: [requirements.txt]
         files: ^requirements\.(in|txt)$
+      - id: pip-compile
+        name: pip-compile requirements-test.txt
+        args: [requirements-test.txt]
+        files: ^requirements-test\.(in|txt)$
