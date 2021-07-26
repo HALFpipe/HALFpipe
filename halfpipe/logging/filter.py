@@ -33,7 +33,6 @@ pywarnings_to_ignore = [
     "future versions will not create a writeable array from broadcast_array. Set the writable flag explicitly to avoid this warning.",
     "The ability to pass arguments to BIDSLayout that control indexing is likely to be removed in future; possibly as early as PyBIDS 0.14. This includes the `config_filename`, `ignore`, `force_index`, and `index_metadata` arguments. The recommended usage pattern is to initialize a new BIDSLayoutIndexer with these arguments, and pass it to the BIDSLayout via the `indexer` argument.",
     "genfromtxt: Empty input file:",
-    "Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working",
     "Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.",
     "`rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.",
     "was deprecated in Matplotlib 3.3 and will be removed two minor releases later.",
