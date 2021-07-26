@@ -87,7 +87,7 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
     if kwargs_str is not None:
         filename = f"{kwargs_str}_{filename}"
 
-    tags_str = _join_tags(tags, entities)
+    tags_str = _join_tags(tags, list(reversed(entities)))
     if tags_str is not None:
         filename = f"{tags_str}_{filename}"
 
