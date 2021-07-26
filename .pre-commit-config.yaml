@@ -1,0 +1,21 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: mixed-line-ending
+      - id: check-case-conflict
+      - id: fix-encoding-pragma
+      - id: fix-byte-order-marker
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  - repo: https://github.com/jazzband/pip-tools
+    rev: 6.2.0
+    hooks:
+      - id: pip-compile
+        name: pip-compile requirements.txt
+        args: [requirements.txt]
+        files: ^requirements\.(in|txt)$

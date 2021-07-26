@@ -1,4 +1,4 @@
-ARG FMRIPREP_VERSION=20.2.1
+ARG FMRIPREP_VERSION=20.2.3
 FROM nipreps/fmriprep:${FMRIPREP_VERSION}
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
@@ -47,7 +47,8 @@ RUN pip install git+https://github.com/pydata/patsy.git
 COPY requirements.txt /tmp/
 RUN cd /tmp && \
     pip uninstall --yes fmriprep smriprep niworkflows nipype pybids && \
-    pip install -r requirements.txt
+    pip install --upgrade pip && \
+    pip install -vv -r requirements.txt
 
 # download all resources
 COPY halfpipe/resource.py /tmp/
@@ -61,5 +62,5 @@ RUN cd /halfpipe && \
     rm -rf ~/.cache/pip && \
     cd && \
     rm -rf /halfpipe/* /tmp/*
-    
+
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
