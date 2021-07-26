@@ -22,8 +22,7 @@ def validate_tags(v):
     raise ValidationError("Need to be either a string or a (nested) list of strings")
 
 
-resultdict_entities = [
-    # first level tag
+first_level_entities = [
     "feature",
     "setting",
     # seed connectivity
@@ -35,12 +34,17 @@ resultdict_entities = [
     "atlas",
     # task
     "taskcontrast",
-    # higher level tag
+]
+higher_level_entities = [
     "model",
     "contrast",
     # file descriptors
     "stat",
     "desc",
+]
+resultdict_entities = [
+    *first_level_entities,
+    *higher_level_entities,
 ]
 
 ResultdictTagsSchema = Schema.from_dict(

@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Dict, Optional, Sequence
+
 import os
 from os import path as op
 from pathlib import Path
@@ -17,17 +19,39 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from nilearn.plotting import plot_glass_brain
 
 from ...io import DictListFile
-from ...model import FuncTagsSchema, ResultdictSchema, entities, resultdict_entities
+from ...model import FuncTagsSchema, ResultdictSchema, entities
+from ...model.tags.resultdict import first_level_entities, resultdict_entities
 from ...utils import splitext, findpaths, formatlikebids, logger
 from ...resource import get as getresource
 from ...stats.algorithms import algorithms
 
 
 def _make_plot(tags, key, sourcefile, metadata):
+    _, _, _ = tags, sourcefile, metadata
     if key == "z":
         pass
     elif key == "matrix":
         pass
+
+
+def _join_tags(tags: Dict[str, str], entities: Optional[Sequence[str]] = None) -> Optional[str]:
+    joined = None
+
+    if entities is None:
+        entities = list(tags.keys())
+
+    for entity in entities:
+        if entity not in tags:
+            continue
+        value = tags[entity]
+        value = formatlikebids(value)
+
+        if joined is None:
+            joined = f"{entity}-{value}"
+        else:
+            joined = f"{joined}_{entity}-{value}"
+
+    return joined
 
 
 def _make_path(sourcefile, type, tags, suffix, **kwargs):
@@ -36,10 +60,9 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
     assert type in ["report", "image"]
 
     for entity in ["sub", "ses"]:
-        tagval = tags.get(entity)
-        if tagval is not None:
-            tagval = formatlikebids(tagval)
-            path = path.joinpath(f"{entity}-{tagval}")
+        folder_name = _join_tags(tags, [entity])
+        if folder_name is not None:
+            path = path.joinpath(folder_name)
 
     if type == "image":
         path = path.joinpath("func")
@@ -47,18 +70,26 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
     if type == "report":
         path = path.joinpath("figures")
 
+    if "feature" in tags:  # make subfolders for all feature outputs
+        folder_name = _join_tags(tags, ["task", *first_level_entities])
+        if folder_name is not None:
+            path = path.joinpath(folder_name)
+
+    if "model" in tags:
+        folder_name = _join_tags(tags, ["model"])
+        assert folder_name is not None
+        path.joinpath(folder_name)
+
     _, ext = splitext(sourcefile)
     filename = f"{suffix}{ext}"  # keep original extension
-    kwtags = list(kwargs.items())
-    for tagname, tagval in reversed(kwtags):  # reverse because we are prepending
-        if tagval is not None:
-            tagval = formatlikebids(tagval)
-            filename = f"{tagname}-{tagval}_{filename}"
-    for entity in entities:  # is already reversed
-        tagval = tags.get(entity)
-        if tagval is not None:
-            tagval = formatlikebids(tagval)
-            filename = f"{entity}-{tagval}_{filename}"
+
+    kwargs_str = _join_tags(kwargs)
+    if kwargs_str is not None:
+        filename = f"{kwargs_str}_{filename}"
+
+    tags_str = _join_tags(tags, entities)
+    if tags_str is not None:
+        filename = f"{tags_str}_{filename}"
 
     return path / filename
 
@@ -168,15 +199,18 @@ class ResultdictDatasink(SimpleInterface):
                 outpath = derivatives_directory
                 if "sub" not in tags:
                     outpath = grouplevel_directory
+
                 if key in ["effect", "variance", "z", "t", "f", "dof"]:  # apply rule
                     outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
                 elif key in algorithms["heterogeneity"].model_outputs:
-                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="heterogeneity")
+                    key = re.sub(r"^het", "", key)
+                    outpath = outpath / _make_path(inpath, "image", tags, "statmap", algorithm="heterogeneity", stat=key)
                 elif key in algorithms["mcartest"].model_outputs:
                     key = re.sub(r"^mcar", "", key)
-                    outpath = outpath / _make_path(inpath, "image", tags, key, stat="mcar")
+                    outpath = outpath / _make_path(inpath, "image", tags, "statmap", algorithm="mcar", stat=key)
                 else:
                     outpath = outpath / _make_path(inpath, "image", tags, key)
+
                 was_updated = _copy_file(inpath, outpath)
 
                 if was_updated:
