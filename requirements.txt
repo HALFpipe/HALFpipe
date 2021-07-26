@@ -15,7 +15,7 @@ nibabel >= 3.2.1
 indexed-gzip >= 1.5.3
 nipype >= 1.6.1
 nitime @ git+https://github.com/nipy/nitime.git@rel/0.8.1
-fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.1+halfpipe.3
+fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
 smriprep >= 0.7.1
 sdcflows == 1.3.3
 dipy == 1.4.0
