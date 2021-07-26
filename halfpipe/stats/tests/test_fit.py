@@ -26,7 +26,7 @@ def test_fit(tmp_path, wakemandg_hensonrn_downsampled):
     subjects = data["subjects"]
     spreadsheet_file = data["spreadsheet"]
 
-    regressors, contrasts, _ = group_design(
+    regressors, contrasts, _, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
         variabledicts=[
