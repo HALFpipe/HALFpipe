@@ -17,22 +17,25 @@ RUN mkdir /ext /halfpipe && \
 COPY requirements.txt install-requirements.sh /tmp/
 
 RUN cd /tmp && \
-    conda update --yes conda pip && \
-    pip install --upgrade pip && \
-    ./install-requirements.sh --requirements-file requirements.txt
+    ./install-requirements.sh --requirements-file requirements.txt && sync && \
+    conda clean --yes --all --force-pkgs-dirs && sync && \
+    find /usr/local/miniconda/ -follow -type f -name "*.a" -delete && sync
 
-# re-do font cache after update
-RUN python -c "from matplotlib import font_manager"
+# re-do matplotlib settings after installing requirements
+# these are taken from fmriprep
+# precaching fonts, set 'Agg' as default backend for matplotlib
+RUN python -c "from matplotlib import font_manager" && \
+    sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
+    $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # download all resources
 COPY halfpipe/resource.py /tmp/
-RUN cd /tmp && \
-    python resource.py
+RUN python /tmp/resource.py
 
 # install halfpipe
 COPY . /halfpipe/
 RUN cd /halfpipe && \
-    pip install . && \
+    pip install --no-deps --use-feature=in-tree-build . && \
     rm -rf ~/.cache/pip && \
     cd && \
     rm -rf /halfpipe/* /tmp/*

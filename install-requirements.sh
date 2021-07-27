@@ -41,14 +41,49 @@ run_cmd() {
     return $EXIT_CODE
 }
 
+printf '%s\n' --------------------
+
+# reset conda environment
+run_cmd conda install --yes --quiet --revision 0
+
+printf '%s\n' --------------------
+
+# but force specific python version
+run_cmd conda install --yes --quiet "python=3.7"
+
+printf '%s\n' --------------------
+
+# update conda
+run_cmd conda update --yes --quiet conda
+
+printf '%s\n' --------------------
+
+# disable installation of mkl
+run_cmd conda install --yes --quiet nomkl
+
+printf '%s\n' --------------------
+
+# make sure that conda detects pip packages
+run_cmd conda config --set pip_interop_enabled True
+
+printf '%s\n' --------------------
+
+# remove all pip packages
+run_cmd "pip uninstall --yes --requirement <(conda list --export | grep pypi | cut -d= -f1)"
+run_cmd pip install --upgrade pip
+
+printf '%s\n' --------------------
+
+CONDA_PACKAGES=()
 PIP_PACKAGES=()
 
 for R in $(grep -v '#' ${REQUIREMENTS_FILES[@]}); do
 
     printf '%s\n' --------------------
 
-    if run_cmd "conda install --quiet --json \"${R}\" > /dev/null"; then
-        printf 'used conda for package "%s"\n' "${R}"
+    if run_cmd "conda install --quiet --json --dry-run \"${R}\" > /dev/null"; then
+        printf 'using conda for package "%s"\n' "${R}"
+        CONDA_PACKAGES+=("${R}")
     else
         printf 'using pip for package "%s"\n' "${R}"
         PIP_PACKAGES+=("${R}")
@@ -57,4 +92,5 @@ for R in $(grep -v '#' ${REQUIREMENTS_FILES[@]}); do
     printf '%s\n' --------------------
 done
 
+run_cmd conda install --yes ${CONDA_PACKAGES[@]}
 run_cmd pip install ${PIP_PACKAGES[@]}
