@@ -93,6 +93,7 @@ def init_model_wf(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
             imagekeys=["design_matrix", "contrast_matrix", *modelfit_model_outputs],
+            metadatakeys=["contrast_name"],
             deletekeys=["contrast"],
         ),
         name="make_resultdicts_a",
@@ -207,7 +208,8 @@ def init_model_wf(
     else:
         raise ValueError()
 
-    workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast")
+    workflow.connect(modelspec, "contrast_numbers", make_resultdicts_b, "contrast")
+    workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast_name")
 
     # run models
     if model.type in ["fe"]:

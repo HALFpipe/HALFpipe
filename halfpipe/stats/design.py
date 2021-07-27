@@ -152,12 +152,25 @@ def _make_contrasts_list(contrast_matrices: List[Tuple[str, pd.DataFrame]]):
 
             contrast_names.append(contrast_name)  # we only care about the f contrast
 
-    return contrasts, contrast_names
+    contrast_numbers = [f"{i:02d}" for i in range(1, len(contrast_names) + 1)]
+
+    return contrasts, contrast_numbers, contrast_names
+
+
+def intercept_only_design(
+    n: int
+) -> Tuple[Dict[str, List[float]], List[Tuple], List[str], List[str]]:
+    return (
+        {"intercept": [1.0] * n},
+        [("intercept", "T", ["intercept"], [1])],
+        ["01"],
+        ["intercept"],
+    )
 
 
 def group_design(
     spreadsheet: Path, contrastdicts: List[Dict], variabledicts: List[Dict], subjects: List[str]
-) -> Tuple[Dict[str, List[float]], List[Tuple], List[str]]:
+) -> Tuple[Dict[str, List[float]], List[Tuple], List[str], List[str]]:
 
     dataframe = _prepare_data_frame(spreadsheet, variabledicts, subjects)
 
@@ -202,8 +215,9 @@ def group_design(
 
         contrast_matrix = pd.DataFrame(contrast.coefs, columns=dmat.columns)
 
-        contrast_name = f"{field}"
-        contrast_matrices.append((contrast_name, contrast_matrix))
+        if field == "Intercept":  # do not capitalize
+            field = field.lower()
+        contrast_matrices.append((field, contrast_matrix))
 
     for contrastdict in contrastdicts:
         if contrastdict["type"] == "t":
@@ -246,15 +260,11 @@ def group_design(
             "Reverting to simple intercept only design. \n"
             f"nevs ({nevs}) >= npts ({npts})"
         )
-        return (
-            {"intercept": [1.0] * len(subjects)},
-            [
-                ("mean", "T", ["Intercept"], [1]),
-            ],
-            ["mean"],
-        )
+        return intercept_only_design(len(subjects))
 
     regressors = dmat.to_dict(orient="list", into=OrderedDict)
-    contrasts, contrast_names = _make_contrasts_list(contrast_matrices)
+    contrasts, contrast_numbers, contrast_names = _make_contrasts_list(
+        contrast_matrices
+    )
 
-    return regressors, contrasts, contrast_names
+    return regressors, contrasts, contrast_numbers, contrast_names

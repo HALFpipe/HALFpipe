@@ -37,7 +37,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     subjects = data["subjects"]
     spreadsheet_file = data["spreadsheet"]
 
-    regressors, contrasts, _ = group_design(
+    regressors, contrasts, _, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
         variabledicts=[

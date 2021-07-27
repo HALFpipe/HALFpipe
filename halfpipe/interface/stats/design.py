@@ -4,7 +4,7 @@
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
 
-from ...stats.design import group_design
+from ...stats.design import group_design, intercept_only_design
 
 
 class GroupDesignInputSpec(TraitedSpec):
@@ -23,6 +23,7 @@ class GroupDesignInputSpec(TraitedSpec):
 class DesignOutputSpec(TraitedSpec):
     regressors = traits.Dict(traits.Str, traits.Any)
     contrasts = traits.List()
+    contrast_numbers = traits.List(traits.Str())
     contrast_names = traits.List(traits.Str())
 
 
@@ -33,7 +34,7 @@ class GroupDesign(SimpleInterface):
     output_spec = DesignOutputSpec
 
     def _run_interface(self, runtime):
-        regressors, contrasts, contrast_names = group_design(
+        regressors, contrasts, numbers, names = group_design(
             spreadsheet=self.inputs.spreadsheet,
             contrastdicts=self.inputs.contrastdicts,
             variabledicts=self.inputs.variabledicts,
@@ -41,7 +42,8 @@ class GroupDesign(SimpleInterface):
         )
         self._results["regressors"] = regressors
         self._results["contrasts"] = contrasts
-        self._results["contrast_names"] = contrast_names
+        self._results["contrast_numbers"] = numbers
+        self._results["contrast_names"] = names
 
         return runtime
 
@@ -57,8 +59,12 @@ class InterceptOnlyDesign(SimpleInterface):
     output_spec = DesignOutputSpec
 
     def _run_interface(self, runtime):
-        self._results["regressors"] = {"Intercept": [1.0] * self.inputs.n_copes}
-        self._results["contrasts"] = [["Intercept", "T", ["Intercept"], [1]]]
-        self._results["contrast_names"] = ["Intercept"]
+        regressors, contrasts, numbers, names = intercept_only_design(
+            self.inputs.n_copes
+        )
+        self._results["regressors"] = regressors
+        self._results["contrasts"] = contrasts
+        self._results["contrast_numbers"] = numbers
+        self._results["contrast_names"] = names
 
         return runtime
