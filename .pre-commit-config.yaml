@@ -16,10 +16,10 @@ repos:
     rev: 6.2.0
     hooks:
       - id: pip-compile
-        name: pip-compile requirements.txt
-        args: [requirements.txt]
+        name: pip-compile requirements.in
+        args: [requirements.in]
         files: ^requirements\.(in|txt)$
       - id: pip-compile
-        name: pip-compile requirements-test.txt
-        args: [requirements-test.txt]
+        name: pip-compile requirements-test.in
+        args: [requirements-test.in]
         files: ^requirements-test\.(in|txt)$
