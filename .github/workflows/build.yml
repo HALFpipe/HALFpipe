@@ -3,7 +3,7 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
   release:
     types:
       - published
@@ -52,7 +52,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
-          if [[ "$VERSION" == "master" ]]; then
+          if [[ "$VERSION" == "main" ]]; then
             VERSION=latest
           fi
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
