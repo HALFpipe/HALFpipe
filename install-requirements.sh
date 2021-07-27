@@ -74,11 +74,6 @@ run_cmd pip install --upgrade pip
 
 printf '%s\n' --------------------
 
-run_cmd conda config --add channels conda-forge
-run_cmd conda config --set channel_priority strict
-
-printf '%s\n' --------------------
-
 CONDA_PACKAGES=()
 PIP_PACKAGES=()
 
