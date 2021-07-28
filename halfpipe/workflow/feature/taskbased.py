@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union, List
+from typing import Dict, Union, List
 
 import os
 from pathlib import Path
@@ -170,7 +170,7 @@ def init_taskbased_wf(
 
     # generate design from first level specification
     if feature.hrf == "dgamma":
-        bases = dict(dgamma=dict())
+        bases: Dict[str, Dict] = dict(dgamma=dict())
     elif feature.hrf == "dgamma_with_derivs":
         bases = dict(dgamma=dict(derivs=True))
     elif feature.hrf == "flobs":
@@ -211,7 +211,8 @@ def init_taskbased_wf(
     # actually estimate the first level model
     modelestimate = pe.Node(
         fsl.FILMGLS(smooth_autocorr=True, mask_size=5),
-        name="modelestimate"
+        name="modelestimate",
+        mem_gb=memcalc.series_std_gb * 1.5,
     )
     workflow.connect(inputnode, "bold", modelestimate, "in_file")
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")

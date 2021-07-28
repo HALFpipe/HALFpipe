@@ -2,11 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import numpy as np
+from typing import Tuple
 
 from fmriprep.config import DEFAULT_MEMORY_MIN_GB
 
 from ..io.metadata.niftiheader import NiftiheaderLoader
+
+
+def calc_bold_gb(shape: Tuple[int, int, int, int]) -> Tuple[float, float]:
+    x, y, z, t = shape
+    volume_gb: float = x * y * z * 8 / 2 ** 30
+    series_gb: float = volume_gb * t
+
+    return volume_gb, series_gb
 
 
 class MemoryCalculator:
@@ -19,18 +27,20 @@ class MemoryCalculator:
 
         if bold_file is not None:
             header, _ = NiftiheaderLoader.load(bold_file)
-            bold_shape = header.get_data_shape()
+            if header is not None:
+                bold_shape = header.get_data_shape()
 
-        if len(bold_shape) > 3:
-            bold_tlen = bold_shape[3]
+        x, y, z = bold_shape[:3]
 
-        self.volume_gb = np.product(bold_shape[:3]) * 8 / 2 ** 30
-        self.series_gb = self.volume_gb * bold_tlen
+        t = 1
+        for n in bold_shape[3:]:
+            t *= n
 
-        std_bold_shape = [97, 115, 97, bold_tlen]  # template size
+        if t == 1:
+            t = bold_tlen
 
-        self.volume_std_gb = np.product(std_bold_shape[:-1]) * 8 / 2 ** 30
-        self.series_std_gb = self.volume_std_gb * bold_tlen
+        self.volume_gb, self.series_gb = calc_bold_gb((x, y, z, t))
+        self.volume_std_gb, self.series_std_gb = calc_bold_gb((97, 115, 97, t))
 
         self.min_gb = DEFAULT_MEMORY_MIN_GB
 
