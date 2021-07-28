@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List
+from typing import Union, List, Dict
 from collections import OrderedDict
 
 import os
@@ -138,16 +138,17 @@ def run(opts, should_run):
             logger.info("Using graphs from previous step")
 
         if opts.nipype_resource_monitor is True:
-            from nipype import config as nipypeconfig
-            nipypeconfig.enable_resource_monitor()
+            import nipype
+            nipype.config.enable_resource_monitor()
 
-        plugin_args = {
-            "workdir": workdir,
-            "watchdog": opts.watchdog,
-            "stop_on_first_crash": opts.debug,
-            "raise_insufficient": False,
-            "keep": opts.keep,
-        }
+        plugin_args: Dict[str, Union[Path, bool, float]] = dict(
+            workdir=workdir,
+            watchdog=opts.watchdog,
+            stop_on_first_crash=opts.debug,
+            resource_monitor=opts.nipype_resource_monitor,
+            raise_insufficient=False,
+            keep=opts.keep,
+        )
 
         if opts.nipype_n_procs is not None:
             plugin_args["n_procs"] = opts.nipype_n_procs
@@ -305,7 +306,10 @@ def main():
     finally:
         if profile and pr is not None:
             pr.disable()
-            pr.dump_stats(Path(opts.workdir) / f"profile.{timestampstr():s}.prof")
+            if opts is not None:
+                pr.dump_stats(
+                    Path(opts.workdir) / f"profile.{timestampstr():s}.prof"
+                )
 
         teardownlogging()
 
