@@ -18,7 +18,7 @@ from .model import ModelFactory
 
 from .collect import collect_bold_files
 from .convert import convert_all
-from .memory import MemoryCalculator
+from .memory import MemoryCalculator, patch_mem_gb
 from .constants import constants
 from ..io.index import Database, BidsDatabase
 from ..io.file import cacheobj, uncacheobj
@@ -125,16 +125,17 @@ def init_workflow(workdir):
 
     config_factory = deepcopyfactory(workflow.config)
     uses_freesurfer = False
+
+    omp_nthreads = config.nipype.omp_nthreads
+    assert isinstance(omp_nthreads, int)
     for node in workflow._get_all_nodes():
 
         node.config = config_factory()
         if node.name in ["split"]:
             node.config["execution"]["hash_method"] = "content"
 
-        if node.name in ["bold_to_std_transform", "bold_to_t1w_transform", "bold_transform"]:
-            node._mem_gb = (
-                memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
-            )  # decrease memory prediction
+        # update memory predictions
+        patch_mem_gb(node, omp_nthreads, memcalc)
 
         if isinstance(node.interface, fs.FSCommand):
             uses_freesurfer = True

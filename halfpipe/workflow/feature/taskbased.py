@@ -200,7 +200,11 @@ def init_taskbased_wf(
     workflow.connect([(level1design, modelgen, [(("ev_files", ravel), "ev_files")])])
 
     # calculate range of image values to determine cutoff value
-    stats = pe.Node(fsl.ImageStats(op_string="-R"), name="stats")
+    stats = pe.Node(
+        fsl.ImageStats(op_string="-R"),
+        name="stats",
+        mem_gb=memcalc.series_std_gb,
+    )
     workflow.connect(inputnode, "bold", stats, "in_file")
     cutoff = pe.Node(
         niu.Function(input_names=["obj"], output_names=["min_val"], function=firstfloat),

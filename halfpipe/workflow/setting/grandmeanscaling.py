@@ -36,7 +36,7 @@ def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator(), name=None,
         inputnode.inputs.mean = float(mean)
 
     grandmeanscaling = pe.Node(
-        GrandMeanScaling(), name="grandmeanscaling"
+        GrandMeanScaling(), name="grandmeanscaling", mem_gb=2 * memcalc.series_std_gb
     )
     workflow.connect(inputnode, "files", grandmeanscaling, "files")
     workflow.connect(inputnode, "mask", grandmeanscaling, "mask")

@@ -7,6 +7,7 @@ from nipype.interfaces import utility as niu
 from nipype.algorithms import confounds as nac
 
 from fmriprep import config
+from niworkflows.utils.spaces import SpatialReferences
 
 from ...interface import (
     Exec,
@@ -78,8 +79,10 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
     # EPI -> mni
+    spaces = config.workflow.spaces
+    assert isinstance(spaces, SpatialReferences)
     epi_norm_rpt = pe.Node(
-        PlotRegistration(template=config.workflow.spaces.get_spaces()[0]),
+        PlotRegistration(template=spaces.get_spaces()[0]),
         name="epi_norm_rpt",
         mem_gb=0.1,
     )
@@ -88,7 +91,7 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
-    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
+    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=2 * memcalc.series_std_gb)
     workflow.connect(inputnode, "bold_std", tsnr, "in_file")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
@@ -102,19 +105,21 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
     resample = pe.Node(
         Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
-        mem_gb=memcalc.series_std_gb,
+        mem_gb=2 * memcalc.volume_std_gb,
     )
     workflow.connect(inputnode, "std_dseg", resample, "input_image")
 
     # vals
     confvals = pe.Node(
-        Vals(), name="vals", mem_gb=memcalc.series_std_gb
+        Vals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
     )
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
     workflow.connect(inputnode, "confounds", confvals, "confounds")
 
     calcmean = pe.Node(
-        CalcMean(key="mean_gm_tsnr"), name="calcmean", mem_gb=memcalc.series_std_gb
+        CalcMean(key="mean_gm_tsnr"),
+        name="calcmean",
+        mem_gb=2 * memcalc.volume_std_gb,
     )
     workflow.connect(confvals, "vals", calcmean, "vals")  # base dict to update
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
