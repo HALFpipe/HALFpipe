@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 
+import psutil
 import pint
 
 ureg = pint.UnitRegistry()
@@ -19,7 +20,7 @@ def limit_from_file(file_name: Path) -> Optional[int]:
         with open(file_name, "r") as file_pointer:
             return int(file_pointer.read())
     except (OSError, IOError, ValueError):
-        pass
+        return None
 
 
 def cgroup_memory_limit():
@@ -208,14 +209,12 @@ def ulimit_memory_limit():
         return min(memory_limits) * ureg.kilobytes
 
 
-def total_memory_bytes():
-    return (
-        os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
-    ) * ureg.bytes
+def available_memory_bytes():
+    return psutil.virtual_memory().available * ureg.bytes
 
 
 def memory_limit() -> float:
-    memory_limits = [total_memory_bytes(), ulimit_memory_limit(), cgroup_memory_limit()]
+    memory_limits = [available_memory_bytes(), ulimit_memory_limit(), cgroup_memory_limit()]
     memory_limits = [
         ml.m_as(ureg.gigabytes)
         for ml in memory_limits
