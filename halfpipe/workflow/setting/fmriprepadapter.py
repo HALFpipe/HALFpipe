@@ -26,10 +26,17 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["files", "mask", "vals"]),
+        name="outputnode",
+    )
 
     #
-    applymask = pe.Node(interface=fsl.ApplyMask(), name="applymask", mem_gb=memcalc.volume_std_gb)
+    applymask = pe.Node(
+        interface=fsl.ApplyMask(),
+        name="applymask",
+        mem_gb=memcalc.series_std_gb,
+    )
     workflow.connect(inputnode, "bold_std", applymask, "in_file")
     workflow.connect(inputnode, "bold_mask_std", applymask, "mask_file")
 

@@ -2,10 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Dict
+
 import os
 import gc
 import logging
 import shutil
+
 from stackprinter import format_current_exception
 
 import multiprocessing as mp
@@ -22,14 +25,20 @@ from ..logging import Context
 logger = logging.getLogger("nipype.workflow")
 
 
-def initializer(workdir, loggingargs, watchdog, host_env):
+def initializer(workdir, loggingargs, plugin_args, host_env):
     from ..logging import setup as setuplogging
     setuplogging(**loggingargs)
 
+    watchdog = plugin_args.get("watchdog", False)
     if watchdog is True:
         from ..watchdog import init_watchdog
 
         init_watchdog()
+
+    resource_monitor = plugin_args.get("resource_monitor", False)
+    if resource_monitor is True:
+        import nipype
+        nipype.config.enable_resource_monitor()
 
     os.environ.update(host_env)
 
@@ -73,7 +82,7 @@ def run_node(node, updatehash, taskid):
 
 
 class MultiProcPlugin(nip.MultiProcPlugin):
-    def __init__(self, plugin_args=None):
+    def __init__(self, plugin_args: Dict):
         # Init variables and instance attributes
         super(nip.MultiProcPlugin, self).__init__(plugin_args=plugin_args)
         self._taskresult = {}
@@ -107,7 +116,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             initargs=(
                 self._cwd,
                 Context.loggingargs(),
-                plugin_args.get("watchdog", False),
+                plugin_args,
                 dict(os.environ),
             ),
             mp_context=mp_context,

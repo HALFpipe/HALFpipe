@@ -151,7 +151,10 @@ def init_ica_aroma_components_wf(
         aroma_melodic_dim=config.workflow.aroma_melodic_dim,
         name="ica_aroma_wf",
     )
-    ica_aroma_wf.get_node("ica_aroma").inputs.denoise_type = "no"
+
+    ica_aroma_node = ica_aroma_wf.get_node("ica_aroma")
+    assert isinstance(ica_aroma_node, pe.Node)
+    ica_aroma_node.inputs.denoise_type = "no"
 
     add_nonsteady = ica_aroma_wf.get_node("add_nonsteady")
     ds_report_ica_aroma = ica_aroma_wf.get_node("ds_report_ica_aroma")

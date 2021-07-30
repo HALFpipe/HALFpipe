@@ -1,3 +1,0 @@
-Bootstrap: docker
-From: halfpipe/halfpipe:latest
-IncludeCmd: yes
