@@ -54,7 +54,7 @@ def _aroma_column_names(melodic_mix=None, aroma_noise_ics=None):
 
 
 def init_ica_aroma_components_wf(
-    workdir=None, name="ica_aroma_components_wf", memcalc=MemoryCalculator()
+    workdir=None, name="ica_aroma_components_wf", memcalc=MemoryCalculator.default()
 ):
     """
 
@@ -185,7 +185,7 @@ def init_ica_aroma_components_wf(
 
 
 def init_ica_aroma_regression_wf(
-    workdir=None, name="ica_aroma_regression_wf", memcalc=MemoryCalculator(), suffix=None
+    workdir=None, name="ica_aroma_regression_wf", memcalc=MemoryCalculator.default(), suffix=None
 ):
     """
 

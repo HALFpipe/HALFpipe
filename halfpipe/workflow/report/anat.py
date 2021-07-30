@@ -6,13 +6,14 @@ from nipype.pipeline import engine as pe
 
 from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
 from fmriprep import config
+from niworkflows.utils.spaces import SpatialReferences
 
 from ...interface import Exec, PlotRegistration, MakeResultdicts, ResultdictDatasink
 
 from ..memory import MemoryCalculator
 
 
-def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalculator()):
+def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalculator.default()):
     workflow = pe.Workflow(name=name)
 
     fmriprepreports = ["t1w_dseg_mask", "std_t1w"]
@@ -60,8 +61,10 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
     workflow.connect(skull_strip_report, "out_report", make_resultdicts, "skull_strip_report")
 
     # T1 -> mni
+    spaces = config.workflow.spaces
+    assert isinstance(spaces, SpatialReferences)
     t1_norm_rpt = pe.Node(
-        PlotRegistration(template=config.workflow.spaces.get_spaces()[0]),
+        PlotRegistration(template=spaces.get_spaces()[0]),
         name="t1_norm_rpt",
         mem_gb=0.1,
     )

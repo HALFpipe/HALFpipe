@@ -12,6 +12,7 @@ from fmriprep.cli.workflow import build_workflow
 from .factory import Factory
 from .report import init_anat_report_wf, init_func_report_wf
 from .constants import constants
+from .memory import MemoryCalculator, patch_mem_gb
 
 from ..utils import deepcopyfactory
 
@@ -85,6 +86,12 @@ class FmriprepFactory(Factory):
             "ants": "force",
         }[spec.global_settings["skull_strip_algorithm"]]
 
+        # reset fmriprep config
+        config.execution.bids_database_dir = None
+        config.execution._layout = None
+        config.execution.layout = None
+
+        # create config
         config.from_dict(
             {
                 "bids_dir": bids_dir,
@@ -102,6 +109,7 @@ class FmriprepFactory(Factory):
                 "write_graph": spec.global_settings["write_graph"],
                 "hires": spec.global_settings["hires"],
                 "run_reconall": spec.global_settings["run_reconall"],
+                "cifti_output": False,  # we do this in halfpipe
                 "t2s_coreg": spec.global_settings["t2s_coreg"],
                 "medial_surface_nan": spec.global_settings["medial_surface_nan"],
                 "output_spaces": f"{constants.reference_space}:res-{constants.reference_res}",
@@ -129,8 +137,17 @@ class FmriprepFactory(Factory):
         fmriprep_wf = retval["workflow"]
         workflow.add_nodes([fmriprep_wf])
 
+        # patch memory usage
+
+        for boldfilepath in boldfilepaths:
+            memcalc = MemoryCalculator.from_bold_file(boldfilepath)
+            func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=boldfilepath)[-1]
+            assert isinstance(func_preproc_wf, pe.Workflow)
+            for node in func_preproc_wf._get_all_nodes():
+                patch_mem_gb(node, memcalc)
+
         # halfpipe-specific report workflows
-        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(self.workdir), memcalc=self.memcalc))
+        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(self.workdir)))
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
 
@@ -145,28 +162,32 @@ class FmriprepFactory(Factory):
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
-        func_report_wf_factory = deepcopyfactory(init_func_report_wf(workdir=str(self.workdir), memcalc=self.memcalc))
         for boldfilepath in boldfilepaths:
             hierarchy = self._get_hierarchy("reports_wf", sourcefile=boldfilepath)
 
-            wf = func_report_wf_factory()
+            wf = init_func_report_wf(
+                workdir=str(self.workdir),
+                memcalc=MemoryCalculator.from_bold_file(boldfilepath),
+            )
             assert wf.name == "func_report_wf"  # check name for line 206
             hierarchy[-1].add_nodes([wf])
             hierarchy.append(wf)
 
             inputnode = wf.get_node("inputnode")
+            assert isinstance(inputnode, pe.Node)
             inputnode.inputs.tags = database.tags(boldfilepath)
             inputnode.inputs.fd_thres = spec.global_settings["fd_thres"]
 
             self.connect(hierarchy, inputnode, sourcefile=boldfilepath)
+
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
 
     def connect(self, nodehierarchy, node, sourcefile=None, subject_id=None, **kwargs):
         """
         connect equally names attrs
         preferentially use datasinked outputs
         """
-
-        _ = kwargs  # ignore kwargs
 
         connected_attrs = set()
 

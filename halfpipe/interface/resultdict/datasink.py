@@ -71,7 +71,12 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
         path = path.joinpath("figures")
 
     if "feature" in tags:  # make subfolders for all feature outputs
-        folder_name = _join_tags(tags, ["task", *first_level_entities])
+        folder_entities = ["task"]
+        if "model" in tags:
+            folder_entities.extend(first_level_entities)
+        else:
+            folder_entities.append("task")
+        folder_name = _join_tags(tags, )
         if folder_name is not None:
             path = path.joinpath(folder_name)
 

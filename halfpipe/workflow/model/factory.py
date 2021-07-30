@@ -53,7 +53,6 @@ class ModelFactory(Factory):
             model=model,
             variables=variables,
             workdir=str(self.workdir),
-            memcalc=self.memcalc,
         )
         wf.add_nodes([vwf])
         hierarchy.append(vwf)

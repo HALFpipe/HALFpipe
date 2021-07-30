@@ -14,7 +14,7 @@ from ...utils import formatlikebids
 
 
 def init_atlasbasedconnectivity_wf(
-    workdir=None, feature=None, atlas_files=None, atlas_spaces=None, memcalc=MemoryCalculator()
+    workdir=None, feature=None, atlas_files=None, atlas_spaces=None, memcalc=MemoryCalculator.default()
 ):
     """
     create workflow for brainatlas

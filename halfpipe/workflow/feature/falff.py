@@ -12,7 +12,7 @@ from ..memory import MemoryCalculator
 from ...utils import formatlikebids
 
 
-def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator()):
+def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
     fractional ALFF maps

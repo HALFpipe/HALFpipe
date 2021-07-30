@@ -11,7 +11,6 @@ from zipfile import ZipFile
 import tarfile
 from pathlib import Path
 from random import seed
-from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -27,7 +26,8 @@ from templateflow.api import get as gettemplate
 from ..base import init_workflow
 from ..execgraph import init_execgraph
 from ...io.index import Database
-from ...model import FeatureSchema, FileSchema, SettingSchema, SpecSchema, savespec
+from ...model import FeatureSchema, FileSchema, SettingSchema
+from ...model.spec import Spec, SpecSchema, savespec
 from ...utils import nvol, ceildiv
 
 
@@ -162,10 +162,11 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
     return pcc_mask_fname
 
 
-@pytest.mark.timeout(4 * 3600)
-def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
+@pytest.fixture(scope="function")
+def mock_spec(bids_data, task_events, pcc_mask):
     spec_schema = SpecSchema()
-    spec = spec_schema.load(spec_schema.dump({}), partial=True)
+    spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
+    assert isinstance(spec, Spec)
 
     spec.files = list(map(FileSchema().load, [
         dict(datatype="bids", path=str(bids_data)),
@@ -281,21 +282,38 @@ def test_feature_extraction(tmp_path, bids_data, task_events, pcc_mask):
         ),
     ]))
 
-    spec.global_settings = dict(
-        sloppy=True,
-    )
+    spec.global_settings.update(dict(sloppy=True))
 
-    savespec(spec, workdir=tmp_path)
+    return spec
+
+
+@pytest.mark.timeout(4 * 3600)
+def test_with_reconall(tmp_path, mock_spec):
+    mock_spec.global_settings.update(dict(run_reconall=True))
+
+    savespec(mock_spec, workdir=tmp_path)
+
+    workflow = init_workflow(tmp_path)
+    workflow_args = dict(stop_on_first_crash=True)
+    workflow.config["execution"].update(workflow_args)
+
+    graphs = init_execgraph(tmp_path, workflow)
+
+    graph = next(iter(graphs.values()))
+    assert any("recon" in u.name for u in graph.nodes)
+
+
+@pytest.mark.timeout(4 * 3600)
+def test_feature_extraction(tmp_path, mock_spec):
+    savespec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = 4
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(
-        stop_on_first_crash=True,
-    )
+    workflow_args = dict(stop_on_first_crash=True)
     workflow.config["execution"].update(workflow_args)
 
-    graphs: OrderedDict = init_execgraph(tmp_path, workflow)
+    graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
     runner = nip.LinearPlugin(plugin_args=workflow_args)

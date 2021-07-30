@@ -51,7 +51,7 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     return workflow
 
 
-def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, memcalc=MemoryCalculator()):
+def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, memcalc=MemoryCalculator.default()):
     """
 
     """

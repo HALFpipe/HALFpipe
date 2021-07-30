@@ -32,7 +32,7 @@ def _bandpass_arg(low, high):
 
 
 def init_bandpass_filter_wf(
-    bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator()
+    bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator.default()
 ):
     """
 

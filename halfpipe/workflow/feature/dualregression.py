@@ -62,7 +62,7 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
 
 
 def init_dualregression_wf(
-    workdir=None, feature=None, map_files=None, map_spaces=None, memcalc=MemoryCalculator()
+    workdir=None, feature=None, map_files=None, map_spaces=None, memcalc=MemoryCalculator.default()
 ):
     """
     create a workflow to calculate dual regression for ICA seeds

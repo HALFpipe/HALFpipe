@@ -2,8 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from abc import abstractmethod
+from typing import Any, Callable, Dict, Optional, Tuple, NamedTuple, Hashable
+
 from math import isclose
-from typing import Dict, Optional, Tuple
+
+from nipype.pipeline import engine as pe
 
 from .fmriprepadapter import init_fmriprep_adapter_wf
 from .icaaroma import init_ica_aroma_components_wf, init_ica_aroma_regression_wf
@@ -16,10 +20,21 @@ from .output import init_setting_output_wf
 
 from ..factory import Factory
 from ..bypass import init_bypass_wf
+from ..memory import MemoryCalculator, patch_mem_gb
 
-from ...utils import deepcopyfactory, b32digest
+from ...utils import deepcopyfactory, b32digest, logger
 
 alphabet = "abcdefghijklmnopqrstuvwxzy"
+
+
+class SettingTuple(NamedTuple):
+    value: Any
+    suffix: Optional[str]
+
+
+class LookupTuple(NamedTuple):
+    setting_tuple: SettingTuple
+    memcalc: MemoryCalculator
 
 
 class ICAAROMAComponentsFactory(Factory):
@@ -29,9 +44,8 @@ class ICAAROMAComponentsFactory(Factory):
         self.previous_factory = fmriprep_factory
 
     def setup(self):
-        prototype = init_ica_aroma_components_wf(workdir=str(self.workdir), memcalc=self.memcalc)
+        prototype = init_ica_aroma_components_wf(workdir=str(self.workdir))
         self.wf_name = prototype.name
-        self.wf_factory = deepcopyfactory(prototype)
 
     def get(self, sourcefile, **kwargs):
         hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
@@ -42,10 +56,17 @@ class ICAAROMAComponentsFactory(Factory):
 
         if vwf is None:
             connect = True
-            vwf = self.wf_factory()
+
+            memcalc = MemoryCalculator.from_bold_file(sourcefile)
+            vwf = init_ica_aroma_components_wf(workdir=str(self.workdir), memcalc=memcalc)
+
+            for node in vwf._get_all_nodes():
+                patch_mem_gb(node, memcalc)
+
             wf.add_nodes([vwf])
 
         inputnode = vwf.get_node("inputnode")
+        assert isinstance(inputnode, pe.Node)
         hierarchy.append(vwf)
 
         if connect:
@@ -60,81 +81,107 @@ class ICAAROMAComponentsFactory(Factory):
 
 
 class LookupFactory(Factory):
-    def __init__(self, ctx, previous_factory):
+    def __init__(self, ctx, previous_factory: Factory):
         super(LookupFactory, self).__init__(ctx)
+
+        self.wf_names: Dict[SettingTuple, str] = dict()
+        self.wf_factories: Dict[LookupTuple, Callable] = dict()
+
+        self.tpl_by_setting_name: Dict[str, SettingTuple] = dict()
 
         self.previous_factory = previous_factory
 
     def setup(self):
-        settingnames = [setting["name"] for setting in self.spec.settings]
+        setting_names = [setting["name"] for setting in self.spec.settings]
 
-        prevtpls = []
+        previous_tpls = []
 
         newsuffix_by_prevtpl: Optional[Dict[Tuple, str]] = None
 
-        if hasattr(self.previous_factory, "by_settingname"):
-            prevtpls.extend(set(self.previous_factory.by_settingname.values()))
+        if isinstance(self.previous_factory, LookupFactory):
+            if len(self.previous_factory.tpl_by_setting_name) > 0:
+                previous_tpls.extend(
+                    set(self.previous_factory.tpl_by_setting_name.values())
+                )
 
-            # 2**16 values for suffix should be sufficient to avoid collisions
-            newsuffixes = [b32digest(tpl)[:4] for tpl in prevtpls]
+                # 2**16 values for suffix should be sufficient to avoid collisions
+                newsuffixes = [b32digest(tpl)[:4] for tpl in previous_tpls]
 
-            newsuffix_by_prevtpl = dict(zip(prevtpls, newsuffixes))
+                newsuffix_by_prevtpl = dict(zip(previous_tpls, newsuffixes))
 
         suffixes = []
-        for name in settingnames:
+        for name in setting_names:
             suffix = None
-            if isinstance(newsuffix_by_prevtpl, dict):
-                suffix = newsuffix_by_prevtpl[self.previous_factory.by_settingname[name]]
+            if isinstance(self.previous_factory, LookupFactory):
+                if isinstance(newsuffix_by_prevtpl, dict):
+                    suffix = newsuffix_by_prevtpl[
+                        self.previous_factory.tpl_by_setting_name[name]
+                    ]
             suffixes.append(suffix)
 
         tpls = map(self._tpl, self.spec.settings)
 
-        self.by_settingname = dict(zip(settingnames, zip(tpls, suffixes)))
+        self.tpl_by_setting_name = {
+            setting_name: SettingTuple(tpl, suffix)
+            for setting_name, tpl, suffix in zip(setting_names, tpls, suffixes)
+        }
 
-        self.wf_names = dict()
-        self.wf_factories = dict()
-        for tpl in set(self.by_settingname.values()):
-            obj, suffix = tpl
-            prototype = self._prototype(tpl)
-            self.wf_names[tpl] = prototype.name
-            self.wf_factories[tpl] = deepcopyfactory(prototype)
-
-    def _prototype(self, tpl):
+    @abstractmethod
+    def _prototype(self, lookup_tuple) -> pe.Workflow:
         raise NotImplementedError()
 
-    def _tpl(self, setting):
+    @abstractmethod
+    def _tpl(self, setting) -> Hashable:
         raise NotImplementedError()
 
     def _should_skip(self, obj):
         return obj is None
 
-    def _connect_inputs(self, hierarchy, inputnode, sourcefile, settingname, tpl):
+    def _connect_inputs(self, hierarchy, inputnode, sourcefile, setting_name, tpl):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.database.fillmetadata("repetition_time", [sourcefile])
             inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
             inputnode.inputs.tags = self.database.tags(sourcefile)
-        self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, settingname=settingname)
+        self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, setting_name=setting_name)
 
-    def get(self, sourcefile, settingname):
+    def wf_factory(self, lookup_tuple: LookupTuple):
+        if lookup_tuple not in self.wf_factories:
+            logger.debug(f"Creating workflow with {self.__class__.__name__} for {lookup_tuple}")
+            prototype = self._prototype(lookup_tuple)
+            self.wf_factories[lookup_tuple] = deepcopyfactory(prototype)
+
+            prototype_name = prototype.name
+            assert isinstance(prototype_name, str)
+            self.wf_names[lookup_tuple.setting_tuple] = prototype_name
+
+        return self.wf_factories[lookup_tuple]()
+
+    def get(self, sourcefile, setting_name):
         hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
         wf = hierarchy[-1]
 
-        tpl = self.by_settingname[settingname]
+        setting_tuple = self.tpl_by_setting_name[setting_name]
+        lookup_tuple = LookupTuple(
+            setting_tuple=setting_tuple,
+            memcalc=MemoryCalculator.from_bold_file(sourcefile),
+        )
 
-        vwf = wf.get_node(self.wf_names[tpl])
+        vwf = None
+        if setting_tuple in self.wf_names:
+            vwf = wf.get_node(self.wf_names[setting_tuple])
         connect_inputs = False
 
         if vwf is None:
             connect_inputs = True
-            vwf = self.wf_factories[tpl]()
+            vwf = self.wf_factory(lookup_tuple)
             wf.add_nodes([vwf])
 
         inputnode = vwf.get_node("inputnode")
         hierarchy.append(vwf)
 
         if connect_inputs:
-            self._connect_inputs(hierarchy, inputnode, sourcefile, settingname, tpl)
+            self._connect_inputs(hierarchy, inputnode, sourcefile, setting_name, lookup_tuple)
 
         outputnode = vwf.get_node("outputnode")
 
@@ -142,21 +189,25 @@ class LookupFactory(Factory):
 
 
 class FmriprepAdapterFactory(LookupFactory):
-    def _prototype(self, tpl):
-        return init_fmriprep_adapter_wf(memcalc=self.memcalc)
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        return init_fmriprep_adapter_wf(memcalc=lookup_tuple.memcalc)
 
-    def _tpl(self, setting):
-        return None
+    def _tpl(self, setting) -> Hashable:
+        return SettingTuple(value=None, suffix=None)
 
 
 class SmoothingFactory(LookupFactory):
-    def _prototype(self, tpl):
-        fwhm, suffix = tpl
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        fwhm = setting_tuple.value
+
         if fwhm is None or float(fwhm) <= 0 or isclose(float(fwhm), 0):
             return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix)
-        return init_smoothing_wf(fwhm=fwhm, memcalc=self.memcalc, suffix=suffix)
 
-    def _tpl(self, setting):
+        return init_smoothing_wf(fwhm=fwhm, memcalc=lookup_tuple.memcalc, suffix=suffix)
+
+    def _tpl(self, setting) -> Hashable:
         smoothing_dict = setting.get("smoothing")
 
         smoothing = None
@@ -168,13 +219,22 @@ class SmoothingFactory(LookupFactory):
 
 
 class GrandMeanScalingFactory(LookupFactory):
-    def _prototype(self, tpl):
-        mean, suffix = tpl
-        if mean is None:
-            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_grand_mean_scaling_wf", suffix=suffix)
-        return init_grand_mean_scaling_wf(mean=mean, memcalc=self.memcalc, suffix=suffix)
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        mean = setting_tuple.value
 
-    def _tpl(self, setting):
+        if mean is None:
+            return init_bypass_wf(
+                attrs=["files", "mask", "vals"],
+                name="no_grand_mean_scaling_wf",
+                suffix=suffix,
+            )
+        return init_grand_mean_scaling_wf(
+            mean=mean, memcalc=lookup_tuple.memcalc, suffix=suffix
+        )
+
+    def _tpl(self, setting) -> Hashable:
         grand_mean_scaling_dict = setting.get("grand_mean_scaling")
 
         grand_mean_scaling = None
@@ -190,31 +250,60 @@ class ICAAROMARegressionFactory(LookupFactory):
         super(ICAAROMARegressionFactory, self).__init__(ctx, previous_factory)
         self.ica_aroma_components_factory = ica_aroma_components_factory
 
-    def _prototype(self, tpl):
-        ica_aroma, suffix = tpl
-        if ica_aroma is not True:
-            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_ica_aroma_regression_wf", suffix=suffix)
-        return init_ica_aroma_regression_wf(workdir=str(self.workdir), memcalc=self.memcalc, suffix=suffix)
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        ica_aroma = setting_tuple.value
 
-    def _tpl(self, setting):
+        if ica_aroma is not True:
+            return init_bypass_wf(
+                attrs=["files", "mask", "vals"],
+                name="no_ica_aroma_regression_wf",
+                suffix=suffix,
+            )
+        return init_ica_aroma_regression_wf(
+            workdir=str(self.workdir),
+            memcalc=lookup_tuple.memcalc,
+            suffix=suffix,
+        )
+
+    def _tpl(self, setting) -> Hashable:
         ica_aroma = setting.get("ica_aroma") is True
         return ica_aroma
 
-    def _connect_inputs(self, hierarchy, inputnode, sourcefile, settingname, tpl):
-        super(ICAAROMARegressionFactory, self)._connect_inputs(hierarchy, inputnode, sourcefile, settingname, tpl)
-        ica_aroma, suffix = tpl
+    def _connect_inputs(
+        self, hierarchy, inputnode, sourcefile, setting_name, lookup_tuple: LookupTuple
+    ):
+        super(ICAAROMARegressionFactory, self)._connect_inputs(
+            hierarchy, inputnode, sourcefile, setting_name, lookup_tuple
+        )
+
+        setting_tuple = lookup_tuple.setting_tuple
+        ica_aroma = setting_tuple.value
+
         if ica_aroma is True:
-            self.ica_aroma_components_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, settingname=settingname)
+            self.ica_aroma_components_factory.connect(
+                hierarchy, inputnode, sourcefile=sourcefile, setting_name=setting_name
+            )
 
 
 class BandpassFilterFactory(LookupFactory):
-    def _prototype(self, tpl):
-        bandpass_filter, suffix = tpl
-        if bandpass_filter is None:
-            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_bandpass_filter_wf", suffix=suffix)
-        return init_bandpass_filter_wf(bandpass_filter=bandpass_filter, memcalc=self.memcalc, suffix=suffix)
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        bandpass_filter = setting_tuple.value
 
-    def _tpl(self, setting):
+        if bandpass_filter is None:
+            return init_bypass_wf(
+                attrs=["files", "mask", "vals"],
+                name="no_bandpass_filter_wf",
+                suffix=suffix,
+            )
+        return init_bandpass_filter_wf(
+            bandpass_filter=bandpass_filter, memcalc=lookup_tuple.memcalc, suffix=suffix
+        )
+
+    def _tpl(self, setting) -> Hashable:
         bandpass_filter_dict = setting.get("bandpass_filter")
 
         bandpass_filter = None
@@ -238,17 +327,22 @@ class BandpassFilterFactory(LookupFactory):
 
 
 class SettingAdapterFactory(LookupFactory):
-    def _prototype(self, tpl):
-        _, suffix = tpl
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+
         return init_setting_adapter_wf(suffix=suffix)
 
-    def _tpl(self, setting):
+    def _tpl(self, setting) -> Hashable:
         return None
 
 
 class ConfoundsSelectFactory(LookupFactory):
-    def _prototype(self, tpl):
-        confound_names, suffix = tpl
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        confound_names = setting_tuple.value
+
         if confound_names is None:
             return init_bypass_wf(
                 attrs=["bold", "confounds", "mask", "vals"],
@@ -258,7 +352,7 @@ class ConfoundsSelectFactory(LookupFactory):
             )
         return init_confounds_select_wf(confound_names=list(confound_names), suffix=suffix)
 
-    def _tpl(self, setting):
+    def _tpl(self, setting) -> Hashable:
         confounds_removal = setting.get("confounds_removal")
 
         confound_names = None
@@ -269,17 +363,20 @@ class ConfoundsSelectFactory(LookupFactory):
 
 
 class ConfoundsRegressionFactory(LookupFactory):
-    def _prototype(self, tpl):
-        has_confounds, suffix = tpl
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+        setting_tuple = lookup_tuple.setting_tuple
+        suffix = setting_tuple.suffix
+        has_confounds = setting_tuple.value
+
         if has_confounds is not True:
             return init_bypass_wf(
                 attrs=["bold", "confounds_selected", "confounds", "mask", "vals"],
                 name="no_confounds_regression_wf",
                 suffix=suffix
             )
-        return init_confounds_regression_wf(memcalc=self.memcalc, suffix=suffix)
+        return init_confounds_regression_wf(memcalc=lookup_tuple.memcalc, suffix=suffix)
 
-    def _tpl(self, setting):
+    def _tpl(self, setting) -> Hashable:
         confounds_removal = setting.get("confounds_removal")
 
         has_confounds = False
@@ -306,14 +403,14 @@ class SettingFactory(Factory):
         self.confounds_select_factory = ConfoundsSelectFactory(ctx, self.setting_adapter_factory)
         self.confounds_regression_factory = ConfoundsRegressionFactory(ctx, self.confounds_select_factory)
 
-        settingnames = set(setting["name"] for setting in self.spec.settings if setting.get("output_image") is True)
-        self.sourcefiles = self.get_sourcefiles(settingnames)
+        setting_names = set(setting["name"] for setting in self.spec.settings if setting.get("output_image") is True)
+        self.sourcefiles = self.get_sourcefiles(setting_names)
 
-    def get_sourcefiles(self, settingnames):
+    def get_sourcefiles(self, setting_names):
         filepaths = set(self.database.get(datatype="func", suffix="bold"))
         ret = set()
         for setting in self.spec.settings:
-            if setting.get("name") in settingnames:
+            if setting.get("name") in setting_names:
                 filters = setting.get("filters")
                 if filters is None or len(filters) == 0:
                     return filepaths
@@ -334,7 +431,9 @@ class SettingFactory(Factory):
         self.confounds_regression_factory.setup()
 
         for setting in self.spec.settings:
-            setting_output_wf_factory = deepcopyfactory(init_setting_output_wf(workdir=str(self.workdir), settingname=setting["name"]))
+            setting_output_wf_factory = deepcopyfactory(
+                init_setting_output_wf(workdir=str(self.workdir), setting_name=setting["name"])
+            )
 
             if setting.get("output_image") is not True:
                 continue  # create lazily in FeatureFactory
@@ -360,15 +459,15 @@ class SettingFactory(Factory):
                     inputnode.inputs.metadata = {
                         "raw_sources": raw_sources_dict[sourcefile]
                     }
-                self.connect(hierarchy, inputnode, sourcefile, settingname=setting["name"], confounds_action="regression")
+                self.connect(hierarchy, inputnode, sourcefile, setting_name=setting["name"], confounds_action="regression")
 
-    def get(self, sourcefile, settingname, confounds_action=None):
+    def get(self, sourcefile, setting_name, confounds_action=None):
         self.ica_aroma_components_factory.get(sourcefile)  # make sure ica aroma components are always calculated
         if confounds_action == "select":
-            return self.confounds_select_factory.get(sourcefile, settingname)
+            return self.confounds_select_factory.get(sourcefile, setting_name)
         elif confounds_action == "regression":
-            return self.confounds_regression_factory.get(sourcefile, settingname)
+            return self.confounds_regression_factory.get(sourcefile, setting_name)
         elif confounds_action is None:
-            return self.setting_adapter_factory.get(sourcefile, settingname)
+            return self.setting_adapter_factory.get(sourcefile, setting_name)
         else:
             raise ValueError(f"Unknown counfounds action '{confounds_action}'")

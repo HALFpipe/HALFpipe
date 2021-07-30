@@ -54,23 +54,23 @@ class BaseModelSchema(Schema):
 
 
 class FixedEffectsModelSchema(BaseModelSchema):
-    type = fields.Str(default="fe", validate=validate.Equal("fe"))
+    type = fields.Str(dump_default="fe", validate=validate.Equal("fe"))
     across = fields.Str(validate=validate.OneOf(["task", "ses", "run", "dir"]))
 
 
 class MixedEffectsModelSchema(BaseModelSchema):
-    type = fields.Str(default="me", validate=validate.Equal("me"))
-    across = fields.Str(default="sub", validate=validate.Equal("sub"))
+    type = fields.Str(dump_default="me", validate=validate.Equal("me"))
+    across = fields.Str(dump_default="sub", validate=validate.Equal("sub"))
 
     algorithms = fields.List(
         fields.Str(validate=validate.OneOf(algorithms.keys())),
-        default=["flame1", "mcartest", "heterogeneity"],
-        missing=["flame1", "mcartest", "heterogeneity"],
+        dump_default=["flame1", "mcartest", "heterogeneity"],
+        load_default=["flame1", "mcartest", "heterogeneity"],
     )
 
 
 class LinearMixedEffectsModelSchema(MixedEffectsModelSchema):
-    type = fields.Str(default="lme", validate=validate.Equal("lme"))
+    type = fields.Str(dump_default="lme", validate=validate.Equal("lme"))
     spreadsheet = fields.Str()
     contrasts = fields.List(fields.Nested(ModelContrastSchema))
 

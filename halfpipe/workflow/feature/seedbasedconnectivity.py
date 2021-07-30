@@ -58,7 +58,7 @@ def _contrasts(design_file=None):
 
 
 def init_seedbasedconnectivity_wf(
-    workdir=None, feature=None, seed_files=None, seed_spaces=None, memcalc=MemoryCalculator()
+    workdir=None, feature=None, seed_files=None, seed_spaces=None, memcalc=MemoryCalculator.default()
 ):
     """
     create workflow to calculate seed connectivity maps

@@ -9,7 +9,7 @@ from ...interface import GrandMeanScaling
 from ..memory import MemoryCalculator
 
 
-def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator(), name=None, suffix=None):
+def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator.default(), name=None, suffix=None):
     """
 
     """

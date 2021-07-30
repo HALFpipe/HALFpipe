@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union, Dict
+from typing import Union, Dict, Optional, OrderedDict as OrderedDictT
 
 import logging
 from pathlib import Path
@@ -12,10 +12,12 @@ from collections import OrderedDict, defaultdict
 from fnmatch import fnmatch
 from argparse import Namespace
 from copy import deepcopy
+from shutil import rmtree
 
 import networkx as nx
 
 import nipype.pipeline.engine as pe
+from nipype.interfaces.base.support import InterfaceResult
 from nipype.interfaces import utility as niu
 from nipype.pipeline.engine.utils import merge_dict
 
@@ -27,6 +29,10 @@ from ..resource import get as getresource
 from .constants import constants
 
 max_chunk_size = 50  # subjects
+
+
+class IdentifiableDiGraph(nx.DiGraph):
+    uuid: Optional[str]
 
 
 def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> OrderedDict:
@@ -67,6 +73,17 @@ def extract_subject_name(hierarchy):
         return m.group("subjectname")
 
 
+def node_result_file(u: pe.Node) -> Path:
+    u._output_dir = None  # reset this just in case
+
+    output_dir = u.output_dir()
+    assert isinstance(output_dir, str)
+
+    result_file = Path(output_dir) / f"result_{u.name}.pklz"
+
+    return result_file
+
+
 def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
     stack = [
         (u, v, source_info, field) for source_info, field in c["connect"]
@@ -102,23 +119,77 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
                         (u, v, source_info, v_field)
                     )
 
-    input_source_dict = defaultdict(dict)
+    input_source_dict: Dict[pe.Node, Dict] = defaultdict(dict)
     for u, v, source_info, field in result:
         u.keep = True  # don't allow results to be deleted
 
-        u._output_dir = None  # reset this just in case
-
-        output_dir = u.output_dir()
-        assert isinstance(output_dir, str)
-
-        result_file = Path(output_dir) / f"result_{u.name}.pklz"
-
-        input_source_dict[v][field] = (result_file, source_info)
+        input_source_dict[v][field] = (node_result_file(u), source_info)
 
     return input_source_dict
 
 
-def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) -> OrderedDict:
+def resolve_input_boundary(flat_graph, non_subject_nodes):
+    pre_run_result_dict: Dict[pe.Node, InterfaceResult] = dict()
+    for (u, v, c) in nx.edge_boundary(flat_graph, non_subject_nodes, data=True):
+        if u not in pre_run_result_dict:
+            pre_run_result_dict[u] = u.run()
+
+        connections = c["connect"]
+        result = pre_run_result_dict[u]
+
+        for u_field, v_field in connections:
+            if isinstance(u_field, tuple):
+                raise NotImplementedError()
+
+            value = result.outputs.trait_get()[u_field]
+            v.set_input(v_field, value)
+
+    for u in pre_run_result_dict.keys():
+        rmtree(u.output_dir(), ignore_errors=True)
+        flat_graph.remove_node(u)
+
+    assert len(nx.node_boundary(flat_graph, non_subject_nodes)) == 0
+
+
+def resolve_output_boundary(flat_graph, non_subject_nodes):
+    input_source_dict: Dict[pe.Node, Dict] = defaultdict(dict)
+
+    for (v, u, c) in nx.edge_boundary(flat_graph.reverse(), non_subject_nodes, data=True):
+        edge_input_source_dict = find_input_source(flat_graph, u, v, c)
+
+        for v, input_sources in edge_input_source_dict.items():
+            input_source_dict[v].update(input_sources)
+
+    return input_source_dict
+
+
+def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str):
+    subject_nodes = defaultdict(set)
+    for node in flat_graph:
+        node.base_dir = base_dir  # make sure to use correct base path
+
+        hierarchy = node._hierarchy.split(".")
+
+        if len(hierarchy) < 3:
+            continue
+
+        subject_name = extract_subject_name(hierarchy)
+        if subject_name is not None:
+            subject_nodes[subject_name].add(node)
+
+    all_subject_nodes = set.union(*subject_nodes.values())
+    non_subject_nodes = set(flat_graph.nodes) - all_subject_nodes
+
+    resolve_input_boundary(flat_graph, non_subject_nodes)
+    input_source_dict = resolve_output_boundary(flat_graph, non_subject_nodes)
+
+    return subject_nodes, input_source_dict
+
+
+def init_execgraph(
+    workdir: Union[Path, str],
+    workflow: IdentifiableWorkflow
+) -> OrderedDictT[str, IdentifiableDiGraph]:
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
@@ -144,71 +215,57 @@ def init_execgraph(workdir: Union[Path, str], workflow: IdentifiableWorkflow) ->
 
     # create or load execgraph
 
-    graphs = uncacheobj(workdir, "graphs", uuid)
-    if graphs is None:
-        logger.info(f'Initializing execution graph for workflow "{uuidstr}"')
+    graphs: Optional[OrderedDictT[str, IdentifiableDiGraph]] = uncacheobj(workdir, "graphs", uuid)
+    if graphs is not None:
+        return graphs
 
-        workflow._generate_flatgraph()
-        flatgraph = workflow._graph
+    logger.info(f'Initializing execution graph for workflow "{uuidstr}"')
 
-        workflow._set_needed_outputs(flatgraph)
+    workflow._generate_flatgraph()
+    flat_graph = workflow._graph
 
-        logger.info("Splitting graph")
+    workflow._set_needed_outputs(flat_graph)
 
-        subject_nodes = defaultdict(set)
-        for node in flatgraph:
-            node.base_dir = workflow.base_dir  # make sure to use correct base path
+    logger.info("Splitting graph")
 
-            hierarchy = node._hierarchy.split(".")
-            assert len(hierarchy) >= 3
-            subject_name = extract_subject_name(hierarchy)
-            if subject_name is not None:
-                subject_nodes[subject_name].add(node)
+    subject_nodes, input_source_dict = split_flat_graph(flat_graph, workflow.base_dir)
 
-        all_subject_nodes = set.union(*subject_nodes.values())
-        model_nodes = set(flatgraph.nodes) - all_subject_nodes
+    logger.info("Expanding subgraphs")
 
-        input_source_dict = defaultdict(dict)
-        for (v, u, c) in nx.edge_boundary(flatgraph.reverse(), model_nodes, data=True):
-            edge_input_source_dict = find_input_source(flatgraph, u, v, c)
+    graphs = OrderedDict()
 
-            for v, input_sources in edge_input_source_dict.items():
-                input_source_dict[v].update(input_sources)
+    def add_graph(s, graph):
+        graph = pe.generate_expanded_graph(graph)
 
-        logger.info("Expanding subgraphs")
+        for index, node in enumerate(graph):
+            node.config = merge_dict(deepcopy(workflow.config), node.config)
+            node.base_dir = workflow.base_dir
+            node.index = index
 
-        graphs = OrderedDict()
+        workflow._configure_exec_nodes(graph)
 
-        def add_graph(s, graph):
-            graph = pe.generate_expanded_graph(graph)
+        for node in graph:
+            if node in input_source_dict:
+                node.input_source.update(input_source_dict[node])
 
-            for index, node in enumerate(graph):
-                node.config = merge_dict(deepcopy(workflow.config), node.config)
-                node.base_dir = workflow.base_dir
-                node.index = index
+        assert isinstance(graphs, dict)
+        graphs[s] = graph
 
-            workflow._configure_exec_nodes(graph)
+    for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
+        s = workflow.bids_to_sub_id_map.get(s, s)
 
-            for node in graph:
-                if node in input_source_dict:
-                    node.input_source.update(input_source_dict[node])
+        subgraph = flat_graph.subgraph(nodes).copy()
+        add_graph(s, subgraph)
 
-            graphs[s] = graph
+        flat_graph.remove_nodes_from(nodes)
 
-        for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
-            s = workflow.bids_to_sub_id_map.get(s, s)
+    if len(flat_graph.nodes) > 0:
+        add_graph("model", flat_graph)
 
-            subgraph = flatgraph.subgraph(nodes).copy()
-            add_graph(s, subgraph)
+    for graph in graphs.values():
+        graph.uuid = uuid
 
-        flatgraph.remove_nodes_from(all_subject_nodes)
-        if len(flatgraph.nodes) > 0:
-            add_graph("model", flatgraph)
-
-        for graph in graphs.values():
-            graph.uuid = uuid
-
-        logger.info(f'Finished graphs for workflow "{uuidstr}"')
-        cacheobj(workdir, "graphs", graphs, uuid=uuid)
+    logger.info(f'Finished graphs for workflow "{uuidstr}"')
+    cacheobj(workdir, "graphs", graphs, uuid=uuid)
 
     return graphs

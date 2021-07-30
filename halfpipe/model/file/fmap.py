@@ -15,30 +15,30 @@ from ..metadata import PEDirMetadataSchema, TEMetadataSchema, PhaseDiffMetadataS
 
 
 class BaseFmapFileSchema(BaseFileSchema):
-    datatype = fields.Str(default="fmap", validate=validate.Equal("fmap"))
+    datatype = fields.Str(dump_default="fmap", validate=validate.Equal("fmap"))
     suffix = fields.Str(validate=validate.OneOf(["magnitude1", "magnitude2", "fieldmap"]))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
-    tags = fields.Nested(FmapTagsSchema(), default=dict())
+    tags = fields.Nested(FmapTagsSchema(), dump_default=dict())
     intended_for = fields.Dict(
         keys=fields.Str(),
         values=fields.List(fields.Str()),
         required=False,
-        default=None,
-        missing=None,
+        dump_default=None,
+        load_default=None,
         allow_none=True,
         description="mapping of acq to task",
     )
 
 
 class EPIFmapFileSchema(BaseFmapFileSchema):
-    suffix = fields.Str(default="epi", validate=validate.Equal("epi"))
-    tags = fields.Nested(EPIFmapTagsSchema(), default=dict())
+    suffix = fields.Str(dump_default="epi", validate=validate.Equal("epi"))
+    tags = fields.Nested(EPIFmapTagsSchema(), dump_default=dict())
     metadata = fields.Nested(PEDirMetadataSchema())
 
 
 class PhaseDiffFmapFileSchema(BaseFmapFileSchema):
-    suffix = fields.Str(default="phasediff", validate=validate.Equal("phasediff"))
+    suffix = fields.Str(dump_default="phasediff", validate=validate.Equal("phasediff"))
     metadata = fields.Nested(PhaseDiffMetadataSchema())
 
 

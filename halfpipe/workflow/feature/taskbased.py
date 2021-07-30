@@ -56,7 +56,7 @@ def init_taskbased_wf(
     feature=None,
     condition_files: Union[str, List] = None,
     condition_units=None,
-    memcalc=MemoryCalculator(),
+    memcalc=MemoryCalculator.default(),
 ):
     """
     create workflow to calculate a first level glm for task functional data

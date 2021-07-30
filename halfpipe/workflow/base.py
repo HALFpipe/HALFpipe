@@ -6,8 +6,6 @@ from uuid import uuid5
 from pathlib import Path
 
 from nipype.pipeline import engine as pe
-from nipype.interfaces import freesurfer as fs
-from fmriprep import config
 
 from .factory import FactoryContext
 from .mriqc import MriqcFactory
@@ -18,7 +16,6 @@ from .model import ModelFactory
 
 from .collect import collect_bold_files
 from .convert import convert_all
-from .memory import MemoryCalculator, patch_mem_gb
 from .constants import constants
 from ..io.index import Database, BidsDatabase
 from ..io.file import cacheobj, uncacheobj
@@ -56,7 +53,6 @@ def init_workflow(workdir):
     # init classes that use the database
 
     bids_database = BidsDatabase(database)
-    memcalc = MemoryCalculator(database)
 
     # create parent workflow
 
@@ -76,7 +72,7 @@ def init_workflow(workdir):
 
     # create factories
 
-    ctx = FactoryContext(workdir, spec, bids_database, workflow, memcalc)
+    ctx = FactoryContext(workdir, spec, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     setting_factory = SettingFactory(ctx, fmriprep_factory)
     feature_factory = FeatureFactory(ctx, setting_factory)
@@ -122,42 +118,18 @@ def init_workflow(workdir):
             model_factory.setup()
 
     # patch workflow
-
     config_factory = deepcopyfactory(workflow.config)
-    uses_freesurfer = False
 
-    omp_nthreads = config.nipype.omp_nthreads
-    assert isinstance(omp_nthreads, int)
     for node in workflow._get_all_nodes():
 
         node.config = config_factory()
         if node.name in ["split"]:
             node.config["execution"]["hash_method"] = "content"
 
-        # update memory predictions
-        patch_mem_gb(node, omp_nthreads, memcalc)
-
-        if isinstance(node.interface, fs.FSCommand):
-            uses_freesurfer = True
-
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
 
     logger.info(f"Finished workflow {uuidstr}")
     cacheobj(workdir, "workflow", workflow)
-
-    # check
-    if uses_freesurfer:
-        from niworkflows.utils.misc import check_valid_fs_license
-
-        if not check_valid_fs_license():
-            logger.error(
-                "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
-                "HALFpipe looked for an existing license file at several paths, in this order: \n"
-                '1) a "license.txt" file in your HALFpipe working directory \n'
-                '2) command line argument "--fs-license-file" \n'
-                "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
-            )
-            return
 
     return workflow

@@ -10,7 +10,7 @@ from ...interface import Exec
 from ..memory import MemoryCalculator
 
 
-def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculator()):
+def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculator.default()):
     """
     """
     workflow = pe.Workflow(name=name)

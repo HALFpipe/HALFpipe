@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from abc import ABC, abstractmethod
+
 from nipype.pipeline import engine as pe
 
 from fmriprep.workflows.bold.base import _get_wf_name
@@ -10,23 +12,21 @@ from ..utils import formatlikebids
 
 
 class FactoryContext:
-    def __init__(self, workdir, spec, bidsdatabase, workflow, memcalc):
+    def __init__(self, workdir, spec, bidsdatabase, workflow):
         self.workdir = workdir
         self.spec = spec
         self.database = bidsdatabase.database
         self.bidsdatabase = bidsdatabase
         self.workflow = workflow
-        self.memcalc = memcalc
 
 
-class Factory:
+class Factory(ABC):
     def __init__(self, ctx):
         self.workdir = ctx.workdir
         self.spec = ctx.spec
         self.database = ctx.database
         self.bidsdatabase = ctx.bidsdatabase
         self.workflow = ctx.workflow
-        self.memcalc = ctx.memcalc
 
     def _endpoint(self, hierarchy, node, attr):
         if len(hierarchy) > 1:
@@ -78,6 +78,7 @@ class Factory:
 
         return hierarchy
 
+    @abstractmethod
     def get(self, *args, **kwargs):
         raise NotImplementedError()
 

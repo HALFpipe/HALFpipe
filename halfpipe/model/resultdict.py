@@ -71,10 +71,10 @@ class ResultdictSchema(Schema):
     class Meta:
         unknown = RAISE
 
-    tags = fields.Nested(ResultdictTagsSchema(), default=dict())
-    metadata = fields.Nested(ResultdictMetadataSchema(), default=dict())
-    images = fields.Nested(ResultdictImagesSchema(), default=dict())
+    tags = fields.Nested(ResultdictTagsSchema(), dump_default=dict())
+    metadata = fields.Nested(ResultdictMetadataSchema(), dump_default=dict())
+    images = fields.Nested(ResultdictImagesSchema(), dump_default=dict())
     reports = fields.Dict(
-        keys=fields.Str(), values=fields.Raw(validate=validate_file), default=dict()
+        keys=fields.Str(), values=fields.Raw(validate=validate_file), dump_default=dict()
     )
-    vals = fields.Dict(keys=fields.Str(), values=fields.Raw(validate=validate_val), default=dict())
+    vals = fields.Dict(keys=fields.Str(), values=fields.Raw(validate=validate_val), dump_default=dict())
