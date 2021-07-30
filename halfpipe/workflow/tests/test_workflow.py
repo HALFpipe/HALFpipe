@@ -4,6 +4,7 @@
 """
 """
 
+from typing import Dict
 import pytest
 
 import os
@@ -295,13 +296,13 @@ def test_with_reconall(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(
-        stop_on_first_crash=True,
-    )
+    workflow_args = dict(stop_on_first_crash=True)
     workflow.config["execution"].update(workflow_args)
 
-    execgraphs = init_execgraph(tmp_path, workflow)
-    execgraph = execgraphs[0]
+    graphs = init_execgraph(tmp_path, workflow)
+
+    graph = next(iter(graphs.values()))
+    assert any("recon" in u.name for u in graph.nodes)
 
 
 @pytest.mark.timeout(4 * 3600)
@@ -311,9 +312,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     config.nipype.omp_nthreads = 4
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(
-        stop_on_first_crash=True,
-    )
+    workflow_args = dict(stop_on_first_crash=True)
     workflow.config["execution"].update(workflow_args)
 
     graphs: OrderedDict = init_execgraph(tmp_path, workflow)

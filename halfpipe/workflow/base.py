@@ -135,23 +135,6 @@ def init_workflow(workdir):
                 memcalc.volume_std_gb * 50 * config.nipype.omp_nthreads
             )  # decrease memory prediction
 
-        if isinstance(node.interface, BIDSFreeSurferDir):
-            parent = workflow.get_node("fmriprep_wf")
-            assert isinstance(parent, pe.Workflow)
-
-            assert node in parent._graph.nodes()  # make sure that we got the correct parent
-
-            result = node.run()  # need to evaluate this node beforehand
-
-            out_edges = list(parent._graph.out_edges(node, data=True))
-            for _, v, d in out_edges:  # manually propagate output
-                (out_attr, in_attr), = d["connect"]
-
-                parent.disconnect(node, out_attr, v, in_attr)
-                sub_node_name, in_attr = in_attr.split(".")
-                sub_node = v.get_node(sub_node_name)
-                setattr(sub_node.inputs, in_attr, result.outputs.get()[out_attr])
-
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
 
