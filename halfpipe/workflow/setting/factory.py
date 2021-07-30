@@ -2,7 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import numpy as np
+from math import isclose
+from typing import Dict, Optional, Tuple
 
 from .fmriprepadapter import init_fmriprep_adapter_wf
 from .icaaroma import init_ica_aroma_components_wf, init_ica_aroma_regression_wf
@@ -69,6 +70,8 @@ class LookupFactory(Factory):
 
         prevtpls = []
 
+        newsuffix_by_prevtpl: Optional[Dict[Tuple, str]] = None
+
         if hasattr(self.previous_factory, "by_settingname"):
             prevtpls.extend(set(self.previous_factory.by_settingname.values()))
 
@@ -80,7 +83,7 @@ class LookupFactory(Factory):
         suffixes = []
         for name in settingnames:
             suffix = None
-            if len(prevtpls) > 1:
+            if isinstance(newsuffix_by_prevtpl, dict):
                 suffix = newsuffix_by_prevtpl[self.previous_factory.by_settingname[name]]
             suffixes.append(suffix)
 
@@ -140,7 +143,7 @@ class LookupFactory(Factory):
 
 class FmriprepAdapterFactory(LookupFactory):
     def _prototype(self, tpl):
-        return init_fmriprep_adapter_wf()
+        return init_fmriprep_adapter_wf(memcalc=self.memcalc)
 
     def _tpl(self, setting):
         return None
@@ -149,7 +152,7 @@ class FmriprepAdapterFactory(LookupFactory):
 class SmoothingFactory(LookupFactory):
     def _prototype(self, tpl):
         fwhm, suffix = tpl
-        if fwhm is None or float(fwhm) <= 0 or np.isclose(float(fwhm), 0):
+        if fwhm is None or float(fwhm) <= 0 or isclose(float(fwhm), 0):
             return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix)
         return init_smoothing_wf(fwhm=fwhm, memcalc=self.memcalc, suffix=suffix)
 

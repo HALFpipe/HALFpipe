@@ -179,7 +179,7 @@ nitransforms==20.0.0rc5
     # via
     #   fmriprep
     #   niworkflows
-git+https://github.com/hippocampusgirl/niworkflows.git@1.3.4+halfpipe.1
+git+https://github.com/hippocampusgirl/niworkflows.git@1.3.4+halfpipe.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -262,6 +262,7 @@ prov==2.0.0
     # via nipype
 psutil==5.8.0
     # via
+    #   -r requirements.in
     #   flufl.lock
     #   fmriprep
 ptyprocess==0.7.0
