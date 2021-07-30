@@ -131,7 +131,7 @@ class RefMetadataSchema(Schema):
 
 
 class SpreadsheetMetadataSchema(Schema):
-    variables = fields.List(fields.Nested(VariableSchema), default=[])
+    variables = fields.List(fields.Nested(VariableSchema), dump_default=[])
 
     @validates_schema
     def validate_variables(self, data, **kwargs):

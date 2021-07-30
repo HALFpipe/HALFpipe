@@ -13,5 +13,5 @@ from ..metadata import BoldMetadataSchema
 
 
 class BidsFileSchema(BaseFileSchema):
-    datatype = fields.Str(default="bids", validate=validate.Equal("bids"))
+    datatype = fields.Str(dump_default="bids", validate=validate.Equal("bids"))
     metadata = fields.Nested(BoldMetadataSchema())

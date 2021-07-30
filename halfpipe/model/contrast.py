@@ -11,14 +11,14 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 class TContrastSchema(Schema):
-    type = fields.Str(default="t", validate=validate.Equal("t"))
+    type = fields.Str(dump_default="t", validate=validate.Equal("t"))
     name = fields.Str()
     variable = fields.List(fields.Str())
     values = fields.Dict(keys=fields.Str(), values=fields.Float())
 
 
 class InferredTypeContrastSchema(Schema):
-    type = fields.Str(default="infer", validate=validate.Equal("infer"))
+    type = fields.Str(dump_default="infer", validate=validate.Equal("infer"))
     variable = fields.List(fields.Str())
 
 

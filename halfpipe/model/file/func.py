@@ -18,12 +18,12 @@ from ...io.metadata.direction import parse_direction_str, canonicalize_direction
 
 
 class BoldFileSchema(BaseFileSchema):
-    datatype = fields.Str(default="func", validate=validate.Equal("func"))
-    suffix = fields.Str(default="bold", validate=validate.Equal("bold"))
+    datatype = fields.Str(dump_default="func", validate=validate.Equal("func"))
+    suffix = fields.Str(dump_default="bold", validate=validate.Equal("bold"))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
-    tags = fields.Nested(BoldTagsSchema(), default=dict())
-    metadata = fields.Nested(BoldMetadataSchema(), default=dict())
+    tags = fields.Nested(BoldTagsSchema(), dump_default=dict())
+    metadata = fields.Nested(BoldMetadataSchema(), dump_default=dict())
 
     @pre_load
     def move_dir_tag_to_metadata(self, in_data, **kwargs):
@@ -53,10 +53,10 @@ class BoldFileSchema(BaseFileSchema):
 
 
 class BaseEventsFileSchema(BaseFileSchema):
-    datatype = fields.Str(default="func", validate=validate.Equal("func"))
-    suffix = fields.Str(default="events", validate=validate.Equal("events"))
+    datatype = fields.Str(dump_default="func", validate=validate.Equal("func"))
+    suffix = fields.Str(dump_default="events", validate=validate.Equal("events"))
 
-    tags = fields.Nested(FuncTagsSchema(), default=dict())
+    tags = fields.Nested(FuncTagsSchema(), dump_default=dict())
 
 
 class MatEventsFileSchema(BaseEventsFileSchema):
@@ -68,14 +68,14 @@ class MatEventsFileSchema(BaseEventsFileSchema):
 class TsvEventsFileSchema(BaseEventsFileSchema):
     extension = fields.Str(validate=validate.OneOf([".tsv"]))
 
-    metadata = fields.Nested(EventsMetadataSchema(), default={"units": "seconds"})
+    metadata = fields.Nested(EventsMetadataSchema(), dump_default={"units": "seconds"})
 
 
 class TxtEventsFileSchema(BaseEventsFileSchema):
     extension = fields.Str(validate=validate.OneOf([".txt"]))
 
-    tags = fields.Nested(TxtEventsTagsSchema(), default=dict())
-    metadata = fields.Nested(EventsMetadataSchema(), default={"units": "seconds"})
+    tags = fields.Nested(TxtEventsTagsSchema(), dump_default=dict())
+    metadata = fields.Nested(EventsMetadataSchema(), dump_default={"units": "seconds"})
 
 
 class EventsFileSchema(OneOfSchema):

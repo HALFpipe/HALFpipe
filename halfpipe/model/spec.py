@@ -44,18 +44,18 @@ class SpecSchema(Schema):
         unknown = RAISE
         ordered = True
 
-    halfpipe_version = fields.Str(default=halfpipe_version)
+    halfpipe_version = fields.Str(dump_default=halfpipe_version)
     schema_version = fields.Str(
-        default=schema_version, validate=validate.OneOf(compatible_schema_versions), required=True
+        dump_default=schema_version, validate=validate.OneOf(compatible_schema_versions), required=True
     )
-    timestamp = fields.DateTime(default=dt.now(), format=timestampfmt, required=True)
+    timestamp = fields.DateTime(dump_default=dt.now(), format=timestampfmt, required=True)
 
-    global_settings = fields.Nested(GlobalSettingsSchema, default={})
+    global_settings = fields.Nested(GlobalSettingsSchema, dump_default={})
 
-    files = fields.List(fields.Nested(FileSchema), default=[], required=True)
-    settings = fields.List(fields.Nested(SettingSchema), default=[], required=True)
-    features = fields.List(fields.Nested(FeatureSchema), default=[], required=True)
-    models = fields.List(fields.Nested(ModelSchema), default=[], required=True)
+    files = fields.List(fields.Nested(FileSchema), dump_default=[], required=True)
+    settings = fields.List(fields.Nested(SettingSchema), dump_default=[], required=True)
+    features = fields.List(fields.Nested(FeatureSchema), dump_default=[], required=True)
+    models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
     def validate_analyses(self, data, **kwargs):

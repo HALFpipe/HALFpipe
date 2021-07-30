@@ -40,45 +40,45 @@ class BaseFeatureSchema(Schema):
 
 
 class TaskBasedFeatureSchema(BaseFeatureSchema):
-    type = fields.Str(default="task_based", validate=validate.Equal("task_based"))
+    type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
 
     conditions = fields.List(fields.Str())
     contrasts = fields.List(fields.Nested(TContrastSchema))
 
     high_pass_filter_cutoff = fields.Float(
-        default=125.0,
-        missing=125.,
+        dump_default=125.0,
+        load_default=125.,
         allow_nan=True,
         allow_none=True,
         validate=validate.Range(min=0.0)
     )
 
     hrf = fields.Str(
-        default="dgamma",
-        missing="dgamma",
+        dump_default="dgamma",
+        load_default="dgamma",
         validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"])
     )
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
     type = fields.Str(
-        default="seed_based_connectivity", validate=validate.Equal("seed_based_connectivity")
+        dump_default="seed_based_connectivity", validate=validate.Equal("seed_based_connectivity")
     )
     seeds = fields.List(fields.Str())
-    min_seed_coverage = fields.Float(default=0.8, validate=validate.Range(min=0.0, max=1.0))
+    min_seed_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class DualRegressionFeatureSchema(BaseFeatureSchema):
-    type = fields.Str(default="dual_regression", validate=validate.Equal("dual_regression"))
+    type = fields.Str(dump_default="dual_regression", validate=validate.Equal("dual_regression"))
     maps = fields.List(fields.Str())
 
 
 class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
     type = fields.Str(
-        default="atlas_based_connectivity", validate=validate.Equal("atlas_based_connectivity")
+        dump_default="atlas_based_connectivity", validate=validate.Equal("atlas_based_connectivity")
     )
     atlases = fields.List(fields.Str())
-    min_region_coverage = fields.Float(default=0.8, validate=validate.Range(min=0.0, max=1.0))
+    min_region_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class ReHoFeatureSchema(BaseFeatureSchema):

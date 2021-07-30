@@ -17,7 +17,7 @@ class BaseVariableSchema(Schema):
 
 
 class CategoricalVariableSchema(BaseVariableSchema):
-    type = fields.Str(default="categorical", validate=validate.Equal("categorical"))
+    type = fields.Str(dump_default="categorical", validate=validate.Equal("categorical"))
     levels = fields.List(fields.Str)
 
 
