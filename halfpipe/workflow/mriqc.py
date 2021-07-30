@@ -52,5 +52,8 @@ class MriqcFactory(Factory):
         mriqc_wf = init_mriqc_wf()
         workflow.add_nodes([mriqc_wf])
 
-    def connect(self, nodehierarchy, node, sourcefile=None, subject_id=None, **kwargs):
-        raise NotImplementedError()
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
+
+    def connect(self, nodehierarchy, node, *args, **kwargs):
+        return super().connect(nodehierarchy, node, *args, **kwargs)

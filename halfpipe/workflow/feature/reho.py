@@ -10,7 +10,7 @@ from ...utils import formatlikebids
 from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, BlurInMask, ReHo
 
 
-def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator()):
+def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
     """
     create a workflow to do ReHo
 

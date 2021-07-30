@@ -72,7 +72,7 @@ def init_model_wf(
         numinputs=1,
         model=None,
         variables=None,
-        memcalc=MemoryCalculator()
+        memcalc=MemoryCalculator.default()
 ):
     name = f"{formatlikebids(model.name)}_wf"
     workflow = pe.Workflow(name=name)
@@ -292,7 +292,12 @@ def init_model_wf(
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")
 
         # random field theory
-        smoothest = MapNode(fsl.SmoothEstimate(), iterfield=["zstat_file", "mask_file"], name="smoothest")
+        smoothest = MapNode(
+            fsl.SmoothEstimate(),
+            iterfield=["zstat_file", "mask_file"],
+            name="smoothest",
+            allow_undefined_iterfield=True,
+        )
         workflow.connect([(modelfit, smoothest, [(("zstats", ravel), "zstat_file")])])
         workflow.connect([(modelfit, smoothest, [(("masks", ravel), "mask_file")])])
 

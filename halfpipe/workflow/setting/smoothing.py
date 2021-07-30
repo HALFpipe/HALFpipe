@@ -10,7 +10,7 @@ from ...interface import Select, BlurInMask
 from ..memory import MemoryCalculator
 
 
-def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator(), name=None, suffix=None):
+def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator.default(), name=None, suffix=None):
     """
     Smooths a volume within a mask while correcting for the mask edge
     """

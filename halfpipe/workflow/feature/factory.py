@@ -15,6 +15,7 @@ from .taskbased import init_taskbased_wf
 
 from ..factory import Factory
 from ..collect import collect_events
+from ..memory import MemoryCalculator
 
 from ...model import FeatureSchema, BaseSettingSchema
 from ...utils import logger
@@ -47,15 +48,16 @@ class FeatureFactory(Factory):
     def setup(self, raw_sources_dict=dict()):
         self.wfs = dict()
 
-        def _find_setting(feature):
-            for setting in self.spec.settings:
-                if setting["name"] == feature.setting:
-                    return setting
-
         for feature in self.spec.features:
             sourcefiles = set(raw_sources_dict.keys())
 
-            filters = _find_setting(feature).get("filters")
+            (setting,) = [
+                setting
+                for setting in self.spec.settings
+                if setting["name"] == feature.setting
+            ]
+
+            filters = setting.get("filters")
             if filters is not None and len(filters) > 0:
                 sourcefiles = self.database.applyfilters(
                     sourcefiles, filters
@@ -72,7 +74,9 @@ class FeatureFactory(Factory):
         database = self.database
 
         vwf = None
-        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.workdir), memcalc=self.memcalc)
+
+        memcalc = MemoryCalculator.from_bold_file(sourcefile)
+        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.workdir), memcalc=memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
 
@@ -152,7 +156,7 @@ class FeatureFactory(Factory):
             self.wfs[feature.name] = []
         self.wfs[feature.name].append(hierarchy)
 
-        for node in vwf._graph.nodes():
+        for node in vwf._graph.nodes:
             m = inputnode_name.fullmatch(node.name)
             if m is not None:
                 if hasattr(node.inputs, "repetition_time"):
@@ -168,6 +172,7 @@ class FeatureFactory(Factory):
                     for setting in self.spec.settings:
                         if setting["name"] == settingname:
                             metadict = BaseSettingSchema().dump(setting)
+                            assert isinstance(metadict, dict)
                             if raw_sources is not None:
                                 metadict["raw_sources"] = sorted(raw_sources)
                             node.inputs.metadata = metadict

@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Set, Tuple, Union
 
 from ..io.index import Database, BidsDatabase
 from ..utils import logger, nvol
@@ -19,7 +19,7 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     )
 
     if candidates is None or len(candidates) == 0:
-        return
+        return None
 
     candidates = sorted(set(  # remove duplicates
         candidates
@@ -39,7 +39,7 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     assert extensions is not None
 
     if len(condition_files) == 0:
-        return  # we did not find any
+        return None  # we did not find any
     elif len(condition_files) == 1:
         if ".mat" in extensions or ".tsv" in extensions:
             return condition_files[0]
@@ -111,7 +111,7 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
     bold_file_paths = [b for b in bold_file_paths if b in bold_file_paths_dict]
 
     _bids_database = BidsDatabase(database)
-    bids_dict = dict()
+    bids_dict: Dict[str, Set[str]] = dict()
     for bold_file_path in bold_file_paths:
 
         # check for duplicate tags via bids path as this contains all tags by definition

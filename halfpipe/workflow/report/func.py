@@ -24,7 +24,7 @@ from ..constants import constants
 from ..memory import MemoryCalculator
 
 
-def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memcalc=MemoryCalculator()):
+def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memcalc=MemoryCalculator.default()):
     """
 
     """

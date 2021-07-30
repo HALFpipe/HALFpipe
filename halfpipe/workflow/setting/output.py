@@ -11,8 +11,8 @@ from ...interface import MakeResultdicts, ResultdictDatasink
 from ...utils import formatlikebids
 
 
-def init_setting_output_wf(workdir=None, settingname=None):
-    name = f"setting_output_{formatlikebids(settingname)}_wf"
+def init_setting_output_wf(workdir=None, setting_name=None):
+    name = f"setting_output_{formatlikebids(setting_name)}_wf"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

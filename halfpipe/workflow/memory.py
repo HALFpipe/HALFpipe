@@ -2,12 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Tuple
+from typing import Tuple, NamedTuple, Union
+
+from pathlib import Path
+
+import pint
 
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
-
-import pint
 
 from .constants import constants
 from ..io.metadata.niftiheader import NiftiheaderLoader
@@ -15,30 +17,18 @@ from ..io.metadata.niftiheader import NiftiheaderLoader
 ureg = pint.UnitRegistry()
 
 
-class MemoryCalculator:
+class MemoryCalculator(NamedTuple):
+    volume_gb: float
+    series_gb: float
+
+    volume_std_gb: float
+    series_std_gb: float
+
     min_gb: float = 0.3  # we assume that any command needs a few hundred megabytes
 
-    def __init__(self, database=None, bold_file=None, bold_shape=[72, 72, 72], bold_tlen=200):
-
-        if database is not None:
-            bold_file = next(iter(
-                database.get(datatype="func", suffix="bold")
-            ))
-
-        if bold_file is not None:
-            header, _ = NiftiheaderLoader.load(bold_file)
-            if header is not None:
-                bold_shape = header.get_data_shape()
-
-        t = 1
-        for n in bold_shape[3:]:
-            t *= n
-
-        if t == 1:
-            t = bold_tlen
-
-        x, y, z = bold_shape[:3]
-        self.volume_gb, self.series_gb = self.calc_bold_gb((x, y, z, t))
+    @classmethod
+    def from_bold_shape(cls, x: int = 72, y: int = 72, z: int = 72, t: int = 200):
+        volume_gb, series_gb = cls.calc_bold_gb((x, y, z, t))
 
         reference_file = get_template(
             constants.reference_space,
@@ -51,33 +41,52 @@ class MemoryCalculator:
         reference_shape = header.get_data_shape()
 
         x, y, z = reference_shape[:3]
-        self.volume_std_gb, self.series_std_gb = self.calc_bold_gb((x, y, z, t))
+        volume_std_gb, series_std_gb = cls.calc_bold_gb((x, y, z, t))
 
-    def calc_bold_gb(self, shape: Tuple[int, int, int, int]) -> Tuple[float, float]:
+        return MemoryCalculator(
+            volume_gb=volume_gb,
+            series_gb=series_gb,
+            volume_std_gb=volume_std_gb,
+            series_std_gb=series_std_gb,
+        )
+
+    @classmethod
+    def default(cls):
+        return MemoryCalculator.from_bold_shape()
+
+    @classmethod
+    def from_bold_file(cls, bold_file: Union[str, Path]):
+        header, _ = NiftiheaderLoader.load(bold_file)
+        if header is not None:
+            bold_shape = header.get_data_shape()
+
+            t = 1
+            for n in bold_shape[3:]:
+                t *= n
+
+            x, y, z = bold_shape[:3]
+
+            if t == 1:
+                return cls.from_bold_shape(x=x, y=y, z=z)
+
+            return cls.from_bold_shape(x=x, y=y, z=z, t=t)
+
+        return cls.default()
+
+    @classmethod
+    def calc_bold_gb(cls, shape: Tuple[int, int, int, int]) -> Tuple[float, float]:
         x, y, z, t = shape
         volume_bytes = ureg.Quantity(x * y * z * 8, ureg.bytes)
 
         volume_gb: float = volume_bytes.to(ureg.gigabytes).m
         series_gb: float = volume_gb * t
 
-        if volume_gb < self.min_gb:
-            volume_gb = volume_gb
+        min_gb: float = cls._field_defaults["min_gb"]
 
-        if series_gb < self.min_gb:
-            series_gb = self.min_gb
+        volume_gb = max(min_gb, volume_gb)
+        series_gb = max(min_gb, series_gb)
 
-        return volume_gb, series_gb
-
-    def __hash__(self):
-        return hash(
-            (
-                self.volume_gb,
-                self.series_gb,
-                self.volume_std_gb,
-                self.series_std_gb,
-                self.min_gb,
-            )
-        )
+        return round(volume_gb, 3), round(series_gb, 3)
 
 
 def patch_mem_gb(node: pe.Node, omp_nthreads: int, memcalc: MemoryCalculator):
@@ -101,7 +110,7 @@ def patch_mem_gb(node: pe.Node, omp_nthreads: int, memcalc: MemoryCalculator):
         node._mem_gb = memcalc.series_gb
 
     if name.endswith("carpetplot_wf.conf_plot"):
-        node._mem_gb = 1.5 * memcalc.series_std_gb
+        node._mem_gb = 2 * memcalc.series_std_gb
 
     if name.endswith("bold_std_trans_wf.merge"):
         node._mem_gb = memcalc.series_std_gb
