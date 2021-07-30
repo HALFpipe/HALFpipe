@@ -20,7 +20,7 @@ from .output import init_setting_output_wf
 
 from ..factory import Factory
 from ..bypass import init_bypass_wf
-from ..memory import MemoryCalculator
+from ..memory import MemoryCalculator, patch_mem_gb
 
 from ...utils import deepcopyfactory, b32digest, logger
 
@@ -59,6 +59,9 @@ class ICAAROMAComponentsFactory(Factory):
 
             memcalc = MemoryCalculator.from_bold_file(sourcefile)
             vwf = init_ica_aroma_components_wf(workdir=str(self.workdir), memcalc=memcalc)
+
+            for node in vwf._get_all_nodes():
+                patch_mem_gb(node, memcalc)
 
             wf.add_nodes([vwf])
 

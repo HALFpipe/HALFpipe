@@ -138,15 +138,13 @@ class FmriprepFactory(Factory):
         workflow.add_nodes([fmriprep_wf])
 
         # patch memory usage
-        omp_nthreads = config.nipype.omp_nthreads
-        assert isinstance(omp_nthreads, int)
 
         for boldfilepath in boldfilepaths:
             memcalc = MemoryCalculator.from_bold_file(boldfilepath)
             func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=boldfilepath)[-1]
             assert isinstance(func_preproc_wf, pe.Workflow)
             for node in func_preproc_wf._get_all_nodes():
-                patch_mem_gb(node, omp_nthreads, memcalc)
+                patch_mem_gb(node, memcalc)
 
         # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(self.workdir)))

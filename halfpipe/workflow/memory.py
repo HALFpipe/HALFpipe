@@ -10,6 +10,7 @@ import pint
 
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
+from fmriprep import config
 
 from .constants import constants
 from ..io.metadata.niftiheader import NiftiheaderLoader
@@ -89,20 +90,23 @@ class MemoryCalculator(NamedTuple):
         return round(volume_gb, 3), round(series_gb, 3)
 
 
-def patch_mem_gb(node: pe.Node, omp_nthreads: int, memcalc: MemoryCalculator):
+def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     name = node.fullname
     assert isinstance(name, str)
 
     # reduce
 
+    omp_nthreads = config.nipype.omp_nthreads
+    assert isinstance(omp_nthreads, int)
+
     if name.endswith("bold_std_trans_wf.bold_to_std_transform"):
-        node._mem_gb = 50 * memcalc.volume_std_gb * omp_nthreads
+        node._mem_gb = 2 * memcalc.volume_std_gb * omp_nthreads
 
     if name.endswith("bold_t1_trans_wf.bold_to_t1w_transform"):
-        node._mem_gb = 20 * memcalc.volume_std_gb * omp_nthreads
+        node._mem_gb = memcalc.volume_std_gb * omp_nthreads
 
     if name.endswith("bold_bold_trans_wf.bold_transform"):
-        node._mem_gb = 20 * memcalc.volume_gb * omp_nthreads
+        node._mem_gb = memcalc.volume_gb * omp_nthreads
 
     # increase
 
@@ -132,7 +136,7 @@ def patch_mem_gb(node: pe.Node, omp_nthreads: int, memcalc: MemoryCalculator):
             "ica_aroma_wf.calc_median_val",
         ]
     ):
-        node._mem_gb = 1.0 * memcalc.series_std_gb
+        node._mem_gb = memcalc.series_std_gb
 
     if node.mem_gb < memcalc.min_gb:
         node._mem_gb = memcalc.min_gb
