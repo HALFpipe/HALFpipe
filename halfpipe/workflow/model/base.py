@@ -317,6 +317,7 @@ def init_model_wf(
         raise ValueError()
 
     # connect modelfit outputs
+    assert modelfit.outputs is not None
     for k, _ in modelfit.outputs.items():
         if k in modelfit_exclude:
             continue
