@@ -85,6 +85,12 @@ class FmriprepFactory(Factory):
             "ants": "force",
         }[spec.global_settings["skull_strip_algorithm"]]
 
+        # reset fmriprep config
+        config.execution.bids_database_dir = None
+        config.execution._layout = None
+        config.execution.layout = None
+
+        # create config
         config.from_dict(
             {
                 "bids_dir": bids_dir,

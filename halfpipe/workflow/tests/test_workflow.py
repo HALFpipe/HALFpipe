@@ -4,7 +4,6 @@
 """
 """
 
-from typing import Dict
 import pytest
 
 import os
@@ -12,7 +11,6 @@ from zipfile import ZipFile
 import tarfile
 from pathlib import Path
 from random import seed
-from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -164,10 +162,10 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
     return pcc_mask_fname
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def mock_spec(bids_data, task_events, pcc_mask):
     spec_schema = SpecSchema()
-    spec = spec_schema.load(spec_schema.dump({}), partial=True)  # get defaults
+    spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
     assert isinstance(spec, Spec)
 
     spec.files = list(map(FileSchema().load, [
@@ -315,7 +313,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     workflow_args = dict(stop_on_first_crash=True)
     workflow.config["execution"].update(workflow_args)
 
-    graphs: OrderedDict = init_execgraph(tmp_path, workflow)
+    graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
     runner = nip.LinearPlugin(plugin_args=workflow_args)
