@@ -94,8 +94,6 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     name = node.fullname
     assert isinstance(name, str)
 
-    # reduce
-
     omp_nthreads = config.nipype.omp_nthreads
     assert isinstance(omp_nthreads, int)
 
@@ -105,19 +103,8 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     if name.endswith("bold_t1_trans_wf.bold_to_t1w_transform"):
         node._mem_gb = memcalc.volume_std_gb * omp_nthreads
 
-    if name.endswith("bold_bold_trans_wf.bold_transform"):
-        node._mem_gb = memcalc.volume_gb * omp_nthreads
-
-    # increase
-
-    if name.endswith("bold_stc_wf.slice_timing_correction"):
-        node._mem_gb = memcalc.series_gb
-
-    if name.endswith("carpetplot_wf.conf_plot"):
-        node._mem_gb = 2 * memcalc.series_std_gb
-
     if name.endswith("bold_std_trans_wf.merge"):
-        node._mem_gb = memcalc.series_std_gb
+        node._mem_gb = 0.75 * memcalc.series_std_gb
 
     if name.endswith("bold_confounds_wf.fdisp"):
         node._mem_gb = memcalc.min_gb
@@ -131,12 +118,34 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     if any(
         name.endswith(s)
         for s in [
+            "bold_stc_wf.slice_timing_correction",
+            "bold_hmc_wf.mcflirt",
+            "bold_bold_trans_wf.bold_transform",
+            "bold_bold_trans_wf.merge",
+        ]
+    ):
+        node._mem_gb = memcalc.series_gb
+
+    if any(
+        name.endswith(s)
+        for s in [
             "ica_aroma_wf.melodic",
             "ica_aroma_wf.calc_bold_mean",
             "ica_aroma_wf.calc_median_val",
         ]
     ):
         node._mem_gb = memcalc.series_std_gb
+
+    if any(
+        name.endswith(s)
+        for s in [
+            "carpetplot_wf.conf_plot",
+            "bold_confounds_wf.rois_plot",
+            "bold_confounds_wf.signals",
+            "bold_confounds_wf.tcompcor",
+        ]
+    ):
+        node._mem_gb = 2 * memcalc.series_std_gb
 
     if node.mem_gb < memcalc.min_gb:
         node._mem_gb = memcalc.min_gb

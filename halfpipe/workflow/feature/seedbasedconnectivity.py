@@ -213,7 +213,7 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(makedofvolume, "out_file", make_resultdicts, "dof")
 
     #
-    tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)
+    tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=2 * memcalc.series_std_gb)
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
     calcmean = pe.MapNode(CalcMean(), iterfield="mask", name="calcmean", mem_gb=memcalc.series_std_gb)

@@ -137,12 +137,20 @@ class FmriprepFactory(Factory):
         fmriprep_wf = retval["workflow"]
         workflow.add_nodes([fmriprep_wf])
 
-        # patch memory usage
-
+        # patch workflow
         for boldfilepath in boldfilepaths:
-            memcalc = MemoryCalculator.from_bold_file(boldfilepath)
             func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=boldfilepath)[-1]
             assert isinstance(func_preproc_wf, pe.Workflow)
+
+            # disable preproc output to save disk space
+            func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
+            assert isinstance(func_derivatives_wf, pe.Workflow)
+            ds_bold_std = func_derivatives_wf.get_node("ds_bold_std")
+            assert isinstance(ds_bold_std, pe.Node)
+            func_derivatives_wf.remove_nodes([ds_bold_std])
+
+            # patch memory usage
+            memcalc = MemoryCalculator.from_bold_file(boldfilepath)
             for node in func_preproc_wf._get_all_nodes():
                 patch_mem_gb(node, memcalc)
 
