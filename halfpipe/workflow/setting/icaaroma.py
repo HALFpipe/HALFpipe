@@ -271,7 +271,7 @@ def init_ica_aroma_regression_wf(
     # Specifically, both ica_aroma_components_wf and fmriprep's func_preproc_wf use
     # the bold_std_trans_wf that has the iterable node "iterablesource"
     # This way there is no dependency
-    aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.series_std_gb)
+    aromavals = pe.Node(interface=Vals(), name="aromavals", mem_gb=memcalc.volume_std_gb)
     workflow.connect(inputnode, "vals", aromavals, "vals")
     workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")
     workflow.connect(aromavals, "vals", outputnode, "vals")
