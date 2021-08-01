@@ -38,6 +38,6 @@ RUN cd /halfpipe && \
     pip install --no-deps --use-feature=in-tree-build . && \
     rm -rf ~/.cache/pip && \
     cd && \
-    rm -rf /halfpipe/* /tmp/*
+    rm -rf /halfpipe /tmp/*
 
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
