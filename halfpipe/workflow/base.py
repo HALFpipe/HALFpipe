@@ -70,6 +70,15 @@ def init_workflow(workdir):
         check_version=False,
     ))
 
+    if (
+        len(spec.features) == 0
+        and not any(setting.get("output_image") is True for setting in spec.settings)
+    ):
+        raise RuntimeError(
+            "Nothing to do. Please specify features to calculate and/or select to output "
+            "a preprocessed image"
+        )
+
     # create factories
 
     ctx = FactoryContext(workdir, spec, bids_database, workflow)

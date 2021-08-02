@@ -287,15 +287,22 @@ def mock_spec(bids_data, task_events, pcc_mask):
     return spec
 
 
-@pytest.mark.timeout(4 * 3600)
+def test_empty(tmp_path, mock_spec):
+    mock_spec.settings = list()
+    mock_spec.features = list()
+
+    savespec(mock_spec, workdir=tmp_path)
+
+    with pytest.raises(RuntimeError):
+        init_workflow(tmp_path)
+
+
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 
     savespec(mock_spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(stop_on_first_crash=True)
-    workflow.config["execution"].update(workflow_args)
 
     graphs = init_execgraph(tmp_path, workflow)
 
