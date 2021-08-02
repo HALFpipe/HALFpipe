@@ -4,7 +4,6 @@
 
 import os
 from pathlib import Path
-import logging
 
 from calamities import (
     TextView,
@@ -18,7 +17,7 @@ from calamities.config import Config as CalamitiesConfig
 
 from .step import Step
 from .. import __version__
-from ..model import SpecSchema, loadspec, savespec
+from ..model.spec import Spec, SpecSchema, loadspec, savespec
 from ..io.index import Database
 from ..workdir import init_workdir
 from ..logging import Context as LoggingContext
@@ -26,12 +25,16 @@ from ..logging import Context as LoggingContext
 from .file import BidsStep
 from .feature import FeaturesStep
 from .model import ModelsStep
+from ..utils import logger
 
 
 class Context:
     def __init__(self):
         spec_schema = SpecSchema()
-        self.spec = spec_schema.load(spec_schema.dump({}), partial=True)  # initialize with defaults
+        spec = spec_schema.load(spec_schema.dump({}), partial=True)
+        assert isinstance(spec, Spec)
+        self.spec: Spec = spec  # initialize with defaults
+
         self.database = Database(self.spec)
 
         self.workdir = None
@@ -57,7 +60,7 @@ class UseExistingSpecStep(Step):
 
     def setup(self, ctx):
         self.is_first_run = True
-        self.existing_spec = loadspec(ctx.workdir, logger=logging.getLogger("halfpipe.ui"))
+        self.existing_spec = loadspec(ctx.workdir, logger=logger)
         self.choice = None
         if self.existing_spec is not None:
             self._append_view(TextView("Found spec file in working directory"))
@@ -73,7 +76,7 @@ class UseExistingSpecStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if self.existing_spec is not None:
             self.choice = self.input_view()
             if self.choice is None:
@@ -83,9 +86,10 @@ class UseExistingSpecStep(Step):
             return self.is_first_run
 
     def next(self, ctx):
-        if self.is_first_run or self.existing_spec is not None:
+        if self.is_first_run:
             self.is_first_run = False
 
+        if self.is_first_run and self.existing_spec is not None:
             if self.choice is None:
                 return BidsStep(self.app)(ctx)
 
@@ -125,29 +129,23 @@ class WorkingDirectoryStep(Step):
 
         if ctx.workdir is None:
             self._append_view(TextView("Specify working directory"))
-            self.workdir_input_view = DirectoryInputView(exists=False)
-            self._append_view(self.workdir_input_view)
+            self.input_view = DirectoryInputView(exists=False)
+            self._append_view(self.input_view)
             self._append_view(SpacerView(1))
             self.predefined_workdir = False
 
-    def run(self, ctx):
+    def run(self, _):
         if self.predefined_workdir:
             return self.is_first_run
-        else:
-            workdir = self.workdir_input_view()
-            try:
-                workdir = Path(workdir)
-                workdir.mkdir(parents=True, exist_ok=True)
-                ctx.workdir = workdir
-                return True
-            except Exception:
-                return False
+
+        self.workdir = self.input_view()
+        return self.workdir is not None
 
     def next(self, ctx):
-        if ctx.workdir is not None:
-            assert isinstance(ctx.workdir, Path)
-            assert ctx.workdir.is_dir()
-            init_workdir(ctx.workdir)
+        assert self.workdir is not None
+
+        workdir = init_workdir(self.workdir)
+        ctx.workdir = workdir
 
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
@@ -163,7 +161,7 @@ class FirstStep(Step):
             f"You are using version {__version__}"
         ]
 
-    def setup(self, ctx):
+    def setup(self, _):
         self._append_view(GiantTextView("HALFpipe"))
         self._append_view(SpacerView(2))
         for line in self._welcome_text():
@@ -174,7 +172,7 @@ class FirstStep(Step):
         self._append_view(SpacerView(1))
         self.is_first_run = True
 
-    def run(self, ctx):
+    def run(self, _):
         return self.is_first_run
 
     def next(self, ctx):
@@ -212,11 +210,11 @@ def init_spec_ui(workdir=None, debug=False):
         assert ctx.workdir is not None
         workdir = ctx.workdir
         if not ctx.use_existing_spec:
-            savespec(ctx.spec, workdir=ctx.workdir, logger=logging.getLogger("halfpipe.ui"))
+            savespec(ctx.spec, workdir=ctx.workdir, logger=logger)
     else:
         import sys
 
-        logging.getLogger("halfpipe.ui").info("Cancelled")
+        logger.info("Cancelled")
         sys.exit(0)
 
     return workdir

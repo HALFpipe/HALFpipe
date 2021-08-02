@@ -20,12 +20,30 @@ def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) ->
 
     fs_root = str(fs_root)
 
-    workdir = resolve(workdir, fs_root)
+    workdir_path = resolve(workdir, fs_root)
 
-    workdir.mkdir(parents=True, exist_ok=True)
+    # check permissions
+    try:
+        workdir_path.mkdir(parents=True, exist_ok=True)
+
+        test_file_path_a = workdir_path / ".halfpipe-permission-test-a"
+        test_file_path_a.touch(exist_ok=True)
+
+        test_file_path_b = workdir_path / ".halfpipe-permission-test-b"
+        test_file_path_b.symlink_to(test_file_path_a)
+
+        test_file_path_b.unlink()
+        test_file_path_a.unlink()
+    except (PermissionError, OSError) as e:
+        raise RuntimeError(
+            f'Cannot use "{workdir}" as working directory for HALFpipe. '
+            "Please check that you have sufficient permissions. "
+            "Please also check that you are using a file system that supports symbolic links. "
+            "For example, FAT32 and exFAT are incompatible."
+        ) from e
 
     LoggingContext.setWorkdir(workdir)
 
-    run_hooks_from_dir(workdir)
+    run_hooks_from_dir(workdir_path)
 
-    return workdir
+    return workdir_path

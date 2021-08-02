@@ -2,18 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict
+from typing import Any, Dict
 
 import os
 import gc
 import logging
 import shutil
-
-from stackprinter import format_current_exception
-
+from threading import Thread
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor
 
+from stackprinter import format_current_exception
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 
@@ -64,7 +63,7 @@ def run_node(node, updatehash, taskid):
     """
 
     # Init variables
-    result = dict(result=None, traceback=None, taskid=taskid)
+    result: Dict[str, Any] = dict(result=None, traceback=None, taskid=taskid)
 
     # Try and execute the node via node.run()
     try:
@@ -85,8 +84,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
     def __init__(self, plugin_args: Dict):
         # Init variables and instance attributes
         super(nip.MultiProcPlugin, self).__init__(plugin_args=plugin_args)
-        self._taskresult = {}
-        self._task_obj = {}
+        self._taskresult: Dict = dict()
+        self._task_obj: Dict = dict()
         self._taskid = 0
         self._rt = None
 
@@ -128,7 +127,16 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._rt = PathReferenceTracer()
 
     def _postrun_check(self):
-        self.pool.shutdown(wait=False)  # do not block
+        shutdown_thread = Thread(
+            target=self.pool.shutdown, kwargs=dict(wait=True), daemon=True
+        )
+        shutdown_thread.start()
+        shutdown_thread.join(timeout=10)
+        if shutdown_thread.is_alive():
+            logger.warning(
+                "Shutdown of ProcessPoolExecutor timed out. This may lead to errors "
+                "when the program closes. These error messages can usually be ignored"
+            )
 
     def _submit_job(self, node, updatehash=False):
         self._taskid += 1
@@ -155,6 +163,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         super(MultiProcPlugin, self)._generate_dependency_list(graph)
 
     def _task_finished_cb(self, jobid, cached=False):
+        assert self.procs is not None
+
         if self._rt is not None:
             name = self.procs[jobid].fullname
             unmark = True  # try to delete this when dependencies finish

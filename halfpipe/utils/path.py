@@ -2,10 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Union
 
-def resolve(path, fs_root):
-    from pathlib import Path
-    from os.path import normpath
+from pathlib import Path
+from os.path import normpath
+
+
+def resolve(path: Union[Path, str], fs_root: Union[Path, str]) -> Path:
 
     fs_root = str(fs_root)
 

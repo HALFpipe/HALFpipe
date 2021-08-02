@@ -6,7 +6,7 @@
 
 """
 
-from typing import Optional
+from typing import List, Optional
 import logging
 import os
 from os import path as op
@@ -58,7 +58,7 @@ class SpecSchema(Schema):
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
-    def validate_analyses(self, data, **kwargs):
+    def validate_analyses(self, data, **_):
         names = []
         for field in ["settings", "features", "models"]:
             if field not in data:
@@ -68,7 +68,7 @@ class SpecSchema(Schema):
             raise ValidationError("Duplicate name")
 
     @validates_schema
-    def validate_files(self, data, **kwargs):
+    def validate_files(self, data, **_):
         if "files" not in data:
             return  # validation error will be raised independently
         descSets = {"seed": set(), "map": set()}
@@ -89,7 +89,7 @@ class SpecSchema(Schema):
                     descSet.add(desc)
 
     @validates_schema
-    def validate_models(self, data, **kwargs):
+    def validate_models(self, data, **_):
         if "models" not in data or "files" not in data:
             return  # validation error will be raised independently
 
@@ -102,7 +102,7 @@ class SpecSchema(Schema):
                     raise ValidationError(f'Spreadsheet "{model.spreadsheet}" not found in files')
 
     @post_load
-    def make_object(self, data, **kwargs):
+    def make_object(self, data, **_):
         return Spec(**data)
 
 
@@ -110,6 +110,10 @@ class Spec:
     def __init__(self, timestamp, files, **kwargs):
         self.timestamp = timestamp
         self.files = files
+
+        self.settings: List = list()
+        self.features: List = list()
+        self.models: List = list()
 
         self.global_settings = dict()
 
@@ -142,8 +146,9 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
             specpath = op.join(workdir, f"spec.{timestampstr}.json")
         else:
             specpath = op.join(workdir, "spec.json")
+
     if not op.isfile(specpath):
-        return
+        return None
 
     logger.info(f"Loading spec file {specpath}")
     with open(specpath, "r") as f:
@@ -153,8 +158,10 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
         spec = SpecSchema().loads(jsn, many=False)
         assert isinstance(spec, Spec)
         return spec
+
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f'Ignored validation error in "{specpath}"', exc_info=e)
+        return None
 
 
 def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):

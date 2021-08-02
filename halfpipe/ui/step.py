@@ -3,12 +3,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
-from typing import Optional, Type
+from typing import Dict, Optional, Type
 
 from calamities import TextView, SpacerView, TextElement, SingleChoiceInputView
 
-import logging
 from copy import deepcopy
+
+from ..utils import logger
 
 
 class Step:
@@ -34,7 +35,7 @@ class Step:
                     if new_ctx is not None:
                         return new_ctx  # only exit loop when we finish
                 except Exception as e:
-                    logging.getLogger("halfpipe.ui").exception("Exception: %s", e)
+                    logger.exception("Exception: %s", exc_info=e)
                     error_color = self.app.layout.color.red
                     self._append_view(TextView(TextElement(str(e), color=error_color)))
                     self._append_view(SpacerView(1))
@@ -51,7 +52,7 @@ class Step:
     @abstractmethod
     def teardown(self):
         for view in reversed(self.views):
-            logging.getLogger("halfpipe.ui").debug(f'Removing view "{view}"')
+            logger.debug(f'Removing view "{view}"')
             self.app.layout.remove(view)
 
     @abstractmethod
@@ -63,7 +64,7 @@ class Step:
         raise NotImplementedError
 
     def _append_view(self, view):
-        logging.getLogger("halfpipe.ui").debug(f'Adding view "{view}"')
+        logger.debug(f'Adding view "{view}"')
         view.appendto(self.app.layout)
         self.views.append(view)
 
@@ -76,9 +77,9 @@ class BranchStep(Step):
 
     is_vertical = False
 
-    options = dict()
+    options: Dict = dict()
 
-    def _should_run(self, ctx):
+    def _should_run(self, _):
         return True
 
     def setup(self, ctx):
@@ -98,7 +99,7 @@ class BranchStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if not self.should_run:
             return self.is_first_run
         else:

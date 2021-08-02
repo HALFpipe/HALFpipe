@@ -103,6 +103,9 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     if name.endswith("bold_t1_trans_wf.bold_to_t1w_transform"):
         node._mem_gb = memcalc.volume_std_gb * omp_nthreads
 
+    if name.endswith("bold_bold_trans_wf.bold_transform"):
+        node._mem_gb = 2 * memcalc.volume_gb * omp_nthreads
+
     if name.endswith("bold_std_trans_wf.merge"):
         node._mem_gb = 0.75 * memcalc.series_std_gb
 
@@ -120,7 +123,6 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
         for s in [
             "bold_stc_wf.slice_timing_correction",
             "bold_hmc_wf.mcflirt",
-            "bold_bold_trans_wf.bold_transform",
             "bold_bold_trans_wf.merge",
         ]
     ):
