@@ -19,6 +19,229 @@ import networkx as nx
 from ..utils import logger, resolve, timestampstr
 
 
+def run_stage_ui(opts):
+    from ..ui import init_spec_ui
+    from calamities.config import Config as CalamitiesConfig
+
+    CalamitiesConfig.fs_root = str(opts.fs_root)
+    opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
+
+
+def run_stage_workflow(opts):
+    from fmriprep import config
+
+    if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
+        config.nipype.omp_nthreads = opts.nipype_omp_nthreads
+        omp_nthreads_origin = "command line arguments"
+
+    elif opts.use_cluster:
+        config.nipype.omp_nthreads = 2
+        omp_nthreads_origin = "from --use-cluster"
+
+    else:
+        omp_nthreads = opts.nipype_n_procs // 4
+        if omp_nthreads < 1:
+            omp_nthreads = 1
+        if omp_nthreads > 8:
+            omp_nthreads = 8
+        config.nipype.omp_nthreads = omp_nthreads
+
+        omp_nthreads_origin = "inferred"
+
+    logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
+
+    from ..workflow.base import init_workflow
+    from ..workflow.execgraph import init_execgraph
+
+    workflow = init_workflow(opts.workdir)
+
+    if workflow is None:
+        return
+
+    opts.graphs = init_execgraph(opts.workdir, workflow)
+
+    if opts.graphs is None:
+        return
+
+    if opts.use_cluster:
+        from ..cluster import create_example_script
+
+        create_example_script(opts.workdir, opts.graphs, opts)
+
+
+def run_stage_run(opts):
+    if opts.graphs is None:
+        from ..io import loadpicklelzma
+
+        assert (
+            opts.graphs_file is not None
+        ), "Missing required --graphs-file input for step run"
+
+        graphs_file = resolve(opts.graphs_file, opts.fs_root)
+        graphs = loadpicklelzma(graphs_file)
+
+        if not isinstance(graphs, OrderedDict):
+            raise RuntimeError(
+                f'Could not read graphs from "{opts.graphs_file}". '
+            )
+
+        logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
+    else:
+        logger.info("Using graphs from previous step")
+
+    if opts.nipype_resource_monitor is True:
+        import nipype
+        nipype.config.enable_resource_monitor()
+
+    plugin_args: Dict[str, Union[Path, bool, float]] = dict(
+        workdir=opts.workdir,
+        watchdog=opts.watchdog,
+        stop_on_first_crash=opts.debug,
+        resource_monitor=opts.nipype_resource_monitor,
+        raise_insufficient=False,
+        keep=opts.keep,
+    )
+
+    if opts.nipype_n_procs is not None:
+        plugin_args["n_procs"] = opts.nipype_n_procs
+
+    if opts.nipype_memory_gb is not None:
+        plugin_args["memory_gb"] = opts.nipype_memory_gb
+    else:
+        from ..memory import memory_limit
+
+        memory_gb = memory_limit()
+        if memory_gb is not None:
+            plugin_args["memory_gb"] = memory_gb
+
+    runnername = f"{opts.nipype_run_plugin}Plugin"
+
+    import nipype.pipeline.plugins as nip
+    import halfpipe.plugins as ppp
+
+    if hasattr(ppp, runnername):
+        logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
+        runnercls = getattr(ppp, runnername)
+
+    elif hasattr(nip, runnername):
+        logger.warning(f'Using unsupported nipype_run_plugin "{runnername}"')
+        runnercls = getattr(nip, runnername)
+
+    else:
+        raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
+
+    logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
+
+    model_chunk = None
+    if "model" in opts.graphs:
+        model_chunk = opts.graphs["model"]
+        del opts.graphs["model"]
+
+    from ..workflow.execgraph import filter_subject_graphs
+
+    subject_graphs = OrderedDict(reversed(list(opts.graphs.items())))
+    subject_graphs = filter_subject_graphs(subject_graphs, opts)
+
+    n_chunks = opts.n_chunks
+    if n_chunks is None:
+        if opts.subject_chunks or opts.use_cluster:
+            n_chunks = len(subject_graphs)
+        else:
+            n_chunks = ceil(len(subject_graphs) / float(opts.max_chunk_size))
+
+    subjectlevel_chunks = []
+    graphs_iter = iter(subject_graphs.values())
+
+    index_arrays = np.array_split(np.arange(len(subject_graphs)), n_chunks)
+    for index_array in index_arrays:
+        graph_list = list(islice(graphs_iter, len(index_array)))
+        subjectlevel_chunks.append(
+            nx.compose_all(graph_list)
+        )  # take len(index_array) subjects and compose
+
+    chunks_to_run: List[nx.DiGraph] = list()
+
+    if opts.only_chunk_index is not None:
+        zero_based_chunk_index = opts.only_chunk_index - 1
+        if zero_based_chunk_index >= n_chunks or zero_based_chunk_index < 0:
+            logger.info(f"Not running chunk {opts.only_chunk_index} as is not defined")
+            return
+
+        logger.info(
+            f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}"
+        )
+        logger.info("Will not run model chunk")
+
+        chunks_to_run.append(
+            subjectlevel_chunks[zero_based_chunk_index]
+        )
+
+    elif opts.only_model_chunk:
+        logger.info("Will not run subject level chunks")
+        logger.info("Will run model chunk")
+
+        if model_chunk is not None:
+            chunks_to_run.append(model_chunk)
+
+    elif len(subjectlevel_chunks) > 0:
+        if len(subjectlevel_chunks) > 1:
+            logger.info(f"Will run all {n_chunks} subject level chunks")
+        else:
+            logger.info("Will run the subject level chunk")
+        logger.info("Will run model chunk")
+
+        chunks_to_run.extend(subjectlevel_chunks)
+        if model_chunk is not None:
+            chunks_to_run.append(model_chunk)
+
+    else:
+        raise ValueError("No graphs to run")
+
+    from nipype.interfaces import freesurfer as fs
+
+    uses_freesurfer = any(
+        isinstance(node.interface, fs.FSCommand)
+        for chunk in chunks_to_run
+        for node in chunk.nodes
+    )
+
+    if uses_freesurfer:
+        from niworkflows.utils.misc import check_valid_fs_license
+
+        if not check_valid_fs_license():
+            logger.error(
+                "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
+                "HALFpipe looked for an existing license file at several paths, in this order: \n"
+                '1) a "license.txt" file in your HALFpipe working directory \n'
+                '2) command line argument "--fs-license-file" \n'
+                "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
+            )
+            return
+
+    from nipype.pipeline import engine as pe
+
+    for i, chunk in enumerate(chunks_to_run):
+        if len(chunks_to_run) > 1:
+            logger.info(f"Running chunk {i+1} of {len(chunks_to_run)}")
+
+        try:
+            assert isinstance(chunk, nx.DiGraph)
+
+            runner = runnercls(plugin_args=plugin_args)
+            firstnode = next(iter(chunk.nodes()))
+            if firstnode is not None:
+                assert isinstance(firstnode, pe.Node)
+                runner.run(chunk, updatehash=False, config=firstnode.config)
+        except Exception as e:
+            if opts.debug:
+                raise e
+            else:
+                logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
+
+        if len(chunks_to_run) > 1:
+            logger.info(f"Completed chunk {i+1} of {len(chunks_to_run)}")
+
+
 def run(opts, should_run):
     # log some basic information
     from .. import __version__
@@ -34,24 +257,17 @@ def run(opts, should_run):
 
     logger.debug(f"debug={opts.debug}")
 
-    workdir = opts.workdir
-    if workdir is not None:
-        workdir = Path(workdir)
-        workdir.mkdir(exist_ok=True, parents=True)
+    if opts.workdir is not None:
+        opts.workdir = Path(opts.workdir)
+        opts.workdir.mkdir(exist_ok=True, parents=True)
 
     logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:
         logger.info("Stage: spec-ui")
+        run_stage_ui(opts)
 
-        from ..ui import init_spec_ui
-        from calamities.config import Config as CalamitiesConfig
-
-        CalamitiesConfig.fs_root = str(opts.fs_root)
-        workdir = init_spec_ui(workdir=workdir, debug=opts.debug)
-
-    assert workdir is not None, "Missing working directory"
-    assert Path(workdir).is_dir(), "Working directory does not exist"
-    opts.workdir = workdir
+    assert opts.workdir is not None, "Missing working directory"
+    assert Path(opts.workdir).is_dir(), "Working directory does not exist"
 
     if opts.fs_license_file is not None:
         fs_license_file = resolve(opts.fs_license_file, opts.fs_root)
@@ -59,7 +275,7 @@ def run(opts, should_run):
             os.environ["FS_LICENSE"] = str(fs_license_file)
     else:
         license_files = list(glob(str(
-            Path(workdir) / "*license*"
+            Path(opts.workdir) / "*license*"
         )))
 
         if len(license_files) > 0:
@@ -69,225 +285,19 @@ def run(opts, should_run):
     if os.environ.get("FS_LICENSE") is not None:
         logger.debug(f'Using FreeSurfer license "{os.environ["FS_LICENSE"]}"')
 
-    graphs = None
+    opts.graphs = None
 
     logger.debug(f'should_run["workflow"]={should_run["workflow"]}')
     if should_run["workflow"]:
         logger.info("Stage: workflow")
-
-        from fmriprep import config
-
-        if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
-            config.nipype.omp_nthreads = opts.nipype_omp_nthreads
-            omp_nthreads_origin = "command line arguments"
-
-        elif opts.use_cluster:
-            config.nipype.omp_nthreads = 2
-            omp_nthreads_origin = "from --use-cluster"
-
-        else:
-            omp_nthreads = opts.nipype_n_procs // 4
-            if omp_nthreads < 1:
-                omp_nthreads = 1
-            if omp_nthreads > 8:
-                omp_nthreads = 8
-            config.nipype.omp_nthreads = omp_nthreads
-
-            omp_nthreads_origin = "inferred"
-
-        logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
-
-        from ..workflow.base import init_workflow
-        from ..workflow.execgraph import init_execgraph
-
-        workflow = init_workflow(workdir)
-
-        if workflow is None:
-            return
-
-        graphs = init_execgraph(workdir, workflow)
-
-        if graphs is None:
-            return
-
-        if opts.use_cluster:
-            from ..cluster import create_example_script
-
-            create_example_script(workdir, graphs, opts)
+        run_stage_workflow(opts)
 
     logger.debug(f'should_run["run"]={should_run["run"]}')
     logger.debug(f"opts.use_cluster={opts.use_cluster}")
 
     if should_run["run"] and not opts.use_cluster:
         logger.info("Stage: run")
-
-        if graphs is None:
-            from ..io import loadpicklelzma
-
-            assert (
-                opts.graphs_file is not None
-            ), "Missing required --graphs-file input for step run"
-
-            graphs_file = resolve(opts.graphs_file, opts.fs_root)
-            graphs = loadpicklelzma(graphs_file)
-
-            assert isinstance(graphs, OrderedDict)
-
-            logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
-        else:
-            logger.info("Using graphs from previous step")
-
-        if opts.nipype_resource_monitor is True:
-            import nipype
-            nipype.config.enable_resource_monitor()
-
-        plugin_args: Dict[str, Union[Path, bool, float]] = dict(
-            workdir=workdir,
-            watchdog=opts.watchdog,
-            stop_on_first_crash=opts.debug,
-            resource_monitor=opts.nipype_resource_monitor,
-            raise_insufficient=False,
-            keep=opts.keep,
-        )
-
-        if opts.nipype_n_procs is not None:
-            plugin_args["n_procs"] = opts.nipype_n_procs
-
-        if opts.nipype_memory_gb is not None:
-            plugin_args["memory_gb"] = opts.nipype_memory_gb
-        else:
-            from ..memory import memory_limit
-
-            memory_gb = memory_limit()
-            if memory_gb is not None:
-                plugin_args["memory_gb"] = memory_gb
-
-        runnername = f"{opts.nipype_run_plugin}Plugin"
-
-        import nipype.pipeline.plugins as nip
-        import halfpipe.plugins as ppp
-
-        if hasattr(ppp, runnername):
-            logger.info(f'Using a patched version of nipype_run_plugin "{runnername}"')
-            runnercls = getattr(ppp, runnername)
-
-        elif hasattr(nip, runnername):
-            logger.warning(f'Using unsupported nipype_run_plugin "{runnername}"')
-            runnercls = getattr(nip, runnername)
-
-        else:
-            raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
-
-        logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
-
-        model_chunk = None
-        if "model" in graphs:
-            model_chunk = graphs["model"]
-            del graphs["model"]
-
-        from ..workflow.execgraph import filter_subject_graphs
-
-        subject_graphs = OrderedDict(reversed(list(graphs.items())))
-        subject_graphs = filter_subject_graphs(subject_graphs, opts)
-
-        n_chunks = opts.n_chunks
-        if n_chunks is None:
-            if opts.subject_chunks or opts.use_cluster:
-                n_chunks = len(subject_graphs)
-            else:
-                n_chunks = ceil(len(subject_graphs) / float(opts.max_chunk_size))
-
-        subjectlevel_chunks = []
-        graphs_iter = iter(subject_graphs.values())
-
-        index_arrays = np.array_split(np.arange(len(subject_graphs)), n_chunks)
-        for index_array in index_arrays:
-            graph_list = list(islice(graphs_iter, len(index_array)))
-            subjectlevel_chunks.append(
-                nx.compose_all(graph_list)
-            )  # take len(index_array) subjects and compose
-
-        chunks_to_run: List[nx.DiGraph] = list()
-
-        if opts.only_chunk_index is not None:
-            zero_based_chunk_index = opts.only_chunk_index - 1
-            if zero_based_chunk_index >= n_chunks or zero_based_chunk_index < 0:
-                logger.info(f"Not running chunk {opts.only_chunk_index} as is not defined")
-                return
-
-            logger.info(
-                f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}"
-            )
-            logger.info("Will not run model chunk")
-
-            chunks_to_run.append(
-                subjectlevel_chunks[zero_based_chunk_index]
-            )
-
-        elif opts.only_model_chunk:
-            logger.info("Will not run subject level chunks")
-            logger.info("Will run model chunk")
-
-            if model_chunk is not None:
-                chunks_to_run.append(model_chunk)
-
-        elif len(subjectlevel_chunks) > 0:
-            if len(subjectlevel_chunks) > 1:
-                logger.info(f"Will run all {n_chunks} subject level chunks")
-            else:
-                logger.info("Will run the subject level chunk")
-            logger.info("Will run model chunk")
-
-            chunks_to_run.extend(subjectlevel_chunks)
-            if model_chunk is not None:
-                chunks_to_run.append(model_chunk)
-
-        else:
-            raise ValueError("No graphs to run")
-
-        from nipype.interfaces import freesurfer as fs
-
-        uses_freesurfer = any(
-            isinstance(node.interface, fs.FSCommand)
-            for chunk in chunks_to_run
-            for node in chunk.nodes
-        )
-
-        if uses_freesurfer:
-            from niworkflows.utils.misc import check_valid_fs_license
-
-            if not check_valid_fs_license():
-                logger.error(
-                    "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
-                    "HALFpipe looked for an existing license file at several paths, in this order: \n"
-                    '1) a "license.txt" file in your HALFpipe working directory \n'
-                    '2) command line argument "--fs-license-file" \n'
-                    "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
-                )
-                return
-
-        from nipype.pipeline import engine as pe
-
-        for i, chunk in enumerate(chunks_to_run):
-            if len(chunks_to_run) > 1:
-                logger.info(f"Running chunk {i+1} of {len(chunks_to_run)}")
-
-            try:
-                assert isinstance(chunk, nx.DiGraph)
-
-                runner = runnercls(plugin_args=plugin_args)
-                firstnode = next(iter(chunk.nodes()))
-                if firstnode is not None:
-                    assert isinstance(firstnode, pe.Node)
-                    runner.run(chunk, updatehash=False, config=firstnode.config)
-            except Exception as e:
-                if opts.debug:
-                    raise e
-                else:
-                    logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
-
-            if len(chunks_to_run) > 1:
-                logger.info(f"Completed chunk {i+1} of {len(chunks_to_run)}")
+        run_stage_run(opts)
 
 
 def main():
