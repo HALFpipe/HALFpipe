@@ -17,7 +17,7 @@ from calamities.config import Config as CalamitiesConfig
 
 from .step import Step
 from .. import __version__
-from ..model import SpecSchema, loadspec, savespec
+from ..model.spec import Spec, SpecSchema, loadspec, savespec
 from ..io.index import Database
 from ..workdir import init_workdir
 from ..logging import Context as LoggingContext
@@ -31,7 +31,10 @@ from ..utils import logger
 class Context:
     def __init__(self):
         spec_schema = SpecSchema()
-        self.spec = spec_schema.load(spec_schema.dump({}), partial=True)  # initialize with defaults
+        spec = spec_schema.load(spec_schema.dump({}), partial=True)
+        assert isinstance(spec, Spec)
+        self.spec: Spec = spec  # initialize with defaults
+
         self.database = Database(self.spec)
 
         self.workdir = None
@@ -83,9 +86,10 @@ class UseExistingSpecStep(Step):
             return self.is_first_run
 
     def next(self, ctx):
-        if self.is_first_run or self.existing_spec is not None:
+        if self.is_first_run:
             self.is_first_run = False
 
+        if self.is_first_run and self.existing_spec is not None:
             if self.choice is None:
                 return BidsStep(self.app)(ctx)
 
