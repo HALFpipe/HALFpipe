@@ -40,7 +40,7 @@ class Context(object):
 
     @classmethod
     def queue(cls):
-        return cls.instance().queue
+        return cls.instance()._queue
 
     @classmethod
     def loggingargs(cls):
@@ -74,7 +74,7 @@ class Context(object):
     def __init__(self):
         ctx = get_context("forkserver")
 
-        self.queue = ctx.JoinableQueue()
+        self._queue = ctx.JoinableQueue()
 
-        self.worker = ctx.Process(target=runWorker, args=(self.queue,))
+        self.worker = ctx.Process(target=runWorker, args=(self._queue,))
         self.worker.start()

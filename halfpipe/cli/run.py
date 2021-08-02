@@ -302,8 +302,8 @@ def run(opts, should_run):
 
 def main():
     from ..logging.base import (
-        setupcontext as setuplogging,
-        teardown as teardownlogging
+        setupcontext as setup_logging_context,
+        teardown as teardown_logging
     )
 
     opts = None
@@ -313,7 +313,7 @@ def main():
     profile = False
 
     try:
-        setuplogging()
+        setup_logging_context()
 
         from .parser import parse_args
         opts, should_run = parse_args()
@@ -342,7 +342,7 @@ def main():
                     Path(opts.workdir) / f"profile.{timestampstr():s}.prof"
                 )
 
-        teardownlogging()
+        teardown_logging()
 
         # clean up orphan processes
 

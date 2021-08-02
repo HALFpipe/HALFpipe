@@ -28,7 +28,7 @@ class Writer:
         if not isinstance(message, Message) or message.type != "log":
             return False  # ignore invalid
 
-        if message.levelno < self.levelno:
+        if message.levelno is not None and message.levelno < self.levelno:
             return False  # filter level
 
         return True
@@ -46,6 +46,8 @@ class Writer:
                     continue
 
                 message = await self.queue.get()
+
+                await self.canWrite.wait()
 
                 if not self.filterMessage(message):
                     self.queue.task_done()
