@@ -1,5 +1,5 @@
 ARG FMRIPREP_VERSION=20.2.3
-FROM nipreps/fmriprep:${FMRIPREP_VERSION}
+FROM nipreps/fmriprep:${FMRIPREP_VERSION} AS base
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     XDG_CACHE_HOME="/home/fmriprep/.cache"
@@ -17,7 +17,22 @@ RUN mkdir /ext /halfpipe && \
 COPY requirements.txt install-requirements.sh /tmp/
 
 RUN cd /tmp && \
-    ./install-requirements.sh --requirements-file requirements.txt && sync && \
+    ./install-requirements.sh --requirements-file requirements.txt && sync
+
+FROM base AS dev
+COPY requirements-test.txt /tmp
+
+RUN cd /tmp && \
+    ./install-requirements.sh --requirements-file requirements-test.txt && sync
+
+RUN echo "bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg==" | base64 --decode > ${FREESURFER_HOME}/license.txt
+
+WORKDIR /halfpipe
+
+ENTRYPOINT ["pytest", "--cov", "--cov-report=xml"]
+
+FROM base AS final
+RUN cd /tmp && \
     conda clean --yes --all --force-pkgs-dirs && sync && \
     find /usr/local/miniconda/ -follow -type f -name "*.a" -delete && sync
 
@@ -27,7 +42,6 @@ RUN cd /tmp && \
 RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
-
 # download all resources
 COPY halfpipe/resource.py /tmp/
 RUN python /tmp/resource.py
