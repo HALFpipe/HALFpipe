@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .addmeans import AddMeans
-from .blurinmask import BlurInMask
 from .maskcoverage import MaskCoverage
 from .maxintensity import MaxIntensity
 from .merge import Merge, MergeMask
@@ -12,7 +11,6 @@ from .zscore import ZScore
 
 __all__ = [
     "AddMeans",
-    "BlurInMask",
     "MaskCoverage",
     "MaxIntensity",
     "Merge",

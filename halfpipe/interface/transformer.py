@@ -39,7 +39,7 @@ class Transformer(SimpleInterface):
 
     suffix = "transformed"
 
-    def _transform(self, array):
+    def _transform(self, _):
         raise NotImplementedError()
 
     def _load(self, in_file, mask_file=None):
@@ -113,7 +113,7 @@ class Transformer(SimpleInterface):
             in_img = self.in_img
 
             if self.mask is not None:
-                m, n = array2.T.shape
+                _, n = array2.T.shape
                 out_array = np.zeros((*in_img.shape[:3], n))
                 out_array[self.mask, :] = array2.T
             else:
