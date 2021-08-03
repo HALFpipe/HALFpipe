@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
+from ..step import YesNoStep
 from ..pattern import FilePatternStep, FilePatternSummaryStep
 from .func import FuncStep, FuncSummaryStep
 
@@ -12,6 +13,8 @@ filetype_str = "T1-weighted image"
 filedict = {"datatype": "anat", "suffix": "T1w"}
 schema = T1wFileSchema
 
+next_step_type = FuncStep
+
 
 class AnatSummaryStep(FilePatternSummaryStep):
     filetype_str = filetype_str
@@ -19,6 +22,22 @@ class AnatSummaryStep(FilePatternSummaryStep):
     schema = schema
 
     next_step_type = FuncSummaryStep
+
+
+class LesionMaskStep(FilePatternStep):
+    filetype_str = "lesion mask"
+    filedict = {"datatype": "anat", "label": "lesion", "suffix": "roi"}
+
+    schema = None
+
+    next_step_type = next_step_type
+
+
+class HasLesionMaskStep(YesNoStep):
+    header_str = "Are lesion masks available?"
+
+    yes_step_type = LesionMaskStep
+    no_step_type = next_step_type
 
 
 class AnatStep(FilePatternStep):
@@ -30,4 +49,4 @@ class AnatStep(FilePatternStep):
 
     required_in_path_entities = ["subject"]
 
-    next_step_type = FuncStep
+    next_step_type = HasLesionMaskStep

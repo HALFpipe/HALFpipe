@@ -77,7 +77,7 @@ class BranchStep(Step):
 
     is_vertical = False
 
-    options: Dict = dict()
+    options: Dict[str, Type[Step]] = dict()
 
     def _should_run(self, _):
         return True
