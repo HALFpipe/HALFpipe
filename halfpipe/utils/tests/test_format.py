@@ -7,6 +7,7 @@ import pytest
 from ..format import formatlikebids
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 @pytest.mark.parametrize(
     "a, b",

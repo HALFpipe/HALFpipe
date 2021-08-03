@@ -216,71 +216,80 @@ def mock_spec(bids_data, task_events, pcc_mask):
         ica_aroma=True,
     )
 
-    spec.settings = list(map(SettingSchema().load, [
-        dict(
-            name="dualRegAndSeedCorrAndTaskBasedSetting",
-            output_image=False,
-            bandpass_filter=dict(type="gaussian", hp_width=125.0),
-            smoothing=dict(fwhm=6.0),
-            **setting_base,
-
-        ),
-        dict(
-            name="fALFFUnfilteredSetting",
-            output_image=False,
-            **setting_base,
-        ),
-        dict(
-            name="fALFFAndReHoAndCorrMatrixSetting",
-            output_image=False,
-            bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
-            **setting_base,
-        ),
-    ]))
-
-    spec.features = list(map(FeatureSchema().load, [
-        dict(
-            name="taskBased",
-            type="task_based",
-            high_pass_filter_cutoff=125.0,
-            conditions=["a", "b"],
-            contrasts=[
-                dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
+    spec.settings = list(
+        map(
+            SettingSchema().load,
+            [
+                dict(
+                    name="dualRegAndSeedCorrAndTaskBasedSetting",
+                    output_image=False,
+                    bandpass_filter=dict(type="gaussian", hp_width=125.0),
+                    smoothing=dict(fwhm=6.0),
+                    **setting_base,
+                ),
+                dict(
+                    name="fALFFUnfilteredSetting",
+                    output_image=False,
+                    **setting_base,
+                ),
+                dict(
+                    name="fALFFAndReHoAndCorrMatrixSetting",
+                    output_image=False,
+                    bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
+                    **setting_base,
+                ),
             ],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting",
-        ),
-        dict(
-            name="seedCorr",
-            type="seed_based_connectivity",
-            seeds=["pcc"],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting"
-        ),
-        dict(
-            name="dualReg",
-            type="dual_regression",
-            maps=["smith09"],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting"
-        ),
-        dict(
-            name="corrMatrix",
-            type="atlas_based_connectivity",
-            atlases=["schaefer2018"],
-            setting="fALFFAndReHoAndCorrMatrixSetting"
-        ),
-        dict(
-            name="reHo",
-            type="reho",
-            setting="fALFFAndReHoAndCorrMatrixSetting",
-            smoothing=dict(fwhm=6.0),
-        ),
-        dict(
-            name="fALFF",
-            type="falff",
-            setting="fALFFAndReHoAndCorrMatrixSetting",
-            unfiltered_setting="fALFFUnfilteredSetting",
-            smoothing=dict(fwhm=6.0),
-        ),
-    ]))
+        )
+    )
+
+    spec.features = list(
+        map(
+            FeatureSchema().load,
+            [
+                dict(
+                    name="taskBased",
+                    type="task_based",
+                    high_pass_filter_cutoff=125.0,
+                    conditions=["a", "b"],
+                    contrasts=[
+                        dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
+                    ],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="seedCorr",
+                    type="seed_based_connectivity",
+                    seeds=["pcc"],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="dualReg",
+                    type="dual_regression",
+                    maps=["smith09"],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="corrMatrix",
+                    type="atlas_based_connectivity",
+                    atlases=["schaefer2018"],
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                ),
+                dict(
+                    name="reHo",
+                    type="reho",
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                    smoothing=dict(fwhm=6.0),
+                ),
+                dict(
+                    name="fALFF",
+                    type="falff",
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                    unfiltered_setting="fALFFUnfilteredSetting",
+                    smoothing=dict(fwhm=6.0),
+                ),
+            ],
+        )
+    )
 
     spec.global_settings.update(dict(sloppy=True))
 
@@ -297,6 +306,8 @@ def test_empty(tmp_path, mock_spec):
         init_workflow(tmp_path)
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(4 * 3600)
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 
@@ -310,6 +321,7 @@ def test_with_reconall(tmp_path, mock_spec):
     assert any("recon" in u.name for u in graph.nodes)
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(4 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)

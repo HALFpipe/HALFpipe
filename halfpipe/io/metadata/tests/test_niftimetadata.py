@@ -14,6 +14,7 @@ from ....model import File
 from ..niftimetadata import NiftiheaderMetadataLoader
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
     size = (2, 3, 4)
@@ -30,6 +31,7 @@ def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
     assert "repetition_time" not in fileobj.metadata
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 @pytest.mark.parametrize("units", ["msec", "usec", "sec", "unknown"])
 def test_NiftiheaderMetadataLoader_repetition_time_units(tmp_path, units):

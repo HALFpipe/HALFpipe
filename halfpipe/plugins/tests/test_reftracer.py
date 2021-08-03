@@ -23,6 +23,7 @@ class DontRunRunner:
         pass
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 def test_PathReferenceTracer(tmp_path):
     import nipype.interfaces.utility as niu
@@ -134,6 +135,7 @@ def select(a, b):
     return b
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 def test_PathReferenceTracer_indirect_refs(tmp_path):
     from nipype import config
