@@ -91,6 +91,14 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
+        output_spaces = f"{constants.reference_space}:res-{constants.reference_res}"
+
+        if spec.global_settings["run_reconall"]:
+            output_spaces += " "
+            output_spaces += "fsaverage:den-164k"
+            output_spaces += " "
+            output_spaces += "fsnative"
+
         # create config
         config.from_dict(
             {
@@ -112,7 +120,7 @@ class FmriprepFactory(Factory):
                 "cifti_output": False,  # we do this in halfpipe
                 "t2s_coreg": spec.global_settings["t2s_coreg"],
                 "medial_surface_nan": spec.global_settings["medial_surface_nan"],
-                "output_spaces": f"{constants.reference_space}:res-{constants.reference_res}",
+                "output_spaces": output_spaces,
                 "bold2t1w_dof": spec.global_settings["bold2t1w_dof"],
                 "fmap_bspline": spec.global_settings["fmap_bspline"],
                 "force_syn": spec.global_settings["force_syn"],
@@ -191,7 +199,7 @@ class FmriprepFactory(Factory):
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
 
-    def connect(self, nodehierarchy, node, sourcefile=None, subject_id=None, **kwargs):
+    def connect(self, nodehierarchy, node, sourcefile=None, subject_id=None, **_):
         """
         connect equally names attrs
         preferentially use datasinked outputs
