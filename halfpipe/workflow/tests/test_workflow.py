@@ -15,7 +15,6 @@ from math import inf
 import pandas as pd
 import nibabel as nib
 from nilearn.image import new_img_like
-from nipype.pipeline import plugins as nip
 from fmriprep import config
 
 from ...resource import get as get_resource
@@ -27,6 +26,8 @@ from ...io.index import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema
 from ...model.spec import Spec, SpecSchema, savespec
 from ...utils import nvol
+from ...cli.parser import build_parser
+from ...cli.run import run_stage_run
 
 
 @pytest.fixture(scope="module")
@@ -287,11 +288,17 @@ def test_feature_extraction(tmp_path, mock_spec):
     config.nipype.omp_nthreads = 4
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(stop_on_first_crash=True)
-    workflow.config["execution"].update(workflow_args)
 
     graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
-    runner = nip.LinearPlugin(plugin_args=workflow_args)
-    runner.run(graph, updatehash=False, config=workflow.config)
+    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+
+    parser = build_parser()
+    opts = parser.parse_args(args=list())
+
+    opts.graphs = graphs
+    opts.nipype_run_plugin = "Linear"
+    opts.debug = True
+
+    run_stage_run(opts)
