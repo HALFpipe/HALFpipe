@@ -9,12 +9,13 @@ from nipype.pipeline import engine as pe
 from fmriprep import config
 from fmriprep.cli.workflow import build_workflow
 
+from .collect import collect_fieldmaps
 from .factory import Factory
 from .report import init_anat_report_wf, init_func_report_wf
 from .constants import constants
 from .memory import MemoryCalculator, patch_mem_gb
 
-from ..utils import deepcopyfactory
+from ..utils import deepcopyfactory, logger
 
 
 def _find_input(hierarchy, node, attr):
@@ -41,7 +42,7 @@ class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
 
-    def setup(self, workdir, boldfilepaths):
+    def setup(self, workdir, bold_file_paths):
         spec = self.spec
         database = self.database
         bidsdatabase = self.bidsdatabase
@@ -58,13 +59,13 @@ class FmriprepFactory(Factory):
 
         subjects = set()
         bidssubjects = set()
-        for boldfilepath in boldfilepaths:
-            subject = database.tagval(boldfilepath, "sub")
+        for bold_file_path in bold_file_paths:
+            subject = database.tagval(bold_file_path, "sub")
 
             if subject is None:
                 continue
 
-            bidspath = bidsdatabase.tobids(boldfilepath)
+            bidspath = bidsdatabase.tobids(bold_file_path)
             bidssubject = bidsdatabase.tagval(bidspath, "subject")
 
             if bidssubject is None:
@@ -146,19 +147,26 @@ class FmriprepFactory(Factory):
         workflow.add_nodes([fmriprep_wf])
 
         # patch workflow
-        for boldfilepath in boldfilepaths:
-            func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=boldfilepath)[-1]
+        for bold_file_path in bold_file_paths:
+            func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=bold_file_path)[-1]
             assert isinstance(func_preproc_wf, pe.Workflow)
+
+            if len(collect_fieldmaps(self.database, bold_file_path)) > 0:  # has fieldmaps
+                if func_preproc_wf.get_node("sdc_estimate_wf") is None:
+                    logger.warning(
+                        f'fMRIPrep did not detect field maps for file "{bold_file_path}"'
+                    )
 
             # disable preproc output to save disk space
             func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
             assert isinstance(func_derivatives_wf, pe.Workflow)
-            ds_bold_std = func_derivatives_wf.get_node("ds_bold_std")
-            assert isinstance(ds_bold_std, pe.Node)
-            func_derivatives_wf.remove_nodes([ds_bold_std])
+            for name in ["ds_bold_surfs", "ds_bold_std"]:
+                node = func_derivatives_wf.get_node(name)
+                if isinstance(node, pe.Node):
+                    func_derivatives_wf.remove_nodes([node])
 
             # patch memory usage
-            memcalc = MemoryCalculator.from_bold_file(boldfilepath)
+            memcalc = MemoryCalculator.from_bold_file(bold_file_path)
             for node in func_preproc_wf._get_all_nodes():
                 patch_mem_gb(node, memcalc)
 
@@ -178,12 +186,12 @@ class FmriprepFactory(Factory):
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
-        for boldfilepath in boldfilepaths:
-            hierarchy = self._get_hierarchy("reports_wf", sourcefile=boldfilepath)
+        for bold_file_path in bold_file_paths:
+            hierarchy = self._get_hierarchy("reports_wf", sourcefile=bold_file_path)
 
             wf = init_func_report_wf(
                 workdir=str(self.workdir),
-                memcalc=MemoryCalculator.from_bold_file(boldfilepath),
+                memcalc=MemoryCalculator.from_bold_file(bold_file_path),
             )
             assert wf.name == "func_report_wf"  # check name for line 206
             hierarchy[-1].add_nodes([wf])
@@ -191,10 +199,10 @@ class FmriprepFactory(Factory):
 
             inputnode = wf.get_node("inputnode")
             assert isinstance(inputnode, pe.Node)
-            inputnode.inputs.tags = database.tags(boldfilepath)
+            inputnode.inputs.tags = database.tags(bold_file_path)
             inputnode.inputs.fd_thres = spec.global_settings["fd_thres"]
 
-            self.connect(hierarchy, inputnode, sourcefile=boldfilepath)
+            self.connect(hierarchy, inputnode, sourcefile=bold_file_path)
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
@@ -247,6 +255,7 @@ class FmriprepFactory(Factory):
 
         # anat only
         anat_wf = wf.get_node("anat_preproc_wf")
+
         if anat_wf is None:
             # func first
             _connect(hierarchy)
@@ -257,7 +266,16 @@ class FmriprepFactory(Factory):
                 self.connect_attr([*hierarchy, initial_boldref_wf], outputnode, "skip_vols", nodehierarchy, node, "skip_vols")
                 connected_attrs.add("skip_vols")
 
-            for name in ["bold_bold_trans_wf", "bold_hmc_wf", "final_boldref_wf", "bold_reg_wf", "sdc_estimate_wf", "sdc_bypass_wf"]:
+            for name in [
+                    "bold_bold_trans_wf",
+                    "bold_hmc_wf",
+                    "final_boldref_wf",
+                    "bold_reg_wf",
+                    "sdc_estimate_wf",
+                    "sdc_bypass_wf",
+                    "bold_std_trans_wf",
+                    "bold_surf_wf"
+            ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
@@ -269,16 +287,18 @@ class FmriprepFactory(Factory):
                 self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
                 connected_attrs.add("bold_split")
 
-            reporthierarchy = self._get_hierarchy("reports_wf", sourcefile=sourcefile, subject_id=subject_id)
-            func_report_wf = reporthierarchy[-1].get_node("func_report_wf")  # this is not part of fmriprep
+            report_hierarchy = self._get_hierarchy("reports_wf", sourcefile=sourcefile, subject_id=subject_id)
+            func_report_wf = report_hierarchy[-1].get_node("func_report_wf")  # this is not part of fmriprep
             if func_report_wf is not None:
-                _connect([*reporthierarchy, func_report_wf])
+                _connect([*report_hierarchy, func_report_wf])
 
             while wf.get_node("anat_preproc_wf") is None:
                 hierarchy.pop()
                 wf = hierarchy[-1]
             anat_wf = wf.get_node("anat_preproc_wf")
+
         anat_norm_wf = anat_wf.get_node("anat_norm_wf")
         _connect([*hierarchy, anat_wf, anat_norm_wf])
         _connect([*hierarchy, anat_wf])
+
         return
