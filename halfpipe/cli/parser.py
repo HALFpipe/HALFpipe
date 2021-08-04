@@ -12,7 +12,7 @@ from ..utils import logger, isempty
 steps = ["spec-ui", "workflow", "run"]
 
 
-def _build_parser():
+def build_parser():
     parser = ArgumentParser(
         description=f"ENIGMA HALFpipe {__version__} is a user-friendly interface "
         "for performing reproducible analysis of fMRI data, including preprocessing, "
@@ -94,7 +94,7 @@ def _build_parser():
 
 
 def parse_args(args=None, namespace=None):
-    parser = _build_parser()
+    parser = build_parser()
     opts = parser.parse_args(args, namespace)
 
     if opts.version is True:

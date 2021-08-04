@@ -67,7 +67,7 @@ idna==3.2
     # via requests
 imageio==2.9.0
     # via scikit-image
-indexed-gzip==1.6.1
+indexed-gzip==1.5.3
     # via
     #   -r requirements.in
     #   fmriprep

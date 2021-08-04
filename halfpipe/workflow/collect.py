@@ -61,7 +61,14 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     )
 
 
-def collect_fieldmaps(database: Database, bold_file_path: str, filters: Dict) -> List[str]:
+def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
+    sub = database.tagval(bold_file_path, "sub")
+    filters = dict(sub=sub)  # enforce same subject
+
+    session = database.tagval(bold_file_path, "ses")
+    if session is not None:  # enforce fmaps from same session
+        filters.update(dict(ses=session))
+
     candidates = database.associations(
         bold_file_path, datatype="fmap", **filters
     )
@@ -87,10 +94,8 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
     for bold_file_path in bold_file_paths:
 
         sub = database.tagval(bold_file_path, "sub")
-        filters = dict(sub=sub)  # enforce same subject
-
         t1ws = database.associations(
-            bold_file_path, datatype="anat", **filters
+            bold_file_path, datatype="anat", sub=sub,
         )
 
         if t1ws is None:  # remove bold files without T1w
@@ -98,11 +103,7 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
 
         associated_file_paths = [bold_file_path, *t1ws]
 
-        session = database.tagval(bold_file_path, "ses")
-        if session is not None:  # enforce fmaps from same session
-            filters.update(dict(ses=session))
-
-        fmaps = collect_fieldmaps(database, bold_file_path, filters)
+        fmaps = collect_fieldmaps(database, bold_file_path)
         if fmaps is not None:
             associated_file_paths.extend(fmaps)  # add all fmaps for now, filter later
 

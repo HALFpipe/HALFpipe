@@ -199,13 +199,11 @@ def run_stage_run(opts):
 
     from nipype.interfaces import freesurfer as fs
 
-    uses_freesurfer = any(
+    if any(
         isinstance(node.interface, fs.FSCommand)
         for chunk in chunks_to_run
         for node in chunk.nodes
-    )
-
-    if uses_freesurfer:
+    ):
         from niworkflows.utils.misc import check_valid_fs_license
 
         if not check_valid_fs_license():

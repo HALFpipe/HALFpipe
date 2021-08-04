@@ -5,7 +5,8 @@
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 
-from ...interface import Select, BlurInMask
+from ...interface.utility.ops.select import Select
+from ...interface.imagemaths.lazyblur import LazyBlurToFWHM
 
 from ..memory import MemoryCalculator
 
@@ -41,7 +42,7 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator.default(), name=None, 
     workflow.connect(inputnode, "files", select, "in_list")
 
     smooth = pe.MapNode(
-        BlurInMask(preserve=True, float_out=True, out_file="blur.nii.gz"), iterfield="in_file", name="smooth"
+        LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth"
     )
     workflow.connect(select, "match_list", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")

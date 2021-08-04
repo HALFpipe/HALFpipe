@@ -5,9 +5,10 @@
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 from nipype.interfaces import fsl
+from niworkflows.interfaces.utility import KeySelect
 
-from ...interface import Exec
 from ..memory import MemoryCalculator
+from ..constants import constants
 
 
 def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculator.default()):
@@ -16,12 +17,13 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        Exec(
-            fieldtpls=[
-                ("bold_std", "firststr"),
-                ("bold_mask_std", "firststr"),
-                ("confounds", "firststr"),
-                ("vals", None)
+        niu.IdentityInterface(
+            fields=[
+                "bold_std",
+                "bold_mask_std",
+                "spatial_reference",
+                "confounds",
+                "vals",
             ]
         ),
         name="inputnode",
@@ -31,14 +33,25 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
         name="outputnode",
     )
 
+    select_std = pe.Node(
+        KeySelect(fields=["bold_std", "bold_mask_std"]),
+        name="select_std",
+        run_without_submitting=True,
+        nohash=True,
+    )
+    select_std.inputs.key = f"{constants.reference_space}_res-{constants.reference_res}"
+    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
+    workflow.connect(inputnode, "spatial_reference", select_std, "keys")
+
     #
     applymask = pe.Node(
         interface=fsl.ApplyMask(),
         name="applymask",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(inputnode, "bold_std", applymask, "in_file")
-    workflow.connect(inputnode, "bold_mask_std", applymask, "mask_file")
+    workflow.connect(select_std, "bold_std", applymask, "in_file")
+    workflow.connect(select_std, "bold_mask_std", applymask, "mask_file")
 
     #
     merge = pe.Node(
@@ -49,7 +62,7 @@ def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculato
 
     #
     workflow.connect(merge, "out", outputnode, "files")
-    workflow.connect(inputnode, "bold_mask_std", outputnode, "mask")
+    workflow.connect(select_std, "bold_mask_std", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
 
     return workflow
