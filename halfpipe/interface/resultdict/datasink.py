@@ -76,7 +76,7 @@ def _make_path(sourcefile, type, tags, suffix, **kwargs):
             folder_entities.extend(first_level_entities)
         else:
             folder_entities.append("task")
-        folder_name = _join_tags(tags, )
+        folder_name = _join_tags(tags, folder_entities)
         if folder_name is not None:
             path = path.joinpath(folder_name)
 
