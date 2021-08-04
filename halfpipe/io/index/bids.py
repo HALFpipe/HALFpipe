@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict
+from typing import Dict, Type
 
 from pathlib import Path
 from os.path import relpath
@@ -11,6 +11,7 @@ import json
 from collections import OrderedDict
 
 from inflection import camelize
+from marshmallow_oneofschema import OneOfSchema
 
 from calamities.pattern.glob import _rlistdir
 from ...model.file import FileSchema
@@ -57,11 +58,16 @@ class BidsDatabase:
             if bidsentity in entity_longnames:
                 bidsentity = entity_longnames[bidsentity]
 
+            if bidsentity == "task" and tags.get("datatype") == "fmap":
+                assert "acq" not in tags
+                bidsentity = "acquisition"
+
             if k in entities:
                 _tags[bidsentity] = formatlikebids(v)
             else:
-                if k == "suffix" and tags.get("datatype") == "fmap":
-                    k = "fmap"
+                if tags.get("datatype") == "fmap":
+                    if k == "suffix":
+                        k = "fmap"
                 _tags[k] = v
 
         bids_path_result = build_path(_tags, bidsconfig.default_path_patterns)
@@ -71,15 +77,18 @@ class BidsDatabase:
 
         bids_path = str(bids_path_result)
 
-        self.bids_paths[file_path] = str(bids_path)
+        if bids_path in self.file_paths:
+            if self.file_paths[bids_path] != str(file_path):
+                raise ValueError("Cannot assign different files to the same BIDS path")
 
+        self.bids_paths[file_path] = str(bids_path)
         self.file_paths[bids_path] = str(file_path)
 
         self._tags[bids_path] = _tags
 
         # traverse schemas to find subclass
 
-        schema = FileSchema
+        schema: Type[OneOfSchema] = FileSchema
         while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
             v = self.database.tagval(file_path, schema.type_field)
             schema = schema.type_schemas[v]
