@@ -12,7 +12,7 @@ xlrd >= 1.0.0
 openpyxl >= 3.0.7
 XlsxWriter >= 1.4.4
 nibabel >= 3.2.1
-indexed-gzip >= 1.5.3
+indexed-gzip == 1.5.3
 nipype >= 1.6.1
 nitime @ git+https://github.com/nipy/nitime.git@rel/0.8.1
 fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
