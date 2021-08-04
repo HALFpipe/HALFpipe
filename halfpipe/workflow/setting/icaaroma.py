@@ -2,39 +2,25 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
-
-import numpy as np
+from math import nan
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 
 from fmriprep.workflows.bold.confounds import init_ica_aroma_wf
-from fmriprep.workflows.bold.resampling import init_bold_std_trans_wf
 from fmriprep import config
-from niworkflows.utils.spaces import Reference, SpatialReferences
-from templateflow.api import get as get_template
 
 from ...interface import (
-    Exec,
     Select,
     MergeColumns,
-    ApplyTransforms,
     MakeResultdicts,
     ResultdictDatasink,
     Vals,
     FilterRegressor,
 )
-from ...resource import get as get_resource
 from ...utils import loadints
 
-from ..constants import constants
 from ..memory import MemoryCalculator
-
-
-spaces = SpatialReferences([Reference("MNI152NLin6Asym", {"res": "2"})])
-if not spaces.is_cached():
-    spaces.checkpoint()
 
 
 def _aroma_column_names(melodic_mix=None, aroma_noise_ics=None):
@@ -61,21 +47,16 @@ def init_ica_aroma_components_wf(
     """
     workflow = pe.Workflow(name=name)
 
-    strfields = ["bold_file", "bold_mask", "itk_bold_to_t1", "out_warp"]
     inputnode = pe.Node(
-        Exec(
-            fieldtpls=[
-                ("tags", None),
-                ("anat2std_xfm", None),
-                *[(field, "firststr") for field in strfields],
-                ("bold_split", None),
-                ("repetition_time", None),
-                ("skip_vols", None),
-                ("movpar_file", None),
-                ("xforms", None),
-                ("std_dseg", "ravel"),
-            ]
-        ),
+        niu.IdentityInterface(fields=[
+            "alt_bold_std",
+            "alt_bold_mask_std",
+            "alt_spatial_reference",
+            "tags",
+            "skip_vols",
+            "repetition_time",
+            "movpar_file",
+        ]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -99,53 +80,9 @@ def init_ica_aroma_components_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    mergexfm = pe.Node(niu.Merge(numinputs=2), name="mergexfm")
-    workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in1")
-    mergexfm.inputs.in2 = get_resource(
-        f"tpl_MNI152NLin6Asym_from_{constants.reference_space}_mode_image_xfm.h5"
-    )
-
-    compxfm = pe.Node(
-        ApplyTransforms(
-            dimension=3,
-            print_out_composite_warp_file=True,
-            output_image="ants_t1_to_mniComposite.nii.gz",
-        ),
-        name="compxfm",
-    )
-    template_path = get_template("MNI152NLin6Asym", resolution=1, suffix="T1w", desc=None)
-    assert isinstance(template_path, Path)
-    compxfm.inputs.reference_image = str(template_path)
-    workflow.connect(mergexfm, "out", compxfm, "transforms")
-
-    compxfmlist = pe.Node(niu.Merge(1), name="compxfmlist")
-    workflow.connect(compxfm, "output_image", compxfmlist, "in1")
-
-    #
-    bold_std_trans_wf = init_bold_std_trans_wf(
-        freesurfer=False,
-        mem_gb=memcalc.series_std_gb,
-        omp_nthreads=config.nipype.omp_nthreads,
-        spaces=spaces,
-        name="bold_std_trans_wf",
-        use_compression=not config.execution.low_mem,
-    )
-
-    bold_std_trans_wf_inputnode = bold_std_trans_wf.get_node("inputnode")
-    bold_std_trans_wf_inputnode.inputs.templates = ["MNI152NLin6Asym"]
-
-    workflow.connect(compxfmlist, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")
-    workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.name_source")
-    workflow.connect(inputnode, "bold_split", bold_std_trans_wf, "inputnode.bold_split")
-    workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.hmc_xforms")
-    workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.itk_bold_to_t1")
-    workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.bold_mask")
-    workflow.connect(inputnode, "out_warp", bold_std_trans_wf, "inputnode.fieldwarp")
-
-    #
     ica_aroma_wf = init_ica_aroma_wf(
         mem_gb=memcalc.series_std_gb,
-        metadata={"RepetitionTime": np.nan},
+        metadata={"RepetitionTime": nan},
         omp_nthreads=config.nipype.omp_nthreads,
         err_on_aroma_warn=config.workflow.aroma_err_on_warn,
         aroma_melodic_dim=config.workflow.aroma_melodic_dim,
@@ -165,16 +102,9 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
 
-    workflow.connect(bold_std_trans_wf, "outputnode.bold_std", ica_aroma_wf, "inputnode.bold_std")
-    workflow.connect(
-        bold_std_trans_wf, "outputnode.bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std"
-    )
-    workflow.connect(
-        bold_std_trans_wf,
-        "outputnode.spatial_reference",
-        ica_aroma_wf,
-        "inputnode.spatial_reference",
-    )
+    workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
+    workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+    workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
 
     workflow.connect(ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics")
     workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", outputnode, "melodic_mix")

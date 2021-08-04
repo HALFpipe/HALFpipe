@@ -20,6 +20,7 @@ from .output import init_setting_output_wf
 
 from ..factory import Factory
 from ..bypass import init_bypass_wf
+from ..resampling.factory import AltBOLDFactory
 from ..memory import MemoryCalculator, patch_mem_gb
 
 from ...utils import deepcopyfactory, b32digest, logger
@@ -38,16 +39,17 @@ class LookupTuple(NamedTuple):
 
 
 class ICAAROMAComponentsFactory(Factory):
-    def __init__(self, ctx, fmriprep_factory):
+    def __init__(self, ctx, fmriprep_factory, alt_bold_factory):
         super(ICAAROMAComponentsFactory, self).__init__(ctx)
 
-        self.previous_factory = fmriprep_factory
+        self.alt_bold_factory = alt_bold_factory
+        self.fmriprep_factory = fmriprep_factory
 
     def setup(self):
         prototype = init_ica_aroma_components_wf(workdir=str(self.workdir))
         self.wf_name = prototype.name
 
-    def get(self, sourcefile, **kwargs):
+    def get(self, sourcefile, **_):
         hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
         wf = hierarchy[-1]
 
@@ -73,7 +75,8 @@ class ICAAROMAComponentsFactory(Factory):
             inputnode.inputs.tags = self.database.tags(sourcefile)
             self.database.fillmetadata("repetition_time", [sourcefile])
             inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
-            self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
+            self.alt_bold_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
+            self.fmriprep_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
 
         outputnode = vwf.get_node("outputnode")
 
@@ -137,7 +140,7 @@ class LookupFactory(Factory):
     def _should_skip(self, obj):
         return obj is None
 
-    def _connect_inputs(self, hierarchy, inputnode, sourcefile, setting_name, tpl):
+    def _connect_inputs(self, hierarchy, inputnode, sourcefile, setting_name, _):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.database.fillmetadata("repetition_time", [sourcefile])
             inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
@@ -192,7 +195,7 @@ class FmriprepAdapterFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
         return init_fmriprep_adapter_wf(memcalc=lookup_tuple.memcalc)
 
-    def _tpl(self, setting) -> Hashable:
+    def _tpl(self, _) -> Hashable:
         return SettingTuple(value=None, suffix=None)
 
 
@@ -333,7 +336,7 @@ class SettingAdapterFactory(LookupFactory):
 
         return init_setting_adapter_wf(suffix=suffix)
 
-    def _tpl(self, setting) -> Hashable:
+    def _tpl(self, _) -> Hashable:
         return None
 
 
@@ -392,7 +395,8 @@ class SettingFactory(Factory):
 
         self.fmriprep_factory = fmriprep_factory
 
-        self.ica_aroma_components_factory = ICAAROMAComponentsFactory(ctx, self.fmriprep_factory)
+        self.alt_bold_factory = AltBOLDFactory(ctx, self.fmriprep_factory)
+        self.ica_aroma_components_factory = ICAAROMAComponentsFactory(ctx, self.fmriprep_factory, self.alt_bold_factory)
         self.fmriprep_adapter_factory = FmriprepAdapterFactory(ctx, self.fmriprep_factory)
         self.smoothing_factory = SmoothingFactory(ctx, self.fmriprep_adapter_factory)
         self.grand_mean_scaling_factory = GrandMeanScalingFactory(ctx, self.smoothing_factory)
@@ -419,6 +423,7 @@ class SettingFactory(Factory):
         return ret
 
     def setup(self, raw_sources_dict=dict()):
+        self.alt_bold_factory.setup()
         self.ica_aroma_components_factory.setup()
         self.fmriprep_adapter_factory.setup()
         self.smoothing_factory.setup()

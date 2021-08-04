@@ -79,6 +79,7 @@ def test_smoothing_volume(tmp_path, target_fwhm):
         assert isclose(in_fwhm, out_fwhm)
 
 
+@pytest.mark.skip(reason="not yet implemented")
 @pytest.mark.parametrize("target_fwhm", [0, 6])
 def test_smoothing_surface(tmp_path, target_fwhm):
     os.chdir(str(tmp_path))
