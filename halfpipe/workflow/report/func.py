@@ -13,12 +13,11 @@ from ...interface import (
     Exec,
     PlotRegistration,
     PlotEpi,
-    Vals,
-    CalcMean,
     Resample,
     MakeResultdicts,
     ResultdictDatasink
 )
+from ...interface.report.vals import UpdateVals, CalcMean
 
 from ..constants import constants
 from ..memory import MemoryCalculator
@@ -111,7 +110,7 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
 
     # vals
     confvals = pe.Node(
-        Vals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
+        UpdateVals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
     )
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
     workflow.connect(inputnode, "confounds", confvals, "confounds")
