@@ -23,6 +23,7 @@ def get_axcodes_set(pat):
 
     for filepath in filepaths:
         header, _ = NiftiheaderLoader.load(filepath)
+        assert isinstance(header, nib.nifti1.Nifti1Header)
         axcodes_set.add(nib.aff2axcodes(header.get_qform()))
 
     return axcodes_set

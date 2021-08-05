@@ -173,9 +173,9 @@ class FLAME1(ModelAlgorithm):
         try:
             mn, inverse_covariance = flame_stage1_onvoxel(y, z, s)
         except np.linalg.LinAlgError:
-            return
+            return None
 
-        voxel_result = defaultdict(dict)
+        voxel_result: Dict[Dict] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             try:

@@ -44,7 +44,9 @@ class Exec(IOBase):
         return add_traits(base, [*fieldnames])
 
     def _list_outputs(self):
-        outputs = self._outputs().get()
+        outputs = self._outputs()
+        assert outputs is not None
+        outputs = outputs.get()
 
         for fieldname, ufn in self.fieldtpls:
             input = getattr(self.inputs, fieldname)
