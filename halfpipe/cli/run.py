@@ -255,10 +255,6 @@ def run(opts, should_run):
 
     logger.debug(f"debug={opts.debug}")
 
-    if opts.workdir is not None:
-        opts.workdir = Path(opts.workdir)
-        opts.workdir.mkdir(exist_ok=True, parents=True)
-
     logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:
         logger.info("Stage: spec-ui")
