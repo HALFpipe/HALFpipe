@@ -3,14 +3,17 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from nipype.pipeline import engine as pe
+from nipype.interfaces import utility as niu
 
 from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
 from fmriprep import config
 from niworkflows.utils.spaces import SpatialReferences
+from niworkflows.interfaces.utility import KeySelect
 
-from ...interface import Exec, PlotRegistration, MakeResultdicts, ResultdictDatasink
+from ...interface import PlotRegistration, MakeResultdicts, ResultdictDatasink
 
 from ..memory import MemoryCalculator
+from ..constants import constants
 
 
 def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalculator.default()):
@@ -18,24 +21,33 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
 
     fmriprepreports = ["t1w_dseg_mask", "std_t1w"]
     fmriprepreportdatasinks = [f"ds_{fr}_report" for fr in fmriprepreports]
-    strfields = [
-        "t1w_preproc",
-        "t1w_mask",
-        "t1w_dseg",
-        "std_preproc",
-        "std_mask",
-        *fmriprepreportdatasinks,
-    ]
+
     inputnode = pe.Node(
-        Exec(
-            fieldtpls=[
-                ("tags", None),
-                *[(field, "firststr") for field in strfields],
-                ("std_dseg", "ravel"),
+        niu.IdentityInterface(
+            fields=[
+                "standardized",
+                "std_mask",
+                "template",
+                "t1w_preproc",
+                "t1w_mask",
+                "t1w_dseg",
+                *fmriprepreportdatasinks,
+                "tags",
             ]
         ),
         name="inputnode",
     )
+
+    select_std = pe.Node(
+        KeySelect(fields=["standardized", "std_mask"]),
+        name="select_std",
+        run_without_submitting=True,
+        nohash=True,
+    )
+    select_std.inputs.key = constants.reference_space
+    workflow.connect(inputnode, "standardized", select_std, "standardized")
+    workflow.connect(inputnode, "std_mask", select_std, "std_mask")
+    workflow.connect(inputnode, "template", select_std, "keys")
 
     #
     make_resultdicts = pe.Node(
@@ -66,10 +78,10 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
     t1_norm_rpt = pe.Node(
         PlotRegistration(template=spaces.get_spaces()[0]),
         name="t1_norm_rpt",
-        mem_gb=0.1,
+        mem_gb=memcalc.min_gb,
     )
-    workflow.connect(inputnode, "std_preproc", t1_norm_rpt, "in_file")
-    workflow.connect(inputnode, "std_mask", t1_norm_rpt, "mask_file")
+    workflow.connect(select_std, "standardized", t1_norm_rpt, "in_file")
+    workflow.connect(select_std, "std_mask", t1_norm_rpt, "mask_file")
     workflow.connect(t1_norm_rpt, "out_report", make_resultdicts, "t1_norm_rpt")
 
     return workflow
