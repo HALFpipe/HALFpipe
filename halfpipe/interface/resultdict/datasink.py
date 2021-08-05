@@ -139,27 +139,6 @@ def _find_sources(inpath, metadata) -> Tuple[Optional[List[str]], Optional[str]]
     return sources, file_hash
 
 
-def _format_metadata_value(obj):
-    if not isinstance(obj, dict):
-        return obj
-    return {
-        _format_metadata_key(k): _format_metadata_value(v)
-        for k, v in obj.items()
-    }
-
-
-def _format_metadata_key(key):  # camelize
-    predefined = dict(
-        ica_aroma="ICAAROMA",
-        fwhm="FWHM",
-        hp_width="HighPassWidth",
-        lp_width="LowPassWidth",
-    )
-    if key in predefined:
-        return predefined[key]
-    return camelize(key)
-
-
 def _file_hash(path) -> str:
     md5 = hashlib.md5()
     with open(path, "rb") as fp:
@@ -175,10 +154,10 @@ def datasink_reports(indicts, reports_directory):
 
     with DictListFile.cached(imgs_file_path) as imgs_file:
         for indict in indicts:
-            tags = indict["tags"]
-            metadata = indict["metadata"]
+            tags = indict.get("tags", dict())
+            metadata = indict.get("metadata", dict())
+            reports = indict.get("reports", dict())
 
-            reports = indict["reports"]
             for key, inpath in reports.items():
                 outpath = reports_directory / _make_path(inpath, "report", tags, key)
                 _copy_file(inpath, outpath)
@@ -212,9 +191,8 @@ def datasink_vals(indicts, reports_directory):
 
     with DictListFile.cached(vals_file_path) as vals_file:
         for indict in indicts:
-
-            tags = indict["tags"]
-            vals = indict["vals"]
+            tags = indict.get("tags", dict())
+            vals = indict.get("vals", dict())
 
             if len(vals) > 0 and "sub" in tags:  # only for first level
                 outdict = FuncTagsSchema().dump(tags)
@@ -231,9 +209,8 @@ def datasink_preproc(indicts, reports_directory):
 
     with DictListFile.cached(preproc_file_path) as preproc_file:
         for indict in indicts:
-
-            tags = indict["tags"]
-            images = indict["images"]
+            tags = indict.get("tags", dict())
+            images = indict.get("images", dict())
 
             if len(images) > 0 and "sub" in tags:  # only for first level
                 outdict = FuncTagsSchema().dump(tags)
@@ -246,16 +223,36 @@ def datasink_preproc(indicts, reports_directory):
         preproc_file.to_table()
 
 
+def _format_sidecar_value(obj):
+    if not isinstance(obj, dict):
+        return obj
+    return {
+        _format_sidecar_key(k): _format_sidecar_value(v)
+        for k, v in obj.items()
+    }
+
+
+def _format_sidecar_key(key):  # camelize
+    predefined = dict(
+        ica_aroma="ICAAROMA",
+        fwhm="FWHM",
+        hp_width="HighPassWidth",
+        lp_width="LowPassWidth",
+    )
+    if key in predefined:
+        return predefined[key]
+    return camelize(key)
+
+
 def datasink_images(indicts, base_directory):
     derivatives_directory = base_directory / "derivatives" / "halfpipe"
     grouplevel_directory = base_directory / "grouplevel"
 
     for indict in indicts:
-        tags = indict["tags"]
-        metadata = indict["metadata"]
-        images = indict["images"]
-
-        metadata = _format_metadata_value(metadata)
+        tags = indict.get("tags", dict())
+        metadata = indict.get("metadata", dict())
+        vals = indict.get("vals", dict())
+        images = indict.get("images", dict())
 
         # images
 
@@ -286,8 +283,15 @@ def datasink_images(indicts, base_directory):
             if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                 stem, extension = splitext(outpath)
                 if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
-                    with open(outpath.parent / f"{stem}.json", "w") as fp:
-                        fp.write(json.dumps(metadata, sort_keys=True, indent=4))
+
+                    sidecar = metadata.copy()
+                    sidecar.update(vals)
+                    sidecar = _format_sidecar_value(sidecar)
+
+                    sidecar_file_path = outpath.parent / f"{stem}.json"
+                    with open(sidecar_file_path, "wt") as sidecar_file_handle:
+                        sidecar
+                        sidecar_file_handle.write(json.dumps(metadata, sort_keys=True, indent=4))
 
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
