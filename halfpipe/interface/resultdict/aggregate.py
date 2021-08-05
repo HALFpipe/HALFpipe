@@ -2,44 +2,182 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from collections import defaultdict
+from typing import Any, Hashable, NamedTuple, Tuple
+
+from collections import defaultdict, Counter
+from math import sqrt
 
 import numpy as np
 
-from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec, isdefined
+from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec
 from nipype.interfaces.io import add_traits, IOBase
 
 from .base import ResultdictsOutputSpec
 from ...model import entities, ResultdictSchema
-from ...utils import ravel
+from ...utils import ravel, logger
 
 
-def _aggregate_if_possible(inval):
-    if isinstance(inval, (list, tuple)) and len(inval) > 0:
-        if all(isinstance(val, float) for val in inval):
-            return np.asarray(inval).mean()
-        if all(isinstance(val, list) for val in inval):
-            return _aggregate_if_possible(ravel(inval))
-        if all(isinstance(val, (dict)) for val in inval):
-            tpllist = [tuple(sorted(val.items())) for val in inval]
-            return dict(_aggregate_if_possible(tpllist))
-        try:
-            invalset = set(inval)
-            if len(invalset) == 1:
-                (aggval,) = invalset
-                return aggval
-        except TypeError:  # cannot make set from inval type
-            pass
-    return inval
+class MeanStd(NamedTuple):
+    mean: float
+    std: float
+    n: int
+    missing: int
+
+
+class BinCount(NamedTuple):
+    value: Any
+    count: int
+
+
+def bin_counts_to_counter(bin_counts: Tuple[BinCount, ...]) -> Tuple[Counter, bool]:
+    value_was_dict = None
+
+    counter: Counter = Counter()
+
+    for bin_count in bin_counts:
+        value = bin_count.value
+        value_is_dict = isinstance(value, dict)
+
+        if value_is_dict:
+            assert value_was_dict is not False
+            value = tuple(sorted(value.items()))
+        else:
+            assert value_was_dict is not True
+
+        value_was_dict = value_is_dict
+
+        counter.update({value: bin_count.count})
+
+    assert value_was_dict is not None
+    return counter, value_was_dict
+
+
+def counter_to_bin_counts(counter: Counter, value_was_dict=False) -> Tuple[BinCount, ...]:
+    bin_counts = list()
+    for v in sorted(counter.keys()):
+        count = counter[v]
+        if value_was_dict is True:
+            v = dict(v)
+        bin_counts.append(BinCount(value=v, count=count))
+    return tuple(bin_counts)
+
+
+def aggregate_if_possible(value, value_was_dict=False):
+    if isinstance(value, (list, tuple)) and len(value) > 0:
+
+        if all(isinstance(v, (float, np.inexact)) for v in value):
+            value_array = np.array(value, dtype=float)
+            return MeanStd(
+                mean=float(np.nanmean(value_array)),
+                std=float(np.nanstd(value_array)),
+                missing=int(np.sum(np.isnan(value_array))),
+                n=int(value_array.size),
+            )
+
+        elif all(isinstance(v, tuple) and all(isinstance(w, BinCount) for w in v) for v in value):
+            counter: Counter = Counter()
+            for v in value:
+                c, value_was_dict = bin_counts_to_counter(v)
+                counter.update(c)
+            return counter_to_bin_counts(counter, value_was_dict=value_was_dict)
+
+        elif all(isinstance(v, MeanStd) for v in value):
+            n = sum(v.n for v in value)
+
+            pooled_std = sqrt(sum(v.std * v.std * (v.n - 1) for v in value) / (n - len(value)))
+
+            return MeanStd(
+                mean=sum(v.mean * v.n for v in value) / n,
+                std=pooled_std,
+                n=int(n),
+                missing=sum(v.missing for v in value),
+            )
+
+        elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
+            value_set = set(value)
+            if len(value_set) == 1:
+                return next(iter(value_set))
+
+            counter = Counter(value)
+            return counter_to_bin_counts(counter, value_was_dict=value_was_dict)
+
+        elif all(isinstance(val, list) for val in value):
+            return aggregate_if_possible(tuple(map(tuple, value)))
+
+        elif all(isinstance(val, dict) for val in value):
+            return aggregate_if_possible(
+                [tuple(sorted(v.items())) for v in value],
+                value_was_dict=True,
+            )
+
+        raise ValueError(f'Cannot aggregate "{value}"')
+
+    return value
+
+
+def aggregate_field(key, value):
+    if key in ["sources", "raw_sources"]:
+        sources = list()
+        for v in value:
+            sources.extend(v)
+        return sources
+
+    return aggregate_if_possible(value)
+
+
+def group_resultdicts(inputs, across):
+    grouped_resultdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    for resultdict in inputs:
+        resultdict = ResultdictSchema().dump(resultdict)
+        assert isinstance(resultdict, dict)
+        tags = resultdict["tags"]
+
+        if across not in tags:
+            continue
+
+        tag_tuple = tuple(sorted(
+            (key, value)
+            for key, value in tags.items()
+            if key != across
+            and not isinstance(value, (tuple, list))  # Ignore lists, as they only
+            # will be there if we aggregated before, meaning that this is not
+            # a tag that separates different results anymore.
+            # This is important for example if we want have aggregated unequal numbers
+            # of runs across subjects, but we still want to compare across subjects
+        ))
+
+        for f, nested in resultdict.items():
+            for k, v in nested.items():
+                grouped_resultdicts[tag_tuple][f][k].append(v)
+
+    return grouped_resultdicts
+
+
+def aggregate_resultdicts(inputs, across):
+    grouped_resultdicts = group_resultdicts(inputs, across)
+
+    for tag_tuple, listdict in grouped_resultdicts.items():
+        resultdict = dict(tags=dict(tag_tuple), vals=dict())
+        resultdict.update(listdict)  # create combined resultdict
+
+        for f in ["tags", "metadata", "vals"]:
+            for key, value in resultdict[f].items():
+                resultdict[f][key] = aggregate_field(key, value)
+
+        schema = ResultdictSchema()
+        validation_errors = schema.validate(resultdict)
+
+        for f in ["tags", "metadata", "vals"]:
+            if f in validation_errors:
+                for key in validation_errors[f]:
+                    logger.warning(f'Removing "{f}.{key}={resultdict[f][key]}" from resultdict')
+                    del resultdict[f][key]  # remove invalid fields
+
+        yield schema.dump(resultdict)
 
 
 class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    across = traits.Str(desc="across which entity to aggregate")
-    include = traits.Dict(
-        traits.Str(),
-        traits.List(traits.Str()),
-        desc="include only resultdicts that have one of the allowed values for the respective key",
-    )
+    across = traits.Enum(*entities, desc="across which entity to aggregate")
 
 
 class AggregateResultdicts(IOBase):
@@ -50,74 +188,19 @@ class AggregateResultdicts(IOBase):
         super(AggregateResultdicts, self).__init__(**inputs)
         self._numinputs = numinputs
         if numinputs >= 1:
-            input_names = [f"in{i+1}" for i in range(numinputs)]
-            add_traits(self.inputs, input_names)
+            self.input_names = [f"in{i+1}" for i in range(numinputs)]
+            add_traits(self.inputs, self.input_names)
         else:
-            input_names = []
+            self.input_names = []
 
     def _list_outputs(self):
-        outputs = self._outputs().get()
+        outputs = self._outputs()
+        assert outputs is not None
+        outputs = outputs.get()
 
-        inputs = ravel([getattr(self.inputs, f"in{i+1}") for i in range(self._numinputs)])
-
+        inputs = ravel([getattr(self.inputs, input_name) for input_name in self.input_names])
         across = self.inputs.across
-        assert across in entities, f'Cannot aggregate across "{across}"'
 
-        include = {}
-        if isdefined(self.inputs.include):
-            include = self.inputs.include
-
-        aggdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        for resultdict in inputs:
-            resultdict = ResultdictSchema().load(resultdict)
-            assert isinstance(resultdict, dict)
-            tags = resultdict["tags"]
-
-            if across not in tags:
-                continue
-
-            if any(
-                key not in tags or tags[key] not in allowedvalues
-                for key, allowedvalues in include.items()
-            ):
-                continue
-
-            t = tuple(
-                (key, value)
-                for key, value in tags.items()
-                if key != across
-                and not isinstance(value, (tuple, list))  # Ignore lists, as they only
-                # will be there if we aggregated before, meaning that this is not
-                # a tag that separates different results anymore.
-                # This is important for example if we want have aggregated unequal numbers
-                # of runs across subjects, but we still want to compare across subjects
-            )
-            t = tuple(sorted(t))
-
-            for f, nested in resultdict.items():
-                for k, v in nested.items():
-                    aggdicts[t][f][k].append(v)
-
-        resultdicts = []
-        for tagtupl, listdict in aggdicts.items():
-            tagdict = dict(tagtupl)
-            resultdict = dict(tags=tagdict, vals=dict())
-            resultdict.update(listdict)  # create combined resultdict
-            for f in ["tags", "metadata", "vals"]:
-                for key, value in resultdict[f].items():
-                    if key in ["confounds_removal"]:  # convert fields that should stay a list to tuple
-                        value = [tuple(v) for v in value]
-                    resultdict[f][key] = _aggregate_if_possible(value)
-                    if key in ["confounds_removal"]:
-                        value = list(value)  # convert back
-            schema = ResultdictSchema()
-            validation_errors = schema.validate(resultdict)
-            for f in ["tags", "metadata", "vals"]:
-                if f in validation_errors:
-                    for key in validation_errors[f]:
-                        del resultdict[f][key]  # remove invalid fields
-            resultdicts.append(schema.load(resultdict))
-
-        outputs["resultdicts"] = resultdicts
+        outputs["resultdicts"] = list(aggregate_resultdicts(inputs, across))
 
         return outputs
