@@ -14,7 +14,7 @@ def loadpicklelzma(filepath):
     try:
         with lzma.open(filepath, "rb") as fptr:
             return pickle.load(fptr)
-    except (lzma.LZMAError, TraitError) as e:
+    except (lzma.LZMAError, TraitError, EOFError) as e:
         logger.error(f'Error while reading "{filepath}"', exc_info=e)
 
 
