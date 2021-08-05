@@ -211,7 +211,8 @@ def collect_metadata(database, source_file, setting) -> Dict:
     header, _ = NiftiheaderLoader.load(source_file)
     assert isinstance(header, Nifti1Header)
 
-    zooms = header.get_zooms()
+    zooms = list(map(float, header.get_zooms()))
+    assert all(isinstance(z, float) for z in zooms)
     metadata["acquisition_voxel_size"] = tuple(zooms[:3])
 
     data_shape = header.get_data_shape()

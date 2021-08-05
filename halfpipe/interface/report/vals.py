@@ -44,18 +44,19 @@ class CalcMean(SimpleInterface):
             mask_file = self.inputs.mask
 
         if isdefined(self.inputs.dseg):  # get grey matter only
-            _, self._results["mean"], _ = np.ravel(
-                mean_signals(in_file, self.inputs.dseg, mask_file=mask_file)
-            )
+            dseg_mean_signals = mean_signals(in_file, self.inputs.dseg, mask_file=mask_file)
+            _, gm_mean, _ = np.ravel(dseg_mean_signals).tolist()
+            self._results["mean"] = float(gm_mean)
+
         elif isdefined(self.inputs.parcellation):
-            self._results["mean"] = list(
-                np.ravel(
-                    mean_signals(in_file, self.inputs.parcellation, mask_file=mask_file)
-                )
-            )
+            parc_mean_signals = mean_signals(in_file, self.inputs.parcellation, mask_file=mask_file)
+            parc_mean_signals_list = list(map(float, np.ravel(parc_mean_signals).tolist()))
+            self._results["mean"] = parc_mean_signals_list
+
         elif mask_file is not None:
             mean = mean_signals(in_file, mask_file)
             self._results["mean"] = float(mean[0])
+
         vals = dict()
         self._results["vals"] = vals
         if isdefined(self.inputs.vals):
@@ -100,15 +101,15 @@ class UpdateVals(IOBase):
             confounds = loadspreadsheet(self.inputs.confounds)
             fd = confounds["framewise_displacement"]
 
-            vals["fd_mean"] = fd.mean()
+            vals["fd_mean"] = float(fd.mean())
 
             if isdefined(self.inputs.fd_thres):
-                vals["fd_perc"] = (fd > self.inputs.fd_thres).mean()
+                vals["fd_perc"] = float((fd > self.inputs.fd_thres).mean())
 
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
             is_noise_component = [c["MotionNoise"] is True for c in aroma_metadata.values()]
-            vals["aroma_noise_frac"] = np.array(is_noise_component).astype(float).mean()
+            vals["aroma_noise_frac"] = float(np.array(is_noise_component).astype(float).mean())
 
         for field in self.fields:
             value = getattr(self.inputs, field, None)
