@@ -207,14 +207,13 @@ def run_stage_run(opts):
         from niworkflows.utils.misc import check_valid_fs_license
 
         if not check_valid_fs_license():
-            logger.error(
+            raise RuntimeError(
                 "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
                 "HALFpipe looked for an existing license file at several paths, in this order: \n"
                 '1) a "license.txt" file in your HALFpipe working directory \n'
                 '2) command line argument "--fs-license-file" \n'
                 "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
             )
-            return
 
     from nipype.pipeline import engine as pe
 
