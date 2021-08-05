@@ -61,7 +61,7 @@ def init_workflow(workdir):
 
     workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
     workflow.config["execution"].update(dict(
-        create_report=False,
+        create_report=True,  # each node writes a text file with inputs and outputs
         crashdump_dir=workflow.base_dir,
         crashfile_format="txt",
         hash_method="content",
