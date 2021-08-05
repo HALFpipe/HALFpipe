@@ -17,7 +17,10 @@ class GlobalSettingsSchema(Schema):
         unknown = RAISE
         ordered = True
 
+    dummy_scans = fields.Int(dump_default=None, allow_none=True)
+
     slice_timing = fields.Boolean(dump_default=False)
+
     skull_strip_algorithm = fields.Str(
         validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), dump_default="ants"
     )
@@ -55,10 +58,10 @@ class GlobalSettingsSchema(Schema):
     sloppy = fields.Boolean(dump_default=False)
 
     @pre_load
-    def fill_default_values(self, in_data, **kwargs):
+    def fill_default_values(self, in_data, **_):  # make load_default equal to dump_default
         for k, v in self.fields.items():
             if k not in in_data:
-                in_data[k] = v.default
+                in_data[k] = v.dump_default
         return in_data
 
 

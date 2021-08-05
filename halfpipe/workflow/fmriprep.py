@@ -77,9 +77,11 @@ class FmriprepFactory(Factory):
         subjects = list(subjects)
         bidssubjects = list(bidssubjects)
 
-        ignore = ["sbref"]
+        ignore = []
+        slice_timing_offset = 0
         if spec.global_settings["slice_timing"] is not True:
             ignore.append("slicetiming")
+            slice_timing_offset += 0.5
 
         skull_strip_t1w = {
             "none": "skip",
@@ -112,7 +114,7 @@ class FmriprepFactory(Factory):
                 "participant_label": bidssubjects,
                 "ignore": ignore,
                 "use_aroma": False,
-                "dummy_scans": 0,  # force user to take care of this manually
+                "dummy_scans": spec.global_settings["dummy_scans"],
                 "skull_strip_t1w": skull_strip_t1w,
                 "anat_only": spec.global_settings["anat_only"],
                 "write_graph": spec.global_settings["write_graph"],
@@ -201,6 +203,9 @@ class FmriprepFactory(Factory):
             assert isinstance(inputnode, pe.Node)
             inputnode.inputs.tags = database.tags(bold_file_path)
             inputnode.inputs.fd_thres = spec.global_settings["fd_thres"]
+
+            inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
+            inputnode.inputs.slice_timing_offset = slice_timing_offset
 
             self.connect(hierarchy, inputnode, sourcefile=bold_file_path)
 
