@@ -18,7 +18,6 @@ from marshmallow import (
 )
 from inflection import underscore
 
-from .setting import BaseSettingSchema
 from .variable import VariableSchema
 
 
@@ -50,7 +49,7 @@ class BaseMetadataSchema(Schema):
         unknown = EXCLUDE
 
     @pre_load
-    def underscore_fields(self, in_data, **kwargs):
+    def underscore_fields(self, in_data, **_):
         return {underscore(k): v for k, v in in_data.items()}
 
 
@@ -94,7 +93,7 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
     slice_encoding_direction = fields.Str(description="", validate=validate.OneOf(direction_codes))
 
     @validates_schema
-    def validate_slice_timing(self, data, **kwargs):
+    def validate_slice_timing(self, data, **_):
         if "slice_timing" not in data or "repetition_time" not in data:
             return  # nothing to validate
         if "slice_timing_code" in data and data["slice_timing_code"] is not None:
@@ -134,23 +133,12 @@ class SpreadsheetMetadataSchema(Schema):
     variables = fields.List(fields.Nested(VariableSchema), dump_default=[])
 
     @validates_schema
-    def validate_variables(self, data, **kwargs):
+    def validate_variables(self, data, **_):
         if "variables" not in data:
             return
         names = [c["name"] for c in data["variables"] if "name" in c]
         if len(names) > len(set(names)):
             raise ValidationError("Duplicate variable name")
-
-
-class ResultdictMetadataSchema(BaseSettingSchema):
-    sources = fields.List(fields.Str)
-    raw_sources = fields.List(fields.Str)
-    sampling_frequency = fields.Float()
-    repetition_time = fields.Float()
-    skull_stripped = fields.Bool()
-    mean_t_s_n_r = fields.Raw()
-    coverage = fields.Raw()
-    critical_z = fields.Raw()
 
 
 MetadataSchema = Schema.from_dict(
