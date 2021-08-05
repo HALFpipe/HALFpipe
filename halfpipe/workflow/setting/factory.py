@@ -18,6 +18,7 @@ from .confounds import init_confounds_select_wf, init_confounds_regression_wf
 from .settingadapter import init_setting_adapter_wf
 from .output import init_setting_output_wf
 
+from ..collect import collect_metadata
 from ..factory import Factory
 from ..bypass import init_bypass_wf
 from ..resampling.factory import AltBOLDFactory
@@ -457,14 +458,23 @@ class SettingFactory(Factory):
                 hierarchy.append(wf)
 
                 inputnode = wf.get_node("inputnode")
-                tags = {"setting": setting["name"]}
+
+                tags = dict(setting=setting["name"])
                 tags.update(self.database.tags(sourcefile))
                 inputnode.inputs.tags = tags
+
+                metadata = collect_metadata(self.database, sourcefile, setting)
                 if raw_sources_dict.get(sourcefile) is not None:
-                    inputnode.inputs.metadata = {
-                        "raw_sources": raw_sources_dict[sourcefile]
-                    }
-                self.connect(hierarchy, inputnode, sourcefile, setting_name=setting["name"], confounds_action="regression")
+                    metadata["raw_sources"] = raw_sources_dict.get(sourcefile)
+                inputnode.inputs.metadata = metadata
+
+                self.connect(
+                    hierarchy,
+                    inputnode,
+                    sourcefile,
+                    setting_name=setting["name"],
+                    confounds_action="regression",
+                )
 
     def get(self, sourcefile, setting_name, confounds_action=None):
         self.ica_aroma_components_factory.get(sourcefile)  # make sure ica aroma components are always calculated
