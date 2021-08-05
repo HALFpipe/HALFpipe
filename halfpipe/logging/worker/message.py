@@ -34,15 +34,15 @@ class BaseMessageSchema(Schema):
 
 
 class LogMessageSchema(BaseMessageSchema):
-    type = fields.Str(default="log", validate=validate.Equal("log"))
+    type = fields.Str(dump_default="log", validate=validate.Equal("log"))
 
-    levelno = fields.Int(default=logging.DEBUG)
+    levelno = fields.Int(dump_default=logging.DEBUG)
 
     msg = fields.Str(required=True)
 
 
 class SetWorkdirMessageSchema(BaseMessageSchema):
-    type = fields.Str(default="set_workdir", validate=validate.Equal("set_workdir"))
+    type = fields.Str(dump_default="set_workdir", validate=validate.Equal("set_workdir"))
 
     workdir = fields.Str(required=True)
 
