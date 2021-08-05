@@ -78,10 +78,11 @@ class FmriprepFactory(Factory):
         bidssubjects = list(bidssubjects)
 
         ignore = []
-        slice_timing_offset = 0
         if spec.global_settings["slice_timing"] is not True:
             ignore.append("slicetiming")
-            slice_timing_offset += 0.5
+            slice_timing_offset: float = 0
+        else:
+            slice_timing_offset = -0.5
 
         skull_strip_t1w = {
             "none": "skip",
