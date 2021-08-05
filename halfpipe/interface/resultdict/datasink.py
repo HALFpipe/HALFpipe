@@ -288,10 +288,11 @@ def datasink_images(indicts, base_directory):
                     sidecar.update(vals)
                     sidecar = _format_sidecar_value(sidecar)
 
+                    sidecar_json = json.dumps(sidecar, sort_keys=True, indent=4)
+
                     sidecar_file_path = outpath.parent / f"{stem}.json"
                     with open(sidecar_file_path, "wt") as sidecar_file_handle:
-                        sidecar
-                        sidecar_file_handle.write(json.dumps(metadata, sort_keys=True, indent=4))
+                        sidecar_file_handle.write(sidecar_json)
 
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
