@@ -7,10 +7,12 @@ import numpy as np
 from nipype.interfaces.base import (
     traits,
     TraitedSpec,
+    DynamicTraitedSpec,
     SimpleInterface,
     File,
     isdefined,
 )
+from nipype.interfaces.io import add_traits, IOBase
 
 from ...io.parse import loadspreadsheet
 from ...io.signals import mean_signals
@@ -63,44 +65,56 @@ class CalcMean(SimpleInterface):
         return runtime
 
 
-class ValsInputSpec(TraitedSpec):
+class UpdateValsInputSpec(DynamicTraitedSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
     confounds = File(exists=True)
     aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True)
     fd_thres = traits.Float()
-    dummy = traits.Int()
 
 
-class ValsOutputSpec(TraitedSpec):
+class UpdateValsOutputSpec(TraitedSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
 
 
-class Vals(SimpleInterface):
-    input_spec = ValsInputSpec
-    output_spec = ValsOutputSpec
+class UpdateVals(IOBase):
+    input_spec = UpdateValsInputSpec
+    output_spec = UpdateValsOutputSpec
 
-    def _run_interface(self, runtime):
+    def __init__(self, fields=[], **inputs):
+        super().__init__(**inputs)
+
+        self.fields = fields
+        add_traits(self.inputs, [*self.fields])
+
+    def _list_outputs(self):
+        outputs = self._outputs()
+        assert outputs is not None
+        outputs = outputs.get()
+
         vals = dict()
-        self._results["vals"] = vals
+
         if isdefined(self.inputs.vals):
             vals.update(self.inputs.vals)
+
         if isdefined(self.inputs.confounds):
-            df_confounds = loadspreadsheet(self.inputs.confounds)
-            vals["fd_mean"] = df_confounds["framewise_displacement"].mean()
+            confounds = loadspreadsheet(self.inputs.confounds)
+            fd = confounds["framewise_displacement"]
+
+            vals["fd_mean"] = fd.mean()
+
             if isdefined(self.inputs.fd_thres):
-                vals["fd_perc"] = (
-                    df_confounds["framewise_displacement"] > self.inputs.fd_thres
-                ).mean()
+                vals["fd_perc"] = (fd > self.inputs.fd_thres).mean()
+
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
-            vals["aroma_noise_frac"] = (
-                np.array(
-                    [val["MotionNoise"] is True for val in aroma_metadata.values()]
-                )
-                .astype(float)
-                .mean()
-            )
-        if isdefined(self.inputs.dummy):
-            vals["dummy"] = self.inputs.dummy
+            is_noise_component = [c["MotionNoise"] is True for c in aroma_metadata.values()]
+            vals["aroma_noise_frac"] = np.array(is_noise_component).astype(float).mean()
 
-        return runtime
+        for field in self.fields:
+            value = getattr(self.inputs, field, None)
+            if isdefined(value):
+                vals[field] = value
+
+        outputs["vals"] = vals
+
+        return outputs

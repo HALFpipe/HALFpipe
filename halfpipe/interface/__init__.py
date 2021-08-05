@@ -8,7 +8,7 @@ from .fixes import ApplyTransforms, FLAMEO, ReHo
 from .fslnumpy import FilterRegressor, TemporalFilter
 from .imagemaths import AddMeans, MaskCoverage, MaxIntensity, Merge, MergeMask, Resample, ZScore
 from .preprocessing import GrandMeanScaling
-from .report import PlotEpi, PlotRegistration, Vals, CalcMean
+from .report import PlotEpi, PlotRegistration, CalcMean
 from .resultdict import (
     MakeResultdicts,
     FilterResultdicts,
@@ -54,7 +54,6 @@ __all__ = [
     "GrandMeanScaling",
     "PlotEpi",
     "PlotRegistration",
-    "Vals",
     "CalcMean",
     "MakeResultdicts",
     "FilterResultdicts",
