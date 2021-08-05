@@ -10,7 +10,6 @@ from pathlib import Path
 
 from marshmallow import Schema, RAISE, fields, ValidationError
 
-from .metadata import ResultdictMetadataSchema
 from .tags import ResultdictTagsSchema
 from ..stats.algorithms import algorithms, modelfit_aliases
 
@@ -44,7 +43,7 @@ image_types = frozenset([
     "matrix",
     "regressors",
 
-    #
+    # stats outputs
     *(
         output
         for algorithm in algorithms.values()
@@ -59,22 +58,14 @@ ResultdictImagesSchema = Schema.from_dict({
 })
 
 
-def validate_val(v):
-    if isinstance(v, float) or isinstance(v, str):
-        return
-    if isinstance(v, (tuple, list)) and all(isinstance(x, str) for x in v):
-        return
-    raise ValidationError("Need to be either a float, a string or a list of strings")
-
-
 class ResultdictSchema(Schema):
     class Meta:
         unknown = RAISE
 
     tags = fields.Nested(ResultdictTagsSchema(), dump_default=dict())
-    metadata = fields.Nested(ResultdictMetadataSchema(), dump_default=dict())
+    metadata = fields.Dict(keys=fields.Str(), values=fields.Raw(), dump_default=dict())
     images = fields.Nested(ResultdictImagesSchema(), dump_default=dict())
     reports = fields.Dict(
         keys=fields.Str(), values=fields.Raw(validate=validate_file), dump_default=dict()
     )
-    vals = fields.Dict(keys=fields.Str(), values=fields.Raw(validate=validate_val), dump_default=dict())
+    vals = fields.Dict(keys=fields.Str(), values=fields.Raw(), dump_default=dict())
