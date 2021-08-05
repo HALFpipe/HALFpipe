@@ -4,7 +4,13 @@
 
 from typing import List, Dict, Set, Tuple, Union
 
-from ..io.index import Database, BidsDatabase
+from nibabel.nifti1 import Nifti1Header
+
+from ..model.setting import BaseSettingSchema
+from ..io.metadata.niftiheader import NiftiheaderLoader
+from ..io.metadata.direction import get_axcodes_set
+from ..io.index.bids import BidsDatabase, get_file_metadata
+from ..io.index.database import Database
 from ..utils import logger, nvol
 
 
@@ -193,3 +199,28 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
     bold_file_paths = [b for b in bold_file_paths if b in bold_file_paths_dict]
 
     return bold_file_paths_dict
+
+
+def collect_metadata(database, source_file, setting) -> Dict:
+    metadata = dict()
+
+    metadata.update(BaseSettingSchema().dump(setting))
+
+    metadata.update(get_file_metadata(database, source_file))
+
+    header, _ = NiftiheaderLoader.load(source_file)
+    assert isinstance(header, Nifti1Header)
+
+    zooms = header.get_zooms()
+    metadata["acquisition_voxel_size"] = tuple(zooms[:3])
+
+    data_shape = header.get_data_shape()
+    assert len(data_shape) == 4
+    metadata["acquisition_volume_shape"] = tuple(data_shape[:3])
+    metadata["number_of_volumes"] = int(data_shape[3])
+
+    (axcodes,) = get_axcodes_set(source_file)
+    axcode_str = "".join(axcodes)
+    metadata["acquisition_orientation"] = axcode_str
+
+    return metadata

@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, Type
+from typing import Dict
 
 from pathlib import Path
 from os.path import relpath
@@ -11,12 +11,11 @@ import json
 from collections import OrderedDict
 
 from inflection import camelize
-from marshmallow_oneofschema import OneOfSchema
 
 from calamities.pattern.glob import _rlistdir
 from ...model.file import FileSchema
 from ...model.tags import entity_longnames, entities
-from ...model.utils import get_nested_schema_field_names
+from ...model.utils import get_nested_schema_field_names, get_type_schema
 from ...utils import formatlikebids, splitext
 from ..metadata import canonicalize_direction_code
 
@@ -28,6 +27,54 @@ bids.config.set_option("extension_initial_dot", True)
 bidsconfig = Config.load("bids")
 
 bidsversion = "1.4.0"
+
+
+def get_file_metadata(database, file_path) -> Dict:
+    schema = get_type_schema(FileSchema, database, file_path)
+    instance = schema()
+
+    metadata = OrderedDict()
+    if "metadata" in instance.fields:
+        # manual conversion
+
+        if database.tagval(file_path, "datatype") == "func":
+            task = database.tagval(file_path, "task")
+            if task is not None:
+                metadata["TaskName"] = task
+
+        # automated conversion
+
+        metadata_keys = get_nested_schema_field_names(instance, "metadata")
+        for key in metadata_keys:
+            database.fillmetadata(key, [file_path])
+            value = database.metadata(file_path, key)
+
+            if value is not None:
+
+                # transform metadata
+
+                if key.endswith("direction"):
+                    value = canonicalize_direction_code(value, file_path)
+
+                if key == "slice_timing_code":
+                    if not database.fillmetadata("slice_timing", [file_path]):
+                        continue
+
+                    key = "slice_timing"
+                    value = database.metadata(file_path, key)
+
+                metadata[key] = value
+
+    return metadata
+
+
+def get_bids_metadata(database, file_path) -> Dict:
+    metadata = get_file_metadata(database, file_path)
+
+    return {
+        camelize(key): value
+        for key, value in metadata.items()
+    }
 
 
 class BidsDatabase:
@@ -86,51 +133,7 @@ class BidsDatabase:
 
         self._tags[bids_path] = _tags
 
-        # traverse schemas to find subclass
-
-        schema: Type[OneOfSchema] = FileSchema
-        while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
-            v = self.database.tagval(file_path, schema.type_field)
-            schema = schema.type_schemas[v]
-
-        instance = schema()
-
-        metadata = OrderedDict()
-        if "metadata" in instance.fields:
-            # manual conversion
-
-            if self.database.tagval(file_path, "datatype") == "func":
-                task = self.database.tagval(file_path, "task")
-                if task is not None:
-                    metadata["TaskName"] = task
-
-            # automated conversion
-
-            metadata_keys = get_nested_schema_field_names(instance, "metadata")
-            for key in metadata_keys:
-                self.database.fillmetadata(key, [file_path])
-                value = self.database.metadata(file_path, key)
-
-                if value is not None:
-
-                    # transform metadata
-
-                    if key.endswith("direction"):
-                        value = canonicalize_direction_code(value, file_path)
-
-                    if key == "slice_timing_code":
-                        if not self.database.fillmetadata("slice_timing", [file_path]):
-                            continue
-
-                        key = "slice_timing"
-                        value = self.database.metadata(file_path, key)
-
-                    bids_key = camelize(key)
-
-                    # add to sidecar
-                    metadata[bids_key] = value
-
-        self._metadata[bids_path] = metadata
+        self._metadata[bids_path] = get_bids_metadata(self.database, file_path)
 
         return bids_path
 
