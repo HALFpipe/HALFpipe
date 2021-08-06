@@ -110,12 +110,11 @@ jobs:
         env:
           DOCKER_IMAGE_NAME: ${{ needs.docker_build.outputs.tag }}
         run: |
-          SINGULARITY_IMAGE_NAME=$(echo -n ${DOCKER_IMAGE_NAME} | tr -c '[:alnum:].' '-')
+          SINGULARITY_IMAGE_NAME="$(echo -n ${DOCKER_IMAGE_NAME} | tr -c '[:alnum:].' '-').singularity"  # we need to add a suffix because docker2singularity removes the last dot and everything that follows
           mkdir -p -v /output
           docker-entrypoint.sh /docker2singularity.sh \
             --name ${SINGULARITY_IMAGE_NAME} \
             ${DOCKER_IMAGE_NAME}
-          echo "::set-output name=image::${SINGULARITY_IMAGE_FILE}"
 
       - name: Upload to server
         shell: bash
