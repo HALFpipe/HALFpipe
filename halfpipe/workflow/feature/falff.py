@@ -6,7 +6,8 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 from nipype.interfaces import afni
 
-from ...interface import MakeResultdicts, ResultdictDatasink, BlurInMask, ZScore
+from ...interface.imagemaths.lazyblur import LazyBlurToFWHM
+from ...interface import MakeResultdicts, ResultdictDatasink, ZScore
 
 from ..memory import MemoryCalculator
 from ...utils import formatlikebids
@@ -100,7 +101,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(falff, "out_file", merge, "in2")
 
     smooth = pe.MapNode(
-        BlurInMask(preserve=True, float_out=True, out_file="blur.nii.gz"), iterfield="in_file", name="smooth"
+        LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth"
     )
     workflow.connect(merge, "out", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")

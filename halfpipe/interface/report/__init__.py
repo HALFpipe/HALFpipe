@@ -3,6 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .imageplot import PlotEpi, PlotRegistration
-from .vals import Vals, CalcMean
+from .vals import CalcMean
 
-__all__ = ["PlotEpi", "PlotRegistration", "Vals", "CalcMean"]
+__all__ = ["PlotEpi", "PlotRegistration", "CalcMean"]

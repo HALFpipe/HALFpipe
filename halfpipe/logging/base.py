@@ -30,7 +30,7 @@ loggernames = [
 ]
 
 
-def showwarning(message, category, filename, lineno, file=None, line=None):
+def showwarning(message, category, filename, lineno, _=None, line=None):
     s = warnings.formatwarning(message, category, filename, lineno, line)
     logger = logging.getLogger("py.warnings")
     logger.warning(f"{s}", stack_info=True)

@@ -17,8 +17,8 @@ from nipype.interfaces import utility as niu
 from nipype.interfaces import fsl
 
 from ...interface.fixes import Level1Design
+from ...interface.conditions import ParseConditionFile, ApplyConditionOffset
 from ...interface import (
-    ParseConditionFile,
     MakeResultdicts,
     FillNA,
     ResultdictDatasink,
@@ -49,6 +49,12 @@ def _add_td_conditions(hrf, condition_names):
         for c in condition_names
         for suffix in suffixes
     ]
+
+
+def _get_scan_start(vals) -> float:
+    scan_start = vals["scan_start"]
+    assert isinstance(scan_start, float)
+    return scan_start
 
 
 def init_taskbased_wf(
@@ -142,14 +148,29 @@ def init_taskbased_wf(
         )
 
     # parse condition files into three (ordered) lists
-    parseconditionfile = pe.Node(
-        ParseConditionFile(contrasts=contrasts),
-        name="parseconditionfile",
+    parse_condition_file = pe.Node(
+        ParseConditionFile(contrasts=contrasts), name="parse_condition_file"
     )
-    workflow.connect(inputnode, "condition_names", parseconditionfile, "condition_names")
-    workflow.connect(inputnode, "condition_files", parseconditionfile, "in_any")
-    workflow.connect(parseconditionfile, "contrast_names", make_resultdicts_b, "taskcontrast")
+    workflow.connect(inputnode, "condition_names", parse_condition_file, "condition_names")
+    workflow.connect(inputnode, "condition_files", parse_condition_file, "in_any")
+    workflow.connect(parse_condition_file, "contrast_names", make_resultdicts_b, "taskcontrast")
 
+    #
+    get_scan_start = pe.Node(
+        niu.Function(
+            input_names=["vals"], output_names=["scan_start"], function=_get_scan_start,
+        ),
+        name="get_scan_start",
+    )
+    workflow.connect(inputnode, "vals", get_scan_start, "vals")
+
+    apply_condition_offset = pe.Node(
+        ApplyConditionOffset(), name="apply_condition_offset"
+    )
+    workflow.connect(parse_condition_file, "subject_info", apply_condition_offset, "subject_info")
+    workflow.connect(get_scan_start, "scan_start", apply_condition_offset, "scan_start")
+
+    #
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
 
@@ -166,7 +187,7 @@ def init_taskbased_wf(
     workflow.connect(inputnode, "condition_units", modelspec, "input_units")
     workflow.connect(inputnode, "repetition_time", modelspec, "time_repetition")
     workflow.connect(fillna, "out_no_header", modelspec, "realignment_parameters")
-    workflow.connect(parseconditionfile, "subject_info", modelspec, "subject_info")
+    workflow.connect(apply_condition_offset, "subject_info", modelspec, "subject_info")
 
     # generate design from first level specification
     if feature.hrf == "dgamma":
@@ -190,7 +211,7 @@ def init_taskbased_wf(
         ),
         name="level1design",
     )
-    workflow.connect(parseconditionfile, "contrasts", level1design, "contrasts")
+    workflow.connect(parse_condition_file, "contrasts", level1design, "contrasts")
     workflow.connect(inputnode, "repetition_time", level1design, "interscan_interval")
     workflow.connect(modelspec, "session_info", level1design, "session_info")
 
@@ -250,11 +271,11 @@ def init_taskbased_wf(
             name="add_td_conditions",
         )
         add_td_conditions.inputs.hrf = feature.hrf
-        workflow.connect(parseconditionfile, "condition_names", add_td_conditions, "condition_names")
+        workflow.connect(parse_condition_file, "condition_names", add_td_conditions, "condition_names")
 
         workflow.connect(add_td_conditions, "condition_names", mergecolumnnames, "in1")
     else:
-        workflow.connect(parseconditionfile, "condition_names", mergecolumnnames, "in1")
+        workflow.connect(parse_condition_file, "condition_names", mergecolumnnames, "in1")
 
     #
     design_unvest = pe.Node(Unvest(), name="design_unvest")
@@ -268,7 +289,7 @@ def init_taskbased_wf(
     workflow.connect(modelgen, "con_file", contrast_unvest, "in_vest")
 
     contrast_tsv = pe.Node(MergeColumns(1), name="contrast_tsv")
-    workflow.connect(parseconditionfile, "contrast_names", contrast_tsv, "row_index")
+    workflow.connect(parse_condition_file, "contrast_names", contrast_tsv, "row_index")
     workflow.connect(contrast_unvest, "out_no_header", contrast_tsv, "in1")
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 

@@ -5,7 +5,7 @@
 from pathlib import Path
 from collections import namedtuple, OrderedDict
 
-from ..cli.parser import _build_parser
+from ..cli.parser import build_parser
 from ..cluster import create_example_script
 
 
@@ -13,7 +13,7 @@ def test_create_example_script(monkeypatch, tmp_path: Path):
     NodePlaceholder = namedtuple("NodePlaceholder", ["mem_gb"])
     WorkflowPlaceholder = namedtuple("WorkflowPlaceholder", ["uuid", "nodes"])
 
-    parser = _build_parser()
+    parser = build_parser()
     opts = parser.parse_args(["--verbose"])
 
     node = NodePlaceholder(mem_gb=1.2)

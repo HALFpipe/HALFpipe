@@ -199,24 +199,21 @@ def run_stage_run(opts):
 
     from nipype.interfaces import freesurfer as fs
 
-    uses_freesurfer = any(
+    if any(
         isinstance(node.interface, fs.FSCommand)
         for chunk in chunks_to_run
         for node in chunk.nodes
-    )
-
-    if uses_freesurfer:
+    ):
         from niworkflows.utils.misc import check_valid_fs_license
 
         if not check_valid_fs_license():
-            logger.error(
+            raise RuntimeError(
                 "fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found. \n"
                 "HALFpipe looked for an existing license file at several paths, in this order: \n"
                 '1) a "license.txt" file in your HALFpipe working directory \n'
                 '2) command line argument "--fs-license-file" \n'
                 "Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"
             )
-            return
 
     from nipype.pipeline import engine as pe
 
@@ -256,10 +253,6 @@ def run(opts, should_run):
         )
 
     logger.debug(f"debug={opts.debug}")
-
-    if opts.workdir is not None:
-        opts.workdir = Path(opts.workdir)
-        opts.workdir.mkdir(exist_ok=True, parents=True)
 
     logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:

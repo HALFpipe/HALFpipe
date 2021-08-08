@@ -6,7 +6,10 @@
 
 """
 
+from typing import Type
+
 from marshmallow import fields, Schema
+from marshmallow_oneofschema.one_of_schema import OneOfSchema
 
 
 def get_nested_schema_field_names(schema, key: str):
@@ -33,3 +36,12 @@ def get_nested_schema_field_names(schema, key: str):
 
 def get_schema_entities(schema):
     return get_nested_schema_field_names(schema, "tags")
+
+
+def get_type_schema(base_schema: Type[OneOfSchema], database, file_path) -> Type[Schema]:
+    # traverse schemas to find subclass
+    schema: Type[OneOfSchema] = base_schema
+    while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
+        v = database.tagval(file_path, schema.type_field)
+        schema = schema.type_schemas[v]
+    return schema

@@ -4,7 +4,13 @@
 
 from typing import List, Dict, Set, Tuple, Union
 
-from ..io.index import Database, BidsDatabase
+from nibabel.nifti1 import Nifti1Header
+
+from ..model.setting import BaseSettingSchema
+from ..io.metadata.niftiheader import NiftiheaderLoader
+from ..io.metadata.direction import get_axcodes_set
+from ..io.index.bids import BidsDatabase, get_file_metadata
+from ..io.index.database import Database
 from ..utils import logger, nvol
 
 
@@ -61,7 +67,14 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     )
 
 
-def collect_fieldmaps(database: Database, bold_file_path: str, filters: Dict) -> List[str]:
+def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
+    sub = database.tagval(bold_file_path, "sub")
+    filters = dict(sub=sub)  # enforce same subject
+
+    session = database.tagval(bold_file_path, "ses")
+    if session is not None:  # enforce fmaps from same session
+        filters.update(dict(ses=session))
+
     candidates = database.associations(
         bold_file_path, datatype="fmap", **filters
     )
@@ -87,10 +100,8 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
     for bold_file_path in bold_file_paths:
 
         sub = database.tagval(bold_file_path, "sub")
-        filters = dict(sub=sub)  # enforce same subject
-
         t1ws = database.associations(
-            bold_file_path, datatype="anat", **filters
+            bold_file_path, datatype="anat", sub=sub,
         )
 
         if t1ws is None:  # remove bold files without T1w
@@ -98,11 +109,7 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
 
         associated_file_paths = [bold_file_path, *t1ws]
 
-        session = database.tagval(bold_file_path, "ses")
-        if session is not None:  # enforce fmaps from same session
-            filters.update(dict(ses=session))
-
-        fmaps = collect_fieldmaps(database, bold_file_path, filters)
+        fmaps = collect_fieldmaps(database, bold_file_path)
         if fmaps is not None:
             associated_file_paths.extend(fmaps)  # add all fmaps for now, filter later
 
@@ -192,3 +199,29 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
     bold_file_paths = [b for b in bold_file_paths if b in bold_file_paths_dict]
 
     return bold_file_paths_dict
+
+
+def collect_metadata(database, source_file, setting) -> Dict:
+    metadata = dict()
+
+    metadata.update(BaseSettingSchema().dump(setting))
+
+    metadata.update(get_file_metadata(database, source_file))
+
+    header, _ = NiftiheaderLoader.load(source_file)
+    assert isinstance(header, Nifti1Header)
+
+    zooms = list(map(float, header.get_zooms()))
+    assert all(isinstance(z, float) for z in zooms)
+    metadata["acquisition_voxel_size"] = tuple(zooms[:3])
+
+    data_shape = header.get_data_shape()
+    assert len(data_shape) == 4
+    metadata["acquisition_volume_shape"] = tuple(data_shape[:3])
+    metadata["number_of_volumes"] = int(data_shape[3])
+
+    (axcodes,) = get_axcodes_set(source_file)
+    axcode_str = "".join(axcodes)
+    metadata["acquisition_orientation"] = axcode_str
+
+    return metadata
