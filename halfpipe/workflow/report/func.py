@@ -8,23 +8,26 @@ from nipype.algorithms import confounds as nac
 
 from fmriprep import config
 from niworkflows.utils.spaces import SpatialReferences
+from niworkflows.interfaces.utility import KeySelect
 
 from ...interface import (
-    Exec,
     PlotRegistration,
     PlotEpi,
-    Vals,
-    CalcMean,
     Resample,
     MakeResultdicts,
     ResultdictDatasink
 )
+from ...interface.report.vals import UpdateVals, CalcMean
 
 from ..constants import constants
 from ..memory import MemoryCalculator
 
 
-def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memcalc=MemoryCalculator.default()):
+def _calc_scan_start(skip_vols: int, slice_timing_offset: float, repetition_time: float) -> float:
+    return (skip_vols + slice_timing_offset) * repetition_time
+
+
+def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalculator.default()):
     """
 
     """
@@ -33,39 +36,55 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
     #
     fmriprepreports = ["bold_conf", "reg", "bold_rois", "compcor", "conf_corr", "sdc"]
     fmriprepreportdatasinks = [f"ds_report_{fr}" for fr in fmriprepreports]
-    strfields = [
-        "bold_std",
-        "bold_std_ref",
-        "bold_mask_std",
-        "movpar_file",
-        "skip_vols",
-        "confounds",
-        "std_dseg",
-        "method",
-        *fmriprepreportdatasinks,
-    ]
+
     inputnode = pe.Node(
-        Exec(
-            fieldtpls=[
-                ("tags", None),
-                *[(field, "firststr") for field in strfields],
-                ("fd_thres", None)
+        niu.IdentityInterface(
+            fields=[
+                "bold_std",
+                "bold_std_ref",
+                "bold_mask_std",
+                "std_dseg",
+                "spatial_reference",
+                "movpar_file",
+                "confounds",
+                "method",
+                *fmriprepreportdatasinks,
+                "fd_thres",
+                "repetition_time",
+                "slice_timing_offset",
+                "skip_vols",
+                "tags",
             ]
         ),
         name="inputnode",
     )
+
+    select_std = pe.Node(
+        KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+        name="select_std",
+        run_without_submitting=True,
+        nohash=True,
+    )
+    select_std.inputs.key = f"{constants.reference_space}_res-{constants.reference_res}"
+    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
+    workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
+    workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
+    workflow.connect(inputnode, "spatial_reference", select_std, "keys")
+
+    #
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports],
-            valkeys=["dummy", "sdc_method"]
+            valkeys=["dummy_scans", "sdc_method", "scan_start"],
         ),
         name="make_resultdicts",
     )
+    workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy_scans")
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
-    workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy")
     workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
 
     #
@@ -86,17 +105,17 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
         name="epi_norm_rpt",
         mem_gb=0.1,
     )
-    workflow.connect(inputnode, "bold_std_ref", epi_norm_rpt, "in_file")
-    workflow.connect(inputnode, "bold_mask_std", epi_norm_rpt, "mask_file")
+    workflow.connect(select_std, "bold_std_ref", epi_norm_rpt, "in_file")
+    workflow.connect(select_std, "bold_mask_std", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=2 * memcalc.series_std_gb)
-    workflow.connect(inputnode, "bold_std", tsnr, "in_file")
+    workflow.connect(select_std, "bold_std", tsnr, "in_file")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "tsnr_file", tsnr_rpt, "in_file")
-    workflow.connect(inputnode, "bold_mask_std", tsnr_rpt, "mask_file")
+    workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
@@ -107,11 +126,26 @@ def init_func_report_wf(workdir=None, fd_thres=None, name="func_report_wf", memc
         name="resample",
         mem_gb=2 * memcalc.volume_std_gb,
     )
-    workflow.connect(inputnode, "std_dseg", resample, "input_image")
+    workflow.connect(select_std, "std_dseg", resample, "input_image")
+
+    # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717
+    calc_scan_start = pe.Node(
+        niu.Function(
+            input_names=["skip_vols", "slice_timing_offset", "repetition_time"],
+            output_names="scan_start",
+            function=_calc_scan_start,
+        ),
+        name="calc_scan_start",
+    )
+    workflow.connect(inputnode, "skip_vols", calc_scan_start, "skip_vols")
+    workflow.connect(inputnode, "repetition_time", calc_scan_start, "repetition_time")
+    workflow.connect(inputnode, "slice_timing_offset", calc_scan_start, "slice_timing_offset")
+
+    workflow.connect(calc_scan_start, "scan_start", make_resultdicts, "scan_start")
 
     # vals
     confvals = pe.Node(
-        Vals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
+        UpdateVals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
     )
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
     workflow.connect(inputnode, "confounds", confvals, "confounds")

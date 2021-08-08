@@ -7,6 +7,43 @@ from math import isclose
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch, File
 
 from ..io import parse_condition_file
+from ..utils import logger
+
+
+class ApplyConditionOffsetInputSpec(TraitedSpec):
+    subject_info = traits.Any()
+    scan_start = traits.Float()
+
+
+class ApplyConditionOffsetOutputSpec(TraitedSpec):
+    subject_info = traits.Any()
+
+
+class ApplyConditionOffset(SimpleInterface):
+    input_spec = ApplyConditionOffsetInputSpec
+    output_spec = ApplyConditionOffsetOutputSpec
+
+    def _run_interface(self, runtime):
+        subject_info = self.inputs.subject_info
+        scan_start = self.inputs.scan_start
+
+        conditions = subject_info.conditions
+        onsets = subject_info.onsets
+        durations = subject_info.durations
+
+        for condition, condition_onsets in zip(conditions, onsets):
+            for i, onset in enumerate(condition_onsets):
+                onset -= scan_start
+                if onset < 0:
+                    onset = 0
+                    logger.warning(f'Condition "{condition}" onset truncated to {onset:f} s.')
+                condition_onsets[i] = onset
+
+        self._results["subject_info"] = Bunch(
+            conditions=conditions, onsets=onsets, durations=durations
+        )
+
+        return runtime
 
 
 class ParseConditionFileInputSpec(TraitedSpec):
@@ -43,8 +80,6 @@ class ParseConditionFileOutputSpec(TraitedSpec):
 
 
 class ParseConditionFile(SimpleInterface):
-    """ interface to construct a group design """
-
     input_spec = ParseConditionFileInputSpec
     output_spec = ParseConditionFileOutputSpec
 

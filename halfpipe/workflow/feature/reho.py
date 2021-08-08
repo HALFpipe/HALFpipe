@@ -7,7 +7,8 @@ from nipype.interfaces import utility as niu
 
 from ..memory import MemoryCalculator
 from ...utils import formatlikebids
-from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, BlurInMask, ReHo
+from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, ReHo
+from ...interface.imagemaths.lazyblur import LazyBlurToFWHM
 
 
 def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
@@ -67,7 +68,7 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     #
     smooth = pe.Node(
-        BlurInMask(preserve=True, float_out=True, out_file="blur.nii.gz"), name="smooth"
+        LazyBlurToFWHM(outputtype="NIFTI_GZ"), name="smooth"
     )
     workflow.connect(reho, "out_file", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")

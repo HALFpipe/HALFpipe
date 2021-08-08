@@ -10,3 +10,5 @@ class constants:
     reference_res: Final[int] = 2
 
     workflowdir: Final[str] = "nipype"
+
+    grayord_density: Final[str] = "91k"

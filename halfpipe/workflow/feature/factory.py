@@ -14,13 +14,22 @@ from .seedbasedconnectivity import init_seedbasedconnectivity_wf
 from .taskbased import init_taskbased_wf
 
 from ..factory import Factory
-from ..collect import collect_events
+from ..collect import collect_events, collect_metadata
 from ..memory import MemoryCalculator
 
-from ...model import FeatureSchema, BaseSettingSchema
+from ...model import FeatureSchema
 from ...utils import logger
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
+
+
+def _find_setting(setting_name, spec):
+    (setting,) = [
+        setting
+        for setting in spec.settings
+        if setting["name"] == setting_name
+    ]
+    return setting
 
 
 class FeatureFactory(Factory):
@@ -51,11 +60,7 @@ class FeatureFactory(Factory):
         for feature in self.spec.features:
             sourcefiles = set(raw_sources_dict.keys())
 
-            (setting,) = [
-                setting
-                for setting in self.spec.settings
-                if setting["name"] == feature.setting
-            ]
+            setting = _find_setting(feature.setting, self.spec)
 
             filters = setting.get("filters")
             if filters is not None and len(filters) > 0:
@@ -164,23 +169,31 @@ class FeatureFactory(Factory):
                     node.inputs.repetition_time = database.metadata(sourcefile, "repetition_time")
                 if hasattr(node.inputs, "tags"):
                     node.inputs.tags = database.tags(sourcefile)
-                settingnamefield = "setting"
-                if m.group("prefix") is not None:
-                    settingnamefield = f'{m.group("prefix")}{settingnamefield}'
-                settingname = getattr(feature, settingnamefield)
+
+                setting_name_field = "setting"
+                prefix = m.group("prefix")
+                if prefix is not None:
+                    setting_name_field = f"{prefix}{setting_name_field}"
+
+                setting_name = getattr(feature, setting_name_field)
+                setting = _find_setting(setting_name, self.spec)
+
                 if hasattr(node.inputs, "metadata"):
-                    for setting in self.spec.settings:
-                        if setting["name"] == settingname:
-                            metadict = BaseSettingSchema().dump(setting)
-                            assert isinstance(metadict, dict)
-                            if raw_sources is not None:
-                                metadict["raw_sources"] = sorted(raw_sources)
-                            node.inputs.metadata = metadict
-                self.setting_factory.connect(hierarchy, node, sourcefile, settingname, confounds_action=confounds_action)
+                    metadata = collect_metadata(database, sourcefile, setting)
+                    metadata["raw_sources"] = sorted(raw_sources)
+                    node.inputs.metadata = metadata
+
+                self.setting_factory.connect(
+                    hierarchy,
+                    node,
+                    sourcefile,
+                    setting_name,
+                    confounds_action=confounds_action,
+                )
 
         return vwf
 
-    def get(self, feature_name, **kwargs):
+    def get(self, feature_name, *_):
         return self.wfs[feature_name]
 
     def connect(self, *args, **kwargs):

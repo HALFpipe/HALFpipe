@@ -7,55 +7,27 @@
 import pytest
 
 import os
-from zipfile import ZipFile
 import tarfile
 from pathlib import Path
-from random import seed
+from random import normalvariate, seed, choices
+from math import inf
 
 import pandas as pd
-import numpy as np
 import nibabel as nib
 from nilearn.image import new_img_like
-from nipype.pipeline import plugins as nip
 from fmriprep import config
 
-from ...tests.resource import setup as setuptestresources
-from ...resource import get as getresource
-from templateflow.api import get as gettemplate
+from ...resource import get as get_resource
+from templateflow.api import get as get_template
 
 from ..base import init_workflow
 from ..execgraph import init_execgraph
 from ...io.index import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema
 from ...model.spec import Spec, SpecSchema, savespec
-from ...utils import nvol, ceildiv
-
-
-@pytest.fixture(scope="module")
-def bids_data(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
-
-    os.chdir(str(tmp_path))
-
-    setuptestresources()
-    input_path = getresource("bids_data.zip")
-
-    with ZipFile(input_path) as fp:
-        fp.extractall(tmp_path)
-
-    bids_data_path = tmp_path / "bids_data"
-
-    func_path = bids_data_path / "sub-1012" / "func"
-
-    Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
-
-    bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
-    bold_img = nib.load(bold_file)
-    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
-    bold_img = new_img_like(bold_img, bold_data, copy_header=True)
-    nib.save(bold_img, bold_file)
-
-    return bids_data_path
+from ...utils import nvol
+from ...cli.parser import build_parser
+from ...cli.run import run_stage_run
 
 
 @pytest.fixture(scope="module")
@@ -68,6 +40,7 @@ def task_events(tmp_path_factory, bids_data):
 
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump({}), partial=True)
+    assert isinstance(spec, Spec)
 
     spec.files = list(map(FileSchema().load, [
         dict(datatype="bids", path=str(bids_data)),
@@ -75,14 +48,14 @@ def task_events(tmp_path_factory, bids_data):
 
     database = Database(spec)
 
-    boldfilespaths = database.get(datatype="func", suffix="bold")
+    bold_file_paths = database.get(datatype="func", suffix="bold")
+    assert database.fillmetadata("repetition_time", bold_file_paths)
 
-    assert database.fillmetadata("repetition_time", boldfilespaths)
-
-    scan_duration = min(
-        nvol(b) * database.metadata(b, "repetition_time")
-        for b in boldfilespaths
-    )
+    scan_duration = inf
+    for b in bold_file_paths:
+        repetition_time = database.metadata(b, "repetition_time")
+        assert isinstance(repetition_time, float)
+        scan_duration = min(nvol(b) * repetition_time, scan_duration)
 
     onset = []
     duration = []
@@ -91,7 +64,7 @@ def task_events(tmp_path_factory, bids_data):
     d = 5.0
     while True:
         t += d
-        t += np.abs(np.random.randn()) + 1.0  # jitter
+        t += abs(normalvariate(0, 1)) + 1.0  # jitter
 
         if t < scan_duration:
             onset.append(t)
@@ -100,9 +73,7 @@ def task_events(tmp_path_factory, bids_data):
             break
 
     n = len(duration)
-    trial_type = list(
-        np.random.permutation(["a", "b"] * ceildiv(n, 2))
-    )[:n]
+    trial_type = choices(["a", "b"], k=n)
 
     events = pd.DataFrame(dict(onset=onset, duration=duration, trial_type=trial_type))
 
@@ -120,7 +91,7 @@ def atlas_harvard_oxford(tmp_path_factory):
 
     os.chdir(str(tmp_path))
 
-    inputtarpath = getresource("HarvardOxford.tgz")
+    inputtarpath = get_resource("HarvardOxford.tgz")
 
     with tarfile.open(inputtarpath) as fp:
         fp.extractall(tmp_path)
@@ -183,7 +154,7 @@ def mock_spec(bids_data, task_events, pcc_mask):
             suffix="map",
             extension=".nii.gz",
             tags=dict(desc="smith09"),
-            path=str(getresource("PNAS_Smith09_rsn10.nii.gz")),
+            path=str(get_resource("PNAS_Smith09_rsn10.nii.gz")),
             metadata=dict(space="MNI152NLin6Asym"),
         ),
         dict(
@@ -199,7 +170,7 @@ def mock_spec(bids_data, task_events, pcc_mask):
             suffix="atlas",
             extension=".nii.gz",
             tags=dict(desc="schaefer2018"),
-            path=str(gettemplate(
+            path=str(get_template(
                 "MNI152NLin2009cAsym",
                 resolution=2,
                 atlas="Schaefer2018",
@@ -329,11 +300,17 @@ def test_feature_extraction(tmp_path, mock_spec):
     config.nipype.omp_nthreads = 4
 
     workflow = init_workflow(tmp_path)
-    workflow_args = dict(stop_on_first_crash=True)
-    workflow.config["execution"].update(workflow_args)
 
     graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
-    runner = nip.LinearPlugin(plugin_args=workflow_args)
-    runner.run(graph, updatehash=False, config=workflow.config)
+    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+
+    parser = build_parser()
+    opts = parser.parse_args(args=list())
+
+    opts.graphs = graphs
+    opts.nipype_run_plugin = "Linear"
+    opts.debug = True
+
+    run_stage_run(opts)

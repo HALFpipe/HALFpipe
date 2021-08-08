@@ -6,9 +6,9 @@ from .conditions import ParseConditionFile
 from .connectivity import ConnectivityMeasure
 from .fixes import ApplyTransforms, FLAMEO, ReHo
 from .fslnumpy import FilterRegressor, TemporalFilter
-from .imagemaths import AddMeans, BlurInMask, MaskCoverage, MaxIntensity, Merge, MergeMask, Resample, ZScore
+from .imagemaths import AddMeans, MaskCoverage, MaxIntensity, Merge, MergeMask, Resample, ZScore
 from .preprocessing import GrandMeanScaling
-from .report import PlotEpi, PlotRegistration, Vals, CalcMean
+from .report import PlotEpi, PlotRegistration, CalcMean
 from .resultdict import (
     MakeResultdicts,
     FilterResultdicts,
@@ -45,7 +45,6 @@ __all__ = [
     "FilterRegressor",
     "TemporalFilter",
     "AddMeans",
-    "BlurInMask",
     "MaskCoverage",
     "MaxIntensity",
     "Merge",
@@ -55,7 +54,6 @@ __all__ = [
     "GrandMeanScaling",
     "PlotEpi",
     "PlotRegistration",
-    "Vals",
     "CalcMean",
     "MakeResultdicts",
     "FilterResultdicts",
