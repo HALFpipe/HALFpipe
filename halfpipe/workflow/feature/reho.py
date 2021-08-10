@@ -6,7 +6,7 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
 
 from ..memory import MemoryCalculator
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 from ...interface import MakeResultdicts, ResultdictDatasink, ZScore, ReHo
 from ...interface.imagemaths.lazyblur import LazyBlurToFWHM
 
@@ -17,7 +17,7 @@ def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator
 
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}"
+        name = f"{format_workflow(feature.name)}"
     else:
         name = "reho"
     if fwhm is not None:

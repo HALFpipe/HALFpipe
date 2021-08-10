@@ -27,7 +27,8 @@ from ...interface import (
     AggregateResultdicts,
     MakeDesignTsv,
 )
-from ...utils import ravel, formatlikebids, lenforeach
+from ...utils import ravel, lenforeach
+from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 from ...stats.algorithms import algorithms, modelfit_aliases
 from ...fixes import Node, MapNode
@@ -74,7 +75,7 @@ def init_model_wf(
         variables=None,
         memcalc=MemoryCalculator.default()
 ):
-    name = f"{formatlikebids(model.name)}_wf"
+    name = f"{format_workflow(model.name)}_wf"
     workflow = pe.Workflow(name=name)
 
     if model is None:

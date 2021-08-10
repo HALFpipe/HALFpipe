@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .copy import deepcopyfactory, deepcopy
-from .format import formatlist, cleaner, formatlikebids
 from .hash import hexdigest, b32digest
 from .image import niftidim, nvol
 from .matrix import loadints, ncol, atleast_4d
@@ -26,9 +25,6 @@ __all__ = [
     "logger",
     "deepcopyfactory",
     "deepcopy",
-    "formatlist",
-    "cleaner",
-    "formatlikebids",
     "hexdigest",
     "b32digest",
     "niftidim",

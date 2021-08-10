@@ -26,7 +26,8 @@ from ...interface import (
     MergeColumns,
     Unvest
 )
-from ...utils import firstfloat, firststr, formatlikebids, ravel
+from ...utils import firstfloat, firststr, ravel
+from ...utils.format import format_workflow
 
 from ..memory import MemoryCalculator
 
@@ -68,7 +69,7 @@ def init_taskbased_wf(
     create workflow to calculate a first level glm for task functional data
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}_wf"
+        name = f"{format_workflow(feature.name)}_wf"
     else:
         name = "taskbased_wf"
     workflow = pe.Workflow(name=name)

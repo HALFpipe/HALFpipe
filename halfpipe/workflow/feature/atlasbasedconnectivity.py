@@ -10,7 +10,7 @@ from ...interface import ConnectivityMeasure, Resample, CalcMean, MakeResultdict
 
 from ..memory import MemoryCalculator
 from ..constants import constants
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 
 
 def init_atlasbasedconnectivity_wf(
@@ -21,7 +21,7 @@ def init_atlasbasedconnectivity_wf(
 
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}_wf"
+        name = f"{format_workflow(feature.name)}_wf"
     else:
         name = "atlasbasedconnectivity_wf"
     workflow = pe.Workflow(name=name)

@@ -16,7 +16,8 @@ from calamities.pattern.glob import _rlistdir
 from ...model.file import FileSchema
 from ...model.tags import entity_longnames, entities
 from ...model.utils import get_nested_schema_field_names, get_type_schema
-from ...utils import formatlikebids, splitext
+from ...utils import splitext
+from ...utils.format import format_like_bids
 from ..metadata import canonicalize_direction_code
 
 from bids.layout import Config
@@ -110,7 +111,7 @@ class BidsDatabase:
                 bidsentity = "acquisition"
 
             if k in entities:
-                _tags[bidsentity] = formatlikebids(v)
+                _tags[bidsentity] = format_like_bids(v)
             else:
                 if tags.get("datatype") == "fmap":
                     if k == "suffix":

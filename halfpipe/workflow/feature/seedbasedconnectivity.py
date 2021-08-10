@@ -22,7 +22,7 @@ from ...interface import (
 
 from ..memory import MemoryCalculator
 from ..constants import constants
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 
 
 def _contrasts(design_file=None):
@@ -34,7 +34,7 @@ def _contrasts(design_file=None):
     import csv
 
     design_df = loadspreadsheet(design_file)
-    m, n = design_df.shape
+    _, n = design_df.shape
 
     contrast_mat = np.zeros((1, n))
     contrast_mat[0, 0] = 1
@@ -64,7 +64,7 @@ def init_seedbasedconnectivity_wf(
     create workflow to calculate seed connectivity maps
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}_wf"
+        name = f"{format_workflow(feature.name)}_wf"
     else:
         name = "seedbasedconnectivity_wf"
     workflow = pe.Workflow(name=name)
