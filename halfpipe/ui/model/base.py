@@ -16,12 +16,14 @@ from calamities import (
 
 from inflection import humanize, underscore
 
-
-from ..utils import forbidden_chars
 from ..step import Step, YesNoStep
-from ...model import Model, FixedEffectsModelSchema
 from ..pattern import entity_display_aliases
-from ...utils import inflect_engine as p, formatlikebids
+from ..utils import forbidden_chars
+
+from ...model import Model, FixedEffectsModelSchema
+from ...utils import inflect_engine as p
+from ...utils.format import format_like_bids
+
 from .loop import AddAnotherModelStep
 from .filter import MEModelMotionFilterStep
 from .spreadsheet import SpreadsheetStep
@@ -72,7 +74,7 @@ def _get_fe_aggregate(ctx, inputname, across):
     ]
     acrossstr = " then ".join([p.plural(display_str) for display_str in display_strs])
     inputname_with_spaces = humanize(underscore(inputname))
-    basename = formatlikebids(f"aggregate {inputname_with_spaces} across {acrossstr}")
+    basename = format_like_bids(f"aggregate {inputname_with_spaces} across {acrossstr}")
 
     entity = across.pop()
 
@@ -152,7 +154,7 @@ class ModelAggregateStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if not len(self.options) > 0:
             return self.is_first_run
         else:
@@ -219,7 +221,7 @@ class ModelFeaturesStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if not self.should_run:
             return self.is_first_run
         else:
@@ -264,7 +266,7 @@ class ModelNameStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -282,7 +284,7 @@ class ModelTypeStep(Step):
     is_vertical = True
     options = {"Intercept only": "me", "Linear model": "lme"}
 
-    def setup(self, ctx):
+    def setup(self, _):
         self._append_view(TextView("Specify model type"))
         self.input_view = SingleChoiceInputView(
             list(self.options.keys()), isVertical=self.is_vertical
@@ -290,7 +292,7 @@ class ModelTypeStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:
             return False

@@ -23,7 +23,8 @@ from ..step import Step, StepType
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
 from ...model import RefFileSchema
-from ...utils import formatlikebids, deepcopy
+from ...utils import deepcopy
+from ...utils.format import format_like_bids
 
 next_step_type = SettingValsStep
 
@@ -85,7 +86,7 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
                 self._append_view(self.input_view)
                 self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             if self.is_missing:
                 return self.is_first_run
             else:
@@ -147,7 +148,7 @@ class MinSeedCoverageStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -197,7 +198,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -245,7 +246,7 @@ def move_setting_smoothing_to_feature(ctx):
 def on_falff_setting(ctx):
     move_setting_smoothing_to_feature(ctx)
 
-    name = formatlikebids(f"{ctx.spec.features[-1].name} unfiltered setting")
+    name = format_like_bids(f"{ctx.spec.features[-1].name} unfiltered setting")
 
     unfiltered_setting = deepcopy(ctx.spec.settings[-1])
     unfiltered_setting["name"] = name
