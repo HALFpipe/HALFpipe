@@ -19,12 +19,12 @@ from ..step import Step
 from ..pattern import entity_display_aliases
 from ...model import SettingSchema, entities, FilterSchema
 from ..utils import forbidden_chars, entity_colors
-from ...utils import formatlikebids
+from ...utils.format import format_like_bids
 
 
 def feature_namefun(ctx):
     featurename = underscore(ctx.spec.features[-1].name)
-    name = formatlikebids(f"{featurename} setting")
+    name = format_like_bids(f"{featurename} setting")
     ctx.spec.features[-1].setting = name
     return name
 
@@ -86,7 +86,7 @@ def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namef
                 self._append_view(self.input_view)
                 self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             if not self.should_run:
                 return self.is_first_run
             else:
@@ -160,7 +160,7 @@ def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namef
                 self._append_view(self.input_view)
                 self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             if not self.should_run:
                 return self.is_first_run
             else:

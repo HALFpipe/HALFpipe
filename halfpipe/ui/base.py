@@ -86,11 +86,10 @@ class UseExistingSpecStep(Step):
             return self.is_first_run
 
     def next(self, ctx):
-        if self.is_first_run:
+        if self.is_first_run or self.existing_spec is not None:
             self.is_first_run = False
 
-        if self.is_first_run and self.existing_spec is not None:
-            if self.choice is None:
+            if self.choice is None or self.existing_spec is None:
                 return BidsStep(self.app)(ctx)
 
             choice_index = self.options.index(self.choice)
@@ -118,8 +117,6 @@ class UseExistingSpecStep(Step):
                 if choice_index == 5:
                     ctx.spec.models = models
                 return ModelsStep(self.app)(ctx)
-        else:
-            return
 
 
 class WorkingDirectoryStep(Step):
@@ -127,7 +124,9 @@ class WorkingDirectoryStep(Step):
         self.predefined_workdir = True
         self.is_first_run = True
 
-        if ctx.workdir is None:
+        self.workdir = ctx.workdir
+
+        if self.workdir is None:
             self._append_view(TextView("Specify working directory"))
             self.input_view = DirectoryInputView(exists=False)
             self._append_view(self.input_view)
@@ -142,16 +141,12 @@ class WorkingDirectoryStep(Step):
         return self.workdir is not None
 
     def next(self, ctx):
-        assert self.workdir is not None
-
         workdir = init_workdir(self.workdir)
         ctx.workdir = workdir
 
         if self.is_first_run or not self.predefined_workdir:
             self.is_first_run = False
             return UseExistingSpecStep(self.app)(ctx)
-        else:
-            return
 
 
 class FirstStep(Step):
