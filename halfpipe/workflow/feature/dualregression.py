@@ -19,7 +19,7 @@ from ...interface import (
     MakeResultdicts,
     ResultdictDatasink,
 )
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 
 from ..memory import MemoryCalculator
 from ..constants import constants
@@ -37,6 +37,7 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
     _, m = map_timeseries_df.shape
 
     k = 0
+    confounds_df = None
     if confounds_file is not None:
         confounds_df = loadspreadsheet(confounds_file)
         _, k = confounds_df.shape
@@ -47,7 +48,7 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
     leading_zeros = int(np.ceil(np.log10(m)))
     map_component_names = [f"{i:0{leading_zeros}d}" for i in range(1, m + 1)]
 
-    if confounds_file is not None:
+    if confounds_df is not None:
         contrast_columns = [*map_component_names, *confounds_df.columns]
     else:
         contrast_columns = [*map_component_names]
@@ -68,7 +69,7 @@ def init_dualregression_wf(
     create a workflow to calculate dual regression for ICA seeds
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}_wf"
+        name = f"{format_workflow(feature.name)}_wf"
     else:
         name = "dualregression_wf"
     workflow = pe.Workflow(name=name)

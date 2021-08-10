@@ -8,7 +8,7 @@ from nipype.pipeline import engine as pe
 
 from fmriprep.workflows.bold.base import _get_wf_name
 
-from ..utils import formatlikebids
+from ..utils.format import format_like_bids
 
 
 class FactoryContext:
@@ -42,7 +42,7 @@ class Factory(ABC):
                 bidspath = bidsdatabase.tobids(sourcefile)
                 subject_id = bidsdatabase.tagval(bidspath, "subject")
             if subject_id is not None:
-                bids_subject_id = formatlikebids(subject_id)
+                bids_subject_id = format_like_bids(subject_id)
         if bids_subject_id is not None:
             return "single_subject_%s_wf" % bids_subject_id
 

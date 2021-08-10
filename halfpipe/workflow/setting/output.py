@@ -8,11 +8,11 @@ import nipype.interfaces.utility as niu
 # from niworkflows.interfaces.plotting import ConfoundsCorrelationPlot
 
 from ...interface import MakeResultdicts, ResultdictDatasink
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 
 
 def init_setting_output_wf(workdir=None, setting_name=None):
-    name = f"setting_output_{formatlikebids(setting_name)}_wf"
+    name = f"setting_output_{format_workflow(setting_name)}_wf"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

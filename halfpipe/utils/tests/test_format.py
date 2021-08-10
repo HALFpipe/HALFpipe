@@ -4,10 +4,9 @@
 
 import pytest
 
-from ..format import formatlikebids
+from ..format import format_like_bids, format_workflow
 
 
-@pytest.mark.timeout(60)
 @pytest.mark.parametrize(
     "a, b",
     [
@@ -20,4 +19,19 @@ from ..format import formatlikebids
     ]
 )
 def test_format(a, b):
-    assert formatlikebids(a) == b
+    assert format_like_bids(a) == b
+
+
+@pytest.mark.parametrize(
+    "a, b",
+    [
+        ("seedCorr", "seed_corr"),
+        ("faces>shapes", "faces_gt_shapes"),
+        ("faces-vs-shapes", "faces_vs_shapes"),
+        ("fALFF", "f_alff"),
+        ("PIAB_1234", "piab_1234"),
+        ("PIAB_1234_MRT1", "piab_1234_mrt1"),
+    ]
+)
+def test_workflow(a, b):
+    assert format_workflow(a) == b

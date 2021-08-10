@@ -21,7 +21,8 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 from ...io import DictListFile
 from ...model import FuncTagsSchema, entities
 from ...model.tags.resultdict import first_level_entities
-from ...utils import splitext, findpaths, formatlikebids, logger
+from ...utils import splitext, findpaths, logger
+from ...utils.format import format_like_bids
 from ...resource import get as getresource
 from ...stats.algorithms import algorithms
 
@@ -44,7 +45,7 @@ def _join_tags(tags: Dict[str, str], entities: Optional[Sequence[str]] = None) -
         if entity not in tags:
             continue
         value = tags[entity]
-        value = formatlikebids(value)
+        value = format_like_bids(value)
 
         if joined is None:
             joined = f"{entity}-{value}"
@@ -68,6 +69,7 @@ def _make_path(source_file, source_type, tags, suffix, **kwargs):
         folder_entities = ["task"]
         if "model" in tags:
             folder_entities.extend(first_level_entities)
+
         folder_name = _join_tags(tags, folder_entities)
         if folder_name is not None:
             path = path.joinpath(folder_name)

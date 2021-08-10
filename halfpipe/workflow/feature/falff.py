@@ -10,7 +10,7 @@ from ...interface.imagemaths.lazyblur import LazyBlurToFWHM
 from ...interface import MakeResultdicts, ResultdictDatasink, ZScore
 
 from ..memory import MemoryCalculator
-from ...utils import formatlikebids
+from ...utils.format import format_workflow
 
 
 def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
@@ -30,7 +30,7 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     """
     if feature is not None:
-        name = f"{formatlikebids(feature.name)}"
+        name = f"{format_workflow(feature.name)}"
     else:
         name = "falff"
     if fwhm is not None:
