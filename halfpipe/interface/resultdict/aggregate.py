@@ -5,7 +5,7 @@
 from typing import Any, Hashable, NamedTuple, Tuple
 
 from collections import defaultdict, Counter
-from math import sqrt
+from math import sqrt, isclose
 
 import numpy as np
 
@@ -66,6 +66,9 @@ def aggregate_if_possible(value, value_was_dict=False):
     if isinstance(value, (list, tuple)) and len(value) > 0:
 
         if all(isinstance(v, (float, np.inexact)) for v in value):
+            if all(isclose(v, value[0]) for v in value):
+                return value[0]
+
             value_array = np.array(value, dtype=float)
             return MeanStd(
                 mean=float(np.nanmean(value_array)),
@@ -74,7 +77,12 @@ def aggregate_if_possible(value, value_was_dict=False):
                 n=int(value_array.size),
             )
 
-        elif all(isinstance(v, tuple) and all(isinstance(w, BinCount) for w in v) for v in value):
+        elif all(
+            isinstance(v, tuple)
+            and len(v) > 0
+            and all(isinstance(w, BinCount) for w in v)
+            for v in value
+        ):
             counter: Counter = Counter()
             for v in value:
                 c, value_was_dict = bin_counts_to_counter(v)
@@ -96,7 +104,12 @@ def aggregate_if_possible(value, value_was_dict=False):
         elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
             value_set = set(value)
             if len(value_set) == 1:
-                return next(iter(value_set))
+                result = next(iter(value_set))
+
+                if value_was_dict:
+                    return dict(result)
+
+                return result
 
             counter = Counter(value)
             return counter_to_bin_counts(counter, value_was_dict=value_was_dict)
@@ -115,21 +128,24 @@ def aggregate_if_possible(value, value_was_dict=False):
     return value
 
 
+def aggregate_list(value):
+    result = list()
+    for v in value:
+        result.extend(v)
+    return result
+
+
 def aggregate_field(key, value):
     if key in ["sources", "raw_sources"]:
-        sources = list()
-        for v in value:
-            sources.extend(v)
-        return sources
+        return aggregate_list(value)
 
     return aggregate_if_possible(value)
 
 
 def group_resultdicts(inputs, across):
     grouped_resultdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for resultdict in inputs:
-        resultdict = ResultdictSchema().dump(resultdict)
-        assert isinstance(resultdict, dict)
+
+    for resultdict in sorted(inputs, key=lambda d: d["tags"][across]):
         tags = resultdict["tags"]
 
         if across not in tags:
@@ -157,11 +173,19 @@ def aggregate_resultdicts(inputs, across):
     grouped_resultdicts = group_resultdicts(inputs, across)
 
     for tag_tuple, listdict in grouped_resultdicts.items():
-        resultdict = dict(tags=dict(tag_tuple), vals=dict())
-        resultdict.update(listdict)  # create combined resultdict
+
+        resultdict = defaultdict(dict)
+        resultdict["tags"] = dict(tag_tuple)
+
+        for f, d in listdict.items():  # create combined resultdict
+            resultdict[f].update(d)
 
         for f in ["tags", "metadata", "vals"]:
             for key, value in resultdict[f].items():
+                if key == across:
+                    assert all(isinstance(v, Hashable) for v in value)
+                    resultdict[f][key] = tuple(value)
+                    continue
                 resultdict[f][key] = aggregate_field(key, value)
 
         schema = ResultdictSchema()
