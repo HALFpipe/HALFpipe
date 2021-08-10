@@ -70,6 +70,8 @@ jobs:
 
       - name: Test with pytest with coverage
         shell: python
+        env:
+          PYTHONDONTWRITEBYTECODE: 1
         run: |
           import sys
           import pytest
