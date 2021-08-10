@@ -5,6 +5,7 @@
 import logging
 from logging import Filter
 import re
+from typing import List
 
 
 def setLevel(record, levelno=logging.DEBUG):
@@ -24,7 +25,7 @@ class DTypeWarningsFilter(Filter):
         return True
 
 
-pywarnings_to_ignore = [
+pywarnings_to_ignore: List[str] = [
     "the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.",
     "cmp not installed",
     "dist() and linux_distribution() functions are deprecated in Python 3.5",
@@ -57,7 +58,7 @@ class PyWarningsFilter(Filter):
     def __init__(self) -> None:
         super().__init__(name="pywarnings_filter")
 
-        escaped = list(map(str, map(re.escape, pywarnings_to_ignore)))
+        escaped: List[str] = [str(re.escape(w)) for w in pywarnings_to_ignore]
         regex_str = "|".join(escaped)
         self.regex = re.compile(f"(?:{regex_str})")
 
@@ -70,6 +71,7 @@ class PyWarningsFilter(Filter):
         if (
             "invalid value encountered in" in message
             or "divide by zero encountered in" in message
+            or "Reference space not set" in message
         ):  # make sqrt and division errors less visible
             setLevel(record, levelno=logging.INFO)
 
