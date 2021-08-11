@@ -202,7 +202,7 @@ def aggregate_resultdicts(inputs, across):
             for key, value in resultdict[f].items():
                 if key == across:
                     assert all(isinstance(v, Hashable) for v in value)
-                    resultdict[f][key] = tuple(value)
+                    resultdict[f][key] = list(value)
                     continue
                 resultdict[f][key] = aggregate_field(key, value)
 
