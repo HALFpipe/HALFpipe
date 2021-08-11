@@ -157,10 +157,19 @@ def _make_cutoff_filterfun(filter_dict: Dict, model_desc: str) -> Optional[Calla
     def cutoff_filterfun(d):
         val = d["vals"].get(filterfield, np.inf)
 
-        if isinstance(val, MeanStd):
-            x: float = val.mean
-        elif isinstance(val, float):
-            x = val
+        if isinstance(val, float):
+            x: float = val
+        elif isinstance(val, MeanStd):
+            x = val.mean
+        elif (
+            isinstance(val, tuple)
+            and len(val) == 4
+            and isinstance(val[0], float)
+            and isinstance(val[1], float)
+            and isinstance(val[2], int)
+            and isinstance(val[3], int)
+        ):  # a MeanStd namedtuple that has been converted to tuple
+            x = val[0]
         else:
             raise ValueError(f'Cannot compare "{val}" to cutoff "{cutoff}"')
 
