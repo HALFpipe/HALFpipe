@@ -56,11 +56,20 @@ def bin_counts_to_counter(bin_counts: Tuple[BinCount, ...]) -> Tuple[Counter, bo
 
 def counter_to_bin_counts(counter: Counter, value_was_dict: bool = False) -> Tuple[BinCount, ...]:
     bin_counts = list()
-    for v in sorted(counter.keys()):
+
+    values = counter.keys()
+
+    try:
+        sorted_values = sorted(values)
+    except TypeError:
+        sorted_values = sorted(values, key=str)  # fallback lexical sort
+
+    for v in sorted_values:
         count = counter[v]
         if value_was_dict is True:
             v = dict(v)
         bin_counts.append(BinCount(value=v, count=count))
+
     return tuple(bin_counts)
 
 
