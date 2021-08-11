@@ -122,7 +122,7 @@ def init_model_wf(
     workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
 
     # copy out results
-    merge_resultdicts_b = pe.Node(niu.Merge(2), name="merge_resultdicts_b")
+    merge_resultdicts_b = pe.Node(niu.Merge(3), name="merge_resultdicts_b")
     workflow.connect(make_resultdicts_a, "resultdicts", merge_resultdicts_b, "in1")
     workflow.connect(make_resultdicts_b, "resultdicts", merge_resultdicts_b, "in2")
 
@@ -141,43 +141,43 @@ def init_model_wf(
         workflow.connect(inputnode, f"in{i:d}", merge_resultdicts_a, f"in{i:d}")
 
     # filter inputs
-    filterkwargs = dict(
-        requireoneofimages=["effect", "reho", "falff", "alff"],
-        excludefiles=str(Path(workdir) / "exclude*.json"),
+    filter_kwargs = dict(
+        require_one_of_images=["effect", "reho", "falff", "alff"],
+        exclude_files=str(Path(workdir) / "exclude*.json"),
     )
     if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
-        filterkwargs.update(dict(filterdicts=model.filters))
+        filter_kwargs.update(dict(filter_dicts=model.filters))
     if hasattr(model, "spreadsheet"):
         if model.spreadsheet is not None and variables is not None:
-            filterkwargs.update(dict(spreadsheet=model.spreadsheet, variabledicts=variables))
-    filterresultdicts = pe.Node(
-        interface=FilterResultdicts(**filterkwargs),
-        name="filterresultdicts",
+            filter_kwargs.update(dict(spreadsheet=model.spreadsheet, variable_dicts=variables))
+    filter_resultdicts = pe.Node(
+        interface=FilterResultdicts(**filter_kwargs),
+        name="filter_resultdicts",
     )
-    workflow.connect(merge_resultdicts_a, "out", filterresultdicts, "indicts")
+    workflow.connect(merge_resultdicts_a, "out", filter_resultdicts, "in_dicts")
 
     # aggregate data structures
     # output is a list where each element respresents a separate model run
-    aggregateresultdicts = pe.Node(
-        AggregateResultdicts(numinputs=1, across=model.across), name="aggregateresultdicts"
+    aggregate_resultdicts = pe.Node(
+        AggregateResultdicts(numinputs=1, across=model.across), name="aggregate_resultdicts"
     )
-    workflow.connect(filterresultdicts, "resultdicts", aggregateresultdicts, "in1")
+    workflow.connect(filter_resultdicts, "resultdicts", aggregate_resultdicts, "in1")
 
     # extract fields from the aggregated data structure
     aliases = dict(effect=["reho", "falff", "alff"])
-    extractfromresultdict = MapNode(
+    extract_from_resultdict = MapNode(
         ExtractFromResultdict(keys=[model.across, *statmaps], aliases=aliases),
         iterfield="indict",
         allow_undefined_iterfield=True,
-        name="extractfromresultdict",
+        name="extract_from_resultdict",
     )
-    workflow.connect(aggregateresultdicts, "resultdicts", extractfromresultdict, "indict")
+    workflow.connect(aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict")
 
     # copy over aggregated metadata and tags to outputs
     for make_resultdicts_node in [make_resultdicts_a, make_resultdicts_b]:
-        workflow.connect(extractfromresultdict, "tags", make_resultdicts_node, "tags")
-        workflow.connect(extractfromresultdict, "metadata", make_resultdicts_node, "metadata")
-        workflow.connect(extractfromresultdict, "vals", make_resultdicts_node, "vals")
+        workflow.connect(extract_from_resultdict, "tags", make_resultdicts_node, "tags")
+        workflow.connect(extract_from_resultdict, "metadata", make_resultdicts_node, "metadata")
+        workflow.connect(extract_from_resultdict, "vals", make_resultdicts_node, "vals")
 
     # create models
     if model.type in ["fe", "me"]:  # intercept only model
@@ -185,7 +185,7 @@ def init_model_wf(
             niu.Function(input_names=["arrarr"], output_names=["image_count"], function=lenforeach),
             name="countimages",
         )
-        workflow.connect(extractfromresultdict, "effect", countimages, "arrarr")
+        workflow.connect(extract_from_resultdict, "effect", countimages, "arrarr")
 
         modelspec = MapNode(
             InterceptOnlyDesign(), name="modelspec", iterfield="n_copes", mem_gb=memcalc.min_gb
@@ -203,7 +203,7 @@ def init_model_wf(
             iterfield="subjects",
             mem_gb=memcalc.min_gb,
         )
-        workflow.connect(extractfromresultdict, "sub", modelspec, "subjects")
+        workflow.connect(extract_from_resultdict, "sub", modelspec, "subjects")
 
     else:
         raise ValueError()
@@ -211,18 +211,20 @@ def init_model_wf(
     workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast")
 
     # run models
-    if model.type in ["fe"]:
+    if model.type in ["fe"]:  # fixed effects aggregate for multiple runs, sessions, etc.
+        # pass length one inputs because we may want to use them on a higher level
+        workflow.connect(aggregate_resultdicts, "non_aggregated_resultdicts", merge_resultdicts_b, "in3")
 
         # need to merge
-        mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * numinputs)
+        mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * 3)
         mergemask = MapNode(MergeMask(), name="mergemask", **mergenodeargs)
-        workflow.connect(extractfromresultdict, "mask", mergemask, "in_files")
+        workflow.connect(extract_from_resultdict, "mask", mergemask, "in_files")
 
         mergeeffect = MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
-        workflow.connect(extractfromresultdict, "effect", mergeeffect, "in_files")
+        workflow.connect(extract_from_resultdict, "effect", mergeeffect, "in_files")
 
         mergevariance = MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
-        workflow.connect(extractfromresultdict, "variance", mergevariance, "in_files")
+        workflow.connect(extract_from_resultdict, "variance", mergevariance, "in_files")
 
         fe_run_mode = MapNode(
             niu.Function(input_names=["var_cope_file"], output_names=["run_mode"], function=_fe_run_mode),
@@ -245,7 +247,7 @@ def init_model_wf(
         modelfit = MapNode(
             FSLFLAMEO(),
             name="modelfit",
-            mem_gb=memcalc.volume_std_gb * 100,
+            mem_gb=memcalc.volume_std_gb * 10,
             iterfield=[
                 "run_mode",
                 "mask_file",
@@ -267,14 +269,13 @@ def init_model_wf(
         # mask output
         workflow.connect(mergemask, "merged_file", make_resultdicts_b, "mask")
 
-    elif model.type in ["me", "lme"]:
-
+    elif model.type in ["me", "lme"]:  # mixed effects across subjects
         # use custom implementation
         modelfit = MapNode(
             ModelFit(algorithms_to_run=model.algorithms),
             name="modelfit",
             n_procs=config.nipype.omp_nthreads,
-            mem_gb=memcalc.volume_std_gb * 100,
+            mem_gb=memcalc.volume_std_gb * numinputs,
             iterfield=[
                 "mask_files",
                 "cope_files",
@@ -283,9 +284,9 @@ def init_model_wf(
                 "contrasts",
             ],
         )
-        workflow.connect(extractfromresultdict, "mask", modelfit, "mask_files")
-        workflow.connect(extractfromresultdict, "effect", modelfit, "cope_files")
-        workflow.connect(extractfromresultdict, "variance", modelfit, "var_cope_files")
+        workflow.connect(extract_from_resultdict, "mask", modelfit, "mask_files")
+        workflow.connect(extract_from_resultdict, "effect", modelfit, "cope_files")
+        workflow.connect(extract_from_resultdict, "variance", modelfit, "var_cope_files")
 
         workflow.connect(modelspec, "regressors", modelfit, "regressors")
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")
@@ -335,7 +336,7 @@ def init_model_wf(
         iterfield=["regressors", "contrasts", "row_index"],
         name="maketsv"
     )
-    workflow.connect(extractfromresultdict, model.across, maketsv, "row_index")
+    workflow.connect(extract_from_resultdict, model.across, maketsv, "row_index")
     workflow.connect(modelspec, "regressors", maketsv, "regressors")
     workflow.connect(modelspec, "contrasts", maketsv, "contrasts")
 

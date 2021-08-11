@@ -172,8 +172,10 @@ def group_resultdicts(inputs, across):
 def aggregate_resultdicts(inputs, across):
     grouped_resultdicts = group_resultdicts(inputs, across)
 
-    for tag_tuple, listdict in grouped_resultdicts.items():
+    aggregated = list()
+    non_aggregated = list()
 
+    for tag_tuple, listdict in grouped_resultdicts.items():
         resultdict = defaultdict(dict)
         resultdict["tags"] = dict(tag_tuple)
 
@@ -197,16 +199,28 @@ def aggregate_resultdicts(inputs, across):
                     logger.warning(f'Removing "{f}.{key}={resultdict[f][key]}" from resultdict')
                     del resultdict[f][key]  # remove invalid fields
 
-        yield schema.dump(resultdict)
+        if any(
+            isinstance(value, list) and len(value) > 1
+            for value in resultdict["images"].values()
+        ):
+            aggregated.append(resultdict)
+        else:
+            non_aggregated.append(resultdict)
+
+    return aggregated, non_aggregated
 
 
 class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
     across = traits.Enum(*entities, desc="across which entity to aggregate")
 
 
+class AggregateResultdictsOutputSpec(ResultdictsOutputSpec):
+    non_aggregated_resultdicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
+
+
 class AggregateResultdicts(IOBase):
     input_spec = AggregateResultdictsInputSpec
-    output_spec = ResultdictsOutputSpec
+    output_spec = AggregateResultdictsOutputSpec
 
     def __init__(self, numinputs=0, **inputs):
         super(AggregateResultdicts, self).__init__(**inputs)
@@ -225,6 +239,9 @@ class AggregateResultdicts(IOBase):
         inputs = ravel([getattr(self.inputs, input_name) for input_name in self.input_names])
         across = self.inputs.across
 
-        outputs["resultdicts"] = list(aggregate_resultdicts(inputs, across))
+        aggregated, non_aggregated = aggregate_resultdicts(inputs, across)
+
+        outputs["resultdicts"] = aggregated
+        outputs["non_aggregated_resultdicts"] = non_aggregated
 
         return outputs
