@@ -35,7 +35,7 @@ class DesignSpec(TraitedSpec):
 
 
 class MakeDesignTsvInputSpec(DesignSpec):
-    row_index = traits.List(traits.Any, mandatory=True)
+    row_index = traits.Any(mandatory=True)
 
 
 class MakeDesignTsvOutputSpec(TraitedSpec):
