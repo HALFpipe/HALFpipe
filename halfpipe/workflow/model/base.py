@@ -117,14 +117,12 @@ def init_model_wf(
         make_resultdicts_a.inputs.model = model.name
         make_resultdicts_b.inputs.model = model.name
 
-    # only output statistical map (_b) result dicts because the design matrix (_a) is
-    # not relevant for higher level analyses
-    workflow.connect(make_resultdicts_b, "resultdicts", outputnode, "resultdicts")
-
     # copy out results
     merge_resultdicts_b = pe.Node(niu.Merge(3), name="merge_resultdicts_b")
     workflow.connect(make_resultdicts_a, "resultdicts", merge_resultdicts_b, "in1")
     workflow.connect(make_resultdicts_b, "resultdicts", merge_resultdicts_b, "in2")
+
+    workflow.connect(merge_resultdicts_b, "out", outputnode, "resultdicts")
 
     resultdict_datasink = pe.Node(
         ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
