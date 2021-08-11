@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, Hashable, NamedTuple, Tuple
+from typing import Any, Hashable, NamedTuple, Tuple, Sequence
 
 from collections import defaultdict, Counter
 from math import sqrt, isclose
@@ -15,6 +15,8 @@ from nipype.interfaces.io import add_traits, IOBase
 from .base import ResultdictsOutputSpec
 from ...model import entities, ResultdictSchema
 from ...utils import ravel, logger
+
+schema = ResultdictSchema()
 
 
 class MeanStd(NamedTuple):
@@ -52,7 +54,7 @@ def bin_counts_to_counter(bin_counts: Tuple[BinCount, ...]) -> Tuple[Counter, bo
     return counter, value_was_dict
 
 
-def counter_to_bin_counts(counter: Counter, value_was_dict=False) -> Tuple[BinCount, ...]:
+def counter_to_bin_counts(counter: Counter, value_was_dict: bool = False) -> Tuple[BinCount, ...]:
     bin_counts = list()
     for v in sorted(counter.keys()):
         count = counter[v]
@@ -62,7 +64,22 @@ def counter_to_bin_counts(counter: Counter, value_was_dict=False) -> Tuple[BinCo
     return tuple(bin_counts)
 
 
-def aggregate_if_possible(value, value_was_dict=False):
+def aggregate_hashable(value: Sequence[Hashable], value_was_dict: bool):
+    value_set = set(value)
+    if len(value_set) == 1:
+        result = next(iter(value_set))
+
+        if value_was_dict:
+            assert isinstance(result, Sequence)
+            return dict(result)
+
+        return result
+
+    counter = Counter(value)
+    return counter_to_bin_counts(counter, value_was_dict=value_was_dict)
+
+
+def aggregate_if_possible(value, value_was_dict: bool = False):
     if isinstance(value, (list, tuple)) and len(value) > 0:
 
         if all(isinstance(v, (float, np.inexact)) for v in value):
@@ -102,17 +119,7 @@ def aggregate_if_possible(value, value_was_dict=False):
             )
 
         elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
-            value_set = set(value)
-            if len(value_set) == 1:
-                result = next(iter(value_set))
-
-                if value_was_dict:
-                    return dict(result)
-
-                return result
-
-            counter = Counter(value)
-            return counter_to_bin_counts(counter, value_was_dict=value_was_dict)
+            return aggregate_hashable(value, value_was_dict)
 
         elif all(isinstance(val, list) for val in value):
             return aggregate_if_possible(tuple(map(tuple, value)))
@@ -190,7 +197,6 @@ def aggregate_resultdicts(inputs, across):
                     continue
                 resultdict[f][key] = aggregate_field(key, value)
 
-        schema = ResultdictSchema()
         validation_errors = schema.validate(resultdict)
 
         for f in ["tags", "metadata", "vals"]:
