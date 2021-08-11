@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Callable, Dict, List, Optional
+
 from glob import glob
 import logging
 
@@ -9,9 +11,10 @@ import numpy as np
 import pandas as pd
 
 from .base import ResultdictsOutputSpec
+from .aggregate import MeanStd
+
 from ...io.index import ExcludeDatabase
 from ...io.parse import loadspreadsheet
-from ...model.resultdict import ResultdictSchema
 from ...model.tags import entities, entity_longnames
 from ...utils import inflect_engine
 
@@ -26,36 +29,34 @@ from nipype.interfaces.base import (
 logger = logging.getLogger("halfpipe")
 
 
-def _aggregate_if_needed(inval):
-    if isinstance(inval, (list, tuple)):
-        return np.asarray(inval).mean()
-    return float(inval)
+def _get_data_frame(file_path, variable_dicts):
+    data_frame = loadspreadsheet(file_path, dtype=object)
 
-
-def _get_dataframe(filepath, variabledicts):
-    dataframe = loadspreadsheet(filepath, dtype=object)
-
-    for variabledict in variabledicts:
-        if variabledict.get("type") == "id":
-            id_column = variabledict.get("name")
+    id_column = None
+    for variable_dict in variable_dicts:
+        if variable_dict.get("type") == "id":
+            id_column = variable_dict.get("name")
             break
 
-    dataframe[id_column] = pd.Series(dataframe[id_column], dtype=str)
-    if all(str(id).startswith("sub-") for id in dataframe[id_column]):  # for bids
-        dataframe[id_column] = [str(id).replace("sub-", "") for id in dataframe[id_column]]
-    dataframe = dataframe.set_index(id_column)
+    if id_column is None:
+        raise ValueError(f'Column "{id_column}" not found')
 
-    return dataframe
+    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
+    if all(str(id).startswith("sub-") for id in data_frame[id_column]):  # for bids
+        data_frame[id_column] = [str(id).replace("sub-", "") for id in data_frame[id_column]]
+    data_frame = data_frame.set_index(id_column)
+
+    return data_frame
 
 
-def _get_categorical_dict(dataframe, variabledicts):
+def _get_categorical_dict(data_frame, variable_dicts):
     categorical_columns = []
-    for variabledict in variabledicts:
-        if variabledict.get("type") == "categorical":
-            categorical_columns.append(variabledict.get("name"))
+    for variable_dict in variable_dicts:
+        if variable_dict.get("type") == "categorical":
+            categorical_columns.append(variable_dict.get("name"))
 
-    categorical_dataframe = dataframe[categorical_columns].astype(str)
-    return categorical_dataframe.to_dict()
+    categorical_data_frame = data_frame[categorical_columns].astype(str)
+    return categorical_data_frame.to_dict()
 
 
 def _format_tags(tagdict):
@@ -75,122 +76,144 @@ def _format_tags(tagdict):
     return ", ".join(tagdesc_list)
 
 
-def _parse_filterdict(filterdict, **kwargs):
-    action = filterdict.get("action")
+def _make_group_filterfun(filter_dict: Dict, categorical_dict: Dict, model_desc: str) -> Optional[Callable[[Dict], bool]]:
+    variable = filter_dict.get("variable")
+    if variable not in categorical_dict:
+        return None
 
-    categorical_dict = kwargs.get("categorical_dict")
-    dataframe = kwargs.get("dataframe")
-    modelname = kwargs.get("modelname")
+    levels = filter_dict.get("levels")
+    if levels is None or len(levels) == 0:
+        return None
 
-    modeldesc = ""
-    if modelname is not None:
-        modeldesc = f'from model "{modelname}" '
+    variable_dict = categorical_dict[variable]
+    selectedsubjects = frozenset(
+        subject for subject, value in variable_dict.items() if value in levels
+    )
 
-    filtertype = filterdict.get("type")
-    if filtertype == "group":
-        variable = filterdict.get("variable")
-        if variable not in categorical_dict:
-            return
+    levelsdesc = inflect_engine.join([f'"{v}"' for v in levels], conj="or")
 
-        levels = filterdict.get("levels")
-        if levels is None or len(levels) == 0:
-            return
+    action = filter_dict["action"]
 
-        variable_dict = categorical_dict[variable]
-        selectedsubjects = frozenset(
-            subject for subject, value in variable_dict.items() if value in levels
-        )
-
-        levelsdesc = inflect_engine.join([f'"{v}"' for v in levels], conj="or")
-
-        if action == "include":
-            def group_filterfun(d):
-                sub = d.get("tags").get("sub")
-                res = sub in selectedsubjects
-
-                if res is False:
-                    logger.info(f'Excluding subject "{sub}" {modeldesc}because "{variable}" is not {levelsdesc}')
-
-                return res
-
-            return group_filterfun
-
-        elif action == "exclude":
-            def group_filterfun(d):
-                sub = d["tags"].get("sub")
-                res = sub not in selectedsubjects
-
-                if res is False:
-                    logger.info(f'Excluding subject "{sub}" {modeldesc}because "{variable}" is {levelsdesc}')
-
-                return res
-
-            return group_filterfun
-
-        else:
-            raise ValueError(f'Invalid action "{action}"')
-
-    elif filtertype == "missing":
-
-        assert dataframe is not None
-
-        variable = filterdict.get("variable")
-        if variable not in dataframe.columns:
-            return
-
-        assert action == "exclude"
-
-        isfinite = pd.notnull(dataframe[variable])
-
-        selectedsubjects = frozenset(isfinite.index[isfinite])
-
-        def missing_filterfun(d):
-            sub = d["tags"].get("sub")
+    if action == "include":
+        def group_include_filterfun(d):
+            sub = d.get("tags").get("sub")
             res = sub in selectedsubjects
 
             if res is False:
-                logger.warning(f'Excluding subject "{sub}" {modeldesc}because "{variable}" is missing')
+                logger.info(f'Excluding subject "{sub}" {model_desc}because "{variable}" is not {levelsdesc}')
 
             return res
 
-        return missing_filterfun
+        return group_include_filterfun
 
-    elif filtertype == "cutoff":
-
-        assert action == "exclude"
-
-        cutoff = filterdict["cutoff"]
-        if cutoff is None or not isinstance(cutoff, float):
-            raise ValueError(f'Invalid cutoff "{cutoff}"')
-
-        filterfield = filterdict["field"]
-
-        def cutoff_filterfun(d):
-            val = _aggregate_if_needed(d["vals"].get(filterfield, np.inf))
-            res = val <= cutoff
+    elif action == "exclude":
+        def group_exclude_filterfun(d):
+            sub = d["tags"].get("sub")
+            res = sub not in selectedsubjects
 
             if res is False:
-                tags = d["tags"]
-                logger.warning(
-                    f'Excluding ({_format_tags(tags)}) {modeldesc}'
-                    f'because "{filterfield}" is larger than {cutoff:f}'
-                )
+                logger.info(f'Excluding subject "{sub}" {model_desc}because "{variable}" is {levelsdesc}')
 
             return res
 
-        return cutoff_filterfun
+        return group_exclude_filterfun
+
+    else:
+        raise ValueError(f'Invalid action "{action}"')
+
+
+def _make_missing_filterfun(filter_dict: Dict, data_frame: pd.DataFrame, model_desc: str) -> Optional[Callable[[Dict], bool]]:
+    variable = filter_dict["variable"]
+    if variable not in data_frame.columns:
+        return None
+
+    assert filter_dict["action"] == "exclude"
+
+    isfinite = pd.notnull(data_frame[variable])
+
+    selectedsubjects = frozenset(isfinite.index[isfinite])
+
+    def missing_filterfun(d):
+        sub = d["tags"].get("sub")
+        res = sub in selectedsubjects
+
+        if res is False:
+            logger.warning(f'Excluding subject "{sub}" {model_desc}because "{variable}" is missing')
+
+        return res
+
+    return missing_filterfun
+
+
+def _make_cutoff_filterfun(filter_dict: Dict, model_desc: str) -> Optional[Callable[[Dict], bool]]:
+    assert filter_dict["action"] == "exclude"
+
+    cutoff = filter_dict["cutoff"]
+    if cutoff is None or not isinstance(cutoff, float):
+        raise ValueError(f'Invalid cutoff "{cutoff}"')
+
+    filterfield = filter_dict["field"]
+
+    def cutoff_filterfun(d):
+        val = d["vals"].get(filterfield, np.inf)
+
+        if isinstance(val, MeanStd):
+            x: float = val.mean
+        elif isinstance(val, float):
+            x = val
+        else:
+            raise ValueError(f'Cannot compare "{val}" to cutoff "{cutoff}"')
+
+        res = x <= cutoff
+
+        if res is False:
+            tags = d["tags"]
+            logger.warning(
+                f'Excluding ({_format_tags(tags)}) {model_desc}'
+                f'because "{filterfield}" is larger than {cutoff:f}'
+            )
+
+        return res
+
+    return cutoff_filterfun
+
+
+def _parse_filter_dict(
+    filter_dict: Dict,
+    categorical_dict: Dict = dict(),
+    data_frame: Optional[pd.DataFrame] = None,
+    model_name: Optional[str] = None
+) -> Optional[Callable[[Dict], bool]]:
+    model_desc = ""
+    if model_name is not None:
+        model_desc = f'from model "{model_name}" '
+
+    filter_type = filter_dict.get("type")
+    if filter_type == "group":
+        return _make_group_filterfun(filter_dict, categorical_dict, model_desc)
+
+    elif filter_type == "missing":
+        if data_frame is None:
+            raise ValueError("Missing data_frame")
+        return _make_missing_filterfun(filter_dict, data_frame, model_desc)
+
+    elif filter_type == "cutoff":
+        return _make_cutoff_filterfun(filter_dict, model_desc)
+
+    return None
 
 
 class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
-    indicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
-    modelname = traits.Str()
-    filterdicts = traits.List(traits.Any(), desc="filter list")
-    variabledicts = traits.List(traits.Any(), desc="variable list")
+    in_dicts = traits.List(traits.Dict(traits.Str(), traits.Any()), mandatory=True)
+
+    model_name = traits.Str()
+    filter_dicts = traits.List(traits.Any(), desc="filter list")
+    variable_dicts = traits.List(traits.Any(), desc="variable list")
     spreadsheet = File(desc="spreadsheet", exists=True)
-    requireoneofimages = traits.List(
+    require_one_of_images = traits.List(
         traits.Str(), desc="only keep resultdicts that have at least one of these keys"
     )
-    excludefiles = traits.Str()
+    exclude_files = traits.Str()
 
 
 class FilterResultdicts(SimpleInterface):
@@ -198,56 +221,54 @@ class FilterResultdicts(SimpleInterface):
     output_spec = ResultdictsOutputSpec
 
     def _run_interface(self, runtime):
-        outdicts = self.inputs.indicts.copy()
+        out_dicts: List[Dict[str, Dict]] = self.inputs.in_dicts.copy()
 
-        resultdict_schema = ResultdictSchema()
-        outdicts = [resultdict_schema.load(outdict) for outdict in outdicts]  # validate
-
-        dataframe = None
+        data_frame = None
         categorical_dict = None
-        if isdefined(self.inputs.spreadsheet) and isdefined(self.inputs.variabledicts):
-            dataframe = _get_dataframe(self.inputs.spreadsheet, self.inputs.variabledicts)
-            categorical_dict = _get_categorical_dict(dataframe, self.inputs.variabledicts)
+        if isdefined(self.inputs.spreadsheet) and isdefined(self.inputs.variable_dicts):
+            data_frame = _get_data_frame(self.inputs.spreadsheet, self.inputs.variable_dicts)
+            categorical_dict = _get_categorical_dict(data_frame, self.inputs.variable_dicts)
 
-        modelname = self.inputs.modelname
-        if not isdefined(modelname):
-            modelname = None
+        model_name = None
+        if isdefined(self.inputs.model_name):
+            model_name = self.inputs.model_name
 
-        filterdicts = []
-        if isdefined(self.inputs.filterdicts):
-            filterdicts = self.inputs.filterdicts
+        filter_dicts: List[Dict] = list()
+        if isdefined(self.inputs.filter_dicts):
+            filter_dicts.extend(self.inputs.filter_dicts)
 
         kwargs = dict(
-            dataframe=dataframe,
+            data_frame=data_frame,
             categorical_dict=categorical_dict,
-            modelname=modelname
+            model_name=model_name
         )
 
-        for filterdict in filterdicts:
-            filterfun = _parse_filterdict(filterdict, **kwargs)
-            if filterfun is not None:
-                outdicts = filter(filterfun, outdicts)
+        for filter_dict in filter_dicts:
+            filter_fun = _parse_filter_dict(filter_dict, **kwargs)
+            if filter_fun is not None:
+                out_dicts = list(filter(filter_fun, out_dicts))
 
-        if isdefined(self.inputs.requireoneofimages):
-            requireoneofimages = self.inputs.requireoneofimages
-            if len(requireoneofimages) > 0:
-                outdicts = [
-                    outdict
-                    for outdict in outdicts
-                    if any(
-                        requireoneofkey in outdict.get("images")
-                        for requireoneofkey in requireoneofimages
+        if isdefined(self.inputs.require_one_of_images):
+            require_one_of_images = self.inputs.require_one_of_images
+            if len(require_one_of_images) > 0:
+                out_dicts = [
+                    out_dict
+                    for out_dict in out_dicts
+                    if isinstance(out_dict, dict)
+                    and any(
+                        key in out_dict.get("images")
+                        for key in require_one_of_images
                     )
                 ]
 
-        if isdefined(self.inputs.excludefiles):
-            excludefiles = glob(self.inputs.excludefiles)
-            excludefiles = tuple(sorted(excludefiles))  # make hashable
-            database = ExcludeDatabase.cached(excludefiles)
-            outdicts = [
-                outdict for outdict in outdicts if database.get(**outdict.get("tags")) is False
+        if isdefined(self.inputs.exclude_files):
+            exclude_files = glob(self.inputs.exclude_files)
+            exclude_files = tuple(sorted(exclude_files))  # make hashable
+            database = ExcludeDatabase.cached(exclude_files)
+            out_dicts = [
+                out_dict for out_dict in out_dicts if database.get(**out_dict["tags"]) is False
             ]
 
-        self._results["resultdicts"] = outdicts
+        self._results["resultdicts"] = out_dicts
 
         return runtime
