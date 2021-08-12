@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from __future__ import annotations
-from typing import Dict, Hashable, NamedTuple, Tuple, Sequence, Union, List
+from typing import Dict, Hashable, NamedTuple, Optional, Tuple, Sequence, Union, List
 from typing_extensions import Literal
 
 from collections import defaultdict, Counter
@@ -51,20 +51,20 @@ class MeanStd(NamedTuple):
         ])
 
     @classmethod
-    def is_instance(cls, value) -> bool:
+    def as_instance(cls, value) -> Optional[MeanStd]:
         if isinstance(value, MeanStd):
-            return True
+            return value
         elif isinstance(value, tuple) and len(value) == 5:
             type, mean, std, n, missing = value
-            return (
+            if (
                 type == "mean_std"
                 and isinstance(mean, float)
                 and isinstance(std, float)
                 and isinstance(n, int)
                 and isinstance(missing, int)
-            )
-        else:
-            return False
+            ):
+                return MeanStd.build(mean=mean, std=std, n=n, missing=missing)
+        return None
 
 
 class BinCount(NamedTuple):
@@ -72,14 +72,14 @@ class BinCount(NamedTuple):
     count: int
 
     @classmethod
-    def is_instance(cls, value) -> bool:
+    def as_instance(cls, value) -> Optional[BinCount]:
         if isinstance(value, BinCount):
-            return True
-        elif isinstance(value, tuple) and len(value) == 2:
+            return value
+        elif isinstance(value, (tuple, list)) and len(value) == 2:
             value, count = value
-            return isinstance(count, int)
-        else:
-            return False
+            if isinstance(count, int):
+                return cls(value, count)
+        return None
 
 
 class BinCounts(NamedTuple):
@@ -87,7 +87,11 @@ class BinCounts(NamedTuple):
     counts: Tuple[BinCount, ...]
 
     @classmethod
-    def build(cls, counter: Counter, value_was_dict: bool = False) -> BinCounts:
+    def build(cls, counts: Tuple[BinCount, ...]) -> BinCounts:
+        return cls(type="bin_counts", counts=counts)
+
+    @classmethod
+    def from_counter(cls, counter: Counter, value_was_dict: bool = False) -> BinCounts:
         counts = list()
 
         values = counter.keys()
@@ -103,23 +107,15 @@ class BinCounts(NamedTuple):
                 v = dict(v)
             counts.append(BinCount(value=v, count=count))
 
-        return cls(type="bin_counts", counts=tuple(counts))
+        return cls.build(counts=tuple(counts))
 
-    @classmethod
-    def aggregate(cls, values: Sequence[Tuple[BinCount, ...]], value_was_dict: bool = False) -> BinCounts:
-        counter: Counter = Counter()
-        for v in values:
-            c, value_was_dict = cls.to_counter(v)
-            counter.update(c)
-        return cls.build(counter, value_was_dict=value_was_dict)
-
-    @classmethod
-    def to_counter(cls, counts: Tuple[BinCount, ...]) -> Tuple[Counter, bool]:
+    @property
+    def counter(self) -> Tuple[Counter, bool]:
         value_was_dict = None
 
         counter: Counter = Counter()
 
-        for count in counts:
+        for count in self.counts:
             value = count.value
 
             if isinstance(value, dict):
@@ -128,7 +124,7 @@ class BinCounts(NamedTuple):
             else:
                 value_is_dict = False
 
-            assert value_was_dict == value_is_dict
+            assert value_was_dict is None or value_is_dict is None or value_was_dict == value_is_dict
 
             value_was_dict = value_is_dict
 
@@ -138,32 +134,39 @@ class BinCounts(NamedTuple):
         return counter, value_was_dict
 
     @classmethod
-    def is_instance(cls, value) -> bool:
+    def as_instance(cls, value) -> Optional[BinCounts]:
         if isinstance(value, BinCounts):
-            return True
-        elif isinstance(value, tuple) and len(value) == 2:
-            type, counts = value
-            return (
-                type == "bin_counts"
-                and all(BinCount.is_instance(c) for c in counts)
-            )
-        else:
-            return False
+            return value
+        elif isinstance(value, (tuple, list)) and len(value) == 2:
+            type, raw_counts = value
+            counts: List[BinCount] = list()
+            for raw_count in raw_counts:
+                count = BinCount.as_instance(raw_count)
+                if count is None:
+                    return None
+                counts.append(count)
+            if type == "bin_counts":
+                return BinCounts.build(tuple(counts))
+        return None
 
 
 def aggregate_hashable(value: Sequence[Hashable], value_was_dict: bool):
-    value_set = set(value)
-    if len(value_set) == 1:
-        result = next(iter(value_set))
+    counter: Counter = Counter()
 
-        if value_was_dict:
-            assert isinstance(result, Sequence)
-            return dict(result)
+    for v in value:
+        bc = BinCounts.as_instance(v)
+        if bc is not None:
+            c, value_was_dict = bc.counter
+            counter.update(c)
+        else:
+            counter.update({v: 1})
 
-        return result
+    bc = BinCounts.from_counter(counter, value_was_dict=value_was_dict)
 
-    counter = Counter(value)
-    return BinCounts.build(counter, value_was_dict=value_was_dict)
+    if len(bc.counts) == 1:
+        (count,) = bc.counts
+        return count.value
+    return bc
 
 
 def aggregate_if_possible(value, value_was_dict: bool = False):
@@ -175,10 +178,7 @@ def aggregate_if_possible(value, value_was_dict: bool = False):
             else:
                 return MeanStd.from_array(list(value))
 
-        elif all(BinCounts.is_instance(v) for v in value):
-            return BinCounts.aggregate(value, value_was_dict=value_was_dict)
-
-        elif all(MeanStd.is_instance(v) or isinstance(v, (float, np.inexact)) for v in value):
+        elif all(MeanStd.as_instance(v) is not None or isinstance(v, (float, np.inexact)) for v in value):
             return MeanStd.aggregate(value)
 
         elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
