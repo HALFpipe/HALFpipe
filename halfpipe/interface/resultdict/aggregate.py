@@ -7,7 +7,7 @@ from typing import Dict, Hashable, NamedTuple, Tuple, Sequence, Union, List
 from typing_extensions import Literal
 
 from collections import defaultdict, Counter
-from math import sqrt
+from math import isclose
 
 import numpy as np
 
@@ -33,19 +33,22 @@ class MeanStd(NamedTuple):
         return cls(type="mean_std", mean=mean, std=std, n=n, missing=missing)
 
     @classmethod
-    def aggregate(cls, values: Sequence[Tuple]) -> MeanStd:
-        mean_stds: List[MeanStd] = [MeanStd(*v) for v in values]  # cast
-
-        n = sum(v.n for v in mean_stds)
-
-        pooled_std = sqrt(sum(v.std * v.std * (v.n - 1) for v in mean_stds) / (n - len(mean_stds)))
-
-        return cls.build(
-            mean=sum(v.mean * v.n for v in mean_stds) / n,
-            std=pooled_std,
-            n=int(n),
-            missing=sum(v.missing for v in mean_stds),
+    def from_array(cls, array: List[float]) -> MeanStd:
+        value_array = np.array(array, dtype=float)
+        return MeanStd.build(
+            mean=float(np.nanmean(value_array)),
+            std=float(np.nanstd(value_array)),
+            missing=int(np.sum(np.isnan(value_array))),
+            n=int(value_array.size),
         )
+
+    @classmethod
+    def aggregate(cls, values: Sequence[Union[Tuple, float, np.inexact]]) -> MeanStd:
+        return cls.from_array([
+            MeanStd(*v).mean if isinstance(v, tuple)
+            else float(v)
+            for v in values
+        ])
 
     @classmethod
     def is_instance(cls, value) -> bool:
@@ -62,30 +65,6 @@ class MeanStd(NamedTuple):
             )
         else:
             return False
-
-
-def bin_counts_to_counter(bin_counts: Tuple[BinCount, ...]) -> Tuple[Counter, bool]:
-    value_was_dict = None
-
-    counter: Counter = Counter()
-
-    for bin_count in bin_counts:
-        value = bin_count.value
-
-        if isinstance(value, dict):
-            value_is_dict = True
-            value = tuple(sorted(value.items()))
-        else:
-            value_is_dict = False
-
-        assert value_was_dict == value_is_dict
-
-        value_was_dict = value_is_dict
-
-        counter.update({value: bin_count.count})
-
-    assert value_was_dict is not None
-    return counter, value_was_dict
 
 
 class BinCount(NamedTuple):
@@ -130,9 +109,33 @@ class BinCounts(NamedTuple):
     def aggregate(cls, values: Sequence[Tuple[BinCount, ...]], value_was_dict: bool = False) -> BinCounts:
         counter: Counter = Counter()
         for v in values:
-            c, value_was_dict = bin_counts_to_counter(v)
+            c, value_was_dict = cls.to_counter(v)
             counter.update(c)
         return cls.build(counter, value_was_dict=value_was_dict)
+
+    @classmethod
+    def to_counter(cls, counts: Tuple[BinCount, ...]) -> Tuple[Counter, bool]:
+        value_was_dict = None
+
+        counter: Counter = Counter()
+
+        for count in counts:
+            value = count.value
+
+            if isinstance(value, dict):
+                value_is_dict = True
+                value = tuple(sorted(value.items()))
+            else:
+                value_is_dict = False
+
+            assert value_was_dict == value_is_dict
+
+            value_was_dict = value_is_dict
+
+            counter.update({value: count.count})
+
+        assert value_was_dict is not None
+        return counter, value_was_dict
 
     @classmethod
     def is_instance(cls, value) -> bool:
@@ -167,18 +170,15 @@ def aggregate_if_possible(value, value_was_dict: bool = False):
     if isinstance(value, (list, tuple)) and len(value) > 0:
 
         if all(isinstance(v, (float, np.inexact)) for v in value):
-            value_array = np.array(value, dtype=float)
-            return MeanStd.build(
-                mean=float(np.nanmean(value_array)),
-                std=float(np.nanstd(value_array)),
-                missing=int(np.sum(np.isnan(value_array))),
-                n=int(value_array.size),
-            )
+            if all(isclose(v, value[0]) for v in value):
+                return value[0]
+            else:
+                return MeanStd.from_array(list(value))
 
         elif all(BinCounts.is_instance(v) for v in value):
             return BinCounts.aggregate(value, value_was_dict=value_was_dict)
 
-        elif all(MeanStd.is_instance(v) for v in value):
+        elif all(MeanStd.is_instance(v) or isinstance(v, (float, np.inexact)) for v in value):
             return MeanStd.aggregate(value)
 
         elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
