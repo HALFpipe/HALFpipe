@@ -159,11 +159,11 @@ def _make_cutoff_filterfun(filter_dict: Dict, model_desc: str) -> Optional[Calla
 
         if isinstance(val, float):
             x: float = val
-        elif MeanStd.is_instance(val):
-            val = MeanStd(*val)
-            x = val.mean
         else:
-            raise ValueError(f'Cannot compare "{val}" to cutoff "{cutoff}"')
+            val = MeanStd.as_instance(val)
+            if val is None:
+                raise ValueError(f'Cannot compare "{val}" to cutoff "{cutoff}"')
+            x = val.mean
 
         res = x <= cutoff
 
