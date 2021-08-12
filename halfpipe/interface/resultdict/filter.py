@@ -244,11 +244,6 @@ class FilterResultdicts(SimpleInterface):
             model_name=model_name
         )
 
-        for filter_dict in filter_dicts:
-            filter_fun = _parse_filter_dict(filter_dict, **kwargs)
-            if filter_fun is not None:
-                out_dicts = list(filter(filter_fun, out_dicts))
-
         if isdefined(self.inputs.require_one_of_images):
             require_one_of_images = self.inputs.require_one_of_images
             if len(require_one_of_images) > 0:
@@ -261,6 +256,10 @@ class FilterResultdicts(SimpleInterface):
                         for key in require_one_of_images
                     )
                 ]
+        for filter_dict in filter_dicts:
+            filter_fun = _parse_filter_dict(filter_dict, **kwargs)
+            if filter_fun is not None:
+                out_dicts = list(filter(filter_fun, out_dicts))
 
         if isdefined(self.inputs.exclude_files):
             exclude_files = glob(self.inputs.exclude_files)
