@@ -63,21 +63,21 @@ def _make_path(source_file, source_type, tags, suffix, **kwargs):
         if folder_name is not None:
             path = path.joinpath(folder_name)
 
-    path.joinpath(dict(image="func", report="figures")[source_type])
+    path = path.joinpath(dict(image="func", report="figures")[source_type])
 
     if "feature" in tags:  # make subfolders for all feature outputs
         folder_entities = ["task"]
-        if "model" in tags:
+        if "sub" not in tags:
             folder_entities.extend(first_level_entities)
 
         folder_name = _join_tags(tags, folder_entities)
         if folder_name is not None:
             path = path.joinpath(folder_name)
 
-    if "model" in tags:
+    if "sub" not in tags:
         folder_name = _join_tags(tags, ["model"])
         assert folder_name is not None
-        path.joinpath(folder_name)
+        path = path.joinpath(folder_name)
 
     _, ext = splitext(source_file)
     filename = f"{suffix}{ext}"  # keep original extension
@@ -260,6 +260,7 @@ def datasink_images(indicts, base_directory):
 
         for key, inpath in images.items():
             outpath = derivatives_directory
+
             if "sub" not in tags:
                 outpath = grouplevel_directory
 
