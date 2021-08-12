@@ -35,14 +35,14 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
 
         next_step_type: Optional[StepType] = None
 
-        def setup(self, ctx):
+        def setup(self, _):
             self._append_view(TextView(self.header_str))
 
             self.input_view = NumberInputView(**self.number_input_args)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             self.cutoff = self.input_view()
             if self.cutoff is None:  # was cancelled
                 return False
@@ -62,6 +62,7 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
             )
             ctx.spec.models[-1].filters.append(filter_obj)
 
+            assert self.next_step_type is not None
             return self.next_step_type(self.app)(ctx)
 
     class FdPercFilterStep(BaseCutoffFilterStep):
@@ -130,7 +131,7 @@ class SubjectGroupFilterStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if not self.should_run:
             return self.is_first_run
         else:
