@@ -14,8 +14,6 @@ from ....model import File
 from ..niftimetadata import NiftiheaderMetadataLoader
 
 
-@pytest.mark.slow
-@pytest.mark.timeout(60)
 def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
     size = (2, 3, 4)
 
