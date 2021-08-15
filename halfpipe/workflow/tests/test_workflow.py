@@ -281,6 +281,7 @@ def test_with_reconall(tmp_path, mock_spec):
     assert any("recon" in u.name for u in graph.nodes)
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(4 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
