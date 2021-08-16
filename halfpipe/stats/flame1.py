@@ -5,10 +5,11 @@
 """
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from collections import defaultdict
-from math import isnan, isclose, isfinite
+from math import isnan, isclose, isfinite, nan
+from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,7 @@ from scipy.optimize import minimize_scalar
 
 from .miscmaths import t2z_convert, f2z_convert
 from .base import ModelAlgorithm, listwise_deletion, demean
+from ..utils.format import format_workflow
 
 
 def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -190,7 +192,7 @@ class FLAME1(ModelAlgorithm):
     def write_outputs(
         cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
     ) -> Dict:
-        output_files = dict()
+        output_files: Dict[str, List[Union[Literal[False], str]]] = dict()
 
         for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(cmatdict)
@@ -205,11 +207,11 @@ class FLAME1(ModelAlgorithm):
 
             if "zstat" not in rdf.index:  # ensure that we always output a zstat
                 rdf = rdf.append(
-                    pd.Series(data=np.nan, index=rdf.columns, name="zstat")
+                    pd.Series(data=nan, index=rdf.columns, name="zstat")
                 )
 
             for map_name, series in rdf.iterrows():
-                out_name = f"{map_name}_{i+1}_{contrast_name}"
+                out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
                 fname = cls.write_map(ref_img, out_name, series)
 
                 if map_name in frozenset(["dof"]):
