@@ -3,9 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from __future__ import annotations
-from typing import Dict, Hashable, NamedTuple, Optional, Tuple, Sequence, Union, List
-from typing_extensions import Literal
+from typing import Any, Dict, Hashable, Optional, Tuple, Sequence, Union, List
 
+from dataclasses import fields
 from collections import defaultdict, Counter
 from math import isclose
 
@@ -15,187 +15,148 @@ from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInpu
 from nipype.interfaces.io import add_traits, IOBase
 
 from .base import ResultdictsOutputSpec
-from ...model import entities, ResultdictSchema
 from ...utils import ravel, logger
+from ...schema.result import MeanStd, Count, Result
+from ...schema.setting import SettingBase, SettingBaseSchema
 
-schema = ResultdictSchema()
-
-
-class MeanStd(NamedTuple):
-    type: Literal["mean_std"]
-    mean: float
-    std: float
-    n: int
-    missing: int
-
-    @classmethod
-    def build(cls, mean: float, std: float, n: int, missing: int) -> MeanStd:
-        return cls(type="mean_std", mean=mean, std=std, n=n, missing=missing)
-
-    @classmethod
-    def from_array(cls, array: List[float]) -> MeanStd:
-        value_array = np.array(array, dtype=float)
-        return MeanStd.build(
-            mean=float(np.nanmean(value_array)),
-            std=float(np.nanstd(value_array)),
-            missing=int(np.sum(np.isnan(value_array))),
-            n=int(value_array.size),
-        )
-
-    @classmethod
-    def aggregate(cls, values: Sequence[Union[Tuple, float, np.inexact]]) -> MeanStd:
-        return cls.from_array([
-            MeanStd(*v).mean if isinstance(v, tuple)
-            else float(v)
-            for v in values
-        ])
-
-    @classmethod
-    def as_instance(cls, value) -> Optional[MeanStd]:
-        if isinstance(value, MeanStd):
-            return value
-        elif isinstance(value, tuple) and len(value) == 5:
-            type, mean, std, n, missing = value
-            if (
-                type == "mean_std"
-                and isinstance(mean, float)
-                and isinstance(std, float)
-                and isinstance(n, int)
-                and isinstance(missing, int)
-            ):
-                return MeanStd.build(mean=mean, std=std, n=n, missing=missing)
-        return None
+schema = Result.Schema()
 
 
-class BinCount(NamedTuple):
-    value: Union[Hashable, Dict]
-    count: int
+def aggregate_continuous(
+    values: Sequence[Union[MeanStd, float, np.inexact]]
+) -> Optional[Union[float, Any]]:
+    scalar_values: List[float] = list()
+    mean_std_values: List[MeanStd] = list()
 
-    @classmethod
-    def as_instance(cls, value) -> Optional[BinCount]:
-        if isinstance(value, BinCount):
-            return value
-        elif isinstance(value, (tuple, list)) and len(value) == 2:
-            value, count = value
-            if isinstance(count, int):
-                return cls(value, count)
-        return None
+    for value in values:
+        if isinstance(value, float):
+            scalar_values.append(value)
+        elif isinstance(value, np.inexact):
+            scalar_values.append(float(value))
+        elif isinstance(value, MeanStd):
+            scalar_values.append(value.mean)
+            mean_std_values.append(value)
+        else:
+            return None
 
+    if all(isclose(v, scalar_values[0]) for v in scalar_values):
+        return scalar_values[0]
 
-class BinCounts(NamedTuple):
-    type: Literal["bin_counts"]
-    counts: Tuple[BinCount, ...]
-
-    @classmethod
-    def build(cls, counts: Tuple[BinCount, ...]) -> BinCounts:
-        return cls(type="bin_counts", counts=counts)
-
-    @classmethod
-    def from_counter(cls, counter: Counter, value_was_dict: bool = False) -> BinCounts:
-        counts = list()
-
-        values = counter.keys()
-
-        try:
-            sorted_values = sorted(values)
-        except TypeError:
-            sorted_values = sorted(values, key=str)  # fallback lexical sort
-
-        for v in sorted_values:
-            count = counter[v]
-            if value_was_dict is True:
-                v = dict(v)
-            counts.append(BinCount(value=v, count=count))
-
-        return cls.build(counts=tuple(counts))
-
-    @property
-    def counter(self) -> Tuple[Counter, bool]:
-        value_was_dict = None
-
-        counter: Counter = Counter()
-
-        for count in self.counts:
-            value = count.value
-
-            if isinstance(value, dict):
-                value_is_dict = True
-                value = tuple(sorted(value.items()))
-            else:
-                value_is_dict = False
-
-            assert value_was_dict is None or value_is_dict is None or value_was_dict == value_is_dict
-
-            value_was_dict = value_is_dict
-
-            counter.update({value: count.count})
-
-        assert value_was_dict is not None
-        return counter, value_was_dict
-
-    @classmethod
-    def as_instance(cls, value) -> Optional[BinCounts]:
-        if isinstance(value, BinCounts):
-            return value
-        elif isinstance(value, (tuple, list)) and len(value) == 2:
-            type, raw_counts = value
-            counts: List[BinCount] = list()
-            for raw_count in raw_counts:
-                count = BinCount.as_instance(raw_count)
-                if count is None:
-                    return None
-                counts.append(count)
-            if type == "bin_counts":
-                return BinCounts.build(tuple(counts))
-        return None
+    return MeanStd.Schema().dump(MeanStd.from_array([
+        value.mean if isinstance(value, MeanStd)
+        else float(value)
+        for value in values
+    ]))
 
 
-def aggregate_hashable(value: Sequence[Hashable], value_was_dict: bool):
+def count_list_from_counter(counter: Counter, value_was_dict: bool = False) -> List[Count]:
+    count_list: List[Count] = list()
+
+    values = counter.keys()
+
+    try:
+        sorted_values = sorted(values)
+    except TypeError:
+        sorted_values = sorted(values, key=str)  # fallback lexical sort
+
+    for v in sorted_values:
+        count = counter[v]
+        if value_was_dict is True:
+            v = dict(v)
+        count_list.append(Count(value=v, count=count))
+
+    return count_list
+
+
+def counter_from_count_list(count_list: Sequence[Count]) -> Tuple[Counter, bool]:
+    value_was_dict = None
+
     counter: Counter = Counter()
 
-    for v in value:
-        bc = BinCounts.as_instance(v)
-        if bc is not None:
-            c, value_was_dict = bc.counter
-            counter.update(c)
+    for count in count_list:
+        value = count.value
+
+        if isinstance(value, dict):
+            value_is_dict = True
+            value = tuple(sorted(value.items()))
         else:
-            counter.update({v: 1})
+            value_is_dict = False
 
-    bc = BinCounts.from_counter(counter, value_was_dict=value_was_dict)
+        assert value_was_dict is None or value_is_dict is None or value_was_dict == value_is_dict
 
-    if len(bc.counts) == 1:
-        (count,) = bc.counts
+        value_was_dict = value_is_dict
+
+        counter.update({value: count.count})
+
+    assert value_was_dict is not None
+
+    return counter, value_was_dict
+
+
+def aggregate_categorical(values: Sequence, value_was_dict: bool):
+    counter: Counter = Counter()
+
+    for value in values:
+        if isinstance(value, Sequence):
+            if all(isinstance(count, Count) for count in value):
+                value_counter, value_was_dict = counter_from_count_list(value)
+                counter.update(value_counter)
+                continue
+
+        counter.update({value: 1})
+
+    count_list = count_list_from_counter(counter, value_was_dict=value_was_dict)
+
+    if len(count_list) == 1:
+        (count,) = count_list
         return count.value
-    return bc
+
+    return Count.Schema().dump(count_list, many=True)
 
 
-def aggregate_if_possible(value, value_was_dict: bool = False):
-    if isinstance(value, (list, tuple)) and len(value) > 0:
+def hashable_from_dict(v):
+    r = set()
 
-        if all(isinstance(v, (float, np.inexact)) for v in value):
-            if all(isclose(v, value[0]) for v in value):
-                return value[0]
-            else:
-                return MeanStd.from_array(list(value))
+    for k, v in v.items():
+        if isinstance(v, Hashable):
+            r.add((k, v))
+        elif isinstance(v, list):
+            r.add((k, tuple(v)))
 
-        elif all(MeanStd.as_instance(v) is not None or isinstance(v, (float, np.inexact)) for v in value):
-            return MeanStd.aggregate(value)
+    return frozenset(r)
 
-        elif all(isinstance(v, Hashable) for v in value):  # str int and tuple
-            return aggregate_hashable(value, value_was_dict)
 
-        elif all(isinstance(val, list) for val in value):
-            return aggregate_if_possible(tuple(map(tuple, value)))
+def aggregate_if_possible(values, value_was_dict: bool = False):
+    if isinstance(values, (list, tuple)) and len(values) > 0:
 
-        elif all(isinstance(val, dict) for val in value):
+        try:
+            return aggregate_continuous(values)
+        except ValueError:
+            pass
+
+        try:
+            return aggregate_categorical(values, value_was_dict=value_was_dict)
+        except (ValueError, TypeError):
+            pass
+
+        if all(isinstance(v, list) for v in values):
+            return aggregate_if_possible(tuple(map(tuple, values)))
+
+        if all(isinstance(v, SettingBase) for v in values):
+            setting_schema = SettingBaseSchema()
             return aggregate_if_possible(
-                [tuple(sorted(v.items())) for v in value],
+                [setting_schema.dump(v) for v in values]
+            )
+
+        if all(isinstance(v, dict) for v in values):
+            return aggregate_if_possible(
+                [hashable_from_dict(v) for v in values],
                 value_was_dict=True,
             )
 
-        raise ValueError(f'Cannot aggregate "{value}"')
+        raise ValueError(f'Cannot aggregate "{values}"')
 
-    return value
+    return values
 
 
 def aggregate_list(value):
@@ -216,7 +177,12 @@ def group_resultdicts(inputs, across):
     grouped_resultdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
     for resultdict in sorted(inputs, key=lambda d: d["tags"][across]):
-        tags = resultdict["tags"]
+        result = schema.load(data=resultdict)
+        if not isinstance(result, Result):
+            logger.warning(f'AggregateResultdicts ignored invalid input "{resultdict}"')
+            continue
+
+        tags = result.tags
 
         if across not in tags:
             continue
@@ -232,21 +198,22 @@ def group_resultdicts(inputs, across):
             # of runs across subjects, but we still want to compare across subjects
         ))
 
-        for f, nested in resultdict.items():
-            for k, v in nested.items():
-                grouped_resultdicts[tag_tuple][f][k].append(v)
+        for field in fields(result):
+            field_dict = getattr(result, field.name)
+            for k, v in field_dict.items():
+                grouped_resultdicts[tag_tuple][field.name][k].append(v)
 
     return grouped_resultdicts
 
 
-def aggregate_resultdicts(inputs, across):
+def aggregate_resultdicts(inputs, across) -> Tuple[List[Dict], List[Dict]]:
     grouped_resultdicts = group_resultdicts(inputs, across)
 
     aggregated = list()
     non_aggregated = list()
 
     for tag_tuple, listdict in grouped_resultdicts.items():
-        resultdict = defaultdict(dict)
+        resultdict: Dict[str, Dict] = defaultdict(dict)
         resultdict["tags"] = dict(tag_tuple)
 
         for f, d in listdict.items():  # create combined resultdict
@@ -265,7 +232,7 @@ def aggregate_resultdicts(inputs, across):
         for f in ["tags", "metadata", "vals"]:
             if f in validation_errors:
                 for key in validation_errors[f]:
-                    logger.warning(f'Removing "{f}.{key}={resultdict[f][key]}" from resultdict')
+                    logger.warning(f'Removing "{f}.{key}={resultdict[f][key]}" from resultdict due to "{validation_errors[f]}"')
                     del resultdict[f][key]  # remove invalid fields
 
         if any(
@@ -280,7 +247,7 @@ def aggregate_resultdicts(inputs, across):
 
 
 class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
-    across = traits.Enum(*entities, desc="across which entity to aggregate")
+    across = traits.Str(desc="across which entity to aggregate")
 
 
 class AggregateResultdictsOutputSpec(ResultdictsOutputSpec):
