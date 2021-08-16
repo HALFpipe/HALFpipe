@@ -14,7 +14,9 @@ from ..io.index.database import Database
 from ..utils import logger, nvol
 
 
-def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tuple[Tuple[str, str], ...]]:
+def collect_events(
+    database: Database, sourcefile: str
+) -> Union[None, str, Tuple[Tuple[str, str], ...]]:
     sourcefile_subject = database.tagval(sourcefile, "sub")
 
     candidates = database.associations(
@@ -27,9 +29,7 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
     if candidates is None or len(candidates) == 0:
         return None
 
-    candidates = sorted(set(  # remove duplicates
-        candidates
-    ))
+    candidates = sorted(set(candidates))  # remove duplicates
 
     def match_subject(event_file):
         subject = database.tagval(event_file, "sub")
@@ -56,15 +56,11 @@ def collect_events(database: Database, sourcefile: str) -> Union[None, str, Tupl
         for condition_file in condition_files:
             condition = database.tagval(condition_file, "condition")
             assert isinstance(condition, str)
-            condition_tuples.append(
-                (condition_file, condition)
-            )
+            condition_tuples.append((condition_file, condition))
 
         return (*condition_tuples,)
 
-    raise ValueError(
-        f'Cannot collect condition files for "{sourcefile}"'
-    )
+    raise ValueError(f'Cannot collect condition files for "{sourcefile}"')
 
 
 def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
@@ -75,9 +71,7 @@ def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
     if session is not None:  # enforce fmaps from same session
         filters.update(dict(ses=session))
 
-    candidates = database.associations(
-        bold_file_path, datatype="fmap", **filters
-    )
+    candidates = database.associations(bold_file_path, datatype="fmap", **filters)
 
     if candidates is None:
         return list()
@@ -87,7 +81,9 @@ def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
     return candidates
 
 
-def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, List[str]]:
+def collect_bold_files(
+    database, setting_factory, feature_factory
+) -> Dict[str, List[str]]:
 
     # find bold files
 
@@ -101,7 +97,9 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
 
         sub = database.tagval(bold_file_path, "sub")
         t1ws = database.associations(
-            bold_file_path, datatype="anat", sub=sub,
+            bold_file_path,
+            datatype="anat",
+            sub=sub,
         )
 
         if t1ws is None:  # remove bold files without T1w
@@ -148,8 +146,7 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
         # had to be restarted
 
         nvol_dict = {
-            bold_file_path: nvol(bold_file_path)
-            for bold_file_path in bold_file_pathset
+            bold_file_path: nvol(bold_file_path) for bold_file_path in bold_file_pathset
         }
         max_nvol = max(nvol_dict.values())
         selected = set(
@@ -202,9 +199,7 @@ def collect_bold_files(database, setting_factory, feature_factory) -> Dict[str, 
 
 
 def collect_metadata(database, source_file, setting) -> Dict:
-    metadata = dict()
-
-    metadata.update(BaseSettingSchema().dump(setting))
+    metadata = dict(setting=BaseSettingSchema().dump(setting))
 
     metadata.update(get_file_metadata(database, source_file))
 
