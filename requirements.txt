@@ -109,7 +109,10 @@ markupsafe==2.0.1
 marshmallow==3.13.0
     # via
     #   -r requirements.in
+    #   marshmallow-dataclass
     #   marshmallow-oneofschema
+marshmallow-dataclass==8.5.3
+    # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
 matplotlib==3.4.2
@@ -130,6 +133,8 @@ mpmath==1.2.1
     # via -r requirements.in
 git+https://github.com/poldracklab/mriqc@0.15.3
     # via -r requirements.in
+mypy-extensions==0.4.3
+    # via typing-inspect
 networkx==2.5.1
     # via
     #   fmriprep
@@ -414,7 +419,11 @@ traits==6.2.0
 transforms3d==0.3.1
     # via niworkflows
 typing-extensions==3.10.0.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   typing-inspect
+typing-inspect==0.7.1
+    # via marshmallow-dataclass
 urllib3==1.26.6
     # via requests
 wcwidth==0.2.5
