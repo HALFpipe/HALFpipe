@@ -65,6 +65,7 @@ class Result:
     ]] = field(default_factory=dict)
 
     metadata: Mapping[str, Union[
+        bool,
         str,
         int,
         float,

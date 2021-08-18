@@ -13,12 +13,11 @@ import json
 import re
 
 from inflection import camelize
+from marshmallow import ValidationError
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from niworkflows.viz.utils import compose_view, extract_svg
 # from nilearn.plotting import plot_glass_brain
-
-from .aggregate import MeanStd
 
 from ...io import DictListFile
 from ...model import FuncTagsSchema, entities
@@ -27,6 +26,8 @@ from ...utils import splitext, findpaths, logger
 from ...utils.format import format_like_bids
 from ...resource import get as getresource
 from ...stats.algorithms import algorithms
+
+from ...schema.result import MeanStd
 
 
 def _make_plot(tags, key, sourcefile, metadata):
@@ -203,13 +204,20 @@ def datasink_vals(indicts, reports_directory):
                 assert isinstance(outdict, dict)
 
                 for key, val in vals.items():
-                    mean_std = MeanStd.as_instance(val)
                     if isinstance(val, (int, float)):
                         outdict[key] = val
-                    elif mean_std is not None:
+                        continue
+
+                    try:
+                        mean_std = MeanStd.Schema().load(val)
+                        assert isinstance(mean_std, MeanStd)
                         outdict[key] = mean_std.mean
-                    else:
-                        logger.warning(f'Omitting invalid key-value pair "{key}={val}" from reportvals.json')
+                        continue
+                    except (ValidationError, AssertionError):
+                        pass
+
+                    logger.warning(f'Omitting invalid key-value pair "{key}={val}" from reportvals.json')
+
                 outdict.update(vals)
 
                 vals_file.put(outdict)
