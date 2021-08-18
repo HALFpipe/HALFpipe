@@ -27,12 +27,16 @@ flufl.lock >= 5.0.3
 psutil >= 5.8.0
 fasteners >= 0.15
 typing_extensions >= 3.10.0.0
+frozendict >= 2.0.6
 requests >= 2.25.1
 pysocks >= 1.7.1
 inflect >= 5.3.0
 inflection >= 0.5.1
 marshmallow >= 3.10.0
 marshmallow-oneofschema
+marshmallow-dataclass >= 8.5.3
+marshmallow-enum
+typeguard
 Pint >= 0.17
 matplotlib ~= 3.3
 seaborn >= 0.11.1
