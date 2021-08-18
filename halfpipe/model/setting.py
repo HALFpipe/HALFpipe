@@ -17,7 +17,7 @@ class GlobalSettingsSchema(Schema):
         unknown = RAISE
         ordered = True
 
-    dummy_scans = fields.Int(dump_default=None, allow_none=True)
+    dummy_scans = fields.Int(dump_default=0, allow_none=True)
 
     slice_timing = fields.Boolean(dump_default=False)
 

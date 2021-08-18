@@ -18,6 +18,8 @@ from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from niworkflows.viz.utils import compose_view, extract_svg
 # from nilearn.plotting import plot_glass_brain
 
+from .aggregate import MeanStd
+
 from ...io import DictListFile
 from ...model import FuncTagsSchema, entities
 from ...model.tags.resultdict import first_level_entities
@@ -199,6 +201,15 @@ def datasink_vals(indicts, reports_directory):
             if len(vals) > 0 and "sub" in tags:  # only for first level
                 outdict = FuncTagsSchema().dump(tags)
                 assert isinstance(outdict, dict)
+
+                for key, val in vals.items():
+                    mean_std = MeanStd.as_instance(val)
+                    if isinstance(val, (int, float)):
+                        outdict[key] = val
+                    elif mean_std is not None:
+                        outdict[key] = mean_std.mean
+                    else:
+                        logger.warning(f'Omitting invalid key-value pair "{key}={val}" from reportvals.json')
                 outdict.update(vals)
 
                 vals_file.put(outdict)

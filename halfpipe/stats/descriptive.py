@@ -4,7 +4,8 @@
 """
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List, Union
+from typing_extensions import Literal
 
 from collections import defaultdict
 
@@ -13,10 +14,11 @@ import pandas as pd
 import nibabel as nib
 
 from .base import ModelAlgorithm, listwise_deletion
+from ..utils.format import format_workflow
 
 
 class Descriptive(ModelAlgorithm):
-    model_outputs = []
+    model_outputs: List[str] = []
     contrast_outputs = ["mean", "std"]
 
     @staticmethod
@@ -38,7 +40,7 @@ class Descriptive(ModelAlgorithm):
         # make data frame
         zframe = pd.DataFrame(z)
 
-        voxel_result = defaultdict(dict)
+        voxel_result: Dict[str, Dict[Tuple[int, int, int], Dict[str, float]]] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
 
@@ -56,7 +58,7 @@ class Descriptive(ModelAlgorithm):
     def write_outputs(
         cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
     ) -> Dict:
-        output_files = dict()
+        output_files: Dict[str, List[Union[Literal[False], str]]] = dict()
 
         for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(cmatdict)
@@ -67,7 +69,7 @@ class Descriptive(ModelAlgorithm):
             rdf = pd.DataFrame.from_records(contrast_results)
 
             for map_name, series in rdf.iterrows():
-                out_name = f"{map_name}_{i+1}_{contrast_name}"
+                out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
                 fname = cls.write_map(ref_img, out_name, series)
 
                 output_name = map_name
