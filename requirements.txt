@@ -55,6 +55,8 @@ flufl.lock==5.1
     # via -r requirements.in
 git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
     # via -r requirements.in
+frozendict==2.0.6
+    # via -r requirements.in
 future==0.18.2
     # via niflow-nipype1-workflows
 gmpy2==2.0.8
