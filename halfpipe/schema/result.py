@@ -5,7 +5,7 @@
 from typing import Any, Mapping, Sequence, Union, List, Type, ClassVar
 
 from dataclasses import dataclass, field
-from marshmallow import Schema
+from marshmallow import Schema as MarshmallowSchema
 from marshmallow_dataclass import add_schema
 
 import numpy as np
@@ -22,7 +22,7 @@ class MeanStd:
     n_observations: int
     n_missing: int
 
-    Schema: ClassVar[Type[Schema]] = Schema
+    Schema: ClassVar[Type[MarshmallowSchema]] = MarshmallowSchema
 
     @classmethod
     def from_array(cls, array: List[float]) -> "MeanStd":
@@ -44,7 +44,7 @@ class Count:
     value: Any
     count: int
 
-    Schema: ClassVar[Type[Schema]] = Schema
+    Schema: ClassVar[Type[MarshmallowSchema]] = MarshmallowSchema
 
 
 @add_schema(base_schema=BaseSchema)
@@ -66,12 +66,14 @@ class Result:
 
     metadata: Mapping[str, Union[
         str,
+        int,
         float,
         Sequence[int],
         Sequence[float],
+        Sequence[str],
         List[Count],
         MeanStd,
         SettingBase,
     ]] = field(default_factory=dict)
 
-    Schema: ClassVar[Type[Schema]] = Schema
+    Schema: ClassVar[Type[MarshmallowSchema]] = MarshmallowSchema

@@ -2,51 +2,58 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Sequence
+
 from math import isclose
 
-from ..aggregate import aggregate_if_possible, aggregate_resultdicts
+from ..aggregate import aggregate_any, aggregate_resultdicts
 from ....schema.result import MeanStd, Count
 
 
-def test_aggregate_if_possible():
-    assert aggregate_if_possible("test") == "test"
+def test_aggregate_any():
+    assert aggregate_any("test") == "test"
 
-    assert aggregate_if_possible(["a", "a"]) == "a"
+    assert aggregate_any(["a", "a"]) == "a"
 
-    mean_std = aggregate_if_possible([0.5, 1.0, 1.5])
+    mean_std_dict = aggregate_any([0.5, 1.0, 1.5])
+    assert isinstance(mean_std_dict, dict)
+    mean_std = MeanStd.Schema().load(mean_std_dict)
     assert isinstance(mean_std, MeanStd)
     assert isclose(mean_std.mean, 1)
 
-    count_list = aggregate_if_possible(["a", "a", "b"])
-    assert isinstance(count_list, list)
-    assert all(isinstance(c, Count) for c in count_list)
+    counts = aggregate_any(["a", "a", "b"])
+    assert isinstance(counts, Sequence)
+    assert all(Count.Schema().load(c) is not None for c in counts)
 
-    count_list = aggregate_if_possible([count_list, count_list])
-    assert isinstance(count_list, list)
-    assert all(isinstance(c, Count) for c in count_list)
+    counts = aggregate_any([counts, counts])
+    assert isinstance(counts, Sequence)
+    assert all(Count.Schema().load(c) is not None for c in counts)
 
 
-def test_aggregate_if_possible_dict():
+def test_aggregate_any_dict():
     dict_a = {"Mean": 1.0}
     dict_b = {"Mean": 2.0}
 
-    count_list = aggregate_if_possible([dict_a, dict_a, dict_b])
-    assert isinstance(count_list, list)
-    assert all(
-        isinstance(c, Count) and isinstance(c.value, dict) for c in count_list
-    )
+    counts = aggregate_any([dict_a, dict_a, dict_b])
+    assert isinstance(counts, Sequence)
+    for c in counts:
+        count = Count.Schema().load(c)
+        assert isinstance(count, Count)
+        assert isinstance(count.value, dict)
 
-    count_list = aggregate_if_possible([count_list, count_list])
-    assert isinstance(count_list, list)
-    assert all(
-        isinstance(c, Count) and isinstance(c.value, dict) for c in count_list
-    )
+    counts = aggregate_any([counts, counts])
+    assert isinstance(counts, Sequence)
+    for c in counts:
+        count = Count.Schema().load(c)
+        assert isinstance(count, Count)
+        assert isinstance(count.value, dict)
 
-    count_list = aggregate_if_possible([tuple(count_list), tuple(count_list)])
-    assert isinstance(count_list, list)
-    assert all(
-        isinstance(c, Count) and isinstance(c.value, dict) for c in count_list
-    )
+    counts = aggregate_any([tuple(counts), tuple(counts)])
+    assert isinstance(counts, Sequence)
+    for c in counts:
+        count = Count.Schema().load(c)
+        assert isinstance(count, Count)
+        assert isinstance(count.value, dict)
 
 
 def test_aggregate_resultdicts():
@@ -83,6 +90,3 @@ def test_aggregate_resultdicts():
     aggregated, _ = aggregate_resultdicts([result_a, result_b], across="sub")
     (result,) = aggregated
     assert len(result["tags"]["sub"]) == 2
-
-    from pprint import pprint
-    pprint(result)

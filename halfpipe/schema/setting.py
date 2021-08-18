@@ -9,7 +9,8 @@
 from typing import List, Optional, Union, Sequence
 
 from dataclasses import dataclass, field
-from marshmallow_dataclass import class_schema
+from typing_extensions import Literal
+from marshmallow_dataclass import add_schema
 
 from .base import BaseSchema
 from .filter import ScanFilter
@@ -32,14 +33,16 @@ class GrandMeanScalingSetting:
 
 @dataclass
 class GaussianTemporalFilterSetting:
-    hp_width: float
-    lp_width: float
+    type: Literal["gaussian"]
+    hp_width: Optional[float]
+    lp_width: Optional[float]
 
 
 @dataclass
 class FrequencyBasedTemporalFilterSetting:
-    low: float
-    high: float
+    type: Literal["frequency_based"]
+    low: Optional[float]
+    high: Optional[float]
 
 
 TemporalFilterSetting = Union[
@@ -48,6 +51,7 @@ TemporalFilterSetting = Union[
 ]
 
 
+@add_schema(base_schema=BaseSchema)
 @dataclass
 class SettingBase:
     ica_aroma: bool = True
@@ -64,9 +68,7 @@ class SettingExtra:
     output_image: bool
 
 
+@add_schema(base_schema=BaseSchema)
 @dataclass
 class Setting(SettingBase, SettingExtra):
     pass
-
-
-SettingBaseSchema = class_schema(SettingBase, base_schema=BaseSchema)

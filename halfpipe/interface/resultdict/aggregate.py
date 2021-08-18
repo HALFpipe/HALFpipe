@@ -3,13 +3,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from __future__ import annotations
-from typing import Any, Dict, Hashable, Optional, Tuple, Sequence, Union, List
+from typing import Any, Dict, Hashable, Iterable, Mapping, Optional, Tuple, Sequence, Union, List
 
 from dataclasses import fields
 from collections import defaultdict, Counter
 from math import isclose
 
 import numpy as np
+from frozendict import frozendict
 
 from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec
 from nipype.interfaces.io import add_traits, IOBase
@@ -17,14 +18,13 @@ from nipype.interfaces.io import add_traits, IOBase
 from .base import ResultdictsOutputSpec
 from ...utils import ravel, logger
 from ...schema.result import MeanStd, Count, Result
-from ...schema.setting import SettingBase, SettingBaseSchema
 
 schema = Result.Schema()
 
 
 def aggregate_continuous(
     values: Sequence[Union[MeanStd, float, np.inexact]]
-) -> Optional[Union[float, Any]]:
+) -> Optional[Union[float, dict]]:
     scalar_values: List[float] = list()
     mean_std_values: List[MeanStd] = list()
 
@@ -42,11 +42,15 @@ def aggregate_continuous(
     if all(isclose(v, scalar_values[0]) for v in scalar_values):
         return scalar_values[0]
 
-    return MeanStd.Schema().dump(MeanStd.from_array([
+    mean_std = MeanStd.from_array([
         value.mean if isinstance(value, MeanStd)
         else float(value)
         for value in values
-    ]))
+    ])
+    mean_std_dict = MeanStd.Schema().dump(mean_std)
+    assert isinstance(mean_std_dict, dict)
+
+    return mean_std_dict
 
 
 def count_list_from_counter(counter: Counter, value_was_dict: bool = False) -> List[Count]:
@@ -111,52 +115,53 @@ def aggregate_categorical(values: Sequence, value_was_dict: bool):
         (count,) = count_list
         return count.value
 
-    return Count.Schema().dump(count_list, many=True)
+    count_dict_list = Count.Schema().dump(count_list, many=True)
+    assert isinstance(count_dict_list, list)
+
+    return count_dict_list
 
 
-def hashable_from_dict(v):
-    r = set()
+def freeze_any(x: Any) -> Hashable:
+    try:
+        _ = hash(x)
+        return x
+    except TypeError as e:  # is not hashable
+        if isinstance(x, Sequence):
+            sequence: List[Hashable] = [
+                freeze_any(element) for element in x
+            ]
+            return tuple(sequence)
+        elif isinstance(x, Mapping):
+            mapping: List[Tuple[Hashable, Hashable]] = [
+                (freeze_any(k), freeze_any(v), )
+                for k, v in x.items()
+            ]
+            return frozendict(mapping)
+        elif isinstance(x, Iterable):
+            iterable: List[Hashable] = [
+                freeze_any(element) for element in x
+            ]
+            return frozenset(iterable)
+        elif hasattr(x, "Schema"):
+            return freeze_any(x.Schema().dump(x))
 
-    for k, v in v.items():
-        if isinstance(v, Hashable):
-            r.add((k, v))
-        elif isinstance(v, list):
-            r.add((k, tuple(v)))
-
-    return frozenset(r)
+        raise ValueError(f'Cannot freeze {x}') from e
 
 
-def aggregate_if_possible(values, value_was_dict: bool = False):
-    if isinstance(values, (list, tuple)) and len(values) > 0:
+def aggregate_any(values: Any, value_was_dict: bool = False):
+    values = freeze_any(values)
 
-        try:
-            return aggregate_continuous(values)
-        except ValueError:
-            pass
+    if not isinstance(values, (list, tuple)) or len(values) == 0:
+        return values
 
-        try:
-            return aggregate_categorical(values, value_was_dict=value_was_dict)
-        except (ValueError, TypeError):
-            pass
+    result = aggregate_continuous(values)
+    if result is None:
+        result = aggregate_categorical(values, value_was_dict=value_was_dict)
 
-        if all(isinstance(v, list) for v in values):
-            return aggregate_if_possible(tuple(map(tuple, values)))
+    if result is not None:
+        return result
 
-        if all(isinstance(v, SettingBase) for v in values):
-            setting_schema = SettingBaseSchema()
-            return aggregate_if_possible(
-                [setting_schema.dump(v) for v in values]
-            )
-
-        if all(isinstance(v, dict) for v in values):
-            return aggregate_if_possible(
-                [hashable_from_dict(v) for v in values],
-                value_was_dict=True,
-            )
-
-        raise ValueError(f'Cannot aggregate "{values}"')
-
-    return values
+    raise ValueError(f'Cannot aggregate "{values}"')
 
 
 def aggregate_list(value):
@@ -170,7 +175,7 @@ def aggregate_field(key, value):
     if key in ["sources", "raw_sources"]:
         return aggregate_list(value)
 
-    return aggregate_if_possible(value)
+    return aggregate_any(value)
 
 
 def group_resultdicts(inputs, across):
