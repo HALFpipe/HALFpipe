@@ -35,6 +35,8 @@ inflection >= 0.5.1
 marshmallow >= 3.10.0
 marshmallow-oneofschema
 marshmallow-dataclass >= 8.5.3
+marshmallow-enum
+typeguard
 Pint >= 0.17
 matplotlib ~= 3.3
 seaborn >= 0.11.1

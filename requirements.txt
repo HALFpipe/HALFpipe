@@ -112,8 +112,11 @@ marshmallow==3.13.0
     # via
     #   -r requirements.in
     #   marshmallow-dataclass
+    #   marshmallow-enum
     #   marshmallow-oneofschema
 marshmallow-dataclass==8.5.3
+    # via -r requirements.in
+marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
@@ -420,6 +423,8 @@ traits==6.2.0
     # via nipype
 transforms3d==0.3.1
     # via niworkflows
+typeguard==2.12.1
+    # via -r requirements.in
 typing-extensions==3.10.0.0
     # via
     #   -r requirements.in
