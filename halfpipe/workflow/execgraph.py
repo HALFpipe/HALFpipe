@@ -24,6 +24,7 @@ from nipype.pipeline.engine.utils import merge_dict
 from ..fixes import Node
 from .base import IdentifiableWorkflow
 from ..utils import resolve
+from ..utils.format import format_like_bids
 from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
@@ -40,23 +41,26 @@ def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> Order
         subject_graphs = OrderedDict([
             (n, v)
             for n, v in subject_graphs.items()
-            if not fnmatch(n, pattern)
+            if not fnmatch(n, pattern) and not fnmatch(format_like_bids(n), pattern)
         ])
 
     for pattern in opts.subject_include:
         subject_graphs = OrderedDict([
             (n, v)
             for n, v in subject_graphs.items()
-            if fnmatch(n, pattern)
+            if fnmatch(n, pattern) or fnmatch(format_like_bids(n), pattern)
         ])
 
     if opts.subject_list is not None:
         subject_list_path = resolve(opts.subject_list, opts.fs_root)
 
         with open(subject_list_path, "r") as f:
-            subject_set = frozenset(
+            subject_set = set(
                 s.strip() for s in f.readlines()
             )
+
+        for subject in subject_set:
+            subject_set.add(format_like_bids(subject))
 
         subject_graphs = OrderedDict([
             (n, v)
