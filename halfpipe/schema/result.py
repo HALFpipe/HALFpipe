@@ -56,21 +56,21 @@ class Result:
     reports: Mapping[str, str] = field(default_factory=dict)
 
     vals: Mapping[str, Union[
-        str,
         float,
-        Sequence[int],
+        str,
         Sequence[float],
+        Sequence[int],
         List[Count],
         MeanStd,
     ]] = field(default_factory=dict)
 
     metadata: Mapping[str, Union[
         bool,
-        str,
-        int,
         float,
-        Sequence[int],
+        int,
+        str,
         Sequence[float],
+        Sequence[int],
         Sequence[str],
         List[Count],
         MeanStd,

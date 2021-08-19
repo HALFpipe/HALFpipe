@@ -142,7 +142,9 @@ def freeze_any(x: Any) -> Hashable:
                 freeze_any(element) for element in x
             ]
             return frozenset(iterable)
-        elif hasattr(x, "Schema"):
+        elif isinstance(x, (MeanStd, Count)):  # special dataclasses
+            return x
+        elif hasattr(x, "Schema"):  # other dataclasses
             return freeze_any(x.Schema().dump(x))
 
         raise ValueError(f'Cannot freeze {x}') from e
