@@ -118,7 +118,7 @@ def init_dualregression_wf(
         MakeResultdicts(
             tagkeys=["feature", "map", "component"],
             imagekeys=statmaps,
-            metadatakeys=["sources", "mean_t_s_n_r"],
+            metadatakeys=["sources", "mean_component_tsnr"],
         ),
         name="make_resultdicts_b",
     )
@@ -244,6 +244,6 @@ def init_dualregression_wf(
     workflow.connect(maxintensity, "out_file", calcmean, "parcellation")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
-    workflow.connect(calcmean, "mean", make_resultdicts_b, "mean_t_s_n_r")
+    workflow.connect(calcmean, "mean", make_resultdicts_b, "mean_component_tsnr")
 
     return workflow

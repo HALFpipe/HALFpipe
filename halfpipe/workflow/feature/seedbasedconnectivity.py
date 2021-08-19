@@ -106,7 +106,7 @@ def init_seedbasedconnectivity_wf(
         MakeResultdicts(
             tagkeys=["feature", "seed"],
             imagekeys=[*statmaps, "design_matrix", "contrast_matrix"],
-            metadatakeys=["mean_t_s_n_r", "coverage"],
+            metadatakeys=["mean_seed_tsnr", "coverage"],
         ),
         name="make_resultdicts",
     )
@@ -220,6 +220,6 @@ def init_seedbasedconnectivity_wf(
     workflow.connect(maskseeds, "out_files", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
-    workflow.connect(calcmean, "mean", make_resultdicts, "mean_t_s_n_r")
+    workflow.connect(calcmean, "mean", make_resultdicts, "mean_seed_tsnr")
 
     return workflow

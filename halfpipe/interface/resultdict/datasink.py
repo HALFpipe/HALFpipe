@@ -259,6 +259,12 @@ def _format_sidecar_key(key):  # camelize
         fwhm="FWHM",
         hp_width="HighPassWidth",
         lp_width="LowPassWidth",
+        fd_perc="FDPerc",
+        fd_mean="FDMean",
+        mean_gm_tsnr="MeanGMTSNR",
+        mean_seed_tsnr="MeanSeedTSNR",
+        mean_component_tsnr="MeanComponentTSNR",
+        mean_atlas_tsnr="MeanAtlasTSNR",
     )
     if key in predefined:
         return predefined[key]
