@@ -3,7 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
-from typing import Dict, Optional, Type
+from collections import defaultdict
+from typing import ClassVar, Dict, Optional, Type
 
 from calamities import TextView, SpacerView, TextElement, SingleChoiceInputView
 
@@ -49,7 +50,6 @@ class Step:
     def setup(self, ctx):
         raise NotImplementedError
 
-    @abstractmethod
     def teardown(self):
         for view in reversed(self.views):
             logger.debug(f'Removing view "{view}"')
@@ -69,15 +69,12 @@ class Step:
         self.views.append(view)
 
 
-StepType = Type[Step]
-
-
 class BranchStep(Step):
     header_str: Optional[str] = None
 
-    is_vertical = False
+    is_vertical: ClassVar[bool] = False
 
-    options: Dict = dict()
+    options: Dict[str, Optional[Type[Step]]] = defaultdict(lambda: None)
 
     def _should_run(self, _):
         return True
@@ -114,17 +111,17 @@ class BranchStep(Step):
 
             if self.choice is None:
                 return
-            elif self.options[self.choice] is None:
+
+            choice_step = self.options[self.choice]
+            if choice_step is None:
                 return ctx
-            else:
-                return self.options[self.choice](self.app, **self.kwargs)(ctx)
+
+            return choice_step(self.app, **self.kwargs)(ctx)
 
 
 class YesNoStep(BranchStep):
-    is_vertical = False
-
-    yes_step_type = None
-    no_step_type = None
+    yes_step_type: Optional[Type[Step]] = None
+    no_step_type: Optional[Type[Step]] = None
 
     def __init__(self, app, **kwargs):
         super(YesNoStep, self).__init__(app, **kwargs)

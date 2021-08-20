@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import ClassVar, Dict, Optional, Type
+
 from calamities import (
     TextView,
     SpacerView,
@@ -13,7 +15,7 @@ from calamities import (
 
 import numpy as np
 from inflection import humanize
-from marshmallow import fields
+from marshmallow import fields, Schema
 
 from .step import Step
 from ..io.parse import loadspreadsheet
@@ -192,7 +194,7 @@ class SetMetadataStep(Step):
 
         self.next_step_type = next_step_type
 
-    def setup(self, ctx):
+    def setup(self, _):
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -249,7 +251,7 @@ class SetMetadataStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:
             return False
@@ -294,18 +296,18 @@ class SetMetadataStep(Step):
 
 
 class CheckMetadataStep(Step):
-    schema = None
+    schema: ClassVar[Type[Schema]]
 
-    key = None
-    appendstr = ""
+    key: ClassVar[str]
+    appendstr: ClassVar[str] = ""
 
-    filters = None
+    filters: ClassVar[Optional[Dict[str, str]]] = None
 
-    next_step_type = None
+    next_step_type: Type[Step]
 
-    show_summary = True
+    show_summary: ClassVar[bool] = True
 
-    def _should_skip(self, ctx):
+    def _should_skip(self, _):
         return False
 
     def setup(self, ctx):
@@ -396,7 +398,7 @@ class CheckMetadataStep(Step):
         if self.show_summary is True or self.is_missing is False:
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if self.is_missing:
             return self.is_first_run
         else:
@@ -409,6 +411,7 @@ class CheckMetadataStep(Step):
         if self.is_first_run or not self.is_missing:
             self.is_first_run = False
             if self.choice == "Yes" or self.should_skip:
+                assert self.next_step_type is not None
                 return self.next_step_type(self.app)(ctx)
             else:
                 return SetMetadataStep(

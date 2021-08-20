@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional, Type
+from typing import ClassVar, Dict, List, Optional, Type
 
 from calamities import (
     TextView,
@@ -30,13 +30,13 @@ logger = logging.getLogger("halfpipe.ui")
 
 
 class FilePatternSummaryStep(Step):
-    entity_display_aliases = entity_display_aliases
+    entity_display_aliases: ClassVar[Dict] = entity_display_aliases
 
-    filetype_str = "file"
-    filedict = {}
-    schema = FileSchema
+    filetype_str: ClassVar[str] = "file"
+    filedict: Dict[str, str] = dict()
+    schema: Type[FileSchema] = FileSchema
 
-    next_step_type = None
+    next_step_type: Optional[Type[Step]] = None
 
     def setup(self, ctx):
         self.is_first_run = True
@@ -49,12 +49,13 @@ class FilePatternSummaryStep(Step):
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         return self.is_first_run
 
     def next(self, ctx):
         if self.is_first_run:
             self.is_first_run = False
+            assert self.next_step_type is not None
             return self.next_step_type(self.app)(ctx)
         else:
             return
@@ -119,7 +120,7 @@ class AskForMissingEntities(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         if self.entity is None:
             return self.is_first_run
         else:
@@ -158,21 +159,21 @@ class FilePatternStep(Step):
     suggest_file_stem = False
     entity_display_aliases = entity_display_aliases
 
-    header_str = None
+    header_str: ClassVar[Optional[str]] = None
 
     filetype_str = "file"
-    filedict = {}
+    filedict: Dict[str, str] = dict()
     schema: Type[FileSchema] = FileSchema
 
-    ask_if_missing_entities = []
-    required_in_path_entities = []
+    ask_if_missing_entities: List[str] = list()
+    required_in_path_entities: List[str] = list()
 
-    next_step_type = None
+    next_step_type: Type[Step]
 
     def _transform_extension(self, ext):
         return ext
 
-    def setup(self, ctx):
+    def setup(self, _):
         self.fileobj: Optional[File] = None
 
         if hasattr(self, "header_str") and self.header_str is not None:

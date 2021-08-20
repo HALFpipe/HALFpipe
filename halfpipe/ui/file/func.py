@@ -2,12 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
+from typing import Optional, Type
+
+from calamities import (
+    MultiCombinedNumberAndSingleChoiceInputView, TextView, SpacerView
+)
 
 from ...model import BoldFileSchema
 
 from ..pattern import FilePatternStep, FilePatternSummaryStep
-from ..step import YesNoStep, StepType
+from ..step import Step, YesNoStep
 from ..metadata import CheckMetadataStep
 from .fmap import FmapStep, FmapSummaryStep
 
@@ -16,16 +20,62 @@ filedict = {"datatype": "func", "suffix": "bold"}
 schema = BoldFileSchema
 
 
-def get_slice_timing_steps(next_step_type) -> StepType:
+def get_post_func_steps(next_step_type: Optional[Type[Step]]) -> Type[Step]:
+    class DoReconAllStep(YesNoStep):
+        header_str = "Do cortical surface-based processing?"
+        yes_step_type = next_step_type
+        no_step_type = next_step_type
+
+        def next(self, ctx):
+            if self.choice == "Yes":
+                ctx.spec.global_settings["run_reconall"] = True
+            else:
+                ctx.spec.global_settings["run_reconall"] = False
+            return super().next(ctx)
+
+    class DummyScansStep(Step):
+        detect_str = "Detect non-steady-state via algorithm"
+
+        next_step_type: Optional[Type[Step]] = DoReconAllStep
+
+        def setup(self, _):
+            self.result = None
+
+            self._append_view(TextView("Remove initial volumes from scans?"))
+
+            self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
+                [""], [self.detect_str], initial_values=[0], min=0,
+            )
+
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+        def run(self, _):
+            self.result = self.input_view()
+            return self.result is not None
+
+        def next(self, ctx):
+            if self.result is not None:
+                value = next(iter(self.result.values()))
+                if isinstance(value, (int, float)):
+                    ctx.spec.global_settings["dummy_scans"] = int(value)
+                elif value == self.detect_str:
+                    ctx.spec.global_settings["dummy_scans"] = None
+                else:
+                    raise ValueError(f'Unknown dummy_scans value "{value}"')
+
+            if self.next_step_type is not None:
+                return self.next_step_type(self.app)(ctx)
+            else:
+                return ctx
+
     class CheckBoldSliceTimingStep(CheckMetadataStep):
         schema = BoldFileSchema
 
         key = "slice_timing"
         filters = filedict
 
-        def __init__(self, app, **kwargs):
-            super(CheckBoldSliceTimingStep, self).__init__(app, **kwargs)
-            self.next_step_type = next_step_type
+        next_step_type = DummyScansStep
 
         def _should_skip(self, ctx):
             if self.key in ctx.already_checked:
@@ -50,14 +100,14 @@ def get_slice_timing_steps(next_step_type) -> StepType:
     class DoSliceTimingStep(YesNoStep):
         header_str = "Do slice timing?"
         yes_step_type = CheckBoldSliceEncodingDirectionStep
-        no_step_type = next_step_type
+        no_step_type = DummyScansStep
 
         def next(self, ctx):
             if self.choice == "Yes":
                 ctx.spec.global_settings["slice_timing"] = True
             else:
                 ctx.spec.global_settings["slice_timing"] = False
-            return super(DoSliceTimingStep, self).next(ctx)
+            return super().next(ctx)
 
     return DoSliceTimingStep
 
@@ -67,20 +117,17 @@ class BoldSummaryStep(FilePatternSummaryStep):
     filedict = filedict
     schema = schema
 
-    next_step_type = get_slice_timing_steps(FmapSummaryStep)
+    next_step_type = get_post_func_steps(FmapSummaryStep)
 
 
 class HasMoreBoldStep(YesNoStep):
     header_str = f"Add more {filetype_str} files?"
-    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
-    no_step_type: StepType = get_slice_timing_steps(FmapStep)
+    no_step_type = get_post_func_steps(FmapStep)
 
 
 class CheckRepetitionTimeStep(CheckMetadataStep):
     schema = schema
-
     key = "repetition_time"
-
     next_step_type = HasMoreBoldStep
 
 

@@ -6,9 +6,7 @@
 
 """
 
-from typing import Optional
-
-from ..step import YesNoStep, StepType
+from ..step import YesNoStep
 from ..model import ModelsStep
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
@@ -17,7 +15,6 @@ next_step_type = ModelsStep
 
 class AddAnotherImageOutputStep(YesNoStep):
     header_str = "Output another preprocessed image?"
-    yes_step_type: Optional[StepType] = None  # add later
     no_step_type = next_step_type
 
 
