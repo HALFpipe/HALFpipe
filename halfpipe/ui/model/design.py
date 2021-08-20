@@ -24,7 +24,7 @@ from itertools import combinations, chain
 
 from ..utils import forbidden_chars
 from ...utils import ravel
-from ..step import Step, StepType, YesNoStep
+from ..step import Step, YesNoStep
 from .loop import AddAnotherModelStep
 from .utils import format_column
 from ...model import InferredTypeContrastSchema, TContrastSchema, MissingFilterSchema
@@ -62,7 +62,7 @@ class InteractionTermsStep(Step):
         super(InteractionTermsStep, self).__init__(app)
         self.variables = variables
 
-    def setup(self, ctx):
+    def setup(self, _):
         self._append_view(TextView("Select which interaction terms to add to the model"))
 
         nvar = len(self.variables)
@@ -82,7 +82,7 @@ class InteractionTermsStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:
             return False
@@ -134,7 +134,7 @@ class InteractionVariablesStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         while True:
             checked = self.input_view()
             if checked is None:
@@ -177,7 +177,6 @@ class AddInteractionTerms(YesNoStep):
 
 class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"
-    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = AddInteractionTerms
 
 
@@ -190,11 +189,12 @@ class ContrastValuesStep(Step):
         self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
         self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
 
-        variable = None
-        for variable in self.variables:
-            if variable["name"] == varname:
-                break
+        variables_by_name = {
+            variable["name"]: variable
+            for variable in self.variables
+        }
 
+        variable = variables_by_name[varname]
         self.options = variable["levels"]
 
         self.input_view = MultiNumberInputView(self.options)
@@ -202,7 +202,7 @@ class ContrastValuesStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.valuedict = self.input_view()
         if self.valuedict is None:
             return False
@@ -242,7 +242,7 @@ class ContrastVariableStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:
             return False
@@ -281,7 +281,7 @@ class ContrastNameStep(Step):
         self._append_view(SpacerView(1))
         self.value = None
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -362,7 +362,7 @@ class VariableMissingActionStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:
             return False
@@ -406,7 +406,7 @@ class VariableSelectStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:  # was cancelled
             return False

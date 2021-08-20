@@ -6,7 +6,7 @@
 
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Type
 
 from calamities import (
     TextView,
@@ -15,7 +15,7 @@ from calamities import (
     MultiMultipleChoiceInputView,
 )
 
-from ..step import Step, YesNoStep, StepType
+from ..step import Step, YesNoStep
 from ...model import (
     FilterSchema,
     GroupFilterSchema,
@@ -33,7 +33,7 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
         header_str: Optional[str] = None
         filter_field: Optional[str] = None
 
-        next_step_type: Optional[StepType] = None
+        next_step_type: Type[Step]
 
         def setup(self, _):
             self._append_view(TextView(self.header_str))
@@ -62,7 +62,6 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
             )
             ctx.spec.models[-1].filters.append(filter_obj)
 
-            assert self.next_step_type is not None
             return self.next_step_type(self.app)(ctx)
 
     class FdPercFilterStep(BaseCutoffFilterStep):

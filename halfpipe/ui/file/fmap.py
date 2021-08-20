@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
+from typing import Optional, Type
 
 from operator import attrgetter
 from itertools import product
@@ -26,7 +26,6 @@ from ...model import (
 from ..feature import FeaturesStep
 from ..step import (
     Step,
-    StepType,
     BranchStep,
     YesNoStep,
 )
@@ -37,7 +36,7 @@ filedict = {"datatype": "fmap"}
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
-next_step_type = FeaturesStep
+fmap_next_step_type = FeaturesStep
 
 
 class FmapSummaryStep(FilePatternSummaryStep):
@@ -45,7 +44,7 @@ class FmapSummaryStep(FilePatternSummaryStep):
     filedict = filedict
     schema = BaseFmapFileSchema
 
-    next_step_type: StepType = next_step_type
+    next_step_type = fmap_next_step_type
 
 
 class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
@@ -55,7 +54,7 @@ class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
     appendstr = " for the functional data"
     filters = bold_filedict
 
-    next_step_type = next_step_type
+    next_step_type = fmap_next_step_type
 
 
 class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
@@ -207,7 +206,6 @@ class AcqToTaskMappingStep(Step):
 
 class HasMoreFmapStep(YesNoStep):
     header_str = "Add more field maps?"
-    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = AcqToTaskMappingStep
 
 
@@ -337,7 +335,7 @@ class FmapTypeStep(BranchStep):
 class HasFmapStep(YesNoStep):
     header_str = "Specify field maps?"
     yes_step_type = FmapTypeStep
-    no_step_type = next_step_type
+    no_step_type = fmap_next_step_type
 
 
 HasMoreFmapStep.yes_step_type = FmapTypeStep

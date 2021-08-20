@@ -7,7 +7,7 @@
 """
 
 from abc import abstractmethod
-from typing import Optional
+from typing import List, Optional, Type
 
 from calamities import (
     MultiNumberInputView,
@@ -19,7 +19,7 @@ from calamities import (
 )
 from calamities.pattern import get_entities_in_path
 
-from ..step import Step, BranchStep, StepType, YesNoStep
+from ..step import Step, BranchStep, YesNoStep
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..utils import forbidden_chars
@@ -41,8 +41,9 @@ def format_variable(variable):
 def find_bold_filepaths(ctx):
     database = ctx.database
     bold_filepaths = database.get(datatype="func", suffix="bold")
+
     if bold_filepaths is None:
-        return
+        raise ValueError("No BOLD files in database")
 
     filters = ctx.spec.settings[-1].get("filters")
     bold_filepaths = set(bold_filepaths)
@@ -53,14 +54,14 @@ def find_bold_filepaths(ctx):
     return bold_filepaths
 
 
-def find_and_parse_condition_files(ctx, bold_filepaths=None):
+def find_and_parse_condition_files(ctx, bold_filepaths: List[str] = list()):
     """
     returns generator for tuple event file paths, conditions, onsets, durations
     """
     database = ctx.database
 
-    if bold_filepaths is None:
-        bold_filepaths = find_bold_filepaths(ctx)
+    if len(bold_filepaths) == 0:
+        bold_filepaths.extend(find_bold_filepaths(ctx))
 
     filters = dict(datatype="func", suffix="events")
     taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
@@ -109,12 +110,12 @@ def get_conditions(ctx):
 class ConfirmInconsistentStep(YesNoStep):
     no_step_type = None
 
-    def __init__(self, app, noun, this_next_step_type):
+    def __init__(self, app, noun, this_next_step_type: Type[Step]):
         self.header_str = f"Do you really want to use inconsistent {noun} across features?"
         self.yes_step_type = this_next_step_type
         super(ConfirmInconsistentStep, self).__init__(app)
 
-    def run(self, ctx):
+    def run(self, _):
         self.choice = self.input_view()
         if self.choice is None:
             return False
@@ -180,7 +181,6 @@ class HighPassFilterCutoffStep(Step):
 
 class AddAnotherContrastStep(YesNoStep):
     header_str = "Add another contrast?"
-    yes_step_type: Optional[StepType] = None  # add later, because not yet defined
     no_step_type = HighPassFilterCutoffStep
 
 
@@ -206,7 +206,7 @@ class ContrastValuesStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -250,7 +250,7 @@ class ContrastNameStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -298,7 +298,7 @@ class ConditionsSelectStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
@@ -337,10 +337,10 @@ class EventsStep(FilePatternStep):
     filetype_str = "event"
     filedict = {"datatype": "func", "suffix": "events"}
 
-    ask_if_missing_entities = []
-    required_in_path_entities = []
+    ask_if_missing_entities: List[str] = list()
+    required_in_path_entities: List[str] = list()
 
-    next_step_type = ConditionsSelectStep
+    next_step_type: Type[Step] = ConditionsSelectStep
 
     def setup(self, ctx):
         bold_filepaths = find_bold_filepaths(ctx)
@@ -377,14 +377,14 @@ class TxtEventsStep(EventsStep):
 
     required_in_path_entities = ["condition"]
 
-    def _transform_extension(self, ext):
+    def _transform_extension(self, _):
         return ".txt"
 
 
 class TsvEventsStep(EventsStep):
     schema = TsvEventsFileSchema
 
-    def _transform_extension(self, ext):
+    def _transform_extension(self, _):
         return ".tsv"
 
 
