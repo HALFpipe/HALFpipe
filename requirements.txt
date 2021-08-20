@@ -12,7 +12,7 @@ backcall==0.2.0
     # via ipython
 bids-validator==1.8.0
     # via pybids
-calamities==0.0.14
+calamities==0.0.15
     # via -r requirements.in
 certifi==2021.5.30
     # via requests
