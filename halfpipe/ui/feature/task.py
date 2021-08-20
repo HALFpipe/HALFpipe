@@ -7,7 +7,7 @@
 """
 
 from abc import abstractmethod
-from typing import List, Optional, Type
+from typing import List, Type
 
 from calamities import (
     MultiNumberInputView,
@@ -154,7 +154,7 @@ class HighPassFilterCutoffStep(Step):
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
-    def run(self, ctx):
+    def run(self, _):
         self.result = self.input_view()
         if self.result is None:  # was cancelled
             return False
