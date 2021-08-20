@@ -77,8 +77,10 @@ class FmriprepFactory(Factory):
         subjects = list(subjects)
         bidssubjects = list(bidssubjects)
 
+        global_settings = spec.global_settings
+
         ignore = []
-        if spec.global_settings["slice_timing"] is not True:
+        if global_settings["slice_timing"] is not True:
             ignore.append("slicetiming")
             slice_timing_offset: float = 0
         else:
@@ -88,7 +90,7 @@ class FmriprepFactory(Factory):
             "none": "skip",
             "auto": "auto",
             "ants": "force",
-        }[spec.global_settings["skull_strip_algorithm"]]
+        }[global_settings["skull_strip_algorithm"]]
 
         # reset fmriprep config
         config.execution.bids_database_dir = None
@@ -97,7 +99,7 @@ class FmriprepFactory(Factory):
 
         output_spaces = f"{constants.reference_space}:res-{constants.reference_res}"
 
-        if spec.global_settings["run_reconall"]:
+        if global_settings["run_reconall"]:
             output_spaces += " "
             output_spaces += "fsaverage:den-164k"
             output_spaces += " "
@@ -115,28 +117,28 @@ class FmriprepFactory(Factory):
                 "participant_label": bidssubjects,
                 "ignore": ignore,
                 "use_aroma": False,
-                "dummy_scans": spec.global_settings["dummy_scans"],
+                "dummy_scans": global_settings["dummy_scans"],
                 "skull_strip_t1w": skull_strip_t1w,
-                "anat_only": spec.global_settings["anat_only"],
-                "write_graph": spec.global_settings["write_graph"],
-                "hires": spec.global_settings["hires"],
-                "run_reconall": spec.global_settings["run_reconall"],
+                "anat_only": global_settings["anat_only"],
+                "write_graph": global_settings["write_graph"],
+                "hires": global_settings["hires"],
+                "run_reconall": global_settings["run_reconall"],
                 "cifti_output": False,  # we do this in halfpipe
-                "t2s_coreg": spec.global_settings["t2s_coreg"],
-                "medial_surface_nan": spec.global_settings["medial_surface_nan"],
+                "t2s_coreg": global_settings["t2s_coreg"],
+                "medial_surface_nan": global_settings["medial_surface_nan"],
                 "output_spaces": output_spaces,
-                "bold2t1w_dof": spec.global_settings["bold2t1w_dof"],
-                "fmap_bspline": spec.global_settings["fmap_bspline"],
-                "force_syn": spec.global_settings["force_syn"],
-                "longitudinal": spec.global_settings["longitudinal"],
-                "regressors_all_comps": spec.global_settings["regressors_all_comps"],
-                "regressors_dvars_th": spec.global_settings["regressors_dvars_th"],
-                "regressors_fd_th": spec.global_settings["regressors_fd_th"],
-                "skull_strip_fixed_seed": spec.global_settings["skull_strip_fixed_seed"],
-                "skull_strip_template": spec.global_settings["skull_strip_template"],
-                "aroma_err_on_warn": spec.global_settings["aroma_err_on_warn"],
-                "aroma_melodic_dim": spec.global_settings["aroma_melodic_dim"],
-                "sloppy": spec.global_settings["sloppy"],
+                "bold2t1w_dof": global_settings["bold2t1w_dof"],
+                "fmap_bspline": global_settings["fmap_bspline"],
+                "force_syn": global_settings["force_syn"],
+                "longitudinal": global_settings["longitudinal"],
+                "regressors_all_comps": global_settings["regressors_all_comps"],
+                "regressors_dvars_th": global_settings["regressors_dvars_th"],
+                "regressors_fd_th": global_settings["regressors_fd_th"],
+                "skull_strip_fixed_seed": global_settings["skull_strip_fixed_seed"],
+                "skull_strip_template": global_settings["skull_strip_template"],
+                "aroma_err_on_warn": global_settings["aroma_err_on_warn"],
+                "aroma_melodic_dim": global_settings["aroma_melodic_dim"],
+                "sloppy": global_settings["sloppy"],
             }
         )
         nipype_dir = Path(workdir) / constants.workflowdir
@@ -203,7 +205,7 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             assert isinstance(inputnode, pe.Node)
             inputnode.inputs.tags = database.tags(bold_file_path)
-            inputnode.inputs.fd_thres = spec.global_settings["fd_thres"]
+            inputnode.inputs.fd_thres = global_settings["fd_thres"]
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
             inputnode.inputs.slice_timing_offset = slice_timing_offset
