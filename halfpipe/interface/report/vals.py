@@ -104,7 +104,8 @@ class UpdateVals(IOBase):
             vals["fd_mean"] = float(fd.mean())
 
             if isdefined(self.inputs.fd_thres):
-                vals["fd_perc"] = float((fd > self.inputs.fd_thres).mean())
+                fd_prop = float((fd > self.inputs.fd_thres).mean())
+                vals["fd_perc"] = fd_prop * 100  # rescale to percent
 
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
