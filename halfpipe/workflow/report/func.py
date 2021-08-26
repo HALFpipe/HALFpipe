@@ -23,8 +23,8 @@ from ..constants import constants
 from ..memory import MemoryCalculator
 
 
-def _calc_scan_start(skip_vols: int, slice_timing_offset: float, repetition_time: float) -> float:
-    return (skip_vols + slice_timing_offset) * repetition_time
+def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
+    return skip_vols * repetition_time
 
 
 def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalculator.default()):
@@ -51,7 +51,6 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
                 *fmriprepreportdatasinks,
                 "fd_thres",
                 "repetition_time",
-                "slice_timing_offset",
                 "skip_vols",
                 "tags",
             ]
@@ -131,7 +130,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717
     calc_scan_start = pe.Node(
         niu.Function(
-            input_names=["skip_vols", "slice_timing_offset", "repetition_time"],
+            input_names=["skip_vols", "repetition_time"],
             output_names="scan_start",
             function=_calc_scan_start,
         ),
@@ -139,7 +138,6 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     )
     workflow.connect(inputnode, "skip_vols", calc_scan_start, "skip_vols")
     workflow.connect(inputnode, "repetition_time", calc_scan_start, "repetition_time")
-    workflow.connect(inputnode, "slice_timing_offset", calc_scan_start, "slice_timing_offset")
 
     workflow.connect(calc_scan_start, "scan_start", make_resultdicts, "scan_start")
 

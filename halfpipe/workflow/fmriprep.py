@@ -82,9 +82,6 @@ class FmriprepFactory(Factory):
         ignore = []
         if global_settings["slice_timing"] is not True:
             ignore.append("slicetiming")
-            slice_timing_offset: float = 0
-        else:
-            slice_timing_offset = -0.5
 
         skull_strip_t1w = {
             "none": "skip",
@@ -208,7 +205,6 @@ class FmriprepFactory(Factory):
             inputnode.inputs.fd_thres = global_settings["fd_thres"]
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
-            inputnode.inputs.slice_timing_offset = slice_timing_offset
 
             self.connect(hierarchy, inputnode, sourcefile=bold_file_path)
 
