@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import ClassVar, Dict, List, Optional, Type
+from typing import ClassVar, Dict, List, Optional, Type, Union
 
 from calamities import (
     TextView,
@@ -16,8 +16,8 @@ from calamities.pattern import tag_parse, get_entities_in_path
 import logging
 
 from .step import Step
+from ..model.file.base import BaseFileSchema, File
 from ..model import (
-    File,
     FileSchema,
     entities,
     entity_longnames as entity_display_aliases
@@ -34,7 +34,7 @@ class FilePatternSummaryStep(Step):
 
     filetype_str: ClassVar[str] = "file"
     filedict: Dict[str, str] = dict()
-    schema: Type[FileSchema] = FileSchema
+    schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
 
     next_step_type: Optional[Type[Step]] = None
 
@@ -152,8 +152,6 @@ class AskForMissingEntities(Step):
 
                 return self.next_step_type(self.app)(ctx)
 
-        return
-
 
 class FilePatternStep(Step):
     suggest_file_stem = False
@@ -163,7 +161,7 @@ class FilePatternStep(Step):
 
     filetype_str = "file"
     filedict: Dict[str, str] = dict()
-    schema: Type[FileSchema] = FileSchema
+    schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
 
     ask_if_missing_entities: List[str] = list()
     required_in_path_entities: List[str] = list()

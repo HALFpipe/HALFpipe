@@ -7,7 +7,7 @@
 """
 
 from abc import abstractmethod
-from typing import List, Type
+from typing import List, Type, Optional
 
 from calamities import (
     MultiNumberInputView,
@@ -17,6 +17,7 @@ from calamities import (
     MultiCombinedNumberAndSingleChoiceInputView,
     CombinedMultipleAndSingleChoiceInputView
 )
+from calamities.input.choice import SingleChoiceInputView
 from calamities.pattern import get_entities_in_path
 
 from ..step import Step, BranchStep, YesNoStep
@@ -29,6 +30,7 @@ from .loop import SettingValsStep
 
 from ...io.parse.condition import parse_condition_file
 from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
+from ...model.feature import Feature
 from ...workflow.collect import collect_events
 
 next_step_type = SettingValsStep
@@ -39,8 +41,7 @@ def format_variable(variable):
 
 
 def find_bold_filepaths(ctx):
-    database = ctx.database
-    bold_filepaths = database.get(datatype="func", suffix="bold")
+    bold_filepaths = ctx.database.get(datatype="func", suffix="bold")
 
     if bold_filepaths is None:
         raise ValueError("No BOLD files in database")
@@ -49,24 +50,16 @@ def find_bold_filepaths(ctx):
     bold_filepaths = set(bold_filepaths)
 
     if filters is not None:
-        bold_filepaths = database.applyfilters(bold_filepaths, filters)
+        bold_filepaths = ctx.database.applyfilters(bold_filepaths, filters)
 
     return bold_filepaths
 
 
-def find_and_parse_condition_files(ctx, bold_filepaths: List[str] = list()):
+def find_and_parse_condition_files(ctx):
     """
     returns generator for tuple event file paths, conditions, onsets, durations
     """
-    database = ctx.database
-
-    if len(bold_filepaths) == 0:
-        bold_filepaths.extend(find_bold_filepaths(ctx))
-
-    filters = dict(datatype="func", suffix="events")
-    taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
-    if len(taskset) == 1:
-        (filters["task"],) = taskset
+    bold_filepaths = find_bold_filepaths(ctx)
 
     eventfile_dict = dict()
     for filepath in bold_filepaths:
@@ -80,7 +73,7 @@ def find_and_parse_condition_files(ctx, bold_filepaths: List[str] = list()):
 
     for in_any in eventfile_set:
         if isinstance(in_any, str):
-            in_any = database.fileobj(in_any)
+            in_any = ctx.database.fileobj(in_any)
         yield (in_any, *parse_condition_file(in_any=in_any))
 
 
@@ -99,7 +92,7 @@ def get_conditions(ctx):
     if len(conditions) == 0:
         return
 
-    ordered_conditions = []
+    ordered_conditions = []  # keep original order
     for c in ravel(conditions_list):
         if c in conditions and c not in ordered_conditions:
             ordered_conditions.append(c)
@@ -268,18 +261,92 @@ class ContrastNameStep(Step):
 AddAnotherContrastStep.yes_step_type = ContrastNameStep
 
 
+def get_matching_features(ctx):
+    current_conditions = frozenset(ctx.spec.features[-1].conditions)
+
+    for feature in ctx.spec.features[:-1]:
+        conditions = frozenset(feature.conditions)
+
+        if conditions.issuperset(current_conditions):
+            yield feature
+
+
+class CopyContrastsStep(Step):
+    skip_option = "Specify manually"
+
+    def setup(self, ctx):
+        self.is_first_run: bool = True
+
+        self.features = list(get_matching_features(ctx))
+        self.should_run: bool = len(self.features) > 0
+
+        self.choice: Optional[str] = None
+
+        if self.should_run:
+            self._append_view(TextView("Use contrasts from existing feature?"))
+            options = [feature.name for feature in self.features] + [self.skip_option]
+            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+    def run(self, _):
+        if not self.should_run:
+            return self.is_first_run
+        else:
+            self.choice = self.input_view()
+            if self.choice is None:
+                return False
+            return True
+
+    def _copy_contrasts(self, ctx):
+        if (
+            not hasattr(ctx.spec.features[-1], "contrasts")
+            or ctx.spec.features[-1].contrasts is None
+        ):
+            ctx.spec.features[-1].contrasts = []
+
+        assert self.choice is not None
+
+        source_feature: Optional[Feature] = None
+        for feature in self.features:
+            if feature.name == self.choice:
+                source_feature = feature
+
+        assert source_feature is not None
+        assert isinstance(source_feature.contrasts, list)
+
+        for contrast in source_feature.contrasts:
+            new_values = {
+                k: v
+                for k, v in contrast["values"].items()
+                if k in ctx.spec.features[-1].conditions
+            }
+
+            new_contrast = dict(name=contrast["name"], values=new_values)
+
+            contrast = TContrastSchema().load(new_contrast)
+            ctx.spec.features[-1].contrasts.append(contrast)
+
+    def next(self, ctx):
+        if self.is_first_run is True or self.should_run is True:
+            self.is_first_run = False
+
+            if self.choice == self.skip_option or self.should_run is False:
+                return ContrastNameStep(self.app)(ctx)
+
+            elif self.choice is not None:
+                self._copy_contrasts(ctx)
+
+            return AddAnotherContrastStep(self.app)(ctx)
+
+
 class ConditionsSelectStep(Step):
     add_file_str = "Add event file"
 
     def setup(self, ctx):
         self.result = None
 
-        if (
-            not hasattr(ctx.spec.features[-1], "conditions")
-            or ctx.spec.features[-1].conditions is None
-            or len(ctx.spec.features[-1].conditions) == 0
-        ):
-            get_conditions(ctx)
+        get_conditions(ctx)
 
         self._append_view(TextView("Select conditions to add to the model"))
 
@@ -318,7 +385,7 @@ class ConditionsSelectStep(Step):
             else:
                 raise ValueError()
 
-        return ContrastNameStep(self.app)(ctx)
+        return CopyContrastsStep(self.app)(ctx)
 
 
 class CheckUnitsStep(CheckMetadataStep):
@@ -405,12 +472,8 @@ class EventsTypeStep(BranchStep):
         self.is_first_run = True
         self.should_run = False
 
-        if (
-            not hasattr(ctx.spec.features[-1], "conditions")
-            or ctx.spec.features[-1].conditions is None
-            or len(ctx.spec.features[-1].conditions) == 0
-        ):  # try to load conditions if not available
-            get_conditions(ctx)
+        # try to load conditions if not available
+        get_conditions(ctx)
 
         if (
             not hasattr(ctx.spec.features[-1], "conditions")
