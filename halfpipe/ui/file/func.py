@@ -20,23 +20,23 @@ filedict = {"datatype": "func", "suffix": "bold"}
 schema = BoldFileSchema
 
 
-def get_post_func_steps(next_step_type: Optional[Type[Step]]) -> Type[Step]:
-    class DoReconAllStep(YesNoStep):
-        header_str = "Do cortical surface-based processing?"
-        yes_step_type = next_step_type
-        no_step_type = next_step_type
+def get_post_func_steps(this_next_step_type: Optional[Type[Step]]) -> Type[Step]:
+    # class DoReconAllStep(YesNoStep):
+    #     header_str = "Do cortical surface-based processing?"
+    #     yes_step_type = next_step_type
+    #     no_step_type = next_step_type
 
-        def next(self, ctx):
-            if self.choice == "Yes":
-                ctx.spec.global_settings["run_reconall"] = True
-            else:
-                ctx.spec.global_settings["run_reconall"] = False
-            return super().next(ctx)
+    #     def next(self, ctx):
+    #         if self.choice == "Yes":
+    #             ctx.spec.global_settings["run_reconall"] = True
+    #         else:
+    #             ctx.spec.global_settings["run_reconall"] = False
+    #         return super().next(ctx)
 
     class DummyScansStep(Step):
         detect_str = "Detect non-steady-state via algorithm"
 
-        next_step_type: Optional[Type[Step]] = DoReconAllStep
+        next_step_type: Optional[Type[Step]] = this_next_step_type
 
         def setup(self, _):
             self.result = None

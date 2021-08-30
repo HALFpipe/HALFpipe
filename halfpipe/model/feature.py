@@ -6,6 +6,8 @@
 
 """
 
+from typing import Dict, Optional, List
+
 from marshmallow import fields, validate, Schema, post_dump, post_load
 from marshmallow_oneofschema import OneOfSchema
 
@@ -14,8 +16,12 @@ from .setting import SmoothingSettingSchema
 
 
 class Feature:
-    def __init__(self, **kwargs):
-        assert "name" in kwargs
+    def __init__(self, name, type, **kwargs):
+        self.name = name
+        self.type = type
+
+        self.contrasts: Optional[List[Dict]] = None
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -31,11 +37,12 @@ class BaseFeatureSchema(Schema):
     type = fields.Str(validate=validate.OneOf(["falff", "reho"]))
 
     @post_load
-    def make_object(self, data, **kwargs):
+    def make_object(self, data, **_):
         return Feature(**data)
 
     @post_dump(pass_many=False)
     def remove_none(self, data, many):
+        assert many is False
         return {key: value for key, value in data.items() if value is not None}
 
 

@@ -333,7 +333,7 @@ class CheckMetadataStep(Step):
         vals = [ctx.database.metadata(filepath, self.key) for filepath in filepaths]
         self.suggestion = None
 
-        if self.key == "phase_encoding_direction" or self.key == "slice_encoding_direction":
+        if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:
             for i, val in enumerate(vals):
                 if val is not None:
                     vals[i] = direction_code_str(val, filepaths[i])
@@ -344,7 +344,9 @@ class CheckMetadataStep(Step):
                     sts = slice_timing_str(val)
                     if sts == "unknown":
                         val = np.array(val)
-                        sts = np.array2string(val, max_line_width=16384)
+                        sts = np.array2string(val, max_line_width=256)
+                        if len(sts) > 128:
+                            sts = f"{sts[:128]}..."
                     else:
                         sts = humanize(sts)
                     vals[i] = sts
@@ -378,6 +380,7 @@ class CheckMetadataStep(Step):
             unit = ""
 
         if self.show_summary is True:
+
             for i in range(min(10, len(order))):
                 display = display_str(f"{uniquevals[i]}")
                 if self.suggestion is None:

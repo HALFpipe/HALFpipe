@@ -6,6 +6,7 @@
 
 """
 
+from typing import Dict, Optional, Type
 from calamities import (
     MultipleChoiceInputView,
     NumberInputView,
@@ -30,12 +31,12 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
     class ConfirmInconsistentStep(YesNoStep):
         no_step_type = None
 
-        def __init__(self, app, val_noun, this_next_step_type):
+        def __init__(self, app, val_noun, this_next_step_type: Type[Step]):
             self.header_str = f"Do you really want to use inconsistent {val_noun} across {p.plural(noun)}?"
             self.yes_step_type = this_next_step_type
             super(ConfirmInconsistentStep, self).__init__(app)
 
-        def run(self, ctx):
+        def run(self, _):
             self.choice = self.input_view()
             if self.choice is None:
                 return False
@@ -92,15 +93,17 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-            self.valuedict = None
+            self.valuedict: Optional[Dict] = None
 
-        def run(self, ctx):
+        def run(self, _):
             self.valuedict = self.input_view()
             if self.valuedict is None:
                 return False
             return True
 
         def next(self, ctx):
+            assert self.valuedict is not None
+
             confoundnames = [
                 self.options[name] for name, is_selected in self.valuedict.items() if is_selected
             ]
@@ -173,7 +176,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
             self.value = None
 
-        def run(self, ctx):
+        def run(self, _):
             self.value = self.input_view()
             if self.value is None:
                 return False
@@ -183,6 +186,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             filterdict = {"type": self.type_str}
             for key, display_str in zip(self.keys, self.display_strs):
                 display_str = str(display_str)
+                assert self.value is not None
                 if self.value.get(display_str) is not None:
                     if isinstance(self.value[display_str], float):
                         filterdict[key] = self.value[display_str]
@@ -317,7 +321,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             self._value = self.input_view()
             if self._value is None:
                 return False
@@ -405,7 +409,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
 
             self._append_view(SpacerView(1))
 
-        def run(self, ctx):
+        def run(self, _):
             self._value = self.input_view()
             if self._value is None:
                 return False
