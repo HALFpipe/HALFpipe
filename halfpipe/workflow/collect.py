@@ -11,7 +11,7 @@ from ..io.metadata.niftiheader import NiftiheaderLoader
 from ..io.metadata.direction import get_axcodes_set
 from ..io.index.bids import BidsDatabase, get_file_metadata
 from ..io.index.database import Database
-from ..utils import logger, nvol
+from ..utils import logger, nvol, inflect_engine as pe
 
 
 def collect_events(
@@ -63,7 +63,7 @@ def collect_events(
     raise ValueError(f'Cannot collect condition files for "{sourcefile}"')
 
 
-def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
+def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> List[str]:
     sub = database.tagval(bold_file_path, "sub")
     filters = dict(sub=sub)  # enforce same subject
 
@@ -76,9 +76,32 @@ def collect_fieldmaps(database: Database, bold_file_path: str) -> List[str]:
     if candidates is None:
         return list()
 
-    candidates = sorted(set(candidates))
+    candidates = set(candidates)
 
-    return candidates
+    # filter
+
+    magnitude = frozenset(["magnitude1", "magnitude2"])
+    has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
+
+    needs_magnitude = frozenset([
+        "phasediff", "phase1", "phase2", "fieldmap",
+    ])
+
+    incomplete = set()
+    for c in candidates:
+        if database.tagval(c, "suffix") in needs_magnitude:
+            if not has_magnitude:
+                incomplete.add(c)
+
+    if len(incomplete) > 0:
+        if silent is not True:
+            incomplete_str = pe.join(sorted(incomplete))
+            logger.info(
+                f"Skipping field maps {incomplete_str} due to missing magnitude images"
+            )
+        candidates -= incomplete
+
+    return sorted(candidates)
 
 
 def collect_bold_files(

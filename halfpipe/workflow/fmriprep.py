@@ -153,7 +153,7 @@ class FmriprepFactory(Factory):
             func_preproc_wf = self._get_hierarchy("fmriprep_wf", sourcefile=bold_file_path)[-1]
             assert isinstance(func_preproc_wf, pe.Workflow)
 
-            if len(collect_fieldmaps(self.database, bold_file_path)) > 0:  # has fieldmaps
+            if len(collect_fieldmaps(self.database, bold_file_path, silent=True)) > 0:  # has fieldmaps
                 if func_preproc_wf.get_node("sdc_estimate_wf") is None:
                     logger.warning(
                         f'fMRIPrep did not detect field maps for file "{bold_file_path}"'
