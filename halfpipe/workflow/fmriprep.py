@@ -2,9 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
 from pathlib import Path
 
 from nipype.pipeline import engine as pe
+from nipype.interfaces.base.traits_extension import isdefined
 
 from fmriprep import config
 from fmriprep.cli.workflow import build_workflow
@@ -15,7 +18,7 @@ from .report import init_anat_report_wf, init_func_report_wf
 from .constants import constants
 from .memory import MemoryCalculator, patch_mem_gb
 
-from ..utils import deepcopyfactory, logger
+from ..utils import deepcopyfactory, logger, inflect_engine as p
 
 
 def _find_input(hierarchy, node, attr):
@@ -221,26 +224,37 @@ class FmriprepFactory(Factory):
         inputattrs = set(node.inputs.copyable_trait_names())
         dsattrs = set(attr for attr in inputattrs if attr.startswith("ds_"))
 
+        for key, value in node.inputs.get().items():
+            if isdefined(value):
+                inputattrs.remove(key)
+
+        ignore = frozenset(["alt_bold_mask_std", "alt_bold_std", "alt_spatial_reference"])
+        inputattrs -= ignore
+
         def _connect(hierarchy):
             wf = hierarchy[-1]
 
-            outputnode = wf.get_node("outputnode")
-            outputattrs = set(outputnode.outputs.copyable_trait_names())
-            attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
+            outputnode: Optional[pe.Node] = wf.get_node("outputnode")
+            if outputnode is not None:
+                outputattrs = set(outputnode.outputs.copyable_trait_names())
+                attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
 
-            actually_connected_attrs = set()
-            for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
-                _, infields = zip(*datadict.get("connect", []))
-                actually_connected_attrs.update(infields)
+                actually_connected_attrs = set()
+                for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
+                    _, infields = zip(*datadict.get("connect", []))
+                    actually_connected_attrs.update(infields)
 
-            attrs &= actually_connected_attrs
+                for key, value in outputnode.inputs.get().items():
+                    if isdefined(value):
+                        actually_connected_attrs.add(key)
 
-            for attr in attrs:
-                self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
-                connected_attrs.add(attr)
+                attrs &= actually_connected_attrs
 
-            while len(dsattrs) > 0:
-                attr = dsattrs.pop()
+                for attr in attrs:
+                    self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
+                    connected_attrs.add(attr)
+
+            for attr in list(dsattrs):
                 childtpl = _find_child(hierarchy, attr)
                 if childtpl is not None:
                     childhierarchy, childnode = childtpl
@@ -250,6 +264,7 @@ class FmriprepFactory(Factory):
                     self.connect_attr(
                         childhierarchy, childnode, childattr, nodehierarchy, node, attr
                     )
+                    dsattrs.remove(attr)
                     connected_attrs.add(attr)
 
         hierarchy = self._get_hierarchy("fmriprep_wf", sourcefile=sourcefile, subject_id=subject_id)
@@ -300,8 +315,16 @@ class FmriprepFactory(Factory):
                 wf = hierarchy[-1]
             anat_wf = wf.get_node("anat_preproc_wf")
 
-        anat_norm_wf = anat_wf.get_node("anat_norm_wf")
-        _connect([*hierarchy, anat_wf, anat_norm_wf])
+        for name in ["anat_norm_wf", "anat_reports_wf"]:
+            wf = anat_wf.get_node(name)
+            _connect([*hierarchy, anat_wf, wf])
         _connect([*hierarchy, anat_wf])
+
+        if connected_attrs != inputattrs:
+            missing_attrs = sorted(inputattrs - connected_attrs)
+            logger.info(
+                f"Unable to find fMRIPrep outputs {p.join(missing_attrs)} "
+                f"for workflow {nodehierarchy}"
+            )
 
         return
