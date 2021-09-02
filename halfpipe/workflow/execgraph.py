@@ -13,6 +13,7 @@ from fnmatch import fnmatch
 from argparse import Namespace
 from copy import deepcopy
 from shutil import rmtree
+from functools import partial
 
 import networkx as nx
 
@@ -25,6 +26,7 @@ from ..fixes import Node
 from .base import IdentifiableWorkflow
 from ..utils import resolve
 from ..utils.format import format_like_bids
+from ..utils.multiprocessing import Pool
 from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
@@ -190,6 +192,21 @@ def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str):
     return subject_nodes, input_source_dict
 
 
+def prepare_graph(workflow, item):
+    s, graph = item
+
+    graph = pe.generate_expanded_graph(graph)
+
+    for index, node in enumerate(graph):
+        node.config = merge_dict(deepcopy(workflow.config), node.config)
+        node.base_dir = workflow.base_dir
+        node.index = index
+
+    workflow._configure_exec_nodes(graph)
+
+    return s, graph
+
+
 def init_execgraph(
     workdir: Union[Path, str],
     workflow: IdentifiableWorkflow
@@ -238,35 +255,27 @@ def init_execgraph(
 
     graphs = OrderedDict()
 
-    def add_graph(s, graph):
-        graph = pe.generate_expanded_graph(graph)
-
-        for index, node in enumerate(graph):
-            node.config = merge_dict(deepcopy(workflow.config), node.config)
-            node.base_dir = workflow.base_dir
-            node.index = index
-
-        workflow._configure_exec_nodes(graph)
-
-        for node in graph:
-            if node in input_source_dict:
-                node.input_source.update(input_source_dict[node])
-
-        assert isinstance(graphs, dict)
-        graphs[s] = graph
-
     for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
         s = workflow.bids_to_sub_id_map.get(s, s)
 
         subgraph = flat_graph.subgraph(nodes).copy()
-        add_graph(s, subgraph)
+        graphs[s] = subgraph
 
         flat_graph.remove_nodes_from(nodes)
 
     if len(flat_graph.nodes) > 0:
-        add_graph("model", flat_graph)
+        graphs["model"] = IdentifiableDiGraph(flat_graph)
+
+    # with Pool() as pool:
+    graphs = OrderedDict(
+        map(partial(prepare_graph, workflow), graphs.items())
+    )
 
     for graph in graphs.values():
+        for node in graph:
+            if node in input_source_dict:
+                node.input_source.update(input_source_dict[node])
+
         graph.uuid = uuid
 
     logger.info(f'Finished graphs for workflow "{uuidstr}"')

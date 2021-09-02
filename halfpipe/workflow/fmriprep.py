@@ -205,7 +205,6 @@ class FmriprepFactory(Factory):
             inputnode.inputs.fd_thres = global_settings["fd_thres"]
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
-
             self.connect(hierarchy, inputnode, sourcefile=bold_file_path)
 
     def get(self, *args, **kwargs):
