@@ -46,7 +46,7 @@ def init_workflow(workdir):
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
 
-    workflow = uncacheobj(workdir, "workflow", uuid)
+    workflow = uncacheobj(workdir, ".workflow", uuid)
     if workflow is not None:
         return workflow
 
@@ -139,6 +139,6 @@ def init_workflow(workdir):
         node.run_without_submitting = False  # run all nodes in multiproc
 
     logger.info(f"Finished workflow {uuidstr}")
-    cacheobj(workdir, "workflow", workflow)
+    cacheobj(workdir, ".workflow", workflow)
 
     return workflow
