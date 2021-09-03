@@ -10,7 +10,7 @@ attrs==21.2.0
     # via niworkflows
 backcall==0.2.0
     # via ipython
-bids-validator==1.8.0
+bids-validator==1.8.2
     # via pybids
 calamities==0.0.16
     # via -r requirements.in
@@ -18,7 +18,7 @@ certifi==2021.5.30
     # via requests
 chardet==4.0.0
     # via -r requirements.in
-charset-normalizer==2.0.3
+charset-normalizer==2.0.4
     # via requests
 ci-info==0.2.0
     # via etelemetry
@@ -51,7 +51,7 @@ fasteners==0.16.3
     # via -r requirements.in
 filelock==3.0.12
     # via nipype
-flufl.lock==5.1
+flufl.lock==6.0
     # via -r requirements.in
 git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
     # via -r requirements.in
@@ -61,7 +61,7 @@ future==0.18.2
     # via niflow-nipype1-workflows
 gmpy2==2.0.8
     # via -r requirements.in
-h5py==3.3.0
+h5py==3.4.0
     # via
     #   dipy
     #   nitransforms
@@ -80,10 +80,8 @@ inflect==5.3.0
     #   calamities
 inflection==0.5.1
     # via -r requirements.in
-ipython==7.25.0
+ipython==7.27.0
     # via line-profiler
-ipython-genutils==0.2.0
-    # via traitlets
 isodate==0.6.0
     # via rdflib
 jedi==0.18.0
@@ -96,7 +94,7 @@ joblib==1.0.1
     # via
     #   nilearn
     #   scikit-learn
-kiwisolver==1.3.1
+kiwisolver==1.3.2
     # via matplotlib
 line-profiler==3.3.0
     # via -r requirements.in
@@ -120,7 +118,7 @@ marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.4.2
+matplotlib==3.4.3
     # via
     #   -r requirements.in
     #   mriqc
@@ -198,7 +196,7 @@ git+https://github.com/hippocampusgirl/niworkflows.git@1.3.4+halfpipe.3
     #   smriprep
 num2words==0.5.10
     # via pybids
-numpy==1.21.1
+numpy==1.21.2
     # via
     #   -r requirements.in
     #   calamities
@@ -237,7 +235,7 @@ packaging==21.0
     #   niworkflows
     #   pint
     #   smriprep
-pandas==1.3.1
+pandas==1.3.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -259,14 +257,14 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==8.3.1
+pillow==8.3.2
     # via
     #   imageio
     #   matplotlib
     #   scikit-image
 pint==0.17
     # via -r requirements.in
-prompt-toolkit==3.0.19
+prompt-toolkit==3.0.20
     # via ipython
 prov==2.0.0
     # via nipype
@@ -277,7 +275,7 @@ psutil==5.8.0
     #   fmriprep
 ptyprocess==0.7.0
     # via pexpect
-pybids==0.13.1
+pybids==0.13.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -288,7 +286,7 @@ pybids==0.13.1
     #   templateflow
 pydot==1.4.2
     # via nipype
-pygments==2.9.0
+pygments==2.10.0
     # via ipython
 pympler==0.9
     # via -r requirements.in
@@ -338,7 +336,7 @@ scikit-learn==0.24.2
     #   nilearn
     #   niworkflows
     #   tedana
-scipy==1.7.0
+scipy==1.7.1
     # via
     #   -r requirements.in
     #   dipy
@@ -358,12 +356,12 @@ sdcflows==1.3.3
     # via
     #   -r requirements.in
     #   fmriprep
-seaborn==0.11.1
+seaborn==0.11.2
     # via
     #   -r requirements.in
     #   mriqc
     #   niworkflows
-simplejson==3.17.3
+simplejson==3.17.5
     # via nipype
 six==1.16.0
     # via
@@ -405,17 +403,17 @@ threadpoolctl==2.2.0
     # via
     #   scikit-learn
     #   tedana
-tifffile==2021.7.2
+tifffile==2021.8.30
     # via scikit-image
 toml==0.10.2
     # via
     #   fmriprep
     #   mriqc
-tqdm==4.61.2
+tqdm==4.62.2
     # via
     #   dipy
     #   templateflow
-traitlets==5.0.5
+traitlets==5.1.0
     # via
     #   ipython
     #   matplotlib-inline
@@ -425,7 +423,7 @@ transforms3d==0.3.1
     # via niworkflows
 typeguard==2.12.1
     # via -r requirements.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   -r requirements.in
     #   typing-inspect
@@ -437,7 +435,7 @@ wcwidth==0.2.5
     # via prompt-toolkit
 xlrd==2.0.1
     # via -r requirements.in
-xlsxwriter==1.4.4
+xlsxwriter==3.0.1
     # via -r requirements.in
 xvfbwrapper==0.2.9
     # via mriqc
