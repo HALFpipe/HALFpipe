@@ -7,7 +7,6 @@
 """
 
 from typing import List, Optional
-import logging
 import os
 from os import path as op
 from datetime import datetime as dt
@@ -30,7 +29,7 @@ from .file import File, FileSchema
 from .setting import SettingSchema, GlobalSettingsSchema
 from .feature import FeatureSchema
 from .model import ModelSchema
-from ..utils import hexdigest, timestampfmt
+from ..utils import hexdigest, timestampfmt, logger
 
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
@@ -138,7 +137,7 @@ class Spec:
         self.files.append(fileobj)
 
 
-def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogger("halfpipe")) -> Optional[Spec]:
+def loadspec(workdir=None, timestamp=None, specpath=None, logger=logger) -> Optional[Spec]:
     if specpath is None:
         assert workdir is not None
         if timestamp is not None:
@@ -164,7 +163,7 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logging.getLogg
         return None
 
 
-def savespec(spec: Spec, workdir=None, specpath=None, logger=logging.getLogger("halfpipe")):
+def savespec(spec: Spec, workdir=None, specpath=None, logger=logger):
     os.makedirs(workdir, exist_ok=True)
     if specpath is None:
         assert workdir is not None

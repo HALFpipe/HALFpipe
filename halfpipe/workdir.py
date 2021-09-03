@@ -6,7 +6,7 @@ from typing import Union
 
 from pathlib import Path
 
-from .logging import Context as LoggingContext
+from .logging import logging_context
 from .hooks import run_hooks_from_dir
 from .utils import resolve
 
@@ -42,7 +42,7 @@ def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) ->
             "For example, FAT32 and exFAT are incompatible."
         ) from e
 
-    LoggingContext.setWorkdir(workdir_path)
+    logging_context.set_workdir(workdir_path)
 
     run_hooks_from_dir(workdir_path)
 

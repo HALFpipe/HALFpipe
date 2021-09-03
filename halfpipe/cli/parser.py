@@ -103,16 +103,16 @@ def parse_args(args=None, namespace=None):
         print(__version__)
         sys.exit(0)
 
-    from ..logging import Context as LoggingContext
+    from ..logging import logging_context
 
-    LoggingContext.enablePrint()
+    logging_context.enable_print()
 
     debug = opts.debug
     if debug:
         import logging
-        from ..logging import setup as setuplogging
+        from ..logging import setup as setup_logging
 
-        setuplogging(LoggingContext.queue(), levelno=logging.DEBUG)
+        setup_logging(logging_context.queue(), levelno=logging.DEBUG)
 
     if opts.watchdog is True:
         from ..watchdog import init_watchdog
@@ -125,7 +125,7 @@ def parse_args(args=None, namespace=None):
 
     verbose = opts.verbose
     if verbose:
-        LoggingContext.enableVerbose()
+        logging_context.enable_verbose()
 
     should_run = {step: True for step in steps}
 

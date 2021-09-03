@@ -19,14 +19,14 @@ from nipype.utils.profiler import get_system_total_memory_gb
 from matplotlib import pyplot as plt
 
 from .reftracer import PathReferenceTracer
-from ..logging import Context
+from ..logging import logging_context
 
 logger = logging.getLogger("nipype.workflow")
 
 
-def initializer(workdir, loggingargs, plugin_args, host_env):
-    from ..logging import setup as setuplogging
-    setuplogging(**loggingargs)
+def initializer(workdir, logging_args, plugin_args, host_env):
+    from ..logging import setup as setup_logging
+    setup_logging(**logging_args)
 
     watchdog = plugin_args.get("watchdog", False)
     if watchdog is True:
@@ -114,7 +114,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             initializer=initializer,
             initargs=(
                 self._cwd,
-                Context.loggingargs(),
+                logging_context.logging_args(),
                 plugin_args,
                 dict(os.environ),
             ),

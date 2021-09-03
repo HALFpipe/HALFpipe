@@ -11,12 +11,12 @@ import os
 from multiprocessing import get_context, active_children
 from multiprocessing import pool as mpp
 
-from ..logging import Context
+from ..logging import logging_context
 
 
-def initializer(loggingargs, host_env):
-    from ..logging import setup as setuplogging
-    setuplogging(**loggingargs)
+def initializer(logging_args, host_env):
+    from ..logging import setup as setup_logging
+    setup_logging(**logging_args)
 
     os.environ.update(host_env)
 
@@ -33,7 +33,7 @@ class Pool(mpp.Pool):
         processes: Union[int, None] = None,
         maxtasksperchild: Union[int, None] = None,
     ) -> None:
-        initargs = (Context.loggingargs(), dict(os.environ))
+        initargs = (logging_context.logging_args(), dict(os.environ))
         context = get_context("forkserver")
         super().__init__(
             processes=processes,
@@ -46,4 +46,3 @@ class Pool(mpp.Pool):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         super().__exit__(exc_type, exc_value, traceback)
         self.join()
-        terminate()

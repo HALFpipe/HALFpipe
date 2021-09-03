@@ -20,7 +20,7 @@ from .. import __version__
 from ..model.spec import Spec, SpecSchema, loadspec, savespec
 from ..io.index import Database
 from ..workdir import init_workdir
-from ..logging import Context as LoggingContext
+from ..logging import logging_context
 
 from .file import BidsStep
 from .feature import FeaturesStep
@@ -179,7 +179,7 @@ class FirstStep(Step):
 
 
 def init_spec_ui(workdir=None, debug=False):
-    LoggingContext.disablePrint()
+    logging_context.disable_print()
 
     fs_root = Path(CalamitiesConfig.fs_root)
 
@@ -199,7 +199,7 @@ def init_spec_ui(workdir=None, debug=False):
     with app:
         ctx = FirstStep(app)(ctx)
 
-    LoggingContext.enablePrint()
+    logging_context.enable_print()
 
     if ctx is not None:
         assert ctx.workdir is not None

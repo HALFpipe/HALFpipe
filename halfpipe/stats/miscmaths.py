@@ -16,7 +16,7 @@ def erfinv(a: mpf, tol: float = 1e-16) -> mpf:
     if a == mpf("1") or a == mpf("-1") or abs(a) < 0.9:
         return mp.erfinv(a)
 
-    u = mp.ln(2 / mp.pi / (abs(a) - 1)**2)
+    u = mp.ln(2 / mp.pi / (abs(a) - 1) ** 2)
     x0 = mp.sign(a) * mp.sqrt(u - mp.ln(u)) / mp.sqrt(2)
 
     def f(t):

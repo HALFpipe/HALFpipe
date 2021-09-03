@@ -269,7 +269,7 @@ def test_empty(tmp_path, mock_spec):
         init_workflow(tmp_path)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(600)
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 

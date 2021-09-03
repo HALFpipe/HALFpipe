@@ -295,7 +295,7 @@ def run(opts, should_run):
 
 def main():
     from ..logging.base import (
-        setupcontext as setup_logging_context,
+        setup_context as setup_logging_context,
         teardown as teardown_logging
     )
 

@@ -4,14 +4,11 @@
 
 from typing import Optional
 
-import logging
 from pathlib import Path
 import re
 
 from .base import Writer
 from ....io.file.lock import AdaptiveLock
-
-logger = logging.getLogger("halfpipe")
 
 escape_codes_regex = re.compile(r"\x1b\[.*?(m|K)")
 
@@ -40,10 +37,13 @@ class FileWriter(Writer, AdaptiveLock):
         self.stream = open(self.filename, mode="a", encoding="utf-8")
 
     def emit(self, msg: str, levelno: int):
+        _ = levelno
         msg = escape_codes_regex.sub("", msg)
-        self.stream.write(msg + self.terminator)
+        if self.stream is not None:
+            self.stream.write(msg + self.terminator)
 
     def release(self):
-        self.stream.close()
+        if self.stream is not None:
+            self.stream.close()
 
         self.unlock()
