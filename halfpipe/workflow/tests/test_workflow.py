@@ -284,7 +284,7 @@ def test_with_reconall(tmp_path, mock_spec):
 
 
 @pytest.mark.slow
-@pytest.mark.timeout(4 * 3600)
+@pytest.mark.timeout(3 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
 
