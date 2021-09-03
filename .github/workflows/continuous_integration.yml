@@ -46,8 +46,11 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Cache data
+        uses: actions/cache@v2
+        with:
+          path: /home
+          key: ${{ runner.os }}-home
 
       - name: Install FreeSurfer license file
         shell: bash
@@ -56,11 +59,8 @@ jobs:
         run: |
           echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-      - name: Cache data
-        uses: actions/cache@v2
-        with:
-          path: /home
-          key: ${{ runner.os }}-home
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Install dependencies
         shell: bash
