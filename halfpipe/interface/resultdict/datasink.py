@@ -204,6 +204,9 @@ def datasink_vals(indicts, reports_directory):
                 assert isinstance(outdict, dict)
 
                 for key, val in vals.items():
+                    if key in frozenset(["sdc_method"]):
+                        continue
+
                     if isinstance(val, (int, float)):
                         outdict[key] = val
                         continue
@@ -212,11 +215,11 @@ def datasink_vals(indicts, reports_directory):
                         mean_std = MeanStd.Schema().load(val)
                         assert isinstance(mean_std, MeanStd)
                         outdict[key] = mean_std.mean
-                        continue
                     except (ValidationError, AssertionError):
-                        pass
-
-                    logger.warning(f'Omitting invalid key-value pair "{key}={val}" from reportvals.json')
+                        logger.warning(
+                            f'Omitting invalid key-value pair "{key}={val}"'
+                            " from reportvals.json"
+                        )
 
                 outdict.update(vals)
 

@@ -6,10 +6,11 @@ from types import MethodType
 
 import logging
 import warnings
+from multiprocessing.queues import JoinableQueue
 
 warnings.filterwarnings("ignore")  # catch all warnings while loading modules
 
-from .context import Context  # noqa: E402
+from .context import context as logging_context  # noqa: E402
 from .handler import QueueHandler  # noqa: E402
 from .formatter import ColorFormatter  # noqa: E402
 from .filter import DTypeWarningsFilter, PyWarningsFilter  # noqa: E402
@@ -36,19 +37,21 @@ def showwarning(message, category, filename, lineno, _=None, line=None):
     logger.warning(f"{s}", stack_info=True)
 
 
-def setupcontext():
-    queue = Context.queue()
+def setup_context():
+    logging_context.setup_worker()
+    queue = logging_context.queue()
+    assert isinstance(queue, JoinableQueue)
     setup(queue)
 
 
 def setup(queue, levelno=logging.INFO):
-    queuehandler = QueueHandler(queue)
-    queuehandler.setFormatter(ColorFormatter())
-    queuehandler.setLevel(levelno)
+    queue_handler = QueueHandler(queue)
+    queue_handler.setFormatter(ColorFormatter())
+    queue_handler.setLevel(levelno)
 
     warnings.resetwarnings()
 
-    def removeHandlers(logger):
+    def remove_handlers(logger):
         c = logger
         while c:
             for hdlr in c.handlers:
@@ -58,15 +61,15 @@ def setup(queue, levelno=logging.INFO):
             else:
                 c = c.parent
 
-    def setupLoggers():
+    def setup_loggers():
         for loggername in loggernames:
             logger = logging.getLogger(loggername)
-            removeHandlers(logger)
+            remove_handlers(logger)
             logger.propagate = False
 
             logger.filters = []
 
-            logger.addHandler(queuehandler)
+            logger.addHandler(queue_handler)
 
             logger.setLevel(levelno)
 
@@ -77,30 +80,31 @@ def setup(queue, levelno=logging.INFO):
         logging.getLogger("nipype.interface").addFilter(DTypeWarningsFilter())
         logging.getLogger("py.warnings").addFilter(PyWarningsFilter())
 
-    setupLoggers()
+    setup_loggers()
 
-    from nipype.utils.logger import Logging as nipypelogging
-    from fmriprep.config import loggers as fmripreploggers
-    from mriqc.config import loggers as mriqcloggers
+    from nipype.utils.logger import Logging as nipype_logging
+    from fmriprep.config import loggers as fmriprep_loggers
+    from mriqc.config import loggers as mriqc_loggers
 
-    setupLoggers()  # re-do setup
+    setup_loggers()  # re-do setup
 
     # monkey patch nipype, fmriprep and mriqc
     # so that thhe logging config will not be overwritten
 
     def emptymethod(self, *args, **kwargs):
+        _, _, _ = self, args, kwargs
         pass
 
-    def emptyinit(cls):
+    def emptyinit(_):
         pass
 
-    nipypelogging.__init__ = emptymethod
-    nipypelogging.enable_file_logging = emptymethod
-    nipypelogging.disable_file_logging = emptymethod
-    nipypelogging.update_logging = emptymethod
-    fmripreploggers.init = MethodType(emptyinit, fmripreploggers)
-    mriqcloggers.init = MethodType(emptyinit, mriqcloggers)
+    nipype_logging.__init__ = emptymethod
+    nipype_logging.enable_file_logging = emptymethod
+    nipype_logging.disable_file_logging = emptymethod
+    nipype_logging.update_logging = emptymethod
+    fmriprep_loggers.init = MethodType(emptyinit, fmriprep_loggers)
+    mriqc_loggers.init = MethodType(emptyinit, mriqc_loggers)
 
 
 def teardown():
-    Context.teardown()
+    logging_context.teardown_worker()

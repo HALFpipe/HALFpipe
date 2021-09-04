@@ -9,36 +9,6 @@ on:
       - main
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    container: ghcr.io/halfpipe/halfpipe:latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Lint with flake8
-        shell: bash
-        run: |
-          pip install flake8
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - name: Set up Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: "15.x"
-
-      - name: Lint with Pyright
-        shell: bash
-        run: |
-          npm install -g pyright
-          mv pyrightconfig.json pyrightconfig.strict.json
-          node -p "JSON.stringify({...require(\"./pyrightconfig.strict.json\"), typeCheckingMode: \"off\"}, null, 2)" > pyrightconfig.json
-          pyright
-
   test:
     runs-on: ubuntu-latest
     container: ghcr.io/halfpipe/halfpipe:latest
@@ -46,8 +16,11 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Cache data
+        uses: actions/cache@v2
+        with:
+          path: /home
+          key: ${{ runner.os }}-home
 
       - name: Install FreeSurfer license file
         shell: bash
@@ -56,11 +29,8 @@ jobs:
         run: |
           echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-      - name: Cache data
-        uses: actions/cache@v2
-        with:
-          path: /home
-          key: ${{ runner.os }}-home
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Install dependencies
         shell: bash
@@ -69,15 +39,12 @@ jobs:
           pip install -r requirements.txt -r requirements-test.txt
 
       - name: Test with pytest with coverage
-        shell: python
+        shell: bash
         env:
           PYTHONDONTWRITEBYTECODE: 1
+          HALFPIPE_UNIT_TEST: 1
         run: |
-          import sys
-          import pytest
-          sys.exit(
-            pytest.main(["--cov", "--cov-report=xml"])
-          )
+          pytest --cov --cov-report=xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

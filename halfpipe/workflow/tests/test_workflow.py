@@ -258,6 +258,7 @@ def mock_spec(bids_data, task_events, pcc_mask):
     return spec
 
 
+@pytest.mark.timeout(120)
 def test_empty(tmp_path, mock_spec):
     mock_spec.settings = list()
     mock_spec.features = list()
@@ -268,6 +269,7 @@ def test_empty(tmp_path, mock_spec):
         init_workflow(tmp_path)
 
 
+@pytest.mark.timeout(600)
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 
@@ -282,7 +284,7 @@ def test_with_reconall(tmp_path, mock_spec):
 
 
 @pytest.mark.slow
-@pytest.mark.timeout(4 * 3600)
+@pytest.mark.timeout(3 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
 

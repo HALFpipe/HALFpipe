@@ -13,6 +13,7 @@ from fnmatch import fnmatch
 from argparse import Namespace
 from copy import deepcopy
 from shutil import rmtree
+from functools import partial
 
 import networkx as nx
 
@@ -25,6 +26,7 @@ from ..fixes import Node
 from .base import IdentifiableWorkflow
 from ..utils import resolve
 from ..utils.format import format_like_bids
+from ..utils.multiprocessing import Pool
 from ..io import DictListFile, cacheobj, uncacheobj
 from ..resource import get as getresource
 from .constants import constants
@@ -190,6 +192,34 @@ def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str):
     return subject_nodes, input_source_dict
 
 
+def prepare_graph(workflow, item):
+    s, graph = item
+
+    graph = pe.generate_expanded_graph(graph)
+
+    for index, node in enumerate(graph):
+        node.config = merge_dict(deepcopy(workflow.config), node.config)
+        node.base_dir = workflow.base_dir
+        node.index = index
+
+    workflow._configure_exec_nodes(graph)
+    graph.uuid = workflow.uuid
+
+    return s, graph
+
+
+def init_flat_graph(workflow, workdir) -> nx.DiGraph:
+    flat_graph = uncacheobj(workdir, ".flat_graph", workflow.uuid)
+    if flat_graph is not None:
+        return flat_graph
+
+    workflow._generate_flatgraph()
+    flat_graph = workflow._graph
+
+    cacheobj(workdir, ".flat_graph", flat_graph, uuid=workflow.uuid)
+    return flat_graph
+
+
 def init_execgraph(
     workdir: Union[Path, str],
     workflow: IdentifiableWorkflow
@@ -223,10 +253,11 @@ def init_execgraph(
     if graphs is not None:
         return graphs
 
-    logger.info(f'Initializing execution graph for workflow "{uuidstr}"')
+    logger.info("Generating flat graph")
 
-    workflow._generate_flatgraph()
-    flat_graph = workflow._graph
+    flat_graph = init_flat_graph(workflow, workdir)
+
+    logger.info("Set needed outputs per node")
 
     workflow._set_needed_outputs(flat_graph)
 
@@ -234,42 +265,33 @@ def init_execgraph(
 
     subject_nodes, input_source_dict = split_flat_graph(flat_graph, workflow.base_dir)
 
-    logger.info("Expanding subgraphs")
-
     graphs = OrderedDict()
-
-    def add_graph(s, graph):
-        graph = pe.generate_expanded_graph(graph)
-
-        for index, node in enumerate(graph):
-            node.config = merge_dict(deepcopy(workflow.config), node.config)
-            node.base_dir = workflow.base_dir
-            node.index = index
-
-        workflow._configure_exec_nodes(graph)
-
-        for node in graph:
-            if node in input_source_dict:
-                node.input_source.update(input_source_dict[node])
-
-        assert isinstance(graphs, dict)
-        graphs[s] = graph
-
     for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
         s = workflow.bids_to_sub_id_map.get(s, s)
 
         subgraph = flat_graph.subgraph(nodes).copy()
-        add_graph(s, subgraph)
+        graphs[s] = subgraph
 
         flat_graph.remove_nodes_from(nodes)
 
     if len(flat_graph.nodes) > 0:
-        add_graph("model", flat_graph)
+        graphs["model"] = IdentifiableDiGraph(flat_graph)
+
+    logger.info("Expanding subgraphs")
+
+    with Pool() as pool:
+        graphs = OrderedDict(
+            pool.imap(partial(prepare_graph, workflow), graphs.items())
+        )
+
+    logger.info("Update input source at chunk boundaries")
 
     for graph in graphs.values():
-        graph.uuid = uuid
+        for node in graph:
+            if node in input_source_dict:
+                node.input_source.update(input_source_dict[node])
 
-    logger.info(f'Finished graphs for workflow "{uuidstr}"')
+    logger.info(f'Created graphs for workflow "{uuidstr}"')
     cacheobj(workdir, "graphs", graphs, uuid=uuid)
 
     return graphs

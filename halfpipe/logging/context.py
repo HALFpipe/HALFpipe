@@ -2,79 +2,117 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional, Union
+
 import logging
 from multiprocessing import get_context
+from multiprocessing.queues import JoinableQueue
+from multiprocessing.process import BaseProcess
 from threading import RLock
 
-from .worker import run as runWorker, MessageSchema
+from .worker import run as run_worker, MessageSchema
+
+ctx = get_context("forkserver")
 
 schema = MessageSchema()
 
+rlock = RLock()
 
-class Context(object):
+
+class NullQueue:
+    def put(self, _) -> None:
+        pass
+
+    def join(self) -> None:
+        pass
+
+
+class context(object):
     _instance = None
-    _instance_rlock = RLock()
+
+    def __init__(self):
+        self._queue: Union[NullQueue, JoinableQueue] = NullQueue()
+        self._worker: Optional[BaseProcess] = None
 
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            with cls._instance_rlock:
+            with rlock:
                 if cls._instance is None:
                     cls._instance = cls()
 
         return cls._instance
 
     @classmethod
-    def teardown(cls):
-        with cls._instance_rlock:
-            if cls._instance is not None:
-                # wait for queue to empty
-                cls.queue().join()
+    def setup_worker(cls):
+        instance = cls.instance()
+        with rlock:
+            if not isinstance(instance._queue, JoinableQueue):
+                instance._queue = JoinableQueue(ctx=ctx)
+            if instance._worker is None:
+                instance._worker = ctx.Process(target=run_worker, args=(instance._queue,))
+                instance._worker.start()
 
-                # send message with teardown command
-                obj = schema.dump({"type": "teardown"})
-                cls.queue().put(obj)
+    @classmethod
+    def teardown_worker(cls):
+        with rlock:
+            instance = cls._instance
+            if instance is None:
+                return
 
-                # wait up to one second
-                cls.instance().worker.join(1.0)
+            queue = instance._queue
+            worker = instance._worker
+            if worker is None or not isinstance(queue, JoinableQueue):
+                return
+
+            # wait for queue to empty
+            queue.join()
+
+            # send message with teardown command
+            obj = schema.dump({"type": "teardown"})
+            queue.put(obj)
+
+            # wait up to one second
+            worker.join(1.0)
+
+            queue.close()
+
+            instance._queue = NullQueue()
+            instance._worker = None
 
     @classmethod
     def queue(cls):
         return cls.instance()._queue
 
     @classmethod
-    def loggingargs(cls):
+    def logging_args(cls):
         return dict(
             queue=cls.queue(),
             levelno=logging.getLogger("halfpipe").level
         )
 
     @classmethod
-    def enableVerbose(cls):
+    def enable_verbose(cls):
         obj = schema.dump({"type": "enable_verbose"})
-        cls.queue().put(obj)
+        queue = cls.queue()
+        queue.put(obj)
 
     @classmethod
-    def enablePrint(cls):
+    def enable_print(cls):
         obj = schema.dump({"type": "enable_print"})
-        cls.queue().put(obj)
-        cls.queue().join()
+        queue = cls.queue()
+        queue.put(obj)
+        queue.join()
 
     @classmethod
-    def disablePrint(cls):
+    def disable_print(cls):
         obj = schema.dump({"type": "disable_print"})
-        cls.queue().put(obj)
-        cls.queue().join()
+        queue = cls.queue()
+        queue.put(obj)
+        queue.join()
 
     @classmethod
-    def setWorkdir(cls, workdir):
+    def set_workdir(cls, workdir):
         obj = schema.dump({"type": "set_workdir", "workdir": workdir})
-        cls.queue().put(obj)
-
-    def __init__(self):
-        ctx = get_context("forkserver")
-
-        self._queue = ctx.JoinableQueue()
-
-        self.worker = ctx.Process(target=runWorker, args=(self._queue,))
-        self.worker.start()
+        queue = cls.queue()
+        queue.put(obj)

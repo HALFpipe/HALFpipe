@@ -295,7 +295,7 @@ def run(opts, should_run):
 
 def main():
     from ..logging.base import (
-        setupcontext as setup_logging_context,
+        setup_context as setup_logging_context,
         teardown as teardown_logging
     )
 
@@ -339,8 +339,5 @@ def main():
 
         # clean up orphan processes
 
-        from multiprocessing import get_context
-
-        ctx = get_context("forkserver")
-        for p in ctx.active_children():
-            p.terminate()
+        from ..utils.multiprocessing import terminate
+        terminate()

@@ -8,10 +8,7 @@
 from typing import ContextManager, List, Dict, Optional, Tuple
 
 from collections import defaultdict
-import os
 from pathlib import Path
-from multiprocessing import get_context
-from multiprocessing.pool import Pool
 from contextlib import nullcontext
 
 import numpy as np
@@ -20,17 +17,8 @@ from tqdm import tqdm
 
 from ..io import parse_design
 from ..utils import atleast_4d
+from ..utils.multiprocessing import Pool
 from .algorithms import algorithms, make_algorithms_set
-from ..logging import Context
-
-ctx = get_context("forkserver")
-
-
-def initializer(loggingargs, host_env):
-    from ..logging import setup as setuplogging
-    setuplogging(**loggingargs)
-
-    os.environ.update(host_env)
 
 
 def voxel_calc(voxel_data):
@@ -132,21 +120,16 @@ def fit(
 
     # setup run
     if num_threads < 2:
-        cm: ContextManager = nullcontext()
+        pool: Optional[Pool] = None
         it = map(voxel_calc, voxel_data)
+        cm: ContextManager = nullcontext()
     else:
-        cm = ctx.Pool(
-            processes=num_threads,
-            initializer=initializer,
-            initargs=(
-                Context.loggingargs(),
-                dict(os.environ),
-            ),
-        )
-        it = cm.imap_unordered(voxel_calc, voxel_data)
+        pool = Pool(processes=num_threads)
+        it = pool.imap_unordered(voxel_calc, voxel_data)
+        cm = pool
 
     # run
-    voxel_results = defaultdict(lambda: defaultdict(dict))
+    voxel_results: Dict = defaultdict(lambda: defaultdict(dict))
     with cm:
         for x in tqdm(it, unit="voxels"):
             if x is None:
@@ -161,10 +144,6 @@ def fit(
                         continue
 
                     voxel_results[a][k].update(v)
-
-        if isinstance(cm, Pool):
-            cm.close()
-            cm.join()
 
     ref_image = nib.squeeze_image(nib.load(cope_files[0]))
 
