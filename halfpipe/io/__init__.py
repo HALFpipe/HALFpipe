@@ -5,11 +5,6 @@
 from .file import (
     DictListFile,
     AdaptiveLock,
-    loadpicklelzma,
-    dumppicklelzma,
-    make_cachefilepath,
-    cacheobj,
-    uncacheobj,
 )
 
 from .parse import (
@@ -30,16 +25,10 @@ from .metadata import (
 __all__ = [
     "DictListFile",
     "AdaptiveLock",
-    "IndexedFile",
     "parse_condition_file",
     "parse_design",
     "loadspreadsheet",
     "loadmatrix",
-    "loadpicklelzma",
-    "dumppicklelzma",
-    "make_cachefilepath",
-    "cacheobj",
-    "uncacheobj",
     "MetadataLoader",
     "SidecarMetadataLoader",
     "slice_timing_str",

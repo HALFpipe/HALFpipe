@@ -7,7 +7,7 @@ from pathlib import Path
 from math import ceil
 from collections import OrderedDict
 
-from .io import make_cachefilepath
+from .io.file.pickle import _make_cache_file_path
 from .utils import logger, inflect_engine as p
 from .workflow.execgraph import filter_subject_graphs
 
@@ -117,7 +117,7 @@ def create_example_script(workdir, graphs: OrderedDict, opts):
     n_chunks = len(subject_graphs)
     assert n_chunks > 0
 
-    graphs_file = make_cachefilepath("graphs", uuid)
+    graphs_file = _make_cache_file_path("graphs", uuid)
 
     n_cpus = 2
     nipype_max_mem_gb = max(node.mem_gb for graph in graphs.values() for node in graph.nodes)

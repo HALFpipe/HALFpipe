@@ -18,7 +18,7 @@ from .collect import collect_bold_files
 from .convert import convert_all
 from .constants import constants
 from ..io.index import Database, BidsDatabase
-from ..io.file import cacheobj, uncacheobj
+from ..io.file.pickle import cache_obj, uncache_obj
 from ..model.spec import loadspec
 from ..utils import logger, deepcopyfactory
 from .. import __version__
@@ -46,7 +46,7 @@ def init_workflow(workdir):
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
 
-    workflow = uncacheobj(workdir, ".workflow", uuid)
+    workflow = uncache_obj(workdir, ".workflow", uuid, display_str="workflow")
     if workflow is not None:
         return workflow
 
@@ -139,6 +139,6 @@ def init_workflow(workdir):
         node.run_without_submitting = False  # run all nodes in multiproc
 
     logger.info(f"Finished workflow {uuidstr}")
-    cacheobj(workdir, ".workflow", workflow)
+    cache_obj(workdir, ".workflow", workflow)
 
     return workflow

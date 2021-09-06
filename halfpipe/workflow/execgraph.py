@@ -27,7 +27,8 @@ from .base import IdentifiableWorkflow
 from ..utils import resolve
 from ..utils.format import format_like_bids
 from ..utils.multiprocessing import Pool
-from ..io import DictListFile, cacheobj, uncacheobj
+from ..io.file.dictlistfile import DictListFile
+from ..io.file.pickle import cache_obj, uncache_obj
 from ..resource import get as getresource
 from .constants import constants
 
@@ -209,14 +210,14 @@ def prepare_graph(workflow, item):
 
 
 def init_flat_graph(workflow, workdir) -> nx.DiGraph:
-    flat_graph = uncacheobj(workdir, ".flat_graph", workflow.uuid)
+    flat_graph = uncache_obj(workdir, ".flat_graph", workflow.uuid, display_str="flat graph")
     if flat_graph is not None:
         return flat_graph
 
     workflow._generate_flatgraph()
     flat_graph = workflow._graph
 
-    cacheobj(workdir, ".flat_graph", flat_graph, uuid=workflow.uuid)
+    cache_obj(workdir, ".flat_graph", flat_graph, uuid=workflow.uuid)
     return flat_graph
 
 
@@ -249,7 +250,7 @@ def init_execgraph(
 
     # create or load execgraph
 
-    graphs: Optional[OrderedDictT[str, IdentifiableDiGraph]] = uncacheobj(workdir, "graphs", uuid)
+    graphs: Optional[OrderedDictT[str, IdentifiableDiGraph]] = uncache_obj(workdir, "graphs", uuid)
     if graphs is not None:
         return graphs
 
@@ -281,7 +282,7 @@ def init_execgraph(
 
     with Pool() as pool:
         graphs = OrderedDict(
-            pool.imap(partial(prepare_graph, workflow), graphs.items())
+            pool.map(partial(prepare_graph, workflow), graphs.items())
         )
 
     logger.info("Update input source at chunk boundaries")
@@ -292,6 +293,6 @@ def init_execgraph(
                 node.input_source.update(input_source_dict[node])
 
     logger.info(f'Created graphs for workflow "{uuidstr}"')
-    cacheobj(workdir, "graphs", graphs, uuid=uuid)
+    cache_obj(workdir, "graphs", graphs, uuid=uuid)
 
     return graphs
