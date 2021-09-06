@@ -71,14 +71,14 @@ def run_stage_workflow(opts):
 
 def run_stage_run(opts):
     if opts.graphs is None:
-        from ..io import loadpicklelzma
+        from ..io.file.pickle import load_pickle_lzma
 
         assert (
             opts.graphs_file is not None
         ), "Missing required --graphs-file input for step run"
 
         graphs_file = resolve(opts.graphs_file, opts.fs_root)
-        graphs = loadpicklelzma(graphs_file)
+        graphs = load_pickle_lzma(graphs_file)
 
         if not isinstance(graphs, OrderedDict):
             raise RuntimeError(
