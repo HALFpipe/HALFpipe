@@ -46,7 +46,7 @@ def uncache_obj(workdir, type_str: str, uuid: UUID, display_str: str = None):
         obj = load_pickle_lzma(path)
         if uuid is not None and hasattr(obj, "uuid"):
             objuuid = getattr(obj, "uuid")
-            if objuuid is None or objuuid != uuid:
+            if objuuid is None or str(objuuid) != str(uuid):
                 return
         logger.info(f"Cached {display_str} from {path}")
         return obj
