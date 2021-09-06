@@ -228,6 +228,7 @@ def init_execgraph(
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
+    assert uuid is not None
     uuidstr = str(uuid)[:8]
 
     # init reports
