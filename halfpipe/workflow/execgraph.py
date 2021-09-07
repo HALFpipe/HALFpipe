@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union, Dict, Optional, OrderedDict as OrderedDictT
+from typing import Set, Tuple, Union, Dict, Optional, OrderedDict as OrderedDictT
 
 import logging
 from pathlib import Path
@@ -158,20 +158,22 @@ def resolve_input_boundary(flat_graph, non_subject_nodes):
     assert len(nx.node_boundary(flat_graph, non_subject_nodes)) == 0
 
 
-def resolve_output_boundary(flat_graph, non_subject_nodes):
-    input_source_dict: Dict[pe.Node, Dict] = defaultdict(dict)
+def resolve_output_boundary(flat_graph, non_subject_nodes) -> Dict[str, Dict]:
+    input_source_dict: Dict[str, Dict] = defaultdict(dict)
 
     for (v, u, c) in nx.edge_boundary(flat_graph.reverse(), non_subject_nodes, data=True):
         edge_input_source_dict = find_input_source(flat_graph, u, v, c)
 
         for v, input_sources in edge_input_source_dict.items():
-            input_source_dict[v].update(input_sources)
+            fullname = v.fullname
+            assert isinstance(fullname, str)
+            input_source_dict[fullname].update(input_sources)
 
     return input_source_dict
 
 
-def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str):
-    subject_nodes = defaultdict(set)
+def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str) -> Tuple[Dict[str, Set[pe.Node]], Dict[str, Dict]]:
+    subject_nodes: Dict[str, Set[pe.Node]] = defaultdict(set)
     for node in flat_graph:
         node.base_dir = base_dir  # make sure to use correct base path
 
@@ -289,8 +291,9 @@ def init_execgraph(
 
     for graph in graphs.values():
         for node in graph:
-            if node in input_source_dict:
-                node.input_source.update(input_source_dict[node])
+            fullname = node.fullname
+            if fullname in input_source_dict:
+                node.input_source.update(input_source_dict[fullname])
 
     logger.info(f'Created graphs for workflow "{uuidstr}"')
     cache_obj(workdir, "graphs", graphs, uuid=uuid)
