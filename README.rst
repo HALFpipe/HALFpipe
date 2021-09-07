@@ -1,7 +1,6 @@
 Welcome to ENIGMA ``HALFpipe``
 ==============================
 
-|https://www.singularity-hub.org/static/img/hosted-singularity–hub-%23e32929.svg|
 |https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg|
 |https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg|
 |codecov|
@@ -9,12 +8,12 @@ Welcome to ENIGMA ``HALFpipe``
 ``HALFpipe`` is a user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
 group analysis. It provides state-of-the-art preprocessing using
-```fmriprep`` <https://fmriprep.readthedocs.io/>`__, but removes the
+`fmriprep <https://fmriprep.readthedocs.io/>`__, but removes the
 necessity to convert data to the
-```BIDS`` <https://bids-specification.readthedocs.io/en/stable/>`__
+`BIDS <https://bids-specification.readthedocs.io/en/stable/>`__
 format. Common resting-state and task-based fMRI features can then be
-calculated on the fly using ```FSL`` <http://fsl.fmrib.ox.ac.uk/>`__ and
-```nipype`` <https://nipype.readthedocs.io/>`__ for statistics.
+calculated on the fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and
+`nipype <https://nipype.readthedocs.io/>`__ for statistics.
 
    If you encounter issues, please see the
    `troubleshooting <#troubleshooting>`__ section of this document.
@@ -79,15 +78,15 @@ Container platform
 
 The first step is to install one of the supported container platforms.
 If you’re using a high-performance computing cluster, more often than
-not ```Singularity`` <https://sylabs.io>`__ will already be available.
+not `Singularity <https://sylabs.io>`__ will already be available.
 
 If not, we recommend using the latest version
-of\ ```Singularity`` <https://sylabs.io>`__. However, it can be somewhat
+of\ `Singularity <https://sylabs.io>`__. However, it can be somewhat
 cumbersome to install, as it needs to be built from source.
 
-The ```NeuroDebian`` <https://neuro.debian.net/>`__ package repository
+The `NeuroDebian <https://neuro.debian.net/>`__ package repository
 provides an older version of
-```Singularity`` <https://sylabs.io/guides/2.6/user-guide/>`__ for
+`Singularity <https://sylabs.io/guides/2.6/user-guide/>`__ for
 `some <https://neuro.debian.net/pkgs/singularity-container.html>`__
 Linux distributions.
 
@@ -99,20 +98,24 @@ multi-user environments, where the access of individual users should be
 limited. ``Docker`` is the only option that is compatible with
 ``Mac OS X``.
 
-+------------+-----+--------------------------------------------------+
-| Container  | V   | Installation                                     |
-| platform   | ers |                                                  |
-|            | ion |                                                  |
-+============+=====+==================================================+
-| **Sin      | **3 | **See**\ https://                                |
-| gularity** | .5. | sylabs.io/guides/3.5/user-guide/quick_start.html |
-|            | 3** |                                                  |
-+------------+-----+--------------------------------------------------+
-| S          | 2.  | ``sudo apt install singularity-container``       |
-| ingularity | 6.1 |                                                  |
-+------------+-----+--------------------------------------------------+
-| Docker     |     | See https://docs.docker.com/engine/install/      |
-+------------+-----+--------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Container platform
+     - Version
+     - Installation
+
+   * - Singularity
+     - 3.x
+     - https://sylabs.io/guides/3.8/user-guide/quick_start.html
+    
+   * - Singularity
+     - 2.x
+     - ``sudo apt install singularity-container``
+     
+   * - Docker
+     - ..
+     - See https://docs.docker.com/engine/install/ 
 
 Download
 ~~~~~~~~
@@ -128,15 +131,15 @@ requires approximately 5 gigabytes of storage.
      - Installation
 
    * - Singularity
-     - Singularity
-     - Docker
-
-   * - 3.x
+     - 3.x
+     - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif
+    
+   * - Singularity
      - 2.x
+     - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg
+     
+   * - Docker
      - ..
-
-   * - <https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif>
-     - <https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg>
      - ``docker pull halfpipe/halfpipe:latest``
 
 ``Singularity`` version ``3.x`` creates a container image file called
@@ -168,15 +171,17 @@ The third step is to run the downloaded container. You may need to
 replace ``halfpipe-halfpipe-latest.simg`` with the actual path and filename where
 ``Singularity`` downloaded your container.
 
-+--------------------+------------------------------------------------+
-| Container platform | Command                                        |
-+====================+================================================+
-| Singularity        | ``singularity run -                            |
-|                    | -containall --bind /:/ext halfpipe-halfpipe-latest.simg`` |
-+--------------------+------------------------------------------------+
-| Docker             | ``docker run --interac                         |
-|                    | tive --tty --volume /:/ext halfpipe/halfpipe`` |
-+--------------------+------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Container platform
+     - Command
+
+   * - Singularity
+     - ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.simg``     
+    
+   * - Docker
+     - ``docker run --interactive --tty --volume /:/ext halfpipe/halfpipe``
 
 You should now see the user interface.
 
@@ -481,7 +486,7 @@ Running on a high-performance computing cluster
    terminal that will continue running in the background even when you
    close or disconnect. Here’s a quick overview of how to use the
    commands (more in-depth documentation is available for example at
-   [http://www.dayid.org/comp/tm.html]).
+   http://www.dayid.org/comp/tm.html).
 
    1. Open a new screen/tmux session on the head node by running either
       ``screen`` or ``tmux``
@@ -655,7 +660,7 @@ Automatically remove unneeded files
 ``HALFpipe`` saves intermediate files for each pipeline step. This
 speeds up re-running with different settings, or resuming after a job
 after it was cancelled. The intermediate file are saved by the
-```nipype`` <https://nipype.readthedocs.io/>`__ workflow engine, which
+`nipype <https://nipype.readthedocs.io/>`__ workflow engine, which
 is what ``HALFpipe`` uses internally. ``nipype`` saves the intermediate
 files in the ``nipype`` folder in the working directory.
 
@@ -760,11 +765,9 @@ For questions or support, please submit an
 `issue <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__ or
 contact us via e-mail at enigma@charite.de.
 
-.. |https://www.singularity-hub.org/static/img/hosted-singularity–hub-%23e32929.svg| image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
-   :target: https://singularity-hub.org/collections/4508
 .. |https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg| image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
    :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
 .. |https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg| image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
    :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
-.. |codecov| image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/master/graph/badge.svg
+.. |codecov| image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/HALFpipe/HALFpipe
