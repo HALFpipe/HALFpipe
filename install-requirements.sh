@@ -43,22 +43,12 @@ run_cmd() {
 
 printf '%s\n' --------------------
 
-# reset conda environment
-run_cmd conda install --yes --quiet --revision 0
+# update conda and disable mkl
+run_cmd conda install --yes --quiet "conda" "nomkl"
 
 printf '%s\n' --------------------
 
-# but force specific python version
-run_cmd conda install --yes --quiet "python=3.7" "nomkl"
-
-printf '%s\n' --------------------
-
-# update conda
-run_cmd conda update --yes --quiet "conda"
-
-printf '%s\n' --------------------
-
-run_cmd conda update --yes --quiet --channel conda-forge pip
+run_cmd conda install --yes --quiet --channel "conda-forge" "pip"
 
 printf '%s\n' --------------------
 

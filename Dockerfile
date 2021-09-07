@@ -16,10 +16,19 @@ RUN mkdir /ext /halfpipe && \
 
 COPY requirements.txt install-requirements.sh /tmp/
 
-RUN cd /tmp && \
-    ./install-requirements.sh --requirements-file requirements.txt && sync && \
-    conda clean --yes --all --force-pkgs-dirs && sync && \
-    find /usr/local/miniconda/ -follow -type f -name "*.a" -delete && sync
+RUN rm -rf /usr/local/miniconda && \
+    cd /tmp && \
+    curl --show-error --silent --location \
+        "https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh" \
+        --output "miniconda.sh" &&  \
+    bash miniconda.sh -b -p /usr/local/miniconda && \
+    ./install-requirements.sh --requirements-file requirements.txt && \
+    sync && \
+    conda clean --yes --all --force-pkgs-dirs && \
+    sync && \
+    find /usr/local/miniconda/ -follow -type f -name "*.a" -delete && \
+    rm -rf /tmp/* && \
+    sync
 
 # re-do matplotlib settings after installing requirements
 # these are taken from fmriprep
