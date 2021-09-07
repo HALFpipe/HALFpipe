@@ -560,7 +560,7 @@ Bug fixes
       can easily be adapted to other systems
 
 -  **Output files now follow the BIDS derivatives naming scheme:** We
-   value interoperability with other software. ```HALFpipe``
+   value interoperability with other software. `HALFpipe
    outputs <https://github.com/mindandbrain/halfpipe#5-outputs>`__ can
    now be automatically be parsed by software that accepts BIDS
    derivatives
