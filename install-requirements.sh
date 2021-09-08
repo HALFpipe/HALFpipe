@@ -48,7 +48,7 @@ run_cmd conda install --yes --quiet "conda" "nomkl"
 
 printf '%s\n' --------------------
 
-run_cmd conda install --yes --quiet --channel "conda-forge" "pip"
+run_cmd conda install --yes --quiet --channel "conda-forge" "pip" "gdb"
 
 printf '%s\n' --------------------
 
