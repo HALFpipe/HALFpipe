@@ -2,6 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Any, OrderedDict as OrderedDictT
+import pytest
+
+from uuid import uuid4
 from pathlib import Path
 from collections import namedtuple, OrderedDict
 
@@ -9,7 +13,8 @@ from ..cli.parser import build_parser
 from ..cluster import create_example_script
 
 
-def test_create_example_script(monkeypatch, tmp_path: Path):
+@pytest.mark.parametrize("has_model", [True, False])
+def test_create_example_script(monkeypatch, tmp_path: Path, has_model: bool):
     NodePlaceholder = namedtuple("NodePlaceholder", ["mem_gb"])
     WorkflowPlaceholder = namedtuple("WorkflowPlaceholder", ["uuid", "nodes"])
 
@@ -17,11 +22,13 @@ def test_create_example_script(monkeypatch, tmp_path: Path):
     opts = parser.parse_args(["--verbose"])
 
     node = NodePlaceholder(mem_gb=1.2)
-    graphs = OrderedDict([
-        ("a", WorkflowPlaceholder(uuid="aaa", nodes=[node])),
-        ("b", WorkflowPlaceholder(uuid="aaa", nodes=[node])),
-        ("model", WorkflowPlaceholder(uuid="aaa", nodes=[node])),
+    graphs: OrderedDictT[str, Any] = OrderedDict([
+        ("a", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
+        ("b", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
     ])
+
+    if has_model:
+        graphs["model"] = WorkflowPlaceholder(uuid=uuid4(), nodes=[node])
 
     monkeypatch.setenv("SINGULARITY_CONTAINER", "halfpipe.sif")
     create_example_script(tmp_path, graphs, opts)
