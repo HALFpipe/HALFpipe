@@ -42,7 +42,10 @@ def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator.default(), name=None, 
     workflow.connect(inputnode, "files", select, "in_list")
 
     smooth = pe.MapNode(
-        LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth"
+        LazyBlurToFWHM(outputtype="NIFTI_GZ"),
+        iterfield="in_file",
+        name="smooth",
+        mem_gb=memcalc.series_std_gb * 1.5,
     )
     workflow.connect(select, "match_list", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
