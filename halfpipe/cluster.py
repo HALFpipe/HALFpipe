@@ -2,10 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import OrderedDict as OrderedDictT
+
 import os
 from pathlib import Path
 from math import ceil
 from collections import OrderedDict
+from typing import Any
 
 from .io.file.pickle import _make_cache_file_path
 from .utils import logger, inflect_engine as p
@@ -103,15 +106,17 @@ singularity run \\
 )
 
 
-def create_example_script(workdir, graphs: OrderedDict, opts):
+def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
     first_workflow = next(iter(graphs.values()))
     uuid = first_workflow.uuid
 
     reversed_graph_items_iter = iter(reversed(graphs.items()))
     last_graph_name, _ = next(reversed_graph_items_iter)
-    assert last_graph_name == "model", "Last graph needs to be model chunk"
+    if last_graph_name == "model":
+        subject_graphs = OrderedDict([*reversed_graph_items_iter])
+    else:
+        subject_graphs = graphs
 
-    subject_graphs = OrderedDict([*reversed_graph_items_iter])
     subject_graphs = filter_subject_graphs(subject_graphs, opts)
 
     n_chunks = len(subject_graphs)
