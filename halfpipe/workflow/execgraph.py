@@ -26,7 +26,6 @@ from ..fixes import Node
 from .base import IdentifiableWorkflow
 from ..utils import resolve
 from ..utils.format import format_like_bids
-from ..utils.multiprocessing import Pool
 from ..io.file.dictlistfile import DictListFile
 from ..io.file.pickle import cache_obj, uncache_obj
 from ..resource import get as getresource
@@ -195,20 +194,19 @@ def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str) -> Tuple[Dict[str, S
     return subject_nodes, input_source_dict
 
 
-def prepare_graph(workflow, item):
-    s, graph = item
-
+def prepare_graph(config, base_dir, uuid, graph):
     graph = pe.generate_expanded_graph(graph)
 
     for index, node in enumerate(graph):
-        node.config = merge_dict(deepcopy(workflow.config), node.config)
-        node.base_dir = workflow.base_dir
+        node.config = merge_dict(deepcopy(config), node.config)
+        node.base_dir = base_dir
         node.index = index
 
-    workflow._configure_exec_nodes(graph)
-    graph.uuid = workflow.uuid
+    empty_workflow = pe.Workflow(name="empty")
+    empty_workflow._configure_exec_nodes(graph)  # self is not accessed
+    graph.uuid = uuid
 
-    return s, graph
+    return graph
 
 
 def init_flat_graph(workflow, workdir) -> nx.DiGraph:
@@ -283,10 +281,11 @@ def init_execgraph(
 
     logger.info("Expanding subgraphs")
 
-    with Pool() as pool:
-        graphs = OrderedDict(
-            pool.map(partial(prepare_graph, workflow), graphs.items())
-        )
+    partial_prepare_graph = partial(
+        prepare_graph, workflow.config, workflow.base_dir, uuid
+    )
+    for s, graph in graphs.items():
+        graphs[s] = partial_prepare_graph(graph)
 
     logger.info("Update input source at chunk boundaries")
 
