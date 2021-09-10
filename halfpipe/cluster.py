@@ -125,8 +125,10 @@ def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
     graphs_file = _make_cache_file_path("graphs", uuid)
 
     n_cpus = 2
-    nipype_max_mem_gb = max(node.mem_gb for graph in graphs.values() for node in graph.nodes)
-    mem_mb = ceil(nipype_max_mem_gb * 1024)
+    mem_gb: float = max(
+        node.mem_gb for graph in graphs.values() for node in graph.nodes
+    ) * 1.1
+    mem_mb: int = int(ceil(mem_gb * 1024))
 
     extra_args = ""
 
@@ -165,7 +167,7 @@ def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
         cwd=str(Path(workdir).resolve()),
         graphs_file=str(Path(workdir).resolve() / graphs_file),
         n_cpus=n_cpus,
-        mem_gb=nipype_max_mem_gb,
+        mem_gb=mem_gb,
         mem_mb=mem_mb,
         extra_args=extra_args,
         bind_args="",

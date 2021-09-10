@@ -8,7 +8,7 @@ from asyncio import get_running_loop, Queue, QueueEmpty, Event, CancelledError, 
 
 import logging
 
-from ..message import Message, LogMessage
+from ..message import LogMessage
 
 
 class Writer:
@@ -21,10 +21,10 @@ class Writer:
 
     def __init__(self, levelno=logging.DEBUG):
         self.queue = Queue()
-        self.canWrite = Event()
+        self.can_write = Event()
         self.levelno = levelno
 
-    def filterMessage(self, message: Message) -> bool:
+    def filter_message(self, message: LogMessage) -> bool:
         if not isinstance(message, LogMessage):
             return False  # ignore invalid
 
@@ -38,25 +38,25 @@ class Writer:
 
         while True:
             try:
-                await self.canWrite.wait()
+                await self.can_write.wait()
 
                 if not self.check():
-                    self.canWrite.clear()
+                    self.can_write.clear()
 
                     continue
 
                 message = await self.queue.get()
 
-                await self.canWrite.wait()
+                await self.can_write.wait()
 
-                if not self.filterMessage(message):
+                if not self.filter_message(message):
                     self.queue.task_done()
                     continue  # avoid acquiring the lock
 
                 await loop.run_in_executor(None, self.acquire)
 
                 while True:
-                    if self.filterMessage(message):
+                    if self.filter_message(message):
                         await loop.run_in_executor(None, self.emit_message, message)
                     self.queue.task_done()
 
@@ -80,7 +80,7 @@ class Writer:
             f"Caught exception in {self.__class__.__name__}. Stopping",
             exc_info=True
         )
-        self.canWrite.clear()
+        self.can_write.clear()
 
     def check(self) -> bool:
         return True

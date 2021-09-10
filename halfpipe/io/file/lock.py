@@ -19,11 +19,9 @@ class AdaptiveLock:
 
         self.lock_instance = None
 
-        self.delay = 0.0
-
     def lock(self, lock_file):
         if self.method == "hard_links":
-            self.lock_instance = FluflLock(lock_file, lifetime=60)  # seconds after which the lock is broken
+            self.lock_instance = FluflLock(lock_file, lifetime=self.timeout)  # seconds after which the lock is broken
 
             try:
                 self.lock_instance.lock(timeout=self.timeout)  # try for a long time
@@ -61,7 +59,7 @@ class AdaptiveLock:
 
         if self.method is None:
             # use a random delay to make write collisions unlikely
-            delay = gauss(10.0, 2.5)
+            delay = gauss(20.0, 2.5)
             if delay > 0:
                 sleep(delay)
 

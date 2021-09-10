@@ -7,6 +7,7 @@ from typing import Optional
 import re
 
 from .file import FileWriter, escape_codes_regex
+from ..message import LogMessage
 from ....io.file.dictlistfile import DictListFile
 
 
@@ -22,8 +23,8 @@ class ReportErrorWriter(FileWriter):
 
         self.dictlistfile: Optional[DictListFile] = None
 
-    def filterMessage(self, message):
-        msg = message.msg
+    def filter_message(self, message: LogMessage):
+        msg = message.long_msg
         msg = escape_codes_regex.sub("", msg)
 
         match = could_not_run_match(msg)
@@ -49,7 +50,7 @@ class ReportErrorWriter(FileWriter):
 
         self.dictlistfile.__enter__()
 
-    def emit_message(self, message):
+    def emit_message(self, message: LogMessage):
         assert self.dictlistfile is not None
         self.dictlistfile.put(dict(
             node=message.node

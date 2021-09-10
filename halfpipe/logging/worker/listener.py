@@ -26,12 +26,12 @@ async def listen(queue):
 
     loop = get_running_loop()
 
-    printWriter = PrintWriter(levelno=25)  # fmriprep's IMPORTANT
-    logWriter = FileWriter(levelno=logging.DEBUG)
-    errWriter = FileWriter(levelno=logging.WARNING)
-    reportErrWriter = ReportErrorWriter(levelno=logging.ERROR)
+    print_writer = PrintWriter(levelno=25)  # fmriprep's IMPORTANT
+    log_writer = FileWriter(levelno=logging.DEBUG)
+    err_writer = FileWriter(levelno=logging.WARNING)
+    report_err_writer = ReportErrorWriter(levelno=logging.ERROR)
 
-    writers = [printWriter, logWriter, errWriter, reportErrWriter]
+    writers = [print_writer, log_writer, err_writer, report_err_writer]
 
     [loop.create_task(writer.start()) for writer in writers]
 
@@ -50,23 +50,23 @@ async def listen(queue):
 
             workdir.mkdir(exist_ok=True, parents=True)
 
-            logWriter.filename = workdir / "log.txt"
-            logWriter.canWrite.set()
+            log_writer.filename = workdir / "log.txt"
+            log_writer.can_write.set()
 
-            errWriter.filename = workdir / "err.txt"
-            errWriter.canWrite.set()
+            err_writer.filename = workdir / "err.txt"
+            err_writer.can_write.set()
 
-            reportErrWriter.filename = workdir / "reports" / "reporterror.js"
-            reportErrWriter.canWrite.set()
+            report_err_writer.filename = workdir / "reports" / "reporterror.js"
+            report_err_writer.can_write.set()
 
         elif isinstance(message, EnableVerboseMessage):
-            printWriter.levelno = logging.DEBUG
+            print_writer.levelno = logging.DEBUG
 
         elif isinstance(message, EnablePrintMessage):
-            printWriter.canWrite.set()
+            print_writer.can_write.set()
 
         elif isinstance(message, DisablePrintMessage):
-            printWriter.canWrite.clear()
+            print_writer.can_write.clear()
 
         elif isinstance(message, TeardownMessage):
             # make sure that all writers have finished writing
