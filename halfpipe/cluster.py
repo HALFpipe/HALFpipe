@@ -24,7 +24,7 @@ script_templates = dict(
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={n_cpus}
-#SBATCH --mem-per-cpu={mem_mb:d}M
+#SBATCH --mem={mem_mb:d}M
 #
 #SBATCH --array=1-{n_chunks}
 
@@ -125,9 +125,10 @@ def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
     graphs_file = _make_cache_file_path("graphs", uuid)
 
     n_cpus = 2
-    nipype_max_mem_gb = max(node.mem_gb for graph in graphs.values() for node in graph.nodes)
-    mem_mb = ceil(nipype_max_mem_gb / n_cpus * 1536)  # fudge factor
-    mem_gb = float(mem_mb) / 1024.
+    mem_gb: float = max(
+        node.mem_gb for graph in graphs.values() for node in graph.nodes
+    ) * 1.1
+    mem_mb: int = int(ceil(mem_gb * 1024))
 
     extra_args = ""
 

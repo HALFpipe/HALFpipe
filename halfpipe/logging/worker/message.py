@@ -2,65 +2,53 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
+from typing import Optional, Union
 
+from pathlib import Path
+from dataclasses import dataclass
 import logging
 
-from marshmallow import Schema, fields, validate, post_load
-from marshmallow_oneofschema import OneOfSchema
+
+@dataclass
+class EnableVerboseMessage:
+    pass
 
 
-class Message:
-    def __init__(self, type: str, **kwargs):
-        self.type = type
-        self.levelno: Optional[int] = None
-        self.msg: Optional[str] = None
-        self.workdir = None
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+@dataclass
+class EnablePrintMessage:
+    pass
 
 
-class BaseMessageSchema(Schema):
-    type = fields.Str(validate=validate.OneOf([
-        "enable_verbose",
-        "enable_print",
-        "disable_print",
-        "teardown",
-    ]))
-
-    @post_load
-    def make_object(self, data, **kwargs):
-        return Message(**data)
+@dataclass
+class DisablePrintMessage:
+    pass
 
 
-class LogMessageSchema(BaseMessageSchema):
-    type = fields.Str(dump_default="log", validate=validate.Equal("log"))
-
-    levelno = fields.Int(dump_default=logging.DEBUG)
-
-    msg = fields.Str(required=True)
+@dataclass
+class TeardownMessage:
+    pass
 
 
-class SetWorkdirMessageSchema(BaseMessageSchema):
-    type = fields.Str(dump_default="set_workdir", validate=validate.Equal("set_workdir"))
+@dataclass
+class LogMessage:
+    short_msg: str
+    long_msg: str
 
-    workdir = fields.Str(required=True)
+    node: Optional[str] = None
+
+    levelno: int = logging.DEBUG
 
 
-class MessageSchema(OneOfSchema):
-    type_field = "type"
-    type_field_remove = False
-    type_schemas = {
-        "log": LogMessageSchema,
-        "set_workdir": SetWorkdirMessageSchema,
-        "enable_verbose": BaseMessageSchema,
-        "enable_print": BaseMessageSchema,
-        "disable_print": BaseMessageSchema,
-        "teardown": BaseMessageSchema,
-    }
+@dataclass
+class SetWorkdirMessage:
+    workdir: Path
 
-    def get_obj_type(self, obj):
-        if isinstance(obj, Message):
-            return obj.type
-        elif isinstance(obj, dict):
-            return obj.get("type")
+
+Message = Union[
+    EnableVerboseMessage,
+    EnablePrintMessage,
+    DisablePrintMessage,
+    TeardownMessage,
+    LogMessage,
+    SetWorkdirMessage,
+]

@@ -7,6 +7,7 @@ import sys
 import stackprinter
 
 from .base import Writer
+from ..message import LogMessage
 
 
 class PrintWriter(Writer):
@@ -14,7 +15,13 @@ class PrintWriter(Writer):
         sys.stdout.write(stackprinter.format())
         sys.stdout.flush()
 
-    def emit(self, msg: str, levelno: int):
+    def emit_message(self, message: LogMessage):
+        msg = message.short_msg
+        levelno = message.levelno
+
+        self.emit(msg, levelno)
+
+    def emit(self, msg: str, _: int):
         sys.stdout.write(msg + self.terminator)
 
     def release(self):
