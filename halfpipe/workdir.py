@@ -5,6 +5,7 @@
 from typing import Union
 
 from pathlib import Path
+from uuid import uuid4
 
 from .logging import logging_context
 from .hooks import run_hooks_from_dir
@@ -26,10 +27,12 @@ def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) ->
     try:
         workdir_path.mkdir(parents=True, exist_ok=True)
 
-        test_file_path_a = workdir_path / ".halfpipe-permission-test-a"
+        uuid = str(uuid4())
+
+        test_file_path_a = workdir_path / f".halfpipe-permission-test-a-{uuid}"
         test_file_path_a.touch(exist_ok=True)
 
-        test_file_path_b = workdir_path / ".halfpipe-permission-test-b"
+        test_file_path_b = workdir_path / f".halfpipe-permission-test-b-{uuid}"
         test_file_path_b.symlink_to(test_file_path_a)
 
         test_file_path_b.unlink()

@@ -89,6 +89,8 @@ def run_stage_run(opts):
     else:
         logger.info("Using graphs from previous step")
 
+    assert opts.graphs is not None
+
     if opts.nipype_resource_monitor is True:
         import nipype
         nipype.config.enable_resource_monitor()
