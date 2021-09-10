@@ -78,9 +78,9 @@ def run_stage_run(opts):
         ), "Missing required --graphs-file input for step run"
 
         graphs_file = resolve(opts.graphs_file, opts.fs_root)
-        graphs = load_pickle_lzma(graphs_file)
+        opts.graphs = load_pickle_lzma(graphs_file)
 
-        if not isinstance(graphs, OrderedDict):
+        if not isinstance(opts.graphs, OrderedDict):
             raise RuntimeError(
                 f'Could not read graphs from "{opts.graphs_file}". '
             )
