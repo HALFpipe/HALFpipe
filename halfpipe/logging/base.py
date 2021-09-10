@@ -91,19 +91,19 @@ def setup(queue, levelno=logging.INFO):
     # monkey patch nipype, fmriprep and mriqc
     # so that thhe logging config will not be overwritten
 
-    def emptymethod(self, *args, **kwargs):
+    def empty_method(self, *args, **kwargs):
         _, _, _ = self, args, kwargs
         pass
 
-    def emptyinit(_):
+    def empty_init(_):
         pass
 
-    nipype_logging.__init__ = emptymethod
-    nipype_logging.enable_file_logging = emptymethod
-    nipype_logging.disable_file_logging = emptymethod
-    nipype_logging.update_logging = emptymethod
-    fmriprep_loggers.init = MethodType(emptyinit, fmriprep_loggers)
-    mriqc_loggers.init = MethodType(emptyinit, mriqc_loggers)
+    nipype_logging.__init__ = empty_method
+    nipype_logging.enable_file_logging = empty_method
+    nipype_logging.disable_file_logging = empty_method
+    nipype_logging.update_logging = empty_method
+    fmriprep_loggers.init = MethodType(empty_init, fmriprep_loggers)
+    mriqc_loggers.init = MethodType(empty_init, mriqc_loggers)
 
 
 def teardown():

@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Optional
+
 import re
 
 from .file import FileWriter, escape_codes_regex
@@ -18,7 +20,7 @@ class ReportErrorWriter(FileWriter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.dictlistfile = None
+        self.dictlistfile: Optional[DictListFile] = None
 
     def filterMessage(self, message):
         msg = message.msg
@@ -47,10 +49,12 @@ class ReportErrorWriter(FileWriter):
 
         self.dictlistfile.__enter__()
 
-    def emitmessage(self, message):
+    def emit_message(self, message):
+        assert self.dictlistfile is not None
         self.dictlistfile.put(dict(
             node=message.node
         ))
 
     def release(self):
-        self.dictlistfile.__exit__()
+        if self.dictlistfile is not None:
+            self.dictlistfile.__exit__()

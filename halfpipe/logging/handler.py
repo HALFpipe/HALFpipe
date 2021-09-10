@@ -3,10 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from logging import Handler
+from copy import copy
 
-from .worker import MessageSchema
-
-schema = MessageSchema()
+from .worker.message import LogMessage
 
 
 class QueueHandler(Handler):
@@ -16,8 +15,16 @@ class QueueHandler(Handler):
 
     def emit(self, record):
         try:
-            msg = self.format(record)
-            obj = schema.dump({"type": "log", "msg": msg, "levelno": record.levelno})
+            long_msg = self.format(record)
+
+            short_record = copy(record)
+            short_record.exc_info = None
+            short_record.exc_text = None
+            short_record.stack_info = None
+
+            short_msg = self.format(short_record)
+
+            obj = LogMessage(short_msg=short_msg, long_msg=long_msg, levelno=record.levelno)
             self.queue.put(obj)
         except Exception:
             self.handleError(record)

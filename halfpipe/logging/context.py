@@ -9,12 +9,18 @@ from multiprocessing import get_context
 from multiprocessing.queues import JoinableQueue
 from multiprocessing.process import BaseProcess
 from threading import RLock
+from pathlib import Path
 
-from .worker import run as run_worker, MessageSchema
+from .worker import run as run_worker
+from .worker.message import (
+    DisablePrintMessage,
+    EnablePrintMessage,
+    EnableVerboseMessage,
+    SetWorkdirMessage,
+    TeardownMessage,
+)
 
 ctx = get_context("forkserver")
-
-schema = MessageSchema()
 
 rlock = RLock()
 
@@ -69,7 +75,7 @@ class context(object):
             queue.join()
 
             # send message with teardown command
-            obj = schema.dump({"type": "teardown"})
+            obj = TeardownMessage()
             queue.put(obj)
 
             # wait up to one second
@@ -93,26 +99,26 @@ class context(object):
 
     @classmethod
     def enable_verbose(cls):
-        obj = schema.dump({"type": "enable_verbose"})
+        obj = EnableVerboseMessage()
         queue = cls.queue()
         queue.put(obj)
 
     @classmethod
     def enable_print(cls):
-        obj = schema.dump({"type": "enable_print"})
+        obj = EnablePrintMessage()
         queue = cls.queue()
         queue.put(obj)
         queue.join()
 
     @classmethod
     def disable_print(cls):
-        obj = schema.dump({"type": "disable_print"})
+        obj = DisablePrintMessage()
         queue = cls.queue()
         queue.put(obj)
         queue.join()
 
     @classmethod
-    def set_workdir(cls, workdir):
-        obj = schema.dump({"type": "set_workdir", "workdir": workdir})
+    def set_workdir(cls, workdir: Path):
+        obj = SetWorkdirMessage(workdir=workdir)
         queue = cls.queue()
         queue.put(obj)
