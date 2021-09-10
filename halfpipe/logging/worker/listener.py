@@ -3,16 +3,21 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
-from marshmallow import ValidationError
 from pathlib import Path
 from copy import deepcopy
 
 from asyncio import get_running_loop, all_tasks, current_task, gather
 
-from .message import Message, MessageSchema
+from .message import (
+    DisablePrintMessage,
+    EnablePrintMessage,
+    EnableVerboseMessage,
+    LogMessage,
+    SetWorkdirMessage,
+    TeardownMessage,
+)
 from .writer import PrintWriter, FileWriter, ReportErrorWriter
-
-schema = MessageSchema()
+from ...utils import logger
 
 
 async def listen(queue):
@@ -35,29 +40,13 @@ async def listen(queue):
     while True:
         message = await loop.run_in_executor(None, queue.get)
 
-        # from pprint import pprint
-        # pprint(schema.dump(message))
-
-        if not isinstance(message, Message):
-            try:
-                message = schema.load(message)
-            except ValidationError:
-                continue  # ignore invalid
-
-        assert isinstance(message, Message)
-
-        if message.type == "log":
+        if isinstance(message, LogMessage):
             for subscriber in subscribers:
                 messagecopy = deepcopy(message)  # allow subscribers to modify message
                 await subscriber.put(messagecopy)
 
-        elif message.type == "set_workdir":
-            workdir = message.workdir
-
-            assert isinstance(workdir, (Path, str))
-
-            if not isinstance(workdir, Path):
-                workdir = Path(workdir)
+        elif isinstance(message, SetWorkdirMessage):
+            workdir: Path = message.workdir
 
             workdir.mkdir(exist_ok=True, parents=True)
 
@@ -70,16 +59,16 @@ async def listen(queue):
             reportErrWriter.filename = workdir / "reports" / "reporterror.js"
             reportErrWriter.canWrite.set()
 
-        elif message.type == "enable_verbose":
+        elif isinstance(message, EnableVerboseMessage):
             printWriter.levelno = logging.DEBUG
 
-        elif message.type == "enable_print":
+        elif isinstance(message, EnablePrintMessage):
             printWriter.canWrite.set()
 
-        elif message.type == "disable_print":
+        elif isinstance(message, DisablePrintMessage):
             printWriter.canWrite.clear()
 
-        elif message.type == "teardown":
+        elif isinstance(message, TeardownMessage):
             # make sure that all writers have finished writing
             await gather(*[subscriber.join() for subscriber in subscribers])
 
@@ -92,5 +81,8 @@ async def listen(queue):
             loop.stop()
 
             break
+
+        else:
+            logger.error(f'Logging worker received unknown message "{message}"')
 
         queue.task_done()
