@@ -6,6 +6,7 @@ from typing import Optional
 
 from pathlib import Path
 import re
+from random import gauss
 
 from .base import Writer
 from ....io.file.lock import AdaptiveLock
@@ -21,6 +22,10 @@ class FileWriter(Writer, AdaptiveLock):
         self.filename: Optional[Path] = None
 
         self.stream = None
+
+    @property
+    def delay(self) -> float:
+        return max(0., gauss(10.0, 2.5))
 
     def check(self) -> bool:
         if self.filename is None or not isinstance(self.filename, Path):

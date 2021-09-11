@@ -17,12 +17,14 @@ class Writer:
 
     terminator = "\n"
 
-    delay = 1.0
-
     def __init__(self, levelno=logging.DEBUG):
         self.queue = Queue()
         self.can_write = Event()
         self.levelno = levelno
+
+    @property
+    def delay(self) -> float:
+        return 1.0
 
     def filter_message(self, message: LogMessage) -> bool:
         if not isinstance(message, LogMessage):
