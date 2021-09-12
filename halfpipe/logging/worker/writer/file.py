@@ -25,7 +25,7 @@ class FileWriter(Writer, AdaptiveLock):
 
     @property
     def delay(self) -> float:
-        return max(0., gauss(10.0, 2.5))
+        return abs(gauss(0.0, 2.5))
 
     def check(self) -> bool:
         if self.filename is None or not isinstance(self.filename, Path):
