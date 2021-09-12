@@ -217,7 +217,7 @@ def init_taskbased_wf(
     workflow.connect(modelspec, "session_info", level1design, "session_info")
 
     # generate required input files for FILMGLS from design
-    modelgen = pe.Node(fsl.FEATModel(), name="modelgen")
+    modelgen = pe.Node(fsl.FEATModel(), name="modelgen", mem_gb=1.0)
     workflow.connect([(level1design, modelgen, [(("fsf_files", firststr), "fsf_file")])])
     workflow.connect([(level1design, modelgen, [(("ev_files", ravel), "ev_files")])])
 

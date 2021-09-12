@@ -78,8 +78,8 @@ class context(object):
             obj = TeardownMessage()
             queue.put(obj)
 
-            # wait up to one second
-            worker.join(1.0)
+            # wait up to one minute
+            worker.join(60.0)
 
             queue.close()
 

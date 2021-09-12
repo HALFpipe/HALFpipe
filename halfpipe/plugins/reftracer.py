@@ -3,13 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-import logging
 
 from nipype.pipeline.engine.utils import load_resultfile
 
-from ..utils import findpaths
-
-logger = logging.getLogger("halfpipe")
+from ..utils import findpaths, logger
 
 
 class PathReferenceTracer:
@@ -125,6 +122,18 @@ class PathReferenceTracer:
         except Exception as ex:
             logger.info(f"{node.name} does not have result: %s", ex)
             return
+
+        try:
+            actual = result.runtime.mem_peak_gb
+            predicted = node.mem_gb
+
+            if actual > predicted:
+                logger.warning(
+                    f'Memory usage for node "{node.fullname}" exceeds prediction '
+                    f"{predicted=} {actual=}"
+                )
+        except Exception:
+            pass
 
         stack = [*findpaths(getattr(result, "outputs"))]
         while len(stack) > 0:

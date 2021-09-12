@@ -18,6 +18,13 @@ calculated on the fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and
    If you encounter issues, please see the
    `troubleshooting <#troubleshooting>`__ section of this document.
 
+..
+
+   Some sections of this document are outdated. While we are working on
+   updating them, the `pre-print <doi.org/gddf>` and the
+   `analysis manual <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`
+   should be able to answer most questions.
+
 Table of Contents
 -----------------
 
@@ -108,14 +115,14 @@ limited. ``Docker`` is the only option that is compatible with
    * - Singularity
      - 3.x
      - https://sylabs.io/guides/3.8/user-guide/quick_start.html
-    
+
    * - Singularity
      - 2.x
      - ``sudo apt install singularity-container``
-     
+
    * - Docker
      - ..
-     - See https://docs.docker.com/engine/install/ 
+     - See https://docs.docker.com/engine/install/
 
 Download
 ~~~~~~~~
@@ -133,11 +140,11 @@ requires approximately 5 gigabytes of storage.
    * - Singularity
      - 3.x
      - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif
-    
+
    * - Singularity
      - 2.x
      - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg
-     
+
    * - Docker
      - ..
      - ``docker pull halfpipe/halfpipe:latest``
@@ -178,8 +185,8 @@ replace ``halfpipe-halfpipe-latest.simg`` with the actual path and filename wher
      - Command
 
    * - Singularity
-     - ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.simg``     
-    
+     - ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.simg``
+
    * - Docker
      - ``docker run --interactive --tty --volume /:/ext halfpipe/halfpipe``
 
@@ -207,6 +214,8 @@ shell environment by default, so we don’t need to pass an option.
 
 User interface
 --------------
+
+   Outdated
 
 The user interface asks a series of questions about your data and the
 analyses you want to run. In each question, you can press ``Control+C``
@@ -456,7 +465,7 @@ Running on a high-performance computing cluster
 3. | In the interactive job, run the ``HALFpipe`` user interface, but
      add the flag ``--use-cluster`` to the end of the command.
    | For example,
-     ``singularity run --containall --bind /:/ext halfpipe_latest.sif --use-cluster``
+     ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif --use-cluster``
 
 4. As soon as you finish specifying all your data, features and models
    in the user interface, ``HALFpipe`` will now generate everything
@@ -471,7 +480,7 @@ Running on a high-performance computing cluster
 6. As soon as all processing has been completed, you can run group
    statistics. This is usually very fast, so you can do this in an
    interactive session. Run
-   ``singularity run --containall --bind /:/ext halfpipe_latest.sif --only-model-chunk``
+   ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif --only-model-chunk``
    and then select ``Run without modification`` in the user interface.
 
 ..
@@ -516,6 +525,8 @@ https://docs.google.com/document/d/1evDkVaoXqSaxulp5eSxVqgaxro7yZl-gao70D0S2dH8
 
 Outputs
 -------
+
+   Outdated
 
 -  A visual report page ``reports/index.html``
 
@@ -687,6 +698,8 @@ Configure nipype
 
 Choose which parts to run or to skip
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Outdated
 
 .. code:: bash
 
