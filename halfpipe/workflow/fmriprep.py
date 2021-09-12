@@ -291,6 +291,7 @@ class FmriprepFactory(Factory):
                     "bold_reg_wf",
                     "sdc_estimate_wf",
                     "sdc_bypass_wf",
+                    "sdc_unwarp_report_wf",
                     "bold_std_trans_wf",
                     "bold_surf_wf"
             ]:
