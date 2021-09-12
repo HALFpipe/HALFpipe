@@ -21,8 +21,8 @@ calculated on the fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and
 ..
 
    Some sections of this document are outdated. While we are working on
-   updating them, the `pre-print <doi.org/gddf>` and the
-   `analysis manual <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`
+   updating them, the `pre-print <doi.org/gddf>`__ and the
+   `analysis manual <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
    should be able to answer most questions.
 
 Table of Contents
