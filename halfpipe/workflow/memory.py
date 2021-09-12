@@ -25,7 +25,7 @@ class MemoryCalculator(NamedTuple):
     volume_std_gb: float
     series_std_gb: float
 
-    min_gb: float = 0.3  # we assume that any command needs a few hundred megabytes
+    min_gb: float = 1.0  # we reserve a gigabyte for each command
 
     @classmethod
     def from_bold_shape(cls, x: int = 72, y: int = 72, z: int = 72, t: int = 200):
@@ -149,5 +149,5 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
     ):
         node._mem_gb = 2 * memcalc.series_std_gb
 
-    if node.mem_gb < memcalc.min_gb:
+    if node._mem_gb < memcalc.min_gb:
         node._mem_gb = memcalc.min_gb

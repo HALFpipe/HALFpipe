@@ -176,11 +176,12 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         super(MultiProcPlugin, self)._task_finished_cb(jobid, cached=cached)
 
     def _async_callback(self, args):
+        assert self.procs is not None
+
         try:
             result = args.result()
             self._taskresult[result["taskid"]] = result
         except Exception as e:
-            assert self.procs is not None
             running_tasks = [
                 self.procs[jobid].fullname
                 for _, jobid in self.pending_tasks

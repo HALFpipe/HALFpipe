@@ -17,6 +17,7 @@ from .model import ModelFactory
 from .collect import collect_bold_files
 from .convert import convert_all
 from .constants import constants
+from .memory import MemoryCalculator
 from ..io.index import Database, BidsDatabase
 from ..io.file.pickle import cache_obj, uncache_obj
 from ..model.spec import loadspec
@@ -128,6 +129,7 @@ def init_workflow(workdir):
 
     # patch workflow
     config_factory = deepcopyfactory(workflow.config)
+    min_gb = MemoryCalculator.default().min_gb
 
     for node in workflow._get_all_nodes():
 
@@ -137,6 +139,9 @@ def init_workflow(workdir):
 
         node.overwrite = None
         node.run_without_submitting = False  # run all nodes in multiproc
+
+        if node._mem_gb < min_gb:  # enforce minimum
+            node._mem_gb = min_gb
 
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
