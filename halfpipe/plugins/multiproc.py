@@ -6,7 +6,6 @@ from typing import Any, Dict
 
 import os
 import gc
-import logging
 import shutil
 from threading import Thread
 import multiprocessing as mp
@@ -20,8 +19,7 @@ from matplotlib import pyplot as plt
 
 from .reftracer import PathReferenceTracer
 from ..logging import logging_context
-
-logger = logging.getLogger("nipype.workflow")
+from ..utils import logger
 
 
 def initializer(workdir, logging_args, plugin_args, host_env):
@@ -182,7 +180,12 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             result = args.result()
             self._taskresult[result["taskid"]] = result
         except Exception as e:
-            logging.getLogger("halfpipe").exception(f"Exception for {args}: %s", e)
+            assert self.procs is not None
+            running_tasks = [
+                self.procs[jobid].fullname
+                for _, jobid in self.pending_tasks
+            ]
+            logger.exception(f"Exception for {args} while running {running_tasks}", exc_info=e)
 
     def _remove_node_dirs(self):
         """Removes directories whose outputs have already been used up
