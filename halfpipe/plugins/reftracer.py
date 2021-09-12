@@ -127,11 +127,18 @@ class PathReferenceTracer:
             actual = result.runtime.mem_peak_gb
             predicted = node.mem_gb
 
-            if actual > predicted:
+            if actual - predicted > 1:  # more than one gigabyte error
                 logger.warning(
                     f'Memory usage for node "{node.fullname}" exceeds prediction '
                     f"{predicted=} {actual=}"
                 )
+
+            elif predicted - actual > 5:  # more than 5 gigabytes error
+                logger.warning(
+                    f'Memory usage for node "{node.fullname}" is significantly below prediction '
+                    f"{predicted=} {actual=}"
+                )
+
         except Exception:
             pass
 
