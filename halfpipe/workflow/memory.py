@@ -132,8 +132,6 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
         name.endswith(s)
         for s in [
             "ica_aroma_wf.melodic",
-            "ica_aroma_wf.calc_bold_mean",
-            "ica_aroma_wf.calc_median_val",
         ]
     ):
         node._mem_gb = memcalc.series_std_gb
@@ -145,6 +143,8 @@ def patch_mem_gb(node: pe.Node, memcalc: MemoryCalculator):
             "bold_confounds_wf.rois_plot",
             "bold_confounds_wf.signals",
             "bold_confounds_wf.tcompcor",
+            "ica_aroma_wf.calc_bold_mean",
+            "ica_aroma_wf.calc_median_val",
         ]
     ):
         node._mem_gb = 2 * memcalc.series_std_gb

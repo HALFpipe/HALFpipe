@@ -109,7 +109,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
-    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=2 * memcalc.series_std_gb)
+    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb * 2.5)
     workflow.connect(select_std, "bold_std", tsnr, "in_file")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)

@@ -221,4 +221,10 @@ def memory_limit() -> float:
         if ml is not None
     ]
 
-    return min(memory_limits) * 0.9  # nipype uses 90% of max as a safety precaution
+    memory_limit = min(memory_limits) * 0.9  # nipype uses 90% of max as a safety precaution
+
+    process = psutil.Process(pid=os.getpid())
+    resident_set_size = process.memory_info().rss * ureg.bytes
+    memory_limit -= resident_set_size.m_as(ureg.gigabytes)  # subtract memory used by current process
+
+    return memory_limit
