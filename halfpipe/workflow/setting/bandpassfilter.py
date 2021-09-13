@@ -98,7 +98,7 @@ def init_bandpass_filter_wf(
             TemporalFilter(),
             iterfield="in_file",
             name="temporalfilter",
-            mem_gb=memcalc.series_std_gb
+            mem_gb=memcalc.series_std_gb * 2
         )
         workflow.connect(calcsigma, "lp_sigma", temporalfilter, "lowpass_sigma")
         workflow.connect(calcsigma, "hp_sigma", temporalfilter, "highpass_sigma")
