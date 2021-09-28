@@ -51,4 +51,4 @@ class MCARTest(Heterogeneity):
             voxel_result = {coordinate: voxel_dict}
             return voxel_result
         except (PerfectSeparationError, np.linalg.LinAlgError):
-            pass
+            return None

@@ -16,6 +16,7 @@ import nibabel as nib
 
 from .flame1 import flame1_prepare_data
 from .base import ModelAlgorithm
+from ..utils import logger
 
 
 class MoM:
@@ -279,7 +280,10 @@ class Heterogeneity(ModelAlgorithm):
 
         try:
             voxel_dict = het_on_voxel(y, z, s)
-        except (np.linalg.LinAlgError, AssertionError):
+        except (np.linalg.LinAlgError, AssertionError, ValueError):
+            return None
+        except Exception as e:
+            logger.warning(f"Unexpected exception for voxel {coordinate}", exc_info=e)
             return None
 
         if voxel_dict is None:
