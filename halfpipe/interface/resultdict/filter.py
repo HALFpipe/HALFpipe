@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional
 
 from glob import glob
 import logging
+from math import isclose
 
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ def _get_data_frame(file_path, variable_dicts):
     if id_column is None:
         raise ValueError(f'Column "{id_column}" not found')
 
-    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
+    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)  # type: ignore
     if all(str(id).startswith("sub-") for id in data_frame[id_column]):  # for bids
         data_frame[id_column] = [str(id).replace("sub-", "") for id in data_frame[id_column]]
     data_frame = data_frame.set_index(id_column)
@@ -130,7 +131,7 @@ def _make_missing_filterfun(filter_dict: Dict, data_frame: pd.DataFrame, model_d
 
     assert filter_dict["action"] == "exclude"
 
-    isfinite = pd.notnull(data_frame[variable])
+    isfinite = pd.notnull(data_frame[variable])  # type: ignore
 
     selectedsubjects = frozenset(isfinite.index[isfinite])
 
@@ -153,10 +154,16 @@ def _make_cutoff_filterfun(filter_dict: Dict, model_desc: str) -> Optional[Calla
     if cutoff is None or not isinstance(cutoff, float):
         raise ValueError(f'Invalid cutoff "{cutoff}"')
 
-    filterfield = filter_dict["field"]
+    filter_field = filter_dict["field"]
+
+    if filter_field == "fd_perc" and cutoff < 1 and not isclose(cutoff, 1):
+        logger.warning(
+            f'The cutoff for "fd_perc" of {cutoff:f} was re-scaled to {cutoff * 100} percent'
+        )
+        cutoff *= 100
 
     def cutoff_filterfun(d):
-        val = d["vals"].get(filterfield, np.inf)
+        val = d["vals"].get(filter_field, np.inf)
 
         if isinstance(val, float):
             x: float = val
@@ -174,7 +181,7 @@ def _make_cutoff_filterfun(filter_dict: Dict, model_desc: str) -> Optional[Calla
             tags = d["tags"]
             logger.warning(
                 f'Excluding ({_format_tags(tags)}) {model_desc}'
-                f'because "{filterfield}" is larger than {cutoff:f}'
+                f'because "{filter_field}" is larger than {cutoff:f}'
             )
 
         return res

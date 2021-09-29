@@ -66,7 +66,7 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
 
     class FdPercFilterStep(BaseCutoffFilterStep):
         filter_field = "fd_perc"
-        number_input_args = {"number": 0.1, "min": 0, "max": 1}
+        number_input_args = {"number": 10, "min": 0, "max": 100}
         next_step_type = cutoff_filter_next_step_type
 
         def setup(self, ctx):
