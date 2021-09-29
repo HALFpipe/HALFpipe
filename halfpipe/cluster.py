@@ -2,91 +2,61 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import OrderedDict as OrderedDictT
+from typing import Any, Dict, List
 
 import os
 from pathlib import Path
 from math import ceil
-from collections import OrderedDict
-from typing import Any
 
-from .io.file.pickle import _make_cache_file_path
 from .utils import logger, inflect_engine as p
-from .workflow.execgraph import filter_subject_graphs
+from .workflow.execgraph import filter_subjects
 
-script_templates = dict(
-    slurm="""#!/bin/bash
+shebang = """#!/bin/bash
 #
 #
-#SBATCH --job-name=halfpipe
+"""
+
+cluster_configs = dict(
+    slurm="""#SBATCH --job-name=halfpipe
 #SBATCH --output=halfpipe.log.txt
 #
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task={n_cpus}
+#SBATCH --cpus-per-task={n_cpus:d}
 #SBATCH --mem={mem_mb:d}M
 #
-#SBATCH --array=1-{n_chunks}
-
-if ! [ -x "$(command -v singularity)" ]; then
-module load singularity
-fi
-
-singularity run \\
---containall {bind_args} \\
-{singularity_container} \\
---workdir {cwd} \\
---only-run \\
---graphs-file {graphs_file} \\
---subject-chunks \\
---only-chunk-index ${{SLURM_ARRAY_TASK_ID}} \\
---nipype-n-procs 2 {extra_args}
-
+#SBATCH --array=1-{n_chunks:d}
 """,
-    torque="""#!/bin/bash
-#
-#
-#PBS -N halfpipe
+    torque="""#PBS -N halfpipe
 #PBS -j oe
 #PBS -o halfpipe.log.txt
-#$ -cwd
 #
-#PBS -l nodes=1:ppn=2
+#PBS -l nodes=1:ppn={n_cpus:d}
 #PBS -l walltime=24:00:00
 #PBS -l mem={mem_mb:d}mb
 #
-#PBS -J 1-{n_chunks}
-
-if ! [ -x "$(command -v singularity)" ]; then
-module load singularity
-fi
-
-singularity run \\
---containall {bind_args} \\
-{singularity_container} \\
---workdir {cwd} \\
---only-run \\
---graphs-file {graphs_file} \\
---subject-chunks \\
---only-chunk-index ${{PBS_ARRAY_INDEX}} \\
---nipype-n-procs 2 {extra_args}
-
-
+#PBS -J 1-{n_chunks:d}
 """,
-    sge="""#!/bin/bash
-#
-#
-#$ -N halfpipe
+    sge="""#$ -N halfpipe
 #$ -j y
 #$ -o halfpipe.log.txt
 #$ -cwd
 #
-#$ -pe smp 2
+#$ -pe smp {n_cpus:d}
 #$ -l h_rt=24:0:0
 #$ -l mem={mem_mb:d}M
 #
-#$ -t 1-{n_chunks}
+#$ -t 1-{n_chunks:d}
+"""
+)
 
+array_index_variables = dict(
+    slurm="SLURM_ARRAY_TASK_ID",
+    torque="PBS_ARRAY_INDEX",
+    sge="SGE_TASK_ID",
+)
+
+singularity_command = """
 if ! [ -x "$(command -v singularity)" ]; then
 module load singularity
 fi
@@ -96,33 +66,23 @@ singularity run \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
---graphs-file {graphs_file} \\
+--uuid {uuid_str} \\
 --subject-chunks \\
---only-chunk-index ${{SGE_TASK_ID}} \\
---nipype-n-procs 2 \\
---nipype-memory-gb {mem_gb} {extra_args}
+--only-chunk-index ${{{array_index_variable}}} \\
+--nipype-n-procs 2 {extra_args}
 
-""",
-)
+"""
 
 
-def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
+def create_example_script(workdir, graphs: Dict[str, Any], opts):
     first_workflow = next(iter(graphs.values()))
     uuid = first_workflow.uuid
 
-    reversed_graph_items_iter = iter(reversed(graphs.items()))
-    last_graph_name, _ = next(reversed_graph_items_iter)
-    if last_graph_name == "model":
-        subject_graphs = OrderedDict([*reversed_graph_items_iter])
-    else:
-        subject_graphs = graphs
+    subjects: List[str] = sorted(graphs.keys())
+    subjects = filter_subjects(subjects, opts)
 
-    subject_graphs = filter_subject_graphs(subject_graphs, opts)
-
-    n_chunks = len(subject_graphs)
+    n_chunks = len(subjects)
     assert n_chunks > 0
-
-    graphs_file = _make_cache_file_path("graphs", uuid)
 
     n_cpus = 2
     mem_gb: float = max(
@@ -165,7 +125,7 @@ def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
         n_chunks=n_chunks,  # one-based indexing
         singularity_container=os.environ["SINGULARITY_CONTAINER"],
         cwd=str(Path(workdir).resolve()),
-        graphs_file=str(Path(workdir).resolve() / graphs_file),
+        uuid_str=str(uuid)[:8],
         n_cpus=n_cpus,
         mem_gb=mem_gb,
         mem_mb=mem_mb,
@@ -173,12 +133,15 @@ def create_example_script(workdir, graphs: OrderedDictT[str, Any], opts):
         bind_args="",
     )
 
-    if opts.fs_root != "/":
+    if opts.fs_root is not None and opts.fs_root != "/":
         data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
 
     stpaths = []
-    for cluster_type, script_template in script_templates.items():
-        st = script_template.format(**data)
+    for cluster_type, cluster_config in cluster_configs.items():
+        data["array_index_variable"] = array_index_variables[cluster_type]
+
+        st: str = shebang + cluster_config.format(**data)
+        st += singularity_command.format(**data)
 
         stpath = f"submit.{cluster_type}.sh"
         stpaths.append(f'"{stpath}"')

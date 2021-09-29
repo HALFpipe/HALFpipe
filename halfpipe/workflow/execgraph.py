@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Set, Tuple, Union, Dict, Optional, OrderedDict as OrderedDictT
+from typing import List, Mapping, Set, Tuple, Union, Dict, Optional
 
 import logging
 from pathlib import Path
@@ -27,7 +27,7 @@ from .base import IdentifiableWorkflow
 from ..utils import resolve
 from ..utils.format import format_like_bids
 from ..io.file.dictlistfile import DictListFile
-from ..io.file.pickle import cache_obj, uncache_obj
+from ..io.cache import cache_obj, uncache_obj
 from ..resource import get as getresource
 from .constants import constants
 
@@ -38,20 +38,27 @@ class IdentifiableDiGraph(nx.DiGraph):
     uuid: Optional[str]
 
 
-def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> OrderedDict:
+def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
+    subjects = sorted(subjects)
+
+    try:
+        subjects.remove("model")
+    except ValueError:
+        pass
+
     for pattern in opts.subject_exclude:
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
+        subjects = [
+            n
+            for n in subjects
             if not fnmatch(n, pattern) and not fnmatch(format_like_bids(n), pattern)
-        ])
+        ]
 
     for pattern in opts.subject_include:
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
+        subjects = [
+            n
+            for n in subjects
             if fnmatch(n, pattern) or fnmatch(format_like_bids(n), pattern)
-        ])
+        ]
 
     if opts.subject_list is not None:
         subject_list_path = resolve(opts.subject_list, opts.fs_root)
@@ -64,13 +71,11 @@ def filter_subject_graphs(subject_graphs: OrderedDict, opts: Namespace) -> Order
         for subject in subject_set:
             subject_set.add(format_like_bids(subject))
 
-        subject_graphs = OrderedDict([
-            (n, v)
-            for n, v in subject_graphs.items()
-            if n in subject_set
-        ])
+        subjects = [
+            n for n in subjects if n in subject_set
+        ]
 
-    return subject_graphs
+    return subjects
 
 
 def extract_subject_name(hierarchy):
@@ -212,6 +217,7 @@ def prepare_graph(config, base_dir, uuid, graph):
 def init_flat_graph(workflow, workdir) -> nx.DiGraph:
     flat_graph = uncache_obj(workdir, ".flat_graph", workflow.uuid, display_str="flat graph")
     if flat_graph is not None:
+        assert isinstance(flat_graph, nx.DiGraph)
         return flat_graph
 
     workflow._generate_flatgraph()
@@ -224,7 +230,7 @@ def init_flat_graph(workflow, workdir) -> nx.DiGraph:
 def init_execgraph(
     workdir: Union[Path, str],
     workflow: IdentifiableWorkflow
-) -> OrderedDictT[str, IdentifiableDiGraph]:
+) -> Dict[str, IdentifiableDiGraph]:
     logger = logging.getLogger("halfpipe")
 
     uuid = workflow.uuid
@@ -251,9 +257,19 @@ def init_execgraph(
 
     # create or load execgraph
 
-    graphs: Optional[OrderedDictT[str, IdentifiableDiGraph]] = uncache_obj(workdir, "graphs", uuid)
-    if graphs is not None:
-        return graphs
+    graphs: Dict[str, IdentifiableDiGraph] = dict()
+
+    obj = uncache_obj(workdir, "graphs", uuid)
+    if isinstance(obj, Mapping):
+        for k, v in obj.items():
+            assert isinstance(v, IdentifiableDiGraph)
+            graphs[k] = v
+
+        if len(graphs) > 0:
+            return graphs
+        else:
+            logger.warning("Re-generating invalid graphs")
+            graphs = dict()
 
     logger.info("Generating flat graph")
 
@@ -270,6 +286,9 @@ def init_execgraph(
     graphs = OrderedDict()
     for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):
         s = workflow.bids_to_sub_id_map.get(s, s)
+
+        if s == "model":
+            raise ValueError('Subject cannot be named "model"')
 
         subgraph = flat_graph.subgraph(nodes).copy()
         graphs[s] = subgraph

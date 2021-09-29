@@ -45,6 +45,7 @@ def build_parser():
 
     rungroup = parser.add_argument_group("run", "")
     rungroup.add_argument("--graphs-file", type=str, help="manually select graphs file")
+    rungroup.add_argument("--uuid", type=str, help="load graphs based on this uuid")
 
     rungroup.add_argument(
         "--subject-include",
