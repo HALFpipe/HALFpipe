@@ -19,7 +19,7 @@ from .convert import convert_all
 from .constants import constants
 from .memory import MemoryCalculator
 from ..io.index import Database, BidsDatabase
-from ..io.file.pickle import cache_obj, uncache_obj
+from ..io.cache import cache_obj, uncache_obj
 from ..model.spec import loadspec
 from ..utils import logger, deepcopyfactory
 from .. import __version__
@@ -33,7 +33,7 @@ class IdentifiableWorkflow(pe.Workflow):
         self.bids_to_sub_id_map = dict()
 
 
-def init_workflow(workdir):
+def init_workflow(workdir) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
 
@@ -49,6 +49,7 @@ def init_workflow(workdir):
 
     workflow = uncache_obj(workdir, ".workflow", uuid, display_str="workflow")
     if workflow is not None:
+        assert isinstance(workflow, IdentifiableWorkflow)
         return workflow
 
     # init classes that use the database

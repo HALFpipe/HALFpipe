@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union, List, Dict
+from typing import Any, Mapping, Union, List, Dict
 from collections import OrderedDict
 
 import os
@@ -70,33 +70,46 @@ def run_stage_workflow(opts):
 
 
 def run_stage_run(opts):
-    if opts.graphs is None:
-        from ..io.file.pickle import load_pickle_lzma
+    workdir: Path = opts.workdir
 
-        assert (
-            opts.graphs_file is not None
-        ), "Missing required --graphs-file input for step run"
-
-        graphs_file = resolve(opts.graphs_file, opts.fs_root)
-        opts.graphs = load_pickle_lzma(graphs_file)
-
-        if not isinstance(opts.graphs, OrderedDict):
-            raise RuntimeError(
-                f'Could not read graphs from "{opts.graphs_file}". '
-            )
-
-        logger.info(f'Using graphs defined in file "{opts.graphs_file}"')
-    else:
+    if opts.graphs is not None:
+        graphs: Mapping[str, Any] = opts.graphs
         logger.info("Using graphs from previous step")
 
-    assert opts.graphs is not None
+    else:
+        if opts.graphs_file is not None:
+            from ..io.file.pickle import load_pickle_lzma
+
+            graphs_file = str(resolve(opts.graphs_file, opts.fs_root))
+
+            logger.info(f'Using graphs defined in file "{graphs_file}"')
+
+            obj = load_pickle_lzma(graphs_file)
+            if not isinstance(obj, Mapping):
+                raise ValueError(f'Invalid graphs file "{graphs_file}"')
+
+            graphs = obj
+
+        elif opts.uuid is not None:
+            from ..io.cache import uncache_obj
+
+            obj = uncache_obj(workdir, type_str="graphs", uuid=opts.uuid)
+            if not isinstance(obj, Mapping):
+                raise ValueError(f'Could not find graphs for "{uuid}"')
+
+            graphs = obj
+
+        else:
+            raise RuntimeError(
+                'Please specify the uuid of the execution graphs to run using "--uuid"'
+            )
 
     if opts.nipype_resource_monitor is True:
         import nipype
         nipype.config.enable_resource_monitor()
 
     plugin_args: Dict[str, Union[Path, bool, float]] = dict(
-        workdir=opts.workdir,
+        workdir=workdir,
         watchdog=opts.watchdog,
         stop_on_first_crash=opts.debug,
         resource_monitor=opts.nipype_resource_monitor,
@@ -134,34 +147,19 @@ def run_stage_run(opts):
 
     logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
-    model_chunk = None
-    if "model" in opts.graphs:
-        model_chunk = opts.graphs["model"]
-        del opts.graphs["model"]
+    from ..workflow.execgraph import filter_subjects
 
-    from ..workflow.execgraph import filter_subject_graphs
-
-    subject_graphs = OrderedDict(reversed(list(opts.graphs.items())))
-    subject_graphs = filter_subject_graphs(subject_graphs, opts)
+    chunks = list(graphs.keys())
+    subjects = filter_subjects(chunks, opts)
 
     n_chunks = opts.n_chunks
     if n_chunks is None:
         if opts.subject_chunks or opts.use_cluster:
-            n_chunks = len(subject_graphs)
+            n_chunks = len(subjects)
         else:
-            n_chunks = ceil(len(subject_graphs) / float(opts.max_chunk_size))
+            n_chunks = ceil(len(subjects) / float(opts.max_chunk_size))
 
-    subjectlevel_chunks = []
-    graphs_iter = iter(subject_graphs.values())
-
-    index_arrays = np.array_split(np.arange(len(subject_graphs)), n_chunks)
-    for index_array in index_arrays:
-        graph_list = list(islice(graphs_iter, len(index_array)))
-        subjectlevel_chunks.append(
-            nx.compose_all(graph_list)
-        )  # take len(index_array) subjects and compose
-
-    chunks_to_run: List[nx.DiGraph] = list()
+    index_arrays = np.array_split(np.arange(len(subjects)), n_chunks)
 
     if opts.only_chunk_index is not None:
         zero_based_chunk_index = opts.only_chunk_index - 1
@@ -172,31 +170,30 @@ def run_stage_run(opts):
         logger.info(
             f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}"
         )
-        logger.info("Will not run model chunk")
 
-        chunks_to_run.append(
-            subjectlevel_chunks[zero_based_chunk_index]
-        )
+        index_arrays = [index_arrays[zero_based_chunk_index]]
 
     elif opts.only_model_chunk:
-        logger.info("Will not run subject level chunks")
+        index_arrays = list()
+
+    chunks_to_run: List[nx.DiGraph] = list()
+    for index_array in index_arrays:
+        graph_list = [
+            graphs[subjects[i]] for i in index_array
+        ]
+        chunks_to_run.append(
+            nx.compose_all(graph_list)
+        )  # take len(index_array) subjects and compose
+
+    if opts.only_chunk_index is not None:
+        logger.info("Will not run model chunk")
+
+    elif "model" in graphs:
         logger.info("Will run model chunk")
 
-        if model_chunk is not None:
-            chunks_to_run.append(model_chunk)
+        chunks_to_run.append(graphs["model"])
 
-    elif len(subjectlevel_chunks) > 0:
-        if len(subjectlevel_chunks) > 1:
-            logger.info(f"Will run all {n_chunks} subject level chunks")
-        else:
-            logger.info("Will run the subject level chunk")
-        logger.info("Will run model chunk")
-
-        chunks_to_run.extend(subjectlevel_chunks)
-        if model_chunk is not None:
-            chunks_to_run.append(model_chunk)
-
-    else:
+    if len(chunks_to_run) == 0:
         raise ValueError("No graphs to run")
 
     from nipype.interfaces import freesurfer as fs
