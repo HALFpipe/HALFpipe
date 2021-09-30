@@ -273,7 +273,7 @@ def init_model_wf(
             ModelFit(algorithms_to_run=model.algorithms),
             name="modelfit",
             n_procs=config.nipype.omp_nthreads,
-            mem_gb=memcalc.volume_std_gb * numinputs,
+            mem_gb=memcalc.volume_std_gb * 10,
             iterfield=[
                 "mask_files",
                 "cope_files",
