@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Any, Dict, Iterable
+
 from math import isclose, sqrt
 
 import numpy as np
@@ -26,7 +28,7 @@ template_origin_sets = {
 
 
 class NiftiheaderMetadataLoader:
-    cache = dict()
+    cache: Dict[str, Any] = dict()
 
     @staticmethod
     def load(niftifile):
@@ -48,13 +50,13 @@ class NiftiheaderMetadataLoader:
 
         value = None
 
+        if header is None or descripdict is None:
+            return False
+
         if hasattr(header, "get_dim_info"):
             _, _, slice_dim = header.get_dim_info()
         else:
             slice_dim = None
-
-        if header is None or descripdict is None:
-            return False
 
         try:
             if key == "slice_timing":
@@ -88,16 +90,20 @@ class NiftiheaderMetadataLoader:
                     slice_duration = repetition_time / n_slices
                     if nifti_slice_duration * n_slices < repetition_time - 2 * slice_duration:  # fudge factor
                         logger.info(
-                            f'Unexpected nifti slice_duration of {nifti_slice_duration:f} ms in header for file "{fileobj.path}"'
+                            f"Image file header entry slice_duration ({nifti_slice_duration:f} ms) is very "
+                            f"different from repetition_time / n_slices ({slice_duration:f} ms) "
+                            f'for file "{fileobj.path}"'
                         )
                         header.set_slice_duration(slice_duration)
                     if isclose(nifti_slice_duration, 0.0):
                         header.set_slice_duration(slice_duration)
                 nifti_slice_duration = header.get_slice_duration()
 
+                assert n_slices is not None
+
                 slice_timing_code = fileobj.metadata.get("slice_timing_code")
                 if slice_timing_code is None:
-                    slice_times = header.get_slice_times()
+                    slice_times: Iterable[float] = header.get_slice_times()  # type: ignore
                 else:
                     slice_times = str_slice_timing(slice_timing_code, n_slices, nifti_slice_duration)
                 slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds

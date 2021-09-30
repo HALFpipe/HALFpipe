@@ -6,6 +6,8 @@
 
 """
 
+from typing import List
+
 import numpy as np
 
 
@@ -30,7 +32,7 @@ def _get_slice_orders(n_slices):
 def slice_timing_str(slice_times):
     slice_times = np.array(slice_times)
 
-    values, inverse, counts = np.unique(slice_times, return_inverse=True, return_counts=True)
+    values, inverse, counts = np.unique(slice_times, return_inverse=True, return_counts=True)  # type: ignore
 
     counts = set(counts)
     if len(counts) != 1:
@@ -43,7 +45,7 @@ def slice_timing_str(slice_times):
     orders = _get_slice_orders(len(order))
 
     for name, indices in orders.items():
-        if np.allclose(order, indices):
+        if np.allclose(order, indices):  # type: ignore
             if multiband_factor > 1:
                 return f" {name} with multi-band acceleration factor {multiband_factor}"
             else:
@@ -52,10 +54,11 @@ def slice_timing_str(slice_times):
     return "unknown"
 
 
-def str_slice_timing(order_str, n_slices, slice_duration):
+def str_slice_timing(order_str: str, n_slices: int, slice_duration: float) -> List[float]:
     order = _get_slice_orders(n_slices)[order_str]
 
-    timings = np.zeros((n_slices,))
-    timings[order] = np.arange(n_slices) * slice_duration
+    timings: List[float] = [0.0] * n_slices
+    for i in range(n_slices):
+        timings[order[i]] = i * slice_duration
 
-    return list(timings)
+    return timings
