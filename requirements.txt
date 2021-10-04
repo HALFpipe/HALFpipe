@@ -187,7 +187,7 @@ nitransforms==20.0.0rc5
     # via
     #   fmriprep
     #   niworkflows
-git+https://github.com/hippocampusgirl/niworkflows.git@1.3.4+halfpipe.3
+niworkflows==1.3.5
     # via
     #   -r requirements.in
     #   fmriprep
