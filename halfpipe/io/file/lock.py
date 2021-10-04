@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from typing import List
-from flufl.lock import Lock as FluflLock, LockError as FluflLockError
+from flufl.lock import Lock as FluflLock, LockError as FluflLockError, TimeOutError
 from fasteners import InterProcessLock as FcntlLock
 
 from time import sleep
@@ -13,9 +13,9 @@ from ...utils import logger
 
 
 class AdaptiveLock:
-    timeout: int = 600
+    def __init__(self, timeout: int = 180):
+        self.timeout = timeout
 
-    def __init__(self):
         self.methods: List[str] = ["fcntl", "hard_links", "delay"]
 
         self.lock_instance = None
@@ -27,7 +27,7 @@ class AdaptiveLock:
             try:
                 self.lock_instance.lock(timeout=self.timeout)  # try for a long time
                 return
-            except FluflLockError:  # timeouts etc.
+            except (FluflLockError, TimeOutError):  # timeouts etc.
                 pass
             except OSError:
                 pass
@@ -40,6 +40,7 @@ class AdaptiveLock:
             )
 
             self.methods.pop(0)
+            self.lock(lock_file)
 
         elif self.methods[0] == "fcntl":
             self.lock_instance = FcntlLock(lock_file)
@@ -55,10 +56,11 @@ class AdaptiveLock:
             )
 
             self.methods.pop(0)
+            self.lock(lock_file)
 
         else:
             # use a random delay to make write collisions unlikely
-            delay = gauss(20.0, 2.5)
+            delay = gauss(20, 5)
             if delay > 0:
                 sleep(delay)
 
