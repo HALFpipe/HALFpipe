@@ -71,7 +71,7 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
 
         def setup(self, ctx):
             fd_thres = ctx.spec.global_settings.get("fd_thres")
-            self.header_str = "Specify the maximum allowed proportion of frames " + \
+            self.header_str = "Specify the maximum allowed percentage of frames " + \
                 f"above the framewise displacement threshold of {fd_thres:.1f} mm"
             super(FdPercFilterStep, self).setup(ctx)
 

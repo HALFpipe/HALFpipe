@@ -290,8 +290,8 @@ def init_execgraph(
         if s == "model":
             raise ValueError('Subject cannot be named "model"')
 
-        subgraph = flat_graph.subgraph(nodes).copy()
-        graphs[s] = subgraph
+        subgraph: nx.DiGraph = flat_graph.subgraph(nodes).copy()
+        graphs[s] = IdentifiableDiGraph(subgraph)
 
         flat_graph.remove_nodes_from(nodes)
 
