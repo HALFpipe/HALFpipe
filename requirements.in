@@ -3,7 +3,7 @@ scipy >= 1.6.2
 mpmath >= 1.1.0
 gmpy2 >= 2.0.8
 pandas >= 1.2.0
-patsy @ git+https://github.com/pydata/patsy.git
+patsy >= 0.5.2
 statsmodels >= 0.12.2
 scikit-learn >= 0.24.0
 nilearn
@@ -14,12 +14,12 @@ XlsxWriter >= 1.4.4
 nibabel >= 3.2.1
 indexed-gzip == 1.5.3
 nipype >= 1.6.1
-nitime @ git+https://github.com/nipy/nitime.git@rel/0.8.1
-fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
+nitime
+fmriprep >= 20.2.4
 smriprep >= 0.7.1
 sdcflows == 1.3.3
 dipy == 1.4.0
-mriqc @ git+https://github.com/poldracklab/mriqc@0.15.3
+mriqc == 0.15.2
 niworkflows >= 1.3.5
 templateflow >= 0.7.1
 pybids >= 0.13.1
@@ -38,7 +38,7 @@ marshmallow-dataclass >= 8.5.3
 marshmallow-enum
 typeguard
 Pint >= 0.17
-matplotlib ~= 3.3
+matplotlib ~= 3.3.4
 seaborn >= 0.11.1
 svgutils >= 0.3.1
 tabulate >= 0.8.9
