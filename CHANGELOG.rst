@@ -1,6 +1,19 @@
 Changelog
 =========
 
+1.2.1 (October 1st 2021)
+------------------------
+
+Bug fixes
+---------
+
+- Fix issues that occurred after re-scaling ``fd_perc`` to be percent (#217)
+- Catch error when ``NaN`` values occur within the linear algebra code (#215)
+- Reduce memory usage when running large workflows by only loading the
+  chunks that will be necessary for the current process (#216)
+- Improve memory usage prediction for cluster submission scripts (#219)
+- Update metadata module with better log messages (#220)
+
 1.2.0 (September 7th 2021)
 --------------------------
 
