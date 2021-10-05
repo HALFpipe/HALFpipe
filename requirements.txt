@@ -53,7 +53,7 @@ filelock==3.0.12
     # via nipype
 flufl.lock==6.0
     # via -r requirements.in
-git+https://github.com/hippocampusgirl/fmriprep.git@20.2.3+halfpipe.1
+fmriprep==20.2.4
     # via -r requirements.in
 frozendict==2.0.6
     # via -r requirements.in
@@ -162,7 +162,7 @@ nibabel==3.2.1
     #   tedana
 niflow-nipype1-workflows==0.0.4
     # via sdcflows
-nilearn==0.8.0
+nilearn==0.6.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -240,7 +240,6 @@ pandas==1.3.2
     #   -r requirements.in
     #   fmriprep
     #   mriqc
-    #   nilearn
     #   niworkflows
     #   pybids
     #   seaborn
@@ -323,7 +322,6 @@ requests==2.26.0
     #   -r requirements.in
     #   etelemetry
     #   fmriprep
-    #   nilearn
     #   templateflow
 scikit-image==0.17.2
     # via
@@ -335,6 +333,7 @@ scikit-learn==0.24.2
     #   mriqc
     #   nilearn
     #   niworkflows
+    #   sklearn
     #   tedana
 scipy==1.7.1
     # via
@@ -370,6 +369,8 @@ six==1.16.0
     #   isodate
     #   patsy
     #   python-dateutil
+sklearn==0.0
+    # via nilearn
 smriprep==0.7.1
     # via
     #   -r requirements.in
