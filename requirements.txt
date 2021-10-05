@@ -134,7 +134,7 @@ more-itertools==8.8.0
     # via -r requirements.in
 mpmath==1.2.1
     # via -r requirements.in
-git+https://github.com/poldracklab/mriqc@0.15.3
+mriqc==0.15.2
     # via -r requirements.in
 mypy-extensions==0.4.3
     # via typing-inspect
@@ -178,7 +178,7 @@ nipype==1.6.1
     #   niworkflows
     #   sdcflows
     #   smriprep
-git+https://github.com/nipy/nitime.git@rel/0.8.1
+nitime==0.9
     # via
     #   -r requirements.in
     #   fmriprep
@@ -247,7 +247,7 @@ pandas==1.3.2
     #   tedana
 parso==0.8.2
     # via jedi
-git+https://github.com/pydata/patsy.git
+patsy==0.5.2
     # via
     #   -r requirements.in
     #   pybids
