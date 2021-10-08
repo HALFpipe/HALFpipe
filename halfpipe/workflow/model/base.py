@@ -58,7 +58,7 @@ def _fe_run_mode(var_cope_file):
 
 def _critical_z(voxels=None, resels=None, critical_p=0.05):
     import numpy as np
-    from scipy.stats import norm
+    from scipy.stats import norm  # type: ignore
 
     voxels = np.array(voxels)
     resels = np.array(resels)
@@ -69,11 +69,11 @@ def _critical_z(voxels=None, resels=None, critical_p=0.05):
 
 
 def init_model_wf(
-        workdir=None,
-        numinputs=1,
-        model=None,
-        variables=None,
-        memcalc=MemoryCalculator.default()
+    workdir: Path,
+    numinputs=1,
+    model=None,
+    variables=None,
+    memcalc=MemoryCalculator.default()
 ):
     name = f"{format_workflow(model.name)}_wf"
     workflow = pe.Workflow(name=name)
@@ -125,7 +125,7 @@ def init_model_wf(
     workflow.connect(merge_resultdicts_b, "out", outputnode, "resultdicts")
 
     resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
+        ResultdictDatasink(base_directory=str(workdir)), name="resultdict_datasink"
     )
     workflow.connect(merge_resultdicts_b, "out", resultdict_datasink, "indicts")
 
@@ -141,7 +141,10 @@ def init_model_wf(
     # filter inputs
     filter_kwargs = dict(
         require_one_of_images=["effect", "reho", "falff", "alff"],
-        exclude_files=str(Path(workdir) / "exclude*.json"),
+        exclude_files=[
+            str(workdir / "exclude*.json"),
+            str(workdir / "reports" / "exclude*.json"),
+        ]
     )
     if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
         filter_kwargs.update(dict(filter_dicts=model.filters))
