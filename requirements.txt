@@ -90,7 +90,7 @@ jinja2==3.0.2
     # via
     #   mriqc
     #   niworkflows
-joblib==1.0.1
+joblib==1.1.0
     # via
     #   nilearn
     #   scikit-learn
@@ -168,6 +168,7 @@ nilearn==0.6.2
     #   fmriprep
     #   mriqc
     #   niworkflows
+    #   smriprep
     #   tedana
 nipype==1.6.1
     # via
@@ -327,6 +328,7 @@ scikit-image==0.17.2
     # via
     #   fmriprep
     #   niworkflows
+    #   smriprep
 scikit-learn==1.0
     # via
     #   -r requirements.in
@@ -371,7 +373,7 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via nilearn
-smriprep==0.7.1
+smriprep==0.7.2
     # via
     #   -r requirements.in
     #   fmriprep
