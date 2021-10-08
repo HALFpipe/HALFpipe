@@ -258,7 +258,7 @@ def run(opts, should_run):
         logger.info("Stage: spec-ui")
         run_stage_ui(opts)
 
-    assert opts.workdir is not None, "Missing working directory"
+    assert opts.workdir is not None, 'Missing working directory. Please specify using "--workdir"'
     assert Path(opts.workdir).is_dir(), "Working directory does not exist"
 
     if opts.fs_license_file is not None:

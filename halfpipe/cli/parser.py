@@ -22,7 +22,8 @@ def build_parser():
     basegroup = parser.add_argument_group("base", "")
 
     basegroup.add_argument(
-        "--workdir", type=str, help="directory where output and intermediate files are stored",
+        "--workdir", "--wk", type=str,
+        help="directory where output and intermediate files are stored",
     )
     basegroup.add_argument("--fs-root", help="path to the file system root")
     basegroup.add_argument("--verbose", action="store_true", default=False)

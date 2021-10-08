@@ -49,10 +49,10 @@ class ModelFactory(Factory):
                 raise ValueError(f'Unknown input name "{inputname}"')
 
         vwf = init_model_wf(
+            self.workdir,
             numinputs=len(inputs),
             model=model,
             variables=variables,
-            workdir=str(self.workdir),
         )
         wf.add_nodes([vwf])
         hierarchy.append(vwf)
@@ -70,4 +70,5 @@ class ModelFactory(Factory):
         return self.wfs[model_name]
 
     def connect(self, *args, **kwargs):
+        _, _ = args, kwargs
         raise NotImplementedError()

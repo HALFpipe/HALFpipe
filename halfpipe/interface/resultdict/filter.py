@@ -224,7 +224,7 @@ class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     require_one_of_images = traits.List(
         traits.Str(), desc="only keep resultdicts that have at least one of these keys"
     )
-    exclude_files = traits.Str()
+    exclude_files = traits.List(traits.Str())
 
 
 class FilterResultdicts(SimpleInterface):
@@ -272,7 +272,11 @@ class FilterResultdicts(SimpleInterface):
                 out_dicts = list(filter(filter_fun, out_dicts))
 
         if isdefined(self.inputs.exclude_files):
-            exclude_files = glob(self.inputs.exclude_files)
+            exclude_files = [
+                exclude_file
+                for path_pattern in self.inputs.exclude_files
+                for exclude_file in glob(path_pattern, recursive=True)
+            ]
             exclude_files = tuple(sorted(exclude_files))  # make hashable
             database = ExcludeDatabase.cached(exclude_files)
             out_dicts = [
