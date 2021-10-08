@@ -1,3 +1,17 @@
+fmriprep ~= 20.2.4
+smriprep ~= 0.7.2
+niworkflows ~= 1.3.5
+sdcflows ~= 1.3.3
+mriqc ~= 0.15.2
+nipype >= 1.6.1
+nilearn
+nibabel >= 3.2.1
+indexed-gzip == 1.5.3
+nitime
+dipy == 1.4.0
+templateflow >= 0.7.1
+pybids >= 0.13.1
+
 numpy >= 1.20
 scipy >= 1.6.2
 mpmath >= 1.1.0
@@ -6,26 +20,23 @@ pandas >= 1.2.0
 patsy >= 0.5.2
 statsmodels >= 0.12.2
 scikit-learn >= 0.24.0
-nilearn
+matplotlib ~= 3.3.4
+seaborn >= 0.11.1
+svgutils >= 0.3.1
+tabulate >= 0.8.9
 odfpy >= 1.4.1
 xlrd >= 1.0.0
 openpyxl >= 3.0.7
 XlsxWriter >= 1.4.4
-nibabel >= 3.2.1
-indexed-gzip == 1.5.3
-nipype >= 1.6.1
-nitime
-fmriprep >= 20.2.4
-smriprep >= 0.7.1
-sdcflows == 1.3.3
-dipy == 1.4.0
-mriqc == 0.15.2
-niworkflows >= 1.3.5
-templateflow >= 0.7.1
-pybids >= 0.13.1
+Pint >= 0.17
+
 flufl.lock >= 5.0.3
 psutil >= 5.8.0
 fasteners >= 0.15
+chardet >= 4.0
+pympler >= 0.9
+stackprinter >= 0.2.5
+line-profiler >= 3.3.0
 typing_extensions >= 3.10.0.0
 frozendict >= 2.0.6
 requests >= 2.25.1
@@ -37,14 +48,5 @@ marshmallow-oneofschema
 marshmallow-dataclass >= 8.5.3
 marshmallow-enum
 typeguard
-Pint >= 0.17
-matplotlib ~= 3.3.4
-seaborn >= 0.11.1
-svgutils >= 0.3.1
-tabulate >= 0.8.9
-chardet >= 4.0
-pympler >= 0.9
-stackprinter >= 0.2.5
-line-profiler >= 3.3.0
 more-itertools >= 8.7.0
 calamities >= 0.0.16

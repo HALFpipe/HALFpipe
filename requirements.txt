@@ -10,7 +10,7 @@ attrs==21.2.0
     # via niworkflows
 backcall==0.2.0
     # via ipython
-bids-validator==1.8.2
+bids-validator==1.8.4
     # via pybids
 calamities==0.0.16
     # via -r requirements.in
@@ -18,7 +18,7 @@ certifi==2021.5.30
     # via requests
 chardet==4.0.0
     # via -r requirements.in
-charset-normalizer==2.0.4
+charset-normalizer==2.0.6
     # via requests
 ci-info==0.2.0
     # via etelemetry
@@ -49,7 +49,7 @@ etelemetry==0.2.2
     # via nipype
 fasteners==0.16.3
     # via -r requirements.in
-filelock==3.0.12
+filelock==3.3.0
     # via nipype
 flufl.lock==6.0
     # via -r requirements.in
@@ -80,23 +80,23 @@ inflect==5.3.0
     #   calamities
 inflection==0.5.1
     # via -r requirements.in
-ipython==7.27.0
+ipython==7.28.0
     # via line-profiler
 isodate==0.6.0
     # via rdflib
 jedi==0.18.0
     # via ipython
-jinja2==3.0.1
+jinja2==3.0.2
     # via
     #   mriqc
     #   niworkflows
-joblib==1.0.1
+joblib==1.1.0
     # via
     #   nilearn
     #   scikit-learn
 kiwisolver==1.3.2
     # via matplotlib
-line-profiler==3.3.0
+line-profiler==3.3.1
     # via -r requirements.in
 lockfile==0.12.2
     # via smriprep
@@ -128,9 +128,9 @@ matplotlib==3.3.4
     #   seaborn
     #   smriprep
     #   tedana
-matplotlib-inline==0.1.2
+matplotlib-inline==0.1.3
     # via ipython
-more-itertools==8.8.0
+more-itertools==8.10.0
     # via -r requirements.in
 mpmath==1.2.1
     # via -r requirements.in
@@ -160,7 +160,7 @@ nibabel==3.2.1
     #   sdcflows
     #   smriprep
     #   tedana
-niflow-nipype1-workflows==0.0.4
+niflow-nipype1-workflows==0.0.5
     # via sdcflows
 nilearn==0.6.2
     # via
@@ -168,6 +168,7 @@ nilearn==0.6.2
     #   fmriprep
     #   mriqc
     #   niworkflows
+    #   smriprep
     #   tedana
 nipype==1.6.1
     # via
@@ -226,7 +227,7 @@ numpy==1.21.2
     #   tifffile
 odfpy==1.4.1
     # via -r requirements.in
-openpyxl==3.0.7
+openpyxl==3.0.9
     # via -r requirements.in
 packaging==21.0
     # via
@@ -235,7 +236,7 @@ packaging==21.0
     #   niworkflows
     #   pint
     #   smriprep
-pandas==1.3.2
+pandas==1.3.3
     # via
     #   -r requirements.in
     #   fmriprep
@@ -303,7 +304,7 @@ python-dateutil==2.8.2
     #   nipype
     #   pandas
     #   prov
-pytz==2021.1
+pytz==2021.3
     # via pandas
 pywavelets==1.1.1
     # via scikit-image
@@ -313,7 +314,7 @@ pyyaml==5.4.1
     #   mriqc
     #   niworkflows
     #   smriprep
-rdflib==6.0.0
+rdflib==6.0.1
     # via
     #   nipype
     #   prov
@@ -327,7 +328,8 @@ scikit-image==0.17.2
     # via
     #   fmriprep
     #   niworkflows
-scikit-learn==0.24.2
+    #   smriprep
+scikit-learn==1.0
     # via
     #   -r requirements.in
     #   mriqc
@@ -371,7 +373,7 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via nilearn
-smriprep==0.7.1
+smriprep==0.7.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -379,7 +381,7 @@ sqlalchemy==1.3.24
     # via pybids
 stackprinter==0.2.5
     # via -r requirements.in
-statsmodels==0.12.2
+statsmodels==0.13.0
     # via
     #   -r requirements.in
     #   mriqc
@@ -400,7 +402,7 @@ templateflow==0.7.1
     #   niworkflows
     #   sdcflows
     #   smriprep
-threadpoolctl==2.2.0
+threadpoolctl==3.0.0
     # via
     #   scikit-learn
     #   tedana
@@ -410,7 +412,7 @@ toml==0.10.2
     # via
     #   fmriprep
     #   mriqc
-tqdm==4.62.2
+tqdm==4.62.3
     # via
     #   dipy
     #   templateflow
@@ -430,7 +432,7 @@ typing-extensions==3.10.0.2
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass
-urllib3==1.26.6
+urllib3==1.26.7
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
