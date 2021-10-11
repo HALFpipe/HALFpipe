@@ -50,6 +50,7 @@ pywarnings_to_ignore: List[str] = [
     "numpy.ufunc size changed, may indicate binary incompatibility.",
     "RequestsDependencyWarning",
     "In future, it will be an error for 'np.bool_' scalars to be interpreted as an index",
+    "ParserWarning: Falling back to the 'python' engine because the 'c' engine does not support regex separators",
 ]
 
 
