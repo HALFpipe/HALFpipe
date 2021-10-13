@@ -1,4 +1,4 @@
-fmriprep ~= 20.2.4
+fmriprep ~= 20.2.5
 smriprep ~= 0.7.2
 niworkflows ~= 1.3.5
 sdcflows ~= 1.3.3
