@@ -61,24 +61,24 @@ class FmriprepFactory(Factory):
         fmriprep_dir.mkdir(parents=True, exist_ok=True)
 
         subjects = set()
-        bidssubjects = set()
+        bids_subjects = set()
         for bold_file_path in bold_file_paths:
             subject = database.tagval(bold_file_path, "sub")
 
             if subject is None:
                 continue
 
-            bidspath = bidsdatabase.tobids(bold_file_path)
-            bidssubject = bidsdatabase.tagval(bidspath, "subject")
+            bids_path = bidsdatabase.tobids(bold_file_path)
+            bids_subject = bidsdatabase.tagval(bids_path, "subject")
 
-            if bidssubject is None:
+            if bids_subject is None:
                 continue
 
             subjects.add(subject)
-            bidssubjects.add(bidssubject)
+            bids_subjects.add(bids_subject)
 
         subjects = list(subjects)
-        bidssubjects = list(bidssubjects)
+        bids_subjects = list(bids_subjects)
 
         global_settings = spec.global_settings
 
@@ -97,48 +97,60 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = f"{constants.reference_space}:res-{constants.reference_res}"
+        output_spaces = [
+            f"{constants.reference_space}:res-{constants.reference_res}"
+        ]
 
         if global_settings["run_reconall"]:
-            output_spaces += " "
-            output_spaces += "fsaverage:den-164k"
-            output_spaces += " "
-            output_spaces += "fsnative"
+            output_spaces.append("fsaverage:den-164k")
+            output_spaces.append("fsnative")
 
         # create config
         config.from_dict(
             {
-                "bids_dir": bids_dir,
-                "output_dir": output_dir,
-                "fmriprep_dir": fmriprep_dir,
-                "output_layout": "legacy",
-                "log_dir": str(workdir),
-                "work_dir": str(workdir / ".fmriprep"),
-                "participant_label": bidssubjects,
-                "ignore": ignore,
-                "use_aroma": False,
-                "dummy_scans": global_settings["dummy_scans"],
-                "skull_strip_t1w": skull_strip_t1w,
-                "anat_only": global_settings["anat_only"],
+                #
+                "bids_dir": bids_dir,  # input directory
+                "output_dir": output_dir,  # derivatives folder
+                "fmriprep_dir": fmriprep_dir,  # fmriprep subfolder
+                "log_dir": str(workdir),  # put crash files directly in working directory
+                "work_dir": str(workdir / ".fmriprep"),  # where toml configuration files will go
+                "output_layout": "legacy",  # do not yet use the new layout
+                "participant_label": bids_subjects,  # include all subjects
                 "write_graph": global_settings["write_graph"],
-                "hires": global_settings["hires"],
+                # smriprep config
+                "anat_only": global_settings["anat_only"],
+                "skull_strip_t1w": skull_strip_t1w,
+                "skull_strip_fixed_seed": global_settings["skull_strip_fixed_seed"],
+                "skull_strip_template": global_settings["skull_strip_template"],
+                # freesurfer config
                 "run_reconall": global_settings["run_reconall"],
+                "hires": global_settings["hires"],
                 "cifti_output": False,  # we do this in halfpipe
                 "t2s_coreg": global_settings["t2s_coreg"],
                 "medial_surface_nan": global_settings["medial_surface_nan"],
-                "output_spaces": output_spaces,
+                "longitudinal": global_settings["longitudinal"],
+                #
+                "dummy_scans": global_settings["dummy_scans"],  # remove initial non-steady state volumes
+                # bold_reg_wf config
+                "use_bbr": global_settings["use_bbr"],
                 "bold2t1w_dof": global_settings["bold2t1w_dof"],
+                # sdcflows config
                 "fmap_bspline": global_settings["fmap_bspline"],
                 "force_syn": global_settings["force_syn"],
-                "longitudinal": global_settings["longitudinal"],
+                #
+                "ignore": ignore,  # used to disable slice timing
+                # ica_aroma_wf settings
+                "use_aroma": False,  # we do this in halfpipe
+                "aroma_err_on_warn": global_settings["aroma_err_on_warn"],
+                "aroma_melodic_dim": global_settings["aroma_melodic_dim"],
+                #
                 "regressors_all_comps": global_settings["regressors_all_comps"],
                 "regressors_dvars_th": global_settings["regressors_dvars_th"],
                 "regressors_fd_th": global_settings["regressors_fd_th"],
-                "skull_strip_fixed_seed": global_settings["skull_strip_fixed_seed"],
-                "skull_strip_template": global_settings["skull_strip_template"],
-                "aroma_err_on_warn": global_settings["aroma_err_on_warn"],
-                "aroma_melodic_dim": global_settings["aroma_melodic_dim"],
-                "sloppy": global_settings["sloppy"],
+                #
+                "output_spaces": " ".join(output_spaces),
+                #
+                "sloppy": global_settings["sloppy"],  # used for unit testing
             }
         )
         nipype_dir = Path(workdir) / constants.workflowdir

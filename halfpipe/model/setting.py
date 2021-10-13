@@ -21,6 +21,8 @@ class GlobalSettingsSchema(Schema):
 
     slice_timing = fields.Boolean(dump_default=False)
 
+    use_bbr = fields.Boolean(dump_default=True, allow_none=True)
+
     skull_strip_algorithm = fields.Str(
         validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), dump_default="ants"
     )

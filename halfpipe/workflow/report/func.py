@@ -48,6 +48,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
                 "movpar_file",
                 "confounds",
                 "method",
+                "fallback",
                 *fmriprepreportdatasinks,
                 "fd_thres",
                 "repetition_time",
@@ -78,13 +79,14 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     make_resultdicts = pe.Node(
         MakeResultdicts(
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports],
-            valkeys=["dummy_scans", "sdc_method", "scan_start"],
+            valkeys=["dummy_scans", "sdc_method", "scan_start", "fallback_registration"],
         ),
         name="make_resultdicts",
     )
     workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy_scans")
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
+    workflow.connect(inputnode, "fallback", make_resultdicts, "fallback_registration")
 
     #
     resultdict_datasink = pe.Node(
