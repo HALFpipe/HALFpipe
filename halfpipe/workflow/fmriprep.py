@@ -5,6 +5,7 @@
 from typing import Optional
 
 from pathlib import Path
+from unittest.mock import patch
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces.base.traits_extension import isdefined
@@ -159,7 +160,11 @@ class FmriprepFactory(Factory):
         config.to_filename(config_file)
 
         retval = dict()
-        build_workflow(config_file, retval)
+
+        with patch("niworkflows.utils.misc.check_valid_fs_license") as mock:
+            mock.return_value = True
+            build_workflow(config_file, retval)
+
         fmriprep_wf = retval["workflow"]
         workflow.add_nodes([fmriprep_wf])
 
