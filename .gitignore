@@ -159,10 +159,16 @@ tags
 # for VS Code
 .vscode/*
 #!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
+#!.vscode/tasks.json
+#!.vscode/launch.json
+#!.vscode/extensions.json
+#*.code-workspace
+#
+# for pycharm
+.idea
 
 # Local History for Visual Studio Code
 .history/
+node_modules
+package-lock.json
+package.json

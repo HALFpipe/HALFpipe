@@ -8,11 +8,14 @@
 
 import os
 import uuid
+
 from datetime import datetime as dt
+from io import IOBase
 from os import path as op
 from typing import List, Optional
 
 import marshmallow.exceptions
+
 from inflection import humanize
 from marshmallow import (
     RAISE,
@@ -61,6 +64,7 @@ class SpecSchema(Schema):
     settings = fields.List(fields.Nested(SettingSchema), dump_default=[], required=True)
     features = fields.List(fields.Nested(FeatureSchema), dump_default=[], required=True)
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
+    args = fields.List(fields.String, required=False)
 
     @validates_schema
     def validate_analyses(self, data, **_):
@@ -130,6 +134,8 @@ class Spec:
 
         self.global_settings = dict()
 
+        self.args: List = list()
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -176,6 +182,18 @@ def loadspec(
 
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f'Ignored validation error in "{specpath}"', exc_info=e)
+        return None
+
+
+def readspec(stdin_spec: dict, logger=logger) -> Optional[Spec]:
+    try:
+        import json
+
+        logger.info(f"Loading spec file from STDIN")
+        spec = SpecSchema().loads(json.dumps(stdin_spec), many=False)
+        return spec
+    except marshmallow.exceptions.ValidationError as e:
+        logger.warning(f"Ignored validation error on STDIN", exc_info=e)
         return None
 
 

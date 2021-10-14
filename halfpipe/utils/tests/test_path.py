@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from nipype.interfaces.base.support import Bunch
 
-from ..path import find_paths, split_ext
+from ..path import findpaths, validate_workdir
 
-A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
-B = "/tmp/b.txt"
+A = "a.txt"
+B = "b.txt"
 
 
 @pytest.mark.timeout(60)
@@ -42,3 +42,21 @@ def test_find_paths(tmp_path, obj):
 def test_split_ext():
     assert split_ext("a/a.nii.gz") == ("a", ".nii.gz")
     assert split_ext("a/a.pickle.xz") == ("a", ".pickle.xz")
+
+@pytest.mark.parametrize(
+    "workdir, is_valid",
+    [
+        (None, False),
+        (int(), False),
+        (float(), False),
+        ([], False),
+        ({}, False),
+        ("NOTDIR", False),
+    ],
+)
+def test_invalid_workdir(workdir, is_valid):
+    assert validate_workdir(workdir) == is_valid
+
+
+def test_valid_workdir(tmp_path):
+    assert validate_workdir(tmp_path) == True

@@ -4,6 +4,7 @@
 
 from os.path import normpath
 from pathlib import Path
+from typing import Union, Optional
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -20,8 +21,6 @@ def resolve(path: Path | str, fs_root: Path | str) -> Path:
 
 
 def find_paths(obj):
-    from pathlib import Path
-
     from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
 
@@ -78,7 +77,6 @@ def split_ext(path: Path | str):
 
 
 def is_empty(path: Path | str) -> bool:
-    from pathlib import Path
 
     path = Path(path)
     try:
@@ -88,3 +86,10 @@ def is_empty(path: Path | str) -> bool:
         pass
 
     return True
+
+
+def validate_workdir(path: str = Optional[None]):
+    try:
+        return Path(path).is_dir()
+    except TypeError:
+        return False

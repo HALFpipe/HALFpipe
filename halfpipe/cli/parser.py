@@ -4,7 +4,7 @@
 
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
-from pathlib import Path
+from typing import Tuple
 
 from .. import __version__
 from ..utils import logger
@@ -13,7 +13,7 @@ from ..utils.path import is_empty
 steps = ["spec-ui", "workflow", "run"]
 
 
-def build_parser():
+def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description=f"ENIGMA HALFpipe {__version__} is a user-friendly interface "
         "for performing reproducible analysis of fMRI data, including preprocessing, "
@@ -109,7 +109,7 @@ def build_parser():
     return parser
 
 
-def parse_args(args=None, namespace=None):
+def parse_args(args=None, namespace=None) -> Tuple:
     parser = build_parser()
     opts = parser.parse_args(args, namespace)
 

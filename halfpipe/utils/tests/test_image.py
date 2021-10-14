@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
+import os 
+import pytest
+
+from nibabel.testing import data_path
+
+from ..image import niftidim, nvol
+
+@pytest.fixture
+def example_nifti():
+    return os.path.join(data_path, 'example4d.nii.gz')
+
+def test_image_niftidim(example_nifti):
+    assert niftidim(example_nifti, 0) == 128
+
+def test_image_nvol(example_nifti):
+    assert nvol(example_nifti) == 2

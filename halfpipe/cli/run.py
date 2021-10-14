@@ -2,18 +2,25 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
+import sys
+
+from collections import OrderedDict
 from glob import glob
 from math import ceil
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, List, Mapping, Union, Optional
 
 import networkx as nx
 import numpy as np
 
-from ..utils import logger
-from ..utils.path import resolve
+from ..errors import SpecError, LicenseError
+from ..model.spec import readspec
+from ..utils import logger, resolve, timestampstr
+from ..utils.environment import setup_freesurfer_env
+from ..utils.path import validate_workdir, resolve
 from ..utils.time import format_current_time
 
 
@@ -25,7 +32,7 @@ def run_stage_ui(opts):
     opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
 
 
-def run_stage_workflow(opts):
+def run_stage_workflow(opts, spec: Optional[dict] = None):
     from fmriprep import config
 
     if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
@@ -53,7 +60,7 @@ def run_stage_workflow(opts):
     from ..workflows.base import init_workflow
     from ..workflows.execgraph import init_execgraph
 
-    workflow = init_workflow(opts.workdir)
+    workflow = init_workflow(workdir=opts.workdir, spec=spec)
 
     if workflow is None:
         return None
@@ -251,31 +258,18 @@ def run(opts, should_run):
             'Detailed logs information will only be available in the "log.txt" file in the working directory. ',
         )
 
-    logger.debug(f"debug={opts.debug}")
+    logger.debug(f"{opts.debug=}")
 
-    logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
+    logger.debug(f'{should_run["spec-ui"]=}')
     if should_run["spec-ui"]:
         logger.info("Stage: spec-ui")
         run_stage_ui(opts)
 
-    assert (
-        opts.workdir is not None
-    ), 'Missing working directory. Please specify using "--workdir"'
-    assert Path(opts.workdir).is_dir(), "Working directory does not exist"
+    validate_workdir(opts.workdir)
 
-    if opts.fs_license_file is not None:
-        fs_license_file = resolve(opts.fs_license_file, opts.fs_root)
-        if fs_license_file.is_file():
-            os.environ["FS_LICENSE"] = str(fs_license_file)
-    else:
-        license_files = list(glob(str(Path(opts.workdir) / "*license*")))
-
-        if len(license_files) > 0:
-            license_file = str(license_files[0])
-            os.environ["FS_LICENSE"] = license_file
-
-    if os.environ.get("FS_LICENSE") is not None:
-        logger.debug(f'Using FreeSurfer license "{os.environ["FS_LICENSE"]}"')
+    if not setup_freesurfer_env(opts):
+        logger.debug("failed to locate a valid freesurfer license")
+        raise LicenseError("Failed to locate a valid freesurfer license")
 
     opts.graphs = None
 
@@ -323,13 +317,14 @@ def main():
             pr.enable()
 
         run(opts, should_run)
+
     except Exception as e:
         logger.exception("Exception: %s", e, exc_info=True)
-
         if debug:
             import pdb
 
             pdb.post_mortem()
+        sys.exit(1)
     finally:
         if profile and pr is not None:
             pr.disable()
@@ -337,6 +332,7 @@ def main():
                 pr.dump_stats(
                     Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
+                pr.dump_stats(Path(opts.workdir) / f"profile.{timestampstr():s}.prof")
 
         teardown_logging()
 
