@@ -9,11 +9,11 @@ from pathlib import Path
 
 from nipype.interfaces.base.support import Bunch
 
-from ..path import findpaths
+from ..path import findpaths, validate_workdir
 
 
-A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
-B = "/tmp/b.txt"
+A = "a.txt"
+B = "b.txt"
 
 
 @pytest.mark.timeout(60)
@@ -26,8 +26,8 @@ B = "/tmp/b.txt"
         {"a": A, "b": B},
         {"x": {"y": [A, B]}},
         Bunch(a=A, b=B),
-        Bunch(x=[A, B])
-    ]
+        Bunch(x=[A, B]),
+    ],
 )
 def test_findpaths(tmp_path, obj):
     os.chdir(str(tmp_path))
@@ -39,3 +39,22 @@ def test_findpaths(tmp_path, obj):
 
     for fname in [A, B]:
         Path(fname).unlink()
+
+
+@pytest.mark.parametrize(
+    "workdir, is_valid",
+    [
+        (None, False),
+        (int(), False),
+        (float(), False),
+        ([], False),
+        ({}, False),
+        ("NOTDIR", False),
+    ],
+)
+def test_invalid_workdir(workdir, is_valid):
+    assert validate_workdir(workdir) == is_valid
+
+
+def test_valid_workdir(tmp_path):
+    assert validate_workdir(tmp_path) == True

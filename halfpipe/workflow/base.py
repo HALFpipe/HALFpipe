@@ -4,6 +4,7 @@
 
 from uuid import uuid5
 from pathlib import Path
+from typing import Optional
 
 from nipype.pipeline import engine as pe
 
@@ -20,7 +21,7 @@ from .constants import constants
 from .memory import MemoryCalculator
 from ..io.index import Database, BidsDatabase
 from ..io.cache import cache_obj, uncache_obj
-from ..model.spec import loadspec
+from ..model.spec import Spec,loadspec
 from ..utils import logger, deepcopyfactory
 from .. import __version__
 
@@ -33,15 +34,18 @@ class IdentifiableWorkflow(pe.Workflow):
         self.bids_to_sub_id_map = dict()
 
 
-def init_workflow(workdir) -> IdentifiableWorkflow:
+def init_workflow(workdir, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
 
     :param spec
     """
 
-    spec = loadspec(workdir=workdir)
-    assert spec is not None, "A spec file could not be loaded"
+    if not spec:
+        logger.info("Loading spec from workdir during init_workflow")
+        spec = loadspec(workdir=workdir)
+        assert spec is not None, "A spec file could not be loaded"
+
     logger.info("Initializing file database")
     database = Database(spec)
     # uuid depends on the spec file, the files found and the version of the program

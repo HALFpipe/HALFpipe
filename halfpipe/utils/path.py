@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union
+from typing import Union, Optional
 
 from pathlib import Path
 from os.path import normpath
@@ -22,7 +22,6 @@ def resolve(path: Union[Path, str], fs_root: Union[Path, str]) -> Path:
 
 
 def findpaths(obj):
-    from pathlib import Path
     from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
 
@@ -74,7 +73,6 @@ def splitext(fname):
 
 
 def isempty(path):
-    from pathlib import Path
 
     path = Path(path)
     try:
@@ -84,3 +82,10 @@ def isempty(path):
         pass
 
     return True
+
+
+def validate_workdir(path: str = Optional[None]):
+    try:
+        return Path(path).is_dir()
+    except TypeError:
+        return False

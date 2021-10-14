@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et: syntax=dockerfile
+ARG FMRIPREP_VERSION=20.2.6
+FROM nipreps/fmriprep:${FMRIPREP_VERSION}
+
+ENTRYPOINT []
+
+ENV PATH="/usr/local/miniconda/bin:$PATH" \
+    XDG_CACHE_HOME="/home/fmriprep/.cache"
+
+ENV HALFPIPE_RESOURCE_DIR="${XDG_CACHE_HOME}/halfpipe" \
+    TEMPLATEFLOW_HOME="${XDG_CACHE_HOME}/templateflow"
+
+RUN mkdir /ext /halfpipe && \
+    chmod a+rwx /ext /halfpipe
+
+# net-tools needed for code-server
+# wget necessary for data downloads
+RUN apt-get update &&\
+    apt-get install -y \
+        net-tools \
+        wget
+
+# create freesurfer license
+RUN cd /tmp &&\
+    echo 'cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IGxpY2Vuc2UudHh0Cg==' | base64 -d | sh
+
+ENV FS_LICENSE=/tmp/license.txt
+
+# set the fmriprep development variables
+ENV FMRIPREP_REGRESSION_SOURCE=/tmp/data/fmriprep_bold_truncated \
+    FMRIPREP_REGRESSION_TARGETS=/tmp/data/fmriprep_bold_mask \
+    FMRIPREP_REGRESSION_REPORTS=/tmp/data/reports \
+    FMRIPREP_DEV=1
+
+COPY requirements.txt requirements-test.txt install-requirements.sh /tmp/
+
+# halfpipe uses a different conda
+RUN rm -rf /usr/local/miniconda && \
+    cd /tmp && \
+    curl --show-error --silent --location \
+        "https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh" \
+        --output "miniconda.sh" &&  \
+    bash miniconda.sh -b -p /usr/local/miniconda && \
+    ./install-requirements.sh --requirements-file requirements.txt && \
+    pip install -r requirements-test.txt && \
+    sync && \
+    conda clean --yes --all --force-pkgs-dirs && \
+    sync && \
+    find /usr/local/miniconda/ -follow -type f -name "*.a" -delete && \
+    rm -rf /tmp/* && \
+    sync
+
+# re-do matplotlib settings after installing requirements
+# these are taken from fmriprep
+# precaching fonts, set 'Agg' as default backend for matplotlib
+RUN python -c "from matplotlib import font_manager" && \
+    sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
+    $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
+
+# download all resources
+COPY halfpipe/resource.py /tmp/
+RUN python /tmp/resource.py
+
+# use flake8 as linter
+RUN conda install -y flake8
+
+RUN mkdir -p /tmp/data
+
+# Download ds005
+RUN wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O ds005_downsampled.tar.gz "https://files.osf.io/v1/resources/fvuh8/providers/osfstorage/57f32a429ad5a101f977eb75" &&\
+    tar xvzf ds005_downsampled.tar.gz -C /tmp/data/ &&\
+    rm ds005_downsampled.tar.gz
+
+# Download ds210
+RUN wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O ds210_downsampled.tar.gz "https://files.osf.io/v1/resources/fvuh8/providers/osfstorage/5ae9e37b9a64d7000ce66c21" &&\
+    tar xvzf ds210_downsampled.tar.gz -C /tmp/data &&\
+    rm ds210_downsampled.tar.gz
+
+# Download ds054
+RUN wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O ds054_downsampled.tar.gz "https://files.osf.io/v1/resources/fvuh8/providers/osfstorage/57f32c22594d9001ef91bf9e" &&\
+    tar xvzf ds054_downsampled.tar.gz -C /tmp/data &&\
+    rm ds054_downsampled.tar.gz
+
+# Download freesurfer results for ds005
+RUN mkdir -p /tmp/ds005/derivatives &&\
+    wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O ds005_derivatives_freesurfer.tar.gz "https://files.osf.io/v1/resources/fvuh8/providers/osfstorage/58fe59eb594d900250960180" &&\
+   tar xvzf ds005_derivatives_freesurfer.tar.gz -C /tmp/ds005/derivatives &&\
+   rm ds005_derivatives_freesurfer.tar.gz
+
+# Download truncated bold images
+RUN wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O fmriprep_bold_truncated.tar.gz "https://osf.io/286yr/download" &&\
+    tar xvzf fmriprep_bold_truncated.tar.gz -C /tmp/data &&\
+    rm fmriprep_bold_truncated.tar.gz
+
+# Download precomputed masks
+RUN wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q --no-check-certificate \
+         -O fmriprep_bold_mask.tar.gz "https://osf.io/s4f7b/download" &&\
+    tar xvzf fmriprep_bold_mask.tar.gz -C /tmp/data &&\
+    rm fmriprep_bold_mask.tar.gz
+
+RUN groupadd halfpipe && useradd halfpipe -g halfpipe \
+    && mkdir /home/halfpipe \
+    && chown halfpipe:halfpipe /home/halfpipe \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo halfpipe ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/halfpipe \
+    && chmod 0440 /etc/sudoers.d/halfpipe
+
+USER halfpipe
