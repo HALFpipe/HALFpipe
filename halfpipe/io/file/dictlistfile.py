@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Dict, List, Optional
+
 from pathlib import Path
 import json
 from functools import lru_cache
@@ -14,6 +16,7 @@ from tabulate import tabulate
 from .lock import AdaptiveLock
 from ...model.tags import entities
 from ...utils import logger
+from ...utils.json import NumpyJSONEncoder
 
 
 def _compare(a, b):
@@ -39,7 +42,7 @@ class DictListFile:
             footer = footer.encode()
         self.footer = footer
 
-        self.dictlist = None
+        self.dictlist: Optional[List[Dict]] = None
         self.is_dirty = None
 
     @classmethod
@@ -67,11 +70,17 @@ class DictListFile:
                 logger.warning("JSONDecodeError %s", e)
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *_):
         if self.is_dirty:
             with open(str(self.filename), "w") as fp:
                 fp.write(self.header.decode())
-                jsonstr = json.dumps(self.dictlist, indent=4, sort_keys=True, ensure_ascii=False)
+                jsonstr = json.dumps(
+                    self.dictlist,
+                    indent=4,
+                    sort_keys=True,
+                    ensure_ascii=False,
+                    cls=NumpyJSONEncoder,
+                )
                 for line in jsonstr.splitlines():
                     fp.write(line)
                     fp.write("\\\n")
@@ -83,8 +92,10 @@ class DictListFile:
         self.dictlist = None
 
     def to_table(self):
+        assert self.dictlist is not None
+
         dictlist = [{str(k): str(v) for k, v in indict.items()} for indict in self.dictlist]
-        dataframe = pd.DataFrame.from_records(dictlist)
+        dataframe = pd.DataFrame.from_records(dictlist)  # type: ignore
         dataframe = dataframe.replace({np.nan: ""})
 
         columns = list(map(str, dataframe.columns))
