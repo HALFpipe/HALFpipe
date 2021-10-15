@@ -205,7 +205,7 @@ def datasink_vals(indicts, reports_directory):
                 assert isinstance(outdict, dict)
 
                 for key, val in vals.items():
-                    if key in frozenset(["sdc_method"]):
+                    if key in frozenset(["sdc_method", "fallback_registration"]):
                         continue
 
                     if isinstance(val, (int, float)):
