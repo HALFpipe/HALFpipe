@@ -24,6 +24,7 @@ from ...model import FuncTagsSchema, entities
 from ...model.tags.resultdict import first_level_entities
 from ...utils import splitext, findpaths, logger
 from ...utils.format import format_like_bids
+from ...utils.json import NumpyJSONEncoder
 from ...resource import get as getresource
 from ...stats.algorithms import algorithms
 
@@ -204,7 +205,7 @@ def datasink_vals(indicts, reports_directory):
                 assert isinstance(outdict, dict)
 
                 for key, val in vals.items():
-                    if key in frozenset(["sdc_method"]):
+                    if key in frozenset(["sdc_method", "fallback_registration"]):
                         continue
 
                     if isinstance(val, (int, float)):
@@ -319,7 +320,7 @@ def datasink_images(indicts, base_directory):
                     sidecar.update(vals)
                     sidecar = _format_sidecar_value(sidecar)
 
-                    sidecar_json = json.dumps(sidecar, sort_keys=True, indent=4)
+                    sidecar_json = json.dumps(sidecar, cls=NumpyJSONEncoder, sort_keys=True, indent=4)
 
                     sidecar_file_path = outpath.parent / f"{stem}.json"
                     with open(sidecar_file_path, "wt") as sidecar_file_handle:
@@ -337,7 +338,7 @@ class ResultdictDatasink(SimpleInterface):
     input_spec = ResultdictDatasinkInputSpec
     output_spec = TraitedSpec
 
-    always_run = True
+    always_run: bool = True
 
     def _run_interface(self, runtime):
         indicts = self.inputs.indicts
