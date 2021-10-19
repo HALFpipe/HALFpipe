@@ -188,14 +188,6 @@ class FmriprepFactory(Factory):
                 if isinstance(node, pe.Node):
                     func_derivatives_wf.remove_nodes([node])
 
-            # set flirt basescale to avoid registration issue for very high resolutions
-            bold_reg_wf = func_preproc_wf.get_node("bold_reg_wf")
-            assert isinstance(bold_reg_wf, pe.Workflow)
-            for node in bold_reg_wf._get_all_nodes():
-                if isinstance(node.interface, FLIRTRPT):
-                    assert not isdefined(node.inputs.args)
-                    node.inputs.args = "-basescale 1"
-
             # patch memory usage
             memcalc = MemoryCalculator.from_bold_file(bold_file_path)
             for node in func_preproc_wf._get_all_nodes():
