@@ -53,7 +53,7 @@ filelock==3.3.0
     # via nipype
 flufl.lock==6.0
     # via -r requirements.in
-fmriprep==20.2.5
+git+https://github.com/hippocampusgirl/fmriprep.git@20.2.5+halfpipe.1
     # via -r requirements.in
 frozendict==2.0.6
     # via -r requirements.in
