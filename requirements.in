@@ -6,7 +6,7 @@ mriqc ~= 0.15.2
 nipype >= 1.6.1
 nilearn
 nibabel >= 3.2.1
-indexed-gzip == 1.5.3
+indexed-gzip >= 1.6.4
 nitime
 dipy == 1.4.0
 templateflow >= 0.7.1
