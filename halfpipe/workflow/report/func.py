@@ -46,7 +46,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
                 "std_dseg",
                 "spatial_reference",
                 "movpar_file",
-                "confounds",
+                "confounds_file",
                 "method",
                 "fallback",
                 *fmriprepreportdatasinks,
@@ -145,10 +145,10 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
 
     # vals
     confvals = pe.Node(
-        UpdateVals(), name="vals", mem_gb=2 * memcalc.volume_std_gb
+        UpdateVals(), name="confvals", mem_gb=2 * memcalc.volume_std_gb
     )
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
-    workflow.connect(inputnode, "confounds", confvals, "confounds")
+    workflow.connect(inputnode, "confounds_file", confvals, "confounds_file")
 
     calcmean = pe.Node(
         CalcMean(key="mean_gm_tsnr"),

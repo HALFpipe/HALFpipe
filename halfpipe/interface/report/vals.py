@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
+import pandas as pd
 
 from nipype.interfaces.base import (
     traits,
@@ -14,7 +15,6 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import add_traits, IOBase
 
-from ...io.parse import loadspreadsheet
 from ...io.signals import mean_signals
 
 
@@ -68,7 +68,7 @@ class CalcMean(SimpleInterface):
 
 class UpdateValsInputSpec(DynamicTraitedSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
-    confounds = File(exists=True)
+    confounds_file = File(exists=True)
     aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True)
     fd_thres = traits.Float()
 
@@ -97,9 +97,20 @@ class UpdateVals(IOBase):
         if isdefined(self.inputs.vals):
             vals.update(self.inputs.vals)
 
-        if isdefined(self.inputs.confounds):
-            confounds = loadspreadsheet(self.inputs.confounds)
-            fd = confounds["framewise_displacement"]
+        confounds_file = self.inputs.confounds_file
+        if isdefined(confounds_file):
+
+            data_frame = pd.read_csv(
+                confounds_file,
+                sep="\t",
+                index_col=None,
+                dtype=np.float64,
+                na_filter=True,
+                na_values="n/a",
+            )
+
+            fd = data_frame["framewise_displacement"]
+            fd.fillna(value=0., inplace=True)
 
             vals["fd_mean"] = float(fd.mean())
 
