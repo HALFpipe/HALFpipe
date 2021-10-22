@@ -311,7 +311,8 @@ class FmriprepFactory(Factory):
                     "sdc_bypass_wf",
                     "sdc_unwarp_report_wf",
                     "bold_std_trans_wf",
-                    "bold_surf_wf"
+                    "bold_surf_wf",
+                    "bold_confounds_wf",
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:

@@ -28,7 +28,7 @@ def _check_multicollinearity(matrix):
     max_singular = np.max(s)
     min_singular = np.min(s)
 
-    rank = np.linalg.matrix_rank(matrix)
+    rank = np.linalg.matrix_rank(matrix)  # type: ignore
 
     logger.info(
         f"max_singular={max_singular} min_singular={min_singular} "
@@ -55,7 +55,7 @@ def _prepare_data_frame(
 
     assert id_column is not None, "Missing id column, cannot specify model"
 
-    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)
+    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)  # type: ignore
     if all(str(id).startswith("sub-") for id in rawdataframe[id_column]):  # for bids
         rawdataframe[id_column] = [
             str(id).replace("sub-", "") for id in rawdataframe[id_column]
@@ -205,11 +205,11 @@ def group_design(
     # data frame to store contrasts
     contrast_matrices: List[Tuple[str, pd.DataFrame]] = []
 
-    for field, columnslice in dmat.design_info.term_name_slices.items():
+    for field, columnslice in dmat.design_info.term_name_slices.items():  # type: ignore
         constraint = {
-            column: 0 for column in dmat.design_info.column_names[columnslice]
+            column: 0 for column in dmat.design_info.column_names[columnslice]  # type: ignore
         }
-        contrast = dmat.design_info.linear_constraint(constraint)
+        contrast = dmat.design_info.linear_constraint(constraint)  # type: ignore
 
         assert np.all(contrast.variable_names == dmat.columns)
 
@@ -247,7 +247,7 @@ def group_design(
             # we translate it to a contrast vector by taking the linear
             # combination of the lsmeans contrasts.
 
-            contrast_vector = lsmeans.loc[names].mul(values, axis=0).sum()
+            contrast_vector = lsmeans.loc[names].mul(values, axis=0).sum()  # type: ignore
             contrast_matrix = pd.DataFrame([contrast_vector], columns=dmat.columns)
 
             contrast_name = f"{contrastdict['name']}"
@@ -262,7 +262,7 @@ def group_design(
         )
         return intercept_only_design(len(subjects))
 
-    regressors = dmat.to_dict(orient="list", into=OrderedDict)
+    regressors = dmat.to_dict(orient="list", into=OrderedDict)  # type: ignore
     contrasts, contrast_numbers, contrast_names = _make_contrasts_list(
         contrast_matrices
     )
