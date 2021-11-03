@@ -1,0 +1,82 @@
+{
+  "creators": [
+    {
+      "affiliation": "Charité – Universitätsmedizin Berlin, Germany",
+      "name": "Waller, Lea",
+      "orcid": "0000-0002-3239-6957"
+    },
+    {
+      "affiliation": "Charité – Universitätsmedizin Berlin, Germany",
+      "name": "Erk, Susanne",
+      "orcid": "0000-0003-0961-3543"
+    },
+    {
+      "affiliation": "University of Melbourne, Melbourne, Australia",
+      "name": "Pozzi, Elena",
+      "orcid": "0000-0001-8360-5571"
+    },
+    {
+      "affiliation": "University of Melbourne, Melbourne, Australia",
+      "name": "Toenders, Yara J.",
+      "orcid": "0000-0002-4117-1143"
+    },
+    {
+      "affiliation": "Duke University School of Medicine, Durham, NC, USA",
+      "name": "Haswell, Courtney C."
+    },
+    {
+      "affiliation": "Charité – Universitätsmedizin Berlin, Germany",
+      "name": "Büttner, Marc",
+      "orcid": "0000-0001-6940-6656"
+    },
+    {
+      "affiliation": "University of Southern California, Los Angeles, CA, USA",
+      "name": "Thompson, Paul M.",
+      "orcid": "0000-0002-4720-8867"
+    },
+    {
+      "affiliation": "University of Melbourne, Melbourne, Australia",
+      "name": "Schmaal, Lianne",
+      "orcid": "0000-0001-9822-048X"
+    },
+    {
+      "affiliation": "Duke University School of Medicine, Durham, NC, USA",
+      "name": "Morey, Rajendra A.",
+      "orcid": "0000-0002-6517-6969"
+    },
+    {
+      "affiliation": "Charité – Universitätsmedizin Berlin, Germany",
+      "name": "Walter, Henrik",
+      "orcid": "0000-0002-9403-6121"
+    },
+    {
+      "affiliation": "University of Amsterdam, the Netherlands",
+      "name": "Veer, Ilya M.",
+      "orcid": "0000-0002-6733-3593"
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Staph, Jason"
+    }
+  ],
+  "keywords": [
+    "neuroimaging",
+    "reproducibility",
+    "pipeline",
+    "meta-analysis",
+    "harmonization",
+    "fMRI",
+    "BIDS"
+  ],
+  "access_right": "open",
+  "license": "GPL-3.0-or-later",
+  "upload_type": "software",
+  "related_identifiers": [
+    {
+      "identifier": "10.1101/2021.05.07.442790",
+      "relation": "isPartOf",
+      "scheme": "doi"
+    }
+  ]
+}
