@@ -1,9 +1,14 @@
 Welcome to ENIGMA ``HALFpipe``
 ==============================
 
-|https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg|
-|https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg|
-|codecov|
+.. image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
+   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
+.. image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
+   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
+.. image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/HALFpipe/HALFpipe
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5657186.svg
+   :target: https://doi.org/10.5281/zenodo.5657186
 
 ``HALFpipe`` is a user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
@@ -777,10 +782,3 @@ Contact
 For questions or support, please submit an
 `issue <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__ or
 contact us via e-mail at enigma@charite.de.
-
-.. |https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg| image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
-.. |https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg| image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
-.. |codecov| image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
-   :target: https://codecov.io/gh/HALFpipe/HALFpipe
