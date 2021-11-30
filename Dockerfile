@@ -1,5 +1,4 @@
-ARG FMRIPREP_VERSION=20.2.3
-FROM nipreps/fmriprep:${FMRIPREP_VERSION}
+FROM nipreps/fmriprep:20.2.6
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     XDG_CACHE_HOME="/home/fmriprep/.cache"
@@ -10,9 +9,7 @@ ENV HALFPIPE_RESOURCE_DIR="${XDG_CACHE_HOME}/halfpipe" \
 RUN mkdir /ext /halfpipe && \
     chmod a+rwx /ext /halfpipe
 
-# install dependencies and update some python packages under the
-# assumption that this doesn't lower reproducibility significantly
-# and because we require some recent additions in these packages
+# Re-install `conda` and dependency `python` packages
 
 COPY requirements.txt install-requirements.sh /tmp/
 
@@ -30,22 +27,22 @@ RUN rm -rf /usr/local/miniconda && \
     rm -rf /tmp/* && \
     sync
 
-# re-do matplotlib settings after installing requirements
-# these are taken from fmriprep
-# precaching fonts, set 'Agg' as default backend for matplotlib
+# Re-apply matplotlib settings after updating
+# Taken from `fmriprep`
+# Pre-caches fonts, set 'Agg' as default backend for matplotlib
 RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
-# download all resources
+# Download all resources
 COPY halfpipe/resource.py /tmp/
 RUN python /tmp/resource.py
 
-# install halfpipe
+# Install halfpipe
 COPY . /halfpipe/
 RUN cd /halfpipe && \
-    pip install --no-deps --use-feature=in-tree-build . && \
-    rm -rf ~/.cache/pip && \
+    /usr/local/miniconda/bin/python -m pip install --no-deps --no-cache-dir . && \
+    rm -rf ~/.cache/pip ~/.conda && \
     cd && \
     rm -rf /halfpipe/* /tmp/*
 
