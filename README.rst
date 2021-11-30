@@ -7,8 +7,8 @@ Welcome to ENIGMA ``HALFpipe``
    :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
 .. image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/HALFpipe/HALFpipe
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5657186.svg
-   :target: https://doi.org/10.5281/zenodo.5657186
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5657185.svg
+   :target: https://doi.org/10.5281/zenodo.5657185
 
 ``HALFpipe`` is a user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
