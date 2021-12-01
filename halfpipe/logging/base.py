@@ -73,7 +73,7 @@ def setup(queue, levelno=logging.INFO):
 
             logger.setLevel(levelno)
 
-        # monkey patch warnings module to overwrite mriqc monkey patching
+        # monkey patch warnings module to overwrite dependencies monkey patching
         warnings.warn = warn
         warnings.showwarning = showwarning
 
@@ -84,11 +84,10 @@ def setup(queue, levelno=logging.INFO):
 
     from nipype.utils.logger import Logging as nipype_logging
     from fmriprep.config import loggers as fmriprep_loggers
-    from mriqc.config import loggers as mriqc_loggers
 
     setup_loggers()  # re-do setup
 
-    # monkey patch nipype, fmriprep and mriqc
+    # monkey patch nipype and fmriprep
     # so that thhe logging config will not be overwritten
 
     def empty_method(self, *args, **kwargs):
@@ -103,7 +102,6 @@ def setup(queue, levelno=logging.INFO):
     nipype_logging.disable_file_logging = empty_method
     nipype_logging.update_logging = empty_method
     fmriprep_loggers.init = MethodType(empty_init, fmriprep_loggers)
-    mriqc_loggers.init = MethodType(empty_init, mriqc_loggers)
 
 
 def teardown():
