@@ -64,7 +64,7 @@ for R in $(grep -v '#' ${REQUIREMENTS_FILES[@]}); do
         CONDA_PACKAGES+=("${R}")
     else
         printf 'using pip for package "%s"\n' "${R}"
-        PIP_PACKAGES+=("${R}")
+        PIP_PACKAGES+=("\"${R}\"")
     fi
 
     printf '%s\n' --------------------
