@@ -161,7 +161,7 @@ nilearn==0.6.2
     #   niworkflows
     #   smriprep
     #   tedana
-git+https://github.com/hippocampusgirl/nipype.git@1.7.0+halfpipe.1
+git+https://github.com/nipy/nipype.git@adab17d0f5556e8c3b6e4f48f86969ce238ff739
     # via
     #   -r requirements.in
     #   fmriprep
