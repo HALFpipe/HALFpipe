@@ -1,12 +1,16 @@
-Welcome to ENIGMA ``HALFpipe``
-==============================
+################################
+ Welcome to ENIGMA ``HALFpipe``
+################################
 
 .. image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
    :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
+
 .. image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
    :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
+
 .. image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/HALFpipe/HALFpipe
+
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5657185.svg
    :target: https://doi.org/10.5281/zenodo.5657185
 
@@ -14,24 +18,26 @@ Welcome to ENIGMA ``HALFpipe``
 analysis of fMRI data, including preprocessing, single-subject, and
 group analysis. It provides state-of-the-art preprocessing using
 `fmriprep <https://fmriprep.readthedocs.io/>`__, but removes the
-necessity to convert data to the
-`BIDS <https://bids-specification.readthedocs.io/en/stable/>`__
-format. Common resting-state and task-based fMRI features can then be
-calculated on the fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and
-`nipype <https://nipype.readthedocs.io/>`__ for statistics.
+necessity to convert data to the `BIDS
+<https://bids-specification.readthedocs.io/en/stable/>`__ format. Common
+resting-state and task-based fMRI features can then be calculated on the
+fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and `nipype
+<https://nipype.readthedocs.io/>`__ for statistics.
 
-   If you encounter issues, please see the
-   `troubleshooting <#troubleshooting>`__ section of this document.
+   If you encounter issues, please see the `troubleshooting
+   <#troubleshooting>`__ section of this document.
 
 ..
 
-   Some sections of this document are outdated. While we are working on
-   updating them, the `pre-print <doi.org/gddf>`__ and the
-   `analysis manual <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
+   Some sections of this document are marked as outdated. While we are
+   working on updating them, the `pre-print <https://doi.org/gddf>`__
+   and the `analysis manual
+   <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
    should be able to answer most questions.
 
-Table of Contents
------------------
+*******************
+ Table of Contents
+*******************
 
 .. raw:: html
 
@@ -49,9 +55,11 @@ Table of Contents
    -  `Features <#features>`__
    -  `Models <#models>`__
 
--  `Running on a high-performance computing
-   cluster <#running-on-a-high-performance-computing-cluster>`__
+-  `Running on a high-performance computing cluster
+   <#running-on-a-high-performance-computing-cluster>`__
+
 -  `Quality checks <#quality-checks>`__
+
 -  `Outputs <#outputs>`__
 
    -  `Subject-level features <#subject-level-features>`__
@@ -59,14 +67,15 @@ Table of Contents
    -  `Group-level <#group-level>`__
 
 -  `Troubleshooting <#troubleshooting>`__
+
 -  `Command line flags <#command-line-flags>`__
 
    -  `Control command line logging <#control-command-line-logging>`__
-   -  `Automatically remove unneeded
-      files <#automatically-remove-unneeded-files>`__
+   -  `Automatically remove unneeded files
+      <#automatically-remove-unneeded-files>`__
    -  `Adjust nipype <#adjust-nipype>`__
-   -  `Choose which parts to run or to
-      skip <#choose-which-parts-to-run-or-to-skip>`__
+   -  `Choose which parts to run or to skip
+      <#choose-which-parts-to-run-or-to-skip>`__
    -  `Working directory <#working-directory>`__
    -  `Data file system root <#data-file-system-root>`__
 
@@ -76,8 +85,9 @@ Table of Contents
 
    <!-- tocstop -->
 
-Getting started
----------------
+*****************
+ Getting started
+*****************
 
 ``HALFpipe`` is distributed as a container, meaning that all required
 software comes bundled in a monolithic file, the container. This allows
@@ -86,51 +96,50 @@ reproducible, because software versions are guaranteed to be the same
 for all users.
 
 Container platform
-~~~~~~~~~~~~~~~~~~
+==================
 
 The first step is to install one of the supported container platforms.
 If you’re using a high-performance computing cluster, more often than
 not `Singularity <https://sylabs.io>`__ will already be available.
 
-If not, we recommend using the latest version
-of\ `Singularity <https://sylabs.io>`__. However, it can be somewhat
-cumbersome to install, as it needs to be built from source.
+If not, we recommend using the latest version of\ `Singularity
+<https://sylabs.io>`__. However, it can be somewhat cumbersome to
+install, as it needs to be built from source.
 
 The `NeuroDebian <https://neuro.debian.net/>`__ package repository
-provides an older version of
-`Singularity <https://sylabs.io/guides/2.6/user-guide/>`__ for
-`some <https://neuro.debian.net/pkgs/singularity-container.html>`__
-Linux distributions.
+provides an older version of `Singularity
+<https://sylabs.io/guides/2.6/user-guide/>`__ for `some
+<https://neuro.debian.net/pkgs/singularity-container.html>`__ Linux
+distributions.
 
-In contrast to ``Singularity``, ``Docker`` always requires elevated
-privileges to run containers. In other words, every user running a
-``Docker`` container automatically has administrator privileges on the
-computer they’re using. Therefore, it is inherently a bad choice for
-multi-user environments, where the access of individual users should be
-limited. ``Docker`` is the only option that is compatible with
-``Mac OS X``.
+If you are running ``mac OS``, then you should be able to run the
+container with ``Docker Desktop``.
+
+If you are running Windows, you can also try running with ``Docker
+Desktop``, but we have not done any compatibility testing yet, so issues
+may occur, for example with respect to file systems.
 
 .. list-table::
    :header-rows: 1
 
-   * - Container platform
-     - Version
-     - Installation
+   -  -  Container platform
+      -  Version
+      -  Installation
 
-   * - Singularity
-     - 3.x
-     - https://sylabs.io/guides/3.8/user-guide/quick_start.html
+   -  -  Singularity
+      -  3.x
+      -  https://sylabs.io/guides/3.8/user-guide/quick_start.html
 
-   * - Singularity
-     - 2.x
-     - ``sudo apt install singularity-container``
+   -  -  Singularity
+      -  2.x
+      -  ``sudo apt install singularity-container``
 
-   * - Docker
-     - ..
-     - See https://docs.docker.com/engine/install/
+   -  -  Docker
+      -  ..
+      -  See https://docs.docker.com/engine/install/
 
 Download
-~~~~~~~~
+========
 
 The second step is to download the ``HALFpipe`` to your computer. This
 requires approximately 5 gigabytes of storage.
@@ -138,21 +147,21 @@ requires approximately 5 gigabytes of storage.
 .. list-table::
    :header-rows: 1
 
-   * - Container platform
-     - Version
-     - Installation
+   -  -  Container platform
+      -  Version
+      -  Installation
 
-   * - Singularity
-     - 3.x
-     - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif
+   -  -  Singularity
+      -  3.x
+      -  https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif
 
-   * - Singularity
-     - 2.x
-     - https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg
+   -  -  Singularity
+      -  2.x
+      -  https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg
 
-   * - Docker
-     - ..
-     - ``docker pull halfpipe/halfpipe:latest``
+   -  -  Docker
+      -  ..
+      -  ``docker pull halfpipe/halfpipe:latest``
 
 ``Singularity`` version ``3.x`` creates a container image file called
 ``HALFpipe_{version}.sif`` in the directory where you run the ``pull``
@@ -164,52 +173,54 @@ container, you need pass ``Singularity`` the path to this file.
    cache directory. The cache directory is located by default in your
    home directory at ``~/.singularity``. If you need to save disk space
    in your home directory, you can safely delete the cache directory
-   after downloading, i.e. by running ``rm -rf ~/.singularity``.
+   after downloading, i.e. by running ``rm -rf ~/.singularity``.
    Alternatively, you could move the cache directory somewhere with more
    free disk space using a symlink. This way, files will automatically
    be stored there in the future. For example, if you have a lot of free
-   disk space in ``/mnt/storage``, then you could first run
-   ``mv ~/.singularity /mnt/storage`` to move the cache directory, and
-   then ``ln -s /mnt/storage/.singularity ~/.singularity`` to create the
+   disk space in ``/mnt/storage``, then you could first run ``mv
+   ~/.singularity /mnt/storage`` to move the cache directory, and then
+   ``ln -s /mnt/storage/.singularity ~/.singularity`` to create the
    symlink.
 
 ``Docker`` will store the container in its storage base directory, so it
 does not matter from which directory you run the ``pull`` command.
 
 Running
-~~~~~~~
+=======
 
 The third step is to run the downloaded container. You may need to
-replace ``halfpipe-halfpipe-latest.simg`` with the actual path and filename where
-``Singularity`` downloaded your container.
+replace ``halfpipe-halfpipe-latest.simg`` with the actual path and
+filename where ``Singularity`` downloaded your container.
 
 .. list-table::
    :header-rows: 1
 
-   * - Container platform
-     - Command
+   -  -  Container platform
+      -  Command
 
-   * - Singularity
-     - ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.simg``
+   -  -  Singularity
+      -  ``singularity run --containall --bind /:/ext
+         halfpipe-halfpipe-latest.simg``
 
-   * - Docker
-     - ``docker run --interactive --tty --volume /:/ext halfpipe/halfpipe``
+   -  -  Docker
+      -  ``docker run --interactive --tty --volume /:/ext
+         halfpipe/halfpipe``
 
 You should now see the user interface.
 
 Background
-^^^^^^^^^^
+----------
 
 Containers are by default isolated from the host computer. This adds
 security, but also means that the container cannot access the data it
 needs for analysis. ``HALFpipe`` expects all inputs (e.g., image files
 and spreadsheets) and outputs (the working directory) to be places in
-the path\ ``/ext`` (see also
-```--fs-root`` <#data-file-system-root---fs-root>`__). Using the option
-``--bind /:/ext``, we instruct ``Singularity`` to map all of the host
-file system (``/``) to that path (``/ext``). You can also run
-``HALFpipe`` and only map only part of the host file system, but keep in
-mind that any directories that are not mapped will not be visible later.
+the path\ ``/ext`` (see also ```--fs-root``
+<#data-file-system-root---fs-root>`__). Using the option ``--bind
+/:/ext``, we instruct ``Singularity`` to map all of the host file system
+(``/``) to that path (``/ext``). You can also run ``HALFpipe`` and only
+map only part of the host file system, but keep in mind that any
+directories that are not mapped will not be visible later.
 
 ``Singularity`` passes the host shell environment to the container by
 default. This means that in some cases, the host computer’s
@@ -217,8 +228,9 @@ configuration can interfere with the software. To avoid this, we need to
 pass the option ``--containall``. ``Docker`` does not pass the host
 shell environment by default, so we don’t need to pass an option.
 
-User interface
---------------
+****************
+ User interface
+****************
 
    Outdated
 
@@ -229,7 +241,7 @@ to cancel the current question and go back to the previous one.
 shortcuts are the same on Mac.
 
 Files
-~~~~~
+=====
 
 To run preprocessing, at least a T1-weighted structural image and a BOLD
 image file is required. Preprocessing and data analysis proceeds
@@ -252,241 +264,267 @@ schema, and extract the subject ID ``subject_01``. Using the extracted
 subject ID, other files can now be matched to this image. If all input
 files are available in BIDS format, then this step can be skipped.
 
-1. ``Specify working directory`` All intermediate and outputs of
+#. ``Specify working directory`` All intermediate and outputs of
    ``HALFpipe`` will be placed in the working directory. Keep in mind to
    choose a location with sufficient free disk space, as intermediates
    can be multiple gigabytes in size for each subject.
-2. ``Is the data available in BIDS format?``
+
+#. ``Is the data available in BIDS format?``
 
    -  ``Yes``
 
-      1. ``Specify the path of the BIDS directory``
+      #. ``Specify the path of the BIDS directory``
 
    -  ``No``
 
-      1. ``Specify anatomical/structural data``
-         ``Specify the path of the T1-weighted image files``
-      2. ``Specify functional data``
-         ``Specify the path of the BOLD image files``
-      3. ``Check repetition time values`` /
-         ``Specify repetition time in seconds``
-      4. ``Add more BOLD image files?``
+      #. ``Specify anatomical/structural data`` ``Specify the path of
+         the T1-weighted image files``
+
+      #. ``Specify functional data`` ``Specify the path of the BOLD
+         image files``
+
+      #. ``Check repetition time values`` / ``Specify repetition time in
+         seconds``
+
+      #. ``Add more BOLD image files?``
 
          -  ``Yes`` Loop back to 2
          -  ``No`` Continue
 
-3. ``Do slice timing?``
+#. ``Do slice timing?``
 
    -  ``Yes``
 
-      1. ``Check slice acquisition direction values``
-      2. ``Check slice timing values``
+      #. ``Check slice acquisition direction values``
+      #. ``Check slice timing values``
 
    -  ``No`` Skip this step
 
-4. ``Specify field maps?`` If the data was imported from a BIDS
+#. ``Specify field maps?`` If the data was imported from a BIDS
    directory, this step will be omitted.
 
    -  ``Yes``
 
-      1. ``Specify the type of the field maps``
+      #. ``Specify the type of the field maps``
 
          -  EPI (blip-up blip-down)
 
-            1. ``Specify the path of the blip-up blip-down EPI image files``
+            #. ``Specify the path of the blip-up blip-down EPI image
+               files``
 
          -  Phase difference and magnitude (used by Siemens scanners)
 
-            1. ``Specify the path of the magnitude image files``
-            2. ``Specify the path of the phase/phase difference image files``
-            3. ``Specify echo time difference in seconds``
+            #. ``Specify the path of the magnitude image files``
+            #. ``Specify the path of the phase/phase difference image
+               files``
+            #. ``Specify echo time difference in seconds``
 
          -  Scanner-computed field map and magnitude (used by GE /
             Philips scanners)
 
-            1. ``Specify the path of the magnitude image files``
-            2. ``Specify the path of the field map image files``
+            #. ``Specify the path of the magnitude image files``
+            #. ``Specify the path of the field map image files``
 
-      2. ``Add more field maps?`` Loop back to 1
-      3. ``Specify effective echo spacing for the functional data in seconds``
-      4. ``Specify phase encoding direction for the functional data``
+      #. ``Add more field maps?`` Loop back to 1
+
+      #. ``Specify effective echo spacing for the functional data in
+         seconds``
+
+      #. ``Specify phase encoding direction for the functional data``
 
    -  ``No`` Skip this step
 
 Features
-~~~~~~~~
+========
 
 Features are analyses that are carried out on the preprocessed data, in
 other words, first-level analyses.
 
-1. ``Specify first-level features?``
+#. ``Specify first-level features?``
 
    -  ``Yes``
 
-      1. ``Specify the feature type``
+      #. ``Specify the feature type``
 
          -  ``Task-based``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. ``Specify the event file type``
+            #. ``Specify feature name``
+            #. ``Specify images to use``
+            #. ``Specify the event file type``
 
             -  ``SPM multiple conditions`` A MATLAB .mat file containing
                three arrays: ``names`` (condition), ``onsets`` and
                ``durations``
+
             -  ``FSL 3-column`` One text file for each condition. Each
                file has its corresponding condition in the filename. The
                first column specifies the event onset, the second the
                duration. The third column of the files is ignored, so
                parametric modulation is not supported
+
             -  ``BIDS TSV`` A tab-separated table with named columns
                ``trial_type`` (condition), ``onset`` and ``duration``.
                While BIDS supports defining additional columns,
                ``HALFpipe`` will currently ignore these
 
-            1. ``Specify the path of the event files``
-            2. ``Select conditions to add to the model``
-            3. ``Specify contrasts``
+            #. ``Specify the path of the event files``
 
-               1. ``Specify contrast name``
-               2. ``Specify contrast values``
-               3. ``Add another contrast?``
+            #. ``Select conditions to add to the model``
+
+            #. ``Specify contrasts``
+
+               #. ``Specify contrast name``
+
+               #. ``Specify contrast values``
+
+               #. ``Add another contrast?``
 
                   -  ``Yes`` Loop back to 1
                   -  ``No`` Continue
 
-            4. ``Apply a temporal filter to the design matrix?`` A
+            #. ``Apply a temporal filter to the design matrix?`` A
                separate temporal filter can be specified for the design
                matrix. In contrast, the temporal filtering of the input
                image and any confound regressors added to the design
                matrix is specified in 10. In general, the two settings
                should match
-            5. ``Apply smoothing?``
+
+            #. ``Apply smoothing?``
 
                -  ``Yes``
 
-                  1. ``Specify smoothing FWHM in mm``
+                  #. ``Specify smoothing FWHM in mm``
 
                -  ``No`` Continue
 
-            6. ``Grand mean scaling will be applied with a mean of 10000.000000``
-            7. ``Temporal filtering will be applied using a gaussian-weighted filter``
-               ``Specify the filter width in seconds``
-            8. ``Remove confounds?``
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Temporal filtering will be applied using a
+               gaussian-weighted filter`` ``Specify the filter width in
+               seconds``
+
+            #. ``Remove confounds?``
 
          -  ``Seed-based connectivity``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. ``Specify binary seed mask file(s)``
+            #. ``Specify feature name``
 
-               1. ``Specify the path of the binary seed mask image files``
-               2. ``Check space values``
-               3. ``Add binary seed mask image file``
+            #. ``Specify images to use``
+
+            #. ``Specify binary seed mask file(s)``
+
+               #. ``Specify the path of the binary seed mask image
+                  files``
+               #. ``Check space values``
+               #. ``Add binary seed mask image file``
 
          -  ``Dual regression``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. TODO
+            #. ``Specify feature name``
+            #. ``Specify images to use``
+            #. TODO
 
          -  ``Atlas-based connectivity matrix``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. TODO
+            #. ``Specify feature name``
+            #. ``Specify images to use``
+            #. TODO
 
          -  ``ReHo``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. TODO
+            #. ``Specify feature name``
+            #. ``Specify images to use``
+            #. TODO
 
          -  ``fALFF``
 
-            1. ``Specify feature name``
-            2. ``Specify images to use``
-            3. TODO
+            #. ``Specify feature name``
+            #. ``Specify images to use``
+            #. TODO
 
    -  ``No`` Skip this step
 
-2. ``Add another first-level feature?``
+#. ``Add another first-level feature?``
 
    -  ``Yes`` Loop back to 1
    -  ``No`` Continue
 
-3. ``Output a preprocessed image?``
+#. ``Output a preprocessed image?``
 
    -  ``Yes``
 
-      1. ``Specify setting name``
-      2. ``Specify images to use``
-      3. ``Apply smoothing?``
+      #. ``Specify setting name``
+
+      #. ``Specify images to use``
+
+      #. ``Apply smoothing?``
 
          -  ``Yes``
 
-            1. ``Specify smoothing FWHM in mm``
+            #. ``Specify smoothing FWHM in mm``
 
          -  ``No`` Continue
 
-      4. ``Do grand mean scaling?``
+      #. ``Do grand mean scaling?``
 
          -  ``Yes``
 
-            1. ``Specify grand mean``
+            #. ``Specify grand mean``
 
          -  ``No`` Continue
 
-      5. ``Apply a temporal filter?``
+      #. ``Apply a temporal filter?``
 
          -  ``Yes``
 
-            1. ``Specify the type of temporal filter``
+            #. ``Specify the type of temporal filter``
 
                -  ``Gaussian-weighted``
                -  ``Frequency-based``
 
          -  ``No`` Continue
 
-      6. ``Remove confounds?``
+      #. ``Remove confounds?``
 
    -  ``No`` Continue
 
 Models
-~~~~~~
+======
 
 Models are statistical analyses that are carried out on the features.
 
    TODO
 
-Running on a high-performance computing cluster
------------------------------------------------
+*************************************************
+ Running on a high-performance computing cluster
+*************************************************
 
-1. Log in to your cluster’s head node
+#. Log in to your cluster’s head node
 
-2. Request an interactive job. Refer to your cluster’s documentation for
+#. Request an interactive job. Refer to your cluster’s documentation for
    how to do this
 
-3. | In the interactive job, run the ``HALFpipe`` user interface, but
-     add the flag ``--use-cluster`` to the end of the command.
-   | For example,
-     ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif --use-cluster``
+#. |  In the interactive job, run the ``HALFpipe`` user interface, but
+      add the flag ``--use-cluster`` to the end of the command.
+   |  For example, ``singularity run --containall --bind /:/ext
+      halfpipe-halfpipe-latest.sif --use-cluster``
 
-4. As soon as you finish specifying all your data, features and models
+#. As soon as you finish specifying all your data, features and models
    in the user interface, ``HALFpipe`` will now generate everything
    needed to run on the cluster. For hundreds of subjects, this can take
    up to a few hours.
 
-5. When ``HALFpipe`` exits, edit the generated submit script
+#. When ``HALFpipe`` exits, edit the generated submit script
    ``submit.slurm.sh`` according to your cluster’s documentation and
    then run it. This submit script will calculate everything except
    group statistics.
 
-6. As soon as all processing has been completed, you can run group
+#. As soon as all processing has been completed, you can run group
    statistics. This is usually very fast, so you can do this in an
-   interactive session. Run
-   ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif --only-model-chunk``
-   and then select ``Run without modification`` in the user interface.
+   interactive session. Run ``singularity run --containall --bind /:/ext
+   halfpipe-halfpipe-latest.sif --only-model-chunk`` and then select
+   ``Run without modification`` in the user interface.
 
 ..
 
@@ -502,34 +540,41 @@ Running on a high-performance computing cluster
    commands (more in-depth documentation is available for example at
    http://www.dayid.org/comp/tm.html).
 
-   1. Open a new screen/tmux session on the head node by running either
+   #. Open a new screen/tmux session on the head node by running either
       ``screen`` or ``tmux``
-   2. Request an interactive job from within the session, for example
+
+   #. Request an interactive job from within the session, for example
       with ``srun --pty bash -i``
-   3. Run the command that you want to run
-   4. Detach from the screen/tmux session, meaning disconnecting with
-      the ability to re-connect later
-      For screen, this is done by first pressing ``Control+a``, then
-      letting go, and then pressing ``d`` on the keyboard.
-      For tmux, it’s ``Control+b`` instead of ``Control+a``.
-      Note that this is always ``Control``, even if you’re on a mac.
-   5. Close your connection to the head node with ``Control+d``.
+
+   #. Run the command that you want to run
+
+   #. Detach from the screen/tmux session, meaning disconnecting with
+      the ability to re-connect later For screen, this is done by first
+      pressing ``Control+a``, then letting go, and then pressing ``d``
+      on the keyboard. For tmux, it’s ``Control+b`` instead of
+      ``Control+a``. Note that this is always ``Control``, even if
+      you’re on a mac.
+
+   #. Close your connection to the head node with ``Control+d``.
       ``screen``/``tmux`` will remain running in the background
-   6. Later, connect again to the head node. Run ``screen -r`` or
-      ``tmux attach`` to check back on the interactive job. If
-      everything went well and the command you wanted to run finished,
-      close the interactive job with ``Control+d`` and then the
+
+   #. Later, connect again to the head node. Run ``screen -r`` or ``tmux
+      attach`` to check back on the interactive job. If everything went
+      well and the command you wanted to run finished, close the
+      interactive job with ``Control+d`` and then the
       ``screen``/``tmux`` session with ``Control+d`` again. If the
       command hasn’t finished yet, detach as before and come back later
 
-Quality checks
---------------
+****************
+ Quality checks
+****************
 
 Please see the manual at
 https://docs.google.com/document/d/1evDkVaoXqSaxulp5eSxVqgaxro7yZl-gao70D0S2dH8
 
-Outputs
--------
+*********
+ Outputs
+*********
 
    Outdated
 
@@ -548,77 +593,80 @@ Outputs
    ``fmriprep`` derivatives. ``derivatives/fmriprep``
 
 Subject-level features
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
--  | For task-based, seed-based connectivity and dual regression
-     features, ``HALFpipe`` outputs the statistical maps for the effect,
-     the variance, the degrees of freedom of the variance and the
-     z-statistic. In FSL, the effect and variance are also called
-     ``cope`` and ``varcope``
-   | ``derivatives/halfpipe/sub-.../func/..._stat-effect_statmap.nii.gz``
-   | ``derivatives/halfpipe/sub-.../func/..._stat-variance_statmap.nii.gz``
-   | ``derivatives/halfpipe/sub-.../func/..._stat-dof_statmap.nii.gz``
-   | ``derivatives/halfpipe/sub-.../func/..._stat-z_statmap.nii.gz``
-   | The design and contrast matrix used for the final model will be
-     outputted alongside the statistical maps
-   | ``derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-design_matrix.tsv``
-   | ``derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-contrast_matrix.tsv``
+-  |  For task-based, seed-based connectivity and dual regression
+      features, ``HALFpipe`` outputs the statistical maps for the
+      effect, the variance, the degrees of freedom of the variance and
+      the z-statistic. In FSL, the effect and variance are also called
+      ``cope`` and ``varcope``
+   |  ``derivatives/halfpipe/sub-.../func/..._stat-effect_statmap.nii.gz``
+   |  ``derivatives/halfpipe/sub-.../func/..._stat-variance_statmap.nii.gz``
+   |  ``derivatives/halfpipe/sub-.../func/..._stat-dof_statmap.nii.gz``
+   |  ``derivatives/halfpipe/sub-.../func/..._stat-z_statmap.nii.gz``
+   |  The design and contrast matrix used for the final model will be
+      outputted alongside the statistical maps
+   |  ``derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-design_matrix.tsv``
+   |  ``derivatives/halfpipe/sub-.../func/sub-..._task-..._feature-..._desc-contrast_matrix.tsv``
 
--  | ReHo and fALFF are not calculated based on a linear model. As such,
-     only one statistical map of the z-scaled values will be output
-   | ``derivatives/halfpipe/sub-.../func/..._alff.nii.gz``
-   | ``derivatives/halfpipe/sub-.../func/..._falff.nii.gz``
-   | ``derivatives/halfpipe/sub-.../func/..._reho.nii.gz``
+-  |  ReHo and fALFF are not calculated based on a linear model. As
+      such, only one statistical map of the z-scaled values will be
+      output
+   |  ``derivatives/halfpipe/sub-.../func/..._alff.nii.gz``
+   |  ``derivatives/halfpipe/sub-.../func/..._falff.nii.gz``
+   |  ``derivatives/halfpipe/sub-.../func/..._reho.nii.gz``
 
 -  For every feature, a ``.json`` file containing a summary of the
    preprocessing
 
--  | settings, and a list of the raw data files that were used for the
-     analysis (``RawSources``)
-   | ``derivatives/halfpipe/sub-.../func/....json``
+-  |  settings, and a list of the raw data files that were used for the
+      analysis (``RawSources``)
+   |  ``derivatives/halfpipe/sub-.../func/....json``
 
--  | For every feature, the corresponding brain mask is output beside
-     the statistical maps. Masks do not differ between different
-     features calculated, they are only copied out repeatedly for
-     convenience
-   | ``derivatives/halfpipe/sub-.../func/...desc-brain_mask.nii.gz``
+-  |  For every feature, the corresponding brain mask is output beside
+      the statistical maps. Masks do not differ between different
+      features calculated, they are only copied out repeatedly for
+      convenience
+   |  ``derivatives/halfpipe/sub-.../func/...desc-brain_mask.nii.gz``
 
--  | Atlas-based connectivity outputs the time series and the full
-     covariance and correlation matrices as text files
-   | ``derivatives/halfpipe/sub-.../func/..._timeseries.txt``
-   | ``derivatives/halfpipe/sub-.../func/..._desc-covariance_matrix.txt``
-   | ``derivatives/halfpipe/sub-.../func/..._desc-correlation_matrix.txt``
+-  |  Atlas-based connectivity outputs the time series and the full
+      covariance and correlation matrices as text files
+   |  ``derivatives/halfpipe/sub-.../func/..._timeseries.txt``
+   |  ``derivatives/halfpipe/sub-.../func/..._desc-covariance_matrix.txt``
+   |  ``derivatives/halfpipe/sub-.../func/..._desc-correlation_matrix.txt``
 
 Preprocessed images
-~~~~~~~~~~~~~~~~~~~
+===================
 
--  | Masked, preprocessed BOLD image
-   | ``derivatives/halfpipe/sub-.../func/..._bold.nii.gz``
+-  |  Masked, preprocessed BOLD image
+   |  ``derivatives/halfpipe/sub-.../func/..._bold.nii.gz``
 
--  | Just like for features
-   | ``derivatives/halfpipe/sub-.../func/..._bold.json``
+-  |  Just like for features
+   |  ``derivatives/halfpipe/sub-.../func/..._bold.json``
 
--  | Just like for features
-   | ``derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-brain_mask.nii.gz``
+-  |  Just like for features
+   |  ``derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-brain_mask.nii.gz``
 
--  | Filtered confounds time series, where all filters that are applied
-     to the BOLD image are applied to the regressors as well. Note that
-     this means that when grand mean scaling is active, confounds time
-     series are also scaled, meaning that values such as
-     ``framewise displacement`` can not be interpreted in terms of their
-     original units anymore.
-   | ``derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-confounds_regressors.tsv``
+-  |  Filtered confounds time series, where all filters that are applied
+      to the BOLD image are applied to the regressors as well. Note that
+      this means that when grand mean scaling is active, confounds time
+      series are also scaled, meaning that values such as ``framewise
+      displacement`` can not be interpreted in terms of their original
+      units anymore.
+   |  ``derivatives/halfpipe/sub-.../func/sub-..._task-..._setting-..._desc-confounds_regressors.tsv``
 
 Group-level
-~~~~~~~~~~~
+===========
 
 -  ``grouplevel/...``
 
-Troubleshooting
----------------
+*****************
+ Troubleshooting
+*****************
 
 -  If an error occurs, this will be output to the command line and
    simultaneously to the ``err.txt`` file in the working directory
+
 -  If the error occurs while running, usually a text file detailing the
    error will be placed in the working directory. These are text files
    and their file names start with ``crash``
@@ -626,26 +674,29 @@ Troubleshooting
    -  Usually, the last line of these text files contains the error
       message. Please read this carefully, as may allow you to
       understand the error
-   -  For example, consider the following error message:
-      ``ValueError: shape (64, 64, 33) for image 1 not compatible with first image shape (64, 64, 34) with axis == None``
-      This error message may seem cryptic at first. However, looking at
-      the message more closely, it suggests that two input images have
-      different, incompatible dimensions. In this case, ``HALFpipe``
-      correctly recognized this issue, and there is no need for concern.
-      The images in question will simply be excluded from preprocessing
-      and/or analysis
+
+   -  For example, consider the following error message: ``ValueError:
+      shape (64, 64, 33) for image 1 not compatible with first image
+      shape (64, 64, 34) with axis == None`` This error message may seem
+      cryptic at first. However, looking at the message more closely, it
+      suggests that two input images have different, incompatible
+      dimensions. In this case, ``HALFpipe`` correctly recognized this
+      issue, and there is no need for concern. The images in question
+      will simply be excluded from preprocessing and/or analysis
+
    -  In some cases, the cause of the error can be a bug in the
       ``HALFpipe`` code. Please check that no similar issue has been
-      reported `here on
-      GitHub <https://github.com/HALFpipe/HALFpipe/issues>`__. In this
-      case, please submit an
-      `issue <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__.
+      reported `here on GitHub
+      <https://github.com/HALFpipe/HALFpipe/issues>`__. In this case,
+      please submit an `issue
+      <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__.
 
-Command line flags
-------------------
+********************
+ Command line flags
+********************
 
 Control command line logging
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
 .. code:: bash
 
@@ -662,12 +713,12 @@ directory, so going back and inspecting this log is always possible,
 even if the ``--verbose`` flag was not specified.
 
 Specifying the flag ``--debug`` will print additional, fine-grained
-messages. It will also automatically start the `Python
-Debugger <https://docs.python.org/3/library/pdb.html>`__ when an error
-occurs. You should only use ``--debug`` if you know what you’re doing.
+messages. It will also automatically start the `Python Debugger
+<https://docs.python.org/3/library/pdb.html>`__ when an error occurs.
+You should only use ``--debug`` if you know what you’re doing.
 
 Automatically remove unneeded files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===================================
 
 .. code:: bash
 
@@ -675,10 +726,10 @@ Automatically remove unneeded files
 
 ``HALFpipe`` saves intermediate files for each pipeline step. This
 speeds up re-running with different settings, or resuming after a job
-after it was cancelled. The intermediate file are saved by the
-`nipype <https://nipype.readthedocs.io/>`__ workflow engine, which
-is what ``HALFpipe`` uses internally. ``nipype`` saves the intermediate
-files in the ``nipype`` folder in the working directory.
+after it was cancelled. The intermediate file are saved by the `nipype
+<https://nipype.readthedocs.io/>`__ workflow engine, which is what
+``HALFpipe`` uses internally. ``nipype`` saves the intermediate files in
+the ``nipype`` folder in the working directory.
 
 In environments with limited disk capacity, this can be problematic. To
 limit disk usage, ``HALFpipe`` can delete intermediate files as soon as
@@ -687,13 +738,13 @@ they are not needed anymore. This behavior is controlled with the
 
 The default option ``--keep some`` keeps all intermediate files from
 fMRIPrep and MELODIC, which would take the longest to re-run. We believe
-this is a good tradeoff between disk space and computer time.
-``--keep all`` turns of all deletion of intermediate files.
-``--keep none`` deletes as much as possible, meaning that the smallest
-amount possible of disk space will be used.
+this is a good tradeoff between disk space and computer time. ``--keep
+all`` turns of all deletion of intermediate files. ``--keep none``
+deletes as much as possible, meaning that the smallest amount possible
+of disk space will be used.
 
 Configure nipype
-~~~~~~~~~~~~~~~~
+================
 
 .. code:: bash
 
@@ -702,7 +753,7 @@ Configure nipype
 ``HALFpipe`` chooses sensible defaults for all of these values.
 
 Choose which parts to run or to skip
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+====================================
 
    Outdated
 
@@ -713,12 +764,13 @@ Choose which parts to run or to skip
 A ``HALFpipe`` run is divided internally into three stages, spec-ui,
 workflow, and run.
 
-1. The ``spec-ui`` stage is where you specify things in the user
+#. The ``spec-ui`` stage is where you specify things in the user
    interface. It creates the ``spec.json`` file that contains all the
    information needed to run ``HALFpipe``. To only run this stage, use
    the option ``--only-spec-ui``. To skip this stage, use the option
    ``--skip-spec-ui``
-2. The ``workflow`` stage is where ``HALFpipe`` uses the ``spec.json``
+
+#. The ``workflow`` stage is where ``HALFpipe`` uses the ``spec.json``
    data to search for all the files that match what was input in the
    user interface. It then generates a ``nipype`` workflow for
    preprocessing, feature extraction and group models. ``nipype`` then
@@ -739,6 +791,7 @@ workflow, and run.
    Therefore, if a workflow file with the calculated ``uuid`` already
    exists, then we do not need to run this stage. We can simple re-use
    the workflow from the existing file, and save some time.
+
 -  In this stage, we can also decide to split the execution into chunks.
    The flag ``--subject-chunks`` creates one chunk per subject. The flag
    ``--use-cluster`` automatically activates ``--subject-chunks``. The
@@ -747,7 +800,7 @@ workflow, and run.
    number of computers. In addition to these, a model chunk is
    generated.
 
-1. The ``run`` stage loads the
+#. The ``run`` stage loads the
    ``execgraph.{n_chunks}_chunks.{uuid}.pickle.xz`` file generated in
    the previous step and runs it. This file usually contains two chunks,
    one for the subject level preprocessing and feature extraction
@@ -756,7 +809,7 @@ workflow, and run.
    ``--only-chunk-index ...`` and ``--only-model-chunk``.
 
 Working directory
-~~~~~~~~~~~~~~~~~
+=================
 
 .. code:: bash
 
@@ -767,7 +820,7 @@ Working directory
    TODO
 
 Data file system root
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 .. code:: bash
 
@@ -776,9 +829,10 @@ Data file system root
 The ``HALFpipe`` container, or really most containers, contain the
 entire base system needed to run
 
-Contact
--------
+*********
+ Contact
+*********
 
-For questions or support, please submit an
-`issue <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__ or
-contact us via e-mail at enigma@charite.de.
+For questions or support, please submit an `issue
+<https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__ or contact
+us via e-mail at enigma@charite.de.
