@@ -269,3 +269,11 @@ def test_loadspreadsheet_empty(tmp_path):
     spreadsheet = loadspreadsheet(file_name)
 
     assert spreadsheet.values.shape == (0, 0)
+
+def test_loadspreadsheet_json(tmp_path, data_frame):
+    file_name = tmp_path / "test.json"
+    with open(file_name, "w") as file_pointer:
+        file_pointer.write(data_frame.to_json())
+
+    spreadsheet = loadspreadsheet(file_name)
+    assert spreadsheet.values.shape
