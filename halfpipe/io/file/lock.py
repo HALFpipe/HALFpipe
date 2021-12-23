@@ -31,8 +31,6 @@ class AdaptiveLock:
                 pass
             except OSError:
                 pass
-            except PermissionError:
-                pass
 
             logger.warning(
                 "Unable to use hard link-based file locks",
