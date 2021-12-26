@@ -5,6 +5,8 @@
 import os
 import logging
 
+from glob import glob
+from pathlib import Path
 from argparse import Namespace
 
 from .path import resolve
@@ -12,14 +14,15 @@ from .path import resolve
 
 logger = logging.getLogger()
 
+
 def setup_freesurfer_env(opts: Namespace) -> bool:
     """Configure the FS_LICENSE env var
 
-       Args:
-         opts: an argparser.Namespace with provided halfpipe arguments
+    Args:
+      opts: an argparser.Namespace with provided halfpipe arguments
 
-       Returns:
-         Boolean value representing a the state of the freesurfer license config
+    Returns:
+      Boolean value representing a the state of the freesurfer license config
     """
 
     if os.environ.get("FS_LICENSE") is not None:
