@@ -2,9 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from os import PathLike
 from uuid import uuid5
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from nipype.pipeline import engine as pe
 
@@ -21,7 +22,7 @@ from .constants import constants
 from .memory import MemoryCalculator
 from ..io.index import Database, BidsDatabase
 from ..io.cache import cache_obj, uncache_obj
-from ..model.spec import Spec,loadspec
+from ..model.spec import Spec, loadspec
 from ..utils import logger, deepcopyfactory
 from .. import __version__
 
@@ -34,7 +35,9 @@ class IdentifiableWorkflow(pe.Workflow):
         self.bids_to_sub_id_map = dict()
 
 
-def init_workflow(workdir, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
+def init_workflow(
+    workdir: Union[PathLike, str, None] = None, spec: Optional[Spec] = None
+) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
 
@@ -65,20 +68,23 @@ def init_workflow(workdir, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
 
-    workflow = IdentifiableWorkflow(name=constants.workflowdir, base_dir=workdir, uuid=uuid)
-    workflow.config["execution"].update(dict(
-        create_report=True,  # each node writes a text file with inputs and outputs
-        crashdump_dir=workflow.base_dir,
-        crashfile_format="txt",
-        hash_method="content",
-        poll_sleep_duration=0.5,
-        use_relative_paths=False,
-        check_version=False,
-    ))
+    workflow = IdentifiableWorkflow(
+        name=constants.workflowdir, base_dir=workdir, uuid=uuid
+    )
+    workflow.config["execution"].update(
+        dict(
+            create_report=True,  # each node writes a text file with inputs and outputs
+            crashdump_dir=workflow.base_dir,
+            crashfile_format="txt",
+            hash_method="content",
+            poll_sleep_duration=0.5,
+            use_relative_paths=False,
+            check_version=False,
+        )
+    )
 
-    if (
-        len(spec.features) == 0
-        and not any(setting.get("output_image") is True for setting in spec.settings)
+    if len(spec.features) == 0 and not any(
+        setting.get("output_image") is True for setting in spec.settings
     ):
         raise RuntimeError(
             "Nothing to do. Please specify features to calculate and/or select to output "

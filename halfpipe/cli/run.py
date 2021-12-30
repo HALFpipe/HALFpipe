@@ -60,7 +60,7 @@ def run_stage_workflow(opts, spec: Optional[dict] = None):
     from ..workflow.base import init_workflow
     from ..workflow.execgraph import init_execgraph
 
-    workflow = init_workflow(opts.workdir, spec)
+    workflow = init_workflow(workdir=opts.workdir, spec=spec)
 
     if workflow is None:
         return
