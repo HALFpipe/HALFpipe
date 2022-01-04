@@ -1,10 +1,4 @@
-# -*- coding: utf-8 -*-
-# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
-# vi: set ft=python sts=4 ts=4 sw=4 et: syntax=dockerfile
-ARG FMRIPREP_VERSION=20.2.6
-FROM nipreps/fmriprep:${FMRIPREP_VERSION}
-
-ENTRYPOINT []
+FROM nipreps/fmriprep:20.2.6
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     XDG_CACHE_HOME="/home/fmriprep/.cache"
@@ -15,28 +9,10 @@ ENV HALFPIPE_RESOURCE_DIR="${XDG_CACHE_HOME}/halfpipe" \
 RUN mkdir /ext /halfpipe && \
     chmod a+rwx /ext /halfpipe
 
-# net-tools needed for code-server
-# wget necessary for data downloads
-RUN apt-get update &&\
-    apt-get install -y \
-        net-tools \
-        wget
-
-# create freesurfer license
-RUN cd /tmp &&\
-    echo 'cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IGxpY2Vuc2UudHh0Cg==' | base64 -d | sh
-
-ENV FS_LICENSE=/tmp/license.txt
-
-# set the fmriprep development variables
-ENV FMRIPREP_REGRESSION_SOURCE=/tmp/data/fmriprep_bold_truncated \
-    FMRIPREP_REGRESSION_TARGETS=/tmp/data/fmriprep_bold_mask \
-    FMRIPREP_REGRESSION_REPORTS=/tmp/data/reports \
-    FMRIPREP_DEV=1
+# Re-install `conda` and dependency `python` packages
 
 COPY requirements.txt requirements-test.txt install-requirements.sh /tmp/
 
-# halfpipe uses a different conda
 RUN rm -rf /usr/local/miniconda && \
     cd /tmp && \
     curl --show-error --silent --location \
@@ -44,7 +20,6 @@ RUN rm -rf /usr/local/miniconda && \
         --output "miniconda.sh" &&  \
     bash miniconda.sh -b -p /usr/local/miniconda && \
     ./install-requirements.sh --requirements-file requirements.txt && \
-    pip install -r requirements-test.txt && \
     sync && \
     conda clean --yes --all --force-pkgs-dirs && \
     sync && \
@@ -52,16 +27,34 @@ RUN rm -rf /usr/local/miniconda && \
     rm -rf /tmp/* && \
     sync
 
-# re-do matplotlib settings after installing requirements
-# these are taken from fmriprep
-# precaching fonts, set 'Agg' as default backend for matplotlib
+# Re-apply matplotlib settings after updating
+# Taken from `fmriprep`
+# Pre-caches fonts, set 'Agg' as default backend for matplotlib
 RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
-# download all resources
+# Download all resources
 COPY halfpipe/resource.py /tmp/
 RUN python /tmp/resource.py
+
+ENTRYPOINT []
+
+RUN apt-get update &&\
+    apt-get install -y \
+        net-tools \
+        wget
+
+# create freesurfer license
+RUN cd /tmp &&\
+    echo "bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg==" | base64 -d > /opt/freesurfer/license.txt
+ENV FS_LICENSE=/opt/freesurfer/license.txt
+
+# set the fmriprep development variables
+ENV FMRIPREP_REGRESSION_SOURCE=/tmp/data/fmriprep_bold_truncated \
+    FMRIPREP_REGRESSION_TARGETS=/tmp/data/fmriprep_bold_mask \
+    FMRIPREP_REGRESSION_REPORTS=/tmp/data/reports \
+    FMRIPREP_DEV=1
 
 # use flake8 as linter
 RUN conda install -y flake8
@@ -114,3 +107,4 @@ RUN groupadd halfpipe && useradd halfpipe -g halfpipe \
     && chmod 0440 /etc/sudoers.d/halfpipe
 
 USER halfpipe
+
