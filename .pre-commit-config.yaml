@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: check-added-large-files
       - id: check-ast
@@ -15,7 +15,7 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.2.0
+    rev: 6.4.0
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
