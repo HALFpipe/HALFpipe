@@ -44,22 +44,30 @@ run_cmd() {
 printf '%s\n' --------------------
 
 # update conda and disable mkl
-run_cmd conda install --yes --quiet "conda" "nomkl"
+run_cmd conda install --yes "conda" "nomkl"
 
 printf '%s\n' --------------------
 
-run_cmd conda install --yes --quiet --channel "conda-forge" "pip" "gdb"
+run_cmd conda config --system --add channels conda-forge
+
+printf '%s\n' --------------------
+
+run_cmd conda install --yes "pip" "gdb"
 
 printf '%s\n' --------------------
 
 CONDA_PACKAGES=()
 PIP_PACKAGES=()
 
-for R in $(grep -v '#' ${REQUIREMENTS_FILES[@]}); do
+while read R; do
+
+    if [ -z "${R}" ]; then
+        continue
+    fi
 
     printf '%s\n' --------------------
 
-    if run_cmd "conda install --dry-run \"${R}\""; then
+    if run_cmd "conda install --satisfied-skip-solve --dry-run \"${R}\""; then
         printf 'using conda for package "%s"\n' "${R}"
         CONDA_PACKAGES+=("${R}")
     else
@@ -68,7 +76,9 @@ for R in $(grep -v '#' ${REQUIREMENTS_FILES[@]}); do
     fi
 
     printf '%s\n' --------------------
-done
+
+done < <(grep -v '#' ${REQUIREMENTS_FILES[@]})
 
 run_cmd conda install --yes ${CONDA_PACKAGES[@]}
+
 run_cmd pip install ${PIP_PACKAGES[@]}
