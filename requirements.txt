@@ -46,7 +46,7 @@ fasteners==0.16.3
     # via -r requirements.in
 flufl.lock==7.0
     # via -r requirements.in
-fmriprep @ git+https://github.com/hippocampusgirl/fmriprep.git@20.2.5+halfpipe.1
+fmriprep @ git+https://github.com/nipreps/fmriprep@32d7c9ced2119297aa59e7c0e419880c08fc5349
     # via -r requirements.in
 formulaic==0.2.4
     # via pybids
