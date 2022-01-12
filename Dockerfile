@@ -15,8 +15,8 @@ COPY requirements.txt install-requirements.sh /tmp/
 
 RUN rm -rf /usr/local/miniconda && \
     cd /tmp && \
-    curl --show-error --silent --location \
-        "https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh" \
+    curl --show-error --location \
+        "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh" \
         --output "miniconda.sh" &&  \
     bash miniconda.sh -b -p /usr/local/miniconda && \
     ./install-requirements.sh --requirements-file requirements.txt && \
