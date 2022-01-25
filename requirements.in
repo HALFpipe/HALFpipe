@@ -1,4 +1,4 @@
-fmriprep @ git+https://github.com/nipreps/fmriprep@32d7c9ced2119297aa59e7c0e419880c08fc5349
+fmriprep ~= 20.2.7
 smriprep ~= 0.7.2
 niworkflows ~= 1.3.5
 sdcflows ~= 1.3.3
@@ -19,7 +19,7 @@ pandas >= 1.2.0
 patsy >= 0.5.2
 statsmodels >= 0.12.2
 scikit-learn >= 0.24.0
-matplotlib ~= 3.3.4
+matplotlib < 3.4
 seaborn >= 0.11.1
 svgutils >= 0.3.1
 tabulate >= 0.8.9

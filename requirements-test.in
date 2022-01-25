@@ -4,3 +4,4 @@ pytest-env
 pytest-github-actions-annotate-failures
 pytest-timeout
 flake8
+black

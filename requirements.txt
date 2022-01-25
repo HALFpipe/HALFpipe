@@ -6,6 +6,8 @@
 #
 astor==0.8.1
     # via formulaic
+asttokens==2.0.5
+    # via stack-data
 atpublic==3.0.1
     # via flufl.lock
 attrs==21.4.0
@@ -14,6 +16,8 @@ backcall==0.2.0
     # via ipython
 bids-validator==1.8.9
     # via pybids
+black==21.12b0
+    # via ipython
 calamities==0.0.16
     # via -r requirements.in
 certifi==2021.10.8
@@ -24,6 +28,7 @@ charset-normalizer==2.0.10
     # via requests
 click==8.0.3
     # via
+    #   black
     #   niflow-nipype1-workflows
     #   pybids
 cycler==0.11.0
@@ -42,15 +47,17 @@ docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
     # via openpyxl
-fasteners==0.16.3
+executing==0.8.2
+    # via stack-data
+fasteners==0.17.2
     # via -r requirements.in
 flufl.lock==7.0
     # via -r requirements.in
-fmriprep @ git+https://github.com/nipreps/fmriprep@32d7c9ced2119297aa59e7c0e419880c08fc5349
+fmriprep==20.2.7
     # via -r requirements.in
 formulaic==0.2.4
     # via pybids
-frozendict==2.1.3
+frozendict==2.2.0
     # via -r requirements.in
 future==0.18.2
     # via niflow-nipype1-workflows
@@ -62,7 +69,7 @@ h5py==3.6.0
     #   nitransforms
 idna==3.3
     # via requests
-imageio==2.13.5
+imageio==2.14.1
     # via scikit-image
 indexed-gzip==1.6.4
     # via
@@ -77,7 +84,7 @@ inflection==0.5.1
     # via -r requirements.in
 interface-meta==1.2.4
     # via formulaic
-ipython==7.31.0
+ipython==8.0.1
     # via line-profiler
 jedi==0.18.1
     # via ipython
@@ -125,7 +132,9 @@ more-itertools==8.12.0
 mpmath==1.2.1
     # via -r requirements.in
 mypy-extensions==0.4.3
-    # via typing-inspect
+    # via
+    #   black
+    #   typing-inspect
 networkx==2.5.1
     # via
     #   fmriprep
@@ -177,7 +186,7 @@ niworkflows==1.3.5
     #   smriprep
 num2words==0.5.10
     # via pybids
-numpy==1.22.0
+numpy==1.22.1
     # via
     #   -r requirements.in
     #   calamities
@@ -214,7 +223,7 @@ packaging==21.3
     #   niworkflows
     #   pint
     #   smriprep
-pandas==1.3.5
+pandas==1.4.0
     # via
     #   -r requirements.in
     #   fmriprep
@@ -226,6 +235,8 @@ pandas==1.3.5
     #   tedana
 parso==0.8.3
     # via jedi
+pathspec==0.9.0
+    # via black
 patsy==0.5.2
     # via
     #   -r requirements.in
@@ -241,6 +252,8 @@ pillow==9.0.0
     #   scikit-image
 pint==0.18
     # via -r requirements.in
+platformdirs==2.4.1
+    # via black
 prompt-toolkit==3.0.24
     # via ipython
 psutil==5.9.0
@@ -250,6 +263,8 @@ psutil==5.9.0
     #   fmriprep
 ptyprocess==0.7.0
     # via pexpect
+pure-eval==0.2.2
+    # via stack-data
 pybids==0.14.0
     # via
     #   -r requirements.in
@@ -262,7 +277,7 @@ pygments==2.11.2
     # via ipython
 pympler==1.0.1
     # via -r requirements.in
-pyparsing==3.0.6
+pyparsing==3.0.7
     # via
     #   matplotlib
     #   packaging
@@ -322,7 +337,7 @@ seaborn==0.11.2
     #   niworkflows
 six==1.16.0
     # via
-    #   fasteners
+    #   asttokens
     #   isodate
     #   patsy
     #   python-dateutil
@@ -334,6 +349,8 @@ smriprep==0.7.2
     #   fmriprep
 sqlalchemy==1.3.24
     # via pybids
+stack-data==0.1.4
+    # via ipython
 stackprinter==0.2.5
     # via -r requirements.in
 statsmodels==0.13.1
@@ -361,6 +378,8 @@ tifffile==2021.11.2
     # via scikit-image
 toml==0.10.2
     # via fmriprep
+tomli==1.2.3
+    # via black
 tqdm==4.62.3
     # via
     #   dipy
@@ -376,6 +395,7 @@ typeguard==2.13.3
 typing-extensions==4.0.1
     # via
     #   -r requirements.in
+    #   black
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass

@@ -56,41 +56,41 @@ class BaseMetadataSchema(Schema):
 class PEDirMetadataSchema(BaseMetadataSchema):
     phase_encoding_direction = fields.Str(
         validate=validate.OneOf(direction_codes),
-        description="The letters i, j, k correspond to the first, second and "
-        "third axis of the data in the NIFTI file.",
+        metadata=dict(description="The letters i, j, k correspond to the first, second and "
+        "third axis of the data in the NIFTI file."),
     )
 
 
 class TEMetadataSchema(BaseMetadataSchema):
     echo_time = fields.Float(
-        description="The echo time (TE) for the acquisition, specified in seconds.",
-        unit="seconds",
+        metadata=dict(description="The echo time (TE) for the acquisition, specified in seconds.",
+        unit="seconds"),
         validate=validate.Range(min=0.0)
     )
 
 
 class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
     repetition_time = fields.Float(
-        description="The time in seconds between the beginning of an acquisition of one "
+        metadata=dict(description="The time in seconds between the beginning of an acquisition of one "
         "volume and the beginning of acquisition of the volume following it (TR).",
-        unit="seconds",
+        unit="seconds"),
         validate=validate.Range(min=0.0)
     )
     effective_echo_spacing = fields.Float(
-        description='The "effective" sampling interval, specified in seconds, between lines '
+        metadata=dict(description='The "effective" sampling interval, specified in seconds, between lines '
         "in the phase-encoding direction, defined based on the size of the reconstructed "
         "image in the phase direction.",
-        unit="seconds",
+        unit="seconds"),
         validate=validate.Range(min=0.0)
     )
     slice_timing = fields.List(
         fields.Float(),
-        description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition.",
-        unit="seconds",
+        metadata=dict(metadata=dict(description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition."),
+        unit="seconds"),
     )
     slice_timing_code = fields.Str(validate=validate.OneOf(slice_order_strs))
     slice_timing_file = fields.Str()
-    slice_encoding_direction = fields.Str(description="", validate=validate.OneOf(direction_codes))
+    slice_encoding_direction = fields.Str(validate=validate.OneOf(direction_codes))
 
     @validates_schema
     def validate_slice_timing(self, data, **_):
@@ -103,14 +103,14 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
 class BIDSFmapMetadataSchema(BaseMetadataSchema):
     intended_for = fields.List(
         fields.Str(),
-        description="Contains one or more filenames with paths relative to the participant subfolder."
+        metadata=dict(description="Contains one or more filenames with paths relative to the participant subfolder."),
     )
 
 
 class PhaseDiffMetadataSchema(BaseMetadataSchema):
     echo_time_difference = fields.Float(
-        description="The echo time difference between the acquisitions, specified in seconds.",
-        unit="seconds",
+        metadata=dict(description="The echo time difference between the acquisitions, specified in seconds.",
+        unit="seconds"),
         validate=validate.Range(min=0.0)
     )
 
@@ -118,14 +118,14 @@ class PhaseDiffMetadataSchema(BaseMetadataSchema):
 class EventsMetadataSchema(BaseMetadataSchema):
     units = fields.Str(
         validate=validate.OneOf(["scans", "seconds"]),
-        description="The units in which onsets and durations are specified.",
+        metadata=dict(description="The units in which onsets and durations are specified."),
     )
 
 
 class RefMetadataSchema(Schema):
     space = fields.Str(
         validate=validate.OneOf(templates),
-        description="The space in which the image is provided.",
+        metadata=dict(description="The space in which the image is provided."),
     )
 
 

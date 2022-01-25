@@ -27,7 +27,6 @@ class BaseFmapFileSchema(BaseFileSchema):
         dump_default=None,
         load_default=None,
         allow_none=True,
-        description="mapping of acq to task",
     )
 
 
