@@ -24,7 +24,6 @@ from bids.layout import Config
 from bids.layout.writing import build_path
 import bids.config
 
-bids.config.set_option("extension_initial_dot", True)
 bidsconfig = Config.load("bids")
 
 bidsversion = "1.4.0"

@@ -22,12 +22,9 @@ from ...model.tags import entities, entity_longnames
 from ...utils import splitext, logger
 from ...io.metadata.sidecar import SidecarMetadataLoader
 
-import bids.config
-
-bids.config.set_option("extension_initial_dot", True)
-from bids import BIDSLayout  # noqa: E402
-from bids.layout.models import BIDSFile  # noqa: E402
-from bids.layout.index import BIDSLayoutIndexer  # noqa: E402
+from bids import BIDSLayout
+from bids.layout.models import BIDSFile
+from bids.layout.index import BIDSLayoutIndexer
 
 file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}
