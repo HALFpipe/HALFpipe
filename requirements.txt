@@ -41,7 +41,7 @@ decorator==4.4.2
     #   networkx
 defusedxml==0.7.1
     # via odfpy
-dipy==1.4.1
+dipy==1.4.0
     # via -r requirements.in
 docopt==0.6.2
     # via num2words
@@ -162,7 +162,7 @@ nilearn==0.6.2
     #   niworkflows
     #   smriprep
     #   tedana
-nipype @ git+https://github.com/nipy/nipype.git@adab17d0f5556e8c3b6e4f48f86969ce238ff739
+nipype @ git+https://github.com/nipy/nipype.git@cd4c34d935a43812d1756482fdc4034844e485b8
     # via
     #   -r requirements.in
     #   fmriprep
@@ -190,6 +190,7 @@ numpy==1.22.1
     # via
     #   -r requirements.in
     #   calamities
+    #   dipy
     #   fmriprep
     #   formulaic
     #   h5py
@@ -316,6 +317,7 @@ scikit-learn==1.0.2
 scipy==1.7.3
     # via
     #   -r requirements.in
+    #   dipy
     #   formulaic
     #   nilearn
     #   nitime
