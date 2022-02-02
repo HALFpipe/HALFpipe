@@ -31,6 +31,15 @@ from nipype.interfaces.base import (
 logger = logging.getLogger("halfpipe")
 
 
+def _normalize_subject(s) -> str:
+    s = str(s)
+
+    if s.startswith("sub-"):
+        s = s[4:]
+
+    return s
+
+
 def _get_data_frame(file_path, variable_dicts):
     data_frame = loadspreadsheet(file_path, dtype=object)
 
@@ -43,9 +52,8 @@ def _get_data_frame(file_path, variable_dicts):
     if id_column is None:
         raise ValueError(f'Column "{id_column}" not found')
 
-    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)  # type: ignore
-    if all(str(id).startswith("sub-") for id in data_frame[id_column]):  # for bids
-        data_frame[id_column] = [str(id).replace("sub-", "") for id in data_frame[id_column]]
+    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
+    data_frame[id_column] = [_normalize_subject(s) for s in data_frame[id_column]]
     data_frame = data_frame.set_index(id_column)
 
     return data_frame
@@ -88,7 +96,7 @@ def _make_group_filterfun(filter_dict: Dict, categorical_dict: Dict, model_desc:
         return None
 
     variable_dict = categorical_dict[variable]
-    selectedsubjects = frozenset(
+    selected_subjects = frozenset(
         subject for subject, value in variable_dict.items() if value in levels
     )
 
@@ -98,11 +106,13 @@ def _make_group_filterfun(filter_dict: Dict, categorical_dict: Dict, model_desc:
 
     if action == "include":
         def group_include_filterfun(d):
-            sub = d.get("tags").get("sub")
-            res = sub in selectedsubjects
+            subject = d.get("tags").get("sub")
+            subject = _normalize_subject(subject)
+
+            res = subject in selected_subjects
 
             if res is False:
-                logger.info(f'Excluding subject "{sub}" {model_desc}because "{variable}" is not {levelsdesc}')
+                logger.info(f'Excluding subject "{subject}" {model_desc}because "{variable}" is not {levelsdesc}')
 
             return res
 
@@ -110,11 +120,13 @@ def _make_group_filterfun(filter_dict: Dict, categorical_dict: Dict, model_desc:
 
     elif action == "exclude":
         def group_exclude_filterfun(d):
-            sub = d["tags"].get("sub")
-            res = sub not in selectedsubjects
+            subject = d["tags"].get("sub")
+            subject = _normalize_subject(subject)
+
+            res = subject not in selected_subjects
 
             if res is False:
-                logger.info(f'Excluding subject "{sub}" {model_desc}because "{variable}" is {levelsdesc}')
+                logger.info(f'Excluding subject "{subject}" {model_desc}because "{variable}" is {levelsdesc}')
 
             return res
 
@@ -131,16 +143,19 @@ def _make_missing_filterfun(filter_dict: Dict, data_frame: pd.DataFrame, model_d
 
     assert filter_dict["action"] == "exclude"
 
-    isfinite = pd.notnull(data_frame[variable])  # type: ignore
+    is_finite = pd.notnull(data_frame[variable])
+    assert isinstance(is_finite, pd.Series)
 
-    selectedsubjects = frozenset(isfinite.index[isfinite])
+    selected_subjects = frozenset(is_finite.index[is_finite])
 
     def missing_filterfun(d):
-        sub = d["tags"].get("sub")
-        res = sub in selectedsubjects
+        subject = d["tags"].get("sub")
+        subject = _normalize_subject(subject)
+
+        res = subject in selected_subjects
 
         if res is False:
-            logger.warning(f'Excluding subject "{sub}" {model_desc}because "{variable}" is missing')
+            logger.warning(f'Excluding subject "{subject}" {model_desc}because "{variable}" is missing')
 
         return res
 
