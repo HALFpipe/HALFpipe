@@ -36,7 +36,7 @@ pyflakes==2.4.0
     # via flake8
 pyparsing==3.0.7
     # via packaging
-pytest==6.2.5
+pytest==7.0.0
     # via
     #   -r requirements-test.in
     #   pytest-cov
@@ -51,11 +51,10 @@ pytest-github-actions-annotate-failures==0.1.6
     # via -r requirements-test.in
 pytest-timeout==2.1.0
     # via -r requirements-test.in
-toml==0.10.2
-    # via pytest
 tomli==1.2.3
     # via
     #   black
     #   coverage
+    #   pytest
 typing-extensions==4.0.1
     # via black
