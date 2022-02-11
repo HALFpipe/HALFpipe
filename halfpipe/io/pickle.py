@@ -9,7 +9,7 @@ import lzma
 import pickle
 from traits.trait_errors import TraitError
 
-from ...utils import logger
+from ..utils import logger
 
 pickle_lzma_extension = ".pickle.xz"
 
@@ -22,7 +22,7 @@ def load_pickle_lzma(file_path: str):
         with lzma.open(file_path, "rb") as fptr:
             return pickle.load(fptr)
 
-    except (lzma.LZMAError, TraitError, EOFError) as e:
+    except (lzma.LZMAError, TraitError, EOFError, AttributeError) as e:
         logger.error(f'Error while reading "{file_path}"', exc_info=e)
         return None
 

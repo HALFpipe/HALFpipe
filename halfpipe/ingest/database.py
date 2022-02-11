@@ -2,15 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from hashlib import sha1
 
 from .resolve import ResolvedSpec
-from ..metadata import MetadataLoader
-from ...model.tags import entities
+from .metadata.base import MetadataLoader
+from ..model.tags import entities
 
 
 class Database:
@@ -242,7 +238,9 @@ class Database:
 
     def tmplstr(self, filepaths):
         if isinstance(filepaths, str):
-            return self.fileobj(filepaths).tmplstr
+            file_obj = self.fileobj(filepaths)
+            assert file_obj is not None
+            return file_obj.tmplstr
         tmplstrset = set(self.tmplstr(filepath) for filepath in filepaths)
         if len(tmplstrset) == 1:
             (tmplstr,) = tmplstrset

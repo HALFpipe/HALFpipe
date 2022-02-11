@@ -2,11 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
-from typing import Any, List, Dict, Optional
+from typing import Any
 
 from collections import defaultdict
 from itertools import product
@@ -17,10 +13,11 @@ from marshmallow import EXCLUDE
 import marshmallow.exceptions
 from calamities.pattern import tag_glob, tag_parse, get_entities_in_path
 
-from ...model.file import FileSchema, File
-from ...model.tags import entities, entity_longnames
-from ...utils import splitext, logger
-from ...io.metadata.sidecar import SidecarMetadataLoader
+from ..model.file import FileSchema, File
+from ..model.tags import entities, entity_longnames
+from ..utils import logger
+from ..utils.path import split_ext
+from .metadata.sidecar import SidecarMetadataLoader
 
 from bids import BIDSLayout
 from bids.layout.models import BIDSFile
@@ -30,32 +27,35 @@ file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}
 
 
-def to_fileobj(obj: BIDSFile, basemetadata: Dict) -> Optional[File]:
-    entitydict: Dict = obj.get_entities()
+def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
+    entitydict: dict = obj.get_entities()
 
-    datatype: Optional[str] = entitydict.get("datatype")
-    suffix: Optional[str] = entitydict.get("suffix")
-    extension: Optional[str] = entitydict.get("extension")
+    datatype: str | None = entitydict.get("datatype")
+    suffix: str | None = entitydict.get("suffix")
+    extension: str | None = entitydict.get("extension")
 
     if datatype is None:
-        return  # exclude README and dataset_description.json etc
+        return None  # exclude README and dataset_description.json etc
 
     if extension is not None:
         if not extension.startswith("."):
             extension = f".{extension}"
 
+    if not isinstance(obj.path, str):
+        return None  # need path
+
     path: str = obj.path
 
-    metadata: Dict = dict(**basemetadata)
+    metadata: dict = dict(**basemetadata)
     metadata.update(obj.get_metadata())
 
-    tags: Dict = dict()
+    tags: dict = dict()
     for k, v in entitydict.items():
         entity = entity_shortnames[k] if k in entity_shortnames else k
         if entity in entities:
             tags[entity] = str(v)
 
-    filedict: Dict[str, Any] = dict(
+    filedict: dict[str, Any] = dict(
         datatype=datatype,
         suffix=suffix,
         extension=extension,
@@ -86,6 +86,8 @@ def to_fileobj(obj: BIDSFile, basemetadata: Dict) -> Optional[File]:
             exc_info=False,
             stack_info=False,
         )
+
+    return None
 
 
 class ResolvedSpec:
@@ -126,7 +128,7 @@ class ResolvedSpec:
             assert isinstance(filedict, dict)
 
             filedict["path"] = filepath
-            _, filedict["extension"] = splitext(filepath)
+            _, filedict["extension"] = split_ext(filepath)
 
             tagdict.update(
                 filedict.get("tags", dict())
@@ -146,7 +148,7 @@ class ResolvedSpec:
 
         return resolved_files
 
-    def _resolve_bids(self, fileobj: File) -> List[File]:
+    def _resolve_bids(self, fileobj: File) -> list[File]:
 
         # load using pybids
         validate = False   # save time
@@ -168,9 +170,9 @@ class ResolvedSpec:
             if isinstance(metadata, dict):
                 basemetadata.update(metadata)
 
-        resolved_files: List[File] = []
+        resolved_files: list[File] = []
         for obj in layout.get_files().values():
-            file: Optional[File] = to_fileobj(obj, basemetadata)
+            file: File | None = to_fileobj(obj, basemetadata)
 
             if file is None:
                 continue
@@ -179,51 +181,42 @@ class ResolvedSpec:
             self.specfileobj_by_filepaths[file.path] = file
             resolved_files.append(file)
 
-        intended_for_mapping = dict()
+        intended_for: dict[str, frozenset[tuple[str, str]]] = dict()
         for file in resolved_files:
             if file.datatype != "fmap":
                 continue
 
             metadata = SidecarMetadataLoader.load(file.path)
-
             if metadata is None:
                 continue
 
             intended_for_paths = metadata.get("intended_for")
-
             if intended_for_paths is None:
                 continue
 
-            tagset = frozenset(file.tags.items())
+            linked_fmap_tags = frozenset(file.tags.items())
+            for intended_for_path in intended_for_paths:
+                intended_for[intended_for_path] = linked_fmap_tags
 
-            for path in intended_for_paths:
-                intended_for_mapping[path] = tagset
-
-        tag_mapping = defaultdict(list)
+        informed_by: dict[frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]] = defaultdict(list)
         for file in resolved_files:
-            tagset = frozenset(file.tags.items())
+            file_tags = frozenset(file.tags.items())
 
-            for path, fmap_tagset in intended_for_mapping.items():
-                if not file.path.endswith(path):  # slow performance
-                    continue
+            for file_path, linked_fmap_tags in intended_for.items():
+                if file.path.endswith(file_path):  # slow performance
+                    informed_by[file_tags].append(linked_fmap_tags)
 
-                tag_mapping[tagset].append(fmap_tagset)
+        mappings: set[tuple[tuple[str, str], tuple[str, str]]] = set()
+        for func_tags, linked_fmap_tags_list in informed_by.items():
+            for linked_fmap_tags in linked_fmap_tags_list:
+                for func_tag, linked_fmap_tag in product(func_tags, linked_fmap_tags):
+                    if func_tag[0] == "sub" or linked_fmap_tag[0] == "sub":
+                        continue
+                    if func_tag[0] == linked_fmap_tag[0]:  # only map between different entities
+                        continue
+                    mappings.add((func_tag, linked_fmap_tag))
 
-        mappings = set()
-        mapping_sets = [
-            set(
-                (a, b)
-                for fmap in fmaplist
-                for a, b in product(func, fmap)
-                if a[0] != b[0]
-                and "sub" not in (a[0], b[0])
-            )
-            for func, fmaplist in tag_mapping.items()
-        ]
-        if len(mapping_sets) > 0:
-            mappings.update(*mapping_sets)
-
-        intended_for = defaultdict(list)
+        intended_for_rules = defaultdict(list)
         for functag, fmaptag in mappings:
             entity, val = functag
             funcstr = f"{entity}.{val}"
@@ -231,7 +224,7 @@ class ResolvedSpec:
             entity, val = fmaptag
             fmapstr = f"{entity}.{val}"
 
-            intended_for[fmapstr].append(funcstr)
+            intended_for_rules[fmapstr].append(funcstr)
 
         if len(intended_for) > 0:
             logger.info("Inferred mapping between func and fmap files to be %s", pformat(intended_for))

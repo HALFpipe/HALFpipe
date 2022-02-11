@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, Dict, Iterable
+from typing import Any, Iterable
 
 from math import isclose, sqrt
 
@@ -28,7 +28,7 @@ template_origin_sets = {
 
 
 class NiftiheaderMetadataLoader:
-    cache: Dict[str, Any] = dict()
+    cache: dict[str, Any] = dict()
 
     @staticmethod
     def load(niftifile):
@@ -120,7 +120,10 @@ class NiftiheaderMetadataLoader:
                 else:
                     zooms = header.get_zooms()
 
-                    if zooms is None or len(zooms) < 4:
+                    if zooms is None or len(zooms) != 4:
+                        logger.info(
+                            f'Missing repetition_time in image file header zooms "{zooms}"'
+                        )
                         return False
 
                     value = float(zooms[3])
@@ -154,12 +157,11 @@ class NiftiheaderMetadataLoader:
                     return False
                 origin = affine[0:3, 3]
                 for name, template_origin_set in template_origin_sets.items():
-                    for o in template_origin_set:
-                        o = np.array(o)
-                        delta = np.abs(o) - np.abs(
-                            origin
-                        )  # use absolute values as we don't care about orientation
-                        if sqrt(np.square(delta).mean()) < 1:
+                    for template_origin in template_origin_set:
+                        o = np.array(template_origin)
+
+                        # use squared values as we don't care about orientation
+                        if sqrt(np.square(o - origin).mean()) < 1:
                             value = name
                             break
 

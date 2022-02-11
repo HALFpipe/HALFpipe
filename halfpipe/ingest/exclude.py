@@ -5,8 +5,8 @@
 from functools import lru_cache
 import logging
 
-from ...model.exclude import ExcludeSchema, rating_indices
-from ...model.tags import entities
+from ..model.exclude import ExcludeSchema, rating_indices
+from ..model.tags import entities
 
 
 def _agg_hierarchy(dicthierarchy, entities=[], **kwargs):
@@ -65,9 +65,12 @@ class ExcludeDatabase:
                 entries = exclude_schema.loads(fp.read())
 
             for entry in entries:
+                i = None
                 for i, entity in enumerate(entities):  # order determines entity precedence
                     if entity in entry:
                         break
+
+                assert isinstance(i, int)
                 _set_in_hierarchy(dicthierarchy, [*entities[i:]], entry)
 
         self.dicthierarchy = dicthierarchy

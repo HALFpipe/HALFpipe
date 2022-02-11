@@ -7,9 +7,10 @@ from pathlib import Path
 import numpy as np
 from scipy.io import loadmat
 
-from ...model.file import File
-from .spreadsheet import loadspreadsheet
-from ...utils import logger, splitext
+from ..model.file import File
+from .spreadsheet import read_spreadsheet
+from ..utils import logger
+from ..utils.path import split_ext
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -19,7 +20,7 @@ def parse_tsv_condition_file(filepath):
     onsets = []
     durations = []
 
-    data = loadspreadsheet(filepath)
+    data = read_spreadsheet(filepath)
 
     groupby = data.groupby(by="trial_type")
 
@@ -77,7 +78,7 @@ def parse_txt_condition_files(filepaths, conditions):
         assert condition is not None
 
         try:
-            data_frame = loadspreadsheet(filepath)
+            data_frame = read_spreadsheet(filepath)
 
             data_frame.rename(columns=dict(
                 zip(list(data_frame.columns)[:2], ["onsets", "durations"])
@@ -119,7 +120,7 @@ def parse_condition_file(in_any=None):
             raise ValueError("Cannot read condition files")
 
     elif isinstance(in_any, (str, Path)):
-        _, extension = splitext(in_any)
+        _, extension = split_ext(in_any)
         if extension == ".mat":
             return parse_mat_condition_file(in_any)
         else:

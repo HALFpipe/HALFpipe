@@ -2,14 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 import numpy as np
 
 from .direction import canonicalize_direction_code, parse_direction_str
-from ..parse.spreadsheet import loadspreadsheet
+from ..spreadsheet import read_spreadsheet
 from ...utils import logger
 
 
@@ -78,7 +74,7 @@ class DatabaseMetadataLoader:
             slice_timing_file = fileobj.metadata.get("slice_timing_file")
             if slice_timing_file is not None:
                 try:
-                    spreadsheet = loadspreadsheet(slice_timing_file)
+                    spreadsheet = read_spreadsheet(slice_timing_file)
                     valuearray = np.ravel(spreadsheet.values).astype(np.float64)
                     value = list(valuearray.tolist())
                 except Exception as e:

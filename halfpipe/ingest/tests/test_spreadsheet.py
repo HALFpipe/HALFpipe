@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from typing import List, Union
 
 from pathlib import Path
@@ -18,7 +14,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from ..spreadsheet import loadspreadsheet
+from ..spreadsheet import read_spreadsheet
 
 vest_str = """/NumWaves       2
 /NumPoints      9
@@ -73,7 +69,7 @@ def test_loadspreadsheet_dtypes(
 
     def random_str(length: int = 30):
         return "".join(
-            choice([*ascii_letters, *digits]) for n in range(length)
+            choice([*ascii_letters, *digits]) for _ in range(length)
         )
 
     n_rows = 10
@@ -89,15 +85,16 @@ def test_loadspreadsheet_dtypes(
     ]))
 
     data_frame = pd.DataFrame.from_records(records)
-    data_frame.index = [f"row{i:d}" for i in range(1, n_rows + 1)]
+    data_frame.set_index([f"row{i:d}" for i in range(1, n_rows + 1)], inplace=True)
 
     data_frame_str = data_frame.to_csv(sep="\1", header=header, index=index)
+    assert isinstance(data_frame_str, str)
     data_frame_str = data_frame_str.replace("\1", delimiter)
 
     with open(file_name, "w") as file_pointer:
         file_pointer.write(data_frame_str)
 
-    spreadsheet = loadspreadsheet(file_name)
+    spreadsheet = read_spreadsheet(file_name)
 
     if header:
         assert all(
@@ -178,6 +175,7 @@ def test_loadspreadsheet_delimited(
         comment_str += "\n"
 
     data_frame_str = data_frame.to_csv(sep="\1", header=True, index=index)
+    assert isinstance(data_frame_str, str)
     data_frame_str = data_frame_str.replace("\1", delimiter)
     data_frame_lines = data_frame_str.splitlines()
 
@@ -205,7 +203,7 @@ def test_loadspreadsheet_delimited(
             file_pointer.write(trailing_spaces_str)
             file_pointer.write("\n")
 
-    spreadsheet = loadspreadsheet(file_name)
+    spreadsheet = read_spreadsheet(file_name)
 
     if header:
         assert all(
@@ -235,7 +233,7 @@ def test_loadspreadsheet_excel(
 
     data_frame.to_excel(file_name, header=header, index=index, sheet_name="sheet", **kwargs)
 
-    spreadsheet = loadspreadsheet(file_name)
+    spreadsheet = read_spreadsheet(file_name)
 
     if header:
         assert all(
@@ -256,7 +254,7 @@ def test_loadspreadsheet_vest(tmp_path):
     with open(file_name, "w") as file_pointer:
         file_pointer.write(vest_str)
 
-    spreadsheet = loadspreadsheet(file_name)
+    spreadsheet = read_spreadsheet(file_name)
 
     assert spreadsheet.values.shape == (9, 2)
 
@@ -266,6 +264,6 @@ def test_loadspreadsheet_empty(tmp_path):
 
     file_name.touch()
 
-    spreadsheet = loadspreadsheet(file_name)
+    spreadsheet = read_spreadsheet(file_name)
 
     assert spreadsheet.values.shape == (0, 0)

@@ -2,9 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
 from typing import Dict
 
 from functools import lru_cache
@@ -16,14 +13,14 @@ from marshmallow import EXCLUDE
 from inflection import underscore
 
 from ...model.metadata import MetadataSchema
-from ...utils import splitext
+from ...utils.path import split_ext
 
 
 class SidecarMetadataLoader:
     @staticmethod
     @lru_cache(maxsize=None)
     def load_json(file_path) -> Dict:
-        stem, _ = splitext(file_path)
+        stem, _ = split_ext(file_path)
         sidecar_file_path = Path(file_path).parent / f"{stem}.json"
 
         if not Path(sidecar_file_path).is_file():

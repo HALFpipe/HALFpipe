@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict
-
 from pathlib import Path
 from os.path import relpath
 from shutil import rmtree
@@ -13,23 +11,21 @@ from collections import OrderedDict
 from inflection import camelize
 
 from calamities.pattern.glob import _rlistdir
-from ...model.file import FileSchema
-from ...model.tags import entity_longnames, entities
-from ...model.utils import get_nested_schema_field_names, get_type_schema
-from ...utils import splitext
-from ...utils.format import format_like_bids
-from ..metadata import canonicalize_direction_code
+from ..model.file import FileSchema
+from ..model.tags import entity_longnames, entities
+from ..model.utils import get_nested_schema_field_names, get_type_schema
+from ..utils.path import split_ext
+from ..utils.format import format_like_bids
+from .metadata.direction import canonicalize_direction_code
 
 from bids.layout import Config
 from bids.layout.writing import build_path
-import bids.config
 
-bidsconfig = Config.load("bids")
-
-bidsversion = "1.4.0"
+bids_config = Config.load("bids")
+bids_version = "1.4.0"
 
 
-def get_file_metadata(database, file_path) -> Dict:
+def get_file_metadata(database, file_path) -> dict:
     schema = get_type_schema(FileSchema, database, file_path)
     instance = schema()
 
@@ -68,7 +64,7 @@ def get_file_metadata(database, file_path) -> Dict:
     return metadata
 
 
-def get_bids_metadata(database, file_path) -> Dict:
+def get_bids_metadata(database, file_path) -> dict:
     metadata = get_file_metadata(database, file_path)
 
     return {
@@ -83,13 +79,13 @@ class BidsDatabase:
 
         # indexed by bids_path
 
-        self.file_paths: Dict[str, str] = dict()
-        self._tags: Dict[str, Dict] = dict()
-        self._metadata: Dict[str, Dict] = dict()
+        self.file_paths: dict[str, str] = dict()
+        self._tags: dict[str, dict] = dict()
+        self._metadata: dict[str, dict] = dict()
 
         # indexed by file_path
 
-        self.bids_paths: Dict[str, str] = dict()
+        self.bids_paths: dict[str, str] = dict()
 
     def put(self, file_path: str) -> str:
         bids_path = self.bids_paths.get(file_path)
@@ -117,7 +113,7 @@ class BidsDatabase:
                         k = "fmap"
                 _tags[k] = v
 
-        bids_path_result = build_path(_tags, bidsconfig.default_path_patterns)
+        bids_path_result = build_path(_tags, bids_config.default_path_patterns)
 
         if bids_path_result is None:
             raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}"')
@@ -172,7 +168,7 @@ class BidsDatabase:
 
         dataset_description = {
             "Name": self.database.sha1,
-            "BIDSVersion": bidsversion,
+            "BIDSVersion": bids_version,
             "DatasetType": "raw",
         }
 
@@ -203,7 +199,7 @@ class BidsDatabase:
             metadata = self._metadata.get(bids_path)
 
             if metadata is not None and len(metadata) > 0:
-                basename, _ = splitext(bids_path)
+                basename, _ = split_ext(bids_path)
                 sidecar_path = Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
 
                 bids_paths.add(sidecar_path)

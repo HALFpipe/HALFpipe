@@ -2,27 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 import nibabel as nib
 import re
 
-from calamities.pattern import tag_glob
-
+from ..glob import tag_glob
 from ...model.metadata import direction_codes, axis_codes, space_codes
 from .niftiheader import NiftiheaderLoader
 
 
-def get_axcodes_set(pat):
-    tagglobres = tag_glob(pat)
-    filepaths, _ = zip(*tagglobres)
-
+def get_axcodes_set(path_pattern: str):
     axcodes_set = set()
 
-    for filepath in filepaths:
-        header, _ = NiftiheaderLoader.load(filepath)
+    for file_path, _ in tag_glob(path_pattern):
+        header, _ = NiftiheaderLoader.load(file_path)
         assert isinstance(header, nib.nifti1.Nifti1Header)
         axcodes_set.add(nib.aff2axcodes(header.get_qform()))
 

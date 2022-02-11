@@ -7,8 +7,8 @@
 """
 
 from ..condition import parse_condition_file
-from ....tests.resource import setup as setuptestresources
-from ....resource import get as getresource
+from ...tests.resource import setup as setuptestresources
+from ...resource import get as getresource
 
 
 txt_str = """8 32 1

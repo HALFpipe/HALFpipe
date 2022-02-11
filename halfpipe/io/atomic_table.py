@@ -14,9 +14,9 @@ import numpy as np
 from tabulate import tabulate
 
 from .lock import AdaptiveLock
-from ...model.tags import entities
-from ...utils import logger
-from ...utils.json import NumpyJSONEncoder
+from ..model.tags import entities
+from ..utils import logger
+from ..utils.json import TypeAwareJSONEncoder
 
 
 def _compare(a, b):
@@ -26,7 +26,7 @@ def _compare(a, b):
         return a == b
 
 
-class DictListFile:
+class AtomicTable:
     def __init__(self, filename, header="report('", footer="');"):
         self.filename = Path(filename)
         self.filename.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +79,7 @@ class DictListFile:
                     indent=4,
                     sort_keys=True,
                     ensure_ascii=False,
-                    cls=NumpyJSONEncoder,
+                    cls=TypeAwareJSONEncoder,
                 )
                 for line in jsonstr.splitlines():
                     fp.write(line)
@@ -95,16 +95,18 @@ class DictListFile:
         assert self.dictlist is not None
 
         dictlist = [{str(k): str(v) for k, v in indict.items()} for indict in self.dictlist]
-        dataframe = pd.DataFrame.from_records(dictlist)  # type: ignore
-        dataframe = dataframe.replace({np.nan: ""})
+        data_frame = pd.DataFrame.from_records(dictlist)
+        assert isinstance(data_frame, pd.DataFrame)
 
-        columns = list(map(str, dataframe.columns))
-        columnsinorder = [entity for entity in reversed(entities) if entity in columns]
-        columnsinorder.extend(sorted([column for column in columns if column not in entities]))
+        data_frame.replace({np.nan: ""}, inplace=True)
 
-        dataframe = dataframe[columnsinorder]
+        columns = list(map(str, data_frame.columns))
+        columns_in_order = [entity for entity in reversed(entities) if entity in columns]
+        columns_in_order.extend(sorted([column for column in columns if column not in entities]))
 
-        table_str = tabulate(dataframe, headers="keys", showindex=False)  # type: ignore
+        data_frame = data_frame[columns_in_order]
+
+        table_str = tabulate(data_frame.astype(str), headers="keys", showindex=False)
 
         table_filename = self.filename.parent / f"{self.filename.stem}.txt"
         with open(str(table_filename), "w") as fp:
