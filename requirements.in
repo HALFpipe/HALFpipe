@@ -7,7 +7,6 @@ nilearn
 nibabel >= 3.2.1
 indexed-gzip >= 1.6.4
 nitime
-dipy
 templateflow >= 0.7.1
 pybids >= 0.13.1
 

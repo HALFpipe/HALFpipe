@@ -1,4 +1,4 @@
-FROM nipreps/fmriprep:20.2.6
+FROM nipreps/fmriprep:20.2.7
 
 ENV PATH="/usr/local/miniconda/bin:$PATH" \
     XDG_CACHE_HOME="/home/fmriprep/.cache"

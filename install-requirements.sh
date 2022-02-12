@@ -43,8 +43,7 @@ run_cmd() {
 
 printf '%s\n' --------------------
 
-# update conda and disable mkl
-run_cmd conda install --yes "conda" "nomkl"
+run_cmd conda update --channel "defaults" --yes "conda"
 
 printf '%s\n' --------------------
 
@@ -52,7 +51,7 @@ run_cmd conda config --system --add channels conda-forge
 
 printf '%s\n' --------------------
 
-run_cmd conda install --yes "pip" "gdb"
+run_cmd conda install --yes "python==3.10" "nomkl" "pip" "gdb"
 
 printf '%s\n' --------------------
 

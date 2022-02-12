@@ -39,8 +39,6 @@ decorator==4.4.2
     #   networkx
 defusedxml==0.7.1
     # via odfpy
-dipy==1.4.1
-    # via -r requirements.in
 docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
@@ -62,9 +60,7 @@ future==0.18.2
 gmpy2==2.1.2
     # via -r requirements.in
 h5py==3.6.0
-    # via
-    #   dipy
-    #   nitransforms
+    # via nitransforms
 idna==3.3
     # via requests
 imageio==2.15.0
@@ -134,7 +130,6 @@ networkx==2.5.1
 nibabel==3.2.2
     # via
     #   -r requirements.in
-    #   dipy
     #   fmriprep
     #   nilearn
     #   nitime
@@ -363,9 +358,7 @@ toml==0.10.2
 tomli==2.0.1
     # via black
 tqdm==4.62.3
-    # via
-    #   dipy
-    #   templateflow
+    # via templateflow
 traitlets==5.1.1
     # via
     #   ipython
