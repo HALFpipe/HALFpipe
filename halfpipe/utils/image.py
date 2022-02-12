@@ -3,18 +3,18 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def niftidim(input, idim: int) -> int:
-    if isinstance(input, str):
+def nifti_dim(obj, dimension_index: int) -> int:
+    if isinstance(obj, str):
         import nibabel as nib
+        obj = nib.load(obj)
 
-        input = nib.load(input)
-    if len(input.shape) > idim:
-        return input.shape[idim]
-    else:
-        return 1
+    if len(obj.shape) > dimension_index:
+        return obj.shape[dimension_index]
+
+    return 1
 
 
-def nvol(input) -> int:
-    from halfpipe.utils import niftidim
+def nvol(obj) -> int:
+    from halfpipe.utils.image import nifti_dim
 
-    return niftidim(input, 3)
+    return nifti_dim(obj, 3)

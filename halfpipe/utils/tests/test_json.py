@@ -6,8 +6,9 @@ from json import dumps
 
 import pytest
 import numpy as np
+from frozendict import frozendict  # type: ignore
 
-from ..json import NumpyJSONEncoder
+from ..json import TypeAwareJSONEncoder
 
 
 def test_bool():
@@ -16,7 +17,7 @@ def test_bool():
     with pytest.raises(Exception):
         dumps(dict(x=x))
 
-    dumps(dict(x=x), cls=NumpyJSONEncoder)
+    dumps(dict(x=x), cls=TypeAwareJSONEncoder)
 
 
 @pytest.mark.parametrize("cls", [np.int32, np.uint32])
@@ -26,7 +27,7 @@ def test_int(cls):
     with pytest.raises(Exception):
         dumps(dict(x=x))
 
-    dumps(dict(x=x), cls=NumpyJSONEncoder)
+    dumps(dict(x=x), cls=TypeAwareJSONEncoder)
 
 
 def test_float():
@@ -35,4 +36,13 @@ def test_float():
     with pytest.raises(Exception):
         dumps(dict(x=x))
 
-    dumps(dict(x=x), cls=NumpyJSONEncoder)
+    dumps(dict(x=x), cls=TypeAwareJSONEncoder)
+
+
+def test_frozendict():
+    x = frozendict(x=5)
+
+    with pytest.raises(Exception):
+        dumps(dict(x=x))
+
+    dumps(dict(x=x), cls=TypeAwareJSONEncoder)

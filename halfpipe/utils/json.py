@@ -7,14 +7,18 @@ from typing import Optional
 from json import JSONEncoder
 
 import numpy as np
+from frozendict import frozendict   # type: ignore
 
 
-class NumpyJSONEncoder(JSONEncoder):
+class TypeAwareJSONEncoder(JSONEncoder):
     """
     adapted from https://github.com/illagrenan/django-numpy-json-encoder
     """
 
     def default(self, o):
+        if isinstance(o, frozendict):
+            return dict(o)
+
         if isinstance(o, np.ndarray):
             return o.tolist()
 
