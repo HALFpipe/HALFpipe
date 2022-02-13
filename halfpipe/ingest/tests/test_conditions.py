@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from ..condition import parse_condition_file
 from ...tests.resource import setup as setuptestresources
 from ...resource import get as getresource

@@ -26,7 +26,7 @@ def _check_multicollinearity(matrix):
     max_singular = np.max(s)
     min_singular = np.min(s)
 
-    rank = np.linalg.matrix_rank(matrix)  # type: ignore
+    rank = np.linalg.matrix_rank(matrix)
 
     logger.info(
         f"max_singular={max_singular} min_singular={min_singular} "
@@ -43,7 +43,7 @@ def _check_multicollinearity(matrix):
 def _prepare_data_frame(
     spreadsheet: Path, variabledicts: list[dict], subjects: list[str]
 ) -> pd.DataFrame:
-    rawdataframe: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=object)
+    data_frame: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=str)
 
     id_column = None
     for variabledict in variabledicts:
@@ -53,12 +53,12 @@ def _prepare_data_frame(
 
     assert id_column is not None, "Missing id column, cannot specify model"
 
-    rawdataframe[id_column] = pd.Series(rawdataframe[id_column], dtype=str)  # type: ignore
-    if all(str(id).startswith("sub-") for id in rawdataframe[id_column]):  # for bids
-        rawdataframe[id_column] = [
-            str(id).replace("sub-", "") for id in rawdataframe[id_column]
+    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
+    if all(str(id).startswith("sub-") for id in data_frame[id_column]):  # for bids
+        data_frame[id_column] = [
+            str(id).replace("sub-", "") for id in data_frame[id_column]
         ]
-    rawdataframe.set_index(id_column, inplace=True)
+    data_frame.set_index(id_column, inplace=True)
 
     continuous_columns = []
     categorical_columns = []
@@ -72,8 +72,8 @@ def _prepare_data_frame(
             columns_in_order.append(variabledict["name"])
 
     # separate
-    continuous = rawdataframe[continuous_columns]
-    categorical = rawdataframe[categorical_columns]
+    continuous = data_frame[continuous_columns]
+    categorical = data_frame[categorical_columns]
 
     # only keep subjects that are in this analysis
     # also sets order
@@ -87,8 +87,8 @@ def _prepare_data_frame(
     categorical = categorical.astype(str)
     categorical = categorical.astype("category")
 
-    # merge
-    dataframe = pd.merge(
+    # merge with only known columns
+    data_frame = pd.merge(
         categorical,
         continuous,
         how="outer",
@@ -97,9 +97,9 @@ def _prepare_data_frame(
     )
 
     # maintain order
-    dataframe = dataframe.loc[subjects, columns_in_order]
+    data_frame = data_frame.loc[subjects, columns_in_order]
 
-    return dataframe
+    return data_frame
 
 
 def _generate_rhs(contrastdicts, columns_var_gt_0) -> list[Term]:

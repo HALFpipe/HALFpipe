@@ -85,7 +85,7 @@ def test_loadspreadsheet_dtypes(
     ]))
 
     data_frame = pd.DataFrame.from_records(records)
-    data_frame.set_index([f"row{i:d}" for i in range(1, n_rows + 1)], inplace=True)
+    data_frame.set_axis([f"row{i:d}" for i in range(1, n_rows + 1)], axis="index", inplace=True)
 
     data_frame_str = data_frame.to_csv(sep="\1", header=header, index=index)
     assert isinstance(data_frame_str, str)
