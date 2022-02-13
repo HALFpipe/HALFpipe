@@ -3,10 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def loadints(in_file):
-    from halfpipe.io import loadmatrix
+def load_ints(in_file):
+    from halfpipe.ingest.spreadsheet import read_spreadsheet
 
-    return list(loadmatrix(in_file, dtype=int))
+    return list(read_spreadsheet(in_file).values)
 
 
 def ncol(in_file):

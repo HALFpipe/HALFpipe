@@ -29,7 +29,9 @@ from .file import File, FileSchema
 from .setting import SettingSchema, GlobalSettingsSchema
 from .feature import FeatureSchema
 from .model import ModelSchema
-from ..utils import hexdigest, timestampfmt, logger
+from ..utils.hash import hex_digest
+from ..utils.time import timestamp_format
+from ..utils import logger
 
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
@@ -47,7 +49,7 @@ class SpecSchema(Schema):
     schema_version = fields.Str(
         dump_default=schema_version, validate=validate.OneOf(compatible_schema_versions), required=True
     )
-    timestamp = fields.DateTime(dump_default=dt.now(), format=timestampfmt, required=True)
+    timestamp = fields.DateTime(dump_default=dt.now(), format=timestamp_format, required=True)
 
     global_settings = fields.Nested(GlobalSettingsSchema, dump_default={})
 
@@ -121,11 +123,11 @@ class Spec:
 
     @property
     def timestampstr(self):
-        return self.timestamp.strftime(timestampfmt)
+        return self.timestamp.strftime(timestamp_format)
 
     @property
     def uuid(self):
-        return uuid.uuid5(namespace, hexdigest(SpecSchema().dump(self)))
+        return uuid.uuid5(namespace, hex_digest(SpecSchema().dump(self)))
 
     def validate(self):
         SpecSchema().validate(self.__dict__)
@@ -141,7 +143,7 @@ def loadspec(workdir=None, timestamp=None, specpath=None, logger=logger) -> Opti
     if specpath is None:
         assert workdir is not None
         if timestamp is not None:
-            timestampstr = timestamp.strftime(timestampfmt)
+            timestampstr = timestamp.strftime(timestamp_format)
             specpath = op.join(workdir, f"spec.{timestampstr}.json")
         else:
             specpath = op.join(workdir, "spec.json")

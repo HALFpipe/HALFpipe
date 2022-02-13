@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from unittest import mock
 
-from calamities import MultiCombinedNumberAndSingleChoiceInputView
+from ...components import MultiCombinedNumberAndSingleChoiceInputView
 
 from ...tests.mock import MockApp
 

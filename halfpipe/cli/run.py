@@ -3,12 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from typing import Any, Mapping, Union, List, Dict
-from collections import OrderedDict
 
 import os
 from pprint import pformat
 from pathlib import Path
-from itertools import islice
 
 from glob import glob
 from math import ceil
@@ -16,14 +14,16 @@ from math import ceil
 import numpy as np
 import networkx as nx
 
-from ..utils import logger, resolve, timestampstr
+from ..utils import logger
+from ..utils.path import resolve
+from ..utils.time import format_current_time
 
 
 def run_stage_ui(opts):
     from ..ui import init_spec_ui
-    from calamities.config import Config as CalamitiesConfig
+    from ..ui.components.config import Config as UIConfig
 
-    CalamitiesConfig.fs_root = str(opts.fs_root)
+    UIConfig.fs_root = str(opts.fs_root)
     opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
 
 
@@ -50,8 +50,8 @@ def run_stage_workflow(opts):
 
     logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
 
-    from ..workflow.base import init_workflow
-    from ..workflow.execgraph import init_execgraph
+    from ..workflows.base import init_workflow
+    from ..workflows.execgraph import init_execgraph
 
     workflow = init_workflow(opts.workdir)
 
@@ -78,7 +78,7 @@ def run_stage_run(opts):
 
     else:
         if opts.graphs_file is not None:
-            from ..io.file.pickle import load_pickle_lzma
+            from ..io.pickle import load_pickle_lzma
 
             graphs_file = str(resolve(opts.graphs_file, opts.fs_root))
 
@@ -95,7 +95,7 @@ def run_stage_run(opts):
 
             obj = uncache_obj(workdir, type_str="graphs", uuid=opts.uuid)
             if not isinstance(obj, Mapping):
-                raise ValueError(f'Could not find graphs for "{uuid}"')
+                raise ValueError(f'Could not find graphs for "{opts.uuid}"')
 
             graphs = obj
 
@@ -147,7 +147,7 @@ def run_stage_run(opts):
 
     logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
 
-    from ..workflow.execgraph import filter_subjects
+    from ..workflows.execgraph import filter_subjects
 
     chunks = list(graphs.keys())
     subjects = filter_subjects(chunks, opts)
@@ -331,7 +331,7 @@ def main():
             pr.disable()
             if opts is not None:
                 pr.dump_stats(
-                    Path(opts.workdir) / f"profile.{timestampstr():s}.prof"
+                    Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
 
         teardown_logging()

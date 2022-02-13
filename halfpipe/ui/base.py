@@ -5,7 +5,7 @@
 import os
 from pathlib import Path
 
-from calamities import (
+from .components import (
     TextView,
     GiantTextView,
     SpacerView,
@@ -13,12 +13,13 @@ from calamities import (
     App,
     SingleChoiceInputView,
 )
-from calamities.config import Config as CalamitiesConfig
+
+from .components.config import Config as UIConfig
 
 from .step import Step
 from .. import __version__
 from ..model.spec import Spec, SpecSchema, loadspec, savespec
-from ..io.index import Database
+from ..ingest.database import Database
 from ..workdir import init_workdir
 from ..logging import logging_context
 
@@ -182,7 +183,7 @@ class FirstStep(Step):
 def init_spec_ui(workdir=None, debug=False):
     logging_context.disable_print()
 
-    fs_root = Path(CalamitiesConfig.fs_root)
+    fs_root = Path(UIConfig.fs_root)
 
     cur_dir = str(Path.cwd())
     new_dir = fs_root / cur_dir[1:]

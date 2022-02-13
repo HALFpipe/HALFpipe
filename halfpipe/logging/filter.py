@@ -52,6 +52,7 @@ pywarnings_to_ignore: List[str] = [
     "In future, it will be an error for 'np.bool_' scalars to be interpreted as an index",
     "ParserWarning: Falling back to the 'python' engine because the 'c' engine does not support regex separators",
     "DeprecationWarning: Using or importing the ABCs from",
+    "FutureWarning: Setting 'extension_initial_dot' will be removed in pybids 0.16.",
 ]
 
 

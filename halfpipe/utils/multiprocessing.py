@@ -9,7 +9,7 @@ from typing import Union
 
 import os
 from multiprocessing import get_context, active_children
-from multiprocessing import pool as mpp
+import multiprocessing.pool as mpp
 
 from ..logging import logging_context
 

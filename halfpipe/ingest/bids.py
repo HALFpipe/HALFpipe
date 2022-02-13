@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 from inflection import camelize
 
-from calamities.pattern.glob import _rlistdir
+from .glob import _rlistdir
 from ..model.file import FileSchema
 from ..model.tags import entity_longnames, entities
 from ..model.utils import get_nested_schema_field_names, get_type_schema

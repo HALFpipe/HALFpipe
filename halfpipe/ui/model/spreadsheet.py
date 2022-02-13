@@ -7,7 +7,7 @@
 """
 
 
-from calamities import (
+from ..components import (
     TextView,
     SpacerView,
     MultiSingleChoiceInputView,
@@ -23,7 +23,7 @@ import pandas as pd
 from ..step import Step
 from .filter import SubjectGroupFilterStep
 from ...model import VariableSchema, SpreadsheetFileSchema
-from ...io import loadspreadsheet
+from ...ingest.spreadsheet import read_spreadsheet
 from .utils import format_column
 
 next_step_type = SubjectGroupFilterStep
@@ -41,7 +41,7 @@ class SpreadsheetColumnTypeStep(Step):
             if variable["type"] == "id"
         )  # omit id column
 
-        self.df = loadspreadsheet(ctx.spec.files[-1].path)
+        self.df = read_spreadsheet(ctx.spec.files[-1].path)
 
         if all(column in already_used for column in self.df):
             self.should_run = False
@@ -125,7 +125,7 @@ class SpreadsheetIdColumnStep(Step):
 
             already_used = set(v["name"] for v in ctx.spec.files[-1].metadata["variables"])
 
-            df = loadspreadsheet(ctx.spec.files[-1].path)
+            df = read_spreadsheet(ctx.spec.files[-1].path)
             columns = [column for column in df if column not in already_used]
             options = [format_column(column) for column in columns]
 
@@ -180,7 +180,7 @@ class AddSpreadsheetStep(Step):
                 return False
 
             try:
-                loadspreadsheet(self.filepath)
+                read_spreadsheet(self.filepath)
                 return True
             except Exception as e:
                 logging.getLogger("halfpipe.ui").exception("Exception: %s", e)

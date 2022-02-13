@@ -2,13 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-"""
-
-from typing import Dict, List, Optional, Tuple, Union
-
 from collections import defaultdict
 from math import isnan, isclose, isfinite, nan
+from typing import Any
 from typing_extensions import Literal
 
 import numpy as np
@@ -21,7 +17,7 @@ from .base import ModelAlgorithm, listwise_deletion, demean
 from ..utils.format import format_workflow
 
 
-def calcgam(beta, y, z, s) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def calcgam(beta, y, z, s) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     weights = s + beta
 
     iU = np.diag(1.0 / np.ravel(weights))
@@ -155,19 +151,19 @@ def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
 
 
 class FLAME1(ModelAlgorithm):
-    model_outputs = []
+    model_outputs: list[str] = []
     contrast_outputs = [
         "copes", "var_copes", "zstats", "tstats", "fstats", "dof", "masks"
     ]
 
     @staticmethod
     def voxel_calc(
-        coordinate: Tuple[int, int, int],
+        coordinate: tuple[int, int, int],
         y: np.ndarray,
         z: np.ndarray,
         s: np.ndarray,
         cmatdict: dict,
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         y, z, s = flame1_prepare_data(y, z, s)
 
         npts = y.size
@@ -177,7 +173,7 @@ class FLAME1(ModelAlgorithm):
         except np.linalg.LinAlgError:
             return None
 
-        voxel_result: Dict[Dict] = defaultdict(dict)
+        voxel_result: dict[str, dict[tuple[int, int, int], Any]] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             try:
@@ -190,9 +186,9 @@ class FLAME1(ModelAlgorithm):
 
     @classmethod
     def write_outputs(
-        cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
-    ) -> Dict:
-        output_files: Dict[str, List[Union[Literal[False], str]]] = dict()
+        cls, ref_img: nib.Nifti1Image, cmatdict: dict, voxel_results: dict
+    ) -> dict:
+        output_files: dict[str, list[Literal[False] | str]] = dict()
 
         for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(cmatdict)

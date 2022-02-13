@@ -11,7 +11,7 @@ from collections import OrderedDict
 from marshmallow import Schema, ValidationError, fields
 
 from .func import FuncTagsSchema
-from ...utils import ravel
+from ...utils.ops import ravel
 
 
 def validate_tags(v):

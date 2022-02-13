@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
-
-from typing import Dict, Optional, Tuple, List
 
 from math import inf, nan, pi, log
 
@@ -55,7 +51,7 @@ class MoM:
 
 class ReML:
     @staticmethod
-    def model(ϑ: float, x: Optional[np.ndarray], s: np.ndarray):
+    def model(ϑ: float, x: np.ndarray | None, s: np.ndarray):
         σg = ϑ
 
         if σg < 0:
@@ -74,13 +70,13 @@ class ReML:
         return vinv, p, b
 
     @classmethod
-    def fit(cls, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+    def fit(cls, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
         return optimize.minimize_scalar(
             cls.neg_log_lik, args=(y, x, s), method="brent"
         )
 
     @classmethod
-    def neg_log_lik(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+    def neg_log_lik(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
         vinv, p, b = cls.model(ϑ, x, s)
 
         if vinv is None:
@@ -100,7 +96,7 @@ class ReML:
         return neg_log_lik
 
     @classmethod
-    def jacobian(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+    def jacobian(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
         _, p, b = cls.model(ϑ, x, s)
 
         if p is None or b is None:
@@ -109,7 +105,7 @@ class ReML:
         return float(np.trace(p) - y.T @ p @ p @ y)
 
     @classmethod
-    def hessian(cls, ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray):
+    def hessian(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
         _, p, b = cls.model(ϑ, x, s)
 
         if p is None or b is None:
@@ -120,7 +116,7 @@ class ReML:
 
 class ML:
     @staticmethod
-    def neg_log_lik(ϑ: float, y: np.ndarray, x: Optional[np.ndarray], s: np.ndarray, γ: np.ndarray):
+    def neg_log_lik(ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray, γ: np.ndarray):
         σg = ϑ
 
         if σg < 0:
@@ -256,7 +252,7 @@ def het_on_voxel(y, z, s):
 
 
 class Heterogeneity(ModelAlgorithm):
-    model_outputs: List[str] = [
+    model_outputs: list[str] = [
         "hetnorm",
         "hetbeta",
         "hetgamma",
@@ -265,16 +261,16 @@ class Heterogeneity(ModelAlgorithm):
         "hetpseudor2",
         "hetchisq",
     ]
-    contrast_outputs: List[str] = []
+    contrast_outputs: list[str] = []
 
     @staticmethod
     def voxel_calc(
-        coordinate: Tuple[int, int, int],
+        coordinate: tuple[int, int, int],
         y: np.ndarray,
         z: np.ndarray,
         s: np.ndarray,
-        cmatdict: Dict,
-    ) -> Optional[Dict]:
+        cmatdict: dict,
+    ) -> dict | None:
         _ = cmatdict
         y, z, s = flame1_prepare_data(y, z, s)
 
@@ -293,12 +289,14 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    def write_outputs(cls, ref_img: nib.Nifti1Image, cmatdict: dict, voxel_results: dict) -> dict:
         output_files = dict()
 
         rdf = pd.DataFrame.from_records(voxel_results)
 
         for map_name, series in rdf.iterrows():
+            assert isinstance(map_name, str)
+
             fname = cls.write_map(ref_img, map_name, series)
             output_files[map_name] = str(fname)
 

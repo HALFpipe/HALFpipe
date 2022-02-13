@@ -9,7 +9,7 @@ from uuid import UUID
 from pathlib import Path
 from shelve import open as open_shelf
 
-from .file.pickle import load_pickle_lzma, dump_pickle_lzma
+from .pickle import load_pickle_lzma, dump_pickle_lzma
 from ..utils import logger
 
 

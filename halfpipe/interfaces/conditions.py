@@ -6,7 +6,7 @@ from math import isclose
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch, File
 
-from ..io import parse_condition_file
+from ..ingest.condition import parse_condition_file
 from ..utils import logger
 
 

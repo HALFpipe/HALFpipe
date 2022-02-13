@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import ClassVar, Dict, Optional, Type
 
-from calamities import TextView, SpacerView, TextElement, SingleChoiceInputView
+from .components import TextView, SpacerView, TextElement, SingleChoiceInputView
 
 from copy import deepcopy
 

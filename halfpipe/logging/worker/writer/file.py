@@ -9,7 +9,7 @@ import re
 from random import gauss
 
 from .base import Writer
-from ....io.file.lock import AdaptiveLock
+from ....utils.lock import AdaptiveLock
 
 escape_codes_regex = re.compile(r"\x1b\[.*?(m|K)")
 

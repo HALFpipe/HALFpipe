@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def hexdigest(obj):
+def hex_digest(obj):
     from hashlib import sha1
     import json
 
@@ -12,7 +12,7 @@ def hexdigest(obj):
     return m.hexdigest()
 
 
-def b32digest(obj):
+def b32_digest(obj):
     from hashlib import sha1
     import json
     from base64 import b32encode

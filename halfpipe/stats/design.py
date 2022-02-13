@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, List, Tuple
-
 from itertools import product
 from collections import OrderedDict
 from pathlib import Path
@@ -15,7 +13,7 @@ from patsy.desc import ModelDesc, Term  # separate imports as to not confuse typ
 from patsy.highlevel import dmatrix
 from patsy.user_util import LookupFactor
 
-from ..io import loadspreadsheet
+from ..ingest.spreadsheet import read_spreadsheet
 from ..utils import logger
 
 
@@ -43,9 +41,9 @@ def _check_multicollinearity(matrix):
 
 
 def _prepare_data_frame(
-    spreadsheet: Path, variabledicts: List[Dict], subjects: List[str]
+    spreadsheet: Path, variabledicts: list[dict], subjects: list[str]
 ) -> pd.DataFrame:
-    rawdataframe: pd.DataFrame = loadspreadsheet(spreadsheet, dtype=object)
+    rawdataframe: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=object)
 
     id_column = None
     for variabledict in variabledicts:
@@ -60,11 +58,11 @@ def _prepare_data_frame(
         rawdataframe[id_column] = [
             str(id).replace("sub-", "") for id in rawdataframe[id_column]
         ]
-    rawdataframe = rawdataframe.set_index(id_column)
+    rawdataframe.set_index(id_column, inplace=True)
 
     continuous_columns = []
     categorical_columns = []
-    columns_in_order: List[str] = []
+    columns_in_order: list[str] = []
     for variabledict in variabledicts:
         if variabledict["type"] == "continuous":
             continuous_columns.append(variabledict["name"])
@@ -104,7 +102,7 @@ def _prepare_data_frame(
     return dataframe
 
 
-def _generate_rhs(contrastdicts, columns_var_gt_0) -> List[Term]:
+def _generate_rhs(contrastdicts, columns_var_gt_0) -> list[Term]:
     rhs = [Term([])]  # force intercept
     for contrastdict in contrastdicts:
         if contrastdict["type"] == "infer":
@@ -120,15 +118,15 @@ def _generate_rhs(contrastdicts, columns_var_gt_0) -> List[Term]:
     return rhs
 
 
-def _make_contrasts_list(contrast_matrices: List[Tuple[str, pd.DataFrame]]):
-    contrasts: List[Tuple] = []
+def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
+    contrasts: list[tuple] = []
     contrast_names = []
 
     for contrast_name, contrast_matrix in contrast_matrices:  # t contrasts
         contrast_name = contrast_name.capitalize()
 
         if contrast_matrix.shape[0] == 1:
-            _, contrast_vector = next(contrast_matrix.iterrows())
+            contrast_vector = contrast_matrix.iloc[0]
             contrasts.append(
                 (contrast_name, "T", list(contrast_vector.index), list(contrast_vector))
             )
@@ -159,7 +157,7 @@ def _make_contrasts_list(contrast_matrices: List[Tuple[str, pd.DataFrame]]):
 
 def intercept_only_design(
     n: int
-) -> Tuple[Dict[str, List[float]], List[Tuple], List[str], List[str]]:
+) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
     return (
         {"intercept": [1.0] * n},
         [("intercept", "T", ["intercept"], [1])],
@@ -169,8 +167,8 @@ def intercept_only_design(
 
 
 def group_design(
-    spreadsheet: Path, contrastdicts: List[Dict], variabledicts: List[Dict], subjects: List[str]
-) -> Tuple[Dict[str, List[float]], List[Tuple], List[str], List[str]]:
+    spreadsheet: Path, contrastdicts: list[dict], variabledicts: list[dict], subjects: list[str]
+) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
 
     dataframe = _prepare_data_frame(spreadsheet, variabledicts, subjects)
 
@@ -180,7 +178,7 @@ def group_design(
     dataframe = dataframe.loc[:, columns_var_gt_0]
 
     # don't need to specify lhs
-    lhs: List[Term] = []
+    lhs: list[Term] = []
 
     # generate rhs
     rhs = _generate_rhs(contrastdicts, columns_var_gt_0)
@@ -200,10 +198,10 @@ def group_design(
     grid = pd.DataFrame(
         list(product(*unique_values_categorical)), columns=dataframe.columns
     )
-    reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
+    reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")  # type: ignore
 
     # data frame to store contrasts
-    contrast_matrices: List[Tuple[str, pd.DataFrame]] = []
+    contrast_matrices: list[tuple[str, pd.DataFrame]] = []
 
     for field, columnslice in dmat.design_info.term_name_slices.items():  # type: ignore
         constraint = {
@@ -211,9 +209,9 @@ def group_design(
         }
         contrast = dmat.design_info.linear_constraint(constraint)  # type: ignore
 
-        assert np.all(contrast.variable_names == dmat.columns)
+        assert np.all(contrast.variable_names == dmat.columns)  # type: ignore
 
-        contrast_matrix = pd.DataFrame(contrast.coefs, columns=dmat.columns)
+        contrast_matrix = pd.DataFrame(contrast.coefs, columns=dmat.columns)  # type: ignore
 
         if field == "Intercept":  # do not capitalize
             field = field.lower()
@@ -222,7 +220,7 @@ def group_design(
     for contrastdict in contrastdicts:
         if contrastdict["type"] == "t":
             (variable,) = contrastdict["variable"]
-            variable_levels: List[str] = list(dataframe[variable].unique())
+            variable_levels: list[str] = list(dataframe[variable].unique())
 
             # Generate the lsmeans matrix where there is one row for each
             # factor level. Each row is a contrast vector.
@@ -231,9 +229,9 @@ def group_design(
             # For example, we would have one row that calculates the mean
             # for patients, and one for controls.
 
-            lsmeans = pd.DataFrame(index=variable_levels, columns=dmat.columns)
+            lsmeans = pd.DataFrame(index=variable_levels, columns=dmat.columns)  # type: ignore
             for level in variable_levels:
-                reference_rows = reference_dmat.loc[grid[variable] == level]
+                reference_rows = reference_dmat.loc[grid[variable] == level]  # type: ignore
                 lsmeans.loc[level] = reference_rows.mean()
 
             value_dict = contrastdict["values"]
@@ -248,7 +246,7 @@ def group_design(
             # combination of the lsmeans contrasts.
 
             contrast_vector = lsmeans.loc[names].mul(values, axis=0).sum()  # type: ignore
-            contrast_matrix = pd.DataFrame([contrast_vector], columns=dmat.columns)
+            contrast_matrix = pd.DataFrame([contrast_vector], columns=dmat.columns)  # type: ignore
 
             contrast_name = f"{contrastdict['name']}"
             contrast_matrices.append((contrast_name, contrast_matrix))
@@ -267,4 +265,4 @@ def group_design(
         contrast_matrices
     )
 
-    return regressors, contrasts, contrast_numbers, contrast_names
+    return regressors, contrasts, contrast_numbers, contrast_names  # type: ignore

@@ -3,13 +3,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from typing import List
-from flufl.lock import Lock as FluflLock, LockError as FluflLockError, TimeOutError
+from flufl.lock._lockfile import Lock as FluflLock, LockError as FluflLockError, TimeOutError
 from fasteners import InterProcessLock as FcntlLock
 
 from time import sleep
 from random import gauss
 
-from ...utils import logger
+from . import logger
 
 
 class AdaptiveLock:
@@ -29,9 +29,7 @@ class AdaptiveLock:
                 return
             except (FluflLockError, TimeOutError):  # timeouts etc.
                 pass
-            except OSError:
-                pass
-            except PermissionError:
+            except OSError:  # such as PermissionError
                 pass
 
             logger.warning(

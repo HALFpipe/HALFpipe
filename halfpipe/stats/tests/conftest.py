@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
 
 import pytest
 
@@ -62,6 +60,7 @@ def mni_downsampled(tmp_path_factory):
     result = ants.ResampleImageBySpacing(
         dimension=3, input_image=tpl, out_spacing=(6, 6, 6)
     ).run()
+    assert result.outputs is not None
 
     return result.outputs.output_image
 
@@ -85,6 +84,7 @@ def wakemandg_hensonrn_downsampled(
             interpolation="NearestNeighbor",
             transforms=["identity"],
         ).run()
+        assert result.outputs is not None
 
         return result.outputs.output_image
 

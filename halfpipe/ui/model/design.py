@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from copy import deepcopy
 
-from calamities import (
+from ..components import (
     TextView,
     SpacerView,
     TextInputView,
@@ -23,7 +23,7 @@ from calamities import (
 from itertools import combinations, chain
 
 from ..utils import forbidden_chars
-from ...utils import ravel
+from ...utils.ops import ravel
 from ..step import Step, YesNoStep
 from .loop import AddAnotherModelStep
 from .utils import format_column

@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from pathlib import Path
 
 from marshmallow import fields, validate, pre_load
@@ -14,7 +10,7 @@ from marshmallow_oneofschema import OneOfSchema
 from .base import File, BaseFileSchema
 from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
 from ..metadata import BoldMetadataSchema, EventsMetadataSchema
-from ...io.metadata.direction import parse_direction_str, canonicalize_direction_code
+from ...ingest.metadata.direction import parse_direction_str, canonicalize_direction_code
 
 
 class BoldFileSchema(BaseFileSchema):

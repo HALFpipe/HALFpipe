@@ -7,7 +7,8 @@ from argparse import ArgumentParser
 from multiprocessing import cpu_count
 
 from .. import __version__
-from ..utils import logger, isempty
+from ..utils import logger
+from ..utils.path import is_empty
 
 steps = ["spec-ui", "workflow", "run"]
 
@@ -142,7 +143,7 @@ def parse_args(args=None, namespace=None):
         if getattr(opts, attrname) is True:
             should_run[step] = False
 
-    if opts.fs_root is not None and isempty(opts.fs_root) is True:
+    if opts.fs_root is not None and is_empty(opts.fs_root) is True:
         logger.info(f'Current fs_root "{opts.fs_root}" is empty, ignoring')
 
         opts.fs_root = None
@@ -164,7 +165,7 @@ def parse_args(args=None, namespace=None):
         ]
 
         for fs_root_candidate in fs_root_candidates:
-            if isempty(fs_root_candidate) is False:  # dir is not empty
+            if not is_empty(fs_root_candidate):
                 opts.fs_root = fs_root_candidate
                 break
 

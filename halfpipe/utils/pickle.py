@@ -9,7 +9,7 @@ import lzma
 import pickle
 from traits.trait_errors import TraitError
 
-from ..utils import logger
+from . import logger
 
 pickle_lzma_extension = ".pickle.xz"
 

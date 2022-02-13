@@ -11,8 +11,8 @@ from os.path import basename
 
 from marshmallow import EXCLUDE
 import marshmallow.exceptions
-from calamities.pattern import tag_glob, tag_parse, get_entities_in_path
 
+from .glob import tag_glob, tag_parse, get_entities_in_path
 from ..model.file import FileSchema, File
 from ..model.tags import entities, entity_longnames
 from ..utils import logger

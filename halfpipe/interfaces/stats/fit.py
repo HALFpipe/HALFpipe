@@ -16,7 +16,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import IOBase, add_traits
 
-from .tsv import DesignSpec
+from .design import DesignSpec
 from ...stats.fit import fit
 from ...stats.algorithms import algorithms, make_algorithms_set
 

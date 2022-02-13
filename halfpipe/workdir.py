@@ -9,15 +9,15 @@ from uuid import uuid4
 
 from .logging import logging_context
 from .hooks import run_hooks_from_dir
-from .utils import resolve
+from .utils.path import resolve
 
 
 def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) -> Path:
     workdir = str(workdir)
 
     if fs_root is None:
-        from calamities.config import Config as CalamitiesConfig
-        fs_root = CalamitiesConfig.fs_root
+        from .ui.components.config import Config as UIConfig
+        fs_root = UIConfig.fs_root
 
     fs_root = str(fs_root)
 

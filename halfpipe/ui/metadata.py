@@ -4,7 +4,7 @@
 
 from typing import ClassVar, Dict, Optional, Type
 
-from calamities import (
+from .components import (
     TextView,
     SpacerView,
     NumberInputView,
@@ -18,10 +18,10 @@ from inflection import humanize
 from marshmallow import fields, Schema
 
 from .step import Step
-from ..io.parse import loadspreadsheet
-from ..io.metadata.slicetiming import slice_timing_str
-from ..io.metadata.niftiheader import NiftiheaderLoader
-from ..io.metadata.direction import (
+from ..ingest.spreadsheet import read_spreadsheet
+from ..ingest.metadata.slicetiming import slice_timing_str
+from ..ingest.metadata.niftiheader import NiftiheaderLoader
+from ..ingest.metadata.direction import (
     direction_code_str,
     canonicalize_direction_code,
 )
@@ -125,7 +125,7 @@ class SliceTimingFileStep(Step):
 
             filepath = self.result
             try:
-                spreadsheet = loadspreadsheet(filepath)
+                spreadsheet = read_spreadsheet(filepath)
                 valuearray = np.ravel(spreadsheet.values).astype(np.float64)
                 valuelist = list(valuearray.tolist())
                 value = self.field.deserialize(valuelist)

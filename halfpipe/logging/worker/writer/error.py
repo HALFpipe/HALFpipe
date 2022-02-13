@@ -2,13 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
-
 import re
 
 from .file import FileWriter, escape_codes_regex
 from ..message import LogMessage
-from ....io.file.dictlistfile import DictListFile
+from ....utils.table import SynchronizedTable
 
 
 could_not_run_match = re.compile(r"could not run node: (?P<fullname>nipype\.[^\s]+)").search
@@ -21,7 +19,7 @@ class ReportErrorWriter(FileWriter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.dictlistfile: Optional[DictListFile] = None
+        self.dictlistfile: SynchronizedTable | None = None
 
     def filter_message(self, message: LogMessage):
         msg = message.long_msg
@@ -46,7 +44,7 @@ class ReportErrorWriter(FileWriter):
 
     def acquire(self):
         if self.dictlistfile is None:
-            self.dictlistfile = DictListFile.cached(self.filename)
+            self.dictlistfile = SynchronizedTable(self.filename)
 
         self.dictlistfile.__enter__()
 

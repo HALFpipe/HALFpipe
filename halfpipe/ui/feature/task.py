@@ -2,14 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from abc import abstractmethod
 from typing import List, Type, Optional
 
-from calamities import (
+from ..components import (
     MultiNumberInputView,
     TextInputView,
     TextView,
@@ -17,21 +13,21 @@ from calamities import (
     MultiCombinedNumberAndSingleChoiceInputView,
     CombinedMultipleAndSingleChoiceInputView
 )
-from calamities.input.choice import SingleChoiceInputView
-from calamities.pattern import get_entities_in_path
+from ..components.input.choice import SingleChoiceInputView
+from ...ingest.glob import get_entities_in_path
 
 from ..step import Step, BranchStep, YesNoStep
 from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
 from ..utils import forbidden_chars
-from ...utils import ravel
+from ...utils.ops import ravel
 from ..setting import get_setting_init_steps
 from .loop import SettingValsStep
 
-from ...io.parse.condition import parse_condition_file
+from ...ingest.condition import parse_condition_file
 from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
 from ...model.feature import Feature
-from ...workflow.collect import collect_events
+from ...ingest.collect import collect_events
 
 next_step_type = SettingValsStep
 

@@ -7,7 +7,7 @@ import logging
 
 from nipype.interfaces.base import traits, TraitedSpec, BaseInterfaceInputSpec, isdefined, File
 
-from ..transformer import Transformer
+from .transformer import Transformer
 
 
 class GrandMeanScalingInputSpec(BaseInterfaceInputSpec):

@@ -14,8 +14,8 @@ from tabulate import tabulate
 
 from .lock import AdaptiveLock
 from ..model.tags import entities
-from ..utils import logger
-from ..utils.json import TypeAwareJSONEncoder
+from . import logger
+from .json import TypeAwareJSONEncoder
 
 
 def _compare(a, b):

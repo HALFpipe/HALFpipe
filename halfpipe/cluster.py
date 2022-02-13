@@ -9,7 +9,7 @@ from pathlib import Path
 from math import ceil
 
 from .utils import logger, inflect_engine as p
-from .workflow.execgraph import filter_subjects
+from .workflows.execgraph import filter_subjects
 
 shebang = """#!/bin/bash
 #

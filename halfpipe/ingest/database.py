@@ -5,7 +5,7 @@
 from hashlib import sha1
 
 from .resolve import ResolvedSpec
-from .metadata.base import MetadataLoader
+from .metadata.loader import MetadataLoader
 from ..model.tags import entities
 
 
