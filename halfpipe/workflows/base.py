@@ -68,7 +68,7 @@ def init_workflow(workdir) -> IdentifiableWorkflow:
         create_report=True,  # each node writes a text file with inputs and outputs
         crashdump_dir=workflow.base_dir,
         crashfile_format="txt",
-        hash_method="content",
+        hash_method="timestamp",
         poll_sleep_duration=0.5,
         use_relative_paths=False,
         check_version=False,
