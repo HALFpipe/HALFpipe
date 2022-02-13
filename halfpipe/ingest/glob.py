@@ -27,7 +27,6 @@ def tag_glob(pathname, entities=None, dironly=False) -> Generator[tuple[str, dic
     """
     dirname, basename = op.split(pathname)
     if not dirname:
-        # print(repr(dirname), repr(basename))
         if _isrecursive(basename):
             dir_generator = _rlistdir(dirname, dironly)
         else:
@@ -40,7 +39,6 @@ def tag_glob(pathname, entities=None, dironly=False) -> Generator[tuple[str, dic
     else:
         dirs = [(dirname, dict())]
     for dirname, dirtagdict in dirs:
-        # print("40", repr(dirname), repr(dirtagdict))
         for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly, dirtagdict):
             yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
 
@@ -60,13 +58,16 @@ def _tag_glob_in_dir(dirname, basename, entities, dironly, parenttagdict):
     adapted from cpython glob
     only basename can contain magic
     """
-    # print("60", repr(dirname), repr(basename), repr(entities), repr(parenttagdict))
     assert not has_magic(dirname)
-    match = _translate(basename, entities, parenttagdict)
+    fullmatch = _translate(basename, entities, parenttagdict)
     for x in _iterdir(dirname, dironly):
-        matchobj = match(x)
+        matchobj = fullmatch(x)
         if matchobj is not None:
-            yield x, matchobj.groupdict()
+            yield x, {
+                entity: value
+                for entity, value in matchobj.groupdict().items()
+                if entity in entities  # filter out groups added by fnmatch such as "g0"
+            }
 
 
 def get_entities_in_path(pat):
@@ -178,7 +179,6 @@ def _rlistdir(dirname, dironly):
     for x in names:
         path = op.join(dirname, x) if dirname else x
         yield path
-        # print("176", repr(dirname), repr(path))
         yield from _rlistdir(path, dironly)
 
 
