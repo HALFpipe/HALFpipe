@@ -22,7 +22,7 @@ certifi==2021.10.8
     # via requests
 chardet==4.0.0
     # via -r requirements.in
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via requests
 click==8.0.3
     # via
@@ -49,7 +49,7 @@ fasteners==0.17.3
     # via -r requirements.in
 flufl.lock==7.0
     # via -r requirements.in
-fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.1
+fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
 formulaic==0.2.4
     # via pybids
@@ -140,7 +140,7 @@ nibabel==3.2.2
     #   tedana
 niflow-nipype1-workflows==0.0.5
     # via sdcflows
-nilearn==0.6.2
+nilearn==0.9.0
     # via
     #   -r requirements.in
     #   fmriprep
@@ -204,11 +204,12 @@ packaging==21.3
     #   pint
     #   scikit-image
     #   statsmodels
-pandas==1.4.0
+pandas==1.4.1
     # via
     #   -r requirements.in
     #   fmriprep
     #   formulaic
+    #   nilearn
     #   niworkflows
     #   pybids
     #   seaborn
@@ -279,6 +280,7 @@ requests==2.27.1
     # via
     #   -r requirements.in
     #   fmriprep
+    #   nilearn
     #   templateflow
 scikit-image==0.19.1
     # via
@@ -289,7 +291,6 @@ scikit-learn==1.0.2
     #   -r requirements.in
     #   nilearn
     #   niworkflows
-    #   sklearn
     #   tedana
 scipy==1.8.0
     # via
@@ -319,9 +320,7 @@ six==1.16.0
     #   isodate
     #   patsy
     #   python-dateutil
-sklearn==0.0
-    # via nilearn
-smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.1
+smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -367,7 +366,7 @@ transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
-typing-extensions==4.0.1
+typing-extensions==4.1.0
     # via
     #   -r requirements.in
     #   typing-inspect

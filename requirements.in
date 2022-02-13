@@ -1,9 +1,9 @@
-fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.1
-smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.1
+fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
+smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
 niworkflows ~= 1.3.5
 sdcflows ~= 1.3.3
 nipype @ git+https://github.com/nipy/nipype.git@cd4c34d935a43812d1756482fdc4034844e485b8
-nilearn
+nilearn >= 0.9.0
 nibabel >= 3.2.1
 indexed-gzip >= 1.6.4
 nitime
