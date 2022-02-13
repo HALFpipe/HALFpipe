@@ -16,7 +16,7 @@ from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
 from ...interfaces.report.vals import UpdateVals
 from ...interfaces.utility.file_type import SplitByFileType
-from ...utils.matrix import load_ints
+from ...utils.matrix import load_vector
 
 from ..memory import MemoryCalculator
 
@@ -147,23 +147,25 @@ def init_ica_aroma_regression_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    aromanoiseics = pe.Node(
+    aroma_noise_ics = pe.Node(
         interface=niu.Function(
-            input_names=["in_file"], output_names=["aroma_noise_ics"], function=load_ints,
+            input_names=["in_file"], output_names=["aroma_noise_ics"], function=load_vector,
         ),
-        name="aromanoiseics",
+        name="aroma_noise_ics",
     )
-    workflow.connect(inputnode, "aroma_noise_ics", aromanoiseics, "in_file")
+    workflow.connect(inputnode, "aroma_noise_ics", aroma_noise_ics, "in_file")
 
     #
-    aromacolumnnames = pe.Node(
+    aroma_column_names = pe.Node(
         interface=niu.Function(
-            input_names=["melodic_mix", "aroma_noise_ics"], output_names=["column_names"], function=_aroma_column_names,
+            input_names=["melodic_mix", "aroma_noise_ics"],
+            output_names=["column_names"],
+            function=_aroma_column_names,
         ),
-        name="loadaromanoiseics",
+        name="aroma_column_names",
     )
-    workflow.connect(inputnode, "melodic_mix", aromacolumnnames, "melodic_mix")
-    workflow.connect(aromanoiseics, "aroma_noise_ics", aromacolumnnames, "aroma_noise_ics")
+    workflow.connect(inputnode, "melodic_mix", aroma_column_names, "melodic_mix")
+    workflow.connect(aroma_noise_ics, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics")
 
     # add melodic_mix to the matrix
     split_by_file_type = pe.Node(SplitByFileType(), name="split_by_file_type")
@@ -172,7 +174,7 @@ def init_ica_aroma_regression_wf(
     merge_columns = pe.Node(MergeColumns(2), name="merge_columns")
     workflow.connect(split_by_file_type, "tsv_files", merge_columns, "in1")
     workflow.connect(inputnode, "melodic_mix", merge_columns, "in2")
-    workflow.connect(aromacolumnnames, "column_names", merge_columns, "column_names2")
+    workflow.connect(aroma_column_names, "column_names", merge_columns, "column_names2")
 
     merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(split_by_file_type, "nifti_files", merge, "in1")
@@ -189,7 +191,7 @@ def init_ica_aroma_regression_wf(
     workflow.connect(merge, "out", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
-    workflow.connect(aromanoiseics, "aroma_noise_ics", filter_regressor, "filter_columns")
+    workflow.connect(aroma_noise_ics, "aroma_noise_ics", filter_regressor, "filter_columns")
 
     workflow.connect(filter_regressor, "out_file", outputnode, "files")
 

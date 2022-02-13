@@ -14,7 +14,7 @@ def add_setting_adapter(workflow):
     inputnode = workflow.get_node("inputnode")
 
     #
-    split_by_file_type = pe.Node(SplitByFileType, name="split_by_file_type")
+    split_by_file_type = pe.Node(SplitByFileType(), name="split_by_file_type")
     workflow.connect(inputnode, "files", split_by_file_type, "files")
 
     # discard any extra files, keep only first match
