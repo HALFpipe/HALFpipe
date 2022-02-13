@@ -3,8 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from .addmeans import AddMeans
-from .maskcoverage import MaskCoverage
-from .maxintensity import MaxIntensity
+from .mask_coverage import MaskCoverage
+from .max_intensity import MaxIntensity
 from .merge import Merge, MergeMask
 from .resample import Resample
 from .zscore import ZScore
