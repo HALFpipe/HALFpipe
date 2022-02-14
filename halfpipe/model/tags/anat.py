@@ -6,10 +6,10 @@
 
 """
 
-from .base import SubTagsSchema, RunTagsSchema
+from .base import ScanTagsSchema, AcqTagsSchema
 
 
-class AnatTagsSchema(SubTagsSchema, RunTagsSchema):
+class AnatTagsSchema(ScanTagsSchema, AcqTagsSchema):
     pass
 
 

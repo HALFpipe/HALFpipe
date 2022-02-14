@@ -2,9 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-"""
-
 from abc import ABC, abstractmethod
 from typing import Dict, Generator, List, Optional, Tuple
 
@@ -64,6 +61,7 @@ class ModelAlgorithm(ABC):
             arr[coordinate] = value
 
         img = new_img_like(ref_img, arr, copy_header=True)
+        assert isinstance(img.header, nib.Nifti1Header)
         img.header.set_data_dtype(np.float64)
 
         fname = Path.cwd() / f"{out_name}.nii.gz"

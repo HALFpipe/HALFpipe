@@ -21,7 +21,7 @@ def resolve(path: Union[Path, str], fs_root: Union[Path, str]) -> Path:
     return Path(abspath)
 
 
-def findpaths(obj):
+def find_paths(obj):
     from pathlib import Path
     from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
@@ -53,7 +53,7 @@ def findpaths(obj):
     return paths
 
 
-def splitext(fname):
+def split_ext(fname):
     """Splits filename and extension (.gz safe)
     >>> splitext('some/file.nii.gz')
     ('file', '.nii.gz')
@@ -73,7 +73,7 @@ def splitext(fname):
     return stem, basename[len(stem) :]
 
 
-def isempty(path):
+def is_empty(path) -> bool:
     from pathlib import Path
 
     path = Path(path)

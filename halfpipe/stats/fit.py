@@ -5,7 +5,7 @@
 """
 """
 
-from typing import ContextManager, List, Dict, Optional, Tuple
+from typing import ContextManager, Iterator, List, Dict, Optional, Tuple
 
 from collections import defaultdict
 from pathlib import Path
@@ -15,8 +15,8 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
-from ..io import parse_design
-from ..utils import atleast_4d
+from ..ingest.design import parse_design
+from ..utils.matrix import atleast_4d
 from ..utils.multiprocessing import Pool
 from .algorithms import algorithms, make_algorithms_set
 
@@ -121,7 +121,7 @@ def fit(
     # setup run
     if num_threads < 2:
         pool: Optional[Pool] = None
-        it = map(voxel_calc, voxel_data)
+        it: Iterator = map(voxel_calc, voxel_data)
         cm: ContextManager = nullcontext()
     else:
         pool = Pool(processes=num_threads)

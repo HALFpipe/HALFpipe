@@ -6,7 +6,7 @@
 
 """
 
-from calamities import (
+from ..components import (
     TextView,
     SpacerView,
     CombinedMultipleAndSingleChoiceInputView,
@@ -21,7 +21,7 @@ from ..step import Step
 from ..setting import get_setting_init_steps, get_setting_vals_steps
 
 from ...model import RefFileSchema
-from ...utils import deepcopy
+from ...utils.copy import deepcopy
 from ...utils.format import format_like_bids
 
 next_step_type = SettingValsStep

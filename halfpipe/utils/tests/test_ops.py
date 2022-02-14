@@ -7,18 +7,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ..ops import firstfloat, firststr
+from ..ops import first_float, first_str
 
 
-def test_firstfloat():
-    assert firstfloat([0, 1, 2, 3]) == 0
-    assert firstfloat(list(map(np.uint32, [0, 1, 2, 3]))) == 0
-    assert firstfloat([0., 1., 2., 3.]) == 0.
-    assert firstfloat(np.array([0., 1., 2., 3.])) == 0.
-    assert firstfloat(pd.Series([0., 1., 2., 3.])) == 0.
+def test_first_float():
+    assert first_float([0, 1, 2, 3]) == 0
+    assert first_float(list(map(np.uint32, [0, 1, 2, 3]))) == 0
+    assert first_float([0., 1., 2., 3.]) == 0.
+    assert first_float(np.array([0., 1., 2., 3.])) == 0.
+    assert first_float(pd.Series([0., 1., 2., 3.])) == 0.
 
 
-def test_firststr():
-    assert firststr([0, "a"]) == "a"
-    assert firststr([None, "a"]) == "a"
-    assert firststr([None, Path("a")]) == "a"
+def test_first_str():
+    assert first_str([0, "a"]) == "a"
+    assert first_str([None, "a"]) == "a"
+    assert first_str([None, Path("a")]) == "a"

@@ -4,7 +4,7 @@
 
 from typing import Optional, Type
 
-from calamities import (
+from ..components import (
     MultiCombinedNumberAndSingleChoiceInputView, TextView, SpacerView
 )
 

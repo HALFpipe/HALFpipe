@@ -11,6 +11,6 @@ def deepcopyfactory(obj):
 
 
 def deepcopy(obj):
-    from halfpipe.utils import deepcopyfactory
+    from halfpipe.utils.copy import deepcopyfactory
 
     return deepcopyfactory(obj)()

@@ -6,8 +6,10 @@
 
 import os
 from nipype.pipeline import plugins as nip
-from nipype.pipeline.plugins.base import logger, report_crash, report_nodes_not_run, str2bool
+from nipype.pipeline.plugins.base import report_crash, report_nodes_not_run, str2bool
 from nipype.pipeline.engine.utils import topological_sort
+
+from ..utils import logger
 
 
 class DebugPlugin(nip.LinearPlugin):
@@ -24,7 +26,7 @@ class DebugPlugin(nip.LinearPlugin):
         import networkx as nx
 
         try:
-            dfs_preorder = nx.dfs_preorder
+            dfs_preorder = nx.dfs_preorder  # type: ignore
         except AttributeError:
             dfs_preorder = nx.dfs_preorder_nodes
 

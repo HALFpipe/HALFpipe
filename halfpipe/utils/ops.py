@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def firstfloat(obj):
+def first_float(obj):
     import numpy as np
     from typing import Iterable
 
@@ -14,13 +14,13 @@ def firstfloat(obj):
 
     elif isinstance(obj, Iterable):
         for elem in obj:
-            elem = firstfloat(elem)
+            elem = first_float(elem)
 
             if isinstance(elem, float):
                 return elem
 
 
-def firststr(obj):
+def first_str(obj) -> str | None:
     from pathlib import Path
 
     if isinstance(obj, str):
@@ -30,11 +30,13 @@ def firststr(obj):
         return str(obj)
 
     if isinstance(obj, (tuple, list)):
-        for elem in obj:
-            elem = firststr(elem)
+        for x in obj:
+            x = first_str(x)
 
-            if isinstance(elem, str):
-                return elem
+            if isinstance(x, str):
+                return x
+
+    return None
 
 
 def ravel(obj):
@@ -65,16 +67,7 @@ def ravel(obj):
         return []
 
 
-def removenone(obj):
-    ret = []
-    for val in obj:
-        if val is None:
-            continue
-        ret.append(val)
-    return ret
-
-
-def lenforeach(arrarr=None):
+def len_for_each(arrarr=None):
     """
     length of each sub-list
     """
@@ -82,7 +75,3 @@ def lenforeach(arrarr=None):
         return []
 
     return list(map(len, arrarr))
-
-
-def ceildiv(a, b):
-    return -(-a // b)

@@ -13,12 +13,12 @@ import nibabel as nib
 import numpy as np
 
 from ..fit import fit
-from ...interface.fixes import FLAMEO as FSLFLAMEO
+from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
 
 from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
 
-from ...interface.imagemaths.merge import _merge, _merge_mask
+from ...interfaces.imagemaths.merge import _merge, _merge_mask
 from ..design import group_design
 
 

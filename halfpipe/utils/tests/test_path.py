@@ -9,7 +9,7 @@ from pathlib import Path
 
 from nipype.interfaces.base.support import Bunch
 
-from ..path import findpaths
+from ..path import find_paths
 
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
@@ -35,7 +35,7 @@ def test_findpaths(tmp_path, obj):
     for fname in [A, B]:
         Path(fname).touch()
 
-    assert set(findpaths(obj)) == set([A, B])
+    assert set(find_paths(obj)) == set([A, B])
 
     for fname in [A, B]:
         Path(fname).unlink()

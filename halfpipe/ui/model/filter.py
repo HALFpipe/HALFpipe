@@ -8,7 +8,7 @@
 
 from typing import Optional, List, Dict, Type
 
-from calamities import (
+from ..components import (
     TextView,
     SpacerView,
     NumberInputView,

@@ -4,6 +4,8 @@
 """
 """
 
+from typing import Any
+
 import pytest
 
 import os
@@ -17,7 +19,7 @@ def add(a, b):
 
 
 class DontRunRunner:
-    plugin_args = dict()
+    plugin_args: dict[str, Any] = dict()
 
     def run(self, *args, **kwargs):
         pass
@@ -188,6 +190,9 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
     x = get_node("x")
     y = get_node("y")
     z = get_node("z")
+
+    assert x is not None
+    assert y is not None
 
     rt = PathReferenceTracer()
 

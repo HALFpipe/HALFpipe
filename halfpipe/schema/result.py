@@ -15,7 +15,7 @@ from .setting import SettingBase
 
 
 @add_schema(base_schema=BaseSchema)
-@dataclass
+@dataclass(frozen=True)
 class MeanStd:
     mean: float
     std: float
@@ -39,7 +39,7 @@ class MeanStd:
 
 
 @add_schema(base_schema=BaseSchema)
-@dataclass
+@dataclass(frozen=True)
 class Count:
     value: Any
     count: int

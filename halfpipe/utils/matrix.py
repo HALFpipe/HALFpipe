@@ -3,10 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-def loadints(in_file):
-    from halfpipe.io import loadmatrix
+def load_vector(in_file):
+    from halfpipe.ingest.spreadsheet import read_spreadsheet
+    from halfpipe.utils.ops import ravel
 
-    return list(loadmatrix(in_file, dtype=int))
+    return ravel(read_spreadsheet(in_file).values)
 
 
 def ncol(in_file):

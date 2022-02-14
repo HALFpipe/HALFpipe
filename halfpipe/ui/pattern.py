@@ -4,14 +4,14 @@
 
 from typing import ClassVar, Dict, List, Optional, Type, Union
 
-from calamities import (
+from .components import (
     TextView,
     SpacerView,
     FilePatternInputView,
     TextInputView,
     TextElement,
 )
-from calamities.pattern import tag_parse, get_entities_in_path
+from ..ingest.glob import tag_parse, get_entities_in_path
 
 import logging
 
@@ -24,7 +24,8 @@ from ..model import (
 )
 from ..model.utils import get_schema_entities
 from .utils import messagefun, forbidden_chars, entity_colors
-from ..utils import splitext, inflect_engine as p
+from ..utils import inflect_engine as p
+from ..utils.path import split_ext
 
 logger = logging.getLogger("halfpipe.ui")
 
@@ -110,7 +111,7 @@ class AskForMissingEntities(Step):
 
             suggestion = ""
             if self.suggest_file_stem:
-                suggestion, _ = splitext(ctx.spec.files[-1].path)
+                suggestion, _ = split_ext(ctx.spec.files[-1].path)
 
             self.input_view = TextInputView(
                 text=suggestion,
@@ -252,7 +253,7 @@ class FilePatternStep(Step):
 
             try:
                 filedict = {**self.filedict, "path": path, "tags": {}}
-                _, ext = splitext(path)
+                _, ext = split_ext(path)
                 filedict["extension"] = self._transform_extension(ext)
 
                 loadresult = self.schema().load(filedict)

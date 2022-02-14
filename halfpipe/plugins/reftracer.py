@@ -6,7 +6,8 @@ from pathlib import Path
 
 from nipype.pipeline.engine.utils import load_resultfile
 
-from ..utils import findpaths, logger
+from ..utils.path import find_paths
+from ..utils import logger
 
 
 class PathReferenceTracer:
@@ -147,7 +148,7 @@ class PathReferenceTracer:
         except Exception:
             pass
 
-        stack = [*findpaths(getattr(result, "outputs"))]
+        stack = [*find_paths(getattr(result, "outputs"))]
         while len(stack) > 0:
             path = self.resolve(stack.pop())
 

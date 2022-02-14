@@ -16,15 +16,13 @@ backcall==0.2.0
     # via ipython
 bids-validator==1.8.9
     # via pybids
-black==21.12b0
+black==22.1.0
     # via ipython
-calamities==0.0.16
-    # via -r requirements.in
 certifi==2021.10.8
     # via requests
 chardet==4.0.0
     # via -r requirements.in
-charset-normalizer==2.0.10
+charset-normalizer==2.0.12
     # via requests
 click==8.0.3
     # via
@@ -33,7 +31,7 @@ click==8.0.3
     #   pybids
 cycler==0.11.0
     # via matplotlib
-cython==0.29.26
+cython==0.29.27
     # via nitime
 decorator==4.4.2
     # via
@@ -41,45 +39,38 @@ decorator==4.4.2
     #   networkx
 defusedxml==0.7.1
     # via odfpy
-dipy==1.4.0
-    # via -r requirements.in
 docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
     # via openpyxl
 executing==0.8.2
     # via stack-data
-fasteners==0.17.2
+fasteners==0.17.3
     # via -r requirements.in
 flufl.lock==7.0
     # via -r requirements.in
-fmriprep==20.2.7
+fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
 formulaic==0.2.4
     # via pybids
-frozendict==2.2.0
+frozendict==2.3.0
     # via -r requirements.in
 future==0.18.2
     # via niflow-nipype1-workflows
 gmpy2==2.1.2
     # via -r requirements.in
 h5py==3.6.0
-    # via
-    #   dipy
-    #   nitransforms
+    # via nitransforms
 idna==3.3
     # via requests
-imageio==2.14.1
+imageio==2.15.0
     # via scikit-image
 indexed-gzip==1.6.4
     # via
     #   -r requirements.in
     #   fmriprep
-    #   smriprep
-inflect==5.3.0
-    # via
-    #   -r requirements.in
-    #   calamities
+inflect==5.4.0
+    # via -r requirements.in
 inflection==0.5.1
     # via -r requirements.in
 interface-meta==1.2.4
@@ -98,8 +89,6 @@ kiwisolver==1.3.2
     # via matplotlib
 line-profiler==3.4.0
     # via -r requirements.in
-lockfile==0.12.2
-    # via smriprep
 lxml==4.7.1
     # via svgutils
 markupsafe==2.0.1
@@ -121,9 +110,7 @@ matplotlib==3.3.4
     #   -r requirements.in
     #   nitime
     #   niworkflows
-    #   scikit-image
     #   seaborn
-    #   smriprep
     #   tedana
 matplotlib-inline==0.1.3
     # via ipython
@@ -140,10 +127,9 @@ networkx==2.5.1
     #   fmriprep
     #   nitime
     #   scikit-image
-nibabel==3.2.1
+nibabel==3.2.2
     # via
     #   -r requirements.in
-    #   dipy
     #   fmriprep
     #   nilearn
     #   nitime
@@ -151,16 +137,14 @@ nibabel==3.2.1
     #   niworkflows
     #   pybids
     #   sdcflows
-    #   smriprep
     #   tedana
 niflow-nipype1-workflows==0.0.5
     # via sdcflows
-nilearn==0.6.2
+nilearn==0.9.0
     # via
     #   -r requirements.in
     #   fmriprep
     #   niworkflows
-    #   smriprep
     #   tedana
 nipype @ git+https://github.com/nipy/nipype.git@cd4c34d935a43812d1756482fdc4034844e485b8
     # via
@@ -169,7 +153,6 @@ nipype @ git+https://github.com/nipy/nipype.git@cd4c34d935a43812d1756482fdc40348
     #   niflow-nipype1-workflows
     #   niworkflows
     #   sdcflows
-    #   smriprep
 nitime==0.9
     # via
     #   -r requirements.in
@@ -183,14 +166,11 @@ niworkflows==1.3.5
     #   -r requirements.in
     #   fmriprep
     #   sdcflows
-    #   smriprep
 num2words==0.5.10
     # via pybids
-numpy==1.22.1
+numpy==1.22.2
     # via
     #   -r requirements.in
-    #   calamities
-    #   dipy
     #   fmriprep
     #   formulaic
     #   h5py
@@ -210,7 +190,6 @@ numpy==1.22.1
     #   scipy
     #   sdcflows
     #   seaborn
-    #   smriprep
     #   statsmodels
     #   tedana
     #   tifffile
@@ -223,12 +202,14 @@ packaging==21.3
     #   nibabel
     #   niworkflows
     #   pint
-    #   smriprep
-pandas==1.4.0
+    #   scikit-image
+    #   statsmodels
+pandas==1.4.1
     # via
     #   -r requirements.in
     #   fmriprep
     #   formulaic
+    #   nilearn
     #   niworkflows
     #   pybids
     #   seaborn
@@ -246,16 +227,16 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.0.0
+pillow==9.0.1
     # via
     #   imageio
     #   matplotlib
     #   scikit-image
 pint==0.18
     # via -r requirements.in
-platformdirs==2.4.1
+platformdirs==2.5.0
     # via black
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.28
     # via ipython
 psutil==5.9.0
     # via
@@ -272,7 +253,6 @@ pybids==0.14.0
     #   fmriprep
     #   niworkflows
     #   sdcflows
-    #   smriprep
     #   templateflow
 pygments==2.11.2
     # via ipython
@@ -296,28 +276,25 @@ pyyaml==6.0
     # via
     #   fmriprep
     #   niworkflows
-    #   smriprep
 requests==2.27.1
     # via
     #   -r requirements.in
     #   fmriprep
+    #   nilearn
     #   templateflow
-scikit-image==0.17.2
+scikit-image==0.19.1
     # via
-    #   fmriprep
+    #   -r requirements.in
     #   niworkflows
-    #   smriprep
 scikit-learn==1.0.2
     # via
     #   -r requirements.in
     #   nilearn
     #   niworkflows
-    #   sklearn
     #   tedana
-scipy==1.7.3
+scipy==1.8.0
     # via
     #   -r requirements.in
-    #   dipy
     #   formulaic
     #   nilearn
     #   nitime
@@ -343,9 +320,7 @@ six==1.16.0
     #   isodate
     #   patsy
     #   python-dateutil
-sklearn==0.0
-    # via nilearn
-smriprep==0.7.2
+smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -355,7 +330,7 @@ stack-data==0.1.4
     # via ipython
 stackprinter==0.2.5
     # via -r requirements.in
-statsmodels==0.13.1
+statsmodels==0.13.2
     # via -r requirements.in
 svgutils==0.3.1
     # via
@@ -371,21 +346,18 @@ templateflow==0.7.2
     #   fmriprep
     #   niworkflows
     #   sdcflows
-    #   smriprep
-threadpoolctl==3.0.0
+threadpoolctl==3.1.0
     # via
     #   scikit-learn
     #   tedana
-tifffile==2021.11.2
+tifffile==2022.2.9
     # via scikit-image
 toml==0.10.2
     # via fmriprep
-tomli==1.2.3
+tomli==2.0.1
     # via black
 tqdm==4.62.3
-    # via
-    #   dipy
-    #   templateflow
+    # via templateflow
 traitlets==5.1.1
     # via
     #   ipython
@@ -394,10 +366,9 @@ transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
-typing-extensions==4.0.1
+typing-extensions==4.1.0
     # via
     #   -r requirements.in
-    #   black
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass

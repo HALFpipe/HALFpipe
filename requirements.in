@@ -1,13 +1,12 @@
-fmriprep ~= 20.2.7
-smriprep ~= 0.7.2
+fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
+smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
 niworkflows ~= 1.3.5
 sdcflows ~= 1.3.3
 nipype @ git+https://github.com/nipy/nipype.git@cd4c34d935a43812d1756482fdc4034844e485b8
-nilearn
+nilearn >= 0.9.0
 nibabel >= 3.2.1
 indexed-gzip >= 1.6.4
 nitime
-dipy
 templateflow >= 0.7.1
 pybids >= 0.13.1
 
@@ -18,7 +17,8 @@ gmpy2 >= 2.0.8
 pandas >= 1.2.0
 patsy >= 0.5.2
 statsmodels >= 0.12.2
-scikit-learn >= 0.24.0
+scikit-learn >= 0.24
+scikit-image >= 0.19
 matplotlib < 3.4
 seaborn >= 0.11.1
 svgutils >= 0.3.1
@@ -48,4 +48,3 @@ marshmallow-dataclass >= 8.5.3
 marshmallow-enum
 typeguard
 more-itertools >= 8.7.0
-calamities >= 0.0.16
