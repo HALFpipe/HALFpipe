@@ -56,7 +56,7 @@ def run_stage_workflow(opts):
     workflow = init_workflow(opts.workdir)
 
     if workflow is None:
-        return
+        return None
 
     opts.graphs = init_execgraph(opts.workdir, workflow)
 
@@ -78,20 +78,20 @@ def run_stage_run(opts):
 
     else:
         if opts.graphs_file is not None:
-            from ..io.pickle import load_pickle_lzma
+            from ..utils.pickle import load_pickle
 
             graphs_file = str(resolve(opts.graphs_file, opts.fs_root))
 
             logger.info(f'Using graphs defined in file "{graphs_file}"')
 
-            obj = load_pickle_lzma(graphs_file)
+            obj = load_pickle(graphs_file)
             if not isinstance(obj, Mapping):
                 raise ValueError(f'Invalid graphs file "{graphs_file}"')
 
             graphs = obj
 
         elif opts.uuid is not None:
-            from ..io.cache import uncache_obj
+            from ..utils.cache import uncache_obj
 
             obj = uncache_obj(workdir, type_str="graphs", uuid=opts.uuid)
             if not isinstance(obj, Mapping):
@@ -306,6 +306,9 @@ def main():
 
     try:
         setup_logging_context()
+
+        from ..utils.pickle import patch_nipype_unpickler
+        patch_nipype_unpickler()
 
         from .parser import parse_args
         opts, should_run = parse_args()

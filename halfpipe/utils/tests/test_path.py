@@ -9,7 +9,7 @@ from pathlib import Path
 
 from nipype.interfaces.base.support import Bunch
 
-from ..path import find_paths
+from ..path import find_paths, split_ext
 
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
@@ -29,7 +29,7 @@ B = "/tmp/b.txt"
         Bunch(x=[A, B])
     ]
 )
-def test_findpaths(tmp_path, obj):
+def test_find_paths(tmp_path, obj):
     os.chdir(str(tmp_path))
 
     for fname in [A, B]:
@@ -39,3 +39,8 @@ def test_findpaths(tmp_path, obj):
 
     for fname in [A, B]:
         Path(fname).unlink()
+
+
+def test_split_ext():
+    assert split_ext("a/a.nii.gz") == ("a", ".nii.gz")
+    assert split_ext("a/a.pickle.xz") == ("a", ".pickle.xz")

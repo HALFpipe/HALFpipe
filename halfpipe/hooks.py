@@ -81,8 +81,6 @@ def run_hooks_from_dir(workdir: Path):
             if child.is_dir():
                 if (child / "__init__.py").exists():  # candidate dir is a module
                     plugins.append(child)
-                else:
-                    stack.append(child)
             elif isinstance(child, Path) and child.suffix == ".zip":
                 try:
                     zip_file = ZipFile(child)
