@@ -26,6 +26,9 @@ def initializer(workdir, logging_args, plugin_args, host_env):
     from ..logging import setup as setup_logging
     setup_logging(**logging_args)
 
+    from ..utils.pickle import patch_nipype_unpickler
+    patch_nipype_unpickler()
+
     watchdog = plugin_args.get("watchdog", False)
     if watchdog is True:
         from ..watchdog import init_watchdog

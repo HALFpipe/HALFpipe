@@ -2,13 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union
-
 from pathlib import Path
 from os.path import normpath
 
 
-def resolve(path: Union[Path, str], fs_root: Union[Path, str]) -> Path:
+def resolve(path: Path | str, fs_root: Path | str) -> Path:
 
     fs_root = str(fs_root)
 
@@ -53,7 +51,7 @@ def find_paths(obj):
     return paths
 
 
-def split_ext(fname):
+def split_ext(path: Path | str):
     """Splits filename and extension (.gz safe)
     >>> splitext('some/file.nii.gz')
     ('file', '.nii.gz')
@@ -64,16 +62,21 @@ def split_ext(fname):
     >>> splitext('text.txt')
     ('text', '.txt')
 
-    Source: niworkflows
+    Adapted from niworkflows
     """
     from pathlib import Path
 
-    basename = str(Path(fname).name)
-    stem = Path(basename.rstrip(".gz")).stem
-    return stem, basename[len(stem) :]
+    name = str(Path(path).name)
+
+    safe_name = name
+    for compound_extension in [".gz", ".xz"]:
+        safe_name = safe_name.removesuffix(compound_extension)
+
+    stem = Path(safe_name).stem
+    return stem, name[len(stem):]
 
 
-def is_empty(path) -> bool:
+def is_empty(path: Path | str) -> bool:
     from pathlib import Path
 
     path = Path(path)

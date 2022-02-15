@@ -81,7 +81,8 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
             log_method = logger.debug  # silence
 
         log_method(
-            f'Ignored validation error for "{path}": %s',
+            f'Skipping unsupported file "{path}" because %s',
+
             e,
             exc_info=False,
             stack_info=False,
@@ -227,11 +228,11 @@ class ResolvedSpec:
             intended_for_rules[fmapstr].append(funcstr)
 
         if len(intended_for) > 0:
-            logger.info("Inferred mapping between func and fmap files to be %s", pformat(intended_for))
+            logger.info("Inferred mapping between func and fmap files to be %s", pformat(intended_for_rules))
             for file in resolved_files:
                 if file.datatype != "fmap":
                     continue
-                file.intended_for = intended_for
+                file.intended_for = intended_for_rules
 
         return resolved_files
 

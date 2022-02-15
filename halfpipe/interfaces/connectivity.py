@@ -9,7 +9,7 @@ from typing import Literal, overload
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from scipy.ndimage.measurements import mean
+from scipy.ndimage import mean
 
 from nipype.interfaces.base import (
     BaseInterface,
