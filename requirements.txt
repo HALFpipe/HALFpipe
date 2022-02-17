@@ -285,7 +285,7 @@ requests==2.27.1
     #   fmriprep
     #   nilearn
     #   templateflow
-scikit-image==0.19.1
+scikit-image==0.19.2
     # via
     #   -r requirements.in
     #   niworkflows
