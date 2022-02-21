@@ -100,7 +100,9 @@ class SynchronizedTable:
 
         data_frame = data_frame[columns_in_order]
 
-        table_str = tabulate(data_frame.astype(str), headers="keys", showindex=False)
+        table_str = tabulate(
+            data_frame, headers="keys", showindex=False, disable_numparse=True,
+        )
 
         table_filename = self.filename.parent / f"{self.filename.stem}.txt"
         with open(str(table_filename), "w") as fp:
