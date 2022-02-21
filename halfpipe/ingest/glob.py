@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Generator, Iterable
+from typing import Callable, Container, Generator, Iterable
 
 import os
 from os import path as op
@@ -21,7 +21,11 @@ show_tag_suggestion_check = re.compile(r".*(?P<newtag>{(?P<tag_name>[a-z]*))(?P<
 remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^}]*?})")
 
 
-def tag_glob(pathname, entities=None, dironly=False) -> Generator[tuple[str, dict[str, str]], None, None]:
+def tag_glob(
+    pathname: str,
+    entities: Container[str] = None,
+    dironly: bool = False
+) -> Generator[tuple[str, dict[str, str]], None, None]:
     """
     adapted from cpython glob
     """
@@ -43,7 +47,7 @@ def tag_glob(pathname, entities=None, dironly=False) -> Generator[tuple[str, dic
             yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
 
 
-def _combine_tagdict(a, b) -> dict:
+def _combine_tagdict(a: dict[str, str], b: dict[str, str]) -> dict[str, str]:
     z = b.copy()
     for k, v in a.items():
         if k in z:
@@ -53,13 +57,19 @@ def _combine_tagdict(a, b) -> dict:
     return z
 
 
-def _tag_glob_in_dir(dirname, basename, entities, dironly, parenttagdict):
+def _tag_glob_in_dir(
+    dirname: str,
+    basename: str,
+    entities: Container[str] | None,
+    dironly: bool,
+    parenttagdict: dict[str, str]
+):
     """
     adapted from cpython glob
     only basename can contain magic
     """
     assert not has_magic(dirname)
-    fullmatch = _translate(basename, entities, parenttagdict)
+    fullmatch, entities = _translate(basename, entities, parenttagdict)
     for x in _iterdir(dirname, dironly):
         matchobj = fullmatch(x)
         if matchobj is not None:
@@ -70,7 +80,7 @@ def _tag_glob_in_dir(dirname, basename, entities, dironly, parenttagdict):
             }
 
 
-def get_entities_in_path(pat):
+def get_entities_in_path(pat: str) -> list[str]:
     res = []
     tokens = tokenize.split(pat)
     for token in tokens:
@@ -83,7 +93,7 @@ def get_entities_in_path(pat):
     return res
 
 
-def _validate_re(s):
+def _validate_re(s: str) -> bool:
     try:
         re.compile(s)
         return True
@@ -92,12 +102,17 @@ def _validate_re(s):
     return False
 
 
-def _translate(pat, entities, parenttagdict):
+def _translate(
+    pat: str,
+    entities: Container[str] | None,
+    parenttagdict: dict[str, str]
+) -> tuple[Callable, set[str]]:
+
     res = ""
 
     tokens = tokenize.split(pat)
 
-    entities_in_res = set()
+    entities_in_res: set[str] = set()
 
     for token in tokens:
         if len(token) == 0:
@@ -146,10 +161,10 @@ def _translate(pat, entities, parenttagdict):
 
     res += "/?"
 
-    return re.compile(res).fullmatch
+    return re.compile(res).fullmatch, entities_in_res
 
 
-def _iterdir(dirname, dironly):
+def _iterdir(dirname: str, dironly: bool) -> Generator[str, None, None]:
     """
     adapted from cpython glob
     """
@@ -171,7 +186,7 @@ def _iterdir(dirname, dironly):
         return
 
 
-def _rlistdir(dirname, dironly):
+def _rlistdir(dirname: str, dironly: bool) -> Generator[str, None, None]:
     """
     adapted from cpython glob
     """
@@ -182,15 +197,15 @@ def _rlistdir(dirname, dironly):
         yield from _rlistdir(path, dironly)
 
 
-def has_magic(s):
+def has_magic(s) -> bool:
     return magic_check.search(s) is not None
 
 
-def _isrecursive(pattern):
+def _isrecursive(pattern: str) -> bool:
     return pattern == "**"
 
 
-def _ishidden(path):
+def _ishidden(path: str) -> bool:
     """
     adapted from cpython glob
     """
