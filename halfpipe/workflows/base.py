@@ -55,7 +55,6 @@ def init_workflow(workdir) -> IdentifiableWorkflow:
         return workflow
 
     # init classes that use the database
-
     bids_database = BidsDatabase(database)
 
     # create parent workflow

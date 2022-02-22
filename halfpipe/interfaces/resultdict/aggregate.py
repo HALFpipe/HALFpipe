@@ -10,7 +10,7 @@ from collections import defaultdict, Counter
 from math import isclose
 
 import numpy as np
-from frozendict import frozendict  # type: ignore
+from pyrsistent import pmap
 
 from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec
 from nipype.interfaces.io import add_traits, IOBase
@@ -207,7 +207,7 @@ def freeze_any(x: Any) -> Hashable:
                 (freeze_any(k), freeze_any(v), )
                 for k, v in x.items()
             ]
-            return frozendict(mapping)
+            return pmap(mapping)
         elif isinstance(x, Iterable):
             iterable: List[Hashable] = [
                 freeze_any(element) for element in x

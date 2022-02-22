@@ -6,7 +6,7 @@ from json import dumps
 
 import pytest
 import numpy as np
-from frozendict import frozendict  # type: ignore
+from pyrsistent import pmap
 
 from ..json import TypeAwareJSONEncoder
 
@@ -39,8 +39,8 @@ def test_float():
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
 
 
-def test_frozendict():
-    x = frozendict(x=5)
+def test_pmap():
+    x = pmap(dict(x=5))
 
     with pytest.raises(Exception):
         dumps(dict(x=x))

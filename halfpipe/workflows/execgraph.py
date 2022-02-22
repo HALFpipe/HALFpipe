@@ -63,13 +63,15 @@ def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
     if opts.subject_list is not None:
         subject_list_path = resolve(opts.subject_list, opts.fs_root)
 
-        with open(subject_list_path, "r") as f:
+        with open(subject_list_path) as file_handle:
             subject_set = set(
-                s.strip() for s in f.readlines()
+                s.strip() for s in file_handle.readlines()
             )
 
-        for subject in subject_set:
-            subject_set.add(format_like_bids(subject))
+        subject_set |= set(
+            format_like_bids(subject)
+            for subject in subject_set
+        )
 
         subjects = [
             n for n in subjects if n in subject_set
@@ -108,7 +110,10 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
             result.append((node, v, source_info, field))
             continue
         assert not isinstance(source_info, tuple)
-        for u, _, k in graph.in_edges(node, data=True):
+        for in_edge in graph.in_edges(node, data=True):
+            assert len(in_edge) == 3
+            u, _, k = in_edge
+            assert isinstance(k, dict)
             for u_source_info, node_field in k["connect"]:
                 if source_info == node_field:
                     stack.append(
@@ -123,7 +128,10 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
         if not isinstance(node.interface, niu.IdentityInterface):
             result.append((u, node, source_info, field))
             continue
-        for _, v, k in graph.out_edges(node, data=True):
+        for out_edge in graph.out_edges(node, data=True):
+            assert len(out_edge) == 3
+            _, v, k = out_edge
+            assert isinstance(k, dict)
             for node_source_info, v_field in k["connect"]:
                 if node_source_info == field:
                     stack.append(
