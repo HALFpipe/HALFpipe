@@ -20,7 +20,6 @@ from marshmallow_oneofschema import OneOfSchema
 
 from .contrast import ModelContrastSchema
 from .filter import FilterSchema
-from ..stats import algorithms
 
 
 class Model:
@@ -64,7 +63,7 @@ class MixedEffectsModelSchema(BaseModelSchema):
     across = fields.Str(dump_default="sub", validate=validate.Equal("sub"))
 
     algorithms = fields.List(
-        fields.Str(validate=validate.OneOf(algorithms.keys())),
+        fields.Str(),
         dump_default=["flame1", "mcartest", "heterogeneity"],
         load_default=["flame1", "mcartest", "heterogeneity"],
     )

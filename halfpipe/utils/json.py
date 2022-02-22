@@ -2,12 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
+from typing import Optional, Mapping
 
 from json import JSONEncoder
 
 import numpy as np
-from frozendict import frozendict   # type: ignore
 
 
 class TypeAwareJSONEncoder(JSONEncoder):
@@ -16,8 +15,10 @@ class TypeAwareJSONEncoder(JSONEncoder):
     """
 
     def default(self, o):
-        if isinstance(o, frozendict):
-            return dict(o)
+        if isinstance(o, Mapping):
+            if not isinstance(o, dict):
+                o = dict(o)
+            return o
 
         if isinstance(o, np.ndarray):
             return o.tolist()

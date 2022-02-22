@@ -4,8 +4,6 @@
 
 from typing import Callable
 
-from glob import glob
-import logging
 from math import isclose
 
 import numpy as np
@@ -15,10 +13,10 @@ from marshmallow import ValidationError
 from .base import ResultdictsOutputSpec
 
 from ...schema.result import MeanStd
-from ...ingest.exclude import ExcludeDatabase
+from ...ingest.exclude import QCDecisionMaker, Decision
 from ...ingest.spreadsheet import read_spreadsheet
-from ...model.tags import entities, entity_longnames
-from ...utils import inflect_engine
+from ...utils import logger, inflect_engine
+from ...utils.format import format_tags
 
 from nipype.interfaces.base import (
     traits,
@@ -27,8 +25,6 @@ from nipype.interfaces.base import (
     isdefined,
     File
 )
-
-logger = logging.getLogger("halfpipe")
 
 
 def _normalize_subject(s) -> str:
@@ -67,23 +63,6 @@ def _get_categorical_dict(data_frame, variable_dicts):
 
     categorical_data_frame = data_frame[categorical_columns].astype(str)
     return categorical_data_frame.to_dict()
-
-
-def _format_tags(tagdict):
-    tagdesc_list = []
-
-    for entity in entities:
-        tagval = tagdict.get(entity)
-
-        if tagval is None:
-            continue
-
-        if entity in entity_longnames:
-            entity = entity_longnames[entity]
-
-        tagdesc_list.append(f'{entity} "{tagval}"')
-
-    return ", ".join(tagdesc_list)
 
 
 def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc: str) -> Callable[[dict], bool] | None:
@@ -195,7 +174,7 @@ def _make_cutoff_filterfun(filter_dict: dict, model_desc: str) -> Callable[[dict
         if res is False:
             tags = d["tags"]
             logger.warning(
-                f'Excluding ({_format_tags(tags)}) {model_desc}'
+                f'Excluding ({format_tags(tags)}) {model_desc}'
                 f'because "{filter_field}" is larger than {cutoff:f}'
             )
 
@@ -286,16 +265,13 @@ class FilterResultdicts(SimpleInterface):
             if filter_fun is not None:
                 out_dicts = list(filter(filter_fun, out_dicts))
 
-        if isdefined(self.inputs.exclude_files):
-            exclude_files = [
-                exclude_file
-                for path_pattern in self.inputs.exclude_files
-                for exclude_file in glob(path_pattern, recursive=True)
-            ]
-            exclude_files = tuple(sorted(exclude_files))  # make hashable
-            database = ExcludeDatabase.cached(exclude_files)
+        exclude_files = self.inputs.exclude_files
+        if isdefined(exclude_files):
+            decision_maker = QCDecisionMaker(exclude_files)
+
             out_dicts = [
-                out_dict for out_dict in out_dicts if database.get(**out_dict["tags"]) is False
+                out_dict for out_dict in out_dicts
+                if decision_maker.get(out_dict["tags"]) is Decision.INCLUDE
             ]
 
         self._results["resultdicts"] = out_dicts

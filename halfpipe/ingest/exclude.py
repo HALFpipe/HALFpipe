@@ -2,104 +2,95 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from functools import lru_cache
-import logging
+from collections import defaultdict
+import json
+from glob import glob, has_magic
+from typing import Generator, Mapping
+from enum import IntEnum, Enum, auto
 
-from ..model.exclude import ExcludeSchema, rating_indices
-from ..model.tags import entities
+from more_itertools import powerset
+from pyrsistent import pmap
 
-
-def _agg_hierarchy(dicthierarchy, entities=[], **kwargs):
-    tagval = None
-    if len(entities) > 0:
-        entity = entities.pop()
-        tagval = kwargs.get(entity)
-
-    if not isinstance(dicthierarchy, dict):
-        assert isinstance(dicthierarchy, int)
-        return dicthierarchy
-
-    rating = -1
-    for k, v in dicthierarchy.items():
-        if tagval is not None and k != tagval:
-            continue
-        if isinstance(v, dict):
-            v = _agg_hierarchy(v, entities, **kwargs)
-        assert isinstance(v, int)
-        if v > rating:
-            rating = v
-
-    return rating
+from ..utils import logger
+from ..utils.format import format_tags
 
 
-def _set_in_hierarchy(dicthierarchy, entities, entry):
-    entity = entities.pop()
-    tagval = entry.get(entity)
-
-    rating = rating_indices[entry["rating"]]
-
-    if tagval not in dicthierarchy:
-        dicthierarchy[tagval] = dict()
-
-    if len(entities) == 0:  # we are at the end of the hierarchy
-        if _agg_hierarchy(dicthierarchy[tagval]) > rating:
-            return  # ignore lower precedence ratings
-        dicthierarchy[tagval] = rating
-        return
-    else:
-        if isinstance(dicthierarchy[tagval], int):
-            if dicthierarchy[tagval] > rating:
-                return  # ignore lower precedence ratings
-            dicthierarchy[tagval] = dict()  # overwrite parent with higher precedence child values
-        _set_in_hierarchy(dicthierarchy[tagval], entities, entry)  # go down hierarchy
+class Rating(IntEnum):
+    NONE = -1
+    GOOD = 0
+    UNCERTAIN = 1
+    BAD = 2
 
 
-class ExcludeDatabase:
-    def __init__(self, excludefiles):
-        exclude_schema = ExcludeSchema(many=True)
+class Decision(Enum):
+    INCLUDE = auto()
+    EXCLUDE = auto()
 
-        dicthierarchy = dict()
 
-        for excludefile in excludefiles:
-            with open(excludefile, "r") as fp:
-                entries = exclude_schema.loads(fp.read())
+class QCDecisionMaker:
+    def __init__(self, file_paths: list[str]):
+        self.index: dict[Mapping[str, str], set[Rating]] = defaultdict(set)
+        self.relevant_tag_names: set[str] = set()
+
+        for file_path in file_paths:
+            self.add_file(file_path)
+
+    def add_file(self, file_path: str) -> None:
+        if has_magic(file_path):
+            for e in glob(file_path, recursive=True):
+                self.add_file(e)
+
+        else:
+            with open(file_path, "r") as file_handle:
+                entries = json.load(file_handle)
 
             for entry in entries:
-                i = None
-                for i, entity in enumerate(entities):  # order determines entity precedence
-                    if entity in entry:
-                        break
+                self.add_entry(entry)
 
-                assert isinstance(i, int)
-                _set_in_hierarchy(dicthierarchy, [*entities[i:]], entry)
+    def add_entry(self, entry: Mapping[str, str]) -> None:
+        rating_str: str | None = entry.get("rating")
 
-        self.dicthierarchy = dicthierarchy
+        if rating_str is None:
+            rating: Rating = Rating.NONE
+        else:
+            rating = Rating[rating_str.upper()]
 
-    def get(self, **kwargs):
-        rating = _agg_hierarchy(self.dicthierarchy, entities=[*entities], **kwargs)
+        tags = pmap({
+            tag: value
+            for tag, value in entry.items()
+            if tag not in ["rating", "type"]
+        })
 
-        if rating == 2:  # rating "bad"
-            return True  # yes, exclude this
+        self.index[tags].add(rating)
 
-        if rating == 0:  # rating "good"
-            return False  # no, don't exclude
+        self.relevant_tag_names.update(tags.keys())
 
-        rating_str = None
-        for r_str, r in rating_indices.items():
-            if r == rating:
-                rating_str = r_str
-        assert rating_str is not None, f'Unknown rating int value "{rating}"'
+    def iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
+        for subset_items in powerset(tags.items()):
+            subset = pmap(subset_items)
+            if subset in self.index:
+                yield from self.index[subset]
 
-        query_str = " ".join([f'{k}="{v}"' for k, v in kwargs.items()])
+    def get(self, tags: Mapping[str, str]) -> Decision:
+        relevant_tags = {
+            tag: value
+            for tag, value in tags.items()
+            if tag in self.relevant_tag_names
+        }
 
-        logging.getLogger("halfpipe").warning(
-            f'Will include observation ({query_str}) for analysis '
-            f'even though quality rating is "{rating_str}"'
-        )
+        rating: Rating = max(self.iter_ratings(relevant_tags))
 
-        return False  # no, don't exclude
+        match rating:
+            case Rating.BAD:
+                return Decision.EXCLUDE
+            case Rating.GOOD:
+                return Decision.INCLUDE
+            case Rating.NONE | Rating.UNCERTAIN:
+                logger.warning(
+                    f"Will include observation ({format_tags(relevant_tags)}) for analysis "
+                    f'even though quality rating is "{rating.name}"'
+                )
 
-    @classmethod
-    @lru_cache(maxsize=128)
-    def cached(cls, excludefile):
-        return cls(excludefile)
+                return Decision.INCLUDE
+
+        raise ValueError()

@@ -3,7 +3,10 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from typing import Mapping
 from inflection import parameterize, camelize, underscore
+
+from ..model.tags import entities, entity_longnames
 
 
 def _replace_special(s):
@@ -37,3 +40,18 @@ def format_workflow(s):
     s = _replace_special(s)
 
     return underscore(parameterize(s))
+
+
+def format_tags(tags: Mapping[str, str]) -> str:
+    s = []
+
+    for entity in reversed(entities):
+        if entity in tags:
+
+            value = tags[entity]
+
+            entity = entity_longnames.get(entity, entity)
+
+            s.append(f'{entity}: "{value}"')
+
+    return ", ".join(s)
