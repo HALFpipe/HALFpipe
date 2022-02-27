@@ -62,7 +62,7 @@ module load singularity
 fi
 
 singularity run \\
---containall {bind_args} \\
+--contain --cleanenv {bind_args} \\
 {singularity_container} \\
 --workdir {cwd} \\
 --only-run \\
