@@ -6,6 +6,10 @@ import os
 from pathlib import Path
 from typing import Any
 
+import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
+from nipype import config
+
 from ..reftracer import PathReferenceTracer
 
 
@@ -20,21 +24,19 @@ class DontRunRunner:
         pass
 
 
-def test_PathReferenceTracer(tmp_path):
-    import nipype.interfaces.utility as niu
-    import nipype.pipeline.engine as pe
+def make_node(name):
+    return pe.Node(
+        interface=niu.Function(
+            function=add, input_names=["a", "b"], output_names=["c"]
+        ),
+        name=name,
+    )
 
+
+def test_PathReferenceTracer(tmp_path):
     os.chdir(str(tmp_path))
 
     wf = pe.Workflow("w", base_dir=Path.cwd())
-
-    def make_node(name):
-        return pe.Node(
-            interface=niu.Function(
-                function=add, input_names=["a", "b"], output_names=["c"]
-            ),
-            name=name,
-        )
 
     x = make_node("x")
     x.inputs.a = 1
@@ -59,7 +61,7 @@ def test_PathReferenceTracer(tmp_path):
     y = get_node("y")
     z = get_node("z")
 
-    rt = PathReferenceTracer()
+    rt = PathReferenceTracer(Path.cwd())
 
     for node in execgraph.nodes:
         rt.add_node(node)
@@ -129,10 +131,6 @@ def select(a, b):
 
 
 def test_PathReferenceTracer_indirect_refs(tmp_path):
-    import nipype.interfaces.utility as niu
-    import nipype.pipeline.engine as pe
-    from nipype import config
-
     os.chdir(str(tmp_path))
 
     config.set_default_config()
@@ -180,8 +178,9 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
 
     assert x is not None
     assert y is not None
+    assert z is not None
 
-    rt = PathReferenceTracer()
+    rt = PathReferenceTracer(Path.cwd())
 
     for node in execgraph.nodes:
         rt.add_node(node)
@@ -207,8 +206,8 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
     assert rt.deps[xrf] == set([xrf.parent, c, d])
     assert rt.deps[yrf] == set([yrf.parent, xrf])
     assert rt.deps[zrf] == set([zrf.parent, yrf])
-    assert rt.deps[c] == set([xrf.parent])
-    assert rt.deps[d] == set([xrf.parent])
+    assert rt.deps[c] == set([xrf.parent, xrf.parent.parent])
+    assert rt.deps[d] == set([xrf.parent, xrf.parent.parent])
 
     y.run()
     rt.set_node_complete(y, True)
@@ -222,8 +221,81 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
     assert rt.deps[xrf] == set([xrf.parent, c, d])
     assert rt.deps[yrf] == set([yrf.parent, d])
     assert rt.deps[zrf] == set([zrf.parent, yrf])
-    assert rt.deps[c] == set([xrf.parent])
-    assert rt.deps[d] == set([xrf.parent])
+    assert rt.deps[c] == set([xrf.parent, xrf.parent.parent])
+    assert rt.deps[d] == set([xrf.parent, xrf.parent.parent])
 
     rtc = set(rt.collect())
     assert rtc == set([xrf, c])
+
+    z.run()
+    rt.set_node_complete(z, True)
+
+    rtc = set(rt.collect())
+    assert rtc == set(
+        [
+            xrf.parent,
+            xrf.parent.parent,
+            yrf,
+            yrf.parent,
+            yrf.parent.parent,
+            zrf,
+            zrf.parent,
+            zrf.parent.parent,
+            d,
+        ]
+    )
+
+
+def test_PathReferenceTracer_nested(tmp_path):
+    os.chdir(str(tmp_path))
+
+    wf = pe.Workflow("w")
+
+    x = make_node("x")
+    x.inputs.a = 1
+    x.inputs.b = 2
+
+    y = make_node("y")
+    y.inputs.a = 7
+    wf.connect(x, "c", y, "b")
+
+    z = make_node("z")
+    wf.connect(y, "c", z, "a")
+    z.inputs.b = 1
+
+    v = pe.Workflow("v")
+    v.add_nodes([wf])
+
+    u = pe.Workflow("u", base_dir=Path.cwd())
+    u.add_nodes([v])
+
+    execgraph = u.run(plugin=DontRunRunner())
+
+    def get_node(name):
+        for node in execgraph.nodes():
+            if node.name == name:
+                return node
+
+    x = get_node("x")
+    y = get_node("y")
+    z = get_node("z")
+
+    rt = PathReferenceTracer(Path.cwd())
+
+    for node in execgraph.nodes:
+        rt.add_node(node)
+    for node in execgraph.nodes:
+        rt.set_node_pending(node)
+
+    xrf = rt.node_resultfile_path(x)
+
+    rt.set_node_complete(x, True)
+    rt.set_node_complete(y, True)
+    rt.set_node_complete(z, True)
+
+    rtc = set(rt.collect())
+
+    assert xrf.parent in rtc
+    assert xrf.parent.parent in rtc
+    assert xrf.parent.parent.parent in rtc
+    assert xrf.parent.parent.parent.parent in rtc
