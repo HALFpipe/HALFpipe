@@ -24,8 +24,8 @@ def load_pickle_lzma(file_path: str):
         file_path = f"{file_path}{pickle_lzma_extension}"
 
     try:
-        with lzma.open(file_path, "rb") as fptr:
-            return pickle.load(fptr)
+        with lzma.open(file_path, "rb") as file_handle:
+            return Unpickler(file_handle).load()
 
     except (lzma.LZMAError, TraitError, EOFError, AttributeError) as e:
         logger.error(f'Error while reading "{file_path}"', exc_info=e)
