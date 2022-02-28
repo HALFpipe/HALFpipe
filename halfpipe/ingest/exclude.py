@@ -66,6 +66,7 @@ class QCDecisionMaker:
         self.relevant_tag_names.update(tags.keys())
 
     def iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
+        yield Rating.NONE  # default
         for subset_items in powerset(tags.items()):
             subset = pmap(subset_items)
             if subset in self.index:
