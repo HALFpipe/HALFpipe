@@ -9,7 +9,7 @@ astor==0.8.1
 asttokens==2.0.5
     # via stack-data
 atpublic==3.0.1
-    # via flufl.lock
+    # via flufl-lock
 attrs==21.4.0
     # via niworkflows
 backcall==0.2.0
@@ -47,7 +47,7 @@ executing==0.8.2
     # via stack-data
 fasteners==0.17.3
     # via -r requirements.in
-flufl.lock==7.0
+flufl-lock==7.0
     # via -r requirements.in
 fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
@@ -244,7 +244,7 @@ prompt-toolkit==3.0.28
 psutil==5.9.0
     # via
     #   -r requirements.in
-    #   flufl.lock
+    #   flufl-lock
     #   fmriprep
 ptyprocess==0.7.0
     # via pexpect
@@ -385,7 +385,7 @@ wrapt==1.13.3
     # via formulaic
 xlrd==2.0.1
     # via -r requirements.in
-xlsxwriter==3.0.2
+xlsxwriter==3.0.3
     # via -r requirements.in
 
 # The following packages are considered to be unsafe in a requirements file:
