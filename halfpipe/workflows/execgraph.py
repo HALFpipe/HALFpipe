@@ -25,7 +25,7 @@ from nipype.pipeline.engine.utils import merge_dict
 from ..fixes import Node
 from .base import IdentifiableWorkflow
 from ..utils.path import resolve
-from ..utils.format import format_like_bids
+from ..utils.format import format_like_bids, normalize_subject
 from ..utils.table import SynchronizedTable
 from ..utils.cache import cache_obj, uncache_obj
 from ..resource import get as getresource
@@ -68,10 +68,8 @@ def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
                 s.strip() for s in file_handle.readlines()
             )
 
-        subject_set |= set(
-            format_like_bids(subject)
-            for subject in subject_set
-        )
+        subject_set |= set(map(normalize_subject, subject_set))
+        subject_set |= set(map(format_like_bids, subject_set))
 
         subjects = [
             n for n in subjects if n in subject_set

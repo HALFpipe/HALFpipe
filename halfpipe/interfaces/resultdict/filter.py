@@ -16,7 +16,7 @@ from ...schema.result import MeanStd
 from ...ingest.exclude import QCDecisionMaker, Decision
 from ...ingest.spreadsheet import read_spreadsheet
 from ...utils import logger, inflect_engine
-from ...utils.format import format_tags
+from ...utils.format import format_tags, normalize_subject
 
 from nipype.interfaces.base import (
     traits,
@@ -25,15 +25,6 @@ from nipype.interfaces.base import (
     isdefined,
     File
 )
-
-
-def _normalize_subject(s) -> str:
-    s = str(s)
-
-    if s.startswith("sub-"):
-        s = s[4:]
-
-    return s
 
 
 def _get_data_frame(file_path, variable_dicts):
@@ -49,7 +40,7 @@ def _get_data_frame(file_path, variable_dicts):
         raise ValueError(f'Column "{id_column}" not found')
 
     data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
-    data_frame[id_column] = [_normalize_subject(s) for s in data_frame[id_column]]
+    data_frame[id_column] = list(map(normalize_subject, data_frame[id_column]))
     data_frame = data_frame.set_index(id_column)
 
     return data_frame
@@ -86,7 +77,7 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
     if action == "include":
         def group_include_filterfun(d):
             subject = d.get("tags").get("sub")
-            subject = _normalize_subject(subject)
+            subject = normalize_subject(subject)
 
             res = subject in selected_subjects
 
@@ -100,7 +91,7 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
     elif action == "exclude":
         def group_exclude_filterfun(d):
             subject = d["tags"].get("sub")
-            subject = _normalize_subject(subject)
+            subject = normalize_subject(subject)
 
             res = subject not in selected_subjects
 
@@ -129,7 +120,7 @@ def _make_missing_filterfun(filter_dict: dict, data_frame: pd.DataFrame, model_d
 
     def missing_filterfun(d):
         subject = d["tags"].get("sub")
-        subject = _normalize_subject(subject)
+        subject = normalize_subject(subject)
 
         res = subject in selected_subjects
 
@@ -145,8 +136,7 @@ def _make_cutoff_filterfun(filter_dict: dict, model_desc: str) -> Callable[[dict
     assert filter_dict["action"] == "exclude"
 
     cutoff = filter_dict["cutoff"]
-    if cutoff is None or not isinstance(cutoff, float):
-        raise ValueError(f'Invalid cutoff "{cutoff}"')
+    assert isinstance(cutoff, float)
 
     filter_field = filter_dict["field"]
 
