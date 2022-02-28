@@ -180,6 +180,12 @@ class FmriprepFactory(Factory):
                         f'fMRIPrep did not detect field maps for file "{bold_file_path}"'
                     )
 
+            if global_settings["slice_timing"] is True:
+                if func_preproc_wf.get_node("bold_stc_wf") is None:
+                    logger.warning(
+                        f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"'
+                    )
+
             # disable preproc output to save disk space
             func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
             assert isinstance(func_derivatives_wf, pe.Workflow)
