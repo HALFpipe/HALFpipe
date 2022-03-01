@@ -3,12 +3,15 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
+from .json import TypeAwareJSONEncoder
+
+
 def hex_digest(obj):
     from hashlib import sha1
     import json
 
     m = sha1()
-    m.update(json.dumps(obj, sort_keys=True).encode())
+    m.update(json.dumps(obj, sort_keys=True, cls=TypeAwareJSONEncoder).encode())
     return m.hexdigest()
 
 
@@ -18,5 +21,5 @@ def b32_digest(obj):
     from base64 import b32encode
 
     m = sha1()
-    m.update(json.dumps(obj, sort_keys=True).encode())
+    m.update(json.dumps(obj, sort_keys=True, cls=TypeAwareJSONEncoder).encode())
     return b32encode(m.digest()).decode("utf-8").replace("=", "").lower()
