@@ -2,278 +2,149 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from __future__ import annotations
-from typing import Any, Dict, Hashable, Iterable, Mapping, Optional, Tuple, Sequence, Union, List
+from typing import Any, Mapping
 
-from dataclasses import fields
-from collections import defaultdict, Counter
-from math import isclose
+from dataclasses import dataclass
+from collections import defaultdict
+from itertools import chain
+from more_itertools import collapse, powerset
+from operator import attrgetter
 
-import numpy as np
-from pyrsistent import pmap
+from pyrsistent import pmap, freeze, thaw
 
 from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec
 from nipype.interfaces.io import add_traits, IOBase
 
-from .base import ResultdictsOutputSpec
+from .base import ResultdictsOutputSpec, Continuous, Categorical
 from ...utils.ops import ravel
-from ...utils import logger
-from ...schema.result import MeanStd, Count, Result
 
-schema = Result.Schema()
+Index = Mapping[str, str]
 
 
-def aggregate_any(values: Any, value_was_dict: bool = False):
-    values = freeze_any(values)
-
-    if not isinstance(values, (list, tuple)) or len(values) == 0:
-        return values
-
-    result = aggregate_continuous(values)
-    if result is None:
-        result = aggregate_categorical(values, value_was_dict=value_was_dict)
-
-    if result is not None:
-        return result
-
-    raise ValueError(f'Cannot aggregate "{values}"')
+@dataclass(frozen=True)
+class Element:
+    numerical_index: int
+    across_value: str
+    data: Mapping[tuple[str, str], Any]
 
 
-def prepare_resultdict(resultdict):
+def compare_index(a: Index, b: Index) -> bool:
+    intersection_keys = set(a.keys()) & set(b.keys())
+    for key in intersection_keys:
+        if a[key] != b[key]:
+            return False
 
-    def prepare_value(s):
-        if isinstance(s, str):
-            return s
-        if isinstance(s, list) and len(s) == 1:
-            return s[0]
-        return s
-
-    for f in ["tags", "images"]:
-        if f not in resultdict:
-            continue
-        resultdict[f] = {
-            key: prepare_value(value)
-            for key, value in resultdict[f].items()
-        }
-    return resultdict
+    return True
 
 
-def group_resultdicts(inputs, across):
-    resultdicts = map(prepare_resultdict, inputs)
+def group_across(rr: list[dict[str, dict]], across_key: str) -> dict[Index, set[Element]]:
+    groups: dict[Index, set[Element]] = defaultdict(set)
 
-    grouped_resultdicts = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    for i, r in enumerate(rr):
+        tags = r.pop("tags")
+        assert isinstance(tags, dict)
 
-    for resultdict in sorted(resultdicts, key=lambda d: d["tags"][across]):
-        result = schema.load(data=resultdict)
-        if not isinstance(result, Result):
-            logger.warning(f'AggregateResultdicts ignored invalid input "{resultdict}"')
-            continue
+        across_value = str(tags.pop(across_key))
 
-        tags = result.tags
-
-        if across not in tags:
-            continue
-
-        tag_tuple = tuple(sorted(
-            (key, value)
+        index = pmap({
+            key: value
             for key, value in tags.items()
-            if key != across
-            and not isinstance(value, (tuple, list))  # Ignore lists, as they only
-            # will be there if we aggregated before, meaning that this is not
-            # a tag that separates different results anymore.
-            # This is important for example if we want have aggregated unequal numbers
-            # of runs across subjects, but we still want to compare across subjects
-        ))
+            if isinstance(value, str)
+        })
 
-        for field in fields(result):
-            field_dict = getattr(result, field.name)
-            for k, v in field_dict.items():
-                grouped_resultdicts[tag_tuple][field.name][k].append(v)
+        data: Mapping[tuple[str, str], Any] = pmap({
+            (field_name, attribute_name): freeze(attribute_value)
+            for field_name, field_dict in r.items()
+            for attribute_name, attribute_value in field_dict.items()
+        })
 
-    return grouped_resultdicts
+        element = Element(i, across_value, data)
+
+        groups[index].add(element)
+
+    return groups
 
 
-def aggregate_continuous(
-    values: Sequence[Union[MeanStd, float, np.inexact]]
-) -> Optional[Union[float, dict]]:
-    scalar_values: List[float] = list()
-    mean_std_values: List[MeanStd] = list()
+def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]:
+    expanded_groups: dict[Index, set[Element]] = dict()
 
-    for value in values:
-        if isinstance(value, float):
-            scalar_values.append(value)
-        elif isinstance(value, np.inexact):
-            scalar_values.append(float(value))
-        elif isinstance(value, MeanStd):
-            scalar_values.append(value.mean)
-            mean_std_values.append(value)
+    indices = set(groups.keys())
+    consumed_indices: set[Index] = set()
+    for aa in powerset(indices):  # potential bottleneck
+        if len(aa) == 0:
+            continue
+
+        keys = [set(a.keys()) for a in aa]
+        intersection_keys = set.intersection(*keys)
+
+        if any(len(set(a[key] for a in aa)) > 1 for key in intersection_keys):
+            continue  # conflicting tags
+
+        a = next(iter(aa))
+        index = pmap((key, a[key]) for key in intersection_keys)
+        elements = set(chain.from_iterable(groups[a] for a in aa))
+
+        if index not in expanded_groups or len(elements) > len(expanded_groups[index]):
+            for a in aa:
+                if a != index:
+                    consumed_indices.add(a)
+
+            expanded_groups[index] = elements
+
+    for a in consumed_indices:
+        del expanded_groups[a]
+
+    return expanded_groups
+
+
+def summarize(xx: list[Any]) -> Any:
+    continuous_values = list(map(Continuous.load, xx))
+    if all(x is None or y is not None for x, y in zip(xx, continuous_values)):
+        return Continuous.summarize(continuous_values)
+    else:
+        categorical_values = list(map(Categorical.load, xx))
+        return Categorical.summarize(categorical_values)
+
+
+def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
+    keys = set(chain.from_iterable(element.data.keys() for element in elements))
+
+    sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
+    summarized: dict[tuple[str, str], Any] = dict()
+    for key in keys:
+        values = [element.data.get(key) for element in sorted_elements]
+        field_name, _ = key
+        if key in [("metadata", "sources"), ("metadata", "raw_sources")] or field_name in ["images"]:
+            summarized[key] = list(collapse(values))
         else:
-            return None
+            summarized[key] = summarize(values)
 
-    if all(isclose(v, scalar_values[0]) for v in scalar_values):
-        return scalar_values[0]
+    data: dict[str, dict[str, Any]] = defaultdict(dict)
+    for (field_name, attribute_name), attribute_value in summarized.items():
+        data[field_name][attribute_name] = thaw(attribute_value)
 
-    mean_std = MeanStd.from_array([
-        value.mean if isinstance(value, MeanStd)
-        else float(value)
-        for value in values
-    ])
-    mean_std_dict = MeanStd.Schema().dump(mean_std)
-    assert isinstance(mean_std_dict, dict)
-
-    return mean_std_dict
+    return data
 
 
-def count_list_from_counter(counter: Counter, value_was_dict: bool = False) -> List[Count]:
-    count_list: List[Count] = list()
+def aggregate(rr: list[dict[str, dict]], across_key: str):
+    groups = group_across(rr, across_key)
+    expanded_groups = group_expand(groups)
 
-    values = counter.keys()
+    aggregated: list[dict[str, dict[str, Any]]] = list()
+    bypass: list[dict[str, dict[str, Any]]] = list()
 
-    try:
-        sorted_values = sorted(values)
-    except TypeError:
-        sorted_values = sorted(values, key=str)  # fallback lexical sort
+    for index, elements in expanded_groups.items():
+        tags: dict[str, Any] = {across_key: [element.across_value for element in elements]}
+        tags |= index
 
-    for v in sorted_values:
-        count = counter[v]
-        if value_was_dict is True:
-            v = dict(v)
-        count_list.append(Count(value=v, count=count))
+        u: dict[str, dict[str, Any]] = dict(tags=tags) | merge_data(elements)
 
-    return count_list
-
-
-def counter_from_count_list(count_list: Sequence[Count]) -> Tuple[Counter, bool]:
-    value_was_dict = None
-
-    counter: Counter = Counter()
-
-    for count in count_list:
-        value = count.value
-
-        if isinstance(value, dict):
-            value_is_dict = True
-            value = tuple(sorted(value.items()))
+        if len(elements) > 1:
+            aggregated.append(u)
         else:
-            value_is_dict = False
+            bypass.append(u)
 
-        assert value_was_dict is None or value_is_dict is None or value_was_dict == value_is_dict
-
-        value_was_dict = value_is_dict
-
-        counter.update({value: count.count})
-
-    assert value_was_dict is not None
-
-    return counter, value_was_dict
-
-
-def aggregate_categorical(values: Sequence, value_was_dict: bool):
-    counter: Counter = Counter()
-
-    for value in values:
-        if isinstance(value, Sequence):
-            if all(isinstance(count, Count) for count in value):
-                value_counter, value_was_dict = counter_from_count_list(value)
-                counter.update(value_counter)
-                continue
-
-        counter.update({value: 1})
-
-    count_list = count_list_from_counter(counter, value_was_dict=value_was_dict)
-
-    if len(count_list) == 1:
-        (count,) = count_list
-        return count.value
-
-    count_dict_list = Count.Schema().dump(count_list, many=True)
-    assert isinstance(count_dict_list, list)
-
-    return count_dict_list
-
-
-def freeze_any(x: Any) -> Hashable:
-    try:
-        _ = hash(x)
-        return x
-    except TypeError as e:  # is not hashable
-        if isinstance(x, Sequence):
-            sequence: List[Hashable] = [
-                freeze_any(element) for element in x
-            ]
-            return tuple(sequence)
-        elif isinstance(x, Mapping):
-            mapping: List[Tuple[Hashable, Hashable]] = [
-                (freeze_any(k), freeze_any(v), )
-                for k, v in x.items()
-            ]
-            return pmap(mapping)
-        elif isinstance(x, Iterable):
-            iterable: List[Hashable] = [
-                freeze_any(element) for element in x
-            ]
-            return frozenset(iterable)
-        elif isinstance(x, (MeanStd, Count)):  # special dataclasses
-            return x
-        elif hasattr(x, "Schema"):  # other dataclasses
-            return freeze_any(x.Schema().dump(x))
-
-        raise ValueError(f'Cannot freeze {x}') from e
-
-
-def aggregate_resultdicts(inputs, across) -> Tuple[List[Dict], List[Dict]]:
-
-    def aggregate_list(value):
-        result = list()
-        for v in value:
-            result.extend(v)
-        return result
-
-
-    def aggregate_field(key, value):
-        if key in ["sources", "raw_sources"]:
-            return aggregate_list(value)
-
-        return aggregate_any(value)
-
-
-    grouped_resultdicts = group_resultdicts(inputs, across)
-
-    aggregated = list()
-    non_aggregated = list()
-
-    for tag_tuple, listdict in grouped_resultdicts.items():
-        resultdict: Dict[str, Dict] = defaultdict(dict)
-        resultdict["tags"] = dict(tag_tuple)
-
-        for f, d in listdict.items():  # create combined resultdict
-            resultdict[f].update(d)
-
-        for f in ["tags", "metadata", "vals"]:
-            for key, value in resultdict[f].items():
-                if key == across:
-                    assert all(isinstance(v, Hashable) for v in value)
-                    resultdict[f][key] = list(value)
-                    continue
-                resultdict[f][key] = aggregate_field(key, value)
-
-        validation_errors = schema.validate(resultdict)
-
-        for f in ["tags", "metadata", "vals"]:
-            if f in validation_errors:
-                for key in validation_errors[f]:
-                    logger.warning(f'Removing "{f}.{key}={resultdict[f][key]}" from resultdict due to "{validation_errors[f]}"')
-                    del resultdict[f][key]  # remove invalid fields
-
-        if any(
-            isinstance(value, list) and len(value) > 1
-            for value in resultdict["images"].values()
-        ):
-            aggregated.append(resultdict)
-        else:
-            non_aggregated.append(resultdict)
-
-    return aggregated, non_aggregated
+    return aggregated, bypass
 
 
 class AggregateResultdictsInputSpec(DynamicTraitedSpec, BaseInterfaceInputSpec):
@@ -305,7 +176,7 @@ class AggregateResultdicts(IOBase):
         inputs = ravel([getattr(self.inputs, input_name) for input_name in self.input_names])
         across = self.inputs.across
 
-        aggregated, non_aggregated = aggregate_resultdicts(inputs, across)
+        aggregated, non_aggregated = aggregate(inputs, across)
 
         outputs["resultdicts"] = aggregated
         outputs["non_aggregated_resultdicts"] = non_aggregated

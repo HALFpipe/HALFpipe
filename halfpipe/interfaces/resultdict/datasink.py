@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, Optional, Sequence, Tuple, List
+from typing import Mapping
 
 import os
 from os import path as op
@@ -13,11 +13,12 @@ import json
 import re
 
 from inflection import camelize
-from marshmallow import ValidationError
 
 from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
 # from niworkflows.viz.utils import compose_view, extract_svg
 # from nilearn.plotting import plot_glass_brain
+
+from .base import Continuous
 
 from ...utils.table import SynchronizedTable
 from ...model import FuncTagsSchema, entities
@@ -29,8 +30,6 @@ from ...utils.json import TypeAwareJSONEncoder
 from ...resource import get as getresource
 from ...stats.algorithms import algorithms
 
-from ...schema.result import MeanStd
-
 
 def _make_plot(tags, key, sourcefile, metadata):
     _, _, _ = tags, sourcefile, metadata
@@ -40,7 +39,7 @@ def _make_plot(tags, key, sourcefile, metadata):
         pass
 
 
-def _join_tags(tags: Dict[str, str], entities: Optional[Sequence[str]] = None) -> Optional[str]:
+def _join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | None:
     joined = None
 
     if entities is None:
@@ -111,7 +110,7 @@ def _copy_file(inpath, outpath):
     return True
 
 
-def _find_sources(inpath, metadata) -> Tuple[Optional[List[str]], Optional[str]]:
+def _find_sources(inpath, metadata) -> tuple[list[str] | None, str | None]:
     file_hash = None
 
     sources = metadata.get("sources")
@@ -205,23 +204,23 @@ def datasink_vals(indicts, reports_directory):
                 outdict = FuncTagsSchema().dump(tags)
                 assert isinstance(outdict, dict)
 
-                for key, val in vals.items():
+                for key, value in vals.items():
                     if key in frozenset(["sdc_method", "fallback_registration"]):
                         continue
 
-                    if isinstance(val, (int, float)):
-                        outdict[key] = val
+                    if isinstance(value, (int, float)):
+                        outdict[key] = value
                         continue
 
-                    try:
-                        mean_std = MeanStd.Schema().load(val)
-                        assert isinstance(mean_std, MeanStd)
-                        outdict[key] = mean_std.mean
-                    except (ValidationError, AssertionError):
-                        logger.warning(
-                            f'Omitting invalid key-value pair "{key}={val}"'
-                            " from reportvals.json"
-                        )
+                    continuous = Continuous.load(value)
+                    if continuous is not None:
+                        outdict[key] = continuous.mean
+                        continue
+
+                    logger.warning(
+                        f'Omitting invalid key-value pair "{key}={value}"'
+                        " from reportvals.json"
+                    )
 
                 outdict.update(vals)
 

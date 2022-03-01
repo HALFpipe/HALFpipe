@@ -8,11 +8,9 @@ from math import isclose
 
 import numpy as np
 import pandas as pd
-from marshmallow import ValidationError
 
-from .base import ResultdictsOutputSpec
+from .base import ResultdictsOutputSpec, Continuous
 
-from ...schema.result import MeanStd
 from ...ingest.exclude import QCDecisionMaker, Decision
 from ...ingest.spreadsheet import read_spreadsheet
 from ...utils import logger, inflect_engine
@@ -152,12 +150,11 @@ def _make_cutoff_filterfun(filter_dict: dict, model_desc: str) -> Callable[[dict
         if isinstance(val, float):
             x: float = val
         else:
-            try:
-                mean_std = MeanStd.Schema().load(val)
-                assert isinstance(mean_std, MeanStd)
-                x = mean_std.mean
-            except (ValidationError, AssertionError) as e:
-                raise ValueError(f'Cannot filter by "{val}"') from e
+            continuous = Continuous.load(val)
+            if continuous is not None:
+                x = continuous.mean
+            else:
+                raise ValueError(f'Cannot filter by "{val}"')
 
         res = x <= cutoff
 
