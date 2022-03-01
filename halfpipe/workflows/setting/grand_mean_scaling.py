@@ -9,10 +9,13 @@ from ...interfaces.grand_mean_scaling import GrandMeanScaling
 from ..memory import MemoryCalculator
 
 
-def init_grand_mean_scaling_wf(mean=None, memcalc=MemoryCalculator.default(), name=None, suffix=None):
-    """
+def init_grand_mean_scaling_wf(
+        mean: float | None = None,
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
+        name: str | None = None,
+        suffix: str | None = None,
+):
 
-    """
     if name is None:
         if mean is not None:
             mean = float(mean)

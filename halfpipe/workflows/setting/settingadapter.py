@@ -32,7 +32,7 @@ def add_setting_adapter(workflow):
     return bold_adapter, tsv_adapter
 
 
-def init_setting_adapter_wf(suffix=None):
+def init_setting_adapter_wf(suffix: str | None = None):
     name = "setting_adapter_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"

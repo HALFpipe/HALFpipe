@@ -11,7 +11,12 @@ from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
 from ..memory import MemoryCalculator
 
 
-def init_smoothing_wf(fwhm=None, memcalc=MemoryCalculator.default(), name=None, suffix=None):
+def init_smoothing_wf(
+        fwhm: float | None = None,
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
+        name: str | None = None,
+        suffix: str | None = None
+):
     """
     Smooths a volume within a mask while correcting for the mask edge
     """

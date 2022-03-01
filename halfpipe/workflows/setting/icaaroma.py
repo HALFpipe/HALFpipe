@@ -16,29 +16,32 @@ from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
 from ...interfaces.report.vals import UpdateVals
 from ...interfaces.utility.file_type import SplitByFileType
-from ...utils.matrix import load_vector
 
 from ..memory import MemoryCalculator
 
 
-def _aroma_column_names(melodic_mix=None, aroma_noise_ics=None):
-    import numpy as np
-    from halfpipe.utils.matrix import ncol
+def _aroma_column_names(melodic_mix: str | None = None, aroma_noise_ics: str | None = None):
+    from math import ceil, log10
+    from halfpipe.utils.matrix import ncol, load_vector
 
-    ncomponents = ncol(melodic_mix)
-    leading_zeros = int(np.ceil(np.log10(ncomponents)))
+    n_components = ncol(melodic_mix)
+    column_indices = load_vector(aroma_noise_ics)
+
+    leading_zeros = int(ceil(log10(n_components)))
     column_names = []
-    for i in range(1, ncomponents + 1):
-        if i in aroma_noise_ics:
+    for i in range(1, n_components + 1):
+        if i in column_indices:
             column_names.append(f"aroma_noise_{i:0{leading_zeros}d}")
         else:
             column_names.append(f"aroma_signal_{i:0{leading_zeros}d}")
 
-    return column_names
+    return column_names, column_indices
 
 
 def init_ica_aroma_components_wf(
-    workdir=None, name="ica_aroma_components_wf", memcalc=MemoryCalculator.default()
+        workdir: str | None = None,
+        name: str = "ica_aroma_components_wf",
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
     """
 
@@ -78,12 +81,18 @@ def init_ica_aroma_components_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
+    err_on_aroma_warn: bool = False
+    if config.workflow.aroma_err_on_warn is not None:
+        err_on_aroma_warn = config.workflow.aroma_err_on_warn
+    aroma_melodic_dim = -200
+    if config.workflow.aroma_melodic_dim is not None:
+        aroma_melodic_dim = config.workflow.aroma_melodic_dim
     ica_aroma_wf = init_ica_aroma_wf(
         mem_gb=memcalc.series_std_gb,
         metadata={"RepetitionTime": nan},
         omp_nthreads=config.nipype.omp_nthreads,
-        err_on_aroma_warn=config.workflow.aroma_err_on_warn,
-        aroma_melodic_dim=config.workflow.aroma_melodic_dim,
+        err_on_aroma_warn=err_on_aroma_warn,
+        aroma_melodic_dim=aroma_melodic_dim,
         name="ica_aroma_wf",
     )
 
@@ -113,7 +122,10 @@ def init_ica_aroma_components_wf(
 
 
 def init_ica_aroma_regression_wf(
-    workdir=None, name="ica_aroma_regression_wf", memcalc=MemoryCalculator.default(), suffix=None
+        workdir: str | None = None,
+        name: str = "ica_aroma_regression_wf",
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
+        suffix: str | None = None,
 ):
     """
 
@@ -147,25 +159,16 @@ def init_ica_aroma_regression_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    aroma_noise_ics = pe.Node(
-        interface=niu.Function(
-            input_names=["in_file"], output_names=["aroma_noise_ics"], function=load_vector,
-        ),
-        name="aroma_noise_ics",
-    )
-    workflow.connect(inputnode, "aroma_noise_ics", aroma_noise_ics, "in_file")
-
-    #
     aroma_column_names = pe.Node(
         interface=niu.Function(
             input_names=["melodic_mix", "aroma_noise_ics"],
-            output_names=["column_names"],
+            output_names=["column_names", "column_indices"],
             function=_aroma_column_names,
         ),
         name="aroma_column_names",
     )
     workflow.connect(inputnode, "melodic_mix", aroma_column_names, "melodic_mix")
-    workflow.connect(aroma_noise_ics, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics")
+    workflow.connect(inputnode, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics")
 
     # add melodic_mix to the matrix
     split_by_file_type = pe.Node(SplitByFileType(), name="split_by_file_type")
@@ -191,7 +194,7 @@ def init_ica_aroma_regression_wf(
     workflow.connect(merge, "out", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
-    workflow.connect(aroma_noise_ics, "aroma_noise_ics", filter_regressor, "filter_columns")
+    workflow.connect(aroma_column_names, "column_indices", filter_regressor, "filter_columns")
 
     workflow.connect(filter_regressor, "out_file", outputnode, "files")
 

@@ -12,7 +12,11 @@ from ...utils.hash import b32_digest
 from ..memory import MemoryCalculator
 
 
-def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
+def init_confounds_select_wf(
+        confound_names: list[str] | None = None,
+        name: str | None = None,
+        suffix: str | None = None
+):
     if name is None:
         if confound_names is not None:
             name = f"confounds_select_{b32_digest(confound_names)[:4]}_wf"
@@ -52,10 +56,11 @@ def init_confounds_select_wf(confound_names=None, name=None, suffix=None):
     return workflow
 
 
-def init_confounds_regression_wf(name="confounds_regression_wf", suffix=None, memcalc=MemoryCalculator.default()):
-    """
-
-    """
+def init_confounds_regression_wf(
+        name: str = "confounds_regression_wf",
+        suffix: str | None = None,
+        memcalc: MemoryCalculator = MemoryCalculator.default()
+):
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)

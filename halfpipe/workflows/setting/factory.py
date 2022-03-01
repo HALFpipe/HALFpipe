@@ -3,7 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, NamedTuple, Hashable
+from typing import Callable, Hashable
+from dataclasses import dataclass
 
 from math import isclose
 
@@ -31,12 +32,13 @@ from ...utils import logger
 alphabet = "abcdefghijklmnopqrstuvwxzy"
 
 
-class SettingTuple(NamedTuple):
+@dataclass(frozen=True)
+class SettingTuple:
     value: Hashable | None
     suffix: str | None
 
-
-class LookupTuple(NamedTuple):
+@dataclass(frozen=True)
+class LookupTuple:
     setting_tuple: SettingTuple
     memcalc: MemoryCalculator
 
@@ -90,10 +92,10 @@ class LookupFactory(Factory):
     def __init__(self, ctx, previous_factory: Factory):
         super(LookupFactory, self).__init__(ctx)
 
-        self.wf_names: Dict[SettingTuple, str] = dict()
-        self.wf_factories: Dict[LookupTuple, Callable] = dict()
+        self.wf_names: dict[SettingTuple, str] = dict()
+        self.wf_factories: dict[LookupTuple, Callable] = dict()
 
-        self.tpl_by_setting_name: Dict[str, SettingTuple] = dict()
+        self.tpl_by_setting_name: dict[str, SettingTuple] = dict()
 
         self.previous_factory = previous_factory
 
@@ -102,7 +104,7 @@ class LookupFactory(Factory):
 
         previous_tpls = []
 
-        newsuffix_by_prevtpl: Optional[Dict[Tuple, str]] = None
+        newsuffix_by_prevtpl: dict[SettingTuple, str] | None = None
 
         if isinstance(self.previous_factory, LookupFactory):
             if len(self.previous_factory.tpl_by_setting_name) > 0:
@@ -208,7 +210,13 @@ class SmoothingFactory(LookupFactory):
         suffix = setting_tuple.suffix
         fwhm = setting_tuple.value
 
-        if fwhm is None or float(fwhm) <= 0 or isclose(float(fwhm), 0):
+        if fwhm is None:
+            fwhm = 0.0
+
+        assert isinstance(fwhm, (float, int, str))
+        fwhm = float(fwhm)
+
+        if fwhm <= 0 or isclose(fwhm, 0):
             return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix)
 
         return init_smoothing_wf(fwhm=fwhm, memcalc=lookup_tuple.memcalc, suffix=suffix)
@@ -236,6 +244,10 @@ class GrandMeanScalingFactory(LookupFactory):
                 name="no_grand_mean_scaling_wf",
                 suffix=suffix,
             )
+
+        assert isinstance(mean, (float, int, str))
+        mean = float(mean)
+
         return init_grand_mean_scaling_wf(
             mean=mean, memcalc=lookup_tuple.memcalc, suffix=suffix
         )
@@ -267,6 +279,7 @@ class ICAAROMARegressionFactory(LookupFactory):
                 name="no_ica_aroma_regression_wf",
                 suffix=suffix,
             )
+
         return init_ica_aroma_regression_wf(
             workdir=str(self.workdir),
             memcalc=lookup_tuple.memcalc,
@@ -305,8 +318,9 @@ class BandpassFilterFactory(LookupFactory):
                 name="no_bandpass_filter_wf",
                 suffix=suffix,
             )
+
         return init_bandpass_filter_wf(
-            bandpass_filter=bandpass_filter, memcalc=lookup_tuple.memcalc, suffix=suffix
+            bandpass_filter=bandpass_filter, memcalc=lookup_tuple.memcalc, suffix=suffix  # type: ignore
         )
 
     def _tpl(self, setting) -> Hashable:
@@ -356,6 +370,8 @@ class ConfoundsSelectFactory(LookupFactory):
                 name="no_confounds_select_wf",
                 suffix=suffix
             )
+
+        assert isinstance(confound_names, (list, tuple))
         return init_confounds_select_wf(confound_names=list(confound_names), suffix=suffix)
 
     def _tpl(self, setting) -> Hashable:
@@ -380,6 +396,7 @@ class ConfoundsRegressionFactory(LookupFactory):
                 name="no_confounds_regression_wf",
                 suffix=suffix
             )
+
         return init_confounds_regression_wf(memcalc=lookup_tuple.memcalc, suffix=suffix)
 
     def _tpl(self, setting) -> Hashable:
