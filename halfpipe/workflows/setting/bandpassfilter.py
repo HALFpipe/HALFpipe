@@ -12,12 +12,18 @@ from ...interfaces.utility.afni import ToAFNI, FromAFNI
 from ..memory import MemoryCalculator
 
 
-def _calc_sigma(lp_width=None, hp_width=None, repetition_time=None):
+def _calc_sigma(
+        lp_width: float | None = None,
+        hp_width: float | None = None,
+        repetition_time: float | None = None,
+):
     lp_sigma = None
     if lp_width is not None:
+        assert isinstance(repetition_time, float)
         lp_sigma = lp_width / (2.0 * repetition_time)
     hp_sigma = None
     if hp_width is not None:
+        assert isinstance(repetition_time, float)
         hp_sigma = hp_width / (2.0 * repetition_time)
     return lp_sigma, hp_sigma
 
@@ -34,12 +40,13 @@ def _bandpass_arg(low, high):
 
 
 def init_bandpass_filter_wf(
-    bandpass_filter=None, name=None, suffix=None, memcalc=MemoryCalculator.default()
+        bandpass_filter: tuple[str, float, float],
+        name: str | None = None,
+        suffix: str | None = None,
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
-    """
-
-    """
     type, low, high = bandpass_filter
+
     if name is None:
         name = f"{type}_bandpass_filter"
         if low is not None:

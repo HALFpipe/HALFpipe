@@ -4,6 +4,7 @@
 
 from collections import defaultdict
 from copy import deepcopy
+from typing import Mapping
 
 import nipype.pipeline.engine as pe
 from nipype.pipeline.engine.utils import (
@@ -53,21 +54,24 @@ class Node(pe.Node):
                 logger.critical("%s", e)
             except FileNotFoundError as e:
                 if self.allow_missing_input_source:
-                    logger.warning("%s", e)
+                    logger.warning(
+                        f'Missing input file "{results_fname}". '
+                        "This may indicate that errors occured during previous processing steps.",
+                        exc_info=e,
+                    )
                 else:
                     raise
 
-            if self.allow_missing_input_source:
-                if outputs is None:
-                    continue
-
             if outputs is None:
-                raise RuntimeError(
-                    """\
-Error populating the inputs of node "%s": the results file of the source node \
-(%s) does not contain any outputs."""
-                    % (self.name, results_fname)
-                )
+                if self.allow_missing_input_source:
+                    continue
+                else:
+                    raise RuntimeError(
+                        """\
+    Error populating the inputs of node "%s": the results file of the source node \
+    (%s) does not contain any outputs."""
+                        % (self.name, results_fname)
+                    )
 
             for key, conn in connections:
                 output_value = Undefined
@@ -114,6 +118,7 @@ class MapNode(pe.MapNode, Node):
             interface=[], runtime=[], provenance=[], inputs=[], outputs=self.outputs
         )
         if self.outputs:
+            assert self.config is not None
             for key, _ in list(self.outputs.items()):
                 rm_extra = self.config["execution"]["remove_unnecessary_outputs"]
                 if str2bool(rm_extra) and self.needed_outputs:

@@ -24,8 +24,8 @@ def load_pickle_lzma(file_path: str):
         file_path = f"{file_path}{pickle_lzma_extension}"
 
     try:
-        with lzma.open(file_path, "rb") as fptr:
-            return pickle.load(fptr)
+        with lzma.open(file_path, "rb") as file_handle:
+            return Unpickler(file_handle).load()
 
     except (lzma.LZMAError, TraitError, EOFError, AttributeError) as e:
         logger.error(f'Error while reading "{file_path}"', exc_info=e)
@@ -51,6 +51,10 @@ class Unpickler(pickle.Unpickler):
     def find_class(self, module: str, name: str):
         module = re.sub(r"^halfpipe\.workflow(?=\.|$)", "halfpipe.workflows", module)
         module = re.sub(r"^halfpipe\.interface(?=\.|$)", "halfpipe.interfaces", module)
+
+        if module == "halfpipe.interfaces.stats.tsv":
+            module = "halfpipe.interfaces.stats.design"
+
         return super(Unpickler, self).find_class(module, name)
 
 

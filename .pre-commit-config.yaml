@@ -4,8 +4,10 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
+      - id: check-merge-conflict
       - id: check-added-large-files
       - id: check-ast
+      - id: check-symlinks
       - id: mixed-line-ending
       - id: check-case-conflict
       - id: fix-encoding-pragma
@@ -20,8 +22,8 @@ repos:
       - id: pip-compile
         name: pip-compile requirements.in
         args: [requirements.in]
-        files: ^requirements\.(in|txt)$
+        files: ^requirements(\.in|\.txt)$
       - id: pip-compile
         name: pip-compile requirements-test.in
         args: [requirements-test.in]
-        files: ^requirements-test\.(in|txt)$
+        files: ^requirements(\.txt|-test\.in|-test\.txt)$

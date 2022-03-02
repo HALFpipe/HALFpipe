@@ -43,6 +43,7 @@ requests >= 2.25.1
 pysocks >= 1.7.1
 inflect >= 5.3.0
 inflection >= 0.5.1
+parse >= 1.19.0
 marshmallow >= 3.10.0
 marshmallow-oneofschema
 marshmallow-dataclass >= 8.5.3

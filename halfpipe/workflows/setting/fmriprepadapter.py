@@ -11,9 +11,10 @@ from ..memory import MemoryCalculator
 from ..constants import constants
 
 
-def init_fmriprep_adapter_wf(name="fmriprep_adapter_wf", memcalc=MemoryCalculator.default()):
-    """
-    """
+def init_fmriprep_adapter_wf(
+        name: str="fmriprep_adapter_wf",
+        memcalc: MemoryCalculator = MemoryCalculator.default(),
+):
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

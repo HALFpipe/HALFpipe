@@ -5,11 +5,17 @@
 #    pip-compile requirements-test.in
 #
 attrs==21.4.0
-    # via pytest
+    # via
+    #   -c requirements.txt
+    #   pytest
 black==22.1.0
-    # via -r requirements-test.in
+    # via
+    #   -c requirements.txt
+    #   -r requirements-test.in
 click==8.0.4
-    # via black
+    # via
+    #   -c requirements.txt
+    #   black
 coverage[toml]==6.3.2
     # via pytest-cov
 flake8==4.0.1
@@ -19,13 +25,21 @@ iniconfig==1.1.1
 mccabe==0.6.1
     # via flake8
 mypy-extensions==0.4.3
-    # via black
+    # via
+    #   -c requirements.txt
+    #   black
 packaging==21.3
-    # via pytest
+    # via
+    #   -c requirements.txt
+    #   pytest
 pathspec==0.9.0
-    # via black
+    # via
+    #   -c requirements.txt
+    #   black
 platformdirs==2.5.1
-    # via black
+    # via
+    #   -c requirements.txt
+    #   black
 pluggy==1.0.0
     # via pytest
 py==1.11.0
@@ -35,7 +49,9 @@ pycodestyle==2.8.0
 pyflakes==2.4.0
     # via flake8
 pyparsing==3.0.7
-    # via packaging
+    # via
+    #   -c requirements.txt
+    #   packaging
 pytest==7.0.1
     # via
     #   -r requirements-test.in
@@ -53,6 +69,7 @@ pytest-timeout==2.1.0
     # via -r requirements-test.in
 tomli==2.0.1
     # via
+    #   -c requirements.txt
     #   black
     #   coverage
     #   pytest

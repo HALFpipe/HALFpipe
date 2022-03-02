@@ -2,8 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import OrderedDict
 from typing import Optional, Mapping
 
+from dataclasses import is_dataclass, asdict
 from json import JSONEncoder
 
 import numpy as np
@@ -15,6 +17,9 @@ class TypeAwareJSONEncoder(JSONEncoder):
     """
 
     def default(self, o):
+        if is_dataclass(o):
+            o = asdict(o, dict_factory=OrderedDict)
+
         if isinstance(o, Mapping):
             if not isinstance(o, dict):
                 o = dict(o)

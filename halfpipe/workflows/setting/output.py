@@ -12,7 +12,7 @@ from ...interfaces.resultdict.datasink import ResultdictDatasink
 from ...utils.format import format_workflow
 
 
-def init_setting_output_wf(workdir=None, setting_name=None):
+def init_setting_output_wf(workdir: str | None = None, setting_name: str | None = None):
     name = f"setting_output_{format_workflow(setting_name)}_wf"
     workflow = pe.Workflow(name=name)
 

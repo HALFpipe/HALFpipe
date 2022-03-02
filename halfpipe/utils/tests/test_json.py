@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from json import dumps
+from dataclasses import dataclass
 
 import pytest
 import numpy as np
@@ -40,9 +41,25 @@ def test_float():
 
 
 def test_pmap():
-    x = pmap(dict(x=5))
+    x =pmap(dict(x=5))
 
     with pytest.raises(Exception):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
+
+
+def test_dataclass():
+    @dataclass
+    class TestDataclass:
+        x: int
+
+    x = TestDataclass(x=5)
+
+    with pytest.raises(Exception):
+        dumps(dict(x=x))
+
+    dumps(dict(x=x), cls=TypeAwareJSONEncoder)
+
+    with pytest.raises(Exception):
+        dumps(dict(x=TestDataclass), cls=TypeAwareJSONEncoder)

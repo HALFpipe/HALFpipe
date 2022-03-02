@@ -11,7 +11,7 @@ from ..design import group_design
 
 
 @pytest.mark.slow
-@pytest.mark.timeout(600)
+@pytest.mark.timeout(1200)
 def test_fit(tmp_path, wakemandg_hensonrn_downsampled):
     os.chdir(str(tmp_path))
 

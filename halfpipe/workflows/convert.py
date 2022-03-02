@@ -21,7 +21,7 @@ def convert_all(
         try:
             bold_bids_path = Path(bids_database.put(bold_path))
         except ValueError as e:
-            logger.warning(f'Cannot convert "{bold_path}" to BIDS, skipping', exc_info=e)
+            logger.warning(f'Skipping "{bold_path}" due to {e}', exc_info=e)
             continue
 
         parts = list(bold_bids_path.parts)

@@ -9,6 +9,15 @@ from inflection import parameterize, camelize, underscore
 from ..model.tags import entities, entity_longnames
 
 
+def normalize_subject(s) -> str:
+    s = str(s)
+
+    if s.startswith("sub-"):
+        s = s[4:]
+
+    return s
+
+
 def _replace_special(s):
     # replace gt and lt characters because these are confusing in bash later on
     s = s.replace("<>", " vs ")
