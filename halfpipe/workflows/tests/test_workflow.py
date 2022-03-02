@@ -288,7 +288,7 @@ def test_with_reconall(tmp_path, mock_spec):
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
 
-    config.nipype.omp_nthreads = 4
+    config.nipype.omp_nthreads = 2
 
     workflow = init_workflow(tmp_path)
 
