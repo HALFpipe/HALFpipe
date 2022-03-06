@@ -2,18 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
-from .anat import __all__ as AnatTagsSchemas
-from .base import __all__ as BaseTagsSchemas
-from .fmap import __all__ as FmapTagsSchemas
-from .func import __all__ as FuncTagsSchemas
-from .ref import __all__ as RefTagsSchemas
+from .anat import schemas as AnatTagsSchemas
+from .base import schemas as BaseTagsSchemas
+from .fmap import schemas as FmapTagsSchemas
+from .func import schemas as FuncTagsSchemas
+from .ref import schemas as RefTagsSchemas
 from .resultdict import ResultdictTagsSchema, resultdict_entities
 
-__all__ = [
+schemas = [
     *BaseTagsSchemas,
     *AnatTagsSchemas,
     *FuncTagsSchemas,
@@ -22,16 +18,17 @@ __all__ = [
     ResultdictTagsSchema,
 ]
 
-entities = ["run", "task", "ses", "sub"]
-for schema in __all__:  # automatically add other entities
+entities_list = ["run", "task", "ses", "sub"]
+for schema in schemas:  # automatically add other entities
     instance = schema()
     for key in instance.fields.keys():
-        if key not in entities:
-            entities.insert(0, key)
+        if key not in entities_list:
+            entities_list.insert(0, key)
 for entity in resultdict_entities:
-    entities.remove(entity)
-    entities.insert(0, entity)  # maintain order for outputs
-entities = tuple(entities)
+    entities_list.remove(entity)
+    entities_list.insert(0, entity)  # maintain order for outputs
+
+entities = tuple(entities_list)
 
 entity_longnames = {
     "ses": "session",
