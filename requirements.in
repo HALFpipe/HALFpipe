@@ -1,3 +1,9 @@
+# build system
+setuptools>=45
+setuptools_scm[toml]>=6.2
+wheel
+
+# neuroimaging
 fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
 smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
 niworkflows ~= 1.3.5
@@ -10,6 +16,7 @@ nitime
 templateflow >= 0.7.1
 pybids >= 0.13.1
 
+# data management
 numpy >= 1.20
 scipy >= 1.6.2
 mpmath >= 1.1.0
@@ -29,6 +36,7 @@ openpyxl >= 3.0.7
 XlsxWriter >= 1.4.4
 Pint >= 0.17
 
+# utilities
 flufl.lock >= 5.0.3
 psutil >= 5.8.0
 fasteners >= 0.15

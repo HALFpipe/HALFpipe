@@ -1,4 +1,5 @@
 [build-system]
+# keep in sync with requirements.in
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
 
 [tool.isort]

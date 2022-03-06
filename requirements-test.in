@@ -1,8 +1,17 @@
 -c requirements.txt
+
+# unit test
 pytest
 pytest-cov
 pytest-env
 pytest-github-actions-annotate-failures
 pytest-timeout
+
+# linters
 flake8
 black
+
+# type stubs
+types-chardet
+types-requests
+types-tabulate

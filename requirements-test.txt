@@ -73,3 +73,11 @@ tomli==2.0.1
     #   black
     #   coverage
     #   pytest
+types-chardet==4.0.3
+    # via -r requirements-test.in
+types-requests==2.27.11
+    # via -r requirements-test.in
+types-tabulate==0.8.5
+    # via -r requirements-test.in
+types-urllib3==1.26.10
+    # via types-requests
