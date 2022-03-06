@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Type
 from inflection import underscore
 from marshmallow import (
     EXCLUDE,
@@ -155,16 +156,18 @@ class SpreadsheetMetadataSchema(Schema):
             raise ValidationError("Duplicate variable name")
 
 
+metadata_schemas: list[Type[Schema]] = [
+    PhaseDiffMetadataSchema,
+    EventsMetadataSchema,
+    RefMetadataSchema,
+    BoldMetadataSchema,
+    BIDSFmapMetadataSchema,
+]
+
 MetadataSchema = Schema.from_dict(
     {
         k: v
-        for schema in [
-            PhaseDiffMetadataSchema,
-            EventsMetadataSchema,
-            RefMetadataSchema,
-            BoldMetadataSchema,
-            BIDSFmapMetadataSchema,
-        ]
+        for schema in metadata_schemas
         for k, v in schema().fields.items()
     }
 )
