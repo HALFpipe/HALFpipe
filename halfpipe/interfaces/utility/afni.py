@@ -6,11 +6,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined, traits
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File, isdefined
-
-from ...utils.path import split_ext
 from ...ingest.spreadsheet import read_spreadsheet
+from ...utils.path import split_ext
 
 
 class ToAFNIInputSpec(TraitedSpec):
@@ -23,7 +22,7 @@ class ToAFNIOutputSpec(TraitedSpec):
 
 
 class ToAFNI(SimpleInterface):
-    """ convert to afni 1d format if necessary """
+    """convert to afni 1d format if necessary"""
 
     input_spec = ToAFNIInputSpec
     output_spec = ToAFNIOutputSpec
@@ -61,7 +60,7 @@ class FromAFNIOutputSpec(TraitedSpec):
 
 
 class FromAFNI(SimpleInterface):
-    """ convert from afni 1d format if necessary """
+    """convert from afni 1d format if necessary"""
 
     input_spec = FromAFNIInputSpec
     output_spec = FromAFNIOutputSpec
@@ -76,18 +75,16 @@ class FromAFNI(SimpleInterface):
         else:
             in_array = read_spreadsheet(in_file).values.transpose()
 
-            header=False
+            header = False
             column_names = None
             if isdefined(self.inputs.metadata):
-                header=True
+                header = True
                 column_names = list(self.inputs.metadata)
 
             out_df = pd.DataFrame(data=in_array, columns=column_names)
 
             out_file = Path.cwd() / f"{stem}.tsv"
-            out_df.to_csv(
-                out_file, sep="\t", index=False, na_rep="n/a", header=header
-            )
+            out_df.to_csv(out_file, sep="\t", index=False, na_rep="n/a", header=header)
 
             self._results["out_file"] = out_file
 

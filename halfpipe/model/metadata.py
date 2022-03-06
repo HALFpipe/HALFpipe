@@ -2,24 +2,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
-
-from marshmallow import (
-    fields,
-    Schema,
-    validate,
-    EXCLUDE,
-    ValidationError,
-    validates_schema,
-    pre_load,
-)
 from inflection import underscore
+from marshmallow import (
+    EXCLUDE,
+    Schema,
+    ValidationError,
+    fields,
+    pre_load,
+    validate,
+    validates_schema,
+)
 
 from .variable import VariableSchema
-
 
 axis_codes = ["i-", "i", "j-", "j", "k-", "k"]
 space_codes = [
@@ -56,37 +50,49 @@ class BaseMetadataSchema(Schema):
 class PEDirMetadataSchema(BaseMetadataSchema):
     phase_encoding_direction = fields.Str(
         validate=validate.OneOf(direction_codes),
-        metadata=dict(description="The letters i, j, k correspond to the first, second and "
-        "third axis of the data in the NIFTI file."),
+        metadata=dict(
+            description="The letters i, j, k correspond to the first, second and "
+            "third axis of the data in the NIFTI file."
+        ),
     )
 
 
 class TEMetadataSchema(BaseMetadataSchema):
     echo_time = fields.Float(
-        metadata=dict(description="The echo time (TE) for the acquisition, specified in seconds.",
-        unit="seconds"),
-        validate=validate.Range(min=0.0)
+        metadata=dict(
+            description="The echo time (TE) for the acquisition, specified in seconds.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
     )
 
 
 class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
     repetition_time = fields.Float(
-        metadata=dict(description="The time in seconds between the beginning of an acquisition of one "
-        "volume and the beginning of acquisition of the volume following it (TR).",
-        unit="seconds"),
-        validate=validate.Range(min=0.0)
+        metadata=dict(
+            description="The time in seconds between the beginning of an acquisition of one "
+            "volume and the beginning of acquisition of the volume following it (TR).",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
     )
     effective_echo_spacing = fields.Float(
-        metadata=dict(description='The "effective" sampling interval, specified in seconds, between lines '
-        "in the phase-encoding direction, defined based on the size of the reconstructed "
-        "image in the phase direction.",
-        unit="seconds"),
-        validate=validate.Range(min=0.0)
+        metadata=dict(
+            description='The "effective" sampling interval, specified in seconds, between lines '
+            "in the phase-encoding direction, defined based on the size of the reconstructed "
+            "image in the phase direction.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
     )
     slice_timing = fields.List(
         fields.Float(),
-        metadata=dict(metadata=dict(description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition."),
-        unit="seconds"),
+        metadata=dict(
+            metadata=dict(
+                description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition."
+            ),
+            unit="seconds",
+        ),
     )
     slice_timing_code = fields.Str(validate=validate.OneOf(slice_order_strs))
     slice_timing_file = fields.Str()
@@ -97,28 +103,36 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         if "slice_timing" not in data or "repetition_time" not in data:
             return  # nothing to validate
         if "slice_timing_code" in data and data["slice_timing_code"] is not None:
-            raise ValidationError("Cannot specify both slice_timing and slice_timing_code at the same time")
+            raise ValidationError(
+                "Cannot specify both slice_timing and slice_timing_code at the same time"
+            )
 
 
 class BIDSFmapMetadataSchema(BaseMetadataSchema):
     intended_for = fields.List(
         fields.Str(),
-        metadata=dict(description="Contains one or more filenames with paths relative to the participant subfolder."),
+        metadata=dict(
+            description="Contains one or more filenames with paths relative to the participant subfolder."
+        ),
     )
 
 
 class PhaseDiffMetadataSchema(BaseMetadataSchema):
     echo_time_difference = fields.Float(
-        metadata=dict(description="The echo time difference between the acquisitions, specified in seconds.",
-        unit="seconds"),
-        validate=validate.Range(min=0.0)
+        metadata=dict(
+            description="The echo time difference between the acquisitions, specified in seconds.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
     )
 
 
 class EventsMetadataSchema(BaseMetadataSchema):
     units = fields.Str(
         validate=validate.OneOf(["scans", "seconds"]),
-        metadata=dict(description="The units in which onsets and durations are specified."),
+        metadata=dict(
+            description="The units in which onsets and durations are specified."
+        ),
     )
 
 

@@ -4,20 +4,18 @@
 
 from pathlib import Path
 
-import numpy as np
 import nibabel as nib
-
+import numpy as np
 from nilearn.image import new_img_like
-
 from nipype.interfaces.base import (
     DynamicTraitedSpec,
-    traits,
     File,
     InputMultiPath,
     OutputMultiPath,
-    isdefined
+    isdefined,
+    traits,
 )
-from nipype.interfaces.io import add_traits, IOBase
+from nipype.interfaces.io import IOBase, add_traits
 
 from ...utils.path import split_ext
 

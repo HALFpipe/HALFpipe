@@ -50,9 +50,15 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
         contrast_columns = [*map_component_names, *confounds_df.columns]
     else:
         contrast_columns = [*map_component_names]
-    contrast_df = pd.DataFrame(contrast_mat, index=map_component_names, columns=contrast_columns)
+    contrast_df = pd.DataFrame(
+        contrast_mat, index=map_component_names, columns=contrast_columns
+    )
 
-    kwargs = dict(sep="\t", na_rep="n/a", quoting=csv.QUOTE_NONNUMERIC,)
+    kwargs = dict(
+        sep="\t",
+        na_rep="n/a",
+        quoting=csv.QUOTE_NONNUMERIC,
+    )
     out_with_header = Path.cwd() / "merge_with_header.tsv"
     contrast_df.to_csv(out_with_header, index=True, header=True, **kwargs)
     out_no_header = Path.cwd() / "merge_no_header.tsv"
@@ -61,11 +67,11 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
 
 
 def init_dualregression_wf(
-        workdir: str | Path,
-        feature=None,
-        map_files=None,
-        map_spaces=None,
-        memcalc=MemoryCalculator.default(),
+    workdir: str | Path,
+    feature=None,
+    map_files=None,
+    map_spaces=None,
+    memcalc=MemoryCalculator.default(),
 ):
     """
     create a workflow to calculate dual regression for ICA seeds
@@ -93,7 +99,9 @@ def init_dualregression_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
 
     if feature is not None:
         inputnode.inputs.map_names = feature.maps
@@ -107,7 +115,9 @@ def init_dualregression_wf(
     #
     statmaps = ["effect", "variance", "z", "dof", "mask"]
     make_resultdicts_a = pe.Node(
-        MakeResultdicts(tagkeys=["feature", "map"], imagekeys=["design_matrix", "contrast_matrix"]),
+        MakeResultdicts(
+            tagkeys=["feature", "map"], imagekeys=["design_matrix", "contrast_matrix"]
+        ),
         name="make_resultdicts_a",
     )
     if feature is not None:
@@ -144,7 +154,9 @@ def init_dualregression_wf(
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
+    reference_dict = dict(
+        reference_space=constants.reference_space, reference_res=constants.reference_res
+    )
     resample = pe.MapNode(
         Resample(interpolation="LanczosWindowedSinc", **reference_dict),
         name="resample",
@@ -157,7 +169,10 @@ def init_dualregression_wf(
 
     # Delete zero voxels for the maps
     applymask = pe.MapNode(
-        fsl.ApplyMask(), name="applymask", iterfield="in_file", mem_gb=memcalc.volume_std_gb,
+        fsl.ApplyMask(),
+        name="applymask",
+        iterfield="in_file",
+        mem_gb=memcalc.volume_std_gb,
     )
     workflow.connect(inputnode, "mask", applymask, "mask_file")
     workflow.connect(resample, "output_image", applymask, "in_file")
@@ -188,10 +203,14 @@ def init_dualregression_wf(
     workflow.connect(spatialglm, "out_file", contrasts, "map_timeseries_file")
     workflow.connect(inputnode, "confounds_selected", contrasts, "confounds_file")
 
-    workflow.connect(contrasts, "out_with_header", make_resultdicts_a, "contrast_matrix")
+    workflow.connect(
+        contrasts, "out_with_header", make_resultdicts_a, "contrast_matrix"
+    )
     workflow.connect(contrasts, "map_component_names", make_resultdicts_b, "component")
 
-    design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design")
+    design = pe.MapNode(
+        MergeColumns(2), iterfield=["in1", "column_names1"], name="design"
+    )
     workflow.connect(spatialglm, "out_file", design, "in1")
     workflow.connect(contrasts, "map_component_names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")
@@ -219,13 +238,19 @@ def init_dualregression_wf(
     workflow.connect(contrasts, "out_no_header", temporalglm, "contrasts")
 
     # make dof volume
-    makedofvolume = pe.MapNode(MakeDofVolume(), iterfield=["design"], name="makedofvolume",)
+    makedofvolume = pe.MapNode(
+        MakeDofVolume(),
+        iterfield=["design"],
+        name="makedofvolume",
+    )
     workflow.connect(inputnode, "bold", makedofvolume, "bold_file")
     workflow.connect(fillna, "out_no_header", makedofvolume, "design")
 
     for glmattr, resultattr in (("cope", "effect"), ("varcb", "variance"), ("z", "z")):
         split = pe.MapNode(
-            fsl.Split(dimension="t"), iterfield="in_file", name=f"split{resultattr}images"
+            fsl.Split(dimension="t"),
+            iterfield="in_file",
+            name=f"split{resultattr}images",
         )
         workflow.connect(temporalglm, f"out_{glmattr}", split, "in_file")
         workflow.connect(split, "out_files", make_resultdicts_b, resultattr)
@@ -236,12 +261,18 @@ def init_dualregression_wf(
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
     maxintensity = pe.MapNode(
-        MaxIntensity(), iterfield="in_file", name="maxintensity", mem_gb=memcalc.series_std_gb
+        MaxIntensity(),
+        iterfield="in_file",
+        name="maxintensity",
+        mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(resample, "output_image", maxintensity, "in_file")
 
     calcmean = pe.MapNode(
-        CalcMean(), iterfield="parcellation", name="calcmean", mem_gb=memcalc.series_std_gb
+        CalcMean(),
+        iterfield="parcellation",
+        name="calcmean",
+        mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(maxintensity, "out_file", calcmean, "parcellation")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")

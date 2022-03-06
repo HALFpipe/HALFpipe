@@ -2,20 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
-from ...interfaces.utility.tsv import SelectColumns, FillNA
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
+from ...interfaces.utility.tsv import FillNA, SelectColumns
 from ...utils.hash import b32_digest
-
 from ..memory import MemoryCalculator
 
 
 def init_confounds_select_wf(
-        confound_names: list[str] | None = None,
-        name: str | None = None,
-        suffix: str | None = None
+    confound_names: list[str] | None = None,
+    name: str | None = None,
+    suffix: str | None = None,
 ):
     if name is None:
         if confound_names is not None:
@@ -57,21 +56,22 @@ def init_confounds_select_wf(
 
 
 def init_confounds_regression_wf(
-        name: str = "confounds_regression_wf",
-        suffix: str | None = None,
-        memcalc: MemoryCalculator = MemoryCalculator.default()
+    name: str = "confounds_regression_wf",
+    suffix: str | None = None,
+    memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold", "confounds_selected", "confounds", "mask", "vals"]), name="inputnode",
+        niu.IdentityInterface(
+            fields=["bold", "confounds_selected", "confounds", "mask", "vals"]
+        ),
+        name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold", "confounds", "mask", "vals"]
-        ),
+        niu.IdentityInterface(fields=["bold", "confounds", "mask", "vals"]),
         name="outputnode",
     )
     workflow.connect(inputnode, "mask", outputnode, "mask")
@@ -83,7 +83,7 @@ def init_confounds_regression_wf(
     filter_regressor_b = pe.Node(
         FilterRegressor(aggressive=True, filter_all=True, mask=False),
         name="filter_regressor_b",
-        mem_gb=memcalc.series_std_gb
+        mem_gb=memcalc.series_std_gb,
     )
     workflow.connect(inputnode, "bold", filter_regressor_b, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor_b, "mask")
@@ -94,7 +94,7 @@ def init_confounds_regression_wf(
     filter_regressor_c = pe.Node(
         FilterRegressor(aggressive=True, filter_all=True, mask=False),
         name="filter_regressor_c",
-        mem_gb=memcalc.min_gb
+        mem_gb=memcalc.min_gb,
     )
     workflow.connect(inputnode, "confounds", filter_regressor_c, "in_file")
     workflow.connect(fillna, "out_no_header", filter_regressor_c, "design_file")

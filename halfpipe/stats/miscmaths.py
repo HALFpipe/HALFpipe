@@ -34,7 +34,7 @@ class Distribution(ABC):
     def cdfc(self, x: mpf) -> mpf:
         return mpf("1") - self.cdf(x)
 
-    def auto_convert(self, x: float, max_prec: int = 2 ** 13) -> float:
+    def auto_convert(self, x: float, max_prec: int = 2**13) -> float:
         if math.isnan(x):
             return math.nan  # skip computation
 
@@ -69,10 +69,10 @@ class Distribution(ABC):
 
                     break
 
-                if mp.prec <= 2 ** 12:
-                    mp.prec += 2 ** 8
+                if mp.prec <= 2**12:
+                    mp.prec += 2**8
                 else:
-                    mp.prec += 2 ** 12
+                    mp.prec += 2**12
 
             # skip calculation
 

@@ -5,12 +5,13 @@
 from nibabel.nifti1 import Nifti1Header
 
 from ..model.setting import BaseSettingSchema
-from .metadata.niftiheader import NiftiheaderLoader
-from .metadata.direction import get_axcodes_set
+from ..utils import inflect_engine as pe
+from ..utils import logger
+from ..utils.image import nvol
 from .bids import BidsDatabase, get_file_metadata
 from .database import Database
-from ..utils import logger, inflect_engine as pe
-from ..utils.image import nvol
+from .metadata.direction import get_axcodes_set
+from .metadata.niftiheader import NiftiheaderLoader
 
 
 def collect_events(
@@ -62,7 +63,9 @@ def collect_events(
     raise ValueError(f'Cannot collect condition files for "{source_file}"')
 
 
-def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> list[str]:
+def collect_fieldmaps(
+    database: Database, bold_file_path: str, silent: bool = False
+) -> list[str]:
     sub = database.tagval(bold_file_path, "sub")
     filters = dict(sub=sub)  # enforce same subject
 
@@ -82,9 +85,14 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
     magnitude = frozenset(["magnitude1", "magnitude2"])
     has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
 
-    needs_magnitude = frozenset([
-        "phasediff", "phase1", "phase2", "fieldmap",
-    ])
+    needs_magnitude = frozenset(
+        [
+            "phasediff",
+            "phase1",
+            "phase2",
+            "fieldmap",
+        ]
+    )
 
     incomplete = set()
     for c in candidates:
@@ -109,7 +117,9 @@ def collect_bold_files(
 
     # find bold files
 
-    bold_file_paths: set[str] = setting_factory.source_files | feature_factory.source_files
+    bold_file_paths: set[str] = (
+        setting_factory.source_files | feature_factory.source_files
+    )
     bold_file_paths_dict: dict[str, list[str]] = dict()
 
     # filter

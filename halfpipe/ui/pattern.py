@@ -2,30 +2,25 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import logging
 from typing import ClassVar, Dict, List, Optional, Type, Union
 
-from .components import (
-    TextView,
-    SpacerView,
-    FilePatternInputView,
-    TextInputView,
-    TextElement,
-)
-from ..ingest.glob import tag_parse, get_entities_in_path
-
-import logging
-
-from .step import Step
+from ..ingest.glob import get_entities_in_path, tag_parse
+from ..model import FileSchema, entities
+from ..model import entity_longnames as entity_display_aliases
 from ..model.file.base import BaseFileSchema, File
-from ..model import (
-    FileSchema,
-    entities,
-    entity_longnames as entity_display_aliases
-)
 from ..model.utils import get_schema_entities
-from .utils import messagefun, forbidden_chars, entity_colors
 from ..utils import inflect_engine as p
 from ..utils.path import split_ext
+from .components import (
+    FilePatternInputView,
+    SpacerView,
+    TextElement,
+    TextInputView,
+    TextView,
+)
+from .step import Step
+from .utils import entity_colors, forbidden_chars, messagefun
 
 logger = logging.getLogger("halfpipe.ui")
 
@@ -45,7 +40,13 @@ class FilePatternSummaryStep(Step):
         entities = get_schema_entities(self.schema)
 
         filepaths = ctx.database.get(**self.filedict)
-        message = messagefun(ctx.database, self.filetype_str, filepaths, entities, self.entity_display_aliases)
+        message = messagefun(
+            ctx.database,
+            self.filetype_str,
+            filepaths,
+            entities,
+            self.entity_display_aliases,
+        )
 
         self._append_view(TextView(message))
         self._append_view(SpacerView(1))
@@ -115,7 +116,8 @@ class AskForMissingEntities(Step):
 
             self.input_view = TextInputView(
                 text=suggestion,
-                isokfun=lambda text: len(text) > 0 and forbidden_chars.search(text) is None,
+                isokfun=lambda text: len(text) > 0
+                and forbidden_chars.search(text) is None,
             )
 
             self._append_view(self.input_view)
@@ -179,7 +181,9 @@ class FilePatternStep(Step):
             self._append_view(TextView(self.header_str))
             self._append_view(SpacerView(1))
 
-        self._append_view(TextView(f"Specify the path of the {self.filetype_str} files"))
+        self._append_view(
+            TextView(f"Specify the path of the {self.filetype_str} files")
+        )
 
         schema_entities = get_schema_entities(self.schema)
         schema_entities = [
@@ -191,22 +195,31 @@ class FilePatternStep(Step):
 
         # convert to display
         schema_entities = [
-            self.entity_display_aliases[entity] if entity in self.entity_display_aliases else entity
+            self.entity_display_aliases[entity]
+            if entity in self.entity_display_aliases
+            else entity
             for entity in schema_entities
         ]
 
-        required_entities = [*self.ask_if_missing_entities, *self.required_in_path_entities]
+        required_entities = [
+            *self.ask_if_missing_entities,
+            *self.required_in_path_entities,
+        ]
 
         entity_instruction_strs = []
         optional_entity_strs = []
         for entity in schema_entities:
             if entity in required_entities:
-                entity_instruction_strs.append(f"Put {{{entity}}} in place of the {entity} names")
+                entity_instruction_strs.append(
+                    f"Put {{{entity}}} in place of the {entity} names"
+                )
             else:
                 optional_entity_strs.append(f"{{{entity}}}")
 
         if len(optional_entity_strs) > 0:
-            entity_instruction_strs.append(f"You can also use {p.join(optional_entity_strs)}")
+            entity_instruction_strs.append(
+                f"You can also use {p.join(optional_entity_strs)}"
+            )
 
         entity_instruction_views = [TextView("") for _ in entity_instruction_strs]
         for view in entity_instruction_views:
@@ -235,7 +248,9 @@ class FilePatternStep(Step):
 
             # remove display aliases
 
-            inv = {alias: entity for entity, alias in self.entity_display_aliases.items()}
+            inv = {
+                alias: entity for entity, alias in self.entity_display_aliases.items()
+            }
 
             i = 0
             _path = ""

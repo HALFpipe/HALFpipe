@@ -2,15 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import pytest
-
 import os
 from pathlib import Path
 
+import pytest
 from nipype.interfaces.base.support import Bunch
 
 from ..path import find_paths, split_ext
-
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
 B = "/tmp/b.txt"
@@ -26,8 +24,8 @@ B = "/tmp/b.txt"
         {"a": A, "b": B},
         {"x": {"y": [A, B]}},
         Bunch(a=A, b=B),
-        Bunch(x=[A, B])
-    ]
+        Bunch(x=[A, B]),
+    ],
 )
 def test_find_paths(tmp_path, obj):
     os.chdir(str(tmp_path))

@@ -2,17 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import pytest
-
 import os
 import tarfile
 from pathlib import Path
 
-from ...tests.resource import setup as setuptestresources
-from ...resource import get as getresource
-
+import pytest
 from nipype.interfaces import ants
 from templateflow.api import get as get_template
+
+from ...resource import get as getresource
+from ...tests.resource import setup as setuptestresources
 
 
 @pytest.fixture(scope="package")

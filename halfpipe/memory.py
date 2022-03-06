@@ -2,15 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional
-
-from pathlib import Path
 import os
 import re
 import subprocess
+from pathlib import Path
+from typing import Optional
 
-import psutil
 import pint
+import psutil
 
 ureg = pint.UnitRegistry()
 
@@ -42,7 +41,9 @@ def cgroup_memory_limit():
     except (OSError, IOError):
         return
     for p in cgroups_lines:
-        m = re.fullmatch(r"(?P<name>\w+)\s(?P<hierarchy_id>\d+)\s\d+\s(?P<enabled>\d+)", p.strip())
+        m = re.fullmatch(
+            r"(?P<name>\w+)\s(?P<hierarchy_id>\d+)\s\d+\s(?P<enabled>\d+)", p.strip()
+        )
         if m is None:
             continue
         name = m.group("name")
@@ -50,11 +51,17 @@ def cgroup_memory_limit():
         enabled = int(m.group("enabled"))
         if name in cg_infos:
             cg_infos[name] = dict(
-                name=name, hierarchy_id=hierarchy_id, enabled=(enabled == 1),
+                name=name,
+                hierarchy_id=hierarchy_id,
+                enabled=(enabled == 1),
             )
 
-    is_cgroups_v2 = all(cg_info.get("hierarchy_id") == 0 for cg_info in cg_infos.values())
-    all_controllers_enabled = all(cg_info.get("enabled") is True for cg_info in cg_infos.values())
+    is_cgroups_v2 = all(
+        cg_info.get("hierarchy_id") == 0 for cg_info in cg_infos.values()
+    )
+    all_controllers_enabled = all(
+        cg_info.get("enabled") is True for cg_info in cg_infos.values()
+    )
 
     if not all_controllers_enabled:
         return
@@ -69,7 +76,10 @@ def cgroup_memory_limit():
     except (OSError, IOError):
         return
     for p in cgroup_lines:
-        m = re.fullmatch(r"(?P<hierarchy_id>\d+):(?P<controllers>[^:]*):(?P<cgroup_path>.+)", p.strip())
+        m = re.fullmatch(
+            r"(?P<hierarchy_id>\d+):(?P<controllers>[^:]*):(?P<cgroup_path>.+)",
+            p.strip(),
+        )
         if m is None:
             continue
         hierarchy_id = int(m.group("hierarchy_id"))
@@ -125,8 +135,7 @@ def cgroup_memory_limit():
         return
 
     memory_root_path = Path(
-        memory_cgroup.get("root_mount_path", "")
-        + memory_cgroup.get("mount_path", "")
+        memory_cgroup.get("root_mount_path", "") + memory_cgroup.get("mount_path", "")
     )
 
     memory_cgroup_path = Path(
@@ -135,10 +144,12 @@ def cgroup_memory_limit():
         + memory_cgroup.get("cgroup_path", "")
     )
 
-    memory_cgroups_to_consider = set([
-        memory_cgroup_path,
-        *memory_cgroup_path.parents,
-    ]) - set(memory_root_path.parents)
+    memory_cgroups_to_consider = set(
+        [
+            memory_cgroup_path,
+            *memory_cgroup_path.parents,
+        ]
+    ) - set(memory_root_path.parents)
 
     if not is_cgroups_v2:
         memory_limit_files = [
@@ -214,17 +225,21 @@ def available_memory_bytes():
 
 
 def memory_limit() -> float:
-    memory_limits = [available_memory_bytes(), ulimit_memory_limit(), cgroup_memory_limit()]
     memory_limits = [
-        ml.m_as(ureg.gigabytes)
-        for ml in memory_limits
-        if ml is not None
+        available_memory_bytes(),
+        ulimit_memory_limit(),
+        cgroup_memory_limit(),
     ]
+    memory_limits = [ml.m_as(ureg.gigabytes) for ml in memory_limits if ml is not None]
 
-    memory_limit = min(memory_limits) * 0.9  # nipype uses 90% of max as a safety precaution
+    memory_limit = (
+        min(memory_limits) * 0.9
+    )  # nipype uses 90% of max as a safety precaution
 
     process = psutil.Process(pid=os.getpid())
     resident_set_size = process.memory_info().rss * ureg.bytes
-    memory_limit -= resident_set_size.m_as(ureg.gigabytes)  # subtract memory used by current process
+    memory_limit -= resident_set_size.m_as(
+        ureg.gigabytes
+    )  # subtract memory used by current process
 
     return memory_limit

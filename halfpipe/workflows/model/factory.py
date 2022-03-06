@@ -4,10 +4,8 @@
 
 import re
 
-from .base import init_model_wf
-
 from ..factory import Factory
-
+from .base import init_model_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -62,7 +60,14 @@ class ModelFactory(Factory):
         self.wfs[model.name].append(hierarchy)
 
         for i, outputhierarchy in enumerate(inputs):
-            self.connect_attr(outputhierarchy, "outputnode", "resultdicts", hierarchy, "inputnode", f"in{i+1:d}")
+            self.connect_attr(
+                outputhierarchy,
+                "outputnode",
+                "resultdicts",
+                hierarchy,
+                "inputnode",
+                f"in{i+1:d}",
+            )
 
         return vwf
 

@@ -5,25 +5,21 @@
 from os import path as op
 from uuid import uuid4
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 from matplotlib import pyplot as plt
-from svgutils.transform import fromstring
-from seaborn import color_palette
-
-
-from nipype.interfaces.base import (
-    traits,
-    File,
-    isdefined,
+from nilearn.plotting import plot_anat, plot_epi
+from nipype.interfaces.base import File, isdefined, traits
+from niworkflows.interfaces.report_base import (
+    ReportingInterface,
+    _SVGReportCapableInputSpec,
 )
+from niworkflows.viz.utils import compose_view, cuts_from_bbox, extract_svg
+from seaborn import color_palette
+from svgutils.transform import fromstring
 
-from niworkflows.interfaces.report_base import ReportingInterface, _SVGReportCapableInputSpec
-from niworkflows.viz.utils import compose_view, extract_svg, cuts_from_bbox
-from nilearn.plotting import plot_epi, plot_anat
-
-from ...utils.image import nvol
 from ...resource import get as getresource
+from ...utils.image import nvol
 
 
 class PlotInputSpec(_SVGReportCapableInputSpec):
@@ -121,7 +117,9 @@ class PlotRegistration(ReportingInterface):
                 cut_coords=cuts[dimension],
                 title=label,
             )
-            display.add_contours(parc_img, levels=levels, colors=colors, linewidths=0.25)
+            display.add_contours(
+                parc_img, levels=levels, colors=colors, linewidths=0.25
+            )
             display.add_contours(mask_img, levels=[0.5], colors="r", linewidths=0.5)
             label = None  # only on first
             svg = extract_svg(display, compress=compress)

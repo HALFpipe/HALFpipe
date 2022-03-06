@@ -17,10 +17,7 @@ from ..memory import MemoryCalculator
 
 
 def init_reho_wf(
-        workdir: str | Path,
-        feature=None,
-        fwhm=None,
-        memcalc=MemoryCalculator.default()
+    workdir: str | Path, feature=None, fwhm=None, memcalc=MemoryCalculator.default()
 ):
     """
     create a workflow to do ReHo
@@ -37,9 +34,14 @@ def init_reho_wf(
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]), name="inputnode",
+        niu.IdentityInterface(
+            fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]
+        ),
+        name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
@@ -50,7 +52,8 @@ def init_reho_wf(
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]), name="make_resultdicts"
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]),
+        name="make_resultdicts",
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
@@ -77,9 +80,7 @@ def init_reho_wf(
     workflow.connect(inputnode, "mask", reho, "mask_file")
 
     #
-    smooth = pe.Node(
-        LazyBlurToFWHM(outputtype="NIFTI_GZ"), name="smooth"
-    )
+    smooth = pe.Node(LazyBlurToFWHM(outputtype="NIFTI_GZ"), name="smooth")
     workflow.connect(reho, "out_file", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")

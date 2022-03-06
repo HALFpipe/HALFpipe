@@ -2,9 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.interfaces.base import traits
-
 import nipype.interfaces.fsl.model as fslm
+from nipype.interfaces.base import traits
 
 
 class Level1DesignInputSpec(fslm.Level1DesignInputSpec):
@@ -17,9 +16,8 @@ class Level1DesignInputSpec(fslm.Level1DesignInputSpec):
             traits.Dict(traits.Enum("derivs", "gammasigma", "gammadelay")),
         ),
         traits.Dict(
-            traits.Enum("custom"), traits.Dict(
-                traits.Enum("bfcustompath", "basisfnum"), traits.Any
-            )
+            traits.Enum("custom"),
+            traits.Dict(traits.Enum("bfcustompath", "basisfnum"), traits.Any),
         ),
         traits.Dict(traits.Enum("none"), traits.Dict()),
         traits.Dict(traits.Enum("none"), traits.Enum(None)),

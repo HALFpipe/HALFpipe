@@ -4,10 +4,9 @@
 
 from nipype.pipeline import engine as pe
 
-from .alt import init_alt_bold_std_trans_wf
-
 from ..factory import Factory
 from ..memory import MemoryCalculator
+from .alt import init_alt_bold_std_trans_wf
 
 
 class AltBOLDFactory(Factory):

@@ -4,13 +4,16 @@
 
 from pathlib import Path
 
-from marshmallow import fields, validate, pre_load
+from marshmallow import fields, pre_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
-from .base import File, BaseFileSchema
-from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
+from ...ingest.metadata.direction import (
+    canonicalize_direction_code,
+    parse_direction_str,
+)
 from ..metadata import BoldMetadataSchema, EventsMetadataSchema
-from ...ingest.metadata.direction import parse_direction_str, canonicalize_direction_code
+from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
+from .base import BaseFileSchema, File
 
 
 class BoldFileSchema(BaseFileSchema):
@@ -39,7 +42,8 @@ class BoldFileSchema(BaseFileSchema):
                 try:
                     pedir_code = parse_direction_str(direction)
                     metadata["phase_encoding_direction"] = canonicalize_direction_code(
-                        pedir_code, path,
+                        pedir_code,
+                        path,
                     )
                     del tags["dir"]
                 except Exception:

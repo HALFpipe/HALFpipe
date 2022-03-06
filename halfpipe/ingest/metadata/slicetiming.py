@@ -50,7 +50,9 @@ def slice_timing_str(slice_times):
     return "unknown"
 
 
-def str_slice_timing(order_str: str, n_slices: int, slice_duration: float) -> List[float]:
+def str_slice_timing(
+    order_str: str, n_slices: int, slice_duration: float
+) -> List[float]:
     order = _get_slice_orders(n_slices)[order_str]
 
     timings: List[float] = [0.0] * n_slices

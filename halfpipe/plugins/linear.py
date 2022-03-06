@@ -5,16 +5,16 @@
 """
 
 import os
+
 from nipype.pipeline import plugins as nip
-from nipype.pipeline.plugins.base import report_crash, report_nodes_not_run, str2bool
 from nipype.pipeline.engine.utils import topological_sort
+from nipype.pipeline.plugins.base import report_crash, report_nodes_not_run, str2bool
 
 from ..utils import logger
 
 
 class DebugPlugin(nip.LinearPlugin):
-    """Execute workflow in series
-    """
+    """Execute workflow in series"""
 
     def run(self, graph, config, updatehash=False):
         """Executes a pre-defined pipeline in a serial order.
@@ -57,7 +57,9 @@ class DebugPlugin(nip.LinearPlugin):
                     raise
                 # remove dependencies from queue
                 subnodes = [s for s in dfs_preorder(graph, node)]
-                notrun.append({"node": node, "dependents": subnodes, "crashfile": crashfile})
+                notrun.append(
+                    {"node": node, "dependents": subnodes, "crashfile": crashfile}
+                )
                 donotrun.extend(subnodes)
                 # Delay raising the crash until we cleaned the house
                 if str2bool(config["execution"]["stop_on_first_crash"]):

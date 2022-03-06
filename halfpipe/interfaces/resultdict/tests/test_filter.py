@@ -6,10 +6,9 @@ from types import FunctionType
 
 import numpy as np
 import pandas as pd
-
 import pytest
 
-from ..filter import _get_data_frame, _get_categorical_dict, _parse_filter_dict
+from ..filter import _get_categorical_dict, _get_data_frame, _parse_filter_dict
 
 
 @pytest.mark.parametrize("action", ["include", "exclude"])
@@ -54,20 +53,20 @@ def test_filter_cutoff():
     filter_dict = dict(
         type="cutoff",
         field="a",
-        cutoff=1.,
+        cutoff=1.0,
         action="exclude",
     )
 
     f = _parse_filter_dict(filter_dict)
     assert isinstance(f, FunctionType)
 
-    assert f(dict(tags=dict(), vals=dict(a=0.))) is True
+    assert f(dict(tags=dict(), vals=dict(a=0.0))) is True
 
-    assert f(dict(tags=dict(), vals=dict(a=2.))) is False
+    assert f(dict(tags=dict(), vals=dict(a=2.0))) is False
 
 
 def test_filter_missing(tmp_path):
-    values = {"1": np.nan, "2": 1., "sub-3": np.nan}
+    values = {"1": np.nan, "2": 1.0, "sub-3": np.nan}
     data_frame = pd.DataFrame(dict(a=values))
     data_frame.reset_index(level=0, inplace=True)
 

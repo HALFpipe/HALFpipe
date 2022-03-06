@@ -2,27 +2,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Callable
-
 from math import isclose
+from typing import Callable
 
 import numpy as np
 import pandas as pd
-
-from .base import ResultdictsOutputSpec, Continuous
-
-from ...ingest.exclude import QCDecisionMaker, Decision
-from ...ingest.spreadsheet import read_spreadsheet
-from ...utils import logger, inflect_engine
-from ...utils.format import format_tags, normalize_subject
-
 from nipype.interfaces.base import (
-    traits,
     BaseInterfaceInputSpec,
+    File,
     SimpleInterface,
     isdefined,
-    File
+    traits,
 )
+
+from ...ingest.exclude import Decision, QCDecisionMaker
+from ...ingest.spreadsheet import read_spreadsheet
+from ...utils import inflect_engine, logger
+from ...utils.format import format_tags, normalize_subject
+from .base import Continuous, ResultdictsOutputSpec
 
 
 def _get_data_frame(file_path, variable_dicts):
@@ -54,7 +51,9 @@ def _get_categorical_dict(data_frame, variable_dicts):
     return categorical_data_frame.to_dict()
 
 
-def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc: str) -> Callable[[dict], bool] | None:
+def _make_group_filterfun(
+    filter_dict: dict, categorical_dict: dict, model_desc: str
+) -> Callable[[dict], bool] | None:
     variable = filter_dict.get("variable")
     if variable not in categorical_dict:
         return None
@@ -73,6 +72,7 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
     action = filter_dict["action"]
 
     if action == "include":
+
         def group_include_filterfun(d):
             subject = d.get("tags").get("sub")
             subject = normalize_subject(subject)
@@ -80,13 +80,16 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
             res = subject in selected_subjects
 
             if res is False:
-                logger.info(f'Excluding subject "{subject}" {model_desc}because "{variable}" is not {levelsdesc}')
+                logger.info(
+                    f'Excluding subject "{subject}" {model_desc}because "{variable}" is not {levelsdesc}'
+                )
 
             return res
 
         return group_include_filterfun
 
     elif action == "exclude":
+
         def group_exclude_filterfun(d):
             subject = d["tags"].get("sub")
             subject = normalize_subject(subject)
@@ -94,7 +97,9 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
             res = subject not in selected_subjects
 
             if res is False:
-                logger.info(f'Excluding subject "{subject}" {model_desc}because "{variable}" is {levelsdesc}')
+                logger.info(
+                    f'Excluding subject "{subject}" {model_desc}because "{variable}" is {levelsdesc}'
+                )
 
             return res
 
@@ -104,7 +109,9 @@ def _make_group_filterfun(filter_dict: dict, categorical_dict: dict, model_desc:
         raise ValueError(f'Invalid action "{action}"')
 
 
-def _make_missing_filterfun(filter_dict: dict, data_frame: pd.DataFrame, model_desc: str) -> Callable[[dict], bool] | None:
+def _make_missing_filterfun(
+    filter_dict: dict, data_frame: pd.DataFrame, model_desc: str
+) -> Callable[[dict], bool] | None:
     variable = filter_dict["variable"]
     if variable not in data_frame.columns:
         return None
@@ -123,14 +130,18 @@ def _make_missing_filterfun(filter_dict: dict, data_frame: pd.DataFrame, model_d
         res = subject in selected_subjects
 
         if res is False:
-            logger.warning(f'Excluding subject "{subject}" {model_desc}because "{variable}" is missing')
+            logger.warning(
+                f'Excluding subject "{subject}" {model_desc}because "{variable}" is missing'
+            )
 
         return res
 
     return missing_filterfun
 
 
-def _make_cutoff_filterfun(filter_dict: dict, model_desc: str) -> Callable[[dict], bool] | None:
+def _make_cutoff_filterfun(
+    filter_dict: dict, model_desc: str
+) -> Callable[[dict], bool] | None:
     assert filter_dict["action"] == "exclude"
 
     cutoff = filter_dict["cutoff"]
@@ -161,7 +172,7 @@ def _make_cutoff_filterfun(filter_dict: dict, model_desc: str) -> Callable[[dict
         if res is False:
             tags = d["tags"]
             logger.warning(
-                f'Excluding ({format_tags(tags)}) {model_desc}'
+                f"Excluding ({format_tags(tags)}) {model_desc}"
                 f'because "{filter_field}" is larger than {cutoff:f}'
             )
 
@@ -174,7 +185,7 @@ def _parse_filter_dict(
     filter_dict: dict,
     categorical_dict: dict = dict(),
     data_frame: pd.DataFrame | None = None,
-    model_name: str | None = None
+    model_name: str | None = None,
 ) -> Callable[[dict], bool] | None:
     model_desc = ""
     if model_name is not None:
@@ -218,8 +229,12 @@ class FilterResultdicts(SimpleInterface):
         data_frame = None
         categorical_dict = None
         if isdefined(self.inputs.spreadsheet) and isdefined(self.inputs.variable_dicts):
-            data_frame = _get_data_frame(self.inputs.spreadsheet, self.inputs.variable_dicts)
-            categorical_dict = _get_categorical_dict(data_frame, self.inputs.variable_dicts)
+            data_frame = _get_data_frame(
+                self.inputs.spreadsheet, self.inputs.variable_dicts
+            )
+            categorical_dict = _get_categorical_dict(
+                data_frame, self.inputs.variable_dicts
+            )
 
         model_name = None
         if isdefined(self.inputs.model_name):
@@ -232,7 +247,7 @@ class FilterResultdicts(SimpleInterface):
         kwargs = dict(
             data_frame=data_frame,
             categorical_dict=categorical_dict,
-            model_name=model_name
+            model_name=model_name,
         )
 
         if isdefined(self.inputs.require_one_of_images):
@@ -243,8 +258,7 @@ class FilterResultdicts(SimpleInterface):
                     for out_dict in out_dicts
                     if isinstance(out_dict, dict)
                     and any(
-                        key in out_dict.get("images")
-                        for key in require_one_of_images
+                        key in out_dict.get("images") for key in require_one_of_images
                     )
                 ]
         for filter_dict in filter_dicts:
@@ -257,7 +271,8 @@ class FilterResultdicts(SimpleInterface):
             decision_maker = QCDecisionMaker(exclude_files)
 
             out_dicts = [
-                out_dict for out_dict in out_dicts
+                out_dict
+                for out_dict in out_dicts
                 if decision_maker.get(out_dict["tags"]) is Decision.INCLUDE
             ]
 

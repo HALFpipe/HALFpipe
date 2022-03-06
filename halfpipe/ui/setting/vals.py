@@ -2,28 +2,30 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import OrderedDict
 from typing import Dict, Optional, Type
+
+from more_itertools import unique_everseen
+
+from ...model import (
+    BandpassFilterSettingSchema,
+    GrandMeanScalingSettingSchema,
+    SmoothingSettingSchema,
+)
+from ...utils import inflect_engine as p
 from ..components import (
+    MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,
     NumberInputView,
     SpacerView,
     TextView,
-    MultiCombinedNumberAndSingleChoiceInputView
 )
-
-from collections import OrderedDict
-from more_itertools import unique_everseen
-
-from ..step import Step, BranchStep, YesNoStep
-from ...model import (
-    SmoothingSettingSchema,
-    BandpassFilterSettingSchema,
-    GrandMeanScalingSettingSchema,
-)
-from ...utils import inflect_engine as p
+from ..step import BranchStep, Step, YesNoStep
 
 
-def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None, oncompletefn=None):
+def get_setting_vals_steps(
+    next_step_type, noun="setting", vals_header_str=None, oncompletefn=None
+):
     class ConfirmInconsistentStep(YesNoStep):
         no_step_type = None
 
@@ -59,28 +61,31 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             self._append_view(TextView(f"Remove {self.noun}?"))
 
             featuresettings = set(
-                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+                feature.setting
+                for feature in ctx.spec.features
+                if hasattr(feature, "setting")
             )
 
-            self.confs = list(unique_everseen(
-                frozenset(
-                    setting.get("confounds_removal", [])
-                    + (
-                        ["ICA-AROMA"]
-                        if setting.get("ica_aroma") is True
-                        else []
+            self.confs = list(
+                unique_everseen(
+                    frozenset(
+                        setting.get("confounds_removal", [])
+                        + (["ICA-AROMA"] if setting.get("ica_aroma") is True else [])
                     )
+                    for setting in ctx.spec.settings[:-1]
+                    # only include active settings
+                    if setting.get("output_image", False)
+                    or setting["name"] in featuresettings
                 )
-                for setting in ctx.spec.settings[:-1]
-                # only include active settings
-                if setting.get("output_image", False) or setting["name"] in featuresettings
-            ))
+            )
 
             suggestion = ["ICA-AROMA"]
 
             if len(self.confs) > 0:
                 inverse_options = {v: k for k, v in self.options.items()}
-                suggestion = [inverse_options[s] for s in self.confs[-1] if s in inverse_options]
+                suggestion = [
+                    inverse_options[s] for s in self.confs[-1] if s in inverse_options
+                ]
 
             self.input_view = MultipleChoiceInputView(
                 list(self.options.keys()), checked=suggestion, isVertical=True
@@ -101,13 +106,17 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             assert self.valuedict is not None
 
             confoundnames = [
-                self.options[name] for name, is_selected in self.valuedict.items() if is_selected
+                self.options[name]
+                for name, is_selected in self.valuedict.items()
+                if is_selected
             ]
 
             ica_aroma = "ICA-AROMA" in confoundnames
             ctx.spec.settings[-1]["ica_aroma"] = ica_aroma
 
-            settingconfoundnames = [name for name in confoundnames if name != "ICA-AROMA"]
+            settingconfoundnames = [
+                name for name in confoundnames if name != "ICA-AROMA"
+            ]
             if len(settingconfoundnames) > 0:
                 ctx.spec.settings[-1]["confounds_removal"] = settingconfoundnames
 
@@ -121,7 +130,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 and len(confoundnames) > 0
                 and frozenset(confoundnames) not in self.confs
             ):
-                return ConfirmInconsistentStep(self.app, self.noun, this_next_step_type)(ctx)
+                return ConfirmInconsistentStep(
+                    self.app, self.noun, this_next_step_type
+                )(ctx)
 
             return this_next_step_type(self.app)(ctx)
 
@@ -141,7 +152,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             suggestion = [*self.suggestion]
 
             featuresettings = set(
-                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+                feature.setting
+                for feature in ctx.spec.features
+                if hasattr(feature, "setting")
             )
 
             self.valsets = OrderedDict()
@@ -151,7 +164,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 valset = self.valsets[key]
 
                 for setting in ctx.spec.settings:
-                    if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                    if (
+                        not setting.get("output_image", False)
+                        and setting["name"] not in featuresettings
+                    ):
                         continue
 
                     bandpass_filter = setting.get("bandpass_filter")
@@ -194,9 +210,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                         )
 
             if len(filterdict) > 1:
-                ctx.spec.settings[-1]["bandpass_filter"] = BandpassFilterSettingSchema().load(
-                    filterdict
-                )
+                ctx.spec.settings[-1][
+                    "bandpass_filter"
+                ] = BandpassFilterSettingSchema().load(filterdict)
 
             this_next_step_type = ConfoundsSelectStep
 
@@ -204,7 +220,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 len(self.valsets[key]) == 1 and filterdict[key] not in self.valsets[key]
                 for key in self.keys
             ):
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
+                return ConfirmInconsistentStep(
+                    self.app, f"{self.noun} values", this_next_step_type
+                )(ctx)
 
             return this_next_step_type(self.app)(ctx)
 
@@ -266,7 +284,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             elif type == "frequency_based":
                 self.yes_step_type = FrequencyBasedBandpassSettingStep
 
-                message = "Temporal filtering will be applied using a frequency-based filter"
+                message = (
+                    "Temporal filtering will be applied using a frequency-based filter"
+                )
                 self._append_view(TextView(message))
 
                 low, high = bandpass_filter.get("low"), bandpass_filter.get("high")
@@ -293,12 +313,17 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             suggestion = 10000.0
 
             featuresettings = set(
-                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+                feature.setting
+                for feature in ctx.spec.features
+                if hasattr(feature, "setting")
             )
 
             self.means = list()
             for setting in ctx.spec.settings:
-                if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                if (
+                    not setting.get("output_image", False)
+                    and setting["name"] not in featuresettings
+                ):
                     continue
 
                 grand_mean_scaling = setting.get("grand_mean_scaling")
@@ -326,14 +351,16 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
         def next(self, ctx):
             assert self._value is not None
 
-            ctx.spec.settings[-1]["grand_mean_scaling"] = GrandMeanScalingSettingSchema().load(
-                {"mean": self._value}
-            )
+            ctx.spec.settings[-1][
+                "grand_mean_scaling"
+            ] = GrandMeanScalingSettingSchema().load({"mean": self._value})
 
             this_next_step_type = DoBandpassFilterStep
 
             if len(self.means) == 1 and self._value not in self.means:
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
+                return ConfirmInconsistentStep(
+                    self.app, f"{self.noun} values", this_next_step_type
+                )(ctx)
 
             return this_next_step_type(self.app)(ctx)
 
@@ -382,12 +409,17 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             suggestion = 6.0
 
             featuresettings = set(
-                feature.setting for feature in ctx.spec.features if hasattr(feature, "setting")
+                feature.setting
+                for feature in ctx.spec.features
+                if hasattr(feature, "setting")
             )
 
             self.fwhms = list()
             for setting in ctx.spec.settings:
-                if not setting.get("output_image", False) and setting["name"] not in featuresettings:
+                if (
+                    not setting.get("output_image", False)
+                    and setting["name"] not in featuresettings
+                ):
                     continue
 
                 smoothing = setting.get("smoothing")
@@ -421,7 +453,9 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
             this_next_step_type = DoGrandMeanScalingStep
 
             if len(self.fwhms) == 1 and self._value not in self.fwhms:
-                return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
+                return ConfirmInconsistentStep(
+                    self.app, f"{self.noun} values", this_next_step_type
+                )(ctx)
 
             return this_next_step_type(self.app)(ctx)
 

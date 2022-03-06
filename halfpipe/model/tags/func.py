@@ -8,7 +8,7 @@
 
 from marshmallow import fields
 
-from .base import ScanTagsSchema, DirTagsSchema
+from .base import DirTagsSchema, ScanTagsSchema
 
 
 class FuncTagsSchema(ScanTagsSchema, DirTagsSchema):

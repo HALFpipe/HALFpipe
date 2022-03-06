@@ -3,31 +3,35 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
-from typing import List, Type, Optional
+from typing import List, Optional, Type
 
+from ...ingest.collect import collect_events
+from ...ingest.condition import parse_condition_file
+from ...ingest.glob import get_entities_in_path
+from ...model import (
+    File,
+    MatEventsFileSchema,
+    TContrastSchema,
+    TsvEventsFileSchema,
+    TxtEventsFileSchema,
+)
+from ...model.feature import Feature
+from ...utils.ops import ravel
 from ..components import (
+    CombinedMultipleAndSingleChoiceInputView,
+    MultiCombinedNumberAndSingleChoiceInputView,
     MultiNumberInputView,
+    SpacerView,
     TextInputView,
     TextView,
-    SpacerView,
-    MultiCombinedNumberAndSingleChoiceInputView,
-    CombinedMultipleAndSingleChoiceInputView
 )
 from ..components.input.choice import SingleChoiceInputView
-from ...ingest.glob import get_entities_in_path
-
-from ..step import Step, BranchStep, YesNoStep
-from ..pattern import FilePatternStep
 from ..metadata import CheckMetadataStep
-from ..utils import forbidden_chars
-from ...utils.ops import ravel
+from ..pattern import FilePatternStep
 from ..setting import get_setting_init_steps
+from ..step import BranchStep, Step, YesNoStep
+from ..utils import forbidden_chars
 from .loop import SettingValsStep
-
-from ...ingest.condition import parse_condition_file
-from ...model import File, TxtEventsFileSchema, TsvEventsFileSchema, MatEventsFileSchema, TContrastSchema
-from ...model.feature import Feature
-from ...ingest.collect import collect_events
 
 next_step_type = SettingValsStep
 
@@ -100,7 +104,9 @@ class ConfirmInconsistentStep(YesNoStep):
     no_step_type = None
 
     def __init__(self, app, noun, this_next_step_type: Type[Step]):
-        self.header_str = f"Do you really want to use inconsistent {noun} across features?"
+        self.header_str = (
+            f"Do you really want to use inconsistent {noun} across features?"
+        )
         self.yes_step_type = this_next_step_type
         super(ConfirmInconsistentStep, self).__init__(app)
 
@@ -163,7 +169,9 @@ class HighPassFilterCutoffStep(Step):
         this_next_step_type = next_step_type
 
         if len(self.valset) == 1 and value not in self.valset:
-            return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
+            return ConfirmInconsistentStep(
+                self.app, f"{self.noun} values", this_next_step_type
+            )(ctx)
 
         return this_next_step_type(self.app)(ctx)
 
@@ -203,7 +211,10 @@ class ContrastValuesStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            newdict = {varname: self.result[dsp] for dsp, varname in self.varname_by_str.items()}
+            newdict = {
+                varname: self.result[dsp]
+                for dsp, varname in self.varname_by_str.items()
+            }
             ctx.spec.features[-1].contrasts[-1]["values"] = newdict
 
         return AddAnotherContrastStep(self.app)(ctx)
@@ -221,7 +232,9 @@ class ContrastNameStep(Step):
             self._append_view(TextView("Specify contrasts"))
             self._append_view(SpacerView(1))
 
-        self.names = set(contrast.get("name") for contrast in ctx.spec.features[-1].contrasts)
+        self.names = set(
+            contrast.get("name") for contrast in ctx.spec.features[-1].contrasts
+        )
 
         base = "contrast"
         index = 1
@@ -498,7 +511,10 @@ class EventsTypeStep(BranchStep):
 
 TaskBasedSettingInitStep = get_setting_init_steps(
     EventsTypeStep,
-    settingdict={"bandpass_filter": {"type": "gaussian"}, "grand_mean_scaling": {"mean": 10000.0}},
+    settingdict={
+        "bandpass_filter": {"type": "gaussian"},
+        "grand_mean_scaling": {"mean": 10000.0},
+    },
 )
 
 

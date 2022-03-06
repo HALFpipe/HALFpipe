@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
-
-import pytest
 
 import os
-from zipfile import ZipFile
 from pathlib import Path
+from zipfile import ZipFile
 
 import nibabel as nib
+import pytest
 from nilearn.image import new_img_like
 
-from ...tests.resource import setup as setup_test_resources
 from ...resource import get as get_resource
+from ...tests.resource import setup as setup_test_resources
 
 
 @pytest.fixture(scope="package")
@@ -37,7 +34,9 @@ def bids_data(tmp_path_factory):
 
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
     bold_img = nib.load(bold_file)
-    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
+    bold_data = bold_img.get_fdata()[
+        ..., :64
+    ]  # we don't need so many volumes for testing
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
     nib.save(bold_img, bold_file)
 

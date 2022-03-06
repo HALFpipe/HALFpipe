@@ -3,10 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
-
-from nipype.interfaces.base import (
-    traits
-)
+from nipype.interfaces.base import traits
 
 from ..transformer import Transformer, TransformerInputSpec
 
@@ -59,7 +56,10 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
             D = np.zeros((m,), dtype=array.dtype)
             N = 0
 
-            for tt in range(max(t - hp_mask_size_minus, 0), min(t + hp_mask_size_plus, sourcetsize - 1) + 1):
+            for tt in range(
+                max(t - hp_mask_size_minus, 0),
+                min(t + hp_mask_size_plus, sourcetsize - 1) + 1,
+            ):
                 dt = tt - t
                 w = hp_exp[dt]
                 A += w * dt
@@ -86,7 +86,10 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
             total = np.zeros((m,), dtype=array.dtype)
             sum = 0
 
-            for tt in range(max(t - lp_mask_size_minus, 0), min(t + lp_mask_size_plus, sourcetsize - 1) + 1):
+            for tt in range(
+                max(t - lp_mask_size_minus, 0),
+                min(t + lp_mask_size_plus, sourcetsize - 1) + 1,
+            ):
                 total += array[:, tt] * lp_exp[tt - t]
                 sum += lp_exp[tt - t]
 

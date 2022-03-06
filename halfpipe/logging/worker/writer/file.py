@@ -2,14 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import re
+from pathlib import Path
+from random import gauss
 from typing import Optional
 
-from pathlib import Path
-import re
-from random import gauss
-
-from .base import Writer
 from ....utils.lock import AdaptiveLock
+from .base import Writer
 
 escape_codes_regex = re.compile(r"\x1b\[.*?(m|K)")
 
@@ -36,7 +35,9 @@ class FileWriter(Writer, AdaptiveLock):
     def acquire(self):
         assert self.filename is not None
 
-        lock_file = str(self.filename.parent / f".{self.filename.name}.lock")  # hidden lock file
+        lock_file = str(
+            self.filename.parent / f".{self.filename.name}.lock"
+        )  # hidden lock file
         self.lock(lock_file)
 
         self.stream = open(self.filename, mode="a", encoding="utf-8")

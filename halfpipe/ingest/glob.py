@@ -2,30 +2,29 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Callable, Container, Generator, Iterable
-
+import fnmatch
 import os
+import re
 from os import path as op
 from pathlib import Path
+from typing import Callable, Container, Generator, Iterable
 
-import re
-import fnmatch
-
-
-tag_parse = re.compile(r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|{\d+})+))?}")
+tag_parse = re.compile(
+    r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|{\d+})+))?}"
+)
 tokenize = re.compile(r"(\A|[^\\])({[a-z]+(?:[:=](?:[^{}]|{\d+})+)?})")
 magic_check = re.compile(r"(?:\*|\?|(?:\A|[^\\]){|[^\\]})")
 special_match = re.compile(r"(\\[AbBdDsDwWZ])")
 suggestion_match = re.compile(r"({suggestion(?:[:=][^}]+)?})")
 chartype_filter = re.compile(r"(\[.+\])")
-show_tag_suggestion_check = re.compile(r".*(?P<newtag>{(?P<tag_name>[a-z]*))(?P<newfilter>[:=][^}]+)?\Z")
+show_tag_suggestion_check = re.compile(
+    r".*(?P<newtag>{(?P<tag_name>[a-z]*))(?P<newfilter>[:=][^}]+)?\Z"
+)
 remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^}]*?})")
 
 
 def tag_glob(
-    pathname: str,
-    entities: Container[str] | None = None,
-    dironly: bool = False
+    pathname: str, entities: Container[str] | None = None, dironly: bool = False
 ) -> Generator[tuple[str, dict[str, str]], None, None]:
     """
     adapted from cpython glob
@@ -40,11 +39,15 @@ def tag_glob(
             yield (dirname, dict())
         return
     if dirname != pathname and has_magic(dirname):
-        dirs: Iterable[tuple[str, dict[str, str]]] = tag_glob(dirname, entities, dironly=True)
+        dirs: Iterable[tuple[str, dict[str, str]]] = tag_glob(
+            dirname, entities, dironly=True
+        )
     else:
         dirs = [(dirname, dict())]
     for dirname, dirtagdict in dirs:
-        for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly, dirtagdict):
+        for name, tagdict in _tag_glob_in_dir(
+            dirname, basename, entities, dironly, dirtagdict
+        ):
             yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
 
 
@@ -63,7 +66,7 @@ def _tag_glob_in_dir(
     basename: str,
     entities: Container[str] | None,
     dironly: bool,
-    parenttagdict: dict[str, str]
+    parenttagdict: dict[str, str],
 ):
     """
     adapted from cpython glob
@@ -104,9 +107,7 @@ def _validate_re(s: str) -> bool:
 
 
 def _translate(
-    pat: str,
-    entities: Container[str] | None,
-    parenttagdict: dict[str, str]
+    pat: str, entities: Container[str] | None, parenttagdict: dict[str, str]
 ) -> tuple[Callable, set[str]]:
 
     res = ""
@@ -138,7 +139,9 @@ def _translate(
                 enre = None
                 if filter_str is not None:
                     if filter_type == ":":
-                        enre = filter_str.replace("\\{", "{").replace("\\}", "}")  # regex syntax
+                        enre = filter_str.replace("\\{", "{").replace(
+                            "\\}", "}"
+                        )  # regex syntax
                     elif filter_type == "=":  # glob syntax
                         enre = fnmatch.translate(filter_str)
                         enre = special_match.sub("", enre)  # remove control codes

@@ -2,25 +2,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, Optional
-
 from pathlib import Path
+from typing import Any, Optional
 from unittest.mock import patch
-
-from nipype.pipeline import engine as pe
-from nipype.interfaces.base.traits_extension import isdefined
 
 from fmriprep import config
 from fmriprep.cli.workflow import build_workflow
+from nipype.interfaces.base.traits_extension import isdefined
+from nipype.pipeline import engine as pe
 
 from ..ingest.collect import collect_fieldmaps
-from .factory import Factory
-from .report import init_anat_report_wf, init_func_report_wf
-from .constants import constants
-from .memory import MemoryCalculator
-
-from ..utils import logger, inflect_engine as p
+from ..utils import inflect_engine as p
+from ..utils import logger
 from ..utils.copy import deepcopyfactory
+from .constants import constants
+from .factory import Factory
+from .memory import MemoryCalculator
+from .report import init_anat_report_wf, init_func_report_wf
 
 
 def _find_input(hierarchy, node, attr):
@@ -98,9 +96,7 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = [
-            f"{constants.reference_space}:res-{constants.reference_res}"
-        ]
+        output_spaces = [f"{constants.reference_space}:res-{constants.reference_res}"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
@@ -113,8 +109,12 @@ class FmriprepFactory(Factory):
                 "bids_dir": bids_dir,  # input directory
                 "output_dir": output_dir,  # derivatives folder
                 "fmriprep_dir": fmriprep_dir,  # fmriprep subfolder
-                "log_dir": str(workdir),  # put crash files directly in working directory
-                "work_dir": str(workdir / ".fmriprep"),  # where toml configuration files will go
+                "log_dir": str(
+                    workdir
+                ),  # put crash files directly in working directory
+                "work_dir": str(
+                    workdir / ".fmriprep"
+                ),  # where toml configuration files will go
                 "output_layout": "legacy",  # do not yet use the new layout
                 "participant_label": sorted(bids_subjects),  # include all subjects
                 "write_graph": global_settings["write_graph"],
@@ -131,7 +131,9 @@ class FmriprepFactory(Factory):
                 "medial_surface_nan": global_settings["medial_surface_nan"],
                 "longitudinal": global_settings["longitudinal"],
                 #
-                "dummy_scans": global_settings["dummy_scans"],  # remove initial non-steady state volumes
+                "dummy_scans": global_settings[
+                    "dummy_scans"
+                ],  # remove initial non-steady state volumes
                 # bold_reg_wf config
                 "use_bbr": global_settings["use_bbr"],
                 "bold2t1w_dof": global_settings["bold2t1w_dof"],
@@ -172,14 +174,23 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy("fmriprep_wf", source_file=bold_file_path)[-1]
+            func_preproc_wf = self._get_hierarchy(
+                "fmriprep_wf", source_file=bold_file_path
+            )[-1]
 
-            if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
-                logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
+            if (
+                not isinstance(func_preproc_wf, pe.Workflow)
+                or len(func_preproc_wf._graph) == 0
+            ):
+                logger.warning(
+                    f'fMRIPrep skipped processing for file "{bold_file_path}"'
+                )
                 skipped.add(bold_file_path)
                 continue
 
-            if len(collect_fieldmaps(database, bold_file_path, silent=True)) > 0:  # has fieldmaps
+            if (
+                len(collect_fieldmaps(database, bold_file_path, silent=True)) > 0
+            ):  # has fieldmaps
                 if func_preproc_wf.get_node("sdc_estimate_wf") is None:
                     logger.warning(
                         f'fMRIPrep did not detect field maps for file "{bold_file_path}"'
@@ -207,7 +218,9 @@ class FmriprepFactory(Factory):
         bold_file_paths -= skipped
 
         # halfpipe-specific report workflows
-        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
+        anat_report_wf_factory = deepcopyfactory(
+            init_anat_report_wf(workdir=str(workdir))
+        )
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
 
@@ -216,9 +229,7 @@ class FmriprepFactory(Factory):
             hierarchy.append(wf)
 
             inputnode = wf.get_node("inputnode")
-            inputnode.inputs.tags = {
-                "sub": subject_id
-            }
+            inputnode.inputs.tags = {"sub": subject_id}
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
@@ -238,7 +249,9 @@ class FmriprepFactory(Factory):
             inputnode.inputs.tags = database.tags(bold_file_path)
             inputnode.inputs.fd_thres = global_settings["fd_thres"]
 
-            inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
+            inputnode.inputs.repetition_time = database.metadata(
+                bold_file_path, "repetition_time"
+            )
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
 
         return bold_file_paths
@@ -261,7 +274,9 @@ class FmriprepFactory(Factory):
             if isdefined(value):
                 inputattrs.remove(key)
 
-        ignore = frozenset(["alt_bold_mask_std", "alt_bold_std", "alt_spatial_reference"])
+        ignore = frozenset(
+            ["alt_bold_mask_std", "alt_bold_std", "alt_spatial_reference"]
+        )
         inputattrs -= ignore
 
         def _connect(hierarchy):
@@ -270,7 +285,9 @@ class FmriprepFactory(Factory):
             outputnode: Optional[pe.Node] = wf.get_node("outputnode")
             if outputnode is not None:
                 outputattrs = set(outputnode.outputs.copyable_trait_names())
-                attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
+                attrs = (
+                    inputattrs & outputattrs
+                ) - connected_attrs  # find common attr names
 
                 actually_connected_attrs = set()
                 for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
@@ -284,7 +301,9 @@ class FmriprepFactory(Factory):
                 attrs &= actually_connected_attrs
 
                 for attr in attrs:
-                    self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
+                    self.connect_attr(
+                        hierarchy, outputnode, attr, nodehierarchy, node, attr
+                    )
                     connected_attrs.add(attr)
 
             for attr in list(dsattrs):
@@ -300,7 +319,9 @@ class FmriprepFactory(Factory):
                     dsattrs.remove(attr)
                     connected_attrs.add(attr)
 
-        hierarchy = self._get_hierarchy("fmriprep_wf", source_file=source_file, subject_id=subject_id)
+        hierarchy = self._get_hierarchy(
+            "fmriprep_wf", source_file=source_file, subject_id=subject_id
+        )
 
         wf = hierarchy[-1]
 
@@ -315,20 +336,27 @@ class FmriprepFactory(Factory):
                 initial_boldref_wf = wf.get_node("initial_boldref_wf")
                 assert isinstance(initial_boldref_wf, pe.Workflow)
                 outputnode = initial_boldref_wf.get_node("outputnode")
-                self.connect_attr([*hierarchy, initial_boldref_wf], outputnode, "skip_vols", nodehierarchy, node, "skip_vols")
+                self.connect_attr(
+                    [*hierarchy, initial_boldref_wf],
+                    outputnode,
+                    "skip_vols",
+                    nodehierarchy,
+                    node,
+                    "skip_vols",
+                )
                 connected_attrs.add("skip_vols")
 
             for name in [
-                    "bold_bold_trans_wf",
-                    "bold_hmc_wf",
-                    "final_boldref_wf",
-                    "bold_reg_wf",
-                    "sdc_estimate_wf",
-                    "sdc_bypass_wf",
-                    "sdc_unwarp_report_wf",
-                    "bold_std_trans_wf",
-                    "bold_surf_wf",
-                    "bold_confounds_wf",
+                "bold_bold_trans_wf",
+                "bold_hmc_wf",
+                "final_boldref_wf",
+                "bold_reg_wf",
+                "sdc_estimate_wf",
+                "sdc_bypass_wf",
+                "sdc_unwarp_report_wf",
+                "bold_std_trans_wf",
+                "bold_surf_wf",
+                "bold_confounds_wf",
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
@@ -338,11 +366,17 @@ class FmriprepFactory(Factory):
                 splitnode = wf.get_node("split_opt_comb")
                 if splitnode is None:
                     splitnode = wf.get_node("bold_split")
-                self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
+                self.connect_attr(
+                    hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split"
+                )
                 connected_attrs.add("bold_split")
 
-            report_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
-            func_report_wf = report_hierarchy[-1].get_node("func_report_wf")  # this is not part of fmriprep
+            report_hierarchy = self._get_hierarchy(
+                "reports_wf", source_file=source_file, subject_id=subject_id
+            )
+            func_report_wf = report_hierarchy[-1].get_node(
+                "func_report_wf"
+            )  # this is not part of fmriprep
             if func_report_wf is not None:
                 _connect([*report_hierarchy, func_report_wf])
 

@@ -6,26 +6,26 @@
 
 """
 
+from .anat import AnatFileSchema, T1wFileSchema
 from .base import File
 from .bids import BidsFileSchema
-from .anat import AnatFileSchema, T1wFileSchema
-from .func import (
-    FuncFileSchema,
-    BoldFileSchema,
-    TxtEventsFileSchema,
-    TsvEventsFileSchema,
-    MatEventsFileSchema,
-)
 from .fmap import (
-    FmapFileSchema,
-    PhaseFmapFileSchema,
-    PhaseDiffFmapFileSchema,
-    EPIFmapFileSchema,
     BaseFmapFileSchema,
+    EPIFmapFileSchema,
+    FmapFileSchema,
+    PhaseDiffFmapFileSchema,
+    PhaseFmapFileSchema,
+)
+from .func import (
+    BoldFileSchema,
+    FuncFileSchema,
+    MatEventsFileSchema,
+    TsvEventsFileSchema,
+    TxtEventsFileSchema,
 )
 from .ref import RefFileSchema
-from .spreadsheet import SpreadsheetFileSchema
 from .schema import FileSchema
+from .spreadsheet import SpreadsheetFileSchema
 
 __all__ = [
     "File",

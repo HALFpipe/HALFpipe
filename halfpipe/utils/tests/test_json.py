@@ -2,11 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from json import dumps
 from dataclasses import dataclass
+from json import dumps
 
-import pytest
 import numpy as np
+import pytest
 from pyrsistent import pmap
 
 from ..json import TypeAwareJSONEncoder
@@ -41,7 +41,7 @@ def test_float():
 
 
 def test_pmap():
-    x =pmap(dict(x=5))
+    x = pmap(dict(x=5))
 
     with pytest.raises(Exception):
         dumps(dict(x=x))

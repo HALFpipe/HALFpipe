@@ -2,13 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import re
 import csv
 import io
+import re
 from statistics import mean
 
-import pandas as pd
 import chardet
+import pandas as pd
 
 from ..utils.path import split_ext
 
@@ -60,9 +60,7 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
     )  # remove unicode characters, e.g. BOM
     file_lines = cleaned_file_str.splitlines()
 
-    file_lines = [
-        s for s in file_lines if len(s.strip()) > 0
-    ]
+    file_lines = [s for s in file_lines if len(s.strip()) > 0]
 
     comment_prefix: str | None = None
     comment_m = re.match(
@@ -72,9 +70,7 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
         comment_prefix = comment_m.group("prefix")
 
     if comment_prefix is not None:
-        file_lines = [
-            s for s in file_lines if not s.startswith(comment_prefix)
-        ]
+        file_lines = [s for s in file_lines if not s.startswith(comment_prefix)]
 
     cleaned_file_str = "\n".join(file_lines)
 
@@ -124,13 +120,17 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
         kwargs["header"] = None
     else:
         scores = [
-            mean(map(float, map(
-                str_is_convertible_to_float,
-                re.split(kwargs["sep"], file_line)
-            )))
+            mean(
+                map(
+                    float,
+                    map(
+                        str_is_convertible_to_float, re.split(kwargs["sep"], file_line)
+                    ),
+                )
+            )
             for file_line in file_lines[:10]
         ]
-        if min(scores[1:]) > 0.:
+        if min(scores[1:]) > 0.0:
             # check if there are at least some float values, without
             # which this heuristic would be pointless
             if scores[0] >= min(scores[1:]):
@@ -154,12 +154,9 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
     if data_frame.columns[0] == "Unnamed: 0":
         # detect index_col that pandas may have missed
         if not any(
-                isinstance(s, float)
-                or (
-                    isinstance(s, str)
-                    and str_is_convertible_to_float(s)
-                )
-                for s in data_frame["Unnamed: 0"]
+            isinstance(s, float)
+            or (isinstance(s, str) and str_is_convertible_to_float(s))
+            for s in data_frame["Unnamed: 0"]
         ):
             data_frame.set_index("Unnamed: 0", inplace=True)
             data_frame.index.rename(None, inplace=True)

@@ -2,31 +2,29 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import pytest
-
 import os
 import tarfile
-from pathlib import Path
-from random import normalvariate, seed, choices
 from math import inf
 from multiprocessing import cpu_count
+from pathlib import Path
+from random import choices, normalvariate, seed
 
-import pandas as pd
 import nibabel as nib
-from nilearn.image import new_img_like
+import pandas as pd
+import pytest
 from fmriprep import config
-
-from ...resource import get as get_resource
+from nilearn.image import new_img_like
 from templateflow.api import get as get_template
 
-from ..base import init_workflow
-from ..execgraph import init_execgraph
+from ...cli.parser import build_parser
+from ...cli.run import run_stage_run
 from ...ingest.database import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema
 from ...model.spec import Spec, SpecSchema, savespec
+from ...resource import get as get_resource
 from ...utils.image import nvol
-from ...cli.parser import build_parser
-from ...cli.run import run_stage_run
+from ..base import init_workflow
+from ..execgraph import init_execgraph
 
 
 @pytest.fixture(scope="module")
@@ -35,15 +33,20 @@ def task_events(tmp_path_factory, bids_data):
 
     os.chdir(str(tmp_path))
 
-    seed(a=0x5e6128c4)
+    seed(a=0x5E6128C4)
 
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump({}), partial=True)
     assert isinstance(spec, Spec)
 
-    spec.files = list(map(FileSchema().load, [
-        dict(datatype="bids", path=str(bids_data)),
-    ]))
+    spec.files = list(
+        map(
+            FileSchema().load,
+            [
+                dict(datatype="bids", path=str(bids_data)),
+            ],
+        )
+    )
 
     database = Database(spec)
 
@@ -77,9 +80,7 @@ def task_events(tmp_path_factory, bids_data):
     events = pd.DataFrame(dict(onset=onset, duration=duration, trial_type=trial_type))
 
     events_fname = Path.cwd() / "events.tsv"
-    events.to_csv(
-        events_fname, sep="\t", index=False, header=True
-    )
+    events.to_csv(events_fname, sep="\t", index=False, header=True)
 
     return events_fname
 
@@ -97,16 +98,13 @@ def atlas_harvard_oxford(tmp_path_factory):
 
     maps = {
         m: (
-            tmp_path / "data" / "atlases"
+            tmp_path
+            / "data"
+            / "atlases"
             / "HarvardOxford"
             / f"HarvardOxford-{m}.nii.gz"
         )
-        for m in (
-            "cort-prob-1mm",
-            "cort-prob-2mm",
-            "sub-prob-1mm",
-            "sub-prob-2mm"
-        )
+        for m in ("cort-prob-1mm", "cort-prob-2mm", "sub-prob-1mm", "sub-prob-2mm")
     }
     return maps
 
@@ -117,9 +115,7 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
 
     os.chdir(str(tmp_path))
 
-    atlas_img = nib.load(
-        atlas_harvard_oxford["cort-prob-2mm"]
-    )
+    atlas_img = nib.load(atlas_harvard_oxford["cort-prob-2mm"])
     atlas = atlas_img.get_fdata()
 
     pcc_mask = atlas[..., 29] > 10
@@ -138,47 +134,54 @@ def mock_spec(bids_data, task_events, pcc_mask):
     spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
     assert isinstance(spec, Spec)
 
-    spec.files = list(map(FileSchema().load, [
-        dict(datatype="bids", path=str(bids_data)),
-        dict(
-            datatype="func",
-            suffix="events",
-            extension=".tsv",
-            tags=dict(task="rest"),
-            path=str(task_events),
-            metadata=dict(units="seconds"),
-        ),
-        dict(
-            datatype="ref",
-            suffix="map",
-            extension=".nii.gz",
-            tags=dict(desc="smith09"),
-            path=str(get_resource("PNAS_Smith09_rsn10.nii.gz")),
-            metadata=dict(space="MNI152NLin6Asym"),
-        ),
-        dict(
-            datatype="ref",
-            suffix="seed",
-            extension=".nii.gz",
-            tags=dict(desc="pcc"),
-            path=str(pcc_mask),
-            metadata=dict(space="MNI152NLin6Asym"),
-        ),
-        dict(
-            datatype="ref",
-            suffix="atlas",
-            extension=".nii.gz",
-            tags=dict(desc="schaefer2018"),
-            path=str(get_template(
-                "MNI152NLin2009cAsym",
-                resolution=2,
-                atlas="Schaefer2018",
-                desc="400Parcels17Networks",
-                suffix="dseg",
-            )),
-            metadata=dict(space="MNI152NLin2009cAsym"),
-        ),
-    ]))
+    spec.files = list(
+        map(
+            FileSchema().load,
+            [
+                dict(datatype="bids", path=str(bids_data)),
+                dict(
+                    datatype="func",
+                    suffix="events",
+                    extension=".tsv",
+                    tags=dict(task="rest"),
+                    path=str(task_events),
+                    metadata=dict(units="seconds"),
+                ),
+                dict(
+                    datatype="ref",
+                    suffix="map",
+                    extension=".nii.gz",
+                    tags=dict(desc="smith09"),
+                    path=str(get_resource("PNAS_Smith09_rsn10.nii.gz")),
+                    metadata=dict(space="MNI152NLin6Asym"),
+                ),
+                dict(
+                    datatype="ref",
+                    suffix="seed",
+                    extension=".nii.gz",
+                    tags=dict(desc="pcc"),
+                    path=str(pcc_mask),
+                    metadata=dict(space="MNI152NLin6Asym"),
+                ),
+                dict(
+                    datatype="ref",
+                    suffix="atlas",
+                    extension=".nii.gz",
+                    tags=dict(desc="schaefer2018"),
+                    path=str(
+                        get_template(
+                            "MNI152NLin2009cAsym",
+                            resolution=2,
+                            atlas="Schaefer2018",
+                            desc="400Parcels17Networks",
+                            suffix="dseg",
+                        )
+                    ),
+                    metadata=dict(space="MNI152NLin2009cAsym"),
+                ),
+            ],
+        )
+    )
 
     setting_base = dict(
         confounds_removal=["(trans|rot)_[xyz]"],
@@ -186,71 +189,80 @@ def mock_spec(bids_data, task_events, pcc_mask):
         ica_aroma=True,
     )
 
-    spec.settings = list(map(SettingSchema().load, [
-        dict(
-            name="dualRegAndSeedCorrAndTaskBasedSetting",
-            output_image=False,
-            bandpass_filter=dict(type="gaussian", hp_width=125.0),
-            smoothing=dict(fwhm=6.0),
-            **setting_base,
-
-        ),
-        dict(
-            name="fALFFUnfilteredSetting",
-            output_image=False,
-            **setting_base,
-        ),
-        dict(
-            name="fALFFAndReHoAndCorrMatrixSetting",
-            output_image=False,
-            bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
-            **setting_base,
-        ),
-    ]))
-
-    spec.features = list(map(FeatureSchema().load, [
-        dict(
-            name="taskBased",
-            type="task_based",
-            high_pass_filter_cutoff=125.0,
-            conditions=["a", "b"],
-            contrasts=[
-                dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
+    spec.settings = list(
+        map(
+            SettingSchema().load,
+            [
+                dict(
+                    name="dualRegAndSeedCorrAndTaskBasedSetting",
+                    output_image=False,
+                    bandpass_filter=dict(type="gaussian", hp_width=125.0),
+                    smoothing=dict(fwhm=6.0),
+                    **setting_base,
+                ),
+                dict(
+                    name="fALFFUnfilteredSetting",
+                    output_image=False,
+                    **setting_base,
+                ),
+                dict(
+                    name="fALFFAndReHoAndCorrMatrixSetting",
+                    output_image=False,
+                    bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
+                    **setting_base,
+                ),
             ],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting",
-        ),
-        dict(
-            name="seedCorr",
-            type="seed_based_connectivity",
-            seeds=["pcc"],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting"
-        ),
-        dict(
-            name="dualReg",
-            type="dual_regression",
-            maps=["smith09"],
-            setting="dualRegAndSeedCorrAndTaskBasedSetting"
-        ),
-        dict(
-            name="corrMatrix",
-            type="atlas_based_connectivity",
-            atlases=["schaefer2018"],
-            setting="fALFFAndReHoAndCorrMatrixSetting"
-        ),
-        dict(
-            name="reHo",
-            type="reho",
-            setting="fALFFAndReHoAndCorrMatrixSetting",
-            smoothing=dict(fwhm=6.0),
-        ),
-        dict(
-            name="fALFF",
-            type="falff",
-            setting="fALFFAndReHoAndCorrMatrixSetting",
-            unfiltered_setting="fALFFUnfilteredSetting",
-            smoothing=dict(fwhm=6.0),
-        ),
-    ]))
+        )
+    )
+
+    spec.features = list(
+        map(
+            FeatureSchema().load,
+            [
+                dict(
+                    name="taskBased",
+                    type="task_based",
+                    high_pass_filter_cutoff=125.0,
+                    conditions=["a", "b"],
+                    contrasts=[
+                        dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
+                    ],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="seedCorr",
+                    type="seed_based_connectivity",
+                    seeds=["pcc"],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="dualReg",
+                    type="dual_regression",
+                    maps=["smith09"],
+                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
+                ),
+                dict(
+                    name="corrMatrix",
+                    type="atlas_based_connectivity",
+                    atlases=["schaefer2018"],
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                ),
+                dict(
+                    name="reHo",
+                    type="reho",
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                    smoothing=dict(fwhm=6.0),
+                ),
+                dict(
+                    name="fALFF",
+                    type="falff",
+                    setting="fALFFAndReHoAndCorrMatrixSetting",
+                    unfiltered_setting="fALFFUnfilteredSetting",
+                    smoothing=dict(fwhm=6.0),
+                ),
+            ],
+        )
+    )
 
     spec.global_settings.update(dict(sloppy=True))
 

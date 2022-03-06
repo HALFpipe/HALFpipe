@@ -7,11 +7,10 @@
 """
 
 from .anat import AnatTagsSchema
-from .func import FuncTagsSchema, BoldTagsSchema, TxtEventsTagsSchema
-from .fmap import FmapTagsSchema, EPIFmapTagsSchema
+from .fmap import EPIFmapTagsSchema, FmapTagsSchema
+from .func import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
 from .ref import RefTagsSchema
 from .resultdict import ResultdictTagsSchema, resultdict_entities
-
 from .schema import entities, entity_longnames
 
 __all__ = [

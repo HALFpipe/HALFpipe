@@ -6,7 +6,7 @@
 
 """
 
-from marshmallow import Schema, RAISE, post_dump, fields
+from marshmallow import RAISE, Schema, fields, post_dump
 
 
 class BaseTagsSchema(Schema):

@@ -2,10 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import re
 from typing import Any, Dict
 
-import re
-
+from ...ingest.collect import collect_events, collect_metadata
+from ...model import FeatureSchema
+from ...utils import logger
+from ..factory import Factory
+from ..memory import MemoryCalculator
 from .atlasbasedconnectivity import init_atlasbasedconnectivity_wf
 from .dualregression import init_dualregression_wf
 from .falff import init_falff_wf
@@ -13,21 +17,12 @@ from .reho import init_reho_wf
 from .seedbasedconnectivity import init_seedbasedconnectivity_wf
 from .taskbased import init_taskbased_wf
 
-from ..factory import Factory
-from ...ingest.collect import collect_events, collect_metadata
-from ..memory import MemoryCalculator
-
-from ...model import FeatureSchema
-from ...utils import logger
-
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 def _find_setting(setting_name, spec):
     (setting,) = [
-        setting
-        for setting in spec.settings
-        if setting["name"] == setting_name
+        setting for setting in spec.settings if setting["name"] == setting_name
     ]
     return setting
 
@@ -64,9 +59,7 @@ class FeatureFactory(Factory):
 
             filters = setting.get("filters")
             if filters is not None and len(filters) > 0:
-                source_files = self.ctx.database.applyfilters(
-                    source_files, filters
-                )
+                source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
                 source_file_raw_sources = raw_sources_dict[source_file]
@@ -81,7 +74,9 @@ class FeatureFactory(Factory):
         vwf = None
 
         memcalc = MemoryCalculator.from_bold_file(source_file)
-        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc)
+        kwargs: Dict[str, Any] = dict(
+            feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc
+        )
         if feature.type == "task_based":
             confounds_action = "select"
 
@@ -116,7 +111,7 @@ class FeatureFactory(Factory):
             vwf = init_taskbased_wf(
                 condition_files=condition_files,
                 condition_units=condition_units,
-                **kwargs
+                **kwargs,
             )
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
@@ -125,7 +120,10 @@ class FeatureFactory(Factory):
                 (seed_file,) = database.get(datatype="ref", suffix="seed", desc=seed)
                 kwargs["seed_files"].append(seed_file)
             database.fillmetadata("space", kwargs["seed_files"])
-            kwargs["seed_spaces"] = [database.metadata(seed_file, "space") for seed_file in kwargs["seed_files"]]
+            kwargs["seed_spaces"] = [
+                database.metadata(seed_file, "space")
+                for seed_file in kwargs["seed_files"]
+            ]
             vwf = init_seedbasedconnectivity_wf(**kwargs)
         elif feature.type == "dual_regression":
             confounds_action = "select"
@@ -134,7 +132,9 @@ class FeatureFactory(Factory):
                 (map_file,) = database.get(datatype="ref", suffix="map", desc=map)
                 kwargs["map_files"].append(map_file)
             database.fillmetadata("space", kwargs["map_files"])
-            kwargs["map_spaces"] = [database.metadata(map_file, "space") for map_file in kwargs["map_files"]]
+            kwargs["map_spaces"] = [
+                database.metadata(map_file, "space") for map_file in kwargs["map_files"]
+            ]
             vwf = init_dualregression_wf(**kwargs)
         elif feature.type == "atlas_based_connectivity":
             confounds_action = "regression"
@@ -143,7 +143,10 @@ class FeatureFactory(Factory):
                 (atlas_file,) = database.get(datatype="ref", suffix="atlas", desc=atlas)
                 kwargs["atlas_files"].append(atlas_file)
             database.fillmetadata("space", kwargs["atlas_files"])
-            kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
+            kwargs["atlas_spaces"] = [
+                database.metadata(atlas_file, "space")
+                for atlas_file in kwargs["atlas_files"]
+            ]
             vwf = init_atlasbasedconnectivity_wf(**kwargs)
         elif feature.type == "reho":
             confounds_action = "regression"
@@ -152,7 +155,7 @@ class FeatureFactory(Factory):
             confounds_action = "regression"
             vwf = init_falff_wf(**kwargs)
         else:
-            raise ValueError(f"Unknown feature type \"{feature.type}\"")
+            raise ValueError(f'Unknown feature type "{feature.type}"')
 
         wf.add_nodes([vwf])
         hierarchy.append(vwf)
@@ -166,7 +169,9 @@ class FeatureFactory(Factory):
             if m is not None:
                 if hasattr(node.inputs, "repetition_time"):
                     database.fillmetadata("repetition_time", [source_file])
-                    node.inputs.repetition_time = database.metadata(source_file, "repetition_time")
+                    node.inputs.repetition_time = database.metadata(
+                        source_file, "repetition_time"
+                    )
                 if hasattr(node.inputs, "tags"):
                     node.inputs.tags = database.tags(source_file)
 

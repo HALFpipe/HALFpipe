@@ -6,32 +6,32 @@
 
 """
 
-from typing import List, Optional
 import os
-from os import path as op
-from datetime import datetime as dt
 import uuid
+from datetime import datetime as dt
+from os import path as op
+from typing import List, Optional
 
-from marshmallow import (
-    fields,
-    Schema,
-    post_load,
-    RAISE,
-    validate,
-    validates_schema,
-    ValidationError,
-)
 import marshmallow.exceptions
 from inflection import humanize
+from marshmallow import (
+    RAISE,
+    Schema,
+    ValidationError,
+    fields,
+    post_load,
+    validate,
+    validates_schema,
+)
 
 from .. import __version__ as halfpipe_version
-from .file import File, FileSchema
-from .setting import SettingSchema, GlobalSettingsSchema
-from .feature import FeatureSchema
-from .model import ModelSchema
+from ..utils import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
-from ..utils import logger
+from .feature import FeatureSchema
+from .file import File, FileSchema
+from .model import ModelSchema
+from .setting import GlobalSettingsSchema, SettingSchema
 
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
@@ -47,9 +47,13 @@ class SpecSchema(Schema):
 
     halfpipe_version = fields.Str(dump_default=halfpipe_version)
     schema_version = fields.Str(
-        dump_default=schema_version, validate=validate.OneOf(compatible_schema_versions), required=True
+        dump_default=schema_version,
+        validate=validate.OneOf(compatible_schema_versions),
+        required=True,
     )
-    timestamp = fields.DateTime(dump_default=dt.now(), format=timestamp_format, required=True)
+    timestamp = fields.DateTime(
+        dump_default=dt.now(), format=timestamp_format, required=True
+    )
 
     global_settings = fields.Nested(GlobalSettingsSchema, dump_default={})
 
@@ -64,7 +68,9 @@ class SpecSchema(Schema):
         for field in ["settings", "features", "models"]:
             if field not in data:
                 continue  # validation error will be raised independently
-            names.extend([a["name"] if isinstance(a, dict) else a.name for a in data[field]])
+            names.extend(
+                [a["name"] if isinstance(a, dict) else a.name for a in data[field]]
+            )
         if len(names) > len(set(names)):
             raise ValidationError("Duplicate name")
 
@@ -85,7 +91,9 @@ class SpecSchema(Schema):
                 if fileobj.suffix in descSets:
                     descSet = descSets[fileobj.suffix]
                     if desc in descSet:
-                        raise ValidationError(f"{humanize(fileobj.suffix)} names need to be unique")
+                        raise ValidationError(
+                            f"{humanize(fileobj.suffix)} names need to be unique"
+                        )
 
                     descSet.add(desc)
 
@@ -94,13 +102,17 @@ class SpecSchema(Schema):
         if "models" not in data or "files" not in data:
             return  # validation error will be raised independently
 
-        spreadsheets = set(file.path for file in data["files"] if file.datatype == "spreadsheet")
+        spreadsheets = set(
+            file.path for file in data["files"] if file.datatype == "spreadsheet"
+        )
 
         for model in data["models"]:
 
             if model.type == "lme":
                 if model.spreadsheet not in spreadsheets:
-                    raise ValidationError(f'Spreadsheet "{model.spreadsheet}" not found in files')
+                    raise ValidationError(
+                        f'Spreadsheet "{model.spreadsheet}" not found in files'
+                    )
 
     @post_load
     def make_object(self, data, **_):
@@ -139,7 +151,9 @@ class Spec:
         self.files.append(fileobj)
 
 
-def loadspec(workdir=None, timestamp=None, specpath=None, logger=logger) -> Optional[Spec]:
+def loadspec(
+    workdir=None, timestamp=None, specpath=None, logger=logger
+) -> Optional[Spec]:
     if specpath is None:
         assert workdir is not None
         if timestamp is not None:
@@ -176,7 +190,9 @@ def savespec(spec: Spec, workdir=None, specpath=None, logger=logger):
             logger.warning("Overwriting invalid spec file")
         else:
             newspecpath = op.join(workdir, f"spec.{spectomove.timestampstr}.json")
-            logger.info(f'Moving previous spec file from "{specpath}" to "{newspecpath}"')
+            logger.info(
+                f'Moving previous spec file from "{specpath}" to "{newspecpath}"'
+            )
             if op.isfile(newspecpath):
                 logger.warning("Found specpath timestampstr collision, overwriting")
             os.replace(specpath, newspecpath)

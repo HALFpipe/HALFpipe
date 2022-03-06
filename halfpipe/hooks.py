@@ -2,11 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union, List
-
+import posixpath
 import sys
 from pathlib import Path
-import posixpath
+from typing import List, Union
 from zipfile import ZipFile
 from zipimport import zipimporter
 
@@ -76,7 +75,13 @@ def run_hooks_from_dir(workdir: Path):
         parent = stack.pop()
         for child in parent.iterdir():
             if parent == workdir:
-                if child.name in ["nipype", "grouplevel", "derivatives", "rawdata", "reports"]:
+                if child.name in [
+                    "nipype",
+                    "grouplevel",
+                    "derivatives",
+                    "rawdata",
+                    "reports",
+                ]:
                     continue  # known workdir subdirs
             if child.is_dir():
                 if (child / "__init__.py").exists():  # candidate dir is a module
@@ -89,7 +94,9 @@ def run_hooks_from_dir(workdir: Path):
                     zip_path = ZipPath(zip_file)
                     stack.append(zip_path)
                 except Exception as e:
-                    logger.warning(f'Cannot list file "{child}": %s', e, stack_info=True)
+                    logger.warning(
+                        f'Cannot list file "{child}": %s', e, stack_info=True
+                    )
             elif str(child).endswith(".py"):
                 plugins.append(child)
 

@@ -2,20 +2,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype.algorithms import confounds as nac
-
 from fmriprep import config
-from niworkflows.utils.spaces import SpatialReferences
+from nipype.algorithms import confounds as nac
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 from niworkflows.interfaces.utility import KeySelect
+from niworkflows.utils.spaces import SpatialReferences
 
-from ...interfaces.report.imageplot import PlotRegistration, PlotEpi
-from ...interfaces.resultdict.make import MakeResultdicts
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.report.vals import UpdateVals, CalcMean
 from ...interfaces.imagemaths.resample import Resample
-
+from ...interfaces.report.imageplot import PlotEpi, PlotRegistration
+from ...interfaces.report.vals import CalcMean, UpdateVals
+from ...interfaces.resultdict.datasink import ResultdictDatasink
+from ...interfaces.resultdict.make import MakeResultdicts
 from ..constants import constants
 from ..memory import MemoryCalculator
 
@@ -24,10 +22,10 @@ def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
     return skip_vols * repetition_time
 
 
-def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalculator.default()):
-    """
-
-    """
+def init_func_report_wf(
+    workdir=None, name="func_report_wf", memcalc=MemoryCalculator.default()
+):
+    """ """
     workflow = pe.Workflow(name=name)
 
     #
@@ -76,7 +74,12 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     make_resultdicts = pe.Node(
         MakeResultdicts(
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports],
-            valkeys=["dummy_scans", "sdc_method", "scan_start", "fallback_registration"],
+            valkeys=[
+                "dummy_scans",
+                "sdc_method",
+                "scan_start",
+                "fallback_registration",
+            ],
         ),
         name="make_resultdicts",
     )
@@ -117,7 +120,9 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
-    reference_dict = dict(reference_space=constants.reference_space, reference_res=constants.reference_res)
+    reference_dict = dict(
+        reference_space=constants.reference_space, reference_res=constants.reference_res
+    )
     reference_dict["input_space"] = reference_dict["reference_space"]
     resample = pe.Node(
         Resample(interpolation="MultiLabel", **reference_dict),
@@ -141,9 +146,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc=MemoryCalcu
     workflow.connect(calc_scan_start, "scan_start", make_resultdicts, "scan_start")
 
     # vals
-    confvals = pe.Node(
-        UpdateVals(), name="confvals", mem_gb=2 * memcalc.volume_std_gb
-    )
+    confvals = pe.Node(UpdateVals(), name="confvals", mem_gb=2 * memcalc.volume_std_gb)
     workflow.connect(inputnode, "fd_thres", confvals, "fd_thres")
     workflow.connect(inputnode, "confounds_file", confvals, "confounds_file")
 

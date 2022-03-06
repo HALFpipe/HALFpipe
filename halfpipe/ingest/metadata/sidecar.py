@@ -2,15 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Dict
 
-from functools import lru_cache
-import json
-from pathlib import Path
-
 import marshmallow.exceptions
-from marshmallow import EXCLUDE
 from inflection import underscore
+from marshmallow import EXCLUDE
 
 from ...model.metadata import MetadataSchema
 from ...utils.path import split_ext
@@ -41,6 +40,7 @@ class SidecarMetadataLoader:
 
             try:
                 from sdcflows.interfaces.fmap import get_ees
+
                 # get effective echo spacing even if not explicitly specified
                 in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=file_path)
             except Exception:

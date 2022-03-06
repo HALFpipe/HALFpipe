@@ -2,26 +2,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from ..components import (
-    TextView,
-    SpacerView,
-    TextInputView,
-    MultipleChoiceInputView,
-    SingleChoiceInputView,
-)
-
 from inflection import humanize, underscore
 
-from ..step import Step, YesNoStep
-from ..pattern import entity_display_aliases
-from ..utils import forbidden_chars
-
-from ...model import Model, FixedEffectsModelSchema
+from ...model import FixedEffectsModelSchema, Model
 from ...utils import inflect_engine as p
 from ...utils.format import format_like_bids
-
-from .loop import AddAnotherModelStep
+from ..components import (
+    MultipleChoiceInputView,
+    SingleChoiceInputView,
+    SpacerView,
+    TextInputView,
+    TextView,
+)
+from ..pattern import entity_display_aliases
+from ..step import Step, YesNoStep
+from ..utils import forbidden_chars
 from .filter import MEModelMotionFilterStep
+from .loop import AddAnotherModelStep
 from .spreadsheet import SpreadsheetStep
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
@@ -34,9 +31,7 @@ def _resolve_across(ctx, inputname):
             return []
     for obj in ctx.spec.models:
         if inputname == obj.name:
-            in_across = set(
-                tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs
-            )
+            in_across = set(tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs)
             assert len(in_across) == 1, "Cannot resolve across"
             (in_across,) = in_across
             return [*in_across, obj.across]
@@ -121,12 +116,16 @@ class ModelAggregateStep(Step):
             filters = setting_filters[obj.setting]
             feature_filepaths = [*filepaths]
             if filters is not None and len(filters) > 0:
-                feature_filepaths = ctx.database.applyfilters(feature_filepaths, filters)
+                feature_filepaths = ctx.database.applyfilters(
+                    feature_filepaths, filters
+                )
             self.feature_entities[obj.name], _ = ctx.database.multitagvalset(
                 aggregate_order, filepaths=feature_filepaths
             )
 
-        entitiesset = set.union(*[set(entitylist) for entitylist in self.feature_entities.values()])
+        entitiesset = set.union(
+            *[set(entitylist) for entitylist in self.feature_entities.values()]
+        )
 
         across = ctx.spec.models[-1].across
         assert across not in entitiesset
@@ -135,7 +134,9 @@ class ModelAggregateStep(Step):
             entity for entity in aggregate_order if entity in entitiesset
         ]  # maintain order
         display_strs = [
-            entity_display_aliases[entity] if entity in entity_display_aliases else entity
+            entity_display_aliases[entity]
+            if entity in entity_display_aliases
+            else entity
             for entity in self.entities
         ]
         self.options = [humanize(p.plural(display_str)) for display_str in display_strs]
@@ -143,9 +144,12 @@ class ModelAggregateStep(Step):
         self.optionstr_by_entity = dict(zip(self.entities, self.options))
 
         if len(self.options) > 0:
-            self._append_view(TextView("Aggregate scan-level statistics before analysis?"))
+            self._append_view(
+                TextView("Aggregate scan-level statistics before analysis?")
+            )
             self.input_view = MultipleChoiceInputView(
-                self.options, checked=[option for option in self.options if option != "task"]
+                self.options,
+                checked=[option for option in self.options if option != "task"],
             )
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -310,12 +314,12 @@ class HasModelStep(YesNoStep):
     no_step_type = None
 
     def _should_run(self, ctx):
-        if (
-            hasattr(ctx.spec, "features")
-            and ctx.spec.features is not None
-        ):
+        if hasattr(ctx.spec, "features") and ctx.spec.features is not None:
             for feature in ctx.spec.features:
-                if hasattr(feature, "type") and feature.type != "atlas_based_connectivity":
+                if (
+                    hasattr(feature, "type")
+                    and feature.type != "atlas_based_connectivity"
+                ):
                     return True
 
         self.choice = "No"

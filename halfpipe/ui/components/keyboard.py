@@ -8,9 +8,8 @@
 import curses
 import curses.ascii
 import enum
-import queue
-
 import os
+import queue
 
 
 class Key(enum.Enum):

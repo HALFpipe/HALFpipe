@@ -6,18 +6,17 @@ from os import path as op
 from pathlib import Path
 from typing import Literal, overload
 
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
-from scipy.ndimage import mean
-
 from nipype.interfaces.base import (
     BaseInterface,
-    TraitedSpec,
     BaseInterfaceInputSpec,
+    File,
+    TraitedSpec,
     traits,
-    File
 )
+from scipy.ndimage import mean
 
 from ..utils.image import nvol
 from ..utils.matrix import atleast_4d
@@ -81,15 +80,15 @@ def mean_signals(
 
         mask_data = np.asanyarray(mask_img.dataobj).astype(bool)
 
-        unmasked_counts = np.bincount(
-            np.ravel(labels), minlength=nlabel + 1
-        )[:nlabel + 1]
+        unmasked_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)[
+            : nlabel + 1
+        ]
 
         labels[np.logical_not(mask_data)] = background_label
 
-        masked_counts = np.bincount(
-            np.ravel(labels), minlength=nlabel + 1
-        )[:nlabel + 1]
+        masked_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)[
+            : nlabel + 1
+        ]
 
         region_coverage = masked_counts.astype(float) / unmasked_counts.astype(float)
         region_coverage[unmasked_counts == 0] = 0
@@ -124,7 +123,9 @@ class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
     )
     mask_file = File(desc="Mask file", exists=True, mandatory=True)
     atlas_file = File(
-        desc="Atlas image file defining the connectivity ROIs", exists=True, mandatory=True,
+        desc="Atlas image file defining the connectivity ROIs",
+        exists=True,
+        mandatory=True,
     )
 
     background_label = traits.Int(desc="", default=0, usedefault=True)

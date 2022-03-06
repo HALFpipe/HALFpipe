@@ -2,18 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from types import MethodType
-
 import logging
 import warnings
 from multiprocessing.queues import JoinableQueue
+from types import MethodType
 
 warnings.filterwarnings("ignore")  # catch all warnings while loading modules
 
 from .context import context as logging_context  # noqa: E402
-from .handler import QueueHandler  # noqa: E402
-from .formatter import ColorFormatter  # noqa: E402
 from .filter import DTypeWarningsFilter, PyWarningsFilter  # noqa: E402
+from .formatter import ColorFormatter  # noqa: E402
+from .handler import QueueHandler  # noqa: E402
 
 warn = warnings.warn
 
@@ -81,8 +80,8 @@ def setup(queue, levelno=logging.INFO):
 
     setup_loggers()
 
-    from nipype.utils.logger import Logging as nipype_logging
     from fmriprep.config import loggers as fmriprep_loggers
+    from nipype.utils.logger import Logging as nipype_logging
 
     setup_loggers()  # re-do setup
 

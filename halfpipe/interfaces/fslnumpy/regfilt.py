@@ -5,9 +5,8 @@
 import logging
 
 import numpy as np
+from nipype.interfaces.base import File, isdefined, traits
 from numpy import typing as npt
-
-from nipype.interfaces.base import traits, isdefined, File
 
 from ..transformer import Transformer, TransformerInputSpec
 
@@ -88,7 +87,12 @@ class FilterRegressorInputSpec(TransformerInputSpec):
     design_file = File(desc="design file", exists=True, mandatory=True)
     filter_columns = traits.List(traits.Int)
     filter_all = traits.Bool(default=False, usedefault=True)
-    mask = traits.Either(File(desc="mask image file name", exists=True), traits.Bool(), default=True, usedefault=True)
+    mask = traits.Either(
+        File(desc="mask image file name", exists=True),
+        traits.Bool(),
+        default=True,
+        usedefault=True,
+    )
     aggressive = traits.Bool(default=False, usedefault=True)
 
 
@@ -113,7 +117,11 @@ class FilterRegressor(Transformer):
         np.nan_to_num(array, copy=False)  # nans create problems further down the line
 
         array2 = regfilt(
-            array, design, filter_columns, calculate_mask=calculate_mask, aggressive=self.inputs.aggressive
+            array,
+            design,
+            filter_columns,
+            calculate_mask=calculate_mask,
+            aggressive=self.inputs.aggressive,
         )
 
         return array2

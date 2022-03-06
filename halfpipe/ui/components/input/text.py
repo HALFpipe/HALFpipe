@@ -6,12 +6,14 @@
 
 """
 
+from typing import Type
+
 import numpy as np
 
-from ..view import CallableView
 from ..keyboard import Key
-from ..text import TextElement, Text
-from .choice import SingleChoiceInputView, MultiSingleChoiceInputView
+from ..text import Text, TextElement
+from ..view import CallableView
+from .choice import MultiSingleChoiceInputView, SingleChoiceInputView
 
 
 def common_chars(inlist):
@@ -67,7 +69,9 @@ class TextInputView(CallableView):
     def _before_call(self):
         if self.text is None:
             self.text = ""
-        self._setStatusBar("  ".join(["[↵] Ok", "[← →] Move cursor", "[ctrl-c] Cancel"]))
+        self._setStatusBar(
+            "  ".join(["[↵] Ok", "[← →] Move cursor", "[ctrl-c] Cancel"])
+        )
 
     def _is_ok(self):
         return True
@@ -87,12 +91,16 @@ class TextInputView(CallableView):
             self.update()
         elif c == Key.Backspace:
             if self.cur_index > 0:
-                self.text = self.text[: self.cur_index - 1] + self.text[self.cur_index :]
+                self.text = (
+                    self.text[: self.cur_index - 1] + self.text[self.cur_index :]
+                )
                 self.cur_index -= 1
                 self.update()
         elif c == Key.Delete:
             if self.cur_index < len(self.text):
-                self.text = self.text[: self.cur_index] + self.text[self.cur_index + 1 :]
+                self.text = (
+                    self.text[: self.cur_index] + self.text[self.cur_index + 1 :]
+                )
                 self.update()
         elif isinstance(c, Key):
             pass
@@ -101,7 +109,9 @@ class TextInputView(CallableView):
         elif self.maxlen > 0 and len(self.text) >= self.maxlen:
             pass
         else:
-            self.text = self.text[: self.cur_index] + chr(c) + self.text[self.cur_index :]
+            self.text = (
+                self.text[: self.cur_index] + chr(c) + self.text[self.cur_index :]
+            )
             self.cur_index += 1
             self.update()
 
@@ -148,7 +158,11 @@ class TextInputView(CallableView):
 
 class NumberInputView(TextInputView):
     def __init__(
-        self, number=0, min=-np.inf, max=np.inf, **kwargs,
+        self,
+        number=0,
+        min=-np.inf,
+        max=np.inf,
+        **kwargs,
     ):
         super(NumberInputView, self).__init__(text=str(number), **kwargs)
         self.min = min
@@ -171,11 +185,13 @@ class NumberInputView(TextInputView):
 
 
 class MultiTextInputView(SingleChoiceInputView):
-    text_input_type = TextInputView
+    text_input_type: Type[TextInputView] = TextInputView
 
     def __init__(self, options, initial_values=None, **kwargs):
         super_kwargs = {
-            k: v for k, v in kwargs.items() if k in {"color", "emphasisColor", "highlightColor"}
+            k: v
+            for k, v in kwargs.items()
+            if k in {"color", "emphasisColor", "highlightColor"}
         }
         super(MultiTextInputView, self).__init__(
             options,
@@ -189,9 +205,13 @@ class MultiTextInputView(SingleChoiceInputView):
 
         if initial_values is None:
             initial_values = [None] * len(options)
-        kwargs.update(dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize))
+        kwargs.update(
+            dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize)
+        )
         self.children = [
-            self.text_input_type(**kwargs) if val is None else self.text_input_type(val, **kwargs)
+            self.text_input_type(**kwargs)
+            if val is None
+            else self.text_input_type(val, **kwargs)
             for val in initial_values
         ]
         for child in self.children:
@@ -267,11 +287,13 @@ class MultiNumberInputView(MultiTextInputView):
 
 
 class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
-    text_input_type = TextInputView
+    text_input_type: Type[TextInputView] = TextInputView
 
     def __init__(self, options, values, initial_values=None, **kwargs):
         super_kwargs = {
-            k: v for k, v in kwargs.items() if k in {"color", "emphasisColor", "highlightColor"}
+            k: v
+            for k, v in kwargs.items()
+            if k in {"color", "emphasisColor", "highlightColor"}
         }
 
         if not isinstance(values[0], list):
@@ -281,7 +303,10 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
             values[i].insert(0, "")
 
         super().__init__(
-            options, values, addBrackets=True, **super_kwargs,
+            options,
+            values,
+            addBrackets=True,
+            **super_kwargs,
         )
 
         self.optionWidth = max(len(option) for option in options)
@@ -292,7 +317,12 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
         if initial_values is None:
             initial_values = [None] * len(options)
 
-        kwargs.update(dict(nchr_prepend=self.optionWidth + self.option_spacing + 1, tokenizefun=_tokenize))
+        kwargs.update(
+            dict(
+                nchr_prepend=self.optionWidth + self.option_spacing + 1,
+                tokenizefun=_tokenize,
+            )
+        )
 
         self.initialSelectedIndices = [0] * len(self.options)
 
@@ -360,7 +390,11 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
             if self.selectedIndices[self.cur_index] == 0:
                 self.children[self.cur_index].isActive = True
 
-        if prev_index is not None and prev_index != self.cur_index and prev_index is not None:
+        if (
+            prev_index is not None
+            and prev_index != self.cur_index
+            and prev_index is not None
+        ):
             self.children[prev_index].isActive = False
 
         if not self.isActive:
@@ -375,7 +409,9 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
     def _getOutput(self):
         if self.selectedIndices is not None:
             return {
-                str(k): str(self.values[i][v]) if v > 0 else self.children[i]._getOutput()
+                str(k): str(self.values[i][v])
+                if v > 0
+                else self.children[i]._getOutput()
                 for i, (k, v) in enumerate(zip(self.options, self.selectedIndices))
             }
 
@@ -398,7 +434,11 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
                 x = self.children[i].previousLength
             else:
                 if color == self.highlightColor:
-                    if self.cur_index is not None and i == self.cur_index and self.isActive:
+                    if (
+                        self.cur_index is not None
+                        and i == self.cur_index
+                        and self.isActive
+                    ):
                         color = self.emphasisColor
 
                 if self._add_brackets:
@@ -415,5 +455,7 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
         return x
 
 
-class MultiCombinedNumberAndSingleChoiceInputView(MultiCombinedTextAndSingleChoiceInputView):
+class MultiCombinedNumberAndSingleChoiceInputView(
+    MultiCombinedTextAndSingleChoiceInputView
+):
     text_input_type = NumberInputView

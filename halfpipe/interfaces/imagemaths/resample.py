@@ -4,22 +4,24 @@
 
 from pathlib import Path
 
-import numpy as np
 import nibabel as nib
-
+import numpy as np
 from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
+from nipype.interfaces.base import File, InputMultiObject, isdefined, traits
 from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
 from templateflow.api import get as get_template
-
-from nipype.interfaces.base import traits, InputMultiObject, File, isdefined
 
 from ...resource import get as getresource
 from ...utils.image import nvol
 
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
-    input_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
-    reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
+    input_space = traits.Either(
+        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True
+    )
+    reference_space = traits.Either(
+        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True
+    )
     reference_res = traits.Int(mandatory=False)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
 
@@ -47,17 +49,27 @@ class Resample(FixHeaderApplyTransforms):
 
         input_space = self.inputs.input_space
         reference_space = self.inputs.reference_space
-        reference_res = self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
+        reference_res = (
+            self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
+        )
 
         if not isdefined(self.inputs.reference_image):
             if reference_res is not None:
-                self.inputs.reference_image = get_template(reference_space, resolution=reference_res, desc="brain", suffix="mask")
+                self.inputs.reference_image = get_template(
+                    reference_space,
+                    resolution=reference_res,
+                    desc="brain",
+                    suffix="mask",
+                )
 
         input_image = nib.load(self.inputs.input_image)
         reference_image = nib.load(self.inputs.reference_image)
         input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
         input_matches_reference = input_matches_reference and np.allclose(
-            input_image.affine, reference_image.affine, atol=1e-2, rtol=1e-2  # tolerance of 0.01 mm
+            input_image.affine,
+            reference_image.affine,
+            atol=1e-2,
+            rtol=1e-2,  # tolerance of 0.01 mm
         )
 
         self.inputs.dimension = 3
@@ -68,15 +80,23 @@ class Resample(FixHeaderApplyTransforms):
 
         transforms = ["identity"]
         if input_space != reference_space:
-            xfm = getresource(f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5")
+            xfm = getresource(
+                f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5"
+            )
             assert Path(xfm).is_file()
             transforms = [str(xfm)]
 
         self.inputs.transforms = transforms
 
-        if not input_matches_reference or set(transforms) != set(["identity"]) or not self.inputs.lazy:
+        if (
+            not input_matches_reference
+            or set(transforms) != set(["identity"])
+            or not self.inputs.lazy
+        ):
             self.resample = True
-            runtime = super(Resample, self)._run_interface(runtime, correct_return_codes)
+            runtime = super(Resample, self)._run_interface(
+                runtime, correct_return_codes
+            )
 
         return runtime
 

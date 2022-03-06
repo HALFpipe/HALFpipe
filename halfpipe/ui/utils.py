@@ -4,7 +4,7 @@
 
 import re
 
-from inflection import parameterize, camelize, underscore
+from inflection import camelize, parameterize, underscore
 
 from ..utils import inflect_engine as p
 
@@ -35,7 +35,9 @@ def makenamesuggestion(*words, index=None):
 def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases=dict()):
     message = ""
     if filepaths is not None:
-        message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
+        message = p.inflect(
+            f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})"
+        )
         if len(filepaths) > 0:
             n_by_tag = dict()
             for tagname in tagnames:
@@ -43,7 +45,9 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases=d
                 if tagvalset is not None:
                     n_by_tag[tagname] = len(tagvalset)
             tagmessages = [
-                p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
+                p.inflect(
+                    f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})"
+                )
                 for tagname, n in n_by_tag.items()
                 if n > 0
             ]

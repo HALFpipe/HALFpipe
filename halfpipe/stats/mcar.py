@@ -26,9 +26,7 @@ class MCARTest(Heterogeneity):
 
         z = demean(z)
 
-        isavailable = np.logical_and(
-            np.isfinite(y), np.isfinite(s)
-        )
+        isavailable = np.logical_and(np.isfinite(y), np.isfinite(s))
         ismissing = np.logical_not(isavailable)
 
         if np.all(ismissing) or np.all(isavailable):

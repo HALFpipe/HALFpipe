@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 from ._version import get_versions
+
 __version__ = get_versions()["version"]
 del get_versions
 
@@ -34,6 +35,3 @@ if xdg_cache_home.is_dir():
     del xdg_cache_home, halfpipe_resource_dir, templateflow_home
 
 os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warning
-
-from . import _version
-__version__ = _version.get_versions()['version']

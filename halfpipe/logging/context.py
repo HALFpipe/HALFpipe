@@ -2,14 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional, Union
-
 import logging
 from multiprocessing import get_context
-from multiprocessing.queues import JoinableQueue
 from multiprocessing.process import BaseProcess
-from threading import RLock
+from multiprocessing.queues import JoinableQueue
 from pathlib import Path
+from threading import RLock
+from typing import Optional, Union
 
 from .worker import run as run_worker
 from .worker.message import (
@@ -56,7 +55,9 @@ class context(object):
             if not isinstance(instance._queue, JoinableQueue):
                 instance._queue = JoinableQueue(ctx=ctx)
             if instance._worker is None:
-                instance._worker = ctx.Process(target=run_worker, args=(instance._queue,))
+                instance._worker = ctx.Process(
+                    target=run_worker, args=(instance._queue,)
+                )
                 instance._worker.start()
 
     @classmethod
@@ -92,10 +93,7 @@ class context(object):
 
     @classmethod
     def logging_args(cls):
-        return dict(
-            queue=cls.queue(),
-            levelno=logging.getLogger("halfpipe").level
-        )
+        return dict(queue=cls.queue(), levelno=logging.getLogger("halfpipe").level)
 
     @classmethod
     def enable_verbose(cls):

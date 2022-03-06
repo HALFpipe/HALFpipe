@@ -4,7 +4,8 @@
 
 import re
 from typing import Mapping
-from inflection import parameterize, camelize, underscore
+
+from inflection import camelize, parameterize, underscore
 
 from ..model.tags import entities, entity_longnames
 

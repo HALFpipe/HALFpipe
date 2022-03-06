@@ -2,21 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import defaultdict
+from dataclasses import dataclass
+from itertools import chain
+from operator import attrgetter
 from typing import Any, Mapping
 
-from dataclasses import dataclass
-from collections import defaultdict
-from itertools import chain
 from more_itertools import collapse, powerset
-from operator import attrgetter
+from nipype.interfaces.base import BaseInterfaceInputSpec, DynamicTraitedSpec, traits
+from nipype.interfaces.io import IOBase, add_traits
+from pyrsistent import freeze, pmap, thaw
 
-from pyrsistent import pmap, freeze, thaw
-
-from nipype.interfaces.base import traits, DynamicTraitedSpec, BaseInterfaceInputSpec
-from nipype.interfaces.io import add_traits, IOBase
-
-from .base import ResultdictsOutputSpec, Continuous, Categorical
 from ...utils.ops import ravel
+from .base import Categorical, Continuous, ResultdictsOutputSpec
 
 Index = Mapping[str, str]
 
@@ -37,7 +35,9 @@ def compare_index(a: Index, b: Index) -> bool:
     return True
 
 
-def group_across(rr: list[dict[str, dict]], across_key: str) -> dict[Index, set[Element]]:
+def group_across(
+    rr: list[dict[str, dict]], across_key: str
+) -> dict[Index, set[Element]]:
     groups: dict[Index, set[Element]] = defaultdict(set)
 
     for i, r in enumerate(rr):
@@ -46,17 +46,17 @@ def group_across(rr: list[dict[str, dict]], across_key: str) -> dict[Index, set[
 
         across_value = str(tags.pop(across_key))
 
-        index = pmap({
-            key: value
-            for key, value in tags.items()
-            if isinstance(value, str)
-        })
+        index = pmap(
+            {key: value for key, value in tags.items() if isinstance(value, str)}
+        )
 
-        data: Mapping[tuple[str, str], Any] = pmap({
-            (field_name, attribute_name): freeze(attribute_value)
-            for field_name, field_dict in r.items()
-            for attribute_name, attribute_value in field_dict.items()
-        })
+        data: Mapping[tuple[str, str], Any] = pmap(
+            {
+                (field_name, attribute_name): freeze(attribute_value)
+                for field_name, field_dict in r.items()
+                for attribute_name, attribute_value in field_dict.items()
+            }
+        )
 
         element = Element(i, across_value, data)
 
@@ -114,7 +114,10 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
         field_name, _ = key
-        if key in [("metadata", "sources"), ("metadata", "raw_sources")] or field_name in ["images"]:
+        if key in [
+            ("metadata", "sources"),
+            ("metadata", "raw_sources"),
+        ] or field_name in ["images"]:
             summarized[key] = list(collapse(values))
         else:
             summarized[key] = summarize(values)
@@ -134,7 +137,9 @@ def aggregate(rr: list[dict[str, dict]], across_key: str):
     bypass: list[dict[str, dict[str, Any]]] = list()
 
     for index, elements in expanded_groups.items():
-        tags: dict[str, Any] = {across_key: [element.across_value for element in elements]}
+        tags: dict[str, Any] = {
+            across_key: [element.across_value for element in elements]
+        }
         tags |= index
 
         u: dict[str, dict[str, Any]] = dict(tags=tags) | merge_data(elements)
@@ -173,7 +178,9 @@ class AggregateResultdicts(IOBase):
         assert outputs is not None
         outputs = outputs.get()
 
-        inputs = ravel([getattr(self.inputs, input_name) for input_name in self.input_names])
+        inputs = ravel(
+            [getattr(self.inputs, input_name) for input_name in self.input_names]
+        )
         across = self.inputs.across
 
         aggregated, non_aggregated = aggregate(inputs, across)

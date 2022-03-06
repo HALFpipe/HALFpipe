@@ -6,8 +6,8 @@
 
 """
 
-from ..step import YesNoStep
 from ..setting import get_setting_vals_steps
+from ..step import YesNoStep
 from .imageoutput import ImageOutputStep
 
 
@@ -19,5 +19,5 @@ class AddAnotherFeatureStep(YesNoStep):
 SettingValsStep = get_setting_vals_steps(
     AddAnotherFeatureStep,
     noun="feature",
-    vals_header_str="Specify preprocessing setting"
+    vals_header_str="Specify preprocessing setting",
 )

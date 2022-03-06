@@ -4,14 +4,9 @@
 
 from pathlib import Path
 
-from nipype.interfaces.base import (
-    TraitedSpec,
-    SimpleInterface,
-    File,
-    isdefined,
-)
-import pandas as pd
 import numpy as np
+import pandas as pd
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined
 
 from ...utils.path import split_ext
 
@@ -42,7 +37,11 @@ class Unvest(SimpleInterface):
             stem, _ = split_ext(in_file)
             self._results["out_no_header"] = Path.cwd() / f"{stem}_no_header.tsv"
             dataframe.to_csv(
-                self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+                self._results["out_no_header"],
+                sep="\t",
+                index=False,
+                na_rep="n/a",
+                header=False,
             )
 
         return runtime

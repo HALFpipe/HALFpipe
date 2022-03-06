@@ -2,19 +2,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Dict
-
 from pathlib import Path
+from typing import Dict, List
 
-from ..ingest.database import Database
 from ..ingest.bids import BidsDatabase
+from ..ingest.database import Database
 from ..utils import logger
 
 
 def convert_all(
-        database: Database,
-        bids_database: BidsDatabase,
-        bold_paths_dict: Dict[str, List[str]]
+    database: Database,
+    bids_database: BidsDatabase,
+    bold_paths_dict: Dict[str, List[str]],
 ):
     for bold_path, associated_paths in bold_paths_dict.items():
 

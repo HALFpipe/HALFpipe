@@ -2,9 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
+from pathlib import Path
 
 from .. import __version__
 from ..utils import logger
@@ -23,7 +23,9 @@ def build_parser():
     basegroup = parser.add_argument_group("base", "")
 
     basegroup.add_argument(
-        "--workdir", "--wk", type=str,
+        "--workdir",
+        "--wk",
+        type=str,
         help="directory where output and intermediate files are stored",
     )
     basegroup.add_argument("--fs-root", help="path to the file system root")
@@ -53,26 +55,37 @@ def build_parser():
         "--subject-include",
         action="append",
         default=[],
-        help="include only subjects that match"
+        help="include only subjects that match",
     )
     rungroup.add_argument(
         "--subject-exclude",
         action="append",
         default=[],
-        help="exclude subjects that match"
+        help="exclude subjects that match",
     )
     rungroup.add_argument("--subject-list", type=str, help="select subjects that match")
 
-    rungroup.add_argument("--n-chunks", type=int, help="merge subject workflows to n chunks")
-    rungroup.add_argument("--max-chunk-size", type=int, help="maximum number of subjects per chunk", default=64)
+    rungroup.add_argument(
+        "--n-chunks", type=int, help="merge subject workflows to n chunks"
+    )
+    rungroup.add_argument(
+        "--max-chunk-size",
+        type=int,
+        help="maximum number of subjects per chunk",
+        default=64,
+    )
     rungroup.add_argument("--subject-chunks", action="store_true", default=False)
-    rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
+    rungroup.add_argument(
+        "--only-chunk-index", type=int, help="select which chunk to run"
+    )
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
 
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
-    rungroup.add_argument("--nipype-resource-monitor", action="store_true", default=False)
+    rungroup.add_argument(
+        "--nipype-resource-monitor", action="store_true", default=False
+    )
     rungroup.add_argument(
         "--keep",
         choices=["all", "some", "none"],
@@ -113,6 +126,7 @@ def parse_args(args=None, namespace=None):
     debug = opts.debug
     if debug:
         import logging
+
         from ..logging import setup as setup_logging
 
         setup_logging(logging_context.queue(), levelno=logging.DEBUG)
@@ -149,19 +163,24 @@ def parse_args(args=None, namespace=None):
         opts.fs_root = None
 
     if opts.fs_root is None:
-        fs_root_candidates = list(map(Path, [
-            "/ext",  # Singularity when using documentation-provided bind flag
-            "/mnt",
-            "/host",
-            "/"
-        ]))
+        fs_root_candidates = list(
+            map(
+                Path,
+                [
+                    "/ext",  # Singularity when using documentation-provided bind flag
+                    "/mnt",
+                    "/host",
+                    "/",
+                ],
+            )
+        )
 
         fs_root_candidates = [
             *[  # prepend fix for Docker for Mac/Windows
                 fs_root_candidate / "host_mnt"
                 for fs_root_candidate in fs_root_candidates
             ],
-            *fs_root_candidates
+            *fs_root_candidates,
         ]
 
         for fs_root_candidate in fs_root_candidates:

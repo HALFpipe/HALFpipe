@@ -2,31 +2,26 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, Union, List
-
 import os
-from pathlib import Path
 from math import isfinite
-
-import numpy as np
+from pathlib import Path
+from typing import Dict, List, Union
 
 import nipype.algorithms.modelgen as model
-
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
+import numpy as np
 from nipype.interfaces import fsl
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
+from ...interfaces.conditions import ApplyConditionOffset, ParseConditionFile
 from ...interfaces.fixes.level1design import Level1Design
-from ...interfaces.conditions import ParseConditionFile, ApplyConditionOffset
-from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.utility.tsv import FillNA, MergeColumns
+from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
+from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...interfaces.utility.vest import Unvest
-
-from ...utils.ops import first_float, first_str, ravel
 from ...utils.format import format_workflow
-
+from ...utils.ops import first_float, first_str, ravel
 from ..memory import MemoryCalculator
 
 
@@ -43,11 +38,7 @@ def _add_td_conditions(hrf, condition_names):
     else:
         raise ValueError(f'Unknown HRF "{hrf}"')
 
-    return [
-        f"{c}{suffix}"
-        for c in condition_names
-        for suffix in suffixes
-    ]
+    return [f"{c}{suffix}" for c in condition_names for suffix in suffixes]
 
 
 def _get_scan_start(vals) -> float:
@@ -90,7 +81,9 @@ def init_taskbased_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
 
     inputnode.inputs.condition_names = feature.conditions
 
@@ -102,7 +95,9 @@ def init_taskbased_wf(
 
     #
     make_resultdicts_a = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["design_matrix", "contrast_matrix"]),
+        MakeResultdicts(
+            tagkeys=["feature"], imagekeys=["design_matrix", "contrast_matrix"]
+        ),
         name="make_resultdicts_a",
     )
     if feature is not None:
@@ -142,21 +137,32 @@ def init_taskbased_wf(
     for contrast in feature.contrasts:
         contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
         contrasts.append(
-            [contrast["name"], contrast["type"].upper(), condition_names, contrast_values]
+            [
+                contrast["name"],
+                contrast["type"].upper(),
+                condition_names,
+                contrast_values,
+            ]
         )
 
     # parse condition files into three (ordered) lists
     parse_condition_file = pe.Node(
         ParseConditionFile(contrasts=contrasts), name="parse_condition_file"
     )
-    workflow.connect(inputnode, "condition_names", parse_condition_file, "condition_names")
+    workflow.connect(
+        inputnode, "condition_names", parse_condition_file, "condition_names"
+    )
     workflow.connect(inputnode, "condition_files", parse_condition_file, "in_any")
-    workflow.connect(parse_condition_file, "contrast_names", make_resultdicts_b, "taskcontrast")
+    workflow.connect(
+        parse_condition_file, "contrast_names", make_resultdicts_b, "taskcontrast"
+    )
 
     #
     get_scan_start = pe.Node(
         niu.Function(
-            input_names=["vals"], output_names=["scan_start"], function=_get_scan_start,
+            input_names=["vals"],
+            output_names=["scan_start"],
+            function=_get_scan_start,
         ),
         name="get_scan_start",
     )
@@ -165,7 +171,9 @@ def init_taskbased_wf(
     apply_condition_offset = pe.Node(
         ApplyConditionOffset(), name="apply_condition_offset"
     )
-    workflow.connect(parse_condition_file, "subject_info", apply_condition_offset, "subject_info")
+    workflow.connect(
+        parse_condition_file, "subject_info", apply_condition_offset, "subject_info"
+    )
     workflow.connect(get_scan_start, "scan_start", apply_condition_offset, "scan_start")
 
     #
@@ -193,12 +201,19 @@ def init_taskbased_wf(
     elif feature.hrf == "dgamma_with_derivs":
         bases = dict(dgamma=dict(derivs=True))
     elif feature.hrf == "flobs":
-        bfcustompath = Path(os.environ["FSLDIR"]) / "etc" / "default_flobs.flobs" / "hrfbasisfns.txt"
+        bfcustompath = (
+            Path(os.environ["FSLDIR"])
+            / "etc"
+            / "default_flobs.flobs"
+            / "hrfbasisfns.txt"
+        )
         assert bfcustompath.is_file()
-        bases = dict(custom=dict(
-            bfcustompath=str(bfcustompath),
-            basisfnum=3,
-        ))
+        bases = dict(
+            custom=dict(
+                bfcustompath=str(bfcustompath),
+                basisfnum=3,
+            )
+        )
     else:
         raise ValueError(f'HRF "{feature.hrf}" is not yet implemented')
 
@@ -215,7 +230,9 @@ def init_taskbased_wf(
 
     # generate required input files for FILMGLS from design
     modelgen = pe.Node(fsl.FEATModel(), name="modelgen", mem_gb=1.0)
-    workflow.connect([(level1design, modelgen, [(("fsf_files", first_str), "fsf_file")])])
+    workflow.connect(
+        [(level1design, modelgen, [(("fsf_files", first_str), "fsf_file")])]
+    )
     workflow.connect([(level1design, modelgen, [(("ev_files", ravel), "ev_files")])])
 
     # calculate range of image values to determine cutoff value
@@ -226,7 +243,9 @@ def init_taskbased_wf(
     )
     workflow.connect(inputnode, "bold", stats, "in_file")
     cutoff = pe.Node(
-        niu.Function(input_names=["obj"], output_names=["min_val"], function=first_float),
+        niu.Function(
+            input_names=["obj"], output_names=["min_val"], function=first_float
+        ),
         name="cutoff",
     )
     workflow.connect(stats, "out_stat", cutoff, "obj")
@@ -269,11 +288,18 @@ def init_taskbased_wf(
             name="add_td_conditions",
         )
         add_td_conditions.inputs.hrf = feature.hrf
-        workflow.connect(parse_condition_file, "condition_names", add_td_conditions, "condition_names")
+        workflow.connect(
+            parse_condition_file,
+            "condition_names",
+            add_td_conditions,
+            "condition_names",
+        )
 
         workflow.connect(add_td_conditions, "condition_names", mergecolumnnames, "in1")
     else:
-        workflow.connect(parse_condition_file, "condition_names", mergecolumnnames, "in1")
+        workflow.connect(
+            parse_condition_file, "condition_names", mergecolumnnames, "in1"
+        )
 
     #
     design_unvest = pe.Node(Unvest(), name="design_unvest")
@@ -292,6 +318,8 @@ def init_taskbased_wf(
     workflow.connect(mergecolumnnames, "out", contrast_tsv, "column_names1")
 
     workflow.connect(design_tsv, "out_with_header", make_resultdicts_a, "design_matrix")
-    workflow.connect(contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix")
+    workflow.connect(
+        contrast_tsv, "out_with_header", make_resultdicts_a, "contrast_matrix"
+    )
 
     return workflow

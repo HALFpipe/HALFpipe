@@ -2,20 +2,20 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
 from nipype.interfaces import afni
 
 from ...interfaces.fslnumpy.tempfilt import TemporalFilter
 from ...interfaces.imagemaths.addmeans import AddMeans
-from ...interfaces.utility.afni import ToAFNI, FromAFNI
+from ...interfaces.utility.afni import FromAFNI, ToAFNI
 from ..memory import MemoryCalculator
 
 
 def _calc_sigma(
-        lp_width: float | None = None,
-        hp_width: float | None = None,
-        repetition_time: float | None = None,
+    lp_width: float | None = None,
+    hp_width: float | None = None,
+    repetition_time: float | None = None,
 ):
     lp_sigma = None
     if lp_width is not None:
@@ -40,10 +40,10 @@ def _bandpass_arg(low, high):
 
 
 def init_bandpass_filter_wf(
-        bandpass_filter: tuple[str, float, float],
-        name: str | None = None,
-        suffix: str | None = None,
-        memcalc: MemoryCalculator = MemoryCalculator.default(),
+    bandpass_filter: tuple[str, float, float],
+    name: str | None = None,
+    suffix: str | None = None,
+    memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
     type, low, high = bandpass_filter
 
@@ -60,11 +60,14 @@ def init_bandpass_filter_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["files", "mask", "low", "high", "vals", "repetition_time"]),
+        niu.IdentityInterface(
+            fields=["files", "mask", "low", "high", "vals", "repetition_time"]
+        ),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode",
+        niu.IdentityInterface(fields=["files", "mask", "vals"]),
+        name="outputnode",
     )
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
@@ -84,7 +87,7 @@ def init_bandpass_filter_wf(
         AddMeans(),
         iterfield=["in_file", "mean_file"],
         name="addmeans",
-        mem_gb=memcalc.series_std_gb * 2
+        mem_gb=memcalc.series_std_gb * 2,
     )
     workflow.connect(inputnode, "files", addmeans, "mean_file")
 
@@ -107,7 +110,7 @@ def init_bandpass_filter_wf(
             TemporalFilter(),
             iterfield="in_file",
             name="temporalfilter",
-            mem_gb=memcalc.series_std_gb * 2
+            mem_gb=memcalc.series_std_gb * 2,
         )
         workflow.connect(calcsigma, "lp_sigma", temporalfilter, "lowpass_sigma")
         workflow.connect(calcsigma, "hp_sigma", temporalfilter, "highpass_sigma")
@@ -121,7 +124,9 @@ def init_bandpass_filter_wf(
 
         makeoutfname = pe.MapNode(
             niu.Function(
-                input_names=["in_file"], output_names=["out_file"], function=_out_file_name,
+                input_names=["in_file"],
+                output_names=["out_file"],
+                function=_out_file_name,
             ),
             iterfield="in_file",
             name="tprojectoutfilename",
@@ -130,7 +135,9 @@ def init_bandpass_filter_wf(
 
         bandpassarg = pe.Node(
             niu.Function(
-                input_names=["low", "high"], output_names=["out"], function=_bandpass_arg,
+                input_names=["low", "high"],
+                output_names=["out"],
+                function=_bandpass_arg,
             ),
             name="bandpassarg",
         )  # cannot use merge here as we need a tuple
@@ -141,14 +148,16 @@ def init_bandpass_filter_wf(
             afni.TProject(polort=1),
             iterfield=["in_file", "out_file"],
             name="tproject",
-            mem_gb=memcalc.series_std_gb * 2
+            mem_gb=memcalc.series_std_gb * 2,
         )
         workflow.connect(toafni, "out_file", tproject, "in_file")
         workflow.connect(bandpassarg, "out", tproject, "bandpass")
         workflow.connect(inputnode, "repetition_time", tproject, "TR")
         workflow.connect(makeoutfname, "out_file", tproject, "out_file")
 
-        fromafni = pe.MapNode(FromAFNI(), iterfield=["in_file", "metadata"], name="fromafni")
+        fromafni = pe.MapNode(
+            FromAFNI(), iterfield=["in_file", "metadata"], name="fromafni"
+        )
         workflow.connect(toafni, "metadata", fromafni, "metadata")
         workflow.connect(tproject, "out_file", fromafni, "in_file")
 

@@ -9,8 +9,8 @@
 from marshmallow import fields, validate
 from marshmallow_oneofschema import OneOfSchema
 
-from .base import File, BaseFileSchema
 from ..tags import AnatTagsSchema
+from .base import BaseFileSchema, File
 
 
 class T1wFileSchema(BaseFileSchema):

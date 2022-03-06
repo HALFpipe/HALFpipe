@@ -4,16 +4,15 @@
 
 import numpy as np
 import pandas as pd
-
 from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
     DynamicTraitedSpec,
-    SimpleInterface,
     File,
+    SimpleInterface,
+    TraitedSpec,
     isdefined,
+    traits,
 )
-from nipype.interfaces.io import add_traits, IOBase
+from nipype.interfaces.io import IOBase, add_traits
 
 from ..connectivity import mean_signals
 
@@ -44,13 +43,19 @@ class CalcMean(SimpleInterface):
             mask_file = self.inputs.mask
 
         if isdefined(self.inputs.dseg):  # get grey matter only
-            dseg_mean_signals = mean_signals(in_file, self.inputs.dseg, mask_file=mask_file)
+            dseg_mean_signals = mean_signals(
+                in_file, self.inputs.dseg, mask_file=mask_file
+            )
             _, gm_mean, _ = np.ravel(dseg_mean_signals).tolist()
             self._results["mean"] = float(gm_mean)
 
         elif isdefined(self.inputs.parcellation):
-            parc_mean_signals = mean_signals(in_file, self.inputs.parcellation, mask_file=mask_file)
-            parc_mean_signals_list = list(map(float, np.ravel(parc_mean_signals).tolist()))
+            parc_mean_signals = mean_signals(
+                in_file, self.inputs.parcellation, mask_file=mask_file
+            )
+            parc_mean_signals_list = list(
+                map(float, np.ravel(parc_mean_signals).tolist())
+            )
             self._results["mean"] = parc_mean_signals_list
 
         elif mask_file is not None:
@@ -111,7 +116,7 @@ class UpdateVals(IOBase):
             assert isinstance(data_frame, pd.DataFrame)
 
             fd = data_frame["framewise_displacement"]
-            fd.fillna(value=0., inplace=True)
+            fd.fillna(value=0.0, inplace=True)
 
             vals["fd_mean"] = float(fd.mean())
 
@@ -121,8 +126,12 @@ class UpdateVals(IOBase):
 
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
-            is_noise_component = [c["MotionNoise"] is True for c in aroma_metadata.values()]
-            vals["aroma_noise_frac"] = float(np.array(is_noise_component).astype(float).mean())
+            is_noise_component = [
+                c["MotionNoise"] is True for c in aroma_metadata.values()
+            ]
+            vals["aroma_noise_frac"] = float(
+                np.array(is_noise_component).astype(float).mean()
+            )
 
         for field in self.fields:
             value = getattr(self.inputs, field, None)

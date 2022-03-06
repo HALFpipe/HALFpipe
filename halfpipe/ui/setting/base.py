@@ -2,20 +2,20 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from ..components import (
-    SpacerView,
-    TextView,
-    TextInputView,
-    TextElement,
-    MultiMultipleChoiceInputView,
-)
 from inflection import humanize, underscore
 
-from ..step import Step
-from ..pattern import entity_display_aliases
-from ...model import SettingSchema, entities, FilterSchema
-from ..utils import forbidden_chars, entity_colors
+from ...model import FilterSchema, SettingSchema, entities
 from ...utils.format import format_like_bids
+from ..components import (
+    MultiMultipleChoiceInputView,
+    SpacerView,
+    TextElement,
+    TextInputView,
+    TextView,
+)
+from ..pattern import entity_display_aliases
+from ..step import Step
+from ..utils import entity_colors, forbidden_chars
 
 
 def feature_namefun(ctx):
@@ -25,7 +25,9 @@ def feature_namefun(ctx):
     return name
 
 
-def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namefun, noun="setting"):
+def get_setting_init_steps(
+    next_step_type, settingdict={}, namefun=feature_namefun, noun="setting"
+):
     class SettingFilterStep(Step):
         def _format_tag(self, tag):
             return f'"{tag}"'
@@ -77,7 +79,9 @@ def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namef
                 self.should_run = True
                 self._append_view(TextView("Specify images to use"))
 
-                self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)
+                self.input_view = MultiMultipleChoiceInputView(
+                    options, values, checked=values
+                )
 
                 self._append_view(self.input_view)
                 self._append_view(SpacerView(1))
@@ -150,7 +154,8 @@ def get_setting_init_steps(next_step_type, settingdict={}, namefun=feature_namef
                     index += 1
 
                 self.input_view = TextInputView(
-                    text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
+                    text=suggestion,
+                    isokfun=lambda text: forbidden_chars.search(text) is None,
                 )
 
                 self._append_view(self.input_view)

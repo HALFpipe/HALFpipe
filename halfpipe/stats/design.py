@@ -2,14 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from itertools import product
 from collections import OrderedDict
+from itertools import product
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
-import numpy as np
-from patsy.desc import ModelDesc, Term  # separate imports as to not confuse type checker
+from patsy.desc import (  # separate imports as to not confuse type checker
+    ModelDesc,
+    Term,
+)
 from patsy.highlevel import dmatrix
 from patsy.user_util import LookupFactor
 
@@ -29,8 +32,7 @@ def _check_multicollinearity(matrix):
     rank = np.linalg.matrix_rank(matrix)
 
     logger.info(
-        f"max_singular={max_singular} min_singular={min_singular} "
-        f"rank={rank}"
+        f"max_singular={max_singular} min_singular={min_singular} " f"rank={rank}"
     )
 
     if min_singular == 0:
@@ -89,11 +91,7 @@ def _prepare_data_frame(
 
     # merge with only known columns
     data_frame = pd.merge(
-        categorical,
-        continuous,
-        how="outer",
-        left_index=True,
-        right_index=True
+        categorical, continuous, how="outer", left_index=True, right_index=True
     )
 
     # maintain order
@@ -146,7 +144,9 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
                 )
 
             contrasts.extend(tcontrasts)  # add t contrasts to the model
-            contrasts.append((contrast_name, "F", tcontrasts))  # then add the f contrast
+            contrasts.append(
+                (contrast_name, "F", tcontrasts)
+            )  # then add the f contrast
 
             contrast_names.append(contrast_name)  # we only care about the f contrast
 
@@ -156,7 +156,7 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
 
 
 def intercept_only_design(
-    n: int
+    n: int,
 ) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
     return (
         {"intercept": [1.0] * n},
@@ -167,7 +167,10 @@ def intercept_only_design(
 
 
 def group_design(
-    spreadsheet: Path, contrastdicts: list[dict], variabledicts: list[dict], subjects: list[str]
+    spreadsheet: Path,
+    contrastdicts: list[dict],
+    variabledicts: list[dict],
+    subjects: list[str],
 ) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
 
     dataframe = _prepare_data_frame(spreadsheet, variabledicts, subjects)
@@ -190,9 +193,7 @@ def group_design(
 
     # prepare lsmeans
     unique_values_categorical = [
-        (0.0,)
-        if is_numeric_dtype(dataframe[f])
-        else dataframe[f].unique()
+        (0.0,) if is_numeric_dtype(dataframe[f]) else dataframe[f].unique()
         for f in dataframe.columns
     ]
     grid = pd.DataFrame(

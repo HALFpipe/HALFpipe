@@ -2,9 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from ..step import YesNoStep
 from ..model import ModelsStep
 from ..setting import get_setting_init_steps, get_setting_vals_steps
+from ..step import YesNoStep
 
 next_step_type = ModelsStep
 
@@ -15,15 +15,14 @@ class AddAnotherImageOutputStep(YesNoStep):
 
 
 ImageOutputSettingValsStep = get_setting_vals_steps(
-    AddAnotherImageOutputStep,
-    noun="image"
+    AddAnotherImageOutputStep, noun="image"
 )
 
 ImageOutputSettingInitStep = get_setting_init_steps(
     ImageOutputSettingValsStep,
     settingdict={"output_image": True},
     namefun=None,
-    noun="image"
+    noun="image",
 )
 
 AddAnotherImageOutputStep.yes_step_type = ImageOutputSettingInitStep

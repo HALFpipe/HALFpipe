@@ -2,39 +2,39 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional, Dict
-
 from os import getenv
 from pathlib import Path
+from typing import IO
 
 default_resource_dir = Path.home() / ".cache" / "halfpipe"
-resource_dir = Path(
-    getenv("HALFPIPE_RESOURCE_DIR", str(default_resource_dir))
-)
+resource_dir = Path(getenv("HALFPIPE_RESOURCE_DIR", str(default_resource_dir)))
 resource_dir.mkdir(exist_ok=True, parents=True)
 
-online_resources: Dict[str, str] = dict([
-    (
-        "index.html",
-        "https://github.com/HALFpipe/QualityCheck/releases/download/0.3.0/index.html",
-    ),
-    (
-        "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
-        "https://api.figshare.com/v2/file/download/5534327",
-    ),
-    (
-        "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5",
-        "https://api.figshare.com/v2/file/download/5534330",
-    ),
-    (
-        "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz",
-        "https://api.figshare.com/v2/file/download/22447958",
-    ),
-])
+online_resources: dict[str, str] = dict(
+    [
+        (
+            "index.html",
+            "https://github.com/HALFpipe/QualityCheck/releases/download/0.3.0/index.html",
+        ),
+        (
+            "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
+            "https://api.figshare.com/v2/file/download/5534327",
+        ),
+        (
+            "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5",
+            "https://api.figshare.com/v2/file/download/5534330",
+        ),
+        (
+            "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz",
+            "https://api.figshare.com/v2/file/download/22447958",
+        ),
+    ]
+)
 
 
 def urllib_download(url: str, target: str):
     from urllib.request import urlretrieve
+
     from tqdm import tqdm
 
     class TqdmUpTo(tqdm):
@@ -47,24 +47,25 @@ def urllib_download(url: str, target: str):
         unit_scale=True,
         unit_divisor=1024,
         miniters=1,
-        desc=url.split('/')[-1]
+        desc=url.split("/")[-1],
     ) as t:
         urlretrieve(url, filename=target, reporthook=t.update_to)
 
 
-def download(url: str, target: Optional[str] = None) -> Optional[str]:
+def download(url: str, target: str | Path | None = None) -> str | None:
+    import io
+
     import requests
     from tqdm import tqdm
-    import io
 
     if not url.startswith("http"):
         assert isinstance(target, (str, Path))
-        return urllib_download(url, target)
+        return urllib_download(url, str(target))
 
     if target is not None:
-        fp = open(target, "wb")
+        file_handle: IO = open(target, "wb")
     else:
-        fp = io.BytesIO()
+        file_handle = io.BytesIO()
 
     print(f"Downloading {url}")
 
@@ -77,26 +78,26 @@ def download(url: str, target: Optional[str] = None) -> Optional[str]:
         for block in rq.iter_content(block_size):
             if block:  # filter out keep-alive new chunks
                 t.update(len(block))
-                fp.write(block)
+                file_handle.write(block)
 
     res = None
-    if isinstance(fp, io.BytesIO):
-        res = fp.getvalue().decode()
+    if isinstance(file_handle, io.BytesIO):
+        res = file_handle.getvalue().decode()
 
     t.close()
-    fp.close()
+    file_handle.close()
 
     return res
 
 
-def get(filename=None) -> str:
-    assert filename in online_resources, f"Resource {filename} not found"
+def get(file_name: str | Path) -> str:
+    assert file_name in online_resources, f"Resource {file_name} not found"
 
-    filepath = resource_dir / filename
-    if filepath.exists():
-        return filepath
+    file_path = resource_dir / file_name
+    if file_path.exists():
+        return str(file_path)
 
-    resource = online_resources[filename]
+    resource = online_resources[str(file_name)]
 
     if isinstance(resource, tuple):
         import json
@@ -109,17 +110,18 @@ def get(filename=None) -> str:
             accval = accval[key]
         resource = accval
 
-    download(resource, target=filepath)
+    download(resource, target=file_path)
 
-    return str(filepath)
+    return str(file_path)
 
 
 if __name__ == "__main__":
     from templateflow import api
+
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
         paths = api.get(space, atlas=None, resolution=[1, 2])
         assert isinstance(paths, list)
         assert len(paths) > 0
-    for filename in online_resources.keys():
-        get(filename=filename)
+    for file_name in online_resources.keys():
+        get(file_name)

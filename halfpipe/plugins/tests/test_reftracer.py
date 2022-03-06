@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
-
-from typing import Any
-
-import pytest
 
 import os
 from pathlib import Path
+from typing import Any
 
 from ..reftracer import PathReferenceTracer
 
@@ -36,11 +31,9 @@ def test_PathReferenceTracer(tmp_path):
     def make_node(name):
         return pe.Node(
             interface=niu.Function(
-                function=add,
-                input_names=["a", "b"],
-                output_names=["c"]
+                function=add, input_names=["a", "b"], output_names=["c"]
             ),
-            name=name
+            name=name,
         )
 
     x = make_node("x")
@@ -136,9 +129,9 @@ def select(a, b):
 
 
 def test_PathReferenceTracer_indirect_refs(tmp_path):
-    from nipype import config
     import nipype.interfaces.utility as niu
     import nipype.pipeline.engine as pe
+    from nipype import config
 
     os.chdir(str(tmp_path))
 
@@ -149,33 +142,27 @@ def test_PathReferenceTracer_indirect_refs(tmp_path):
 
     x = pe.Node(
         interface=niu.Function(
-            function=totxt,
-            input_names=["a", "b"],
-            output_names=["c", "d"]
+            function=totxt, input_names=["a", "b"], output_names=["c", "d"]
         ),
-        name="x"
+        name="x",
     )
     x.inputs.a = 1
     x.inputs.b = 2
 
     y = pe.Node(
         interface=niu.Function(
-            function=select,
-            input_names=["a", "b"],
-            output_names=["c"]
+            function=select, input_names=["a", "b"], output_names=["c"]
         ),
-        name="y"
+        name="y",
     )
     wf.connect(x, "c", y, "a")
     wf.connect(x, "d", y, "b")
 
     z = pe.Node(
         interface=niu.Function(
-            function=select,
-            input_names=["a", "b"],
-            output_names=["c"]
+            function=select, input_names=["a", "b"], output_names=["c"]
         ),
-        name="z"
+        name="z",
     )
     wf.connect(y, "c", z, "a")
     wf.connect(y, "c", z, "b")

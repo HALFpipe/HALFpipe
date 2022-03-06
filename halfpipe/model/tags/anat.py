@@ -6,7 +6,7 @@
 
 """
 
-from .base import ScanTagsSchema, AcqTagsSchema
+from .base import AcqTagsSchema, ScanTagsSchema
 
 
 class AnatTagsSchema(ScanTagsSchema, AcqTagsSchema):

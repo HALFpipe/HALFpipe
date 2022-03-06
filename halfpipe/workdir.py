@@ -2,13 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Union
-
 from pathlib import Path
+from typing import Union
 from uuid import uuid4
 
-from .logging import logging_context
 from .hooks import run_hooks_from_dir
+from .logging import logging_context
 from .utils.path import resolve
 
 
@@ -17,6 +16,7 @@ def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) ->
 
     if fs_root is None:
         from .ui.components.config import Config as UIConfig
+
         fs_root = UIConfig.fs_root
 
     fs_root = str(fs_root)

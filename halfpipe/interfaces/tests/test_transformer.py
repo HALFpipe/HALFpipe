@@ -26,9 +26,7 @@ def test_transformer_nii(tmp_path):
     n_volumes = 10
 
     test_array = np.random.rand(n_voxels, n_volumes)
-    test_img_data = np.zeros(
-        (*ref_mask_img.shape, n_volumes), dtype=float
-    )
+    test_img_data = np.zeros((*ref_mask_img.shape, n_volumes), dtype=float)
     test_img_data[ref_mask, :] = test_array
 
     img = new_img_like(ref_mask_img, test_img_data, copy_header=True)

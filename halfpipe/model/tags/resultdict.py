@@ -10,8 +10,8 @@ from collections import OrderedDict
 
 from marshmallow import Schema, ValidationError, fields
 
-from .func import FuncTagsSchema
 from ...utils.ops import ravel
+from .func import FuncTagsSchema
 
 
 def validate_tags(v):

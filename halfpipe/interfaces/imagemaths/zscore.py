@@ -8,7 +8,6 @@ from ..transformer import Transformer
 
 
 class ZScore(Transformer):
-
     def _transform(self, array):
         mean = np.nanmean(array)
         std = np.nanstd(array)

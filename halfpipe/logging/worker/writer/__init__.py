@@ -6,5 +6,4 @@ from .error import ReportErrorWriter
 from .file import FileWriter
 from .print import PrintWriter
 
-
 __all__ = ["ReportErrorWriter", "PrintWriter", "FileWriter"]

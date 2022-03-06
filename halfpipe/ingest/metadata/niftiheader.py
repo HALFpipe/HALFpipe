@@ -2,12 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Optional, Tuple, Dict
-
 import re
+from typing import Dict, Optional, Tuple
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 import pint
 
 from ...utils import logger
@@ -85,7 +84,9 @@ class NiftiheaderLoader:
         try:
             img = nib.load(nifti_file, mmap=False, keep_file_open=False)
         except Exception as e:
-            logger.warning(f'Caught error loading file "{nifti_file}"', e, exc_info=True)
+            logger.warning(
+                f'Caught error loading file "{nifti_file}"', e, exc_info=True
+            )
             return None, None
 
         header = img.header.copy()
@@ -93,7 +94,11 @@ class NiftiheaderLoader:
         try:
             descrip_dict = parse_descrip(header)
         except Exception as e:
-            logger.info(f'Could not parse nii file descrip for "{nifti_file:s}: %s"', e, exc_info=True)
+            logger.info(
+                f'Could not parse nii file descrip for "{nifti_file:s}: %s"',
+                e,
+                exc_info=True,
+            )
             descrip_dict = dict()
 
         cls.cache[nifti_file] = header, descrip_dict

@@ -6,10 +6,10 @@
 
 """
 
-from .base import __all__ as BaseTagsSchemas
 from .anat import __all__ as AnatTagsSchemas
-from .func import __all__ as FuncTagsSchemas
+from .base import __all__ as BaseTagsSchemas
 from .fmap import __all__ as FmapTagsSchemas
+from .func import __all__ as FuncTagsSchemas
 from .ref import __all__ as RefTagsSchemas
 from .resultdict import ResultdictTagsSchema, resultdict_entities
 

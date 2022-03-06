@@ -9,7 +9,7 @@
 import curses
 import sys
 
-esc = u"\u001b["
+esc = "\u001b["
 hide = f"{esc}?25l"
 show = f"{esc}?25h"
 

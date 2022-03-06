@@ -2,18 +2,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
 
 from ...interfaces.grand_mean_scaling import GrandMeanScaling
 from ..memory import MemoryCalculator
 
 
 def init_grand_mean_scaling_wf(
-        mean: float | None = None,
-        memcalc: MemoryCalculator = MemoryCalculator.default(),
-        name: str | None = None,
-        suffix: str | None = None,
+    mean: float | None = None,
+    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    name: str | None = None,
+    suffix: str | None = None,
 ):
 
     if name is None:
@@ -28,9 +28,12 @@ def init_grand_mean_scaling_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["files", "mask", "mean", "vals"]), name="inputnode",
+        niu.IdentityInterface(fields=["files", "mask", "mean", "vals"]),
+        name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode"
+    )
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")

@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
 
-from pathlib import Path
-import pytest
-
-from math import isclose
 import os
+from math import isclose
+from pathlib import Path
 
 import nipype.pipeline.engine as pe
+import pytest
 from nipype.interfaces import afni
 
-from ..smoothing import init_smoothing_wf
-
-from ...tests.helpers import run_workflow
-from ....tests.resource import setup as setup_test_resources
 from ....resource import get as get_resource
+from ....tests.resource import setup as setup_test_resources
+from ...tests.helpers import run_workflow
+from ..smoothing import init_smoothing_wf
 
 
 def volume_smoothness(image_file, mask_file):
@@ -86,9 +82,7 @@ def test_smoothing_surface(tmp_path, target_fwhm):
 
     setup_test_resources()
 
-    in_file = get_resource(
-        "sub-50005_task-rest_Atlas_s0.dtseries.nii"
-    )
+    in_file = get_resource("sub-50005_task-rest_Atlas_s0.dtseries.nii")
 
     wf = init_smoothing_wf(target_fwhm)
     wf.base_dir = tmp_path

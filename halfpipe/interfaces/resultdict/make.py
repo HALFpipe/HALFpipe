@@ -5,18 +5,14 @@
 import re
 from collections import defaultdict
 
-from nipype.interfaces.base import (
-    traits,
-    isdefined,
-    DynamicTraitedSpec,
-)
-from nipype.interfaces.io import add_traits, IOBase
+from nipype.interfaces.base import DynamicTraitedSpec, isdefined, traits
+from nipype.interfaces.io import IOBase, add_traits
 
-from .base import ResultdictsOutputSpec
 from ...model import ResultdictSchema
 from ...model.utils import get_schema_entities
-from ...utils.ops import ravel
 from ...utils.copy import deepcopy
+from ...utils.ops import ravel
+from .base import ResultdictsOutputSpec
 
 resultdict_schema = ResultdictSchema()
 resultdict_entities = set(get_schema_entities(resultdict_schema))
@@ -47,7 +43,8 @@ class MakeResultdicts(IOBase):
     ):
         super(MakeResultdicts, self).__init__(**inputs)
         add_traits(
-            self.inputs, [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys]
+            self.inputs,
+            [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys],
         )
         self._dictkeys = dictkeys
         self._keys = {
@@ -70,7 +67,6 @@ class MakeResultdicts(IOBase):
             (fieldname, None, getattr(self.inputs, fieldname))
             for fieldname in self._dictkeys
             if isdefined(getattr(self.inputs, fieldname))
-
         ]
         inputs.extend(
             [

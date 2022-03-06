@@ -2,20 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
 
-from ...interfaces.utility.file_type import SplitByFileType
 from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
-
+from ...interfaces.utility.file_type import SplitByFileType
 from ..memory import MemoryCalculator
 
 
 def init_smoothing_wf(
-        fwhm: float | None = None,
-        memcalc: MemoryCalculator = MemoryCalculator.default(),
-        name: str | None = None,
-        suffix: str | None = None
+    fwhm: float | None = None,
+    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    name: str | None = None,
+    suffix: str | None = None,
 ):
     """
     Smooths a volume within a mask while correcting for the mask edge
@@ -31,9 +30,13 @@ def init_smoothing_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        interface=niu.IdentityInterface(fields=["files", "mask", "vals", "fwhm"]), name="inputnode",
+        interface=niu.IdentityInterface(fields=["files", "mask", "vals", "fwhm"]),
+        name="inputnode",
     )
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
+    outputnode = pe.Node(
+        interface=niu.IdentityInterface(fields=["files", "mask", "vals"]),
+        name="outputnode",
+    )
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
@@ -54,9 +57,7 @@ def init_smoothing_wf(
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
-    merge = pe.Node(
-        niu.Merge(2), name="merge"
-    )
+    merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(smooth, "out_file", merge, "in1")
     workflow.connect(split_by_file_type, "tsv_files", merge, "in2")
 

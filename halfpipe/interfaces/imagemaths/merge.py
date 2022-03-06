@@ -2,21 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
 from os.path import commonprefix
+from pathlib import Path
 
-import numpy as np
 import nibabel as nib
-
+import numpy as np
 from nilearn.image import new_img_like
-
-from nipype.interfaces.base import (
-    SimpleInterface,
-    TraitedSpec,
-    traits,
-    isdefined,
-    File
-)
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined, traits
 
 from ...utils.image import nifti_dim
 
@@ -24,9 +16,7 @@ dimensions = ["x", "y", "z", "t"]
 
 
 def _merge_fname(in_files):
-    prefix = commonprefix([
-        Path(f).name for f in in_files
-    ])
+    prefix = commonprefix([Path(f).name for f in in_files])
     if len(prefix) > 0:
         prefix += "_"
 
@@ -95,7 +85,9 @@ class MergeInputSpec(TraitedSpec):
     in_files = traits.List(
         File(desc="Image file(s) to resample", exists=True), mandatory=True
     )
-    dimension = traits.Enum(*dimensions, desc="dimension along which to merge", mandatory=True)
+    dimension = traits.Enum(
+        *dimensions, desc="dimension along which to merge", mandatory=True
+    )
 
 
 class MergeOutputSpec(TraitedSpec):

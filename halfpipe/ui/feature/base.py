@@ -2,28 +2,20 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from ..components import (
-    TextView,
-    SpacerView,
-    TextInputView,
-    SingleChoiceInputView,
-)
-
 from ...model import Feature
-
-from ..utils import forbidden_chars
-
+from ..components import SingleChoiceInputView, SpacerView, TextInputView, TextView
 from ..step import Step, YesNoStep
-from .task import TaskBasedStep
-from .rest import (
-    SeedBasedConnectivityStep,
-    DualRegressionStep,
-    AtlasBasedConnectivityStep,
-    ReHoStep,
-    FALFFStep,
-)
-from .loop import AddAnotherFeatureStep
+from ..utils import forbidden_chars
 from .imageoutput import ImageOutputStep
+from .loop import AddAnotherFeatureStep
+from .rest import (
+    AtlasBasedConnectivityStep,
+    DualRegressionStep,
+    FALFFStep,
+    ReHoStep,
+    SeedBasedConnectivityStep,
+)
+from .task import TaskBasedStep
 
 
 class FeatureNameStep(Step):
@@ -93,7 +85,9 @@ class FeatureTypeStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the feature type"))
 
-        self.input_view = SingleChoiceInputView(list(self.options.keys()), isVertical=True)
+        self.input_view = SingleChoiceInputView(
+            list(self.options.keys()), isVertical=True
+        )
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))

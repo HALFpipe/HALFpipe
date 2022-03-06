@@ -6,8 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, File
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, traits
 
 from ...ingest.design import parse_design
 from ...stats.design import group_design, intercept_only_design
@@ -34,7 +33,7 @@ class DesignOutputSpec(TraitedSpec):
 
 
 class GroupDesign(SimpleInterface):
-    """ interface to construct a group design """
+    """interface to construct a group design"""
 
     input_spec = GroupDesignInputSpec
     output_spec = DesignOutputSpec
@@ -59,7 +58,7 @@ class InterceptOnlyDesignInputSpec(TraitedSpec):
 
 
 class InterceptOnlyDesign(SimpleInterface):
-    """ interface to construct a group design """
+    """interface to construct a group design"""
 
     input_spec = InterceptOnlyDesignInputSpec
     output_spec = DesignOutputSpec
@@ -84,14 +83,24 @@ class DesignSpec(TraitedSpec):
     )
     contrasts = traits.List(
         traits.Either(
-            traits.Tuple(traits.Str, traits.Enum("T"), traits.List(traits.Str),
-                         traits.List(traits.Float)),
-            traits.Tuple(traits.Str, traits.Enum("F"),
-                         traits.List(
-                             traits.Tuple(traits.Str, traits.Enum("T"),
-                                          traits.List(traits.Str),
-                                          traits.List(traits.Float)),
-            ))
+            traits.Tuple(
+                traits.Str,
+                traits.Enum("T"),
+                traits.List(traits.Str),
+                traits.List(traits.Float),
+            ),
+            traits.Tuple(
+                traits.Str,
+                traits.Enum("F"),
+                traits.List(
+                    traits.Tuple(
+                        traits.Str,
+                        traits.Enum("T"),
+                        traits.List(traits.Str),
+                        traits.List(traits.Float),
+                    ),
+                ),
+            ),
         ),
         mandatory=True,
     )
@@ -111,7 +120,9 @@ class MakeDesignTsv(SimpleInterface):
     output_spec = MakeDesignTsvOutputSpec
 
     def _run_interface(self, runtime):
-        design_matrix, contrast_matrices = parse_design(self.inputs.regressors, self.inputs.contrasts)
+        design_matrix, contrast_matrices = parse_design(
+            self.inputs.regressors, self.inputs.contrasts
+        )
 
         design_matrix.index = self.inputs.row_index
 
@@ -133,7 +144,11 @@ class MakeDesignTsv(SimpleInterface):
 
         self._results["contrasts_tsv"] = Path.cwd() / "contrasts.tsv"
         contrast_data_frame.to_csv(
-            self._results["contrasts_tsv"], sep="\t", index=True, na_rep="n/a", header=True
+            self._results["contrasts_tsv"],
+            sep="\t",
+            index=True,
+            na_rep="n/a",
+            header=True,
         )
 
         return runtime

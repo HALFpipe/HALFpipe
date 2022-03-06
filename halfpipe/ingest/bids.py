@@ -2,25 +2,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
-from os.path import relpath
-from shutil import rmtree
 import json
 from collections import OrderedDict
+from os.path import relpath
+from pathlib import Path
+from shutil import rmtree
 from typing import overload
-
-from inflection import camelize
-
-from .glob import _rlistdir
-from ..model.file import FileSchema
-from ..model.tags import entity_longnames, entities
-from ..model.utils import get_nested_schema_field_names, get_type_schema
-from ..utils.path import split_ext
-from ..utils.format import format_like_bids
-from .metadata.direction import canonicalize_direction_code
 
 from bids.layout import Config
 from bids.layout.writing import build_path
+from inflection import camelize
+
+from ..model.file import FileSchema
+from ..model.tags import entities, entity_longnames
+from ..model.utils import get_nested_schema_field_names, get_type_schema
+from ..utils.format import format_like_bids
+from ..utils.path import split_ext
+from .glob import _rlistdir
+from .metadata.direction import canonicalize_direction_code
 
 bids_config = Config.load("bids")
 bids_version = "1.4.0"
@@ -68,10 +67,7 @@ def get_file_metadata(database, file_path) -> dict:
 def get_bids_metadata(database, file_path) -> dict:
     metadata = get_file_metadata(database, file_path)
 
-    return {
-        camelize(key): value
-        for key, value in metadata.items()
-    }
+    return {camelize(key): value for key, value in metadata.items()}
 
 
 class BidsDatabase:
@@ -154,7 +150,9 @@ class BidsDatabase:
     def get_tag_value(self, bids_path: str, entity: str) -> str | None:
         ...
 
-    def get_tag_value(self, bids_path: list[str] | str, entity: str) -> str | list | None:
+    def get_tag_value(
+        self, bids_path: list[str] | str, entity: str
+    ) -> str | list | None:
         if isinstance(bids_path, (list, tuple)):  # vectorize
             return [self.get_tag_value(b, entity) for b in bids_path]
 
@@ -209,7 +207,9 @@ class BidsDatabase:
 
             if metadata is not None and len(metadata) > 0:
                 basename, _ = split_ext(bids_path)
-                sidecar_path = Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
+                sidecar_path = (
+                    Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
+                )
 
                 bids_paths.add(sidecar_path)
 
@@ -230,9 +230,7 @@ class BidsDatabase:
 
             # use relative paths to limit parents to bidsdir
             files_to_keep.add(relative_bids_path)
-            files_to_keep.update(
-                map(str, Path(relative_bids_path).parents)
-            )
+            files_to_keep.update(map(str, Path(relative_bids_path).parents))
 
         for file_path in _rlistdir(bidsdir, False):
             relative_file_path = relpath(file_path, start=bidsdir)
