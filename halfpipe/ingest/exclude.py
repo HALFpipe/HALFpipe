@@ -81,17 +81,16 @@ class QCDecisionMaker:
 
         rating: Rating = max(self.iter_ratings(relevant_tags))
 
-        match rating:
-            case Rating.BAD:
-                return Decision.EXCLUDE
-            case Rating.GOOD:
-                return Decision.INCLUDE
-            case Rating.NONE | Rating.UNCERTAIN:
-                logger.warning(
-                    f"Will include observation ({format_tags(relevant_tags)}) for analysis "
-                    f'even though quality rating is "{rating.name}"'
-                )
+        if rating == Rating.BAD:
+            return Decision.EXCLUDE
+        elif rating == Rating.GOOD:
+            return Decision.INCLUDE
+        elif rating == Rating.NONE or rating == Rating.UNCERTAIN:
+            logger.warning(
+                f"Will include observation ({format_tags(relevant_tags)}) for analysis "
+                f'even though quality rating is "{rating.name}"'
+            )
 
-                return Decision.INCLUDE
-
-        raise ValueError()
+            return Decision.INCLUDE
+        else:
+            raise ValueError()

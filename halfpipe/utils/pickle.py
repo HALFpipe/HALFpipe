@@ -63,15 +63,14 @@ def load_pickle(file_path: str | Path):
 
     _, file_extension = split_ext(file_path)
 
-    match file_extension:
-        case ".pkl":
-            file_open: Callable[[Path, Literal["rb"]], BufferedIOBase] = open
-        case ".pklz":
-            file_open = gzip.open
-        case ".pickle.xz":
-            file_open = lzma.open
-        case _:
-            raise ValueError()
+    if file_extension == ".pkl":
+        file_open: Callable[[Path, Literal["rb"]], BufferedIOBase] = open
+    elif file_extension == ".pklz":
+        file_open = gzip.open
+    elif file_extension == ".pickle.xz":
+        file_open = lzma.open
+    else:
+        raise ValueError()
 
     with chdir(file_path.parent):
         with file_open(file_path, "rb") as file_handle:
