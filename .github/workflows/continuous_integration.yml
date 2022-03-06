@@ -79,30 +79,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          VENV=/home/runner/work/_temp/_github_workflow/venv
-
-          mkdir -p ${VENV}
-
-          python -m venv ${VENV}
-          ${VENV}/bin/pip install \
-            --requirement requirements.txt  \
-            --requirement requirements-test.txt
-
       - name: Lint
         uses: github/super-linter/slim@v4
         env:
-          PYTHONPATH: /github/workflow/venv/lib/python3.10/site-packages
-
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LOG_LEVEL: DEBUG
+          LOG_LEVEL: WARN
 
           DEFAULT_BRANCH: main
           LINTER_RULES_PATH: .
