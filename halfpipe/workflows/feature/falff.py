@@ -2,20 +2,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
+from pathlib import Path
+
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
 from nipype.interfaces import afni
 
 from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
-from ...interfaces.resultdict.make import MakeResultdicts
-from ...interfaces.resultdict.datasink import ResultdictDatasink
 from ...interfaces.imagemaths.zscore import ZScore
-
-from ..memory import MemoryCalculator
+from ...interfaces.resultdict.datasink import ResultdictDatasink
+from ...interfaces.resultdict.make import MakeResultdicts
 from ...utils.format import format_workflow
+from ..memory import MemoryCalculator
 
 
-def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
+def init_falff_wf(
+    workdir: str | Path, feature=None, fwhm=None, memcalc=MemoryCalculator.default()
+):
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
     fractional ALFF maps
@@ -42,12 +45,18 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]), name="inputnode",
+        niu.IdentityInterface(
+            fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]
+        ),
+        name="inputnode",
     )
     unfiltered_inputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold", "mask"]), name="unfiltered_inputnode",
+        niu.IdentityInterface(fields=["bold", "mask"]),
+        name="unfiltered_inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
@@ -56,7 +65,8 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]), name="make_resultdicts"
+        MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]),
+        name="make_resultdicts",
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
@@ -74,7 +84,9 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     # standard deviation of the filtered image
-    stddev_filtered = pe.Node(afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb)
+    stddev_filtered = pe.Node(
+        afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb
+    )
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
     workflow.connect(inputnode, "bold", stddev_filtered, "in_file")
@@ -109,7 +121,9 @@ def init_falff_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculato
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
-    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore", mem_gb=memcalc.volume_std_gb)
+    zscore = pe.MapNode(
+        ZScore(), iterfield="in_file", name="zscore", mem_gb=memcalc.volume_std_gb
+    )
     workflow.connect(smooth, "out_file", zscore, "in_file")
     workflow.connect(inputnode, "mask", zscore, "mask")
 

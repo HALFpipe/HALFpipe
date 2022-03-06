@@ -6,11 +6,11 @@ from random import seed
 
 import numpy as np
 import pandas as pd
-
 from nipype.interfaces import afni
 
-from ..afni import ToAFNI, FromAFNI
 from ....ingest.spreadsheet import read_spreadsheet
+from ..afni import FromAFNI, ToAFNI
+
 
 def test_afni(tmp_path):
     seed(a=0x5E6128C4)

@@ -2,17 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, Mapping, Union, List, Dict
-
 import os
-from pprint import pformat
-from pathlib import Path
-
 from glob import glob
 from math import ceil
+from pathlib import Path
+from pprint import pformat
+from typing import Any, Dict, List, Mapping, Union
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
 from ..utils import logger
 from ..utils.path import resolve
@@ -48,7 +46,9 @@ def run_stage_workflow(opts):
 
         omp_nthreads_origin = "inferred"
 
-    logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
+    logger.info(
+        f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})"
+    )
 
     from ..workflows.base import init_workflow
     from ..workflows.execgraph import init_execgraph
@@ -106,6 +106,7 @@ def run_stage_run(opts):
 
     if opts.nipype_resource_monitor is True:
         import nipype
+
         nipype.config.enable_resource_monitor()
 
     plugin_args: Dict[str, Union[Path, bool, float]] = dict(
@@ -132,6 +133,7 @@ def run_stage_run(opts):
     runnername = f"{opts.nipype_run_plugin}Plugin"
 
     import nipype.pipeline.plugins as nip
+
     import halfpipe.plugins as ppp
 
     if hasattr(ppp, runnername):
@@ -145,7 +147,7 @@ def run_stage_run(opts):
     else:
         raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
 
-    logger.debug(f'Using plugin arguments\n{pformat(plugin_args)}')
+    logger.debug(f"Using plugin arguments\n{pformat(plugin_args)}")
 
     from ..workflows.execgraph import filter_subjects
 
@@ -178,9 +180,7 @@ def run_stage_run(opts):
 
     chunks_to_run: List[nx.DiGraph] = list()
     for index_array in index_arrays:
-        graph_list = [
-            graphs[subjects[i]] for i in index_array
-        ]
+        graph_list = [graphs[subjects[i]] for i in index_array]
         chunks_to_run.append(
             nx.compose_all(graph_list)
         )  # take len(index_array) subjects and compose
@@ -248,7 +248,7 @@ def run(opts, should_run):
         logger.log(
             25,
             'Option "--verbose" was not specified. Will not print detailed logs to the terminal. \n'
-            'Detailed logs information will only be available in the "log.txt" file in the working directory. '
+            'Detailed logs information will only be available in the "log.txt" file in the working directory. ',
         )
 
     logger.debug(f"debug={opts.debug}")
@@ -258,7 +258,9 @@ def run(opts, should_run):
         logger.info("Stage: spec-ui")
         run_stage_ui(opts)
 
-    assert opts.workdir is not None, 'Missing working directory. Please specify using "--workdir"'
+    assert (
+        opts.workdir is not None
+    ), 'Missing working directory. Please specify using "--workdir"'
     assert Path(opts.workdir).is_dir(), "Working directory does not exist"
 
     if opts.fs_license_file is not None:
@@ -266,9 +268,7 @@ def run(opts, should_run):
         if fs_license_file.is_file():
             os.environ["FS_LICENSE"] = str(fs_license_file)
     else:
-        license_files = list(glob(str(
-            Path(opts.workdir) / "*license*"
-        )))
+        license_files = list(glob(str(Path(opts.workdir) / "*license*")))
 
         if len(license_files) > 0:
             license_file = str(license_files[0])
@@ -293,10 +293,8 @@ def run(opts, should_run):
 
 
 def main():
-    from ..logging.base import (
-        setup_context as setup_logging_context,
-        teardown as teardown_logging
-    )
+    from ..logging.base import setup_context as setup_logging_context
+    from ..logging.base import teardown as teardown_logging
 
     opts = None
     pr = None
@@ -308,9 +306,11 @@ def main():
         setup_logging_context()
 
         from ..utils.pickle import patch_nipype_unpickler
+
         patch_nipype_unpickler()
 
         from .parser import parse_args
+
         opts, should_run = parse_args()
 
         debug = opts.debug
@@ -318,6 +318,7 @@ def main():
 
         if profile is True:
             from cProfile import Profile
+
             pr = Profile()
             pr.enable()
 
@@ -342,4 +343,5 @@ def main():
         # clean up orphan processes
 
         from ..utils.multiprocessing import terminate
+
         terminate()

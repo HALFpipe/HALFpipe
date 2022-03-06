@@ -2,31 +2,31 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import gc
+import multiprocessing as mp
+import os
+import shutil
+from concurrent.futures import ProcessPoolExecutor
+from threading import Thread
 from typing import Any, Dict
 
-import os
-import gc
-import shutil
-from threading import Thread
-import multiprocessing as mp
-from concurrent.futures import ProcessPoolExecutor
-
-from stackprinter import format_current_exception
+from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
+from stackprinter import format_current_exception
 
-from matplotlib import pyplot as plt
-
-from .reftracer import PathReferenceTracer
 from ..logging import logging_context
 from ..utils import logger
+from .reftracer import PathReferenceTracer
 
 
 def initializer(workdir, logging_args, plugin_args, host_env):
     from ..logging import setup as setup_logging
+
     setup_logging(**logging_args)
 
     from ..utils.pickle import patch_nipype_unpickler
+
     patch_nipype_unpickler()
 
     watchdog = plugin_args.get("watchdog", False)
@@ -38,6 +38,7 @@ def initializer(workdir, logging_args, plugin_args, host_env):
     resource_monitor = plugin_args.get("resource_monitor", False)
     if resource_monitor is True:
         import nipype
+
         nipype.config.enable_resource_monitor()
 
     os.environ.update(host_env)
@@ -97,7 +98,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         # Read in options or set defaults.
         self.processors = self.plugin_args.get("n_procs", mp.cpu_count())
         self.memory_gb = self.plugin_args.get(
-            "memory_gb", get_system_total_memory_gb() * 0.9,  # Allocate 90% of system memory
+            "memory_gb",
+            get_system_total_memory_gb() * 0.9,  # Allocate 90% of system memory
         )
         self.raise_insufficient = self.plugin_args.get("raise_insufficient", True)
 
@@ -186,17 +188,20 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._taskresult[result["taskid"]] = result
         except Exception as e:
             running_tasks = [
-                self.procs[jobid].fullname
-                for _, jobid in self.pending_tasks
+                self.procs[jobid].fullname for _, jobid in self.pending_tasks
             ]
-            logger.exception(f"Exception for {args} while running {running_tasks}", exc_info=e)
+            logger.exception(
+                f"Exception for {args} while running {running_tasks}", exc_info=e
+            )
 
     def _remove_node_dirs(self):
-        """Removes directories whose outputs have already been used up
-        """
+        """Removes directories whose outputs have already been used up"""
         if self._rt is not None:
             paths = [*self._rt.collect()]
             if len(paths) > 0:
-                logger.info("[node dependencies finished] removing\n" + "\n".join(map(str, paths)))
+                logger.info(
+                    "[node dependencies finished] removing\n"
+                    + "\n".join(map(str, paths))
+                )
                 for path in paths:
                     shutil.rmtree(path, ignore_errors=True)

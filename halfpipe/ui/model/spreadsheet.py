@@ -7,23 +7,22 @@
 """
 
 
-from ..components import (
-    TextView,
-    SpacerView,
-    MultiSingleChoiceInputView,
-    FileInputView,
-    TextElement,
-    SingleChoiceInputView,
-)
-
 import logging
 
 import pandas as pd
 
+from ...ingest.spreadsheet import read_spreadsheet
+from ...model import SpreadsheetFileSchema, VariableSchema
+from ..components import (
+    FileInputView,
+    MultiSingleChoiceInputView,
+    SingleChoiceInputView,
+    SpacerView,
+    TextElement,
+    TextView,
+)
 from ..step import Step
 from .filter import SubjectGroupFilterStep
-from ...model import VariableSchema, SpreadsheetFileSchema
-from ...ingest.spreadsheet import read_spreadsheet
 from .utils import format_column
 
 next_step_type = SubjectGroupFilterStep
@@ -59,10 +58,13 @@ class SpreadsheetColumnTypeStep(Step):
             self.input_view = MultiSingleChoiceInputView(options, values)
 
             suggestions = {
-                column: 1 if self.df[column].dtype == object else 0 for column in columns
+                column: 1 if self.df[column].dtype == object else 0
+                for column in columns
             }
 
-            self.input_view.selectedIndices = [suggestions[column] for column in columns]
+            self.input_view.selectedIndices = [
+                suggestions[column] for column in columns
+            ]
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -108,7 +110,10 @@ class SpreadsheetIdColumnStep(Step):
         self.should_run = True
         self.choice = None
 
-        if not hasattr(ctx.spec.files[-1], "metadata") or ctx.spec.files[-1].metadata is None:
+        if (
+            not hasattr(ctx.spec.files[-1], "metadata")
+            or ctx.spec.files[-1].metadata is None
+        ):
             ctx.spec.files[-1].metadata = dict()
 
         if ctx.spec.files[-1].metadata.get("variables") is None:
@@ -123,7 +128,9 @@ class SpreadsheetIdColumnStep(Step):
         if self.should_run:
             self._append_view(TextView("Specify the column containing subject names"))
 
-            already_used = set(v["name"] for v in ctx.spec.files[-1].metadata["variables"])
+            already_used = set(
+                v["name"] for v in ctx.spec.files[-1].metadata["variables"]
+            )
 
             df = read_spreadsheet(ctx.spec.files[-1].path)
             columns = [column for column in df if column not in already_used]
@@ -196,7 +203,9 @@ class AddSpreadsheetStep(Step):
             return next_step_type(self.app)(ctx)
         else:
             ctx.spec.files.append(
-                SpreadsheetFileSchema().load({"datatype": "spreadsheet", "path": self.filepath})
+                SpreadsheetFileSchema().load(
+                    {"datatype": "spreadsheet", "path": self.filepath}
+                )
             )
             return SpreadsheetIdColumnStep(self.app)(ctx)
 
@@ -214,7 +223,9 @@ class SpreadsheetSelectStep(Step):
         if filepaths is not None and len(filepaths) > 0:
             self.is_missing = False
 
-            self._append_view(TextView("Select the covariates/group data spreadsheet file"))
+            self._append_view(
+                TextView("Select the covariates/group data spreadsheet file")
+            )
 
             self.add_file_str = "Add spreadsheet file"
 

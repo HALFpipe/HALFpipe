@@ -5,6 +5,7 @@
 import os
 from contextlib import AbstractContextManager
 
+
 class chdir(AbstractContextManager):
     """
     Non thread-safe context manager to change the current working directory.

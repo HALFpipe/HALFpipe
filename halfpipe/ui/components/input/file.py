@@ -8,11 +8,11 @@
 import os
 from os import path as op
 
+from ..file import get_dir, resolve
 from ..keyboard import Key
 from ..view import CallableView
-from .text import TextInputView, common_chars
 from .choice import SingleChoiceInputView
-from ..file import get_dir, resolve
+from .text import TextInputView, common_chars
 
 
 class FileInputView(CallableView):
@@ -22,7 +22,9 @@ class FileInputView(CallableView):
             base_path, messagefun=messagefun, forbidden_chars="'\"'", maxlen=256
         )
         self.text_input_view.update = self.update
-        self.suggestion_view = SingleChoiceInputView([], isVertical=True, addBrackets=False)
+        self.suggestion_view = SingleChoiceInputView(
+            [], isVertical=True, addBrackets=False
+        )
         self.suggestion_view.update = self.update
 
         self.matching_files = []
@@ -110,7 +112,9 @@ class FileInputView(CallableView):
             self.text = None
             self.suggestion_view.set_options([])
             self.isActive = False
-        elif self.suggestion_view.isActive and self.suggestion_view.cur_index is not None:
+        elif (
+            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
+        ):
             if c == Key.Up and self.suggestion_view.cur_index == 0:
                 self.suggestion_view.offset = 0
                 self.suggestion_view.cur_index = None

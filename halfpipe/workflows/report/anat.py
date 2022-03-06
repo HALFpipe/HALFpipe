@@ -2,23 +2,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-
-from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
 from fmriprep import config
-from niworkflows.utils.spaces import SpatialReferences
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
+from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
 from niworkflows.interfaces.utility import KeySelect
+from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.report.imageplot import PlotRegistration
-from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
-
-from ..memory import MemoryCalculator
+from ...interfaces.resultdict.make import MakeResultdicts
 from ..constants import constants
+from ..memory import MemoryCalculator
 
 
-def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalculator.default()):
+def init_anat_report_wf(
+    workdir=None, name="anat_report_wf", memcalc=MemoryCalculator.default()
+):
     workflow = pe.Workflow(name=name)
 
     fmriprepreports = ["t1w_dseg_mask", "std_t1w"]
@@ -53,7 +53,9 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
 
     #
     make_resultdicts = pe.Node(
-        MakeResultdicts(reportkeys=["skull_strip_report", "t1_norm_rpt", *fmriprepreports]),
+        MakeResultdicts(
+            reportkeys=["skull_strip_report", "t1_norm_rpt", *fmriprepreports]
+        ),
         name="make_resultdicts",
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
@@ -72,7 +74,9 @@ def init_anat_report_wf(workdir=None, name="anat_report_wf", memcalc=MemoryCalcu
     skull_strip_report = pe.Node(SimpleShowMaskRPT(), name="skull_strip_report")
     workflow.connect(inputnode, "t1w_preproc", skull_strip_report, "background_file")
     workflow.connect(inputnode, "t1w_mask", skull_strip_report, "mask_file")
-    workflow.connect(skull_strip_report, "out_report", make_resultdicts, "skull_strip_report")
+    workflow.connect(
+        skull_strip_report, "out_report", make_resultdicts, "skull_strip_report"
+    )
 
     # T1 -> mni
     spaces = config.workflow.spaces

@@ -6,23 +6,18 @@
 
 """
 
-from typing import Optional, List, Dict, Type
+from typing import Dict, List, Optional, Type
 
+from ...model import FilterSchema, GroupFilterSchema
 from ..components import (
-    TextView,
-    SpacerView,
-    NumberInputView,
     MultiMultipleChoiceInputView,
+    NumberInputView,
+    SpacerView,
+    TextView,
 )
-
 from ..step import Step, YesNoStep
-from ...model import (
-    FilterSchema,
-    GroupFilterSchema,
-)
-
-from .loop import AddAnotherModelStep
 from .design import VariableSelectStep
+from .loop import AddAnotherModelStep
 from .utils import format_column
 
 
@@ -49,7 +44,10 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
             return True
 
         def next(self, ctx):
-            if not hasattr(ctx.spec.models[-1], "filters") or ctx.spec.models[-1].filters is None:
+            if (
+                not hasattr(ctx.spec.models[-1], "filters")
+                or ctx.spec.models[-1].filters is None
+            ):
                 ctx.spec.models[-1].filters = []
 
             filter_obj = FilterSchema().load(
@@ -71,8 +69,10 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
 
         def setup(self, ctx):
             fd_thres = ctx.spec.global_settings.get("fd_thres")
-            self.header_str = "Specify the maximum allowed percentage of frames " + \
-                f"above the framewise displacement threshold of {fd_thres:.1f} mm"
+            self.header_str = (
+                "Specify the maximum allowed percentage of frames "
+                + f"above the framewise displacement threshold of {fd_thres:.1f} mm"
+            )
             super(FdPercFilterStep, self).setup(ctx)
 
     class FdMeanFilterStep(BaseCutoffFilterStep):
@@ -98,7 +98,9 @@ class SubjectGroupFilterStep(Step):
         self.is_first_run = True
         self.should_run = False
 
-        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = ctx.database.metadata(
+            ctx.spec.models[-1].spreadsheet, "variables"
+        )
         self.variables = [
             variable.copy()
             for variable in self.variables
@@ -113,19 +115,17 @@ class SubjectGroupFilterStep(Step):
             self._append_view(TextView("Specify the subjects to use"))
             self._append_view(SpacerView(1))
 
-            instruction_str0 = (
-                "Select the subjects to include in this analysis by their categorical variables"
-            )
+            instruction_str0 = "Select the subjects to include in this analysis by their categorical variables"
             self._append_view(TextView(instruction_str0))
-            instruction_str1 = (
-                "For multiple categorical variables, the intersection of the groups will be used"
-            )
+            instruction_str1 = "For multiple categorical variables, the intersection of the groups will be used"
             self._append_view(TextView(instruction_str1))
 
             options = [format_column(variable["name"]) for variable in self.variables]
             values = [[*variable["levels"]] for variable in self.variables]  # make copy
 
-            self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)
+            self.input_view = MultiMultipleChoiceInputView(
+                options, values, checked=values
+            )
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -146,14 +146,19 @@ class SubjectGroupFilterStep(Step):
                     return True
 
     def next(self, ctx):
-        if not hasattr(ctx.spec.models[-1], "filters") or ctx.spec.models[-1].filters is None:
+        if (
+            not hasattr(ctx.spec.models[-1], "filters")
+            or ctx.spec.models[-1].filters is None
+        ):
             ctx.spec.models[-1].filters = []
 
         if len(self.variables) > 0:
             assert self.choice is not None
             for variable, checked in zip(self.variables, self.choice):
                 if not all(checked.values()):
-                    levels = [str(k) for k, is_selected in checked.items() if is_selected]
+                    levels = [
+                        str(k) for k, is_selected in checked.items() if is_selected
+                    ]
                     ctx.spec.models[-1].filters.append(
                         GroupFilterSchema().load(
                             {

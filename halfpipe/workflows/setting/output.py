@@ -2,14 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
+
+from ...interfaces.resultdict.datasink import ResultdictDatasink
+from ...interfaces.resultdict.make import MakeResultdicts
+from ...utils.format import format_workflow
 
 # from niworkflows.interfaces.plotting import ConfoundsCorrelationPlot
-
-from ...interfaces.resultdict.make import MakeResultdicts
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...utils.format import format_workflow
 
 
 def init_setting_output_wf(workdir: str | None = None, setting_name: str | None = None):
@@ -17,14 +17,21 @@ def init_setting_output_wf(workdir: str | None = None, setting_name: str | None 
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "confounds", "mask"]),
-        name="inputnode"
+        niu.IdentityInterface(
+            fields=["tags", "vals", "metadata", "bold", "confounds", "mask"]
+        ),
+        name="inputnode",
     )
 
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            imagekeys=["bold", "confounds_regressors", "brain_mask", "confoundcorr_bold"]
+            imagekeys=[
+                "bold",
+                "confounds_regressors",
+                "brain_mask",
+                "confoundcorr_bold",
+            ]
         ),
         name="make_resultdicts",
     )

@@ -1,7 +1,3 @@
 {
-    "ignore": [
-        "versioneer.py",
-        "halfpipe/_version.py"
-    ],
     "python.analysis.useLibraryCodeForTypes": true
 }

@@ -36,7 +36,7 @@ class Formatter(logging.Formatter):
 
     def formatException(self, exc_info):
         msg = stackprinter.format(exc_info)
-        msg_indented = '    ' + '\n    '.join(msg.split('\n')).strip()
+        msg_indented = "    " + "\n    ".join(msg.split("\n")).strip()
         return msg_indented
 
     def format(self, record):

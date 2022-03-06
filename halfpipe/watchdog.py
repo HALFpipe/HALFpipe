@@ -2,12 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import time
 import logging
-from stackprinter import format_thread
-from threading import main_thread, Thread
+import time
+from threading import Thread, main_thread
 
 from pympler import muppy, summary
+from stackprinter import format_thread
 
 logger = logging.getLogger("halfpipe.watchdog")
 
@@ -25,11 +25,7 @@ def init_watchdog(interval=60):
                 rows = summary.summarize(muppy.get_objects())
                 memtrace = "\n".join(summary.format_(rows))
 
-                logger.info(
-                    "Watchdog traceback:\n"
-                    f"{stacktrace}\n"
-                    f"{memtrace}"
-                )
+                logger.info("Watchdog traceback:\n" f"{stacktrace}\n" f"{memtrace}")
             except Exception as e:
                 logger.error("Error in watchdog", exc_info=e)
 

@@ -4,22 +4,19 @@
 """
 """
 
-import pytest
-
 import os
 from collections import OrderedDict
 
 import nibabel as nib
 import numpy as np
-
-from ..fit import fit
-from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
-
+import pytest
 from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
 
+from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
 from ...interfaces.imagemaths.merge import _merge, _merge_mask
 from ..design import group_design
+from ..fit import fit
 
 
 @pytest.mark.slow
@@ -152,10 +149,10 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
 
         if k not in frozenset(["var_cope"]):
             assert np.all(
-                np.abs(a0 - a1)[
-                    np.logical_not(np.isclose(a0, a1, rtol=1e-2))
-                ] < 25
+                np.abs(a0 - a1)[np.logical_not(np.isclose(a0, a1, rtol=1e-2))] < 25
             ), f"Difference in diverging voxels is too big for {k}"
 
             # mean error average needs to be below 0.05
-            assert float(np.abs(a0 - a1).mean()) < 5e-2, f"Too high mean error average for {k}"
+            assert (
+                float(np.abs(a0 - a1).mean()) < 5e-2
+            ), f"Too high mean error average for {k}"

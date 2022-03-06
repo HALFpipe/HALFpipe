@@ -8,15 +8,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ..ops import first_float, first_str, check_almost_equal
+from ..ops import check_almost_equal, first_float, first_str
 
 
 def test_first_float():
     assert first_float([0, 1, 2, 3]) == 0
     assert first_float(list(map(np.uint32, [0, 1, 2, 3]))) == 0
-    assert first_float([0., 1., 2., 3.]) == 0.
-    assert first_float(np.array([0., 1., 2., 3.])) == 0.
-    assert first_float(pd.Series([0., 1., 2., 3.])) == 0.
+    assert first_float([0.0, 1.0, 2.0, 3.0]) == 0.0
+    assert first_float(np.array([0.0, 1.0, 2.0, 3.0])) == 0.0
+    assert first_float(pd.Series([0.0, 1.0, 2.0, 3.0])) == 0.0
 
 
 def test_first_str():
@@ -26,7 +26,7 @@ def test_first_str():
 
 
 def test_check_almost_equal():
-    a: Any = 100000000001/100000000000
+    a: Any = 100000000001 / 100000000000
     b: Any = 1
 
     assert check_almost_equal(a, b) is True

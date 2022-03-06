@@ -2,12 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, OrderedDict as OrderedDictT
-import pytest
-
-from uuid import uuid4
+from collections import OrderedDict, namedtuple
 from pathlib import Path
-from collections import namedtuple, OrderedDict
+from typing import Any
+from typing import OrderedDict as OrderedDictT
+from uuid import uuid4
+
+import pytest
 
 from ..cli.parser import build_parser
 from ..cluster import create_example_script
@@ -22,10 +23,12 @@ def test_create_example_script(monkeypatch, tmp_path: Path, has_model: bool):
     opts = parser.parse_args(["--verbose"])
 
     node = NodePlaceholder(mem_gb=1.2)
-    graphs: OrderedDictT[str, Any] = OrderedDict([
-        ("a", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
-        ("b", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
-    ])
+    graphs: OrderedDictT[str, Any] = OrderedDict(
+        [
+            ("a", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
+            ("b", WorkflowPlaceholder(uuid=uuid4(), nodes=[node])),
+        ]
+    )
 
     if has_model:
         graphs["model"] = WorkflowPlaceholder(uuid=uuid4(), nodes=[node])

@@ -5,22 +5,23 @@
 from nibabel.nifti1 import Nifti1Header
 
 from ..model.setting import BaseSettingSchema
-from .metadata.niftiheader import NiftiheaderLoader
-from .metadata.direction import get_axcodes_set
+from ..utils import inflect_engine as pe
+from ..utils import logger
+from ..utils.image import nvol
 from .bids import BidsDatabase, get_file_metadata
 from .database import Database
-from ..utils import logger, inflect_engine as pe
-from ..utils.image import nvol
+from .metadata.direction import get_axcodes_set
+from .metadata.niftiheader import NiftiheaderLoader
 
 
 def collect_events(
-    database: Database, sourcefile: str
+    database: Database, source_file: str
 ) -> str | tuple[tuple[str, str], ...] | None:
-    sourcefile_subject = database.tagval(sourcefile, "sub")
+    source_file_subject = database.tagval(source_file, "sub")
 
     candidates = database.associations(
-        sourcefile,
-        task=database.tagval(sourcefile, "task"),  # enforce same task
+        source_file,
+        task=database.tagval(source_file, "task"),  # enforce same task
         datatype="func",
         suffix="events",
     )
@@ -34,7 +35,7 @@ def collect_events(
         subject = database.tagval(event_file, "sub")
 
         if subject is not None:
-            return subject == sourcefile_subject
+            return subject == source_file_subject
         else:
             return True
 
@@ -59,10 +60,12 @@ def collect_events(
 
         return (*condition_tuples,)
 
-    raise ValueError(f'Cannot collect condition files for "{sourcefile}"')
+    raise ValueError(f'Cannot collect condition files for "{source_file}"')
 
 
-def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> list[str]:
+def collect_fieldmaps(
+    database: Database, bold_file_path: str, silent: bool = False
+) -> list[str]:
     sub = database.tagval(bold_file_path, "sub")
     filters = dict(sub=sub)  # enforce same subject
 
@@ -82,9 +85,14 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
     magnitude = frozenset(["magnitude1", "magnitude2"])
     has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
 
-    needs_magnitude = frozenset([
-        "phasediff", "phase1", "phase2", "fieldmap",
-    ])
+    needs_magnitude = frozenset(
+        [
+            "phasediff",
+            "phase1",
+            "phase2",
+            "fieldmap",
+        ]
+    )
 
     incomplete = set()
     for c in candidates:
@@ -109,14 +117,13 @@ def collect_bold_files(
 
     # find bold files
 
-    bold_file_paths = setting_factory.sourcefiles | feature_factory.sourcefiles
+    bold_file_paths: set[str] = (
+        setting_factory.source_files | feature_factory.source_files
+    )
+    bold_file_paths_dict: dict[str, list[str]] = dict()
 
     # filter
-
-    bold_file_paths_dict = dict()
-
     for bold_file_path in bold_file_paths:
-
         sub = database.tagval(bold_file_path, "sub")
         t1ws = database.associations(
             bold_file_path,
@@ -135,19 +142,17 @@ def collect_bold_files(
 
         bold_file_paths_dict[bold_file_path] = associated_file_paths
 
-    bold_file_paths = [b for b in bold_file_paths if b in bold_file_paths_dict]
+    bold_file_paths &= bold_file_paths_dict.keys()
 
+    # check for duplicate tags via bids path as this contains all tags by definition
     _bids_database = BidsDatabase(database)
     bids_dict: dict[str, set[str]] = dict()
     for bold_file_path in bold_file_paths:
-
-        # check for duplicate tags via bids path as this contains all tags by definition
-
         bids_path = None
 
         try:
             _bids_database.put(bold_file_path)
-            bids_path = _bids_database.tobids(bold_file_path)
+            bids_path = _bids_database.to_bids(bold_file_path)
         except ValueError:
             continue
 
@@ -214,8 +219,6 @@ def collect_bold_files(
         for bold_file_path in bold_file_pathset:
             if bold_file_path != selectedbold_file_path:
                 del bold_file_paths_dict[bold_file_path]
-
-    bold_file_paths = [b for b in bold_file_paths if b in bold_file_paths_dict]
 
     return bold_file_paths_dict
 

@@ -2,18 +2,18 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
+import nipype.pipeline.engine as pe
 from nipype.interfaces import fsl
 from niworkflows.interfaces.utility import KeySelect
 
-from ..memory import MemoryCalculator
 from ..constants import constants
+from ..memory import MemoryCalculator
 
 
 def init_fmriprep_adapter_wf(
-        name: str="fmriprep_adapter_wf",
-        memcalc: MemoryCalculator = MemoryCalculator.default(),
+    name: str = "fmriprep_adapter_wf",
+    memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
     workflow = pe.Workflow(name=name)
 
@@ -55,9 +55,7 @@ def init_fmriprep_adapter_wf(
     workflow.connect(select_std, "bold_mask_std", applymask, "mask_file")
 
     #
-    merge = pe.Node(
-        niu.Merge(2), name="merge"
-    )
+    merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(applymask, "out_file", merge, "in1")
     workflow.connect(inputnode, "confounds", merge, "in2")
 

@@ -3,17 +3,17 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from __future__ import annotations
-from collections import Counter
-from typing import Any, Hashable, Mapping, Sequence
-from dataclasses import dataclass
 
-from math import isclose, isfinite, nan
 import statistics
+from collections import Counter
+from dataclasses import dataclass
+from math import isclose, isfinite, nan
+from typing import Any, Hashable, Mapping, Sequence
 
 import numpy as np
-from parse import parse, Result as ParseResult
-
-from nipype.interfaces.base import traits, TraitedSpec
+from nipype.interfaces.base import TraitedSpec, traits
+from parse import Result as ParseResult
+from parse import parse
 from pyrsistent import freeze, thaw
 
 from ...utils.ops import check_almost_equal

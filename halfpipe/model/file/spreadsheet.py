@@ -8,11 +8,13 @@
 
 from marshmallow import fields, validate
 
-from .base import BaseFileSchema
 from ..metadata import SpreadsheetMetadataSchema
+from .base import BaseFileSchema
 
 
 class SpreadsheetFileSchema(BaseFileSchema):
-    datatype = fields.Str(dump_default="spreadsheet", validate=validate.Equal("spreadsheet"))
+    datatype = fields.Str(
+        dump_default="spreadsheet", validate=validate.Equal("spreadsheet")
+    )
 
     metadata = fields.Nested(SpreadsheetMetadataSchema(), dump_default=dict())

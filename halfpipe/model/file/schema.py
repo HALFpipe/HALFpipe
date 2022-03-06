@@ -8,9 +8,9 @@
 
 from marshmallow_oneofschema import OneOfSchema
 
+from .anat import AnatFileSchema
 from .base import File
 from .bids import BidsFileSchema
-from .anat import AnatFileSchema
 from .fmap import FmapFileSchema
 from .func import FuncFileSchema
 from .ref import RefFileSchema

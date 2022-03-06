@@ -16,12 +16,6 @@ def test_listwise_deletion():
         x[np.random.rand(*x.shape) < missing_proportion] = np.nan
         arrays.append(x)
 
-    assert all(
-        np.all(np.isfinite(a))
-        for a in listwise_deletion(*arrays)
-    )
+    assert all(np.all(np.isfinite(a)) for a in listwise_deletion(*arrays))
 
-    assert 1 == len(set(
-        a.shape[0]
-        for a in listwise_deletion(*arrays)
-    ))
+    assert 1 == len(set(a.shape[0] for a in listwise_deletion(*arrays)))

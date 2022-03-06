@@ -3,10 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import OrderedDict
-from typing import Optional, Mapping
-
-from dataclasses import is_dataclass, asdict
+from dataclasses import asdict, is_dataclass
 from json import JSONEncoder
+from typing import Mapping, Optional
 
 import numpy as np
 

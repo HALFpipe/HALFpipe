@@ -2,17 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from math import inf, nan, pi, log
+from math import inf, log, nan, pi
 
+import nibabel as nib
 import numpy as np
+import pandas as pd
 from scipy import optimize, special, stats
 
-import pandas as pd
-import nibabel as nib
-
-from .flame1 import flame1_prepare_data
-from .base import ModelAlgorithm
 from ..utils import logger
+from .base import ModelAlgorithm
+from .flame1 import flame1_prepare_data
 
 
 class MoM:
@@ -57,7 +56,7 @@ class ReML:
         if σg < 0:
             return None, None, None
 
-        vinv = np.diag(np.ravel(1. / (s + σg)))
+        vinv = np.diag(np.ravel(1.0 / (s + σg)))
 
         if x is None:
             return vinv, None, None
@@ -71,9 +70,7 @@ class ReML:
 
     @classmethod
     def fit(cls, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
-        return optimize.minimize_scalar(
-            cls.neg_log_lik, args=(y, x, s), method="brent"
-        )
+        return optimize.minimize_scalar(cls.neg_log_lik, args=(y, x, s), method="brent")
 
     @classmethod
     def neg_log_lik(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
@@ -116,13 +113,15 @@ class ReML:
 
 class ML:
     @staticmethod
-    def neg_log_lik(ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray, γ: np.ndarray):
+    def neg_log_lik(
+        ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray, γ: np.ndarray
+    ):
         σg = ϑ
 
         if σg < 0:
             return inf
 
-        vinv = np.diag(np.ravel(1. / (s + σg)))
+        vinv = np.diag(np.ravel(1.0 / (s + σg)))
 
         n = y.size
         neg_log_lik = n * np.log(2 * pi) / 2
@@ -159,13 +158,7 @@ class InvGammaML:
         u = np.sum(np.log(x))
         v = np.sum(1 / x)
 
-        return (
-            -n * a * log(b)
-            + n * log(special.gamma(a))
-            + a * u
-            + u
-            + b * v
-        )
+        return -n * a * log(b) + n * log(special.gamma(a)) + a * u + u + b * v
 
     @staticmethod
     def jacobian(ϑ: np.ndarray, x: np.ndarray):
@@ -179,10 +172,12 @@ class InvGammaML:
         u = np.sum(np.log(x))
         v = np.sum(1 / x)
 
-        return np.array([
-            -n * log(b) + n * special.digamma(a) + u,
-            -n * a / b + v,
-        ])
+        return np.array(
+            [
+                -n * log(b) + n * special.digamma(a) + u,
+                -n * a / b + v,
+            ]
+        )
 
     @staticmethod
     def hessian(ϑ: np.ndarray, x: np.ndarray):
@@ -193,10 +188,12 @@ class InvGammaML:
 
         n = x.size
 
-        return n * np.array([
-            [special.polygamma(1, a), -1 / b],
-            [-1 / b, a / np.square(b)],
-        ])
+        return n * np.array(
+            [
+                [special.polygamma(1, a), -1 / b],
+                [-1 / b, a / np.square(b)],
+            ]
+        )
 
 
 def het_on_voxel(y, z, s):
@@ -247,7 +244,7 @@ def het_on_voxel(y, z, s):
         hettypical=typical,
         heti2=i2,
         hetpseudor2=pseudor2,
-        hetchisq=chisq
+        hetchisq=chisq,
     )
 
 
@@ -289,7 +286,9 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(cls, ref_img: nib.Nifti1Image, cmatdict: dict, voxel_results: dict) -> dict:
+    def write_outputs(
+        cls, ref_img: nib.Nifti1Image, cmatdict: dict, voxel_results: dict
+    ) -> dict:
         output_files = dict()
 
         rdf = pd.DataFrame.from_records(voxel_results)

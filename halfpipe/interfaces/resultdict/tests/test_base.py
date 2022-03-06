@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from math import isclose, nan
+
 from ..base import Continuous
 
 

@@ -4,9 +4,9 @@
 
 from hashlib import sha1
 
-from .resolve import ResolvedSpec
-from .metadata.loader import MetadataLoader
 from ..model.tags import entities
+from .metadata.loader import MetadataLoader
+from .resolve import ResolvedSpec
 
 
 class Database:
@@ -117,10 +117,13 @@ class Database:
     def tagvaldict(self, entity):
         return self.filepaths_by_tags.get(entity)
 
-    def get(self, **filters):
+    def get(self, **filters) -> set[str]:
         res = None
         for tagname, tagval in filters.items():
-            if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:
+            if (
+                tagname in self.filepaths_by_tags
+                and tagval in self.filepaths_by_tags[tagname]
+            ):
                 cur_set = self.filepaths_by_tags[tagname][tagval]
                 if res is not None:
                     res &= cur_set
@@ -230,7 +233,10 @@ class Database:
         return (
             entitylist,
             set(
-                tuple(self.tags_by_filepaths[filepath].get(entity) for entity in entitylist)
+                tuple(
+                    self.tags_by_filepaths[filepath].get(entity)
+                    for entity in entitylist
+                )
                 for filepath in filepaths
                 if filepath in self.tags_by_filepaths
             ),
@@ -252,7 +258,7 @@ class Database:
         for filepath in filepaths:
             fileobj = self.fileobj(filepath)
             if fileobj is None:
-                raise ValueError(f"Unknown filepath \"{filepath}\"")
+                raise ValueError(f'Unknown filepath "{filepath}"')
             found = self.metadata_loader.fill(fileobj, key)
             found_all = found_all and found
         return found

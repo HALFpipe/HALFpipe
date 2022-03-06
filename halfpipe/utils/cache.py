@@ -2,15 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any, Mapping, Optional, Union
-
 import pickle
-from uuid import UUID
 from pathlib import Path
 from shelve import open as open_shelf
+from typing import Any, Mapping, Optional, Union
+from uuid import UUID
 
-from .pickle import load_pickle_lzma, dump_pickle_lzma
 from ..utils import logger
+from .pickle import dump_pickle_lzma, load_pickle_lzma
 
 
 def _make_cache_file_path(type_str: str, uuid: Optional[Union[UUID, str]]):
@@ -22,13 +21,16 @@ def _make_cache_file_path(type_str: str, uuid: Optional[Union[UUID, str]]):
     return path
 
 
-def uncache_obj(workdir: Union[Path, str], type_str: str, uuid: Union[UUID, str], display_str: str = None):
+def uncache_obj(
+    workdir: Union[Path, str],
+    type_str: str,
+    uuid: Union[UUID, str],
+    display_str: str = None,
+):
     if display_str is None:
         display_str = type_str
 
-    cache_file_path = str(
-        Path(workdir) / _make_cache_file_path(type_str, uuid)
-    )
+    cache_file_path = str(Path(workdir) / _make_cache_file_path(type_str, uuid))
 
     try:
         obj = load_pickle_lzma(cache_file_path)
@@ -55,13 +57,16 @@ def uncache_obj(workdir: Union[Path, str], type_str: str, uuid: Union[UUID, str]
     return None
 
 
-def cache_obj(workdir: Union[Path, str], type_str: str, obj: Any, uuid: Optional[Union[UUID, str]] = None):
+def cache_obj(
+    workdir: Union[Path, str],
+    type_str: str,
+    obj: Any,
+    uuid: Optional[Union[UUID, str]] = None,
+):
     if uuid is None:
         uuid = getattr(obj, "uuid", None)
 
-    cache_file_path = str(
-        Path(workdir) / _make_cache_file_path(type_str, uuid)
-    )
+    cache_file_path = str(Path(workdir) / _make_cache_file_path(type_str, uuid))
 
     if isinstance(obj, Mapping):
         with open_shelf(

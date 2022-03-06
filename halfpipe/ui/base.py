@@ -5,28 +5,25 @@
 import os
 from pathlib import Path
 
-from .components import (
-    TextView,
-    GiantTextView,
-    SpacerView,
-    DirectoryInputView,
-    App,
-    SingleChoiceInputView,
-)
-
-from .components.config import Config as UIConfig
-
-from .step import Step
 from .. import __version__
-from ..model.spec import Spec, SpecSchema, loadspec, savespec
 from ..ingest.database import Database
-from ..workdir import init_workdir
 from ..logging import logging_context
-
-from .file import BidsStep
-from .feature import FeaturesStep
-from .model import ModelsStep
+from ..model.spec import Spec, SpecSchema, loadspec, savespec
 from ..utils import logger
+from ..workdir import init_workdir
+from .components import (
+    App,
+    DirectoryInputView,
+    GiantTextView,
+    SingleChoiceInputView,
+    SpacerView,
+    TextView,
+)
+from .components.config import Config as UIConfig
+from .feature import FeaturesStep
+from .file import BidsStep
+from .model import ModelsStep
+from .step import Step
 
 
 class Context:
@@ -153,10 +150,7 @@ class WorkingDirectoryStep(Step):
 
 class FirstStep(Step):
     def _welcome_text(self):
-        return [
-            "Welcome to ENIGMA HALFpipe!",
-            f"You are using version {__version__}"
-        ]
+        return ["Welcome to ENIGMA HALFpipe!", f"You are using version {__version__}"]
 
     def setup(self, _):
         self._append_view(GiantTextView("HALFpipe"))
@@ -164,7 +158,9 @@ class FirstStep(Step):
         for line in self._welcome_text():
             self._append_view(TextView(line))
         self._append_view(SpacerView(1))
-        self._append_view(TextView("Please report any problems or leave suggestions at"))
+        self._append_view(
+            TextView("Please report any problems or leave suggestions at")
+        )
         self._append_view(TextView("https://github.com/HALFpipe/HALFpipe/issues"))
         self._append_view(SpacerView(1))
         self.is_first_run = True

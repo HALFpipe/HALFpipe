@@ -4,11 +4,10 @@
 
 from os import path as op
 
-import numpy as np
 import nibabel as nib
-
-from nipype.interfaces.base import TraitedSpec, BaseInterface, traits, isdefined, File
+import numpy as np
 from nilearn.image import new_img_like
+from nipype.interfaces.base import BaseInterface, File, TraitedSpec, isdefined, traits
 
 from ...utils.image import nvol
 from ...utils.matrix import ncol

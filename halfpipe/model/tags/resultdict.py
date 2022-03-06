@@ -2,16 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from collections import OrderedDict
 
 from marshmallow import Schema, ValidationError, fields
 
-from .func import FuncTagsSchema
 from ...utils.ops import ravel
+from .func import FuncTagsSchema
 
 
 def validate_tags(v):
@@ -48,8 +44,10 @@ resultdict_entities = [
 ]
 
 ResultdictTagsSchema = Schema.from_dict(
-    OrderedDict([
-        (entity, fields.Raw(validate=validate_tags))
-        for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
-    ])
+    OrderedDict(
+        [
+            (entity, fields.Raw(validate=validate_tags))
+            for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
+        ]
+    )
 )

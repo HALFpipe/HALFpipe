@@ -2,12 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List
-from flufl.lock._lockfile import Lock as FluflLock, LockError as FluflLockError, TimeOutError
-from fasteners import InterProcessLock as FcntlLock
-
-from time import sleep
 from random import gauss
+from time import sleep
+from typing import List
+
+from fasteners import InterProcessLock as FcntlLock
+from flufl.lock._lockfile import Lock as FluflLock
+from flufl.lock._lockfile import LockError as FluflLockError
+from flufl.lock._lockfile import TimeOutError
 
 from . import logger
 
@@ -22,7 +24,9 @@ class AdaptiveLock:
 
     def lock(self, lock_file):
         if self.methods[0] == "hard_links":
-            self.lock_instance = FluflLock(lock_file, lifetime=self.timeout)  # seconds after which the lock is broken
+            self.lock_instance = FluflLock(
+                lock_file, lifetime=self.timeout
+            )  # seconds after which the lock is broken
 
             try:
                 self.lock_instance.lock(timeout=self.timeout)  # try for a long time
@@ -32,10 +36,7 @@ class AdaptiveLock:
             except OSError:  # such as PermissionError
                 pass
 
-            logger.warning(
-                "Unable to use hard link-based file locks",
-                exc_info=True
-            )
+            logger.warning("Unable to use hard link-based file locks", exc_info=True)
 
             self.methods.pop(0)
             self.lock(lock_file)
@@ -48,10 +49,7 @@ class AdaptiveLock:
             if acquired:
                 return
 
-            logger.warning(
-                "Unable to use fcntl-based file locks",
-                exc_info=True
-            )
+            logger.warning("Unable to use fcntl-based file locks", exc_info=True)
 
             self.methods.pop(0)
             self.lock(lock_file)
@@ -66,7 +64,9 @@ class AdaptiveLock:
         if self.methods[0] == "hard_links":
             assert isinstance(self.lock_instance, FluflLock)
 
-            self.lock_instance.unlock(unconditionally=True)  # do not raise errors in unlock
+            self.lock_instance.unlock(
+                unconditionally=True
+            )  # do not raise errors in unlock
             self.lock_instance = None
 
         elif self.methods[0] == "fcntl":

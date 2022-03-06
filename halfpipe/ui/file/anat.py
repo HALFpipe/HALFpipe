@@ -3,10 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
+from ...model import T1wFileSchema
 from ..pattern import FilePatternStep, FilePatternSummaryStep
 from .func import FuncStep, FuncSummaryStep
-
-from ...model import T1wFileSchema
 
 filetype_str = "T1-weighted image"
 filedict = {"datatype": "anat", "suffix": "T1w"}

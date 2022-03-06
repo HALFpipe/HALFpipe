@@ -5,14 +5,13 @@
 """
 """
 
-from typing import ContextManager, Iterator, List, Dict, Optional, Tuple
-
 from collections import defaultdict
-from pathlib import Path
 from contextlib import nullcontext
+from pathlib import Path
+from typing import ContextManager, Dict, Iterator, List, Optional, Tuple
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 from tqdm import tqdm
 
 from ..ingest.design import parse_design
@@ -24,9 +23,7 @@ from .algorithms import algorithms, make_algorithms_set
 def voxel_calc(voxel_data):
     algorithm_set, c, y, z, s, cmatdict = voxel_data
 
-    return {
-        a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithm_set
-    }
+    return {a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithm_set}
 
 
 def load_data(
@@ -38,23 +35,16 @@ def load_data(
     algorithms_to_run: List[str],
 ):
     # load data
-    cope_data = [
-        atleast_4d(nib.load(f).get_fdata())
-        for f in cope_files
-    ]
+    cope_data = [atleast_4d(nib.load(f).get_fdata()) for f in cope_files]
     copes = np.concatenate(cope_data, axis=3)
 
     mask_data = [
-        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(bool))
-        for f in mask_files
+        atleast_4d(np.asanyarray(nib.load(f).dataobj).astype(bool)) for f in mask_files
     ]
     masks = np.concatenate(mask_data, axis=3)
 
     if var_cope_files is not None:
-        var_cope_data = [
-            atleast_4d(nib.load(f).get_fdata())
-            for f in var_cope_files
-        ]
+        var_cope_data = [atleast_4d(nib.load(f).get_fdata()) for f in var_cope_files]
         var_copes = np.concatenate(var_cope_data, axis=3)
     else:
         var_copes = np.zeros_like(copes)
@@ -149,8 +139,6 @@ def fit(
 
     output_files = dict()
     for a, v in voxel_results.items():
-        output_files.update(
-            algorithms[a].write_outputs(ref_image, cmatdict, v)
-        )
+        output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v))
 
     return output_files

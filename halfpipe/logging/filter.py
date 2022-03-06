@@ -3,8 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
-from logging import Filter
 import re
+from logging import Filter
 
 
 def set_level(record, levelno=logging.DEBUG):

@@ -4,21 +4,14 @@
 
 from pathlib import Path
 
-import numpy as np
 import nibabel as nib
-
+import numpy as np
 from nilearn.image import new_img_like
-
-from nipype.interfaces.base import (
-    SimpleInterface,
-    TraitedSpec,
-    isdefined,
-    File,
-)
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined
 
 from ..ingest.spreadsheet import read_spreadsheet
+from ..utils.image import nvol
 from ..utils.path import split_ext
-from ..utils.image import  nvol
 
 
 class TransformerInputSpec(TraitedSpec):
@@ -34,6 +27,7 @@ class Transformer(SimpleInterface):
     """
     Interface that takes any kind of array input and applies a function to it
     """
+
     input_spec = TransformerInputSpec
     output_spec = TransformerOutputSpec
 
@@ -62,12 +56,18 @@ class Transformer(SimpleInterface):
             elif ndim == 4:
                 volumes = nib.four_to_three(in_img)
             else:
-                raise ValueError(f'Unexpect number of dimensions {ndim:d} in "{in_file}"')
+                raise ValueError(
+                    f'Unexpect number of dimensions {ndim:d} in "{in_file}"'
+                )
 
             volume_shape = volumes[0].shape
             n_voxels = np.prod(volume_shape)
 
-            if isdefined(mask_file) and isinstance(mask_file, str) and Path(mask_file).is_file():
+            if (
+                isdefined(mask_file)
+                and isinstance(mask_file, str)
+                and Path(mask_file).is_file()
+            ):
                 mask_img = nib.squeeze_image(nib.load(mask_file))
 
                 assert nvol(mask_img) == 1
@@ -75,10 +75,7 @@ class Transformer(SimpleInterface):
 
                 mask_fdata = mask_img.get_fdata(dtype=np.float64)
                 mask_bin = np.logical_not(
-                    np.logical_or(
-                        mask_fdata <= 0,
-                        np.isclose(mask_fdata, 0, atol=1e-2)
-                    )
+                    np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
                 )
 
                 self.mask = mask_bin
@@ -130,9 +127,7 @@ class Transformer(SimpleInterface):
 
             out_df = in_df
             np.copyto(out_df.values, array2)
-            out_df.to_csv(
-                out_file, sep="\t", index=False, na_rep="n/a", header=True
-            )
+            out_df.to_csv(out_file, sep="\t", index=False, na_rep="n/a", header=True)
 
         return out_file
 

@@ -7,7 +7,8 @@
 """
 
 from typing import Dict, Optional
-from marshmallow import Schema, fields, post_load, RAISE
+
+from marshmallow import RAISE, Schema, fields, post_load
 
 
 class File:

@@ -4,17 +4,16 @@
 """
 """
 
-from typing import Dict, Optional, Tuple, List, Union
-from typing_extensions import Literal
-
 from collections import defaultdict
+from typing import Dict, List, Optional, Tuple, Union
 
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
+from typing_extensions import Literal
 
-from .base import ModelAlgorithm, listwise_deletion
 from ..utils.format import format_workflow
+from .base import ModelAlgorithm, listwise_deletion
 
 
 class Descriptive(ModelAlgorithm):
@@ -40,7 +39,9 @@ class Descriptive(ModelAlgorithm):
         # make data frame
         zframe = pd.DataFrame(z)
 
-        voxel_result: Dict[str, Dict[Tuple[int, int, int], Dict[str, float]]] = defaultdict(dict)
+        voxel_result: Dict[
+            str, Dict[Tuple[int, int, int], Dict[str, float]]
+        ] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
 

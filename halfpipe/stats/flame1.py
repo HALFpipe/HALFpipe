@@ -3,18 +3,18 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from math import isnan, isclose, isfinite, nan
+from math import isclose, isfinite, isnan, nan
 from typing import Any
-from typing_extensions import Literal
 
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
 from scipy.optimize import minimize_scalar
+from typing_extensions import Literal
 
-from .miscmaths import t2z_convert, f2z_convert
-from .base import ModelAlgorithm, listwise_deletion, demean
 from ..utils.format import format_workflow
+from .base import ModelAlgorithm, demean, listwise_deletion
+from .miscmaths import f2z_convert, t2z_convert
 
 
 def calcgam(beta, y, z, s) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -52,9 +52,7 @@ def marg_posterior_energy(ex, y, z, s):
 
 
 def solveforbeta(y, z, s):
-    res = minimize_scalar(
-        marg_posterior_energy, args=(y, z, s), method="brent"
-    )
+    res = minimize_scalar(marg_posterior_energy, args=(y, z, s), method="brent")
     fu = res.x
 
     beta = max(1e-10, fu)
@@ -153,7 +151,13 @@ def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
 class FLAME1(ModelAlgorithm):
     model_outputs: list[str] = []
     contrast_outputs = [
-        "copes", "var_copes", "zstats", "tstats", "fstats", "dof", "masks"
+        "copes",
+        "var_copes",
+        "zstats",
+        "tstats",
+        "fstats",
+        "dof",
+        "masks",
     ]
 
     @staticmethod
@@ -202,9 +206,7 @@ class FLAME1(ModelAlgorithm):
                 rdf = rdf.append(pd.Series(data=False, index=rdf.columns, name="mask"))
 
             if "zstat" not in rdf.index:  # ensure that we always output a zstat
-                rdf = rdf.append(
-                    pd.Series(data=nan, index=rdf.columns, name="zstat")
-                )
+                rdf = rdf.append(pd.Series(data=nan, index=rdf.columns, name="zstat"))
 
             for map_name, series in rdf.iterrows():
                 out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"

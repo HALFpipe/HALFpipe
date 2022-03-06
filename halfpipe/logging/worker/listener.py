@@ -3,11 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
-from pathlib import Path
+from asyncio import all_tasks, current_task, gather, get_running_loop
 from copy import deepcopy
+from pathlib import Path
 
-from asyncio import get_running_loop, all_tasks, current_task, gather
-
+from ...utils import logger
 from .message import (
     DisablePrintMessage,
     EnablePrintMessage,
@@ -16,12 +16,12 @@ from .message import (
     SetWorkdirMessage,
     TeardownMessage,
 )
-from .writer import PrintWriter, FileWriter, ReportErrorWriter
-from ...utils import logger
+from .writer import FileWriter, PrintWriter, ReportErrorWriter
 
 
 async def listen(queue):
     from halfpipe.logging import setup as setup_logging
+
     setup_logging(queue)
 
     loop = get_running_loop()

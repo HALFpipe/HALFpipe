@@ -2,33 +2,30 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Mapping
-
+import hashlib
+import json
 import os
+import re
 from os import path as op
 from pathlib import Path
 from shutil import copyfile
-import hashlib
-import json
-import re
 
 from inflection import camelize
+from nipype.interfaces.base import SimpleInterface, TraitedSpec, traits
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface
-# from niworkflows.viz.utils import compose_view, extract_svg
-# from nilearn.plotting import plot_glass_brain
-
-from .base import Continuous
-
-from ...utils.table import SynchronizedTable
 from ...model import FuncTagsSchema, entities
 from ...model.tags.resultdict import first_level_entities
-from ...utils.path import split_ext, find_paths
+from ...resource import get as getresource
+from ...stats.algorithms import algorithms
 from ...utils import logger
 from ...utils.format import format_like_bids
 from ...utils.json import TypeAwareJSONEncoder
-from ...resource import get as getresource
-from ...stats.algorithms import algorithms
+from ...utils.path import find_paths, split_ext
+from ...utils.table import SynchronizedTable
+from .base import Continuous
+
+# from niworkflows.viz.utils import compose_view, extract_svg
+# from nilearn.plotting import plot_glass_brain
 
 
 def _make_plot(tags, key, sourcefile, metadata):
@@ -129,7 +126,9 @@ def _find_sources(inpath, metadata) -> tuple[list[str] | None, str | None]:
             if isinstance(nipype_hash_file, (str, Path)):
                 nipype_hash_file = Path(nipype_hash_file)
 
-                match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", nipype_hash_file.name)
+                match = re.match(
+                    r"_0x(?P<hash>[0-9a-f]{32})\.json", nipype_hash_file.name
+                )
                 if match is not None:
                     file_hash = match.group("hash")
 
@@ -251,10 +250,7 @@ def datasink_preproc(indicts, reports_directory):
 def _format_sidecar_value(obj):
     if not isinstance(obj, dict):
         return obj
-    return {
-        _format_sidecar_key(k): _format_sidecar_value(v)
-        for k, v in obj.items()
-    }
+    return {_format_sidecar_key(k): _format_sidecar_value(v) for k, v in obj.items()}
 
 
 def _format_sidecar_key(key):  # camelize
@@ -294,15 +290,26 @@ def datasink_images(indicts, base_directory):
                 outpath = grouplevel_directory
 
             if key in ["effect", "variance", "z", "t", "f", "dof"]:  # apply rule
-                outpath = outpath / _make_path(inpath, "image", tags, "statmap", stat=key)
+                outpath = outpath / _make_path(
+                    inpath, "image", tags, "statmap", stat=key
+                )
 
             elif key in algorithms["heterogeneity"].model_outputs:
                 key = re.sub(r"^het", "", key)
-                outpath = outpath / _make_path(inpath, "image", tags, "statmap", algorithm="heterogeneity", stat=key)
+                outpath = outpath / _make_path(
+                    inpath,
+                    "image",
+                    tags,
+                    "statmap",
+                    algorithm="heterogeneity",
+                    stat=key,
+                )
 
             elif key in algorithms["mcartest"].model_outputs:
                 key = re.sub(r"^mcar", "", key)
-                outpath = outpath / _make_path(inpath, "image", tags, "statmap", algorithm="mcar", stat=key)
+                outpath = outpath / _make_path(
+                    inpath, "image", tags, "statmap", algorithm="mcar", stat=key
+                )
 
             else:
                 outpath = outpath / _make_path(inpath, "image", tags, key)
@@ -320,7 +327,9 @@ def datasink_images(indicts, base_directory):
                     sidecar.update(vals)
                     sidecar = _format_sidecar_value(sidecar)
 
-                    sidecar_json = json.dumps(sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4)
+                    sidecar_json = json.dumps(
+                        sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4
+                    )
 
                     sidecar_file_path = outpath.parent / f"{stem}.json"
                     with open(sidecar_file_path, "wt") as sidecar_file_handle:

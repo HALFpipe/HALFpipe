@@ -2,8 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
 from os.path import normpath
+from pathlib import Path
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -21,6 +21,7 @@ def resolve(path: Path | str, fs_root: Path | str) -> Path:
 
 def find_paths(obj):
     from pathlib import Path
+
     from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
 
@@ -53,13 +54,13 @@ def find_paths(obj):
 
 def split_ext(path: Path | str):
     """Splits filename and extension (.gz safe)
-    >>> splitext('some/file.nii.gz')
+    >>> split_ext('some/file.nii.gz')
     ('file', '.nii.gz')
-    >>> splitext('some/other/file.nii')
+    >>> split_ext('some/other/file.nii')
     ('file', '.nii')
-    >>> splitext('otherext.tar.gz')
+    >>> split_ext('otherext.tar.gz')
     ('otherext', '.tar.gz')
-    >>> splitext('text.txt')
+    >>> split_ext('text.txt')
     ('text', '.txt')
 
     Adapted from niworkflows
@@ -73,7 +74,7 @@ def split_ext(path: Path | str):
         safe_name = safe_name.removesuffix(compound_extension)
 
     stem = Path(safe_name).stem
-    return stem, name[len(stem):]
+    return stem, name[len(stem) :]
 
 
 def is_empty(path: Path | str) -> bool:

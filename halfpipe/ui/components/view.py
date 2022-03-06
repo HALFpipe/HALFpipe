@@ -5,17 +5,17 @@
 """
 
 """
+import curses
+import functools
+import itertools
 from typing import Optional
 
 import numpy as np
-import itertools
-import functools
-import curses
 
-from .font import font
 from .cursor import Cursor
-from .text import TextElement, Text
+from .font import font
 from .layout import Layout
+from .text import Text, TextElement
 
 longestReadableLineWidth = 100
 

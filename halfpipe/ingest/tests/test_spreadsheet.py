@@ -2,17 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Union
-
+from collections import OrderedDict
+from math import isclose
 from pathlib import Path
 from random import choice, random
 from string import ascii_letters, digits
-from collections import OrderedDict
-from math import isclose
+from typing import List, Union
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
 from ..spreadsheet import read_spreadsheet
 
@@ -34,28 +33,34 @@ vest_str = """/NumWaves       2
 """
 
 
-@pytest.mark.parametrize("extension,delimiter", [
-    (".tsv", "\t"),
-    (".csv", ","),
-    (".csv", ";"),
-    (".txt", " "),
-    (".txt", "  "),
-    (".txt", "\t"),
-    (".txt", ","),
-    (".txt", ";"),
-    ("", " "),
-    ("", "  "),
-    ("", "\t"),
-    ("", ","),
-    ("", ";"),
-])
-@pytest.mark.parametrize("header,index,n_str_columns,n_float_columns", [
-    (True, True, 10, 0),
-    (True, True, 10, 10),
-    (True, False, 10, 0),
-    (True, False, 10, 10),
-    (False, False, 10, 10),
-])
+@pytest.mark.parametrize(
+    "extension,delimiter",
+    [
+        (".tsv", "\t"),
+        (".csv", ","),
+        (".csv", ";"),
+        (".txt", " "),
+        (".txt", "  "),
+        (".txt", "\t"),
+        (".txt", ","),
+        (".txt", ";"),
+        ("", " "),
+        ("", "  "),
+        ("", "\t"),
+        ("", ","),
+        ("", ";"),
+    ],
+)
+@pytest.mark.parametrize(
+    "header,index,n_str_columns,n_float_columns",
+    [
+        (True, True, 10, 0),
+        (True, True, 10, 10),
+        (True, False, 10, 0),
+        (True, False, 10, 10),
+        (False, False, 10, 10),
+    ],
+)
 def test_loadspreadsheet_dtypes(
     tmp_path: Path,
     extension: str,
@@ -68,24 +73,30 @@ def test_loadspreadsheet_dtypes(
     file_name = tmp_path / f"data{extension}"
 
     def random_str(length: int = 30):
-        return "".join(
-            choice([*ascii_letters, *digits]) for _ in range(length)
-        )
+        return "".join(choice([*ascii_letters, *digits]) for _ in range(length))
 
     n_rows = 10
 
-    records: OrderedDict[str, List[Union[str, float]]] = OrderedDict([
-        (f"x{i}", [random_str(5) for _ in range(n_rows)])
-        for i in range(n_str_columns)
-    ])
+    records: OrderedDict[str, List[Union[str, float]]] = OrderedDict(
+        [
+            (f"x{i}", [random_str(5) for _ in range(n_rows)])
+            for i in range(n_str_columns)
+        ]
+    )
 
-    records.update(OrderedDict([
-        (f"y{i}", [random() for _ in range(n_rows)])
-        for i in range(n_float_columns)
-    ]))
+    records.update(
+        OrderedDict(
+            [
+                (f"y{i}", [random() for _ in range(n_rows)])
+                for i in range(n_float_columns)
+            ]
+        )
+    )
 
     data_frame = pd.DataFrame.from_records(records)
-    data_frame.set_axis([f"row{i:d}" for i in range(1, n_rows + 1)], axis="index", inplace=True)
+    data_frame.set_axis(
+        [f"row{i:d}" for i in range(1, n_rows + 1)], axis="index", inplace=True
+    )
 
     data_frame_str = data_frame.to_csv(sep="\1", header=header, index=index)
     assert isinstance(data_frame_str, str)
@@ -97,10 +108,7 @@ def test_loadspreadsheet_dtypes(
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(
-            a == b
-            for a, b in zip(data_frame.columns, spreadsheet.columns)
-        )
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
 
     assert all(
         isclose(a, b) if isinstance(a, float) else a == b
@@ -108,12 +116,15 @@ def test_loadspreadsheet_dtypes(
     )
 
 
-@pytest.fixture(scope="module", params=[
-    (1, 1),
-    (10, 1),
-    (1, 10),
-    (10, 10),
-])
+@pytest.fixture(
+    scope="module",
+    params=[
+        (1, 1),
+        (10, 1),
+        (1, 10),
+        (10, 10),
+    ],
+)
 def data_frame(request):
     return pd.DataFrame(
         np.random.randn(*request.param),
@@ -122,35 +133,44 @@ def data_frame(request):
     )
 
 
-@pytest.mark.parametrize("extension,delimiter", [
-    (".tsv", "\t"),
-    (".csv", ","),
-    (".csv", ";"),
-    (".txt", " "),
-    (".txt", "  "),
-    (".txt", "\t"),
-    (".txt", ","),
-    (".txt", ";"),
-    ("", " "),
-    ("", "  "),
-    ("", "\t"),
-    ("", ","),
-    ("", ";"),
-])
-@pytest.mark.parametrize("header,index,blank_lines_before_header,blank_lines_after_header", [
-    (False, False, 0, 0),
-    (False, False, 0, 1),
-    (True, False, 0, 0),
-    (True, True, 1, 1),
-])
-@pytest.mark.parametrize("comment_prefix,n_comment_lines", [
-    ("", 0),
-    ("#", 1),
-    ("#", 2),
-    ("%", 2),
-    ("/", 2),
-    ("//", 2),
-])
+@pytest.mark.parametrize(
+    "extension,delimiter",
+    [
+        (".tsv", "\t"),
+        (".csv", ","),
+        (".csv", ";"),
+        (".txt", " "),
+        (".txt", "  "),
+        (".txt", "\t"),
+        (".txt", ","),
+        (".txt", ";"),
+        ("", " "),
+        ("", "  "),
+        ("", "\t"),
+        ("", ","),
+        ("", ";"),
+    ],
+)
+@pytest.mark.parametrize(
+    "header,index,blank_lines_before_header,blank_lines_after_header",
+    [
+        (False, False, 0, 0),
+        (False, False, 0, 1),
+        (True, False, 0, 0),
+        (True, True, 1, 1),
+    ],
+)
+@pytest.mark.parametrize(
+    "comment_prefix,n_comment_lines",
+    [
+        ("", 0),
+        ("#", 1),
+        ("#", 2),
+        ("%", 2),
+        ("/", 2),
+        ("//", 2),
+    ],
+)
 @pytest.mark.parametrize("n_trailing_spaces", [0, 2])
 def test_loadspreadsheet_delimited(
     tmp_path: Path,
@@ -168,8 +188,7 @@ def test_loadspreadsheet_delimited(
     file_name = tmp_path / f"data{extension}"
 
     comment_str = "\n".join(
-        f"{comment_prefix}comment{i}"
-        for i in range(1, n_comment_lines + 1)
+        f"{comment_prefix}comment{i}" for i in range(1, n_comment_lines + 1)
     )
     if len(comment_str) > 0:
         comment_str += "\n"
@@ -206,10 +225,7 @@ def test_loadspreadsheet_delimited(
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(
-            a == b
-            for a, b in zip(data_frame.columns, spreadsheet.columns)
-        )
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
 
     assert np.allclose(data_frame.values, spreadsheet.values)
 
@@ -218,11 +234,7 @@ def test_loadspreadsheet_delimited(
 @pytest.mark.parametrize("index", [False])
 @pytest.mark.parametrize("extension", [".ods", ".xls", ".xlsx"])
 def test_loadspreadsheet_excel(
-    tmp_path: Path,
-    data_frame: pd.DataFrame,
-    header: bool,
-    index: bool,
-    extension: str
+    tmp_path: Path, data_frame: pd.DataFrame, header: bool, index: bool, extension: str
 ):
     file_name = tmp_path / f"data{extension}"
 
@@ -231,21 +243,17 @@ def test_loadspreadsheet_excel(
     if extension == ".ods":
         kwargs["engine"] = "odf"
 
-    data_frame.to_excel(file_name, header=header, index=index, sheet_name="sheet", **kwargs)
+    data_frame.to_excel(
+        file_name, header=header, index=index, sheet_name="sheet", **kwargs
+    )
 
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(
-            a == b
-            for a, b in zip(data_frame.columns, spreadsheet.columns)
-        )
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
 
     if index:
-        assert all(
-            a == b
-            for a, b in zip(data_frame.index, spreadsheet.index)
-        )
+        assert all(a == b for a, b in zip(data_frame.index, spreadsheet.index))
 
 
 def test_loadspreadsheet_vest(tmp_path):

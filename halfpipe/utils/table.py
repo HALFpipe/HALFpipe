@@ -2,20 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, List, Optional
-
-from pathlib import Path
 import json
 from math import isclose
+from pathlib import Path
+from typing import Dict, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from tabulate import tabulate
 
-from .lock import AdaptiveLock
 from ..model.tags import entities
 from . import logger
 from .json import TypeAwareJSONEncoder
+from .lock import AdaptiveLock
 
 
 def _compare(a, b):
@@ -88,20 +87,29 @@ class SynchronizedTable:
     def to_table(self):
         assert self.dictlist is not None
 
-        dictlist = [{str(k): str(v) for k, v in indict.items()} for indict in self.dictlist]
+        dictlist = [
+            {str(k): str(v) for k, v in indict.items()} for indict in self.dictlist
+        ]
         data_frame = pd.DataFrame.from_records(dictlist)
         assert isinstance(data_frame, pd.DataFrame)
 
         data_frame.replace({np.nan: ""}, inplace=True)
 
         columns = list(map(str, data_frame.columns))
-        columns_in_order = [entity for entity in reversed(entities) if entity in columns]
-        columns_in_order.extend(sorted([column for column in columns if column not in entities]))
+        columns_in_order = [
+            entity for entity in reversed(entities) if entity in columns
+        ]
+        columns_in_order.extend(
+            sorted([column for column in columns if column not in entities])
+        )
 
         data_frame = data_frame[columns_in_order]
 
         table_str = tabulate(
-            data_frame, headers="keys", showindex=False, disable_numparse=True,
+            data_frame,
+            headers="keys",
+            showindex=False,
+            disable_numparse=True,
         )
 
         table_filename = self.filename.parent / f"{self.filename.stem}.txt"
@@ -112,18 +120,14 @@ class SynchronizedTable:
     def put(self, indict):
         assert self.dictlist is not None
 
-        intags = {
-            k: v for k, v in indict.items() if k in entities
-        }
+        intags = {k: v for k, v in indict.items() if k in entities}
 
         matches = False
 
         for i in range(len(self.dictlist)):
             curdict = self.dictlist[i]
 
-            curtags = {
-                k: v for k, v in curdict.items() if k in entities
-            }
+            curtags = {k: v for k, v in curdict.items() if k in entities}
 
             if set(intags.items()) == set(curtags.items()):
                 if set(indict.keys()) == set(curdict.keys()):

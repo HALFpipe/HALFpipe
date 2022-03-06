@@ -1,2 +1,0 @@
-include versioneer.py
-include halfpipe/_version.py

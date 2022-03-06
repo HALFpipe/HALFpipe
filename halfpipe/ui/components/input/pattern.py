@@ -5,30 +5,29 @@
 """
 
 """
-from typing import Any, Optional, Dict, List
-
+import logging
 import os
-from os import path as op
-from threading import Thread, Event
 from operator import attrgetter
+from os import path as op
+from threading import Event, Thread
+from typing import Any, Dict, List, Optional
 
 import inflect
-import logging
 
-from ..keyboard import Key
-from ..view import CallableView
-from .text import TextInputView, common_chars
-from .choice import SingleChoiceInputView
-from ..text import TextElement, TextElementCollection, Text
-from ..file import resolve
 from ....ingest.glob import (
+    remove_tag_remainder_match,
+    show_tag_suggestion_check,
+    suggestion_match,
     tag_glob,
     tag_parse,
     tokenize,
-    suggestion_match,
-    show_tag_suggestion_check,
-    remove_tag_remainder_match,
 )
+from ..file import resolve
+from ..keyboard import Key
+from ..text import Text, TextElement, TextElementCollection
+from ..view import CallableView
+from .choice import SingleChoiceInputView
+from .text import TextInputView, common_chars
 
 logger = logging.getLogger("halfpipe.ui")
 p = inflect.engine()
@@ -79,9 +78,9 @@ class FilePatternInputView(CallableView):
         self.message: Text = TextElement("")
         self.message_is_dirty = False
 
-        self.matching_files: List[Text] = []
+        self.matching_files: list[Text] = []
         self.cur_dir = None
-        self.cur_dir_files = []
+        self.cur_dir_files: list[str] = []
         self.dironly = dironly
         self.is_ok = False
 
@@ -151,9 +150,7 @@ class FilePatternInputView(CallableView):
                 assert self.color_by_tag is not None
                 color = self.color_by_tag.get(tag_name, self.highlightColor)
 
-            text_element_collection.append(
-                TextElement(token, color=color)
-            )
+            text_element_collection.append(TextElement(token, color=color))
 
         return text_element_collection
 
@@ -283,9 +280,13 @@ class FilePatternInputView(CallableView):
             try:
                 for filepath, tagdict in tag_glob_generator:
                     if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-                        suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
+                        suggestionstr = suggestion_match.sub(
+                            tagdict["suggestion"], suggestiontempl
+                        )
                         if op.isdir(filepath):
-                            suggestionstr = op.join(suggestionstr, "")  # add trailing slash
+                            suggestionstr = op.join(
+                                suggestionstr, ""
+                            )  # add trailing slash
                         new_suggestions.add(suggestionstr)
 
                     elif _is_candidate(filepath):
@@ -308,12 +309,16 @@ class FilePatternInputView(CallableView):
             tagsetdict = {}
             if len(tagdictlist) > 0:
                 tagsetdict = {
-                    k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"
+                    k: set(dic[k] for dic in tagdictlist)
+                    for k in tagdictlist[0]
+                    if k != "suggestion"
                 }
 
             nfile = len(filepaths)
 
-            has_all_required_entities = all(entity in tagsetdict for entity in self.required_entities)
+            has_all_required_entities = all(
+                entity in tagsetdict for entity in self.required_entities
+            )
             logger.debug(f"has_all_required_entities={has_all_required_entities}")
 
             if not self.message_is_dirty:
@@ -359,8 +364,7 @@ class FilePatternInputView(CallableView):
 
             if not is_suggestion_done:
                 self.matching_files = [
-                    self._tokenize(s, addBrackets=False)
-                    for s in new_suggestions
+                    self._tokenize(s, addBrackets=False) for s in new_suggestions
                 ]
                 self._suggest_matches()
 
@@ -412,7 +416,9 @@ class FilePatternInputView(CallableView):
             self.suggestion_view.set_options([])
             self.isActive = False
 
-        elif self.suggestion_view.isActive and self.suggestion_view.cur_index is not None:
+        elif (
+            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
+        ):
             self.tab_pressed = False
 
             if c == Key.Up and self.suggestion_view.cur_index == 0:  # exit and discard

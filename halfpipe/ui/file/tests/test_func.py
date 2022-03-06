@@ -3,16 +3,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from typing import Any
-
-import pytest
 from unittest import mock
 
-from ...components import MultiCombinedNumberAndSingleChoiceInputView
-
-from ...tests.mock import MockApp
+import pytest
 
 from ...base import Context
+from ...components import MultiCombinedNumberAndSingleChoiceInputView
 from ...step import Step, YesNoStep
+from ...tests.mock import MockApp
 from ..func import get_post_func_steps
 
 

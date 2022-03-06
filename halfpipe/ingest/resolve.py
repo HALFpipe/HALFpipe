@@ -2,26 +2,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Any
-
 from collections import defaultdict
 from itertools import product
-from pprint import pformat
 from os.path import basename
+from pprint import pformat
+from typing import Any
 
-from marshmallow import EXCLUDE
 import marshmallow.exceptions
+from bids import BIDSLayout
+from bids.layout.index import BIDSLayoutIndexer
+from bids.layout.models import BIDSFile
+from marshmallow import EXCLUDE
 
-from .glob import tag_glob, tag_parse, get_entities_in_path
-from ..model.file import FileSchema, File
+from ..model.file import File, FileSchema
 from ..model.tags import entities, entity_longnames
 from ..utils import logger
 from ..utils.path import split_ext
+from .glob import get_entities_in_path, tag_glob, tag_parse
 from .metadata.sidecar import SidecarMetadataLoader
-
-from bids import BIDSLayout
-from bids.layout.models import BIDSFile
-from bids.layout.index import BIDSLayoutIndexer
 
 file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}
@@ -82,7 +80,6 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
 
         log_method(
             f'Skipping unsupported file "{path}" because %s',
-
             e,
             exc_info=False,
             stack_info=False,
@@ -131,9 +128,7 @@ class ResolvedSpec:
             filedict["path"] = filepath
             _, filedict["extension"] = split_ext(filepath)
 
-            tagdict.update(
-                filedict.get("tags", dict())
-            )
+            tagdict.update(filedict.get("tags", dict()))
 
             filedict["tags"] = tagdict
 
@@ -152,7 +147,7 @@ class ResolvedSpec:
     def _resolve_bids(self, fileobj: File) -> list[File]:
 
         # load using pybids
-        validate = False   # save time
+        validate = False  # save time
         layout = BIDSLayout(
             root=fileobj.path,
             reset_database=True,  # force reindex in case files have changed
@@ -161,7 +156,7 @@ class ResolvedSpec:
             indexer=BIDSLayoutIndexer(
                 validate=validate,
                 index_metadata=False,  # save time
-            )
+            ),
         )
 
         # load override metadata
@@ -199,7 +194,9 @@ class ResolvedSpec:
             for intended_for_path in intended_for_paths:
                 intended_for[intended_for_path] = linked_fmap_tags
 
-        informed_by: dict[frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]] = defaultdict(list)
+        informed_by: dict[
+            frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]
+        ] = defaultdict(list)
         for file in resolved_files:
             file_tags = frozenset(file.tags.items())
 
@@ -213,7 +210,9 @@ class ResolvedSpec:
                 for func_tag, linked_fmap_tag in product(func_tags, linked_fmap_tags):
                     if func_tag[0] == "sub" or linked_fmap_tag[0] == "sub":
                         continue
-                    if func_tag[0] == linked_fmap_tag[0]:  # only map between different entities
+                    if (
+                        func_tag[0] == linked_fmap_tag[0]
+                    ):  # only map between different entities
                         continue
                     mappings.add((func_tag, linked_fmap_tag))
 
@@ -228,7 +227,10 @@ class ResolvedSpec:
             intended_for_rules[fmapstr].append(funcstr)
 
         if len(intended_for) > 0:
-            logger.info("Inferred mapping between func and fmap files to be %s", pformat(intended_for_rules))
+            logger.info(
+                "Inferred mapping between func and fmap files to be %s",
+                pformat(intended_for_rules),
+            )
             for file in resolved_files:
                 if file.datatype != "fmap":
                     continue

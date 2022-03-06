@@ -4,20 +4,23 @@
 
 from collections import defaultdict
 from copy import deepcopy
-from typing import Mapping
 
 import nipype.pipeline.engine as pe
+from nipype.interfaces.base import InterfaceResult, Undefined, isdefined, traits
 from nipype.pipeline.engine.utils import (
-    load_resultfile, evaluate_connect_function, save_resultfile
+    evaluate_connect_function,
+    load_resultfile,
+    save_resultfile,
 )
-from nipype.interfaces.base import isdefined, traits, Undefined, InterfaceResult
 from nipype.utils.misc import str2bool
 
 from ..utils import logger
 
 
 class Node(pe.Node):
-    def __init__(self, interface, name, keep=False, allow_missing_input_source=False, **kwargs):
+    def __init__(
+        self, interface, name, keep=False, allow_missing_input_source=False, **kwargs
+    ):
         super().__init__(interface, name, **kwargs)
         self.keep: bool = keep
         self.allow_missing_input_source: bool = allow_missing_input_source
@@ -109,7 +112,9 @@ class Node(pe.Node):
 
 
 class MapNode(pe.MapNode, Node):
-    def __init__(self, interface, iterfield, name, allow_undefined_iterfield=False, **kwargs):
+    def __init__(
+        self, interface, iterfield, name, allow_undefined_iterfield=False, **kwargs
+    ):
         super().__init__(interface, iterfield, name, **kwargs)
         self.allow_undefined_iterfield: bool = allow_undefined_iterfield
 

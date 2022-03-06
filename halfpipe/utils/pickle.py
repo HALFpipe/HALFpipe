@@ -2,19 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Callable, Literal
-from io import BufferedIOBase
-
-from pathlib import Path
+import gzip
 import lzma
 import pickle
-from traits.trait_errors import TraitError
 import re
-import gzip
+from io import BufferedIOBase
+from pathlib import Path
+from typing import Callable, Literal
+
+from traits.trait_errors import TraitError
 
 from . import logger
-from .path import split_ext
 from .future import chdir
+from .path import split_ext
 
 pickle_lzma_extension = ".pickle.xz"
 
@@ -63,15 +63,14 @@ def load_pickle(file_path: str | Path):
 
     _, file_extension = split_ext(file_path)
 
-    match file_extension:
-        case ".pkl":
-            file_open: Callable[[Path, Literal["rb"]], BufferedIOBase] = open
-        case ".pklz":
-            file_open = gzip.open
-        case ".pickle.xz":
-            file_open = lzma.open
-        case _:
-            raise ValueError()
+    if file_extension == ".pkl":
+        file_open: Callable[[Path, Literal["rb"]], BufferedIOBase] = open
+    elif file_extension == ".pklz":
+        file_open = gzip.open
+    elif file_extension == ".pickle.xz":
+        file_open = lzma.open
+    else:
+        raise ValueError()
 
     with chdir(file_path.parent):
         with file_open(file_path, "rb") as file_handle:
@@ -79,8 +78,8 @@ def load_pickle(file_path: str | Path):
 
 
 def patch_nipype_unpickler():
+    from nipype.pipeline.engine import base, nodes, utils
     from nipype.utils import filemanip
-    from nipype.pipeline.engine import utils, nodes, base
 
     filemanip.loadpkl = load_pickle
     utils.loadpkl = load_pickle

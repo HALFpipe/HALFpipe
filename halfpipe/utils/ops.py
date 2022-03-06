@@ -5,15 +5,15 @@
 
 from itertools import zip_longest
 from math import isclose
-from typing import Any, Collection, Sequence, Mapping
-from functools import cmp_to_key
+from typing import Any, Collection, Mapping, Sequence
 
 import numpy as np
 
 
 def first_float(obj) -> float | None:
-    import numpy as np
     from typing import Iterable
+
+    import numpy as np
 
     if isinstance(obj, float):
         return obj
@@ -96,7 +96,9 @@ def check_almost_equal(a: Any, b: Any) -> bool:
     elif isinstance(a, Collection) and isinstance(b, Collection):
         return check_almost_equal(sorted(a), sorted(b))
 
-    elif isinstance(a, (float, int, np.number)) and isinstance(b, (float, int, np.number)):
+    elif isinstance(a, (float, int, np.number)) and isinstance(
+        b, (float, int, np.number)
+    ):
         return isclose(a, b)
 
     return a == b

@@ -8,17 +8,17 @@
 import os
 
 from nipype.interfaces.base import (
-    traits,
     DynamicTraitedSpec,
-    isdefined,
     File,
     InputMultiPath,
+    isdefined,
+    traits,
 )
 from nipype.interfaces.io import IOBase, add_traits
 
-from .design import DesignSpec
-from ...stats.fit import fit
 from ...stats.algorithms import algorithms, make_algorithms_set
+from ...stats.fit import fit
+from .design import DesignSpec
 
 
 class ModelFitInputSpec(DesignSpec):
@@ -71,11 +71,13 @@ class ModelFit(IOBase):
             var_cope_files = None
 
         prev_os_environ = os.environ.copy()
-        os.environ.update({
-            "MKL_NUM_THREADS": "1",
-            "NUMEXPR_NUM_THREADS": "1",
-            "OMP_NUM_THREADS": "1",
-        })
+        os.environ.update(
+            {
+                "MKL_NUM_THREADS": "1",
+                "NUMEXPR_NUM_THREADS": "1",
+                "OMP_NUM_THREADS": "1",
+            }
+        )
 
         self._results.update(
             fit(
@@ -84,9 +86,7 @@ class ModelFit(IOBase):
                 mask_files=self.inputs.mask_files,
                 regressors=self.inputs.regressors,
                 contrasts=self.inputs.contrasts,
-
                 algorithms_to_run=self.inputs.algorithms_to_run,
-
                 num_threads=self.inputs.num_threads,
             )
         )

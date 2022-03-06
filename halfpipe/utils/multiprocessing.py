@@ -5,17 +5,17 @@
 """
 """
 
-from typing import Union
-
-import os
-from multiprocessing import get_context, active_children
 import multiprocessing.pool as mpp
+import os
+from multiprocessing import active_children, get_context
+from typing import Union
 
 from ..logging import logging_context
 
 
 def initializer(logging_args, host_env):
     from ..logging import setup as setup_logging
+
     setup_logging(**logging_args)
 
     os.environ.update(host_env)
@@ -40,7 +40,7 @@ class Pool(mpp.Pool):
             initializer=initializer,
             initargs=initargs,
             maxtasksperchild=maxtasksperchild,
-            context=context
+            context=context,
         )
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

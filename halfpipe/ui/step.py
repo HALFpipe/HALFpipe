@@ -4,13 +4,11 @@
 
 from abc import abstractmethod
 from collections import defaultdict
+from copy import deepcopy
 from typing import ClassVar, Dict, Optional, Type
 
-from .components import TextView, SpacerView, TextElement, SingleChoiceInputView
-
-from copy import deepcopy
-
 from ..utils import logger
+from .components import SingleChoiceInputView, SpacerView, TextElement, TextView
 
 
 class Step:

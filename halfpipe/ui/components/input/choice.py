@@ -5,11 +5,11 @@
 """
 
 """
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
-from ..view import CallableView
 from ..keyboard import Key
 from ..text import Text, TextElement
+from ..view import CallableView
 
 
 class SingleChoiceInputView(CallableView):
@@ -61,7 +61,9 @@ class SingleChoiceInputView(CallableView):
         arrows = "← →"
         if self.isVertical:
             arrows = "↑ ↓"
-        self._setStatusBar("  ".join(["[↵] Ok", f"[{arrows}] Change selection", "[ctrl-c] Cancel"]))
+        self._setStatusBar(
+            "  ".join(["[↵] Ok", f"[{arrows}] Change selection", "[ctrl-c] Cancel"])
+        )
 
     def _handleKey(self, c):
         if c == Key.Break:
@@ -71,10 +73,16 @@ class SingleChoiceInputView(CallableView):
         elif c == Key.Return:
             if self._is_ok():
                 self.isActive = False
-        elif (self.isVertical and c == Key.Up) or (not self.isVertical and c == Key.Left):
+        elif (self.isVertical and c == Key.Up) or (
+            not self.isVertical and c == Key.Left
+        ):
             self.cur_index = max(0, self.cur_index - 1)
             self.update()
-        elif (self.isVertical and c == Key.Down) or (not self.isVertical and c == Key.Right) or c == Key.Tab:
+        elif (
+            (self.isVertical and c == Key.Down)
+            or (not self.isVertical and c == Key.Right)
+            or c == Key.Tab
+        ):
             self.cur_index = min(len(self.options) - 1, self.cur_index + 1)
             self.update()
         elif isinstance(c, Key):
@@ -145,7 +153,12 @@ class SingleChoiceInputView(CallableView):
             self.layout.window.addstr(y, x, "[", color)
             x += 1
         nchr = option.drawAt(
-            y, x, self.layout, color, overridecolor=overridecolor, renderfun=self.renderfun,
+            y,
+            x,
+            self.layout,
+            color,
+            overridecolor=overridecolor,
+            renderfun=self.renderfun,
         )
         x += nchr
         if self.addBrackets:
@@ -294,7 +307,8 @@ class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
         options = [*multiple_choice_options, *single_choice_options]
         self.single_choice_options = single_choice_options
         super(CombinedMultipleAndSingleChoiceInputView, self).__init__(
-            options, **kwargs,
+            options,
+            **kwargs,
         )
 
     def _before_call(self):
@@ -330,7 +344,9 @@ class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
                 return optionStr
             else:
                 return {
-                    k: v for k, v in self.checked.items() if k not in self.single_choice_options
+                    k: v
+                    for k, v in self.checked.items()
+                    if k not in self.single_choice_options
                 }
 
     def _render_option(self, optionStr):
@@ -348,9 +364,15 @@ class CombinedMultipleAndSingleChoiceInputView(MultipleChoiceInputView):
 
 
 class MultiSingleChoiceInputView(SingleChoiceInputView):
-    def __init__(self, options, values, selectedIndices=None, addBrackets=True, **kwargs):
+    def __init__(
+        self, options, values, selectedIndices=None, addBrackets=True, **kwargs
+    ):
         super().__init__(
-            options, isVertical=True, addBrackets=False, showSelectionAfterExit=False, **kwargs,
+            options,
+            isVertical=True,
+            addBrackets=False,
+            showSelectionAfterExit=False,
+            **kwargs,
         )
         self.selectedIndices = selectedIndices
         self.optionWidth = max(len(option) for option in options)
@@ -386,7 +408,8 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
         elif c == Key.Right:
             if self.cur_index is not None and self.selectedIndices is not None:
                 self.selectedIndices[self.cur_index] = min(
-                    len(self.values[self.cur_index]) - 1, self.selectedIndices[self.cur_index] + 1,
+                    len(self.values[self.cur_index]) - 1,
+                    self.selectedIndices[self.cur_index] + 1,
                 )
             self.update()
         else:
@@ -411,7 +434,11 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
             color = self.color
             if self.selectedIndices is not None:
                 if j == self.selectedIndices[i]:
-                    if self.cur_index is not None and i == self.cur_index and self.isActive:
+                    if (
+                        self.cur_index is not None
+                        and i == self.cur_index
+                        and self.isActive
+                    ):
                         color = self.emphasisColor
                     else:
                         color = self.highlightColor
@@ -433,7 +460,10 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
 
     def __init__(self, options, values, checked=None, enforce_unique=False, **kwargs):
         super(MultiMultipleChoiceInputView, self).__init__(
-            options, values, addBrackets=False, **kwargs,
+            options,
+            values,
+            addBrackets=False,
+            **kwargs,
         )
 
         self.cur_col = None
@@ -441,7 +471,8 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
         if checked is None:
             checked = [[] for _ in options]
         self.checked: List[Dict[str, bool]] = [
-            {str(k): (str(k) in checked[i]) for k in self.values[i]} for i in range(len(options))
+            {str(k): (str(k) in checked[i]) for k in self.values[i]}
+            for i in range(len(options))
         ]
 
         self.enforce_unique = enforce_unique
@@ -465,7 +496,9 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
             self.update()
         elif c == Key.Right:
             if self.cur_col is not None:
-                self.cur_col = min(len(self.values[self.cur_index]) - 1, self.cur_col + 1)
+                self.cur_col = min(
+                    len(self.values[self.cur_index]) - 1, self.cur_col + 1
+                )
             self.update()
         elif c == ord(" "):
             if self.cur_index is not None and self.cur_col is not None:
@@ -483,6 +516,7 @@ class MultiMultipleChoiceInputView(MultiSingleChoiceInputView):
     def _getOutput(self) -> Optional[List[Dict[str, bool]]]:
         if self.cur_index is not None:
             return self.checked
+        return None
 
     def _draw_option(self, i, y):
         option = self.options[i]

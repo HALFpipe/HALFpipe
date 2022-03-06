@@ -2,13 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
+from math import ceil
+from pathlib import Path
 from typing import Any, Dict, List
 
-import os
-from pathlib import Path
-from math import ceil
-
-from .utils import logger, inflect_engine as p
+from .utils import inflect_engine as p
+from .utils import logger
 from .workflows.execgraph import filter_subjects
 
 shebang = """#!/bin/bash
@@ -47,7 +47,7 @@ cluster_configs = dict(
 #$ -l mem={mem_mb:d}M
 #
 #$ -t 1-{n_chunks:d}
-"""
+""",
 )
 
 array_index_variables = dict(
@@ -85,9 +85,10 @@ def create_example_script(workdir, graphs: Dict[str, Any], opts):
     assert n_chunks > 0
 
     n_cpus = 2
-    mem_gb: float = max(
-        node.mem_gb for subject in subjects for node in graphs[subject].nodes
-    ) * 1.5 + 3.0  # three gigabytes for the python process plus the actual memory
+    mem_gb: float = (
+        max(node.mem_gb for subject in subjects for node in graphs[subject].nodes) * 1.5
+        + 3.0
+    )  # three gigabytes for the python process plus the actual memory
     mem_mb: int = int(ceil(mem_gb * 1024))
 
     extra_args = ""
@@ -149,4 +150,6 @@ def create_example_script(workdir, graphs: Dict[str, Any], opts):
         with open(Path(workdir) / stpath, "w") as f:
             f.write(st)
 
-    logger.log(25, f"Cluster submission script templates were created at {p.join(stpaths)}")
+    logger.log(
+        25, f"Cluster submission script templates were created at {p.join(stpaths)}"
+    )

@@ -3,13 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
 
-from pathlib import Path
-
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
 from nilearn.image import new_img_like
 
 
@@ -30,7 +29,9 @@ class ModelAlgorithm(ABC):
 
     @staticmethod
     @abstractmethod
-    def write_outputs(ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict) -> Dict:
+    def write_outputs(
+        ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+    ) -> Dict:
         raise NotImplementedError()
 
     @classmethod
@@ -41,8 +42,10 @@ class ModelAlgorithm(ABC):
         shape: List[int] = list(ref_img.shape[:3])
 
         (k,) = set(
-            (1,) if isinstance(value, (int, float))
-            else (len(value),) if isinstance(value, (list, tuple))
+            (1,)
+            if isinstance(value, (int, float))
+            else (len(value),)
+            if isinstance(value, (list, tuple))
             else value.shape
             for value in values
         )
@@ -71,13 +74,7 @@ class ModelAlgorithm(ABC):
 
 
 def listwise_deletion(*args: np.ndarray) -> Generator[np.ndarray, None, None]:
-    available = np.all(
-        np.concatenate(
-            [np.isfinite(a) for a in args],
-            axis=1
-        ),
-        axis=1
-    )
+    available = np.all(np.concatenate([np.isfinite(a) for a in args], axis=1), axis=1)
 
     for a in args:
         yield a[available, ...]

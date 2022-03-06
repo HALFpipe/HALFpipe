@@ -2,11 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import nibabel as nib
 import re
 
+import nibabel as nib
+
+from ...model.metadata import axis_codes, direction_codes, space_codes
 from ..glob import tag_glob
-from ...model.metadata import direction_codes, axis_codes, space_codes
 from .niftiheader import NiftiheaderLoader
 
 

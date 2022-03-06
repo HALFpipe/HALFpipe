@@ -2,11 +2,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from collections import defaultdict
 import json
+from collections import defaultdict
+from enum import Enum, IntEnum, auto
 from glob import glob, has_magic
 from typing import Generator, Mapping
-from enum import IntEnum, Enum, auto
 
 from more_itertools import powerset
 from pyrsistent import pmap
@@ -55,11 +55,13 @@ class QCDecisionMaker:
         else:
             rating = Rating[rating_str.upper()]
 
-        tags = pmap({
-            tag: value
-            for tag, value in entry.items()
-            if tag not in ["rating", "type"]
-        })
+        tags = pmap(
+            {
+                tag: value
+                for tag, value in entry.items()
+                if tag not in ["rating", "type"]
+            }
+        )
 
         self.index[tags].add(rating)
 
@@ -74,24 +76,21 @@ class QCDecisionMaker:
 
     def get(self, tags: Mapping[str, str]) -> Decision:
         relevant_tags = {
-            tag: value
-            for tag, value in tags.items()
-            if tag in self.relevant_tag_names
+            tag: value for tag, value in tags.items() if tag in self.relevant_tag_names
         }
 
         rating: Rating = max(self.iter_ratings(relevant_tags))
 
-        match rating:
-            case Rating.BAD:
-                return Decision.EXCLUDE
-            case Rating.GOOD:
-                return Decision.INCLUDE
-            case Rating.NONE | Rating.UNCERTAIN:
-                logger.warning(
-                    f"Will include observation ({format_tags(relevant_tags)}) for analysis "
-                    f'even though quality rating is "{rating.name}"'
-                )
+        if rating == Rating.BAD:
+            return Decision.EXCLUDE
+        elif rating == Rating.GOOD:
+            return Decision.INCLUDE
+        elif rating == Rating.NONE or rating == Rating.UNCERTAIN:
+            logger.warning(
+                f"Will include observation ({format_tags(relevant_tags)}) for analysis "
+                f'even though quality rating is "{rating.name}"'
+            )
 
-                return Decision.INCLUDE
-
-        raise ValueError()
+            return Decision.INCLUDE
+        else:
+            raise ValueError()

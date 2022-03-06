@@ -6,7 +6,6 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
 
 from ...interfaces.utility.file_type import SplitByFileType
-
 from ...utils.ops import first_str
 
 
@@ -23,7 +22,9 @@ def add_setting_adapter(workflow):
         name="bold_adapter",
     )
     tsv_adapter = pe.Node(
-        niu.Function(input_names=["obj"], output_names=["confounds"], function=first_str),
+        niu.Function(
+            input_names=["obj"], output_names=["confounds"], function=first_str
+        ),
         name="tsv_adapter",
     )
     workflow.connect(split_by_file_type, "nifti_files", bold_adapter, "obj")
@@ -38,9 +39,13 @@ def init_setting_adapter_wf(suffix: str | None = None):
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="inputnode",)
+    inputnode = pe.Node(
+        niu.IdentityInterface(fields=["files", "mask", "vals"]),
+        name="inputnode",
+    )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["bold", "confounds", "mask", "vals"]), name="outputnode",
+        niu.IdentityInterface(fields=["bold", "confounds", "mask", "vals"]),
+        name="outputnode",
     )
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")

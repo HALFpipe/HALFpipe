@@ -6,16 +6,16 @@
 
 """
 import curses
-import threading
 import queue
+import threading
 from time import sleep
 
 from .color import Color
+from .cursor import Cursor
 from .keyboard import Keyboard
 from .layout import Layout
-from .cursor import Cursor
 
-frameDelaySeconds = 50. / 1000.  # 20 fps
+frameDelaySeconds = 50.0 / 1000.0  # 20 fps
 
 
 class App:

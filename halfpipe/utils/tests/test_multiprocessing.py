@@ -5,9 +5,9 @@
 """
 """
 
-import pytest
-
 from multiprocessing import active_children
+
+import pytest
 
 from ..multiprocessing import Pool
 

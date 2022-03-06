@@ -7,8 +7,8 @@ from .json import TypeAwareJSONEncoder
 
 
 def hex_digest(obj):
-    from hashlib import sha1
     import json
+    from hashlib import sha1
 
     m = sha1()
     m.update(json.dumps(obj, sort_keys=True, cls=TypeAwareJSONEncoder).encode())
@@ -16,9 +16,9 @@ def hex_digest(obj):
 
 
 def b32_digest(obj):
-    from hashlib import sha1
     import json
     from base64 import b32encode
+    from hashlib import sha1
 
     m = sha1()
     m.update(json.dumps(obj, sort_keys=True, cls=TypeAwareJSONEncoder).encode())

@@ -7,14 +7,14 @@
 """
 
 from marshmallow import (
-    fields,
-    validate,
-    Schema,
-    post_load,
-    post_dump,
-    validates_schema,
-    ValidationError,
     RAISE,
+    Schema,
+    ValidationError,
+    fields,
+    post_dump,
+    post_load,
+    validate,
+    validates_schema,
 )
 from marshmallow_oneofschema import OneOfSchema
 

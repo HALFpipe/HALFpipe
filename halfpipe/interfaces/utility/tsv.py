@@ -3,20 +3,20 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
-from pathlib import Path
 import re
+from pathlib import Path
 
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    SimpleInterface,
-    File,
-    DynamicTraitedSpec,
-    isdefined,
-)
-from nipype.interfaces.io import add_traits, IOBase
-import pandas as pd
 import numpy as np
+import pandas as pd
+from nipype.interfaces.base import (
+    DynamicTraitedSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    isdefined,
+    traits,
+)
+from nipype.interfaces.io import IOBase, add_traits
 
 from ...ingest.spreadsheet import read_spreadsheet
 from ...utils.ops import ravel
@@ -30,9 +30,7 @@ class FillNAInputSpec(TraitedSpec):
 class TsvOutputSpec(TraitedSpec):
     out_with_header = File(exists=True, desc="output tsv file with a header")
     out_no_header = File(exists=True, desc="output tsv file without header")
-    column_names = traits.List(
-        traits.Str, desc="list of column names in order"
-    )
+    column_names = traits.List(traits.Str, desc="list of column names in order")
 
 
 class FillNA(SimpleInterface):
@@ -53,14 +51,20 @@ class FillNA(SimpleInterface):
 
             non_finite_count = np.logical_not(np.isfinite(df.values)).sum()
             if non_finite_count > 0:
-                logging.getLogger("halfpipe").warning(f"Replacing {non_finite_count:d} non-finite values with {replace_with:f} in file \"{in_file}\"")
+                logging.getLogger("halfpipe").warning(
+                    f'Replacing {non_finite_count:d} non-finite values with {replace_with:f} in file "{in_file}"'
+                )
 
                 df.replace([np.inf, -np.inf], np.nan, inplace=True)
                 df.fillna(replace_with, inplace=True)
 
             self._results["out_no_header"] = Path.cwd() / "fillna_no_header.tsv"
             df.to_csv(
-                self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+                self._results["out_no_header"],
+                sep="\t",
+                index=False,
+                na_rep="n/a",
+                header=False,
             )
 
             self._results["column_names"] = list(map(str, df.columns))
@@ -178,11 +182,19 @@ class SelectColumns(SimpleInterface):
         ]
         self._results["out_with_header"] = Path.cwd() / "select_with_header.tsv"
         dataframe.to_csv(
-            self._results["out_with_header"], sep="\t", index=False, na_rep="n/a", header=True
+            self._results["out_with_header"],
+            sep="\t",
+            index=False,
+            na_rep="n/a",
+            header=True,
         )
         self._results["out_no_header"] = Path.cwd() / "select_no_header.tsv"
         dataframe.to_csv(
-            self._results["out_no_header"], sep="\t", index=False, na_rep="n/a", header=False
+            self._results["out_no_header"],
+            sep="\t",
+            index=False,
+            na_rep="n/a",
+            header=False,
         )
         self._results["column_names"] = list(map(str, dataframe.columns))
 

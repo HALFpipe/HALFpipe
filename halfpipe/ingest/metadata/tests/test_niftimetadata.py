@@ -6,9 +6,9 @@
 
 """
 
-import pytest
-import numpy as np
 import nibabel as nib
+import numpy as np
+import pytest
 
 from ....model import File
 from ..niftimetadata import NiftiheaderMetadataLoader

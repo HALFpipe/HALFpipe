@@ -6,7 +6,7 @@
 
 """
 
-from marshmallow import Schema, fields, validate, pre_load, post_dump, RAISE
+from marshmallow import RAISE, Schema, fields, post_dump, pre_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
 from .filter import FilterSchema
@@ -60,7 +60,9 @@ class GlobalSettingsSchema(Schema):
     sloppy = fields.Boolean(dump_default=False)
 
     @pre_load
-    def fill_default_values(self, in_data, **_):  # make load_default equal to dump_default
+    def fill_default_values(
+        self, in_data, **_
+    ):  # make load_default equal to dump_default
         for k, v in self.fields.items():
             if k not in in_data:
                 in_data[k] = v.dump_default
@@ -76,14 +78,18 @@ class GrandMeanScalingSettingSchema(Schema):
 
 
 class GaussianHighpassSettingSchema(Schema):
-    type = fields.Str(dump_default="gaussian", validate=validate.OneOf(["gaussian"]), required=True)
+    type = fields.Str(
+        dump_default="gaussian", validate=validate.OneOf(["gaussian"]), required=True
+    )
     hp_width = fields.Float(validate=validate.Range(min=0.0))
     lp_width = fields.Float(validate=validate.Range(min=0.0))
 
 
 class FrequencyBasedBandpassSettingSchema(Schema):
     type = fields.Str(
-        dump_default="frequency_based", validate=validate.OneOf(["frequency_based"]), required=True
+        dump_default="frequency_based",
+        validate=validate.OneOf(["frequency_based"]),
+        required=True,
     )
     low = fields.Float(validate=validate.Range(min=0.0))
     high = fields.Float(validate=validate.Range(min=0.0))
@@ -106,7 +112,9 @@ class BaseSettingSchema(Schema):
         unknown = RAISE
         ordered = True
 
-    ica_aroma = fields.Bool(allow_none=True)  # none is allowed to signify that this step will be skipped
+    ica_aroma = fields.Bool(
+        allow_none=True
+    )  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped

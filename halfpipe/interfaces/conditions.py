@@ -4,7 +4,14 @@
 
 from math import isclose
 
-from nipype.interfaces.base import traits, TraitedSpec, SimpleInterface, isdefined, Bunch, File
+from nipype.interfaces.base import (
+    Bunch,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    isdefined,
+    traits,
+)
 
 from ..ingest.condition import parse_condition_file
 from ..utils import logger
@@ -36,7 +43,9 @@ class ApplyConditionOffset(SimpleInterface):
                 onset -= scan_start
                 if onset < 0:
                     onset = 0
-                    logger.warning(f'Condition "{condition}" onset truncated to {onset:f} s.')
+                    logger.warning(
+                        f'Condition "{condition}" onset truncated to {onset:f} s.'
+                    )
                 condition_onsets[i] = onset
 
         self._results["subject_info"] = Bunch(
@@ -87,7 +96,9 @@ class ParseConditionFile(SimpleInterface):
         conditions, onsets, durations = parse_condition_file(in_any=self.inputs.in_any)
 
         if isdefined(self.inputs.condition_names):
-            conditions_selected = [str(name) for name in self.inputs.condition_names]  # need a traits-free representation for bunch
+            conditions_selected = [
+                str(name) for name in self.inputs.condition_names
+            ]  # need a traits-free representation for bunch
             onsets_selected, durations_selected = [], []
             for condition_name in conditions_selected:
                 if condition_name not in conditions:
@@ -99,7 +110,11 @@ class ParseConditionFile(SimpleInterface):
                     condition_durations = durations[i]
                 onsets_selected.append(condition_onsets)
                 durations_selected.append(condition_durations)
-            conditions, onsets, durations = conditions_selected, onsets_selected, durations_selected
+            conditions, onsets, durations = (
+                conditions_selected,
+                onsets_selected,
+                durations_selected,
+            )
 
         filtered_conditions = [  # filter conditions with zero events
             (condition, onset, duration)
@@ -113,7 +128,9 @@ class ParseConditionFile(SimpleInterface):
 
         self._results["condition_names"] = list(conditions)
 
-        if isdefined(self.inputs.contrasts):  # filter contrasts based on parsed conditions
+        if isdefined(
+            self.inputs.contrasts
+        ):  # filter contrasts based on parsed conditions
             contrasts = self.inputs.contrasts
 
             newcontrasts = list()
@@ -137,9 +154,7 @@ class ParseConditionFile(SimpleInterface):
                     (name, type, list(contrast_conditions), list(contrast_values))
                 )
 
-            self._results["contrast_names"] = [
-                name for name, _, _, _ in newcontrasts
-            ]
+            self._results["contrast_names"] = [name for name, _, _, _ in newcontrasts]
 
         self._results["subject_info"] = Bunch(
             conditions=conditions, onsets=onsets, durations=durations

@@ -6,7 +6,7 @@
 
 """
 
-from marshmallow import Schema, RAISE, fields
+from marshmallow import RAISE, Schema, fields
 
 from .tags import ResultdictTagsSchema
 

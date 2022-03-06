@@ -8,9 +8,9 @@ import numpy as np
 from scipy.io import loadmat
 
 from ..model.file import File
-from .spreadsheet import read_spreadsheet
 from ..utils import logger
 from ..utils.path import split_ext
+from .spreadsheet import read_spreadsheet
 
 bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -80,9 +80,12 @@ def parse_txt_condition_files(filepaths, conditions):
         try:
             data_frame = read_spreadsheet(filepath)
 
-            data_frame.rename(columns=dict(
-                zip(list(data_frame.columns)[:2], ["onsets", "durations"])
-            ), inplace=True)
+            data_frame.rename(
+                columns=dict(
+                    zip(list(data_frame.columns)[:2], ["onsets", "durations"])
+                ),
+                inplace=True,
+            )
 
             onsets.append(data_frame.onsets.tolist())
             durations.append(data_frame.durations.tolist())
@@ -101,7 +104,10 @@ def parse_condition_file(in_any=None):
     durations = []
 
     if isinstance(in_any, (list, tuple)):
-        if all(isinstance(fileobj, File) and fileobj.extension == ".txt" for fileobj in in_any):
+        if all(
+            isinstance(fileobj, File) and fileobj.extension == ".txt"
+            for fileobj in in_any
+        ):
             condition_file_tpls = [
                 (fileobj.path, fileobj.tags.get("condition")) for fileobj in in_any
             ]

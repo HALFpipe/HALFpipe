@@ -9,7 +9,7 @@ astor==0.8.1
 asttokens==2.0.5
     # via stack-data
 atpublic==3.0.1
-    # via flufl-lock
+    # via flufl.lock
 attrs==21.4.0
     # via niworkflows
 backcall==0.2.0
@@ -47,7 +47,7 @@ executing==0.8.2
     # via stack-data
 fasteners==0.17.3
     # via -r requirements.in
-flufl-lock==7.0
+flufl.lock==7.0
     # via -r requirements.in
 fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
@@ -206,6 +206,7 @@ packaging==21.3
     #   niworkflows
     #   pint
     #   scikit-image
+    #   setuptools-scm
     #   statsmodels
 pandas==1.4.1
     # via
@@ -246,7 +247,7 @@ prompt-toolkit==3.0.28
 psutil==5.9.0
     # via
     #   -r requirements.in
-    #   flufl-lock
+    #   flufl.lock
     #   fmriprep
 ptyprocess==0.7.0
     # via pexpect
@@ -321,6 +322,8 @@ seaborn==0.11.2
     # via
     #   -r requirements.in
     #   niworkflows
+setuptools-scm[toml]==6.4.2
+    # via -r requirements.in
 six==1.16.0
     # via
     #   asttokens
@@ -362,7 +365,9 @@ tifffile==2022.2.9
 toml==0.10.2
     # via fmriprep
 tomli==2.0.1
-    # via black
+    # via
+    #   black
+    #   setuptools-scm
 tqdm==4.62.3
     # via templateflow
 traitlets==5.1.1
@@ -383,6 +388,8 @@ urllib3==1.26.8
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
+wheel==0.37.1
+    # via -r requirements.in
 wrapt==1.13.3
     # via formulaic
 xlrd==2.0.1

@@ -4,10 +4,8 @@
 
 import re
 
-from .base import init_model_wf
-
 from ..factory import Factory
-
+from .base import init_model_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -19,21 +17,21 @@ class ModelFactory(Factory):
         self.feature_factory = feature_factory
 
     def has(self, name):
-        for model in self.spec.models:
+        for model in self.ctx.spec.models:
             if model.name == name:
                 return True
         return False
 
     def setup(self):
         self.wfs = dict()
-        for model in self.spec.models:
+        for model in self.ctx.spec.models:
             self.create(model)
 
     def create(self, model):
         hierarchy = self._get_hierarchy("models_wf")
         wf = hierarchy[-1]
 
-        database = self.database
+        database = self.ctx.database
 
         variables = None
         if hasattr(model, "spreadsheet"):
@@ -49,9 +47,9 @@ class ModelFactory(Factory):
                 raise ValueError(f'Unknown input name "{inputname}"')
 
         vwf = init_model_wf(
-            self.workdir,
+            self.ctx.workdir,
+            model,
             numinputs=len(inputs),
-            model=model,
             variables=variables,
         )
         wf.add_nodes([vwf])
@@ -62,7 +60,14 @@ class ModelFactory(Factory):
         self.wfs[model.name].append(hierarchy)
 
         for i, outputhierarchy in enumerate(inputs):
-            self.connect_attr(outputhierarchy, "outputnode", "resultdicts", hierarchy, "inputnode", f"in{i+1:d}")
+            self.connect_attr(
+                outputhierarchy,
+                "outputnode",
+                "resultdicts",
+                hierarchy,
+                "inputnode",
+                f"in{i+1:d}",
+            )
 
         return vwf
 

@@ -2,12 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.interfaces.base import (
-    traits,
-    DynamicTraitedSpec,
-    BaseInterfaceInputSpec,
-)
-from nipype.interfaces.io import add_traits, IOBase
+from nipype.interfaces.base import BaseInterfaceInputSpec, DynamicTraitedSpec, traits
+from nipype.interfaces.io import IOBase, add_traits
 
 from ...model import ResultdictSchema
 

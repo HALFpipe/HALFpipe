@@ -8,8 +8,8 @@
 
 from marshmallow import fields, validate
 
-from .base import BaseFileSchema
 from ..metadata import BoldMetadataSchema
+from .base import BaseFileSchema
 
 
 class BidsFileSchema(BaseFileSchema):

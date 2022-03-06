@@ -4,15 +4,15 @@
 
 from typing import Optional, Type
 
-from ..components import (
-    MultiCombinedNumberAndSingleChoiceInputView, TextView, SpacerView
-)
-
 from ...model import BoldFileSchema
-
+from ..components import (
+    MultiCombinedNumberAndSingleChoiceInputView,
+    SpacerView,
+    TextView,
+)
+from ..metadata import CheckMetadataStep
 from ..pattern import FilePatternStep, FilePatternSummaryStep
 from ..step import Step, YesNoStep
-from ..metadata import CheckMetadataStep
 from .fmap import FmapStep, FmapSummaryStep
 
 filetype_str = "BOLD image"
@@ -44,7 +44,10 @@ def get_post_func_steps(this_next_step_type: Optional[Type[Step]]) -> Type[Step]
             self._append_view(TextView("Remove initial volumes from scans?"))
 
             self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
-                [""], [self.detect_str], initial_values=[0], min=0,
+                [""],
+                [self.detect_str],
+                initial_values=[0],
+                min=0,
             )
 
             self._append_view(self.input_view)

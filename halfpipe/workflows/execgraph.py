@@ -2,33 +2,30 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Mapping, Set, Tuple, Union, Dict, Optional
-
 import logging
-from pathlib import Path
-from shutil import copyfile
 import re
-from collections import OrderedDict, defaultdict
-from fnmatch import fnmatch
 from argparse import Namespace
+from collections import OrderedDict, defaultdict
 from copy import deepcopy
-from shutil import rmtree
+from fnmatch import fnmatch
 from functools import partial
+from pathlib import Path
+from shutil import copyfile, rmtree
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
 
 import networkx as nx
-
 import nipype.pipeline.engine as pe
-from nipype.interfaces.base.support import InterfaceResult
 from nipype.interfaces import utility as niu
+from nipype.interfaces.base.support import InterfaceResult
 from nipype.pipeline.engine.utils import merge_dict
 
 from ..fixes import Node
-from .base import IdentifiableWorkflow
-from ..utils.path import resolve
-from ..utils.format import format_like_bids, normalize_subject
-from ..utils.table import SynchronizedTable
-from ..utils.cache import cache_obj, uncache_obj
 from ..resource import get as getresource
+from ..utils.cache import cache_obj, uncache_obj
+from ..utils.format import format_like_bids, normalize_subject
+from ..utils.path import resolve
+from ..utils.table import SynchronizedTable
+from .base import IdentifiableWorkflow
 from .constants import constants
 
 max_chunk_size = 50  # subjects
@@ -64,16 +61,12 @@ def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
         subject_list_path = resolve(opts.subject_list, opts.fs_root)
 
         with open(subject_list_path) as file_handle:
-            subject_set = set(
-                s.strip() for s in file_handle.readlines()
-            )
+            subject_set = set(s.strip() for s in file_handle.readlines())
 
         subject_set |= set(map(normalize_subject, subject_set))
         subject_set |= set(map(format_like_bids, subject_set))
 
-        subjects = [
-            n for n in subjects if n in subject_set
-        ]
+        subjects = [n for n in subjects if n in subject_set]
 
     return subjects
 
@@ -96,9 +89,7 @@ def node_result_file(u: pe.Node) -> Path:
 
 
 def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
-    stack = [
-        (u, v, source_info, field) for source_info, field in c["connect"]
-    ]
+    stack = [(u, v, source_info, field) for source_info, field in c["connect"]]
 
     result = list()
 
@@ -114,9 +105,7 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
             assert isinstance(k, dict)
             for u_source_info, node_field in k["connect"]:
                 if source_info == node_field:
-                    stack.append(
-                        (u, v, u_source_info, field)
-                    )
+                    stack.append((u, v, u_source_info, field))
 
     stack = result
     result = list()
@@ -132,9 +121,7 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
             assert isinstance(k, dict)
             for node_source_info, v_field in k["connect"]:
                 if node_source_info == field:
-                    stack.append(
-                        (u, v, source_info, v_field)
-                    )
+                    stack.append((u, v, source_info, v_field))
 
     input_source_dict: Dict[pe.Node, Dict] = defaultdict(dict)
     for u, v, source_info, field in result:
@@ -172,7 +159,9 @@ def resolve_input_boundary(flat_graph, non_subject_nodes):
 def resolve_output_boundary(flat_graph, non_subject_nodes) -> Dict[str, Dict]:
     input_source_dict: Dict[str, Dict] = defaultdict(dict)
 
-    for (v, u, c) in nx.edge_boundary(flat_graph.reverse(), non_subject_nodes, data=True):
+    for (v, u, c) in nx.edge_boundary(
+        flat_graph.reverse(), non_subject_nodes, data=True
+    ):
         edge_input_source_dict = find_input_source(flat_graph, u, v, c)
 
         for v, input_sources in edge_input_source_dict.items():
@@ -183,7 +172,9 @@ def resolve_output_boundary(flat_graph, non_subject_nodes) -> Dict[str, Dict]:
     return input_source_dict
 
 
-def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str) -> Tuple[Dict[str, Set[pe.Node]], Dict[str, Dict]]:
+def split_flat_graph(
+    flat_graph: nx.DiGraph, base_dir: str
+) -> Tuple[Dict[str, Set[pe.Node]], Dict[str, Dict]]:
     subject_nodes: Dict[str, Set[pe.Node]] = defaultdict(set)
     for node in flat_graph:
         node.base_dir = base_dir  # make sure to use correct base path
@@ -222,7 +213,9 @@ def prepare_graph(config, base_dir, uuid, graph):
 
 
 def init_flat_graph(workflow, workdir) -> nx.DiGraph:
-    flat_graph = uncache_obj(workdir, ".flat_graph", workflow.uuid, display_str="flat graph")
+    flat_graph = uncache_obj(
+        workdir, ".flat_graph", workflow.uuid, display_str="flat graph"
+    )
     if flat_graph is not None:
         assert isinstance(flat_graph, nx.DiGraph)
         return flat_graph
@@ -235,8 +228,7 @@ def init_flat_graph(workflow, workdir) -> nx.DiGraph:
 
 
 def init_execgraph(
-    workdir: Union[Path, str],
-    workflow: IdentifiableWorkflow
+    workdir: Union[Path, str], workflow: IdentifiableWorkflow
 ) -> Dict[str, IdentifiableDiGraph]:
     logger = logging.getLogger("halfpipe")
 
@@ -288,7 +280,8 @@ def init_execgraph(
 
     logger.info("Splitting graph")
 
-    subject_nodes, input_source_dict = split_flat_graph(flat_graph, workflow.base_dir)
+    base_dir = str(workflow.base_dir)
+    subject_nodes, input_source_dict = split_flat_graph(flat_graph, base_dir)
 
     graphs = OrderedDict()
     for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):

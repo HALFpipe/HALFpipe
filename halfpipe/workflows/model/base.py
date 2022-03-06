@@ -5,37 +5,32 @@
 from pathlib import Path
 from typing import FrozenSet
 
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype.interfaces import fsl
-
 from fmriprep import config
+from nipype.interfaces import fsl
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
+from ...fixes import MapNode, Node
+from ...interfaces.fixes.flameo import FLAMEO
+from ...interfaces.imagemaths.merge import Merge, MergeMask
+from ...interfaces.resultdict.aggregate import AggregateResultdicts
+from ...interfaces.resultdict.datasink import ResultdictDatasink
+from ...interfaces.resultdict.extract import ExtractFromResultdict
+from ...interfaces.resultdict.filter import FilterResultdicts
+from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.stats.design import GroupDesign, InterceptOnlyDesign, MakeDesignTsv
 from ...interfaces.stats.fit import ModelFit
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.imagemaths.merge import Merge, MergeMask
-from ...interfaces.resultdict.extract import ExtractFromResultdict
-from ...interfaces.resultdict.make import MakeResultdicts
-from ...interfaces.fixes.flameo import FLAMEO
-from ...interfaces.resultdict.filter import FilterResultdicts
-from ...interfaces.resultdict.aggregate import AggregateResultdicts
-from ...utils.ops import ravel, len_for_each
-from ...utils.format import format_workflow
-from ..memory import MemoryCalculator
 from ...stats.algorithms import algorithms, modelfit_aliases
-from ...fixes import Node, MapNode
+from ...utils.format import format_workflow
+from ...utils.ops import len_for_each, ravel
+from ..memory import MemoryCalculator
 
-modelfit_model_outputs = frozenset([
-    output
-    for a in algorithms.values()
-    for output in a.model_outputs
-])
-modelfit_contrast_outputs = frozenset([
-    output
-    for a in algorithms.values()
-    for output in a.contrast_outputs
-])
+modelfit_model_outputs = frozenset(
+    [output for a in algorithms.values() for output in a.model_outputs]
+)
+modelfit_contrast_outputs = frozenset(
+    [output for a in algorithms.values() for output in a.contrast_outputs]
+)
 modelfit_exclude: FrozenSet[str] = frozenset([])
 
 
@@ -63,10 +58,10 @@ def _critical_z(voxels=None, resels=None, critical_p=0.05):
 
 def init_model_wf(
     workdir: Path,
+    model,
     numinputs=1,
-    model=None,
     variables=None,
-    memcalc=MemoryCalculator.default()
+    memcalc=MemoryCalculator.default(),
 ):
     name = f"{format_workflow(model.name)}_wf"
     workflow = pe.Workflow(name=name)
@@ -80,7 +75,9 @@ def init_model_wf(
         allow_missing_input_source=True,
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
+    )
 
     # setup outputs
     make_resultdicts_a = pe.Node(
@@ -101,7 +98,10 @@ def init_model_wf(
             tagkeys=["model", "contrast"],
             imagekeys=statmaps,
             metadatakeys=["critical_z"],
-            missingvalues=[None, False],  # need to use False because traits doesn't support NoneType
+            missingvalues=[
+                None,
+                False,
+            ],  # need to use False because traits doesn't support NoneType
         ),
         name="make_resultdicts_b",
     )
@@ -137,13 +137,19 @@ def init_model_wf(
         exclude_files=[
             str(workdir / "exclude*.json"),
             str(workdir / "reports" / "exclude*.json"),
-        ]
+        ],
     )
-    if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
+    if (
+        hasattr(model, "filters")
+        and model.filters is not None
+        and len(model.filters) > 0
+    ):
         filter_kwargs.update(dict(filter_dicts=model.filters))
     if hasattr(model, "spreadsheet"):
         if model.spreadsheet is not None and variables is not None:
-            filter_kwargs.update(dict(spreadsheet=model.spreadsheet, variable_dicts=variables))
+            filter_kwargs.update(
+                dict(spreadsheet=model.spreadsheet, variable_dicts=variables)
+            )
     filter_resultdicts = pe.Node(
         interface=FilterResultdicts(**filter_kwargs),
         name="filter_resultdicts",
@@ -153,7 +159,8 @@ def init_model_wf(
     # aggregate data structures
     # output is a list where each element respresents a separate model run
     aggregate_resultdicts = pe.Node(
-        AggregateResultdicts(numinputs=1, across=model.across), name="aggregate_resultdicts"
+        AggregateResultdicts(numinputs=1, across=model.across),
+        name="aggregate_resultdicts",
     )
     workflow.connect(filter_resultdicts, "resultdicts", aggregate_resultdicts, "in1")
 
@@ -165,24 +172,35 @@ def init_model_wf(
         allow_undefined_iterfield=True,
         name="extract_from_resultdict",
     )
-    workflow.connect(aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict")
+    workflow.connect(
+        aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict"
+    )
 
     # copy over aggregated metadata and tags to outputs
     for make_resultdicts_node in [make_resultdicts_a, make_resultdicts_b]:
         workflow.connect(extract_from_resultdict, "tags", make_resultdicts_node, "tags")
-        workflow.connect(extract_from_resultdict, "metadata", make_resultdicts_node, "metadata")
+        workflow.connect(
+            extract_from_resultdict, "metadata", make_resultdicts_node, "metadata"
+        )
         workflow.connect(extract_from_resultdict, "vals", make_resultdicts_node, "vals")
 
     # create models
     if model.type in ["fe", "me"]:  # intercept only model
         countimages = pe.Node(
-            niu.Function(input_names=["arrarr"], output_names=["image_count"], function=len_for_each),
+            niu.Function(
+                input_names=["arrarr"],
+                output_names=["image_count"],
+                function=len_for_each,
+            ),
             name="countimages",
         )
         workflow.connect(extract_from_resultdict, "effect", countimages, "arrarr")
 
         modelspec = MapNode(
-            InterceptOnlyDesign(), name="modelspec", iterfield="n_copes", mem_gb=memcalc.min_gb
+            InterceptOnlyDesign(),
+            name="modelspec",
+            iterfield="n_copes",
+            mem_gb=memcalc.min_gb,
         )
         workflow.connect(countimages, "image_count", modelspec, "n_copes")
 
@@ -205,9 +223,16 @@ def init_model_wf(
     workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast")
 
     # run models
-    if model.type in ["fe"]:  # fixed effects aggregate for multiple runs, sessions, etc.
+    if model.type in [
+        "fe"
+    ]:  # fixed effects aggregate for multiple runs, sessions, etc.
         # pass length one inputs because we may want to use them on a higher level
-        workflow.connect(aggregate_resultdicts, "non_aggregated_resultdicts", merge_resultdicts_b, "in3")
+        workflow.connect(
+            aggregate_resultdicts,
+            "non_aggregated_resultdicts",
+            merge_resultdicts_b,
+            "in3",
+        )
 
         # need to merge
         mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * 3)
@@ -217,11 +242,17 @@ def init_model_wf(
         mergeeffect = MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
         workflow.connect(extract_from_resultdict, "effect", mergeeffect, "in_files")
 
-        mergevariance = MapNode(Merge(dimension="t"), name="mergevariance", **mergenodeargs)
+        mergevariance = MapNode(
+            Merge(dimension="t"), name="mergevariance", **mergenodeargs
+        )
         workflow.connect(extract_from_resultdict, "variance", mergevariance, "in_files")
 
         fe_run_mode = MapNode(
-            niu.Function(input_names=["var_cope_file"], output_names=["run_mode"], function=_fe_run_mode),
+            niu.Function(
+                input_names=["var_cope_file"],
+                output_names=["run_mode"],
+                function=_fe_run_mode,
+            ),
             iterfield=["var_cope_file"],
             name="fe_run_mode",
         )
@@ -258,7 +289,9 @@ def init_model_wf(
         workflow.connect(mergevariance, "merged_file", modelfit, "var_cope_file")
         workflow.connect(multipleregressdesign, "design_mat", modelfit, "design_file")
         workflow.connect(multipleregressdesign, "design_con", modelfit, "t_con_file")
-        workflow.connect(multipleregressdesign, "design_grp", modelfit, "cov_split_file")
+        workflow.connect(
+            multipleregressdesign, "design_grp", modelfit, "cov_split_file"
+        )
 
         # mask output
         workflow.connect(mergemask, "merged_file", make_resultdicts_b, "mask")
@@ -280,7 +313,9 @@ def init_model_wf(
         )
         workflow.connect(extract_from_resultdict, "mask", modelfit, "mask_files")
         workflow.connect(extract_from_resultdict, "effect", modelfit, "cope_files")
-        workflow.connect(extract_from_resultdict, "variance", modelfit, "var_cope_files")
+        workflow.connect(
+            extract_from_resultdict, "variance", modelfit, "var_cope_files"
+        )
 
         workflow.connect(modelspec, "regressors", modelfit, "regressors")
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")
@@ -299,7 +334,7 @@ def init_model_wf(
             niu.Function(
                 input_names=["voxels", "resels"],
                 output_names=["critical_z"],
-                function=_critical_z
+                function=_critical_z,
             ),
             name="criticalz",
         )
@@ -328,7 +363,7 @@ def init_model_wf(
     maketsv = MapNode(
         MakeDesignTsv(),
         iterfield=["regressors", "contrasts", "row_index"],
-        name="maketsv"
+        name="maketsv",
     )
     workflow.connect(extract_from_resultdict, model.across, maketsv, "row_index")
     workflow.connect(modelspec, "regressors", maketsv, "regressors")

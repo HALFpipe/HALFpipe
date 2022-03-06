@@ -6,8 +6,8 @@ import sys
 
 import stackprinter
 
-from .base import Writer
 from ..message import LogMessage
+from .base import Writer
 
 
 class PrintWriter(Writer):

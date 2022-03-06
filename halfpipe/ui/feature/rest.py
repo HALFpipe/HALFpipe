@@ -6,23 +6,20 @@
 
 """
 
-from ..components import (
-    TextView,
-    SpacerView,
-    CombinedMultipleAndSingleChoiceInputView,
-    NumberInputView
-)
-
-from .loop import AddAnotherFeatureStep, SettingValsStep
-
-from ..pattern import FilePatternStep
-from ..metadata import CheckMetadataStep
-from ..step import Step
-from ..setting import get_setting_init_steps, get_setting_vals_steps
-
 from ...model import RefFileSchema
 from ...utils.copy import deepcopy
 from ...utils.format import format_like_bids
+from ..components import (
+    CombinedMultipleAndSingleChoiceInputView,
+    NumberInputView,
+    SpacerView,
+    TextView,
+)
+from ..metadata import CheckMetadataStep
+from ..pattern import FilePatternStep
+from ..setting import get_setting_init_steps, get_setting_vals_steps
+from ..step import Step
+from .loop import AddAnotherFeatureStep, SettingValsStep
 
 next_step_type = SettingValsStep
 
@@ -122,7 +119,11 @@ class MinSeedCoverageStep(Step):
         self.result = None
 
         self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
-        self._append_view(TextView("Functional images that do not meet the requirement will be skipped"))
+        self._append_view(
+            TextView(
+                "Functional images that do not meet the requirement will be skipped"
+            )
+        )
 
         self.valset = set()
 
@@ -136,9 +137,7 @@ class MinSeedCoverageStep(Step):
         if len(self.valset) > 0:
             suggestion = next(iter(self.valset))
 
-        self.input_view = NumberInputView(
-            number=suggestion, min=0, max=1.0
-        )
+        self.input_view = NumberInputView(number=suggestion, min=0, max=1.0)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -172,7 +171,11 @@ class AtlasBasedMinRegionCoverageStep(Step):
         self.result = None
 
         self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
-        self._append_view(TextView("Atlas region signals that do not reach the requirement are set to n/a"))
+        self._append_view(
+            TextView(
+                "Atlas region signals that do not reach the requirement are set to n/a"
+            )
+        )
 
         self.valset = set()
 
@@ -186,9 +189,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
         if len(self.valset) > 0:
             suggestion = next(iter(self.valset))
 
-        self.input_view = NumberInputView(
-            number=suggestion, min=0, max=1.0
-        )
+        self.input_view = NumberInputView(number=suggestion, min=0, max=1.0)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -219,10 +220,14 @@ SeedBasedConnectivitySettingInitStep = get_setting_init_steps(
 )
 DualRegressionSettingInitStep = get_setting_init_steps(
     DualRegressionRefStep,
-    settingdict={"bandpass_filter": {"type": "gaussian"}, "grand_mean_scaling": {"mean": 10000.0}},
+    settingdict={
+        "bandpass_filter": {"type": "gaussian"},
+        "grand_mean_scaling": {"mean": 10000.0},
+    },
 )
 AtlasBasedConnectivitySettingInitStep = get_setting_init_steps(
-    AtlasBasedConnectivityRefStep, settingdict={"smoothing": None, "grand_mean_scaling": {"mean": 10000.0}},
+    AtlasBasedConnectivityRefStep,
+    settingdict={"smoothing": None, "grand_mean_scaling": {"mean": 10000.0}},
 )
 
 settingdict = {
@@ -245,17 +250,27 @@ def on_falff_setting(ctx):
 
     unfiltered_setting = deepcopy(ctx.spec.settings[-1])
     unfiltered_setting["name"] = name
-    del unfiltered_setting["bandpass_filter"]  # remove bandpass filter, keep everything else
+    del unfiltered_setting[
+        "bandpass_filter"
+    ]  # remove bandpass filter, keep everything else
     ctx.spec.settings.append(unfiltered_setting)
 
     ctx.spec.features[-1].unfiltered_setting = name
 
 
-ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
-ReHoSettingInitStep = get_setting_init_steps(ReHoSettingValsStep, settingdict=settingdict)
+ReHoSettingValsStep = get_setting_vals_steps(
+    AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature
+)
+ReHoSettingInitStep = get_setting_init_steps(
+    ReHoSettingValsStep, settingdict=settingdict
+)
 
-FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
-FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)
+FALFFSettingValsStep = get_setting_vals_steps(
+    AddAnotherFeatureStep, oncompletefn=on_falff_setting
+)
+FALFFSettingInitStep = get_setting_init_steps(
+    FALFFSettingValsStep, settingdict=settingdict
+)
 
 SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep

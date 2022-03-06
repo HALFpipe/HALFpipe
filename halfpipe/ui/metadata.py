@@ -4,29 +4,25 @@
 
 from typing import ClassVar, Dict, Optional, Type
 
-from .components import (
-    TextView,
-    SpacerView,
-    NumberInputView,
-    SingleChoiceInputView,
-    FileInputView,
-    TextElement,
-)
-
 import numpy as np
 from inflection import humanize
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
-from .step import Step
-from ..ingest.spreadsheet import read_spreadsheet
-from ..ingest.metadata.slicetiming import slice_timing_str
+from ..ingest.metadata.direction import canonicalize_direction_code, direction_code_str
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
-from ..ingest.metadata.direction import (
-    direction_code_str,
-    canonicalize_direction_code,
-)
-from ..model import space_codes, slice_order_strs
+from ..ingest.metadata.slicetiming import slice_timing_str
+from ..ingest.spreadsheet import read_spreadsheet
+from ..model import slice_order_strs, space_codes
 from ..utils import logger
+from .components import (
+    FileInputView,
+    NumberInputView,
+    SingleChoiceInputView,
+    SpacerView,
+    TextElement,
+    TextView,
+)
+from .step import Step
 
 
 def _get_field(schema, key):
@@ -85,20 +81,18 @@ class SliceTimingFileStep(Step):
             self.specfileobjs = [specfileobj]
 
             self.filepaths = [
-                fileobj.path
-                for fileobj in ctx.database.fromspecfileobj(specfileobj)
+                fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)
             ]
         else:
             self.filepaths = ctx.database.get(**self.filters)
             self.specfileobjs = set(
-                ctx.database.specfileobj(filepath)
-                for filepath in self.filepaths
+                ctx.database.specfileobj(filepath) for filepath in self.filepaths
             )
 
         for field in ["slice_encoding_direction", "repetition_time"]:
-            assert ctx.database.fillmetadata(
-                field, self.filepaths
-            ) is True  # should have already been done, but can't hurt
+            assert (
+                ctx.database.fillmetadata(field, self.filepaths) is True
+            )  # should have already been done, but can't hurt
 
         header_str = f"Import {humankey} values{self.appendstr}"
         if unit is not None:
@@ -161,7 +155,9 @@ class SliceTimingFileStep(Step):
                             )
 
             except Exception as e:
-                logger.warning(f'Failed to read slice timing from "{filepath}"', exc_info=e)
+                logger.warning(
+                    f'Failed to read slice timing from "{filepath}"', exc_info=e
+                )
                 self.message = TextElement(str(e), color=error_color)
                 continue  # try again for correct file
 
@@ -180,7 +176,9 @@ class SliceTimingFileStep(Step):
 
 
 class SetMetadataStep(Step):
-    def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
+    def __init__(
+        self, app, filters, schema, key, suggestion, next_step_type, appendstr=""
+    ):
         super(SetMetadataStep, self).__init__(app)
 
         self.schema = schema
@@ -208,7 +206,11 @@ class SetMetadataStep(Step):
 
         self.aliases = {}
 
-        if field.validate is not None and hasattr(field.validate, "choices") or self.key == "slice_timing":
+        if (
+            field.validate is not None
+            and hasattr(field.validate, "choices")
+            or self.key == "slice_timing"
+        ):
             choices = None
             display_choices = None
 
@@ -221,7 +223,7 @@ class SetMetadataStep(Step):
                     "Alternating increasing odd first (1, 3, ... 2, 4, ...)",
                     "Alternating decreasing even first (... 3, 1, ... 4, 2)",
                     "Alternating decreasing odd first (... 4, 2, ... 3, 1)",
-                    "Import from file"
+                    "Import from file",
                 ]
 
             if choices is None:
@@ -273,7 +275,7 @@ class SetMetadataStep(Step):
                         self.schema,
                         self.suggestion,
                         self.next_step_type,
-                        appendstr=self.appendstr
+                        appendstr=self.appendstr,
                     )(ctx)
                 else:  # a code was specified
                     key = "slice_timing_code"
@@ -285,7 +287,9 @@ class SetMetadataStep(Step):
                 specfileobjs = [ctx.spec.files[-1]]
             else:
                 filepaths = ctx.database.get(**self.filters)
-                specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
+                specfileobjs = set(
+                    ctx.database.specfileobj(filepath) for filepath in filepaths
+                )
 
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
@@ -323,7 +327,8 @@ class CheckMetadataStep(Step):
 
         if self.filters is None:
             filepaths = [
-                fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])
+                fileobj.path
+                for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])
             ]
         else:
             filepaths = [*ctx.database.get(**self.filters)]
@@ -424,5 +429,5 @@ class CheckMetadataStep(Step):
                     self.key,
                     self.suggestion,
                     self.next_step_type,
-                    appendstr=self.appendstr
+                    appendstr=self.appendstr,
                 )(ctx)

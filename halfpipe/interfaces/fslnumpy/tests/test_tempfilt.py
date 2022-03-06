@@ -2,16 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import pytest
-
 import os
 from random import seed
 
 import nibabel as nib
 import numpy as np
+import pytest
+from nipype.interfaces import fsl
 
 from ..tempfilt import TemporalFilter
-from nipype.interfaces import fsl
 
 
 @pytest.mark.slow
