@@ -57,10 +57,10 @@ def _get_scan_start(vals) -> float:
 
 
 def init_taskbased_wf(
-    workdir=None,
-    feature=None,
-    condition_files: Union[str, List] = None,
-    condition_units=None,
+    workdir: Path | str,
+    feature,
+    condition_files: Union[str, List],
+    condition_units,
     memcalc=MemoryCalculator.default(),
 ):
     """
@@ -92,7 +92,6 @@ def init_taskbased_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    assert feature is not None
     inputnode.inputs.condition_names = feature.conditions
 
     if condition_files is not None:

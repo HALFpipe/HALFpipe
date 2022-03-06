@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""
-"""
 
 import pytest
 
@@ -11,6 +9,7 @@ import tarfile
 from pathlib import Path
 from random import normalvariate, seed, choices
 from math import inf
+from multiprocessing import cpu_count
 
 import pandas as pd
 import nibabel as nib
@@ -288,7 +287,7 @@ def test_with_reconall(tmp_path, mock_spec):
 def test_feature_extraction(tmp_path, mock_spec):
     savespec(mock_spec, workdir=tmp_path)
 
-    config.nipype.omp_nthreads = 2
+    config.nipype.omp_nthreads = cpu_count()
 
     workflow = init_workflow(tmp_path)
 

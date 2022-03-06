@@ -3,30 +3,31 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import ABC, abstractmethod
-
-from nipype.pipeline import engine as pe
+from dataclasses import dataclass
+from pathlib import Path
 
 from fmriprep.workflows.bold.base import _get_wf_name
+from nipype.pipeline import engine as pe
 
+from ..fixes.workflows import IdentifiableWorkflow
+from ..ingest.bids import BidsDatabase
+from ..ingest.database import Database
+from ..model.spec import Spec
 from ..utils.format import format_like_bids
 
 
+@dataclass
 class FactoryContext:
-    def __init__(self, workdir, spec, bidsdatabase, workflow):
-        self.workdir = workdir
-        self.spec = spec
-        self.database = bidsdatabase.database
-        self.bidsdatabase = bidsdatabase
-        self.workflow = workflow
+    workdir: Path
+    spec: Spec
+    database: Database
+    bids_database: BidsDatabase
+    workflow: IdentifiableWorkflow
 
 
 class Factory(ABC):
-    def __init__(self, ctx):
-        self.workdir = ctx.workdir
-        self.spec = ctx.spec
-        self.database = ctx.database
-        self.bidsdatabase = ctx.bidsdatabase
-        self.workflow = ctx.workflow
+    def __init__(self, ctx: FactoryContext):
+        self.ctx = ctx
 
     def _endpoint(self, hierarchy, node, attr):
         if len(hierarchy) > 1:
@@ -35,43 +36,65 @@ class Factory(ABC):
             return parent, fullattr
         return node, attr
 
-    def _single_subject_wf_name(self, sourcefile=None, bids_subject_id=None, subject_id=None):
-        bidsdatabase = self.bidsdatabase
+    def _single_subject_wf_name(
+            self,
+            source_file: Path | str | None = None,
+            bids_subject_id: str | None = None,
+            subject_id: str | None = None
+    ) -> str | None:
+        bids_database = self.ctx.bids_database
+
         if bids_subject_id is None:
-            if sourcefile is not None:
-                bidspath = bidsdatabase.tobids(sourcefile)
-                subject_id = bidsdatabase.tagval(bidspath, "subject")
+            if source_file is not None:
+                bids_path = bids_database.to_bids(source_file)
+                assert bids_path is not None
+                subject_id = bids_database.get_tag_value(bids_path, "subject")
             if subject_id is not None:
                 bids_subject_id = format_like_bids(subject_id)
+
         if bids_subject_id is not None:
             return "single_subject_%s_wf" % bids_subject_id
 
-    def _bold_wf_name(self, sourcefile):
-        bidspath = self.bidsdatabase.tobids(sourcefile)
+        return None
+
+    def _bold_wf_name(self, source_file):
+        bidspath = self.ctx.bids_database.to_bids(source_file)
         return _get_wf_name(bidspath)
 
-    def _get_hierarchy(self, name, sourcefile=None, subject_id=None, childname=None, create_ok=True):
-        hierarchy = [self.workflow]
+    def _get_hierarchy(
+            self,
+            name: str,
+            source_file: Path | str | None = None,
+            subject_id: str | None = None,
+            childname: str | None = None,
+            create_ok: bool = True
+    ):
+        hierarchy: list[pe.Workflow] = [self.ctx.workflow]
 
         def require_workflow(child_name):
-            wf = hierarchy[-1]
-            child = wf.get_node(child_name)
+            workflow = hierarchy[-1]
+            child = workflow.get_node(child_name)
+
             if child is None:
-                assert create_ok
+                if create_ok is False:
+                    raise ValueError()
+
                 child = pe.Workflow(name=child_name)
-                wf.add_nodes([child])
+                workflow.add_nodes([child])
+
+            assert isinstance(child, pe.Workflow)
             hierarchy.append(child)
 
         require_workflow(name)
 
-        single_subject_wf_name = self._single_subject_wf_name(sourcefile=sourcefile, subject_id=subject_id)
+        single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
 
         if single_subject_wf_name is not None:
             require_workflow(single_subject_wf_name)
 
-        if sourcefile is not None:
-            if self.database.tagval(sourcefile, "datatype") == "func":
-                require_workflow(self._bold_wf_name(sourcefile))
+        if source_file is not None:
+            if self.ctx.database.tagval(source_file, "datatype") == "func":
+                require_workflow(self._bold_wf_name(source_file))
 
         if childname is not None:
             require_workflow(childname)

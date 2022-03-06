@@ -2,20 +2,26 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
 
-from ..memory import MemoryCalculator
-from ...utils.format import format_workflow
-
-from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
-from ...interfaces.resultdict.make import MakeResultdicts
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.imagemaths.zscore import ZScore
 from ...interfaces.fixes.reho import ReHo
+from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
+from ...interfaces.imagemaths.zscore import ZScore
+from ...interfaces.resultdict.datasink import ResultdictDatasink
+from ...interfaces.resultdict.make import MakeResultdicts
+from ...utils.format import format_workflow
+from ..memory import MemoryCalculator
 
 
-def init_reho_wf(workdir=None, feature=None, fwhm=None, memcalc=MemoryCalculator.default()):
+def init_reho_wf(
+        workdir: str | Path,
+        feature=None,
+        fwhm=None,
+        memcalc=MemoryCalculator.default()
+):
     """
     create a workflow to do ReHo
 

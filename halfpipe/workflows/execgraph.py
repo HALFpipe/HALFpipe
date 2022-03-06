@@ -2,33 +2,30 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import List, Mapping, Set, Tuple, Union, Dict, Optional
-
 import logging
-from pathlib import Path
-from shutil import copyfile
 import re
-from collections import OrderedDict, defaultdict
-from fnmatch import fnmatch
 from argparse import Namespace
+from collections import OrderedDict, defaultdict
 from copy import deepcopy
-from shutil import rmtree
+from fnmatch import fnmatch
 from functools import partial
+from pathlib import Path
+from shutil import copyfile, rmtree
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
 
 import networkx as nx
-
 import nipype.pipeline.engine as pe
-from nipype.interfaces.base.support import InterfaceResult
 from nipype.interfaces import utility as niu
+from nipype.interfaces.base.support import InterfaceResult
 from nipype.pipeline.engine.utils import merge_dict
 
 from ..fixes import Node
-from .base import IdentifiableWorkflow
-from ..utils.path import resolve
-from ..utils.format import format_like_bids, normalize_subject
-from ..utils.table import SynchronizedTable
-from ..utils.cache import cache_obj, uncache_obj
 from ..resource import get as getresource
+from ..utils.cache import cache_obj, uncache_obj
+from ..utils.format import format_like_bids, normalize_subject
+from ..utils.path import resolve
+from ..utils.table import SynchronizedTable
+from .base import IdentifiableWorkflow
 from .constants import constants
 
 max_chunk_size = 50  # subjects
@@ -288,7 +285,8 @@ def init_execgraph(
 
     logger.info("Splitting graph")
 
-    subject_nodes, input_source_dict = split_flat_graph(flat_graph, workflow.base_dir)
+    base_dir = str(workflow.base_dir)
+    subject_nodes, input_source_dict = split_flat_graph(flat_graph, base_dir)
 
     graphs = OrderedDict()
     for s, nodes in sorted(subject_nodes.items(), key=lambda t: t[0]):

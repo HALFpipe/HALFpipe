@@ -22,9 +22,6 @@ def init_alt_bold_std_trans_wf(
     ),
     memcalc=MemoryCalculator.default(),
 ):
-    """
-
-    """
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

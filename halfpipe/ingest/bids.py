@@ -7,6 +7,7 @@ from os.path import relpath
 from shutil import rmtree
 import json
 from collections import OrderedDict
+from typing import overload
 
 from inflection import camelize
 
@@ -133,27 +134,35 @@ class BidsDatabase:
 
         return bids_path
 
-    def tobids(self, file_path):
+    def to_bids(self, file_path):
         return self.bids_paths.get(file_path)
 
-    def frombids(self, bids_path):
+    def from_bids(self, bids_path):
         return self.file_paths.get(bids_path)
 
-    def tags(self, bids_path):
+    def tags(self, bids_path) -> dict | None:
         """
         get a dictionary of entity -> value for a specific bids_path
         """
         return self._tags.get(bids_path)
 
-    def tagval(self, bids_path, entity):
+    @overload
+    def get_tag_value(self, bids_path: list[str], entity: str) -> list:
+        ...
 
+    @overload
+    def get_tag_value(self, bids_path: str, entity: str) -> str | None:
+        ...
+
+    def get_tag_value(self, bids_path: list[str] | str, entity: str) -> str | list | None:
         if isinstance(bids_path, (list, tuple)):  # vectorize
-            return [self.tagval(fp, entity) for fp in bids_path]
+            return [self.get_tag_value(b, entity) for b in bids_path]
 
-        tagdict = self._tags.get(bids_path)
-
+        tagdict = self.tags(bids_path)
         if tagdict is not None:
             return tagdict.get(entity)
+
+        return None
 
     def write(self, bidsdir):
         bidsdir = Path(bidsdir)

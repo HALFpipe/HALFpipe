@@ -63,8 +63,8 @@ def _critical_z(voxels=None, resels=None, critical_p=0.05):
 
 def init_model_wf(
     workdir: Path,
+    model,
     numinputs=1,
-    model=None,
     variables=None,
     memcalc=MemoryCalculator.default()
 ):

@@ -117,7 +117,7 @@ class Database:
     def tagvaldict(self, entity):
         return self.filepaths_by_tags.get(entity)
 
-    def get(self, **filters):
+    def get(self, **filters) -> set[str]:
         res = None
         for tagname, tagval in filters.items():
             if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:

@@ -6,6 +6,7 @@ from typing import Callable, Container, Generator, Iterable
 
 import os
 from os import path as op
+from pathlib import Path
 
 import re
 import fnmatch
@@ -23,7 +24,7 @@ remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^}]*?})")
 
 def tag_glob(
     pathname: str,
-    entities: Container[str] = None,
+    entities: Container[str] | None = None,
     dironly: bool = False
 ) -> Generator[tuple[str, dict[str, str]], None, None]:
     """
@@ -164,7 +165,7 @@ def _translate(
     return re.compile(res).fullmatch, entities_in_res
 
 
-def _iterdir(dirname: str, dironly: bool) -> Generator[str, None, None]:
+def _iterdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
     """
     adapted from cpython glob
     """
@@ -186,7 +187,7 @@ def _iterdir(dirname: str, dironly: bool) -> Generator[str, None, None]:
         return
 
 
-def _rlistdir(dirname: str, dironly: bool) -> Generator[str, None, None]:
+def _rlistdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
     """
     adapted from cpython glob
     """

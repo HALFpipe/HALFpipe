@@ -2,23 +2,28 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
+from pathlib import Path
+
 from nipype.algorithms import confounds as nac
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
 from ...interfaces.connectivity import ConnectivityMeasure
 from ...interfaces.imagemaths.resample import Resample
 from ...interfaces.report.vals import CalcMean
-from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
-
-from ..memory import MemoryCalculator
-from ..constants import constants
+from ...interfaces.resultdict.make import MakeResultdicts
 from ...utils.format import format_workflow
+from ..constants import constants
+from ..memory import MemoryCalculator
 
 
 def init_atlasbasedconnectivity_wf(
-    workdir=None, feature=None, atlas_files=None, atlas_spaces=None, memcalc=MemoryCalculator.default()
+        workdir: str | Path,
+        feature=None,
+        atlas_files=None,
+        atlas_spaces=None,
+        memcalc=MemoryCalculator.default(),
 ):
     """
     create workflow for brainatlas

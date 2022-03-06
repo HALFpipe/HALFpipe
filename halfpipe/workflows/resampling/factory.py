@@ -7,7 +7,7 @@ from nipype.pipeline import engine as pe
 from .alt import init_alt_bold_std_trans_wf
 
 from ..factory import Factory
-from ..memory import MemoryCalculator, patch_mem_gb
+from ..memory import MemoryCalculator
 
 
 class AltBOLDFactory(Factory):
@@ -20,8 +20,8 @@ class AltBOLDFactory(Factory):
         prototype = init_alt_bold_std_trans_wf()
         self.wf_name = prototype.name
 
-    def get(self, sourcefile, **_):
-        hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
+    def get(self, source_file, **_):
+        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -30,20 +30,21 @@ class AltBOLDFactory(Factory):
         if vwf is None:
             connect = True
 
-            memcalc = MemoryCalculator.from_bold_file(sourcefile)
+            memcalc = MemoryCalculator.from_bold_file(source_file)
             vwf = init_alt_bold_std_trans_wf(memcalc=memcalc)
 
             for node in vwf._get_all_nodes():
-                patch_mem_gb(node, memcalc)
+                memcalc.patch_mem_gb(node)
 
             wf.add_nodes([vwf])
 
+        assert isinstance(vwf, pe.Workflow)
         inputnode = vwf.get_node("inputnode")
         assert isinstance(inputnode, pe.Node)
         hierarchy.append(vwf)
 
         if connect:
-            self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
+            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
 
         outputnode = vwf.get_node("outputnode")
 

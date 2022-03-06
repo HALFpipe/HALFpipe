@@ -23,7 +23,7 @@ from ...ingest.collect import collect_metadata
 from ..factory import Factory
 from ..bypass import init_bypass_wf
 from ..resampling.factory import AltBOLDFactory
-from ..memory import MemoryCalculator, patch_mem_gb
+from ..memory import MemoryCalculator
 
 from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
@@ -37,6 +37,7 @@ class SettingTuple:
     value: Hashable | None
     suffix: str | None
 
+
 @dataclass(frozen=True)
 class LookupTuple:
     setting_tuple: SettingTuple
@@ -44,18 +45,18 @@ class LookupTuple:
 
 
 class ICAAROMAComponentsFactory(Factory):
-    def __init__(self, ctx, fmriprep_factory, alt_bold_factory):
+    def __init__(self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory):
         super(ICAAROMAComponentsFactory, self).__init__(ctx)
 
         self.alt_bold_factory = alt_bold_factory
         self.fmriprep_factory = fmriprep_factory
 
     def setup(self):
-        prototype = init_ica_aroma_components_wf(workdir=str(self.workdir))
+        prototype = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir))
         self.wf_name = prototype.name
 
-    def get(self, sourcefile, **_):
-        hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
+    def get(self, source_file, **_):
+        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -64,24 +65,25 @@ class ICAAROMAComponentsFactory(Factory):
         if vwf is None:
             connect = True
 
-            memcalc = MemoryCalculator.from_bold_file(sourcefile)
-            vwf = init_ica_aroma_components_wf(workdir=str(self.workdir), memcalc=memcalc)
+            memcalc = MemoryCalculator.from_bold_file(source_file)
+            vwf = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir), memcalc=memcalc)
 
             for node in vwf._get_all_nodes():
-                patch_mem_gb(node, memcalc)
+                memcalc.patch_mem_gb(node)
 
             wf.add_nodes([vwf])
 
+        assert isinstance(vwf, pe.Workflow)
         inputnode = vwf.get_node("inputnode")
         assert isinstance(inputnode, pe.Node)
         hierarchy.append(vwf)
 
         if connect:
-            inputnode.inputs.tags = self.database.tags(sourcefile)
-            self.database.fillmetadata("repetition_time", [sourcefile])
-            inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
-            self.alt_bold_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
-            self.fmriprep_factory.connect(hierarchy, inputnode, sourcefile=sourcefile)
+            inputnode.inputs.tags = self.ctx.database.tags(source_file)
+            self.ctx.database.fillmetadata("repetition_time", [source_file])
+            inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
+            self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
+            self.fmriprep_factory.connect(hierarchy, inputnode, source_file=source_file)
 
         outputnode = vwf.get_node("outputnode")
 
@@ -100,7 +102,7 @@ class LookupFactory(Factory):
         self.previous_factory = previous_factory
 
     def setup(self):
-        setting_names = [setting["name"] for setting in self.spec.settings]
+        setting_names = [setting["name"] for setting in self.ctx.spec.settings]
 
         previous_tpls = []
 
@@ -127,7 +129,7 @@ class LookupFactory(Factory):
                     ]
             suffixes.append(suffix)
 
-        tpls = map(self._tpl, self.spec.settings)
+        tpls = map(self._tpl, self.ctx.spec.settings)
 
         self.tpl_by_setting_name = {
             setting_name: SettingTuple(tpl, suffix)
@@ -145,13 +147,13 @@ class LookupFactory(Factory):
     def _should_skip(self, obj):
         return obj is None
 
-    def _connect_inputs(self, hierarchy, inputnode, sourcefile, setting_name, _):
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, _):
         if hasattr(inputnode.inputs, "repetition_time"):
-            self.database.fillmetadata("repetition_time", [sourcefile])
-            inputnode.inputs.repetition_time = self.database.metadata(sourcefile, "repetition_time")
+            self.ctx.database.fillmetadata("repetition_time", [source_file])
+            inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
-            inputnode.inputs.tags = self.database.tags(sourcefile)
-        self.previous_factory.connect(hierarchy, inputnode, sourcefile=sourcefile, setting_name=setting_name)
+            inputnode.inputs.tags = self.ctx.database.tags(source_file)
+        self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -165,14 +167,14 @@ class LookupFactory(Factory):
 
         return self.wf_factories[lookup_tuple]()
 
-    def get(self, sourcefile, setting_name):
-        hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
+    def get(self, source_file, setting_name):
+        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
         lookup_tuple = LookupTuple(
             setting_tuple=setting_tuple,
-            memcalc=MemoryCalculator.from_bold_file(sourcefile),
+            memcalc=MemoryCalculator.from_bold_file(source_file),
         )
 
         vwf = None
@@ -185,11 +187,12 @@ class LookupFactory(Factory):
             vwf = self.wf_factory(lookup_tuple)
             wf.add_nodes([vwf])
 
+        assert isinstance(vwf, pe.Workflow)
         inputnode = vwf.get_node("inputnode")
         hierarchy.append(vwf)
 
         if connect_inputs:
-            self._connect_inputs(hierarchy, inputnode, sourcefile, setting_name, lookup_tuple)
+            self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
         outputnode = vwf.get_node("outputnode")
 
@@ -281,7 +284,7 @@ class ICAAROMARegressionFactory(LookupFactory):
             )
 
         return init_ica_aroma_regression_wf(
-            workdir=str(self.workdir),
+            workdir=str(self.ctx.workdir),
             memcalc=lookup_tuple.memcalc,
             suffix=suffix,
         )
@@ -291,10 +294,10 @@ class ICAAROMARegressionFactory(LookupFactory):
         return ica_aroma
 
     def _connect_inputs(
-        self, hierarchy, inputnode, sourcefile, setting_name, lookup_tuple: LookupTuple
+        self, hierarchy, inputnode, source_file, setting_name, lookup_tuple: LookupTuple
     ):
         super(ICAAROMARegressionFactory, self)._connect_inputs(
-            hierarchy, inputnode, sourcefile, setting_name, lookup_tuple
+            hierarchy, inputnode, source_file, setting_name, lookup_tuple
         )
 
         setting_tuple = lookup_tuple.setting_tuple
@@ -302,7 +305,7 @@ class ICAAROMARegressionFactory(LookupFactory):
 
         if ica_aroma is True:
             self.ica_aroma_components_factory.connect(
-                hierarchy, inputnode, sourcefile=sourcefile, setting_name=setting_name
+                hierarchy, inputnode, source_file=source_file, setting_name=setting_name
             )
 
 
@@ -427,20 +430,20 @@ class SettingFactory(Factory):
         self.confounds_select_factory = ConfoundsSelectFactory(ctx, self.setting_adapter_factory)
         self.confounds_regression_factory = ConfoundsRegressionFactory(ctx, self.confounds_select_factory)
 
-        setting_names = set(setting["name"] for setting in self.spec.settings if setting.get("output_image") is True)
-        self.sourcefiles = self.get_sourcefiles(setting_names)
+        setting_names = set(setting["name"] for setting in self.ctx.spec.settings if setting.get("output_image") is True)
+        self.source_files = self.get_source_files(setting_names)
 
-    def get_sourcefiles(self, setting_names):
-        filepaths = set(self.database.get(datatype="func", suffix="bold"))
-        ret = set()
-        for setting in self.spec.settings:
+    def get_source_files(self, setting_names) -> set[str]:
+        bold_file_paths = set(self.ctx.database.get(datatype="func", suffix="bold"))
+        source_files: set[str] = set()
+        for setting in self.ctx.spec.settings:
             if setting.get("name") in setting_names:
                 filters = setting.get("filters")
                 if filters is None or len(filters) == 0:
-                    return filepaths
+                    return bold_file_paths
                 else:
-                    ret |= self.database.applyfilters(filepaths, filters)
-        return ret
+                    source_files |= self.ctx.database.applyfilters(bold_file_paths, filters)
+        return source_files
 
     def setup(self, raw_sources_dict=dict()):
         self.alt_bold_factory.setup()
@@ -455,22 +458,22 @@ class SettingFactory(Factory):
         self.confounds_select_factory.setup()
         self.confounds_regression_factory.setup()
 
-        for setting in self.spec.settings:
+        for setting in self.ctx.spec.settings:
             setting_output_wf_factory = deepcopyfactory(
-                init_setting_output_wf(workdir=str(self.workdir), setting_name=setting["name"])
+                init_setting_output_wf(workdir=str(self.ctx.workdir), setting_name=setting["name"])
             )
 
             if setting.get("output_image") is not True:
                 continue  # create lazily in FeatureFactory
 
-            sourcefiles = set(raw_sources_dict.keys())
+            source_files = set(raw_sources_dict.keys())
 
             filters = setting.get("filters")
             if filters is not None and len(filters) > 0:
-                sourcefiles = self.database.applyfilters(sourcefiles, filters)
+                source_files = self.ctx.database.applyfilters(source_files, filters)
 
-            for sourcefile in sourcefiles:
-                hierarchy = self._get_hierarchy("settings_wf", sourcefile=sourcefile)
+            for source_file in source_files:
+                hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
 
                 wf = setting_output_wf_factory()
                 hierarchy[-1].add_nodes([wf])
@@ -478,30 +481,34 @@ class SettingFactory(Factory):
 
                 inputnode = wf.get_node("inputnode")
 
-                tags = dict(setting=setting["name"])
-                tags.update(self.database.tags(sourcefile))
+                tags: dict[str, str] = dict(setting=setting["name"])
+
+                source_file_tags = self.ctx.database.tags(source_file)
+                assert isinstance(source_file_tags, dict)
+                tags.update(source_file_tags)
+
                 inputnode.inputs.tags = tags
 
-                metadata = collect_metadata(self.database, sourcefile, setting)
-                if raw_sources_dict.get(sourcefile) is not None:
-                    metadata["raw_sources"] = raw_sources_dict.get(sourcefile)
+                metadata = collect_metadata(self.ctx.database, source_file, setting)
+                if raw_sources_dict.get(source_file) is not None:
+                    metadata["raw_sources"] = raw_sources_dict.get(source_file)
                 inputnode.inputs.metadata = metadata
 
                 self.connect(
                     hierarchy,
                     inputnode,
-                    sourcefile,
+                    source_file,
                     setting_name=setting["name"],
                     confounds_action="regression",
                 )
 
-    def get(self, sourcefile, setting_name, confounds_action=None):
-        self.ica_aroma_components_factory.get(sourcefile)  # make sure ica aroma components are always calculated
+    def get(self, source_file, setting_name, confounds_action=None):
+        self.ica_aroma_components_factory.get(source_file)  # make sure ica aroma components are always calculated
         if confounds_action == "select":
-            return self.confounds_select_factory.get(sourcefile, setting_name)
+            return self.confounds_select_factory.get(source_file, setting_name)
         elif confounds_action == "regression":
-            return self.confounds_regression_factory.get(sourcefile, setting_name)
+            return self.confounds_regression_factory.get(source_file, setting_name)
         elif confounds_action is None:
-            return self.setting_adapter_factory.get(sourcefile, setting_name)
+            return self.setting_adapter_factory.get(source_file, setting_name)
         else:
             raise ValueError(f"Unknown counfounds action '{confounds_action}'")

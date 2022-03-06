@@ -2,34 +2,34 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from nipype.pipeline import engine as pe
-from nipype.interfaces import utility as niu
-from nipype.algorithms import confounds as nac
-from nipype.interfaces import fsl
+from pathlib import Path
 
 from fmriprep import config
+from nipype.algorithms import confounds as nac
+from nipype.interfaces import fsl
+from nipype.interfaces import utility as niu
+from nipype.pipeline import engine as pe
 
+from ...interfaces.imagemaths.max_intensity import MaxIntensity
 from ...interfaces.imagemaths.resample import Resample
 from ...interfaces.report.vals import CalcMean
-from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.utility.tsv import FillNA, MergeColumns
+from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
-from ...interfaces.imagemaths.max_intensity import MaxIntensity
-
+from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...utils.format import format_workflow
-
-from ..memory import MemoryCalculator
 from ..constants import constants
+from ..memory import MemoryCalculator
 
 
 def _contrasts(map_timeseries_file=None, confounds_file=None):
+    import csv
     from pathlib import Path
 
-    from halfpipe.ingest.spreadsheet import read_spreadsheet
     import numpy as np
     import pandas as pd
-    import csv
+
+    from halfpipe.ingest.spreadsheet import read_spreadsheet
 
     map_timeseries_df = read_spreadsheet(map_timeseries_file)
     _, m = map_timeseries_df.shape
@@ -61,7 +61,11 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
 
 
 def init_dualregression_wf(
-    workdir=None, feature=None, map_files=None, map_spaces=None, memcalc=MemoryCalculator.default()
+        workdir: str | Path,
+        feature=None,
+        map_files=None,
+        map_spaces=None,
+        memcalc=MemoryCalculator.default(),
 ):
     """
     create a workflow to calculate dual regression for ICA seeds

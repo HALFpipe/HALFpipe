@@ -19,21 +19,21 @@ class ModelFactory(Factory):
         self.feature_factory = feature_factory
 
     def has(self, name):
-        for model in self.spec.models:
+        for model in self.ctx.spec.models:
             if model.name == name:
                 return True
         return False
 
     def setup(self):
         self.wfs = dict()
-        for model in self.spec.models:
+        for model in self.ctx.spec.models:
             self.create(model)
 
     def create(self, model):
         hierarchy = self._get_hierarchy("models_wf")
         wf = hierarchy[-1]
 
-        database = self.database
+        database = self.ctx.database
 
         variables = None
         if hasattr(model, "spreadsheet"):
@@ -49,9 +49,9 @@ class ModelFactory(Factory):
                 raise ValueError(f'Unknown input name "{inputname}"')
 
         vwf = init_model_wf(
-            self.workdir,
+            self.ctx.workdir,
+            model,
             numinputs=len(inputs),
-            model=model,
             variables=variables,
         )
         wf.add_nodes([vwf])
