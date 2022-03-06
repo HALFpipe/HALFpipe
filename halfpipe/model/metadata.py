@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from typing import Type
+
 from inflection import underscore
 from marshmallow import (
     EXCLUDE,
@@ -165,9 +166,5 @@ metadata_schemas: list[Type[Schema]] = [
 ]
 
 MetadataSchema = Schema.from_dict(
-    {
-        k: v
-        for schema in metadata_schemas
-        for k, v in schema().fields.items()
-    }
+    {k: v for schema in metadata_schemas for k, v in schema().fields.items()}
 )

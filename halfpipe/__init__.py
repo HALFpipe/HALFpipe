@@ -3,9 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from tempfile import mkdtemp
-from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version(__name__)

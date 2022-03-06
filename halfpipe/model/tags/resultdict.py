@@ -44,8 +44,10 @@ resultdict_entities = [
 ]
 
 ResultdictTagsSchema = Schema.from_dict(
-    OrderedDict([
-        (entity, fields.Raw(validate=validate_tags))
-        for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
-    ])
+    OrderedDict(
+        [
+            (entity, fields.Raw(validate=validate_tags))
+            for entity in [*FuncTagsSchema().fields.keys(), *resultdict_entities]
+        ]
+    )
 )
