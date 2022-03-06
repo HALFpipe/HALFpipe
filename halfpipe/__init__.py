@@ -5,11 +5,14 @@
 import os
 from pathlib import Path
 from tempfile import mkdtemp
+from importlib.metadata import PackageNotFoundError, version
 
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
-del get_versions
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    __version__ = "unknown"
+finally:
+    del version, PackageNotFoundError
 
 os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"

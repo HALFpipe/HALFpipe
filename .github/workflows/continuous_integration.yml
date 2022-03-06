@@ -79,10 +79,11 @@ jobs:
       - name: Lint
         uses: github/super-linter/slim@v4
         env:
-          DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LINTER_RULES_PATH: .
           LOG_LEVEL: DEBUG
+
+          DEFAULT_BRANCH: main
+          LINTER_RULES_PATH: .
 
           VALIDATE_ALL_CODEBASE: true
 
