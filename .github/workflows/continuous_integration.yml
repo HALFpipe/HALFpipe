@@ -36,36 +36,39 @@ jobs:
             args: "--ignore=halfpipe/interfaces --ignore=halfpipe/stats --ignore=halfpipe/workflows"
 
     steps:
-      - name: Cache data
-        uses: actions/cache@v2
-        with:
-          path: /home
-          key: ${{ runner.os }}-home
+    - name: Cache data
+      uses: actions/cache@v2
+      with:
+        path: /home
+        key: ${{ runner.os }}-home
 
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Setup dependencies and license files
-        shell: bash
-        run: |
-          pip install -r requirements.txt -r requirements-test.txt
+    - name: Setup dependencies and license files
+      shell: bash
+      run: |
+        pip install \
+          --requirement requirements.txt \
+          --requirement requirements-test.txt
 
-          FREESURFER_LICENSE_BASE64="bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg=="
-          echo ${FREESURFER_LICENSE_BASE64} | base64 --decode > ${FREESURFER_HOME}/license.txt
+        FREESURFER_LICENSE_BASE64="bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg=="
+        echo ${FREESURFER_LICENSE_BASE64} \
+          | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-      - name: Test with pytest with coverage
-        shell: bash
-        env:
-          PYTHONDONTWRITEBYTECODE: 1
-          GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
-        run: |
-          pytest ${{ matrix.args }} --cov --cov-report=xml
+    - name: Test with pytest with coverage
+      shell: bash
+      env:
+        PYTHONDONTWRITEBYTECODE: 1
+        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
+      run: |
+        pytest ${{ matrix.args }} --cov --cov-report=xml
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage_${{ matrix.chunk }}
-          path: ./coverage.xml
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage_${{ matrix.chunk }}
+        path: ./coverage.xml
 
   lint:
     runs-on: ubuntu-latest
@@ -76,9 +79,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          VENV=/home/runner/work/_temp/_github_workflow/venv
+
+          mkdir -p ${VENV}
+
+          python -m venv ${VENV}
+          ${VENV}/bin/pip install \
+            --requirement requirements.txt  \
+            --requirement requirements-test.txt
+
       - name: Lint
         uses: github/super-linter/slim@v4
         env:
+          PYTHONPATH: /github/workflow/venv/lib/python3.10/site-packages
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: DEBUG
 
