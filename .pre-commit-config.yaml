@@ -21,9 +21,11 @@ repos:
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
-        args: [requirements.in]
+        args:
+          - "requirements.in"
         files: ^requirements(\.in|\.txt)$
       - id: pip-compile
         name: pip-compile requirements-test.in
-        args: [requirements-test.in]
+        args:
+          - "requirements-test.in"
         files: ^requirements(\.txt|-test\.in|-test\.txt)$
