@@ -1,6 +1,35 @@
 Changelog
 =========
 
+1.2.2 (March 15th 2022)
+-----------------------
+
+Bug fixes
+---------
+
+- Fix issue with BOLD to T1w registration (#230, #238, #239)
+- Also detect `exclude.json` files that are placed in the `reports/` folder (#228)
+- Improve error message when the FreeSurfer license file is missing (#231)
+- Fix a rare calculation error for `fd_mean` and related image quality metrics (#237, #241)
+- Fix various warning messages (#247)
+- Fix performance issue when collecting inputs for group statistics ()
+- Fix a user interface issue where the option `Start over after models` was missing (#259, #260)
+- Fix an issue where `sub-` prefixes were not recognized correctly when filtering inputs for group statistics (#264)
+- Fix an issue when writing mixed data type columns to the text files in the `reports/` folder (#274)
+- Fix warnings for missing quality check information (#276)
+- Fix errors when aggregating subjects with different numbers of scans during group statistics (#280)
+- Fix error when fMRIPrep skips a BOLD file (#285)
+
+Maintenance
+-----------
+
+- Bump `indexed_gzip` (#240)
+- Bump `nipype` after bug fix (#255)
+- Bump `fmriprep` after bug fix (#262)
+- Upgrade to Python 3.10, clean up code and add more unit tests (#269)
+- Make continuous integration tests run faster (#282, #284)
+- Add type checking and linting to continuous integration (#285)
+
 1.2.1 (October 1st 2021)
 ------------------------
 
