@@ -18,8 +18,8 @@ from ..model.tags import entities, entity_longnames
 from ..model.utils import get_nested_schema_field_names, get_type_schema
 from ..utils import logger
 from ..utils.format import format_like_bids
-from ..utils.path import split_ext
 from ..utils.hash import int_digest
+from ..utils.path import split_ext
 from .glob import _rlistdir
 from .metadata.direction import canonicalize_direction_code
 
@@ -109,7 +109,9 @@ class BidsDatabase:
             if bids_entity == "run":
                 if not v.isdecimal():  # enforce run to be numerical
                     run_identifier = str(int_digest(v))[:4]
-                    logger.warning(f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance')
+                    logger.warning(
+                        f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance'
+                    )
                     v = run_identifier
 
             if k in entities:

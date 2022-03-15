@@ -125,12 +125,12 @@ def collect_bold_files(
     # filter
     for bold_file_path in bold_file_paths:
         sub = database.tagval(bold_file_path, "sub")
+
         t1ws = database.associations(
             bold_file_path,
             datatype="anat",
             sub=sub,
         )
-
         if t1ws is None:  # remove bold files without T1w
             continue
 
@@ -139,6 +139,15 @@ def collect_bold_files(
         fmaps = collect_fieldmaps(database, bold_file_path)
         if fmaps is not None:
             associated_file_paths.extend(fmaps)  # add all fmaps for now, filter later
+
+        sbrefs = database.associations(
+            bold_file_path,
+            datatype="func",
+            suffix="sbref",
+            sub=sub,
+        )
+        if sbrefs is not None:
+            associated_file_paths.extend(sbrefs)
 
         bold_file_paths_dict[bold_file_path] = associated_file_paths
 
