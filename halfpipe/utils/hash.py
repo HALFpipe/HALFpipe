@@ -6,6 +6,10 @@
 from .json import TypeAwareJSONEncoder
 
 
+def int_digest(obj) -> int:
+    return int(hex_digest(obj), 16)
+
+
 def hex_digest(obj):
     import json
     from hashlib import sha1
