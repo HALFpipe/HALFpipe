@@ -16,7 +16,6 @@ def convert_all(
     bold_paths_dict: Dict[str, List[str]],
 ):
     for bold_path, associated_paths in bold_paths_dict.items():
-
         try:
             bold_bids_path = Path(bids_database.put(bold_path))
         except ValueError as e:

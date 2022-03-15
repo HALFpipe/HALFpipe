@@ -16,7 +16,9 @@ from inflection import camelize
 from ..model.file import FileSchema
 from ..model.tags import entities, entity_longnames
 from ..model.utils import get_nested_schema_field_names, get_type_schema
+from ..utils import logger
 from ..utils.format import format_like_bids
+from ..utils.hash import int_digest
 from ..utils.path import split_ext
 from .glob import _rlistdir
 from .metadata.direction import canonicalize_direction_code
@@ -77,7 +79,7 @@ class BidsDatabase:
         # indexed by bids_path
 
         self.file_paths: dict[str, str] = dict()
-        self._tags: dict[str, dict] = dict()
+        self.bids_tags: dict[str, dict] = dict()
         self._metadata: dict[str, dict] = dict()
 
         # indexed by file_path
@@ -91,26 +93,36 @@ class BidsDatabase:
             return bids_path  # already added
 
         tags = self.database.tags(file_path)
+        assert isinstance(tags, dict)
 
-        _tags = dict()
+        bids_tags = dict()
         for k, v in tags.items():
-            bidsentity = k
-            if bidsentity in entity_longnames:
-                bidsentity = entity_longnames[bidsentity]
+            bids_entity = k
 
-            if bidsentity == "task" and tags.get("datatype") == "fmap":
+            if bids_entity in entity_longnames:  # map to long names
+                bids_entity = entity_longnames[bids_entity]
+
+            if bids_entity == "task" and tags.get("datatype") == "fmap":
                 assert "acq" not in tags
-                bidsentity = "acquisition"
+                bids_entity = "acquisition"
+
+            if bids_entity == "run":
+                if not v.isdecimal():  # enforce run to be numerical
+                    run_identifier = str(int_digest(v))[:4]
+                    logger.warning(
+                        f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance'
+                    )
+                    v = run_identifier
 
             if k in entities:
-                _tags[bidsentity] = format_like_bids(v)
+                bids_tags[bids_entity] = format_like_bids(v)
             else:
                 if tags.get("datatype") == "fmap":
                     if k == "suffix":
                         k = "fmap"
-                _tags[k] = v
+                bids_tags[k] = v
 
-        bids_path_result = build_path(_tags, bids_config.default_path_patterns)
+        bids_path_result = build_path(bids_tags, bids_config.default_path_patterns)
 
         if bids_path_result is None:
             raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}"')
@@ -124,7 +136,7 @@ class BidsDatabase:
         self.bids_paths[file_path] = str(bids_path)
         self.file_paths[bids_path] = str(file_path)
 
-        self._tags[bids_path] = _tags
+        self.bids_tags[bids_path] = bids_tags
 
         self._metadata[bids_path] = get_bids_metadata(self.database, file_path)
 
@@ -140,7 +152,7 @@ class BidsDatabase:
         """
         get a dictionary of entity -> value for a specific bids_path
         """
-        return self._tags.get(bids_path)
+        return self.bids_tags.get(bids_path)
 
     @overload
     def get_tag_value(self, bids_path: list[str], entity: str) -> list:

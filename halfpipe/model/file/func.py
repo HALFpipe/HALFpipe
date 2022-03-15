@@ -11,7 +11,7 @@ from ...ingest.metadata.direction import (
     canonicalize_direction_code,
     parse_direction_str,
 )
-from ..metadata import BoldMetadataSchema, EventsMetadataSchema
+from ..metadata import BoldMetadataSchema, EventsMetadataSchema, PEDirMetadataSchema
 from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
 from .base import BaseFileSchema, File
 
@@ -50,6 +50,11 @@ class BoldFileSchema(BaseFileSchema):
                     pass
 
         return in_data
+
+
+class SBRefFileSchema(BoldFileSchema):
+    suffix = fields.Str(dump_default="sbref", validate=validate.Equal("sbref"))
+    metadata = fields.Nested(PEDirMetadataSchema(), dump_default=dict())
 
 
 class BaseEventsFileSchema(BaseFileSchema):
@@ -96,7 +101,11 @@ class EventsFileSchema(OneOfSchema):
 class FuncFileSchema(OneOfSchema):
     type_field = "suffix"
     type_field_remove = False
-    type_schemas = {"bold": BoldFileSchema, "events": EventsFileSchema}
+    type_schemas = {
+        "bold": BoldFileSchema,
+        "sbref": SBRefFileSchema,
+        "events": EventsFileSchema,
+    }
 
     def get_obj_type(self, obj):
         if isinstance(obj, File):
