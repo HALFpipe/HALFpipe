@@ -95,7 +95,7 @@ lxml==4.8.0
     # via svgutils
 markupsafe==2.1.0
     # via jinja2
-marshmallow==3.14.1
+marshmallow==3.15.0
     # via
     #   -r requirements.in
     #   marshmallow-dataclass
@@ -201,6 +201,7 @@ openpyxl==3.0.9
     # via -r requirements.in
 packaging==21.3
     # via
+    #   marshmallow
     #   matplotlib
     #   nibabel
     #   niworkflows
