@@ -17,7 +17,7 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.4.0
+    rev: 6.5.1
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
