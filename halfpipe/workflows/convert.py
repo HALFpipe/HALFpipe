@@ -33,11 +33,10 @@ def convert_all(
         rel_bold_bids_path = str(Path(*parts))
 
         for path in associated_paths:
-
             try:
                 bids_path = bids_database.put(path)
             except ValueError as e:
-                logger.warning(f'Cannot convert "{path}" to BIDS, skipping', exc_info=e)
+                logger.warning(f'Skipping "{path}" due to {e}', exc_info=e)
                 continue
 
             if database.tagval(path, "datatype") != "fmap":
