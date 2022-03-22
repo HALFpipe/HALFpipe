@@ -57,7 +57,8 @@
   ],
   "contributors": [
     {
-      "name": "Staph, Jason"
+      "name": "Staph, Jason",
+      "type": "Researcher"
     }
   ],
   "keywords": [
@@ -69,12 +70,11 @@
     "fMRI",
     "BIDS"
   ],
-  "access_right": "open",
   "license": "GPL-3.0-or-later",
   "upload_type": "software",
   "related_identifiers": [
     {
-      "identifier": "10.1101/2021.05.07.442790",
+      "identifier": "10.1002/hbm.25829",
       "relation": "isPartOf",
       "scheme": "doi"
     }
