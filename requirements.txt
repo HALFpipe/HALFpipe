@@ -6,18 +6,12 @@
 #
 astor==0.8.1
     # via formulaic
-asttokens==2.0.5
-    # via stack-data
 atpublic==3.0.1
     # via flufl-lock
 attrs==21.4.0
     # via niworkflows
-backcall==0.2.0
-    # via ipython
 bids-validator==1.9.2
     # via pybids
-black==22.1.0
-    # via ipython
 certifi==2021.10.8
     # via requests
 chardet==4.0.0
@@ -26,7 +20,6 @@ charset-normalizer==2.0.12
     # via requests
 click==8.0.4
     # via
-    #   black
     #   niflow-nipype1-workflows
     #   pybids
 cycler==0.11.0
@@ -34,17 +27,13 @@ cycler==0.11.0
 cython==0.29.28
     # via nitime
 decorator==4.4.2
-    # via
-    #   ipython
-    #   networkx
+    # via networkx
 defusedxml==0.7.1
     # via odfpy
 docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
     # via openpyxl
-executing==0.8.2
-    # via stack-data
 fasteners==0.17.3
     # via -r requirements.in
 flufl-lock==7.0
@@ -77,10 +66,6 @@ inflection==0.5.1
     # via -r requirements.in
 interface-meta==1.2.4
     # via formulaic
-ipython==8.0.1
-    # via line-profiler
-jedi==0.18.1
-    # via ipython
 jinja2==3.0.3
     # via niworkflows
 joblib==1.1.0
@@ -89,7 +74,7 @@ joblib==1.1.0
     #   scikit-learn
 kiwisolver==1.3.2
     # via matplotlib
-line-profiler==3.4.0
+line-profiler==3.5.0
     # via -r requirements.in
 lxml==4.8.0
     # via svgutils
@@ -114,16 +99,12 @@ matplotlib==3.5.1
     #   niworkflows
     #   seaborn
     #   tedana
-matplotlib-inline==0.1.3
-    # via ipython
 more-itertools==8.12.0
     # via -r requirements.in
 mpmath==1.2.1
     # via -r requirements.in
 mypy-extensions==0.4.3
-    # via
-    #   black
-    #   typing-inspect
+    # via typing-inspect
 networkx==2.5.1
     # via
     #   fmriprep
@@ -221,18 +202,10 @@ pandas==1.4.1
     #   tedana
 parse==1.19.0
     # via -r requirements.in
-parso==0.8.3
-    # via jedi
-pathspec==0.9.0
-    # via black
 patsy==0.5.2
     # via
     #   -r requirements.in
     #   statsmodels
-pexpect==4.8.0
-    # via ipython
-pickleshare==0.7.5
-    # via ipython
 pillow==9.0.1
     # via
     #   imageio
@@ -240,19 +213,11 @@ pillow==9.0.1
     #   scikit-image
 pint==0.18
     # via -r requirements.in
-platformdirs==2.5.1
-    # via black
-prompt-toolkit==3.0.28
-    # via ipython
 psutil==5.9.0
     # via
     #   -r requirements.in
     #   flufl-lock
     #   fmriprep
-ptyprocess==0.7.0
-    # via pexpect
-pure-eval==0.2.2
-    # via stack-data
 pybids==0.14.0
     # via
     #   -r requirements.in
@@ -260,8 +225,6 @@ pybids==0.14.0
     #   niworkflows
     #   sdcflows
     #   templateflow
-pygments==2.11.2
-    # via ipython
 pympler==1.0.1
     # via -r requirements.in
 pyparsing==3.0.7
@@ -326,7 +289,6 @@ setuptools-scm[toml]==6.4.2
     # via -r requirements.in
 six==1.16.0
     # via
-    #   asttokens
     #   isodate
     #   patsy
     #   python-dateutil
@@ -336,8 +298,6 @@ smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.
     #   fmriprep
 sqlalchemy==1.3.24
     # via pybids
-stack-data==0.2.0
-    # via ipython
 stackprinter==0.2.5
     # via -r requirements.in
 statsmodels==0.13.2
@@ -365,15 +325,9 @@ tifffile==2022.2.9
 toml==0.10.2
     # via fmriprep
 tomli==2.0.1
-    # via
-    #   black
-    #   setuptools-scm
+    # via setuptools-scm
 tqdm==4.62.3
     # via templateflow
-traitlets==5.1.1
-    # via
-    #   ipython
-    #   matplotlib-inline
 transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
@@ -386,8 +340,6 @@ typing-inspect==0.7.1
     # via marshmallow-dataclass
 urllib3==1.26.8
     # via requests
-wcwidth==0.2.5
-    # via prompt-toolkit
 wheel==0.37.1
     # via -r requirements.in
 wrapt==1.13.3
