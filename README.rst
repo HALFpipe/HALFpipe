@@ -24,13 +24,17 @@ resting-state and task-based fMRI features can then be calculated on the
 fly using `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and `nipype
 <https://nipype.readthedocs.io/>`__ for statistics.
 
+   Subscribe to our `mailing list <https://mailman.charite.de/mailman/listinfo/halfpipe-announcements>`_ to stay up to date with new developments and releases.
+
+..
+
    If you encounter issues, please see the `troubleshooting
    <#troubleshooting>`__ section of this document.
 
 ..
 
    Some sections of this document are marked as outdated. While we are
-   working on updating them, the `pre-print <https://doi.org/gddf>`__
+   working on updating them, the `paper <https://doi.org/hmts>`__
    and the `analysis manual
    <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
    should be able to answer most questions.
