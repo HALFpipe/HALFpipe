@@ -93,12 +93,14 @@ class UseExistingSpecStep(Step):
 
             choice_index = self.options.index(self.choice)
 
+            global_settings = self.existing_spec.global_settings
             files = self.existing_spec.files
             settings = self.existing_spec.settings
             features = self.existing_spec.features
             models = self.existing_spec.models
 
             if choice_index > 1:
+                ctx.spec.global_settings = global_settings
                 for fileobj in files:
                     ctx.put(fileobj)
             if choice_index > 2:
