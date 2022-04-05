@@ -218,7 +218,7 @@ psutil==5.9.0
     #   -r requirements.in
     #   flufl-lock
     #   fmriprep
-pybids==0.15.0
+pybids==0.15.1
     # via
     #   -r requirements.in
     #   fmriprep
