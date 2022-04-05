@@ -569,6 +569,10 @@ Models are statistical analyses that are carried out on the features.
       ``screen``/``tmux`` session with ``Control+d`` again. If the
       command hasn’t finished yet, detach as before and come back later
 
+..
+
+    Are you getting a "missing dependencies" error? Some clusters configure singularity with an option called `mount hostfs <https://sylabs.io/guides/3.9/user-guide/bind_paths_and_mounts.html#disabling-system-binds>`_ that will bind all cluster file systems into the container. These file systems may in some cases have paths that conflict with where software is installed in the ``HALFpipe`` container, effectively overwriting that software. You can disable this by adding the option ``--no-mount hostfs`` right after ``singularity run``.
+
 ****************
  Quality checks
 ****************
