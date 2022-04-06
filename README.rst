@@ -577,8 +577,7 @@ Models are statistical analyses that are carried out on the features.
  Quality checks
 ****************
 
-Please see the manual at
-https://docs.google.com/document/d/1evDkVaoXqSaxulp5eSxVqgaxro7yZl-gao70D0S2dH8
+Please see the `manual <https://drive.google.com/file/d/1TMg9MRvBwZO8HB1UJmH0gm4tYaBVnvcQ/view>`_
 
 *********
  Outputs
