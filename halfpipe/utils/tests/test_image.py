@@ -7,14 +7,14 @@ import pytest
 
 from nibabel.testing import data_path
 
-from ..image import niftidim, nvol
+from ..image import nifti_dim, nvol
 
 @pytest.fixture
 def example_nifti():
     return os.path.join(data_path, 'example4d.nii.gz')
 
-def test_image_niftidim(example_nifti):
-    assert niftidim(example_nifti, 0) == 128
+def test_image_nifti_dim(example_nifti):
+    assert nifti_dim(example_nifti, 0) == 128
 
 def test_image_nvol(example_nifti):
     assert nvol(example_nifti) == 2

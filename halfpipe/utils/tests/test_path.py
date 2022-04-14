@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from nipype.interfaces.base.support import Bunch
 
-from ..path import findpaths, validate_workdir
+from ..path import find_paths, validate_workdir
 
 A = "a.txt"
 B = "b.txt"
