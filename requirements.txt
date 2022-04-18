@@ -331,7 +331,7 @@ transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   -r requirements.in
     #   typing-inspect
