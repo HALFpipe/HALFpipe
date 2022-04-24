@@ -22,9 +22,8 @@ def setup_freesurfer_env(opts: Namespace) -> bool:
       opts: an argparser.Namespace with provided halfpipe arguments
 
     Returns:
-      Boolean value representing a the state of the freesurfer license config
+      Boolean value representing the state of the freesurfer license config
     """
-
     if os.environ.get("FS_LICENSE") is not None:
         logger.debug(f'Using FreeSurfer license "{os.environ["FS_LICENSE"]}"')
         return True

@@ -18,7 +18,7 @@ import numpy as np
 
 from ..errors import SpecError, LicenseError
 from ..model.spec import readspec
-from ..utils import logger, resolve, timestampstr
+from ..utils import logger
 from ..utils.environment import setup_freesurfer_env
 from ..utils.path import validate_workdir, resolve
 from ..utils.time import format_current_time
@@ -258,9 +258,9 @@ def run(opts, should_run):
             'Detailed logs information will only be available in the "log.txt" file in the working directory. ',
         )
 
-    logger.debug(f"{opts.debug=}")
+    logger.debug(f"debug={opts.debug}")
 
-    logger.debug(f'{should_run["spec-ui"]=}')
+    logger.debug(f'should_run["spec-ui"]={should_run["spec-ui"]}')
     if should_run["spec-ui"]:
         logger.info("Stage: spec-ui")
         run_stage_ui(opts)
@@ -332,7 +332,6 @@ def main():
                 pr.dump_stats(
                     Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
-                pr.dump_stats(Path(opts.workdir) / f"profile.{timestampstr():s}.prof")
 
         teardown_logging()
 

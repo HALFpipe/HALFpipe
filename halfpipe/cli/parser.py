@@ -4,6 +4,7 @@
 
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Tuple
 
 from .. import __version__
