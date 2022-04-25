@@ -5,6 +5,7 @@
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import Tuple
 
 from .. import __version__
 from ..utils import logger
@@ -13,7 +14,7 @@ from ..utils.path import is_empty
 steps = ["spec-ui", "workflow", "run"]
 
 
-def build_parser():
+def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description=f"ENIGMA HALFpipe {__version__} is a user-friendly interface "
         "for performing reproducible analysis of fMRI data, including preprocessing, "
@@ -30,6 +31,7 @@ def build_parser():
     )
     basegroup.add_argument("--fs-root", help="path to the file system root")
     basegroup.add_argument("--verbose", action="store_true", default=False)
+    basegroup.add_argument("--existing-spec-file", action="store_true", default=False)
 
     stepgroup = parser.add_argument_group("steps", "")
     for step in steps:
@@ -109,7 +111,7 @@ def build_parser():
     return parser
 
 
-def parse_args(args=None, namespace=None):
+def parse_args(args=None, namespace=None) -> Tuple:
     parser = build_parser()
     opts = parser.parse_args(args, namespace)
 
@@ -145,6 +147,9 @@ def parse_args(args=None, namespace=None):
         logging_context.enable_verbose()
 
     should_run = {step: True for step in steps}
+
+    if opts.existing_spec_file:
+        should_run["spec-ui"] = False
 
     for step in steps:
         attrname = f"only-{step}".replace("-", "_")

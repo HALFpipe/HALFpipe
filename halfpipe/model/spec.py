@@ -179,6 +179,18 @@ def loadspec(
         return None
 
 
+def readspec(stdin_spec: dict, logger=logger) -> Optional[Spec]:
+    try:
+        import json
+
+        logger.info("Loading spec file from STDIN")
+        spec = SpecSchema().loads(json.dumps(stdin_spec), many=False)
+        return spec
+    except marshmallow.exceptions.ValidationError as e:
+        logger.warning(f"Ignored validation error on STDIN, {e}", exc_info=e)
+        return None
+
+
 def savespec(spec: Spec, workdir=None, specpath=None, logger=logger):
     os.makedirs(workdir, exist_ok=True)
     if specpath is None:

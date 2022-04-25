@@ -88,3 +88,10 @@ def is_empty(path: Path | str) -> bool:
         pass
 
     return True
+
+
+def validate_workdir(path: Path | str):
+    try:
+        return Path(path).is_dir()
+    except TypeError:
+        return False

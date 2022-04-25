@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
@@ -22,17 +23,20 @@ from .fmriprep import FmriprepFactory
 from .memory import MemoryCalculator
 from .model import ModelFactory
 from .mriqc import MriqcFactory
+from ..model.spec import Spec
 from .setting import SettingFactory
 
 
-def init_workflow(workdir: Path) -> IdentifiableWorkflow:
+def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
-
+    :param workdir
     :param spec
     """
 
-    spec = loadspec(workdir=workdir)
+    if not spec:
+        spec = loadspec(workdir=workdir)
+
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")
     database = Database(spec)
