@@ -210,7 +210,7 @@ pillow==9.0.1
     #   imageio
     #   matplotlib
     #   scikit-image
-pint==0.19.1
+pint==0.19.2
     # via -r requirements.in
 psutil==5.9.0
     # via
