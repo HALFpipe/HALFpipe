@@ -23,7 +23,7 @@ def calcgam(beta, y, z, s) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     iU = np.diag(1.0 / np.ravel(weights))
 
     tmp = z.T @ iU
-    ziUz = tmp @ z
+    ziUz = np.atleast_2d(tmp @ z)
 
     gam = np.linalg.lstsq(ziUz, tmp @ y, rcond=None)[0]
 
@@ -42,13 +42,16 @@ def marg_posterior_energy(ex, y, z, s):
     _, iU_logdet = np.linalg.slogdet(iU)
     _, ziUz_logdet = np.linalg.slogdet(ziUz)
 
-    ret = -(
+    energy = -(
         0.5 * float(iU_logdet)
         - 0.5 * float(ziUz_logdet)
         - 0.5 * float(y.T @ iU @ y - gam.T @ ziUz @ gam)
     )
 
-    return ret
+    if not isfinite(energy):
+        return 1e32
+
+    return energy
 
 
 def solveforbeta(y, z, s):
@@ -62,10 +65,15 @@ def solveforbeta(y, z, s):
 
 def flame_stage1_onvoxel(y, z, s):
     norm = np.std(y)
+
+    if isclose(norm, 0):
+        raise ValueError("Dependent variable has zero variance")
+
     y /= norm
     s /= np.square(norm)
 
-    assert not np.any(s < 0), "Variance needs to be non-negative"
+    if np.any(s < 0):
+        raise ValueError("Variance needs to be non-negative")
 
     beta = solveforbeta(y, z, s)
 
