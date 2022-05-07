@@ -2,24 +2,33 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import defaultdict
 from pathlib import Path
+from shutil import rmtree
 
 from nipype.pipeline.engine.utils import load_resultfile
 
 from ..utils import logger
-from ..utils.path import find_paths
+from ..utils.path import find_paths, is_empty
 
 
 class PathReferenceTracer:
-    def __init__(self):
-        self.black = set()  # is pending
-        self.grey = set()  # still has references from pending nodes
-        self.white = set()
+    def __init__(self, workdir: str | Path):
+        self.workdir: Path = self.resolve(workdir)
+        self.weak_references: set[Path] = set()
 
-        self.refs = dict()  # other paths that are referenced by a path
-        self.deps = dict()  # paths that a path depends on (inverse refs)
+        self.black: set[Path] = set()  # is pending
+        self.grey: set[Path] = set()  # still has references from pending nodes
+        self.white: set[Path] = set()
 
-    def resolve(self, path):
+        self.refs: dict[Path, set[Path]] = defaultdict(
+            set
+        )  # other paths that are referenced by a path
+        self.deps: dict[Path, set[Path]] = defaultdict(
+            set
+        )  # paths that a path depends on (inverse refs)
+
+    def resolve(self, path) -> Path:
         if not isinstance(path, Path):
             path = Path(path)
         path = path.resolve()
@@ -33,30 +42,30 @@ class PathReferenceTracer:
         yield from pathset & self.black
         yield from pathset & self.grey
 
-    def add_ref(self, frompath, topath):
-        if frompath == topath:
+    def add_ref(self, from_path, to_path):
+        if from_path == to_path:
             return
 
-        self.refs[frompath].add(topath)
-        self.deps[topath].add(frompath)
+        self.refs[from_path].add(to_path)
+        self.deps[to_path].add(from_path)
 
-        if frompath in self.white:  # no longer without references
-            self.white.remove(frompath)
-            self.grey.add(frompath)
+        if from_path in self.white:  # no longer without references
+            self.white.remove(from_path)
+            self.grey.add(from_path)
 
-    def remove_ref(self, frompath, topath):
-        self.refs[frompath].remove(topath)
-        self.deps[topath].remove(frompath)
+    def remove_ref(self, from_path, to_path):
+        self.refs[from_path].remove(to_path)
+        self.deps[to_path].remove(from_path)
 
-        if len(self.refs[frompath]) == 0:  # no more references remain
-            if frompath in self.grey:
-                self.grey.remove(frompath)
-                self.white.add(frompath)
+        if len(self.refs[from_path]) == 0:  # no more references remain
+            if from_path in self.grey:
+                self.grey.remove(from_path)
+                self.white.add(from_path)
 
     def node_resultfile_path(self, node) -> Path:
-        topath = self.resolve(node.output_dir())
+        to_path = self.resolve(node.output_dir())
 
-        return topath / f"result_{node.name}.pklz"
+        return to_path / f"result_{node.name}.pklz"
 
     def add_file(self, path, target=None):
         if target is None:
@@ -65,63 +74,66 @@ class PathReferenceTracer:
         if path not in self.black and path not in self.grey and path not in self.white:
             target.add(path)
 
-        if path not in self.refs:
-            self.refs[path] = set()  # initialize empty
-
-        if path not in self.deps:
-            self.deps[path] = set()
-
     def add_node(self, node):  # to black set
         path = self.node_resultfile_path(node)
 
         self.add_file(path, target=self.black)
-        self.add_file(path.parent)  # also track node dir
 
-        self.add_ref(path.parent, path)  # cannot delete dir with files in it
+        child = path
+        while child.parent != self.workdir:
+            parent = child.parent
+
+            if child != path.parent:
+                self.weak_references.add(child)
+
+            self.add_file(parent)
+            self.add_ref(parent, child)
+
+            child = parent
 
     def set_node_pending(self, node):
-        topath = self.node_resultfile_path(node)
+        to_path = self.node_resultfile_path(node)
 
-        if topath not in self.deps:
+        if to_path not in self.deps:
             return
 
         if node.input_source:
             input_files, _ = zip(*node.input_source.values())
             for input_file in input_files:
-                frompath = self.resolve(input_file)
-                if frompath in self.black or frompath in self.grey:
-                    self.add_ref(frompath, topath)
+                from_path = self.resolve(input_file)
+                if from_path in self.black or from_path in self.grey:
+                    self.add_ref(from_path, to_path)
                 else:
                     logger.debug(
                         f'{node.name} has untracked input_source "{input_file}"'
                     )
 
     def set_node_complete(self, node, unmark: bool):
-        topath = self.node_resultfile_path(node)
+        to_path = self.node_resultfile_path(node)
 
-        if topath not in self.deps:  # node is not being tracked
+        if to_path not in self.deps:  # node is not being tracked
             return
 
-        if topath not in self.black:  # needs to be pending
+        if to_path not in self.black:  # needs to be pending
             return
 
-        deps = [*self.deps[topath]]
-        for frompath in deps:  # remove input dependencies after node was run
-            if frompath == topath.parent:
+        deps = [*self.deps[to_path]]
+        for from_path in deps:  # remove input dependencies after node was run
+            if from_path == to_path.parent:
                 continue
 
-            self.remove_ref(frompath, topath)
+            self.remove_ref(from_path, to_path)
 
         if unmark is True:
-            self.black.remove(topath)
-            if len(self.refs[topath]) == 0:
-                self.white.add(topath)
+            self.black.remove(to_path)
+            if len(self.refs[to_path]) == 0:
+                self.white.add(to_path)
                 return  # no need to track result
             else:
-                self.grey.add(topath)
+                self.grey.add(to_path)
 
         try:
-            result = load_resultfile(topath)  # load result from file
+            result = load_resultfile(to_path)  # load result from file
         except Exception as ex:
             logger.info(f"{node.name} does not have result: %s", ex)
             return
@@ -160,18 +172,38 @@ class PathReferenceTracer:
                 continue  # this path is not being traced, for example because it is an external file
 
             self.add_file(path)
-            self.add_ref(path, topath)  # add reference from result file
+            self.add_ref(path, to_path)  # add reference from result file
 
-            for frompath in found:
-                self.add_ref(frompath, path)  # add any parents as dependency
+            for from_path in found:
+                self.add_ref(from_path, path)  # add any parents as dependency
 
             if path.is_dir():
                 stack.extend(path.iterdir())
 
     def collect(self):
         while len(self.white) > 0:
-            topath = self.white.pop()
-            deps = [*self.deps[topath]]
-            for frompath in deps:  # remove input dependencies
-                self.remove_ref(frompath, topath)
-            yield topath
+            to_path = self.white.pop()
+
+            deps = list(self.deps[to_path])
+
+            for from_path in deps:  # remove input dependencies
+                self.remove_ref(from_path, to_path)
+
+            yield to_path
+
+    def collect_and_delete(self):
+        paths = list(self.collect())
+
+        if len(paths) == 0:
+            return
+
+        logger.info(
+            "[node dependencies finished] removing\n" + "\n".join(map(str, paths))
+        )
+
+        for path in paths:
+            if path in self.weak_references:
+                if path.is_dir() and not is_empty(path):
+                    continue  # do not delete non-empty weak references, in case other chunks refer to them
+
+            rmtree(path, ignore_errors=True)

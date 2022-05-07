@@ -5,10 +5,9 @@
 import gc
 import multiprocessing as mp
 import os
-import shutil
 from concurrent.futures import ProcessPoolExecutor
 from threading import Thread
-from typing import Any, Dict
+from typing import Any
 
 from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
@@ -65,7 +64,7 @@ def run_node(node, updatehash, taskid):
     """
 
     # Init variables
-    result: Dict[str, Any] = dict(result=None, traceback=None, taskid=taskid)
+    result: dict[str, Any] = dict(result=None, traceback=None, taskid=taskid)
 
     # Try and execute the node via node.run()
     try:
@@ -83,17 +82,17 @@ def run_node(node, updatehash, taskid):
 
 
 class MultiProcPlugin(nip.MultiProcPlugin):
-    def __init__(self, plugin_args: Dict):
+    def __init__(self, plugin_args: dict):
         # Init variables and instance attributes
         super(nip.MultiProcPlugin, self).__init__(plugin_args=plugin_args)
-        self._taskresult: Dict = dict()
-        self._task_obj: Dict = dict()
+        self._taskresult: dict = dict()
+        self._task_obj: dict = dict()
         self._taskid = 0
         self._rt = None
 
         # Cache current working directory and make sure we
         # change to it when workers are set up
-        self._cwd = plugin_args.get("workdir", os.getcwd())
+        self._cwd: str = plugin_args.get("workdir", os.getcwd())
 
         # Read in options or set defaults.
         self.processors = self.plugin_args.get("n_procs", mp.cpu_count())
@@ -127,7 +126,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._stats = None
         self._keep = plugin_args.get("keep", "all")
         if self._keep != "all":
-            self._rt = PathReferenceTracer()
+            self._rt = PathReferenceTracer(self._cwd)
 
     def _postrun_check(self):
         shutdown_thread = Thread(
@@ -195,13 +194,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             )
 
     def _remove_node_dirs(self):
-        """Removes directories whose outputs have already been used up"""
+        """
+        Removes directories whose outputs have already been used up
+        """
         if self._rt is not None:
-            paths = [*self._rt.collect()]
-            if len(paths) > 0:
-                logger.info(
-                    "[node dependencies finished] removing\n"
-                    + "\n".join(map(str, paths))
-                )
-                for path in paths:
-                    shutil.rmtree(path, ignore_errors=True)
+            self._rt.collect_and_delete()
