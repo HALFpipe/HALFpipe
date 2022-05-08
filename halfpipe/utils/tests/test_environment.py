@@ -13,8 +13,20 @@ from ..environment import setup_freesurfer_env
 
 logger = logging.getLogger()
 
-good_opts, _ = parse_args(["--fs-license-file", "./README.rst"])
+good_opts, _ = parse_args(["--fs-license-file", "/etc/hosts"])
 bad_opts, _ = parse_args(["--fs-license-file", "/dev/null"])
+
+
+def test_freesurfer_env_works_with_env_set():
+    no_opts, _ = parse_args([])
+
+    try:
+        _ = os.environ["FS_LICENSE"]
+    except KeyError:
+        os.environ["FS_LICENSE"] = '/dev/full'
+
+    no_opts_test = setup_freesurfer_env(no_opts)
+    assert no_opts_test == True
 
 
 @pytest.mark.parametrize("opts, proper_result", [(good_opts, True), (bad_opts, False)])
