@@ -3,8 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import pytest
 
+import pytest
 from nibabel.testing import data_path
 
 from ..image import nifti_dim, nvol

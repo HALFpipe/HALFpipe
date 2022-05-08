@@ -4,12 +4,11 @@
 
 import logging
 import os
-import pytest
 
+import pytest
 
 from ...cli.parser import parse_args
 from ..environment import setup_freesurfer_env
-
 
 logger = logging.getLogger()
 
@@ -23,10 +22,10 @@ def test_freesurfer_env_works_with_env_set():
     try:
         _ = os.environ["FS_LICENSE"]
     except KeyError:
-        os.environ["FS_LICENSE"] = '/dev/full'
+        os.environ["FS_LICENSE"] = "/dev/full"
 
     no_opts_test = setup_freesurfer_env(no_opts)
-    assert no_opts_test == True
+    assert no_opts_test is True
 
 
 @pytest.mark.parametrize("opts, proper_result", [(good_opts, True), (bad_opts, False)])
@@ -38,4 +37,4 @@ def test_setup_freesurfer_env(opts, proper_result):
         pass
 
     thistest = setup_freesurfer_env(opts)
-    assert thistest == proper_result
+    assert thistest is proper_result

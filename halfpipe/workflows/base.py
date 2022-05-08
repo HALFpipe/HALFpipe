@@ -11,7 +11,7 @@ from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.collect import collect_bold_files
 from ..ingest.database import Database
-from ..model.spec import loadspec
+from ..model.spec import Spec, loadspec
 from ..utils import logger
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -23,7 +23,6 @@ from .fmriprep import FmriprepFactory
 from .memory import MemoryCalculator
 from .model import ModelFactory
 from .mriqc import MriqcFactory
-from ..model.spec import Spec
 from .setting import SettingFactory
 
 
