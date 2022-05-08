@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
@@ -10,7 +11,7 @@ from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.collect import collect_bold_files
 from ..ingest.database import Database
-from ..model.spec import loadspec
+from ..model.spec import Spec, loadspec
 from ..utils import logger
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -25,14 +26,16 @@ from .mriqc import MriqcFactory
 from .setting import SettingFactory
 
 
-def init_workflow(workdir: Path) -> IdentifiableWorkflow:
+def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
-
+    :param workdir
     :param spec
     """
 
-    spec = loadspec(workdir=workdir)
+    if not spec:
+        spec = loadspec(workdir=workdir)
+
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")
     database = Database(spec)

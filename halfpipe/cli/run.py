@@ -257,6 +257,8 @@ def run(opts, should_run):
     if should_run["spec-ui"]:
         logger.info("Stage: spec-ui")
         run_stage_ui(opts)
+    else:
+        logger.info("Loading existing spec")
 
     assert (
         opts.workdir is not None
