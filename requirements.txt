@@ -309,7 +309,7 @@ tabulate==0.8.9
     # via -r requirements.in
 tedana==0.0.9a1
     # via fmriprep
-templateflow==0.8.0
+templateflow==0.8.1
     # via
     #   -r requirements.in
     #   fmriprep
