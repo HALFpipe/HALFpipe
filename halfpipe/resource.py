@@ -14,7 +14,7 @@ online_resources: dict[str, str] = dict(
     [
         (
             "index.html",
-            "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.0/index.html",
+            "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.1/index.html",
         ),
         (
             "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
