@@ -18,9 +18,12 @@ chardet==4.0.0
     # via -r requirements.in
 charset-normalizer==2.0.12
     # via requests
+ci-info==0.2.0
+    # via etelemetry
 click==8.0.4
     # via
     #   niflow-nipype1-workflows
+    #   nipype
     #   pybids
 cycler==0.11.0
     # via matplotlib
@@ -34,8 +37,12 @@ docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
     # via openpyxl
+etelemetry==0.3.0
+    # via nipype
 fasteners==0.17.3
     # via -r requirements.in
+filelock==3.7.0
+    # via nipype
 flufl-lock==7.0
     # via -r requirements.in
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
@@ -66,6 +73,8 @@ inflection==0.5.1
     # via -r requirements.in
 interface-meta==1.2.4
     # via formulaic
+isodate==0.6.1
+    # via rdflib
 jinja2==3.0.3
     # via niworkflows
 joblib==1.1.0
@@ -76,8 +85,12 @@ kiwisolver==1.3.2
     # via matplotlib
 line-profiler==3.5.1
     # via -r requirements.in
+looseversion==1.0.1
+    # via nipype
 lxml==4.8.0
-    # via svgutils
+    # via
+    #   prov
+    #   svgutils
 markupsafe==2.1.0
     # via jinja2
 marshmallow==3.15.0
@@ -108,13 +121,16 @@ mypy-extensions==0.4.3
 networkx==2.5.1
     # via
     #   fmriprep
+    #   nipype
     #   nitime
+    #   prov
     #   scikit-image
 nibabel==3.2.2
     # via
     #   -r requirements.in
     #   fmriprep
     #   nilearn
+    #   nipype
     #   nitime
     #   nitransforms
     #   niworkflows
@@ -128,7 +144,7 @@ nilearn==0.9.0
     #   fmriprep
     #   niworkflows
     #   tedana
-nipype @ https://github.com/nipy/nipype/archive/cd4c34d935a43812d1756482fdc4034844e485b8.zip
+nipype==1.8.1
     # via
     #   -r requirements.in
     #   fmriprep
@@ -160,6 +176,7 @@ numpy==1.22.3
     #   matplotlib
     #   nibabel
     #   nilearn
+    #   nipype
     #   nitime
     #   nitransforms
     #   niworkflows
@@ -184,6 +201,7 @@ packaging==21.3
     #   marshmallow
     #   matplotlib
     #   nibabel
+    #   nipype
     #   niworkflows
     #   scikit-image
     #   setuptools-scm
@@ -212,6 +230,8 @@ pillow==9.0.1
     #   scikit-image
 pint==0.19.2
     # via -r requirements.in
+prov==2.0.0
+    # via nipype
 psutil==5.9.0
     # via
     #   -r requirements.in
@@ -224,12 +244,16 @@ pybids==0.15.1
     #   niworkflows
     #   sdcflows
     #   templateflow
+pydot==1.4.2
+    # via nipype
 pympler==1.0.1
     # via -r requirements.in
 pyparsing==3.0.7
     # via
     #   matplotlib
     #   packaging
+    #   pydot
+    #   rdflib
 pyrsistent==0.18.1
     # via -r requirements.in
 pysocks==1.7.1
@@ -237,7 +261,9 @@ pysocks==1.7.1
 python-dateutil==2.8.2
     # via
     #   matplotlib
+    #   nipype
     #   pandas
+    #   prov
 pytz==2021.3
     # via pandas
 pywavelets==1.2.0
@@ -246,9 +272,14 @@ pyyaml==6.0
     # via
     #   fmriprep
     #   niworkflows
+rdflib==6.1.1
+    # via
+    #   nipype
+    #   prov
 requests==2.27.1
     # via
     #   -r requirements.in
+    #   etelemetry
     #   fmriprep
     #   nilearn
     #   templateflow
@@ -267,6 +298,7 @@ scipy==1.8.0
     #   -r requirements.in
     #   formulaic
     #   nilearn
+    #   nipype
     #   nitime
     #   nitransforms
     #   niworkflows
@@ -286,6 +318,8 @@ seaborn==0.11.2
     #   niworkflows
 setuptools-scm[toml]==6.4.2
     # via -r requirements.in
+simplejson==3.17.6
+    # via nipype
 six==1.16.0
     # via
     #   isodate
@@ -327,6 +361,8 @@ tomli==2.0.1
     # via setuptools-scm
 tqdm==4.62.3
     # via templateflow
+traits==6.3.2
+    # via nipype
 transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
