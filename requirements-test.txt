@@ -8,7 +8,7 @@ attrs==21.4.0
     # via
     #   -c requirements.txt
     #   pytest
-coverage[toml]==6.3.2
+coverage[toml]==6.3.3
     # via pytest-cov
 iniconfig==1.1.1
     # via pytest
@@ -20,7 +20,7 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via
     #   -c requirements.txt
     #   packaging
