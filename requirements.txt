@@ -167,7 +167,7 @@ niworkflows==1.3.7
     #   sdcflows
 num2words==0.5.10
     # via pybids
-numpy==1.22.3
+numpy==1.22.4
     # via
     #   -r requirements.in
     #   fmriprep
