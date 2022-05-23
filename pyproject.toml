@@ -1,6 +1,6 @@
 [build-system]
 # keep in sync with requirements.in
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
+requires = ["setuptools>=62", "setuptools_scm[toml]>=6.2", "wheel"]
 
 [tool.isort]
 profile = "black"

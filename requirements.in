@@ -17,7 +17,7 @@ pybids >= 0.13.1
 
 # data management
 numpy >= 1.20
-scipy >= 1.6.2
+scipy >=1.8.0,!=1.8.1
 mpmath >= 1.1.0
 gmpy2 >= 2.0.8
 pandas >= 1.2.0

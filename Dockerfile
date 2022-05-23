@@ -16,7 +16,7 @@ COPY requirements.txt install-requirements.sh /tmp/
 RUN rm -rf /usr/local/miniconda && \
     cd /tmp && \
     curl --show-error --location \
-        "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh" \
+        "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
         --output "miniconda.sh" &&  \
     bash miniconda.sh -b -p /usr/local/miniconda && \
     ./install-requirements.sh --requirements-file requirements.txt && \
