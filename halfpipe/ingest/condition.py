@@ -51,14 +51,14 @@ def parse_mat_condition_file(filepath):
 
     assert data is not None
 
-    mnames = np.squeeze(data["names"])
-    mdurations = np.squeeze(data["durations"])
-    monsets = np.squeeze(data["onsets"])
+    mat_names = np.squeeze(data["names"])
+    mat_durations = np.squeeze(data["durations"])
+    mat_onsets = np.squeeze(data["onsets"])
 
-    for i, name in enumerate(mnames):
+    for i, name in enumerate(mat_names):
         condition = extract(name)
-        ionsets = np.ravel(monsets[i])
-        idurations = np.ravel(mdurations[i])
+        ionsets = np.ravel(mat_onsets[i])
+        idurations = np.ravel(mat_durations[i])
 
         data = np.zeros((ionsets.size, 2))
         data[:, 0] = ionsets
