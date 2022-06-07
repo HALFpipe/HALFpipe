@@ -145,7 +145,7 @@ nilearn==0.9.1
     #   fmriprep
     #   niworkflows
     #   tedana
-nipype==1.8.1
+nipype==1.8.2
     # via
     #   -r requirements.in
     #   fmriprep
