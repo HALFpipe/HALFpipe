@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from math import isclose
+
 from ...resource import get as getresource
 from ...tests.resource import setup as setuptestresources
 from ..condition import parse_condition_file
@@ -52,6 +54,13 @@ def test_parse_condition_file_mat():
 
     conditions, onsets, durations = parse_condition_file(in_any=file_name)
 
-    assert tuple(conditions) == ("Famous", "Unfamiliar", "Scrambled")
+    assert conditions == ["Famous", "Unfamiliar", "Scrambled"]
     assert all(len(v) > 0 for v in durations)
     assert all(len(v) > 0 for v in onsets)
+
+    famous_onsets, unfamiliar_onsets, scrambled_onsets = onsets
+
+    assert isclose(famous_onsets[0], 0)
+    assert isclose(famous_onsets[1], 3.273)
+    assert isclose(unfamiliar_onsets[0], 6.647)
+    assert isclose(scrambled_onsets[0], 25.606)
