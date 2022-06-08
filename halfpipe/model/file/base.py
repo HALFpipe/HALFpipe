@@ -21,6 +21,7 @@ class File:
         self.tags = dict()
         self.intended_for: Optional[Dict] = None
 
+        self.metadata = kwargs.get("metadata", dict())
         for k, v in kwargs.items():
             setattr(self, k, v)
 
