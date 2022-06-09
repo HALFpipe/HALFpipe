@@ -82,23 +82,26 @@ def collect_fieldmaps(
 
     # filter
 
-    magnitude = frozenset(["magnitude1", "magnitude2"])
-    has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
-
-    needs_magnitude = frozenset(
-        [
-            "phasediff",
-            "phase1",
-            "phase2",
-            "fieldmap",
-        ]
-    )
+    magnitude_map: dict[str, list[str]] = {
+        "phase1": ["magnitude1", "magnitude2"],
+        "phase2": ["magnitude1", "magnitude2"],
+        "phasediff": ["magnitude1", "magnitude2"],
+        "fieldmap": ["magnitude"],
+    }
 
     incomplete = set()
     for c in candidates:
-        if database.tagval(c, "suffix") in needs_magnitude:
-            if not has_magnitude:
-                incomplete.add(c)
+        suffix = database.tagval(c, "suffix")
+        assert isinstance(suffix, str)
+        if suffix not in magnitude_map:
+            continue
+        magnitude: list[str] = magnitude_map[suffix]
+
+        has_magnitude = any(
+            database.tagval(c, "suffix") in magnitude for c in candidates
+        )
+        if not has_magnitude:
+            incomplete.add(c)
 
     if len(incomplete) > 0:
         if silent is not True:

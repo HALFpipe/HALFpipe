@@ -58,7 +58,7 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
     def _should_skip(self, ctx):
         filepaths = [*ctx.database.get(**filedict)]
         suffixvalset = ctx.database.tagvalset("suffix", filepaths=filepaths)
-        return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff", "fieldmap"])
+        return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff"])
 
 
 class AcqToTaskMappingStep(Step):

@@ -17,7 +17,7 @@ from .base import BaseFileSchema, File
 class BaseFmapFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="fmap", validate=validate.Equal("fmap"))
     suffix = fields.Str(
-        validate=validate.OneOf(["magnitude1", "magnitude2", "fieldmap"])
+        validate=validate.OneOf(["magnitude", "magnitude1", "magnitude2", "fieldmap"])
     )
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
@@ -55,6 +55,7 @@ class FmapFileSchema(OneOfSchema):
         "phasediff": PhaseDiffFmapFileSchema,
         "phase1": PhaseFmapFileSchema,
         "phase2": PhaseFmapFileSchema,
+        "magnitude": BaseFmapFileSchema,
         "magnitude1": BaseFmapFileSchema,
         "magnitude2": BaseFmapFileSchema,
         "fieldmap": BaseFmapFileSchema,
