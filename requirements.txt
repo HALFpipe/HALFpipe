@@ -340,7 +340,7 @@ svgutils==0.3.1
     # via
     #   -r requirements.in
     #   niworkflows
-tabulate==0.8.9
+tabulate==0.8.10
     # via -r requirements.in
 tedana==0.0.9a1
     # via fmriprep
