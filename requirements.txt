@@ -317,7 +317,7 @@ seaborn==0.11.2
     # via
     #   -r requirements.in
     #   niworkflows
-setuptools-scm[toml]==6.4.2
+setuptools-scm[toml]==7.0.1
     # via -r requirements.in
 simplejson==3.17.6
     # via nipype
@@ -371,6 +371,7 @@ typeguard==2.13.3
 typing-extensions==4.2.0
     # via
     #   -r requirements.in
+    #   setuptools-scm
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass
