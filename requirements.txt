@@ -167,7 +167,7 @@ niworkflows==1.3.7
     #   sdcflows
 num2words==0.5.10
     # via pybids
-numpy==1.23.0
+numpy==1.22.4
     # via
     #   -r requirements.in
     #   fmriprep
@@ -207,7 +207,7 @@ packaging==21.3
     #   scikit-image
     #   setuptools-scm
     #   statsmodels
-pandas==1.4.3
+pandas==1.4.2
     # via
     #   -r requirements.in
     #   fmriprep
@@ -317,7 +317,7 @@ seaborn==0.11.2
     # via
     #   -r requirements.in
     #   niworkflows
-setuptools-scm[toml]==7.0.2
+setuptools-scm[toml]==6.4.2
     # via -r requirements.in
 simplejson==3.17.6
     # via nipype
@@ -340,7 +340,7 @@ svgutils==0.3.1
     # via
     #   -r requirements.in
     #   niworkflows
-tabulate==0.8.10
+tabulate==0.8.9
     # via -r requirements.in
 tedana==0.0.9a1
     # via fmriprep
@@ -371,7 +371,6 @@ typeguard==2.13.3
 typing-extensions==4.2.0
     # via
     #   -r requirements.in
-    #   setuptools-scm
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass
