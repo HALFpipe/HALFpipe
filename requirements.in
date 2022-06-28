@@ -1,21 +1,19 @@
 # build system
-setuptools>=45
 setuptools_scm[toml]>=6.2
 wheel
 
 # neuroimaging
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
 smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.zip
-niworkflows ~= 1.3.5
+niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.7+halfpipe.1.zip
 sdcflows ~= 1.3.3
 nipype >= 1.8.1
 nibabel >= 3.2.1
 indexed-gzip >= 1.6.4
-nitime
 templateflow >= 0.7.1
 pybids >= 0.13.1
 
-# data management
+# data science
 numpy >= 1.20
 scipy >=1.8.0,!=1.8.1
 mpmath >= 1.1.0
