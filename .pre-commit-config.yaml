@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.2.0
+    rev: v4.3.0
     hooks:
       - id: check-merge-conflict
       - id: check-added-large-files
@@ -17,7 +17,7 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.6.1
+    rev: 6.7.0
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
@@ -30,7 +30,7 @@ repos:
           - "requirements-test.in"
         files: ^requirements(\.txt|-test\.in|-test\.txt)$
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
       - id: black
         language_version: python3.10
