@@ -6,7 +6,7 @@ from math import isclose
 
 from ...resource import get as getresource
 from ...tests.resource import setup as setuptestresources
-from ..condition import parse_condition_file
+from ..condition import ConditionFile
 
 txt_str = """8 32 1
 72 32 1
@@ -23,42 +23,40 @@ tsv_str = """onset duration  trial_type  response_time stim_file
 def test_parse_condition_file_txt(tmp_path):
     file_name = tmp_path / "faces.txt"
 
-    with open(file_name, "w") as fp:
-        fp.write(txt_str)
+    with open(file_name, "w") as file_handle:
+        file_handle.write(txt_str)
 
-    conditions, onsets, durations = parse_condition_file(
-        in_any=((file_name, "faces"), (file_name, "shapes"))
-    )
+    cf = ConditionFile(data=((file_name, "faces"), (file_name, "shapes")))
 
-    assert all(v == 32 for d in durations for v in d)
-    assert all(v[0] == 8 for v in onsets)
-    assert tuple(conditions) == ("faces", "shapes")
+    assert cf.conditions == ["faces", "shapes"]
+    assert all(v == 32 for d in cf.durations for v in d)
+    assert all(v[0] == 8 for v in cf.onsets)
 
 
 def test_parse_condition_file_tsv(tmp_path):
     file_name = tmp_path / "gonogo.tsv"
 
-    with open(file_name, "w") as fp:
-        fp.write(tsv_str)
+    with open(file_name, "w") as file_handle:
+        file_handle.write(tsv_str)
 
-    conditions, onsets, durations = parse_condition_file(in_any=file_name)
+    cf = ConditionFile(data=file_name)
 
-    assert tuple(conditions) == ("go", "stop")
-    assert all(len(v) > 0 for v in durations)
-    assert all(len(v) > 0 for v in onsets)
+    assert cf.conditions == ["go", "stop"]
+    assert all(len(v) > 0 for v in cf.durations)
+    assert all(len(v) > 0 for v in cf.onsets)
 
 
 def test_parse_condition_file_mat():
     setuptestresources()
     file_name = getresource("run_01_spmdef.mat")
 
-    conditions, onsets, durations = parse_condition_file(in_any=file_name)
+    cf = ConditionFile(data=file_name)
 
-    assert conditions == ["Famous", "Unfamiliar", "Scrambled"]
-    assert all(len(v) > 0 for v in durations)
-    assert all(len(v) > 0 for v in onsets)
+    assert cf.conditions == ["Famous", "Unfamiliar", "Scrambled"]
+    assert all(len(v) > 0 for v in cf.durations)
+    assert all(len(v) > 0 for v in cf.onsets)
 
-    famous_onsets, unfamiliar_onsets, scrambled_onsets = onsets
+    famous_onsets, unfamiliar_onsets, scrambled_onsets = cf.onsets
 
     assert isclose(famous_onsets[0], 0)
     assert isclose(famous_onsets[1], 3.273)

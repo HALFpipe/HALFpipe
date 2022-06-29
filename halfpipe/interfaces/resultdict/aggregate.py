@@ -8,11 +8,12 @@ from itertools import chain
 from operator import attrgetter
 from typing import Any, Mapping
 
-from more_itertools import collapse, powerset
+from more_itertools import collapse
 from nipype.interfaces.base import BaseInterfaceInputSpec, DynamicTraitedSpec, traits
 from nipype.interfaces.io import IOBase, add_traits
 from pyrsistent import freeze, pmap, thaw
 
+from ...utils import logger
 from ...utils.ops import ravel
 from .base import Categorical, Continuous, ResultdictsOutputSpec
 
@@ -66,33 +67,37 @@ def group_across(
 
 
 def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]:
-    expanded_groups: dict[Index, set[Element]] = dict()
-
     indices = set(groups.keys())
-    consumed_indices: set[Index] = set()
-    for aa in powerset(indices):  # potential bottleneck
-        if len(aa) == 0:
-            continue
 
-        keys = [set(a.keys()) for a in aa]
-        intersection_keys = set.intersection(*keys)
+    expanded_groups: dict[Index, set[Element]] = defaultdict(set)
+    for index, elements in groups.items():
+        expanded_groups[index] |= elements
 
-        if any(len(set(a[key] for a in aa)) > 1 for key in intersection_keys):
-            continue  # conflicting tags
+    while len(indices) > 0:
+        target = indices.pop()
 
-        a = next(iter(aa))
-        index = pmap((key, a[key]) for key in intersection_keys)
-        elements = set(chain.from_iterable(groups[a] for a in aa))
+        candidates = indices.copy()
+        for candidate in candidates:
+            if candidate == target:
+                continue
 
-        if index not in expanded_groups or len(elements) > len(expanded_groups[index]):
-            for a in aa:
-                if a != index:
-                    consumed_indices.add(a)
+            keys = set(target.keys()).intersection(candidate.keys())
+            if not all(candidate[key] == target[key] for key in keys):
+                continue  # candidate is not compatible with target
 
-            expanded_groups[index] = elements
+            index = pmap({key: target[key] for key in keys})
+            logger.debug(f"Merging {target} and {candidate} into {index}")
 
-    for a in consumed_indices:
-        del expanded_groups[a]
+            target_elements = expanded_groups.pop(target)
+            candidate_elements = expanded_groups.pop(candidate)
+
+            expanded_groups[index] |= target_elements
+            expanded_groups[index] |= candidate_elements
+
+            indices.remove(candidate)
+            indices.add(index)
+
+            break
 
     return expanded_groups
 

@@ -78,14 +78,14 @@ class NiftiheaderLoader:
 
         _, ext = split_ext(nifti_file)
 
-        if ext in [".mat"]:
+        if ext in [".mat", ".json"]:  # don't even try for these extensions
             return None, None
 
         try:
             img = nib.load(nifti_file, mmap=False, keep_file_open=False)
         except Exception as e:
             logger.warning(
-                f'Caught error loading file "{nifti_file}"', e, exc_info=True
+                f'Caught error loading file "{nifti_file}": %s', e, exc_info=True
             )
             return None, None
 

@@ -65,7 +65,7 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
             if tagvals is not None and len(tagvals) > 0:
                 self.is_missing = False
 
-                self.add_file_str = f"Add {self.filetype_str} file"
+                self.add_file_str = f"Load another {self.filetype_str} file"
 
                 dsp_values = [f'"{value}"' for value in tagvals]
 

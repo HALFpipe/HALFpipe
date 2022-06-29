@@ -81,20 +81,21 @@ class FeatureFactory(Factory):
             confounds_action = "select"
 
             condition_files = collect_events(database, source_file)
-
-            if isinstance(condition_files, str):
-                condition_file_paths = [condition_files]
-            elif isinstance(condition_files, tuple):
-                condition_files = list(condition_files)
-
-                condition_file_paths, _ = zip(*condition_files)
-                condition_file_paths = list(condition_file_paths)
-            else:  # we did not find any condition files
+            if (
+                condition_files is None or len(condition_files) == 0
+            ):  # we did not find any condition files
                 logger.warning(
                     f'Skipping feature "{feature.name}" for "{source_file}" '
                     "because no event files could be found"
                 )
                 return
+
+            condition_file_paths = []
+            for condition_file in condition_files:
+                if isinstance(condition_file, tuple):
+                    condition_file_paths.append(condition_file[0])
+                else:
+                    condition_file_paths.append(condition_file)
 
             raw_sources = [*raw_sources, *condition_file_paths]
 

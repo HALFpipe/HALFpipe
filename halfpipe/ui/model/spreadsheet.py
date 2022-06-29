@@ -227,7 +227,7 @@ class SpreadsheetSelectStep(Step):
                 TextView("Select the covariates/group data spreadsheet file")
             )
 
-            self.add_file_str = "Add spreadsheet file"
+            self.add_file_str = "Load another spreadsheet file"
 
             dsp_values = [f'"{value}"' for value in filepaths]
             dsp_values = [*dsp_values, self.add_file_str]
