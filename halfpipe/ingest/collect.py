@@ -16,51 +16,42 @@ from .metadata.niftiheader import NiftiheaderLoader
 
 def collect_events(
     database: Database, source_file: str
-) -> str | tuple[tuple[str, str], ...] | None:
-    source_file_subject = database.tagval(source_file, "sub")
-
-    candidates = database.associations(
+) -> tuple[str | tuple[str, str], ...] | None:
+    # get from database
+    candidates: tuple[str] | None = database.associations(
         source_file,
         task=database.tagval(source_file, "task"),  # enforce same task
         datatype="func",
         suffix="events",
     )
-
     if candidates is None or len(candidates) == 0:
         return None
 
-    candidates = sorted(set(candidates))  # remove duplicates
+    # filter
+    condition_files: list[str | tuple[str, str]] = list()
 
-    def match_subject(event_file):
-        subject = database.tagval(event_file, "sub")
-
+    source_file_subject = database.tagval(source_file, "sub")
+    for candidate in sorted(set(candidates)):  # remove duplicates
+        # enforce same subject if applicable
+        subject = database.tagval(candidate, "sub")
         if subject is not None:
-            return subject == source_file_subject
-        else:
-            return True
+            if subject != source_file_subject:
+                continue
 
-    condition_files = list(filter(match_subject, candidates))
-
-    extensions = database.tagvalset("extension", filepaths=condition_files)
-    assert extensions is not None
-
-    if len(condition_files) == 0:
-        return None  # we did not find any
-    elif len(condition_files) == 1:
-        if ".mat" in extensions or ".tsv" in extensions:
-            return condition_files[0]
-
-    if ".txt" in extensions:
-        condition_tuples: list[tuple[str, str]] = list()
-
-        for condition_file in condition_files:
-            condition = database.tagval(condition_file, "condition")
+        extension = database.tagval(candidate, "extension")
+        if extension == ".txt":
+            condition = database.tagval(candidate, "condition")
             assert isinstance(condition, str)
-            condition_tuples.append((condition_file, condition))
+            condition_file: str | tuple[str, str] = (candidate, condition)
+        else:
+            condition_file = candidate
 
-        return (*condition_tuples,)
+        condition_files.append(condition_file)
 
-    raise ValueError(f'Cannot collect condition files for "{source_file}"')
+    if len(condition_files) > 0:
+        return tuple(condition_files)
+    else:
+        return None
 
 
 def collect_fieldmaps(

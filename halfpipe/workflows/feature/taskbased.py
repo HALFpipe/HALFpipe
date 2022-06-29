@@ -50,7 +50,7 @@ def _get_scan_start(vals) -> float:
 def init_taskbased_wf(
     workdir: Path | str,
     feature,
-    condition_files: Union[str, List],
+    condition_files: tuple[str | tuple[str, str], ...],
     condition_units,
     memcalc=MemoryCalculator.default(),
 ):
