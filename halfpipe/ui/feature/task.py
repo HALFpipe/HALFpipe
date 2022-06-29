@@ -328,7 +328,7 @@ class CopyContrastsStep(Step):
 
 
 class ConditionsSelectStep(Step):
-    add_file_str = "Add event file"
+    add_file_str = "Load another event file"
 
     def setup(self, ctx):
         self.result = None
