@@ -6,7 +6,6 @@ from math import isclose
 
 from nipype.interfaces.base import (
     Bunch,
-    File,
     SimpleInterface,
     TraitedSpec,
     isdefined,

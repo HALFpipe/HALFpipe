@@ -5,7 +5,6 @@
 import os
 from math import isfinite
 from pathlib import Path
-from typing import Dict, List, Union
 
 import nipype.algorithms.modelgen as model
 import numpy as np
@@ -197,7 +196,7 @@ def init_taskbased_wf(
 
     # generate design from first level specification
     if feature.hrf == "dgamma":
-        bases: Dict[str, Dict] = dict(dgamma=dict())
+        bases: dict[str, dict] = dict(dgamma=dict())
     elif feature.hrf == "dgamma_with_derivs":
         bases = dict(dgamma=dict(derivs=True))
     elif feature.hrf == "flobs":

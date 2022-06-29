@@ -397,8 +397,8 @@ class EventsStep(FilePatternStep):
     next_step_type: Type[Step] = ConditionsSelectStep
 
     def setup(self, ctx):
-        bold_filepaths = find_bold_filepaths(ctx)
-        self.taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
+        bold_file_paths = find_bold_file_paths(ctx)
+        self.taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
         if len(self.taskset) > 1:
             self.required_in_path_entities = ["task"]
         super(EventsStep, self).setup(ctx)
