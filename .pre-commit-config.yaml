@@ -17,16 +17,21 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.7.0
+    rev: 6.8.0
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
         args:
+          - "--resolver"
+          - "backtracking"
+          - "--strip-extras"  # make it possible to use as a constraint
           - "requirements.in"
         files: ^requirements(\.in|\.txt)$
       - id: pip-compile
         name: pip-compile requirements-test.in
         args:
+          - "--resolver"
+          - "backtracking"
           - "requirements-test.in"
         files: ^requirements(\.txt|-test\.in|-test\.txt)$
   - repo: https://github.com/psf/black
