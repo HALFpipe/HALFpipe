@@ -4,6 +4,8 @@
 
 from math import isclose
 
+import pytest
+
 from ...resource import get as getresource
 from ...tests.resource import setup as setuptestresources
 from ..condition import ConditionFile
@@ -17,6 +19,11 @@ txt_str = """8 32 1
 tsv_str = """onset duration  trial_type  response_time stim_file
 1.2 0.6 go  1.435 images/red_square.jpg
 5.6 0.6 stop  1.739 images/blue_square.jpg
+"""
+
+tsv_numeric_str = """onset duration  trial_type  response_time stim_file
+1.2 0.6 1  1.435 images/red_square.jpg
+5.6 0.6 2  1.739 images/blue_square.jpg
 """
 
 
@@ -33,7 +40,14 @@ def test_parse_condition_file_txt(tmp_path):
     assert all(v[0] == 8 for v in cf.onsets)
 
 
-def test_parse_condition_file_tsv(tmp_path):
+@pytest.mark.parametrize(
+    "tsv_str,expected_conditions",
+    [
+        (tsv_str, ["go", "stop"]),
+        (tsv_numeric_str, ["1", "2"]),
+    ],
+)
+def test_parse_condition_file_tsv(tmp_path, tsv_str, expected_conditions):
     file_name = tmp_path / "gonogo.tsv"
 
     with open(file_name, "w") as file_handle:
@@ -41,7 +55,7 @@ def test_parse_condition_file_tsv(tmp_path):
 
     cf = ConditionFile(data=file_name)
 
-    assert cf.conditions == ["go", "stop"]
+    assert cf.conditions == expected_conditions
     assert all(len(v) > 0 for v in cf.durations)
     assert all(len(v) > 0 for v in cf.onsets)
 

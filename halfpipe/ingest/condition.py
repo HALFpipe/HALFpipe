@@ -72,6 +72,8 @@ class ConditionFile:
 
     def parse_tsv(self, path: Path | str):
         data_frame = read_spreadsheet(path)
+        data_frame = data_frame.astype(dict(trial_type=str), copy=False)
+
         groupby = data_frame.groupby(by="trial_type")
 
         onsets_mapping = groupby["onset"].apply(list).to_dict()
