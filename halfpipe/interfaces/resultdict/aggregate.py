@@ -27,15 +27,6 @@ class Element:
     data: Mapping[tuple[str, str], Any]
 
 
-def compare_index(a: Index, b: Index) -> bool:
-    intersection_keys = set(a.keys()) & set(b.keys())
-    for key in intersection_keys:
-        if a[key] != b[key]:
-            return False
-
-    return True
-
-
 def group_across(
     rr: list[dict[str, dict]], across_key: str
 ) -> dict[Index, set[Element]]:

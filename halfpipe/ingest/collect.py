@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from nibabel.nifti1 import Nifti1Header
+from sdcflows.workflows.pepolar import check_pes
 
 from ..model.setting import BaseSettingSchema
 from ..utils import inflect_engine as pe
@@ -10,7 +11,7 @@ from ..utils import logger
 from ..utils.image import nvol
 from .bids import BidsDatabase, get_file_metadata
 from .database import Database
-from .metadata.direction import get_axcodes_set
+from .metadata.direction import canonicalize_direction_code, get_axcodes_set
 from .metadata.niftiheader import NiftiheaderLoader
 
 
@@ -54,6 +55,15 @@ def collect_events(
         return None
 
 
+def collect_pe_dir(database: Database, c: str):
+    database.fillmetadata("phase_encoding_direction", [c])
+    pe_dir = canonicalize_direction_code(
+        database.metadata(c, "phase_encoding_direction"),
+        c,
+    )
+    return pe_dir
+
+
 def collect_fieldmaps(
     database: Database, bold_file_path: str, silent: bool = False
 ) -> list[str]:
@@ -71,8 +81,7 @@ def collect_fieldmaps(
 
     candidates = set(candidates)
 
-    # filter
-
+    # filter phase maps
     magnitude_map: dict[str, list[str]] = {
         "phase1": ["magnitude1", "magnitude2"],
         "phase2": ["magnitude1", "magnitude2"],
@@ -101,6 +110,28 @@ def collect_fieldmaps(
                 f"Skipping field maps {incomplete_str} due to missing magnitude images"
             )
         candidates -= incomplete
+
+    # filter pepolar
+    epi_fmaps = list()
+    for c in candidates:
+        suffix = database.tagval(c, "suffix")
+        assert isinstance(suffix, str)
+        if suffix != "epi":
+            continue
+
+        epi_fmaps.append((c, collect_pe_dir(database, c)))
+
+    if len(epi_fmaps) > 0:
+        try:
+            check_pes(epi_fmaps, collect_pe_dir(database, bold_file_path))
+        except ValueError:
+            incomplete = set(c for c, _ in epi_fmaps)
+            if silent is not True:
+                incomplete_str = pe.join(sorted(incomplete))
+                logger.info(
+                    f"Skipping field maps {incomplete_str} because they do not have matched phase encoding directions"
+                )
+            candidates -= incomplete
 
     return sorted(candidates)
 
