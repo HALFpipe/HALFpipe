@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
+import pytest
 import requests
 
 from ...model.file.base import File
@@ -15,37 +16,27 @@ from ...model.spec import Spec
 from ..resolve import ResolvedSpec
 
 
-def test__resolve_bids(tmp_path: Path):
-    # command = ["aws", "s3", "ls", "--recursive", "--no-sign-request", "s3://openneuro.org/ds004109", "|", "rev", "|", "cut", "-d\" \"", "-f1", "|", "rev", ">", "cur_path/all_files.txt"]
-    # p = subprocess.run(command, shell=True)
-
-    # Create empty directory
-    file_path = "/Users/dominik/all_files.txt"
-    # "/home/lea/downloads/all_files.txt"  # put in your text file from openneuro.org e.g.
-
-    # Create empty file for each file in all text file
-    """with open(file_path, "r") as file_handle:
-        lines = file_handle.readlines()
-
-    for line in lines:
-        path = tmp_path / line.strip()
-
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.touch()
-        """
-
+@pytest.mark.parametrize(
+    ("openneuroID"),
+    (
+        ("ds004109"),
+        ("ds004187"),
+        ("ds004161"),
+    ),
+)
+def test__resolve_bids(tmp_path: Path, openneuroID: str):
     # Get file names with GraphQL request
     # Test different IDs with .parametrize or string.Template substitute method
-    query_example = """query{
-        dataset(id: "ds004109"){
-            latestSnapshot{
+    query_example = f"""query{{
+        dataset (id: "{openneuroID}"){{
+            latestSnapshot{{
                 id
-                files(prefix: null){
+                files(prefix: null){{
                     filename
-                }
-            }
-        }
-    }"""
+                }}
+            }}
+        }}
+    }}"""
     gql_url = "https://openneuro.org/crn/graphql"
     r = requests.post(gql_url, json={"query": query_example})
     if not r == 200:
@@ -58,6 +49,14 @@ def test__resolve_bids(tmp_path: Path):
 
     for line in file_list:
         if not isinstance(line, str):
+            continue
+        if line.endswith(
+            (
+                "MP2RAGE.nii.gz",
+                "UNIT1.nii.gz"
+                # , ".bval", ".bvec"
+            )
+        ):
             continue
         path = tmp_path / line.strip()
 
@@ -73,4 +72,14 @@ def test__resolve_bids(tmp_path: Path):
     file_obj = File(str(tmp_path), "bids")
     resolved_files = resolved_spec.resolve(file_obj)
 
-    assert len(file_list) == len(resolved_files)
+    counter = 0
+    for i in file_list:
+        if (
+            i.startswith("derivatives")
+            or "/dwi" in i
+            or i.endswith(("MP2RAGE.nii.gz", "UNIT1.nii.gz"))
+        ):
+            continue
+        if i.endswith(("events.tsv", ".nii.gz", ".nii")):
+            counter += 1
+    assert counter == len(resolved_files)
