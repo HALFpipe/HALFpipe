@@ -39,7 +39,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
     gql_url = "https://openneuro.org/crn/graphql"
     r = requests.post(gql_url, json={"query": query_example})
     if not r == 200:
-        print(r.status_code)
+        raise RuntimeError("Could not fetch file listing")
 
     file_list: List[str] = []
     json_file = json.loads(r.text)
