@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-import string
 from datetime import datetime
 from pathlib import Path
 from typing import List
