@@ -52,4 +52,4 @@ repos:
     rev: v0.961
     hooks:
     - id: mypy
-      additional_dependencies: [types-chardet, types-requests]
+      additional_dependencies: [types-chardet, types-requests, types-tabulate]

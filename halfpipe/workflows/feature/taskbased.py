@@ -107,7 +107,7 @@ def init_taskbased_wf(
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["feature", "taskcontrast"],
-            imagekeys=["effect", "variance", "z", "dof", "mask"],
+            imagekeys=["effect", "variance", "sigmasquareds", "z", "dof", "mask"],
             metadatakeys=["sources"],
         ),
         name="make_resultdicts_b",
@@ -270,6 +270,9 @@ def init_taskbased_wf(
 
     workflow.connect(modelestimate, "copes", make_resultdicts_b, "effect")
     workflow.connect(modelestimate, "varcopes", make_resultdicts_b, "variance")
+    workflow.connect(
+        modelestimate, "sigmasquareds", make_resultdicts_b, "sigmasquareds"
+    )
     workflow.connect(modelestimate, "zstats", make_resultdicts_b, "z")
     workflow.connect(makedofvolume, "out_file", make_resultdicts_b, "dof")
 

@@ -289,7 +289,15 @@ def datasink_images(indicts, base_directory):
             if "sub" not in tags:
                 outpath = grouplevel_directory
 
-            if key in ["effect", "variance", "z", "t", "f", "dof"]:  # apply rule
+            if key in [
+                "effect",
+                "variance",
+                "z",
+                "t",
+                "f",
+                "dof",
+                "sigmasquareds",
+            ]:  # apply rule
                 outpath = outpath / _make_path(
                     inpath, "image", tags, "statmap", stat=key
                 )
