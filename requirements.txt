@@ -10,13 +10,13 @@ atpublic==3.0.1
     # via flufl-lock
 attrs==21.4.0
     # via niworkflows
-bids-validator==1.9.3
+bids-validator==1.9.4
     # via pybids
-certifi==2022.5.18.1
+certifi==2022.6.15
     # via requests
 chardet==5.0.0
     # via -r requirements.in
-charset-normalizer==2.0.12
+charset-normalizer==2.1.0
     # via requests
 ci-info==0.2.0
     # via etelemetry
@@ -41,13 +41,13 @@ etelemetry==0.3.0
     # via nipype
 fasteners==0.17.3
     # via -r requirements.in
-filelock==3.7.0
+filelock==3.7.1
     # via nipype
 flufl-lock==7.0
     # via -r requirements.in
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
     # via -r requirements.in
-fonttools==4.33.3
+fonttools==4.34.4
     # via matplotlib
 formulaic==0.2.4
     # via pybids
@@ -57,11 +57,11 @@ future==0.18.2
     # via niflow-nipype1-workflows
 gmpy2==2.1.2
     # via -r requirements.in
-h5py==3.6.0
+h5py==3.7.0
     # via nitransforms
 idna==3.3
     # via requests
-imageio==2.19.2
+imageio==2.19.3
     # via scikit-image
 indexed-gzip==1.6.13
     # via
@@ -82,7 +82,7 @@ joblib==1.1.0
     # via
     #   nilearn
     #   scikit-learn
-kiwisolver==1.4.2
+kiwisolver==1.4.3
     # via matplotlib
 line-profiler==3.5.1
     # via -r requirements.in
@@ -90,7 +90,7 @@ lockfile==0.12.2
     # via smriprep
 looseversion==1.0.1
     # via nipype
-lxml==4.8.0
+lxml==4.9.1
     # via
     #   nilearn
     #   prov
@@ -215,7 +215,7 @@ packaging==21.3
     #   setuptools-scm
     #   smriprep
     #   statsmodels
-pandas==1.4.2
+pandas==1.4.3
     # via
     #   -r requirements.in
     #   fmriprep
@@ -232,7 +232,7 @@ patsy==0.5.2
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==9.1.1
+pillow==9.2.0
     # via
     #   imageio
     #   matplotlib
@@ -327,7 +327,7 @@ seaborn==0.11.2
     # via
     #   -r requirements.in
     #   niworkflows
-setuptools-scm==7.0.3
+setuptools-scm==7.0.4
     # via -r requirements.in
 simplejson==3.17.6
     # via nipype
@@ -379,14 +379,14 @@ transforms3d==0.3.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
-typing-extensions==4.2.0
+typing-extensions==4.3.0
     # via
     #   -r requirements.in
     #   setuptools-scm
     #   typing-inspect
 typing-inspect==0.7.1
     # via marshmallow-dataclass
-urllib3==1.26.9
+urllib3==1.26.10
     # via requests
 wheel==0.37.1
     # via -r requirements.in
