@@ -68,7 +68,7 @@ indexed-gzip==1.6.13
     #   -r requirements.in
     #   fmriprep
     #   smriprep
-inflect==5.6.0
+inflect==5.6.2
     # via -r requirements.in
 inflection==0.5.1
     # via -r requirements.in
