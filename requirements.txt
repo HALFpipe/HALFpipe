@@ -130,7 +130,7 @@ networkx==2.5.1
     #   nitime
     #   prov
     #   scikit-image
-nibabel==3.2.2
+nibabel==4.0.1
     # via
     #   -r requirements.in
     #   fmriprep
