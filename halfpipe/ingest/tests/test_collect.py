@@ -117,7 +117,7 @@ def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
     [
         (["", "", "", ""], 0),
         (["", "", "phase1", ""], 0),
-        (["", "", "phase1", "phase2"], 2),
+        (["", "", "phase1", "phase2"], 0),
         (["magnitude1", "", "phase1", "phase2"], 4),
         (["", "magnitude2", "phase1", "phase2"], 4),
         (["magnitude1", "magnitude2", "phase1", "phase2"], 4),
