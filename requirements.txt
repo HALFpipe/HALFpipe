@@ -51,7 +51,7 @@ fonttools==4.34.4
     # via matplotlib
 formulaic==0.2.4
     # via pybids
-frozendict==2.3.2
+frozendict==2.3.4
     # via -r requirements.in
 future==0.18.2
     # via niflow-nipype1-workflows
