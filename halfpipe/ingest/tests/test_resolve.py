@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -37,9 +38,18 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
         }}
     }}"""
     gql_url = "https://openneuro.org/crn/graphql"
-    r = requests.post(gql_url, json={"query": query_example})
-    if not r == 200:
-        raise RuntimeError("Could not fetch file listing")
+    attempts = 0
+    while attempts < 3:
+        r = requests.post(gql_url, json={"query": query_example})
+        if not r == 200:
+            time.sleep(0.3)
+            attempts += 1
+            continue
+        break
+
+    # r = requests.post(gql_url, json={"query": query_example})
+    # if not r == 200:
+    #   raise RuntimeError("Could not fetch file listing")
 
     file_list: List[str] = []
     json_file = json.loads(r.text)
