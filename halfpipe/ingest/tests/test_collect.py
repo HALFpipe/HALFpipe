@@ -61,8 +61,10 @@ def test_collect_fieldmaps_epi(pe_dirs, expected_count):
 @pytest.mark.parametrize(
     "case1_suffix, case1_count",
     [
+        (["", "", ""], 0),
         (["", "", "phasediff"], 0),
-        (["magnitude1", "", "phasediff"], 3),
+        (["magnitude1", "", "phasediff"], 2),
+        (["", "magnitude2", "phasediff"], 2),
         (["magnitude1", "magnitude2", "phasediff"], 3),
     ],
 )
@@ -70,40 +72,30 @@ def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
     database = Database(Spec(datetime.now, list()))
 
     bold_file_path = "bold.nii.gz"
-
-    files = [
-        # Phase Difference Maps and atleast one magnitude image
-        File(
-            path="magnitude1.nii.gz",
-            datatype="fmap",
-            suffix=case1_suffix[0],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(echo_time_1=4.63),
-        ),
-        File(
-            path="magnitude2.nii.gz",
-            datatype="fmap",
-            suffix=case1_suffix[1],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(echo_time_2=7.09),
-        ),
-        File(
-            path="phasediff.nii.gz",
-            datatype="fmap",
-            suffix=case1_suffix[2],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-        ),
+    files = []
+    for i in case1_suffix:
+        if "magnitude1" == i or "magnitude2" == i or "phasediff" == i:
+            files.append(
+                File(
+                    path=i + ".nii.gz",
+                    datatype="fmap",
+                    suffix=i,
+                    extension=".nii.gz",
+                    tags=dict(sub="01"),
+                    # metadata=dict(echo_time_1=4.63),
+                )
+            )
+    files.append(
         File(
             path=bold_file_path,
             datatype="func",
             suffix="bold",
             extension=".nii.gz",
             tags=dict(sub="01"),
-        ),
-    ]
+        )
+    )
+    if len(files) < 3:
+        files.clear()
 
     for file in files:
         database.put(file)
@@ -118,8 +110,8 @@ def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
         (["", "", "", ""], 0),
         (["", "", "phase1", ""], 0),
         (["", "", "phase1", "phase2"], 0),
-        (["magnitude1", "", "phase1", "phase2"], 4),
-        (["", "magnitude2", "phase1", "phase2"], 4),
+        (["magnitude1", "", "phase1", "phase2"], 3),
+        (["", "magnitude2", "phase1", "phase2"], 3),
         (["magnitude1", "magnitude2", "phase1", "phase2"], 4),
     ],
 )
@@ -128,37 +120,21 @@ def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
 
     bold_file_path = "bold.nii.gz"
 
-    files = [
-        File(
-            path="magnitude1.nii.gz",
-            datatype="fmap",
-            suffix=case2_suffix[0],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(echo_time_1=None),
-        ),
-        File(
-            path="magnitude2.nii.gz",
-            datatype="fmap",
-            suffix=case2_suffix[1],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(echo_time_2=None),
-        ),
-        File(
-            path="phase1.nii.gz",
-            datatype="fmap",
-            suffix=case2_suffix[2],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-        ),
-        File(
-            path="phase2.nii.gz",
-            datatype="fmap",
-            suffix=case2_suffix[3],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-        ),
+    files = []
+    for i in case2_suffix:
+        if (
+            "magnitude1" == i or "magnitude2" == i or "phase1" == i or "phase2" == i
+        ):  # use comparison to only add files with matching suffix instead of checking if suffix are "in" i
+            files.append(
+                File(
+                    path=i + ".nii.gz",
+                    datatype="fmap",
+                    suffix=i,
+                    extension=".nii.gz",
+                    tags=dict(sub="01"),
+                )
+            )
+    files.append(
         File(
             path=bold_file_path,
             datatype="func",
@@ -166,7 +142,10 @@ def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
             extension=".nii.gz",
             tags=dict(sub="01"),
         ),
-    ]
+    )
+
+    if len(files) < 4:
+        files.clear()
 
     for file in files:
         database.put(file)
@@ -181,6 +160,7 @@ def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
         (["fieldmap", "magnitude"], 2),
         (["fieldmap", ""], 0),
         (["", "magnitude"], 0),
+        (["", ""], 0),
     ],
 )
 def test_collect_fieldmaps_direct(case3_suffix, case3_count):
@@ -188,30 +168,32 @@ def test_collect_fieldmaps_direct(case3_suffix, case3_count):
 
     bold_file_path = "bold.nii.gz"
 
-    files = [
-        File(
-            path="fieldmap.nii.gz",
-            datatype="fmap",
-            suffix=case3_suffix[0],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(units=("Hz", "rad/s", "T")),
-        ),
-        File(
-            path="magnitude.nii.gz",
-            datatype="fmap",
-            suffix=case3_suffix[1],
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-        ),
+    files = []
+    for i in case3_suffix:
+        if "fieldmap" == i or "magnitude" == i:
+            files.append(
+                File(
+                    path=i + ".nii.gz",
+                    datatype="fmap",
+                    suffix=i,
+                    extension=".nii.gz",
+                    tags=dict(sub="01"),
+                    # metadata=dict(units=("Hz", "rad/s", "T")),
+                )
+            )
+    files.append(
         File(
             path=bold_file_path,
             datatype="func",
             suffix="bold",
             extension=".nii.gz",
             tags=dict(sub="01"),
-        ),
-    ]
+        )
+    )
+    if (
+        len(files) < 3
+    ):  # clear files if expected count will be 0 (counting bold file as well here)
+        files.clear()
 
     for file in files:
         database.put(file)
