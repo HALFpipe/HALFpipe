@@ -72,9 +72,10 @@ def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
     database = Database(Spec(datetime.now, list()))
 
     bold_file_path = "bold.nii.gz"
+    vars = ["magnitude1", "magnitude2", "phasediff"]
     files = []
     for i in case1_suffix:
-        if "magnitude1" == i or "magnitude2" == i or "phasediff" == i:
+        if i in vars:
             files.append(
                 File(
                     path=i + ".nii.gz",
@@ -119,12 +120,10 @@ def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
     database = Database(Spec(datetime.now, list()))
 
     bold_file_path = "bold.nii.gz"
-
+    vars = ["magnitude1", "magnitude2", "phase1", "phase2"]
     files = []
     for i in case2_suffix:
-        if (
-            "magnitude1" == i or "magnitude2" == i or "phase1" == i or "phase2" == i
-        ):  # use comparison to only add files with matching suffix instead of checking if suffix are "in" i
+        if i in vars:
             files.append(
                 File(
                     path=i + ".nii.gz",
@@ -167,10 +166,10 @@ def test_collect_fieldmaps_direct(case3_suffix, case3_count):
     database = Database(Spec(datetime.now, list()))
 
     bold_file_path = "bold.nii.gz"
-
+    vars = ["fieldmap", "magnitude"]
     files = []
     for i in case3_suffix:
-        if "fieldmap" == i or "magnitude" == i:
+        if i in vars:
             files.append(
                 File(
                     path=i + ".nii.gz",
