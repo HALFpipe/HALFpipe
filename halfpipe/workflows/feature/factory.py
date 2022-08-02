@@ -100,7 +100,10 @@ class FeatureFactory(Factory):
             raw_sources = [*raw_sources, *condition_file_paths]
 
             condition_units = None
-            condition_units_set = database.metadatavalset("units", condition_file_paths)
+            condition_units_set: set = {
+                database.metadata(condition_file_path, "units")
+                for condition_file_path in condition_file_paths
+            }
             if condition_units_set is not None:
                 if len(condition_units_set) == 1:
                     (condition_units,) = condition_units_set
