@@ -68,7 +68,7 @@ indexed-gzip==1.6.13
     #   -r requirements.in
     #   fmriprep
     #   smriprep
-inflect==5.6.2
+inflect==6.0.0
     # via -r requirements.in
 inflection==0.5.1
     # via -r requirements.in
@@ -254,6 +254,8 @@ pybids==0.14.1
     #   sdcflows
     #   smriprep
     #   templateflow
+pydantic==1.9.1
+    # via inflect
 pydot==1.4.2
     # via nipype
 pympler==1.0.1
@@ -382,6 +384,7 @@ typeguard==2.13.3
 typing-extensions==4.3.0
     # via
     #   -r requirements.in
+    #   pydantic
     #   setuptools-scm
     #   typing-inspect
 typing-inspect==0.7.1
