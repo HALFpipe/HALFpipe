@@ -5,7 +5,6 @@
 import json
 from math import isclose
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -40,14 +39,10 @@ class SynchronizedTable:
             footer = footer.encode()
         self.footer = footer
 
-        self.dictlist: Optional[List[Dict]] = None
+        self.dictlist: list[dict] | None = None
         self.is_dirty = None
 
-    def __enter__(self):
-        self.lock.lock(self.lockfilename)
-
-        self.dictlist = []
-        self.is_dirty = False
+    def load(self):
         if self.filename.is_file():
             with open(str(self.filename), "rb") as fp:
                 bytesfromfile = fp.read()
@@ -61,23 +56,35 @@ class SynchronizedTable:
                 self.dictlist = json.loads(jsonstr)
             except json.decoder.JSONDecodeError as e:
                 logger.warning("JSONDecodeError %s", e)
+        if self.dictlist is None:
+            self.dictlist = list()
+
+    def dump(self, opener=open, mode="wb"):
+        with opener(str(self.filename), mode) as file_handle:
+            file_handle.write(self.header)
+            jsonstr = json.dumps(
+                self.dictlist,
+                indent=4,
+                sort_keys=True,
+                ensure_ascii=False,
+                cls=TypeAwareJSONEncoder,
+            )
+            for line in jsonstr.splitlines():
+                file_handle.write(line.encode())
+                file_handle.write("\\\n".encode())
+            file_handle.write(self.footer)
+
+    def __enter__(self):
+        self.lock.lock(self.lockfilename)
+
+        self.is_dirty = False
+        self.load()
+
         return self
 
     def __exit__(self, *_):
         if self.is_dirty:
-            with open(str(self.filename), "w") as fp:
-                fp.write(self.header.decode())
-                jsonstr = json.dumps(
-                    self.dictlist,
-                    indent=4,
-                    sort_keys=True,
-                    ensure_ascii=False,
-                    cls=TypeAwareJSONEncoder,
-                )
-                for line in jsonstr.splitlines():
-                    fp.write(line)
-                    fp.write("\\\n")
-                fp.write(self.footer.decode())
+            self.dump()
         try:
             self.lock.unlock()
         except RuntimeError:
