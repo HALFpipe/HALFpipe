@@ -11,7 +11,7 @@ from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
-from ..model.spec import Spec, loadspec
+from ..model.spec import Spec, load_spec
 from ..utils import logger
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -34,7 +34,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     """
 
     if not spec:
-        spec = loadspec(workdir=workdir)
+        spec = load_spec(workdir=workdir)
 
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")

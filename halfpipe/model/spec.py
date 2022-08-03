@@ -2,14 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
-import os
 import uuid
-from datetime import datetime as dt
-from os import path as op
+from datetime import datetime
+from pathlib import Path
 from typing import List, Optional
 
 import marshmallow.exceptions
@@ -52,7 +47,7 @@ class SpecSchema(Schema):
         required=True,
     )
     timestamp = fields.DateTime(
-        dump_default=dt.now(), format=timestamp_format, required=True
+        dump_default=datetime.now(), format=timestamp_format, required=True
     )
 
     global_settings = fields.Nested(GlobalSettingsSchema, dump_default={})
@@ -78,7 +73,7 @@ class SpecSchema(Schema):
     def validate_files(self, data, **_):
         if "files" not in data:
             return  # validation error will be raised independently
-        descSets = {"seed": set(), "map": set()}
+        desc_value_sets: dict[str, set[str]] = {"seed": set(), "map": set()}
         if not isinstance(data["files"], list):
             return  # validation error will be raised independently
         for fileobj in data["files"]:
@@ -86,16 +81,20 @@ class SpecSchema(Schema):
             if not isinstance(fileobj, File):
                 raise ValidationError("List elements need to be File objects")
 
-            if hasattr(fileobj, "tags"):
-                desc = fileobj.tags.get("desc")
-                if fileobj.suffix in descSets:
-                    descSet = descSets[fileobj.suffix]
-                    if desc in descSet:
+            tags = fileobj.tags
+
+            if "desc" in tags:
+                desc = fileobj.tags["desc"]
+                suffix = fileobj.suffix
+
+                if suffix in desc_value_sets:
+                    desc_value_set = desc_value_sets[suffix]
+                    if desc in desc_value_set:
                         raise ValidationError(
-                            f"{humanize(fileobj.suffix)} names need to be unique"
+                            f"{humanize(suffix)} names need to be unique"
                         )
 
-                    descSet.add(desc)
+                    desc_value_set.add(desc)
 
     @validates_schema
     def validate_models(self, data, **_):
@@ -151,35 +150,42 @@ class Spec:
         self.files.append(fileobj)
 
 
-def loadspec(
-    workdir=None, timestamp=None, specpath=None, logger=logger
+def load_spec(
+    workdir: str | Path | None = None,
+    path: str | Path | None = None,
+    timestamp: datetime | None = None,
+    logger=logger,
 ) -> Optional[Spec]:
-    if specpath is None:
-        assert workdir is not None
+    if path is None:
+        if workdir is None:
+            raise ValueError("Need to provide either `workdir` or `path`")
+        workdir = Path(workdir)
+
         if timestamp is not None:
             timestampstr = timestamp.strftime(timestamp_format)
-            specpath = op.join(workdir, f"spec.{timestampstr}.json")
+            path = workdir / f"spec.{timestampstr}.json"
         else:
-            specpath = op.join(workdir, "spec.json")
+            path = workdir / "spec.json"
 
-    if not op.isfile(specpath):
+    path = Path(path)
+    if not path.is_file():
         return None
 
-    logger.info(f"Loading spec file {specpath}")
-    with open(specpath, "r") as f:
-        jsn = f.read()
+    logger.info(f'Loading spec file "{path}"')
+    with path.open() as file_handle:
+        spec_file_str = file_handle.read()
 
     try:
-        spec = SpecSchema().loads(jsn, many=False)
+        spec = SpecSchema().loads(spec_file_str, many=False)
         assert isinstance(spec, Spec)
         return spec
 
     except marshmallow.exceptions.ValidationError as e:
-        logger.warning(f'Ignored validation error in "{specpath}"', exc_info=e)
+        logger.warning(f'Ignored validation error in "{path}"', exc_info=e)
         return None
 
 
-def readspec(stdin_spec: dict, logger=logger) -> Optional[Spec]:
+def readspec(stdin_spec: dict, logger=logger) -> Spec | None:
     try:
         import json
 
@@ -191,23 +197,41 @@ def readspec(stdin_spec: dict, logger=logger) -> Optional[Spec]:
         return None
 
 
-def savespec(spec: Spec, workdir=None, specpath=None, logger=logger):
-    os.makedirs(workdir, exist_ok=True)
-    if specpath is None:
-        assert workdir is not None
-        specpath = op.join(workdir, "spec.json")
-    if op.isfile(specpath):
-        spectomove = loadspec(specpath=specpath)
-        if spectomove is None:
-            logger.warning("Overwriting invalid spec file")
-        else:
-            newspecpath = op.join(workdir, f"spec.{spectomove.timestampstr}.json")
-            logger.info(
-                f'Moving previous spec file from "{specpath}" to "{newspecpath}"'
-            )
-            if op.isfile(newspecpath):
-                logger.warning("Found specpath timestampstr collision, overwriting")
-            os.replace(specpath, newspecpath)
-    jsn = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=False)
-    with open(specpath, "w") as f:
-        f.write(jsn)
+def save_spec(
+    spec: Spec,
+    workdir: Path | str | None = None,
+    path: Path | str | None = None,
+    logger=logger,
+):
+    if workdir is not None:
+        workdir = Path(workdir)
+
+    if path is None:
+        if workdir is None:
+            raise ValueError("Need to provide either `workdir` or `path`")
+        path = workdir / "spec.json"
+
+    path = Path(path)
+
+    if workdir is None:
+        workdir = path.parent
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    if path.is_file():
+        previous_spec = load_spec(path=path)
+        if previous_spec is None:
+            logger.warning('Overwriting invalid spec file at "{path}"')
+
+        else:  # backup previous spec
+            backup_path = workdir / f"spec.{previous_spec.timestampstr}.json"
+            logger.info(f'Moving previous spec file from "{path}" to "{backup_path}"')
+
+            if backup_path.is_file():
+                logger.warning(
+                    'Overwriting "backup_path" due to `timestampstr` collision'
+                )
+            path.rename(backup_path)
+
+    spec_file_str = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=False)
+    with path.open("w") as file_handle:
+        file_handle.write(spec_file_str)

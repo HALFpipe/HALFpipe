@@ -52,7 +52,7 @@ from .setting import (
     SettingSchema,
     SmoothingSettingSchema,
 )
-from .spec import SpecSchema, loadspec, savespec
+from .spec import SpecSchema
 from .tags import (
     BoldTagsSchema,
     FuncTagsSchema,
@@ -64,8 +64,6 @@ from .variable import VariableSchema
 
 __all__ = [
     "SpecSchema",
-    "loadspec",
-    "savespec",
     "BoldTagsSchema",
     "FuncTagsSchema",
     "entities",

@@ -20,7 +20,7 @@ from ...cli.parser import build_parser
 from ...cli.run import run_stage_run
 from ...ingest.database import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema
-from ...model.spec import Spec, SpecSchema, savespec
+from ...model.spec import Spec, SpecSchema, save_spec
 from ...resource import get as get_resource
 from ...utils.image import nvol
 from ..base import init_workflow
@@ -274,7 +274,7 @@ def test_empty(tmp_path, mock_spec):
     mock_spec.settings = list()
     mock_spec.features = list()
 
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     with pytest.raises(RuntimeError):
         init_workflow(tmp_path)
@@ -284,7 +284,7 @@ def test_empty(tmp_path, mock_spec):
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
 
@@ -297,7 +297,7 @@ def test_with_reconall(tmp_path, mock_spec):
 @pytest.mark.slow
 @pytest.mark.timeout(3 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = cpu_count()
 
