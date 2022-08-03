@@ -19,8 +19,7 @@ from ..model.utils import get_nested_schema_field_names, get_type_schema
 from ..utils import logger
 from ..utils.format import format_like_bids
 from ..utils.hash import int_digest
-from ..utils.path import split_ext
-from .glob import _rlistdir
+from ..utils.path import rlistdir, split_ext
 from .metadata.direction import canonicalize_direction_code
 
 bids_config = Config.load("bids")
@@ -244,7 +243,7 @@ class BidsDatabase:
             files_to_keep.add(relative_bids_path)
             files_to_keep.update(map(str, Path(relative_bids_path).parents))
 
-        for file_path in _rlistdir(bidsdir, False):
+        for file_path in rlistdir(bidsdir):
             relative_file_path = relpath(file_path, start=bidsdir)
             if relative_file_path not in files_to_keep:
                 p = Path(file_path)

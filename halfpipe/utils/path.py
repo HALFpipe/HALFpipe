@@ -2,8 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from os.path import normpath
+import os
+from os import path as op
 from pathlib import Path
+from typing import Generator
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -14,7 +16,7 @@ def resolve(path: Path | str, fs_root: Path | str) -> Path:
     abspath = str(Path(path).resolve())
 
     if not abspath.startswith(fs_root):
-        abspath = normpath(fs_root + abspath)
+        abspath = op.normpath(fs_root + abspath)
 
     return Path(abspath)
 
@@ -95,3 +97,53 @@ def validate_workdir(path: Path | str):
         return Path(path).is_dir()
     except TypeError:
         return False
+
+
+def is_hidden(path: Path | str) -> bool:
+    """
+    adapted from cpython glob
+    """
+    return Path(path).stem[0] == "."
+
+
+def iterdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
+    """
+    adapted from cpython glob
+    """
+    if not dirname:
+        dirname = os.curdir
+    try:
+        with os.scandir(dirname) as it:
+            for entry in it:
+                try:
+                    if not dironly or entry.is_dir():
+                        entry_name = entry.name
+                        if entry.is_dir():
+                            entry_name = op.join(entry_name, "")
+                        if not is_hidden(entry_name):
+                            yield entry_name
+                except OSError:
+                    pass
+    except OSError:
+        return
+
+
+def rlistdir(
+    dirname: str | Path,
+    dironly: bool = False,
+    maxdepth: int | None = None,
+) -> Generator[str, None, None]:
+    """
+    adapted from cpython glob
+    """
+
+    if maxdepth is not None:
+        maxdepth -= 1
+
+    names = list(iterdir(dirname, dironly))
+    for x in names:
+        path = op.join(dirname, x) if dirname else x
+        yield path
+
+        if maxdepth is None or maxdepth > 0:
+            yield from rlistdir(path, dironly)
