@@ -5,8 +5,8 @@
 from abc import abstractmethod
 from typing import List, Optional, Type
 
-from ...ingest.collect import collect_events
-from ...ingest.condition import ConditionFile
+from ...collect.events import collect_events
+from ...ingest.events import ConditionFile
 from ...ingest.glob import get_entities_in_path
 from ...model import (
     File,

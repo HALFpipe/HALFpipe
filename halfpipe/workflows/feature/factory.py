@@ -5,7 +5,8 @@
 import re
 from typing import Any, Dict
 
-from ...ingest.collect import collect_events, collect_metadata
+from ...collect.events import collect_events
+from ...collect.metadata import collect_metadata
 from ...model import FeatureSchema
 from ...utils import logger
 from ..factory import Factory

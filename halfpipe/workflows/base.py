@@ -7,9 +7,9 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
+from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
-from ..ingest.collect import collect_bold_files
 from ..ingest.database import Database
 from ..model.spec import Spec, loadspec
 from ..utils import logger

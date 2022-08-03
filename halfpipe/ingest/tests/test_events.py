@@ -8,7 +8,7 @@ import pytest
 
 from ...resource import get as getresource
 from ...tests.resource import setup as setuptestresources
-from ..condition import ConditionFile
+from ..events import ConditionFile
 
 txt_str = """8 32 1
 72 32 1

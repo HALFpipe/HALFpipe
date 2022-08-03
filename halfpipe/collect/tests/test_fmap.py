@@ -6,10 +6,10 @@ from datetime import datetime
 
 import pytest
 
+from ...ingest.database import Database
 from ...model.file.base import File
 from ...model.spec import Spec
-from ..collect import collect_fieldmaps
-from ..database import Database
+from ..fmap import collect_fieldmaps
 
 
 @pytest.mark.parametrize(
