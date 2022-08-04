@@ -10,19 +10,18 @@ from os import path as op
 from pathlib import Path
 from shutil import copyfile
 
-from inflection import camelize
 from nipype.interfaces.base import SimpleInterface, TraitedSpec, traits
 
 from ...model import FuncTagsSchema, entities
 from ...model.tags.resultdict import first_level_entities
 from ...resource import get as getresource
+from ...result.bids.sidecar import save_sidecar
+from ...result.variables import Continuous
 from ...stats.algorithms import algorithms
 from ...utils import logger
 from ...utils.format import format_like_bids
-from ...utils.json import TypeAwareJSONEncoder
 from ...utils.path import find_paths, split_ext
 from ...utils.table import SynchronizedTable
-from .base import Continuous
 
 # from niworkflows.viz.utils import compose_view, extract_svg
 # from nilearn.plotting import plot_glass_brain
@@ -247,30 +246,6 @@ def datasink_preproc(indicts, reports_directory):
         preproc_file.to_table()
 
 
-def _format_sidecar_value(obj):
-    if not isinstance(obj, dict):
-        return obj
-    return {_format_sidecar_key(k): _format_sidecar_value(v) for k, v in obj.items()}
-
-
-def _format_sidecar_key(key):  # camelize
-    predefined = dict(
-        ica_aroma="ICAAROMA",
-        fwhm="FWHM",
-        hp_width="HighPassWidth",
-        lp_width="LowPassWidth",
-        fd_perc="FDPerc",
-        fd_mean="FDMean",
-        mean_gm_tsnr="MeanGMTSNR",
-        mean_seed_tsnr="MeanSeedTSNR",
-        mean_component_tsnr="MeanComponentTSNR",
-        mean_atlas_tsnr="MeanAtlasTSNR",
-    )
-    if key in predefined:
-        return predefined[key]
-    return camelize(key)
-
-
 def datasink_images(indicts, base_directory):
     derivatives_directory = base_directory / "derivatives" / "halfpipe"
     grouplevel_directory = base_directory / "grouplevel"
@@ -330,18 +305,7 @@ def datasink_images(indicts, base_directory):
             if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
                 stem, extension = split_ext(outpath)
                 if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
-
-                    sidecar = metadata.copy()
-                    sidecar.update(vals)
-                    sidecar = _format_sidecar_value(sidecar)
-
-                    sidecar_json = json.dumps(
-                        sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4
-                    )
-
-                    sidecar_file_path = outpath.parent / f"{stem}.json"
-                    with open(sidecar_file_path, "wt") as sidecar_file_handle:
-                        sidecar_file_handle.write(sidecar_json)
+                    save_sidecar(metadata, vals, outpath, stem)
 
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
