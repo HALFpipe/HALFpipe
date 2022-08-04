@@ -11,8 +11,8 @@ from typing import Generator, Mapping
 from more_itertools import powerset
 from pyrsistent import pmap
 
-from ..utils import logger
-from ..utils.format import format_tags
+from .utils import logger
+from .utils.format import format_tags
 
 
 class Rating(IntEnum):
