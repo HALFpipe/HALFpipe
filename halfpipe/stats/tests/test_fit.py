@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from ..design import group_design
+from ...design import group_design
 from ..fit import fit
 
 
@@ -28,12 +28,12 @@ def test_fit(tmp_path, wakemandg_hensonrn_downsampled):
     regressors, contrasts, _, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
-        variabledicts=[
+        variables=[
             {"name": "Sub", "type": "id"},
             {"name": "Age", "type": "continuous"},
             {"name": "ReactionTime", "type": "categorical"},
         ],
-        contrastdicts=[
+        contrasts=[
             {"variable": ["Age"], "type": "infer"},
             {"variable": ["ReactionTime"], "type": "infer"},
         ],

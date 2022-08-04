@@ -13,9 +13,9 @@ import pytest
 from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
 
+from ...design import group_design
 from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
 from ...interfaces.imagemaths.merge import _merge, _merge_mask
-from ..design import group_design
 from ..fit import fit
 
 
@@ -38,12 +38,12 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn_downsampled, use_var_cope):
     regressors, contrasts, _, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
-        variabledicts=[
+        variables=[
             {"name": "Sub", "type": "id"},
             {"name": "Age", "type": "continuous"},
             {"name": "ReactionTime", "type": "categorical"},
         ],
-        contrastdicts=[
+        contrasts=[
             {"variable": ["Age"], "type": "infer"},
             {"variable": ["ReactionTime"], "type": "infer"},
         ],
