@@ -60,10 +60,9 @@ def prepare_data_frame(
     assert id_column is not None, "Missing id column, cannot specify model"
 
     data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
-    if all(str(id).startswith("sub-") for id in data_frame[id_column]):  # for bids
-        data_frame[id_column] = [
-            str(id).replace("sub-", "") for id in data_frame[id_column]
-        ]
+    data_frame[id_column] = [  # remove bids prefixes
+        str(subject_id).removeprefix("sub-") for subject_id in data_frame[id_column]
+    ]
     data_frame.set_index(id_column, inplace=True)
 
     continuous_columns = []

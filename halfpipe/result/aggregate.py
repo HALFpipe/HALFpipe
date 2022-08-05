@@ -122,7 +122,7 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
     return data
 
 
-def aggregate(rr: list[dict[str, dict]], across_key: str):
+def aggregate_results(rr: list[dict[str, dict]], across_key: str):
     groups = group_across(rr, across_key)
     expanded_groups = group_expand(groups)
 

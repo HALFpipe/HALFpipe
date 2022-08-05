@@ -5,7 +5,7 @@
 from nipype.interfaces.base import BaseInterfaceInputSpec, DynamicTraitedSpec, traits
 from nipype.interfaces.io import IOBase, add_traits
 
-from ...result.aggregate import aggregate
+from ...result.aggregate import aggregate_results
 from ...utils.ops import ravel
 from .base import ResultdictsOutputSpec
 
@@ -47,7 +47,7 @@ class AggregateResultdicts(IOBase):
 
         across = self.inputs.across
 
-        aggregated, non_aggregated = aggregate(inputs, across)
+        aggregated, non_aggregated = aggregate_results(inputs, across)
 
         outputs["resultdicts"] = aggregated
         outputs["non_aggregated_resultdicts"] = non_aggregated

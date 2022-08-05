@@ -5,7 +5,10 @@
 import os
 from os import path as op
 from pathlib import Path
+from shutil import copyfile
 from typing import Generator
+
+from . import logger
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -147,3 +150,16 @@ def rlistdir(
 
         if maxdepth is None or maxdepth > 0:
             yield from rlistdir(path, dironly)
+
+
+def copy_if_newer(inpath: Path, outpath: Path):
+    outpath.parent.mkdir(exist_ok=True, parents=True)
+    if outpath.exists():
+        if os.stat(inpath).st_mtime <= os.stat(outpath).st_mtime:
+            logger.info(f'Not overwriting file "{outpath}"')
+            return False
+        logger.info(f'Overwriting file "{outpath}"')
+    else:
+        logger.info(f'Creating file "{outpath}"')
+    copyfile(inpath, outpath)
+    return True
