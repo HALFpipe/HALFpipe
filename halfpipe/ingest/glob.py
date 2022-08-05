@@ -3,11 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import fnmatch
-import os
 import re
 from os import path as op
-from pathlib import Path
 from typing import Callable, Container, Generator, Iterable
+
+from ..utils.path import iterdir, rlistdir
 
 tag_parse = re.compile(
     r"{(?P<tag_name>[a-z]+)((?P<filter_type>[:=])(?P<filter>(?:[^{}]|{\d+})+))?}"
@@ -31,10 +31,10 @@ def tag_glob(
     """
     dirname, basename = op.split(pathname)
     if not dirname:
-        if _isrecursive(basename):
-            dir_generator = _rlistdir(dirname, dironly)
+        if is_recursive(basename):
+            dir_generator = rlistdir(dirname, dironly)
         else:
-            dir_generator = _iterdir(dirname, dironly)
+            dir_generator = iterdir(dirname, dironly)
         for dirname in dir_generator:
             yield (dirname, dict())
         return
@@ -74,7 +74,7 @@ def _tag_glob_in_dir(
     """
     assert not has_magic(dirname)
     fullmatch, entities = _translate(basename, entities, parenttagdict)
-    for x in _iterdir(dirname, dironly):
+    for x in iterdir(dirname, dironly):
         matchobj = fullmatch(x)
         if matchobj is not None:
             yield x, {
@@ -168,49 +168,9 @@ def _translate(
     return re.compile(res).fullmatch, entities_in_res
 
 
-def _iterdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
-    """
-    adapted from cpython glob
-    """
-    if not dirname:
-        dirname = os.curdir
-    try:
-        with os.scandir(dirname) as it:
-            for entry in it:
-                try:
-                    if not dironly or entry.is_dir():
-                        entry_name = entry.name
-                        if entry.is_dir():
-                            entry_name = op.join(entry_name, "")
-                        if not _ishidden(entry_name):
-                            yield entry_name
-                except OSError:
-                    pass
-    except OSError:
-        return
-
-
-def _rlistdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
-    """
-    adapted from cpython glob
-    """
-    names = list(_iterdir(dirname, dironly))
-    for x in names:
-        path = op.join(dirname, x) if dirname else x
-        yield path
-        yield from _rlistdir(path, dironly)
-
-
 def has_magic(s) -> bool:
     return magic_check.search(s) is not None
 
 
-def _isrecursive(pattern: str) -> bool:
+def is_recursive(pattern: str) -> bool:
     return pattern == "**"
-
-
-def _ishidden(path: str) -> bool:
-    """
-    adapted from cpython glob
-    """
-    return path[0] == "."

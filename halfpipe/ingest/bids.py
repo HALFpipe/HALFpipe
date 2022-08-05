@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-from collections import OrderedDict
 from os.path import relpath
 from pathlib import Path
 from shutil import rmtree
@@ -13,61 +12,19 @@ from bids.layout import Config
 from bids.layout.writing import build_path
 from inflection import camelize
 
-from ..model.file import FileSchema
+from ..collect.metadata import collect_metadata
 from ..model.tags import entities, entity_longnames
-from ..model.utils import get_nested_schema_field_names, get_type_schema
 from ..utils import logger
 from ..utils.format import format_like_bids
 from ..utils.hash import int_digest
-from ..utils.path import split_ext
-from .glob import _rlistdir
-from .metadata.direction import canonicalize_direction_code
+from ..utils.path import rlistdir, split_ext
 
 bids_config = Config.load("bids")
 bids_version = "1.4.0"
 
 
-def get_file_metadata(database, file_path) -> dict:
-    schema = get_type_schema(FileSchema, database, file_path)
-    instance = schema()
-
-    metadata = OrderedDict()
-    if "metadata" in instance.fields:
-        # manual conversion
-
-        if database.tagval(file_path, "datatype") == "func":
-            task = database.tagval(file_path, "task")
-            if task is not None:
-                metadata["TaskName"] = task
-
-        # automated conversion
-
-        metadata_keys = get_nested_schema_field_names(instance, "metadata")
-        for key in metadata_keys:
-            database.fillmetadata(key, [file_path])
-            value = database.metadata(file_path, key)
-
-            if value is not None:
-
-                # transform metadata
-
-                if key.endswith("direction"):
-                    value = canonicalize_direction_code(value, file_path)
-
-                if key == "slice_timing_code":
-                    if not database.fillmetadata("slice_timing", [file_path]):
-                        continue
-
-                    key = "slice_timing"
-                    value = database.metadata(file_path, key)
-
-                metadata[key] = value
-
-    return metadata
-
-
 def get_bids_metadata(database, file_path) -> dict:
-    metadata = get_file_metadata(database, file_path)
+    metadata = collect_metadata(database, file_path)
 
     return {camelize(key): value for key, value in metadata.items()}
 
@@ -244,7 +201,7 @@ class BidsDatabase:
             files_to_keep.add(relative_bids_path)
             files_to_keep.update(map(str, Path(relative_bids_path).parents))
 
-        for file_path in _rlistdir(bidsdir, False):
+        for file_path in rlistdir(bidsdir):
             relative_file_path = relpath(file_path, start=bidsdir)
             if relative_file_path not in files_to_keep:
                 p = Path(file_path)

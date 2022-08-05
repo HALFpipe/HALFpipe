@@ -8,8 +8,8 @@ from typing import Mapping
 import numpy as np
 import pytest
 
-from ..aggregate import aggregate, summarize
-from ..base import Categorical, Continuous
+from ..aggregate import aggregate_results, summarize
+from ..variables import Categorical, Continuous
 
 
 def test_summarize():
@@ -117,7 +117,7 @@ def test_aggregate_resultdicts():
         ),
     )
 
-    aggregated, _ = aggregate([result_a, result_b, result_c], across_key="sub")
+    aggregated, _ = aggregate_results([result_a, result_b, result_c], across_key="sub")
     (result,) = aggregated
 
     subjects = result["tags"]["sub"]
@@ -187,7 +187,7 @@ def test_aggregate_resultdicts_heterogenous():
         ),
     )
 
-    aggregated, _ = aggregate([result_a, result_b, result_c], across_key="sub")
+    aggregated, _ = aggregate_results([result_a, result_b, result_c], across_key="sub")
     (result,) = aggregated
 
     subjects = result["tags"]["sub"]
@@ -232,6 +232,6 @@ def test_aggregate_many():
                 )
             )
 
-    aggregated, non_aggregated = aggregate(results, across_key="run")
+    aggregated, non_aggregated = aggregate_results(results, across_key="run")
     assert len(aggregated) == n
     assert len(non_aggregated) == n

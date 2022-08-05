@@ -4,7 +4,7 @@
 
 from math import isclose, nan
 
-from ..base import Continuous
+from ..variables import Continuous
 
 
 def test_continuous():

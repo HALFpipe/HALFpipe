@@ -4,107 +4,20 @@
 
 import hashlib
 import json
-import os
 import re
 from os import path as op
 from pathlib import Path
-from shutil import copyfile
 
-from inflection import camelize
 from nipype.interfaces.base import SimpleInterface, TraitedSpec, traits
 
-from ...model import FuncTagsSchema, entities
-from ...model.tags.resultdict import first_level_entities
+from ...model import FuncTagsSchema
 from ...resource import get as getresource
-from ...stats.algorithms import algorithms
+from ...result.bids.base import make_bids_path
+from ...result.bids.images import save_images
+from ...result.variables import Continuous
 from ...utils import logger
-from ...utils.format import format_like_bids
-from ...utils.json import TypeAwareJSONEncoder
-from ...utils.path import find_paths, split_ext
+from ...utils.path import copy_if_newer, find_paths
 from ...utils.table import SynchronizedTable
-from .base import Continuous
-
-# from niworkflows.viz.utils import compose_view, extract_svg
-# from nilearn.plotting import plot_glass_brain
-
-
-def _make_plot(tags, key, sourcefile, metadata):
-    _, _, _ = tags, sourcefile, metadata
-    if key == "z":
-        pass
-    elif key == "matrix":
-        pass
-
-
-def _join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | None:
-    joined = None
-
-    if entities is None:
-        entities = list(tags.keys())
-
-    for entity in entities:
-        if entity not in tags:
-            continue
-        value = tags[entity]
-        value = format_like_bids(value)
-
-        if joined is None:
-            joined = f"{entity}-{value}"
-        else:
-            joined = f"{joined}_{entity}-{value}"
-
-    return joined
-
-
-def _make_path(source_file, source_type, tags, suffix, **kwargs):
-    path = Path()
-
-    for entity in ["sub", "ses"]:
-        folder_name = _join_tags(tags, [entity])
-        if folder_name is not None:
-            path = path.joinpath(folder_name)
-
-    path = path.joinpath(dict(image="func", report="figures")[source_type])
-
-    if "feature" in tags:  # make subfolders for all feature outputs
-        folder_entities = ["task"]
-        if "sub" not in tags:
-            folder_entities.extend(first_level_entities)
-
-        folder_name = _join_tags(tags, folder_entities)
-        if folder_name is not None:
-            path = path.joinpath(folder_name)
-
-    if "sub" not in tags:
-        folder_name = _join_tags(tags, ["model"])
-        assert folder_name is not None
-        path = path.joinpath(folder_name)
-
-    _, ext = split_ext(source_file)
-    filename = f"{suffix}{ext}"  # keep original extension
-
-    kwargs_str = _join_tags(kwargs)
-    if kwargs_str is not None:
-        filename = f"{kwargs_str}_{filename}"
-
-    tags_str = _join_tags(tags, list(reversed(entities)))
-    if tags_str is not None:
-        filename = f"{tags_str}_{filename}"
-
-    return path / filename
-
-
-def _copy_file(inpath, outpath):
-    outpath.parent.mkdir(exist_ok=True, parents=True)
-    if outpath.exists():
-        if os.stat(inpath).st_mtime <= os.stat(outpath).st_mtime:
-            logger.info(f'Not overwriting file "{outpath}"')
-            return False
-        logger.info(f'Overwriting file "{outpath}"')
-    else:
-        logger.info(f'Creating file "{outpath}"')
-    copyfile(inpath, outpath)
-    return True
 
 
 def _find_sources(inpath, metadata) -> tuple[list[str] | None, str | None]:
@@ -152,8 +65,9 @@ def _file_hash(path) -> str:
 
 
 def datasink_reports(indicts, reports_directory):
-    indexhtml_path = reports_directory / "index.html"
-    _copy_file(getresource("index.html"), indexhtml_path)
+    index_html_download_path = Path(getresource("index.html"))
+    index_html_target_path = reports_directory / "index.html"
+    copy_if_newer(index_html_download_path, index_html_target_path)
 
     imgs_file_path = reports_directory / "reportimgs.js"
 
@@ -164,8 +78,10 @@ def datasink_reports(indicts, reports_directory):
             reports = indict.get("reports", dict())
 
             for key, inpath in reports.items():
-                outpath = reports_directory / _make_path(inpath, "report", tags, key)
-                _copy_file(inpath, outpath)
+                outpath = reports_directory / make_bids_path(
+                    inpath, "report", tags, key
+                )
+                copy_if_newer(inpath, outpath)
 
                 file_hash = None
                 sources, file_hash = _find_sources(inpath, metadata)
@@ -244,105 +160,6 @@ def datasink_preproc(indicts, reports_directory):
 
                 preproc_file.put(outdict)
 
-        preproc_file.to_table()
-
-
-def _format_sidecar_value(obj):
-    if not isinstance(obj, dict):
-        return obj
-    return {_format_sidecar_key(k): _format_sidecar_value(v) for k, v in obj.items()}
-
-
-def _format_sidecar_key(key):  # camelize
-    predefined = dict(
-        ica_aroma="ICAAROMA",
-        fwhm="FWHM",
-        hp_width="HighPassWidth",
-        lp_width="LowPassWidth",
-        fd_perc="FDPerc",
-        fd_mean="FDMean",
-        mean_gm_tsnr="MeanGMTSNR",
-        mean_seed_tsnr="MeanSeedTSNR",
-        mean_component_tsnr="MeanComponentTSNR",
-        mean_atlas_tsnr="MeanAtlasTSNR",
-    )
-    if key in predefined:
-        return predefined[key]
-    return camelize(key)
-
-
-def datasink_images(indicts, base_directory):
-    derivatives_directory = base_directory / "derivatives" / "halfpipe"
-    grouplevel_directory = base_directory / "grouplevel"
-
-    for indict in indicts:
-        tags = indict.get("tags", dict())
-        metadata = indict.get("metadata", dict())
-        vals = indict.get("vals", dict())
-        images = indict.get("images", dict())
-
-        # images
-
-        for key, inpath in images.items():
-            outpath = derivatives_directory
-
-            if "sub" not in tags:
-                outpath = grouplevel_directory
-
-            if key in [
-                "effect",
-                "variance",
-                "z",
-                "t",
-                "f",
-                "dof",
-                "sigmasquareds",
-            ]:  # apply rule
-                outpath = outpath / _make_path(
-                    inpath, "image", tags, "statmap", stat=key
-                )
-
-            elif key in algorithms["heterogeneity"].model_outputs:
-                key = re.sub(r"^het", "", key)
-                outpath = outpath / _make_path(
-                    inpath,
-                    "image",
-                    tags,
-                    "statmap",
-                    algorithm="heterogeneity",
-                    stat=key,
-                )
-
-            elif key in algorithms["mcartest"].model_outputs:
-                key = re.sub(r"^mcar", "", key)
-                outpath = outpath / _make_path(
-                    inpath, "image", tags, "statmap", algorithm="mcar", stat=key
-                )
-
-            else:
-                outpath = outpath / _make_path(inpath, "image", tags, key)
-
-            was_updated = _copy_file(inpath, outpath)
-
-            if was_updated:
-                _make_plot(tags, key, outpath, metadata)
-
-            if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
-                stem, extension = split_ext(outpath)
-                if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
-
-                    sidecar = metadata.copy()
-                    sidecar.update(vals)
-                    sidecar = _format_sidecar_value(sidecar)
-
-                    sidecar_json = json.dumps(
-                        sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4
-                    )
-
-                    sidecar_file_path = outpath.parent / f"{stem}.json"
-                    with open(sidecar_file_path, "wt") as sidecar_file_handle:
-                        sidecar_file_handle.write(sidecar_json)
-
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
     base_directory = traits.Directory(
@@ -367,6 +184,6 @@ class ResultdictDatasink(SimpleInterface):
         datasink_vals(indicts, reports_directory)
         datasink_preproc(indicts, reports_directory)
 
-        datasink_images(indicts, base_directory)
+        save_images(indicts, base_directory)
 
         return runtime

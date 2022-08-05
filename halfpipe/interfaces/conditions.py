@@ -12,7 +12,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from ..ingest.condition import ConditionFile
+from ..ingest.events import ConditionFile
 from ..utils import logger
 
 

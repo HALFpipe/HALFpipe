@@ -7,6 +7,7 @@ from math import inf, log, nan, pi
 import nibabel as nib
 import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from scipy import optimize, special, stats
 
 from ..utils import logger
@@ -114,7 +115,11 @@ class ReML:
 class ML:
     @staticmethod
     def neg_log_lik(
-        ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray, γ: np.ndarray
+        ϑ: float,
+        y: npt.NDArray[np.floating],
+        x: npt.NDArray[np.floating] | None,
+        s: npt.NDArray[np.floating],
+        γ: npt.NDArray[np.floating],
     ):
         σg = ϑ
 
