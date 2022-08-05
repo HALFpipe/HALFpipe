@@ -300,7 +300,7 @@ scikit-image==0.19.3
     # via
     #   -r requirements.in
     #   niworkflows
-scikit-learn==1.1.1
+scikit-learn==1.1.2
     # via
     #   -r requirements.in
     #   nilearn
