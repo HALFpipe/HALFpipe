@@ -298,28 +298,28 @@ def test_with_reconall(tmp_path, mock_spec):
     assert any("recon" in u.name for u in graph.nodes)
 
 
-# @pytest.mark.slow
-# @pytest.mark.timeout(3 * 3600)
-# def test_feature_extraction(tmp_path, mock_spec):
-#    save_spec(mock_spec, workdir=tmp_path)
-#
-#    config.nipype.omp_nthreads = cpu_count()
-#
-#    workflow = init_workflow(tmp_path)
-#
-#    graphs = init_execgraph(tmp_path, workflow)
-#    graph = next(iter(graphs.values()))
-#
-#    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
-#
-#    parser = build_parser()
-#    opts = parser.parse_args(args=list())
-#
-#    opts.graphs = graphs
-#    opts.nipype_run_plugin = "Linear"
-#    opts.debug = True
-#
-#    run_stage_run(opts)
+@pytest.mark.slow
+@pytest.mark.timeout(3 * 3600)
+def test_feature_extraction(tmp_path, mock_spec):
+    save_spec(mock_spec, workdir=tmp_path)
+
+    config.nipype.omp_nthreads = cpu_count()
+
+    workflow = init_workflow(tmp_path)
+
+    graphs = init_execgraph(tmp_path, workflow)
+    graph = next(iter(graphs.values()))
+
+    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+
+    parser = build_parser()
+    opts = parser.parse_args(args=list())
+
+    opts.graphs = graphs
+    opts.nipype_run_plugin = "Linear"
+    opts.debug = True
+
+    run_stage_run(opts)
 
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):  # bids data hinzufügen
