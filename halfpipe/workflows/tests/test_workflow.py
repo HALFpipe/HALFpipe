@@ -341,7 +341,7 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):  # bids data hinzufüge
     ]
     for i in files:
         Path(fmap_path / i).unlink()
-    # copy file before changing its contents
+    # copy file before changing its content
     shutil.copy(
         os.path.join(fmap_path, "sub-1012_dir-PA_epi.json"),
         os.path.join(fmap_path, "sub-1012_dir-AP_epi.json"),
