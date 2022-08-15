@@ -324,11 +324,6 @@ def test_with_reconall(tmp_path, mock_spec):
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):  # bids data hinzufügen
 
-    # BIDS Ordner modifizieren zwei Bilder einmal AP und einmal PA hinzufügen
-    # Das erste Objekt als fieldmap speichern und metadaten hinzufügen
-    # Fieldmaps in Mockspec hinzufügen, beide Methoden ausführen, rausnehmen wieder reintuen
-    # Alle 3 Fieldmap typen hinzufügen
-
     bids_path = bids_data
     fmap_path = bids_path / "sub-1012" / "fmap"
     files = [
