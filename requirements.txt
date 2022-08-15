@@ -344,7 +344,7 @@ smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.
     #   fmriprep
 sqlalchemy==1.3.24
     # via pybids
-stackprinter==0.2.6
+stackprinter==0.2.7
     # via -r requirements.in
 statsmodels==0.13.2
     # via -r requirements.in
