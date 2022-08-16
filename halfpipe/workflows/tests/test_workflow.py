@@ -10,7 +10,6 @@ from math import inf
 from multiprocessing import cpu_count
 from pathlib import Path
 from random import choices, normalvariate, seed
-from zipfile import ZipFile
 
 import nibabel as nib
 import pandas as pd
@@ -25,7 +24,6 @@ from ...ingest.database import Database
 from ...model import FeatureSchema, FileSchema, SettingSchema
 from ...model.spec import Spec, SpecSchema, save_spec
 from ...resource import get as get_resource
-from ...tests.resource import setup as setup_test_resources
 from ...utils.image import nvol
 from ..base import init_workflow
 from ..execgraph import init_execgraph
@@ -322,9 +320,11 @@ def test_feature_extraction(tmp_path, mock_spec):
     run_stage_run(opts)
 
 
-def test_with_fieldmaps(tmp_path, bids_data, mock_spec):  # bids data hinzufügen
+def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
+    bids_path = tmp_path / "bids"
+    shutil.copytree(bids_data, bids_path)
 
-    bids_path = bids_data
+    # delete extra files
     fmap_path = bids_path / "sub-1012" / "fmap"
     files = [
         "sub-1012_acq-3mm_phasediff.nii.gz",
@@ -336,23 +336,29 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):  # bids data hinzufüge
     ]
     for i in files:
         Path(fmap_path / i).unlink()
-    # copy file before changing its content
-    shutil.copy(
-        os.path.join(fmap_path, "sub-1012_dir-PA_epi.json"),
-        os.path.join(fmap_path, "sub-1012_dir-AP_epi.json"),
-    )
+
+    # copy image file
     shutil.copy(
         os.path.join(fmap_path, "sub-1012_dir-PA_epi.nii.gz"),
         os.path.join(fmap_path, "sub-1012_dir-AP_epi.nii.gz"),
     )
 
-    with open(fmap_path / "sub-1012_dir-AP_epi.json", "r") as json_file:
+    # copy metadata
+    with open(fmap_path / "sub-1012_dir-PA_epi.json", "r") as json_file:
         data = json.load(json_file)
-
     data["PhaseEncodingDirection"] = "j-"
-
     with open(fmap_path / "sub-1012_dir-AP_epi.json", "w") as json_file:
         json.dump(data, json_file)
 
     # start testing
-    save_spec(mock_spec, workdir=tmp_path)
+    workdir = tmp_path / "workdir"
+    save_spec(mock_spec, workdir=workdir)
+
+    config.nipype.omp_nthreads = cpu_count()
+
+    workflow = init_workflow(workdir)
+
+    graphs = init_execgraph(workdir, workflow)
+    graph = next(iter(graphs.values()))
+
+    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
