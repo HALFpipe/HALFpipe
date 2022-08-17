@@ -2,10 +2,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 import marshmallow.exceptions
 from inflection import humanize
@@ -123,9 +123,9 @@ class Spec:
         self.timestamp = timestamp
         self.files = files
 
-        self.settings: List = list()
-        self.features: List = list()
-        self.models: List = list()
+        self.settings: list = list()
+        self.features: list = list()
+        self.models: list = list()
 
         self.global_settings = dict()
 
@@ -155,7 +155,7 @@ def load_spec(
     path: str | Path | None = None,
     timestamp: datetime | None = None,
     logger=logger,
-) -> Optional[Spec]:
+) -> Spec | None:
     if path is None:
         if workdir is None:
             raise ValueError("Need to provide either `workdir` or `path`")
@@ -177,24 +177,27 @@ def load_spec(
 
     try:
         spec = SpecSchema().loads(spec_file_str, many=False)
-        assert isinstance(spec, Spec)
-        return spec
+        if isinstance(spec, Spec):
+            return spec
 
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f'Ignored validation error in "{path}"', exc_info=e)
-        return None
+
+    return None
 
 
 def readspec(stdin_spec: dict, logger=logger) -> Spec | None:
     try:
-        import json
 
         logger.info("Loading spec file from STDIN")
         spec = SpecSchema().loads(json.dumps(stdin_spec), many=False)
-        return spec
+        if isinstance(spec, Spec):
+            return spec
+
     except marshmallow.exceptions.ValidationError as e:
         logger.warning(f"Ignored validation error on STDIN, {e}", exc_info=e)
-        return None
+
+    return None
 
 
 def save_spec(
