@@ -8,14 +8,14 @@ from typing import List, Optional, Type
 from ...collect.events import collect_events
 from ...ingest.events import ConditionFile
 from ...ingest.glob import get_entities_in_path
-from ...model import (
-    File,
+from ...model.contrast import TContrastSchema
+from ...model.feature import Feature
+from ...model.file.base import File
+from ...model.file.func import (
     MatEventsFileSchema,
-    TContrastSchema,
     TsvEventsFileSchema,
     TxtEventsFileSchema,
 )
-from ...model.feature import Feature
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView,

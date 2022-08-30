@@ -5,7 +5,7 @@
 from nipype.interfaces.base import BaseInterfaceInputSpec, DynamicTraitedSpec, traits
 from nipype.interfaces.io import IOBase, add_traits
 
-from ...model import ResultdictSchema
+from ...model.resultdict import ResultdictSchema
 
 
 class ExtractFromResultdictInputSpec(BaseInterfaceInputSpec):

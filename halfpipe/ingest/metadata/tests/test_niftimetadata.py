@@ -6,7 +6,7 @@ import nibabel as nib
 import numpy as np
 import pytest
 
-from ....model import File
+from ....model.file.base import File
 from ..niftimetadata import NiftiheaderMetadataLoader
 
 

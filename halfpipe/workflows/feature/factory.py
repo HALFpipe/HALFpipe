@@ -7,7 +7,7 @@ from typing import Any, Dict
 
 from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
-from ...model import FeatureSchema
+from ...model.feature import FeatureSchema
 from ...utils import logger
 from ..factory import Factory
 from ..memory import MemoryCalculator

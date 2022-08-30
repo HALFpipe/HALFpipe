@@ -2,13 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from typing import Dict, List, Optional, Type
 
-from ...model import FilterSchema, GroupFilterSchema
+from ...model.filter import FilterSchema, GroupFilterSchema
 from ..components import (
     MultiMultipleChoiceInputView,
     NumberInputView,

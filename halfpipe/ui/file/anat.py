@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
-from ...model import T1wFileSchema
+from ...model.file.anat import T1wFileSchema
 from ..pattern import FilePatternStep, FilePatternSummaryStep
 from .func import FuncStep, FuncSummaryStep
 

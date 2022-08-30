@@ -11,7 +11,7 @@ from nibabel.nifti1 import Nifti1Header
 from ..ingest.database import Database
 from ..ingest.metadata.direction import canonicalize_direction_code, get_axcodes_set
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
-from ..model.file import FileSchema
+from ..model.file.schema import FileSchema
 from ..model.metadata import MetadataSchema
 from ..model.setting import BaseSettingSchema
 from ..model.utils import get_nested_schema_field_names, get_type_schema
