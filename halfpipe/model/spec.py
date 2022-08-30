@@ -24,7 +24,8 @@ from ..utils import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
 from .feature import FeatureSchema
-from .file import File, FileSchema
+from .file.base import File
+from .file.schema import FileSchema
 from .model import ModelSchema
 from .setting import GlobalSettingsSchema, SettingSchema
 

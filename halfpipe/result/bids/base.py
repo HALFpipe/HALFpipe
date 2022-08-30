@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from ...model import entities
+from ...model.tags import entities
 from ...model.tags.resultdict import first_level_entities
 from ...utils.format import format_like_bids
 from ...utils.path import split_ext

@@ -6,9 +6,10 @@ import logging
 from typing import ClassVar, Dict, List, Optional, Type, Union
 
 from ..ingest.glob import get_entities_in_path, tag_parse
-from ..model import FileSchema, entities
-from ..model import entity_longnames as entity_display_aliases
 from ..model.file.base import BaseFileSchema, File
+from ..model.file.schema import FileSchema
+from ..model.tags import entities
+from ..model.tags import entity_longnames as entity_display_aliases
 from ..model.utils import get_schema_entities
 from ..utils import inflect_engine as p
 from ..utils.path import split_ext

@@ -4,7 +4,9 @@
 
 from inflection import humanize, underscore
 
-from ...model import FilterSchema, SettingSchema, entities
+from ...model.filter import FilterSchema
+from ...model.setting import SettingSchema
+from ...model.tags import entities
 from ...utils.format import format_like_bids
 from ..components import (
     MultiMultipleChoiceInputView,
