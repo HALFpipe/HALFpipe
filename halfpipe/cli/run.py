@@ -64,9 +64,9 @@ def run_stage_workflow(opts):
         return
 
     if opts.use_cluster:
-        from ..cluster import create_example_script
+        from ..cluster import make_script
 
-        create_example_script(opts.workdir, opts.graphs, opts)
+        make_script(opts.workdir, opts.graphs, opts)
 
 
 def run_stage_run(opts):
@@ -239,11 +239,6 @@ def run_stage_run(opts):
 
 
 def run(opts, should_run):
-    # log some basic information
-    from .. import __version__
-
-    logger.info(f"HALFpipe version {__version__}")
-
     if not opts.verbose:
         logger.log(
             25,
@@ -295,36 +290,42 @@ def run(opts, should_run):
 
 
 def main():
-    from ..logging.base import setup_context as setup_logging_context
-    from ..logging.base import teardown as teardown_logging
-
+    # make these variables available in top scope
     opts = None
-    pr = None
-
+    profiler_instance = None
     debug = False
     profile = False
 
     try:
+        from ..logging.base import setup_context as setup_logging_context
+
         setup_logging_context()
+
+        from .parser import parse_args
+
+        opts, should_run = parse_args()
+        debug = getattr(opts, "debug", False)
+        profile = getattr(opts, "profile", False)
 
         from ..utils.pickle import patch_nipype_unpickler
 
         patch_nipype_unpickler()
 
-        from .parser import parse_args
-
-        opts, should_run = parse_args()
-
-        debug = opts.debug
-        profile = opts.profile
-
         if profile is True:
             from cProfile import Profile
 
-            pr = Profile()
-            pr.enable()
+            profiler_instance = Profile()
+            profiler_instance.enable()
 
-        run(opts, should_run)
+        from .. import __version__
+
+        logger.info(f"HALFpipe version {__version__}")
+
+        action = getattr(opts, "action", None)
+        if action is not None:
+            action(opts)
+        else:
+            run(opts, should_run)
     except Exception as e:
         logger.exception("Exception: %s", e, exc_info=True)
 
@@ -333,12 +334,14 @@ def main():
 
             pdb.post_mortem()
     finally:
-        if profile and pr is not None:
-            pr.disable()
+        if profile and profiler_instance is not None:
+            profiler_instance.disable()
             if opts is not None:
-                pr.dump_stats(
+                profiler_instance.dump_stats(
                     Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
+
+        from ..logging.base import teardown as teardown_logging
 
         teardown_logging()
 

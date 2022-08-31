@@ -11,11 +11,11 @@ from uuid import uuid4
 import pytest
 
 from ..cli.parser import build_parser
-from ..cluster import create_example_script
+from ..cluster import make_script
 
 
 @pytest.mark.parametrize("has_model", [True, False])
-def test_create_example_script(monkeypatch, tmp_path: Path, has_model: bool):
+def test_make_script(monkeypatch, tmp_path: Path, has_model: bool):
     NodePlaceholder = namedtuple("NodePlaceholder", ["mem_gb"])
     WorkflowPlaceholder = namedtuple("WorkflowPlaceholder", ["uuid", "nodes"])
 
@@ -34,7 +34,7 @@ def test_create_example_script(monkeypatch, tmp_path: Path, has_model: bool):
         graphs["model"] = WorkflowPlaceholder(uuid=uuid4(), nodes=[node])
 
     monkeypatch.setenv("SINGULARITY_CONTAINER", "halfpipe.sif")
-    create_example_script(tmp_path, graphs, opts)
+    make_script(tmp_path, graphs, opts)
 
     assert Path(tmp_path / "submit.slurm.sh").is_file()
     assert Path(tmp_path / "submit.sge.sh").is_file()

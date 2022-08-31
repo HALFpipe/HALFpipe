@@ -12,6 +12,7 @@ from more_itertools import collapse
 from pyrsistent import freeze, pmap, thaw
 
 from ..utils import logger
+from .base import ResultDict, ResultKey
 from .variables import Categorical, Continuous
 
 Index = Mapping[str, str]
@@ -21,12 +22,10 @@ Index = Mapping[str, str]
 class Element:
     numerical_index: int
     across_value: str
-    data: Mapping[tuple[str, str], Any]
+    data: Mapping[tuple[ResultKey, str], Any]
 
 
-def group_across(
-    rr: list[dict[str, dict]], across_key: str
-) -> dict[Index, set[Element]]:
+def group_across(rr: list[ResultDict], across_key: str) -> dict[Index, set[Element]]:
     groups: dict[Index, set[Element]] = defaultdict(set)
 
     for i, r in enumerate(rr):
@@ -39,7 +38,7 @@ def group_across(
             {key: value for key, value in tags.items() if isinstance(value, str)}
         )
 
-        data: Mapping[tuple[str, str], Any] = pmap(
+        data: Mapping[tuple[ResultKey, str], Any] = pmap(
             {
                 (field_name, attribute_name): freeze(attribute_value)
                 for field_name, field_dict in r.items()
@@ -106,7 +105,7 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
     summarized: dict[tuple[str, str], Any] = dict()
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
-        field_name, _ = key
+        field_name: str = key[0]
         if key in [
             ("metadata", "sources"),
             ("metadata", "raw_sources"),
@@ -122,7 +121,7 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
     return data
 
 
-def aggregate_results(rr: list[dict[str, dict]], across_key: str):
+def aggregate_results(rr: list[ResultDict], across_key: str):
     groups = group_across(rr, across_key)
     expanded_groups = group_expand(groups)
 
