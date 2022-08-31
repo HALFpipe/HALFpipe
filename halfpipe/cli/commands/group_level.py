@@ -38,11 +38,18 @@ class GroupLevelCommand(Command):
             action="append",
         )
         argument_parser.add_argument(
+            "--include",
+            type=str,
+            nargs=2,
+            metavar=("TAG", "VALUE"),
+            action="append",
+        )
+        argument_parser.add_argument(
             "--exclude",
             type=str,
             nargs=2,
             metavar=("TAG", "VALUE"),
-            action="extend",
+            action="append",
         )
 
         argument_parser.add_argument(
@@ -182,6 +189,35 @@ class GroupLevelCommand(Command):
                 if tags[key] == from_value:
                     tags[key] = to_value
 
+        include = arguments.include
+        if include is not None:
+            filtered_results = list()
+            for key, value in include:
+                for result in results:
+                    tags = result["tags"]
+                    if key not in tags:
+                        continue
+                    if tags[key] == value:
+                        filtered_results.append(result)
+            results = filtered_results
+
+        exclude = arguments.exclude
+        if exclude is not None:
+            filtered_results = list()
+            for result in results:
+                should_include = True
+
+                for key, value in exclude:
+                    tags = result["tags"]
+                    if key not in tags:
+                        continue
+                    if tags[key] == value:
+                        should_include = False
+
+                if should_include:
+                    filtered_results.append(result)
+            results = filtered_results
+
         results, _ = aggregate_results(results, "sub")
 
         group_level_results = list()
@@ -202,12 +238,7 @@ class GroupLevelCommand(Command):
                 var_cope_files = images.pop("variance")
                 mask_files = images.pop("mask")
 
-                (
-                    regressor_list,
-                    contrast_list,
-                    contrast_numbers,
-                    contrast_names,
-                ) = group_design(
+                (regressor_list, contrast_list, _, contrast_names,) = group_design(
                     spreadsheet,
                     contrasts,
                     variables,
