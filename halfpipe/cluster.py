@@ -73,7 +73,7 @@ singularity run \\
 """
 
 
-def make_script(workdir, graphs: Dict[str, Any], opts):
+def make_script(workdir: Path, graphs: Dict[str, Any], opts):
     first_workflow = next(iter(graphs.values()))
     uuid = first_workflow.uuid
 
@@ -138,6 +138,13 @@ def make_script(workdir, graphs: Dict[str, Any], opts):
             pass  # TODO
         else:
             data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
+
+    subject_list = workdir / "subject-list.txt"
+    data["subject_list"] = str(subject_list)
+    with open(subject_list, "wt") as file_handle:
+        for subject in subjects:
+            file_handle.write(subject)
+            file_handle.write("\n")
 
     stpaths = []
     for cluster_type, cluster_config in cluster_configs.items():
