@@ -239,11 +239,6 @@ def run_stage_run(opts):
 
 
 def run(opts, should_run):
-    # log some basic information
-    from .. import __version__
-
-    logger.info(f"HALFpipe version {__version__}")
-
     if not opts.verbose:
         logger.log(
             25,
@@ -295,17 +290,23 @@ def run(opts, should_run):
 
 
 def main():
-    from .parser import parse_args
-
-    opts, should_run = parse_args()
-
+    # make these variables available in top scope
+    opts = None
     profiler_instance = None
-
-    action = getattr(opts, "action", None)
-    debug = getattr(opts, "debug", False)
-    profile = getattr(opts, "profile", False)
+    debug = False
+    profile = False
 
     try:
+        from ..logging.base import setup_context as setup_logging_context
+
+        setup_logging_context()
+
+        from .parser import parse_args
+
+        opts, should_run = parse_args()
+        debug = getattr(opts, "debug", False)
+        profile = getattr(opts, "profile", False)
+
         from ..utils.pickle import patch_nipype_unpickler
 
         patch_nipype_unpickler()
@@ -316,12 +317,14 @@ def main():
             profiler_instance = Profile()
             profiler_instance.enable()
 
+        from .. import __version__
+
+        logger.info(f"HALFpipe version {__version__}")
+
+        action = getattr(opts, "action", None)
         if action is not None:
             action(opts)
         else:
-            from ..logging.base import setup_context as setup_logging_context
-
-            setup_logging_context()
             run(opts, should_run)
     except Exception as e:
         logger.exception("Exception: %s", e, exc_info=True)

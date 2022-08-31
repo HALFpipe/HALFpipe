@@ -28,6 +28,12 @@ class GroupLevelCommand(Command):
             "--outdir",
             type=str,
             required=True,
+            dest="workdir",
+        )
+
+        argument_parser.add_argument(
+            "--model-name",
+            type=str,
         )
 
         argument_parser.add_argument(
@@ -102,16 +108,18 @@ class GroupLevelCommand(Command):
         from ...model.contrast import ModelContrastSchema
         from ...model.variable import VariableSchema
         from ...result.aggregate import aggregate_results
+        from ...result.bids.images import save_images
         from ...result.filter import filter_results
         from ...stats.algorithms import modelfit_aliases
         from ...stats.fit import fit
+        from ...utils import logger
         from ...utils.future import chdir
-
-        print(arguments)
 
         algorithms = arguments.algorithm
         if algorithms is None:
             return
+
+        output_directory = Path(arguments.workdir)
 
         spreadsheet = arguments.spreadsheet
 
@@ -178,37 +186,36 @@ class GroupLevelCommand(Command):
         )
 
         rename = arguments.rename
-        if rename is None:
-            rename = list()
-
-        for key, from_value, to_value in rename:
-            for result in results:
-                tags = result["tags"]
-                if key not in tags:
-                    continue
-                if tags[key] == from_value:
-                    tags[key] = to_value
+        if rename is not None:
+            for key, from_value, to_value in rename:
+                for result in results:
+                    tags = result["tags"]
+                    if key not in tags:
+                        continue
+                    if tags[key] == from_value:
+                        tags[key] = to_value
 
         include = arguments.include
         if include is not None:
-            filtered_results = list()
             for key, value in include:
+                filtered_results = list()
                 for result in results:
                     tags = result["tags"]
                     if key not in tags:
                         continue
                     if tags[key] == value:
                         filtered_results.append(result)
-            results = filtered_results
+                results = filtered_results
 
         exclude = arguments.exclude
         if exclude is not None:
             filtered_results = list()
             for result in results:
+                tags = result["tags"]
+
                 should_include = True
 
                 for key, value in exclude:
-                    tags = result["tags"]
                     if key not in tags:
                         continue
                     if tags[key] == value:
@@ -216,7 +223,14 @@ class GroupLevelCommand(Command):
 
                 if should_include:
                     filtered_results.append(result)
+                else:
+                    logger.info(f"Excluding {tags}")
             results = filtered_results
+
+        logger.debug(f"Including {len(results):d} sets of images")
+        for result in results:
+            tags = result["tags"]
+            logger.debug(f"Including {tags}")
 
         results, _ = aggregate_results(results, "sub")
 
@@ -226,7 +240,12 @@ class GroupLevelCommand(Command):
 
         with TemporaryDirectory() as temporary_directory:
             for i, result in enumerate(results):
-                subjects = result["tags"].pop("sub")
+                tags = result["tags"]
+                subjects = tags.pop("sub")
+
+                logger.info(
+                    f"Running model {tags} ({i + 1:d} of {len(results):d}) for {len(subjects)} inputs"
+                )
 
                 images = result.pop("images")
 
@@ -265,6 +284,8 @@ class GroupLevelCommand(Command):
 
                     for i in range(len(contrast_names)):
                         group_level_result = result.copy()
+                        if arguments.model_name is not None:
+                            group_level_result["tags"]["model"] = arguments.model_name
                         group_level_result["images"] = {
                             key: value[i]
                             for key, value in output_files.items()
@@ -272,7 +293,4 @@ class GroupLevelCommand(Command):
                         }
                         group_level_results.append(group_level_result)
 
-            import pdb
-
-            pdb.set_trace()
-            print(group_level_results)
+            save_images(group_level_results, output_directory)
