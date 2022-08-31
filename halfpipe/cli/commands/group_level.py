@@ -35,7 +35,7 @@ class GroupLevelCommand(Command):
             type=str,
             nargs=3,
             metavar=("TAG", "FROM", "TO"),
-            action="extend",
+            action="append",
         )
         argument_parser.add_argument(
             "--exclude",
@@ -99,6 +99,8 @@ class GroupLevelCommand(Command):
         from ...stats.algorithms import modelfit_aliases
         from ...stats.fit import fit
         from ...utils.future import chdir
+
+        print(arguments)
 
         algorithms = arguments.algorithm
         if algorithms is None:
@@ -168,6 +170,18 @@ class GroupLevelCommand(Command):
             exclude_files=arguments.qc_exclude_files,
         )
 
+        rename = arguments.rename
+        if rename is None:
+            rename = list()
+
+        for key, from_value, to_value in rename:
+            for result in results:
+                tags = result["tags"]
+                if key not in tags:
+                    continue
+                if tags[key] == from_value:
+                    tags[key] = to_value
+
         results, _ = aggregate_results(results, "sub")
 
         group_level_results = list()
@@ -219,14 +233,12 @@ class GroupLevelCommand(Command):
                             output_files[to_key] = output_files.pop(from_key)
 
                     for i in range(len(contrast_names)):
-                        group_level_result = dict(
-                            images={
-                                key: value[i]
-                                for key, value in output_files.items()
-                                if isinstance(value[i], str)
-                            },
-                            **result,
-                        )
+                        group_level_result = result.copy()
+                        group_level_result["images"] = {
+                            key: value[i]
+                            for key, value in output_files.items()
+                            if isinstance(value[i], str)
+                        }
                         group_level_results.append(group_level_result)
 
             import pdb
