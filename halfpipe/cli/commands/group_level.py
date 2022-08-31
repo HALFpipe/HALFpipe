@@ -100,6 +100,7 @@ class GroupLevelCommand(Command):
         )
 
     def run(self, arguments: Namespace):
+        from copy import deepcopy
         from pathlib import Path
         from tempfile import TemporaryDirectory
 
@@ -234,8 +235,6 @@ class GroupLevelCommand(Command):
 
         results, _ = aggregate_results(results, "sub")
 
-        group_level_results = list()
-
         aliases = dict(reho="effect", falff="effect", alff="effect")
 
         with TemporaryDirectory() as temporary_directory:
@@ -257,7 +256,7 @@ class GroupLevelCommand(Command):
                 var_cope_files = images.pop("variance")
                 mask_files = images.pop("mask")
 
-                (regressor_list, contrast_list, _, contrast_names,) = group_design(
+                (regressor_list, contrast_list, _, contrast_names) = group_design(
                     spreadsheet,
                     contrasts,
                     variables,
@@ -282,15 +281,17 @@ class GroupLevelCommand(Command):
                         if from_key in output_files:
                             output_files[to_key] = output_files.pop(from_key)
 
-                    for i in range(len(contrast_names)):
-                        group_level_result = result.copy()
+                    model_results = list()
+                    for i, contrast_name in enumerate(contrast_names):
+                        model_result = deepcopy(result)
+                        model_result["tags"]["contrast"] = contrast_name
                         if arguments.model_name is not None:
-                            group_level_result["tags"]["model"] = arguments.model_name
-                        group_level_result["images"] = {
+                            model_result["tags"]["model"] = arguments.model_name
+                        model_result["images"] = {
                             key: value[i]
                             for key, value in output_files.items()
                             if isinstance(value[i], str)
                         }
-                        group_level_results.append(group_level_result)
+                        model_results.append(model_result)
 
-            save_images(group_level_results, output_directory)
+                    save_images(model_results, output_directory)
