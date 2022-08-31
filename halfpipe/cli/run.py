@@ -64,9 +64,9 @@ def run_stage_workflow(opts):
         return
 
     if opts.use_cluster:
-        from ..cluster import create_example_script
+        from ..cluster import make_script
 
-        create_example_script(opts.workdir, opts.graphs, opts)
+        make_script(opts.workdir, opts.graphs, opts)
 
 
 def run_stage_run(opts):
