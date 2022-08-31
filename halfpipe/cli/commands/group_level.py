@@ -93,6 +93,21 @@ class GroupLevelCommand(Command):
         )
 
         argument_parser.add_argument(
+            "--fd-mean-cutoff",
+            type=float,
+            default=0.5,
+        )
+        argument_parser.add_argument(
+            "--fd-perc-cutoff",
+            type=float,
+            default=10,
+        )
+        argument_parser.add_argument(
+            "--missing-value-strategy",
+            choices=("listwise-deletion",),
+            default="listwise-deletion",
+        )
+        argument_parser.add_argument(
             "--algorithm",
             type=str,
             nargs="+",
@@ -107,6 +122,7 @@ class GroupLevelCommand(Command):
         from ...collect.derivatives import collect_derivatives
         from ...design import group_design
         from ...model.contrast import ModelContrastSchema
+        from ...model.filter import FilterSchema
         from ...model.variable import VariableSchema
         from ...result.aggregate import aggregate_results
         from ...result.bids.images import save_images
@@ -122,8 +138,6 @@ class GroupLevelCommand(Command):
 
         output_directory = Path(arguments.workdir)
 
-        spreadsheet = arguments.spreadsheet
-
         variable_schema = VariableSchema()
         variables: list[dict] = [
             variable_schema.load(
@@ -137,8 +151,35 @@ class GroupLevelCommand(Command):
         contrast_schema = ModelContrastSchema()
         contrasts: list[dict] = list()
 
-        if arguments.continuous_variable is not None:
-            for name in arguments.continuous_variable:
+        filter_schema = FilterSchema()
+        filters: list[dict] = list()
+
+        if arguments.fd_mean_cutoff is not None:
+            filters.append(
+                filter_schema.load(
+                    dict(
+                        type="cutoff",
+                        action="exclude",
+                        field="fd_mean",
+                        cutoff=arguments.fd_mean_cutoff,
+                    )
+                )
+            )
+        if arguments.fd_perc_cutoff is not None:
+            filters.append(
+                filter_schema.load(
+                    dict(
+                        type="cutoff",
+                        action="exclude",
+                        field="fd_perc",
+                        cutoff=arguments.fd_perc_cutoff,
+                    )
+                )
+            )
+
+        continuous_variable = arguments.continuous_variable
+        if continuous_variable is not None:
+            for name in continuous_variable:
                 variables.append(
                     variable_schema.load(
                         dict(
@@ -156,8 +197,9 @@ class GroupLevelCommand(Command):
                     )
                 )
 
-        if arguments.categorical_variable is not None:
-            for name, levels in zip(arguments.categorical_variable, arguments.levels):
+        categorical_variable = arguments.categorical_variable
+        if categorical_variable is not None:
+            for name, levels in zip(categorical_variable, arguments.levels):
                 variables.append(
                     variable_schema.load(
                         dict(
@@ -176,14 +218,32 @@ class GroupLevelCommand(Command):
                     )
                 )
 
+        missing_value_strategy = arguments.missing_value_strategy
+        if missing_value_strategy == "listwise-deletion":
+            for variable in variables:
+                name = variable["name"]
+                filters.append(
+                    filter_schema.load(
+                        dict(
+                            type="missing",
+                            action="exclude",
+                            variable=name,
+                        )
+                    )
+                )
+
         results = list()
         for input_directory in arguments.input_directory:
             results.extend(collect_derivatives(Path(input_directory)))
 
+        spreadsheet = arguments.spreadsheet
         results = filter_results(
             results,
+            filter_dicts=filters,
             require_one_of_images=["effect", "reho", "falff", "alff"],
             exclude_files=arguments.qc_exclude_files,
+            spreadsheet=spreadsheet,
+            variable_dicts=variables,
         )
 
         rename = arguments.rename
@@ -228,11 +288,6 @@ class GroupLevelCommand(Command):
                     logger.info(f"Excluding {tags}")
             results = filtered_results
 
-        logger.debug(f"Including {len(results):d} sets of images")
-        for result in results:
-            tags = result["tags"]
-            logger.debug(f"Including {tags}")
-
         results, _ = aggregate_results(results, "sub")
 
         aliases = dict(reho="effect", falff="effect", alff="effect")
@@ -274,7 +329,7 @@ class GroupLevelCommand(Command):
                         regressor_list,
                         contrast_list,
                         algorithms,
-                        8,
+                        arguments.nipype_n_procs,
                     )
 
                     for from_key, to_key in modelfit_aliases.items():
