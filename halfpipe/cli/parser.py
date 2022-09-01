@@ -84,7 +84,9 @@ def build_parser() -> ArgumentParser:
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
 
     rungroup.add_argument("--nipype-memory-gb", type=float)
-    rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
+    rungroup.add_argument(
+        "--nipype-n-procs", "--n-procs", type=int, default=cpu_count()
+    )
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
     rungroup.add_argument(
         "--nipype-resource-monitor", action="store_true", default=False
