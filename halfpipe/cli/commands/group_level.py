@@ -292,34 +292,34 @@ class GroupLevelCommand(Command):
 
         aliases = dict(reho="effect", falff="effect", alff="effect")
 
-        with TemporaryDirectory() as temporary_directory:
-            for i, result in enumerate(results):
-                tags = result["tags"]
-                subjects = tags.pop("sub")
+        for i, result in enumerate(results):
+            tags = result["tags"]
+            subjects = tags.pop("sub")
 
-                logger.info(
-                    f"Running model {tags} ({i + 1:d} of {len(results):d}) for {len(subjects)} inputs"
-                )
+            logger.info(
+                f"Running model {tags} ({i + 1:d} of {len(results):d}) for {len(subjects)} inputs"
+            )
 
-                images = result.pop("images")
+            images = result.pop("images")
 
-                for from_key, to_key in aliases.items():
-                    if from_key in images:
-                        images[to_key] = images.pop(from_key)
+            for from_key, to_key in aliases.items():
+                if from_key in images:
+                    images[to_key] = images.pop(from_key)
 
-                cope_files = images.pop("effect")
-                var_cope_files = images.pop("variance")
-                mask_files = images.pop("mask")
+            cope_files = images.pop("effect")
+            var_cope_files = images.pop("variance")
+            mask_files = images.pop("mask")
 
-                (regressor_list, contrast_list, _, contrast_names) = group_design(
-                    spreadsheet,
-                    contrasts,
-                    variables,
-                    subjects,
-                )
+            (regressor_list, contrast_list, _, contrast_names) = group_design(
+                spreadsheet,
+                contrasts,
+                variables,
+                subjects,
+            )
 
-                model_path = Path(temporary_directory) / f"model-{i:03d}"
-                model_path.mkdir(parents=True, exist_ok=True)
+            with TemporaryDirectory() as temporary_directory:
+                model_path = Path(temporary_directory)
+                model_results = list()
 
                 with chdir(model_path):
                     output_files = fit(
@@ -332,21 +332,20 @@ class GroupLevelCommand(Command):
                         arguments.nipype_n_procs,
                     )
 
-                    for from_key, to_key in modelfit_aliases.items():
-                        if from_key in output_files:
-                            output_files[to_key] = output_files.pop(from_key)
+                for from_key, to_key in modelfit_aliases.items():
+                    if from_key in output_files:
+                        output_files[to_key] = output_files.pop(from_key)
 
-                    model_results = list()
-                    for i, contrast_name in enumerate(contrast_names):
-                        model_result = deepcopy(result)
-                        model_result["tags"]["contrast"] = contrast_name
-                        if arguments.model_name is not None:
-                            model_result["tags"]["model"] = arguments.model_name
-                        model_result["images"] = {
-                            key: value[i]
-                            for key, value in output_files.items()
-                            if isinstance(value[i], str)
-                        }
-                        model_results.append(model_result)
+                for i, contrast_name in enumerate(contrast_names):
+                    model_result = deepcopy(result)
+                    model_result["tags"]["contrast"] = contrast_name
+                    if arguments.model_name is not None:
+                        model_result["tags"]["model"] = arguments.model_name
+                    model_result["images"] = {
+                        key: value[i]
+                        for key, value in output_files.items()
+                        if isinstance(value[i], str)
+                    }
+                    model_results.append(model_result)
 
-                    save_images(model_results, output_directory)
+                save_images(model_results, output_directory)
