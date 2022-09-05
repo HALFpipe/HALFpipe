@@ -35,21 +35,23 @@ class QCDecisionMaker:
         self.shown_warning_tags: set[Mapping[str, str]] = set()
 
         for file_path in file_paths:
-            self.add_file(file_path)
+            self._add_file(file_path)
 
-    def add_file(self, file_path: str) -> None:
+    def _add_file(self, file_path: str) -> None:
         if has_magic(file_path):
             for e in glob(file_path, recursive=True):
-                self.add_file(e)
+                self._add_file(e)
 
         else:
             with open(file_path, "r") as file_handle:
                 entries = json.load(file_handle)
 
+            if not isinstance(entries, list):
+                raise ValueError
             for entry in entries:
-                self.add_entry(entry)
+                self._add_entry(entry)
 
-    def add_entry(self, entry: Mapping[str, str]) -> None:
+    def _add_entry(self, entry: Mapping[str, str]) -> None:
         rating_str: str | None = entry.get("rating")
 
         if rating_str is None:
@@ -69,7 +71,7 @@ class QCDecisionMaker:
 
         self.relevant_tag_names.update(tags.keys())
 
-    def iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
+    def _iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
         yield Rating.NONE  # default
         for subset_items in powerset(tags.items()):
             subset = pmap(subset_items)
@@ -88,7 +90,7 @@ class QCDecisionMaker:
                 }
             )
 
-        rating: Rating = max(self.iter_ratings(relevant_tags))
+        rating: Rating = max(self._iter_ratings(relevant_tags))
 
         if rating == Rating.BAD:
             return Decision.EXCLUDE
