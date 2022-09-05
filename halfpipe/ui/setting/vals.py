@@ -7,7 +7,7 @@ from typing import Dict, Optional, Type
 
 from more_itertools import unique_everseen
 
-from ...model import (
+from ...model.setting import (
     BandpassFilterSettingSchema,
     GrandMeanScalingSettingSchema,
     SmoothingSettingSchema,

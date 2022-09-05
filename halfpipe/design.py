@@ -65,43 +65,41 @@ def prepare_data_frame(
     ]
     data_frame.set_index(id_column, inplace=True)
 
-    continuous_columns = []
-    categorical_columns = []
-    columns_in_order: list[str] = []
-    for variabledict in variables:
-        if variabledict["type"] == "continuous":
-            continuous_columns.append(variabledict["name"])
-            columns_in_order.append(variabledict["name"])
-        elif variabledict["type"] == "categorical":
-            categorical_columns.append(variabledict["name"])
-            columns_in_order.append(variabledict["name"])
-
-    # separate
-    continuous = data_frame[continuous_columns]
-    categorical = data_frame[categorical_columns]
-
     if subjects is not None:
         # only keep subjects that are in this analysis
         # also sets order
-        continuous = continuous.loc[subjects]
-        categorical = categorical.loc[subjects]
-
-    # change type to numeric
-    continuous = continuous.astype(float)
-
-    # change type first to string then to category
-    categorical = categorical.astype(str)
-    categorical = categorical.astype("category")
-
-    # merge with only known columns
-    data_frame = pd.merge(
-        categorical, continuous, how="outer", left_index=True, right_index=True
-    )
-
-    # maintain order
-    data_frame = data_frame.loc[:, columns_in_order]
-    if subjects is not None:
         data_frame = data_frame.loc[subjects, :]
+
+    continuous_columns: list[str] = list()
+    categorical_columns: list[str] = list()
+    columns_in_order: list[str] = []
+    for variabledict in variables:
+        name = variabledict["name"]
+        if variabledict["type"] == "continuous":
+            continuous_columns.append(name)
+            columns_in_order.append(name)
+
+            # change type to numeric
+            data_frame[name] = data_frame[name].astype(float)
+        elif variabledict["type"] == "categorical":
+            categorical_columns.append(name)
+            columns_in_order.append(name)
+
+            # change type first to string then to category
+            # set unknown levels to missing
+            levels = variabledict["levels"]
+            data_frame[name] = (
+                data_frame[name]
+                .astype(str)
+                .astype("category")
+                .cat.set_categories(
+                    new_categories=levels,
+                )
+                .cat.remove_unused_categories()
+            )
+
+    # ensure order
+    data_frame = data_frame.loc[:, columns_in_order]
 
     return data_frame
 

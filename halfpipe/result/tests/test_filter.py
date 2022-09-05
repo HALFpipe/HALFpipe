@@ -9,6 +9,8 @@ import pandas as pd
 import pytest
 
 from ...design import prepare_data_frame
+from ...model.filter import FilterSchema
+from ...model.variable import VariableSchema
 from ..base import ResultDict
 from ..filter import filter_results, get_categorical_dict, parse_filter_dict
 
@@ -21,20 +23,27 @@ def test_filter_group(action: str, tmp_path):
 
     data_frame.to_csv(tmp_path / "spreadsheet.csv", index=False)
 
-    variable_dicts = [
-        dict(type="id", name="index"),
-        dict(type="categorical", name="a"),
+    variable_schema = VariableSchema()
+    variables = [
+        variable_schema.load(dict(type="id", name="index")),
+        variable_schema.load(
+            dict(type="categorical", name="a", levels=["a", "b", "c", "d"])
+        ),
     ]
 
-    data_frame = prepare_data_frame(tmp_path / "spreadsheet.csv", variable_dicts)
-    categorical_dict = get_categorical_dict(data_frame, variable_dicts=variable_dicts)
+    data_frame = prepare_data_frame(tmp_path / "spreadsheet.csv", variables)
+    categorical_dict = get_categorical_dict(data_frame, variable_dicts=variables)
 
     levels = ["b", "c"]
-    filter_dict = dict(
-        type="group",
-        variable="a",
-        levels=levels,
-        action=action,
+
+    filter_schema = FilterSchema()
+    filter_dict = filter_schema.load(
+        dict(
+            type="group",
+            variable="a",
+            levels=levels,
+            action=action,
+        )
     )
 
     f = parse_filter_dict(filter_dict, categorical_dict)

@@ -10,6 +10,7 @@ from typing import Tuple
 from .. import __version__
 from ..utils import logger
 from ..utils.path import is_empty
+from .commands.group_level import GroupLevelCommand
 
 steps = ["spec-ui", "workflow", "run"]
 
@@ -25,7 +26,7 @@ def build_parser() -> ArgumentParser:
 
     basegroup.add_argument(
         "--workdir",
-        "--wk",
+        "--wd",
         type=str,
         help="directory where output and intermediate files are stored",
     )
@@ -83,7 +84,9 @@ def build_parser() -> ArgumentParser:
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
 
     rungroup.add_argument("--nipype-memory-gb", type=float)
-    rungroup.add_argument("--nipype-n-procs", type=int, default=cpu_count())
+    rungroup.add_argument(
+        "--nipype-n-procs", "--n-procs", type=int, default=cpu_count()
+    )
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
     rungroup.add_argument(
         "--nipype-resource-monitor", action="store_true", default=False
@@ -107,6 +110,13 @@ def build_parser() -> ArgumentParser:
     debuggroup.add_argument("--debug", action="store_true", default=False)
     debuggroup.add_argument("--profile", action="store_true", default=False)
     debuggroup.add_argument("--watchdog", action="store_true", default=False)
+
+    subparsers = parser.add_subparsers(dest="command")
+    commands = [
+        GroupLevelCommand(),
+    ]
+    for command in commands:
+        command.setup(subparsers.add_parser)
 
     return parser
 

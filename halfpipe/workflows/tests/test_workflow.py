@@ -21,7 +21,9 @@ from templateflow.api import get as get_template
 from ...cli.parser import build_parser
 from ...cli.run import run_stage_run
 from ...ingest.database import Database
-from ...model import FeatureSchema, FileSchema, SettingSchema
+from ...model.feature import FeatureSchema
+from ...model.file.schema import FileSchema
+from ...model.setting import SettingSchema
 from ...model.spec import Spec, SpecSchema, save_spec
 from ...resource import get as get_resource
 from ...utils.image import nvol

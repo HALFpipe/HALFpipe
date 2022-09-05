@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from ...model import entities
+from ...model.tags import entities
 from ...model.tags.resultdict import first_level_entities
 from ...utils.format import format_like_bids
 from ...utils.path import split_ext
@@ -49,7 +49,7 @@ def make_bids_path(source_file, source_type, tags, suffix, **kwargs) -> Path:
         if folder_name is not None:
             path = path.joinpath(folder_name)
 
-    if "sub" not in tags:
+    if "model" in tags:
         folder_name = join_tags(tags, ["model"])
         assert folder_name is not None
         path = path.joinpath(folder_name)

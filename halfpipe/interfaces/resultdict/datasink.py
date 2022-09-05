@@ -10,7 +10,7 @@ from pathlib import Path
 
 from nipype.interfaces.base import SimpleInterface, TraitedSpec, traits
 
-from ...model import FuncTagsSchema
+from ...model.tags import FuncTagsSchema
 from ...resource import get as getresource
 from ...result.bids.base import make_bids_path
 from ...result.bids.images import save_images

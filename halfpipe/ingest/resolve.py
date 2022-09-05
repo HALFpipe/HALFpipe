@@ -14,7 +14,8 @@ from bids.layout.index import BIDSLayoutIndexer
 from bids.layout.models import BIDSFile
 from marshmallow import EXCLUDE
 
-from ..model.file import File, FileSchema
+from ..model.file.base import File
+from ..model.file.schema import FileSchema
 from ..model.tags import entities, entity_longnames
 from ..utils import logger
 from ..utils.path import split_ext
