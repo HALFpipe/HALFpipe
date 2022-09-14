@@ -5,7 +5,7 @@
 from argparse import ArgumentParser, Namespace
 from typing import Callable
 
-from .base import Command
+from ..base import Command
 
 
 class GroupLevelCommand(Command):
@@ -29,6 +29,13 @@ class GroupLevelCommand(Command):
             type=str,
             required=True,
             dest="workdir",
+        )
+
+        argument_parser.add_argument(
+            "--from-spec",
+            type=bool,
+            default=False,
+            action="store_true",
         )
 
         argument_parser.add_argument(
@@ -113,28 +120,30 @@ class GroupLevelCommand(Command):
             nargs="+",
             action="extend",
         )
+        argument_parser.add_argument(
+            "--export",
+            type=str,
+            nargs="+",
+            action="extend",
+        )
 
     def run(self, arguments: Namespace):
         from copy import deepcopy
         from pathlib import Path
         from tempfile import TemporaryDirectory
 
-        from ...collect.derivatives import collect_derivatives
-        from ...design import group_design
-        from ...model.contrast import ModelContrastSchema
-        from ...model.filter import FilterSchema
-        from ...model.variable import VariableSchema
-        from ...result.aggregate import aggregate_results
-        from ...result.bids.images import save_images
-        from ...result.filter import filter_results
-        from ...stats.algorithms import modelfit_aliases
-        from ...stats.fit import fit
-        from ...utils import logger
-        from ...utils.future import chdir
-
-        algorithms = arguments.algorithm
-        if algorithms is None:
-            return
+        from ....collect.derivatives import collect_derivatives
+        from ....design import group_design
+        from ....model.contrast import ModelContrastSchema
+        from ....model.filter import FilterSchema
+        from ....model.variable import VariableSchema
+        from ....result.aggregate import aggregate_results
+        from ....result.bids.images import save_images
+        from ....result.filter import filter_results
+        from ....stats.algorithms import modelfit_aliases
+        from ....stats.fit import fit
+        from ....utils import logger
+        from ....utils.future import chdir
 
         output_directory = Path(arguments.workdir)
 
@@ -274,15 +283,15 @@ class GroupLevelCommand(Command):
             for result in results:
                 tags = result["tags"]
 
-                should_include = True
+                _include_flag = True
 
                 for key, value in exclude:
                     if key not in tags:
                         continue
                     if tags[key] == value:
-                        should_include = False
+                        _include_flag = False
 
-                if should_include:
+                if _include_flag:
                     filtered_results.append(result)
                 else:
                     logger.info(f"Excluding {tags}")
@@ -291,6 +300,14 @@ class GroupLevelCommand(Command):
         results, _ = aggregate_results(results, "sub")
 
         aliases = dict(reho="effect", falff="effect", alff="effect")
+
+        exports = arguments.export
+        if exports is not None:
+            raise NotImplementedError
+
+        algorithms = arguments.algorithm
+        if algorithms is None:
+            return
 
         for i, result in enumerate(results):
             tags = result["tags"]
@@ -319,7 +336,6 @@ class GroupLevelCommand(Command):
 
             with TemporaryDirectory() as temporary_directory:
                 model_path = Path(temporary_directory)
-                model_results = list()
 
                 with chdir(model_path):
                     output_files = fit(
@@ -336,16 +352,34 @@ class GroupLevelCommand(Command):
                     if from_key in output_files:
                         output_files[to_key] = output_files.pop(from_key)
 
+                images = {
+                    key: value
+                    for key, value in output_files.items()
+                    if isinstance(value, str)
+                }
+
+                model_results = list()
+
+                if len(images) > 0:
+                    model_result = deepcopy(result)
+                    if arguments.model_name is not None:
+                        model_result["tags"]["model"] = arguments.model_name
+                    model_result["images"] = images
+                    model_results.append(model_result)
+
                 for i, contrast_name in enumerate(contrast_names):
+                    images = {
+                        key: value[i]
+                        for key, value in output_files.items()
+                        if isinstance(value, list) and isinstance(value[i], str)
+                    }
+                    if len(images) == 0:
+                        continue
                     model_result = deepcopy(result)
                     model_result["tags"]["contrast"] = contrast_name
                     if arguments.model_name is not None:
                         model_result["tags"]["model"] = arguments.model_name
-                    model_result["images"] = {
-                        key: value[i]
-                        for key, value in output_files.items()
-                        if isinstance(value[i], str)
-                    }
+                    model_result["images"] = images
                     model_results.append(model_result)
 
                 save_images(model_results, output_directory)
