@@ -307,6 +307,7 @@ class GroupLevelCommand(Command):
 
         algorithms = arguments.algorithm
         if algorithms is None:
+            logger.warning("Specify algorithms to run with `--algorithm`")
             return
 
         for i, result in enumerate(results):
