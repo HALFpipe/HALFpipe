@@ -38,7 +38,14 @@ RUN python -c "from matplotlib import font_manager" && \
 COPY halfpipe/resource.py /tmp/
 RUN python /tmp/resource.py
 
-# Install halfpipe
+# Add coinstac server components
+COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
+RUN curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh \
+  && bash nodesource_setup.sh \
+  && apt-get update \
+  && apt --no-install-recommends -y install nodejs \
+  && ln -s /usr/local/bin/node /usr/local/bin/nodejs
+
 COPY . /halfpipe/
 RUN cd /halfpipe && \
     /usr/local/miniconda/bin/python -m pip install --no-deps --no-cache-dir . && \
