@@ -70,12 +70,6 @@ class AppendObjectAction(Action):
 
 
 class ObjectSetAttributeAction(Action):
-    @classmethod
-    @property
-    @abstractmethod
-    def field(cls) -> str:
-        raise NotImplementedError
-
     def __init__(
         self,
         option_strings: Sequence[str],
