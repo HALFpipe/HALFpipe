@@ -39,7 +39,7 @@ et-xmlfile==1.1.0
     # via openpyxl
 etelemetry==0.3.0
     # via nipype
-fasteners==0.17.3
+fasteners==0.18
     # via -r requirements.in
 filelock==3.7.1
     # via nipype
@@ -97,7 +97,7 @@ lxml==4.9.1
     #   svgutils
 markupsafe==2.1.1
     # via jinja2
-marshmallow==3.17.1
+marshmallow==3.18.0
     # via
     #   -r requirements.in
     #   marshmallow-dataclass
@@ -151,7 +151,7 @@ nilearn==0.9.1
     #   niworkflows
     #   smriprep
     #   tedana
-nipype==1.8.4
+nipype==1.8.5
     # via
     #   -r requirements.in
     #   fmriprep
