@@ -215,7 +215,7 @@ packaging==21.3
     #   setuptools-scm
     #   smriprep
     #   statsmodels
-pandas==1.4.4
+pandas==1.5.1
     # via
     #   -r requirements.in
     #   fmriprep
