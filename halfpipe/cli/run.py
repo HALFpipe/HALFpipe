@@ -323,6 +323,7 @@ def main():
 
         action = getattr(opts, "action", None)
         if action is not None:
+            logger.info(f"Running action {action}")
             action(opts)
         else:
             run(opts, should_run)
