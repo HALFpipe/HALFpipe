@@ -97,7 +97,7 @@ lxml==4.9.1
     #   svgutils
 markupsafe==2.1.1
     # via jinja2
-marshmallow==3.17.1
+marshmallow==3.18.0
     # via
     #   -r requirements.in
     #   marshmallow-dataclass
@@ -151,7 +151,7 @@ nilearn==0.9.1
     #   niworkflows
     #   smriprep
     #   tedana
-nipype==1.8.4
+nipype==1.8.5
     # via
     #   -r requirements.in
     #   fmriprep
