@@ -231,7 +231,7 @@ pandas==1.5.1
     #   tedana
 parse==1.19.0
     # via -r requirements.in
-patsy==0.5.2
+patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
