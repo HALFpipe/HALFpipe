@@ -119,7 +119,7 @@ matplotlib==3.6.1
     #   seaborn
     #   smriprep
     #   tedana
-more-itertools==8.14.0
+more-itertools==9.0.0
     # via -r requirements.in
 mpmath==1.2.1
     # via -r requirements.in
