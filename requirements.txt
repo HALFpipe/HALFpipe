@@ -70,7 +70,7 @@ indexed-gzip==1.7.0
     #   -r requirements.in
     #   fmriprep
     #   smriprep
-inflect==6.0.0
+inflect==6.0.2
     # via -r requirements.in
 inflection==0.5.1
     # via -r requirements.in
