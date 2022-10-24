@@ -342,7 +342,11 @@ def main():
                     Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
 
+        from ..logging.base import logging_context
         from ..logging.base import teardown as teardown_logging
+
+        # ensure queued messages get printed
+        logging_context.enable_print()
 
         teardown_logging()
 
