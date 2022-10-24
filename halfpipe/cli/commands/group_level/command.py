@@ -33,7 +33,6 @@ class GroupLevelCommand(Command):
 
         argument_parser.add_argument(
             "--from-spec",
-            type=bool,
             default=False,
             action="store_true",
         )
