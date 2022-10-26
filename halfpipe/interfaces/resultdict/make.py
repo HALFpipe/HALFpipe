@@ -8,7 +8,7 @@ from collections import defaultdict
 from nipype.interfaces.base import DynamicTraitedSpec, isdefined, traits
 from nipype.interfaces.io import IOBase, add_traits
 
-from ...model import ResultdictSchema
+from ...model.resultdict import ResultdictSchema
 from ...model.utils import get_schema_entities
 from ...utils.copy import deepcopy
 from ...utils.ops import ravel

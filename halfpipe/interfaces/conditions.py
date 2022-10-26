@@ -6,14 +6,13 @@ from math import isclose
 
 from nipype.interfaces.base import (
     Bunch,
-    File,
     SimpleInterface,
     TraitedSpec,
     isdefined,
     traits,
 )
 
-from ..ingest.condition import parse_condition_file
+from ..ingest.events import ConditionFile
 from ..utils import logger
 
 
@@ -56,13 +55,12 @@ class ApplyConditionOffset(SimpleInterface):
 
 
 class ParseConditionFileInputSpec(TraitedSpec):
-    in_any = traits.Either(
-        File(),
-        traits.List(File()),
-        traits.List(traits.Tuple(File, traits.Str)),
+    in_any = traits.Any(
         mandatory=True,
     )
+
     condition_names = traits.List(traits.Str(), desc="filter conditions")
+
     contrasts = traits.List(
         traits.Tuple(
             traits.Str,
@@ -75,6 +73,7 @@ class ParseConditionFileInputSpec(TraitedSpec):
 
 class ParseConditionFileOutputSpec(TraitedSpec):
     subject_info = traits.Any()
+
     contrasts = traits.List(
         traits.Tuple(
             traits.Str,
@@ -93,69 +92,59 @@ class ParseConditionFile(SimpleInterface):
     output_spec = ParseConditionFileOutputSpec
 
     def _run_interface(self, runtime):
-        conditions, onsets, durations = parse_condition_file(in_any=self.inputs.in_any)
+        # parse input files
+        cf = ConditionFile(data=self.inputs.in_any)
+        conditions = cf.conditions
+        onsets = cf.onsets
+        durations = cf.durations
 
+        # use only selected conditions
         if isdefined(self.inputs.condition_names):
-            conditions_selected = [
-                str(name) for name in self.inputs.condition_names
-            ]  # need a traits-free representation for bunch
-            onsets_selected, durations_selected = [], []
-            for condition_name in conditions_selected:
-                if condition_name not in conditions:
-                    condition_onsets = []
-                    condition_durations = []
-                else:
-                    i = conditions.index(condition_name)
-                    condition_onsets = onsets[i]
-                    condition_durations = durations[i]
-                onsets_selected.append(condition_onsets)
-                durations_selected.append(condition_durations)
-            conditions, onsets, durations = (
-                conditions_selected,
-                onsets_selected,
-                durations_selected,
-            )
+            conditions, onsets, durations = cf.select(self.inputs.condition_names)
 
-        filtered_conditions = [  # filter conditions with zero events
+        # remove empty or invalid conditions
+        filtered_conditions = [
             (condition, onset, duration)
             for condition, onset, duration in zip(conditions, onsets, durations)
             if len(onset) == len(duration) and len(onset) > 0
         ]
-
         assert len(filtered_conditions) > 0, "No events found"
-
         conditions, onsets, durations = zip(*filtered_conditions)
 
-        self._results["condition_names"] = list(conditions)
-
-        if isdefined(
-            self.inputs.contrasts
-        ):  # filter contrasts based on parsed conditions
+        # filter and re-write contrasts based on available conditions
+        if isdefined(self.inputs.contrasts):
             contrasts = self.inputs.contrasts
-
-            newcontrasts = list()
-            self._results["contrasts"] = newcontrasts
-
-            for name, type, contrast_conditions, contrast_values in contrasts:
+            new_contrasts = list()
+            for name, contrast_type, contrast_conditions, contrast_values in contrasts:
                 if any(
-                    c not in conditions and not isclose(v, 0)
-                    for c, v in zip(contrast_conditions, contrast_values)
+                    condition not in conditions  # is missing
+                    and not isclose(value, 0)  # but is part of the contrast
+                    for condition, value in zip(contrast_conditions, contrast_values)
                 ):
-                    continue  # cannot use this contrast
+                    continue
 
-                contrast_conditions, contrast_values = zip(
-                    *[
-                        (c, v)
-                        for c, v in zip(contrast_conditions, contrast_values)
-                        if c in conditions
-                    ]
-                )
-                newcontrasts.append(
-                    (name, type, list(contrast_conditions), list(contrast_values))
+                filtered_contrast = [
+                    (condition, value)
+                    for condition, value in zip(contrast_conditions, contrast_values)
+                    if condition in conditions
+                ]
+                contrast_conditions, contrast_values = map(
+                    list, zip(*filtered_contrast)
                 )
 
-            self._results["contrast_names"] = [name for name, _, _, _ in newcontrasts]
+                new_contrasts.append(
+                    (
+                        name,
+                        contrast_type,
+                        contrast_conditions,
+                        contrast_values,
+                    )
+                )
 
+            self._results["contrast_names"] = [name for name, _, _, _ in new_contrasts]
+            self._results["contrasts"] = new_contrasts
+
+        self._results["condition_names"] = list(conditions)
         self._results["subject_info"] = Bunch(
             conditions=conditions, onsets=onsets, durations=durations
         )

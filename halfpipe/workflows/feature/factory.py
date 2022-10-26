@@ -5,8 +5,9 @@
 import re
 from typing import Any, Dict
 
-from ...ingest.collect import collect_events, collect_metadata
-from ...model import FeatureSchema
+from ...collect.events import collect_events
+from ...collect.metadata import collect_metadata
+from ...model.feature import FeatureSchema
 from ...utils import logger
 from ..factory import Factory
 from ..memory import MemoryCalculator
@@ -81,25 +82,29 @@ class FeatureFactory(Factory):
             confounds_action = "select"
 
             condition_files = collect_events(database, source_file)
-
-            if isinstance(condition_files, str):
-                condition_file_paths = [condition_files]
-            elif isinstance(condition_files, tuple):
-                condition_files = list(condition_files)
-
-                condition_file_paths, _ = zip(*condition_files)
-                condition_file_paths = list(condition_file_paths)
-            else:  # we did not find any condition files
+            if (
+                condition_files is None or len(condition_files) == 0
+            ):  # we did not find any condition files
                 logger.warning(
                     f'Skipping feature "{feature.name}" for "{source_file}" '
                     "because no event files could be found"
                 )
                 return
 
+            condition_file_paths = []
+            for condition_file in condition_files:
+                if isinstance(condition_file, tuple):
+                    condition_file_paths.append(condition_file[0])
+                else:
+                    condition_file_paths.append(condition_file)
+
             raw_sources = [*raw_sources, *condition_file_paths]
 
             condition_units = None
-            condition_units_set = database.metadatavalset("units", condition_file_paths)
+            condition_units_set: set = {
+                database.metadata(condition_file_path, "units")
+                for condition_file_path in condition_file_paths
+            }
             if condition_units_set is not None:
                 if len(condition_units_set) == 1:
                     (condition_units,) = condition_units_set

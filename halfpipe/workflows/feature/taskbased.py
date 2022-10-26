@@ -5,7 +5,6 @@
 import os
 from math import isfinite
 from pathlib import Path
-from typing import Dict, List, Union
 
 import nipype.algorithms.modelgen as model
 import numpy as np
@@ -50,7 +49,7 @@ def _get_scan_start(vals) -> float:
 def init_taskbased_wf(
     workdir: Path | str,
     feature,
-    condition_files: Union[str, List],
+    condition_files: tuple[str | tuple[str, str], ...],
     condition_units,
     memcalc=MemoryCalculator.default(),
 ):
@@ -108,7 +107,7 @@ def init_taskbased_wf(
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["feature", "taskcontrast"],
-            imagekeys=["effect", "variance", "z", "dof", "mask"],
+            imagekeys=["effect", "variance", "sigmasquareds", "z", "dof", "mask"],
             metadatakeys=["sources"],
         ),
         name="make_resultdicts_b",
@@ -197,7 +196,7 @@ def init_taskbased_wf(
 
     # generate design from first level specification
     if feature.hrf == "dgamma":
-        bases: Dict[str, Dict] = dict(dgamma=dict())
+        bases: dict[str, dict] = dict(dgamma=dict())
     elif feature.hrf == "dgamma_with_derivs":
         bases = dict(dgamma=dict(derivs=True))
     elif feature.hrf == "flobs":
@@ -271,6 +270,9 @@ def init_taskbased_wf(
 
     workflow.connect(modelestimate, "copes", make_resultdicts_b, "effect")
     workflow.connect(modelestimate, "varcopes", make_resultdicts_b, "variance")
+    workflow.connect(
+        modelestimate, "sigmasquareds", make_resultdicts_b, "sigmasquareds"
+    )
     workflow.connect(modelestimate, "zstats", make_resultdicts_b, "z")
     workflow.connect(makedofvolume, "out_file", make_resultdicts_b, "dof")
 

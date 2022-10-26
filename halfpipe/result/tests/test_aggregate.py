@@ -6,9 +6,10 @@ from math import isclose
 from typing import Mapping
 
 import numpy as np
+import pytest
 
-from ..aggregate import aggregate, summarize
-from ..base import Categorical, Continuous
+from ..aggregate import aggregate_results, summarize
+from ..variables import Categorical, Continuous
 
 
 def test_summarize():
@@ -116,7 +117,7 @@ def test_aggregate_resultdicts():
         ),
     )
 
-    aggregated, _ = aggregate([result_a, result_b, result_c], across_key="sub")
+    aggregated, _ = aggregate_results([result_a, result_b, result_c], across_key="sub")
     (result,) = aggregated
 
     subjects = result["tags"]["sub"]
@@ -156,9 +157,7 @@ def test_aggregate_resultdicts_heterogenous():
     result_a = dict(
         tags=dict(sub="a", task="x", model="aggregateAcrossRuns"),
         images=dict(stat="a"),
-        vals=dict(
-            dummy_scans=1,
-        ),
+        vals=dict(dummy_scans=1),
         metadata=dict(
             setting=dict(
                 ica_aroma=False,
@@ -168,9 +167,7 @@ def test_aggregate_resultdicts_heterogenous():
     result_b = dict(
         tags=dict(sub="b", task="x", model="aggregateAcrossRuns"),
         images=dict(stat="b"),
-        vals=dict(
-            dummy_scans=1,
-        ),
+        vals=dict(dummy_scans=1),
         metadata=dict(
             setting=dict(
                 ica_aroma=False,
@@ -190,8 +187,51 @@ def test_aggregate_resultdicts_heterogenous():
         ),
     )
 
-    aggregated, _ = aggregate([result_a, result_b, result_c], across_key="sub")
+    aggregated, _ = aggregate_results([result_a, result_b, result_c], across_key="sub")
     (result,) = aggregated
 
     subjects = result["tags"]["sub"]
     assert len(subjects) == 3
+
+
+@pytest.mark.timeout(4)
+def test_aggregate_many():
+    results = list()
+
+    n = 32
+
+    for i in range(1, n + 1):
+        results.append(
+            dict(
+                tags=dict(sub=f"{i:02d}", task="x", run="01"),
+                images=dict(stat=f"sub-{i:02d}_x.nii.gz"),
+                vals=dict(dummy_scans=1),
+                metadata=dict(),
+            )
+        )
+
+    for i in range(1, n + 1):
+        for j in range(1, 4):
+            tags: dict[str, str | list[str]] = dict(
+                sub=f"{i:02d}", task="y", run=f"{j:02d}"
+            )
+
+            if j == 1:  # make heterogenous
+                tags["model"] = "aggregateAcrossDirs"
+            if j in [2, 3]:
+                tags["acq"] = "extra"
+            if j == 3:
+                tags["something"] = "else"
+
+            results.append(
+                dict(
+                    tags=tags,
+                    images=dict(stat=f"sub-{i:02d}_run-{j:02d}_y.nii.gz"),
+                    vals=dict(dummy_scans=1),
+                    metadata=dict(),
+                )
+            )
+
+    aggregated, non_aggregated = aggregate_results(results, across_key="run")
+    assert len(aggregated) == n
+    assert len(non_aggregated) == n

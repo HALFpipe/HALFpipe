@@ -2,15 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from copy import deepcopy
 from itertools import chain, combinations
 from typing import List, Optional
 
-from ...model import InferredTypeContrastSchema, MissingFilterSchema, TContrastSchema
+from ...model.contrast import InferredTypeContrastSchema, TContrastSchema
+from ...model.filter import MissingFilterSchema
 from ...utils.ops import ravel
 from ..components import (
     MultiNumberInputView,

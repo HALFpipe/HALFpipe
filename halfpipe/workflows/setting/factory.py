@@ -9,7 +9,7 @@ from typing import Callable, Hashable
 
 from nipype.pipeline import engine as pe
 
-from ...ingest.collect import collect_metadata
+from ...collect.metadata import collect_metadata
 from ...utils import logger
 from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest

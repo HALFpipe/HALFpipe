@@ -26,7 +26,7 @@ def _aroma_column_names(
     from halfpipe.utils.matrix import load_vector, ncol
 
     n_components = ncol(melodic_mix)
-    column_indices = load_vector(aroma_noise_ics)
+    column_indices: list[int] = list(map(int, load_vector(aroma_noise_ics)))
 
     leading_zeros = int(ceil(log10(n_components)))
     column_names = []

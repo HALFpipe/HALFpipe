@@ -5,13 +5,14 @@
 import re
 
 from ..factory import Factory
+from ..feature.factory import FeatureFactory
 from .base import init_model_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 class ModelFactory(Factory):
-    def __init__(self, ctx, feature_factory):
+    def __init__(self, ctx, feature_factory: FeatureFactory):
         super(ModelFactory, self).__init__(ctx)
 
         self.feature_factory = feature_factory

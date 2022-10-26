@@ -8,7 +8,7 @@ from pathlib import Path
 from .. import __version__
 from ..ingest.database import Database
 from ..logging import logging_context
-from ..model.spec import Spec, SpecSchema, loadspec, savespec
+from ..model.spec import Spec, SpecSchema, load_spec, save_spec
 from ..utils import logger
 from ..workdir import init_workdir
 from .components import (
@@ -58,7 +58,7 @@ class UseExistingSpecStep(Step):
 
     def setup(self, ctx):
         self.is_first_run = True
-        self.existing_spec = loadspec(ctx.workdir, logger=logger)
+        self.existing_spec = load_spec(workdir=ctx.workdir, logger=logger)
         self.choice = None
         if self.existing_spec is not None:
             self._append_view(TextView("Found spec file in working directory"))
@@ -93,12 +93,14 @@ class UseExistingSpecStep(Step):
 
             choice_index = self.options.index(self.choice)
 
+            global_settings = self.existing_spec.global_settings
             files = self.existing_spec.files
             settings = self.existing_spec.settings
             features = self.existing_spec.features
             models = self.existing_spec.models
 
             if choice_index > 1:
+                ctx.spec.global_settings = global_settings
                 for fileobj in files:
                     ctx.put(fileobj)
             if choice_index > 2:
@@ -203,7 +205,7 @@ def init_spec_ui(workdir=None, debug=False):
         assert ctx.workdir is not None
         workdir = ctx.workdir
         if not ctx.use_existing_spec:
-            savespec(ctx.spec, workdir=ctx.workdir, logger=logger)
+            save_spec(ctx.spec, workdir=ctx.workdir, logger=logger)
     else:
         import sys
 

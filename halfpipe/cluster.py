@@ -12,40 +12,39 @@ from .utils import logger
 from .workflows.execgraph import filter_subjects
 
 shebang = """#!/bin/bash
-#
-#
+
 """
 
 cluster_configs = dict(
     slurm="""#SBATCH --job-name=halfpipe
 #SBATCH --output=halfpipe.log.txt
-#
-#SBATCH --time=24:00:00
+
+#SBATCH --time=1-0
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={n_cpus:d}
 #SBATCH --mem={mem_mb:d}M
-#
+
 #SBATCH --array=1-{n_chunks:d}
 """,
     torque="""#PBS -N halfpipe
 #PBS -j oe
 #PBS -o halfpipe.log.txt
-#
+
 #PBS -l nodes=1:ppn={n_cpus:d}
 #PBS -l walltime=24:00:00
 #PBS -l mem={mem_mb:d}mb
-#
+
 #PBS -J 1-{n_chunks:d}
 """,
     sge="""#$ -N halfpipe
 #$ -j y
 #$ -o halfpipe.log.txt
 #$ -cwd
-#
+
 #$ -pe smp {n_cpus:d}
 #$ -l h_rt=24:0:0
-#$ -l mem={mem_mb:d}M
-#
+#$ -l h_vmem={mem_mb:d}M
+
 #$ -t 1-{n_chunks:d}
 """,
 )
@@ -67,14 +66,14 @@ singularity run \\
 --workdir {cwd} \\
 --only-run \\
 --uuid {uuid_str} \\
+--subject-list {subject_list} \\
 --subject-chunks \\
 --only-chunk-index ${{{array_index_variable}}} \\
 --nipype-n-procs 2 {extra_args}
-
 """
 
 
-def create_example_script(workdir, graphs: Dict[str, Any], opts):
+def make_script(workdir: Path, graphs: Dict[str, Any], opts):
     first_workflow = next(iter(graphs.values()))
     uuid = first_workflow.uuid
 
@@ -134,8 +133,18 @@ def create_example_script(workdir, graphs: Dict[str, Any], opts):
         bind_args="",
     )
 
-    if opts.fs_root is not None and opts.fs_root != "/":
-        data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
+    if opts.fs_root is not None:
+        if opts.fs_root == "/":
+            pass  # TODO
+        else:
+            data["bind_args"] = f"\\\n--bind /:{opts.fs_root}"
+
+    subject_list = workdir / "subject-list.txt"
+    data["subject_list"] = str(subject_list)
+    with open(subject_list, "wt") as file_handle:
+        for subject in subjects:
+            file_handle.write(subject)
+            file_handle.write("\n")
 
     stpaths = []
     for cluster_type, cluster_config in cluster_configs.items():

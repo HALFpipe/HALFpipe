@@ -11,7 +11,7 @@ from fmriprep.cli.workflow import build_workflow
 from nipype.interfaces.base.traits_extension import isdefined
 from nipype.pipeline import engine as pe
 
-from ..ingest.collect import collect_fieldmaps
+from ..collect.fmap import collect_fieldmaps
 from ..utils import inflect_engine as p
 from ..utils import logger
 from ..utils.copy import deepcopyfactory

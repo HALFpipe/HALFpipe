@@ -2,16 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from marshmallow import RAISE, Schema, fields, post_dump
+from marshmallow import Schema, fields, post_dump
+from marshmallow.utils import EXCLUDE
 
 
 class BaseTagsSchema(Schema):
     class Meta:
-        unknown = RAISE
-
-    # @post_load
-    # def make_object(self, data, **kwargs):
-    #     return Tags(**data)
+        unknown = EXCLUDE
 
     @post_dump(pass_many=False)
     def remove_none_tags(self, data, many):

@@ -88,13 +88,16 @@ class NiftiheaderMetadataLoader:
                 nifti_slice_duration = header.get_slice_duration()
                 if n_slices is not None and repetition_time is not None:
                     slice_duration = repetition_time / n_slices
+
                     if (
-                        nifti_slice_duration * n_slices
-                        < repetition_time - 2 * slice_duration
-                    ):  # fudge factor
+                        nifti_slice_duration > slice_duration  # too long
+                        or nifti_slice_duration * n_slices
+                        < repetition_time
+                        - 2 * slice_duration  # too short with fudge factor
+                    ):
                         logger.info(
-                            f"Image file header entry slice_duration ({nifti_slice_duration:f} ms) is very "
-                            f"different from repetition_time / n_slices ({slice_duration:f} ms) "
+                            f"Image file header entry slice_duration ({nifti_slice_duration:f} ms) is "
+                            f"inconsistent with repetition_time / n_slices ({slice_duration:f} ms) "
                             f'for file "{fileobj.path}"'
                         )
                         header.set_slice_duration(slice_duration)

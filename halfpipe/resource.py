@@ -14,7 +14,7 @@ online_resources: dict[str, str] = dict(
     [
         (
             "index.html",
-            "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.0/index.html",
+            "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.1/index.html",
         ),
         (
             "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
@@ -116,12 +116,15 @@ def get(file_name: str | Path) -> str:
 
 
 if __name__ == "__main__":
-    from templateflow import api
+    from templateflow import api as tfapi
+
+    tfapi.get("OASIS30ANTs")
 
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
-        paths = api.get(space, atlas=None, resolution=[1, 2])
+        paths = tfapi.get(space, atlas=None, resolution=(1, 2))
         assert isinstance(paths, list)
         assert len(paths) > 0
+
     for file_name in online_resources.keys():
         get(file_name)

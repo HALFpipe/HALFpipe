@@ -6,38 +6,15 @@ import os
 
 import pytest
 
-from ..design import group_design
 from ..fit import fit
 
 
 @pytest.mark.slow
 @pytest.mark.timeout(1200)
-def test_fit(tmp_path, wakemandg_hensonrn_downsampled):
+def test_fit(tmp_path, wakemandg_hensonrn):
     os.chdir(str(tmp_path))
 
-    # prepare
-    data = wakemandg_hensonrn_downsampled
-
-    cope_files = data["stat-effect_statmap"]
-    var_cope_files = data["stat-variance_statmap"]
-    mask_files = data["mask"]
-
-    subjects = data["subjects"]
-    spreadsheet_file = data["spreadsheet"]
-
-    regressors, contrasts, _, _ = group_design(
-        subjects=subjects,
-        spreadsheet=spreadsheet_file,
-        variabledicts=[
-            {"name": "Sub", "type": "id"},
-            {"name": "Age", "type": "continuous"},
-            {"name": "ReactionTime", "type": "categorical"},
-        ],
-        contrastdicts=[
-            {"variable": ["Age"], "type": "infer"},
-            {"variable": ["ReactionTime"], "type": "infer"},
-        ],
-    )
+    cope_files, var_cope_files, mask_files, regressors, contrasts = wakemandg_hensonrn
 
     result = fit(
         cope_files=cope_files,

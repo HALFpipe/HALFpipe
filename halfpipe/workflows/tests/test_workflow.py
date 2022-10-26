@@ -2,7 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
+import shutil
 import tarfile
 from math import inf
 from multiprocessing import cpu_count
@@ -19,8 +21,10 @@ from templateflow.api import get as get_template
 from ...cli.parser import build_parser
 from ...cli.run import run_stage_run
 from ...ingest.database import Database
-from ...model import FeatureSchema, FileSchema, SettingSchema
-from ...model.spec import Spec, SpecSchema, savespec
+from ...model.feature import FeatureSchema
+from ...model.file.schema import FileSchema
+from ...model.setting import SettingSchema
+from ...model.spec import Spec, SpecSchema, save_spec
 from ...resource import get as get_resource
 from ...utils.image import nvol
 from ..base import init_workflow
@@ -274,7 +278,7 @@ def test_empty(tmp_path, mock_spec):
     mock_spec.settings = list()
     mock_spec.features = list()
 
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     with pytest.raises(RuntimeError):
         init_workflow(tmp_path)
@@ -284,7 +288,7 @@ def test_empty(tmp_path, mock_spec):
 def test_with_reconall(tmp_path, mock_spec):
     mock_spec.global_settings.update(dict(run_reconall=True))
 
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
 
@@ -297,7 +301,7 @@ def test_with_reconall(tmp_path, mock_spec):
 @pytest.mark.slow
 @pytest.mark.timeout(3 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
-    savespec(mock_spec, workdir=tmp_path)
+    save_spec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = cpu_count()
 
@@ -316,3 +320,47 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts.debug = True
 
     run_stage_run(opts)
+
+
+def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
+    bids_path = tmp_path / "bids"
+    shutil.copytree(bids_data, bids_path)
+
+    # delete extra files
+    fmap_path = bids_path / "sub-1012" / "fmap"
+    files = [
+        "sub-1012_acq-3mm_phasediff.nii.gz",
+        "sub-1012_acq-3mm_phasediff.json",
+        "sub-1012_acq-3mm_magnitude2.nii.gz",
+        "sub-1012_acq-3mm_magnitude2.json",
+        "sub-1012_acq-3mm_magnitude1.nii.gz",
+        "sub-1012_acq-3mm_magnitude1.json",
+    ]
+    for i in files:
+        Path(fmap_path / i).unlink()
+
+    # copy image file
+    shutil.copy(
+        os.path.join(fmap_path, "sub-1012_dir-PA_epi.nii.gz"),
+        os.path.join(fmap_path, "sub-1012_dir-AP_epi.nii.gz"),
+    )
+
+    # copy metadata
+    with open(fmap_path / "sub-1012_dir-PA_epi.json", "r") as json_file:
+        data = json.load(json_file)
+    data["PhaseEncodingDirection"] = "j-"
+    with open(fmap_path / "sub-1012_dir-AP_epi.json", "w") as json_file:
+        json.dump(data, json_file)
+
+    # start testing
+    workdir = tmp_path / "workdir"
+    save_spec(mock_spec, workdir=workdir)
+
+    config.nipype.omp_nthreads = cpu_count()
+
+    workflow = init_workflow(workdir)
+
+    graphs = init_execgraph(workdir, workflow)
+    graph = next(iter(graphs.values()))
+
+    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)

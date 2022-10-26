@@ -182,7 +182,7 @@ class FLAME1(ModelAlgorithm):
 
         try:
             mn, inverse_covariance = flame_stage1_onvoxel(y, z, s)
-        except np.linalg.LinAlgError:
+        except (np.linalg.LinAlgError, ValueError, SystemError):
             return None
 
         voxel_result: dict[str, dict[tuple[int, int, int], Any]] = defaultdict(dict)
@@ -191,7 +191,7 @@ class FLAME1(ModelAlgorithm):
             try:
                 r = flame1_contrast(mn, inverse_covariance, npts, cmat)
                 voxel_result[name][coordinate] = r
-            except np.linalg.LinAlgError:
+            except (np.linalg.LinAlgError, SystemError):
                 continue
 
         return voxel_result

@@ -10,12 +10,14 @@ import pytest
 from nipype.interfaces import ants
 from templateflow.api import get as get_template
 
+from ...design import group_design
+from ...model.variable import VariableSchema
 from ...resource import get as getresource
 from ...tests.resource import setup as setuptestresources
 
 
 @pytest.fixture(scope="package")
-def wakemandg_hensonrn(tmp_path_factory):
+def wakemandg_hensonrn_raw(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn")
 
     os.chdir(str(tmp_path))
@@ -66,7 +68,7 @@ def mni_downsampled(tmp_path_factory):
 
 @pytest.fixture(scope="package")
 def wakemandg_hensonrn_downsampled(
-    tmp_path_factory, wakemandg_hensonrn, mni_downsampled
+    tmp_path_factory, wakemandg_hensonrn_raw, mni_downsampled
 ):
     tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn_downsampled")
 
@@ -87,10 +89,43 @@ def wakemandg_hensonrn_downsampled(
 
         return result.outputs.output_image
 
-    for k, v in wakemandg_hensonrn.items():
+    for k, v in wakemandg_hensonrn_raw.items():
         if isinstance(v, list):
             data[k] = [_downsample(f) if Path(f).exists() else f for f in v]
         else:
             data[k] = v
 
     return data
+
+
+@pytest.fixture(scope="package")
+def wakemandg_hensonrn(wakemandg_hensonrn_downsampled):
+    data = wakemandg_hensonrn_downsampled
+
+    cope_files = data["stat-effect_statmap"]
+    var_cope_files = data["stat-variance_statmap"]
+    mask_files = data["mask"]
+
+    subjects = data["subjects"]
+    spreadsheet_file = data["spreadsheet"]
+
+    variable_schema = VariableSchema()
+    variables = [
+        variable_schema.load(dict(name="Sub", type="id")),
+        variable_schema.load(dict(name="Age", type="continuous")),
+        variable_schema.load(
+            dict(name="ReactionTime", type="categorical", levels=["1", "2", "3", "4"])
+        ),
+    ]
+
+    regressors, contrasts, _, _ = group_design(
+        subjects=subjects,
+        spreadsheet=spreadsheet_file,
+        variables=variables,
+        contrasts=[
+            {"variable": ["Age"], "type": "infer"},
+            {"variable": ["ReactionTime"], "type": "infer"},
+        ],
+    )
+
+    return (cope_files, var_cope_files, mask_files, regressors, contrasts)

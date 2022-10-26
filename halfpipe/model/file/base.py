@@ -2,25 +2,29 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from typing import Dict, Optional
 
 from marshmallow import RAISE, Schema, fields, post_load
 
 
 class File:
-    def __init__(self, path, datatype, suffix=None, extension=None, **kwargs):
+    def __init__(
+        self,
+        path: str,
+        datatype: str,
+        suffix: str | None = None,
+        extension: str | None = None,
+        **kwargs,
+    ):
         self.path = path
         self.datatype = datatype
         self.suffix = suffix
         self.extension = extension
 
-        self.tags = dict()
+        self.tags: dict[str, str] = dict()
         self.intended_for: Optional[Dict] = None
 
+        self.metadata = kwargs.get("metadata", dict())
         for k, v in kwargs.items():
             setattr(self, k, v)
 

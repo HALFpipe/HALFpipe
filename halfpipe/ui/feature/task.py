@@ -5,18 +5,17 @@
 from abc import abstractmethod
 from typing import List, Optional, Type
 
-from ...ingest.collect import collect_events
-from ...ingest.condition import parse_condition_file
+from ...collect.events import collect_events
+from ...ingest.events import ConditionFile
 from ...ingest.glob import get_entities_in_path
-from ...model import (
-    File,
+from ...model.contrast import TContrastSchema
+from ...model.feature import Feature
+from ...model.file.base import File
+from ...model.file.func import (
     MatEventsFileSchema,
-    TContrastSchema,
     TsvEventsFileSchema,
     TxtEventsFileSchema,
 )
-from ...model.feature import Feature
-from ...utils.ops import ravel
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView,
@@ -40,64 +39,43 @@ def format_variable(variable):
     return f'"{variable}"'
 
 
-def find_bold_filepaths(ctx):
-    bold_filepaths = ctx.database.get(datatype="func", suffix="bold")
+def find_bold_file_paths(ctx):
+    bold_file_paths = ctx.database.get(datatype="func", suffix="bold")
 
-    if bold_filepaths is None:
+    if bold_file_paths is None:
         raise ValueError("No BOLD files in database")
 
     filters = ctx.spec.settings[-1].get("filters")
-    bold_filepaths = set(bold_filepaths)
+    bold_file_paths = set(bold_file_paths)
 
     if filters is not None:
-        bold_filepaths = ctx.database.applyfilters(bold_filepaths, filters)
+        bold_file_paths = ctx.database.applyfilters(bold_file_paths, filters)
 
-    return bold_filepaths
-
-
-def find_and_parse_condition_files(ctx):
-    """
-    returns generator for tuple event file paths, conditions, onsets, durations
-    """
-    bold_filepaths = find_bold_filepaths(ctx)
-
-    eventfile_dict = dict()
-    for filepath in bold_filepaths:
-        events = collect_events(ctx.database, filepath)
-        if events is not None:
-            eventfile_dict[filepath] = events
-
-    eventfile_set = set(eventfile_dict.values())
-    if len(eventfile_set) == 0:
-        return
-
-    for in_any in eventfile_set:
-        if isinstance(in_any, str):
-            in_any = ctx.database.fileobj(in_any)
-        yield (in_any, *parse_condition_file(in_any=in_any))
+    return bold_file_paths
 
 
 def get_conditions(ctx):
-    ctx.spec.features[-1].conditions = []  # create attribute
+    bold_file_paths = find_bold_file_paths(ctx)
 
-    out_list = list(find_and_parse_condition_files(ctx))
-    if out_list is None or len(out_list) == 0:
-        return
+    conditions: list[str] = list()
+    seen = set()
+    for bold_file_path in bold_file_paths:
+        event_file_paths = collect_events(ctx.database, bold_file_path)
 
-    _, conditions_list, _, _ = zip(*out_list)
+        if event_file_paths is None:
+            continue
 
-    conditionssets = [set(conditions) for conditions in conditions_list]
-    conditions = set.union(*conditionssets)
+        if event_file_paths in seen:
+            continue
 
-    if len(conditions) == 0:
-        return
+        cf = ConditionFile(data=event_file_paths)
+        for condition in cf.conditions:  # maintain order
+            if condition not in conditions:
+                conditions.append(condition)
 
-    ordered_conditions = []  # keep original order
-    for c in ravel(conditions_list):
-        if c in conditions and c not in ordered_conditions:
-            ordered_conditions.append(c)
+        seen.add(event_file_paths)
 
-    ctx.spec.features[-1].conditions = ordered_conditions
+    ctx.spec.features[-1].conditions = conditions
 
 
 class ConfirmInconsistentStep(YesNoStep):
@@ -350,7 +328,7 @@ class CopyContrastsStep(Step):
 
 
 class ConditionsSelectStep(Step):
-    add_file_str = "Add event file"
+    add_file_str = "Load another event file"
 
     def setup(self, ctx):
         self.result = None
@@ -419,8 +397,8 @@ class EventsStep(FilePatternStep):
     next_step_type: Type[Step] = ConditionsSelectStep
 
     def setup(self, ctx):
-        bold_filepaths = find_bold_filepaths(ctx)
-        self.taskset = ctx.database.tagvalset("task", filepaths=bold_filepaths)
+        bold_file_paths = find_bold_file_paths(ctx)
+        self.taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
         if len(self.taskset) > 1:
             self.required_in_path_entities = ["task"]
         super(EventsStep, self).setup(ctx)

@@ -5,15 +5,14 @@
 from itertools import product
 from operator import attrgetter
 
-from ...model import (
+from ...model.file.fmap import (
     BaseFmapFileSchema,
-    BoldFileSchema,
     EPIFmapFileSchema,
     PhaseDiffFmapFileSchema,
     PhaseFmapFileSchema,
-    entities,
-    entity_longnames,
 )
+from ...model.file.func import BoldFileSchema
+from ...model.tags import entities, entity_longnames
 from ..components import MultiSingleChoiceInputView, SpacerView, TextView
 from ..feature import FeaturesStep
 from ..metadata import CheckMetadataStep
@@ -58,7 +57,7 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
     def _should_skip(self, ctx):
         filepaths = [*ctx.database.get(**filedict)]
         suffixvalset = ctx.database.tagvalset("suffix", filepaths=filepaths)
-        return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff", "fieldmap"])
+        return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff"])
 
 
 class AcqToTaskMappingStep(Step):

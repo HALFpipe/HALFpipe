@@ -4,7 +4,7 @@
 
 from typing import Optional, Type
 
-from ...model import BoldFileSchema
+from ...model.file.func import BoldFileSchema
 from ..components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     SpacerView,

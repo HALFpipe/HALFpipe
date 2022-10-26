@@ -178,13 +178,6 @@ class Database:
 
         return res
 
-    def matches(self, filepath, **filters):
-        for entity, querytagval in filters.items():
-            tagval = self.tagval(filepath, entity)
-            if tagval != querytagval:
-                return False
-        return True
-
     def associations(self, filepath, **filters):
         res = self.get(**filters)
         for entity in reversed(entities):  # from high to low priority
@@ -242,16 +235,6 @@ class Database:
             ),
         )
 
-    def tmplstr(self, filepaths):
-        if isinstance(filepaths, str):
-            file_obj = self.fileobj(filepaths)
-            assert file_obj is not None
-            return file_obj.tmplstr
-        tmplstrset = set(self.tmplstr(filepath) for filepath in filepaths)
-        if len(tmplstrset) == 1:
-            (tmplstr,) = tmplstrset
-            return tmplstr
-
     def fillmetadata(self, key, filepaths):
         found = False
         found_all = True
@@ -268,10 +251,3 @@ class Database:
         if fileobj is not None and hasattr(fileobj, "metadata"):
             if fileobj.metadata is not None and isinstance(fileobj.metadata, dict):
                 return fileobj.metadata.get(key)
-
-    def metadatavalset(self, key, filepaths):
-        valset = set()
-        for filepath in filepaths:
-            valset.add(self.metadata(filepath, key))
-
-        return valset
