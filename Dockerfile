@@ -40,11 +40,7 @@ RUN python /tmp/resource.py
 
 # Add coinstac server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
-RUN curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh \
-  && bash nodesource_setup.sh \
-  && apt-get update \
-  && apt --no-install-recommends -y install nodejs \
-  && ln -s /usr/local/bin/node /usr/local/bin/nodejs
+RUN conda install nodejs -y
 
 COPY . /halfpipe/
 RUN cd /halfpipe && \
