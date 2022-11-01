@@ -22,6 +22,7 @@ class Model:
     def __init__(self, name, type, **kwargs):
         self.name = name
         self.type = type
+        self.inputs = list()
         self.filters = list()
         for k, v in kwargs.items():
             setattr(self, k, v)

@@ -74,12 +74,12 @@ class GroupLevelCommand(Command):
         argument_parser.add_argument(
             "--spreadsheet",
             type=str,
-            required=True,
+            required=False,
         )
         argument_parser.add_argument(
             "--id-column",
             type=str,
-            required=True,
+            required=False,
         )
         argument_parser.add_argument(
             "--categorical-variable",
@@ -125,126 +125,42 @@ class GroupLevelCommand(Command):
             nargs="+",
             action="extend",
         )
+        argument_parser.add_argument(
+            "--aggregate",
+            type=str,
+            metavar="across",
+            nargs="+",
+            action="extend",
+        )
 
     def run(self, arguments: Namespace):
+        from collections import defaultdict
         from copy import deepcopy
         from pathlib import Path
         from tempfile import TemporaryDirectory
 
         from ....collect.derivatives import collect_derivatives
-        from ....design import group_design
-        from ....model.contrast import ModelContrastSchema
-        from ....model.filter import FilterSchema
-        from ....model.variable import VariableSchema
+        from ....design import group_design, intercept_only_design
         from ....result.aggregate import aggregate_results
         from ....result.bids.images import save_images
         from ....result.filter import filter_results
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
         from ....utils import logger
+        from ....utils.format import format_like_bids
         from ....utils.future import chdir
+        from .parser import parse_group_level
 
         output_directory = Path(arguments.workdir)
-
-        variable_schema = VariableSchema()
-        variables: list[dict] = [
-            variable_schema.load(
-                dict(
-                    type="id",
-                    name=arguments.id_column,
-                )
-            )
-        ]
-
-        contrast_schema = ModelContrastSchema()
-        contrasts: list[dict] = list()
-
-        filter_schema = FilterSchema()
-        filters: list[dict] = list()
-
-        if arguments.fd_mean_cutoff is not None:
-            filters.append(
-                filter_schema.load(
-                    dict(
-                        type="cutoff",
-                        action="exclude",
-                        field="fd_mean",
-                        cutoff=arguments.fd_mean_cutoff,
-                    )
-                )
-            )
-        if arguments.fd_perc_cutoff is not None:
-            filters.append(
-                filter_schema.load(
-                    dict(
-                        type="cutoff",
-                        action="exclude",
-                        field="fd_perc",
-                        cutoff=arguments.fd_perc_cutoff,
-                    )
-                )
-            )
-
-        continuous_variable = arguments.continuous_variable
-        if continuous_variable is not None:
-            for name in continuous_variable:
-                variables.append(
-                    variable_schema.load(
-                        dict(
-                            type="continuous",
-                            name=name,
-                        )
-                    )
-                )
-                contrasts.append(
-                    contrast_schema.load(
-                        dict(
-                            type="infer",
-                            variable=[name],
-                        )
-                    )
-                )
-
-        categorical_variable = arguments.categorical_variable
-        if categorical_variable is not None:
-            for name, levels in zip(categorical_variable, arguments.levels):
-                variables.append(
-                    variable_schema.load(
-                        dict(
-                            type="categorical",
-                            name=name,
-                            levels=levels,
-                        )
-                    )
-                )
-                contrasts.append(
-                    contrast_schema.load(
-                        dict(
-                            type="infer",
-                            variable=[name],
-                        )
-                    )
-                )
-
-        missing_value_strategy = arguments.missing_value_strategy
-        if missing_value_strategy == "listwise-deletion":
-            for variable in variables:
-                name = variable["name"]
-                filters.append(
-                    filter_schema.load(
-                        dict(
-                            type="missing",
-                            action="exclude",
-                            variable=name,
-                        )
-                    )
-                )
 
         results = list()
         for input_directory in arguments.input_directory:
             results.extend(collect_derivatives(Path(input_directory)))
 
-        spreadsheet = arguments.spreadsheet
+        spreadsheet, variables, contrasts, filters, results = parse_group_level(
+            arguments, results
+        )
+
         results = filter_results(
             results,
             filter_dicts=filters,
@@ -264,38 +180,45 @@ class GroupLevelCommand(Command):
                     if tags[key] == from_value:
                         tags[key] = to_value
 
-        include = arguments.include
-        if include is not None:
-            for key, value in include:
-                filtered_results = list()
-                for result in results:
-                    tags = result["tags"]
-                    if key not in tags:
-                        continue
-                    if tags[key] == value:
-                        filtered_results.append(result)
-                results = filtered_results
+        # `--include`
+        include = list()
+        if arguments.include is not None:
+            include.extend(arguments.include)
 
-        exclude = arguments.exclude
-        if exclude is not None:
+        include_groups: dict[str, set[str]] = defaultdict(set)
+        for key, value in include:
+            include_groups[key].add(format_like_bids(value))
+        for key, values in include_groups.items():
             filtered_results = list()
             for result in results:
                 tags = result["tags"]
-
-                _include_flag = True
-
-                for key, value in exclude:
-                    if key not in tags:
-                        continue
-                    if tags[key] == value:
-                        _include_flag = False
-
-                if _include_flag:
+                if key not in tags:
+                    continue
+                if format_like_bids(tags[key]) in values:
                     filtered_results.append(result)
-                else:
-                    logger.info(f"Excluding {tags}")
             results = filtered_results
 
+        # `--exclude`
+        exclude: list[tuple[str, str]] = list()
+        if arguments.exclude is not None:
+            exclude.extend(arguments.exclude)
+
+        filtered_results = list()
+        for result in results:
+            tags = result["tags"]
+            _include_flag = True
+            for key, value in exclude:
+                if key not in tags:
+                    continue
+                if tags[key] == value:
+                    _include_flag = False
+            if _include_flag:
+                filtered_results.append(result)
+            else:
+                logger.info(f"Excluding {tags}")
+        results = filtered_results
+
+        # cross-subject processing
         results, _ = aggregate_results(results, "sub")
 
         aliases = dict(reho="effect", falff="effect", alff="effect")
@@ -331,12 +254,20 @@ class GroupLevelCommand(Command):
             var_cope_files = images.pop("variance")
             mask_files = images.pop("mask")
 
-            (regressor_list, contrast_list, _, contrast_names) = group_design(
-                spreadsheet,
-                contrasts,
-                variables,
-                subjects,
-            )
+            if spreadsheet is not None:
+                (regressor_list, contrast_list, _, contrast_names) = group_design(
+                    spreadsheet,
+                    contrasts,
+                    variables,
+                    subjects,
+                )
+            else:
+                (
+                    regressor_list,
+                    contrast_list,
+                    _,
+                    contrast_names,
+                ) = intercept_only_design(len(subjects))
 
             with TemporaryDirectory() as temporary_directory:
                 model_path = Path(temporary_directory)
