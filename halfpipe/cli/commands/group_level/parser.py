@@ -11,6 +11,7 @@ from ....model.filter import FilterSchema
 from ....model.model import Model
 from ....model.spec import Spec, load_spec
 from ....model.variable import VariableSchema
+from ....utils import logger
 from ....utils.format import format_like_bids
 
 variable_schema = VariableSchema()
@@ -51,12 +52,19 @@ def _parse_from_spec(
 
     model: Model | None = None
     for m in spec.models:
-        if m.name == model_name:
+        if m.across != "sub":
+            continue  # skip lower level models
+        if model_name is None or m.name == model_name:
             model = m
             break
 
     if model is None:
-        raise ValueError(f'Model "{model_name}" not found in "{workdir}"')
+        if model_name is not None:
+            raise ValueError(f'Model "{model_name}" not found')
+        else:
+            raise ValueError("Could not find a model to run")
+
+    logger.info(f'Loading model "{model.name}" from spec file')
 
     spreadsheet: Path | str | None = getattr(model, "spreadsheet", None)
     if spreadsheet is not None:

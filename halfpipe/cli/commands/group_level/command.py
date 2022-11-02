@@ -144,6 +144,7 @@ class GroupLevelCommand(Command):
         from ....result.aggregate import aggregate_results
         from ....result.bids.images import save_images
         from ....result.filter import filter_results
+        from ....stats.algorithms import algorithms as all_algorithms
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
         from ....utils import logger
@@ -232,8 +233,7 @@ class GroupLevelCommand(Command):
 
         algorithms = arguments.algorithm
         if algorithms is None:
-            logger.error("Specify algorithms to run with `--algorithm`")
-            return
+            algorithms = list(all_algorithms.keys())
 
         if len(results) == 0:
             logger.error("No inputs found")
