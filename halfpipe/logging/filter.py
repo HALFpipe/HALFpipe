@@ -47,6 +47,8 @@ pywarnings_to_hide: list[str] = [
     "divide by zero encountered in",
     # nitransforms
     "Reference space not set",
+    # statsmodels
+    "overflow encountered in",
 ]
 
 

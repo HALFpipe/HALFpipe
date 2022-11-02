@@ -148,9 +148,10 @@ def parse_args(args=None, namespace=None) -> Tuple:
 
         init_watchdog()
 
-    from fmriprep import config
+    if debug:
+        from fmriprep import config
 
-    config.execution.debug = ["all"] if debug else []
+        config.execution.debug = ["all"]
 
     verbose = opts.verbose
     if verbose:

@@ -9,7 +9,7 @@ from typing import ContextManager, Dict, Iterator, List, Optional, Tuple
 
 import nibabel as nib
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ..ingest.design import parse_design
 from ..utils.matrix import atleast_4d
@@ -118,7 +118,7 @@ def fit(
     # run
     voxel_results: Dict = defaultdict(lambda: defaultdict(dict))
     with cm:
-        for x in tqdm(it, unit="voxels"):
+        for x in tqdm(it, unit="voxels", desc="model fit"):
             if x is None:
                 continue
 

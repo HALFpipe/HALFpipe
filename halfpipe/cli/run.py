@@ -2,19 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-from glob import glob
-from math import ceil
+import logging
+from argparse import Namespace
 from pathlib import Path
-from pprint import pformat
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Mapping
 
-import networkx as nx
-import numpy as np
-
-from ..utils import logger
-from ..utils.path import resolve
-from ..utils.time import format_current_time
+logger = logging.getLogger("halfpipe")
 
 
 def run_stage_ui(opts):
@@ -70,6 +63,13 @@ def run_stage_workflow(opts):
 
 
 def run_stage_run(opts):
+    from math import ceil
+
+    import networkx as nx
+    import numpy as np
+
+    from ..utils.path import resolve
+
     workdir: Path = opts.workdir
 
     if opts.graphs is not None:
@@ -109,7 +109,7 @@ def run_stage_run(opts):
 
         nipype.config.enable_resource_monitor()
 
-    plugin_args: Dict[str, Union[Path, bool, float]] = dict(
+    plugin_args: dict[str, Path | bool | float] = dict(
         workdir=workdir,
         watchdog=opts.watchdog,
         stop_on_first_crash=opts.debug,
@@ -147,6 +147,8 @@ def run_stage_run(opts):
     else:
         raise ValueError(f'Unknown nipype_run_plugin "{runnername}"')
 
+    from pprint import pformat
+
     logger.debug(f"Using plugin arguments\n{pformat(plugin_args)}")
 
     from ..workflows.execgraph import filter_subjects
@@ -178,7 +180,7 @@ def run_stage_run(opts):
     elif opts.only_model_chunk:
         index_arrays = list()
 
-    chunks_to_run: List[nx.DiGraph] = list()
+    chunks_to_run: list[nx.DiGraph] = list()
     for index_array in index_arrays:
         graph_list = [graphs[subjects[i]] for i in index_array]
         chunks_to_run.append(
@@ -239,6 +241,10 @@ def run_stage_run(opts):
 
 
 def run(opts, should_run):
+    import os
+
+    from ..utils.path import resolve
+
     if not opts.verbose:
         logger.log(
             25,
@@ -265,6 +271,8 @@ def run(opts, should_run):
         if fs_license_file.is_file():
             os.environ["FS_LICENSE"] = str(fs_license_file)
     else:
+        from glob import glob
+
         license_files = list(glob(str(Path(opts.workdir) / "*license*")))
 
         if len(license_files) > 0:
@@ -291,10 +299,11 @@ def run(opts, should_run):
 
 def main():
     # make these variables available in top scope
-    opts = None
+    opts: Namespace | None = None
     profiler_instance = None
-    debug = False
-    profile = False
+
+    debug: bool = False
+    profile: bool = False
 
     try:
         from ..logging.base import setup_context as setup_logging_context
@@ -323,6 +332,7 @@ def main():
 
         action = getattr(opts, "action", None)
         if action is not None:
+            logger.info(f"Running action {action}")
             action(opts)
         else:
             run(opts, should_run)
@@ -337,11 +347,17 @@ def main():
         if profile and profiler_instance is not None:
             profiler_instance.disable()
             if opts is not None:
+                from ..utils.time import format_current_time
+
                 profiler_instance.dump_stats(
                     Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
                 )
 
+        from ..logging.base import logging_context
         from ..logging.base import teardown as teardown_logging
+
+        # ensure queued messages get printed
+        logging_context.enable_print()
 
         teardown_logging()
 

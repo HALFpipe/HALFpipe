@@ -2,14 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from pathlib import Path
-
-import numpy as np
-import pandas as pd
 from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, traits
 
-from ...design import group_design, intercept_only_design
-from ...ingest.design import parse_design
+from ...design import group_design, intercept_only_design, make_design_tsv
 
 
 class GroupDesignInputSpec(TraitedSpec):
@@ -120,35 +115,8 @@ class MakeDesignTsv(SimpleInterface):
     output_spec = MakeDesignTsvOutputSpec
 
     def _run_interface(self, runtime):
-        design_matrix, contrast_matrices = parse_design(
-            self.inputs.regressors, self.inputs.contrasts
-        )
-
-        design_matrix.index = self.inputs.row_index
-
-        self._results["design_tsv"] = Path.cwd() / "design.tsv"
-        design_matrix.to_csv(
-            self._results["design_tsv"], sep="\t", index=True, na_rep="n/a", header=True
-        )
-
-        index: list[str] = list()
-        for contrast_name, contrast_matrix in contrast_matrices.items():
-            for _ in range(contrast_matrix.shape[0]):
-                index.append(contrast_name)
-
-        contrast_data_frame = pd.DataFrame(
-            np.concatenate(list(contrast_matrices.values()), axis=0),
-            index=index,
-            columns=design_matrix.columns,
-        )
-
-        self._results["contrasts_tsv"] = Path.cwd() / "contrasts.tsv"
-        contrast_data_frame.to_csv(
-            self._results["contrasts_tsv"],
-            sep="\t",
-            index=True,
-            na_rep="n/a",
-            header=True,
+        self._results["design_tsv"], self._results["contrasts_tsv"] = make_design_tsv(
+            self.inputs.regressors, self.inputs.contrasts, self.inputs.row_index
         )
 
         return runtime
