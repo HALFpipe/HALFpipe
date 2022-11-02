@@ -17,6 +17,7 @@ from patsy.desc import (  # separate imports as to not confuse type checker
 from patsy.highlevel import dmatrix
 from patsy.user_util import LookupFactor
 
+from .ingest.design import parse_design
 from .ingest.spreadsheet import read_spreadsheet
 from .utils import logger
 
@@ -204,8 +205,9 @@ def group_design(
     rhs = _generate_rhs(contrasts, columns_var_gt_0)
 
     # specify patsy design matrix
-    modelDesc = ModelDesc(lhs, rhs)
-    dmat = dmatrix(modelDesc, dataframe, return_type="dataframe", NA_action="raise")
+    model_desc = ModelDesc(lhs, rhs)
+    dmat = dmatrix(model_desc, dataframe, return_type="dataframe", NA_action="raise")
+    assert isinstance(dmat, pd.DataFrame)
     _check_multicollinearity(dmat)
 
     # prepare lsmeans
@@ -217,6 +219,7 @@ def group_design(
         list(product(*unique_values_categorical)), columns=dataframe.columns
     )
     reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
+    assert isinstance(reference_dmat, pd.DataFrame)
 
     # data frame to store contrasts
     contrast_matrices: list[tuple[str, pd.DataFrame]] = []
@@ -279,8 +282,43 @@ def group_design(
         return intercept_only_design(len(subjects))
 
     regressor_list = dmat.to_dict(orient="list", into=OrderedDict)
+    assert isinstance(regressor_list, dict)
     contrast_list, contrast_numbers, contrast_names = _make_contrasts_list(
         contrast_matrices
     )
 
     return regressor_list, contrast_list, contrast_numbers, contrast_names
+
+
+def make_design_tsv(
+    regressor_list: dict[str, list[float]],
+    contrast_list: list[tuple],
+    row_index: list[str],
+) -> tuple[Path, Path]:
+    design_matrix, contrast_matrices = parse_design(regressor_list, contrast_list)
+    design_matrix.index = pd.Index(row_index)
+
+    design_tsv = Path.cwd() / "design.tsv"
+    design_matrix.to_csv(design_tsv, sep="\t", index=True, na_rep="n/a", header=True)
+
+    index: list[str] = list()
+    for contrast_name, contrast_matrix in contrast_matrices.items():
+        for _ in range(contrast_matrix.shape[0]):
+            index.append(contrast_name)
+
+    contrast_data_frame = pd.DataFrame(
+        np.concatenate(list(contrast_matrices.values()), axis=0),
+        index=index,
+        columns=design_matrix.columns,
+    )
+
+    contrast_tsv = Path.cwd() / "contrasts.tsv"
+    contrast_data_frame.to_csv(
+        contrast_tsv,
+        sep="\t",
+        index=True,
+        na_rep="n/a",
+        header=True,
+    )
+
+    return design_tsv, contrast_tsv

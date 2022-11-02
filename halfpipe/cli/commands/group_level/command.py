@@ -140,14 +140,14 @@ class GroupLevelCommand(Command):
         from tempfile import TemporaryDirectory
 
         from ....collect.derivatives import collect_derivatives
-        from ....design import group_design, intercept_only_design
+        from ....design import group_design, intercept_only_design, make_design_tsv
         from ....result.aggregate import aggregate_results
         from ....result.bids.images import save_images
         from ....result.filter import filter_results
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
         from ....utils import logger
-        from ....utils.format import format_like_bids
+        from ....utils.format import format_like_bids, format_tags
         from ....utils.future import chdir
         from .parser import parse_group_level
 
@@ -240,8 +240,14 @@ class GroupLevelCommand(Command):
             tags = result["tags"]
             subjects = tags.pop("sub")
 
-            logger.info(
-                f"Running model {tags} ({i + 1:d} of {len(results):d}) for {len(subjects)} inputs"
+            # remove lower level contrast label
+            if "contrast" in tags:
+                del tags["contrast"]
+
+            logger.log(
+                25,
+                f"Running model {i + 1:d} of {len(results):d} "
+                f"with tags {format_tags(tags)} for {len(subjects)} subjects",
             )
 
             images = result.pop("images")
@@ -273,6 +279,10 @@ class GroupLevelCommand(Command):
                 model_path = Path(temporary_directory)
 
                 with chdir(model_path):
+                    design_tsv, contrast_tsv = make_design_tsv(
+                        regressor_list, contrast_list, subjects
+                    )
+
                     output_files = fit(
                         cope_files,
                         var_cope_files,
@@ -292,15 +302,16 @@ class GroupLevelCommand(Command):
                     for key, value in output_files.items()
                     if isinstance(value, str)
                 }
+                images["design_matrix"] = str(design_tsv)
+                images["contrast_matrix"] = str(contrast_tsv)
 
                 model_results = list()
 
-                if len(images) > 0:
-                    model_result = deepcopy(result)
-                    if arguments.model_name is not None:
-                        model_result["tags"]["model"] = arguments.model_name
-                    model_result["images"] = images
-                    model_results.append(model_result)
+                model_result = deepcopy(result)
+                if arguments.model_name is not None:
+                    model_result["tags"]["model"] = arguments.model_name
+                model_result["images"] = images
+                model_results.append(model_result)
 
                 for i, contrast_name in enumerate(contrast_names):
                     images = {

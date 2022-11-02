@@ -278,7 +278,7 @@ class Heterogeneity(ModelAlgorithm):
 
         try:
             voxel_dict = het_on_voxel(y, z, s)
-        except (np.linalg.LinAlgError, AssertionError, ValueError):
+        except (np.linalg.LinAlgError, AssertionError, ValueError, SystemError):
             return None
         except Exception as e:
             logger.warning(f"Unexpected exception for voxel {coordinate}", exc_info=e)
