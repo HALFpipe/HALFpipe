@@ -8,6 +8,7 @@ from typing import Mapping
 from inflection import camelize, parameterize, underscore
 
 from ..model.tags import entities, entity_longnames
+from . import inflect_engine
 
 
 def normalize_subject(s) -> str:
@@ -62,6 +63,6 @@ def format_tags(tags: Mapping[str, str]) -> str:
 
             entity = entity_longnames.get(entity, entity)
 
-            s.append(f'{entity}: "{value}"')
+            s.append(f'{entity}="{value}"')
 
-    return ", ".join(s)
+    return inflect_engine.join(s)

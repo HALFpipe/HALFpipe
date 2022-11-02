@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from marshmallow import (
     RAISE,
     Schema,
@@ -26,6 +22,7 @@ class Model:
     def __init__(self, name, type, **kwargs):
         self.name = name
         self.type = type
+        self.inputs = list()
         self.filters = list()
         for k, v in kwargs.items():
             setattr(self, k, v)

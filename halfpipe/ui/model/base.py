@@ -216,7 +216,9 @@ class ModelFeaturesStep(Step):
 
             names = sorted(list(self.namesset))
 
-            self.input_view = MultipleChoiceInputView(names, checked=names)
+            self.input_view = MultipleChoiceInputView(
+                names, checked=names, isVertical=True
+            )
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

@@ -17,9 +17,10 @@ def parse_design(
     contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
 
     def make_contrast_matrix(conditions, weights) -> npt.NDArray:
-        contrast_matrix = pd.Series(data=weights, index=conditions)[
+        contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[
             design_matrix.columns
         ]
+        assert isinstance(contrast_matrix, pd.Series)
         return contrast_matrix.to_numpy(dtype=np.float64)[np.newaxis, :]
 
     for contrast in contrasts:
