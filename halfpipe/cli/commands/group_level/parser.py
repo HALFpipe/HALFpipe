@@ -20,6 +20,7 @@ filter_schema = FilterSchema()
 
 DesignType = tuple[
     Path | None,
+    list[str],
     list[dict],
     list[dict],
     list[dict],
@@ -41,7 +42,7 @@ def _parse_from_spec(
     arguments: Namespace,
     results: list[dict],
 ) -> DesignType:
-    workdir = arguments.input_directory[0]
+    workdir = Path(arguments.input_directory[0])
 
     spec: Spec | None = load_spec(workdir=workdir)
 
@@ -103,7 +104,14 @@ def _parse_from_spec(
                 break
     results = filtered_results
 
-    return spreadsheet, variables, contrasts, filters, results
+    qc_exclude_files: list[str] = [
+        str(workdir / "exclude*.json"),
+        str(workdir / "reports" / "exclude*.json"),
+    ]
+    if arguments.qc_exclude_files is not None:
+        qc_exclude_files.extend(arguments.qc_exclude_files)
+
+    return spreadsheet, qc_exclude_files, variables, contrasts, filters, results
 
 
 def _parse_from_arguments(
@@ -204,4 +212,8 @@ def _parse_from_arguments(
                 )
             )
 
-    return spreadsheet, variables, contrasts, filters, results
+    qc_exclude_files = list()
+    if arguments.qc_exclude_files is not None:
+        qc_exclude_files.extend(arguments.qc_exclude_files)
+
+    return spreadsheet, qc_exclude_files, variables, contrasts, filters, results

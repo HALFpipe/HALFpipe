@@ -161,15 +161,20 @@ class GroupLevelCommand(Command):
         for input_directory in arguments.input_directory:
             results.extend(collect_derivatives(Path(input_directory)))
 
-        spreadsheet, variables, contrasts, filters, results = parse_group_level(
-            arguments, results
-        )
+        (
+            spreadsheet,
+            qc_exclude_files,
+            variables,
+            contrasts,
+            filters,
+            results,
+        ) = parse_group_level(arguments, results)
 
         results = filter_results(
             results,
             filter_dicts=filters,
             require_one_of_images=["effect", "reho", "falff", "alff"],
-            exclude_files=arguments.qc_exclude_files,
+            exclude_files=qc_exclude_files,
             spreadsheet=spreadsheet,
             variable_dicts=variables,
         )
