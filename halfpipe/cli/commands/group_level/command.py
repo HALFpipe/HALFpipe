@@ -27,7 +27,7 @@ class GroupLevelCommand(Command):
             "--output-directory",
             "--outdir",
             type=str,
-            required=True,
+            required=False,
             dest="workdir",
         )
 
@@ -151,7 +151,10 @@ class GroupLevelCommand(Command):
         from ....utils.future import chdir
         from .parser import parse_group_level
 
-        output_directory = Path(arguments.workdir)
+        if arguments.workdir is not None:
+            output_directory = Path(arguments.workdir)
+        else:
+            output_directory = Path(arguments.input_directory[0])
 
         results = list()
         for input_directory in arguments.input_directory:
