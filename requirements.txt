@@ -105,7 +105,7 @@ marshmallow==3.18.0
     #   marshmallow-dataclass
     #   marshmallow-enum
     #   marshmallow-oneofschema
-marshmallow-dataclass==8.5.9
+marshmallow-dataclass==8.5.10
     # via -r requirements.in
 marshmallow-enum==1.5.1
     # via -r requirements.in
