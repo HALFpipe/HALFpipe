@@ -7,6 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Mapping
 
+from tqdm.auto import tqdm
+
 from ...file_index.base import FileIndex
 from ...model.tags.schema import entities
 from ...stats.algorithms import algorithms
@@ -101,7 +103,10 @@ def load_images(file_index: FileIndex) -> list[ResultDict]:
     image_group_entities = set(entities) - {"stat", "algorithm"}
 
     results = list()
-    for group in file_index.get_tag_groups(image_group_entities):
+    for group in tqdm(
+        file_index.get_tag_groups(image_group_entities),
+        desc="loading image metadata",
+    ):
         result = _load_result(file_index, group)
         if result is None:
             continue

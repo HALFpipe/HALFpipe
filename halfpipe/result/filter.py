@@ -4,7 +4,7 @@
 
 from math import isclose
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -189,7 +189,7 @@ def filter_results(
     variable_dicts: list[dict] | None = None,
     model_name: str | None = None,
     require_one_of_images: list[str] = list(),
-    exclude_files: list[str] | None = None,
+    exclude_files: Sequence[str | Path] | None = None,
 ) -> list[ResultDict]:
     results = results.copy()
 
