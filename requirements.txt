@@ -235,7 +235,7 @@ patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==9.2.0
+pillow==9.3.0
     # via
     #   imageio
     #   matplotlib
