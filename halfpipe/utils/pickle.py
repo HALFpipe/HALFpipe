@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import gzip
+import logging
 import lzma
 import pickle
 import re
@@ -12,7 +13,6 @@ from typing import Callable, Literal
 
 from traits.trait_errors import TraitError
 
-from ..logging import logger
 from .future import chdir
 from .path import split_ext
 
@@ -28,7 +28,7 @@ def load_pickle_lzma(file_path: str):
             return Unpickler(file_handle).load()
 
     except (lzma.LZMAError, TraitError, EOFError, AttributeError) as e:
-        logger.error(f'Error while reading "{file_path}"', exc_info=e)
+        logging.error(f'Error while reading "{file_path}"', exc_info=e)
         return None
 
 
@@ -37,14 +37,14 @@ def dump_pickle_lzma(file_path: str, obj):
         file_path = f"{file_path}{pickle_lzma_extension}"
 
     if Path(file_path).is_file():
-        logger.warning(f'Overwriting existing file "{file_path}"')
+        logging.warning(f'Overwriting existing file "{file_path}"')
 
     try:
         with lzma.open(file_path, "wb") as fptr:
             pickle.dump(obj, fptr, protocol=pickle.HIGHEST_PROTOCOL)
 
     except lzma.LZMAError as e:
-        logger.error(f'Error while writing "{file_path}"', exc_info=e)
+        logging.error(f'Error while writing "{file_path}"', exc_info=e)
 
 
 class Unpickler(pickle.Unpickler):

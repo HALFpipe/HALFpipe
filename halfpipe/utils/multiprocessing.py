@@ -2,15 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-"""
-
 import multiprocessing.pool as mpp
 import os
 from multiprocessing import active_children, get_context
-from typing import Union
-
-from ..logging import logging_context
 
 
 def initializer(logging_args, host_env):
@@ -30,9 +24,12 @@ def terminate():
 class Pool(mpp.Pool):
     def __init__(
         self,
-        processes: Union[int, None] = None,
-        maxtasksperchild: Union[int, None] = None,
+        processes: int | None = None,
+        maxtasksperchild: int | None = None,
     ) -> None:
+
+        from ..logging import logging_context
+
         initargs = (logging_context.logging_args(), dict(os.environ))
         context = get_context("forkserver")
         super().__init__(

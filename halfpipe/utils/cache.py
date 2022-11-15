@@ -2,13 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import logging
 import pickle
 from pathlib import Path
 from shelve import open as open_shelf
 from typing import Any, Mapping, Optional, Union
 from uuid import UUID
 
-from ..logging import logger
 from .pickle import dump_pickle_lzma, load_pickle_lzma
 
 
@@ -25,7 +25,7 @@ def uncache_obj(
     workdir: Union[Path, str],
     type_str: str,
     uuid: Union[UUID, str],
-    display_str: str = None,
+    display_str: str | None = None,
 ):
     if display_str is None:
         display_str = type_str
@@ -41,7 +41,7 @@ def uncache_obj(
                 if obj_uuid is None or str(obj_uuid) != str(uuid):
                     return None
 
-            logger.info(f"Using {display_str} from cache at {cache_file_path}")
+            logging.info(f"Using {display_str} from cache at {cache_file_path}")
 
             return obj
 

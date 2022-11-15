@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import logging
 from random import gauss
 from time import sleep
 from typing import List
@@ -10,8 +11,6 @@ from fasteners import InterProcessLock as FcntlLock
 from flufl.lock._lockfile import Lock as FluflLock
 from flufl.lock._lockfile import LockError as FluflLockError
 from flufl.lock._lockfile import TimeOutError
-
-from ..logging import logger
 
 
 class AdaptiveLock:
@@ -36,7 +35,7 @@ class AdaptiveLock:
             except OSError:  # such as PermissionError
                 pass
 
-            logger.warning("Unable to use hard link-based file locks", exc_info=True)
+            logging.warning("Unable to use hard link-based file locks", exc_info=True)
 
             self.methods.pop(0)
             self.lock(lock_file)
@@ -49,7 +48,7 @@ class AdaptiveLock:
             if acquired:
                 return
 
-            logger.warning("Unable to use fcntl-based file locks", exc_info=True)
+            logging.warning("Unable to use fcntl-based file locks", exc_info=True)
 
             self.methods.pop(0)
             self.lock(lock_file)
