@@ -7,7 +7,6 @@ from asyncio import all_tasks, current_task, gather, get_running_loop
 from copy import deepcopy
 from pathlib import Path
 
-from ...utils import logger
 from .message import (
     DisablePrintMessage,
     EnablePrintMessage,
@@ -83,6 +82,6 @@ async def listen(queue):
             break
 
         else:
-            logger.error(f'Logging worker received unknown message "{message}"')
+            logging.error(f'Logging worker received unknown message "{message}"')
 
         queue.task_done()

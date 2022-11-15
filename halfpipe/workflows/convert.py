@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
-from ..utils import logger
+from ..logging import logger
 
 
 def convert_all(

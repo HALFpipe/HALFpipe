@@ -6,13 +6,14 @@
 from argparse import Namespace
 from pathlib import Path
 
+from ....logging import logger
 from ....model.contrast import ModelContrastSchema
 from ....model.filter import FilterSchema
 from ....model.model import Model
 from ....model.spec import Spec, load_spec
 from ....model.variable import VariableSchema
-from ....utils import logger
-from ....utils.format import format_like_bids
+from ....utils.format import format_like_bids, inflect_engine
+from ....utils.path import resolve
 
 variable_schema = VariableSchema()
 contrast_schema = ModelContrastSchema()
@@ -20,7 +21,7 @@ filter_schema = FilterSchema()
 
 DesignType = tuple[
     Path | None,
-    list[str],
+    list[Path],
     list[dict],
     list[dict],
     list[dict],
@@ -42,7 +43,7 @@ def _parse_from_spec(
     arguments: Namespace,
     results: list[dict],
 ) -> DesignType:
-    workdir = Path(arguments.input_directory[0])
+    workdir = resolve(arguments.input_directory[0], arguments.fs_root)
 
     spec: Spec | None = load_spec(workdir=workdir)
 
@@ -91,6 +92,7 @@ def _parse_from_spec(
         filters = list()
 
     filtered_results = list()
+    seen_inputs: set[str] = set()
     for result in results:
         tags = result["tags"]
 
@@ -99,17 +101,32 @@ def _parse_from_spec(
             if value is None:
                 continue
             value = format_like_bids(value)
+            seen_inputs.add(value)
             if value in model.inputs:
                 filtered_results.append(result)
                 break
     results = filtered_results
 
-    qc_exclude_files: list[str] = [
-        str(workdir / "exclude*.json"),
-        str(workdir / "reports" / "exclude*.json"),
+    if len(results) == 0:
+        seen_inputs_str = inflect_engine.join(
+            [f'"{seen_input}"' for seen_input in sorted(seen_inputs)]
+        )
+        model_inputs_str = inflect_engine.join(
+            [f'"{model_input}"' for model_input in sorted(model.inputs)],
+            conj="or",
+        )
+        raise ValueError(
+            f"Found inputs {seen_inputs_str}, but need one of {model_inputs_str}"
+        )
+
+    qc_exclude_files: list[Path] = [
+        workdir / "exclude*.json",
+        workdir / "reports" / "exclude*.json",
     ]
+
     if arguments.qc_exclude_files is not None:
-        qc_exclude_files.extend(arguments.qc_exclude_files)
+        for qc_exclude_file in arguments.qc_exclude_files:
+            qc_exclude_files.append(resolve(qc_exclude_file, arguments.fs_root))
 
     return spreadsheet, qc_exclude_files, variables, contrasts, filters, results
 
@@ -118,7 +135,7 @@ def _parse_from_arguments(
     arguments: Namespace,
     results: list[dict],
 ) -> DesignType:
-    spreadsheet: Path = Path(arguments.spreadsheet)
+    spreadsheet: Path = resolve(arguments.spreadsheet, arguments.fs_root)
 
     variables: list[dict] = list()
     if arguments.id_column is not None:
@@ -212,8 +229,9 @@ def _parse_from_arguments(
                 )
             )
 
-    qc_exclude_files = list()
+    qc_exclude_files: list[Path] = list()
     if arguments.qc_exclude_files is not None:
-        qc_exclude_files.extend(arguments.qc_exclude_files)
+        for qc_exclude_file in arguments.qc_exclude_files:
+            qc_exclude_files.append(resolve(qc_exclude_file, arguments.fs_root))
 
     return spreadsheet, qc_exclude_files, variables, contrasts, filters, results

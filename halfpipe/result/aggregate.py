@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from more_itertools import collapse
 from pyrsistent import freeze, pmap, thaw
 
-from ..utils import logger
+from ..logging import logger
 from .base import ResultDict, ResultKey
 from .variables import Categorical, Continuous
 

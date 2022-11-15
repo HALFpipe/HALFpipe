@@ -7,9 +7,8 @@ from pathlib import Path
 
 from .. import __version__
 from ..ingest.database import Database
-from ..logging import logging_context
+from ..logging import logger, logging_context
 from ..model.spec import Spec, SpecSchema, load_spec, save_spec
-from ..utils import logger
 from ..workdir import init_workdir
 from .components import (
     App,

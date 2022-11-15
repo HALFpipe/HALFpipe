@@ -5,10 +5,13 @@
 import re
 from typing import Mapping
 
+from inflect import engine
 from inflection import camelize, parameterize, underscore
 
 from ..model.tags import entities, entity_longnames
-from . import inflect_engine
+
+inflect_engine = engine()
+del engine
 
 
 def normalize_subject(s) -> str:

@@ -9,7 +9,7 @@ from typing import List, Union
 from zipfile import ZipFile
 from zipimport import zipimporter
 
-from .utils import logger
+from .logging import logger
 
 
 class ZipPath:

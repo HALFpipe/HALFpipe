@@ -7,8 +7,8 @@ from typing import Any, Dict
 
 from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
+from ...logging import logger
 from ...model.feature import FeatureSchema
-from ...utils import logger
 from ..factory import Factory
 from ..memory import MemoryCalculator
 from .atlasbasedconnectivity import init_atlasbasedconnectivity_wf

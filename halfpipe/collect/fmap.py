@@ -6,8 +6,8 @@ from sdcflows.workflows.pepolar import check_pes
 
 from ..ingest.database import Database
 from ..ingest.metadata.direction import canonicalize_direction_code
-from ..utils import inflect_engine as pe
-from ..utils import logger
+from ..logging import logger
+from ..utils.format import inflect_engine as pe
 
 
 def collect_pe_dir(database: Database, c: str):

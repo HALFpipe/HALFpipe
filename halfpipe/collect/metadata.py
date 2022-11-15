@@ -15,7 +15,7 @@ from ..model.file.schema import FileSchema
 from ..model.metadata import MetadataSchema
 from ..model.setting import BaseSettingSchema
 from ..model.utils import get_nested_schema_field_names, get_type_schema
-from ..utils import inflect_engine
+from ..utils.format import inflect_engine
 
 metadata_fields: frozenset[str] = frozenset(
     [

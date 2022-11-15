@@ -10,12 +10,12 @@ from pathlib import Path
 
 from nipype.interfaces.base import SimpleInterface, TraitedSpec, traits
 
+from ...logging import logger
 from ...model.tags import FuncTagsSchema
 from ...resource import get as getresource
 from ...result.bids.base import make_bids_path
 from ...result.bids.images import save_images
 from ...result.variables import Continuous
-from ...utils import logger
 from ...utils.path import copy_if_newer, find_paths
 from ...utils.table import SynchronizedTable
 
