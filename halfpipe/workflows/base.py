@@ -11,8 +11,8 @@ from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
+from ..logging import logger
 from ..model.spec import Spec, load_spec
-from ..utils import logger
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
 from .constants import constants

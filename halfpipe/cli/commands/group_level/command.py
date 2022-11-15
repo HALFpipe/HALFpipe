@@ -141,13 +141,13 @@ class GroupLevelCommand(Command):
 
         from ....collect.derivatives import collect_derivatives
         from ....design import group_design, intercept_only_design, make_design_tsv
+        from ....logging import logger
         from ....result.aggregate import aggregate_results
         from ....result.bids.images import save_images
         from ....result.filter import filter_results
         from ....stats.algorithms import algorithms as all_algorithms
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
-        from ....utils import logger
         from ....utils.format import format_like_bids, format_tags
         from ....utils.future import chdir
         from .parser import parse_group_level

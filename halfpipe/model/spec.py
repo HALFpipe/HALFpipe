@@ -20,7 +20,7 @@ from marshmallow import (
 )
 
 from .. import __version__ as halfpipe_version
-from ..utils import logger
+from ..logging import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
 from .feature import FeatureSchema

@@ -7,8 +7,8 @@ from math import ceil
 from pathlib import Path
 from typing import Any, Dict, List
 
-from .utils import inflect_engine as p
-from .utils import logger
+from .logging import logger
+from .utils.format import inflect_engine as p
 from .workflows.execgraph import filter_subjects
 
 shebang = """#!/bin/bash

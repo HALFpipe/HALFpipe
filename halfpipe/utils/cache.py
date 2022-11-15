@@ -8,7 +8,7 @@ from shelve import open as open_shelf
 from typing import Any, Mapping, Optional, Union
 from uuid import UUID
 
-from ..utils import logger
+from ..logging import logger
 from .pickle import dump_pickle_lzma, load_pickle_lzma
 
 

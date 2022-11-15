@@ -8,7 +8,7 @@ from pathlib import Path
 from shutil import copyfile
 from typing import Generator
 
-from . import logger
+from ..logging import logger
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:

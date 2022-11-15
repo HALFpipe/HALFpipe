@@ -11,8 +11,8 @@ import pandas as pd
 
 from ..design import prepare_data_frame
 from ..exclude import Decision, QCDecisionMaker
-from ..utils import inflect_engine, logger
-from ..utils.format import format_tags, normalize_subject
+from ..logging import logger
+from ..utils.format import format_tags, inflect_engine, normalize_subject
 from .base import ResultDict
 from .variables import Continuous
 

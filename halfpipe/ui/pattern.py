@@ -11,7 +11,7 @@ from ..model.file.schema import FileSchema
 from ..model.tags import entities
 from ..model.tags import entity_longnames as entity_display_aliases
 from ..model.utils import get_schema_entities
-from ..utils import inflect_engine as p
+from ..utils.format import inflect_engine as p
 from ..utils.path import split_ext
 from .components import (
     FilePatternInputView,

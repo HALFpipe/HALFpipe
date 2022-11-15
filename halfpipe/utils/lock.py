@@ -11,7 +11,7 @@ from flufl.lock._lockfile import Lock as FluflLock
 from flufl.lock._lockfile import LockError as FluflLockError
 from flufl.lock._lockfile import TimeOutError
 
-from . import logger
+from ..logging import logger
 
 
 class AdaptiveLock:

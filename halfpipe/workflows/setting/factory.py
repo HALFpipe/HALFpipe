@@ -10,7 +10,7 @@ from typing import Callable, Hashable
 from nipype.pipeline import engine as pe
 
 from ...collect.metadata import collect_metadata
-from ...utils import logger
+from ...logging import logger
 from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
 from ..bypass import init_bypass_wf

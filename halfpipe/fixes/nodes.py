@@ -14,7 +14,7 @@ from nipype.pipeline.engine.utils import (
 )
 from nipype.utils.misc import str2bool
 
-from ..utils import logger
+from ..logging import logger
 
 
 class Node(pe.Node):

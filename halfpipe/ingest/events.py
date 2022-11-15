@@ -9,8 +9,8 @@ from typing import Any, Iterable
 import numpy as np
 from scipy.io import loadmat
 
+from ..logging import logger
 from ..model.file.base import File
-from ..utils import logger
 from ..utils.path import split_ext
 from .spreadsheet import read_spreadsheet
 

@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
+from ..logging import logger
 from ..model.tags import entities
-from . import logger
 from .json import TypeAwareJSONEncoder
 from .lock import AdaptiveLock
 

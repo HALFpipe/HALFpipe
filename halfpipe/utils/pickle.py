@@ -12,7 +12,7 @@ from typing import Callable, Literal
 
 from traits.trait_errors import TraitError
 
-from . import logger
+from ..logging import logger
 from .future import chdir
 from .path import split_ext
 

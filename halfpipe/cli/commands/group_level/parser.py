@@ -6,12 +6,12 @@
 from argparse import Namespace
 from pathlib import Path
 
+from ....logging import logger
 from ....model.contrast import ModelContrastSchema
 from ....model.filter import FilterSchema
 from ....model.model import Model
 from ....model.spec import Spec, load_spec
 from ....model.variable import VariableSchema
-from ....utils import logger
 from ....utils.format import format_like_bids
 
 variable_schema = VariableSchema()

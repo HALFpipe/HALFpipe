@@ -5,8 +5,8 @@
 from inflection import humanize, underscore
 
 from ...model.model import FixedEffectsModelSchema, Model
-from ...utils import inflect_engine as p
 from ...utils.format import format_like_bids
+from ...utils.format import inflect_engine as p
 from ..components import (
     MultipleChoiceInputView,
     SingleChoiceInputView,
