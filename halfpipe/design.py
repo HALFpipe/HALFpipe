@@ -19,7 +19,7 @@ from patsy.user_util import LookupFactor
 
 from .ingest.design import parse_design
 from .ingest.spreadsheet import read_spreadsheet
-from .utils import logger
+from .logging import logger
 
 
 def _check_multicollinearity(matrix):

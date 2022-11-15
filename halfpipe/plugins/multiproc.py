@@ -14,8 +14,7 @@ from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
 
-from ..logging import logging_context
-from ..utils import logger
+from ..logging import logger, logging_context
 from .reftracer import PathReferenceTracer
 
 

@@ -4,15 +4,15 @@
 
 from math import isclose
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 import numpy as np
 import pandas as pd
 
 from ..design import prepare_data_frame
 from ..exclude import Decision, QCDecisionMaker
-from ..utils import inflect_engine, logger
-from ..utils.format import format_tags, normalize_subject
+from ..logging import logger
+from ..utils.format import format_tags, inflect_engine, normalize_subject
 from .base import ResultDict
 from .variables import Continuous
 
@@ -189,7 +189,7 @@ def filter_results(
     variable_dicts: list[dict] | None = None,
     model_name: str | None = None,
     require_one_of_images: list[str] = list(),
-    exclude_files: list[str] | None = None,
+    exclude_files: Sequence[str | Path] | None = None,
 ) -> list[ResultDict]:
     results = results.copy()
 

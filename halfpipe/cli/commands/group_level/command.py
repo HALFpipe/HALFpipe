@@ -141,25 +141,32 @@ class GroupLevelCommand(Command):
 
         from ....collect.derivatives import collect_derivatives
         from ....design import group_design, intercept_only_design, make_design_tsv
+        from ....logging import logger
         from ....result.aggregate import aggregate_results
         from ....result.bids.images import save_images
         from ....result.filter import filter_results
         from ....stats.algorithms import algorithms as all_algorithms
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
-        from ....utils import logger
         from ....utils.format import format_like_bids, format_tags
         from ....utils.future import chdir
+        from ....utils.path import resolve
         from .parser import parse_group_level
 
         if arguments.workdir is not None:
             output_directory = Path(arguments.workdir)
         else:
             output_directory = Path(arguments.input_directory[0])
+        output_directory = resolve(output_directory, arguments.fs_root)
 
         results = list()
         for input_directory in arguments.input_directory:
-            results.extend(collect_derivatives(Path(input_directory)))
+            results.extend(
+                collect_derivatives(resolve(input_directory, arguments.fs_root))
+            )
+
+        if len(results) == 0:
+            raise ValueError("No inputs found")
 
         (
             spreadsheet,
@@ -178,6 +185,9 @@ class GroupLevelCommand(Command):
             spreadsheet=spreadsheet,
             variable_dicts=variables,
         )
+
+        if len(results) == 0:
+            raise ValueError("No images remain after filtering")
 
         rename = arguments.rename
         if rename is not None:
@@ -207,6 +217,9 @@ class GroupLevelCommand(Command):
                     filtered_results.append(result)
             results = filtered_results
 
+        if len(results) == 0:
+            raise ValueError('No images remain after "--include" was applied')
+
         # `--exclude`
         exclude: list[tuple[str, str]] = list()
         if arguments.exclude is not None:
@@ -227,6 +240,13 @@ class GroupLevelCommand(Command):
                 logger.info(f"Excluding {tags}")
         results = filtered_results
 
+        if len(results) == 0:
+            raise ValueError('No images remain after "--exclude" was applied')
+
+        across: list[str] = arguments.aggregate
+        if len(across) > 0 and across != ["sub"]:
+            raise NotImplementedError
+
         # cross-subject processing
         results, _ = aggregate_results(results, "sub")
 
@@ -241,8 +261,7 @@ class GroupLevelCommand(Command):
             algorithms = list(all_algorithms.keys())
 
         if len(results) == 0:
-            logger.error("No inputs found")
-            return
+            raise ValueError("No inputs found")
 
         for i, result in enumerate(results):
             tags = result["tags"]

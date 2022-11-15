@@ -6,7 +6,7 @@ import re
 
 from inflection import camelize, parameterize, underscore
 
-from ..utils import inflect_engine as p
+from ..utils.format import inflect_engine as p
 
 forbidden_chars = re.compile(r"[^a-zA-Z0-9_\-<> ]")
 

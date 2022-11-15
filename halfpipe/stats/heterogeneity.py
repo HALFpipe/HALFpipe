@@ -10,7 +10,7 @@ import pandas as pd
 from numpy import typing as npt
 from scipy import optimize, special, stats
 
-from ..utils import logger
+from ..logging import logger
 from .base import ModelAlgorithm
 from .flame1 import flame1_prepare_data
 

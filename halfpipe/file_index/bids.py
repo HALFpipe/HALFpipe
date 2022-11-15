@@ -66,7 +66,7 @@ def parse(path: Path) -> dict[str, str] | None:
 class BIDSIndex(FileIndex):
     def put(self, root: Path):
         it = root.glob("**/*")
-        for path in tqdm(it, desc=f'indexing "{root}"'):
+        for path in tqdm(it, desc=f'indexing files from "{root}"'):
             tags = parse(path)
 
             if tags is None:

@@ -8,7 +8,7 @@ from shutil import rmtree
 
 from nipype.pipeline.engine.utils import load_resultfile
 
-from ..utils import logger
+from ..logging import logger
 from ..utils.path import find_paths, is_empty
 
 

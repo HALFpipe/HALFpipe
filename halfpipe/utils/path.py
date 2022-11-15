@@ -2,13 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import logging
 import os
 from os import path as op
 from pathlib import Path
 from shutil import copyfile
 from typing import Generator
-
-from . import logger
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -156,10 +155,10 @@ def copy_if_newer(inpath: Path, outpath: Path):
     outpath.parent.mkdir(exist_ok=True, parents=True)
     if outpath.exists():
         if os.stat(inpath).st_mtime <= os.stat(outpath).st_mtime:
-            logger.info(f'Not overwriting file "{outpath}"')
+            logging.info(f'Not overwriting file "{outpath}"')
             return False
-        logger.info(f'Overwriting file "{outpath}"')
+        logging.info(f'Overwriting file "{outpath}"')
     else:
-        logger.info(f'Creating file "{outpath}"')
+        logging.info(f'Creating file "{outpath}"')
     copyfile(inpath, outpath)
     return True

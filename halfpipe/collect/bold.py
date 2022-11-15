@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from ..ingest.bids import BidsDatabase
-from ..utils import logger
+from ..logging import logger
 from ..utils.image import nvol
 from .fmap import collect_fieldmaps
 

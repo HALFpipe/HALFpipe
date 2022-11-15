@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from ...utils import logger
+from ...logging import logger
 from ..spreadsheet import read_spreadsheet
 from .direction import canonicalize_direction_code, parse_direction_str
 

@@ -11,7 +11,7 @@ from typing import Container, Mapping
 
 from pyrsistent import pmap
 
-from ..utils import logger
+from ..logging import logger
 
 
 class FileIndex:

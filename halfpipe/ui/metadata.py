@@ -12,8 +12,8 @@ from ..ingest.metadata.direction import canonicalize_direction_code, direction_c
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
 from ..ingest.metadata.slicetiming import slice_timing_str
 from ..ingest.spreadsheet import read_spreadsheet
+from ..logging import logger
 from ..model.metadata import slice_order_strs, space_codes
-from ..utils import logger
 from .components import (
     FileInputView,
     NumberInputView,

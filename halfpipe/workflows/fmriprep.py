@@ -12,9 +12,9 @@ from nipype.interfaces.base.traits_extension import isdefined
 from nipype.pipeline import engine as pe
 
 from ..collect.fmap import collect_fieldmaps
-from ..utils import inflect_engine as p
-from ..utils import logger
+from ..logging import logger
 from ..utils.copy import deepcopyfactory
+from ..utils.format import inflect_engine as p
 from .constants import constants
 from .factory import Factory
 from .memory import MemoryCalculator

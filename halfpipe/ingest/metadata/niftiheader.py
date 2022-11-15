@@ -9,7 +9,7 @@ import nibabel as nib
 import numpy as np
 import pint
 
-from ...utils import logger
+from ...logging import logger
 from ...utils.path import split_ext
 
 ureg = pint.UnitRegistry()

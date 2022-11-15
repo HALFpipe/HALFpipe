@@ -9,8 +9,8 @@ import numpy as np
 from nibabel.spatialimages import HeaderDataError
 from templateflow import api
 
+from ...logging import logger
 from ...model.metadata import axis_codes, templates
-from ...utils import logger
 from .direction import canonicalize_direction_code
 from .niftiheader import NiftiheaderLoader
 from .slicetiming import str_slice_timing

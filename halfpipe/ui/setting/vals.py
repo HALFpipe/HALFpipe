@@ -12,7 +12,7 @@ from ...model.setting import (
     GrandMeanScalingSettingSchema,
     SmoothingSettingSchema,
 )
-from ...utils import inflect_engine as p
+from ...utils.format import inflect_engine as p
 from ..components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,

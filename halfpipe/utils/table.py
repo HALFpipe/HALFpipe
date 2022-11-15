@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
+import logging
 from math import isclose
 from pathlib import Path
 
@@ -11,7 +12,6 @@ import pandas as pd
 from tabulate import tabulate
 
 from ..model.tags import entities
-from . import logger
 from .json import TypeAwareJSONEncoder
 from .lock import AdaptiveLock
 
@@ -55,7 +55,7 @@ class SynchronizedTable:
                 jsonstr = jsonstr.replace("\\\n", "")
                 self.dictlist = json.loads(jsonstr)
             except json.decoder.JSONDecodeError as e:
-                logger.warning("JSONDecodeError %s", e)
+                logging.warning("JSONDecodeError %s", e)
         if self.dictlist is None:
             self.dictlist = list()
 
@@ -111,6 +111,7 @@ class SynchronizedTable:
         )
 
         data_frame = data_frame[columns_in_order]
+        assert isinstance(data_frame, pd.DataFrame)
 
         table_str = tabulate(
             data_frame,
@@ -144,7 +145,7 @@ class SynchronizedTable:
                 matches = True
 
                 self.dictlist[i].update(indict)
-                logger.debug(f"Updating {self.filename} entry {curdict} with {indict}")
+                logging.debug(f"Updating {self.filename} entry {curdict} with {indict}")
 
                 break
 

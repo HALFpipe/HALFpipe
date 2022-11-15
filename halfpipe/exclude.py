@@ -6,12 +6,13 @@ import json
 from collections import defaultdict
 from enum import Enum, IntEnum, auto
 from glob import glob, has_magic
-from typing import Generator, Mapping
+from pathlib import Path
+from typing import Generator, Mapping, Sequence
 
 from more_itertools import powerset
 from pyrsistent import pmap
 
-from .utils import logger
+from .logging import logger
 from .utils.format import format_tags
 
 
@@ -28,7 +29,7 @@ class Decision(Enum):
 
 
 class QCDecisionMaker:
-    def __init__(self, file_paths: list[str]):
+    def __init__(self, file_paths: Sequence[str | Path]):
         self.index: dict[Mapping[str, str], set[Rating]] = defaultdict(set)
         self.relevant_tag_names: set[str] = set()
 
@@ -37,7 +38,9 @@ class QCDecisionMaker:
         for file_path in file_paths:
             self._add_file(file_path)
 
-    def _add_file(self, file_path: str) -> None:
+    def _add_file(self, file_path: str | Path) -> None:
+        file_path = str(file_path)
+
         if has_magic(file_path):
             for e in glob(file_path, recursive=True):
                 self._add_file(e)
