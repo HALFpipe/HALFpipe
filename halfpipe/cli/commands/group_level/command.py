@@ -244,7 +244,7 @@ class GroupLevelCommand(Command):
             raise ValueError('No images remain after "--exclude" was applied')
 
         across: list[str] = arguments.aggregate
-        if len(across) > 0 and across != ["sub"]:
+        if across is not None and len(across) > 0 and across != ["sub"]:
             raise NotImplementedError
 
         # cross-subject processing
