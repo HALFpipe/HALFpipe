@@ -17,10 +17,14 @@ finally:
 os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
 os.environ["NIPYPE_NO_MATLAB"] = "1"
 
-xdg_cache_home = Path("/home/fmriprep/.cache")
-if xdg_cache_home.is_dir():
-    # we are likely running in a container, so we make sure to reset
-    # important env variables
+os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warningddd
+
+# special variable set in the container
+if os.getenv("IS_DOCKER_8395080871") is not None:
+    # we are running in a container, so we reset important
+    # env variables to the correct values
+
+    xdg_cache_home = Path("/var/cache")
     os.environ["XDG_CACHE_HOME"] = str(
         xdg_cache_home
     )  # where matplotlib looks for the font cache
@@ -36,5 +40,3 @@ if xdg_cache_home.is_dir():
     )  # where templateflow.api looks for its cache
 
     del xdg_cache_home, halfpipe_resource_dir, templateflow_home
-
-os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warning
