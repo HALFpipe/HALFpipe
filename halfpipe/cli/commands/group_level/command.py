@@ -135,6 +135,7 @@ class GroupLevelCommand(Command):
 
     def run(self, arguments: Namespace):
         from collections import defaultdict
+        from contextlib import chdir
         from copy import deepcopy
         from pathlib import Path
         from tempfile import TemporaryDirectory
@@ -149,7 +150,6 @@ class GroupLevelCommand(Command):
         from ....stats.algorithms import modelfit_aliases
         from ....stats.fit import fit
         from ....utils.format import format_like_bids, format_tags
-        from ....utils.future import chdir
         from ....utils.path import resolve
         from .parser import parse_group_level
 
@@ -302,57 +302,57 @@ class GroupLevelCommand(Command):
                     contrast_names,
                 ) = intercept_only_design(len(subjects))
 
-            with TemporaryDirectory() as temporary_directory:
-                model_path = Path(temporary_directory)
+            with (
+                TemporaryDirectory() as temporary_directory,
+                chdir(temporary_directory),
+            ):
+                design_tsv, contrast_tsv = make_design_tsv(
+                    regressor_list, contrast_list, subjects
+                )
 
-                with chdir(model_path):
-                    design_tsv, contrast_tsv = make_design_tsv(
-                        regressor_list, contrast_list, subjects
-                    )
+                output_files = fit(
+                    cope_files,
+                    var_cope_files,
+                    mask_files,
+                    regressor_list,
+                    contrast_list,
+                    algorithms,
+                    arguments.nipype_n_procs,
+                )
 
-                    output_files = fit(
-                        cope_files,
-                        var_cope_files,
-                        mask_files,
-                        regressor_list,
-                        contrast_list,
-                        algorithms,
-                        arguments.nipype_n_procs,
-                    )
+            for from_key, to_key in modelfit_aliases.items():
+                if from_key in output_files:
+                    output_files[to_key] = output_files.pop(from_key)
 
-                for from_key, to_key in modelfit_aliases.items():
-                    if from_key in output_files:
-                        output_files[to_key] = output_files.pop(from_key)
+            images = {
+                key: value
+                for key, value in output_files.items()
+                if isinstance(value, str)
+            }
+            images["design_matrix"] = str(design_tsv)
+            images["contrast_matrix"] = str(contrast_tsv)
 
+            model_results = list()
+
+            model_result = deepcopy(result)
+            if arguments.model_name is not None:
+                model_result["tags"]["model"] = arguments.model_name
+            model_result["images"] = images
+            model_results.append(model_result)
+
+            for i, contrast_name in enumerate(contrast_names):
                 images = {
-                    key: value
+                    key: value[i]
                     for key, value in output_files.items()
-                    if isinstance(value, str)
+                    if isinstance(value, list) and isinstance(value[i], str)
                 }
-                images["design_matrix"] = str(design_tsv)
-                images["contrast_matrix"] = str(contrast_tsv)
-
-                model_results = list()
-
+                if len(images) == 0:
+                    continue
                 model_result = deepcopy(result)
+                model_result["tags"]["contrast"] = contrast_name
                 if arguments.model_name is not None:
                     model_result["tags"]["model"] = arguments.model_name
                 model_result["images"] = images
                 model_results.append(model_result)
 
-                for i, contrast_name in enumerate(contrast_names):
-                    images = {
-                        key: value[i]
-                        for key, value in output_files.items()
-                        if isinstance(value, list) and isinstance(value[i], str)
-                    }
-                    if len(images) == 0:
-                        continue
-                    model_result = deepcopy(result)
-                    model_result["tags"]["contrast"] = contrast_name
-                    if arguments.model_name is not None:
-                        model_result["tags"]["model"] = arguments.model_name
-                    model_result["images"] = images
-                    model_results.append(model_result)
-
-                save_images(model_results, output_directory)
+            save_images(model_results, output_directory)

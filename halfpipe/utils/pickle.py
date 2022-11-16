@@ -7,13 +7,13 @@ import logging
 import lzma
 import pickle
 import re
+from contextlib import chdir
 from io import BufferedIOBase
 from pathlib import Path
 from typing import Callable, Literal
 
 from traits.trait_errors import TraitError
 
-from .future import chdir
 from .path import split_ext
 
 pickle_lzma_extension = ".pickle.xz"
