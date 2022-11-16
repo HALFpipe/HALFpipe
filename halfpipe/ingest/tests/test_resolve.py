@@ -3,10 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import List
 
 import pytest
 import requests
@@ -26,35 +24,58 @@ from ..resolve import ResolvedSpec
 )
 def test__resolve_bids(tmp_path: Path, openneuroID: str):
     # Get file names with GraphQL request
-    # Test different IDs with .parametrize or string.Template substitute method
     query_example = f"""query{{
-        dataset (id: "{openneuroID}"){{
-            latestSnapshot{{
-                id
-                files(prefix: null){{
-                    filename
-                }}
+    snapshot(datasetId: "{openneuroID}", tag: "1.0.0"){{
+        files{{
+            id
+            key
+            filename
+            size
+            directory
+            annexed
             }}
         }}
     }}"""
+
     gql_url = "https://openneuro.org/crn/graphql"
-    attempts = 0
-    while attempts < 3:
-        r = requests.post(gql_url, json={"query": query_example})
-        if not r == 200:
-            time.sleep(0.3)
-            attempts += 1
-            continue
-        break
+    # attempts = 0
+    # while attempts < 3:
+    #   r = requests.post(gql_url, json={"query": query_example})
+    #  if not r.status_code == 200:
+    #     time.sleep(0.3)
+    #    attempts += 1
+    #   continue
+    # break
 
-    # r = requests.post(gql_url, json={"query": query_example})
-    if not r == 200:
-      raise RuntimeError("Could not fetch file listing")
+    r = requests.post(gql_url, json={"query": query_example})
+    print(r.status_code)
+    if not r.status_code == 200:
+        raise RuntimeError("Could not fetch file listing")
 
-    file_list: List[str] = []
     json_file = json.loads(r.text)
-    for val in json_file["data"]["dataset"]["latestSnapshot"]["files"]:
-        file_list.append(val["filename"])
+
+    def recursive_walk(neuro_dict, file_list: list = []):
+        base_list = neuro_dict["data"]["snapshot"]["files"]  # returns list of all files
+        for val in base_list:
+            if not val["directory"]:
+                file_list.append(val["filename"])
+            cur_id = val["id"]
+            query = f"""query{{
+                snapshot(datasetId: "{openneuroID}", tag: "1.0.0"){{
+                    files(tree: "{cur_id}"){{
+                        id
+                        key
+                        filename
+                        directory
+                        }}
+                    }}
+                }}"""
+            r = requests.post(gql_url, json={"query": query})
+            json_dict = json.loads(r.text)
+            recursive_walk(json_dict)
+        return file_list
+
+    file_list: list[str] = recursive_walk(neuro_dict=json_file)
 
     for line in file_list:
         if not isinstance(line, str):
@@ -74,7 +95,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
             with open(path, "w") as file_handle:
                 file_handle.write("{}")
         path.touch()
-
+    print(path)
     spec = Spec(datetime.now, [])
     resolved_spec = ResolvedSpec(spec)
 
