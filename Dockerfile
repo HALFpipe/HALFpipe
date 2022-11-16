@@ -22,14 +22,17 @@ RUN rm -rf /usr/local/miniconda \
         "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
         --output "miniconda.sh" \
  && bash miniconda.sh -b -p /usr/local/miniconda \
- && mamba install --yes "python=3.10" "nomkl" "pip" "gdb" "nodejs" \
+ && mamba install --yes "python=3.11" "nomkl" "pip" "gdb" "nodejs" \
  && ./install-requirements.sh --requirements-file requirements.txt \
  && cd \
  && sync \
  && mamba clean --yes --all --force-pkgs-dirs \
  && sync \
  && find /usr/local/miniconda/ -follow -type f -name "*.a" -delete \
- && rm -rf /tmp/* ~/.conda \
+ && rm -rf ~/.conda \
+        /var/cache/apt /var/lib/apt \
+        ~/.cache/pip /var/cache/pip \
+        /tmp/* /var/tmp/* \
  && sync
 
 # Re-apply matplotlib settings after updating
@@ -54,6 +57,9 @@ COPY . /halfpipe/
 RUN cd /halfpipe \
  && /usr/local/miniconda/bin/python -m pip install --no-deps --no-cache-dir . \
  && cd \
- && rm -rf ~/.cache/pip /halfpipe /tmp/*
+ && rm -rf /halfpipe \
+        ~/.cache/pip /var/cache/pip \
+        /tmp/* /var/tmp/* \
+ && sync
 
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
