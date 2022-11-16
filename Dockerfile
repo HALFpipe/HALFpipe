@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 FROM nipreps/fmriprep:20.2.7
 
 RUN mkdir /ext /host \
@@ -14,17 +16,17 @@ ENV XDG_CACHE_HOME="/var/cache" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
-# Re-install `conda` and dependency `python` packages
-COPY requirements.txt install-requirements.sh /tmp/
-RUN rm -rf /usr/local/miniconda \
- && cd /tmp \
+# Re-install `conda` and all `python` packages
+RUN --mount=source=requirements.txt,target=/requirements.txt \
+    --mount=source=install-requirements.sh,target=/install-requirements.sh \
+    rm -rf /usr/local/miniconda \
  && curl --show-error --location \
         "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
-        --output "miniconda.sh" \
- && bash miniconda.sh -b -p /usr/local/miniconda \
+        --output /tmp/miniconda.sh \
+ && bash /tmp/miniconda.sh -b -p /usr/local/miniconda \
  && mamba install --yes "python=3.11" "nomkl" "pip" "gdb" "nodejs" \
- && ./install-requirements.sh --requirements-file requirements.txt \
- && cd \
+ && /install-requirements.sh \
+        --requirements-file /requirements.txt \
  && sync \
  && mamba clean --yes --all --force-pkgs-dirs \
  && sync \
@@ -43,23 +45,17 @@ RUN python -c "from matplotlib import font_manager" \
         $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Download all resources
-COPY halfpipe/resource.py /tmp/
-RUN python /tmp/resource.py \
- && sync \
- && rm -rf /tmp/* \
- && sync
+RUN --mount=source=halfpipe/resource.py,target=/resource.py \
+    python /resource.py
 
 # Add coinstac server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
 # Install HALFpipe
-COPY . /halfpipe/
-RUN cd /halfpipe \
- && /usr/local/miniconda/bin/python -m pip install --no-deps --no-cache-dir . \
- && cd \
- && rm -rf /halfpipe \
-        ~/.cache/pip /var/cache/pip \
-        /tmp/* /var/tmp/* \
+RUN --mount=target=/halfpipe \
+    cp -r /halfpipe /tmp \
+ && pip install --no-deps /tmp/halfpipe \
+ && rm -rf ~/.cache/pip /var/cache/pip /tmp/* /var/tmp/* \
  && sync
 
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
