@@ -29,7 +29,10 @@ RUN rm -rf /usr/local/miniconda \
  && mamba clean --yes --all --force-pkgs-dirs \
  && sync \
  && find /usr/local/miniconda/ -follow -type f -name "*.a" -delete \
- && rm -rf /tmp/* ~/.conda \
+ && rm -rf ~/.conda \
+        /var/cache/apt /var/lib/apt \
+        ~/.cache/pip /var/cache/pip \
+        /tmp/* /var/tmp/* \
  && sync
 
 # Re-apply matplotlib settings after updating
@@ -54,6 +57,9 @@ COPY . /halfpipe/
 RUN cd /halfpipe \
  && /usr/local/miniconda/bin/python -m pip install --no-deps --no-cache-dir . \
  && cd \
- && rm -rf ~/.cache/pip /halfpipe /tmp/*
+ && rm -rf /halfpipe \
+        ~/.cache/pip /var/cache/pip \
+        /tmp/* /var/tmp/* \
+ && sync
 
 ENTRYPOINT ["/usr/local/miniconda/bin/halfpipe"]
