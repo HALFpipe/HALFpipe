@@ -17,7 +17,7 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.8.0
+    rev: 6.10.0
     hooks:
       - id: pip-compile
         name: pip-compile requirements.in
@@ -35,21 +35,21 @@ repos:
           - "requirements-test.in"
         files: ^requirements(\.txt|-test\.in|-test\.txt)$
   - repo: https://github.com/psf/black
-    rev: 22.6.0
+    rev: 22.10.0
     hooks:
       - id: black
-        language_version: python3.10
+        language_version: python3.11
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
         name: isort (python)
   - repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
+    rev: 5.0.4
     hooks:
       - id: flake8
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.961
+    rev: v0.991
     hooks:
     - id: mypy
       additional_dependencies: [types-chardet, types-requests, types-tabulate]
