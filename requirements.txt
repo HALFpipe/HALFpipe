@@ -327,7 +327,7 @@ sdcflows==1.3.3
     # via
     #   -r requirements.in
     #   fmriprep
-seaborn==0.12.0
+seaborn==0.12.1
     # via
     #   -r requirements.in
     #   niworkflows
