@@ -95,7 +95,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
             with open(path, "w") as file_handle:
                 file_handle.write("{}")
         path.touch()
-    print(path)
+
     spec = Spec(datetime.now, [])
     resolved_spec = ResolvedSpec(spec)
 
