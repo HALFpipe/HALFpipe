@@ -320,39 +320,39 @@ class GroupLevelCommand(Command):
                     arguments.nipype_n_procs,
                 )
 
-            for from_key, to_key in modelfit_aliases.items():
-                if from_key in output_files:
-                    output_files[to_key] = output_files.pop(from_key)
+                for from_key, to_key in modelfit_aliases.items():
+                    if from_key in output_files:
+                        output_files[to_key] = output_files.pop(from_key)
 
-            images = {
-                key: value
-                for key, value in output_files.items()
-                if isinstance(value, str)
-            }
-            images["design_matrix"] = str(design_tsv)
-            images["contrast_matrix"] = str(contrast_tsv)
-
-            model_results = list()
-
-            model_result = deepcopy(result)
-            if arguments.model_name is not None:
-                model_result["tags"]["model"] = arguments.model_name
-            model_result["images"] = images
-            model_results.append(model_result)
-
-            for i, contrast_name in enumerate(contrast_names):
                 images = {
-                    key: value[i]
+                    key: value
                     for key, value in output_files.items()
-                    if isinstance(value, list) and isinstance(value[i], str)
+                    if isinstance(value, str)
                 }
-                if len(images) == 0:
-                    continue
+                images["design_matrix"] = str(design_tsv)
+                images["contrast_matrix"] = str(contrast_tsv)
+
+                model_results = list()
+
                 model_result = deepcopy(result)
-                model_result["tags"]["contrast"] = contrast_name
                 if arguments.model_name is not None:
                     model_result["tags"]["model"] = arguments.model_name
                 model_result["images"] = images
                 model_results.append(model_result)
 
-            save_images(model_results, output_directory)
+                for i, contrast_name in enumerate(contrast_names):
+                    images = {
+                        key: value[i]
+                        for key, value in output_files.items()
+                        if isinstance(value, list) and isinstance(value[i], str)
+                    }
+                    if len(images) == 0:
+                        continue
+                    model_result = deepcopy(result)
+                    model_result["tags"]["contrast"] = contrast_name
+                    if arguments.model_name is not None:
+                        model_result["tags"]["model"] = arguments.model_name
+                    model_result["images"] = images
+                    model_results.append(model_result)
+
+                save_images(model_results, output_directory)
