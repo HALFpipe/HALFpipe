@@ -93,6 +93,9 @@ def _parse_from_spec(
 
     filtered_results = list()
     seen_inputs: set[str] = set()
+
+    model_inputs: set[str] = set(map(format_like_bids, model.inputs))
+
     for result in results:
         tags = result["tags"]
 
@@ -102,7 +105,7 @@ def _parse_from_spec(
                 continue
             value = format_like_bids(value)
             seen_inputs.add(value)
-            if value in model.inputs:
+            if value in model_inputs:
                 filtered_results.append(result)
                 break
     results = filtered_results
@@ -112,7 +115,7 @@ def _parse_from_spec(
             [f'"{seen_input}"' for seen_input in sorted(seen_inputs)]
         )
         model_inputs_str = inflect_engine.join(
-            [f'"{model_input}"' for model_input in sorted(model.inputs)],
+            [f'"{model_input}"' for model_input in sorted(model_inputs)],
             conj="or",
         )
         raise ValueError(
