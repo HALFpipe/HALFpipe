@@ -51,7 +51,7 @@ def init_bandpass_filter_wf(
         name = f"{type}_bandpass_filter"
         if low is not None:
             name = f"{name}_{int(low * 1000):d}"
-        if low is not None:
+        if high is not None:
             name = f"{name}_{int(high * 1000):d}"
         name = f"{name}_wf"
     if suffix is not None:
