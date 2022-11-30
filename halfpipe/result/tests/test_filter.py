@@ -17,7 +17,7 @@ from ..filter import filter_results, get_categorical_dict, parse_filter_dict
 
 @pytest.mark.parametrize("action", ["include", "exclude"])
 def test_filter_group(action: str, tmp_path):
-    groups = {"1": "d", "sub-2": "c", "3": "b"}
+    groups = {"1": "d", "sub-2": "c", "sub-a_3": "b"}
     data_frame = pd.DataFrame(dict(a=groups))
     data_frame.reset_index(level=0, inplace=True)
 
@@ -49,7 +49,7 @@ def test_filter_group(action: str, tmp_path):
     f = parse_filter_dict(filter_dict, categorical_dict)
     assert isinstance(f, FunctionType)
 
-    for k, v in {**groups, "2": "c", "sub-3": "b"}.items():
+    for k, v in {**groups, "2": "c", "sub-1": "d", "a3": "b"}.items():
         result: ResultDict = {"tags": dict(sub=k)}
 
         will_keep = f(result)
@@ -79,7 +79,7 @@ def test_filter_cutoff():
 
 
 def test_filter_missing(tmp_path):
-    values = {"1": np.nan, "2": 1.0, "sub-3": np.nan}
+    values = {"1": np.nan, "2": 1.0, "sub-a_3": np.nan}
     data_frame = pd.DataFrame(dict(a=values))
     data_frame.reset_index(level=0, inplace=True)
 
@@ -97,7 +97,7 @@ def test_filter_missing(tmp_path):
         action="exclude",
     )
 
-    for k, v in {**values, "sub-1": np.nan, "3": np.nan}.items():
+    for k, v in {**values, "sub-1": np.nan, "a3": np.nan}.items():
         result: ResultDict = {"tags": dict(sub=k)}
         results = filter_results(
             [result],

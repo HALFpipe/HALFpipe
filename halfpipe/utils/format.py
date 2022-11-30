@@ -20,7 +20,7 @@ def normalize_subject(s) -> str:
     if s.startswith("sub-"):
         s = s[4:]
 
-    return s
+    return format_like_bids(s)
 
 
 def _replace_special(s):

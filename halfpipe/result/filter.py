@@ -40,7 +40,9 @@ def _make_group_filterfun(
 
     variable_dict = categorical_dict[variable]
     selected_subjects = frozenset(
-        subject for subject, value in variable_dict.items() if value in levels
+        normalize_subject(subject)
+        for subject, value in variable_dict.items()
+        if value in levels
     )
 
     levelsdesc = inflect_engine.join([f'"{v}"' for v in levels], conj="or")
@@ -97,7 +99,7 @@ def _make_missing_filterfun(
     is_finite = pd.notnull(data_frame[variable])
     assert isinstance(is_finite, pd.Series)
 
-    selected_subjects = frozenset(is_finite.index[is_finite])
+    selected_subjects = frozenset(map(normalize_subject, is_finite.index[is_finite]))
 
     def missing_filterfun(d):
         subject = d["tags"].get("sub")
