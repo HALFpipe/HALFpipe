@@ -26,7 +26,7 @@ def test_get(tmp_path, tags: Mapping[str, str], decision):
     test_file_path = tmp_path / "exclude_hcp_neele.json"
     x = (
         {
-            "sub": "PSY00",
+            "sub": "PSY_00",
             "type": "skull_strip_report",
             "rating": tags["rating"],
         },
@@ -44,3 +44,5 @@ def test_get(tmp_path, tags: Mapping[str, str], decision):
     # warnings catcher & tasks maybe 2nd test
     qc = QCDecisionMaker(file_paths=file_paths)
     assert qc.get(tags=dict(sub="PSY00")) == decision
+    assert qc.get(tags=dict(sub="PSY_00")) == decision
+    assert qc.get(tags=dict(sub="sub-PSY00")) == decision
