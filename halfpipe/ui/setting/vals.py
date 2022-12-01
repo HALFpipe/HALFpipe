@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import OrderedDict
-from typing import Dict, Optional, Type
+from typing import Type
 
 from more_itertools import unique_everseen
 
@@ -58,6 +58,8 @@ def get_setting_vals_steps(
         }
 
         def setup(self, ctx):
+            self.valuedict: dict | None = None
+
             self._append_view(TextView(f"Remove {self.noun}?"))
 
             featuresettings = set(
@@ -93,8 +95,6 @@ def get_setting_vals_steps(
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
-
-            self.valuedict: Optional[Dict] = None
 
         def run(self, _):
             self.valuedict = self.input_view()
@@ -195,7 +195,7 @@ def get_setting_vals_steps(
             return True
 
         def next(self, ctx):
-            filterdict = {"type": self.type_str}
+            filterdict: dict[str, str | None] = {"type": self.type_str}
             for key, display_str in zip(self.keys, self.display_strs):
                 display_str = str(display_str)
                 assert self.value is not None
@@ -203,7 +203,7 @@ def get_setting_vals_steps(
                     if isinstance(self.value[display_str], float):
                         filterdict[key] = self.value[display_str]
                     elif self.value[display_str] == "Skip":
-                        pass
+                        filterdict[key] = None
                     else:
                         raise ValueError(
                             f'Unknown bandpass filter value "{self.value[display_str]}"'
