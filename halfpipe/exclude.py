@@ -7,7 +7,7 @@ from collections import defaultdict
 from enum import Enum, IntEnum, auto
 from glob import glob, has_magic
 from pathlib import Path
-from typing import Generator, Mapping, Sequence
+from typing import Any, Generator, Mapping, Sequence
 
 from more_itertools import powerset
 from pyrsistent import pmap
@@ -54,9 +54,14 @@ class QCDecisionMaker:
             for entry in entries:
                 self._add_entry(entry)
 
-    def _normalize_value(self, tag: str, value: str) -> str:
+    def _normalize_value(self, tag: str, value: Any) -> str:
+        if isinstance(value, list):
+            if len(value) == 1:
+                (value,) = value
         if tag == "sub":
             value = normalize_subject(value)
+        if not isinstance(value, str):
+            raise ValueError
         return value
 
     def _add_entry(self, entry: Mapping[str, str]) -> None:
@@ -86,7 +91,7 @@ class QCDecisionMaker:
             if subset in self.index:
                 yield from self.index[subset]
 
-    def get(self, tags: Mapping[str, str]) -> Decision:
+    def get(self, tags: Mapping[str, Any]) -> Decision:
         if len(self.relevant_tag_names) == 0:
             relevant_tags = pmap(tags)
         else:

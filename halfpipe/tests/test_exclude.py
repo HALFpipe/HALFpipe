@@ -46,3 +46,4 @@ def test_get(tmp_path, tags: Mapping[str, str], decision):
     assert qc.get(tags=dict(sub="PSY00")) == decision
     assert qc.get(tags=dict(sub="PSY_00")) == decision
     assert qc.get(tags=dict(sub="sub-PSY00")) == decision
+    assert qc.get(tags=dict(sub="sub-PSY00", run=["03"])) == decision
