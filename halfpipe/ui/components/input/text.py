@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from typing import Type
 
 import numpy as np
@@ -159,9 +155,9 @@ class TextInputView(CallableView):
 class NumberInputView(TextInputView):
     def __init__(
         self,
-        number=0,
-        min=-np.inf,
-        max=np.inf,
+        number: float = 0,
+        min: float = -np.inf,
+        max: float = np.inf,
         **kwargs,
     ):
         super(NumberInputView, self).__init__(text=str(number), **kwargs)
