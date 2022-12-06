@@ -14,7 +14,7 @@ bids-validator==1.9.4
     # via pybids
 certifi==2022.6.15
     # via requests
-chardet==5.0.0
+chardet==5.1.0
     # via -r requirements.in
 charset-normalizer==2.1.0
     # via requests
