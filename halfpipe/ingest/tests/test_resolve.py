@@ -38,42 +38,12 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
     }}"""
 
     gql_url = "https://openneuro.org/crn/graphql"
-    # attempts = 0
-    # while attempts < 3:
-    #   r = requests.post(gql_url, json={"query": query_example})
-    #  if not r.status_code == 200:
-    #     time.sleep(0.3)
-    #    attempts += 1
-    #   continue
-    # break
 
     r = requests.post(gql_url, json={"query": query_example})
-    print(r.status_code)
     if not r.status_code == 200:
         raise RuntimeError("Could not fetch file listing")
 
     json_file = json.loads(r.text)
-
-    # def recursive_walk(neuro_dict, file_list: list = []):
-    #    base_list = neuro_dict["data"]["snapshot"]["files"]  # returns list of all files
-    #    for val in base_list:
-    #        if not val["directory"]:
-    #            file_list.append(val["filename"])
-    #        cur_id = val["id"]
-    #        query = f"""query{{
-    #            snapshot(datasetId: "{openneuroID}", tag: "1.0.0"){{
-    #                files(tree: "{cur_id}"){{
-    #                    id
-    #                    key
-    #                    filename
-    #                    directory
-    #                    }}
-    #                }}
-    #            }}"""
-    #        r = requests.post(gql_url, json={"query": query})
-    #        json_dict = json.loads(r.text)
-    #        recursive_walk(json_dict)
-    #    return file_list
 
     def recursive_walk_wpath(neuro_dict, file_list=[], build_path=None):
         base_list = neuro_dict["data"]["snapshot"]["files"]  # returns list of all files
@@ -118,13 +88,9 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
     for line in file_list:
         if not isinstance(line, str):
             continue
-        if line.endswith(
-            (
-                "MP2RAGE.nii.gz",
-                "UNIT1.nii.gz"
-                # , ".bval", ".bvec"
-            )
-        ):
+        if line.endswith(("MP2RAGE.nii.gz", "UNIT1.nii.gz")):
+            continue
+        if "T1map" in line:
             continue
         path = tmp_path / line.strip()
 
@@ -145,6 +111,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
         if (
             i.startswith("derivatives")
             or "/dwi" in i
+            or "T1map" in i
             or i.endswith(("MP2RAGE.nii.gz", "UNIT1.nii.gz"))
         ):
             continue
