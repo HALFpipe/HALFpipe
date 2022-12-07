@@ -6,8 +6,9 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 from nilearn.image import new_img_like
-from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined, traits
 
 from ..ingest.spreadsheet import read_spreadsheet
 from ..utils.image import nvol
@@ -17,6 +18,8 @@ from ..utils.path import split_ext
 class TransformerInputSpec(TraitedSpec):
     in_file = File(desc="File to filter", exists=True, mandatory=True)
     mask = File(desc="mask to use for volumes", exists=True)
+
+    write_header = traits.Bool(default=True, usedefault=True)
 
 
 class TransformerOutputSpec(TraitedSpec):
@@ -123,11 +126,15 @@ class Transformer(SimpleInterface):
             nib.save(out_img, out_file)
 
         else:
-            in_df = self.in_df
-
-            out_df = in_df
+            out_df = pd.DataFrame(data=array2, columns=self.in_df.columns)
             np.copyto(out_df.values, array2)
-            out_df.to_csv(out_file, sep="\t", index=False, na_rep="n/a", header=True)
+            out_df.to_csv(
+                out_file,
+                sep="\t",
+                index=False,
+                na_rep="n/a",
+                header=self.inputs.write_header,
+            )
 
         return out_file
 

@@ -7,6 +7,7 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import fsl
 from niworkflows.interfaces.utility import KeySelect
 
+from ...interfaces.utility.remove_volumes import RemoveVolumes
 from ..constants import constants
 from ..memory import MemoryCalculator
 
@@ -23,6 +24,7 @@ def init_fmriprep_adapter_wf(
                 "bold_std",
                 "bold_mask_std",
                 "spatial_reference",
+                "skip_vols",
                 "confounds",
                 "vals",
             ]
@@ -46,21 +48,32 @@ def init_fmriprep_adapter_wf(
     workflow.connect(inputnode, "spatial_reference", select_std, "keys")
 
     #
-    applymask = pe.Node(
+    apply_mask = pe.Node(
         interface=fsl.ApplyMask(),
-        name="applymask",
+        name="apply_mask",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(select_std, "bold_std", applymask, "in_file")
-    workflow.connect(select_std, "bold_mask_std", applymask, "mask_file")
+    workflow.connect(select_std, "bold_std", apply_mask, "in_file")
+    workflow.connect(select_std, "bold_mask_std", apply_mask, "mask_file")
 
     #
     merge = pe.Node(niu.Merge(2), name="merge")
-    workflow.connect(applymask, "out_file", merge, "in1")
+    workflow.connect(apply_mask, "out_file", merge, "in1")
     workflow.connect(inputnode, "confounds", merge, "in2")
 
     #
-    workflow.connect(merge, "out", outputnode, "files")
+    skip_vols = pe.MapNode(
+        RemoveVolumes(),
+        iterfield="in_file",
+        name="skip_vols",
+        mem_gb=memcalc.series_std_gb,
+    )
+    workflow.connect(merge, "out", skip_vols, "in_file")
+    workflow.connect(inputnode, "skip_vols", skip_vols, "skip_vols")
+    workflow.connect(select_std, "bold_mask_std", skip_vols, "mask")
+
+    #
+    workflow.connect(skip_vols, "out_file", outputnode, "files")
     workflow.connect(select_std, "bold_mask_std", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
 

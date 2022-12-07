@@ -14,6 +14,7 @@ from ...interfaces.report.vals import UpdateVals
 from ...interfaces.resultdict.datasink import ResultdictDatasink
 from ...interfaces.resultdict.make import MakeResultdicts
 from ...interfaces.utility.file_type import SplitByFileType
+from ...interfaces.utility.remove_volumes import RemoveVolumes
 from ...interfaces.utility.tsv import MergeColumns
 from ..memory import MemoryCalculator
 
@@ -44,7 +45,6 @@ def init_ica_aroma_components_wf(
     name: str = "ica_aroma_components_wf",
     memcalc: MemoryCalculator = MemoryCalculator.default(),
 ):
-    """ """
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -81,7 +81,7 @@ def init_ica_aroma_components_wf(
     )
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    #
+    # create ICA-AROMA workflow
     err_on_aroma_warn: bool = False
     if config.workflow.aroma_err_on_warn is not None:
         err_on_aroma_warn = config.workflow.aroma_err_on_warn
@@ -97,19 +97,21 @@ def init_ica_aroma_components_wf(
         name="ica_aroma_wf",
     )
 
+    # disable qactually denoising the data
     ica_aroma_node = ica_aroma_wf.get_node("ica_aroma")
     assert isinstance(ica_aroma_node, pe.Node)
     ica_aroma_node.inputs.denoise_type = "no"
 
+    # remove duplicate nodes
     add_nonsteady = ica_aroma_wf.get_node("add_nonsteady")
     ds_report_ica_aroma = ica_aroma_wf.get_node("ds_report_ica_aroma")
     ica_aroma_wf.remove_nodes([add_nonsteady, ds_report_ica_aroma])
 
+    # connect inputs to ICA-AROMA
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
     workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
-
     workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
     workflow.connect(
         inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std"
@@ -118,10 +120,20 @@ def init_ica_aroma_components_wf(
         inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference"
     )
 
+    # remove dummy scans from outputs
+    skip_vols = pe.Node(
+        RemoveVolumes(write_header=False),  # melodic_mix files don't have column names
+        name="skip_vols",
+        mem_gb=memcalc.min_gb,
+    )
+    workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", skip_vols, "in_file")
+    workflow.connect(inputnode, "skip_vols", skip_vols, "skip_vols")
+
+    # pass outputs to outputnode
+    workflow.connect(skip_vols, "out_file", outputnode, "melodic_mix")
     workflow.connect(
         ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics"
     )
-    workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", outputnode, "melodic_mix")
     workflow.connect(
         ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata"
     )
