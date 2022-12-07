@@ -2,17 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import os
-import pdb
-
 import networkx as nx
 from nipype.pipeline import plugins as nip
 from nipype.pipeline.engine.utils import topological_sort
 
-from ..logging import logger
 
-
-class DebugPlugin(nip.LinearPlugin):
+class TestPlugin(nip.LinearPlugin):
     """Execute workflow in series"""
 
     def run(self, graph, config, updatehash=False):
@@ -26,18 +21,7 @@ class DebugPlugin(nip.LinearPlugin):
         if not isinstance(graph, nx.DiGraph):
             raise ValueError("Input must be a networkx digraph object")
 
-        logger.info("Running serially.")
-
-        old_wd = os.getcwd()
-
         nodes, _ = topological_sort(graph)
 
         for node in nodes:
-            try:
-                if self._status_callback:
-                    self._status_callback(node, "start")
-                node.run(updatehash=updatehash)
-            except Exception:
-                pdb.post_mortem()
-
-        os.chdir(old_wd)  # Return wherever we were before
+            node.run(updatehash=updatehash)

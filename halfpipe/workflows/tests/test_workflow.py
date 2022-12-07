@@ -316,7 +316,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts = parser.parse_args(args=list())
 
     opts.graphs = graphs
-    opts.nipype_run_plugin = "Linear"
+    opts.nipype_run_plugin = "Test"
     opts.debug = True
 
     run_stage_run(opts)
