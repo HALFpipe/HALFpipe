@@ -41,12 +41,6 @@ run_cmd() {
     return $exit_code
 }
 
-printf '%s\n' --------------------
-
-run_cmd mamba install --yes "python==3.10" "nomkl" "pip" "gdb"
-
-printf '%s\n' --------------------
-
 conda_packages=()
 pip_packages=()
 
@@ -72,4 +66,5 @@ done < <(grep -v '#' ${requirements_files[@]})
 run_cmd mamba install --yes ${conda_packages[@]}
 
 # we assume that all python dependencies have already been resolved by `pip-compile`
+# so there will be no conflicts when we ask `pip` to install them
 run_cmd pip install --no-deps ${pip_packages[@]}

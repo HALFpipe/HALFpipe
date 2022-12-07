@@ -4,6 +4,8 @@
 
 from pathlib import Path
 
+from tqdm.auto import tqdm
+
 from ..utils.path import split_ext
 from .base import FileIndex
 
@@ -63,7 +65,8 @@ def parse(path: Path) -> dict[str, str] | None:
 
 class BIDSIndex(FileIndex):
     def put(self, root: Path):
-        for path in root.glob("**/*"):
+        it = root.glob("**/*")
+        for path in tqdm(it, desc=f'indexing files from "{root}"'):
             tags = parse(path)
 
             if tags is None:

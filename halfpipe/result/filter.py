@@ -4,15 +4,15 @@
 
 from math import isclose
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 import numpy as np
 import pandas as pd
 
 from ..design import prepare_data_frame
 from ..exclude import Decision, QCDecisionMaker
-from ..utils import inflect_engine, logger
-from ..utils.format import format_tags, normalize_subject
+from ..logging import logger
+from ..utils.format import format_tags, inflect_engine, normalize_subject
 from .base import ResultDict
 from .variables import Continuous
 
@@ -40,7 +40,9 @@ def _make_group_filterfun(
 
     variable_dict = categorical_dict[variable]
     selected_subjects = frozenset(
-        subject for subject, value in variable_dict.items() if value in levels
+        normalize_subject(subject)
+        for subject, value in variable_dict.items()
+        if value in levels
     )
 
     levelsdesc = inflect_engine.join([f'"{v}"' for v in levels], conj="or")
@@ -97,7 +99,7 @@ def _make_missing_filterfun(
     is_finite = pd.notnull(data_frame[variable])
     assert isinstance(is_finite, pd.Series)
 
-    selected_subjects = frozenset(is_finite.index[is_finite])
+    selected_subjects = frozenset(map(normalize_subject, is_finite.index[is_finite]))
 
     def missing_filterfun(d):
         subject = d["tags"].get("sub")
@@ -189,7 +191,7 @@ def filter_results(
     variable_dicts: list[dict] | None = None,
     model_name: str | None = None,
     require_one_of_images: list[str] = list(),
-    exclude_files: list[str] | None = None,
+    exclude_files: Sequence[str | Path] | None = None,
 ) -> list[ResultDict]:
     results = results.copy()
 

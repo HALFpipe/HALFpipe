@@ -5,8 +5,8 @@
 from inflection import humanize, underscore
 
 from ...model.model import FixedEffectsModelSchema, Model
-from ...utils import inflect_engine as p
 from ...utils.format import format_like_bids
+from ...utils.format import inflect_engine as p
 from ..components import (
     MultipleChoiceInputView,
     SingleChoiceInputView,
@@ -216,7 +216,9 @@ class ModelFeaturesStep(Step):
 
             names = sorted(list(self.namesset))
 
-            self.input_view = MultipleChoiceInputView(names, checked=names)
+            self.input_view = MultipleChoiceInputView(
+                names, checked=names, isVertical=True
+            )
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

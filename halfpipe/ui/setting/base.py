@@ -56,7 +56,7 @@ def get_setting_init_steps(
                     continue
 
                 tagvals_set = set(tagvals_list)
-                if len(tagvals_set) > 1:
+                if 1 < len(tagvals_set) < 16:
                     self.entities.append(entity)
 
                     entity_str = entity

@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from dataclasses import asdict, is_dataclass
 from json import JSONEncoder
-from typing import Mapping, Optional
+from typing import Any, Mapping, Optional
 
 import numpy as np
 
@@ -15,7 +15,7 @@ class TypeAwareJSONEncoder(JSONEncoder):
     adapted from https://github.com/illagrenan/django-numpy-json-encoder
     """
 
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         if is_dataclass(o):
             o = asdict(o, dict_factory=OrderedDict)
 

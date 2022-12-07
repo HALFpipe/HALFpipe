@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, Optional
-
 from marshmallow import RAISE, Schema, fields, post_load
 
 
@@ -22,9 +20,9 @@ class File:
         self.extension = extension
 
         self.tags: dict[str, str] = dict()
-        self.intended_for: Optional[Dict] = None
+        self.intended_for: dict | None = None
 
-        self.metadata = kwargs.get("metadata", dict())
+        self.metadata: dict = dict()
         for k, v in kwargs.items():
             setattr(self, k, v)
 

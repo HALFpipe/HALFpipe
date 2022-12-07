@@ -40,7 +40,7 @@ fasteners >= 0.15
 chardet
 pympler >= 0.9
 stackprinter >= 0.2.5
-line-profiler >= 3.3.0
+line-profiler >= 4.0.1
 typing_extensions >= 3.10.0.0
 pyrsistent >= 0.18.1
 frozendict >= 2.0.6

@@ -37,7 +37,7 @@ jobs:
 
     steps:
     - name: Cache data
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /home
         key: ${{ runner.os }}-home
@@ -65,7 +65,7 @@ jobs:
         pytest ${{ matrix.args }} --cov --cov-report=xml
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage_${{ matrix.chunk }}
         path: ./coverage.xml
@@ -121,7 +121,7 @@ jobs:
           echo "::set-output name=file::${FILE}"
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ${{ steps.collect.file  }}

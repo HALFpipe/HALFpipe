@@ -7,7 +7,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import ClassVar, Dict, Optional, Type
 
-from ..utils import logger
+from ..logging import logger
 from .components import SingleChoiceInputView, SpacerView, TextElement, TextView
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Tuple
 
 from .. import __version__
-from ..utils import logger
+from ..logging import logger
 from ..utils.path import is_empty
 from .commands.group_level import GroupLevelCommand
 
@@ -148,9 +148,10 @@ def parse_args(args=None, namespace=None) -> Tuple:
 
         init_watchdog()
 
-    from fmriprep import config
+    if debug:
+        from fmriprep import config
 
-    config.execution.debug = ["all"] if debug else []
+        config.execution.debug = ["all"]
 
     verbose = opts.verbose
     if verbose:

@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import Union
 from uuid import uuid4
 
 from .hooks import run_hooks_from_dir
@@ -11,7 +10,7 @@ from .logging import logging_context
 from .utils.path import resolve
 
 
-def init_workdir(workdir: Union[str, Path], fs_root: Union[str, Path] = None) -> Path:
+def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path:
     workdir = str(workdir)
 
     if fs_root is None:

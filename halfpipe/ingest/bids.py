@@ -13,8 +13,8 @@ from bids.layout.writing import build_path
 from inflection import camelize
 
 from ..collect.metadata import collect_metadata
+from ..logging import logger
 from ..model.tags import entities, entity_longnames
-from ..utils import logger
 from ..utils.format import format_like_bids
 from ..utils.hash import int_digest
 from ..utils.path import rlistdir, split_ext

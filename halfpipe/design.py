@@ -5,6 +5,7 @@
 from collections import OrderedDict
 from itertools import product
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -16,8 +17,9 @@ from patsy.desc import (  # separate imports as to not confuse type checker
 from patsy.highlevel import dmatrix
 from patsy.user_util import LookupFactor
 
+from .ingest.design import parse_design
 from .ingest.spreadsheet import read_spreadsheet
-from .utils import logger
+from .logging import logger
 
 
 def _check_multicollinearity(matrix):
@@ -48,55 +50,67 @@ def prepare_data_frame(
     spreadsheet: Path,
     variables: list[dict],
     subjects: list[str] | None = None,
+    na_action: Literal["impute"] | None = None,
 ) -> pd.DataFrame:
     data_frame: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=str)
 
-    id_column = None
+    # set data frame index
+    id_column_name: str | None = None
     for variabledict in variables:
         if variabledict["type"] == "id":
-            id_column = variabledict["name"]
+            id_column_name = variabledict["name"]
             break
+    if id_column_name is None:
+        raise ValueError("Missing id column, cannot specify model")
 
-    assert id_column is not None, "Missing id column, cannot specify model"
-
-    data_frame[id_column] = pd.Series(data_frame[id_column], dtype=str)
-    data_frame[id_column] = [  # remove bids prefixes
-        str(subject_id).removeprefix("sub-") for subject_id in data_frame[id_column]
+    id_column = pd.Series(data_frame[id_column_name], dtype=str)
+    id_column[:] = [  # remove bids prefixes
+        str(subject_id).removeprefix("sub-") for subject_id in id_column
     ]
-    data_frame.set_index(id_column, inplace=True)
+    data_frame[id_column_name] = id_column
+    data_frame.set_index(id_column_name, inplace=True)
 
+    # filter data frame
     if subjects is not None:
         # only keep subjects that are in this analysis
         # also sets order
         data_frame = data_frame.loc[subjects, :]
 
+    # apply variable data types
     continuous_columns: list[str] = list()
     categorical_columns: list[str] = list()
     columns_in_order: list[str] = []
     for variabledict in variables:
         name = variabledict["name"]
+        if name not in data_frame:
+            continue
+        column = data_frame[name]
+        if not isinstance(column, pd.Series):
+            continue
+
         if variabledict["type"] == "continuous":
             continuous_columns.append(name)
             columns_in_order.append(name)
-
             # change type to numeric
-            data_frame[name] = data_frame[name].astype(float)
+            column = column.astype(float, copy=False)
+            # impute missing values with mean
+            if na_action == "impute":
+                column.fillna(column.mean(), inplace=True)
+
         elif variabledict["type"] == "categorical":
             categorical_columns.append(name)
             columns_in_order.append(name)
-
             # change type first to string then to category
+            column = column.astype(str).astype("category")
             # set unknown levels to missing
             levels = variabledict["levels"]
-            data_frame[name] = (
-                data_frame[name]
-                .astype(str)
-                .astype("category")
-                .cat.set_categories(
-                    new_categories=levels,
-                )
-                .cat.remove_unused_categories()
-            )
+            column = column.cat.set_categories(new_categories=levels)
+            column = column.cat.remove_unused_categories()
+            # impute missing values
+            if na_action == "impute":
+                column.fillna(column.mode()[0], inplace=True)
+
+        data_frame[name] = column
 
     # ensure order
     data_frame = data_frame.loc[:, columns_in_order]
@@ -177,7 +191,7 @@ def group_design(
     subjects: list[str],
 ) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
 
-    dataframe = prepare_data_frame(spreadsheet, variables, subjects)
+    dataframe = prepare_data_frame(spreadsheet, variables, subjects, na_action="impute")
 
     # remove zero variance columns
     columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1  # does not count NA
@@ -191,8 +205,9 @@ def group_design(
     rhs = _generate_rhs(contrasts, columns_var_gt_0)
 
     # specify patsy design matrix
-    modelDesc = ModelDesc(lhs, rhs)
-    dmat = dmatrix(modelDesc, dataframe, return_type="dataframe")
+    model_desc = ModelDesc(lhs, rhs)
+    dmat = dmatrix(model_desc, dataframe, return_type="dataframe", NA_action="raise")
+    assert isinstance(dmat, pd.DataFrame)
     _check_multicollinearity(dmat)
 
     # prepare lsmeans
@@ -204,6 +219,7 @@ def group_design(
         list(product(*unique_values_categorical)), columns=dataframe.columns
     )
     reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
+    assert isinstance(reference_dmat, pd.DataFrame)
 
     # data frame to store contrasts
     contrast_matrices: list[tuple[str, pd.DataFrame]] = []
@@ -266,8 +282,43 @@ def group_design(
         return intercept_only_design(len(subjects))
 
     regressor_list = dmat.to_dict(orient="list", into=OrderedDict)
+    assert isinstance(regressor_list, dict)
     contrast_list, contrast_numbers, contrast_names = _make_contrasts_list(
         contrast_matrices
     )
 
     return regressor_list, contrast_list, contrast_numbers, contrast_names
+
+
+def make_design_tsv(
+    regressor_list: dict[str, list[float]],
+    contrast_list: list[tuple],
+    row_index: list[str],
+) -> tuple[Path, Path]:
+    design_matrix, contrast_matrices = parse_design(regressor_list, contrast_list)
+    design_matrix.index = pd.Index(row_index)
+
+    design_tsv = Path.cwd() / "design.tsv"
+    design_matrix.to_csv(design_tsv, sep="\t", index=True, na_rep="n/a", header=True)
+
+    index: list[str] = list()
+    for contrast_name, contrast_matrix in contrast_matrices.items():
+        for _ in range(contrast_matrix.shape[0]):
+            index.append(contrast_name)
+
+    contrast_data_frame = pd.DataFrame(
+        np.concatenate(list(contrast_matrices.values()), axis=0),
+        index=index,
+        columns=design_matrix.columns,
+    )
+
+    contrast_tsv = Path.cwd() / "contrasts.tsv"
+    contrast_data_frame.to_csv(
+        contrast_tsv,
+        sep="\t",
+        index=True,
+        na_rep="n/a",
+        header=True,
+    )
+
+    return design_tsv, contrast_tsv

@@ -10,7 +10,7 @@ from nipype.pipeline import plugins as nip
 from nipype.pipeline.engine.utils import topological_sort
 from nipype.pipeline.plugins.base import report_crash, report_nodes_not_run, str2bool
 
-from ..utils import logger
+from ..logging import logger
 
 
 class DebugPlugin(nip.LinearPlugin):

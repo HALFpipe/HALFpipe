@@ -10,7 +10,7 @@ import pandas as pd
 from numpy import typing as npt
 from scipy import optimize, special, stats
 
-from ..utils import logger
+from ..logging import logger
 from .base import ModelAlgorithm
 from .flame1 import flame1_prepare_data
 
@@ -278,7 +278,7 @@ class Heterogeneity(ModelAlgorithm):
 
         try:
             voxel_dict = het_on_voxel(y, z, s)
-        except (np.linalg.LinAlgError, AssertionError, ValueError):
+        except (np.linalg.LinAlgError, AssertionError, ValueError, SystemError):
             return None
         except Exception as e:
             logger.warning(f"Unexpected exception for voxel {coordinate}", exc_info=e)

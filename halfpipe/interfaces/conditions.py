@@ -13,7 +13,7 @@ from nipype.interfaces.base import (
 )
 
 from ..ingest.events import ConditionFile
-from ..utils import logger
+from ..logging import logger
 
 
 class ApplyConditionOffsetInputSpec(TraitedSpec):

@@ -5,9 +5,13 @@
 import re
 from typing import Mapping
 
+from inflect import engine
 from inflection import camelize, parameterize, underscore
 
 from ..model.tags import entities, entity_longnames
+
+inflect_engine = engine()
+del engine
 
 
 def normalize_subject(s) -> str:
@@ -16,7 +20,7 @@ def normalize_subject(s) -> str:
     if s.startswith("sub-"):
         s = s[4:]
 
-    return s
+    return format_like_bids(s)
 
 
 def _replace_special(s):
@@ -62,6 +66,6 @@ def format_tags(tags: Mapping[str, str]) -> str:
 
             entity = entity_longnames.get(entity, entity)
 
-            s.append(f'{entity}: "{value}"')
+            s.append(f'{entity}="{value}"')
 
-    return ", ".join(s)
+    return inflect_engine.join(s)
