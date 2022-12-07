@@ -59,11 +59,23 @@ class FileIndex:
 
         return res
 
-    def get_tags(self, path: Path) -> Mapping[str, str]:
-        return self.tags_by_paths[path]
+    def get_tags(self, path: Path) -> Mapping[str, str | None]:
+        if path in self.tags_by_paths:
+            return self.tags_by_paths[path]
+        else:
+            return dict()
 
     def get_tag_value(self, path: Path, key: str) -> str | None:
         return self.get_tags(path).get(key)
+
+    def set_tag_value(self, path: Path, key: str, value: str) -> None:
+        # remove previous value
+        if self.get_tag_value(path, key) is not None:
+            previous_value = self.tags_by_paths[path].pop(key)
+            self.paths_by_tags[key][previous_value].remove(path)
+        if value is not None:
+            self.tags_by_paths[path][key] = value
+            self.paths_by_tags[key][value].add(path)
 
     def get_tag_mapping(self, key: str) -> Mapping[str, set[Path]]:
         return self.paths_by_tags[key]
