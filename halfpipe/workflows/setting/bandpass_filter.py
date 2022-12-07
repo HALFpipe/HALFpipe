@@ -18,25 +18,40 @@ def _calc_sigma(
     repetition_time: float | None = None,
 ):
     lp_sigma = None
-    if lp_width is not None:
-        assert isinstance(repetition_time, float)
-        lp_sigma = lp_width / (2.0 * repetition_time)
     hp_sigma = None
-    if hp_width is not None:
-        assert isinstance(repetition_time, float)
-        hp_sigma = hp_width / (2.0 * repetition_time)
+
+    if lp_width is not None or hp_width is not None:
+        if not isinstance(repetition_time, float):
+            raise ValueError(
+                f'Invalid repetition time "{repetition_time}" ({type(repetition_time)})'
+            )
+        if lp_width is not None:
+            lp_sigma = lp_width / (2.0 * repetition_time)
+        if hp_width is not None:
+            hp_sigma = hp_width / (2.0 * repetition_time)
+
     return lp_sigma, hp_sigma
 
 
-def _out_file_name(in_file):
+def _out_file_name(in_file) -> str:
     from halfpipe.utils.path import split_ext
 
     stem, ext = split_ext(in_file)
     return f"{stem}_tproject{ext}"
 
 
-def _bandpass_arg(low, high):
-    return (float(low), float(high))
+def _bandpass_arg(low, high) -> str:
+    low, high = float(low), float(high)
+
+    # constants taken from https://github.com/afni/afni/blob/master/src/3dTproject.c#L1312-L1313
+    if low < 0 and high < 0:
+        return ""  # only remove selected confounds
+    elif high < 0:
+        return f"-stopband 0 {low - 0.0001:f}"
+    elif low < 0:
+        return f"-stopband {high + 0.0001:f} 999999.9"
+    else:
+        return f"-passband {low:f} {high:f}"
 
 
 def init_bandpass_filter_wf(
@@ -50,9 +65,9 @@ def init_bandpass_filter_wf(
     if name is None:
         name = f"{type}_bandpass_filter"
         if low is not None:
-            name = f"{name}_{int(low * 1000):d}"
+            name = f"{name}_low_{int(low * 1000):d}"
         if high is not None:
-            name = f"{name}_{int(high * 1000):d}"
+            name = f"{name}_high_{int(high * 1000):d}"
         name = f"{name}_wf"
     if suffix is not None:
         name = f"{name}_{suffix}"
@@ -105,7 +120,6 @@ def init_bandpass_filter_wf(
         workflow.connect(inputnode, "low", calcsigma, "lp_width")
         workflow.connect(inputnode, "high", calcsigma, "hp_width")
         workflow.connect(inputnode, "repetition_time", calcsigma, "repetition_time")
-
         temporalfilter = pe.MapNode(
             TemporalFilter(),
             iterfield="in_file",
@@ -125,7 +139,7 @@ def init_bandpass_filter_wf(
         makeoutfname = pe.MapNode(
             niu.Function(
                 input_names=["in_file"],
-                output_names=["out_file"],
+                output_names="out_file",
                 function=_out_file_name,
             ),
             iterfield="in_file",
@@ -133,16 +147,16 @@ def init_bandpass_filter_wf(
         )
         workflow.connect(toafni, "out_file", makeoutfname, "in_file")
 
-        bandpassarg = pe.Node(
+        bandpass_arg = pe.Node(
             niu.Function(
                 input_names=["low", "high"],
-                output_names=["out"],
+                output_names="out",
                 function=_bandpass_arg,
             ),
-            name="bandpassarg",
-        )  # cannot use merge here as we need a tuple
-        workflow.connect(inputnode, "low", bandpassarg, "low")
-        workflow.connect(inputnode, "high", bandpassarg, "high")
+            name="bandpass_arg",
+        )
+        workflow.connect(inputnode, "low", bandpass_arg, "low")
+        workflow.connect(inputnode, "high", bandpass_arg, "high")
 
         tproject = pe.MapNode(
             afni.TProject(polort=1),
@@ -151,7 +165,7 @@ def init_bandpass_filter_wf(
             mem_gb=memcalc.series_std_gb * 2,
         )
         workflow.connect(toafni, "out_file", tproject, "in_file")
-        workflow.connect(bandpassarg, "out", tproject, "bandpass")
+        workflow.connect(bandpass_arg, "out", tproject, "args")
         workflow.connect(inputnode, "repetition_time", tproject, "TR")
         workflow.connect(makeoutfname, "out_file", tproject, "out_file")
 
