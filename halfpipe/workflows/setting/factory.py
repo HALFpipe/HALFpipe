@@ -17,13 +17,13 @@ from ..bypass import init_bypass_wf
 from ..factory import Factory
 from ..memory import MemoryCalculator
 from ..resampling.factory import AltBOLDFactory
-from .bandpassfilter import init_bandpass_filter_wf
+from .bandpass_filter import init_bandpass_filter_wf
 from .confounds import init_confounds_regression_wf, init_confounds_select_wf
 from .fmriprepadapter import init_fmriprep_adapter_wf
 from .grand_mean_scaling import init_grand_mean_scaling_wf
-from .icaaroma import init_ica_aroma_components_wf, init_ica_aroma_regression_wf
+from .ica_aroma import init_ica_aroma_components_wf, init_ica_aroma_regression_wf
 from .output import init_setting_output_wf
-from .settingadapter import init_setting_adapter_wf
+from .setting_adapter import init_setting_adapter_wf
 from .smoothing import init_smoothing_wf
 
 alphabet = "abcdefghijklmnopqrstuvwxzy"
