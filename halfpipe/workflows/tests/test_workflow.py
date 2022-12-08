@@ -21,6 +21,7 @@ from templateflow.api import get as get_template
 from ...cli.parser import build_parser
 from ...cli.run import run_stage_run
 from ...ingest.database import Database
+from ...ingest.spreadsheet import read_spreadsheet
 from ...model.feature import FeatureSchema
 from ...model.file.schema import FileSchema
 from ...model.setting import SettingSchema
@@ -199,7 +200,7 @@ def mock_spec(bids_data, task_events, pcc_mask):
             [
                 dict(
                     name="dualRegAndSeedCorrAndTaskBasedSetting",
-                    output_image=False,
+                    output_image=True,
                     bandpass_filter=dict(type="gaussian", hp_width=125.0),
                     smoothing=dict(fwhm=6.0),
                     **setting_base,
@@ -301,6 +302,9 @@ def test_with_reconall(tmp_path, mock_spec):
 @pytest.mark.slow
 @pytest.mark.timeout(3 * 3600)
 def test_feature_extraction(tmp_path, mock_spec):
+    skip_vols = 3
+    mock_spec.global_settings.update(dict(dummy_scans=skip_vols))
+
     save_spec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = cpu_count()
@@ -316,10 +320,33 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts = parser.parse_args(args=list())
 
     opts.graphs = graphs
-    opts.nipype_run_plugin = "Linear"
+    opts.nipype_run_plugin = "Test"
     opts.debug = True
 
+    (bold_path,) = tmp_path.glob("rawdata/sub-*/func/*_bold.nii.gz")
+    bold_image = nib.load(bold_path)
+
     run_stage_run(opts)
+
+    (preproc_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_bold.nii.gz")
+    preproc_image = nib.load(preproc_path)
+
+    assert bold_image.shape[3] == preproc_image.shape[3] + skip_vols
+
+    (confounds_path,) = tmp_path.glob(
+        "derivatives/halfpipe/sub-*/func/*_desc-confounds_regressors.tsv"
+    )
+    confounds_frame = read_spreadsheet(confounds_path)
+
+    assert bold_image.shape[3] == confounds_frame.shape[0] + skip_vols
+
+    template_path = get_template(
+        "MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w"
+    )
+    template_image = nib.load(template_path)
+
+    assert bold_image.shape[:3] != template_image.shape  # sanity check
+    assert preproc_image.shape[:3] == template_image.shape
 
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):

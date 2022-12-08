@@ -6,8 +6,9 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 from nilearn.image import new_img_like
-from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined
+from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined, traits
 
 from ..ingest.spreadsheet import read_spreadsheet
 from ..utils.image import nvol
@@ -17,6 +18,8 @@ from ..utils.path import split_ext
 class TransformerInputSpec(TraitedSpec):
     in_file = File(desc="File to filter", exists=True, mandatory=True)
     mask = File(desc="mask to use for volumes", exists=True)
+
+    write_header = traits.Bool(default_value=True, usedefault=True)
 
 
 class TransformerOutputSpec(TraitedSpec):
@@ -116,6 +119,10 @@ class Transformer(SimpleInterface):
             else:
                 out_array = array2.T.reshape((*in_img.shape[:3], -1))
 
+            # squeeze time axis if we are outputting a single volume
+            if out_array.shape[3] == 1:
+                out_array = np.squeeze(out_array, axis=3)
+
             out_img = new_img_like(in_img, out_array, copy_header=True)
             assert isinstance(out_img.header, nib.Nifti1Header)
 
@@ -123,11 +130,22 @@ class Transformer(SimpleInterface):
             nib.save(out_img, out_file)
 
         else:
-            in_df = self.in_df
+            header = True
+            if (
+                hasattr(self.inputs, "write_header")
+                and isdefined(self.inputs.write_header)
+                and self.inputs.write_header is False
+            ):
+                header = False
 
-            out_df = in_df
-            np.copyto(out_df.values, array2)
-            out_df.to_csv(out_file, sep="\t", index=False, na_rep="n/a", header=True)
+            out_df = pd.DataFrame(data=array2, columns=self.in_df.columns)
+            out_df.to_csv(
+                out_file,
+                sep="\t",
+                index=False,
+                na_rep="n/a",
+                header=header,
+            )
 
         return out_file
 

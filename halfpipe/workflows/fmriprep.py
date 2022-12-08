@@ -18,7 +18,7 @@ from ..utils.format import inflect_engine as p
 from .constants import constants
 from .factory import Factory
 from .memory import MemoryCalculator
-from .report import init_anat_report_wf, init_func_report_wf
+from .reports import init_anat_report_wf, init_func_report_wf
 
 
 def _find_input(hierarchy, node, attr):

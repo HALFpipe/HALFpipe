@@ -9,13 +9,13 @@ from .fmap import collect_fieldmaps
 
 
 def collect_bold_files(
-    database, setting_factory, feature_factory
+    database, post_processing_factory, feature_factory
 ) -> dict[str, list[str]]:
 
     # find bold files
 
     bold_file_paths: set[str] = (
-        setting_factory.source_files | feature_factory.source_files
+        post_processing_factory.source_files | feature_factory.source_files
     )
     bold_file_paths_dict: dict[str, list[str]] = dict()
 

@@ -25,6 +25,7 @@ loggernames = [
     "nipype.utils",
     "nipype.filemanip",
     "nipype.interface",
+    "niworkflows",
     "py.warnings",
 ]
 

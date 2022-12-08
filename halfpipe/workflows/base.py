@@ -18,12 +18,12 @@ from ..utils.copy import deepcopyfactory
 from .constants import constants
 from .convert import convert_all
 from .factory import FactoryContext
-from .feature import FeatureFactory
+from .features import FeatureFactory
 from .fmriprep import FmriprepFactory
 from .memory import MemoryCalculator
-from .model import ModelFactory
 from .mriqc import MriqcFactory
-from .setting import SettingFactory
+from .post_processing import PostProcessingFactory
+from .stats import StatsFactory
 
 
 def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
@@ -82,12 +82,12 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
 
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
-    setting_factory = SettingFactory(ctx, fmriprep_factory)
-    feature_factory = FeatureFactory(ctx, setting_factory)
-    model_factory = ModelFactory(ctx, feature_factory)
+    post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
+    feature_factory = FeatureFactory(ctx, post_processing_factory)
+    stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(
-        database, setting_factory, feature_factory
+        database, post_processing_factory, feature_factory
     )
 
     # write out
@@ -131,9 +131,9 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
         }
 
         if spec.global_settings.get("run_halfpipe") is True:
-            setting_factory.setup(bold_file_paths_dict)
+            post_processing_factory.setup(bold_file_paths_dict)
             feature_factory.setup(bold_file_paths_dict)
-            model_factory.setup()
+            stats_factory.setup()
 
     # patch workflow
     config_factory = deepcopyfactory(workflow.config)

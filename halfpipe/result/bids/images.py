@@ -30,7 +30,7 @@ statmap_keys: frozenset[str] = frozenset(
 )
 
 
-def _from_bids_derivatives(tags: Mapping[str, str]) -> str | None:
+def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
     suffix = tags["suffix"]
     if suffix == "statmap":
 

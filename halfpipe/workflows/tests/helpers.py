@@ -3,7 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import nipype.pipeline.engine as pe
-from nipype.pipeline import plugins as nip
+
+from ...plugins import TestPlugin
 
 
 def run_workflow(workflow: pe.Workflow):
@@ -12,9 +13,7 @@ def run_workflow(workflow: pe.Workflow):
     workflow_args = dict(stop_on_first_crash=True, crashdump_dir=workflow.base_dir)
     workflow.config["execution"].update(workflow_args)
 
-    graph = workflow.run()
-
-    runner = nip.LinearPlugin(plugin_args=workflow_args)
-    runner.run(graph, updatehash=False, config=workflow.config)
+    runner = TestPlugin(plugin_args=workflow_args)
+    graph = workflow.run(plugin=runner)
 
     return graph
