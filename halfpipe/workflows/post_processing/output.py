@@ -5,8 +5,8 @@
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
 
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
 
 # from niworkflows.interfaces.plotting import ConfoundsCorrelationPlot

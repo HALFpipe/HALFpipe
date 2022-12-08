@@ -11,12 +11,12 @@ from ...logging import logger
 from ...model.feature import FeatureSchema
 from ..factory import Factory
 from ..memory import MemoryCalculator
-from .atlasbasedconnectivity import init_atlasbasedconnectivity_wf
-from .dualregression import init_dualregression_wf
+from .atlas_based_connectivity import init_atlas_based_connectivity_wf
+from .dual_regression import init_dualregression_wf
 from .falff import init_falff_wf
 from .reho import init_reho_wf
-from .seedbasedconnectivity import init_seedbasedconnectivity_wf
-from .taskbased import init_taskbased_wf
+from .seed_based_connectivity import init_seed_based_connectivity_wf
+from .task_based import init_taskbased_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -29,10 +29,10 @@ def _find_setting(setting_name, spec):
 
 
 class FeatureFactory(Factory):
-    def __init__(self, ctx, setting_factory):
+    def __init__(self, ctx, post_processing_factory):
         super(FeatureFactory, self).__init__(ctx)
 
-        self.setting_factory = setting_factory
+        self.post_processing_factory = post_processing_factory
 
         instance = FeatureSchema()
         settingnames = set()
@@ -42,7 +42,7 @@ class FeatureFactory(Factory):
             for k, v in featuredict.items():
                 if k.endswith("setting"):
                     settingnames.add(v)
-        self.source_files = self.setting_factory.get_source_files(settingnames)
+        self.source_files = self.post_processing_factory.get_source_files(settingnames)
 
     def has(self, name):
         for feature in self.ctx.spec.features:
@@ -129,7 +129,7 @@ class FeatureFactory(Factory):
                 database.metadata(seed_file, "space")
                 for seed_file in kwargs["seed_files"]
             ]
-            vwf = init_seedbasedconnectivity_wf(**kwargs)
+            vwf = init_seed_based_connectivity_wf(**kwargs)
         elif feature.type == "dual_regression":
             confounds_action = "select"
             kwargs["map_files"] = []
@@ -152,7 +152,7 @@ class FeatureFactory(Factory):
                 database.metadata(atlas_file, "space")
                 for atlas_file in kwargs["atlas_files"]
             ]
-            vwf = init_atlasbasedconnectivity_wf(**kwargs)
+            vwf = init_atlas_based_connectivity_wf(**kwargs)
         elif feature.type == "reho":
             confounds_action = "regression"
             vwf = init_reho_wf(**kwargs)
@@ -193,7 +193,7 @@ class FeatureFactory(Factory):
                     metadata["raw_sources"] = sorted(raw_sources)
                     node.inputs.metadata = metadata
 
-                self.setting_factory.connect(
+                self.post_processing_factory.connect(
                     hierarchy,
                     node,
                     source_file,

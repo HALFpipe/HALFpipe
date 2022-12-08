@@ -9,9 +9,9 @@ from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
 from niworkflows.interfaces.utility import KeySelect
 from niworkflows.utils.spaces import SpatialReferences
 
-from ...interfaces.report.imageplot import PlotRegistration
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.reports.imageplot import PlotRegistration
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ..constants import constants
 from ..memory import MemoryCalculator
 

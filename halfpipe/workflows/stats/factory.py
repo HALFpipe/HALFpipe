@@ -5,15 +5,15 @@
 import re
 
 from ..factory import Factory
-from ..feature.factory import FeatureFactory
-from .base import init_model_wf
+from ..features.factory import FeatureFactory
+from .base import init_stats_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
-class ModelFactory(Factory):
+class StatsFactory(Factory):
     def __init__(self, ctx, feature_factory: FeatureFactory):
-        super(ModelFactory, self).__init__(ctx)
+        super().__init__(ctx)
 
         self.feature_factory = feature_factory
 
@@ -29,7 +29,7 @@ class ModelFactory(Factory):
             self.create(model)
 
     def create(self, model):
-        hierarchy = self._get_hierarchy("models_wf")
+        hierarchy = self._get_hierarchy("stats_wf")
         wf = hierarchy[-1]
 
         database = self.ctx.database
@@ -47,7 +47,7 @@ class ModelFactory(Factory):
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
 
-        vwf = init_model_wf(
+        vwf = init_stats_wf(
             self.ctx.workdir,
             model,
             numinputs=len(inputs),

@@ -65,7 +65,7 @@ def test_bandpass_filter_volume(tmp_path, bandpass_filter):
 
     graph = run_workflow(wf)
 
-    (merge,) = [n for n in graph.nodes if n.name == "addmeans"]
+    (merge,) = [n for n in graph.nodes if n.name == "add_means"]
     (out_file,) = merge.result.outputs.out_file
 
     image = nib.load(out_file)

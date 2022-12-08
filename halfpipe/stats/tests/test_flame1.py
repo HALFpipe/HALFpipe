@@ -12,7 +12,7 @@ from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
-from ...interfaces.imagemaths.merge import _merge, _merge_mask
+from ...interfaces.image_maths.merge import _merge, _merge_mask
 from ..fit import fit
 
 

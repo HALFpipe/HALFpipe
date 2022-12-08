@@ -19,7 +19,7 @@ class TransformerInputSpec(TraitedSpec):
     in_file = File(desc="File to filter", exists=True, mandatory=True)
     mask = File(desc="mask to use for volumes", exists=True)
 
-    write_header = traits.Bool(default=True, usedefault=True)
+    write_header = traits.Bool(default_value=True, usedefault=True)
 
 
 class TransformerOutputSpec(TraitedSpec):
@@ -119,6 +119,10 @@ class Transformer(SimpleInterface):
             else:
                 out_array = array2.T.reshape((*in_img.shape[:3], -1))
 
+            # squeeze time axis if we are outputting a single volume
+            if out_array.shape[3] == 1:
+                out_array = np.squeeze(out_array, axis=3)
+
             out_img = new_img_like(in_img, out_array, copy_header=True)
             assert isinstance(out_img.header, nib.Nifti1Header)
 
@@ -126,14 +130,21 @@ class Transformer(SimpleInterface):
             nib.save(out_img, out_file)
 
         else:
+            header = True
+            if (
+                hasattr(self.inputs, "write_header")
+                and isdefined(self.inputs.write_header)
+                and self.inputs.write_header is False
+            ):
+                header = False
+
             out_df = pd.DataFrame(data=array2, columns=self.in_df.columns)
-            np.copyto(out_df.values, array2)
             out_df.to_csv(
                 out_file,
                 sep="\t",
                 index=False,
                 na_rep="n/a",
-                header=self.inputs.write_header,
+                header=header,
             )
 
         return out_file

@@ -12,12 +12,12 @@ from nipype.pipeline import engine as pe
 
 from ...fixes import MapNode, Node
 from ...interfaces.fixes.flameo import FLAMEO
-from ...interfaces.imagemaths.merge import Merge, MergeMask
-from ...interfaces.resultdict.aggregate import AggregateResultdicts
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.extract import ExtractFromResultdict
-from ...interfaces.resultdict.filter import FilterResultdicts
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.merge import Merge, MergeMask
+from ...interfaces.result.aggregate import AggregateResultdicts
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.extract import ExtractFromResultdict
+from ...interfaces.result.filter import FilterResultdicts
+from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.design import GroupDesign, InterceptOnlyDesign, MakeDesignTsv
 from ...interfaces.stats.fit import ModelFit
 from ...stats.algorithms import algorithms, modelfit_aliases
@@ -56,7 +56,7 @@ def _critical_z(voxels=None, resels=None, critical_p=0.05):
     return critical_z_array.tolist()
 
 
-def init_model_wf(
+def init_stats_wf(
     workdir: Path,
     model,
     numinputs=1,
@@ -189,7 +189,7 @@ def init_model_wf(
         countimages = pe.Node(
             niu.Function(
                 input_names=["arrarr"],
-                output_names=["image_count"],
+                output_names="image_count",
                 function=len_for_each,
             ),
             name="countimages",
@@ -250,7 +250,7 @@ def init_model_wf(
         fe_run_mode = MapNode(
             niu.Function(
                 input_names=["var_cope_file"],
-                output_names=["run_mode"],
+                output_names="run_mode",
                 function=_fe_run_mode,
             ),
             iterfield=["var_cope_file"],
@@ -333,7 +333,7 @@ def init_model_wf(
         criticalz = pe.Node(
             niu.Function(
                 input_names=["voxels", "resels"],
-                output_names=["critical_z"],
+                output_names="critical_z",
                 function=_critical_z,
             ),
             name="criticalz",

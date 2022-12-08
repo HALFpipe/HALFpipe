@@ -55,7 +55,7 @@ class ICAAROMAComponentsFactory(Factory):
         self.wf_name = prototype.name
 
     def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -177,7 +177,7 @@ class LookupFactory(Factory):
         return self.wf_factories[lookup_tuple]()
 
     def get(self, source_file, setting_name):
-        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
@@ -439,9 +439,9 @@ class ConfoundsRegressionFactory(LookupFactory):
         return has_confounds
 
 
-class SettingFactory(Factory):
+class PostProcessingFactory(Factory):
     def __init__(self, ctx, fmriprep_factory):
-        super(SettingFactory, self).__init__(ctx)
+        super().__init__(ctx)
 
         self.fmriprep_factory = fmriprep_factory
 
@@ -524,7 +524,9 @@ class SettingFactory(Factory):
                 source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
-                hierarchy = self._get_hierarchy("settings_wf", source_file=source_file)
+                hierarchy = self._get_hierarchy(
+                    "post_processing_wf", source_file=source_file
+                )
 
                 wf = setting_output_wf_factory()
                 hierarchy[-1].add_nodes([wf])

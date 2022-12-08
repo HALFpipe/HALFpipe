@@ -10,11 +10,11 @@ from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
-from ...interfaces.imagemaths.mask_coverage import MaskCoverage
-from ...interfaces.imagemaths.resample import Resample
-from ...interfaces.report.vals import CalcMean
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.mask_coverage import MaskCoverage
+from ...interfaces.image_maths.resample import Resample
+from ...interfaces.reports.vals import CalcMean
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...utils.format import format_workflow
@@ -55,7 +55,7 @@ def _contrasts(design_file=None):
     return str(out_with_header), str(out_no_header)
 
 
-def init_seedbasedconnectivity_wf(
+def init_seed_based_connectivity_wf(
     workdir: str | Path,
     feature=None,
     seed_files=None,
@@ -68,7 +68,7 @@ def init_seedbasedconnectivity_wf(
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
-        name = "seedbasedconnectivity_wf"
+        name = "seed_based_connectivity_wf"
     workflow = pe.Workflow(name=name)
 
     # input

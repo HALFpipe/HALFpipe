@@ -10,9 +10,9 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
-from ...interfaces.report.vals import UpdateVals
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.reports.vals import UpdateVals
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.utility.file_type import SplitByFileType
 from ...interfaces.utility.remove_volumes import RemoveVolumes
 from ...interfaces.utility.tsv import MergeColumns

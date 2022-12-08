@@ -3,17 +3,17 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from fmriprep import config
-from nipype.algorithms import confounds as nac
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.interfaces.utility import KeySelect
 from niworkflows.utils.spaces import SpatialReferences
 
-from ...interfaces.imagemaths.resample import Resample
-from ...interfaces.report.imageplot import PlotEpi, PlotRegistration
-from ...interfaces.report.vals import CalcMean, UpdateVals
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.resample import Resample
+from ...interfaces.reports.imageplot import PlotEpi, PlotRegistration
+from ...interfaces.reports.tsnr import TSNR
+from ...interfaces.reports.vals import CalcMean, UpdateVals
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ..constants import constants
 from ..memory import MemoryCalculator
 
@@ -29,8 +29,8 @@ def init_func_report_wf(
     workflow = pe.Workflow(name=name)
 
     #
-    fmriprepreports = ["bold_conf", "reg", "bold_rois", "compcor", "conf_corr", "sdc"]
-    fmriprepreportdatasinks = [f"ds_report_{fr}" for fr in fmriprepreports]
+    fmriprep_reports = ["bold_conf", "reg", "bold_rois", "compcor", "conf_corr", "sdc"]
+    fmriprep_reportdatasinks = [f"ds_report_{fr}" for fr in fmriprep_reports]
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -44,7 +44,7 @@ def init_func_report_wf(
                 "confounds_file",
                 "method",
                 "fallback",
-                *fmriprepreportdatasinks,
+                *fmriprep_reportdatasinks,
                 "fd_thres",
                 "repetition_time",
                 "skip_vols",
@@ -73,7 +73,7 @@ def init_func_report_wf(
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprepreports],
+            reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprep_reports],
             valkeys=[
                 "dummy_scans",
                 "sdc_method",
@@ -95,7 +95,7 @@ def init_func_report_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    for fr, frd in zip(fmriprepreports, fmriprepreportdatasinks):
+    for fr, frd in zip(fmriprep_reports, fmriprep_reportdatasinks):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
     # EPI -> mni
@@ -111,11 +111,12 @@ def init_func_report_wf(
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
-    tsnr = pe.Node(nac.TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb * 2.5)
+    tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
     workflow.connect(select_std, "bold_std", tsnr, "in_file")
+    workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
-    workflow.connect(tsnr, "tsnr_file", tsnr_rpt, "in_file")
+    workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
     workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
@@ -156,7 +157,7 @@ def init_func_report_wf(
         mem_gb=2 * memcalc.volume_std_gb,
     )
     workflow.connect(confvals, "vals", calcmean, "vals")  # base dict to update
-    workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
+    workflow.connect(tsnr, "out_file", calcmean, "in_file")
     workflow.connect(resample, "output_image", calcmean, "dseg")
 
     workflow.connect(calcmean, "vals", make_resultdicts, "vals")

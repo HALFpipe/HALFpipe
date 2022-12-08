@@ -8,10 +8,10 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
 
 from ...interfaces.fixes.reho import ReHo
-from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
-from ...interfaces.imagemaths.zscore import ZScore
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
+from ...interfaces.image_maths.zscore import ZScore
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 

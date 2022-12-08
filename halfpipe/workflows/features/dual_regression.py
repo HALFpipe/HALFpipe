@@ -10,11 +10,11 @@ from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
-from ...interfaces.imagemaths.max_intensity import MaxIntensity
-from ...interfaces.imagemaths.resample import Resample
-from ...interfaces.report.vals import CalcMean
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.max_intensity import MaxIntensity
+from ...interfaces.image_maths.resample import Resample
+from ...interfaces.reports.vals import CalcMean
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...utils.format import format_workflow

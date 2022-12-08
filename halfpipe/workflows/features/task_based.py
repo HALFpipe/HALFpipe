@@ -14,8 +14,8 @@ from nipype.pipeline import engine as pe
 
 from ...interfaces.conditions import ApplyConditionOffset, ParseConditionFile
 from ...interfaces.fixes.level1design import Level1Design
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...interfaces.utility.vest import Unvest

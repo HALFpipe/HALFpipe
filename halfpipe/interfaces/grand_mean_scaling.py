@@ -21,8 +21,6 @@ class GrandMeanScalingInputSpec(BaseInterfaceInputSpec):
     mask = File(exists=True, desc="3D brain mask")
     mean = traits.Float(mandatory=True, desc="grand mean scale value")
 
-    write_header = traits.Bool(default=True, usedefault=True)
-
 
 class GrandMeanScalingOutputSpec(TraitedSpec):
     files = traits.List(File(exists=True))

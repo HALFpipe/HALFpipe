@@ -6,7 +6,7 @@ import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
 from fmriprep import config
 
-from ...interfaces.imagemaths.lazy_blur import LazyBlurToFWHM
+from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
 from ...interfaces.utility.file_type import SplitByFileType
 from ..memory import MemoryCalculator
 

@@ -9,16 +9,16 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from ...interfaces.connectivity import ConnectivityMeasure
-from ...interfaces.imagemaths.resample import Resample
-from ...interfaces.report.vals import CalcMean
-from ...interfaces.resultdict.datasink import ResultdictDatasink
-from ...interfaces.resultdict.make import MakeResultdicts
+from ...interfaces.image_maths.resample import Resample
+from ...interfaces.reports.vals import CalcMean
+from ...interfaces.result.datasink import ResultdictDatasink
+from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
 from ..constants import constants
 from ..memory import MemoryCalculator
 
 
-def init_atlasbasedconnectivity_wf(
+def init_atlas_based_connectivity_wf(
     workdir: str | Path,
     feature=None,
     atlas_files=None,
@@ -32,7 +32,7 @@ def init_atlasbasedconnectivity_wf(
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
-        name = "atlasbasedconnectivity_wf"
+        name = "atlas_based_connectivity_wf"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

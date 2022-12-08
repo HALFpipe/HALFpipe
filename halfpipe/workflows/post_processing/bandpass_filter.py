@@ -7,7 +7,7 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import afni
 
 from ...interfaces.fslnumpy.tempfilt import TemporalFilter
-from ...interfaces.imagemaths.addmeans import AddMeans
+from ...interfaces.image_maths.add_means import AddMeans
 from ...interfaces.utility.afni import FromAFNI, ToAFNI
 from ..memory import MemoryCalculator
 
@@ -98,15 +98,15 @@ def init_bandpass_filter_wf(
     else:
         inputnode.inputs.high = -1.0
 
-    addmeans = pe.MapNode(
+    add_means = pe.MapNode(
         AddMeans(),
         iterfield=["in_file", "mean_file"],
-        name="addmeans",
+        name="add_means",
         mem_gb=memcalc.series_std_gb * 2,
     )
-    workflow.connect(inputnode, "files", addmeans, "mean_file")
+    workflow.connect(inputnode, "files", add_means, "mean_file")
 
-    workflow.connect(addmeans, "out_file", outputnode, "files")
+    workflow.connect(add_means, "out_file", outputnode, "files")
 
     if type == "gaussian":
         calcsigma = pe.Node(
@@ -131,7 +131,7 @@ def init_bandpass_filter_wf(
         workflow.connect(inputnode, "files", temporalfilter, "in_file")
         workflow.connect(inputnode, "mask", temporalfilter, "mask")
 
-        workflow.connect(temporalfilter, "out_file", addmeans, "in_file")
+        workflow.connect(temporalfilter, "out_file", add_means, "in_file")
     elif type == "frequency_based":
         toafni = pe.MapNode(ToAFNI(), iterfield="in_file", name="toafni")
         workflow.connect(inputnode, "files", toafni, "in_file")
@@ -175,7 +175,7 @@ def init_bandpass_filter_wf(
         workflow.connect(toafni, "metadata", fromafni, "metadata")
         workflow.connect(tproject, "out_file", fromafni, "in_file")
 
-        workflow.connect(fromafni, "out_file", addmeans, "in_file")
+        workflow.connect(fromafni, "out_file", add_means, "in_file")
     else:
         raise ValueError(f"Unknown bandpass_filter type '{type}'")
 
