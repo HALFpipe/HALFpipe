@@ -86,7 +86,7 @@ joblib==1.2.0
     #   scikit-learn
 kiwisolver==1.4.3
     # via matplotlib
-line-profiler==4.0.1
+line-profiler==4.0.2
     # via -r requirements.in
 lockfile==0.12.2
     # via smriprep
