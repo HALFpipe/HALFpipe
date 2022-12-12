@@ -57,7 +57,7 @@ frozendict==2.3.4
     # via -r requirements.in
 future==0.18.2
     # via niflow-nipype1-workflows
-gmpy2==2.1.2
+gmpy2==2.1.4
     # via -r requirements.in
 h5py==3.7.0
     # via nitransforms
