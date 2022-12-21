@@ -5,7 +5,7 @@ wheel
 # neuroimaging
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
 smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.zip
-niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.7+halfpipe.1.zip
+niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.8+halfpipe.1.zip
 sdcflows ~= 1.3.3
 nipype >= 1.8.1
 nibabel >= 4.0.0
