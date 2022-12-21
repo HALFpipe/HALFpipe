@@ -33,7 +33,7 @@ pytest-cov==4.0.0
     # via -r requirements-test.in
 pytest-env==0.8.1
     # via -r requirements-test.in
-pytest-github-actions-annotate-failures==0.1.7
+pytest-github-actions-annotate-failures==0.1.8
     # via -r requirements-test.in
 pytest-timeout==2.1.0
     # via -r requirements-test.in
