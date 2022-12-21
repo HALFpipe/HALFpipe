@@ -12,7 +12,7 @@ attrs==21.4.0
     # via niworkflows
 bids-validator==1.9.4
     # via pybids
-certifi==2022.6.15
+certifi==2022.12.7
     # via requests
 chardet==5.1.0
     # via -r requirements.in
@@ -303,7 +303,7 @@ scikit-image==0.19.3
     # via
     #   -r requirements.in
     #   niworkflows
-scikit-learn==1.1.3
+scikit-learn==1.2.0
     # via
     #   -r requirements.in
     #   nilearn
