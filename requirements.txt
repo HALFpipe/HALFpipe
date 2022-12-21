@@ -379,7 +379,7 @@ tqdm==4.64.0
     # via templateflow
 traits==6.3.2
     # via nipype
-transforms3d==0.3.1
+transforms3d==0.4.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
