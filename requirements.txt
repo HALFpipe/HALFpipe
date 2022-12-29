@@ -269,7 +269,7 @@ pyparsing==3.0.9
     #   packaging
     #   pydot
     #   rdflib
-pyrsistent==0.19.2
+pyrsistent==0.19.3
     # via -r requirements.in
 pysocks==1.7.1
     # via -r requirements.in
