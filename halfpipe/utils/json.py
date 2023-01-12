@@ -5,6 +5,7 @@
 from collections import OrderedDict
 from dataclasses import asdict, is_dataclass
 from json import JSONEncoder
+from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import numpy as np
@@ -26,6 +27,9 @@ class TypeAwareJSONEncoder(JSONEncoder):
 
         if isinstance(o, np.ndarray):
             return o.tolist()
+
+        if isinstance(o, Path):
+            return str(o)
 
         dtype = getattr(o, "dtype", None)
         kind: Optional[str] = getattr(dtype, "kind", None)

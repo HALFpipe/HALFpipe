@@ -30,7 +30,7 @@ def _merge_fname(in_files):
     return fname
 
 
-def _merge(in_files, dimension):
+def merge(in_files, dimension):
     in_imgs = [nib.load(f) for f in in_files]
 
     idim = dimensions.index(dimension)
@@ -64,7 +64,7 @@ def _merge(in_files, dimension):
     return merged_file
 
 
-def _merge_mask(in_files):
+def merge_mask(in_files):
     in_imgs = [nib.load(in_file) for in_file in in_files]
 
     outshape = in_imgs[0].shape
@@ -107,7 +107,7 @@ class Merge(SimpleInterface):
             self._results["merged_file"] = False
             return runtime
 
-        merged_file = _merge(in_files, self.inputs.dimension)
+        merged_file = merge(in_files, self.inputs.dimension)
 
         self._results["merged_file"] = str(merged_file)
 
@@ -133,7 +133,7 @@ class MergeMask(SimpleInterface):
             self._results["merged_file"] = False
             return runtime
 
-        merged_file = _merge_mask(in_files)
+        merged_file = merge_mask(in_files)
 
         self._results["merged_file"] = str(merged_file)
 
