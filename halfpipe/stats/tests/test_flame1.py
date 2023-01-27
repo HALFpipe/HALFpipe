@@ -12,7 +12,7 @@ from nipype.interfaces import fsl
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
-from ...interfaces.image_maths.merge import _merge, _merge_mask
+from ...interfaces.image_maths.merge import merge, merge_mask
 from ..fit import fit
 
 
@@ -26,9 +26,9 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn, use_var_cope):
     cope_files, var_cope_files, mask_files, regressors, contrasts = wakemandg_hensonrn
 
     # run FSL
-    merge_cope_file = _merge(cope_files, "t")
-    merge_var_cope_file = _merge(var_cope_files, "t")
-    merge_mask_file = _merge_mask(mask_files)
+    merge_cope_file = merge(cope_files, "t")
+    merge_var_cope_file = merge(var_cope_files, "t")
+    merge_mask_file = merge_mask(mask_files)
 
     workflow = pe.Workflow("comparison", base_dir=str(tmp_path))
 
