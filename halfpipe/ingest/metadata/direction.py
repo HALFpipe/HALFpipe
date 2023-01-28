@@ -53,9 +53,11 @@ def invert_location(d):
 def canonicalize_direction_code(pedir_code, pat):
     canonical_pedir_code = pedir_code
     if pedir_code not in axis_codes:
-        assert pedir_code in space_codes, "Unknown phase encoding direction code"
+        if pedir_code not in space_codes:
+            raise ValueError("Unknown phase encoding direction code")
         axcodes_set = get_axcodes_set(pat)
-        assert len(axcodes_set) == 1, "Inconsistent axis orientations"
+        if len(axcodes_set) != 1:
+            raise ValueError("Inconsistent axis orientations")
         axcodes = axcodes_set.pop()
         for i, axcode in enumerate(axcodes):
             axcode = axcode.lower()
@@ -64,16 +66,19 @@ def canonicalize_direction_code(pedir_code, pat):
                 if pedir_code[0] == axcode:
                     canonical_pedir_code += "-"
                 break
-    assert canonical_pedir_code in axis_codes, "Unknown phase encoding direction code"
+    if canonical_pedir_code not in axis_codes:
+        raise ValueError("Unknown phase encoding direction code")
     return canonical_pedir_code
 
 
 def direction_code_str(pedir_code, pat):
     if pedir_code not in space_codes:
-        assert pedir_code in axis_codes, "Unknown phase encoding direction code"
+        if pedir_code not in axis_codes:
+            raise ValueError("Unknown phase encoding direction code")
 
         axcodes_set = get_axcodes_set(pat)
-        assert len(axcodes_set) == 1, "Inconsistent axis orientations"
+        if len(axcodes_set) != 1:
+            raise ValueError("Inconsistent axis orientations")
         (axcodes,) = axcodes_set
 
         location_to = axcodes[["i", "j", "k"].index(pedir_code[0])].lower()
@@ -83,7 +88,8 @@ def direction_code_str(pedir_code, pat):
 
         pedir_code = f"{location_from}{location_to}"
 
-    assert pedir_code in space_codes, "Unknown phase encoding direction code"
+    if pedir_code not in space_codes:
+        raise ValueError("Unknown phase encoding direction code")
 
     return {
         "rl": "right to left",

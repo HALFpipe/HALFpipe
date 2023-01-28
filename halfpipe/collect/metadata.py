@@ -11,6 +11,7 @@ from nibabel.nifti1 import Nifti1Header
 from ..ingest.database import Database
 from ..ingest.metadata.direction import canonicalize_direction_code, get_axcodes_set
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
+from ..logging import logger
 from ..model.file.schema import FileSchema
 from ..model.metadata import MetadataSchema
 from ..model.setting import BaseSettingSchema
@@ -57,7 +58,11 @@ def collect_metadata(
             if value is not None:
                 # transform metadata
                 if key.endswith("direction"):
-                    value = canonicalize_direction_code(value, str(path))
+                    try:
+                        value = canonicalize_direction_code(value, str(path))
+                    except ValueError as e:
+                        logger.warning(f'Cannot find "{key}" for "{path}"', exc_info=e)
+                        continue
                 if key == "slice_timing_code":
                     if not database.fillmetadata("slice_timing", [path]):
                         continue
@@ -67,21 +72,22 @@ def collect_metadata(
                 metadata[key] = value
 
     header, _ = NiftiheaderLoader.load(str(path))
-    assert isinstance(header, Nifti1Header)
+    if isinstance(header, Nifti1Header):
+        zooms = list(map(float, header.get_zooms()))
+        if all(isinstance(z, float) for z in zooms):
+            metadata["acquisition_voxel_size"] = tuple(zooms[:3])
 
-    zooms = list(map(float, header.get_zooms()))
-    assert all(isinstance(z, float) for z in zooms)
-    metadata["acquisition_voxel_size"] = tuple(zooms[:3])
+        data_shape = header.get_data_shape()
+        metadata["acquisition_volume_shape"] = tuple(data_shape[:3])
 
-    data_shape = header.get_data_shape()
-    metadata["acquisition_volume_shape"] = tuple(data_shape[:3])
+        if len(data_shape) == 4:
+            metadata["number_of_volumes"] = int(data_shape[3])
 
-    if len(data_shape) == 4:
-        metadata["number_of_volumes"] = int(data_shape[3])
-
-    (axcodes,) = get_axcodes_set(str(path))
-    axcode_str = "".join(axcodes)
-    metadata["acquisition_orientation"] = axcode_str
+    axcodes_set = get_axcodes_set(str(path))
+    if len(axcodes_set) == 1:
+        (axcodes,) = axcodes_set
+        axcode_str = "".join(axcodes)
+        metadata["acquisition_orientation"] = axcode_str
 
     if not set(metadata.keys()).issubset(metadata_fields):
         unknown_keys = set(metadata.keys()) - metadata_fields
