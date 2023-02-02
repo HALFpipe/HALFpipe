@@ -55,7 +55,7 @@ formulaic==0.2.4
     # via pybids
 frozendict==2.3.4
     # via -r requirements.in
-future==0.18.2
+future==0.18.3
     # via niflow-nipype1-workflows
 gmpy2==2.1.5
     # via -r requirements.in
