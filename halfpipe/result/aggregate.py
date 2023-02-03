@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from more_itertools import collapse
 from pyrsistent import freeze, pmap, thaw
+from tqdm.auto import tqdm
 
 from ..logging import logger
 from .base import ResultDict, ResultKey
@@ -60,31 +61,34 @@ def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]
     for index, elements in groups.items():
         expanded_groups[index] |= elements
 
-    while len(indices) > 0:
-        target = indices.pop()
+    with tqdm(desc="expanding groups", total=len(indices)) as progress_bar:
+        while len(indices) > 0:
+            target = indices.pop()
 
-        candidates = indices.copy()
-        for candidate in candidates:
-            if candidate == target:
-                continue
+            candidates = indices.copy()
+            for candidate in candidates:
+                if candidate == target:
+                    continue
 
-            keys = set(target.keys()).intersection(candidate.keys())
-            if not all(candidate[key] == target[key] for key in keys):
-                continue  # candidate is not compatible with target
+                keys = set(target.keys()).intersection(candidate.keys())
+                if not all(candidate[key] == target[key] for key in keys):
+                    continue  # candidate is not compatible with target
 
-            index = pmap({key: target[key] for key in keys})
-            logger.debug(f"Merging {target} and {candidate} into {index}")
+                index = pmap({key: target[key] for key in keys})
+                logger.debug(f"Merging {target} and {candidate} into {index}")
 
-            target_elements = expanded_groups.pop(target)
-            candidate_elements = expanded_groups.pop(candidate)
+                target_elements = expanded_groups.pop(target)
+                candidate_elements = expanded_groups.pop(candidate)
 
-            expanded_groups[index] |= target_elements
-            expanded_groups[index] |= candidate_elements
+                expanded_groups[index] |= target_elements
+                expanded_groups[index] |= candidate_elements
 
-            indices.remove(candidate)
-            indices.add(index)
+                indices.remove(candidate)
+                indices.add(index)
 
-            break
+                break
+
+            progress_bar.update()
 
     return expanded_groups
 
@@ -108,7 +112,9 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
         field_name: str = key[0]
         if key in [
             ("metadata", "sources"),
+            ("metadata", "Sources"),
             ("metadata", "raw_sources"),
+            ("metadata", "RawSources"),
         ] or field_name in ["images"]:
             summarized[key] = list(collapse(values))
         else:

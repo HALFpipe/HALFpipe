@@ -86,14 +86,14 @@ def regfilt(array, design, comps, calculate_mask=True, aggressive=False):
 class FilterRegressorInputSpec(TransformerInputSpec):
     design_file = File(desc="design file", exists=True, mandatory=True)
     filter_columns = traits.List(traits.Int)
-    filter_all = traits.Bool(default=False, usedefault=True)
+    filter_all = traits.Bool(default_value=False, usedefault=True)
     mask = traits.Either(
         File(desc="mask image file name", exists=True),
         traits.Bool(),
         default=True,
         usedefault=True,
     )
-    aggressive = traits.Bool(default=False, usedefault=True)
+    aggressive = traits.Bool(default_value=False, usedefault=True)
 
 
 class FilterRegressor(Transformer):
@@ -105,7 +105,6 @@ class FilterRegressor(Transformer):
         design = np.loadtxt(self.inputs.design_file, dtype=np.float64, ndmin=2)
 
         filter_all = self.inputs.filter_all
-
         if filter_all is not True:
             filter_columns = self.inputs.filter_columns
 

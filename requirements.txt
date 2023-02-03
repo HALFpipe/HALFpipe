@@ -12,9 +12,9 @@ attrs==21.4.0
     # via niworkflows
 bids-validator==1.9.4
     # via pybids
-certifi==2022.6.15
+certifi==2022.12.7
     # via requests
-chardet==5.0.0
+chardet==5.1.0
     # via -r requirements.in
 charset-normalizer==2.1.0
     # via requests
@@ -55,9 +55,9 @@ formulaic==0.2.4
     # via pybids
 frozendict==2.3.4
     # via -r requirements.in
-future==0.18.2
+future==0.18.3
     # via niflow-nipype1-workflows
-gmpy2==2.1.2
+gmpy2==2.1.5
     # via -r requirements.in
 h5py==3.7.0
     # via nitransforms
@@ -86,7 +86,7 @@ joblib==1.2.0
     #   scikit-learn
 kiwisolver==1.4.3
     # via matplotlib
-line-profiler==4.0.1
+line-profiler==4.0.2
     # via -r requirements.in
 lockfile==0.12.2
     # via smriprep
@@ -111,7 +111,7 @@ marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.6.2
+matplotlib==3.6.3
     # via
     #   -r requirements.in
     #   nitime
@@ -132,7 +132,7 @@ networkx==2.5.1
     #   nitime
     #   prov
     #   scikit-image
-nibabel==4.0.2
+nibabel==5.0.0
     # via
     #   -r requirements.in
     #   fmriprep
@@ -167,7 +167,7 @@ nitransforms==20.0.0rc5
     # via
     #   fmriprep
     #   niworkflows
-niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.7+halfpipe.1.zip
+niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.8+halfpipe.1.zip
     # via
     #   -r requirements.in
     #   fmriprep
@@ -175,7 +175,7 @@ niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.7+halfp
     #   smriprep
 num2words==0.5.10
     # via pybids
-numpy==1.23.5
+numpy==1.24.1
     # via
     #   -r requirements.in
     #   contourpy
@@ -205,7 +205,7 @@ numpy==1.23.5
     #   tifffile
 odfpy==1.4.1
     # via -r requirements.in
-openpyxl==3.0.10
+openpyxl==3.1.0
     # via -r requirements.in
 packaging==21.3
     # via
@@ -218,7 +218,7 @@ packaging==21.3
     #   setuptools-scm
     #   smriprep
     #   statsmodels
-pandas==1.5.2
+pandas==1.5.3
     # via
     #   -r requirements.in
     #   fmriprep
@@ -269,7 +269,7 @@ pyparsing==3.0.9
     #   packaging
     #   pydot
     #   rdflib
-pyrsistent==0.19.2
+pyrsistent==0.19.3
     # via -r requirements.in
 pysocks==1.7.1
     # via -r requirements.in
@@ -303,13 +303,13 @@ scikit-image==0.19.3
     # via
     #   -r requirements.in
     #   niworkflows
-scikit-learn==1.1.3
+scikit-learn==1.2.0
     # via
     #   -r requirements.in
     #   nilearn
     #   niworkflows
     #   tedana
-scipy==1.9.3
+scipy==1.10.0
     # via
     #   -r requirements.in
     #   formulaic
@@ -327,7 +327,7 @@ sdcflows==1.3.3
     # via
     #   -r requirements.in
     #   fmriprep
-seaborn==0.12.1
+seaborn==0.12.2
     # via
     #   -r requirements.in
     #   niworkflows
@@ -346,7 +346,7 @@ smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.
     #   fmriprep
 sqlalchemy==1.3.24
     # via pybids
-stackprinter==0.2.9
+stackprinter==0.2.10
     # via -r requirements.in
 statsmodels==0.13.5
     # via -r requirements.in
@@ -379,7 +379,7 @@ tqdm==4.64.0
     # via templateflow
 traits==6.3.2
     # via nipype
-transforms3d==0.3.1
+transforms3d==0.4.1
     # via niworkflows
 typeguard==2.13.3
     # via -r requirements.in
@@ -399,7 +399,7 @@ wrapt==1.14.1
     # via formulaic
 xlrd==2.0.1
     # via -r requirements.in
-xlsxwriter==3.0.3
+xlsxwriter==3.0.7
     # via -r requirements.in
 
 # The following packages are considered to be unsafe in a requirements file:

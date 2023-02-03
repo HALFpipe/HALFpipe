@@ -138,7 +138,9 @@ def _parse_from_arguments(
     arguments: Namespace,
     results: list[dict],
 ) -> DesignType:
-    spreadsheet: Path = resolve(arguments.spreadsheet, arguments.fs_root)
+    spreadsheet: Path | None = None
+    if arguments.spreadsheet is not None:
+        spreadsheet = resolve(arguments.spreadsheet, arguments.fs_root)
 
     variables: list[dict] = list()
     if arguments.id_column is not None:

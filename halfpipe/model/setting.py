@@ -2,10 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
 from marshmallow import RAISE, Schema, fields, post_dump, pre_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
@@ -81,8 +77,8 @@ class GaussianHighpassSettingSchema(Schema):
     type = fields.Str(
         dump_default="gaussian", validate=validate.OneOf(["gaussian"]), required=True
     )
-    hp_width = fields.Float(validate=validate.Range(min=0.0))
-    lp_width = fields.Float(validate=validate.Range(min=0.0))
+    hp_width = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
+    lp_width = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
 
 
 class FrequencyBasedBandpassSettingSchema(Schema):
@@ -91,8 +87,8 @@ class FrequencyBasedBandpassSettingSchema(Schema):
         validate=validate.OneOf(["frequency_based"]),
         required=True,
     )
-    low = fields.Float(validate=validate.Range(min=0.0))
-    high = fields.Float(validate=validate.Range(min=0.0))
+    low = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
+    high = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
 
 
 class BandpassFilterSettingSchema(OneOfSchema):

@@ -39,6 +39,9 @@ def test_FilterRegressor(tmp_path):
     instance.inputs.in_file = in_file
     instance.inputs.design_file = design_file
     instance.inputs.filter_columns = [1, 2, 3]
+    assert instance.inputs.aggressive is False
+    assert instance.inputs.filter_all is False
+    assert instance.inputs.mask is True
     result = instance.run()
     assert result.outputs is not None
 
