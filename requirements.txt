@@ -205,7 +205,7 @@ numpy==1.24.1
     #   tifffile
 odfpy==1.4.1
     # via -r requirements.in
-openpyxl==3.1.0
+openpyxl==3.1.1
     # via -r requirements.in
 packaging==21.3
     # via
