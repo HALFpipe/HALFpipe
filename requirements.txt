@@ -111,7 +111,7 @@ marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.6.3
+matplotlib==3.7.1
     # via
     #   -r requirements.in
     #   nitime
