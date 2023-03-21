@@ -105,7 +105,7 @@ marshmallow==3.19.0
     #   marshmallow-dataclass
     #   marshmallow-enum
     #   marshmallow-oneofschema
-marshmallow-dataclass==8.5.10
+marshmallow-dataclass==8.5.12
     # via -r requirements.in
 marshmallow-enum==1.5.1
     # via -r requirements.in
@@ -389,7 +389,7 @@ typing-extensions==4.4.0
     #   pydantic
     #   setuptools-scm
     #   typing-inspect
-typing-inspect==0.7.1
+typing-inspect==0.8.0
     # via marshmallow-dataclass
 urllib3==1.26.10
     # via requests
