@@ -18,7 +18,7 @@ class TypeAwareJSONEncoder(JSONEncoder):
 
     def default(self, o: Any) -> Any:
         if is_dataclass(o):
-            o = asdict(o, dict_factory=OrderedDict)
+            o = asdict(o, dict_factory=OrderedDict)  # type: ignore
 
         if isinstance(o, Mapping):
             if not isinstance(o, dict):

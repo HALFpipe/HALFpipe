@@ -56,12 +56,12 @@ def download(url: str, target: str | Path | None = None) -> str | None:
     print(f"Downloading {url}")
 
     with requests.get(url, stream=True) as response:
-        total_size = int(response.headers.get("content-length", 0))
+        total_size = int(response.headers.get("content-length", 0))  # type: ignore
         block_size = 1024
 
         t = tqdm(total=total_size, unit="B", unit_scale=True)
 
-        for block in response.iter_content(block_size):
+        for block in response.iter_content(block_size):  # type: ignore
             if block:  # filter out keep-alive new chunks
                 t.update(len(block))
                 file_handle.write(block)
