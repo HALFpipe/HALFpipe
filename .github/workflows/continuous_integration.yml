@@ -25,15 +25,15 @@ jobs:
           - other
         include:
           - chunk: interfaces
-            args: "halfpipe/interfaces"
+            args: "tests/interfaces"
           - chunk: stats
-            args: "halfpipe/stats"
+            args: "tests/stats"
           - chunk: workflows
-            args: "halfpipe/workflows -k 'not test_feature_extraction'"
+            args: "tests/workflows -k 'not test_feature_extraction'"
           - chunk: feature_extraction
-            args: "halfpipe/workflows/tests/test_workflow.py::test_feature_extraction"
+            args: "tests/workflows/tests/test_workflow.py::test_feature_extraction"
           - chunk: other
-            args: "--ignore=halfpipe/interfaces --ignore=halfpipe/stats --ignore=halfpipe/workflows"
+            args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
 
     steps:
     - name: Cache data
@@ -62,7 +62,7 @@ jobs:
         PYTHONDONTWRITEBYTECODE: 1
         GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
       run: |
-        pytest ${{ matrix.args }} --cov --cov-report=xml
+        python -m pytest ${{ matrix.args }} --cov --cov-report=xml
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
@@ -96,7 +96,7 @@ jobs:
           PYTHON_ISORT_CONFIG_FILE: pyproject.toml
 
           VALIDATE_PYTHON_FLAKE8: true
-          PYTHON_FLAKE8_CONFIG_FILE: setup.cfg
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
 
           VALIDATE_PYTHON_MYPY: true
           PYTHON_MYPY_CONFIG_FILE: mypy.ini

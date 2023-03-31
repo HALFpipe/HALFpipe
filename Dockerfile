@@ -45,15 +45,15 @@ RUN python -c "from matplotlib import font_manager" \
         $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Download all resources
-RUN --mount=source=halfpipe/resource.py,target=/resource.py \
+RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
     python /resource.py
 
 # Add coinstac server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
 # Install HALFpipe
-RUN --mount=target=/halfpipe \
-    cp -r /halfpipe /tmp \
+RUN --mount=target=src/halfpipe \
+    cp -r /src/halfpipe /tmp \
  && pip install --no-deps /tmp/halfpipe \
  && rm -rf ~/.cache/pip /var/cache/pip /tmp/* /var/tmp/* \
  && sync
