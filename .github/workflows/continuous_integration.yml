@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+  release:
+    types:
+      - published
+      - edited
 
 jobs:
   test:
@@ -45,8 +49,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup dependencies and license files
+    - name: Test with pytest with coverage
       shell: bash
+      env:
+        PYTHONDONTWRITEBYTECODE: 1
+        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
       run: |
         pip install \
           --requirement requirements.txt \
@@ -56,12 +63,6 @@ jobs:
         echo ${FREESURFER_LICENSE_BASE64} \
           | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-    - name: Test with pytest with coverage
-      shell: bash
-      env:
-        PYTHONDONTWRITEBYTECODE: 1
-        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
-      run: |
         python -m pytest ${{ matrix.args }} --cov --cov-report=xml
 
     - name: Upload artifacts
@@ -76,8 +77,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Lint
         uses: github/super-linter/slim@v4

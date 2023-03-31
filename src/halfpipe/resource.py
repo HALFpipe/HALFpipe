@@ -55,13 +55,13 @@ def download(url: str, target: str | Path | None = None) -> str | None:
 
     print(f"Downloading {url}")
 
-    with requests.get(url, stream=True) as rq:
-        total_size = int(rq.headers.get("content-length", 0))
+    with requests.get(url, stream=True) as response:
+        total_size = int(response.headers.get("content-length", 0))
         block_size = 1024
 
         t = tqdm(total=total_size, unit="B", unit_scale=True)
 
-        for block in rq.iter_content(block_size):
+        for block in response.iter_content(block_size):
             if block:  # filter out keep-alive new chunks
                 t.update(len(block))
                 file_handle.write(block)
