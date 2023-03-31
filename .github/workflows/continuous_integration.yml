@@ -31,7 +31,7 @@ jobs:
           - chunk: workflows
             args: "tests/workflows -k 'not test_feature_extraction'"
           - chunk: feature_extraction
-            args: "tests/workflows/tests/test_workflow.py::test_feature_extraction"
+            args: "tests/workflows/test_workflow.py::test_feature_extraction"
           - chunk: other
             args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
 
