@@ -102,14 +102,16 @@ def summarize(xx: list[Any]) -> Any:
         return Categorical.summarize(categorical_values)
 
 
-def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
-    keys = set(chain.from_iterable(element.data.keys() for element in elements))
+def merge_data(elements: set[Element]) -> ResultDict:
+    keys: set[tuple[ResultKey, str]] = set(
+        chain.from_iterable(element.data.keys() for element in elements)
+    )
 
     sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
-    summarized: dict[tuple[str, str], Any] = dict()
+    summarized: dict[tuple[ResultKey, str], Any] = dict()
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
-        field_name: str = key[0]
+        field_name: ResultKey = key[0]
         if key in [
             ("metadata", "sources"),
             ("metadata", "Sources"),
@@ -120,19 +122,21 @@ def merge_data(elements: set[Element]) -> dict[str, dict[str, Any]]:
         else:
             summarized[key] = summarize(values)
 
-    data: dict[str, dict[str, Any]] = defaultdict(dict)
+    data: ResultDict = defaultdict(dict)
     for (field_name, attribute_name), attribute_value in summarized.items():
         data[field_name][attribute_name] = thaw(attribute_value)
 
     return data
 
 
-def aggregate_results(rr: list[ResultDict], across_key: str):
+def aggregate_results(
+    rr: list[ResultDict], across_key: str
+) -> tuple[list[ResultDict], list[ResultDict]]:
     groups = group_across(rr, across_key)
     expanded_groups = group_expand(groups)
 
-    aggregated: list[dict[str, dict[str, Any]]] = list()
-    bypass: list[dict[str, dict[str, Any]]] = list()
+    aggregated: list[ResultDict] = list()
+    bypass: list[ResultDict] = list()
 
     for index, elements in expanded_groups.items():
         tags: dict[str, Any] = {
@@ -140,7 +144,8 @@ def aggregate_results(rr: list[ResultDict], across_key: str):
         }
         tags |= index
 
-        u: dict[str, dict[str, Any]] = dict(tags=tags) | merge_data(elements)
+        u: ResultDict = {"tags": tags}
+        u |= merge_data(elements)
 
         if len(elements) > 1:
             aggregated.append(u)

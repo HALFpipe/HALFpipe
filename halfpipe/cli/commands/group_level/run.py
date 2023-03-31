@@ -8,6 +8,7 @@ from contextlib import chdir
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Callable
 
 from nipype.interfaces import fsl
 from tqdm.auto import tqdm
@@ -17,6 +18,7 @@ from ....design import group_design, intercept_only_design, make_design_tsv
 from ....interfaces.image_maths.merge import merge, merge_mask
 from ....logging import logger
 from ....result.aggregate import aggregate_results
+from ....result.base import ResultDict
 from ....result.bids.images import save_images
 from ....result.filter import filter_results
 from ....stats.algorithms import algorithms as all_algorithms
@@ -26,6 +28,7 @@ from ....utils.format import format_like_bids, format_tags
 from ....utils.hash import b32_digest
 from ....utils.multiprocessing import Pool
 from ....utils.path import resolve
+from .export import export
 from .parser import parse_group_level
 
 aliases = dict(reho="effect", falff="effect", alff="effect")
@@ -39,12 +42,16 @@ def run(arguments: Namespace):
     output_directory = resolve(output_directory, arguments.fs_root)
 
     exports = arguments.export
-    if exports is not None:
-        raise NotImplementedError
+    if exports is None:
+        exports = list()
 
     algorithms = arguments.algorithm
-    if algorithms is None:
+    if len(exports) == 0 and algorithms is None:
         algorithms = list(all_algorithms.keys())
+    elif len(exports) > 0 and algorithms is None:
+        algorithms = list()
+    elif len(exports) > 0 and algorithms is not None:
+        raise ValueError("Cannot specify both `--export` and `--algorithm`")
 
     results = list()
     for input_directory in arguments.input_directory:
@@ -145,6 +152,7 @@ def run(arguments: Namespace):
             contrasts,
             variables,
             algorithms,
+            exports,
             output_directory,
             arguments.nipype_n_procs,
             arguments.model_name,
@@ -162,7 +170,7 @@ def within(
     with Pool(processes=n_procs) as pool:
         results = list(
             tqdm(
-                pool.imap_unordered(_within, results),
+                pool.imap_unordered(within_inner, results),
                 total=len(results),
                 desc=f'level "{key}"',
             )
@@ -173,37 +181,7 @@ def within(
     return results
 
 
-def between(
-    results: list,
-    spreadsheet,
-    contrasts: list,
-    variables: list,
-    algorithms: list[str],
-    output_directory: Path,
-    n_procs: int,
-    model_name: str | None = None,
-):
-    results, _ = aggregate_results(results, "sub")
-
-    if len(results) == 0:
-        raise ValueError("No inputs found")
-
-    logger.log(25, f"Will run {len(results):d} group-level models")
-    for i, result in enumerate(results):
-        _between(
-            i,
-            result,
-            spreadsheet,
-            contrasts,
-            variables,
-            algorithms,
-            n_procs,
-            model_name,
-            output_directory,
-        )
-
-
-def _within(result: dict):
+def within_inner(result: dict):
     key = b32_digest(result)[:8]
 
     model_directory = Path.cwd() / f"model-{key}"
@@ -244,7 +222,7 @@ def _within(result: dict):
             design_file=multiple_regress_design.outputs.design_mat,
             t_con_file=multiple_regress_design.outputs.design_con,
             cov_split_file=multiple_regress_design.outputs.design_grp,
-        ).run()
+        ).run()  # type: ignore
         assert flameo.outputs is not None
 
     cope_file = flameo.outputs.copes
@@ -262,20 +240,53 @@ def _within(result: dict):
     return result
 
 
-def _between(
-    i,
-    result,
+def between(
+    results: list,
+    spreadsheet,
+    contrasts: list,
+    variables: list,
+    algorithms: list[str],
+    exports: list[str],
+    output_directory: Path,
+    n_procs: int,
+    model_name: str | None = None,
+):
+    results, _ = aggregate_results(results, "sub")
+
+    if len(results) == 0:
+        raise ValueError("No inputs found")
+
+    logger.log(25, f"Will process {len(results):d} variables")
+    for i, result in enumerate(results):
+        directory = Path.cwd() / f"variable-{i + 1:02d}"
+        directory.mkdir(exist_ok=True, parents=True)
+
+        between_inner(
+            directory,
+            result,
+            spreadsheet,
+            contrasts,
+            variables,
+            algorithms,
+            exports,
+            n_procs,
+            model_name,
+            output_directory,
+        )
+
+
+def between_inner(
+    model_directory: Path,
+    result: ResultDict,
     spreadsheet,
     contrasts,
     variables,
-    algorithms,
+    algorithms: list[str],
+    exports: list[str],
     n_procs,
     model_name,
     output_directory,
 ):
-    model_directory = Path.cwd() / f"model-{i:02d}"
-    model_directory.mkdir(exist_ok=True, parents=True)
-
     tags = result["tags"]
     subjects = tags.pop("sub")
 
@@ -286,7 +297,8 @@ def _between(
 
     logger.log(
         25,
-        f"Running model {i + 1:d} with tags {format_tags(tags)} for {len(subjects)} subjects",
+        f'Running "{model_directory.name}" '
+        f"with tags {format_tags(tags)} for {len(subjects)} subjects",
     )
 
     images = result.pop("images")
@@ -314,43 +326,60 @@ def _between(
             contrast_names,
         ) = intercept_only_design(len(subjects))
 
+    model_images: dict[str, str] = dict()
     with chdir(model_directory):
-        design_tsv, contrast_tsv = make_design_tsv(
-            regressor_list, contrast_list, subjects
-        )
+        if len(algorithms) == 0 and len(exports) > 0:
+            func: Callable = export
+            args: list[Any] = exports
+        elif len(algorithms) > 0 and len(exports) == 0:
+            func = fit
+            args = algorithms
 
-        output_files = fit(
+            design_tsv, contrast_tsv = make_design_tsv(
+                regressor_list,
+                contrast_list,
+                subjects,
+            )
+            model_images["design_matrix"] = str(design_tsv)
+            model_images["contrast_matrix"] = str(contrast_tsv)
+        else:
+            raise ValueError("Must specify either algorithms or exports")
+
+        outputs: dict[str, Any] = func(
+            subjects,
             cope_files,
             var_cope_files,
             mask_files,
             regressor_list,
             contrast_list,
-            algorithms,
+            args,
             n_procs,
         )
 
-    for from_key, to_key in modelfit_aliases.items():
-        if from_key in output_files:
-            output_files[to_key] = output_files.pop(from_key)
+    if "metadata" in outputs:
+        metadata = outputs.pop("metadata")
+        result["metadata"] |= metadata
 
-    images = {
-        key: value for key, value in output_files.items() if isinstance(value, str)
-    }
-    images["design_matrix"] = str(design_tsv)
-    images["contrast_matrix"] = str(contrast_tsv)
+    for from_key, to_key in modelfit_aliases.items():
+        if from_key in outputs:
+            outputs[to_key] = outputs.pop(from_key)
+
+    model_images.update(
+        {key: value for key, value in outputs.items() if isinstance(value, str)}
+    )
 
     model_results = list()
 
     model_result = deepcopy(result)
     if model_name is not None:
         model_result["tags"]["model"] = model_name
-    model_result["images"] = images
+    model_result["images"] = model_images
     model_results.append(model_result)
 
     for i, contrast_name in enumerate(contrast_names):
         images = {
             key: value[i]
-            for key, value in output_files.items()
+            for key, value in outputs.items()
             if isinstance(value, list) and isinstance(value[i], str)
         }
         if len(images) == 0:

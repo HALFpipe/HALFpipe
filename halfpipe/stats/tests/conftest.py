@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import tarfile
 from pathlib import Path
 
 import pytest
@@ -12,42 +11,6 @@ from templateflow.api import get as get_template
 
 from ...design import group_design
 from ...model.variable import VariableSchema
-from ...resource import get as getresource
-from ...tests.resource import setup as setuptestresources
-
-
-@pytest.fixture(scope="package")
-def wakemandg_hensonrn_raw(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn")
-
-    os.chdir(str(tmp_path))
-
-    setuptestresources()
-    inputtarpath = getresource("wakemandg_hensonrn_statmaps.tar.gz")
-
-    with tarfile.open(inputtarpath) as fp:
-        fp.extractall(tmp_path)
-
-    subjects = [f"{i+1:02d}" for i in range(16)]
-    suffixes = ["stat-effect_statmap", "stat-variance_statmap", "mask"]
-
-    data = {
-        suffix: [
-            tmp_path
-            / f"sub-{subject}_task-faces_feature-taskBased_taskcontrast-facesGtScrambled_model-aggregateTaskBasedAcrossRuns_contrast-intercept_{suffix}.nii.gz"
-            for subject in subjects
-        ]
-        for suffix in suffixes
-    }
-
-    data.update(
-        {
-            "subjects": subjects,
-            "spreadsheet": tmp_path / "subjects_age_sex.csv",
-        }
-    )
-
-    return data
 
 
 @pytest.fixture(scope="package")
@@ -67,7 +30,7 @@ def mni_downsampled(tmp_path_factory):
 
 
 @pytest.fixture(scope="package")
-def wakemandg_hensonrn_downsampled(
+def wakemandg_hensonrn_raw_downsampled(
     tmp_path_factory, wakemandg_hensonrn_raw, mni_downsampled
 ):
     tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn_downsampled")
@@ -121,7 +84,7 @@ def wakemandg_hensonrn(wakemandg_hensonrn_downsampled):
     regressors, contrasts, _, _ = group_design(
         subjects=subjects,
         spreadsheet=spreadsheet_file,
-        variables=variables,
+        variables=variables,  # type: ignore
         contrasts=[
             {"variable": ["Age"], "type": "infer"},
             {"variable": ["ReactionTime"], "type": "infer"},

@@ -143,11 +143,15 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
 
 def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
-    # filtering for design matrix is already done
-    # the nans that are left should be replaced with zeros
+    # Filtering for design matrix is already done,
+    # so the nans that are left should be replaced with zeros.
     z = np.nan_to_num(z)
 
-    # remove observations with nan cope/varcope
+    # If we don't have any variance information, set it to zero.
+    if np.isnan(s).all():
+        s[:] = 0
+
+    # Remove observations with nan cope/varcope
     y, z, s = listwise_deletion(y, z, s)
 
     # finally demean the design matrix
@@ -221,7 +225,7 @@ class FLAME1(ModelAlgorithm):
                 fname = cls.write_map(ref_img, out_name, series)
 
                 if map_name in frozenset(["dof"]):
-                    output_name = map_name
+                    output_name = str(map_name)
 
                 else:
                     output_name = f"{map_name}s"

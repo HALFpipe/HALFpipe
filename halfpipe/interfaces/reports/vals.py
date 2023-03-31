@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import nibabel as nib
 import numpy as np
 import pandas as pd
 from nipype.interfaces.base import (
@@ -37,29 +38,31 @@ class CalcMean(SimpleInterface):
     output_spec = CalcMeanOutputSpec
 
     def _run_interface(self, runtime):
-        in_file = self.inputs.in_file
-        mask_file = None
+        in_img = nib.load(self.inputs.in_file)
+        mask_img: nib.Nifti1Image | None = None
         if isdefined(self.inputs.mask):
-            mask_file = self.inputs.mask
+            mask_img = nib.load(self.inputs.mask)
 
         if isdefined(self.inputs.dseg):  # get grey matter only
+            atlas_img = nib.load(self.inputs.dseg)
             dseg_mean_signals = mean_signals(
-                in_file, self.inputs.dseg, mask_file=mask_file
+                in_img,
+                atlas_img,
+                mask_img=mask_img,
             )
             _, gm_mean, _ = np.ravel(dseg_mean_signals).tolist()
             self._results["mean"] = float(gm_mean)
 
         elif isdefined(self.inputs.parcellation):
-            parc_mean_signals = mean_signals(
-                in_file, self.inputs.parcellation, mask_file=mask_file
-            )
+            atlas_img = nib.load(self.inputs.parcellation)
+            parc_mean_signals = mean_signals(in_img, atlas_img, mask_img=mask_img)
             parc_mean_signals_list = list(
                 map(float, np.ravel(parc_mean_signals).tolist())
             )
             self._results["mean"] = parc_mean_signals_list
 
-        elif mask_file is not None:
-            mean = mean_signals(in_file, mask_file)
+        elif mask_img is not None:
+            mean = mean_signals(in_img, mask_img)
             self._results["mean"] = float(mean[0])
 
         vals = dict()

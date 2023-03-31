@@ -3,8 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from os import path as op
-from pathlib import Path
-from typing import Literal, overload
 
 import nibabel as nib
 import numpy as np
@@ -16,105 +14,8 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
-from scipy.ndimage import mean
 
-from ..utils.image import nvol
-from ..utils.matrix import atleast_4d
-
-
-@overload
-def mean_signals(
-    in_file: str | Path,
-    atlas_file: str | Path,
-    output_coverage: Literal[False] = False,
-    mask_file: str | Path | None = None,
-    background_label: int = 0,
-    min_region_coverage: float = 0,
-) -> np.ndarray:
-    ...
-
-
-@overload
-def mean_signals(
-    in_file: str | Path,
-    atlas_file: str | Path,
-    output_coverage: Literal[True],
-    mask_file: str | Path | None = None,
-    background_label: int = 0,
-    min_region_coverage: float = 0,
-) -> tuple[np.ndarray, list[float]]:
-    ...
-
-
-def mean_signals(
-    in_file: str | Path,
-    atlas_file: str | Path,
-    output_coverage: bool = False,
-    mask_file: str | Path | None = None,
-    background_label: int = 0,
-    min_region_coverage: float = 0,
-):
-    in_img = nib.load(in_file)
-    atlas_img = nib.load(atlas_file)
-
-    assert nvol(atlas_img) == 1
-    assert atlas_img.shape[:3] == in_img.shape[:3]
-    assert np.allclose(atlas_img.affine, in_img.affine)
-
-    labels = np.asanyarray(atlas_img.dataobj).astype(int)
-
-    nlabel: int = labels.max()
-
-    assert background_label <= nlabel
-
-    indices = np.arange(0, nlabel + 1, dtype=int)
-
-    out_region_coverage = None
-
-    if mask_file is not None:
-        mask_img = nib.load(mask_file)
-
-        assert nvol(mask_img) == 1
-        assert mask_img.shape[:3] == in_img.shape[:3]
-        assert np.allclose(mask_img.affine, in_img.affine)
-
-        mask_data = np.asanyarray(mask_img.dataobj).astype(bool)
-
-        unmasked_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)[
-            : nlabel + 1
-        ]
-
-        labels[np.logical_not(mask_data)] = background_label
-
-        masked_counts = np.bincount(np.ravel(labels), minlength=nlabel + 1)[
-            : nlabel + 1
-        ]
-
-        region_coverage = masked_counts.astype(float) / unmasked_counts.astype(float)
-        region_coverage[unmasked_counts == 0] = 0
-
-        out_region_coverage = list(region_coverage[indices != background_label])
-        assert len(out_region_coverage) == nlabel
-
-        indices = indices[region_coverage >= min_region_coverage]
-
-    indices = indices[indices != background_label]
-
-    assert np.all(labels >= 0)
-
-    in_data = atleast_4d(in_img.get_fdata())
-
-    result = np.full((in_data.shape[3], nlabel), np.nan)
-
-    for i, img in enumerate(np.moveaxis(in_data, 3, 0)):
-        result[i, indices - 1] = mean(
-            img, labels=labels.reshape(img.shape), index=indices
-        )
-
-    if output_coverage is True:
-        return result, out_region_coverage
-    else:
-        return result
+from ..signals import mean_signals
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
@@ -149,11 +50,15 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime):
+        in_img = nib.load(self.inputs.in_file)
+        atlas_img = nib.load(self.inputs.atlas_file)
+        mask_img = nib.load(self.inputs.mask_file)
+
         self._time_series, self._region_coverage = mean_signals(
-            self.inputs.in_file,
-            self.inputs.atlas_file,
+            in_img,
+            atlas_img,
             output_coverage=True,
-            mask_file=self.inputs.mask_file,
+            mask_img=mask_img,
             background_label=self.inputs.background_label,
             min_region_coverage=self.inputs.min_region_coverage,
         )

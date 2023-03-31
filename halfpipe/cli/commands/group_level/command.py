@@ -121,17 +121,19 @@ class GroupLevelCommand(Command):
             action="extend",
         )
         argument_parser.add_argument(
-            "--export",
-            type=str,
-            nargs="+",
-            action="extend",
-        )
-        argument_parser.add_argument(
             "--aggregate",
             type=str,
             metavar="across",
             nargs="+",
             action="extend",
+        )
+
+        argument_parser.add_argument(
+            "--export",
+            type=str,
+            nargs=4,
+            metavar=("NAME", "TYPE", "IMAGE_PATH", "LABEL_PATH"),
+            action="append",
         )
 
     def run(self, arguments: Namespace):

@@ -10,26 +10,12 @@ default_resource_dir = Path.home() / ".cache" / "halfpipe"
 resource_dir = Path(getenv("HALFPIPE_RESOURCE_DIR", str(default_resource_dir)))
 resource_dir.mkdir(exist_ok=True, parents=True)
 
-online_resources: dict[str, str] = dict(
-    [
-        (
-            "index.html",
-            "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.1/index.html",
-        ),
-        (
-            "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5",
-            "https://api.figshare.com/v2/file/download/5534327",
-        ),
-        (
-            "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5",
-            "https://api.figshare.com/v2/file/download/5534330",
-        ),
-        (
-            "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz",
-            "https://api.figshare.com/v2/file/download/22447958",
-        ),
-    ]
-)
+online_resources: dict[str, str] = {
+    "index.html": "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.1/index.html",
+    "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534327",
+    "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534330",
+    "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://api.figshare.com/v2/file/download/22447958",
+}
 
 
 def urllib_download(url: str, target: str):

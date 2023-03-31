@@ -36,6 +36,7 @@ Pint >= 0.17
 # utilities
 flufl.lock >= 5.0.3
 psutil >= 5.8.0
+threadpoolctl
 fasteners >= 0.15
 chardet
 pympler >= 0.9

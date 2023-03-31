@@ -85,7 +85,7 @@ def build_parser() -> ArgumentParser:
 
     rungroup.add_argument("--nipype-memory-gb", type=float)
     rungroup.add_argument(
-        "--nipype-n-procs", "--n-procs", type=int, default=cpu_count()
+        "--nipype-n-procs", "--n-procs", "--num-threads", type=int, default=cpu_count()
     )
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
     rungroup.add_argument(
@@ -151,7 +151,7 @@ def parse_args(args=None, namespace=None) -> Tuple:
     if debug:
         from fmriprep import config
 
-        config.execution.debug = ["all"]
+        config.execution.debug = ["all"]  # type: ignore
 
     verbose = opts.verbose
     if verbose:

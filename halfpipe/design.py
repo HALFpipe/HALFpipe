@@ -281,8 +281,12 @@ def group_design(
         )
         return intercept_only_design(len(subjects))
 
-    regressor_list = dmat.to_dict(orient="list", into=OrderedDict)
-    assert isinstance(regressor_list, dict)
+    regressor_list: dict[str, list[float]] = OrderedDict(
+        *(
+            (str(name), values)
+            for name, values in dmat.to_dict(orient="list", into=OrderedDict).items()
+        )
+    )
     contrast_list, contrast_numbers, contrast_names = _make_contrasts_list(
         contrast_matrices
     )

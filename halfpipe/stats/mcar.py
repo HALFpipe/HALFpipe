@@ -26,14 +26,14 @@ class MCARTest(Heterogeneity):
 
         z = demean(z)
 
-        isavailable = np.logical_and(np.isfinite(y), np.isfinite(s))
-        ismissing = np.logical_not(isavailable)
+        is_available = np.isfinite(y) & np.isfinite(s)
+        is_missing = ~is_available
 
-        if np.all(ismissing) or np.all(isavailable):
+        if np.all(is_missing) or np.all(is_available):
             return None  # zero variance
 
         try:
-            model = sm.Logit(ismissing.ravel().astype(float), z, missing="drop")
+            model = sm.Logit(is_missing.ravel().astype(float), z, missing="drop")
             result = model.fit(disp=False, warn_convergence=False)
 
             chisq = result.llr
