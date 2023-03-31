@@ -51,7 +51,7 @@ while read requirement; do
 
     printf '%s\n' --------------------
 
-    if run_cmd "mamba install --satisfied-skip-solve --dry-run \"${requirement}\" >/dev/null"; then
+    if run_cmd "mamba install --dry-run \"${requirement}\" >/dev/null"; then
         printf 'using conda for package "%s"\n' "${requirement}"
         conda_packages+=("${requirement}")
     else
