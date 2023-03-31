@@ -66,7 +66,11 @@ def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
         subject_set |= set(map(normalize_subject, subject_set))
         subject_set |= set(map(format_like_bids, subject_set))
 
-        subjects = [n for n in subjects if n in subject_set]
+        subjects = [
+            subject
+            for subject in subjects
+            if subject in subject_set or format_like_bids(subject) in subject_set
+        ]
 
     return subjects
 
