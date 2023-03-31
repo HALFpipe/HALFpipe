@@ -62,8 +62,8 @@ def wakemandg_hensonrn_raw_downsampled(
 
 
 @pytest.fixture(scope="package")
-def wakemandg_hensonrn(wakemandg_hensonrn_downsampled):
-    data = wakemandg_hensonrn_downsampled
+def wakemandg_hensonrn(wakemandg_hensonrn_raw_downsampled):
+    data = wakemandg_hensonrn_raw_downsampled
 
     cope_files = data["stat-effect_statmap"]
     var_cope_files = data["stat-variance_statmap"]

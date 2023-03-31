@@ -122,34 +122,42 @@ def mode_signals(
     if not np.allclose(modes_img.affine, cope_img.affine):
         raise ValueError("Atlas image and input image must have the same affine.")
 
+    # Load the data.
     cope_data = cope_img.get_fdata()
 
     var_cope_data = var_cope_img.get_fdata()
-    if np.isnan(var_cope_data).all():  # No varcope data.
+    if np.isnan(var_cope_data).all():  # No varcope data, so assume equal weights.
         var_cope_data[:] = 1
 
     modes_data = modes_img.get_fdata()
 
-    mode_count = modes_data.shape[3]
-    volume_count = cope_data.shape[3]
+    mask_data = np.isfinite(cope_data) & np.isfinite(var_cope_data)
+
+    # Remove voxels with no data.
+    maximum_mask = mask_data.any(axis=3)
+    cope_data = cope_data[maximum_mask, :]
+    var_cope_data = var_cope_data[maximum_mask, :]
+    modes_data = modes_data[maximum_mask, :]
+    mask_data = mask_data[maximum_mask, :]
+
+    # Create the output array.
+    mode_count = modes_data.shape[-1]
+    volume_count = cope_data.shape[-1]
     signals_lstsq = np.full((volume_count, mode_count), np.nan)
 
     for i in tqdm(range(volume_count), desc="extracting signals", leave=False):
-        cope = cope_data[..., i]
-        var_cope = var_cope_data[..., i]
+        mask = mask_data[:, i]
 
-        mask = np.isfinite(cope) & np.isfinite(var_cope)
-        cope = cope[mask]
-        var_cope = var_cope[mask]
-        modes = modes_data[mask, :]
+        # Reciprocal of the square root.
+        weights = np.power(var_cope_data[mask, i, np.newaxis], -0.5)
 
-        weights = np.power(var_cope, -0.5)  # Reciprocal of the square root.
-        wendog = cope * weights
-        wexog = modes * weights[:, np.newaxis]
+        # Prepare the weighted variables.
+        weighted_endog = cope_data[mask, i, np.newaxis] * weights
+        weighted_exog = modes_data[mask, :] * weights
 
-        signals_lstsq[i, :], _, _, _ = scipy.linalg.lstsq(
-            wexog,
-            wendog,
+        signals_lstsq[i, :, np.newaxis], _, _, _ = scipy.linalg.lstsq(
+            weighted_exog.transpose() @ weighted_exog,
+            weighted_exog.transpose() @ weighted_endog,
             check_finite=False,
             lapack_driver="gelsy",
             overwrite_a=True,
@@ -157,61 +165,3 @@ def mode_signals(
         )
 
     return signals_lstsq
-
-    # signals = np.full((volume_count, mode_count), np.nan)
-
-    # mask = np.isfinite(cope_data) & np.isfinite(var_cope_data)
-    # maximum_mask = mask.any(axis=3)
-
-    # cope_data = cope_data[maximum_mask, :]
-    # var_cope_data = var_cope_data[maximum_mask, :]
-    # modes_data = modes_data[maximum_mask, :]
-
-    # mask = np.isfinite(cope_data) & np.isfinite(var_cope_data)
-    # minimum_mask = mask.all(axis=1)
-    # (minimum_indices,) = np.where(minimum_mask)
-    # minimum_q, minimum_r = np.linalg.qr(modes_data[minimum_mask, :])
-
-    # for i in tqdm(range(volume_count), desc="extracting signals", leave=False):
-    #     cope = cope_data[..., i]
-    #     var_cope = var_cope_data[..., i]
-
-    #     mask = np.isfinite(cope) & np.isfinite(var_cope)
-    #     difference_mask = mask & ~minimum_mask
-    #     (difference_indices,) = np.where(difference_mask)
-
-    #     indices = np.concatenate((minimum_indices, difference_indices))
-
-    #     difference_q, difference_r = np.linalg.qr(modes_data[difference_mask, :])
-
-    #     stacked_r = np.concatenate((minimum_r, difference_r), axis=0)
-    #     q_2, r = np.linalg.qr(stacked_r)
-    #     left_singular_vectors, singular_values, right_singular_vectors = np.linalg.svd(
-    #         r, full_matrices=False
-    #     )
-
-    #     minimum_q_2 = q_2[:mode_count, :]
-    #     difference_q_2 = q_2[mode_count:, :]
-    #     q = np.concatenate(
-    #         (minimum_q @ minimum_q_2, difference_q @ difference_q_2), axis=0
-    #     )
-    #     left_singular_vectors = q @ left_singular_vectors
-
-    #     cope = cope[indices]
-    #     var_cope = var_cope[indices]
-    #     modes = modes_data[indices, :]
-    #     weights = np.power(var_cope, -0.5)  # Reciprocal of the square root.
-    #     wendog = cope * weights
-    #     wexog = modes * weights[:, np.newaxis]
-
-    #     wexog_pinv_ = pinv(
-    #         q @ left_singular_vectors,
-    #         singular_values,
-    #         right_singular_vectors,
-    #     )
-
-    #     import pdb
-
-    #     pdb.set_trace()
-
-    # return signals
