@@ -14,29 +14,29 @@ except PackageNotFoundError:
 finally:
     del version, PackageNotFoundError
 
-os.environ["NIPYPE_NO_ET"] = "1"  # disable nipype update check
+os.environ["NIPYPE_NO_ET"] = "1"  # Disable nipype update check.
 os.environ["NIPYPE_NO_MATLAB"] = "1"
 
-os.environ["MPLCONFIGDIR"] = mkdtemp()  # silence matplotlib warningddd
+os.environ["MPLCONFIGDIR"] = mkdtemp()  # Silence matplotlib warning.
 
-# special variable set in the container
+# Special variable set in the container by fMRIPrep.
 if os.getenv("IS_DOCKER_8395080871") is not None:
-    # we are running in a container, so we reset important
-    # env variables to the correct values
+    # We are running in a container, so we reset important
+    # env variables to the correct values.
 
     xdg_cache_home = Path("/var/cache")
     os.environ["XDG_CACHE_HOME"] = str(
         xdg_cache_home
-    )  # where matplotlib looks for the font cache
+    )  # Where matplotlib looks for the font cache.
 
     halfpipe_resource_dir = xdg_cache_home / "halfpipe"
     os.environ["HALFPIPE_RESOURCE_DIR"] = str(
         halfpipe_resource_dir
-    )  # where halfpipe.resource.get looks for its cache
+    )  # Where halfpipe.resource.get looks for its cache.
 
     templateflow_home = xdg_cache_home / "templateflow"
     os.environ["TEMPLATEFLOW_HOME"] = str(
         templateflow_home
-    )  # where templateflow.api looks for its cache
+    )  # Where templateflow.api looks for its cache.
 
     del xdg_cache_home, halfpipe_resource_dir, templateflow_home
