@@ -71,7 +71,8 @@ def load_data(
 
     # Update the masks.
     mask_data &= np.isfinite(cope_data)
-    mask_data &= np.isfinite(var_cope_data)
+    if var_cope_files is not None:
+        mask_data &= np.isfinite(var_cope_data)
 
     # Zero out voxels that are not in the mask.
     cope_data[~mask_data] = np.nan
@@ -135,15 +136,15 @@ def fit(
     algorithms_to_run: list[str],
     num_threads: int,
 ) -> dict[str, str]:
-    copes, var_copes = load_data(
+    copes_img, var_copes_img = load_data(
         cope_files,
         var_cope_files,
         mask_files,
     )
 
     voxel_data, cmatdict = make_voxelwise_generator(
-        copes,
-        var_copes,
+        copes_img,
+        var_copes_img,
         regressors,
         contrasts,
         algorithms_to_run,
@@ -165,15 +166,12 @@ def fit(
         for x in tqdm(iterator, unit="voxels", desc="model fit"):
             if x is None:
                 continue
-
             for algorithm, result in x.items():  # transpose
                 if result is None:
                     continue
-
                 for k, v in result.items():
                     if v is None:
                         continue
-
                     voxel_results[algorithm][k].update(v)
 
     ref_image = nib.squeeze_image(nib.load(cope_files[0]))
