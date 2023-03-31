@@ -52,10 +52,10 @@ while read requirement; do
     printf '%s\n' --------------------
 
     if run_cmd "mamba install --dry-run \"${requirement}\" >/dev/null"; then
-        printf 'using conda for package "%s"\n' "${requirement}"
+        printf 'Using conda for package "%s"\n' "${requirement}"
         conda_packages+=("${requirement}")
     else
-        printf 'using pip for package "%s"\n' "${requirement}"
+        printf 'Using pip for package "%s"\n' "${requirement}"
         pip_packages+=("\"${requirement}\"")
     fi
 
@@ -64,7 +64,13 @@ while read requirement; do
 done < <(grep -v '#' ${requirements_files[@]})
 
 run_cmd mamba install --yes ${conda_packages[@]}
+if [ $? -ne 0 ]; then
+  exit 1
+fi
 
-# we assume that all python dependencies have already been resolved by `pip-compile`
-# so there will be no conflicts when we ask `pip` to install them
+# We assume that all python dependencies have already been resolved by `pip-compile`,
+# so there will be no conflicts when we ask `pip` to install them.
 run_cmd pip install --no-deps ${pip_packages[@]}
+if [ $? -ne 0 ]; then
+  exit 1
+fi

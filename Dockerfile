@@ -52,7 +52,7 @@ RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
 # Install HALFpipe
-RUN --mount=target=src/halfpipe \
+RUN --mount=target=/src/halfpipe \
     cp -r /src/halfpipe /tmp \
  && pip install --no-deps /tmp/halfpipe \
  && rm -rf ~/.cache/pip /var/cache/pip /tmp/* /var/tmp/* \
