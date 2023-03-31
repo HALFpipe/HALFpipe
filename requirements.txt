@@ -6,30 +6,30 @@
 #
 astor==0.8.1
     # via formulaic
-atpublic==3.0.1
+atpublic==3.1.1
     # via flufl-lock
-attrs==21.4.0
+attrs==22.2.0
     # via niworkflows
-bids-validator==1.9.4
+bids-validator==1.11.0
     # via pybids
 certifi==2022.12.7
     # via requests
 chardet==5.1.0
     # via -r requirements.in
-charset-normalizer==2.1.0
+charset-normalizer==3.1.0
     # via requests
-ci-info==0.2.0
+ci-info==0.3.0
     # via etelemetry
 click==8.1.3
     # via
     #   niflow-nipype1-workflows
     #   nipype
     #   pybids
-contourpy==1.0.5
+contourpy==1.0.7
     # via matplotlib
 cycler==0.11.0
     # via matplotlib
-cython==0.29.30
+cython==0.29.33
     # via nitime
 decorator==4.4.2
     # via networkx
@@ -43,29 +43,29 @@ etelemetry==0.3.0
     # via nipype
 fasteners==0.18
     # via -r requirements.in
-filelock==3.7.1
+filelock==3.10.7
     # via nipype
 flufl-lock==7.1.1
     # via -r requirements.in
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
     # via -r requirements.in
-fonttools==4.34.4
+fonttools==4.39.3
     # via matplotlib
 formulaic==0.2.4
     # via pybids
-frozendict==2.3.4
+frozendict==2.3.6
     # via -r requirements.in
 future==0.18.3
     # via niflow-nipype1-workflows
 gmpy2==2.1.5
     # via -r requirements.in
-h5py==3.7.0
+h5py==3.8.0
     # via nitransforms
-idna==3.3
+idna==3.4
     # via requests
-imageio==2.19.3
+imageio==2.27.0
     # via scikit-image
-indexed-gzip==1.7.0
+indexed-gzip==1.7.1
     # via
     #   -r requirements.in
     #   fmriprep
@@ -84,20 +84,20 @@ joblib==1.2.0
     # via
     #   nilearn
     #   scikit-learn
-kiwisolver==1.4.3
+kiwisolver==1.4.4
     # via matplotlib
-line-profiler==4.0.2
+line-profiler==4.0.3
     # via -r requirements.in
 lockfile==0.12.2
     # via smriprep
-looseversion==1.0.1
+looseversion==1.1.2
     # via nipype
-lxml==4.9.1
+lxml==4.9.2
     # via
     #   nilearn
     #   prov
     #   svgutils
-markupsafe==2.1.1
+markupsafe==2.1.2
     # via jinja2
 marshmallow==3.19.0
     # via
@@ -105,13 +105,13 @@ marshmallow==3.19.0
     #   marshmallow-dataclass
     #   marshmallow-enum
     #   marshmallow-oneofschema
-marshmallow-dataclass==8.5.10
+marshmallow-dataclass==8.5.12
     # via -r requirements.in
 marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.6.3
+matplotlib==3.7.1
     # via
     #   -r requirements.in
     #   nitime
@@ -119,11 +119,11 @@ matplotlib==3.6.3
     #   seaborn
     #   smriprep
     #   tedana
-more-itertools==9.0.0
+more-itertools==9.1.0
     # via -r requirements.in
-mpmath==1.2.1
+mpmath==1.3.0
     # via -r requirements.in
-mypy-extensions==0.4.3
+mypy-extensions==1.0.0
     # via typing-inspect
 networkx==2.5.1
     # via
@@ -132,7 +132,7 @@ networkx==2.5.1
     #   nitime
     #   prov
     #   scikit-image
-nibabel==5.0.0
+nibabel==5.0.1
     # via
     #   -r requirements.in
     #   fmriprep
@@ -147,7 +147,7 @@ nibabel==5.0.0
     #   tedana
 niflow-nipype1-workflows==0.0.5
     # via sdcflows
-nilearn==0.9.1
+nilearn==0.10.0
     # via
     #   fmriprep
     #   niworkflows
@@ -173,9 +173,9 @@ niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.8+halfp
     #   fmriprep
     #   sdcflows
     #   smriprep
-num2words==0.5.10
+num2words==0.5.12
     # via pybids
-numpy==1.24.1
+numpy==1.24.2
     # via
     #   -r requirements.in
     #   contourpy
@@ -205,9 +205,9 @@ numpy==1.24.1
     #   tifffile
 odfpy==1.4.1
     # via -r requirements.in
-openpyxl==3.1.0
+openpyxl==3.1.2
     # via -r requirements.in
-packaging==21.3
+packaging==23.0
     # via
     #   marshmallow
     #   matplotlib
@@ -235,7 +235,7 @@ patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==9.3.0
+pillow==9.4.0
     # via
     #   imageio
     #   matplotlib
@@ -257,7 +257,7 @@ pybids==0.14.1
     #   sdcflows
     #   smriprep
     #   templateflow
-pydantic==1.9.1
+pydantic==1.10.7
     # via inflect
 pydot==1.4.2
     # via nipype
@@ -266,7 +266,6 @@ pympler==1.0.1
 pyparsing==3.0.9
     # via
     #   matplotlib
-    #   packaging
     #   pydot
     #   rdflib
 pyrsistent==0.19.3
@@ -279,16 +278,16 @@ python-dateutil==2.8.2
     #   nipype
     #   pandas
     #   prov
-pytz==2022.1
+pytz==2023.3
     # via pandas
-pywavelets==1.3.0
+pywavelets==1.4.1
     # via scikit-image
 pyyaml==6.0
     # via
     #   fmriprep
     #   niworkflows
     #   smriprep
-rdflib==6.1.1
+rdflib==6.3.2
     # via
     #   nipype
     #   prov
@@ -303,13 +302,13 @@ scikit-image==0.19.3
     # via
     #   -r requirements.in
     #   niworkflows
-scikit-learn==1.2.1
+scikit-learn==1.2.2
     # via
     #   -r requirements.in
     #   nilearn
     #   niworkflows
     #   tedana
-scipy==1.10.0
+scipy==1.10.1
     # via
     #   -r requirements.in
     #   formulaic
@@ -331,9 +330,9 @@ seaborn==0.12.2
     # via
     #   -r requirements.in
     #   niworkflows
-setuptools-scm==7.0.4
+setuptools-scm==7.1.0
     # via -r requirements.in
-simplejson==3.17.6
+simplejson==3.18.4
     # via nipype
 six==1.16.0
     # via
@@ -370,37 +369,35 @@ threadpoolctl==3.1.0
     #   -r requirements.in
     #   scikit-learn
     #   tedana
-tifffile==2022.5.4
+tifffile==2023.3.21
     # via scikit-image
 toml==0.10.2
     # via fmriprep
-tomli==2.0.1
-    # via setuptools-scm
-tqdm==4.64.0
+tqdm==4.65.0
     # via templateflow
 traits==6.3.2
     # via nipype
 transforms3d==0.4.1
     # via niworkflows
-typeguard==2.13.3
+typeguard==3.0.2
     # via -r requirements.in
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via
     #   -r requirements.in
     #   pydantic
     #   setuptools-scm
     #   typing-inspect
-typing-inspect==0.7.1
+typing-inspect==0.8.0
     # via marshmallow-dataclass
-urllib3==1.26.10
+urllib3==1.26.15
     # via requests
-wheel==0.38.4
+wheel==0.40.0
     # via -r requirements.in
-wrapt==1.14.1
+wrapt==1.15.0
     # via formulaic
 xlrd==2.0.1
     # via -r requirements.in
-xlsxwriter==3.0.8
+xlsxwriter==3.0.9
     # via -r requirements.in
 
 # The following packages are considered to be unsafe in a requirements file:
