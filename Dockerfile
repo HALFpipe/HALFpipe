@@ -24,7 +24,7 @@ RUN --mount=source=requirements.txt,target=/requirements.txt \
         "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
         --output /tmp/miniconda.sh \
  && bash /tmp/miniconda.sh -b -p /usr/local/miniconda \
- && mamba install --yes "python=3.11" "nomkl" "pip" "gdb" "nodejs" \
+ && mamba install --yes "python=3.11" "pip" "gdb" "nodejs" \
  && /install-requirements.sh \
         --requirements-file /requirements.txt \
  && sync \
