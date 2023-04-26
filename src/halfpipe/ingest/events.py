@@ -72,6 +72,9 @@ class ConditionFile:
 
     def parse_tsv(self, path: Path | str):
         data_frame = read_spreadsheet(path)
+        if "trial_type" not in data_frame.columns:
+            logger.warning(f'No "trial_type" column in "{path}"')
+            return
         data_frame = data_frame.astype(dict(trial_type=str), copy=False)
 
         groupby = data_frame.groupby(by="trial_type")

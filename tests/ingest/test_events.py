@@ -17,12 +17,14 @@ txt_str = """8 32 1
 200 32 1
 """
 
-tsv_str = """onset duration  trial_type  response_time stim_file
+tsv_header = "onset duration  trial_type  response_time stim_file"
+
+tsv_str = f"""{tsv_header}
 1.2 0.6 go  1.435 images/red_square.jpg
 5.6 0.6 stop  1.739 images/blue_square.jpg
 """
 
-tsv_numeric_str = """onset duration  trial_type  response_time stim_file
+tsv_numeric_str = f"""{tsv_header}
 1.2 0.6 1  1.435 images/red_square.jpg
 5.6 0.6 2  1.739 images/blue_square.jpg
 """
@@ -43,10 +45,7 @@ def test_parse_condition_file_txt(tmp_path):
 
 @pytest.mark.parametrize(
     "tsv_str,expected_conditions",
-    [
-        (tsv_str, ["go", "stop"]),
-        (tsv_numeric_str, ["1", "2"]),
-    ],
+    [(tsv_str, ["go", "stop"]), (tsv_numeric_str, ["1", "2"]), (f"{tsv_header}\n", [])],
 )
 def test_parse_condition_file_tsv(tmp_path, tsv_str, expected_conditions):
     file_name = tmp_path / "gonogo.tsv"
