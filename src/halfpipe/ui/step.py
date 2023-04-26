@@ -8,6 +8,7 @@ from copy import deepcopy
 from typing import ClassVar, Dict, Optional, Type
 
 from ..logging import logger
+from .base import Context
 from .components import SingleChoiceInputView, SpacerView, TextElement, TextView
 
 
@@ -18,7 +19,7 @@ class Step:
         self.views = []
         self.kwargs = kwargs
 
-    def __call__(self, ctx):
+    def __call__(self, ctx: Context) -> Context | None:
         try:
             if self.was_setup is False:
                 self.setup(ctx)  # run only once
@@ -28,7 +29,7 @@ class Step:
             while True:
                 if not self.run(ctx):
                     self.teardown()
-                    return
+                    return None
                 try:
                     new_ctx = self.next(deepcopy(ctx))
                     if new_ctx is not None:
@@ -45,7 +46,7 @@ class Step:
             raise e  # go back to previous step
 
     @abstractmethod
-    def setup(self, ctx):
+    def setup(self, ctx: Context) -> None:
         raise NotImplementedError
 
     def teardown(self):

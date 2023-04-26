@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import logging
-from multiprocessing import get_context
 from multiprocessing.process import BaseProcess
 from multiprocessing.queues import JoinableQueue
 from pathlib import Path
 from threading import RLock
-from typing import Optional, Union
+from typing import Any, ClassVar, Self
 
+from ..utils.multiprocessing import mp_context
 from .worker import run as run_worker
 from .worker.message import (
     DisablePrintMessage,
@@ -20,8 +20,6 @@ from .worker.message import (
     SetWorkdirMessage,
     TeardownMessage,
 )
-
-ctx = get_context("forkserver")
 
 rlock = RLock()
 
@@ -34,15 +32,18 @@ class NullQueue:
         pass
 
 
-class context(object):
-    _instance: context | None = None
+Queue = NullQueue | JoinableQueue
 
-    def __init__(self):
-        self._queue: Union[NullQueue, JoinableQueue] = NullQueue()
-        self._worker: Optional[BaseProcess] = None
+
+class context(object):
+    _instance: ClassVar[Self | None] = None
+
+    def __init__(self) -> None:
+        self._queue: Queue = NullQueue()
+        self._worker: BaseProcess | None = None
 
     @classmethod
-    def instance(cls):
+    def instance(cls) -> context:
         if cls._instance is None:
             with rlock:
                 if cls._instance is None:
@@ -51,19 +52,19 @@ class context(object):
         return cls._instance
 
     @classmethod
-    def setup_worker(cls):
+    def setup_worker(cls) -> None:
         instance = cls.instance()
         with rlock:
             if not isinstance(instance._queue, JoinableQueue):
-                instance._queue = JoinableQueue(ctx=ctx)
+                instance._queue = JoinableQueue(ctx=mp_context)
             if instance._worker is None:
-                instance._worker = ctx.Process(
+                instance._worker = mp_context.Process(
                     target=run_worker, args=(instance._queue,)
                 )
                 instance._worker.start()
 
     @classmethod
-    def teardown_worker(cls):
+    def teardown_worker(cls) -> None:
         with rlock:
             instance = cls._instance
             if instance is None:
@@ -90,35 +91,35 @@ class context(object):
             instance._worker = None
 
     @classmethod
-    def queue(cls):
+    def queue(cls) -> Queue:
         return cls.instance()._queue
 
     @classmethod
-    def logging_args(cls):
+    def logging_args(cls) -> dict[str, Any]:
         return dict(queue=cls.queue(), levelno=logging.getLogger("halfpipe").level)
 
     @classmethod
-    def enable_verbose(cls):
+    def enable_verbose(cls) -> None:
         obj = EnableVerboseMessage()
         queue = cls.queue()
         queue.put(obj)
 
     @classmethod
-    def enable_print(cls):
+    def enable_print(cls) -> None:
         obj = EnablePrintMessage()
         queue = cls.queue()
         queue.put(obj)
         queue.join()
 
     @classmethod
-    def disable_print(cls):
+    def disable_print(cls) -> None:
         obj = DisablePrintMessage()
         queue = cls.queue()
         queue.put(obj)
         queue.join()
 
     @classmethod
-    def set_workdir(cls, workdir: Path):
+    def set_workdir(cls, workdir: Path) -> None:
         obj = SetWorkdirMessage(workdir=workdir)
         queue = cls.queue()
         queue.put(obj)

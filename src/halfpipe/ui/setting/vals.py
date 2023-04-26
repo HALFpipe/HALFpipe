@@ -13,6 +13,7 @@ from ...model.setting import (
     SmoothingSettingSchema,
 )
 from ...utils.format import inflect_engine as p
+from ..base import Context
 from ..components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,
@@ -57,7 +58,7 @@ def get_setting_vals_steps(
             "Global signal": "global_signal",
         }
 
-        def setup(self, ctx):
+        def setup(self, ctx) -> None:
             self.valuedict: dict | None = None
 
             self._append_view(TextView(f"Remove {self.noun}?"))
@@ -194,7 +195,7 @@ def get_setting_vals_steps(
                 return False
             return True
 
-        def next(self, ctx):
+        def next(self, ctx) -> Context | None:
             filterdict: dict[str, str | None] = {"type": self.type_str}
             for key, display_str in zip(self.keys, self.display_strs):
                 display_str = str(display_str)

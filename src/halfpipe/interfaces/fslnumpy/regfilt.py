@@ -28,7 +28,13 @@ def binarize(array, lowerth, upperth, threstype="inclusive", invert: bool = Fals
     return array2
 
 
-def regfilt(array, design, comps, calculate_mask=True, aggressive=False):
+def regfilt(
+    array: npt.NDArray,
+    design: npt.NDArray,
+    comps: list[int],
+    calculate_mask: bool = True,
+    aggressive: bool = False,
+) -> npt.NDArray:
     """
     numpy translation of fsl fsl_regfilt.cc dofilter
     """

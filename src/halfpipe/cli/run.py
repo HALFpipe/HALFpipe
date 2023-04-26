@@ -22,7 +22,7 @@ def run_stage_workflow(opts):
     from fmriprep import config
 
     if opts.nipype_omp_nthreads is not None and opts.nipype_omp_nthreads > 0:
-        config.nipype.omp_nthreads = opts.nipype_omp_nthreads
+        config.nipype.omp_nthreads = opts.nipype_omp_nthreads  # type: ignore
         omp_nthreads_origin = "command line arguments"
 
     elif opts.use_cluster:
@@ -62,7 +62,7 @@ def run_stage_workflow(opts):
         make_script(opts.workdir, opts.graphs, opts)
 
 
-def run_stage_run(opts):
+def run_stage_run(opts: Namespace):
     from math import ceil
 
     import networkx as nx
@@ -80,7 +80,8 @@ def run_stage_run(opts):
         if opts.graphs_file is not None:
             from ..utils.pickle import load_pickle
 
-            graphs_file = str(resolve(opts.graphs_file, opts.fs_root))
+            fs_root = Path(opts.fs_root)
+            graphs_file = str(resolve(opts.graphs_file, fs_root))
 
             logger.info(f'Using graphs defined in file "{graphs_file}"')
 
@@ -184,7 +185,7 @@ def run_stage_run(opts):
     for index_array in index_arrays:
         graph_list = [graphs[subjects[i]] for i in index_array]
         chunks_to_run.append(
-            nx.compose_all(graph_list)
+            nx.compose_all(graph_list)  # type: ignore
         )  # take len(index_array) subjects and compose
 
     if opts.only_chunk_index is not None:
@@ -297,7 +298,7 @@ def run(opts, should_run):
         run_stage_run(opts)
 
 
-def main():
+def main() -> None:
     # make these variables available in top scope
     opts: Namespace | None = None
     profiler_instance = None

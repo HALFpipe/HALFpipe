@@ -16,7 +16,7 @@ from ..mock import MockApp
 
 
 @pytest.mark.parametrize("value", ["detect_str", 0, 5])
-def test_dummy_scans_step(value):
+def test_dummy_scans_step(value: str | int | None) -> None:
     app = MockApp()
 
     DoSliceTimingStep = get_post_func_steps(None)

@@ -16,12 +16,11 @@ crash_file_match = re.compile(r"Node: (?P<fullname>nipype\.[^\s]+)").match
 
 
 class ReportErrorWriter(FileWriter):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-
         self.dictlistfile: SynchronizedTable | None = None
 
-    def filter_message(self, message: LogMessage):
+    def filter_message(self, message: LogMessage) -> bool:
         msg = message.long_msg
         msg = escape_codes_regex.sub("", msg)
 
@@ -42,16 +41,17 @@ class ReportErrorWriter(FileWriter):
 
         return False
 
-    def acquire(self):
+    def acquire(self) -> None:
+        if self.filename is None:
+            return
         if self.dictlistfile is None:
             self.dictlistfile = SynchronizedTable(self.filename)
-
         self.dictlistfile.__enter__()
 
-    def emit_message(self, message: LogMessage):
-        assert self.dictlistfile is not None
-        self.dictlistfile.put(dict(node=message.node))
+    def emit_message(self, message: LogMessage) -> None:
+        if self.dictlistfile is not None:
+            self.dictlistfile.put(dict(node=message.node))
 
-    def release(self):
+    def release(self) -> None:
         if self.dictlistfile is not None:
             self.dictlistfile.__exit__()

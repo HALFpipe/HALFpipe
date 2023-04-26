@@ -55,7 +55,7 @@ def _bandpass_arg(low, high) -> str:
 
 
 def init_bandpass_filter_wf(
-    bandpass_filter: tuple[str, float, float],
+    bandpass_filter: tuple[str, float | None, float | None],
     name: str | None = None,
     suffix: str | None = None,
     memcalc: MemoryCalculator = MemoryCalculator.default(),
@@ -112,7 +112,7 @@ def init_bandpass_filter_wf(
         calcsigma = pe.Node(
             niu.Function(
                 input_names=["lp_width", "hp_width", "repetition_time"],
-                output_names=["lp_sigma", "hp_sigma"],
+                output_names=["lp_sigma", "hp_sigma"],  # type: ignore
                 function=_calc_sigma,
             ),
             name="calcsigma",

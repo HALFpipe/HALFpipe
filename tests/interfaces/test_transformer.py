@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+from pathlib import Path
 
 import nibabel as nib
 import numpy as np
@@ -12,7 +13,7 @@ from templateflow import api
 from halfpipe.interfaces.transformer import Transformer
 
 
-def test_transformer_nii(tmp_path):
+def test_transformer_nii(tmp_path: Path) -> None:
     os.chdir(str(tmp_path))
 
     api_args = dict(template="MNI152NLin2009cAsym", resolution=2)

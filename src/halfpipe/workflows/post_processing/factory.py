@@ -104,10 +104,10 @@ class LookupFactory(Factory):
 
         self.previous_factory = previous_factory
 
-    def setup(self):
+    def setup(self) -> None:
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
 
-        previous_tpls = []
+        previous_tpls: list[SettingTuple] = []
 
         newsuffix_by_prevtpl: dict[SettingTuple, str] | None = None
 
@@ -222,13 +222,14 @@ class SmoothingFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
         setting_tuple = lookup_tuple.setting_tuple
         suffix = setting_tuple.suffix
-        fwhm = setting_tuple.value
+        fwhm_value = setting_tuple.value
 
-        if fwhm is None:
+        if fwhm_value is None:
             fwhm = 0.0
-
-        assert isinstance(fwhm, (float, int, str))
-        fwhm = float(fwhm)
+        elif isinstance(fwhm_value, (float, int, str)):
+            fwhm = float(fwhm_value)
+        else:
+            raise ValueError
 
         if fwhm <= 0 or isclose(fwhm, 0):
             return init_bypass_wf(
@@ -494,7 +495,10 @@ class PostProcessingFactory(Factory):
                     )
         return source_files
 
-    def setup(self, raw_sources_dict=dict()):
+    def setup(self, raw_sources_dict: dict | None = None) -> None:
+        if raw_sources_dict is None:
+            raw_sources_dict = dict()
+
         self.alt_bold_factory.setup()
         self.ica_aroma_components_factory.setup()
         self.fmriprep_adapter_factory.setup()

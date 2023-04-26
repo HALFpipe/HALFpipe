@@ -10,7 +10,7 @@ from fnmatch import fnmatch
 from functools import partial
 from pathlib import Path
 from shutil import copyfile, rmtree
-from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
+from typing import Mapping
 
 import networkx as nx
 import nipype.pipeline.engine as pe
@@ -32,10 +32,10 @@ max_chunk_size = 50  # subjects
 
 
 class IdentifiableDiGraph(nx.DiGraph):
-    uuid: Optional[str]
+    uuid: str | None
 
 
-def filter_subjects(subjects: List[str], opts: Namespace) -> List[str]:
+def filter_subjects(subjects: list[str], opts: Namespace) -> list[str]:
     subjects = sorted(subjects)
 
     try:
@@ -92,7 +92,7 @@ def node_result_file(u: pe.Node) -> Path:
     return result_file
 
 
-def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
+def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: dict):
     stack = [(u, v, source_info, field) for source_info, field in c["connect"]]
 
     result = list()
@@ -127,7 +127,7 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
                 if node_source_info == field:
                     stack.append((u, v, source_info, v_field))
 
-    input_source_dict: Dict[pe.Node, Dict] = defaultdict(dict)
+    input_source_dict: dict[pe.Node, dict] = defaultdict(dict)
     for u, v, source_info, field in result:
         u.keep = True  # don't allow results to be deleted
 
@@ -136,9 +136,9 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: Dict):
     return input_source_dict
 
 
-def resolve_input_boundary(flat_graph, non_subject_nodes):
-    pre_run_result_dict: Dict[pe.Node, InterfaceResult] = dict()
-    for (u, v, c) in nx.edge_boundary(flat_graph, non_subject_nodes, data=True):
+def resolve_input_boundary(flat_graph, non_subject_nodes) -> None:
+    pre_run_result_dict: dict[pe.Node, InterfaceResult] = dict()
+    for (u, v, c) in nx.edge_boundary(flat_graph, non_subject_nodes, data=True):  # type: ignore
         if u not in pre_run_result_dict:
             pre_run_result_dict[u] = u.run()
 
@@ -157,13 +157,13 @@ def resolve_input_boundary(flat_graph, non_subject_nodes):
         rmtree(u.output_dir(), ignore_errors=True)
         flat_graph.remove_node(u)
 
-    assert len(nx.node_boundary(flat_graph, non_subject_nodes)) == 0
+    assert len(nx.node_boundary(flat_graph, non_subject_nodes)) == 0  # type: ignore
 
 
-def resolve_output_boundary(flat_graph, non_subject_nodes) -> Dict[str, Dict]:
-    input_source_dict: Dict[str, Dict] = defaultdict(dict)
+def resolve_output_boundary(flat_graph, non_subject_nodes) -> dict[str, dict]:
+    input_source_dict: dict[str, dict] = defaultdict(dict)
 
-    for (v, u, c) in nx.edge_boundary(
+    for (v, u, c) in nx.edge_boundary(  # type: ignore
         flat_graph.reverse(), non_subject_nodes, data=True
     ):
         edge_input_source_dict = find_input_source(flat_graph, u, v, c)
@@ -178,8 +178,8 @@ def resolve_output_boundary(flat_graph, non_subject_nodes) -> Dict[str, Dict]:
 
 def split_flat_graph(
     flat_graph: nx.DiGraph, base_dir: str
-) -> Tuple[Dict[str, Set[pe.Node]], Dict[str, Dict]]:
-    subject_nodes: Dict[str, Set[pe.Node]] = defaultdict(set)
+) -> tuple[dict[str, set[pe.Node]], dict[str, dict]]:
+    subject_nodes: dict[str, set[pe.Node]] = defaultdict(set)
     for node in flat_graph:
         node.base_dir = base_dir  # make sure to use correct base path
 
@@ -232,8 +232,8 @@ def init_flat_graph(workflow, workdir) -> nx.DiGraph:
 
 
 def init_execgraph(
-    workdir: Union[Path, str], workflow: IdentifiableWorkflow
-) -> Dict[str, IdentifiableDiGraph]:
+    workdir: Path | str, workflow: IdentifiableWorkflow
+) -> dict[str, IdentifiableDiGraph]:
     uuid = workflow.uuid
     assert uuid is not None
     uuidstr = str(uuid)[:8]
@@ -258,7 +258,7 @@ def init_execgraph(
 
     # create or load execgraph
 
-    graphs: Dict[str, IdentifiableDiGraph] = dict()
+    graphs: dict[str, IdentifiableDiGraph] = dict()
 
     obj = uncache_obj(workdir, "graphs", uuid)
     if isinstance(obj, Mapping):

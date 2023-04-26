@@ -24,7 +24,7 @@ def init_atlas_based_connectivity_wf(
     atlas_files=None,
     atlas_spaces=None,
     memcalc=MemoryCalculator.default(),
-):
+) -> pe.Workflow:
     """
     create workflow for brainatlas
 

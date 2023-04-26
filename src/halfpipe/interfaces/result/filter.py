@@ -11,6 +11,7 @@ from nipype.interfaces.base import (
     isdefined,
     traits,
 )
+from nipype.interfaces.base.support import Bunch
 
 from ...result.base import ResultDict
 from ...result.filter import filter_results
@@ -34,7 +35,7 @@ class FilterResultdicts(SimpleInterface):
     input_spec = FilterResultdictsInputSpec
     output_spec = ResultdictsOutputSpec
 
-    def _run_interface(self, runtime):
+    def _run_interface(self, runtime: Bunch) -> Bunch:
         out_dicts: list[ResultDict] = self.inputs.in_dicts.copy()
 
         variable_dicts: list[dict] | None = None

@@ -2,16 +2,31 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import multiprocessing.pool as mpp
+import multiprocessing.pool as mp_pool
 import os
 from multiprocessing import active_children, get_context
 
+mp_context = get_context("spawn")
 
-def initializer(logging_args, host_env):
+
+def mock_tqdm(iterable, *args, **kwargs):
+    return iterable
+
+
+def initializer(logging_kwargs, host_env):
+    # Do not show tqdm progress bars from subprocesses.
+    import tqdm
+    import tqdm.auto
+
+    tqdm.tqdm = mock_tqdm
+    tqdm.auto.tqdm = mock_tqdm
+
+    # Make sure we send all logging to the logger process.
     from ..logging import setup as setup_logging
 
-    setup_logging(**logging_args)
+    setup_logging(**logging_kwargs)
 
+    # Make sure we use the same environment variables as the parent process.
     os.environ.update(host_env)
 
 
@@ -21,7 +36,7 @@ def terminate():
         p.join()
 
 
-class Pool(mpp.Pool):
+class Pool(mp_pool.Pool):
     def __init__(
         self,
         processes: int | None = None,
@@ -30,14 +45,13 @@ class Pool(mpp.Pool):
 
         from ..logging import logging_context
 
-        initargs = (logging_context.logging_args(), dict(os.environ))
-        context = get_context("forkserver")
+        init_args = (logging_context.logging_args(), dict(os.environ))
         super().__init__(
             processes=processes,
             initializer=initializer,
-            initargs=initargs,
+            initargs=init_args,
             maxtasksperchild=maxtasksperchild,
-            context=context,
+            context=mp_context,
         )
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:

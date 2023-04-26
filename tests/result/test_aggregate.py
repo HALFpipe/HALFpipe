@@ -13,7 +13,7 @@ from halfpipe.result.base import ResultDict
 from halfpipe.result.variables import Categorical, Continuous
 
 
-def test_summarize():
+def test_summarize() -> None:
     assert summarize(["test"]) == "test"
 
     assert summarize(["a", "a"]) == "a"
@@ -37,7 +37,7 @@ def test_summarize():
     assert len(s) == 2
 
 
-def test_summarize_dict():
+def test_summarize_dict() -> None:
     dict_a = {"Mean": 1.0}
     dict_b = {"Mean": 2.0}
 
@@ -63,7 +63,7 @@ def test_summarize_dict():
     assert isinstance(c.counter, Mapping)
 
 
-def test_aggregate_resultdicts():
+def test_aggregate_resultdicts() -> None:
     slice_timing = list(np.linspace(0, 2, 33))
 
     result_a: ResultDict = {
@@ -151,10 +151,11 @@ def test_aggregate_resultdicts():
     assert len(size) == 3
     assert all(isclose(s, 2.9) for s in size)
 
-    assert all(isclose(a, b) for a, b in zip(slice_timing, metadata["slice_timing"]))
+    for i, a in enumerate(slice_timing):
+        assert isclose(a, metadata["slice_timing"][i])
 
 
-def test_aggregate_resultdicts_heterogenous():
+def test_aggregate_resultdicts_heterogenous() -> None:
     result_a: ResultDict = {
         "tags": dict(sub="a", task="x", model="aggregateAcrossRuns"),
         "images": dict(stat="a"),
@@ -196,7 +197,7 @@ def test_aggregate_resultdicts_heterogenous():
 
 
 @pytest.mark.timeout(4)
-def test_aggregate_many():
+def test_aggregate_many() -> None:
     results: list[ResultDict] = list()
 
     n = 32

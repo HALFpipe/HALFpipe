@@ -102,7 +102,7 @@ def summarize(xx: list[Any]) -> Any:
         return Categorical.summarize(categorical_values)
 
 
-def merge_data(elements: set[Element]) -> ResultDict:
+def merge_data(elements: set[Element], summarize_metadata: bool = True) -> ResultDict:
     keys: set[tuple[ResultKey, str]] = set(
         chain.from_iterable(element.data.keys() for element in elements)
     )
@@ -112,12 +112,17 @@ def merge_data(elements: set[Element]) -> ResultDict:
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
         field_name: ResultKey = key[0]
-        if key in [
-            ("metadata", "sources"),
-            ("metadata", "Sources"),
-            ("metadata", "raw_sources"),
-            ("metadata", "RawSources"),
-        ] or field_name in ["images"]:
+        if (
+            key
+            in [
+                ("metadata", "sources"),
+                ("metadata", "Sources"),
+                ("metadata", "raw_sources"),
+                ("metadata", "RawSources"),
+            ]
+            or field_name in ["images"]
+            or summarize_metadata is False
+        ):
             summarized[key] = list(collapse(values))
         else:
             summarized[key] = summarize(values)
@@ -130,7 +135,9 @@ def merge_data(elements: set[Element]) -> ResultDict:
 
 
 def aggregate_results(
-    rr: list[ResultDict], across_key: str
+    rr: list[ResultDict],
+    across_key: str,
+    summarize_metadata: bool = True,
 ) -> tuple[list[ResultDict], list[ResultDict]]:
     groups = group_across(rr, across_key)
     expanded_groups = group_expand(groups)
@@ -145,7 +152,7 @@ def aggregate_results(
         tags |= index
 
         u: ResultDict = {"tags": tags}
-        u |= merge_data(elements)
+        u |= merge_data(elements, summarize_metadata=summarize_metadata)
 
         if len(elements) > 1:
             aggregated.append(u)

@@ -13,6 +13,7 @@ from ..model.tags import entity_longnames as entity_display_aliases
 from ..model.utils import get_schema_entities
 from ..utils.format import inflect_engine as p
 from ..utils.path import split_ext
+from .base import Context
 from .components import (
     FilePatternInputView,
     SpacerView,
@@ -175,8 +176,8 @@ class FilePatternStep(Step):
     def _transform_extension(self, ext):
         return ext
 
-    def setup(self, _):
-        self.fileobj: Optional[File] = None
+    def setup(self, ctx: Context) -> None:
+        self.fileobj: File | None = None
 
         if hasattr(self, "header_str") and self.header_str is not None:
             self._append_view(TextView(self.header_str))

@@ -6,6 +6,7 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import marshmallow.exceptions
 from inflection import humanize
@@ -59,7 +60,7 @@ class SpecSchema(Schema):
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
-    def validate_analyses(self, data, **_):
+    def validate_analyses(self, data, **kwargs):
         names = []
         for field in ["settings", "features", "models"]:
             if field not in data:
@@ -71,14 +72,13 @@ class SpecSchema(Schema):
             raise ValidationError("Duplicate name")
 
     @validates_schema
-    def validate_files(self, data, **_):
+    def validate_files(self, data, **kwargs) -> None:
         if "files" not in data:
             return  # validation error will be raised independently
         desc_value_sets: dict[str, set[str]] = {"seed": set(), "map": set()}
         if not isinstance(data["files"], list):
             return  # validation error will be raised independently
         for fileobj in data["files"]:
-
             if not isinstance(fileobj, File):
                 raise ValidationError("List elements need to be File objects")
 
@@ -107,7 +107,6 @@ class SpecSchema(Schema):
         )
 
         for model in data["models"]:
-
             if model.type == "lme":
                 if model.spreadsheet not in spreadsheets:
                     raise ValidationError(
@@ -120,16 +119,13 @@ class SpecSchema(Schema):
 
 
 class Spec:
-    def __init__(self, timestamp, files, **kwargs):
+    def __init__(self, timestamp: datetime, files, **kwargs) -> None:
         self.timestamp = timestamp
         self.files = files
-
         self.settings: list = list()
         self.features: list = list()
         self.models: list = list()
-
-        self.global_settings = dict()
-
+        self.global_settings: dict[str, Any] = dict()
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -189,7 +185,6 @@ def load_spec(
 
 def readspec(stdin_spec: dict, logger=logger) -> Spec | None:
     try:
-
         logger.info("Loading spec file from STDIN")
         spec = SpecSchema().loads(json.dumps(stdin_spec), many=False)
         if isinstance(spec, Spec):

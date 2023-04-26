@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+from pathlib import Path
 
 import nibabel as nib
 import nipype.pipeline.engine as pe
@@ -29,7 +30,9 @@ from ..helpers import run_workflow
         ("frequency_based", 0.01, 0.1),
     ],
 )
-def test_bandpass_filter_volume(tmp_path, bandpass_filter):
+def test_bandpass_filter_volume(
+    tmp_path: Path, bandpass_filter: tuple[str, float | None, float | None]
+) -> None:
     os.chdir(str(tmp_path))
 
     setup_test_resources()

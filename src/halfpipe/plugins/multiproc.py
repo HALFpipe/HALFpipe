@@ -3,25 +3,27 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import gc
-import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from threading import Thread
 from typing import Any
 
+import nipype.pipeline.engine as pe
 from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
 
 from ..logging import logger, logging_context
+from ..utils.multiprocessing import mp_context
 from .reftracer import PathReferenceTracer
 
 
 def initializer(workdir, logging_args, plugin_args, host_env):
-    from ..logging import setup as setup_logging
+    from ..utils.multiprocessing import initializer
 
-    setup_logging(**logging_args)
+    initializer(logging_args, host_env)
 
     from ..utils.pickle import patch_nipype_unpickler
 
@@ -39,13 +41,11 @@ def initializer(workdir, logging_args, plugin_args, host_env):
 
         nipype.config.enable_resource_monitor()
 
-    os.environ.update(host_env)
-
     os.chdir(workdir)
 
 
 # Run node
-def run_node(node, updatehash, taskid):
+def run_node(node: pe.Node, updatehash: bool, taskid: int):
     """Function to execute node.run(), catch and log any errors and
     return the result dictionary
     Parameters
@@ -94,7 +94,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         self._cwd: str = plugin_args.get("workdir", os.getcwd())
 
         # Read in options or set defaults.
-        self.processors = self.plugin_args.get("n_procs", mp.cpu_count())
+        self.processors = self.plugin_args.get("n_procs", cpu_count())
         self.memory_gb = self.plugin_args.get(
             "memory_gb",
             get_system_total_memory_gb() * 0.9,  # Allocate 90% of system memory
@@ -109,7 +109,6 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._cwd,
         )
 
-        mp_context = mp.get_context("forkserver")  # force forkserver
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
             initializer=initializer,

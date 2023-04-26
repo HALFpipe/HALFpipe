@@ -30,6 +30,7 @@ def load_data(
     cope_files: list[Path],
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
+    quiet: bool | None = None,
 ) -> tuple[nib.Nifti1Image, nib.Nifti1Image]:
     if len(cope_files) != len(mask_files):
         raise ValueError(
@@ -44,14 +45,14 @@ def load_data(
 
     cope_data = np.empty(shape, dtype=float)
     for i, cope_img in enumerate(
-        tqdm(cope_imgs, desc="loading cope images", leave=False)
+        tqdm(cope_imgs, desc="loading cope images", leave=False, disable=quiet)
     ):
         cope_data[..., i] = cope_img.get_fdata()
 
     # Load mask images.
     mask_data = np.empty(shape, dtype=bool)
     for i, mask_file in enumerate(
-        tqdm(mask_files, desc="loading mask images", leave=False)
+        tqdm(mask_files, desc="loading mask images", leave=False, disable=quiet)
     ):
         mask_img = nib.load(mask_file)
         mask_data[..., i] = np.asanyarray(mask_img.dataobj).astype(bool)
@@ -61,10 +62,15 @@ def load_data(
     if var_cope_files is not None:
         if len(var_cope_files) != len(cope_files):
             raise ValueError(
-                f"Number of variance cope files ({len(var_cope_files)}) does not match number of cope files ({len(cope_files)})"
+                f"Number of var_cope files ({len(var_cope_files)}) does not match number of cope files ({len(cope_files)})"
             )
         for i, var_cope_file in enumerate(
-            tqdm(var_cope_files, desc="loading varcope images", leave=False)
+            tqdm(
+                var_cope_files,
+                desc="loading var_cope images",
+                leave=False,
+                disable=quiet,
+            )
         ):
             var_cope_img = nib.load(var_cope_file)
             var_cope_data[..., i] = var_cope_img.get_fdata()

@@ -24,20 +24,24 @@ def _compare(a, b):
 
 
 class SynchronizedTable:
-    def __init__(self, filename, header="report('", footer="');"):
+    def __init__(
+        self,
+        filename: Path | str,
+        header: str | None = "report('",
+        footer: str | None = "');",
+    ) -> None:
         self.filename = Path(filename)
         self.filename.parent.mkdir(parents=True, exist_ok=True)
 
         self.lockfilename = f"{filename}.lock"
         self.lock = AdaptiveLock()
 
+        self.header_bytes = None
         if isinstance(header, str):
-            header = header.encode()
-        self.header = header
-
+            self.header_bytes = header.encode()
+        self.footer_bytes = None
         if isinstance(footer, str):
-            footer = footer.encode()
-        self.footer = footer
+            self.footer_bytes = footer.encode()
 
         self.dictlist: list[dict] | None = None
         self.is_dirty = None
@@ -47,10 +51,10 @@ class SynchronizedTable:
             with open(str(self.filename), "rb") as fp:
                 bytesfromfile = fp.read()
             try:
-                if self.header is not None:
-                    bytesfromfile = bytesfromfile[len(self.header) :]
-                if self.footer is not None:
-                    bytesfromfile = bytesfromfile[: -len(self.footer)]
+                if self.header_bytes is not None:
+                    bytesfromfile = bytesfromfile[len(self.header_bytes) :]
+                if self.footer_bytes is not None:
+                    bytesfromfile = bytesfromfile[: -len(self.footer_bytes)]
                 jsonstr = bytesfromfile.decode()
                 jsonstr = jsonstr.replace("\\\n", "")
                 self.dictlist = json.loads(jsonstr)
@@ -61,7 +65,7 @@ class SynchronizedTable:
 
     def dump(self, opener=open, mode="wb"):
         with opener(str(self.filename), mode) as file_handle:
-            file_handle.write(self.header)
+            file_handle.write(self.header_bytes)
             jsonstr = json.dumps(
                 self.dictlist,
                 indent=4,
@@ -72,7 +76,7 @@ class SynchronizedTable:
             for line in jsonstr.splitlines():
                 file_handle.write(line.encode())
                 file_handle.write("\\\n".encode())
-            file_handle.write(self.footer)
+            file_handle.write(self.footer_bytes)
 
     def __enter__(self):
         self.lock.lock(self.lockfilename)
@@ -114,7 +118,7 @@ class SynchronizedTable:
         assert isinstance(data_frame, pd.DataFrame)
 
         table_str = tabulate(
-            data_frame,
+            data_frame,  # type: ignore
             headers="keys",
             showindex=False,
             disable_numparse=True,

@@ -16,6 +16,7 @@ from ...model.file.func import (
     TsvEventsFileSchema,
     TxtEventsFileSchema,
 )
+from ..base import Context
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView,
@@ -32,7 +33,7 @@ from ..step import BranchStep, Step, YesNoStep
 from ..utils import forbidden_chars
 from .loop import SettingValsStep
 
-next_step_type = SettingValsStep
+next_step_type: Type[Step] = SettingValsStep
 
 
 def format_variable(variable):
@@ -396,9 +397,14 @@ class EventsStep(FilePatternStep):
 
     next_step_type: Type[Step] = ConditionsSelectStep
 
-    def setup(self, ctx):
+    def setup(self, ctx: Context):
         bold_file_paths = find_bold_file_paths(ctx)
-        self.taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
+
+        taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
+        if taskset is None:
+            taskset = set()
+        self.taskset = taskset
+
         if len(self.taskset) > 1:
             self.required_in_path_entities = ["task"]
         super(EventsStep, self).setup(ctx)

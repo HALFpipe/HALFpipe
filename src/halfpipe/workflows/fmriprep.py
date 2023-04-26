@@ -279,7 +279,7 @@ class FmriprepFactory(Factory):
         )
         inputattrs -= ignore
 
-        def _connect(hierarchy):
+        def _connect(hierarchy) -> None:
             wf = hierarchy[-1]
 
             outputnode: Optional[pe.Node] = wf.get_node("outputnode")

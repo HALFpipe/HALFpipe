@@ -5,6 +5,8 @@
 import re
 from typing import Any, Dict
 
+from nipype.pipeline import engine as pe
+
 from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
 from ...logging import logger
@@ -30,7 +32,7 @@ def _find_setting(setting_name, spec):
 
 class FeatureFactory(Factory):
     def __init__(self, ctx, post_processing_factory):
-        super(FeatureFactory, self).__init__(ctx)
+        super().__init__(ctx)
 
         self.post_processing_factory = post_processing_factory
 
@@ -66,7 +68,7 @@ class FeatureFactory(Factory):
                 source_file_raw_sources = raw_sources_dict[source_file]
                 self.create(source_file, feature, raw_sources=source_file_raw_sources)
 
-    def create(self, source_file, feature, raw_sources=[]):
+    def create(self, source_file, feature, raw_sources=[]) -> pe.Workflow | None:
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
         wf = hierarchy[-1]
 
@@ -89,7 +91,7 @@ class FeatureFactory(Factory):
                     f'Skipping feature "{feature.name}" for "{source_file}" '
                     "because no event files could be found"
                 )
-                return
+                return None
 
             condition_file_paths = []
             for condition_file in condition_files:
@@ -101,7 +103,7 @@ class FeatureFactory(Factory):
             raw_sources = [*raw_sources, *condition_file_paths]
 
             condition_units = None
-            condition_units_set: set = {
+            condition_units_set: set[str | None] = {
                 database.metadata(condition_file_path, "units")
                 for condition_file_path in condition_file_paths
             }

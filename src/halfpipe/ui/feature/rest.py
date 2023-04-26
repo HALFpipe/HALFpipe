@@ -2,9 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Type
+
 from ...model.file.ref import RefFileSchema
 from ...utils.copy import deepcopy
 from ...utils.format import format_like_bids
+from ..base import Context
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     NumberInputView,
@@ -17,7 +20,7 @@ from ..setting import get_setting_init_steps, get_setting_vals_steps
 from ..step import Step
 from .loop import AddAnotherFeatureStep, SettingValsStep
 
-next_step_type = SettingValsStep
+next_step_type: Type[Step] = SettingValsStep
 
 
 def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
@@ -45,7 +48,7 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
         header_str = f"Specify {dsp_str} file(s)"
         filetype_str = f"{dsp_str} image"
 
-        def setup(self, ctx):
+        def setup(self, ctx: Context) -> None:
             self.choice = None
             self.is_first_run = True
 

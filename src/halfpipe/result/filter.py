@@ -133,7 +133,7 @@ def _make_cutoff_filterfun(
         )
         cutoff *= 100
 
-    def cutoff_filterfun(d):
+    def cutoff_filterfun(d: dict) -> bool:
         val = d["vals"].get(filter_field, np.inf)
 
         if isinstance(val, float):

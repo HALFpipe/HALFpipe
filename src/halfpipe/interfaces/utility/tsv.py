@@ -90,7 +90,7 @@ class MergeColumns(IOBase):
         else:
             input_names = []
 
-    def _list_outputs(self):
+    def _list_outputs(self) -> dict:
         output_spec = self._outputs()
         assert output_spec is not None
         outputs = output_spec.get()

@@ -26,19 +26,16 @@ from .step import Step
 
 
 class Context:
-    def __init__(self):
+    def __init__(self) -> None:
         spec_schema = SpecSchema()
         spec = spec_schema.load(spec_schema.dump({}), partial=True)
         assert isinstance(spec, Spec)
         self.spec: Spec = spec  # initialize with defaults
-
         self.database = Database(self.spec)
-
-        self.workdir = None
+        self.workdir: Path | None = None
         self.use_existing_spec = False
         self.debug = False
-
-        self.already_checked = set()
+        self.already_checked: set[str] = set()
 
     def put(self, fileobj):
         self.database.put(fileobj)
@@ -141,6 +138,8 @@ class WorkingDirectoryStep(Step):
         return self.workdir is not None
 
     def next(self, ctx):
+        if self.workdir is None:
+            raise ValueError
         workdir = init_workdir(self.workdir)
         ctx.workdir = workdir
 
@@ -177,7 +176,7 @@ class FirstStep(Step):
             return
 
 
-def init_spec_ui(workdir=None, debug=False):
+def init_spec_ui(workdir: Path | None = None, debug: bool = False) -> Path:
     logging_context.disable_print()
 
     fs_root = Path(UIConfig.fs_root)
@@ -190,21 +189,21 @@ def init_spec_ui(workdir=None, debug=False):
         os.chdir(fs_root)
 
     app = App()
-    ctx = Context()
-    ctx.debug = debug
+    base_ctx = Context()
+    base_ctx.debug = debug
     if workdir is not None:
-        ctx.workdir = workdir
+        base_ctx.workdir = workdir
 
     with app:
-        ctx = FirstStep(app)(ctx)
+        app_ctx = FirstStep(app)(base_ctx)
 
     logging_context.enable_print()
 
-    if ctx is not None:
-        assert ctx.workdir is not None
-        workdir = ctx.workdir
-        if not ctx.use_existing_spec:
-            save_spec(ctx.spec, workdir=ctx.workdir, logger=logger)
+    if app_ctx is not None:
+        assert app_ctx.workdir is not None
+        workdir = app_ctx.workdir
+        if not app_ctx.use_existing_spec:
+            save_spec(app_ctx.spec, workdir=app_ctx.workdir, logger=logger)
     else:
         import sys
 

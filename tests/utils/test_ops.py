@@ -25,7 +25,7 @@ def test_first_str():
     assert first_str([None, Path("a")]) == "a"
 
 
-def test_check_almost_equal():
+def test_check_almost_equal() -> None:
     a: Any = 100000000001 / 100000000000
     b: Any = 1
 

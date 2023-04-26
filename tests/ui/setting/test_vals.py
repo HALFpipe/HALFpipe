@@ -48,7 +48,7 @@ from ..mock import MockApp
         ),
     ],
 )
-def test_setting_vals(bandpass_filter):
+def test_setting_vals(bandpass_filter) -> None:
     type, ui_return_value, expected = bandpass_filter
 
     app = MockApp()

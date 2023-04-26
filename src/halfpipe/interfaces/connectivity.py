@@ -14,6 +14,7 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
+from nipype.interfaces.base.support import Bunch
 
 from ..signals import mean_signals
 
@@ -49,7 +50,7 @@ class ConnectivityMeasure(BaseInterface):
     input_spec = ConnectivityMeasureInputSpec
     output_spec = ConnectivityMeasureOutputSpec
 
-    def _run_interface(self, runtime):
+    def _run_interface(self, runtime: Bunch) -> Bunch:
         in_img = nib.load(self.inputs.in_file)
         atlas_img = nib.load(self.inputs.atlas_file)
         mask_img = nib.load(self.inputs.mask_file)

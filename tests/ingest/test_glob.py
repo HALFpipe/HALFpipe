@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
 from random import choices, seed
 from string import ascii_lowercase, digits
 
@@ -12,7 +13,7 @@ def _random_string(length: int = 5) -> str:
     return "".join(choices(ascii_lowercase + digits, k=length))
 
 
-def test_tag_glob(tmp_path):
+def test_tag_glob(tmp_path: Path) -> None:
     seed(a=0x5E6128C4)
 
     ground_truth: dict[str, dict[str, int]] = dict()
@@ -41,15 +42,15 @@ def test_tag_glob(tmp_path):
 
     matched_file_paths = set()
 
-    for file_path, tag_dict in tag_glob(path_pattern, entities=["subject", "run"]):
-        assert file_path in ground_truth
+    for file_str, tag_dict in tag_glob(path_pattern, entities=["subject", "run"]):
+        assert file_str in ground_truth
+        gt = ground_truth[file_str]
+        assert set(gt.keys()) == set(tag_dict.keys())
 
-        assert set(ground_truth[file_path].keys()) == set(tag_dict.keys())
-
-        a = set(ground_truth[file_path].items())
+        a = set(gt.items())
         b = set((entity, int(value)) for entity, value in tag_dict.items())
         assert a == b
 
-        matched_file_paths.add(file_path)
+        matched_file_paths.add(file_str)
 
     assert set(ground_truth.keys()) == matched_file_paths

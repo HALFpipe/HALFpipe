@@ -19,8 +19,13 @@ from ..logging import logger
 
 class Node(pe.Node):
     def __init__(
-        self, interface, name, keep=False, allow_missing_input_source=False, **kwargs
-    ):
+        self,
+        interface,
+        name: str,
+        keep: bool = False,
+        allow_missing_input_source: bool = False,
+        **kwargs,
+    ) -> None:
         super().__init__(interface, name, **kwargs)
         self.keep: bool = keep
         self.allow_missing_input_source: bool = allow_missing_input_source
@@ -113,9 +118,14 @@ class Node(pe.Node):
 
 class MapNode(pe.MapNode, Node):
     def __init__(
-        self, interface, iterfield, name, allow_undefined_iterfield=False, **kwargs
-    ):
-        super().__init__(interface, iterfield, name, **kwargs)
+        self,
+        interface,
+        iterfield,
+        name: str,
+        allow_undefined_iterfield: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(interface=interface, iterfield=iterfield, name=name, **kwargs)
         self.allow_undefined_iterfield: bool = allow_undefined_iterfield
 
     def _make_empty_results(self):

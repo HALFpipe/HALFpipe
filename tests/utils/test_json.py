@@ -49,7 +49,7 @@ def test_pmap():
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
 
 
-def test_dataclass():
+def test_dataclass() -> None:
     @dataclass
     class TestDataclass:
         x: int

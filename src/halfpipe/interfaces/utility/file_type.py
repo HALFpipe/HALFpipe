@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, isdefined, traits
+from nipype.interfaces.base.support import Bunch
 
 from ...utils.path import split_ext
 
@@ -20,7 +21,7 @@ class SplitByFileType(SimpleInterface):
     input_spec = SplitByFileTypeInputSpec
     output_spec = SplitByFileTypeOutputSpec
 
-    def _run_interface(self, runtime):
+    def _run_interface(self, runtime: Bunch) -> Bunch:
         files = self.inputs.files
 
         tsv_files: list[str] = list()

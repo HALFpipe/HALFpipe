@@ -16,12 +16,10 @@ from .setting import SmoothingSettingSchema
 
 
 class Feature:
-    def __init__(self, name, type, **kwargs):
+    def __init__(self, name: str, type: str, **kwargs) -> None:
         self.name = name
         self.type = type
-
         self.contrasts: Optional[List[Dict]] = None
-
         for k, v in kwargs.items():
             setattr(self, k, v)
 

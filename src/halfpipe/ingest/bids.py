@@ -30,7 +30,7 @@ def get_bids_metadata(database, file_path) -> dict:
 
 
 class BidsDatabase:
-    def __init__(self, database):
+    def __init__(self, database) -> None:
         self.database = database
 
         # indexed by bids_path

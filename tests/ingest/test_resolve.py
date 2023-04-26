@@ -100,7 +100,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
                 file_handle.write("{}")
         path.touch()
 
-    spec = Spec(datetime.now, [])
+    spec = Spec(datetime.now(), [])
     resolved_spec = ResolvedSpec(spec)
 
     file_obj = File(str(tmp_path), "bids")

@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Any
+
 import nibabel as nib
 import numpy as np
 import pandas as pd
@@ -13,6 +15,7 @@ from nipype.interfaces.base import (
     isdefined,
     traits,
 )
+from nipype.interfaces.base.support import Bunch
 from nipype.interfaces.io import IOBase, add_traits
 
 from ..connectivity import mean_signals
@@ -37,7 +40,7 @@ class CalcMean(SimpleInterface):
     input_spec = CalcMeanInputSpec
     output_spec = CalcMeanOutputSpec
 
-    def _run_interface(self, runtime):
+    def _run_interface(self, runtime: Bunch) -> Bunch:
         in_img = nib.load(self.inputs.in_file)
         mask_img: nib.Nifti1Image | None = None
         if isdefined(self.inputs.mask):
@@ -65,7 +68,7 @@ class CalcMean(SimpleInterface):
             mean = mean_signals(in_img, mask_img)
             self._results["mean"] = float(mean[0])
 
-        vals = dict()
+        vals: dict[str, Any] = dict()
         self._results["vals"] = vals
         if isdefined(self.inputs.vals):
             vals.update(self.inputs.vals)
@@ -107,7 +110,6 @@ class UpdateVals(IOBase):
 
         confounds_file = self.inputs.confounds_file
         if isdefined(confounds_file):
-
             data_frame = pd.read_csv(
                 confounds_file,
                 sep="\t",

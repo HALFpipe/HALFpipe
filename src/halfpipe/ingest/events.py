@@ -43,7 +43,7 @@ class ConditionFile:
         elif data is not None:
             self.parse(data)
 
-    def parse(self, data: tuple[AnyFile, str] | AnyFile):
+    def parse(self, data: tuple[AnyFile, str] | AnyFile) -> None:
         condition: str | None = None
 
         if isinstance(data, tuple):
@@ -65,12 +65,15 @@ class ConditionFile:
         elif extension == ".tsv":
             self.parse_tsv(path)
         elif extension == ".txt":
-            assert isinstance(condition, str)
+            if not isinstance(condition, str):
+                raise ValueError(f'Missing condition name for file "{path}"')
             self.parse_txt(condition, path)
         else:
-            raise ValueError(f'Cannot read condition file with extension "{extension}"')
+            raise ValueError(
+                f'Cannot read condition file "{path}" with extension "{extension}"'
+            )
 
-    def parse_tsv(self, path: Path | str):
+    def parse_tsv(self, path: Path | str) -> None:
         data_frame = read_spreadsheet(path)
         if "trial_type" not in data_frame.columns:
             logger.warning(f'No "trial_type" column in "{path}"')
@@ -89,9 +92,11 @@ class ConditionFile:
             self.onsets.append(onsets_mapping[condition])
             self.durations.append(durations_mapping[condition])
 
-    def parse_mat(self, path: Path | str):
+    def parse_mat(self, path: Path | str) -> None:
         data = loadmat(path)
-        assert data is not None
+        if data is None:
+            logger.warning(f'Cannot read condition file "{path}"')
+            return
 
         names = np.squeeze(data["names"])
         durations = np.squeeze(data["durations"])
@@ -111,7 +116,7 @@ class ConditionFile:
             self.onsets.append(coerce[:, 0].tolist())
             self.durations.append(coerce[:, 1].tolist())
 
-    def parse_txt(self, condition: str, path: Path | str):
+    def parse_txt(self, condition: str, path: Path | str) -> None:
         self.conditions.append(condition)
 
         try:

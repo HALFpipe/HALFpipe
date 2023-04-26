@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
 from types import FunctionType
 
 import numpy as np
@@ -88,7 +89,7 @@ def test_filter_cutoff():
     assert f(dict(tags=dict(), vals=dict(a=2.0))) is False
 
 
-def test_filter_missing(tmp_path):
+def test_filter_missing(tmp_path: Path) -> None:
     values = {"1": np.nan, "2": 1.0, "sub-a_3": np.nan}
     data_frame = pd.DataFrame(dict(a=values))
     data_frame.reset_index(level=0, inplace=True)
