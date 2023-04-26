@@ -9,6 +9,7 @@ from typing import Any, Callable, Mapping
 from inflection import camelize, underscore
 
 from ...collect.metadata import metadata_fields
+from ...logging import logger
 from ...utils.json import TypeAwareJSONEncoder
 from ...utils.path import split_ext
 
@@ -60,7 +61,13 @@ def translate_to_bids(key):
 def load_sidecar(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     sidecar_path = get_sidecar_path(path)
     with sidecar_path.open() as file_handle:
-        sidecar = json.load(file_handle)
+        try:
+            sidecar = json.load(file_handle)
+        except json.JSONDecodeError:
+            logger.warning(
+                f'Could not load sidecar file "{sidecar_path}"', exc_info=True
+            )
+            sidecar = dict()
 
     sidecar = translate_sidecar(sidecar, translate_from_bids)
 

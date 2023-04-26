@@ -10,6 +10,7 @@ from typing import Mapping
 from tqdm.auto import tqdm
 
 from ...file_index.base import FileIndex
+from ...logging import logger
 from ...model.tags.schema import entities
 from ...stats.algorithms import algorithms
 from ...utils.path import copy_if_newer, split_ext
@@ -33,7 +34,6 @@ statmap_keys: frozenset[str] = frozenset(
 def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
     suffix = tags["suffix"]
     if suffix == "statmap":
-
         if "stat" not in tags:
             return None
 
@@ -89,6 +89,10 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
             result["vals"].update(vals)
             continue
 
+        if path.stat(follow_symlinks=True).st_size == 0:
+            logger.warning(f'Skipping empty file "{path}"')
+            continue
+
         key = _from_bids_derivatives(file_index.get_tags(path))
         if key is None:
             continue
@@ -99,7 +103,6 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
 
 
 def load_images(file_index: FileIndex) -> list[ResultDict]:
-
     image_group_entities = set(entities) - {"stat", "algorithm"}
 
     results = list()
@@ -115,7 +118,7 @@ def load_images(file_index: FileIndex) -> list[ResultDict]:
     return results
 
 
-def save_images(results: list[ResultDict], base_directory: Path):
+def save_images(results: list[ResultDict], base_directory: Path, remove: bool = False):
     derivatives_directory = base_directory / "derivatives" / "halfpipe"
     grouplevel_directory = base_directory / "grouplevel"
 
@@ -136,6 +139,9 @@ def save_images(results: list[ResultDict], base_directory: Path):
             outpath = outpath / _to_bids_derivatives(key, inpath, tags)
 
             was_updated = copy_if_newer(inpath, outpath)
+
+            if remove:
+                inpath.unlink()
 
             if was_updated:
                 # TODO make plot
