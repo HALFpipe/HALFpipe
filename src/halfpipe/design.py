@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from itertools import product
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -85,6 +85,8 @@ def prepare_data_frame(
         if name not in data_frame:
             continue
         column = data_frame[name]
+        # Remove leading and trailing whitespace.
+        column = column.str.strip()
         if not isinstance(column, pd.Series):
             continue
 
@@ -173,10 +175,17 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
     return contrasts, contrast_numbers, contrast_names
 
 
+class Design(NamedTuple):
+    regressor_list: dict[str, list[float]]
+    contrast_list: list[tuple]
+    contrast_numbers: list[str]
+    contrast_names: list[str]
+
+
 def intercept_only_design(
     n: int,
-) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
-    return (
+) -> Design:
+    return Design(
         {"intercept": [1.0] * n},
         [("intercept", "T", ["intercept"], [1])],
         ["01"],
@@ -189,7 +198,7 @@ def group_design(
     contrasts: list[dict],
     variables: list[dict],
     subjects: list[str],
-) -> tuple[dict[str, list[float]], list[tuple], list[str], list[str]]:
+) -> Design:
 
     dataframe = prepare_data_frame(spreadsheet, variables, subjects, na_action="impute")
 
@@ -289,7 +298,7 @@ def group_design(
         contrast_matrices
     )
 
-    return regressor_list, contrast_list, contrast_numbers, contrast_names
+    return Design(regressor_list, contrast_list, contrast_numbers, contrast_names)
 
 
 def make_design_tsv(
