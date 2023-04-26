@@ -139,6 +139,8 @@ class InteractionVariablesStep(Step):
         self._append_view(SpacerView(1))
 
     def run(self, _):
+        if self.variables is None:
+            return False
         while True:
             checked = self.input_view()
             if checked is None:
@@ -437,7 +439,9 @@ class VariableSelectStep(Step):
 
         self.varname_by_str = dict(zip(options, varnames))
 
-        self.input_view = MultipleChoiceInputView(options, checked=options)
+        self.input_view = MultipleChoiceInputView(
+            options, checked=options, isVertical=True
+        )
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -449,6 +453,8 @@ class VariableSelectStep(Step):
         return True
 
     def next(self, ctx):
+        if self.variables is None:
+            return None
         if (
             not hasattr(ctx.spec.models[-1], "contrasts")
             or ctx.spec.models[-1].contrasts is None

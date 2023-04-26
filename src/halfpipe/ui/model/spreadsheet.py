@@ -36,7 +36,7 @@ class SpreadsheetColumnTypeStep(Step):
             if variable["type"] == "id"
         )  # omit id column
 
-        self.df = read_spreadsheet(ctx.spec.files[-1].path)
+        self.df = read_spreadsheet(ctx.spec.files[-1].path, dtype=str)
 
         if all(column in already_used for column in self.df):
             self.should_run = False
