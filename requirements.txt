@@ -65,7 +65,6 @@ imageio==2.27.0
     # via scikit-image
 indexed-gzip==1.7.1
     # via
-    #   -r requirements.in
     #   fmriprep
     #   smriprep
 inflect==6.0.2
@@ -268,8 +267,6 @@ pyparsing==3.0.9
     #   rdflib
 pyrsistent==0.19.3
     # via -r requirements.in
-pysocks==1.7.1
-    # via -r requirements.in
 python-dateutil==2.8.2
     # via
     #   matplotlib
@@ -297,12 +294,9 @@ requests==2.28.2
     #   nilearn
     #   templateflow
 scikit-image==0.19.3
-    # via
-    #   -r requirements.in
-    #   niworkflows
+    # via niworkflows
 scikit-learn==1.2.2
     # via
-    #   -r requirements.in
     #   nilearn
     #   niworkflows
     #   tedana
@@ -377,8 +371,6 @@ traits==6.3.2
     # via nipype
 transforms3d==0.4.1
     # via niworkflows
-typeguard==3.0.2
-    # via -r requirements.in
 typing-extensions==4.5.0
     # via
     #   -r requirements.in
