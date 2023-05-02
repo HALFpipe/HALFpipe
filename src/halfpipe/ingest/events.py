@@ -44,19 +44,27 @@ class ConditionFile:
             self.parse(data)
 
     def parse(self, data: tuple[AnyFile, str] | AnyFile) -> None:
+        path: Path | None = None
         condition: str | None = None
+        extension: str | None = None
 
+        # We have received a tuple of an FSL condition file and a condition name.
         if isinstance(data, tuple):
-            data, condition = data  # unpack
+            data, condition = data
+            extension = ".txt"
 
+        # Ensure that we have a Path object. Extract the extension if necessary.
         if isinstance(data, (Path, str)):
-            path = data
-            _, extension = split_ext(path)
+            path = Path(data)
+            if extension is None:
+                _, extension = split_ext(path)
+
         elif isinstance(data, File):
             file = data
-            path = file.path
-            extension = file.extension
+            path = Path(file.path)
 
+            if extension is None:
+                extension = file.extension
             if condition is None:
                 condition = file.tags.get("condition")
 
@@ -64,7 +72,7 @@ class ConditionFile:
             self.parse_mat(path)
         elif extension == ".tsv":
             self.parse_tsv(path)
-        elif extension == ".txt":
+        elif extension == ".txt" or isinstance(condition, str):
             if not isinstance(condition, str):
                 raise ValueError(f'Missing condition name for file "{path}"')
             self.parse_txt(condition, path)

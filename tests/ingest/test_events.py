@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from math import isclose
+from pathlib import Path
 
 import pytest
 
@@ -30,8 +31,9 @@ tsv_numeric_str = f"""{tsv_header}
 """
 
 
-def test_parse_condition_file_txt(tmp_path):
-    file_name = tmp_path / "faces.txt"
+@pytest.mark.parametrize("suffix", [".txt", ""])
+def test_parse_condition_file_txt(tmp_path: Path, suffix: str):
+    file_name = tmp_path / f"faces{suffix}"
 
     with open(file_name, "w") as file_handle:
         file_handle.write(txt_str)
@@ -47,7 +49,9 @@ def test_parse_condition_file_txt(tmp_path):
     "tsv_str,expected_conditions",
     [(tsv_str, ["go", "stop"]), (tsv_numeric_str, ["1", "2"]), (f"{tsv_header}\n", [])],
 )
-def test_parse_condition_file_tsv(tmp_path, tsv_str, expected_conditions):
+def test_parse_condition_file_tsv(
+    tmp_path: Path, tsv_str: str, expected_conditions: list[str]
+):
     file_name = tmp_path / "gonogo.tsv"
 
     with open(file_name, "w") as file_handle:
