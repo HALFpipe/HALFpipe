@@ -99,6 +99,12 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
 
         result["images"][key] = path
 
+    if len(result["metadata"]) == 0 or len(result["vals"]) == 0:
+        logger.warning(
+            f'Could not find metadata for "{tags}".'
+            "Check if the `.json` sidecar files are present."
+        )
+
     return dict(result)
 
 

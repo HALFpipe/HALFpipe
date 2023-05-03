@@ -134,7 +134,16 @@ def _make_cutoff_filterfun(
         cutoff *= 100
 
     def cutoff_filterfun(d: dict) -> bool:
-        val = d["vals"].get(filter_field, np.inf)
+        tags = d["tags"]
+        vals = d.get("vals")
+
+        if vals is None:
+            logger.warning(
+                f"Excluding ({format_tags(tags)}) {model_desc}"
+                f'because "{filter_field}" is missing. '
+            )
+            return False
+        val = vals.get(filter_field, np.inf)
 
         if isinstance(val, float):
             x: float = val
@@ -146,9 +155,7 @@ def _make_cutoff_filterfun(
                 raise ValueError(f'Cannot filter by "{val}"')
 
         res = x <= cutoff
-
         if res is False:
-            tags = d["tags"]
             logger.warning(
                 f"Excluding ({format_tags(tags)}) {model_desc}"
                 f'because "{filter_field}" is larger than {cutoff:f}'
