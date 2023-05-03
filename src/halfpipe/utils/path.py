@@ -11,7 +11,6 @@ from typing import Generator
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
-
     fs_root = str(fs_root)
 
     # resolve workdir in fs_root
@@ -162,3 +161,11 @@ def copy_if_newer(inpath: Path, outpath: Path):
         logging.info(f'Creating file "{outpath}"')
     copyfile(inpath, outpath)
     return True
+
+
+def exists(path: Path | str) -> bool:
+    path = Path(path)
+    try:
+        return path.exists()
+    except PermissionError:
+        return False

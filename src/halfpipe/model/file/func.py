@@ -11,6 +11,8 @@ from ...ingest.metadata.direction import (
     canonicalize_direction_code,
     parse_direction_str,
 )
+from ...logging import logger
+from ...utils.path import exists
 from ..metadata import BoldMetadataSchema, EventsMetadataSchema, PEDirMetadataSchema
 from ..tags import BoldTagsSchema, FuncTagsSchema, TxtEventsTagsSchema
 from .base import BaseFileSchema, File
@@ -27,7 +29,9 @@ class BoldFileSchema(BaseFileSchema):
     @pre_load
     def move_dir_tag_to_metadata(self, in_data, **kwargs):
         path = Path(in_data["path"])
-        if not path.is_file():  # this obj does not refer to a specific file
+
+        # Ensure that the path refers to a specific file that we have access to.
+        if not exists(path):
             return in_data
 
         metadata = in_data.get("metadata")
@@ -47,7 +51,9 @@ class BoldFileSchema(BaseFileSchema):
                     )
                     del tags["dir"]
                 except Exception:
-                    pass
+                    logger.warning(
+                        f"Could not parse phase encoding direction from tag {direction} for {path}"
+                    )
 
         return in_data
 
