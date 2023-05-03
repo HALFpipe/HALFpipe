@@ -18,7 +18,7 @@ from ..logging import logger
 from ..model.file.base import File
 from ..model.file.schema import FileSchema
 from ..model.tags import entities, entity_longnames
-from ..utils.path import split_ext
+from ..utils.path import exists, split_ext
 from .glob import get_entities_in_path, tag_glob, tag_parse
 from .metadata.sidecar import SidecarMetadataLoader
 
@@ -146,6 +146,12 @@ class ResolvedSpec:
         return resolved_files
 
     def _resolve_bids(self, fileobj: File) -> list[File]:
+        if not exists(fileobj.path):
+            logger.warning(
+                f'Skipping BIDS directory "{fileobj.path}" because it does not exist or '
+                "we do not have sufficient permissions."
+            )
+            return list()
 
         # load using pybids
         validate = False  # save time
