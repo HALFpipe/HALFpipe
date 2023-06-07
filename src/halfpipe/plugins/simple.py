@@ -7,7 +7,7 @@ from nipype.pipeline import plugins as nip
 from nipype.pipeline.engine.utils import topological_sort
 
 
-class TestPlugin(nip.LinearPlugin):
+class SimplePlugin(nip.LinearPlugin):
     """Execute workflow in series"""
 
     def run(self, graph, config, updatehash=False):

@@ -4,13 +4,12 @@
 
 from collections import defaultdict
 from math import isclose, isfinite, isnan, nan
-from typing import Any
+from typing import Any, Literal
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
-from typing_extensions import Literal
 
 from ..utils.format import format_workflow
 from .base import ModelAlgorithm, demean, listwise_deletion

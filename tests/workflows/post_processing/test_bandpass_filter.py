@@ -13,10 +13,10 @@ from nilearn.image import new_img_like
 from scipy.signal import welch
 
 from halfpipe.resource import get as get_resource
+from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.bandpass_filter import init_bandpass_filter_wf
 
 from ...resource import setup as setup_test_resources
-from ..helpers import run_workflow
 
 
 @pytest.mark.parametrize(

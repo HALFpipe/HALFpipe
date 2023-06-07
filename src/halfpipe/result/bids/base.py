@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal
 
 from ...model.tags import entities
 from ...model.tags.resultdict import first_level_entities
@@ -30,7 +31,18 @@ def join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | 
     return joined
 
 
-def make_bids_path(source_file, source_type, tags, suffix, **kwargs) -> Path:
+def make_bids_prefix(tags: dict[str, str]) -> str | None:
+    prefix = join_tags(tags, list(reversed(entities)))
+    return prefix
+
+
+def make_bids_path(
+    source_file: Path | str,
+    source_type: Literal["image", "report"],
+    tags: dict[str, str],
+    suffix: str,
+    **kwargs: str,
+) -> Path:
     path = Path()
 
     for entity in ["sub", "ses"]:
@@ -61,7 +73,7 @@ def make_bids_path(source_file, source_type, tags, suffix, **kwargs) -> Path:
     if kwargs_str is not None:
         filename = f"{kwargs_str}_{filename}"
 
-    tags_str = join_tags(tags, list(reversed(entities)))
+    tags_str = make_bids_prefix(tags)
     if tags_str is not None:
         filename = f"{tags_str}_{filename}"
 

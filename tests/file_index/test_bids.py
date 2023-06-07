@@ -28,3 +28,19 @@ def test_parse():
     assert len(tags) == 1
 
     assert tags["suffix"] == "func"
+
+    path = Path(
+        "qtab/derivatives/fmriprep/sub-0194/anat/sub-0194_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
+    )
+    tags = parse(path)
+
+    assert isinstance(tags, dict)
+    assert len(tags) == 7
+
+    assert tags["sub"] == "0194"
+    assert tags["from"] == "T1w"
+    assert tags["to"] == "MNI152NLin2009cAsym"
+    assert tags["mode"] == "image"
+    assert tags["suffix"] == "xfm"
+    assert tags["datatype"] == "anat"
+    assert tags["extension"] == ".h5"

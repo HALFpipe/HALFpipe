@@ -56,7 +56,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     logger.info(f"Initializing new workflow {uuidstr}")
 
     workflow = IdentifiableWorkflow(
-        name=constants.workflowdir, base_dir=workdir, uuid=uuid
+        name=constants.workflow_directory, base_dir=workdir, uuid=uuid
     )
     workflow.config["execution"].update(
         dict(
@@ -140,7 +140,6 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     min_gb = MemoryCalculator.default().min_gb
 
     for node in workflow._get_all_nodes():
-
         node.config = config_factory()
         if node.name in ["split"]:
             node.config["execution"]["hash_method"] = "content"

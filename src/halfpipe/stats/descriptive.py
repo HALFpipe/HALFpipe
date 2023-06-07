@@ -3,12 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
 
 from ..utils.format import format_workflow
 from .base import ModelAlgorithm, listwise_deletion
@@ -26,7 +25,6 @@ class Descriptive(ModelAlgorithm):
         s: np.ndarray,
         cmatdict: dict,
     ) -> Optional[Dict]:
-
         # filtering for design matrix is already done
         # the nans that are left should be replaced with zeros
         z = np.nan_to_num(z)
@@ -42,7 +40,6 @@ class Descriptive(ModelAlgorithm):
         ] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
-
             if name.lower() == "intercept":
                 continue
 

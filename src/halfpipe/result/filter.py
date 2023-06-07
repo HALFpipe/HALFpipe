@@ -4,7 +4,7 @@
 
 from math import isclose
 from pathlib import Path
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,10 @@ from .base import ResultDict
 from .variables import Continuous
 
 
-def get_categorical_dict(data_frame, variable_dicts):
+def get_categorical_dict(
+    data_frame: pd.DataFrame,
+    variable_dicts: list[dict[str, str]],
+) -> dict[str, dict[str, str]]:
     categorical_columns = []
     for variable_dict in variable_dicts:
         if variable_dict.get("type") == "categorical":
@@ -27,8 +30,10 @@ def get_categorical_dict(data_frame, variable_dicts):
     return categorical_data_frame.to_dict()
 
 
-def _make_group_filterfun(
-    filter_dict: dict, categorical_dict: dict, model_desc: str
+def make_group_filter(
+    filter_dict: dict[str, Any],
+    categorical_dict: dict[str, dict[str, str]],
+    model_desc: str,
 ) -> Callable[[dict], bool] | None:
     variable = filter_dict.get("variable")
     if variable not in categorical_dict:
@@ -51,7 +56,7 @@ def _make_group_filterfun(
 
     if action == "include":
 
-        def group_include_filterfun(d):
+        def group_include_filter(d):
             subject = d.get("tags").get("sub")
             subject = normalize_subject(subject)
 
@@ -64,11 +69,11 @@ def _make_group_filterfun(
 
             return res
 
-        return group_include_filterfun
+        return group_include_filter
 
     elif action == "exclude":
 
-        def group_exclude_filterfun(d):
+        def group_exclude_filter(d):
             subject = d["tags"].get("sub")
             subject = normalize_subject(subject)
 
@@ -81,13 +86,13 @@ def _make_group_filterfun(
 
             return res
 
-        return group_exclude_filterfun
+        return group_exclude_filter
 
     else:
         raise ValueError(f'Invalid action "{action}"')
 
 
-def _make_missing_filterfun(
+def make_missing_filter(
     filter_dict: dict, data_frame: pd.DataFrame, model_desc: str
 ) -> Callable[[dict], bool] | None:
     variable = filter_dict["variable"]
@@ -101,7 +106,7 @@ def _make_missing_filterfun(
 
     selected_subjects = frozenset(map(normalize_subject, is_finite.index[is_finite]))
 
-    def missing_filterfun(d):
+    def missing_filter(d):
         subject = d["tags"].get("sub")
         subject = normalize_subject(subject)
 
@@ -114,10 +119,10 @@ def _make_missing_filterfun(
 
         return res
 
-    return missing_filterfun
+    return missing_filter
 
 
-def _make_cutoff_filterfun(
+def make_cutoff_filter(
     filter_dict: dict, model_desc: str
 ) -> Callable[[dict], bool] | None:
     assert filter_dict["action"] == "exclude"
@@ -133,7 +138,7 @@ def _make_cutoff_filterfun(
         )
         cutoff *= 100
 
-    def cutoff_filterfun(d: dict) -> bool:
+    def cutoff_filter(d: dict) -> bool:
         tags = d["tags"]
         vals = d.get("vals")
 
@@ -163,12 +168,12 @@ def _make_cutoff_filterfun(
 
         return res
 
-    return cutoff_filterfun
+    return cutoff_filter
 
 
 def parse_filter_dict(
     filter_dict: dict,
-    categorical_dict: dict = dict(),
+    categorical_dict: dict[str, dict[str, str]] = dict(),
     data_frame: pd.DataFrame | None = None,
     model_name: str | None = None,
 ) -> Callable[[dict], bool] | None:
@@ -178,15 +183,15 @@ def parse_filter_dict(
 
     filter_type = filter_dict.get("type")
     if filter_type == "group":
-        return _make_group_filterfun(filter_dict, categorical_dict, model_desc)
+        return make_group_filter(filter_dict, categorical_dict, model_desc)
 
     elif filter_type == "missing":
         if data_frame is None:
             raise ValueError("Missing data_frame")
-        return _make_missing_filterfun(filter_dict, data_frame, model_desc)
+        return make_missing_filter(filter_dict, data_frame, model_desc)
 
     elif filter_type == "cutoff":
-        return _make_cutoff_filterfun(filter_dict, model_desc)
+        return make_cutoff_filter(filter_dict, model_desc)
 
     return None
 
@@ -194,7 +199,7 @@ def parse_filter_dict(
 def filter_results(
     results: list[ResultDict],
     filter_dicts: list[dict] = list(),
-    spreadsheet: Path | str | None = None,
+    spreadsheet: Path | str | pd.DataFrame | None = None,
     variable_dicts: list[dict] | None = None,
     model_name: str | None = None,
     require_one_of_images: list[str] = list(),
@@ -202,12 +207,15 @@ def filter_results(
 ) -> list[ResultDict]:
     results = results.copy()
 
-    data_frame = None
-    categorical_dict: dict = dict()
-    if spreadsheet is not None:
-        spreadsheet = Path(spreadsheet)
-        if variable_dicts is not None:
+    categorical_dict: dict[str, dict[str, str]] = dict()
+    data_frame: pd.DataFrame | None = None
+    if variable_dicts is not None:
+        if isinstance(spreadsheet, pd.DataFrame):
+            data_frame = spreadsheet
+        elif spreadsheet is not None:
+            spreadsheet = Path(spreadsheet)
             data_frame = prepare_data_frame(spreadsheet, variable_dicts)
+        if data_frame is not None:
             categorical_dict = get_categorical_dict(data_frame, variable_dicts)
 
     if len(require_one_of_images) > 0:

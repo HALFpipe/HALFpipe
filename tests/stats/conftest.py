@@ -10,7 +10,7 @@ import pytest
 from nipype.interfaces import ants
 from templateflow.api import get as get_template
 
-from halfpipe.design import group_design
+from halfpipe.design import group_design, prepare_data_frame
 from halfpipe.model.variable import VariableSchema
 
 from .base import Dataset
@@ -94,14 +94,18 @@ def wakemandg_hensonrn(
     assert isinstance(variable, dict)
     variables.append(variable)
 
-    regressors, contrasts, _, _ = group_design(
+    data_frame = prepare_data_frame(
+        spreadsheet_file,
+        variables,
         subjects=subjects,
-        spreadsheet=spreadsheet_file,
-        variables=variables,
+    )
+    regressors, contrasts, _, _ = group_design(
+        data_frame,
         contrasts=[
             {"variable": ["Age"], "type": "infer"},
             {"variable": ["ReactionTime"], "type": "infer"},
         ],
+        subjects=subjects,
     )
 
     return Dataset(

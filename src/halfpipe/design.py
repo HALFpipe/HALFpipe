@@ -47,12 +47,15 @@ def _check_multicollinearity(matrix):
 
 
 def prepare_data_frame(
-    spreadsheet: Path,
+    spreadsheet: Path | pd.DataFrame,
     variables: list[dict],
     subjects: list[str] | None = None,
     na_action: Literal["impute"] | None = None,
 ) -> pd.DataFrame:
-    data_frame: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=str)
+    if isinstance(spreadsheet, Path):
+        data_frame: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=str)
+    else:
+        data_frame = spreadsheet.copy()
 
     # set data frame index
     id_column_name: str | None = None
@@ -70,13 +73,13 @@ def prepare_data_frame(
     data_frame[id_column_name] = id_column
     data_frame.set_index(id_column_name, inplace=True)
 
-    # filter data frame
+    # Filter data frame
     if subjects is not None:
-        # only keep subjects that are in this analysis
-        # also sets order
+        # Only keep subjects that are in this analysis
+        # while also setting the order
         data_frame = data_frame.loc[subjects, :]
 
-    # apply variable data types
+    # Apply variable data types
     continuous_columns: list[str] = list()
     categorical_columns: list[str] = list()
     columns_in_order: list[str] = []
@@ -93,23 +96,23 @@ def prepare_data_frame(
         if variabledict["type"] == "continuous":
             continuous_columns.append(name)
             columns_in_order.append(name)
-            # change type to numeric
+            # Change type to numeric
             column = column.astype(float, copy=False)
-            # impute missing values with mean
             if na_action == "impute":
+                # Impute missing values with mean
                 column.fillna(column.mean(), inplace=True)
 
         elif variabledict["type"] == "categorical":
             categorical_columns.append(name)
             columns_in_order.append(name)
-            # change type first to string then to category
+            # Change type first to string then to category
             column = column.astype(str).astype("category")
-            # set unknown levels to missing
+            # Set unknown levels to missing
             levels = variabledict["levels"]
             column = column.cat.set_categories(new_categories=levels)
             column = column.cat.remove_unused_categories()
-            # impute missing values
             if na_action == "impute":
+                # Impute missing values with mode
                 column.fillna(column.mode()[0], inplace=True)
 
         data_frame[name] = column
@@ -121,7 +124,7 @@ def prepare_data_frame(
 
 
 def _generate_rhs(contrasts, columns_var_gt_0) -> list[Term]:
-    rhs = [Term([])]  # force intercept
+    rhs = [Term([])]  # Force intercept
     for contrast in contrasts:
         if contrast["type"] == "infer":
             if not columns_var_gt_0[contrast["variable"]].all():
@@ -130,7 +133,7 @@ def _generate_rhs(contrasts, columns_var_gt_0) -> list[Term]:
                     "because it has zero variance"
                 )
                 continue
-            # for every term in the model a contrast of type infer needs to be specified
+            # For every term in the model a contrast of type infer needs to be specified
             rhs.append(Term([LookupFactor(name) for name in contrast["variable"]]))
 
     return rhs
@@ -151,24 +154,23 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
 
             contrast_names.append(contrast_name)
 
-    for contrast_name, contrast_matrix in contrast_matrices:  # f contrasts
+    for contrast_name, contrast_matrix in contrast_matrices:  # F contrasts
         contrast_name = contrast_name.capitalize()
 
         if contrast_matrix.shape[0] > 1:
-
-            tcontrasts = []  # an f contrast consists of multiple t contrasts
+            tcontrasts = []  # An F contrast consists of multiple t contrasts
             for i, contrast_vector in contrast_matrix.iterrows():
                 tname = f"{contrast_name}_{i:d}"
                 tcontrasts.append(
                     (tname, "T", list(contrast_vector.index), list(contrast_vector))
                 )
 
-            contrasts.extend(tcontrasts)  # add t contrasts to the model
+            contrasts.extend(tcontrasts)  # Add t contrasts to the model
             contrasts.append(
                 (contrast_name, "F", tcontrasts)
-            )  # then add the f contrast
+            )  # Then add the f contrast
 
-            contrast_names.append(contrast_name)  # we only care about the f contrast
+            contrast_names.append(contrast_name)  # We only care about the f contrast
 
     contrast_numbers = [f"{i:02d}" for i in range(1, len(contrast_names) + 1)]
 
@@ -194,43 +196,42 @@ def intercept_only_design(
 
 
 def group_design(
-    spreadsheet: Path,
+    data_frame: pd.DataFrame,
     contrasts: list[dict],
-    variables: list[dict],
     subjects: list[str],
 ) -> Design:
+    # Only keep subjects that are in this design matrix
+    # while also setting the order
+    data_frame = data_frame.loc[subjects, :]
 
-    dataframe = prepare_data_frame(spreadsheet, variables, subjects, na_action="impute")
-
-    # remove zero variance columns
-    columns_var_gt_0 = dataframe.apply(pd.Series.nunique) > 1  # does not count NA
+    # Remove zero variance columns
+    columns_var_gt_0 = data_frame.apply(pd.Series.nunique) > 1  # Does not count NA
     assert isinstance(columns_var_gt_0, pd.Series)
-    dataframe = dataframe.loc[:, columns_var_gt_0]
+    data_frame = data_frame.loc[:, columns_var_gt_0]
 
-    # don't need to specify lhs
+    # Don't need to specify lhs
     lhs: list[Term] = []
-
-    # generate rhs
+    # Generate rhs
     rhs = _generate_rhs(contrasts, columns_var_gt_0)
 
-    # specify patsy design matrix
+    # Specify patsy design matrix
     model_desc = ModelDesc(lhs, rhs)
-    dmat = dmatrix(model_desc, dataframe, return_type="dataframe", NA_action="raise")
+    dmat = dmatrix(model_desc, data_frame, return_type="dataframe", NA_action="raise")
     assert isinstance(dmat, pd.DataFrame)
     _check_multicollinearity(dmat)
 
-    # prepare lsmeans
+    # Prepare lsmeans
     unique_values_categorical = [
-        (0.0,) if is_numeric_dtype(dataframe[f]) else dataframe[f].unique()
-        for f in dataframe.columns
+        (0.0,) if is_numeric_dtype(data_frame[f]) else data_frame[f].unique()
+        for f in data_frame.columns
     ]
     grid = pd.DataFrame(
-        list(product(*unique_values_categorical)), columns=dataframe.columns
+        list(product(*unique_values_categorical)), columns=data_frame.columns
     )
     reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
     assert isinstance(reference_dmat, pd.DataFrame)
 
-    # data frame to store contrasts
+    # Data frame to store contrasts
     contrast_matrices: list[tuple[str, pd.DataFrame]] = []
 
     for field, columnslice in dmat.design_info.term_name_slices.items():
@@ -250,7 +251,7 @@ def group_design(
     for contrast in contrasts:
         if contrast["type"] == "t":
             (variable,) = contrast["variable"]
-            variable_levels: list[str] = list(dataframe[variable].unique())
+            variable_levels: list[str] = list(data_frame[variable].unique())
 
             # Generate the lsmeans matrix where there is one row for each
             # factor level. Each row is a contrast vector.

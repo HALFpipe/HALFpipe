@@ -8,7 +8,6 @@ import nibabel as nib
 import numpy as np
 import scipy
 from numpy import typing as npt
-from tqdm.auto import tqdm
 
 from .utils.image import nvol
 from .utils.matrix import atleast_4d
@@ -72,6 +71,9 @@ def mean_signals(
             raise ValueError("Mask image and input image must have the same shape.")
         if not np.allclose(mask_img.affine, in_img.affine):
             raise ValueError("Mask image and input image must have the same affine.")
+        mask_img = nib.squeeze_image(mask_img)  # Remove trailing singleton dimensions.
+        if mask_img is None:
+            raise RuntimeError("Failed to squeeze mask image")
         mask_data = np.asanyarray(mask_img.dataobj).astype(bool)
 
     if not np.all(mask_data):
@@ -110,11 +112,56 @@ def mean_signals(
         return signals
 
 
+@overload
 def mode_signals(
     cope_img: nib.Nifti1Image,
     var_cope_img: nib.Nifti1Image,
     modes_img: nib.Nifti1Image,
+    output_coverage: Literal[False] = False,
 ) -> npt.NDArray:
+    ...
+
+
+@overload
+def mode_signals(
+    cope_img: nib.Nifti1Image,
+    var_cope_img: nib.Nifti1Image,
+    modes_img: nib.Nifti1Image,
+    output_coverage: Literal[True],
+) -> tuple[npt.NDArray, npt.NDArray]:
+    ...
+
+
+def mode_signals(
+    cope_img: nib.Nifti1Image,
+    var_cope_img: nib.Nifti1Image,
+    modes_img: nib.Nifti1Image,
+    output_coverage: bool = False,
+) -> npt.NDArray | tuple[npt.NDArray, npt.NDArray]:
+    """
+    Compute the mode signals for a given set of cope, varcope, and modes images.
+
+    Parameters
+    ----------
+    cope_img : nib.Nifti1Image
+        The cope image.
+    var_cope_img : nib.Nifti1Image
+        The varcope image.
+    modes_img : nib.Nifti1Image
+        The modes image.
+    output_coverage : bool, optional
+        Whether to output the coverage, by default False.
+
+    Returns
+    -------
+    npt.NDArray | tuple[npt.NDArray, npt.NDArray]
+        The mode signals, and optionally the coverage.
+
+    Raises
+    ------
+    ValueError
+        If the input images do not have the same shape.
+    """
     if modes_img.shape[:3] != cope_img.shape[:3]:
         raise ValueError("Atlas image and input image must have the same volume shape.")
     if cope_img.shape[:3] != var_cope_img.shape[:3]:
@@ -130,6 +177,7 @@ def mode_signals(
         var_cope_data[:] = 1
 
     modes_data = modes_img.get_fdata()
+    voxel_sum = modes_data.sum(axis=(0, 1, 2))
 
     mask_data = np.isfinite(cope_data) & np.isfinite(var_cope_data)
 
@@ -140,20 +188,25 @@ def mode_signals(
     modes_data = modes_data[maximum_mask, :]
     mask_data = mask_data[maximum_mask, :]
 
-    # Create the output array.
+    # Create the output arrays.
     mode_count = modes_data.shape[-1]
     volume_count = cope_data.shape[-1]
     signals_lstsq = np.full((volume_count, mode_count), np.nan)
+    coverage = np.full((volume_count, mode_count), np.nan)
 
-    for i in tqdm(range(volume_count), desc="extracting signals", leave=False):
+    for i in range(volume_count):
         mask = mask_data[:, i]
+
+        masked_mode_data = modes_data[mask, :]
+        masked_voxel_sum = masked_mode_data.sum(axis=0)
+        coverage[i, :] = masked_voxel_sum / voxel_sum
 
         # Reciprocal of the square root.
         weights = np.power(var_cope_data[mask, i, np.newaxis], -0.5)
 
         # Prepare the weighted variables.
         weighted_endog = cope_data[mask, i, np.newaxis] * weights
-        weighted_exog = modes_data[mask, :] * weights
+        weighted_exog = masked_mode_data * weights
 
         signals_lstsq[i, :, np.newaxis], _, _, _ = scipy.linalg.lstsq(
             weighted_exog.transpose() @ weighted_exog,
@@ -164,4 +217,7 @@ def mode_signals(
             overwrite_b=True,
         )
 
-    return signals_lstsq
+    if output_coverage is True:
+        return signals_lstsq, coverage
+    else:
+        return signals_lstsq

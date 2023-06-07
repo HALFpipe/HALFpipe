@@ -6,18 +6,17 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-from nipype.interfaces.ants.resampling import ApplyTransformsInputSpec
 from nipype.interfaces.base import File, InputMultiObject, isdefined, traits
-from niworkflows.interfaces.fixes import FixHeaderApplyTransforms
 from templateflow.api import get as get_template
 
 from ...resource import get as getresource
 from ...utils.image import nvol
+from ..fixes.applytransforms import ApplyTransforms, ApplyTransformsInputSpec
 
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
     input_space = traits.Either(
-        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True
+        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False
     )
     reference_space = traits.Either(
         "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True
@@ -41,13 +40,12 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
     )
 
 
-class Resample(FixHeaderApplyTransforms):
+class Resample(ApplyTransforms):
     input_spec = ResampleInputSpec
 
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         self.resample = False
 
-        input_space = self.inputs.input_space
         reference_space = self.inputs.reference_space
         reference_res = (
             self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
@@ -62,31 +60,37 @@ class Resample(FixHeaderApplyTransforms):
                     suffix="mask",
                 )
 
-        input_image = nib.load(self.inputs.input_image)
-        reference_image = nib.load(self.inputs.reference_image)
-        input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
-        input_matches_reference = input_matches_reference and np.allclose(
-            input_image.affine,
-            reference_image.affine,
-            atol=1e-2,
-            rtol=1e-2,  # tolerance of 0.01 mm
-        )
+        if not isdefined(self.inputs.dimension):
+            self.inputs.dimension = 3
 
-        self.inputs.dimension = 3
-
-        input_image_nvol = nvol(input_image)
-        if input_image_nvol > 0:
-            self.inputs.input_image_type = 3  # time series
-
-        transforms = ["identity"]
-        if input_space != reference_space:
-            xfm = getresource(
-                f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5"
+        input_matches_reference = False
+        if isdefined(self.inputs.input_image):
+            input_image = nib.load(self.inputs.input_image)
+            reference_image = nib.load(self.inputs.reference_image)
+            input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
+            input_matches_reference = input_matches_reference and np.allclose(
+                input_image.affine,
+                reference_image.affine,
+                atol=1e-2,
+                rtol=1e-2,  # Use a tolerance of 0.01 mm
             )
-            assert Path(xfm).is_file()
-            transforms = [str(xfm)]
+            input_image_nvol = nvol(input_image)
+            if input_image_nvol > 0:
+                self.inputs.input_image_type = 3  # Set to time series
 
-        self.inputs.transforms = transforms
+        if not isdefined(self.inputs.transforms):
+            transforms = ["identity"]
+
+            input_space = self.inputs.input_space
+            if isdefined(input_space):
+                if input_space != reference_space:
+                    xfm = getresource(
+                        f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5"
+                    )
+                    assert Path(xfm).is_file()
+                    transforms = [str(xfm)]
+
+            self.inputs.transforms = transforms
 
         if (
             not input_matches_reference

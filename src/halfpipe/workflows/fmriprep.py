@@ -156,7 +156,7 @@ class FmriprepFactory(Factory):
                 "sloppy": global_settings["sloppy"],  # used for unit testing
             }
         )
-        nipype_dir = Path(workdir) / constants.workflowdir
+        nipype_dir = Path(workdir) / constants.workflow_directory
         nipype_dir.mkdir(parents=True, exist_ok=True)
         config_file = nipype_dir / f"fmriprep.config.{uuidstr}.toml"
         config.to_filename(config_file)

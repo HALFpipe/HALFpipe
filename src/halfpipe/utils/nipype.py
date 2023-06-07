@@ -4,16 +4,26 @@
 
 import nipype.pipeline.engine as pe
 
-from halfpipe.plugins import TestPlugin
+from ..plugins import SimplePlugin
 
 
 def run_workflow(workflow: pe.Workflow):
-    assert workflow.base_dir is not None
+    """
+    Runs a Nipype workflow serially.
+
+    Args:
+        workflow (nipype.pipeline.engine.Workflow): The Nipype workflow to run.
+
+    Returns:
+        graph: The graph of the executed workflow.
+    """
+    if workflow.base_dir is None:
+        raise ValueError("Workflow must have a base directory")
 
     workflow_args = dict(stop_on_first_crash=True, crashdump_dir=workflow.base_dir)
     workflow.config["execution"].update(workflow_args)
 
-    runner = TestPlugin(plugin_args=workflow_args)
+    runner = SimplePlugin(plugin_args=workflow_args)
     graph = workflow.run(plugin=runner)
 
     return graph

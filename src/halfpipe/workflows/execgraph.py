@@ -138,7 +138,7 @@ def find_input_source(graph: nx.DiGraph, u: Node, v: Node, c: dict):
 
 def resolve_input_boundary(flat_graph, non_subject_nodes) -> None:
     pre_run_result_dict: dict[pe.Node, InterfaceResult] = dict()
-    for (u, v, c) in nx.edge_boundary(flat_graph, non_subject_nodes, data=True):  # type: ignore
+    for u, v, c in nx.edge_boundary(flat_graph, non_subject_nodes, data=True):  # type: ignore
         if u not in pre_run_result_dict:
             pre_run_result_dict[u] = u.run()
 
@@ -163,7 +163,7 @@ def resolve_input_boundary(flat_graph, non_subject_nodes) -> None:
 def resolve_output_boundary(flat_graph, non_subject_nodes) -> dict[str, dict]:
     input_source_dict: dict[str, dict] = defaultdict(dict)
 
-    for (v, u, c) in nx.edge_boundary(  # type: ignore
+    for v, u, c in nx.edge_boundary(  # type: ignore
         flat_graph.reverse(), non_subject_nodes, data=True
     ):
         edge_input_source_dict = find_input_source(flat_graph, u, v, c)
@@ -253,7 +253,7 @@ def init_execgraph(
 
     # init dirs
 
-    modeldir = Path(workdir) / constants.workflowdir / "models_wf"
+    modeldir = Path(workdir) / constants.workflow_directory / "models_wf"
     modeldir.mkdir(parents=True, exist_ok=True)
 
     # create or load execgraph

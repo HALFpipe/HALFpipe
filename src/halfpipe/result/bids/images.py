@@ -29,6 +29,9 @@ statmap_keys: frozenset[str] = frozenset(
         "sigmasquareds",
     ]
 )
+has_sidecar_keys: frozenset[str] = frozenset(
+    ["effect", "reho", "falff", "alff", "bold", "timeseries"]
+)
 
 
 def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
@@ -99,11 +102,13 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
 
         result["images"][key] = path
 
-    if len(result["metadata"]) == 0 or len(result["vals"]) == 0:
-        logger.warning(
-            f'Could not find metadata for "{tags}".'
-            "Check if the `.json` sidecar files are present."
-        )
+    if not has_sidecar_keys.isdisjoint(result["images"].keys()):
+        if len(result["metadata"]) == 0 and len(result["vals"]) == 0:
+            image_files = list(result["images"].values())
+            logger.warning(
+                f"Could not find metadata for files {image_files}. "
+                "Check if the `.json` sidecar files are present."
+            )
 
     return dict(result)
 
@@ -154,6 +159,6 @@ def save_images(results: list[ResultDict], base_directory: Path, remove: bool = 
                 pass
 
             _, extension = split_ext(outpath)
-            if key in ["effect", "reho", "falff", "alff", "bold", "timeseries"]:
+            if key in has_sidecar_keys:
                 if extension in [".nii", ".nii.gz", ".tsv"]:  # add sidecar
                     save_sidecar(outpath, metadata, vals)

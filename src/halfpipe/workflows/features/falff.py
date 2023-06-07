@@ -18,7 +18,7 @@ from ..memory import MemoryCalculator
 
 def init_falff_wf(
     workdir: str | Path, feature=None, fwhm=None, memcalc=MemoryCalculator.default()
-):
+) -> pe.Workflow:
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
     fractional ALFF maps

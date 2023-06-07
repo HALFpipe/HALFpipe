@@ -3,81 +3,151 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import OrderedDict
+from contextlib import nullcontext
+from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import ContextManager, Iterable, Literal, Self, Sequence
 
 import nibabel as nib
+import numpy as np
 import pandas as pd
+from nilearn.image import new_img_like
 from numpy import typing as npt
-from threadpoolctl import threadpool_limits
+from tqdm.auto import tqdm
 
 from ....ingest.design import parse_design
 from ....ingest.spreadsheet import read_spreadsheet
 from ....signals import mean_signals, mode_signals
 from ....stats.fit import load_data
+from ....utils.format import format_like_bids
+from ....utils.multiprocessing import Pool
 
 
-def export(
-    row_index: list[str],
-    cope_files: list[Path],
-    var_cope_files: list[Path] | None,
-    mask_files: list[Path],
-    regressors: dict[str, list[float]],
-    contrasts: list[tuple],
-    exports: list[tuple[str, str, str, str]],
-    num_threads: int,
-) -> dict[str, Any]:
-    copes_img, var_copes_img = load_data(cope_files, var_cope_files, mask_files)
-    covariate_frame, _ = parse_design(regressors, contrasts)
-    covariate_frame.index = pd.Index(row_index)
+@dataclass
+class Atlas:
+    type: Literal["atlas", "modes"]
+    name: str
+    image: nib.Nifti1Image
+    labels: dict[int, str]
 
-    variables: dict[str, npt.NDArray] = OrderedDict()
-    metadata: dict[str, Any] = dict(coverage=dict())
-
-    for export_name, export_type, image_str, labels_path in exports:
-        image_path = Path(image_str)
+    @classmethod
+    def from_args(
+        cls,
+        type: Literal["atlas", "modes"],
+        name: str,
+        image_path: Path | str,
+        labels_path: Path | str,
+    ) -> Self:
+        image_path = Path(image_path)
 
         labels_frame = read_spreadsheet(labels_path)
-
         labels: dict[int, str] = dict()
         for label_tuple in labels_frame.itertuples(index=False):
             # First columnn is the index, second is the name.
-            labels[int(label_tuple[0])] = str(label_tuple[1])
-
-        signals: npt.NDArray | None = None
+            labels[int(label_tuple[0])] = format_like_bids(str(label_tuple[1]))
 
         image = nib.load(image_path)
-        with threadpool_limits(limits=num_threads, user_api="blas"):
-            if export_type == "atlas":
-                signals, coverage = mean_signals(
-                    image,
-                    copes_img,
-                    output_coverage=True,
-                )
-                metadata["coverage"][export_name] = {
-                    labels[i + 1]: c for i, c in enumerate(coverage)
-                }
-            elif export_type == "modes":
-                signals = mode_signals(copes_img, var_copes_img, image)
+        return cls(type, name, image, labels)
 
-        if signals is None:
-            raise ValueError(f'Could not export "{export_type}" for "{image_str}".')
 
-        signal_count = signals.shape[1]
-        for i in range(signal_count):
-            variables[f"{export_name}[{labels[i + 1]}]"] = signals[:, i]
+def export(
+    column_prefix: str | None,
+    subjects: list[str],
+    cope_files: list[Path],
+    var_cope_files: Sequence[Path | None] | None,
+    mask_files: list[Path],
+    regressors: dict[str, list[float]],
+    contrasts: list[tuple],
+    atlases: list[Atlas],
+    num_threads: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    covariate_frame, _ = parse_design(regressors, contrasts)
+    covariate_frame.index = pd.Index(subjects)
 
-    variable_frame = pd.DataFrame.from_dict(variables)
-    variable_frame.index = pd.Index(row_index)
+    signals: dict[str, npt.NDArray] = OrderedDict()
+    coverages: dict[str, npt.NDArray] = OrderedDict()
 
-    variable_path = Path.cwd() / "variables.tsv"
-    variable_frame.to_csv(variable_path, sep="\t", index=True)
+    # Prepare for parallel processing.
+    num_inputs = len(cope_files)
+    if var_cope_files is None:
+        var_cope_files = [None] * num_inputs
+    inner = partial(get_signals, atlases)
+    arg_tuples = zip(cope_files, var_cope_files, mask_files)
 
-    covariate_path = Path.cwd() / "covariates.tsv"
-    covariate_frame.to_csv(covariate_path, sep="\t", index=True)
+    # Only start a pool if we are using more than one thread.
+    if num_threads < 2:
+        pool: Pool | None = None
+        it: Iterable = map(inner, arg_tuples)
+        cm: ContextManager = nullcontext()
+    else:
+        pool = Pool(processes=num_threads)
+        it = pool.imap(inner, arg_tuples)
+        cm = pool
 
-    return dict(
-        variables=str(variable_path),
-        covariates=str(covariate_path),
-        metadata=metadata,
+    with cm:
+        # Top list level is subjects, second level is atlases.
+        signal_rows: list[list[tuple[npt.NDArray, npt.NDArray]]] = list(
+            tqdm(it, unit="images", desc="extracting signals", total=num_inputs)
+        )
+
+    if pool is not None:
+        pool.terminate()
+        pool.join()
+
+    # Transpose subjects and atlases.
+    signal_columns = (list(c) for c in zip(*signal_rows))
+    for atlas, signal_column in zip(atlases, signal_columns):
+        # Unpack signal/coverage.
+        signal_list, coverage_list = (list(c) for c in zip(*signal_column))
+        signal_array: npt.NDArray = np.vstack(signal_list)
+        coverage_array: npt.NDArray = np.vstack(coverage_list)
+
+        for i in range(signal_array.shape[1]):
+            label = atlas.labels[i + 1]
+            signals[f"{column_prefix}_{atlas.name}_label-{label}"] = signal_array[:, i]
+            coverages[f"{column_prefix}_{atlas.name}_label-{label}"] = coverage_array[
+                :, i
+            ]
+
+    signals_frame = pd.DataFrame.from_dict(signals)
+    signals_frame.index = pd.Index(subjects)
+    atlas_coverage_frame = pd.DataFrame.from_dict(coverages)
+    atlas_coverage_frame.index = pd.Index(subjects)
+
+    return signals_frame, covariate_frame, atlas_coverage_frame
+
+
+def get_signals(
+    atlases: list[Atlas],
+    path_tuple: tuple[Path, Path | None, Path],
+) -> list[tuple[npt.NDArray, npt.NDArray]]:
+    (cope_file, var_cope_file, mask_file) = path_tuple
+
+    var_cope_files = None
+    if var_cope_file is not None:
+        var_cope_files = [var_cope_file]
+    cope_img, var_cope_img = load_data(
+        [cope_file], var_cope_files, [mask_file], quiet=True
     )
+
+    results: list[tuple[npt.NDArray, npt.NDArray]] = list()
+    for atlas in atlases:
+        if atlas.type == "atlas":
+            cope_data = np.asanyarray(cope_img.dataobj)
+            mask_img = new_img_like(cope_img, np.isfinite(cope_data))
+            s, c = mean_signals(
+                cope_img,
+                atlas.image,
+                mask_img=mask_img,
+                output_coverage=True,
+            )
+            results.append((s, np.array(c)))
+        elif atlas.type == "modes":
+            results.append(
+                mode_signals(cope_img, var_cope_img, atlas.image, output_coverage=True)
+            )
+        else:
+            raise ValueError(f'Unknown atlas type "{atlas.type}".')
+
+    return results

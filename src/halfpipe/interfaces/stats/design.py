@@ -4,7 +4,12 @@
 
 from nipype.interfaces.base import File, SimpleInterface, TraitedSpec, traits
 
-from ...design import group_design, intercept_only_design, make_design_tsv
+from ...design import (
+    group_design,
+    intercept_only_design,
+    make_design_tsv,
+    prepare_data_frame,
+)
 
 
 class GroupDesignInputSpec(TraitedSpec):
@@ -34,11 +39,16 @@ class GroupDesign(SimpleInterface):
     output_spec = DesignOutputSpec
 
     def _run_interface(self, runtime):
+        data_frame = prepare_data_frame(
+            self.inputs.spreadsheet,
+            self.inputs.variabledicts,
+            self.inputs.subjects,
+            na_action="impute",
+        )
         regressors, contrasts, numbers, names = group_design(
-            spreadsheet=self.inputs.spreadsheet,
-            contrasts=self.inputs.contrastdicts,
-            variables=self.inputs.variabledicts,
-            subjects=self.inputs.subjects,
+            data_frame,
+            self.inputs.contrastdicts,
+            self.inputs.subjects,
         )
         self._results["regressors"] = regressors
         self._results["contrasts"] = contrasts

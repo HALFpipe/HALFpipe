@@ -13,20 +13,22 @@ def mock_tqdm(iterable, *args, **kwargs):
     return iterable
 
 
-def initializer(logging_kwargs, host_env):
-    # Do not show tqdm progress bars from subprocesses.
+def initializer(logging_kwargs, host_env, host_cwd):
+    os.chdir(host_cwd)
+
+    # Do not show tqdm progress bars from subprocesses
     import tqdm
     import tqdm.auto
 
     tqdm.tqdm = mock_tqdm
     tqdm.auto.tqdm = mock_tqdm
 
-    # Make sure we send all logging to the logger process.
+    # Make sure we send all logging to the logger process
     from ..logging import setup as setup_logging
 
     setup_logging(**logging_kwargs)
 
-    # Make sure we use the same environment variables as the parent process.
+    # Make sure we use the same environment variables as the parent process
     os.environ.update(host_env)
 
 
@@ -42,10 +44,9 @@ class Pool(mp_pool.Pool):
         processes: int | None = None,
         maxtasksperchild: int | None = None,
     ) -> None:
-
         from ..logging import logging_context
 
-        init_args = (logging_context.logging_args(), dict(os.environ))
+        init_args = (logging_context.logging_args(), dict(os.environ), os.getcwd())
         super().__init__(
             processes=processes,
             initializer=initializer,

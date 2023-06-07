@@ -34,30 +34,42 @@ class FileIndex:
 
         return hash_algorithm.hexdigest()
 
-    def get(self, **tags) -> set[Path] | None:
+    def get(self, **tags: str | None) -> set[Path] | None:
         """
-        Find all paths that match the query tags
+        Find all paths that match the query tags.
+
+        Args:
+            **tags: A dictionary of tags to match against. The keys are the tag names
+                    and the values are the tag values. Pass a value of `None` to
+                    select paths without that tag.
+
+        Returns:
+            A set of `Path` objects that match all the specified tags. If no paths
+            match the query, returns `None`.
         """
 
-        res = None
-
+        matches: set[Path] | None = None
         for key, value in tags.items():
             if key not in self.paths_by_tags:
                 logger.info(f'Unknown key "{key}"')
                 return None
 
             values = self.paths_by_tags[key]
-            if value not in values:
-                logger.info(f'Unknown value "{value}"')
-                return None
-
-            paths = values[value]
-            if res is not None:
-                res &= paths
+            if value is not None:
+                if value not in values:
+                    logger.info(f'Unknown value "{value}"')
+                    return None
+                paths: set[Path] = values[value]
             else:
-                res = paths.copy()
+                paths_in_index = set(self.tags_by_paths.keys())
+                paths = paths_in_index.difference(*values.values())
 
-        return res
+            if matches is not None:
+                matches &= paths
+            else:
+                matches = paths.copy()
+
+        return matches
 
     def get_tags(self, path: Path) -> Mapping[str, str | None]:
         if path in self.tags_by_paths:

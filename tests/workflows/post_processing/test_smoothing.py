@@ -11,10 +11,10 @@ import pytest
 from nipype.interfaces import afni
 
 from halfpipe.resource import get as get_resource
+from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.smoothing import init_smoothing_wf
 
 from ...resource import setup as setup_test_resources
-from ..helpers import run_workflow
 
 
 def volume_smoothness(image_file, mask_file):

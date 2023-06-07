@@ -17,6 +17,7 @@ test_online_resources = {
     "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz": "https://github.com/edickie/ciftify/raw/v2.1.0/tests/data/sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz",
     "tpl-MNI152NLin2009cAsym_atlas-DiFuMo_desc-1024dimensions_probseg.tsv": "https://download.fmri.science/test_resources/tpl-MNI152NLin2009cAsym_atlas-DiFuMo_desc-1024dimensions_probseg.tsv",
     "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz": "https://download.fmri.science/test_resources/tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz",
+    "sub-0003_fmriprep_derivatives.zip": "https://download.fmri.science/test_resources/sub-0003_fmriprep_derivatives.zip",
 }
 
 

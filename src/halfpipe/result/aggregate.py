@@ -13,10 +13,18 @@ from pyrsistent import freeze, pmap, thaw
 from tqdm.auto import tqdm
 
 from ..logging import logger
+from ..utils.copy import deepcopy
 from .base import ResultDict, ResultKey
 from .variables import Categorical, Continuous
 
 Index = Mapping[str, str]
+
+source_keys = [
+    ("metadata", "sources"),
+    ("metadata", "Sources"),
+    ("metadata", "raw_sources"),
+    ("metadata", "RawSources"),
+]
 
 
 @dataclass(frozen=True)
@@ -93,45 +101,23 @@ def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]
     return expanded_groups
 
 
-def summarize(xx: list[Any]) -> Any:
-    continuous_values = list(map(Continuous.load, xx))
-    if all(x is None or y is not None for x, y in zip(xx, continuous_values)):
-        return Continuous.summarize(continuous_values)
-    else:
-        categorical_values = list(map(Categorical.load, xx))
-        return Categorical.summarize(categorical_values)
-
-
-def merge_data(elements: set[Element], summarize_metadata: bool = True) -> ResultDict:
+def merge_data(elements: set[Element]) -> ResultDict:
+    # Find all field name attribute name pairs in the set of elements
     keys: set[tuple[ResultKey, str]] = set(
         chain.from_iterable(element.data.keys() for element in elements)
     )
 
     sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
-    summarized: dict[tuple[ResultKey, str], Any] = dict()
+    result: ResultDict = defaultdict(dict)
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
-        field_name: ResultKey = key[0]
-        if (
-            key
-            in [
-                ("metadata", "sources"),
-                ("metadata", "Sources"),
-                ("metadata", "raw_sources"),
-                ("metadata", "RawSources"),
-            ]
-            or field_name in ["images"]
-            or summarize_metadata is False
-        ):
-            summarized[key] = list(collapse(values))
-        else:
-            summarized[key] = summarize(values)
+        field_name, attribute_name = key
+        if key in source_keys or field_name in ["images"]:
+            values = list(collapse(values))
 
-    data: ResultDict = defaultdict(dict)
-    for (field_name, attribute_name), attribute_value in summarized.items():
-        data[field_name][attribute_name] = thaw(attribute_value)
+        result[field_name][attribute_name] = thaw(values)
 
-    return data
+    return result
 
 
 def aggregate_results(
@@ -152,7 +138,7 @@ def aggregate_results(
         tags |= index
 
         u: ResultDict = {"tags": tags}
-        u |= merge_data(elements, summarize_metadata=summarize_metadata)
+        u |= merge_data(elements)
 
         if len(elements) > 1:
             aggregated.append(u)
@@ -160,3 +146,37 @@ def aggregate_results(
             bypass.append(u)
 
     return aggregated, bypass
+
+
+def summarize(values: list[Any]) -> Any:
+    """
+    Summarizes a list of values, which can be either continuous or categorical.
+
+    Args:
+        values (list): A list of values to summarize.
+
+    Returns:
+        Any: The summarized value. If all values are continuous, returns a summary of the continuous values, which are the mean and standard deviation as a string.
+        If any value is categorical, returns a summary of the categorical values, which are the counts of each level.
+    """
+    continuous_values = list(map(Continuous.load, values))
+    if all(x is None or y is not None for x, y in zip(values, continuous_values)):
+        return Continuous.summarize(continuous_values)
+    else:
+        categorical_values = list(map(Categorical.load, values))
+        return Categorical.summarize(categorical_values)
+
+
+def summarize_metadata(
+    result: ResultDict,
+) -> ResultDict:
+    result = deepcopy(result)
+    for field_name, attribute_dict in result.items():
+        if field_name in ["images"]:
+            continue
+        for attribute_name in attribute_dict.keys():
+            key = (field_name, attribute_name)
+            if key in source_keys:
+                continue
+            attribute_dict[attribute_name] = summarize(attribute_dict[attribute_name])
+    return result
