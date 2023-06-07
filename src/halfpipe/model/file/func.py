@@ -27,7 +27,7 @@ class BoldFileSchema(BaseFileSchema):
     metadata = fields.Nested(BoldMetadataSchema(), dump_default=dict())
 
     @pre_load
-    def move_dir_tag_to_metadata(self, in_data, **kwargs):
+    def copy_dir_tag_to_metadata(self, in_data, **kwargs):
         path = Path(in_data["path"])
 
         # Ensure that the path refers to a specific file that we have access to.
@@ -49,12 +49,10 @@ class BoldFileSchema(BaseFileSchema):
                         pedir_code,
                         path,
                     )
-                    del tags["dir"]
                 except Exception:
                     logger.warning(
                         f"Could not parse phase encoding direction from tag {direction} for {path}"
                     )
-
         return in_data
 
 
