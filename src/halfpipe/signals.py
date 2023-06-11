@@ -208,9 +208,12 @@ def mode_signals(
         weighted_endog = cope_data[mask, i, np.newaxis] * weights
         weighted_exog = masked_mode_data * weights
 
+        gram_matrix = weighted_exog.transpose() @ weighted_exog
+        correlation_vector = weighted_exog.transpose() @ weighted_endog
+
         signals_lstsq[i, :, np.newaxis], _, _, _ = scipy.linalg.lstsq(
-            weighted_exog.transpose() @ weighted_exog,
-            weighted_exog.transpose() @ weighted_endog,
+            gram_matrix,
+            correlation_vector,
             check_finite=False,
             lapack_driver="gelsy",
             overwrite_a=True,

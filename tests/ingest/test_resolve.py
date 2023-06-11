@@ -6,6 +6,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import nibabel as nib
+import numpy as np
 import pytest
 import requests
 
@@ -22,7 +24,7 @@ from halfpipe.model.spec import Spec
         ("ds004161"),
     ),
 )
-def test__resolve_bids(tmp_path: Path, openneuroID: str):
+def test_resolve_bids(tmp_path: Path, openneuroID: str):
     # Get file names with GraphQL request
     query_example = f"""query{{
     snapshot(datasetId: "{openneuroID}", tag: "1.0.0"){{
@@ -98,6 +100,9 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
         if line.endswith(".json"):
             with open(path, "w") as file_handle:
                 file_handle.write("{}")
+        elif line.endswith(".nii.gz"):
+            empty_image = nib.Nifti1Image(np.zeros(0), np.eye(4))
+            nib.save(empty_image, path)
         path.touch()
 
     spec = Spec(datetime.now(), [])

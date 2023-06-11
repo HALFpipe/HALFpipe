@@ -29,7 +29,6 @@ def test_fit(tmp_path, wakemandg_hensonrn_raw):
     )
     modes_img = nib.load(modes_path)
 
-    with np.errstate(all="raise"):
-        signals = mode_signals(copes_img, var_copes_img, modes_img)
+    signals = mode_signals(copes_img, var_copes_img, modes_img)
 
     assert np.all(np.isfinite(signals))

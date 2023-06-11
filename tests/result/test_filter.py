@@ -84,9 +84,9 @@ def test_filter_cutoff():
     f = parse_filter_dict(filter_dict)
     assert isinstance(f, FunctionType)
 
-    assert f(dict(tags=dict(), vals=dict(a=0.0))) is True
+    assert f(dict(tags=dict(task="rest"), vals=dict(a=0.0))) is True
 
-    assert f(dict(tags=dict(), vals=dict(a=2.0))) is False
+    assert f(dict(tags=dict(task="rest"), vals=dict(a=2.0))) is False
 
 
 def test_filter_missing(tmp_path: Path) -> None:
