@@ -22,22 +22,13 @@ jobs:
     strategy:
       matrix:
         chunk:
-          - interfaces
-          - stats
-          - workflows
           - feature_extraction
           - other
         include:
-          - chunk: interfaces
-            args: "tests/interfaces"
-          - chunk: stats
-            args: "tests/stats"
-          - chunk: workflows
-            args: "tests/workflows -k 'not test_feature_extraction'"
           - chunk: feature_extraction
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
           - chunk: other
-            args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
+            args: "-k 'not test_feature_extraction'"
 
     steps:
     - name: Cache data
@@ -117,7 +108,7 @@ jobs:
         shell: bash
         run: |
           FILE=$(find . -name "coverage.xml" | paste --serial --delimiters=, -)
-          echo "::set-output name=file::${FILE}"
+          echo "file=${FILE}" >> ${GITHUB_OUTPUT}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
