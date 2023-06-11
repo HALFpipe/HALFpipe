@@ -49,7 +49,6 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
     if hp_sigma > 0:
         c0 = None
         for t in range(sourcetsize):
-
             A = 0
             B = np.zeros((m,), dtype=array.dtype)
             C = 0

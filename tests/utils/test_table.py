@@ -6,7 +6,6 @@ from halfpipe.utils.table import SynchronizedTable
 
 
 def test_synchronized_table(tmp_path):
-
     synchronized_table = SynchronizedTable(tmp_path / "report_test.js")
 
     with synchronized_table:

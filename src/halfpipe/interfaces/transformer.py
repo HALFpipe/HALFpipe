@@ -49,7 +49,6 @@ class Transformer(SimpleInterface):
         self.mask = None
 
         if ext in [".nii", ".nii.gz"]:
-
             in_img = nib.load(in_file)
             self.in_img = in_img
 

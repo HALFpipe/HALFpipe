@@ -61,7 +61,6 @@ class Distribution(ABC):
                 p = cdf(mpmathify(x))
 
                 if not mp.almosteq(p, mpf("1")) and not mp.almosteq(p, mpf("0")):
-
                     # we have sufficient precision to represent the p-value
 
                     calc_z = autoprec(lambda: normppf(cdf(mpmathify(x))))
@@ -174,7 +173,6 @@ def t2z_convert(x: float, nu: int, **kwargs) -> float:
 
 
 def f2z_convert(x: float, d1: int, d2: int, **kwargs) -> float:
-
     if x <= 0 or d1 <= 0 or d2 <= 0:
         return -math.inf
 
@@ -182,7 +180,6 @@ def f2z_convert(x: float, d1: int, d2: int, **kwargs) -> float:
 
 
 def chisq2z_convert(x: float, k: int, **kwargs) -> float:
-
     if x <= mpf("0") or k <= mpf("0"):
         return -math.inf
 

@@ -143,7 +143,6 @@ class PathReferenceTracer:
             predicted = node.mem_gb
 
             if actual - predicted > 0:
-
                 log_method = logger.info
                 if actual - predicted > 1:  # more than one gigabyte error
                     log_method = logger.warning

@@ -27,7 +27,6 @@ def parse_descrip(header: nib.Nifti1Header) -> dict[str, float]:
     descrip = descrip_array.tolist().decode()
 
     for m in descrip_pattern.finditer(descrip):
-
         var_name = m.group("var_name")
         value = m.group("value")
         unit = m.group("unit")

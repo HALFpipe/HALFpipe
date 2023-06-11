@@ -30,7 +30,6 @@ def test_freesurfer_env_works_with_env_set():
 
 @pytest.mark.parametrize("opts, proper_result", [(good_opts, True), (bad_opts, False)])
 def test_setup_freesurfer_env(opts, proper_result):
-
     try:
         del os.environ["FS_LICENSE"]
     except KeyError:

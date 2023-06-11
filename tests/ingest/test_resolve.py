@@ -49,7 +49,7 @@ def test__resolve_bids(tmp_path: Path, openneuroID: str):
         base_list = neuro_dict["data"]["snapshot"]["files"]  # returns list of all files
         if build_path is None:
             build_path = []
-        for (i, val) in enumerate(base_list):
+        for i, val in enumerate(base_list):
             if not val["directory"]:
                 p = "/".join(str(x) for x in build_path)
                 x = p + "/" + val["filename"]

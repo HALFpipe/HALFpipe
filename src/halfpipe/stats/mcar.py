@@ -23,7 +23,6 @@ class MCARTest(Heterogeneity):
         s: np.ndarray,
         cmatdict: dict,
     ) -> dict | None:
-
         z = demean(z)
 
         is_available = np.isfinite(y) & np.isfinite(s)

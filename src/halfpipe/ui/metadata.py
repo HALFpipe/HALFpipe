@@ -385,7 +385,6 @@ class CheckMetadataStep(Step):
             unit = ""
 
         if self.show_summary is True:
-
             for i in range(min(10, len(order))):
                 display = display_str(f"{uniquevals[i]}")
                 if self.suggestion is None:

@@ -11,7 +11,6 @@ from .fmap import collect_fieldmaps
 def collect_bold_files(
     database, post_processing_factory, feature_factory
 ) -> dict[str, list[str]]:
-
     # find bold files
 
     bold_file_paths: set[str] = (

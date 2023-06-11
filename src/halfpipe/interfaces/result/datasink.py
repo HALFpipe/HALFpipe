@@ -28,7 +28,6 @@ def _find_sources(inpath, metadata) -> tuple[list[str] | None, str | None]:
         sources = list()
 
     try:
-
         for parent in Path(inpath).parents:
             nipype_hash_file = None
 

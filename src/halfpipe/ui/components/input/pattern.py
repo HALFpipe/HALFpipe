@@ -145,7 +145,6 @@ class FilePatternInputView(CallableView):
 
             matchobj = tag_parse.fullmatch(token)
             if matchobj is not None:
-
                 tag_name = matchobj.group("tag_name")
                 assert self.color_by_tag is not None
                 color = self.color_by_tag.get(tag_name, self.highlightColor)
@@ -436,7 +435,6 @@ class FilePatternInputView(CallableView):
             else:
                 self.suggestion_view._handleKey(c)
         else:
-
             if c == Key.Down:
                 _enter_suggestion_view()
 

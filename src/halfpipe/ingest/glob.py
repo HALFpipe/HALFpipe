@@ -109,7 +109,6 @@ def _validate_re(s: str) -> bool:
 def _translate(
     pat: str, entities: Container[str] | None, parenttagdict: dict[str, str]
 ) -> tuple[Callable, set[str]]:
-
     res = ""
 
     tokens = tokenize.split(pat)
@@ -122,7 +121,6 @@ def _translate(
 
         matchobj = tag_parse.fullmatch(token)
         if matchobj is not None:
-
             tag_name = matchobj.group("tag_name")
             if entities is None or tag_name in entities:
                 filter_type = matchobj.group("filter_type")

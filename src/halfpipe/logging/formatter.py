@@ -50,7 +50,6 @@ class Formatter(logging.Formatter):
             return formatted
 
         else:
-
             lines[0] = f"{lines[0]}"
             for i in range(1, len(lines) - 1):
                 lines[i] = f"│ {lines[i]}"

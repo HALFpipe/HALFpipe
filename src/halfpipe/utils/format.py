@@ -61,7 +61,6 @@ def format_tags(tags: Mapping[str, str]) -> str:
 
     for entity in reversed(entities):
         if entity in tags:
-
             value = tags[entity]
 
             entity = entity_longnames.get(entity, entity)

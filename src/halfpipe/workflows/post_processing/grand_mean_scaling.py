@@ -15,7 +15,6 @@ def init_grand_mean_scaling_wf(
     name: str | None = None,
     suffix: str | None = None,
 ):
-
     if name is None:
         if mean is not None:
             mean = float(mean)
