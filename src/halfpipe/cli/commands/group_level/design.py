@@ -26,12 +26,26 @@ class DesignBase:
     model_name: str | None
     data_frame: pd.DataFrame | None
     qc_exclude_files: list[Path]
+    variables: list[dict]
     contrasts: list[dict]
     filters: list[dict]
     results: list[ResultDict]
     aggregate: list[str] | None
 
     variable_sets: dict[str, set[str]] = field(default_factory=lambda: defaultdict(set))
+
+    def filter_results(self) -> None:
+        self.results = filter_results(
+            self.results,
+            filter_dicts=self.filters,
+            # Require images we can do statistics on
+            require_one_of_images=["effect", "reho", "falff", "alff"],
+            exclude_files=self.qc_exclude_files,
+            spreadsheet=self.data_frame,
+            variable_dicts=self.variables,
+        )
+        if len(self.results) == 0:
+            raise ValueError("No images remain after filtering")
 
     @classmethod
     def from_spreadsheet(
@@ -50,21 +64,11 @@ class DesignBase:
         else:
             data_frame = prepare_data_frame(spreadsheet, variables)
 
-        results = filter_results(
-            results,
-            filter_dicts=filters,
-            # Require images we can do statistics on
-            require_one_of_images=["effect", "reho", "falff", "alff"],
-            exclude_files=qc_exclude_files,
-            spreadsheet=data_frame,
-            variable_dicts=variables,
-        )
-        if len(results) == 0:
-            raise ValueError("No images remain after filtering")
         return cls(
             model_name,
             data_frame,
             qc_exclude_files,
+            variables,
             contrasts,
             filters,
             results,

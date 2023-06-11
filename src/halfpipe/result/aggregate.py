@@ -172,7 +172,7 @@ def summarize_metadata(
 ) -> ResultDict:
     result = deepcopy(result)
     for field_name, attribute_dict in result.items():
-        if field_name in ["images"]:
+        if field_name in ["tags", "images"]:
             continue
         for attribute_name in attribute_dict.keys():
             key = (field_name, attribute_name)

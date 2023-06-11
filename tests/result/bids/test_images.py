@@ -12,7 +12,8 @@ from halfpipe.result.bids.images import load_images, save_images
 
 def test_images(tmp_path: Path):
     statmap_path = tmp_path / "statmap.nii.gz"
-    statmap_path.touch()
+    with statmap_path.open("w") as file_handle:
+        file_handle.write("test")  # File cannot be empty, because we skip empty files
 
     result: ResultDict = {
         "tags": {

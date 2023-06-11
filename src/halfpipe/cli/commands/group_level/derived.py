@@ -24,7 +24,7 @@ from ....utils.multiprocessing import Pool
 from ....utils.nipype import run_workflow
 from ....workflows.constants import constants
 from ....workflows.features.jacobian import init_jacobian_wf
-from .design_base import DesignBase
+from .design import DesignBase
 
 ureg = pint.UnitRegistry()
 
@@ -39,10 +39,6 @@ def apply_derived(
     ).apply()
     apply_derived_variables(
         arguments.derived_variable,
-        design_base,
-    )
-    apply_binary_from_categorical(
-        arguments.binary_from_categorical,
         design_base,
     )
     variables_to_drop: list[str] | None = arguments.drop_variable
@@ -141,32 +137,31 @@ class ImagingVariables:
 
         return data
 
+    def get_brain_mask_path(self, subject: str) -> Path:
+        index = self.fmriprep_derivatives
+        brain_mask_paths = index.get(
+            datatype="anat",
+            sub=subject,
+            space=constants.reference_space,
+            res=str(constants.reference_res),
+            desc="brain",
+            suffix="mask",
+            extension=".nii.gz",
+        )
+        if brain_mask_paths is None:
+            raise ValueError(f"No brain mask found in the index for subject {subject}")
+        brain_mask_path = brain_mask_paths.pop()
+        return brain_mask_path
+
     @cached_property
     def jacobian_stats(self) -> pd.DataFrame:
-        index = self.fmriprep_derivatives
-
         data: dict[str, dict[str, float]] = defaultdict(dict)
         for subject, jacobian_path in tqdm(
             self.jacobian_paths.items(),
             desc="calculating jacobian stats",
             unit="subjects",
         ):
-            brain_mask_paths = index.get(
-                datatype="anat",
-                sub=subject,
-                space=constants.reference_space,
-                res=str(constants.reference_res),
-                desc="brain",
-                suffix="mask",
-                extension=".nii.gz",
-            )
-            if brain_mask_paths is None:
-                raise ValueError(
-                    f"Cannot calculate jacobian stats for subject {subject}. No brain mask found in the index"
-                )
-                continue
-            brain_mask_path = brain_mask_paths.pop()
-            brain_mask_image = nib.load(brain_mask_path)
+            brain_mask_image = nib.load(self.get_brain_mask_path(subject))
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
 
             jacobian_image = nib.load(jacobian_path)
@@ -257,7 +252,10 @@ class ImagingVariables:
                     },
                     "images": {
                         "effect": path,
+                        "mask": self.get_brain_mask_path(subject),
                     },
+                    "metadata": {},
+                    "vals": {},
                 }
             )
 
@@ -281,6 +279,7 @@ class ImagingVariables:
         if arguments.derived_image is not None:
             for image in arguments.derived_image:
                 image_handlers[image]()
+        self.design_base.filter_results()
 
 
 def apply_derived_variables(
@@ -293,48 +292,6 @@ def apply_derived_variables(
         raise ValueError("Design has no data frame")
     for derived_variable in derived_variables:
         name, expression = derived_variable
-        design_base.data_frame.eval(f"{name} = {expression}", inplace=True)
+        design_base.data_frame.eval(f"{name} = ({expression})", inplace=True)
         # Add contrast for new variable
         design_base.add_variable(name)
-
-
-def apply_binary_from_categorical(
-    binary_from_categorical: list[tuple[str, ...]] | None,
-    design_base: DesignBase,
-):
-    """
-    Implements the `--binary-from-categorical` flag. This flag transforms categorical
-    variables into binary variables. The source variable is removed from the data
-    frame, but can be used to create multiple binary variables.
-    Use this as an alternative to the default dummy coding of categorical variables.
-
-    Args:
-        binary_from_categorical: A list of tuples, where each tuple contains the name of the binary variable to be
-            created, the name of the categorical variable to use as a basis, and the categorical levels to use as
-            the basis for the binary variable.
-        design_base: The design_base object to whose data frame the binary variables will be added.
-
-    Raises:
-        ValueError: If the design_base matrix has no data frame.
-    """
-    if binary_from_categorical is None:
-        return
-    if design_base.data_frame is None:
-        raise ValueError("Design has no data frame")
-
-    # Update data frame
-    variables: dict[str, pd.Series] = dict()
-    for bfc in binary_from_categorical:
-        name = bfc[0]
-        variable = bfc[1]
-        levels = bfc[2:]
-
-        if variable not in variables:
-            series = design_base.drop_variable(variable)
-            if series is None:
-                raise ValueError(f"Variable {variable} not found in design_base")
-            variables[variable] = series
-        else:
-            series = variables[variable]
-        series = series.isin(levels).astype(float)
-        design_base.add_variable(name, series)

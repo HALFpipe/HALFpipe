@@ -8,7 +8,7 @@ from typing import Mapping
 import numpy as np
 import pytest
 
-from halfpipe.result.aggregate import aggregate_results, summarize
+from halfpipe.result.aggregate import aggregate_results, summarize, summarize_metadata
 from halfpipe.result.base import ResultDict
 from halfpipe.result.variables import Categorical, Continuous
 
@@ -120,6 +120,7 @@ def test_aggregate_resultdicts() -> None:
 
     aggregated, _ = aggregate_results([result_a, result_b, result_c], across_key="sub")
     (result,) = aggregated
+    result = summarize_metadata(result)
 
     subjects = result["tags"]["sub"]
     assert len(subjects) == 3

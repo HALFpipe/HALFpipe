@@ -7,6 +7,7 @@ from contextlib import chdir
 from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import partial, reduce
+from itertools import starmap
 from pathlib import Path
 
 import pandas as pd
@@ -66,7 +67,7 @@ class BetweenBase:
                 images[to_key] = images.pop(from_key)
         # Extract the relevant keys from the image dictionary
         cope_paths = images.pop("effect")
-        var_cope_paths = images.pop("variance")
+        var_cope_paths = images.pop("variance", None)
         mask_paths = images.pop("mask")
         # Create a design tuple
         if design_base.data_frame is not None:
@@ -79,6 +80,14 @@ class BetweenBase:
             design = intercept_only_design(len(subjects))
 
         with chdir(model_directory):
+            self.apply_export(
+                subjects,
+                cope_paths,
+                var_cope_paths,
+                mask_paths,
+                design,
+                result,
+            )
             self.apply_fit(
                 subjects,
                 cope_paths,
@@ -90,7 +99,7 @@ class BetweenBase:
             )
 
     def apply_export_variables(self, design_base: DesignBase) -> None:
-        export_variables: list[str] | None = self.arguments.export_variables
+        export_variables: list[str] | None = self.arguments.export_variable
         if export_variables is None:
             return
         for name in export_variables:
@@ -110,7 +119,7 @@ class BetweenBase:
         self,
         subjects: list[str],
         cope_paths: list[Path],
-        var_cope_paths: list[Path],
+        var_cope_paths: list[Path] | None,
         mask_paths: list[Path],
         design: Design,
         result: ResultDict,
@@ -135,7 +144,7 @@ class BetweenBase:
                 mask_paths,
                 regressor_list,
                 contrast_list,
-                self.arguments.algorithms,
+                self.arguments.algorithm,
                 self.arguments.nipype_n_procs,
             )
         )
@@ -172,11 +181,11 @@ class BetweenBase:
             results.append(result)
         save_images(results, self.output_directory)
 
-    def apply_exports(
+    def apply_export(
         self,
         subjects: list[str],
         cope_paths: list[Path],
-        var_cope_paths: list[Path],
+        var_cope_paths: list[Path] | None,
         mask_paths: list[Path],
         design: Design,
         result: ResultDict,
@@ -186,10 +195,10 @@ class BetweenBase:
         atlases: list[Atlas] = list()
         if self.arguments.export_atlas is not None:
             make_atlas = partial(Atlas.from_args, "atlas")
-            atlases.extend(map(make_atlas, self.arguments.export_atlas))
+            atlases.extend(starmap(make_atlas, self.arguments.export_atlas))
         if self.arguments.export_modes is not None:
             make_modes = partial(Atlas.from_args, "modes")
-            atlases.extend(map(make_modes, self.arguments.export_modes))
+            atlases.extend(starmap(make_modes, self.arguments.export_modes))
 
         regressor_list, contrast_list, _, _ = design
         phenotype_frame, covariate_frame, atlas_coverage_frame = export(

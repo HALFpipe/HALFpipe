@@ -46,12 +46,13 @@ def run(arguments: Namespace):
     results = apply_exclude(arguments.exclude, results)
 
     if arguments.from_spec:
-        designs = apply_from_spec(arguments, results)
+        design_bases = apply_from_spec(arguments, results)
     else:
-        designs = apply_from_arguments(arguments, results)
+        design_bases = apply_from_arguments(arguments, results)
 
-    for design in designs:
-        apply_design(arguments, design, output_directory)
+    for design_base in design_bases:
+        design_base.filter_results()
+        apply_design(arguments, design_base, output_directory)
 
 
 def apply_include(
@@ -157,3 +158,4 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
                 design_base,
                 model_directory,
             )
+    between_base.write_outputs()

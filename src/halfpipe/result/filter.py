@@ -140,8 +140,12 @@ def make_cutoff_filter(
 
     def cutoff_filter(d: dict) -> bool:
         tags = d["tags"]
-        vals = d.get("vals")
 
+        if "task" not in tags:
+            logger.info(f"Skipping cutoff filter for structural ({format_tags(tags)})")
+            return True
+
+        vals = d.get("vals")
         if vals is None:
             logger.warning(
                 f"Excluding ({format_tags(tags)}) {model_desc}"

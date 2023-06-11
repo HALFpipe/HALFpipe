@@ -167,16 +167,6 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         action="append",
         help="add this variable to the model as a variable derived from existing variables via the specified formula",
     )
-    group.add_argument(
-        "--binary-from-categorical",
-        type=str,
-        nargs="+",
-        action="append",
-        help=(
-            "add a binary variable that is 1 if the categorical variable is in the given levels and 0 otherwise. "
-            "use this as an alternative to the default dummy coding of categorical variables"
-        ),
-    )
     derived_images = ("jacobian",)
     group.add_argument(
         "--derived-image",
