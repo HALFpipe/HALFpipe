@@ -13,7 +13,6 @@ from ..model.tags import entity_longnames as entity_display_aliases
 from ..model.utils import get_schema_entities
 from ..utils.format import inflect_engine as p
 from ..utils.path import split_ext
-from .base import Context
 from .components import (
     FilePatternInputView,
     SpacerView,
@@ -21,7 +20,7 @@ from .components import (
     TextInputView,
     TextView,
 )
-from .step import Step
+from .step import Context, Step
 from .utils import entity_colors, forbidden_chars, messagefun
 
 logger = logging.getLogger("halfpipe.ui")

@@ -320,7 +320,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts = parser.parse_args(args=list())
 
     opts.graphs = graphs
-    opts.nipype_run_plugin = "Test"
+    opts.nipype_run_plugin = "Simple"
     opts.debug = True
 
     (bold_path,) = tmp_path.glob("rawdata/sub-*/func/*_bold.nii.gz")

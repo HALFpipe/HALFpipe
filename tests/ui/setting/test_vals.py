@@ -8,13 +8,12 @@ from unittest import mock
 
 import pytest
 
-from halfpipe.ui.base import Context
 from halfpipe.ui.components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,
 )
 from halfpipe.ui.setting.vals import get_setting_vals_steps
-from halfpipe.ui.step import Step
+from halfpipe.ui.step import Context, Step
 
 from ..mock import MockApp
 

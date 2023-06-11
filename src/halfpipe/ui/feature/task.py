@@ -16,7 +16,6 @@ from ...model.file.func import (
     TsvEventsFileSchema,
     TxtEventsFileSchema,
 )
-from ..base import Context
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     MultiCombinedNumberAndSingleChoiceInputView,
@@ -29,7 +28,7 @@ from ..components.input.choice import SingleChoiceInputView
 from ..metadata import CheckMetadataStep
 from ..pattern import FilePatternStep
 from ..setting import get_setting_init_steps
-from ..step import BranchStep, Step, YesNoStep
+from ..step import BranchStep, Context, Step, YesNoStep
 from ..utils import forbidden_chars
 from .loop import SettingValsStep
 

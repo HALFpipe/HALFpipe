@@ -7,10 +7,9 @@ from unittest import mock
 
 import pytest
 
-from halfpipe.ui.base import Context
 from halfpipe.ui.components import MultiCombinedNumberAndSingleChoiceInputView
 from halfpipe.ui.file.func import get_post_func_steps
-from halfpipe.ui.step import Step, YesNoStep
+from halfpipe.ui.step import Context, Step, YesNoStep
 
 from ..mock import MockApp
 

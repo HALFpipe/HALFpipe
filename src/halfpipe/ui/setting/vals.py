@@ -13,7 +13,6 @@ from ...model.setting import (
     SmoothingSettingSchema,
 )
 from ...utils.format import inflect_engine as p
-from ..base import Context
 from ..components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,
@@ -21,7 +20,7 @@ from ..components import (
     SpacerView,
     TextView,
 )
-from ..step import BranchStep, Step, YesNoStep
+from ..step import BranchStep, Context, Step, YesNoStep
 
 
 def get_setting_vals_steps(

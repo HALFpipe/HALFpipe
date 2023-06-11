@@ -6,9 +6,8 @@ import os
 from pathlib import Path
 
 from .. import __version__
-from ..ingest.database import Database
 from ..logging import logger, logging_context
-from ..model.spec import Spec, SpecSchema, load_spec, save_spec
+from ..model.spec import load_spec, save_spec
 from ..workdir import init_workdir
 from .components import (
     App,
@@ -22,24 +21,7 @@ from .components.config import Config as UIConfig
 from .feature import FeaturesStep
 from .file import BidsStep
 from .model import ModelsStep
-from .step import Step
-
-
-class Context:
-    def __init__(self) -> None:
-        spec_schema = SpecSchema()
-        spec = spec_schema.load(spec_schema.dump({}), partial=True)
-        assert isinstance(spec, Spec)
-        self.spec: Spec = spec  # initialize with defaults
-        self.database = Database(self.spec)
-        self.workdir: Path | None = None
-        self.use_existing_spec = False
-        self.debug = False
-        self.already_checked: set[str] = set()
-
-    def put(self, fileobj):
-        self.database.put(fileobj)
-        return len(self.spec.files) - 1
+from .step import Context, Step
 
 
 class UseExistingSpecStep(Step):

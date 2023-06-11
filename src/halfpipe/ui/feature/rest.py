@@ -7,7 +7,6 @@ from typing import Type
 from ...model.file.ref import RefFileSchema
 from ...utils.copy import deepcopy
 from ...utils.format import format_like_bids
-from ..base import Context
 from ..components import (
     CombinedMultipleAndSingleChoiceInputView,
     NumberInputView,
@@ -17,7 +16,7 @@ from ..components import (
 from ..metadata import CheckMetadataStep
 from ..pattern import FilePatternStep
 from ..setting import get_setting_init_steps, get_setting_vals_steps
-from ..step import Step
+from ..step import Context, Step
 from .loop import AddAnotherFeatureStep, SettingValsStep
 
 next_step_type: Type[Step] = SettingValsStep
