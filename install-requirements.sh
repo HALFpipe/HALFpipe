@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-opts=`getopt -o r: --long requirements-file: -n 'enigma-qc' -- "$@"`
+opts=$(getopt -o r: --long requirements-file: -n 'enigma-qc' -- "$@")
 eval set -- "$opts"
 
 verbose=1
@@ -28,23 +28,33 @@ if [[ "${#requirements_files[@]}" -lt 1 ]]; then
     fail "missing required --requirements-file parameter"
 fi
 
-run_cmd() {
-    cmd="$*"
 
-    if [ "$verbose" = "1" ]; then
-	    printf "$cmd\n"
+run_cmd() {
+    command="$*"
+
+    printf '%s\n' --------------------
+
+    if [ "${verbose}" = "1" ]; then
+        printf "%s\n" "${command}"
     fi
 
     eval "$@"
 
     exit_code=$?
-    return $exit_code
+
+    if [[ ${exit_code} -gt 0 ]]; then
+        echo "ERROR: command exited with nonzero status ${exit_code}"
+    fi
+
+    printf '%s\n' --------------------
+
+    return ${exit_code}
 }
 
 conda_packages=()
 pip_packages=()
 
-while read requirement; do
+while read -r requirement; do
     if [ -z "${requirement}" ]; then
         continue
     fi
@@ -61,16 +71,14 @@ while read requirement; do
 
     printf '%s\n' --------------------
 
-done < <(grep -v '#' ${requirements_files[@]})
+done < <(grep --no-filename -v '#' "${requirements_files[@]}")
 
-run_cmd mamba install --yes ${conda_packages[@]}
-if [ $? -ne 0 ]; then
+
+if ! run_cmd mamba install --yes "${conda_packages[@]}"; then
   exit 1
 fi
-
 # We assume that all python dependencies have already been resolved by `pip-compile`,
 # so there will be no conflicts when we ask `pip` to install them.
-run_cmd pip install --no-deps ${pip_packages[@]}
-if [ $? -ne 0 ]; then
+if ! run_cmd pip install --no-deps "${pip_packages[@]}"; then
   exit 1
 fi
