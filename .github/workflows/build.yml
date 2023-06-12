@@ -79,7 +79,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
 
   singularity_build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs:
       - docker_build
