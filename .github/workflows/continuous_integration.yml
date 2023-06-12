@@ -14,7 +14,7 @@ on:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: ghcr.io/halfpipe/halfpipe:latest
 
     timeout-minutes: 360
@@ -22,13 +22,22 @@ jobs:
     strategy:
       matrix:
         chunk:
+          - interfaces
+          - stats
+          - workflows
           - feature_extraction
           - other
         include:
+          - chunk: interfaces
+            args: "tests/interfaces"
+          - chunk: stats
+            args: "tests/stats"
+          - chunk: workflows
+            args: "tests/workflows -k 'not test_feature_extraction'"
           - chunk: feature_extraction
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
           - chunk: other
-            args: "-k 'not test_feature_extraction'"
+            args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
 
     steps:
     - name: Cache data
