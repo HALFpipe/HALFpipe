@@ -4,32 +4,28 @@
 #
 #    pip-compile --resolver=backtracking requirements-test.in
 #
-attrs==22.2.0
-    # via
-    #   -c requirements.txt
-    #   pytest
-coverage[toml]==7.2.2
+coverage[toml]==7.2.7
     # via pytest-cov
 iniconfig==2.0.0
     # via pytest
-packaging==23.0
+packaging==23.1
     # via
     #   -c requirements.txt
     #   pytest
 pluggy==1.0.0
     # via pytest
-pytest==7.2.2
+pytest==7.3.2
     # via
     #   -r requirements-test.in
     #   pytest-cov
     #   pytest-env
     #   pytest-github-actions-annotate-failures
     #   pytest-timeout
-pytest-cov==4.0.0
+pytest-cov==4.1.0
     # via -r requirements-test.in
 pytest-env==0.8.1
     # via -r requirements-test.in
-pytest-github-actions-annotate-failures==0.1.8
+pytest-github-actions-annotate-failures==0.2.0
     # via -r requirements-test.in
 pytest-timeout==2.1.0
     # via -r requirements-test.in
