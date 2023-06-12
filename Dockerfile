@@ -24,7 +24,7 @@ RUN --mount=source=requirements.txt,target=/requirements.txt \
         "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
         --output /tmp/miniconda.sh \
  && bash /tmp/miniconda.sh -b -p /usr/local/miniconda \
- && mamba install --yes "python=3.11" "nomkl" "pip" "gdb" "nodejs" \
+ && mamba install --yes "python=3.11" "pip" "gdb" "nodejs" \
  && /install-requirements.sh \
         --requirements-file /requirements.txt \
  && sync \
@@ -45,15 +45,15 @@ RUN python -c "from matplotlib import font_manager" \
         $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Download all resources
-RUN --mount=source=halfpipe/resource.py,target=/resource.py \
+RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
     python /resource.py
 
 # Add coinstac server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
 # Install HALFpipe
-RUN --mount=target=/halfpipe \
-    cp -r /halfpipe /tmp \
+RUN --mount=target=/src/halfpipe \
+    cp -r /src/halfpipe /tmp \
  && pip install --no-deps /tmp/halfpipe \
  && rm -rf ~/.cache/pip /var/cache/pip /tmp/* /var/tmp/* \
  && sync

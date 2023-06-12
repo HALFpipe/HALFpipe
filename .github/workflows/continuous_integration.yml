@@ -7,10 +7,14 @@ on:
   pull_request:
     branches:
       - main
+  release:
+    types:
+      - published
+      - edited
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container: ghcr.io/halfpipe/halfpipe:latest
 
     timeout-minutes: 360
@@ -18,22 +22,13 @@ jobs:
     strategy:
       matrix:
         chunk:
-          - interfaces
-          - stats
-          - workflows
           - feature_extraction
           - other
         include:
-          - chunk: interfaces
-            args: "halfpipe/interfaces"
-          - chunk: stats
-            args: "halfpipe/stats"
-          - chunk: workflows
-            args: "halfpipe/workflows -k 'not test_feature_extraction'"
           - chunk: feature_extraction
-            args: "halfpipe/workflows/tests/test_workflow.py::test_feature_extraction"
+            args: "tests/workflows/test_workflow.py::test_feature_extraction"
           - chunk: other
-            args: "--ignore=halfpipe/interfaces --ignore=halfpipe/stats --ignore=halfpipe/workflows"
+            args: "-k 'not test_feature_extraction'"
 
     steps:
     - name: Cache data
@@ -45,8 +40,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup dependencies and license files
+    - name: Test with pytest with coverage
       shell: bash
+      env:
+        PYTHONDONTWRITEBYTECODE: 1
+        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
       run: |
         pip install \
           --requirement requirements.txt \
@@ -56,13 +54,7 @@ jobs:
         echo ${FREESURFER_LICENSE_BASE64} \
           | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-    - name: Test with pytest with coverage
-      shell: bash
-      env:
-        PYTHONDONTWRITEBYTECODE: 1
-        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
-      run: |
-        pytest ${{ matrix.args }} --cov --cov-report=xml
+        python -m pytest ${{ matrix.args }} --cov --cov-report=xml
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
@@ -76,11 +68,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Lint
-        uses: github/super-linter/slim@v4
+        uses: super-linter/super-linter/slim@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: WARN
@@ -96,7 +86,7 @@ jobs:
           PYTHON_ISORT_CONFIG_FILE: pyproject.toml
 
           VALIDATE_PYTHON_FLAKE8: true
-          PYTHON_FLAKE8_CONFIG_FILE: setup.cfg
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
 
           VALIDATE_PYTHON_MYPY: true
           PYTHON_MYPY_CONFIG_FILE: mypy.ini
@@ -118,7 +108,7 @@ jobs:
         shell: bash
         run: |
           FILE=$(find . -name "coverage.xml" | paste --serial --delimiters=, -)
-          echo "::set-output name=file::${FILE}"
+          echo "file=${FILE}" >> ${GITHUB_OUTPUT}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
