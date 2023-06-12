@@ -124,7 +124,9 @@ class MergeColumns(IOBase):
                 if isdefined(column_names):
                     if not isinstance(column_names, (list, tuple)):
                         column_names = [column_names]
-                    data_frame.set_axis(column_names, axis="columns", inplace=True)
+                    data_frame = data_frame.set_axis(
+                        column_names, axis="columns", copy=False
+                    )
 
                 data_frames.append(data_frame)
 
