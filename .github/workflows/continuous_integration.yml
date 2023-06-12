@@ -14,11 +14,6 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    container: ghcr.io/halfpipe/halfpipe:latest
-
-    timeout-minutes: 360
-
     strategy:
       matrix:
         chunk:
@@ -30,14 +25,24 @@ jobs:
         include:
           - chunk: interfaces
             args: "tests/interfaces"
+            runs-on: ubuntu-latest
           - chunk: stats
             args: "tests/stats"
+            runs-on: ubuntu-latest
           - chunk: workflows
             args: "tests/workflows -k 'not test_feature_extraction'"
+            runs-on: ubuntu-latest
           - chunk: feature_extraction
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
+            runs-on: ubuntu-latest
           - chunk: other
             args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
+            runs-on: self-hosted
+
+    runs-on: ${{ matrix.runs-on }}
+    container: ghcr.io/halfpipe/halfpipe:latest
+
+    timeout-minutes: 360
 
     steps:
     - name: Cache data
