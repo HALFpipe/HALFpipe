@@ -6,14 +6,18 @@ from math import isclose
 
 from nipype.interfaces import afni
 
+from ...logging import logger
+
 
 class LazyBlurToFWHM(afni.BlurToFWHM):
     @property
-    def _should_run(self):
-        return not isclose(self.inputs.fwhm, 0, abs_tol=1e-2) and self.inputs.fwhm > 0
+    def should_run(self) -> bool:
+        fwhm: float = self.inputs.fwhm
+        logger.info(f"LazyBlurToFWHM with {fwhm}")
+        return not isclose(fwhm, 0, abs_tol=1e-2) and fwhm > 0
 
     def _run_interface(self, runtime, correct_return_codes=(0,)):
-        if self._should_run:
+        if self.should_run:
             return super(LazyBlurToFWHM, self)._run_interface(
                 runtime, correct_return_codes
             )
@@ -29,7 +33,7 @@ class LazyBlurToFWHM(afni.BlurToFWHM):
         return runtime
 
     def _list_outputs(self):
-        if self._should_run:
+        if self.should_run:
             return super(LazyBlurToFWHM, self)._list_outputs()
 
         outputs = self._outputs()

@@ -4,7 +4,6 @@
 
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
-from fmriprep import config
 
 from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
 from ...interfaces.utility.file_type import SplitByFileType
@@ -54,8 +53,6 @@ def init_smoothing_wf(
         name="smooth",
         mem_gb=memcalc.series_std_gb * 1.5,
     )
-    if config.execution.sloppy:
-        smooth.inputs.args = "-maxite 2"
     workflow.connect(split_by_file_type, "nifti_files", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
