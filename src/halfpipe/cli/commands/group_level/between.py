@@ -200,6 +200,9 @@ class BetweenBase:
             make_modes = partial(Atlas.from_args, "modes")
             atlases.extend(starmap(make_modes, self.arguments.export_modes))
 
+        if len(atlases) == 0:
+            return
+
         regressor_list, contrast_list, _, _ = design
         phenotype_frame, covariate_frame, atlas_coverage_frame = export(
             prefix,
