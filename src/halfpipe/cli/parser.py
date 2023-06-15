@@ -207,6 +207,10 @@ def parse_args(args=None, namespace=None) -> Tuple:
         logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
 
     workdir = opts.workdir
+    if workdir is None:
+        if hasattr(opts, "output_directory"):
+            # Get workdir from the `group-level` options
+            workdir = opts.output_directory
     if workdir is not None:
         from ..workdir import init_workdir
 
