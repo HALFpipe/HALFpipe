@@ -191,8 +191,10 @@ def parse_args(args=None, namespace=None) -> Tuple:
             ]
             # Prepend fix for Docker for Mac/Windows
             fs_root_candidates.extend(
-                fs_root_candidate / "host_mnt"
-                for fs_root_candidate in fs_root_candidates
+                [
+                    fs_root_candidate / "host_mnt"
+                    for fs_root_candidate in fs_root_candidates
+                ]
             )
 
             for fs_root_candidate in fs_root_candidates:
