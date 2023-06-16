@@ -286,12 +286,14 @@ def apply_derived_variables(
     derived_variables: list[tuple[str, str]] | None,
     design_base: DesignBase,
 ):
+    data_frame = design_base.data_frame
     if derived_variables is None:
         return
-    if design_base.data_frame is None:
+    if data_frame is None:
         raise ValueError("Design has no data frame")
     for derived_variable in derived_variables:
         name, expression = derived_variable
-        design_base.data_frame.eval(f"{name} = ({expression})", inplace=True)
+        data_frame.eval(f"{name} = ({expression})", inplace=True)
+        data_frame[name] = data_frame[name].astype(float)
         # Add contrast for new variable
         design_base.add_variable(name)
