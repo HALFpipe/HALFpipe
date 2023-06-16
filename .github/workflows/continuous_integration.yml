@@ -34,7 +34,7 @@ jobs:
             runs-on: ubuntu-latest
           - chunk: feature_extraction
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
-            runs-on: ubuntu-latest
+            runs-on: self-hosted
           - chunk: other
             args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
             runs-on: self-hosted

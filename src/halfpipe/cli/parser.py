@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
 from argparse import ArgumentParser
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -178,35 +179,40 @@ def parse_args(args=None, namespace=None) -> Tuple:
 
         opts.fs_root = None
 
-    if opts.fs_root is None:
-        fs_root_candidates = list(
-            map(
-                Path,
+    # Special variable set in the container by fMRIPrep.
+    if os.getenv("IS_DOCKER_8395080871") is not None:
+        # We are running in a container, so we can infer the fs_root.
+        if opts.fs_root is None:
+            fs_root_candidates: list[Path] = [
+                Path("/ext"),  # Singularity when using documentation-provided bind flag
+                Path("/mnt"),
+                Path("/host"),
+                Path("/"),
+            ]
+            # Prepend fix for Docker for Mac/Windows
+            fs_root_candidates.extend(
                 [
-                    "/ext",  # Singularity when using documentation-provided bind flag
-                    "/mnt",
-                    "/host",
-                    "/",
-                ],
+                    fs_root_candidate / "host_mnt"
+                    for fs_root_candidate in fs_root_candidates
+                ]
             )
-        )
 
-        fs_root_candidates = [
-            *[  # prepend fix for Docker for Mac/Windows
-                fs_root_candidate / "host_mnt"
-                for fs_root_candidate in fs_root_candidates
-            ],
-            *fs_root_candidates,
-        ]
+            for fs_root_candidate in fs_root_candidates:
+                if not is_empty(fs_root_candidate):
+                    opts.fs_root = fs_root_candidate
+                    break
 
-        for fs_root_candidate in fs_root_candidates:
-            if not is_empty(fs_root_candidate):
-                opts.fs_root = fs_root_candidate
-                break
-
-        logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
+            logger.debug(f'Inferred fs_root to be "{opts.fs_root}"')
+    else:
+        # We are not running in a container
+        if opts.fs_root is None:
+            opts.fs_root = Path("/")
 
     workdir = opts.workdir
+    if workdir is None:
+        if hasattr(opts, "output_directory"):
+            # Get workdir from the `group-level` options
+            workdir = opts.output_directory
     if workdir is not None:
         from ..workdir import init_workdir
 
