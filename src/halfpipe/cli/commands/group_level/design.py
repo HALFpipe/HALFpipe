@@ -103,17 +103,18 @@ class DesignBase:
             self.variable_sets[name].add(prefixed_name)
             name = prefixed_name
         if series is not None:
-            series_frame = pd.DataFrame({name: series})
+            series_frame = pd.DataFrame({name: series}, dtype=float)
             self.data_frame = self.data_frame.combine_first(series_frame)
         # Add contrasts for new variable
-        self.contrasts.append(
-            contrast_schema.load(
-                dict(
-                    type="infer",
-                    variable=[name],
-                )
+        contrast = contrast_schema.load(
+            dict(
+                type="infer",
+                variable=[name],
             )
         )
+        if not isinstance(contrast, dict):
+            raise RuntimeError
+        self.contrasts.append(contrast)
 
     def drop_variable(
         self,
@@ -234,96 +235,90 @@ def apply_from_arguments(
         spreadsheet = resolve(arguments.spreadsheet, arguments.fs_root)
 
     variables: list[dict] = list()
+    contrasts: list[dict] = list()
+
     if arguments.id_column is not None:
-        variables.append(
-            variable_schema.load(
-                dict(
-                    type="id",
-                    name=arguments.id_column,
-                )
+        variable = variable_schema.load(
+            dict(
+                type="id",
+                name=arguments.id_column,
             )
         )
+        if not isinstance(variable, dict):
+            raise RuntimeError
+        variables.append(variable)
 
     filters: list[dict] = list()
     if arguments.fd_mean_cutoff is not None:
-        filters.append(
-            filter_schema.load(
-                dict(
-                    type="cutoff",
-                    action="exclude",
-                    field="fd_mean",
-                    cutoff=arguments.fd_mean_cutoff,
-                )
+        filter = filter_schema.load(
+            dict(
+                type="cutoff",
+                action="exclude",
+                field="fd_mean",
+                cutoff=arguments.fd_mean_cutoff,
             )
         )
+        if not isinstance(filter, dict):
+            raise RuntimeError
+        filters.append(filter)
     if arguments.fd_perc_cutoff is not None:
-        filters.append(
-            filter_schema.load(
-                dict(
-                    type="cutoff",
-                    action="exclude",
-                    field="fd_perc",
-                    cutoff=arguments.fd_perc_cutoff,
-                )
+        filter = filter_schema.load(
+            dict(
+                type="cutoff",
+                action="exclude",
+                field="fd_perc",
+                cutoff=arguments.fd_perc_cutoff,
             )
         )
+        if not isinstance(filter, dict):
+            raise RuntimeError
+        filters.append(filter)
 
-    contrasts: list[dict] = list()
+    def add_variable(type: str, name: str, **variable_kwargs) -> None:
+        variable = variable_schema.load(
+            dict(
+                type=type,
+                name=name,
+                **variable_kwargs,
+            )
+        )
+        if not isinstance(variable, dict):
+            raise RuntimeError
+        variables.append(variable)
+        contrast = contrast_schema.load(
+            dict(
+                type="infer",
+                variable=[name],
+            )
+        )
+        if not isinstance(contrast, dict):
+            raise RuntimeError
+        contrasts.append(contrast)
 
     continuous_variable = arguments.continuous_variable
     if continuous_variable is not None:
         for name in continuous_variable:
-            variables.append(
-                variable_schema.load(
-                    dict(
-                        type="continuous",
-                        name=name,
-                    )
-                )
-            )
-            contrasts.append(
-                contrast_schema.load(
-                    dict(
-                        type="infer",
-                        variable=[name],
-                    )
-                )
-            )
+            add_variable("continuous", name)
 
     categorical_variable = arguments.categorical_variable
     if categorical_variable is not None:
         for name, levels in zip(categorical_variable, arguments.levels):
-            variables.append(
-                variable_schema.load(
-                    dict(
-                        type="categorical",
-                        name=name,
-                        levels=levels,
-                    )
-                )
-            )
-            contrasts.append(
-                contrast_schema.load(
-                    dict(
-                        type="infer",
-                        variable=[name],
-                    )
-                )
-            )
+            add_variable("categorical", name, levels=levels)
 
     missing_value_strategy = arguments.missing_value_strategy
     if missing_value_strategy == "listwise-deletion":
         for variable in variables:
             name = variable["name"]
-            filters.append(
-                filter_schema.load(
-                    dict(
-                        type="missing",
-                        action="exclude",
-                        variable=name,
-                    )
+            filter = filter_schema.load(
+                dict(
+                    type="missing",
+                    action="exclude",
+                    variable=name,
                 )
             )
+            if not isinstance(filter, dict):
+                raise RuntimeError
+            filters.append(filter)
 
     qc_exclude_files: list[Path] = list()
     if arguments.qc_exclude_files is not None:

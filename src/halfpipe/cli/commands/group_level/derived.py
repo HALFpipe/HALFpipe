@@ -200,7 +200,7 @@ class ImagingVariables:
             brain_mask_image = nib.load(brain_mask_path)
 
             voxel_size = np.array(brain_mask_image.header.get_zooms()[:3]) * ureg.mm
-            voxel_volume = np.prod(voxel_size)
+            voxel_volume: pint.Quantity = np.prod(voxel_size)
 
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
             total_intracranial_volume = (
