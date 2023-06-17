@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from functools import partial, reduce
 from itertools import starmap
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -224,17 +225,19 @@ class BetweenBase:
         def combine_first(data_frames: list[pd.DataFrame]) -> pd.DataFrame:
             return reduce(lambda a, b: a.combine_first(b), data_frames)
 
+        csv_kwargs: dict[str, Any] = dict(sep="\t", index=True, na_rep="n/a")
+
         phenotype_frame = combine_first(self.phenotype_frames)
         # Sort columns to alphabetical order.
         phenotype_frame.sort_index(axis=1, inplace=True)
         phenotype_path = self.output_directory / "phenotypes.tsv"
-        phenotype_frame.to_csv(phenotype_path, sep="\t", index=True)
+        phenotype_frame.to_csv(phenotype_path, **csv_kwargs)
 
         covariate_frame = combine_first(self.covariate_frames)
         covariate_path = self.output_directory / "covariates.tsv"
-        covariate_frame.to_csv(covariate_path, sep="\t", index=True)
+        covariate_frame.to_csv(covariate_path, **csv_kwargs)
 
         atlas_coverage_frame = combine_first(self.atlas_coverage_frames)
         atlas_coverage_frame.sort_index(axis=1, inplace=True)
         coverage_path = self.output_directory / "atlas_coverages.tsv"
-        atlas_coverage_frame.to_csv(coverage_path, sep="\t", index=True)
+        atlas_coverage_frame.to_csv(coverage_path, **csv_kwargs)
