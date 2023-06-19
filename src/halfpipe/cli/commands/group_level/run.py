@@ -43,8 +43,8 @@ def run(arguments: Namespace):
     if len(results) == 0:
         raise ValueError("No inputs found")
 
-    results = apply_include(arguments.include, results)
-    results = apply_exclude(arguments.exclude, results)
+    results = apply_include(arguments.include, arguments.include_list, results)
+    results = apply_exclude(arguments.exclude, arguments.exclude_list, results)
 
     if arguments.from_spec:
         design_bases = apply_from_spec(arguments, results)
@@ -56,12 +56,31 @@ def run(arguments: Namespace):
         apply_design(arguments, design_base, output_directory)
 
 
+def apply_list_files(
+    target: list[tuple[str, str]],
+    file_list: list[tuple[str, str]],
+) -> None:
+    for key, file_name in file_list:
+        with Path(file_name).open("rt") as file_handle:
+            for line in file_handle:
+                line = line.strip()
+                if not line:
+                    continue
+                target.append((key, format_like_bids(line)))
+
+
 def apply_include(
-    include: list[tuple[str, str]] | None, results: list[ResultDict]
+    include: list[tuple[str, str]] | None,
+    include_list: list[tuple[str, str]] | None,
+    results: list[ResultDict],
 ) -> list[ResultDict]:
     """Handle the `--include` argument"""
     if include is None:
-        return results
+        include = list()
+    if include_list is None:
+        include_list = list()
+
+    apply_list_files(include, include_list)
 
     include_groups: dict[str, set[str]] = defaultdict(set)
     for key, value in include:
@@ -83,11 +102,17 @@ def apply_include(
 
 
 def apply_exclude(
-    exclude: list[tuple[str, str]] | None, results: list[ResultDict]
+    exclude: list[tuple[str, str]] | None,
+    exclude_list: list[tuple[str, str]] | None,
+    results: list[ResultDict],
 ) -> list[ResultDict]:
     """Handle the `--exclude` argument"""
     if exclude is None:
-        return results
+        exclude = list()
+    if exclude_list is None:
+        exclude_list = list()
+
+    apply_list_files(exclude, exclude_list)
 
     filtered_results = list()
     for result in results:

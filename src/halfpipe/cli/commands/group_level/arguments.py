@@ -40,12 +40,28 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="include only images with this tag and value. if multiple are specified, images must match one of them",
     )
     group.add_argument(
+        "--include-list",
+        type=str,
+        nargs=2,
+        metavar=("TAG", "PATH"),
+        action="append",
+        help="include only images with this tag and any of the values in the file",
+    )
+    group.add_argument(
         "--exclude",
         type=str,
         nargs=2,
         metavar=("TAG", "VALUE"),
         action="append",
         help="exclude images with this tag and value",
+    )
+    group.add_argument(
+        "--exclude-list",
+        type=str,
+        nargs=2,
+        metavar=("TAG", "PATH"),
+        action="append",
+        help="exclude images with this tag and any of the values in the file",
     )
     group.add_argument(
         "--fd-mean-cutoff",
