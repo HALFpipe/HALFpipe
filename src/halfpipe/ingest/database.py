@@ -138,10 +138,14 @@ class Database:
             return set()
         return res
 
-    def filter(self, filepaths, **filters: str):
+    def filter(self, filepaths, **filters: str) -> set[str]:
         res = set(filepaths)
 
         for entity, tagval in filters.items():
+            if entity not in self.filepaths_by_tags:
+                return set()
+            if tagval not in self.filepaths_by_tags[entity]:
+                return set()
             cur_set = self.filepaths_by_tags[entity][tagval]
             res &= cur_set
 

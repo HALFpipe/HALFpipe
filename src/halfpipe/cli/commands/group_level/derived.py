@@ -7,6 +7,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property, partial
 from pathlib import Path
+from shutil import copyfile
+from tempfile import TemporaryDirectory
 from typing import Callable, Mapping
 
 import nibabel as nib
@@ -61,14 +63,18 @@ def calculate_jacobian(
         tuple[str, Path]: A tuple containing the subject ID and the path to the jacobian file.
     """
     subject, transform_path = task
-    wf_directory = Path.cwd() / f"sub-{subject}_jacobian_wf"
-    wf = init_jacobian_wf(
-        transform_path,
-    )
-    wf.base_dir = wf_directory
-    graph = run_workflow(wf)
-    (scale_jacobian,) = [node for node in graph.nodes if node.name == "scale_jacobian"]
-    jacobian_path = scale_jacobian.result.outputs.out_file
+    jacobian_path = Path.cwd() / f"sub-{subject}_jacobian.nii.gz"
+    with TemporaryDirectory(prefix=f"sub-{subject}_jacobian_wf") as temporary_directory:
+        wf = init_jacobian_wf(
+            transform_path,
+        )
+        wf.base_dir = temporary_directory
+        graph = run_workflow(wf)
+        (scale_jacobian,) = [
+            node for node in graph.nodes if node.name == "scale_jacobian"
+        ]
+        temporary_jacobian_path = scale_jacobian.result.outputs.out_file
+        copyfile(temporary_jacobian_path, jacobian_path)
     return subject, jacobian_path
 
 
@@ -156,11 +162,7 @@ class ImagingVariables:
     @cached_property
     def jacobian_stats(self) -> pd.DataFrame:
         data: dict[str, dict[str, float]] = defaultdict(dict)
-        for subject, jacobian_path in tqdm(
-            self.jacobian_paths.items(),
-            desc="calculating jacobian stats",
-            unit="subjects",
-        ):
+        for subject, jacobian_path in self.jacobian_paths.items():
             brain_mask_image = nib.load(self.get_brain_mask_path(subject))
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
 

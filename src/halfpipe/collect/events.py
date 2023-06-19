@@ -3,15 +3,22 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from ..ingest.database import Database
+from ..logging import logger
 
 
 def collect_events(
     database: Database, source_file: str
 ) -> tuple[str | tuple[str, str], ...] | None:
+    task = database.tagval(source_file, "task")
+    if not isinstance(task, str):
+        logger.warning(
+            f'Cannot collect events for "{source_file}" because it has no task tag'
+        )
+        return None
     # Get from database
     candidates: tuple[str, ...] | None = database.associations(
         source_file,
-        task=database.tagval(source_file, "task"),  # Enforce same task
+        task=task,  # Enforce same task
         datatype="func",
         suffix="events",
     )

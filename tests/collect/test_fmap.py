@@ -172,7 +172,7 @@ def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
     ],
 )
 def test_collect_fieldmaps_direct(case3_suffix, case3_count):
-    database = Database(Spec(datetime.now, list()))
+    database = Database(Spec(datetime.now(), list()))
 
     bold_file_path = "bold.nii.gz"
     vars = ["fieldmap", "magnitude"]
