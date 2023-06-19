@@ -20,10 +20,10 @@ from ..utils.multiprocessing import mp_context
 from .reftracer import PathReferenceTracer
 
 
-def initializer(workdir, logging_args, plugin_args, host_env):
+def initializer(host_cwd, logging_args, plugin_args, host_env):
     from ..utils.multiprocessing import initializer
 
-    initializer(logging_args, host_env)
+    initializer(logging_args, host_env, host_cwd)
 
     from ..utils.pickle import patch_nipype_unpickler
 
@@ -40,8 +40,6 @@ def initializer(workdir, logging_args, plugin_args, host_env):
         import nipype
 
         nipype.config.enable_resource_monitor()
-
-    os.chdir(workdir)
 
 
 # Run node
