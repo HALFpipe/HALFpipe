@@ -16,6 +16,7 @@ from halfpipe.utils.format import format_like_bids, format_workflow
         ("fALFF", "fALFF"),
         ("PIAB_1234", "PIAB1234"),
         ("PIAB_1234_MRT1", "PIAB1234MRT1"),
+        ("", ""),
     ],
 )
 def test_format(a, b):
@@ -31,6 +32,7 @@ def test_format(a, b):
         ("fALFF", "f_alff"),
         ("PIAB_1234", "piab_1234"),
         ("PIAB_1234_MRT1", "piab_1234_mrt1"),
+        ("", ""),
     ],
 )
 def test_workflow(a, b):
