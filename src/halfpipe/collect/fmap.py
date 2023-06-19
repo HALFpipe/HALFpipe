@@ -22,21 +22,34 @@ def collect_pe_dir(database: Database, c: str):
 def collect_fieldmaps(
     database: Database, bold_file_path: str, silent: bool = False
 ) -> list[str]:
-    sub = database.tagval(bold_file_path, "sub")
-    filters = dict(sub=sub)  # enforce same subject
+    bold_file_tags = database.tags(bold_file_path)
+    if bold_file_tags is None:
+        return list()
 
-    session = database.tagval(bold_file_path, "ses")
-    if session is not None:  # enforce fmaps from same session
+    sub = bold_file_tags.get("sub")
+    if sub is None:
+        return list()
+    # Ensure same subject and datatype
+    filters: dict[str, str] = dict(sub=sub, datatype="fmap")
+    # If applicable, ensure fmaps from same session
+    session = bold_file_tags.get("ses")
+    if session is not None:
         filters.update(dict(ses=session))
+    # Do not filter by `dir` tag, because we might miss compatible field maps otherwise
+    if "dir" in bold_file_tags:
+        del bold_file_tags["dir"]
 
-    candidates = database.associations(bold_file_path, datatype="fmap", **filters)
+    matching_files = database.associations2(bold_file_tags, filters)
+    if matching_files is None:
+        return list()
+    candidates: set[str] = set(matching_files)
 
     if candidates is None:
         return list()
 
     candidates = set(candidates)
 
-    # filter phase maps
+    # Filter phase maps
     magnitude_map: dict[str, list[str]] = {
         "phase1": ["magnitude1", "magnitude2"],
         "phase2": ["magnitude1", "magnitude2"],
@@ -66,11 +79,12 @@ def collect_fieldmaps(
             )
         candidates -= incomplete
 
-    # filter pepolar
+    # Filter pepolar
     epi_fmaps = list()
     for c in candidates:
         suffix = database.tagval(c, "suffix")
-        assert isinstance(suffix, str)
+        if not isinstance(suffix, str):
+            continue
         if suffix != "epi":
             continue
 
@@ -80,12 +94,13 @@ def collect_fieldmaps(
         try:
             check_pes(epi_fmaps, collect_pe_dir(database, bold_file_path))
         except ValueError:
-            incomplete = set(c for c, _ in epi_fmaps)
             if silent is not True:
-                incomplete_str = pe.join(sorted(incomplete))
+                incomplete_str = pe.join(
+                    sorted(f'"{c}" with direction {dir}' for c, dir in epi_fmaps)
+                )
                 logger.info(
                     f"Skipping field maps {incomplete_str} because they do not have matched phase encoding directions"
                 )
-            candidates -= incomplete
+            candidates -= set(c for c, _ in epi_fmaps)
 
     return sorted(candidates)

@@ -13,7 +13,10 @@ from ...utils.format import format_workflow
 
 
 def init_setting_output_wf(workdir: str | None = None, setting_name: str | None = None):
-    name = f"setting_output_{format_workflow(setting_name)}_wf"
+    if setting_name is None:
+        name = "setting_output_wf"
+    else:
+        name = f"setting_output_{format_workflow(setting_name)}_wf"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(

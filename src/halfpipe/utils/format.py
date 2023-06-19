@@ -34,7 +34,10 @@ def _replace_special(s):
     return s
 
 
-def format_like_bids(name):
+def format_like_bids(name: str) -> str:
+    if len(name) == 0:
+        return name
+
     s = camelize(name)  # convert underscores to camel case
     s = re.sub(r"([A-Z])", r" \1", s)  # convert camel case into words
 
@@ -42,12 +45,14 @@ def format_like_bids(name):
 
     s = underscore(parameterize(s))
 
-    uppercase_first_letter = name[0].isupper()
+    has_upper_first_letter = name[0].isupper()
+    return camelize(s, has_upper_first_letter)
 
-    return camelize(s, uppercase_first_letter)
 
+def format_workflow(s: str) -> str:
+    if len(s) == 0:
+        return s
 
-def format_workflow(s):
     s = re.sub(r"[_-]", " ", s)  # convert underscores to spaces
     s = re.sub(r"([A-Z]+)", r" \1", s)  # convert camel case into words
 

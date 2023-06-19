@@ -5,7 +5,6 @@
 from pathlib import Path
 from uuid import uuid4
 
-from .hooks import run_hooks_from_dir
 from .logging import logging_context
 from .utils.path import resolve
 
@@ -22,7 +21,7 @@ def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path
 
     workdir_path = resolve(workdir, fs_root)
 
-    # check permissions
+    # Check permissions and file system compatibility
     try:
         workdir_path.mkdir(parents=True, exist_ok=True)
 
@@ -45,7 +44,5 @@ def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path
         ) from e
 
     logging_context.set_workdir(workdir_path)
-
-    run_hooks_from_dir(workdir_path)
 
     return workdir_path

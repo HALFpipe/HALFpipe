@@ -24,7 +24,6 @@ def build_parser() -> ArgumentParser:
     )
 
     basegroup = parser.add_argument_group("base", "")
-
     basegroup.add_argument(
         "--workdir",
         "--wd",
@@ -209,10 +208,6 @@ def parse_args(args=None, namespace=None) -> Tuple:
             opts.fs_root = Path("/")
 
     workdir = opts.workdir
-    if workdir is None:
-        if hasattr(opts, "output_directory"):
-            # Get workdir from the `group-level` options
-            workdir = opts.output_directory
     if workdir is not None:
         from ..workdir import init_workdir
 
