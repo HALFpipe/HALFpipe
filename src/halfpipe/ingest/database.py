@@ -3,9 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from hashlib import sha1
-from typing import Iterable, Mapping
-
-from traitlets import Any
+from typing import Any, Iterable, Mapping
 
 from ..model.spec import Spec
 from ..model.tags import entities

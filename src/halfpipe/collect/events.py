@@ -8,17 +8,17 @@ from ..ingest.database import Database
 def collect_events(
     database: Database, source_file: str
 ) -> tuple[str | tuple[str, str], ...] | None:
-    # get from database
-    candidates: tuple[str] | None = database.associations(
+    # Get from database
+    candidates: tuple[str, ...] | None = database.associations(
         source_file,
-        task=database.tagval(source_file, "task"),  # enforce same task
+        task=database.tagval(source_file, "task"),  # Enforce same task
         datatype="func",
         suffix="events",
     )
     if candidates is None or len(candidates) == 0:
         return None
 
-    # filter
+    # Filter
     condition_files: list[str | tuple[str, str]] = list()
 
     source_file_subject = database.tagval(source_file, "sub")
