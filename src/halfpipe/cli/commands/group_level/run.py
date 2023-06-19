@@ -14,6 +14,7 @@ from ....result.aggregate import aggregate_results
 from ....result.base import ResultDict
 from ....utils.format import format_like_bids
 from ....utils.path import resolve
+from ....workdir import init_workdir
 from .aggregate import apply_aggregate
 from .between import BetweenBase
 from .derived import apply_derived
@@ -30,7 +31,7 @@ def run(arguments: Namespace):
         output_directory = Path(arguments.workdir)
     else:
         output_directory = Path(arguments.input_directory[0])
-    output_directory = resolve(output_directory, arguments.fs_root)
+    output_directory = init_workdir(output_directory, arguments.fs_root)
 
     # Index the input directories
     results: list[ResultDict] = list()

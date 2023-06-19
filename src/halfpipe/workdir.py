@@ -21,7 +21,7 @@ def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path
 
     workdir_path = resolve(workdir, fs_root)
 
-    # check permissions
+    # Check permissions and file system compatibility
     try:
         workdir_path.mkdir(parents=True, exist_ok=True)
 
