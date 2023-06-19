@@ -227,7 +227,7 @@ pandas==2.0.2
     #   seaborn
     #   statsmodels
     #   tedana
-parse==1.19.0
+parse==1.19.1
     # via -r requirements.in
 patsy==0.5.3
     # via
