@@ -3,14 +3,18 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from hashlib import sha1
+from typing import Iterable, Mapping
 
+from traitlets import Any
+
+from ..model.spec import Spec
 from ..model.tags import entities
 from .metadata.loader import MetadataLoader
 from .resolve import ResolvedSpec
 
 
 class Database:
-    def __init__(self, spec):
+    def __init__(self, spec: Spec | ResolvedSpec) -> None:
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
             resolved_spec = spec
@@ -20,8 +24,8 @@ class Database:
 
         self.metadata_loader = MetadataLoader(self)
 
-        self.filepaths_by_tags = dict()
-        self.tags_by_filepaths = dict()
+        self.filepaths_by_tags: dict[str, dict[str, set[str]]] = dict()
+        self.tags_by_filepaths: dict[str, dict[str, str]] = dict()
 
         for file_obj in self.resolved_spec.resolved_files:
             self.index(file_obj)
@@ -117,7 +121,7 @@ class Database:
     def tagvaldict(self, entity):
         return self.filepaths_by_tags.get(entity)
 
-    def get(self, **filters) -> set[str]:
+    def get(self, **filters: str) -> set[str]:
         res = None
         for tagname, tagval in filters.items():
             if (
@@ -136,7 +140,7 @@ class Database:
             return set()
         return res
 
-    def filter(self, filepaths, **filters):
+    def filter(self, filepaths, **filters: str):
         res = set(filepaths)
 
         for entity, tagval in filters.items():
@@ -145,7 +149,7 @@ class Database:
 
         return res
 
-    def applyfilters(self, filepaths, filters):
+    def applyfilters(self, filepaths: Iterable[str], filters: Any) -> set[str]:
         if not isinstance(filters, (tuple, list)) and hasattr(filters, "filters"):
             return self.applyfilters(filepaths, filters.filters)
 
@@ -178,8 +182,8 @@ class Database:
 
         return res
 
-    def associations(self, filepath, **filters):
-        res = self.get(**filters)
+    def associations(self, filepath: str, **filters: str) -> tuple[str, ...] | None:
+        matching_files = self.get(**filters)
         for entity in reversed(entities):  # from high to low priority
             if entity not in self.filepaths_by_tags:
                 continue
@@ -187,13 +191,36 @@ class Database:
             for _, filepaths in self.filepaths_by_tags[entity].items():
                 if filepath in filepaths:
                     cur_set |= set(filepaths)
-            cur_set &= res
+            cur_set &= matching_files
             if len(cur_set) > 0:
-                res = cur_set
+                matching_files = cur_set
             if len(cur_set) == 1:
                 break
-        if len(res) > 0:
-            return tuple(res)
+        if len(matching_files) > 0:
+            return tuple(matching_files)
+        return None
+
+    def associations2(
+        self, optional_tags: Mapping[str, str], mandatory_tags: Mapping[str, str]
+    ) -> tuple[str, ...] | None:
+        matching_files = self.get(**mandatory_tags)
+        for entity in reversed(entities):  # from high to low priority
+            if entity not in self.filepaths_by_tags:
+                continue
+            if entity not in optional_tags:
+                continue
+            entity_dict = self.filepaths_by_tags[entity]
+            if optional_tags[entity] not in entity_dict:
+                continue
+            files: set[str] = entity_dict[optional_tags[entity]]
+            files &= matching_files
+            if len(files) > 0:
+                matching_files = files
+            if len(files) == 1:
+                break
+        if len(matching_files) > 0:
+            return tuple(matching_files)
+        return None
 
     def tagvalset(self, entity, filepaths=None):
         if not isinstance(entity, str):

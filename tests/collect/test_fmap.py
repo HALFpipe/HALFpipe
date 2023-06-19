@@ -19,38 +19,47 @@ from halfpipe.model.spec import Spec
         (["j", "j"], 0),
     ],
 )
-def test_collect_fieldmaps_epi(pe_dirs, expected_count):
-    database = Database(Spec(datetime.now, list()))
+@pytest.mark.parametrize(
+    "use_dir_tag",
+    [True, False],
+)
+def test_collect_fieldmaps_epi(
+    pe_dirs: list[str], expected_count: int, use_dir_tag: bool
+) -> None:
+    database = Database(Spec(datetime.now(), list()))
 
     bold_file_path = "bold.nii.gz"
+    bold_file = File(
+        path=bold_file_path,
+        datatype="func",
+        suffix="bold",
+        extension=".nii.gz",
+        tags=dict(sub="01"),
+        metadata=dict(phase_encoding_direction=pe_dirs[0]),
+    )
+    fmap_ap_file = File(
+        path="ap.nii.gz",
+        datatype="fmap",
+        suffix="epi",
+        extension=".nii.gz",
+        tags=dict(sub="01"),
+        metadata=dict(phase_encoding_direction=pe_dirs[0]),
+    )
+    fmap_pa_file = File(
+        path="pa.nii.gz",
+        datatype="fmap",
+        suffix="epi",
+        extension=".nii.gz",
+        tags=dict(sub="01"),
+        metadata=dict(phase_encoding_direction=pe_dirs[1]),
+    )
 
-    files = [
-        File(
-            path=bold_file_path,
-            datatype="func",
-            suffix="bold",
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(phase_encoding_direction=pe_dirs[0]),
-        ),
-        File(
-            path="ap.nii.gz",
-            datatype="fmap",
-            suffix="epi",
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(phase_encoding_direction=pe_dirs[0]),
-        ),
-        File(
-            path="pa.nii.gz",
-            datatype="fmap",
-            suffix="epi",
-            extension=".nii.gz",
-            tags=dict(sub="01"),
-            metadata=dict(phase_encoding_direction=pe_dirs[1]),
-        ),
-    ]
+    if use_dir_tag:
+        bold_file.tags["dir"] = "ap"
+        fmap_ap_file.tags["dir"] = "ap"
+        fmap_pa_file.tags["dir"] = "pa"
 
+    files = [bold_file, fmap_ap_file, fmap_pa_file]
     for file in files:
         database.put(file)
 
@@ -69,7 +78,7 @@ def test_collect_fieldmaps_epi(pe_dirs, expected_count):
     ],
 )
 def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
-    database = Database(Spec(datetime.now, list()))
+    database = Database(Spec(datetime.now(), list()))
 
     bold_file_path = "bold.nii.gz"
     vars = ["magnitude1", "magnitude2", "phasediff"]
@@ -117,7 +126,7 @@ def test_collect_fieldmaps_phasediff(case1_suffix, case1_count):
     ],
 )
 def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
-    database = Database(Spec(datetime.now, list()))
+    database = Database(Spec(datetime.now(), list()))
 
     bold_file_path = "bold.nii.gz"
     vars = ["magnitude1", "magnitude2", "phase1", "phase2"]
