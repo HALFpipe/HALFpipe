@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from argparse import Namespace
-from contextlib import chdir
 from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import partial, reduce
@@ -43,7 +42,6 @@ class BetweenBase:
         self,
         result: ResultDict,
         design_base: DesignBase,
-        model_directory: Path,
     ) -> None:
         # Get information about what we are running
         tags = result["tags"]
@@ -54,8 +52,7 @@ class BetweenBase:
                 del tags[key]
         logger.log(
             25,
-            f'Running "{model_directory.name}" '
-            f"with tags {format_tags(tags)} for {len(subjects)} subjects",
+            f"Processing tags {format_tags(tags)} for {len(subjects)} subjects",
         )
 
         # Remove variables for exporting from the data frame that holds the covariates
@@ -80,7 +77,6 @@ class BetweenBase:
         else:
             design = intercept_only_design(len(subjects))
 
-        with chdir(model_directory):
             self.apply_export(
                 subjects,
                 cope_paths,

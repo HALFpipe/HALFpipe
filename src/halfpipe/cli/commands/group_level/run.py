@@ -179,9 +179,9 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
             model_directory = Path.cwd() / f"variable-{i + 1:02d}"
             model_directory.mkdir(exist_ok=True, parents=True)
 
-            between_base.apply(
-                result,
-                design_base,
-                model_directory,
-            )
+            with chdir(model_directory):
+                between_base.apply(
+                    result,
+                    design_base,
+                )
     between_base.write_outputs()
