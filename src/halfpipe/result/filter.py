@@ -26,8 +26,16 @@ def get_categorical_dict(
         if variable_dict.get("type") == "categorical":
             categorical_columns.append(variable_dict.get("name"))
 
-    categorical_data_frame = data_frame[categorical_columns].astype(str)
-    return categorical_data_frame.to_dict()
+    data_frame = data_frame[categorical_columns].astype(str)
+    data_frame_dict = data_frame.to_dict()
+
+    categorical_dict: dict[str, dict[str, str]] = dict()
+    for key, value in data_frame_dict.items():
+        if not isinstance(key, str):
+            raise ValueError("Categorical variable names must be strings")
+        categorical_dict[key] = value
+
+    return categorical_dict
 
 
 def make_group_filter(
@@ -36,6 +44,8 @@ def make_group_filter(
     model_desc: str,
 ) -> Callable[[dict], bool] | None:
     variable = filter_dict.get("variable")
+    if not isinstance(variable, str):
+        return None
     if variable not in categorical_dict:
         return None
 

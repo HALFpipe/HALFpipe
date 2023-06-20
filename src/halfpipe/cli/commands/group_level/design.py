@@ -63,7 +63,10 @@ class DesignBase:
             data_frame = None
         else:
             data_frame = prepare_data_frame(spreadsheet, variables)
-
+            column_info = inflect_engine.join(
+                [f'"{column}"' for column in data_frame.columns]
+            )
+            logger.info(f"Initializing design base with variables {column_info}")
         return cls(
             model_name,
             data_frame,
@@ -96,7 +99,7 @@ class DesignBase:
         """
         if self.data_frame is None:
             raise ValueError("Cannot add variable to design without `data_frame`")
-
+        logger.info(f'Adding variable "{name}" to design base')
         # Add variable to data frame
         if prefix is not None:
             prefixed_name = f"{prefix}_{name}"
@@ -122,6 +125,7 @@ class DesignBase:
     ) -> pd.Series | None:
         if self.data_frame is None:
             raise ValueError("Cannot drop variable from design without `data_frame`")
+        logger.info(f'Removing variable "{name}" from design base')
         # Remove contrasts for the variable
         self.contrasts = [
             contrast
@@ -135,7 +139,7 @@ class DesignBase:
 
 def apply_from_spec(
     arguments: Namespace,
-    results: list[dict],
+    results: list[ResultDict],
 ) -> Generator[DesignBase, None, None]:
     workdir = resolve(arguments.input_directory[0], arguments.fs_root)
 
@@ -228,7 +232,7 @@ def apply_from_spec(
 
 def apply_from_arguments(
     arguments: Namespace,
-    results: list[dict],
+    results: list[ResultDict],
 ) -> Generator[DesignBase, None, None]:
     spreadsheet: Path | None = None
     if arguments.spreadsheet is not None:

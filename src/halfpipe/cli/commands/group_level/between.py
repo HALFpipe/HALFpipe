@@ -59,7 +59,8 @@ class BetweenBase:
         self.apply_export_variables(design_base)
 
         # Rename the images to what the fit method expects
-        images = result.pop("images")
+        images = result["images"]
+        result["images"] = dict()
         for from_key, to_key in aliases.items():
             if from_key in images:
                 images[to_key] = images.pop(from_key)
@@ -77,23 +78,23 @@ class BetweenBase:
         else:
             design = intercept_only_design(len(subjects))
 
-            self.apply_export(
-                subjects,
-                cope_paths,
-                var_cope_paths,
-                mask_paths,
-                design,
-                result,
-            )
-            self.apply_fit(
-                subjects,
-                cope_paths,
-                var_cope_paths,
-                mask_paths,
-                design,
-                result,
-                design_base.model_name,
-            )
+        self.apply_export(
+            subjects,
+            cope_paths,
+            var_cope_paths,
+            mask_paths,
+            design,
+            result,
+        )
+        self.apply_fit(
+            subjects,
+            cope_paths,
+            var_cope_paths,
+            mask_paths,
+            design,
+            result,
+            design_base.model_name,
+        )
 
     def apply_export_variables(self, design_base: DesignBase) -> None:
         export_variables: list[str] | None = self.arguments.export_variable
@@ -197,6 +198,7 @@ class BetweenBase:
             make_modes = partial(Atlas.from_args, "modes")
             atlases.extend(starmap(make_modes, self.arguments.export_modes))
 
+        logger.info(f"Exporting atlases {atlases}")
         if len(atlases) == 0:
             return
 
@@ -223,17 +225,27 @@ class BetweenBase:
 
         csv_kwargs: dict[str, Any] = dict(sep="\t", index=True, na_rep="n/a")
 
-        phenotype_frame = combine_first(self.phenotype_frames)
-        # Sort columns to alphabetical order.
-        phenotype_frame.sort_index(axis=1, inplace=True)
-        phenotype_path = self.output_directory / "phenotypes.tsv"
-        phenotype_frame.to_csv(phenotype_path, **csv_kwargs)
+        if len(self.phenotype_frames) > 0:
+            phenotype_frame = combine_first(self.phenotype_frames)
+            # Sort columns to alphabetical order.
+            phenotype_frame.sort_index(axis=1, inplace=True)
+            phenotype_path = self.output_directory / "phenotypes.tsv"
+            phenotype_frame.to_csv(phenotype_path, **csv_kwargs)
+        else:
+            logger.warning("No phenotypes were exported")
 
-        covariate_frame = combine_first(self.covariate_frames)
-        covariate_path = self.output_directory / "covariates.tsv"
-        covariate_frame.to_csv(covariate_path, **csv_kwargs)
+        if len(self.covariate_frames) > 0:
+            covariate_frame = combine_first(self.covariate_frames)
+            covariate_path = self.output_directory / "covariates.tsv"
+            covariate_frame.to_csv(covariate_path, **csv_kwargs)
+        else:
+            logger.warning("No covariates were exported")
 
-        atlas_coverage_frame = combine_first(self.atlas_coverage_frames)
-        atlas_coverage_frame.sort_index(axis=1, inplace=True)
-        coverage_path = self.output_directory / "atlas_coverages.tsv"
-        atlas_coverage_frame.to_csv(coverage_path, **csv_kwargs)
+        if len(self.atlas_coverage_frames) > 0:
+            atlas_coverage_frame = combine_first(self.atlas_coverage_frames)
+            # Sort columns to alphabetical order.
+            atlas_coverage_frame.sort_index(axis=1, inplace=True)
+            coverage_path = self.output_directory / "atlas_coverages.tsv"
+            atlas_coverage_frame.to_csv(coverage_path, **csv_kwargs)
+        else:
+            logger.warning("No atlas coverages were exported")

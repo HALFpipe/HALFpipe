@@ -104,7 +104,7 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
 
     if not has_sidecar_keys.isdisjoint(result["images"].keys()):
         if len(result["metadata"]) == 0 and len(result["vals"]) == 0:
-            image_files = list(result["images"].values())
+            image_files = [str(image_file) for image_file in result["images"].values()]
             logger.warning(
                 f"Could not find metadata for files {image_files}. "
                 "Check if the `.json` sidecar files are present."
