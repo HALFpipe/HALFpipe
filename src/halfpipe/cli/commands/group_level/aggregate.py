@@ -9,10 +9,12 @@ from pathlib import Path
 from nipype.interfaces import fsl
 from tqdm.auto import tqdm
 
+from halfpipe.result.base import ResultDict
+
 from ....design import intercept_only_design
 from ....interfaces.image_maths.merge import merge, merge_mask
 from ....logging import logger
-from ....result.aggregate import aggregate_results
+from ....result.aggregate import aggregate_results, summarize_metadata
 from ....utils.hash import b32_digest
 from ....utils.multiprocessing import Pool
 from .base import aliases
@@ -41,11 +43,12 @@ def apply_aggregate(
             )
 
         results.extend(bypass)
+        results = [summarize_metadata(result) for result in results]
     # Set in design object
     design.results = results
 
 
-def map_fixed_effects_aggregate(result: dict):
+def map_fixed_effects_aggregate(result: ResultDict) -> ResultDict:
     key = b32_digest(result)[:8]
 
     model_directory = Path.cwd() / f"model-{key}"
@@ -55,7 +58,8 @@ def map_fixed_effects_aggregate(result: dict):
         key: value for key, value in result["tags"].items() if isinstance(value, str)
     }  # filter out list fields
 
-    images = result.pop("images")
+    images = result["images"]
+    result["images"] = dict()
 
     for from_key, to_key in aliases.items():
         if from_key in images:

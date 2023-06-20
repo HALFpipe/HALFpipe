@@ -18,6 +18,7 @@ from tqdm.auto import tqdm
 
 from ....ingest.design import parse_design
 from ....ingest.spreadsheet import read_spreadsheet
+from ....logging import logger
 from ....signals import mean_signals, mode_signals
 from ....stats.fit import load_data
 from ....utils.format import format_like_bids
@@ -28,7 +29,7 @@ from ....utils.multiprocessing import Pool
 class Atlas:
     type: Literal["atlas", "modes"]
     name: str
-    image: nib.Nifti1Image
+    image: nib.nifti1.Nifti1Image
     labels: dict[int, str]
 
     @classmethod
@@ -47,7 +48,7 @@ class Atlas:
             # First columnn is the index, second is the name.
             labels[int(label_tuple[0])] = format_like_bids(str(label_tuple[1]))
 
-        image = nib.load(image_path)
+        image = nib.loadsave.load(image_path)
         return cls(type, name, image, labels)
 
 
@@ -114,6 +115,10 @@ def export(
     signals_frame.index = pd.Index(subjects)
     atlas_coverage_frame = pd.DataFrame.from_dict(coverages)
     atlas_coverage_frame.index = pd.Index(subjects)
+
+    logger.info(
+        f"Exported {signals_frame.shape[1]} signals and {covariate_frame.shape[1]} covariates"
+    )
 
     return signals_frame, covariate_frame, atlas_coverage_frame
 

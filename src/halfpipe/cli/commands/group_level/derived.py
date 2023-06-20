@@ -163,10 +163,10 @@ class ImagingVariables:
     def jacobian_stats(self) -> pd.DataFrame:
         data: dict[str, dict[str, float]] = defaultdict(dict)
         for subject, jacobian_path in self.jacobian_paths.items():
-            brain_mask_image = nib.load(self.get_brain_mask_path(subject))
+            brain_mask_image = nib.loadsave.load(self.get_brain_mask_path(subject))
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
 
-            jacobian_image = nib.load(jacobian_path)
+            jacobian_image = nib.loadsave.load(jacobian_path)
             jacobian_data = jacobian_image.get_fdata()[brain_mask]
 
             data["jacobian_mean"][subject] = jacobian_data.mean()
@@ -199,7 +199,7 @@ class ImagingVariables:
             if subject is None:
                 continue
 
-            brain_mask_image = nib.load(brain_mask_path)
+            brain_mask_image = nib.loadsave.load(brain_mask_path)
 
             voxel_size = np.array(brain_mask_image.header.get_zooms()[:3]) * ureg.mm
             voxel_volume: pint.Quantity = np.prod(voxel_size)
@@ -229,7 +229,10 @@ class ImagingVariables:
             subject = tags.pop("sub")
 
             prefix = make_bids_prefix(tags)
-            data[prefix][subject] = vals.get(name, np.nan)
+            value = vals.get(name, np.nan)
+            if isinstance(value, list):
+                value = np.mean(value)
+            data[prefix][subject] = float(value)
 
         for prefix, values in data.items():
             self.design_base.add_variable(

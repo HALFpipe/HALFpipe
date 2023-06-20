@@ -21,6 +21,8 @@ def join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | 
         if entity not in tags:
             continue
         value = tags[entity]
+        if not isinstance(value, str):
+            continue
         value = format_like_bids(value)
 
         if joined is None:

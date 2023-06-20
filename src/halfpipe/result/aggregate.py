@@ -34,12 +34,17 @@ class Element:
     data: Mapping[tuple[ResultKey, str], Any]
 
 
-def group_across(rr: list[ResultDict], across_key: str) -> dict[Index, set[Element]]:
+def group_across(
+    results: list[ResultDict], across_key: str
+) -> dict[Index, set[Element]]:
     groups: dict[Index, set[Element]] = defaultdict(set)
 
-    for i, r in enumerate(rr):
-        tags = r.pop("tags")
-        assert isinstance(tags, dict)
+    for i, result in enumerate(results):
+        tags = result["tags"]
+        result["tags"] = dict()
+
+        if not isinstance(tags, dict):
+            raise ValueError("Tags must be a dictionary")
 
         across_value = str(tags.pop(across_key))
 
@@ -47,13 +52,12 @@ def group_across(rr: list[ResultDict], across_key: str) -> dict[Index, set[Eleme
             {key: value for key, value in tags.items() if isinstance(value, str)}
         )
 
-        data: Mapping[tuple[ResultKey, str], Any] = pmap(
-            {
-                (field_name, attribute_name): freeze(attribute_value)
-                for field_name, field_dict in r.items()
-                for attribute_name, attribute_value in field_dict.items()
-            }
-        )
+        data_dict = {
+            (field_name, attribute_name): freeze(attribute_value)
+            for field_name, field_dict in result.items()
+            for attribute_name, attribute_value in field_dict.items()
+        }
+        data: Mapping[tuple[ResultKey, str], Any] = pmap(data_dict)
 
         element = Element(i, across_value, data)
 
@@ -108,7 +112,12 @@ def merge_data(elements: set[Element]) -> ResultDict:
     )
 
     sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
-    result: ResultDict = defaultdict(dict)
+    result: ResultDict = {
+        "tags": dict(),
+        "images": dict(),
+        "vals": dict(),
+        "metadata": dict(),
+    }
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
         field_name, attribute_name = key
@@ -136,9 +145,8 @@ def aggregate_results(
             across_key: [element.across_value for element in elements]
         }
         tags |= index
-
-        u: ResultDict = {"tags": tags}
-        u |= merge_data(elements)
+        u = merge_data(elements)
+        u["tags"] |= tags
 
         if len(elements) > 1:
             aggregated.append(u)
@@ -174,6 +182,8 @@ def summarize_metadata(
     for field_name, attribute_dict in result.items():
         if field_name in ["tags", "images"]:
             continue
+        if not isinstance(attribute_dict, dict):
+            raise ValueError("Expected attribute_dict to be a dict")
         for attribute_name in attribute_dict.keys():
             key = (field_name, attribute_name)
             if key in source_keys:
