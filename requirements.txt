@@ -45,7 +45,7 @@ fasteners==0.18
     # via -r requirements.in
 filelock==3.12.1
     # via nipype
-flufl-lock==7.1.1
+flufl-lock==8.0.1
     # via -r requirements.in
 fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
     # via -r requirements.in
