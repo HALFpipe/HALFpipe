@@ -22,6 +22,7 @@ from ....file_index.bids import BIDSIndex
 from ....logging import logger
 from ....model.tags.resultdict import resultdict_entities
 from ....result.bids.base import make_bids_prefix
+from ....result.variables import Continuous
 from ....utils.multiprocessing import Pool
 from ....utils.nipype import run_workflow
 from ....workflows.constants import constants
@@ -231,8 +232,11 @@ class ImagingVariables:
             prefix = make_bids_prefix(tags)
             value = vals.get(name, np.nan)
             if isinstance(value, list):
-                value = np.mean(value)
-            data[prefix][subject] = float(value)
+                value = Continuous.summarize(value)
+            continuous = Continuous.load(value)
+            if continuous is None:
+                raise ValueError(f'Could not load variable "{name}" for export')
+            data[prefix][subject] = continuous.mean
 
         for prefix, values in data.items():
             self.design_base.add_variable(
