@@ -5,6 +5,7 @@
 import multiprocessing.pool as mp_pool
 import os
 from multiprocessing import active_children, get_context
+from typing import Any
 
 mp_context = get_context("spawn")
 
@@ -13,7 +14,25 @@ def mock_tqdm(iterable, *args, **kwargs):
     return iterable
 
 
-def initializer(logging_kwargs, host_env, host_cwd):
+def get_init_args() -> tuple[set[int], dict[str, Any], dict[str, str], str]:
+    from ..logging import logging_context
+
+    return (
+        os.sched_getaffinity(0),
+        logging_context.logging_args(),
+        dict(os.environ),
+        os.getcwd(),
+    )
+
+
+def initializer(
+    sched_affinity: set[int],
+    logging_kwargs: dict[str, Any],
+    host_env: dict[str, str],
+    host_cwd: str,
+) -> None:
+    os.sched_setaffinity(0, sched_affinity)
+
     os.chdir(host_cwd)
 
     # Do not show tqdm progress bars from subprocesses
@@ -32,7 +51,7 @@ def initializer(logging_kwargs, host_env, host_cwd):
     os.environ.update(host_env)
 
 
-def terminate():
+def terminate() -> None:
     for p in active_children():
         p.terminate()
         p.join()
@@ -44,9 +63,7 @@ class Pool(mp_pool.Pool):
         processes: int | None = None,
         maxtasksperchild: int | None = None,
     ) -> None:
-        from ..logging import logging_context
-
-        init_args = (logging_context.logging_args(), dict(os.environ), os.getcwd())
+        init_args = get_init_args()
         super().__init__(
             processes=processes,
             initializer=initializer,
