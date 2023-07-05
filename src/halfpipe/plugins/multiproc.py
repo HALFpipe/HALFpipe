@@ -15,15 +15,18 @@ from nipype.pipeline import plugins as nip
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
 
-from ..logging import logger, logging_context
-from ..utils.multiprocessing import mp_context
+from ..logging import logger
+from ..utils.multiprocessing import get_init_args, mp_context
 from .reftracer import PathReferenceTracer
 
 
-def initializer(host_cwd, logging_args, plugin_args, host_env):
+def initializer(
+    init_args: tuple[set[int], dict[str, Any], dict[str, str], str],
+    plugin_args: dict,
+) -> None:
     from ..utils.multiprocessing import initializer
 
-    initializer(logging_args, host_env, host_cwd)
+    initializer(*init_args)
 
     from ..utils.pickle import patch_nipype_unpickler
 
@@ -111,10 +114,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             max_workers=self.processors,
             initializer=initializer,
             initargs=(
-                self._cwd,
-                logging_context.logging_args(),
+                get_init_args(),
                 plugin_args,
-                dict(os.environ),
             ),
             mp_context=mp_context,
         )
