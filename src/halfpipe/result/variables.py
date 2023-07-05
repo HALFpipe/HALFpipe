@@ -78,19 +78,21 @@ class Continuous:
         return False
 
     @staticmethod
-    def summarize(oo: list[Continuous | None]) -> str | float | None:
-        uu = list(o.mean for o in oo if o is not None and isfinite(o.mean))
-        if len(uu) == 0:
+    def summarize(values: list[Continuous | None]) -> str | float | None:
+        means = list(
+            value.mean for value in values if value is not None and isfinite(value.mean)
+        )
+        if len(means) == 0:
             return None
 
-        v = uu[0]
-        if all(isclose(v, u) for u in uu):
-            return v
+        first_mean = means[0]
+        if all(isclose(first_mean, mean) for mean in means):
+            return first_mean
 
-        mean = statistics.mean(uu)
-        std = statistics.stdev(uu)
-        n_observations = len(oo)
-        n_missing = len(oo) - len(uu)
+        mean = statistics.mean(means)
+        std = statistics.stdev(means)
+        n_observations = len(values)
+        n_missing = len(values) - len(means)
 
         return str(Continuous(mean, std, n_observations, n_missing))
 
