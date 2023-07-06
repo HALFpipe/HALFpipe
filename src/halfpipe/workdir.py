@@ -5,7 +5,7 @@
 from pathlib import Path
 from uuid import uuid4
 
-from .logging import logging_context
+from .logging.base import logging_context
 from .utils.path import resolve
 
 

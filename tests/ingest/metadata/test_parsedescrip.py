@@ -31,7 +31,7 @@ from halfpipe.ingest.metadata.niftiheader import parse_descrip  # noqa
     ],
 )
 def test_parse_descrip(tmp_path, test_descrip, expected_dict):
-    header = nib.Nifti1Header()
+    header = nib.nifti1.Nifti1Header()
     header["descrip"] = test_descrip
 
     descrip_dict = parse_descrip(header=header)

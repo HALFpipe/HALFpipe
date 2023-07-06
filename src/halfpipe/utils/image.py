@@ -7,7 +7,7 @@ def nifti_dim(obj, dimension_index: int) -> int:
     if isinstance(obj, str):
         import nibabel as nib
 
-        obj = nib.load(obj)
+        obj = nib.loadsave.load(obj)
 
     if len(obj.shape) > dimension_index:
         return obj.shape[dimension_index]

@@ -5,6 +5,7 @@
 from hashlib import sha1
 from typing import Any, Iterable, Mapping
 
+from ..logging import logger
 from ..model.spec import Spec
 from ..model.tags import entities
 from .metadata.loader import MetadataLoader
@@ -16,8 +17,10 @@ class Database:
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
             resolved_spec = spec
-        if resolved_spec is None:
+        elif isinstance(spec, Spec):
             resolved_spec = ResolvedSpec(spec)
+        else:
+            raise ValueError("Need to initialize Database with a Spec or ResolvedSpec")
         self.resolved_spec = resolved_spec
 
         self.metadata_loader = MetadataLoader(self)
@@ -47,6 +50,8 @@ class Database:
         def add_tag_to_index(filepath, entity, tagval):
             if tagval is None:
                 return
+
+            logger.debug(f"Adding tag {entity}={tagval} for {filepath}")
 
             if entity not in self.filepaths_by_tags:
                 self.filepaths_by_tags[entity] = dict()
@@ -214,7 +219,7 @@ class Database:
             entity_dict = self.filepaths_by_tags[entity]
             if optional_tags[entity] not in entity_dict:
                 continue
-            files: set[str] = entity_dict[optional_tags[entity]]
+            files: set[str] = entity_dict[optional_tags[entity]].copy()
             files &= matching_files
             if len(files) > 0:
                 matching_files = files

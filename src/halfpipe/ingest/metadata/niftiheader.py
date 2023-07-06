@@ -19,7 +19,7 @@ descrip_pattern = re.compile(
 )
 
 
-def parse_descrip(header: nib.Nifti1Header) -> dict[str, float]:
+def parse_descrip(header: nib.nifti1.Nifti1Header) -> dict[str, float]:
     descrip_dict = dict()
 
     descrip_array = header.get("descrip")
@@ -68,10 +68,12 @@ def parse_descrip(header: nib.Nifti1Header) -> dict[str, float]:
 
 
 class NiftiheaderLoader:
-    cache: dict[str, tuple[nib.Nifti1Header, dict[str, float]]] = dict()
+    cache: dict[str, tuple[nib.nifti1.Nifti1Header, dict[str, float]]] = dict()
 
     @classmethod
-    def load(cls, nifti_file: str) -> Tuple[Optional[nib.Nifti1Header], Optional[Dict]]:
+    def load(
+        cls, nifti_file: str
+    ) -> Tuple[Optional[nib.nifti1.Nifti1Header], Optional[Dict]]:
         if nifti_file in cls.cache:
             return cls.cache[nifti_file]
 
@@ -81,7 +83,7 @@ class NiftiheaderLoader:
             return None, None
 
         try:
-            img = nib.load(nifti_file, mmap=False, keep_file_open=False)
+            img = nib.loadsave.load(nifti_file, mmap=False, keep_file_open=False)
         except Exception as e:
             logger.warning(
                 f'Caught error loading file "{nifti_file}": %s', e, exc_info=True

@@ -30,12 +30,14 @@ class ModelAlgorithm(ABC):
     @staticmethod
     @abstractmethod
     def write_outputs(
-        ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+        ref_img: nib.nifti1.Nifti1Image, cmatdict: Dict, voxel_results: Dict
     ) -> Dict:
         raise NotImplementedError()
 
     @classmethod
-    def write_map(cls, ref_img: nib.Nifti1Image, out_name: str, series: pd.Series):
+    def write_map(
+        cls, ref_img: nib.nifti1.Nifti1Image, out_name: str, series: pd.Series
+    ):
         coordinates = series.index.tolist()
         values = series.values
 
@@ -64,11 +66,11 @@ class ModelAlgorithm(ABC):
             arr[coordinate] = value
 
         img = new_img_like(ref_img, arr, copy_header=True)
-        assert isinstance(img.header, nib.Nifti1Header)
+        assert isinstance(img.header, nib.nifti1.Nifti1Header)
         img.header.set_data_dtype(np.float64)
 
         fname = Path.cwd() / f"{out_name}.nii.gz"
-        nib.save(img, fname)
+        nib.loadsave.save(img, fname)
 
         return fname
 

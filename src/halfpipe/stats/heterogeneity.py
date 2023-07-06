@@ -292,7 +292,7 @@ class Heterogeneity(ModelAlgorithm):
 
     @classmethod
     def write_outputs(
-        cls, ref_img: nib.Nifti1Image, cmatdict: dict, voxel_results: dict
+        cls, ref_img: nib.nifti1.Nifti1Image, cmatdict: dict, voxel_results: dict
     ) -> dict:
         output_files = dict()
 

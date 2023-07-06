@@ -46,7 +46,7 @@ class MaskCoverage(IOBase):
         return add_traits(base, self._keys)
 
     def _run_interface(self, runtime):
-        mask_img = nib.load(self.inputs.mask_file)
+        mask_img = nib.loadsave.load(self.inputs.mask_file)
         mask = np.asanyarray(mask_img.dataobj).astype(bool)
         mask = np.squeeze(mask)
 
@@ -59,7 +59,7 @@ class MaskCoverage(IOBase):
         self._coverage = []
 
         for in_file in self.inputs.in_files:
-            in_img = nib.load(in_file)
+            in_img = nib.loadsave.load(in_file)
             in_bool = np.asanyarray(in_img.dataobj).astype(bool)
             in_bool = np.squeeze(in_bool)
 
@@ -83,7 +83,7 @@ class MaskCoverage(IOBase):
             out_file = Path.cwd() / f"{stem}_masked.nii.gz"
 
             out_img = new_img_like(in_img, out_bool, copy_header=True)
-            nib.save(out_img, out_file)
+            nib.loadsave.save(out_img, out_file)
 
             self._out_files.append(out_file)
 

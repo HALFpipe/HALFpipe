@@ -175,7 +175,7 @@ def make_cutoff_filter(
 
         res = x <= cutoff
         if res is False:
-            logger.warning(
+            logger.info(
                 f"Excluding ({format_tags(tags)}) {model_desc}"
                 f'because "{filter_field}" is larger than {cutoff:f}'
             )

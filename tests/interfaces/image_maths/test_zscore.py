@@ -20,7 +20,7 @@ def test_zscore(tmp_path):
 
     api_args = dict(template="MNI152NLin2009cAsym", resolution=2)
     ref_mask_file = api.get(**api_args, desc="brain", suffix="mask")
-    ref_mask_img = nib.load(ref_mask_file)
+    ref_mask_img = nib.loadsave.load(ref_mask_file)
 
     ref_mask = ref_mask_img.get_fdata() > 0
     n_voxels = np.count_nonzero(ref_mask)
@@ -33,10 +33,10 @@ def test_zscore(tmp_path):
     test_img_data[ref_mask] = test_data
 
     img = new_img_like(ref_mask_img, test_img_data, copy_header=True)
-    assert isinstance(img.header, nib.Nifti1Header)
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
     img.header.set_data_dtype(np.float64)
     test_file = "img.nii.gz"
-    nib.save(img, test_file)
+    nib.loadsave.save(img, test_file)
 
     instance = ZScore()
     instance.inputs.in_file = test_file
@@ -45,7 +45,7 @@ def test_zscore(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    out_img = nib.load(result.outputs.out_file)
+    out_img = nib.loadsave.load(result.outputs.out_file)
     out_img_data = out_img.get_fdata()
     out_data = out_img_data[ref_mask]
 

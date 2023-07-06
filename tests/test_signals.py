@@ -27,7 +27,7 @@ def test_fit(tmp_path, wakemandg_hensonrn_raw):
     modes_path = get_resource(
         "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz"
     )
-    modes_img = nib.load(modes_path)
+    modes_img = nib.loadsave.load(modes_path)
 
     signals = mode_signals(copes_img, var_copes_img, modes_img)
 

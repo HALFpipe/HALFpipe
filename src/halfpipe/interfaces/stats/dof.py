@@ -42,14 +42,14 @@ class MakeDofVolume(BaseInterface):
                 dof = float(file.read())
 
         if isdefined(self.inputs.bold_file):
-            ref_img = nib.load(self.inputs.bold_file)
+            ref_img = nib.loadsave.load(self.inputs.bold_file)
             if isdefined(self.inputs.num_regressors):
                 dof = float(nvol(ref_img) - self.inputs.num_regressors)
             elif isdefined(self.inputs.design):
                 dof = float(nvol(ref_img) - ncol(self.inputs.design))
 
         if isdefined(self.inputs.copes):
-            ref_img = nib.load(first_str(self.inputs.copes))
+            ref_img = nib.loadsave.load(first_str(self.inputs.copes))
 
         if dof is None:
             return runtime
@@ -61,11 +61,11 @@ class MakeDofVolume(BaseInterface):
         outarr = np.full(outshape, dof)
 
         outimg = new_img_like(ref_img, outarr, copy_header=True)
-        assert isinstance(outimg.header, nib.Nifti1Header)
+        assert isinstance(outimg.header, nib.nifti1.Nifti1Header)
         outimg.header.set_data_dtype(np.float64)
 
         self._out_file = op.abspath("dof_file.nii.gz")
-        nib.save(outimg, self._out_file)
+        nib.loadsave.save(outimg, self._out_file)
 
         return runtime
 

@@ -15,7 +15,7 @@ def mock_tqdm(iterable, *args, **kwargs):
 
 
 def get_init_args() -> tuple[set[int], dict[str, Any], dict[str, str], str]:
-    from ..logging import logging_context
+    from ..logging.base import logging_context
 
     return (
         os.sched_getaffinity(0),
@@ -43,7 +43,7 @@ def initializer(
     tqdm.auto.tqdm = mock_tqdm
 
     # Make sure we send all logging to the logger process
-    from ..logging import setup as setup_logging
+    from ..logging.base import setup as setup_logging
 
     setup_logging(**logging_kwargs)
 

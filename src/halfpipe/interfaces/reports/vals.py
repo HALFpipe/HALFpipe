@@ -41,13 +41,13 @@ class CalcMean(SimpleInterface):
     output_spec = CalcMeanOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
-        in_img = nib.load(self.inputs.in_file)
-        mask_img: nib.Nifti1Image | None = None
+        in_img = nib.loadsave.load(self.inputs.in_file)
+        mask_img: nib.nifti1.Nifti1Image | None = None
         if isdefined(self.inputs.mask):
-            mask_img = nib.load(self.inputs.mask)
+            mask_img = nib.loadsave.load(self.inputs.mask)
 
         if isdefined(self.inputs.dseg):  # get grey matter only
-            atlas_img = nib.load(self.inputs.dseg)
+            atlas_img = nib.loadsave.load(self.inputs.dseg)
             dseg_mean_signals = mean_signals(
                 in_img,
                 atlas_img,
@@ -57,7 +57,7 @@ class CalcMean(SimpleInterface):
             self._results["mean"] = float(gm_mean)
 
         elif isdefined(self.inputs.parcellation):
-            atlas_img = nib.load(self.inputs.parcellation)
+            atlas_img = nib.loadsave.load(self.inputs.parcellation)
             parc_mean_signals = mean_signals(in_img, atlas_img, mask_img=mask_img)
             parc_mean_signals_list = list(
                 map(float, np.ravel(parc_mean_signals).tolist())

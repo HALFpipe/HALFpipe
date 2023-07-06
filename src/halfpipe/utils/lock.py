@@ -60,15 +60,16 @@ class AdaptiveLock:
                 sleep(delay)
 
     def unlock(self):
+        if self.lock_instance is None:
+            raise ValueError("Lock instance is None")
         if self.methods[0] == "hard_links":
-            assert isinstance(self.lock_instance, FluflLock)
-
+            if not isinstance(self.lock_instance, FluflLock):
+                raise ValueError("Lock instance is not a FluflLock")
             self.lock_instance.unlock(
                 unconditionally=True
-            )  # do not raise errors in unlock
+            )  # Do not raise errors in unlock
             self.lock_instance = None
-
         elif self.methods[0] == "fcntl":
-            assert isinstance(self.lock_instance, FcntlLock)
-
-            self.lock_instance.release()
+            if not isinstance(self.lock_instance, FcntlLock):
+                raise ValueError("Lock instance is not an FcntlLock")
+            self.lock_instance.release()  # type: ignore

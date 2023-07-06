@@ -131,7 +131,7 @@ def parse_args(args=None, namespace=None) -> Tuple:
         print(__version__)
         sys.exit(0)
 
-    from ..logging import logging_context
+    from ..logging.base import logging_context
 
     logging_context.enable_print()
 
@@ -139,7 +139,7 @@ def parse_args(args=None, namespace=None) -> Tuple:
     if debug:
         import logging
 
-        from ..logging import setup as setup_logging
+        from ..logging.base import setup as setup_logging
 
         setup_logging(logging_context.queue(), levelno=logging.DEBUG)
 
