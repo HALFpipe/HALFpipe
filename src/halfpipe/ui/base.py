@@ -6,7 +6,8 @@ import os
 from pathlib import Path
 
 from .. import __version__
-from ..logging import logger, logging_context
+from ..logging import logger
+from ..logging.base import logging_context
 from ..model.spec import load_spec, save_spec
 from ..workdir import init_workdir
 from .components import (

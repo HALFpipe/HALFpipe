@@ -4,10 +4,7 @@
 
 import logging
 
-from .base import setup, teardown
-from .context import context as logging_context
-
 logger = logging.getLogger("halfpipe")
 del logging
 
-__all__ = ["setup", "teardown", "logger", "logging_context"]
+__all__ = ["logger"]
