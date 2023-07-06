@@ -3,10 +3,10 @@ setuptools_scm[toml]>=6.2
 wheel
 
 # Neuroimaging packages.
-fmriprep @ https://github.com/HippocampusGirl/fmriprep/archive/20.2.7+halfpipe.2.zip
-smriprep @ https://github.com/HippocampusGirl/smriprep/archive/0.7.2+halfpipe.2.zip
-niworkflows @ https://github.com/HippocampusGirl/niworkflows/archive/1.3.9+halfpipe.1.zip
-sdcflows ~= 1.3.3
+fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
+smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
+niworkflows @ git+https://github.com/HippocampusGirl/niworkflows@1.3.9+halfpipe.1
+sdcflows @ git+https://github.com/HippocampusGirl/sdcflows@1.3.3+halfpipe.1
 nipype >= 1.8.1
 nibabel >= 4.0.0
 templateflow >= 0.7.1
