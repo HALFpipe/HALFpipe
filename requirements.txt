@@ -67,7 +67,7 @@ indexed-gzip==1.7.1
     # via
     #   fmriprep
     #   smriprep
-inflect==6.0.4
+inflect==7.0.0
     # via -r requirements.in
 inflection==0.5.1
     # via -r requirements.in
@@ -374,6 +374,7 @@ transforms3d==0.4.1
     # via niworkflows
 typing-extensions==4.6.3
     # via
+    #   inflect
     #   pint
     #   pydantic
     #   setuptools-scm
