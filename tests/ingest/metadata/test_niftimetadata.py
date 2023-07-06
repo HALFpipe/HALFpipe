@@ -20,7 +20,7 @@ def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
 
     fname = str(tmp_path / "test.nii")
 
-    nib.Nifti1Image(np.zeros(size), np.eye(4)).to_filename(fname)
+    nib.nifti1.Nifti1Image(np.zeros(size), np.eye(4)).to_filename(fname)
 
     fileobj = File(path=fname, datatype="anat", metadata=dict())
 
@@ -37,8 +37,8 @@ def test_NiftiheaderMetadataLoader_repetition_time_units(tmp_path, units):
 
     fname = str(tmp_path / "test.nii")
 
-    img = nib.Nifti1Image(np.zeros(size), np.eye(4))
-    assert isinstance(img.header, nib.Nifti1Header)
+    img = nib.nifti1.Nifti1Image(np.zeros(size), np.eye(4))
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
 
     zooms = [1.0, 1.0, 1.0, repetition_time]
 
@@ -68,8 +68,8 @@ def test_NiftiheaderMetadataLoader_slice_timing(tmp_path, nifti_slice_duration):
 
     fname = str(tmp_path / "test.nii")
 
-    img = nib.Nifti1Image(np.zeros(size), np.eye(4))
-    assert isinstance(img.header, nib.Nifti1Header)
+    img = nib.nifti1.Nifti1Image(np.zeros(size), np.eye(4))
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
 
     zooms = [1.0, 1.0, 1.0, repetition_time]
 

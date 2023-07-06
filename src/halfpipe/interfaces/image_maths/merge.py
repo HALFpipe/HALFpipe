@@ -31,7 +31,7 @@ def _merge_fname(in_files):
 
 
 def merge(in_files, dimension):
-    in_imgs = [nib.load(f) for f in in_files]
+    in_imgs = [nib.loadsave.load(f) for f in in_files]
 
     idim = dimensions.index(dimension)
 
@@ -59,13 +59,13 @@ def merge(in_files, dimension):
     outimg = new_img_like(in_imgs[0], outarr, copy_header=True)
 
     merged_file = _merge_fname(in_files)
-    nib.save(outimg, merged_file)
+    nib.loadsave.save(outimg, merged_file)
 
     return merged_file
 
 
 def merge_mask(in_files):
-    in_imgs = [nib.load(in_file) for in_file in in_files]
+    in_imgs = [nib.loadsave.load(in_file) for in_file in in_files]
 
     outshape = in_imgs[0].shape
     assert all(in_img.shape == outshape for in_img in in_imgs), "Mask shape mismatch"
@@ -76,7 +76,7 @@ def merge_mask(in_files):
     outimg = new_img_like(in_imgs[0], outarr, copy_header=True)
 
     merged_file = _merge_fname(in_files)
-    nib.save(outimg, merged_file)
+    nib.loadsave.save(outimg, merged_file)
 
     return merged_file
 

@@ -19,14 +19,14 @@ def test_TemporalFilter(tmp_path):
     seed(a=0x4D3C732F)
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
-    img = nib.Nifti1Image(array, np.eye(4))
-    assert isinstance(img.header, nib.Nifti1Header)
+    img = nib.nifti1.Nifti1Image(array, np.eye(4))
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
     img.header.set_data_dtype(np.float64)
 
     os.chdir(str(tmp_path))
 
     in_file = "img.nii.gz"
-    nib.save(img, in_file)
+    nib.loadsave.save(img, in_file)
 
     instance = TemporalFilter()
     instance.inputs.in_file = in_file
@@ -35,7 +35,7 @@ def test_TemporalFilter(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r0 = nib.load(result.outputs.out_file).get_fdata()
+    r0 = nib.loadsave.load(result.outputs.out_file).get_fdata()
 
     instance = fsl.TemporalFilter()
     instance.inputs.in_file = in_file
@@ -44,5 +44,5 @@ def test_TemporalFilter(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r1 = nib.load(result.outputs.out_file).get_fdata()
+    r1 = nib.loadsave.load(result.outputs.out_file).get_fdata()
     assert np.allclose(r0, r1)

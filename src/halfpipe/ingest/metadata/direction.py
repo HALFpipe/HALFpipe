@@ -18,7 +18,7 @@ def get_axcodes_set(path_pattern: str):
         header, _ = NiftiheaderLoader.load(file_path)
         if not isinstance(header, nib.nifti1.Nifti1Header):
             continue
-        axcodes_set.add(nib.aff2axcodes(header.get_qform()))
+        axcodes_set.add(nib.orientations.aff2axcodes(header.get_qform()))
 
     return axcodes_set
 

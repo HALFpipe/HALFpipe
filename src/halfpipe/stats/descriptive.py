@@ -52,7 +52,7 @@ class Descriptive(ModelAlgorithm):
 
     @classmethod
     def write_outputs(
-        cls, ref_img: nib.Nifti1Image, cmatdict: Dict, voxel_results: Dict
+        cls, ref_img: nib.nifti1.Nifti1Image, cmatdict: Dict, voxel_results: Dict
     ) -> Dict:
         output_files: Dict[str, List[Union[Literal[False], str]]] = dict()
 

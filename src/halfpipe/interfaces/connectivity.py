@@ -51,9 +51,9 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
-        in_img = nib.load(self.inputs.in_file)
-        atlas_img = nib.load(self.inputs.atlas_file)
-        mask_img = nib.load(self.inputs.mask_file)
+        in_img = nib.loadsave.load(self.inputs.in_file)
+        atlas_img = nib.loadsave.load(self.inputs.atlas_file)
+        mask_img = nib.loadsave.load(self.inputs.mask_file)
 
         self._time_series, self._region_coverage = mean_signals(
             in_img,

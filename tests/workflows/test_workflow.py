@@ -120,7 +120,7 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
 
     os.chdir(str(tmp_path))
 
-    atlas_img = nib.load(atlas_harvard_oxford["cort-prob-2mm"])
+    atlas_img = nib.loadsave.load(atlas_harvard_oxford["cort-prob-2mm"])
     atlas = atlas_img.get_fdata()
 
     pcc_mask = atlas[..., 29] > 10
@@ -128,7 +128,7 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
     pcc_mask_img = new_img_like(atlas_img, pcc_mask, copy_header=True)
 
     pcc_mask_fname = Path.cwd() / "pcc.nii.gz"
-    nib.save(pcc_mask_img, pcc_mask_fname)
+    nib.loadsave.save(pcc_mask_img, pcc_mask_fname)
 
     return pcc_mask_fname
 
@@ -324,12 +324,12 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts.debug = True
 
     (bold_path,) = tmp_path.glob("rawdata/sub-*/func/*_bold.nii.gz")
-    bold_image = nib.load(bold_path)
+    bold_image = nib.loadsave.load(bold_path)
 
     run_stage_run(opts)
 
     (preproc_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_bold.nii.gz")
-    preproc_image = nib.load(preproc_path)
+    preproc_image = nib.loadsave.load(preproc_path)
 
     assert bold_image.shape[3] == preproc_image.shape[3] + skip_vols
 
@@ -343,7 +343,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     template_path = get_template(
         "MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w"
     )
-    template_image = nib.load(template_path)
+    template_image = nib.loadsave.load(template_path)
 
     assert bold_image.shape[:3] != template_image.shape  # sanity check
     assert preproc_image.shape[:3] == template_image.shape

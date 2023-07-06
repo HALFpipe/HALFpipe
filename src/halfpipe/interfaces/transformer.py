@@ -49,14 +49,14 @@ class Transformer(SimpleInterface):
         self.mask = None
 
         if ext in [".nii", ".nii.gz"]:
-            in_img = nib.load(in_file)
+            in_img = nib.loadsave.load(in_file)
             self.in_img = in_img
 
             ndim = np.asanyarray(in_img.dataobj).ndim
             if ndim == 3:
                 volumes = [in_img]
             elif ndim == 4:
-                volumes = nib.four_to_three(in_img)
+                volumes = nib.funcs.four_to_three(in_img)
             else:
                 raise ValueError(
                     f'Unexpect number of dimensions {ndim:d} in "{in_file}"'
@@ -70,7 +70,7 @@ class Transformer(SimpleInterface):
                 and isinstance(mask_file, str)
                 and Path(mask_file).is_file()
             ):
-                mask_img = nib.squeeze_image(nib.load(mask_file))
+                mask_img = nib.funcs.squeeze_image(nib.loadsave.load(mask_file))
 
                 assert nvol(mask_img) == 1
                 assert np.allclose(mask_img.affine, in_img.affine)
@@ -123,10 +123,10 @@ class Transformer(SimpleInterface):
                 out_array = np.squeeze(out_array, axis=3)
 
             out_img = new_img_like(in_img, out_array, copy_header=True)
-            assert isinstance(out_img.header, nib.Nifti1Header)
+            assert isinstance(out_img.header, nib.nifti1.Nifti1Header)
 
             out_img.header.set_data_dtype(np.float64)
-            nib.save(out_img, out_file)
+            nib.loadsave.save(out_img, out_file)
 
         else:
             header = True

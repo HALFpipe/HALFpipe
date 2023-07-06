@@ -42,7 +42,7 @@ def test_bandpass_filter_volume(
     )
     mask_file = tmp_path / "mask.nii.gz"
 
-    image = nib.load(image_file)
+    image = nib.loadsave.load(image_file)
 
     sampling_period: float = float(image.header.get_zooms()[3])
     sampling_frequency = 1 / sampling_period
@@ -51,7 +51,7 @@ def test_bandpass_filter_volume(
     mask_data = image_data.std(axis=3) > 0
 
     mask_image = new_img_like(image, data=mask_data)
-    nib.save(mask_image, mask_file)
+    nib.loadsave.save(mask_image, mask_file)
 
     _, before = welch(image_data[mask_data, :].ravel(), sampling_frequency)
 
@@ -72,7 +72,7 @@ def test_bandpass_filter_volume(
     (merge,) = [n for n in graph.nodes if n.name == "add_means"]
     (out_file,) = merge.result.outputs.out_file
 
-    image = nib.load(out_file)
+    image = nib.loadsave.load(out_file)
     image_data = image.get_fdata()
 
     _, after = welch(image_data[mask_data, :].ravel(), sampling_frequency)

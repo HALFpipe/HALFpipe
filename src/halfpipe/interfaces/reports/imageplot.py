@@ -28,7 +28,7 @@ from ...utils.image import nvol
 
 
 def robust_set_limits_in_mask(
-    data_img: nib.Nifti1Image, mask_img: nib.Nifti1Image
+    data_img: nib.nifti1.Nifti1Image, mask_img: nib.nifti1.Nifti1Image
 ) -> dict[str, float]:
     plot_params: dict[str, float] = dict()
 
@@ -49,8 +49,8 @@ class PlotEpi(ReportingInterface):
     input_spec = PlotInputSpec
 
     def _generate_report(self):
-        epi_img = nib.load(self.inputs.in_file)
-        mask_img = nib.load(self.inputs.mask_file)
+        epi_img = nib.loadsave.load(self.inputs.in_file)
+        mask_img = nib.loadsave.load(self.inputs.mask_file)
         assert nvol(epi_img) == 1
         assert nvol(mask_img) == 1
 
@@ -99,8 +99,8 @@ class PlotRegistration(ReportingInterface):
     input_spec = PlotRegistrationInputSpec
 
     def _generate_report(self):
-        anat_img = nib.load(self.inputs.in_file)
-        mask_img = nib.load(self.inputs.mask_file)
+        anat_img = nib.loadsave.load(self.inputs.in_file)
+        mask_img = nib.loadsave.load(self.inputs.mask_file)
         assert nvol(anat_img) == 1
         assert nvol(mask_img) == 1
 
@@ -109,7 +109,7 @@ class PlotRegistration(ReportingInterface):
         template = self.inputs.template
         parc_file = getresource(f"tpl-{template}_RegistrationCheckOverlay.nii.gz")
         assert parc_file is not None
-        parc_img = nib.load(parc_file)
+        parc_img = nib.loadsave.load(parc_file)
 
         levels = np.unique(np.asanyarray(parc_img.dataobj).astype(np.int32))
         levels = (levels[levels > 0] - 0.5).tolist()

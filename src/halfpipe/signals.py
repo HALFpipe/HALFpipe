@@ -15,10 +15,10 @@ from .utils.matrix import atleast_4d
 
 @overload
 def mean_signals(
-    in_img: nib.Nifti1Image,
-    atlas_img: nib.Nifti1Image,
+    in_img: nib.nifti1.Nifti1Image,
+    atlas_img: nib.nifti1.Nifti1Image,
     output_coverage: Literal[False] = False,
-    mask_img: nib.Nifti1Image | None = None,
+    mask_img: nib.nifti1.Nifti1Image | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ) -> npt.NDArray:
@@ -27,10 +27,10 @@ def mean_signals(
 
 @overload
 def mean_signals(
-    in_img: nib.Nifti1Image,
-    atlas_img: nib.Nifti1Image,
+    in_img: nib.nifti1.Nifti1Image,
+    atlas_img: nib.nifti1.Nifti1Image,
     output_coverage: Literal[True],
-    mask_img: nib.Nifti1Image | None = None,
+    mask_img: nib.nifti1.Nifti1Image | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ) -> tuple[npt.NDArray, list[float]]:
@@ -38,10 +38,10 @@ def mean_signals(
 
 
 def mean_signals(
-    in_img: nib.Nifti1Image,
-    atlas_img: nib.Nifti1Image,
+    in_img: nib.nifti1.Nifti1Image,
+    atlas_img: nib.nifti1.Nifti1Image,
     output_coverage: bool = False,
-    mask_img: nib.Nifti1Image | None = None,
+    mask_img: nib.nifti1.Nifti1Image | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ):
@@ -114,9 +114,9 @@ def mean_signals(
 
 @overload
 def mode_signals(
-    cope_img: nib.Nifti1Image,
-    var_cope_img: nib.Nifti1Image,
-    modes_img: nib.Nifti1Image,
+    cope_img: nib.nifti1.Nifti1Image,
+    var_cope_img: nib.nifti1.Nifti1Image,
+    modes_img: nib.nifti1.Nifti1Image,
     output_coverage: Literal[False] = False,
 ) -> npt.NDArray:
     ...
@@ -124,18 +124,18 @@ def mode_signals(
 
 @overload
 def mode_signals(
-    cope_img: nib.Nifti1Image,
-    var_cope_img: nib.Nifti1Image,
-    modes_img: nib.Nifti1Image,
+    cope_img: nib.nifti1.Nifti1Image,
+    var_cope_img: nib.nifti1.Nifti1Image,
+    modes_img: nib.nifti1.Nifti1Image,
     output_coverage: Literal[True],
 ) -> tuple[npt.NDArray, npt.NDArray]:
     ...
 
 
 def mode_signals(
-    cope_img: nib.Nifti1Image,
-    var_cope_img: nib.Nifti1Image,
-    modes_img: nib.Nifti1Image,
+    cope_img: nib.nifti1.Nifti1Image,
+    var_cope_img: nib.nifti1.Nifti1Image,
+    modes_img: nib.nifti1.Nifti1Image,
     output_coverage: bool = False,
 ) -> npt.NDArray | tuple[npt.NDArray, npt.NDArray]:
     """
@@ -143,11 +143,11 @@ def mode_signals(
 
     Parameters
     ----------
-    cope_img : nib.Nifti1Image
+    cope_img : nib.nifti1.Nifti1Image
         The cope image.
-    var_cope_img : nib.Nifti1Image
+    var_cope_img : nib.nifti1.Nifti1Image
         The varcope image.
-    modes_img : nib.Nifti1Image
+    modes_img : nib.nifti1.Nifti1Image
         The modes image.
     output_coverage : bool, optional
         Whether to output the coverage, by default False.
