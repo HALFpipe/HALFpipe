@@ -6,7 +6,7 @@ from collections import defaultdict
 from itertools import product
 from os.path import basename
 from pprint import pformat
-from typing import Any
+from typing import Any, Generator
 
 import marshmallow.exceptions
 from bids import BIDSLayout
@@ -17,6 +17,7 @@ from marshmallow import EXCLUDE
 from ..logging import logger
 from ..model.file.base import File
 from ..model.file.schema import FileSchema
+from ..model.spec import Spec
 from ..model.tags import entities, entity_longnames
 from ..utils.path import exists, split_ext
 from .glob import get_entities_in_path, tag_glob, tag_parse
@@ -90,26 +91,26 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
 
 
 class ResolvedSpec:
-    def __init__(self, spec):
+    def __init__(self, spec: Spec) -> None:
         self.spec = spec
 
-        self.fileobj_by_filepaths = dict()
+        self.fileobj_by_filepaths: dict[str, File] = dict()
 
-        self.specfileobj_by_filepaths = dict()
-        self.fileobjs_by_specfilepaths = dict()
+        self.specfileobj_by_filepaths: dict[str, File] = dict()
+        self.fileobjs_by_specfilepaths: dict[str, list[File]] = dict()
 
         for fileobj in self.spec.files:
             self.resolve(fileobj)
 
     @property
-    def resolved_files(self):
+    def resolved_files(self) -> Generator[File, None, None]:
         yield from self.fileobj_by_filepaths.values()
 
-    def put(self, fileobj):
+    def put(self, fileobj: File) -> list[File]:
         self.spec.put(fileobj)
         return self.resolve(fileobj)
 
-    def _resolve_fileobj_with_tags(self, fileobj):
+    def _resolve_fileobj_with_tags(self, fileobj: File) -> list[File]:
         tagglobres = list(tag_glob(fileobj.path))
         if len(tagglobres) == 0:
             logger.warning(f'No files found for query "{fileobj.path}"')
@@ -118,7 +119,7 @@ class ResolvedSpec:
             "{\\g<tag_name>}", fileobj.path
         )  # remove regex information from path if present
 
-        resolved_files = []
+        resolved_files: list[File] = list()
 
         for filepath, tagdict in tagglobres:
             assert isinstance(tagdict, dict)
@@ -134,6 +135,10 @@ class ResolvedSpec:
             filedict["tags"] = tagdict
 
             filedict["tmplstr"] = tmplstr
+
+            logger.debug(
+                f'Resolved "{pformat(filedict)}" from "{pformat(file_schema.dump(fileobj))}"'
+            )
 
             resolved_fileobj = file_schema.load(filedict)
             assert isinstance(resolved_fileobj, File)
@@ -245,7 +250,7 @@ class ResolvedSpec:
 
         return resolved_files
 
-    def resolve(self, fileobj):
+    def resolve(self, fileobj: File) -> list[File]:
         if len(get_entities_in_path(fileobj.path)) == 0:
             if fileobj.datatype == "bids":
                 resolved_files = self._resolve_bids(fileobj)
@@ -259,11 +264,11 @@ class ResolvedSpec:
 
         return resolved_files
 
-    def fileobj(self, filepath):
+    def fileobj(self, filepath: str) -> File | None:
         return self.fileobj_by_filepaths.get(filepath)
 
-    def specfileobj(self, filepath):
+    def specfileobj(self, filepath: str) -> File | None:
         return self.specfileobj_by_filepaths.get(filepath)
 
-    def fromspecfileobj(self, specfileobj):
+    def fromspecfileobj(self, specfileobj: File) -> list[File] | None:
         return self.fileobjs_by_specfilepaths.get(specfileobj.path)
