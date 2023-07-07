@@ -108,7 +108,7 @@ marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.7.1
+matplotlib==3.7.2
     # via
     #   -r requirements.in
     #   nitime
@@ -366,8 +366,6 @@ tifffile==2023.4.12
     # via scikit-image
 toml==0.10.2
     # via fmriprep
-tomli==2.0.1
-    # via setuptools-scm
 tqdm==4.65.0
     # via templateflow
 traits==6.3.2
@@ -377,7 +375,6 @@ transforms3d==0.4.1
 typing-extensions==4.6.3
     # via
     #   inflect
-    #   marshmallow-dataclass
     #   pint
     #   pydantic
     #   setuptools-scm
