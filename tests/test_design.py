@@ -4,9 +4,10 @@
 
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from halfpipe.design import prepare_data_frame
+from halfpipe.design import group_design, prepare_data_frame
 
 tsv_str = """SubjID\tSex\tSite.\tRecur\tAD
 11111111\t0\t1\t0\tNA
@@ -41,3 +42,26 @@ def test_prepare_data_frame(tmp_path: Path, tsv_str: str):
     assert df["Recur"].dtype == "category"
     assert df["Recur"].notnull().sum() == 4
     assert df["AD"].dtype == "category"
+
+
+def test_group_design():
+    data_frame = pd.DataFrame(
+        {
+            "subject": ["s1", "s2", "s3", "s4", "s5", "s6"],
+            "group": ["A", "A", "B", "B", "C", "C"],
+        }
+    )
+    data_frame = data_frame.set_index("subject")
+    data_frame["group"] = data_frame["group"].astype("category")
+
+    subjects = ["s1", "s2", "s3", "s4"]
+    contrasts = [
+        dict(type="infer", variable=["group"], levels=["A", "B", "C"]),
+    ]
+
+    design = group_design(
+        data_frame,
+        contrasts,
+        subjects,
+    )
+    assert len(design.regressor_list) == 2
