@@ -6,11 +6,11 @@ from pathlib import Path
 
 from tqdm.auto import tqdm
 
-from ..utils.path import split_ext
+from ..utils.path import AnyPath, recursive_list_directory, split_ext
 from .base import FileIndex
 
 
-def parse(path: Path) -> dict[str, str] | None:
+def parse(path: AnyPath) -> dict[str, str] | None:
     """
     Parses a BIDS-formatted filename and returns a dictionary of its tags.
 
@@ -63,8 +63,9 @@ def parse(path: Path) -> dict[str, str] | None:
     )
     if extension:
         tags["extension"] = extension
-    if path.parent.name in ("anat", "func", "fmap"):
-        tags["datatype"] = path.parent.name
+    parent_name = Path(str(path.parent)).name
+    if parent_name in ("anat", "func", "fmap"):
+        tags["datatype"] = parent_name
     for key, value in zip(keys, values):
         if key is not None:
             tags[key] = value
@@ -72,8 +73,8 @@ def parse(path: Path) -> dict[str, str] | None:
 
 
 class BIDSIndex(FileIndex):
-    def put(self, root: Path):
-        it = root.glob("**/*")
+    def put(self, root: AnyPath):
+        it = recursive_list_directory(root)
         for path in tqdm(it, desc=f'indexing files from "{root}"', unit="files"):
             tags = parse(path)
 

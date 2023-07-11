@@ -4,10 +4,14 @@
 
 import logging
 import os
+import pathlib
+import zipfile
 from os import path as op
 from pathlib import Path
 from shutil import copyfile
 from typing import Generator
+
+AnyPath = pathlib.Path | zipfile.Path
 
 
 def resolve(path: Path | str, fs_root: Path | str) -> Path:
@@ -55,7 +59,7 @@ def find_paths(obj):
     return paths
 
 
-def split_ext(path: Path | str):
+def split_ext(path: str | AnyPath):
     """Splits filename and extension (.gz safe)
     >>> split_ext('some/file.nii.gz')
     ('file', '.nii.gz')
@@ -70,7 +74,10 @@ def split_ext(path: Path | str):
     """
     from pathlib import Path
 
-    name = str(Path(path).name)
+    if isinstance(path, str):
+        path = Path(path)
+
+    name = str(path.name)
 
     safe_name = name
     for compound_extension in [".gz", ".xz"]:
@@ -148,6 +155,43 @@ def rlistdir(
 
         if maxdepth is None or maxdepth > 0:
             yield from rlistdir(path, dironly)
+
+
+def recursive_list_directory(
+    path: str | AnyPath,
+    only_directories: bool = False,
+    enter_archives: bool = False,
+    max_depth: int | None = None,
+) -> Generator[AnyPath, None, None]:
+    if max_depth is not None:
+        max_depth -= 1
+    if isinstance(path, str):
+        path = Path(path)
+    if path.is_dir():
+        if max_depth is None or max_depth >= 0:
+            for child in path.iterdir():
+                if child.is_dir():
+                    yield child
+                yield from recursive_list_directory(
+                    child,
+                    only_directories,
+                    enter_archives,
+                    max_depth,
+                )
+    else:
+        if not only_directories:
+            yield path
+        if enter_archives:
+            with path.open("rb") as file_handle:
+                if not zipfile.is_zipfile(file_handle):
+                    return
+                zip_file = zipfile.ZipFile(file_handle)
+                yield from recursive_list_directory(
+                    zipfile.Path(zip_file),
+                    only_directories,
+                    enter_archives,
+                    max_depth,
+                )
 
 
 def copy_if_newer(inpath: Path, outpath: Path):

@@ -6,20 +6,20 @@ from __future__ import annotations
 
 from collections import defaultdict
 from hashlib import sha1
-from pathlib import Path
 from typing import Container, Mapping
 
 from pyrsistent import pmap
 
 from ..logging import logger
+from ..utils.path import AnyPath
 
 
 class FileIndex:
     def __init__(self) -> None:
-        self.paths_by_tags: dict[str, dict[str, set[Path]]] = defaultdict(
+        self.paths_by_tags: dict[str, dict[str, set[AnyPath]]] = defaultdict(
             lambda: defaultdict(set)
         )
-        self.tags_by_paths: dict[Path, dict[str, str]] = defaultdict(dict)
+        self.tags_by_paths: dict[AnyPath, dict[str, str]] = defaultdict(dict)
 
     @property
     def hexdigest(self) -> str:
@@ -28,13 +28,13 @@ class FileIndex:
         """
         hash_algorithm = sha1()
 
-        for path in sorted(self.tags_by_paths.keys()):
+        for path in sorted(self.tags_by_paths.keys(), key=str):
             path_bytes = str(path).encode()
             hash_algorithm.update(path_bytes)
 
         return hash_algorithm.hexdigest()
 
-    def get(self, **tags: str | None) -> set[Path] | None:
+    def get(self, **tags: str | None) -> set[AnyPath] | None:
         """
         Find all paths that match the query tags.
 
@@ -48,7 +48,7 @@ class FileIndex:
             match the query, returns `None`.
         """
 
-        matches: set[Path] | None = None
+        matches: set[AnyPath] | None = None
         for key, value in tags.items():
             if key not in self.paths_by_tags:
                 logger.info(f'Unknown key "{key}"')
@@ -59,7 +59,7 @@ class FileIndex:
                 if value not in values:
                     logger.info(f'Unknown value "{value}"')
                     return None
-                paths: set[Path] = values[value]
+                paths: set[AnyPath] = values[value]
             else:
                 paths_in_index = set(self.tags_by_paths.keys())
                 paths = paths_in_index.difference(*values.values())
@@ -71,16 +71,16 @@ class FileIndex:
 
         return matches
 
-    def get_tags(self, path: Path) -> Mapping[str, str | None]:
+    def get_tags(self, path: AnyPath) -> Mapping[str, str | None]:
         if path in self.tags_by_paths:
             return self.tags_by_paths[path]
         else:
             return dict()
 
-    def get_tag_value(self, path: Path, key: str) -> str | None:
+    def get_tag_value(self, path: AnyPath, key: str) -> str | None:
         return self.get_tags(path).get(key)
 
-    def set_tag_value(self, path: Path, key: str, value: str) -> None:
+    def set_tag_value(self, path: AnyPath, key: str, value: str) -> None:
         # remove previous value
         if self.get_tag_value(path, key) is not None:
             previous_value = self.tags_by_paths[path].pop(key)
@@ -89,10 +89,10 @@ class FileIndex:
             self.tags_by_paths[path][key] = value
             self.paths_by_tags[key][value].add(path)
 
-    def get_tag_mapping(self, key: str) -> Mapping[str, set[Path]]:
+    def get_tag_mapping(self, key: str) -> Mapping[str, set[AnyPath]]:
         return self.paths_by_tags[key]
 
-    def get_tag_values(self, key: str, paths: set[Path] | None = None) -> set[str]:
+    def get_tag_values(self, key: str, paths: set[AnyPath] | None = None) -> set[str]:
         if key not in self.paths_by_tags:
             return set()
 
@@ -104,7 +104,7 @@ class FileIndex:
         )
 
     def get_tag_groups(
-        self, keys: Container[str], paths: set[Path] | None = None
+        self, keys: Container[str], paths: set[AnyPath] | None = None
     ) -> list[Mapping[str, str]]:
         if paths is None:
             paths = set(self.tags_by_paths.keys())
