@@ -25,6 +25,7 @@ from ....result.bids.base import make_bids_prefix
 from ....result.variables import Continuous
 from ....utils.multiprocessing import Pool
 from ....utils.nipype import run_workflow
+from ....utils.path import AnyPath
 from ....workflows.constants import constants
 from ....workflows.features.jacobian import init_jacobian_wf
 from .design import DesignBase
@@ -51,7 +52,7 @@ def apply_derived(
 
 
 def calculate_jacobian(
-    task: tuple[str, Path],
+    task: tuple[str, AnyPath],
 ) -> tuple[str, Path]:
     """
     Calculates the jacobian for a given subject and transform path using a nipype workflow.
@@ -64,6 +65,8 @@ def calculate_jacobian(
         tuple[str, Path]: A tuple containing the subject ID and the path to the jacobian file.
     """
     subject, transform_path = task
+    if not isinstance(transform_path, Path):
+        raise ValueError("Transform path must be a pathlib.Path object")
     jacobian_path = Path.cwd() / f"sub-{subject}_jacobian.nii.gz"
     with TemporaryDirectory(prefix=f"sub-{subject}_jacobian_wf") as temporary_directory:
         wf = init_jacobian_wf(
@@ -103,7 +106,7 @@ class ImagingVariables:
         return index
 
     @cached_property
-    def jacobian_paths(self) -> dict[str, Path]:
+    def jacobian_paths(self) -> dict[str, AnyPath]:
         index = self.fmriprep_derivatives
 
         query = {
@@ -120,7 +123,7 @@ class ImagingVariables:
                 "Cannot calculate jacobian. No transforms found in the input directories"
             )
 
-        tasks: dict[str, Path] = dict()
+        tasks: dict[str, AnyPath] = dict()
         for transform_path in transform_paths:
             subject = index.get_tag_value(transform_path, "sub")
             if subject is None:
@@ -133,7 +136,7 @@ class ImagingVariables:
             tasks[subject] = transform_path
 
         with Pool(processes=self.n_procs) as pool:
-            data: dict[str, Path] = dict(
+            data: dict[str, AnyPath] = dict(
                 tqdm(
                     pool.imap_unordered(calculate_jacobian, tasks.items()),
                     total=len(tasks),
@@ -144,7 +147,7 @@ class ImagingVariables:
 
         return data
 
-    def get_brain_mask_path(self, subject: str) -> Path:
+    def get_brain_mask_path(self, subject: str) -> AnyPath:
         index = self.fmriprep_derivatives
         brain_mask_paths = index.get(
             datatype="anat",

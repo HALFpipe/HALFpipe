@@ -84,6 +84,16 @@ def len_for_each(arrarr=None):
 
 
 def check_almost_equal(a: Any, b: Any) -> bool:
+    """
+    Recursively compare data structures for equality while using `math.isclose` for floats.
+
+    Args:
+        a (Any): The first value to compare.
+        b (Any): The second value to compare.
+
+    Returns:
+        bool: True if the values are almost equal, False otherwise.
+    """
     if isinstance(a, Mapping) and isinstance(b, Mapping):
         return check_almost_equal(sorted(a.items()), sorted(b.items()))
 
