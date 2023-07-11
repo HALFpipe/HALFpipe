@@ -41,10 +41,10 @@ class ApplyConditionOffset(SimpleInterface):
             for i, onset in enumerate(condition_onsets):
                 onset -= scan_start
                 if onset < 0:
-                    onset = 0
                     logger.warning(
-                        f'Condition "{condition}" onset truncated to {onset:f} s.'
+                        f'Condition "{condition}" onset truncated from {onset:f} to {0.0:f} s.'
                     )
+                    onset = 0
                 condition_onsets[i] = onset
 
         self._results["subject_info"] = Bunch(
