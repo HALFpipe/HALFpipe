@@ -11,7 +11,7 @@ from inflection import camelize, underscore
 from ...collect.metadata import metadata_fields
 from ...logging import logger
 from ...utils.json import TypeAwareJSONEncoder
-from ...utils.path import split_ext
+from ...utils.path import AnyPath, split_ext
 
 key_to_bids_map: Mapping[str, str] = dict(
     ica_aroma="ICAAROMA",
@@ -29,9 +29,9 @@ key_to_bids_map: Mapping[str, str] = dict(
 key_from_bids_map: Mapping[str, str] = {v: k for k, v in key_to_bids_map.items()}
 
 
-def get_sidecar_path(path: Path) -> Path:
+def get_sidecar_path(path: AnyPath) -> Path:
     stem, _ = split_ext(path)
-    sidecar_path = path.parent / f"{stem}.json"
+    sidecar_path = path.parent / f"{stem}.json"  # type: ignore
     return sidecar_path
 
 
@@ -58,7 +58,7 @@ def translate_to_bids(key):
         return camelize(key)
 
 
-def load_sidecar(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def load_sidecar(path: AnyPath) -> tuple[dict[str, Any], dict[str, Any]]:
     sidecar_path = get_sidecar_path(path)
     with sidecar_path.open() as file_handle:
         try:

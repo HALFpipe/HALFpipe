@@ -5,10 +5,9 @@
 from pathlib import Path
 from typing import Literal
 
-from ...model.tags import entities
 from ...model.tags.resultdict import first_level_entities
 from ...utils.format import format_like_bids
-from ...utils.path import split_ext
+from ...utils.path import AnyPath, split_ext
 
 
 def join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | None:
@@ -33,16 +32,26 @@ def join_tags(tags: dict[str, str], entities: list[str] | None = None) -> str | 
     return joined
 
 
-def make_bids_prefix(tags: dict[str, str]) -> str | None:
+def make_bids_prefix(
+    tags: dict[str, str],
+    entities: list[str] | None = None,
+) -> str | None:
+    if entities is None:
+        from ...model.tags import entities as model_entities
+
+        entities = list(model_entities)
+
     prefix = join_tags(tags, list(reversed(entities)))
     return prefix
 
 
 def make_bids_path(
-    source_file: Path | str,
-    source_type: Literal["image", "report"],
+    source_file: AnyPath | str,
+    source_type: Literal["image", "report"] | None,
     tags: dict[str, str],
     suffix: str,
+    entities: list[str] | None = None,
+    folder_entities: list[str] | None = None,
     **kwargs: str,
 ) -> Path:
     path = Path()
@@ -52,13 +61,16 @@ def make_bids_path(
         if folder_name is not None:
             path = path.joinpath(folder_name)
 
-    path = path.joinpath(dict(image="func", report="figures")[source_type])
+    if source_type is not None:
+        path = path.joinpath(dict(image="func", report="figures")[source_type])
 
-    if "feature" in tags:  # make subfolders for all feature outputs
-        folder_entities = ["task"]
-        if "sub" not in tags:
-            folder_entities.extend(first_level_entities)
+    if "feature" in tags:  # Make subfolders for all feature outputs
+        if folder_entities is None:
+            folder_entities = ["task"]
+            if "sub" not in tags:
+                folder_entities.extend(first_level_entities)
 
+    if folder_entities is not None:
         folder_name = join_tags(tags, folder_entities)
         if folder_name is not None:
             path = path.joinpath(folder_name)
@@ -69,13 +81,13 @@ def make_bids_path(
         path = path.joinpath(folder_name)
 
     _, ext = split_ext(source_file)
-    filename = f"{suffix}{ext}"  # keep original extension
+    filename = f"{suffix}{ext}"  # Keep original extension
 
     kwargs_str = join_tags(kwargs)
     if kwargs_str is not None:
         filename = f"{kwargs_str}_{filename}"
 
-    tags_str = make_bids_prefix(tags)
+    tags_str = make_bids_prefix(tags, entities=entities)
     if tags_str is not None:
         filename = f"{tags_str}_{filename}"
 

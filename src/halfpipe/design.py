@@ -202,12 +202,18 @@ def group_design(
 ) -> Design:
     # Only keep subjects that are in this design matrix
     # while also setting the order
-    data_frame = data_frame.loc[subjects, :]
+    data_frame = data_frame.loc[subjects, :].copy()
 
     # Remove zero variance columns
     columns_var_gt_0 = data_frame.apply(pd.Series.nunique) > 1  # Does not count NA
     assert isinstance(columns_var_gt_0, pd.Series)
     data_frame = data_frame.loc[:, columns_var_gt_0]
+
+    # Remove unused categories
+    for column in data_frame.columns:
+        if data_frame[column].dtype != "category":
+            continue
+        data_frame[column] = data_frame[column].cat.remove_unused_categories()
 
     # Don't need to specify lhs
     lhs: list[Term] = []

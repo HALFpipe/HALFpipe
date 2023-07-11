@@ -54,4 +54,4 @@ class ReportErrorWriter(FileWriter):
 
     def release(self) -> None:
         if self.dictlistfile is not None:
-            self.dictlistfile.__exit__()
+            self.dictlistfile.__exit__(None, None, None)

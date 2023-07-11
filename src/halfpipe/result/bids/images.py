@@ -92,9 +92,10 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
             result["vals"].update(vals)
             continue
 
-        if path.stat(follow_symlinks=True).st_size == 0:
-            logger.warning(f'Skipping empty file "{path}"')
-            continue
+        if isinstance(path, Path):
+            if path.stat(follow_symlinks=True).st_size == 0:
+                logger.warning(f'Skipping empty file "{path}"')
+                continue
 
         key = _from_bids_derivatives(file_index.get_tags(path))
         if key is None:

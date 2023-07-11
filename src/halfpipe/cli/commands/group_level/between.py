@@ -5,7 +5,7 @@
 from argparse import Namespace
 from copy import deepcopy
 from dataclasses import dataclass, field
-from functools import partial, reduce
+from functools import partial
 from itertools import starmap
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,7 @@ from ....result.bids.base import make_bids_prefix
 from ....result.bids.images import save_images
 from ....stats.algorithms import modelfit_aliases
 from ....stats.fit import fit
+from ....utils.data_frame import combine_first
 from ....utils.format import format_tags
 from .base import aliases
 from .design import DesignBase
@@ -220,9 +221,6 @@ class BetweenBase:
         self.atlas_coverage_frames.append(atlas_coverage_frame)
 
     def write_outputs(self) -> None:
-        def combine_first(data_frames: list[pd.DataFrame]) -> pd.DataFrame:
-            return reduce(lambda a, b: a.combine_first(b), data_frames)
-
         csv_kwargs: dict[str, Any] = dict(sep="\t", index=True, na_rep="n/a")
 
         if len(self.phenotype_frames) > 0:

@@ -8,27 +8,26 @@ from typing import Generator
 from ..file_index.bids import BIDSIndex
 from ..result.base import ResultDict
 from ..result.bids.images import load_images
-from ..utils.path import rlistdir
+from ..utils.path import AnyPath, recursive_list_directory
 
 
 def find_derivatives_directories(
-    name: str, path: Path | str, maxdepth: int = 1
-) -> Generator[Path, None, None]:
-    path = Path(path)
-    if path.parts[-2:] == ("derivatives", name):
-        yield path
-        return
-    if path.parts[-1] == "derivatives":
-        path = path.parent
-    if path.parts[-2] == "derivatives":
-        path = path.parent.parent
+    name: str, path: str | AnyPath, max_depth: int = 1
+) -> Generator[AnyPath, None, None]:
+    if isinstance(path, str):
+        path = Path(path)
+    if isinstance(path, Path):
+        if path.parts[-2:] == ("derivatives", name):
+            yield path
+            return
+        if path.parts[-1] == "derivatives":
+            path = path.parent
+        if path.parts[-2] == "derivatives":
+            path = path.parent.parent
     working_directories: set[Path] = set()
-    for file_name in rlistdir(path, maxdepth=maxdepth):
-        file_path = Path(file_name)
-        if file_path.suffix == ".zip":
-            continue
+    for file_path in recursive_list_directory(path, max_depth=max_depth):
         if file_path.name == "spec.json":
-            working_directories.add(file_path.parent)
+            working_directories.add(file_path.parent)  # type: ignore
 
     found_derivatives = False
     for working_directory in working_directories:
@@ -42,11 +41,11 @@ def find_derivatives_directories(
 
 
 def collect_halfpipe_derivatives(
-    path: Path | str, maxdepth: int = 1
+    path: str | AnyPath, max_depth: int = 1
 ) -> list[ResultDict]:
     index = BIDSIndex()
     for derivatives_directory in find_derivatives_directories(
-        "halfpipe", path, maxdepth=maxdepth
+        "halfpipe", path, max_depth=max_depth
     ):
         index.put(derivatives_directory)
 

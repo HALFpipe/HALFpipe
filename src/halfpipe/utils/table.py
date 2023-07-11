@@ -4,8 +4,9 @@
 
 import json
 import logging
-from math import isclose
 from pathlib import Path
+from types import TracebackType
+from typing import Any, Self, Type
 
 import numpy as np
 import pandas as pd
@@ -14,13 +15,7 @@ from tabulate import tabulate
 from ..model.tags import entities
 from .json import TypeAwareJSONEncoder
 from .lock import AdaptiveLock
-
-
-def _compare(a, b):
-    if isinstance(a, float) and isinstance(b, float):
-        return isclose(a, b)
-    else:
-        return a == b
+from .ops import check_almost_equal
 
 
 class SynchronizedTable:
@@ -44,9 +39,9 @@ class SynchronizedTable:
             self.footer_bytes = footer.encode()
 
         self.dictlist: list[dict] | None = None
-        self.is_dirty = None
+        self.is_dirty: bool | None = None
 
-    def load(self):
+    def load(self) -> None:
         if self.filename.is_file():
             with open(str(self.filename), "rb") as fp:
                 bytesfromfile = fp.read()
@@ -63,7 +58,7 @@ class SynchronizedTable:
         if self.dictlist is None:
             self.dictlist = list()
 
-    def dump(self, opener=open, mode="wb"):
+    def dump(self, opener=open, mode="wb") -> None:
         with opener(str(self.filename), mode) as file_handle:
             file_handle.write(self.header_bytes)
             jsonstr = json.dumps(
@@ -78,7 +73,7 @@ class SynchronizedTable:
                 file_handle.write("\\\n".encode())
             file_handle.write(self.footer_bytes)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.lock.lock(self.lockfilename)
 
         self.is_dirty = False
@@ -86,7 +81,12 @@ class SynchronizedTable:
 
         return self
 
-    def __exit__(self, *_):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         if self.is_dirty:
             self.dump()
         try:
@@ -95,7 +95,7 @@ class SynchronizedTable:
             pass
         self.dictlist = None
 
-    def to_table(self):
+    def to_table(self) -> None:
         assert self.dictlist is not None
 
         dictlist = [
@@ -129,7 +129,7 @@ class SynchronizedTable:
             fp.write(table_str)
             fp.write("\n")
 
-    def put(self, indict):
+    def put(self, indict: dict[str, Any]) -> None:
         assert self.dictlist is not None
 
         intags = {k: v for k, v in indict.items() if k in entities}
@@ -143,7 +143,7 @@ class SynchronizedTable:
 
             if set(intags.items()) == set(curtags.items()):
                 if set(indict.keys()) == set(curdict.keys()):
-                    if all(_compare(v, curdict[k]) for k, v in indict.items()):
+                    if check_almost_equal(indict, curdict):
                         return  # update not needed
 
                 matches = True
