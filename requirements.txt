@@ -385,7 +385,7 @@ tzdata==2023.3
     # via pandas
 urllib3==2.0.3
     # via requests
-wheel==0.40.0
+wheel==0.41.1
     # via -r requirements.in
 wrapt==1.15.0
     # via formulaic
