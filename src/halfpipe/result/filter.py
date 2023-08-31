@@ -253,7 +253,8 @@ def filter_results(
             results = list(filter(filter_fun, results))
 
     if exclude_files is not None:
-        decision_maker = QCDecisionMaker(exclude_files)
+        exclude_paths = list(map(Path, exclude_files))
+        decision_maker = QCDecisionMaker(exclude_paths)
         results = [
             result
             for result in results

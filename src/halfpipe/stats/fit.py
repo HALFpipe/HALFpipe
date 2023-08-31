@@ -167,7 +167,6 @@ def make_voxelwise_generator(
 
 
 def fit(
-    row_index: list[str],
     cope_files: list[Path],
     var_cope_files: list[Path] | None,
     mask_files: list[Path],

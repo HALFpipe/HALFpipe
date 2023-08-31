@@ -2,9 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-"""
-
 import os
 
 from nipype.interfaces.base import (
@@ -16,7 +13,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.io import IOBase, add_traits
 
-from ...stats.algorithms import algorithms, make_algorithms_set
+from ...stats.algorithms import algorithms, make_algorithms_dict
 from ...stats.fit import fit
 from .design import DesignSpec
 
@@ -53,10 +50,9 @@ class ModelFit(IOBase):
         self._results = dict()
 
     def _add_output_traits(self, base):
-        algorithm_set = make_algorithms_set(self.inputs.algorithms_to_run)
+        algorithm_dict = make_algorithms_dict(self.inputs.algorithms_to_run)
         fieldnames = list()
-        for a in algorithm_set:
-            algorithm = algorithms[a]
+        for algorithm in algorithm_dict.values():
             fieldnames.extend(algorithm.model_outputs)
             fieldnames.extend(algorithm.contrast_outputs)
         return add_traits(base, fieldnames)

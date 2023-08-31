@@ -393,7 +393,7 @@ class FmriprepFactory(Factory):
         _connect([*hierarchy, anat_wf])
 
         if connected_attrs != inputattrs:
-            missing_attrs = sorted(inputattrs - connected_attrs)
+            missing_attrs: list[str] = sorted(inputattrs - connected_attrs)
             logger.info(
                 f"Unable to find fMRIPrep outputs {p.join(missing_attrs)} "
                 f"for workflow {nodehierarchy}"

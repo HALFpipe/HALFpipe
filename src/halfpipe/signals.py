@@ -71,7 +71,9 @@ def mean_signals(
             raise ValueError("Mask image and input image must have the same shape.")
         if not np.allclose(mask_img.affine, in_img.affine):
             raise ValueError("Mask image and input image must have the same affine.")
-        mask_img = nib.squeeze_image(mask_img)  # Remove trailing singleton dimensions.
+        mask_img = nib.funcs.squeeze_image(
+            mask_img
+        )  # Remove trailing singleton dimensions.
         if mask_img is None:
             raise RuntimeError("Failed to squeeze mask image")
         mask_data = np.asanyarray(mask_img.dataobj).astype(bool)
