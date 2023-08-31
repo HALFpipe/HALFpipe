@@ -9,12 +9,11 @@ from pathlib import Path
 from nipype.interfaces import fsl
 from tqdm.auto import tqdm
 
-from halfpipe.result.base import ResultDict
-
 from ....design import intercept_only_design
 from ....interfaces.image_maths.merge import merge, merge_mask
 from ....logging import logger
 from ....result.aggregate import aggregate_results, summarize_metadata
+from ....result.base import ResultDict
 from ....utils.hash import b32_digest
 from ....utils.multiprocessing import Pool
 from .base import aliases
@@ -48,11 +47,13 @@ def apply_aggregate(
     design.results = results
 
 
-def map_fixed_effects_aggregate(result: ResultDict) -> ResultDict:
+def map_fixed_effects_aggregate(
+    result: ResultDict, exist_ok: bool = False
+) -> ResultDict:
     key = b32_digest(result)[:8]
 
     model_directory = Path.cwd() / f"model-{key}"
-    model_directory.mkdir(exist_ok=False, parents=True)
+    model_directory.mkdir(exist_ok=exist_ok, parents=True)
 
     tags = {
         key: value for key, value in result["tags"].items() if isinstance(value, str)
@@ -72,7 +73,11 @@ def map_fixed_effects_aggregate(result: ResultDict) -> ResultDict:
     with chdir(model_directory):
         cope_file = merge(cope_files, "t")
         var_cope_file = merge(var_cope_files, "t")
-        mask_file = merge_mask(mask_files)
+        mask_file_path = merge_mask(mask_files)
+
+        # Ensure consistent naming
+        mask_file = Path.cwd() / "mask.nii.gz"
+        mask_file_path.rename(mask_file)
 
         n = len(cope_files)
         (regressors, contrasts, _, _) = intercept_only_design(n)
@@ -97,10 +102,23 @@ def map_fixed_effects_aggregate(result: ResultDict) -> ResultDict:
     var_cope_file = flameo.outputs.var_copes
 
     images = dict(
-        effect=cope_file,
-        variance=var_cope_file,
-        mask=mask_file,
+        effect=Path(cope_file),
+        variance=Path(var_cope_file),
+        mask=Path(mask_file),
     )
+
+    # Remove unused files
+    output_paths = set(images.values())
+    for input_path in flameo.inputs.values():
+        if not isinstance(input_path, (str, Path)):
+            continue
+        input_path = Path(input_path)
+        if not input_path.is_file():
+            continue
+        if input_path in output_paths:
+            continue
+        logger.debug(f'Removing unused file "{input_path}"')
+        input_path.unlink()
 
     result["tags"] = tags
     result["images"] = images
