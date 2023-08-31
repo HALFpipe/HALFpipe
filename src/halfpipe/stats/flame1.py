@@ -202,7 +202,7 @@ class FLAME1(ModelAlgorithm):
     @classmethod
     def write_outputs(
         cls, ref_img: nib.nifti1.Nifti1Image, cmatdict: dict, voxel_results: dict
-    ) -> dict:
+    ) -> dict[str, list[Literal[False] | str]]:
         output_files: dict[str, list[Literal[False] | str]] = dict()
 
         for output_name in cls.contrast_outputs:
@@ -214,10 +214,10 @@ class FLAME1(ModelAlgorithm):
             rdf = pd.DataFrame.from_records(contrast_results)
 
             if "mask" not in rdf.index:  # ensure that we always output a mask
-                rdf = rdf.append(pd.Series(data=False, index=rdf.columns, name="mask"))
+                rdf = rdf.append(pd.Series(data=False, index=rdf.columns, name="mask"))  # type: ignore
 
             if "zstat" not in rdf.index:  # ensure that we always output a zstat
-                rdf = rdf.append(pd.Series(data=nan, index=rdf.columns, name="zstat"))
+                rdf = rdf.append(pd.Series(data=nan, index=rdf.columns, name="zstat"))  # type: ignore
 
             for map_name, series in rdf.iterrows():
                 out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
