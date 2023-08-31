@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
+import zipfile
 from collections import defaultdict
 from enum import Enum, IntEnum, auto
 from glob import glob, has_magic
@@ -14,6 +15,7 @@ from pyrsistent import pmap
 
 from .logging import logger
 from .utils.format import format_tags, normalize_subject
+from .utils.path import AnyPath
 
 
 class Rating(IntEnum):
@@ -29,24 +31,25 @@ class Decision(Enum):
 
 
 class QCDecisionMaker:
-    def __init__(self, file_paths: Sequence[str | Path]):
+    def __init__(self, file_paths: Sequence[AnyPath]):
         self.index: dict[Mapping[str, str], set[Rating]] = defaultdict(set)
         self.relevant_tag_names: set[str] = set()
 
         self.shown_warning_tags: set[Mapping[str, str]] = set()
 
         for file_path in file_paths:
-            self._add_file(file_path)
+            self.add_file(file_path)
 
-    def _add_file(self, file_path: str | Path) -> None:
-        file_path = str(file_path)
+    def add_file(self, file_path: AnyPath) -> None:
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
 
-        if has_magic(file_path):
-            for e in glob(file_path, recursive=True):
-                self._add_file(e)
+        if has_magic(str(file_path)) and not isinstance(file_path, zipfile.Path):
+            for e in glob(str(file_path), recursive=True):
+                self.add_file(Path(e))
 
         else:
-            with open(file_path, "r") as file_handle:
+            with file_path.open() as file_handle:
                 entries = json.load(file_handle)
 
             if not isinstance(entries, list):
@@ -76,7 +79,7 @@ class QCDecisionMaker:
             {
                 tag: self._normalize_value(tag, value)
                 for tag, value in entry.items()
-                if tag not in ["rating", "type"]
+                if tag != "rating"
             }
         )
 
@@ -84,7 +87,7 @@ class QCDecisionMaker:
 
         self.relevant_tag_names.update(tags.keys())
 
-    def _iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
+    def iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
         yield Rating.NONE  # default
         for subset_items in powerset(tags.items()):
             subset = pmap(subset_items)
@@ -103,7 +106,7 @@ class QCDecisionMaker:
                 }
             )
 
-        rating: Rating = max(self._iter_ratings(relevant_tags))
+        rating: Rating = max(self.iter_ratings(relevant_tags))
 
         if rating == Rating.BAD:
             return Decision.EXCLUDE
