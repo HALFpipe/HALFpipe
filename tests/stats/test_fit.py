@@ -27,7 +27,6 @@ def test_fit(tmp_path: Path, wakemandg_hensonrn: Dataset):
     ) = wakemandg_hensonrn
 
     result = fit(
-        row_index=subjects,
         cope_files=cope_files,
         var_cope_files=var_cope_files,
         mask_files=mask_files,

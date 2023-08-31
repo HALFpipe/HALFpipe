@@ -96,7 +96,6 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
         var_cope_files_or_none = None
 
     result = fit(
-        row_index=subjects,
         cope_files=cope_files,
         var_cope_files=var_cope_files_or_none,
         mask_files=mask_files,
