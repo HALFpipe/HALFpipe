@@ -8,10 +8,10 @@ from collections import defaultdict
 from enum import Enum, IntEnum, auto
 from glob import glob, has_magic
 from pathlib import Path
-from typing import Any, Generator, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 from more_itertools import powerset
-from pyrsistent import pmap
+from pyrsistent import PMap, pmap
 
 from .logging import logger
 from .utils.format import format_tags, normalize_subject
@@ -32,7 +32,8 @@ class Decision(Enum):
 
 class QCDecisionMaker:
     def __init__(self, file_paths: Sequence[AnyPath]):
-        self.index: dict[Mapping[str, str], set[Rating]] = defaultdict(set)
+        self.index: dict[PMap[str, str], set[Rating]] = defaultdict(set)
+        self.types: set[str] = set()
         self.relevant_tag_names: set[str] = set()
 
         self.shown_warning_tags: set[Mapping[str, str]] = set()
@@ -84,15 +85,26 @@ class QCDecisionMaker:
         )
 
         self.index[tags].add(rating)
+        if "type" in tags:
+            self.types.add(tags["type"])
 
         self.relevant_tag_names.update(tags.keys())
 
-    def iter_ratings(self, tags: Mapping[str, str]) -> Generator[Rating, None, None]:
-        yield Rating.NONE  # default
-        for subset_items in powerset(tags.items()):
-            subset = pmap(subset_items)
-            if subset in self.index:
-                yield from self.index[subset]
+    def iterate_ratings(self, tags: Mapping[str, str]) -> Iterator[Rating]:
+        yield Rating.NONE  # Default value
+
+        if "type" in tags:
+            indices: Iterator[PMap] = map(pmap, powerset(tags.items()))
+        else:
+            indices = (
+                subset.set("type", rating_type)
+                for subset in map(pmap, powerset(tags.items()))
+                for rating_type in self.types
+            )
+
+        for index in indices:
+            if index in self.index:
+                yield from self.index[index]
 
     def get(self, tags: Mapping[str, Any]) -> Decision:
         if len(self.relevant_tag_names) == 0:
@@ -106,7 +118,7 @@ class QCDecisionMaker:
                 }
             )
 
-        rating: Rating = max(self.iter_ratings(relevant_tags))
+        rating: Rating = max(self.iterate_ratings(relevant_tags))
 
         if rating == Rating.BAD:
             return Decision.EXCLUDE

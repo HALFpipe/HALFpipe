@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+from pathlib import Path
 from typing import Mapping
 
 import pytest
@@ -22,7 +23,7 @@ from halfpipe.exclude import Decision, QCDecisionMaker
     ],
 )
 def test_get(tmp_path, tags: Mapping[str, str], decision):
-    file_paths: list[str] = []
+    file_paths: list[Path] = []
     test_file_path = tmp_path / "exclude_hcp_neele.json"
     x = (
         {
@@ -40,7 +41,7 @@ def test_get(tmp_path, tags: Mapping[str, str], decision):
     with open(test_file_path, "w") as file_handle:
         json.dump(x, file_handle)
 
-    file_paths.append(str(test_file_path))
+    file_paths.append(test_file_path)
     # warnings catcher & tasks maybe 2nd test
     qc = QCDecisionMaker(file_paths=file_paths)
     assert qc.get(tags=dict(sub="PSY00")) == decision
