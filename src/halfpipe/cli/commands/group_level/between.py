@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import starmap
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 
@@ -131,20 +131,19 @@ class BetweenBase:
             contrast_list,
             subjects,
         )
-        outputs: dict[str, str] = dict(
+        outputs: dict[str, str | list[str | Literal[False]]] = dict(
             design_matrix=str(design_tsv),
             contrast_matrix=str(contrast_tsv),
         )
         outputs.update(
             fit(
-                subjects,
-                cope_paths,
-                var_cope_paths,
-                mask_paths,
-                regressor_list,
-                contrast_list,
-                self.arguments.algorithm,
-                self.arguments.nipype_n_procs,
+                cope_files=cope_paths,
+                var_cope_files=var_cope_paths,
+                mask_files=mask_paths,
+                regressors=regressor_list,
+                contrasts=contrast_list,
+                algorithms_to_run=self.arguments.algorithm,
+                num_threads=self.arguments.nipype_n_procs,
             )
         )
         # Apply rules from model fit aliases
@@ -163,13 +162,16 @@ class BetweenBase:
             result["tags"]["model"] = model_name
         result["images"] = images
         results.append(result)
+
         # Per-contrast results
         for i, contrast_name in enumerate(contrast_names):
-            images = {
-                key: value[i]
-                for key, value in outputs.items()
-                if isinstance(value, list) and isinstance(value[i], str)
-            }
+            images = dict()
+            for key, value in outputs.items():
+                if not isinstance(value, list):
+                    continue
+                contrast_value = value[i]
+                if isinstance(contrast_value, str):
+                    images[key] = contrast_value
             if len(images) == 0:
                 continue
             result = deepcopy(result)

@@ -230,10 +230,12 @@ def memory_limit() -> float:
         ulimit_memory_limit(),
         cgroup_memory_limit(),
     ]
-    memory_limits = [ml.m_as(ureg.gigabytes) for ml in memory_limits if ml is not None]
+    memory_limits_in_gigabytes = [
+        float(ml.m_as(ureg.gigabytes)) for ml in memory_limits if ml is not None
+    ]
 
     memory_limit = (
-        min(memory_limits) * 0.9
+        min(memory_limits_in_gigabytes) * 0.9
     )  # nipype uses 90% of max as a safety precaution
 
     process = psutil.Process(pid=os.getpid())

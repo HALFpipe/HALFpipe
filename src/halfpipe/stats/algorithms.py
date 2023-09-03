@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, List, Set, Type
+from typing import Type
 
 from .base import ModelAlgorithm
 from .descriptive import Descriptive
@@ -20,7 +20,7 @@ modelfit_aliases = dict(
     masks="mask",
 )
 
-algorithms: Dict[str, Type[ModelAlgorithm]] = dict(
+algorithms: dict[str, Type[ModelAlgorithm]] = dict(
     descriptive=Descriptive,
     flame1=FLAME1,
     heterogeneity=Heterogeneity,
@@ -28,10 +28,13 @@ algorithms: Dict[str, Type[ModelAlgorithm]] = dict(
 )
 
 
-def make_algorithms_set(algorithms_to_run: List[str]) -> Set[str]:
+def make_algorithms_dict(
+    algorithms_to_run: list[str],
+) -> dict[str, Type[ModelAlgorithm]]:
     # update algorithms
     # remove duplicates and always run descriptive
 
     algorithm_set = set(algorithms_to_run) | frozenset(["descriptive"])
 
-    return algorithm_set
+    algorithms_dict = {name: algorithms[name] for name in algorithm_set}
+    return algorithms_dict

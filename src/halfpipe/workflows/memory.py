@@ -76,7 +76,7 @@ class MemoryCalculator(NamedTuple):
     @classmethod
     def calc_bold_gb(cls, shape: Tuple[int, int, int, int]) -> Tuple[float, float]:
         x, y, z, t = shape
-        volume_bytes = ureg.Quantity(x * y * z * 8, ureg.bytes)
+        volume_bytes = x * y * z * 8 * ureg.bytes
 
         volume_gb: float = volume_bytes.to(ureg.gigabytes).m
         series_gb: float = volume_gb * t

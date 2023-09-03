@@ -5,24 +5,41 @@
 from collections import defaultdict
 from contextlib import nullcontext
 from pathlib import Path
-from typing import ContextManager, Iterator
+from typing import ContextManager, Iterator, Literal, NamedTuple, Type
 
 import nibabel as nib
 import numpy as np
 from nilearn.image import new_img_like
+from numpy import typing as npt
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
 
 from ..ingest.design import parse_design
 from ..utils.multiprocessing import Pool
-from .algorithms import algorithms, make_algorithms_set
+from .algorithms import algorithms, make_algorithms_dict
+from .base import ModelAlgorithm
 
 
-def voxel_calc(voxel_data):
+class VoxelData(NamedTuple):
+    algorithm_dict: dict[str, Type[ModelAlgorithm]]
+    coordinate: tuple[int, int, int]
+    effect: npt.NDArray[np.float64]
+    design_matrix: npt.NDArray[np.float64]
+    variance: npt.NDArray[np.float64]
+    contrast_matrices: dict[str, npt.NDArray[np.float64]]
+
+
+def voxel_calc(voxel_data: VoxelData) -> dict:
     with threadpool_limits(limits=1, user_api="blas"):
-        algorithm_set, c, y, z, s, cmatdict = voxel_data
         return {
-            a: algorithms[a].voxel_calc(c, y, z, s, cmatdict) for a in algorithm_set
+            name: algorithm.voxel_calc(
+                voxel_data.coordinate,
+                voxel_data.effect,
+                voxel_data.design_matrix,
+                voxel_data.variance,
+                voxel_data.contrast_matrices,
+            )
+            for name, algorithm in voxel_data.algorithm_dict.items()
         }
 
 
@@ -75,6 +92,10 @@ def load_data(
                 disable=quiet,
             )
         ):
+            if var_cope_file is None:
+                raise ValueError(
+                    f'Missing var_cope file corresponding to "{cope_files[i]}"'
+                )
             var_cope_img = nib.funcs.squeeze_image(nib.loadsave.load(var_cope_file))
             var_cope_data[..., i] = var_cope_img.get_fdata()
 
@@ -94,49 +115,58 @@ def load_data(
     return copes_img, var_copes_img
 
 
+def ensure_row_vector(x):
+    return np.ravel(x)[:, np.newaxis]
+
+
 def make_voxelwise_generator(
     copes_img: nib.nifti1.Nifti1Image,
     var_copes_img: nib.nifti1.Nifti1Image,
     regressors: dict[str, list[float]],
     contrasts: list[tuple],
     algorithms_to_run: list[str],
-) -> tuple[Iterator, dict]:
+) -> tuple[Iterator[VoxelData], dict]:
     shape = copes_img.shape[:3]
 
     copes = copes_img.get_fdata()
     var_copes = var_copes_img.get_fdata()
 
-    dmat, cmatdict = parse_design(regressors, contrasts)
-    nevs = dmat.columns.size
+    dmat, contrast_matrices = parse_design(regressors, contrasts)
+    regressor_count = dmat.columns.size
 
-    algorithm_set = make_algorithms_set(algorithms_to_run)
+    algorithm_dict = make_algorithms_dict(algorithms_to_run)
 
     # Do not run the MCAR test if we do not have regressors.
     if dmat.shape[1] == 1:
-        algorithm_set -= frozenset(["mcartest"])
+        if "mcartest" in algorithm_dict:
+            del algorithm_dict["mcartest"]
 
     # prepare voxelwise generator
     def gen_voxel_data():
-        def ensure_row_vector(x):
-            return np.ravel(x)[:, np.newaxis]
-
         for coordinate in np.ndindex(*shape):
-            y = ensure_row_vector(copes[coordinate])
+            effect = ensure_row_vector(copes[coordinate])
 
-            npts = np.count_nonzero(np.isfinite(y))
-            if npts < nevs + 3:  # need at least three degrees of freedom
+            sample_count = np.count_nonzero(np.isfinite(effect))
+            # Skip if we don't have at least three degrees of freedom
+            if sample_count < regressor_count + 3:
                 continue
 
-            s = ensure_row_vector(var_copes[coordinate])
-            z = dmat.to_numpy(dtype=float)
+            variance = ensure_row_vector(var_copes[coordinate])
+            design_matrix = dmat.to_numpy(dtype=float)
 
-            yield algorithm_set, coordinate, y, z, s, cmatdict
+            yield VoxelData(
+                algorithm_dict=algorithm_dict,
+                coordinate=coordinate,
+                effect=effect,
+                design_matrix=design_matrix,
+                variance=variance,
+                contrast_matrices=contrast_matrices,
+            )
 
-    return gen_voxel_data(), cmatdict
+    return gen_voxel_data(), contrast_matrices
 
 
 def fit(
-    row_index: list[str],
     cope_files: list[Path],
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
@@ -144,7 +174,7 @@ def fit(
     contrasts: list[tuple],
     algorithms_to_run: list[str],
     num_threads: int,
-) -> dict[str, str]:
+) -> dict[str, list[Literal[False] | str]]:
     copes_img, var_copes_img = load_data(
         cope_files,
         var_cope_files,
@@ -166,7 +196,7 @@ def fit(
         cm: ContextManager = nullcontext()
     else:
         pool = Pool(processes=num_threads)
-        iterator = pool.imap_unordered(voxel_calc, voxel_data)
+        iterator = pool.imap_unordered(voxel_calc, voxel_data, chunksize=2**9)
         cm = pool
 
     # run
@@ -185,7 +215,7 @@ def fit(
 
     ref_image = nib.funcs.squeeze_image(nib.loadsave.load(cope_files[0]))
 
-    output_files = dict()
+    output_files: dict[str, list[Literal[False] | str]] = dict()
     for a, v in voxel_results.items():
         output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v))
 

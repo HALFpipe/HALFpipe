@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generator, List, Optional, Tuple
+from typing import Generator, Literal
 
 import nibabel as nib
 import numpy as np
@@ -13,25 +13,25 @@ from nilearn.image import new_img_like
 
 
 class ModelAlgorithm(ABC):
-    model_outputs: List[str] = list()
-    contrast_outputs: List[str] = list()
+    model_outputs: list[str] = list()
+    contrast_outputs: list[str] = list()
 
     @staticmethod
     @abstractmethod
     def voxel_calc(
-        coordinate: Tuple[int, int, int],
+        coordinate: tuple[int, int, int],
         y: np.ndarray,
         z: np.ndarray,
         s: np.ndarray,
-        cmatdict: Dict,
-    ) -> Optional[Dict]:
+        cmatdict: dict,
+    ) -> dict | None:
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
     def write_outputs(
-        ref_img: nib.nifti1.Nifti1Image, cmatdict: Dict, voxel_results: Dict
-    ) -> Dict:
+        ref_img: nib.nifti1.Nifti1Image, cmatdict: dict, voxel_results: dict
+    ) -> dict[str, list[Literal[False] | str]]:
         raise NotImplementedError()
 
     @classmethod
@@ -41,7 +41,7 @@ class ModelAlgorithm(ABC):
         coordinates = series.index.tolist()
         values = series.values
 
-        shape: List[int] = list(ref_img.shape[:3])
+        shape: list[int] = list(ref_img.shape[:3])
 
         (k,) = set(
             (1,)

@@ -8,8 +8,6 @@ from collections import defaultdict
 from hashlib import sha1
 from typing import Container, Mapping
 
-from pyrsistent import pmap
-
 from ..logging import logger
 from ..utils.path import AnyPath
 
@@ -106,6 +104,8 @@ class FileIndex:
     def get_tag_groups(
         self, keys: Container[str], paths: set[AnyPath] | None = None
     ) -> list[Mapping[str, str]]:
+        from pyrsistent import pmap
+
         if paths is None:
             paths = set(self.tags_by_paths.keys())
 
