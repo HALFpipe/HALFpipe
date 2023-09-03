@@ -28,6 +28,7 @@ def test_fit(tmp_path, wakemandg_hensonrn_raw):
         "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz"
     )
     modes_img = nib.loadsave.load(modes_path)
+    assert isinstance(modes_img, nib.nifti1.Nifti1Image)
 
     signals = mode_signals(copes_img, var_copes_img, modes_img)
 
