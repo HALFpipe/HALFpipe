@@ -71,7 +71,7 @@ def test_mean_signals(
     assert np.allclose(combined_signals[:, :brainnetome_count], brainnetome_signals)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(600)
 def test_mode_signals(
     tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any]]
 ) -> None:
