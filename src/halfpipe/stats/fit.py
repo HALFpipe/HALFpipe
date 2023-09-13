@@ -5,7 +5,7 @@
 from collections import defaultdict
 from contextlib import nullcontext
 from pathlib import Path
-from typing import ContextManager, Iterator, Literal, NamedTuple, Type
+from typing import ContextManager, Iterator, Literal, NamedTuple, Sequence, Type
 
 import nibabel as nib
 import numpy as np
@@ -14,7 +14,7 @@ from numpy import typing as npt
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
 
-from ..ingest.design import parse_design
+from ..design import FContrast, TContrast, parse_design
 from ..utils.multiprocessing import Pool
 from .algorithms import algorithms, make_algorithms_dict
 from .base import ModelAlgorithm
@@ -123,7 +123,7 @@ def make_voxelwise_generator(
     copes_img: nib.nifti1.Nifti1Image,
     var_copes_img: nib.nifti1.Nifti1Image,
     regressors: dict[str, list[float]],
-    contrasts: list[tuple],
+    contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
 ) -> tuple[Iterator[VoxelData], dict]:
     shape = copes_img.shape[:3]
@@ -143,20 +143,20 @@ def make_voxelwise_generator(
 
     # prepare voxelwise generator
     def gen_voxel_data():
-        for coordinate in np.ndindex(*shape):
-            effect = ensure_row_vector(copes[coordinate])
+        for x, y, z in np.ndindex(*shape):
+            effect = ensure_row_vector(copes[x, y, z])
 
             sample_count = np.count_nonzero(np.isfinite(effect))
             # Skip if we don't have at least three degrees of freedom
             if sample_count < regressor_count + 3:
                 continue
 
-            variance = ensure_row_vector(var_copes[coordinate])
+            variance = ensure_row_vector(var_copes[x, y, z])
             design_matrix = dmat.to_numpy(dtype=float)
 
             yield VoxelData(
                 algorithm_dict=algorithm_dict,
-                coordinate=coordinate,
+                coordinate=(x, y, z),
                 effect=effect,
                 design_matrix=design_matrix,
                 variance=variance,
@@ -171,10 +171,10 @@ def fit(
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
     regressors: dict[str, list[float]],
-    contrasts: list[tuple],
+    contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
     num_threads: int,
-) -> dict[str, list[Literal[False] | str]]:
+) -> dict[str, Sequence[Literal[False] | str]]:
     copes_img, var_copes_img = load_data(
         cope_files,
         var_cope_files,
@@ -215,7 +215,7 @@ def fit(
 
     ref_image = nib.funcs.squeeze_image(nib.loadsave.load(cope_files[0]))
 
-    output_files: dict[str, list[Literal[False] | str]] = dict()
+    output_files: dict[str, Sequence[Literal[False] | str]] = dict()
     for a, v in voxel_results.items():
         output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v))
 
