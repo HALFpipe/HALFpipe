@@ -5,6 +5,7 @@
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -143,7 +144,7 @@ class MergeColumns(IOBase):
         out_with_header = Path.cwd() / "merge_with_header.tsv"
         out_no_header = Path.cwd() / "merge_no_header.tsv"
 
-        kwargs = dict(sep="\t", na_rep="n/a")
+        kwargs: dict[str, Any] = {"sep": "\t", "na_rep": "n/a"}
         data_frame.to_csv(out_with_header, index=use_index, header=True, **kwargs)
         data_frame.to_csv(out_no_header, index=False, header=False, **kwargs)
 

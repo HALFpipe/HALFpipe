@@ -235,7 +235,7 @@ def init_stats_wf(
         )
 
         # need to merge
-        mergenodeargs = dict(iterfield="in_files", mem_gb=memcalc.volume_std_gb * 3)
+        mergenodeargs = {"iterfield": "in_files", "mem_gb": memcalc.volume_std_gb * 3}
         mergemask = MapNode(MergeMask(), name="mergemask", **mergenodeargs)
         workflow.connect(extract_from_resultdict, "mask", mergemask, "in_files")
 
