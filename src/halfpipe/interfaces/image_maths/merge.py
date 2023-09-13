@@ -31,7 +31,7 @@ def _merge_fname(in_files):
 
 
 def merge(in_files, dimension):
-    in_imgs = [nib.loadsave.load(f) for f in in_files]
+    in_imgs = [nib.nifti1.load(f) for f in in_files]
 
     idim = dimensions.index(dimension)
 
@@ -65,7 +65,7 @@ def merge(in_files, dimension):
 
 
 def merge_mask(in_files):
-    in_imgs = [nib.loadsave.load(in_file) for in_file in in_files]
+    in_imgs = [nib.nifti1.load(in_file) for in_file in in_files]
 
     outshape = in_imgs[0].shape
     assert all(in_img.shape == outshape for in_img in in_imgs), "Mask shape mismatch"

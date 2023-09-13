@@ -114,11 +114,11 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
     )
 
     # compare
-    mask = nib.loadsave.load(merge_mask_file).get_fdata() > 0
+    mask = nib.nifti1.load(merge_mask_file).get_fdata() > 0
 
     for k in set(r0.keys()) & set(r1.keys()):
-        a0 = nib.loadsave.load(r0[k]).get_fdata()[mask]
-        a1 = nib.loadsave.load(r1[k]).get_fdata()[mask]
+        a0 = nib.nifti1.load(r0[k]).get_fdata()[mask]
+        a1 = nib.nifti1.load(r1[k]).get_fdata()[mask]
 
         # weak criteria, determined post-hoc
         # we don't expect exactly identical results, because FSL and numpy

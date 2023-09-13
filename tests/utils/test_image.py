@@ -12,7 +12,7 @@ from halfpipe.utils.image import nifti_dim, nvol
 
 @pytest.fixture
 def example_nifti():
-    return os.path.join(data_path, "example4d.nii.gz")
+    return os.path.join(str(data_path), "example4d.nii.gz")
 
 
 def test_image_nifti_dim(example_nifti):

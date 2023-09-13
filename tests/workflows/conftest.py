@@ -34,7 +34,7 @@ def bids_data(tmp_path_factory):
     Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
 
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
-    bold_img = nib.loadsave.load(bold_file)
+    bold_img = nib.nifti1.load(bold_file)
     bold_data = bold_img.get_fdata()[
         ..., :64
     ]  # we don't need so many volumes for testing

@@ -49,7 +49,7 @@ class Transformer(SimpleInterface):
         self.mask = None
 
         if ext in [".nii", ".nii.gz"]:
-            in_img = nib.loadsave.load(in_file)
+            in_img = nib.nifti1.load(in_file)
             self.in_img = in_img
 
             ndim = np.asanyarray(in_img.dataobj).ndim
@@ -70,7 +70,7 @@ class Transformer(SimpleInterface):
                 and isinstance(mask_file, str)
                 and Path(mask_file).is_file()
             ):
-                mask_img = nib.funcs.squeeze_image(nib.loadsave.load(mask_file))
+                mask_img = nib.funcs.squeeze_image(nib.nifti1.load(mask_file))
 
                 assert nvol(mask_img) == 1
                 assert np.allclose(mask_img.affine, in_img.affine)

@@ -101,7 +101,7 @@ def test_resolve_bids(tmp_path: Path, openneuroID: str):
             with open(path, "w") as file_handle:
                 file_handle.write("{}")
         elif line.endswith(".nii.gz"):
-            empty_image = nib.nifti1.Nifti1Image(np.zeros(0), np.eye(4))
+            empty_image = nib.analyze.AnalyzeImage(np.zeros(0), np.eye(4))
             nib.loadsave.save(empty_image, path)
         path.touch()
 

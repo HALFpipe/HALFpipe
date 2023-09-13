@@ -83,7 +83,7 @@ class NiftiheaderLoader:
             return None, None
 
         try:
-            img = nib.loadsave.load(nifti_file, mmap=False, keep_file_open=False)
+            img = nib.nifti1.load(nifti_file)
         except Exception as e:
             logger.warning(
                 f'Caught error loading file "{nifti_file}": %s', e, exc_info=True

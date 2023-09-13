@@ -30,13 +30,13 @@ class ModelAlgorithm(ABC):
     @staticmethod
     @abstractmethod
     def write_outputs(
-        ref_img: nib.nifti1.Nifti1Image, cmatdict: dict, voxel_results: dict
+        ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict
     ) -> dict[str, list[Literal[False] | str]]:
         raise NotImplementedError()
 
     @classmethod
     def write_map(
-        cls, ref_img: nib.nifti1.Nifti1Image, out_name: str, series: pd.Series
+        cls, ref_img: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series
     ):
         coordinates = series.index.tolist()
         values = series.values

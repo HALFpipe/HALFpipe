@@ -42,9 +42,10 @@ def test_bandpass_filter_volume(
     )
     mask_file = tmp_path / "mask.nii.gz"
 
-    image = nib.loadsave.load(image_file)
+    image = nib.nifti1.load(image_file)
+    zooms: tuple[float, ...] = image.header.get_zooms()
 
-    sampling_period: float = float(image.header.get_zooms()[3])
+    sampling_period: float = float(zooms[3])  # type: ignore
     sampling_frequency = 1 / sampling_period
 
     image_data = image.get_fdata()
@@ -72,7 +73,7 @@ def test_bandpass_filter_volume(
     (merge,) = [n for n in graph.nodes if n.name == "add_means"]
     (out_file,) = merge.result.outputs.out_file
 
-    image = nib.loadsave.load(out_file)
+    image = nib.nifti1.load(out_file)
     image_data = image.get_fdata()
 
     _, after = welch(image_data[mask_data, :].ravel(), sampling_frequency)

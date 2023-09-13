@@ -27,7 +27,7 @@ def test_tsnr(tmp_path):
     result = tsnr.run(cwd=cwd)
     assert result.outputs is not None
 
-    tsnr_image = nib.loadsave.load(result.outputs.out_file)
+    tsnr_image = nib.nifti1.load(result.outputs.out_file)
 
     reference_tsnr = nac.TSNR(in_file=data_file)
 
@@ -37,7 +37,7 @@ def test_tsnr(tmp_path):
     result = reference_tsnr.run(cwd=cwd)
     assert result.outputs is not None
 
-    reference_tsnr_image = nib.loadsave.load(result.outputs.tsnr_file)
+    reference_tsnr_image = nib.nifti1.load(result.outputs.tsnr_file)
 
     assert np.allclose(
         tsnr_image.get_fdata(), reference_tsnr_image.get_fdata(), atol=1e-5

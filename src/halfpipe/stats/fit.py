@@ -48,7 +48,7 @@ def load_data(
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
     quiet: bool | None = None,
-) -> tuple[nib.nifti1.Nifti1Image, nib.nifti1.Nifti1Image]:
+) -> tuple[nib.analyze.AnalyzeImage, nib.analyze.AnalyzeImage]:
     if len(cope_files) != len(mask_files):
         raise ValueError(
             f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})"
@@ -56,8 +56,7 @@ def load_data(
 
     # Load cope images.
     cope_imgs = [
-        nib.funcs.squeeze_image(nib.loadsave.load(cope_file))
-        for cope_file in cope_files
+        nib.funcs.squeeze_image(nib.nifti1.load(cope_file)) for cope_file in cope_files
     ]
 
     (volume_shape,) = set(img.shape[:3] for img in cope_imgs)
@@ -74,7 +73,7 @@ def load_data(
     for i, mask_file in enumerate(
         tqdm(mask_files, desc="loading mask images", leave=False, disable=quiet)
     ):
-        mask_img = nib.funcs.squeeze_image(nib.loadsave.load(mask_file))
+        mask_img = nib.funcs.squeeze_image(nib.nifti1.load(mask_file))
         mask_data[..., i] = np.asanyarray(mask_img.dataobj).astype(bool)
 
     # Load varcope images.
@@ -96,7 +95,7 @@ def load_data(
                 raise ValueError(
                     f'Missing var_cope file corresponding to "{cope_files[i]}"'
                 )
-            var_cope_img = nib.funcs.squeeze_image(nib.loadsave.load(var_cope_file))
+            var_cope_img = nib.funcs.squeeze_image(nib.nifti1.load(var_cope_file))
             var_cope_data[..., i] = var_cope_img.get_fdata()
 
     # Update the masks.
@@ -120,8 +119,8 @@ def ensure_row_vector(x):
 
 
 def make_voxelwise_generator(
-    copes_img: nib.nifti1.Nifti1Image,
-    var_copes_img: nib.nifti1.Nifti1Image,
+    copes_img: nib.analyze.AnalyzeImage,
+    var_copes_img: nib.analyze.AnalyzeImage,
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
@@ -213,7 +212,7 @@ def fit(
                         continue
                     voxel_results[algorithm][k].update(v)
 
-    ref_image = nib.funcs.squeeze_image(nib.loadsave.load(cope_files[0]))
+    ref_image = nib.funcs.squeeze_image(nib.nifti1.load(cope_files[0]))
 
     output_files: dict[str, Sequence[Literal[False] | str]] = dict()
     for a, v in voxel_results.items():

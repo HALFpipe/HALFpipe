@@ -22,7 +22,7 @@ def test_FilterRegressor(tmp_path):
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
 
-    img = nib.nifti1.Nifti1Image(array, np.eye(4))
+    img = nib.analyze.AnalyzeImage(array, np.eye(4))
     assert isinstance(img.header, nib.nifti1.Nifti1Header)
     img.header.set_data_dtype(np.float64)
 
@@ -45,7 +45,7 @@ def test_FilterRegressor(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r0 = nib.loadsave.load(result.outputs.out_file).get_fdata()
+    r0 = nib.nifti1.load(result.outputs.out_file).get_fdata()
 
     instance = fsl.FilterRegressor()
     instance.inputs.in_file = in_file
@@ -54,7 +54,7 @@ def test_FilterRegressor(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r1 = nib.loadsave.load(result.outputs.out_file).get_fdata()
+    r1 = nib.nifti1.load(result.outputs.out_file).get_fdata()
 
     # delta = r0 - r1
     # print(r0[np.where(delta == delta.max())[:3]])

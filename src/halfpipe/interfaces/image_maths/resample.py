@@ -65,8 +65,8 @@ class Resample(ApplyTransforms):
 
         input_matches_reference = False
         if isdefined(self.inputs.input_image):
-            input_image = nib.loadsave.load(self.inputs.input_image)
-            reference_image = nib.loadsave.load(self.inputs.reference_image)
+            input_image = nib.nifti1.load(self.inputs.input_image)
+            reference_image = nib.nifti1.load(self.inputs.reference_image)
             input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
             input_matches_reference = input_matches_reference and np.allclose(
                 input_image.affine,
