@@ -57,7 +57,7 @@ def collect_fieldmaps(
         "fieldmap": ["magnitude"],
     }
 
-    incomplete = set()
+    incomplete: set[str] = set()
     for c in candidates:
         suffix = database.tagval(c, "suffix")
         assert isinstance(suffix, str)

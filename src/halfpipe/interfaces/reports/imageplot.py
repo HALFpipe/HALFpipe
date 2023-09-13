@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import nibabel as nib
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import cm
 from nilearn.plotting import plot_anat, plot_epi
 from nipype.interfaces.base import File, isdefined, traits
 from niworkflows.interfaces.report_base import (
@@ -28,7 +28,7 @@ from ...utils.image import nvol
 
 
 def robust_set_limits_in_mask(
-    data_img: nib.nifti1.Nifti1Image, mask_img: nib.nifti1.Nifti1Image
+    data_img: nib.analyze.AnalyzeImage, mask_img: nib.analyze.AnalyzeImage
 ) -> dict[str, float]:
     plot_params: dict[str, float] = dict()
 
@@ -49,8 +49,8 @@ class PlotEpi(ReportingInterface):
     input_spec = PlotInputSpec
 
     def _generate_report(self):
-        epi_img = nib.loadsave.load(self.inputs.in_file)
-        mask_img = nib.loadsave.load(self.inputs.mask_file)
+        epi_img = nib.nifti1.load(self.inputs.in_file)
+        mask_img = nib.nifti1.load(self.inputs.mask_file)
         assert nvol(epi_img) == 1
         assert nvol(mask_img) == 1
 
@@ -74,7 +74,7 @@ class PlotEpi(ReportingInterface):
                 cut_coords=cuts[dimension],
                 title=label,
                 colorbar=(dimension == "z"),
-                cmap=plt.get_cmap("gray"),
+                cmap=cm.get_cmap("gray"),
                 **plot_params,
             )
 
@@ -99,8 +99,8 @@ class PlotRegistration(ReportingInterface):
     input_spec = PlotRegistrationInputSpec
 
     def _generate_report(self):
-        anat_img = nib.loadsave.load(self.inputs.in_file)
-        mask_img = nib.loadsave.load(self.inputs.mask_file)
+        anat_img = nib.nifti1.load(self.inputs.in_file)
+        mask_img = nib.nifti1.load(self.inputs.mask_file)
         assert nvol(anat_img) == 1
         assert nvol(mask_img) == 1
 
@@ -109,7 +109,7 @@ class PlotRegistration(ReportingInterface):
         template = self.inputs.template
         parc_file = getresource(f"tpl-{template}_RegistrationCheckOverlay.nii.gz")
         assert parc_file is not None
-        parc_img = nib.loadsave.load(parc_file)
+        parc_img = nib.nifti1.load(parc_file)
 
         levels = np.unique(np.asanyarray(parc_img.dataobj).astype(np.int32))
         levels = (levels[levels > 0] - 0.5).tolist()

@@ -167,10 +167,19 @@ class ImagingVariables:
     def jacobian_stats(self) -> pd.DataFrame:
         data: dict[str, dict[str, float]] = defaultdict(dict)
         for subject, jacobian_path in self.jacobian_paths.items():
-            brain_mask_image = nib.loadsave.load(self.get_brain_mask_path(subject))
+            brain_mask_path = self.get_brain_mask_path(subject)
+            if not isinstance(brain_mask_path, Path):
+                raise ValueError
+            brain_mask_image = nib.nifti1.load(brain_mask_path)
+            if not isinstance(brain_mask_image, nib.analyze.AnalyzeImage):
+                raise ValueError
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
 
-            jacobian_image = nib.loadsave.load(jacobian_path)
+            if not isinstance(jacobian_path, (Path, str)):
+                raise ValueError(f'"{jacobian_path}" is not a path')
+            jacobian_image = nib.nifti1.load(jacobian_path)
+            if not isinstance(jacobian_image, nib.analyze.AnalyzeImage):
+                raise ValueError(f'"{jacobian_path}" is not a nifti image')
             jacobian_data = jacobian_image.get_fdata()[brain_mask]
 
             data["jacobian_mean"][subject] = jacobian_data.mean()
@@ -203,10 +212,14 @@ class ImagingVariables:
             if subject is None:
                 continue
 
-            brain_mask_image = nib.loadsave.load(brain_mask_path)
+            if not isinstance(brain_mask_path, (Path, str)):
+                raise ValueError(f'"{brain_mask_path}" is not a path')
+            brain_mask_image = nib.nifti1.load(brain_mask_path)
+            if not isinstance(brain_mask_image, nib.analyze.AnalyzeImage):
+                raise ValueError(f'"{brain_mask_path}" is not a nifti image')
 
             voxel_size = np.array(brain_mask_image.header.get_zooms()[:3]) * ureg.mm
-            voxel_volume: pint.Quantity = np.prod(voxel_size)
+            voxel_volume: pint.Quantity = np.prod(voxel_size)  # type: ignore
 
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
             total_intracranial_volume = (

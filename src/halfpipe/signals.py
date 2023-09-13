@@ -15,10 +15,10 @@ from .utils.matrix import atleast_4d
 
 @overload
 def mean_signals(
-    in_img: nib.nifti1.Nifti1Image,
-    atlas_img: nib.nifti1.Nifti1Image,
+    data_image: nib.analyze.AnalyzeImage,
+    atlas_image: nib.analyze.AnalyzeImage,
     output_coverage: Literal[False] = False,
-    mask_img: nib.nifti1.Nifti1Image | None = None,
+    mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ) -> npt.NDArray:
@@ -27,10 +27,10 @@ def mean_signals(
 
 @overload
 def mean_signals(
-    in_img: nib.nifti1.Nifti1Image,
-    atlas_img: nib.nifti1.Nifti1Image,
+    data_image: nib.analyze.AnalyzeImage,
+    atlas_image: nib.analyze.AnalyzeImage,
     output_coverage: Literal[True],
-    mask_img: nib.nifti1.Nifti1Image | None = None,
+    mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ) -> tuple[npt.NDArray, list[float]]:
@@ -38,87 +38,102 @@ def mean_signals(
 
 
 def mean_signals(
-    in_img: nib.nifti1.Nifti1Image,
-    atlas_img: nib.nifti1.Nifti1Image,
+    data_image: nib.analyze.AnalyzeImage,
+    atlas_image: nib.analyze.AnalyzeImage,
     output_coverage: bool = False,
-    mask_img: nib.nifti1.Nifti1Image | None = None,
+    mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
 ):
-    if nvol(atlas_img) != 1:
-        raise ValueError("Atlas image cannot be a 4D image.")
-    volume_shape = in_img.shape[:3]
-    if atlas_img.shape[:3] != volume_shape:
-        raise ValueError("Atlas image and input image must have the same shape.")
-    if not np.allclose(atlas_img.affine, in_img.affine):
-        raise ValueError("Atlas image and input image must have the same affine.")
+    volume_shape = data_image.shape[:3]
+    if atlas_image.shape[:3] != volume_shape:
+        raise ValueError("Atlas image and data image must have the same shape")
+    if not np.allclose(atlas_image.affine, data_image.affine):
+        raise ValueError("Atlas image and data image must have the same affine")
 
-    labels = np.asanyarray(atlas_img.dataobj).astype(int)
-    label_count: int = labels.max()
+    atlas_volumes = atleast_4d(np.asanyarray(atlas_image.dataobj).astype(int))
+    label_count: int = atlas_volumes.max()
 
     if background_label > label_count:
-        raise ValueError(f"Background label {background_label} was not found in atlas.")
+        raise ValueError(f"Background label {background_label} was not found in atlas")
 
-    indices = np.arange(0, label_count + 1, dtype=int)
-    region_coverage_list: list[float] | None = None
+    data: npt.NDArray[np.float64] = atleast_4d(data_image.get_fdata())
+    mask: npt.NDArray[np.bool_] = np.ones(volume_shape, dtype=bool)
 
-    in_data = atleast_4d(in_img.get_fdata())
-    mask_data = np.ones(volume_shape, dtype=bool)
-    if mask_img is not None:
-        if nvol(mask_img) != 1:
-            raise ValueError("Mask image cannot be a 4D image.")
-        if mask_img.shape[:3] != in_img.shape[:3]:
-            raise ValueError("Mask image and input image must have the same shape.")
-        if not np.allclose(mask_img.affine, in_img.affine):
-            raise ValueError("Mask image and input image must have the same affine.")
-        mask_img = nib.funcs.squeeze_image(
-            mask_img
-        )  # Remove trailing singleton dimensions.
-        if mask_img is None:
-            raise RuntimeError("Failed to squeeze mask image")
-        mask_data = np.asanyarray(mask_img.dataobj).astype(bool)
-
-    if not np.all(mask_data):
-        unmasked_counts = np.bincount(np.ravel(labels), minlength=label_count + 1)
-        unmasked_counts = unmasked_counts[: label_count + 1]
-
-        labels[np.logical_not(mask_data)] = background_label
-        masked_counts = np.bincount(np.ravel(labels), minlength=label_count + 1)
-        masked_counts = masked_counts[: label_count + 1]
-
-        region_coverage = masked_counts.astype(float) / unmasked_counts.astype(float)
-        region_coverage[unmasked_counts == 0] = 0
-
-        region_coverage_list = list(region_coverage[indices != background_label])
-        if len(region_coverage_list) != label_count:
-            raise RuntimeError("Unexpected number of covarage values.")
-
-        indices = indices[region_coverage >= min_region_coverage]
-
-    indices = indices[indices != background_label]
-
-    if np.any(labels < 0):
-        raise ValueError("Atlas image contains negative values.")
-
-    volume_count = in_data.shape[3]
+    volume_count = data.shape[3]
     signals = np.full((volume_count, label_count), np.nan)
+    region_coverage_array: npt.NDArray[np.float64] = np.full(label_count + 1, np.nan)
 
-    for i, img in enumerate(np.moveaxis(in_data, 3, 0)):
-        signals[i, indices - 1] = scipy.ndimage.mean(
-            img, labels=labels.reshape(img.shape), index=indices
-        )
+    seen_labels: set[int] = set()
+
+    if mask_image is not None:
+        if nvol(mask_image) != 1:
+            raise ValueError("Mask image cannot be a 4D image")
+        if mask_image.shape[:3] != data_image.shape[:3]:
+            raise ValueError("Mask image and data image must have the same shape")
+        if not np.allclose(mask_image.affine, data_image.affine):
+            raise ValueError("Mask image and data image must have the same affine")
+        mask_image = nib.funcs.squeeze_image(
+            mask_image
+        )  # Remove trailing singleton dimensions.
+        if mask_image is None:
+            raise RuntimeError("Failed to squeeze mask image")
+        mask = np.asanyarray(mask_image.dataobj).astype(bool)
+
+    for atlas_volume in np.moveaxis(atlas_volumes, 3, 0):
+        labels = np.arange(0, label_count + 1, dtype=int)
+
+        if not np.all(mask):
+            unmasked_counts = np.bincount(
+                np.ravel(atlas_volume), minlength=label_count + 1
+            )
+            unmasked_counts = unmasked_counts[: label_count + 1]
+
+            atlas_volume[np.logical_not(mask)] = background_label
+            masked_counts = np.bincount(
+                np.ravel(atlas_volume), minlength=label_count + 1
+            )
+            masked_counts = masked_counts[: label_count + 1]
+
+            has_voxels = unmasked_counts != 0
+            region_coverage = np.zeros(label_count + 1)
+            region_coverage[has_voxels] = (
+                masked_counts[has_voxels] / unmasked_counts[has_voxels]
+            )
+
+            region_coverage_array[has_voxels] = region_coverage[has_voxels]
+
+            has_coverage = region_coverage >= min_region_coverage
+            labels = labels[has_voxels & has_coverage]
+
+        labels = labels[labels != background_label]
+
+        if np.any(labels < 0):
+            raise ValueError("Atlas image contains negative values")
+        if set(labels) & seen_labels:
+            raise ValueError("Atlas image contains duplicate labels across volumes")
+        seen_labels |= set(labels)
+
+        for j, data_volume in enumerate(np.moveaxis(data, 3, 0)):
+            signals[j, labels - 1] = scipy.ndimage.mean(
+                data_volume,
+                labels=atlas_volume.reshape(data_volume.shape),
+                index=labels,
+            )
 
     if output_coverage is True:
-        return signals, region_coverage_list
+        labels = np.arange(0, label_count + 1, dtype=int)
+        labels = labels[labels != background_label]
+        return signals, list(region_coverage_array[labels])
     else:
         return signals
 
 
 @overload
 def mode_signals(
-    cope_img: nib.nifti1.Nifti1Image,
-    var_cope_img: nib.nifti1.Nifti1Image,
-    modes_img: nib.nifti1.Nifti1Image,
+    cope_img: nib.analyze.AnalyzeImage,
+    var_cope_img: nib.analyze.AnalyzeImage,
+    modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[False] = False,
 ) -> npt.NDArray:
     ...
@@ -126,18 +141,18 @@ def mode_signals(
 
 @overload
 def mode_signals(
-    cope_img: nib.nifti1.Nifti1Image,
-    var_cope_img: nib.nifti1.Nifti1Image,
-    modes_img: nib.nifti1.Nifti1Image,
+    cope_img: nib.analyze.AnalyzeImage,
+    var_cope_img: nib.analyze.AnalyzeImage,
+    modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[True],
 ) -> tuple[npt.NDArray, npt.NDArray]:
     ...
 
 
 def mode_signals(
-    cope_img: nib.nifti1.Nifti1Image,
-    var_cope_img: nib.nifti1.Nifti1Image,
-    modes_img: nib.nifti1.Nifti1Image,
+    cope_img: nib.analyze.AnalyzeImage,
+    var_cope_img: nib.analyze.AnalyzeImage,
+    modes_img: nib.analyze.AnalyzeImage,
     output_coverage: bool = False,
 ) -> npt.NDArray | tuple[npt.NDArray, npt.NDArray]:
     """
@@ -145,11 +160,11 @@ def mode_signals(
 
     Parameters
     ----------
-    cope_img : nib.nifti1.Nifti1Image
+    cope_img : nib.analyze.AnalyzeImage
         The cope image.
-    var_cope_img : nib.nifti1.Nifti1Image
+    var_cope_img : nib.analyze.AnalyzeImage
         The varcope image.
-    modes_img : nib.nifti1.Nifti1Image
+    modes_img : nib.analyze.AnalyzeImage
         The modes image.
     output_coverage : bool, optional
         Whether to output the coverage, by default False.

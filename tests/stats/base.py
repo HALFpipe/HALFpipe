@@ -3,7 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
+
+from halfpipe.design import FContrast, TContrast
 
 
 class Dataset(NamedTuple):
@@ -12,4 +14,4 @@ class Dataset(NamedTuple):
     var_cope_files: list[Path]
     mask_files: list[Path]
     regressors: dict[str, list[float]]
-    contrasts: list[tuple]
+    contrasts: Sequence[TContrast | FContrast]

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from itertools import starmap
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 import pandas as pd
 
@@ -131,19 +131,19 @@ class BetweenBase:
             contrast_list,
             subjects,
         )
-        outputs: dict[str, str | list[str | Literal[False]]] = dict(
+        outputs: dict[str, str | Sequence[Literal[False] | str]] = dict(
             design_matrix=str(design_tsv),
             contrast_matrix=str(contrast_tsv),
         )
         outputs.update(
             fit(
-                cope_files=cope_paths,
-                var_cope_files=var_cope_paths,
-                mask_files=mask_paths,
-                regressors=regressor_list,
-                contrasts=contrast_list,
-                algorithms_to_run=self.arguments.algorithm,
-                num_threads=self.arguments.nipype_n_procs,
+                cope_paths,
+                var_cope_paths,
+                mask_paths,
+                regressor_list,
+                contrast_list,
+                self.arguments.algorithm,
+                self.arguments.nipype_n_procs,
             )
         )
         # Apply rules from model fit aliases
@@ -151,12 +151,12 @@ class BetweenBase:
             if from_key in outputs:
                 outputs[to_key] = outputs.pop(from_key)
 
+        results: list[ResultDict] = list()
+
+        # Top-level result
         images: dict[str, str] = {
             key: value for key, value in outputs.items() if isinstance(value, str)
         }
-
-        results: list[ResultDict] = list()
-        # Top-level result
         result = summarize_metadata(result)
         if model_name is not None:
             result["tags"]["model"] = model_name
@@ -165,21 +165,20 @@ class BetweenBase:
 
         # Per-contrast results
         for i, contrast_name in enumerate(contrast_names):
-            images = dict()
-            for key, value in outputs.items():
-                if not isinstance(value, list):
-                    continue
-                contrast_value = value[i]
-                if isinstance(contrast_value, str):
-                    images[key] = contrast_value
-            if len(images) == 0:
+            contrast_images = {
+                key: value[i]
+                for key, value in outputs.items()
+                if isinstance(value, list) and isinstance(value[i], str)
+            }
+            if len(contrast_images) == 0:
                 continue
             result = deepcopy(result)
             result["tags"]["contrast"] = contrast_name
             if model_name is not None:
                 result["tags"]["model"] = model_name
-            result["images"] = images
+            result["images"] = contrast_images
             results.append(result)
+
         save_images(results, self.output_directory)
 
     def apply_export(

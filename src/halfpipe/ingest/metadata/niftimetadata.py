@@ -7,6 +7,7 @@ from typing import Any, Iterable
 
 import numpy as np
 from nibabel.spatialimages import HeaderDataError
+from numpy import typing as npt
 from templateflow import api
 
 from ...logging import logger
@@ -163,10 +164,10 @@ class NiftiheaderMetadataLoader:
                 affine = header.get_best_affine()
                 if not isinstance(affine, np.ndarray):
                     return False
-                origin = affine[0:3, 3]
+                origin: npt.NDArray[np.float64] = affine[0:3, 3]
                 for name, template_origin_set in template_origin_sets.items():
                     for template_origin in template_origin_set:
-                        o = np.array(template_origin)
+                        o: npt.NDArray[np.float64] = np.array(template_origin)
 
                         # use squared values as we don't care about orientation
                         if sqrt(np.square(o - origin).mean()) < 1:

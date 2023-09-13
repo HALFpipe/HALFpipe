@@ -35,7 +35,7 @@ def test_TemporalFilter(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r0 = nib.loadsave.load(result.outputs.out_file).get_fdata()
+    r0 = nib.nifti1.load(result.outputs.out_file).get_fdata()
 
     instance = fsl.TemporalFilter()
     instance.inputs.in_file = in_file
@@ -44,5 +44,5 @@ def test_TemporalFilter(tmp_path):
     result = instance.run()
     assert result.outputs is not None
 
-    r1 = nib.loadsave.load(result.outputs.out_file).get_fdata()
+    r1 = nib.nifti1.load(result.outputs.out_file).get_fdata()
     assert np.allclose(r0, r1)

@@ -5,10 +5,11 @@
 from collections import OrderedDict
 from itertools import product
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Sequence
 
 import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from pandas.api.types import is_numeric_dtype
 from patsy.desc import (  # separate imports as to not confuse type checker
     ModelDesc,
@@ -17,7 +18,6 @@ from patsy.desc import (  # separate imports as to not confuse type checker
 from patsy.highlevel import dmatrix
 from patsy.user_util import LookupFactor
 
-from .ingest.design import parse_design
 from .ingest.spreadsheet import read_spreadsheet
 from .logging import logger
 
@@ -139,8 +139,14 @@ def _generate_rhs(contrasts, columns_var_gt_0) -> list[Term]:
     return rhs
 
 
-def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
-    contrasts: list[tuple] = []
+TContrast = tuple[str, Literal["T"], list[str], list[float]]
+FContrast = tuple[str, Literal["F"], list[TContrast]]
+
+
+def _make_contrasts_list(
+    contrast_matrices: list[tuple[str, pd.DataFrame]]
+) -> tuple[Sequence[TContrast | FContrast], list[str], list[str]]:
+    contrasts: list[TContrast | FContrast] = list()
     contrast_names = []
 
     for contrast_name, contrast_matrix in contrast_matrices:  # t contrasts
@@ -158,17 +164,16 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
         contrast_name = contrast_name.capitalize()
 
         if contrast_matrix.shape[0] > 1:
-            tcontrasts = []  # An F contrast consists of multiple t contrasts
+            # An F contrast consists of multiple T contrasts
+            tcontrasts: list[TContrast] = list()
             for i, contrast_vector in contrast_matrix.iterrows():
                 tname = f"{contrast_name}_{i:d}"
                 tcontrasts.append(
                     (tname, "T", list(contrast_vector.index), list(contrast_vector))
                 )
-
-            contrasts.extend(tcontrasts)  # Add t contrasts to the model
-            contrasts.append(
-                (contrast_name, "F", tcontrasts)
-            )  # Then add the f contrast
+            contrasts.extend(tcontrasts)  # Add T contrasts to the model
+            # Then add the F contrast
+            contrasts.append((contrast_name, "F", tcontrasts))
 
             contrast_names.append(contrast_name)  # We only care about the f contrast
 
@@ -179,7 +184,7 @@ def _make_contrasts_list(contrast_matrices: list[tuple[str, pd.DataFrame]]):
 
 class Design(NamedTuple):
     regressor_list: dict[str, list[float]]
-    contrast_list: list[tuple]
+    contrast_list: Sequence[TContrast | FContrast]
     contrast_numbers: list[str]
     contrast_names: list[str]
 
@@ -310,7 +315,7 @@ def group_design(
 
 def make_design_tsv(
     regressor_list: dict[str, list[float]],
-    contrast_list: list[tuple],
+    contrast_list: Sequence[TContrast | FContrast],
     row_index: list[str],
 ) -> tuple[Path, Path]:
     design_matrix, contrast_matrices = parse_design(regressor_list, contrast_list)
@@ -340,3 +345,48 @@ def make_design_tsv(
     )
 
     return design_tsv, contrast_tsv
+
+
+def parse_design(
+    regressors: dict[str, list[float]],
+    contrasts: Sequence[TContrast | FContrast],
+) -> tuple[pd.DataFrame, OrderedDict[str, npt.NDArray]]:
+    design_matrix = pd.DataFrame.from_dict(regressors)
+
+    contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
+
+    def make_contrast_matrix(conditions, weights) -> npt.NDArray:
+        contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[
+            design_matrix.columns
+        ]
+        assert isinstance(contrast_matrix, pd.Series)
+        return contrast_matrix.to_numpy(dtype=np.float64)[np.newaxis, :]
+
+    for contrast in contrasts:
+        name = contrast[0]
+        statistic = contrast[1]
+
+        contrast_matrix = None
+
+        if statistic == "F":
+            child_contrast_matrices = list()
+
+            for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore
+                child_contrast_matrix = make_contrast_matrix(conditions, weights)
+                if child_contrast_name in contrast_matrices:
+                    assert np.allclose(
+                        contrast_matrices[child_contrast_name], child_contrast_matrix
+                    )
+                    del contrast_matrices[child_contrast_name]
+                child_contrast_matrices.append(child_contrast_matrix)
+            contrast_matrix = np.concatenate(child_contrast_matrices, axis=0)
+
+        elif statistic == "T":
+            conditions = contrast[2]
+            weights = contrast[3]  # type: ignore
+            contrast_matrix = make_contrast_matrix(conditions, weights)
+
+        if contrast_matrix is not None:
+            contrast_matrices[name] = contrast_matrix
+
+    return design_matrix, contrast_matrices

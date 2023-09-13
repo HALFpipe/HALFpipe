@@ -16,7 +16,7 @@ from nilearn.image import new_img_like
 from numpy import typing as npt
 from tqdm.auto import tqdm
 
-from ....ingest.design import parse_design
+from ....design import FContrast, TContrast, parse_design
 from ....ingest.spreadsheet import read_spreadsheet
 from ....logging import logger
 from ....signals import mean_signals, mode_signals
@@ -29,7 +29,7 @@ from ....utils.multiprocessing import Pool
 class Atlas:
     type: Literal["atlas", "modes"]
     name: str
-    image: nib.nifti1.Nifti1Image
+    image: nib.analyze.AnalyzeImage
     labels: dict[int, str]
 
     @classmethod
@@ -48,7 +48,9 @@ class Atlas:
             # First columnn is the index, second is the name.
             labels[int(label_tuple[0])] = format_like_bids(str(label_tuple[1]))
 
-        image = nib.loadsave.load(image_path)
+        image = nib.nifti1.load(image_path)
+        if not isinstance(image, nib.analyze.AnalyzeImage):
+            raise ValueError(f'"{image_path}" is not a nifti image')
         return cls(type, name, image, labels)
 
 
@@ -59,7 +61,7 @@ def export(
     var_cope_files: Sequence[Path | None] | None,
     mask_files: list[Path],
     regressors: dict[str, list[float]],
-    contrasts: list[tuple],
+    contrasts: Sequence[TContrast | FContrast],
     atlases: list[Atlas],
     num_threads: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -144,7 +146,7 @@ def get_signals(
             s, c = mean_signals(
                 cope_img,
                 atlas.image,
-                mask_img=mask_img,
+                mask_image=mask_img,
                 output_coverage=True,
             )
             results.append((s, np.array(c)))

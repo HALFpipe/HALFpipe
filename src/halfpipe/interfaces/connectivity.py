@@ -51,15 +51,15 @@ class ConnectivityMeasure(BaseInterface):
     output_spec = ConnectivityMeasureOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
-        in_img = nib.loadsave.load(self.inputs.in_file)
-        atlas_img = nib.loadsave.load(self.inputs.atlas_file)
-        mask_img = nib.loadsave.load(self.inputs.mask_file)
+        in_img = nib.nifti1.load(self.inputs.in_file)
+        atlas_img = nib.nifti1.load(self.inputs.atlas_file)
+        mask_img = nib.nifti1.load(self.inputs.mask_file)
 
         self._time_series, self._region_coverage = mean_signals(
             in_img,
             atlas_img,
             output_coverage=True,
-            mask_img=mask_img,
+            mask_image=mask_img,
             background_label=self.inputs.background_label,
             min_region_coverage=self.inputs.min_region_coverage,
         )

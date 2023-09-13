@@ -54,11 +54,11 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
         contrast_mat, index=map_component_names, columns=contrast_columns
     )
 
-    kwargs = dict(
-        sep="\t",
-        na_rep="n/a",
-        quoting=csv.QUOTE_NONNUMERIC,
-    )
+    kwargs = {
+        "sep": "\t",
+        "na_rep": "n/a",
+        "quoting": csv.QUOTE_NONNUMERIC,
+    }
     out_with_header = Path.cwd() / "merge_with_header.tsv"
     contrast_df.to_csv(out_with_header, index=True, header=True, **kwargs)
     out_no_header = Path.cwd() / "merge_no_header.tsv"

@@ -42,14 +42,14 @@ class MakeDofVolume(BaseInterface):
                 dof = float(file.read())
 
         if isdefined(self.inputs.bold_file):
-            ref_img = nib.loadsave.load(self.inputs.bold_file)
+            ref_img = nib.nifti1.load(self.inputs.bold_file)
             if isdefined(self.inputs.num_regressors):
                 dof = float(nvol(ref_img) - self.inputs.num_regressors)
             elif isdefined(self.inputs.design):
                 dof = float(nvol(ref_img) - ncol(self.inputs.design))
 
         if isdefined(self.inputs.copes):
-            ref_img = nib.loadsave.load(first_str(self.inputs.copes))
+            ref_img = nib.nifti1.load(first_str(self.inputs.copes))
 
         if dof is None:
             return runtime

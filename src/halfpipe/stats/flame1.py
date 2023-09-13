@@ -201,7 +201,7 @@ class FLAME1(ModelAlgorithm):
 
     @classmethod
     def write_outputs(
-        cls, ref_img: nib.nifti1.Nifti1Image, cmatdict: dict, voxel_results: dict
+        cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict
     ) -> dict[str, list[Literal[False] | str]]:
         output_files: dict[str, list[Literal[False] | str]] = dict()
 

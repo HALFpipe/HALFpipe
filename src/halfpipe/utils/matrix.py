@@ -17,13 +17,13 @@ def ncol(in_file):
     return array.shape[1]
 
 
-def atleast_4d(ary):
+def atleast_4d(array):
     import numpy as np
 
-    ary = np.atleast_3d(ary)
+    array = np.atleast_3d(array)
 
-    if ary.ndim == 3:
-        return ary[:, :, :, np.newaxis]
+    if array.ndim == 3:
+        return array[:, :, :, np.newaxis]
 
     else:
-        return ary
+        return array

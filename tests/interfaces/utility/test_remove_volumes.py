@@ -63,6 +63,6 @@ def test_remove_volumes_nii(tmp_path):
     result = remove_volumes.run(cwd=cwd)
     assert result.outputs is not None
 
-    image = nib.loadsave.load(data_file)
-    test_image = nib.loadsave.load(result.outputs.out_file)
+    image = nib.nifti1.load(data_file)
+    test_image = nib.nifti1.load(result.outputs.out_file)
     assert np.allclose(test_image.get_fdata(), image.get_fdata()[..., skip_vols:])
