@@ -22,7 +22,7 @@ def test_FilterRegressor(tmp_path):
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
 
-    img = nib.analyze.AnalyzeImage(array, np.eye(4))
+    img = nib.nifti1.Nifti1Image(array, np.eye(4))
     assert isinstance(img.header, nib.nifti1.Nifti1Header)
     img.header.set_data_dtype(np.float64)
 
