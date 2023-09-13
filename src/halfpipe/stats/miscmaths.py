@@ -5,7 +5,11 @@
 import math
 from abc import ABC, abstractmethod
 
+import numpy as np
+import scipy
 from mpmath import autoprec, mp, mpf, mpmathify
+
+from .gsl import tdistribution_logcdf
 
 
 def erfinv(a: mpf, tol: float = 1e-16) -> mpf:
@@ -169,7 +173,9 @@ class ChisqDistribution(Distribution):
 
 
 def t2z_convert(x: float, nu: int, **kwargs) -> float:
-    return TDistribution(nu).auto_convert(x, **kwargs)
+    sign = np.sign(x)
+    log_pvalue = tdistribution_logcdf(-np.abs(x), nu)
+    return -sign * scipy.special.ndtri_exp(log_pvalue)
 
 
 def f2z_convert(x: float, d1: int, d2: int, **kwargs) -> float:
