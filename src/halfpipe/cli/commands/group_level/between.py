@@ -5,7 +5,6 @@
 from argparse import Namespace
 from copy import deepcopy
 from dataclasses import dataclass, field
-from functools import partial
 from itertools import starmap
 from pathlib import Path
 from typing import Any, Literal, Sequence
@@ -24,7 +23,7 @@ from ....utils.data_frame import combine_first
 from ....utils.format import format_tags
 from .base import aliases
 from .design import DesignBase
-from .export import Atlas, export
+from .export import Atlas, DiscreteAtlas, ProbabilisticAtlas, export
 
 
 @dataclass
@@ -60,15 +59,15 @@ class BetweenBase:
         self.apply_export_variables(design_base)
 
         # Rename the images to what the fit method expects
-        images = result["images"]
+        images: dict[str, list[Path]] = result["images"]
         result["images"] = dict()
         for from_key, to_key in aliases.items():
             if from_key in images:
                 images[to_key] = images.pop(from_key)
         # Extract the relevant keys from the image dictionary
-        cope_paths = images.pop("effect")
-        var_cope_paths = images.pop("variance", None)
-        mask_paths = images.pop("mask")
+        cope_paths = images["effect"]
+        var_cope_paths = images.get("variance")
+        mask_paths = images["mask"]
         # Create a design tuple
         if design_base.data_frame is not None:
             design = group_design(
@@ -81,9 +80,7 @@ class BetweenBase:
 
         self.apply_export(
             subjects,
-            cope_paths,
-            var_cope_paths,
-            mask_paths,
+            images,
             design,
             result,
         )
@@ -184,9 +181,7 @@ class BetweenBase:
     def apply_export(
         self,
         subjects: list[str],
-        cope_paths: list[Path],
-        var_cope_paths: list[Path] | None,
-        mask_paths: list[Path],
+        images: dict[str, Any],
         design: Design,
         result: ResultDict,
     ) -> None:
@@ -194,11 +189,13 @@ class BetweenBase:
 
         atlases: list[Atlas] = list()
         if self.arguments.export_atlas is not None:
-            make_atlas = partial(Atlas.from_args, "atlas")
-            atlases.extend(starmap(make_atlas, self.arguments.export_atlas))
+            atlases.extend(
+                starmap(DiscreteAtlas.from_args, self.arguments.export_atlas)
+            )
         if self.arguments.export_modes is not None:
-            make_modes = partial(Atlas.from_args, "modes")
-            atlases.extend(starmap(make_modes, self.arguments.export_modes))
+            atlases.extend(
+                starmap(ProbabilisticAtlas.from_args, self.arguments.export_modes)
+            )
 
         logger.info(f"Exporting atlases {atlases}")
         if len(atlases) == 0:
@@ -208,9 +205,7 @@ class BetweenBase:
         phenotype_frame, covariate_frame, atlas_coverage_frame = export(
             prefix,
             subjects,
-            cope_paths,
-            var_cope_paths,
-            mask_paths,
+            images,
             regressor_list,
             contrast_list,
             atlases,

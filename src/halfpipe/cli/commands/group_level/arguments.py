@@ -235,10 +235,10 @@ def setup_argument_parser(argument_parser: ArgumentParser):
     group.add_argument(
         "--export-atlas",
         type=str,
-        nargs=3,
-        metavar=("NAME", "IMAGE_PATH", "LABEL_PATH"),
+        nargs=4,
+        metavar=("NAME", "TYPE", "IMAGE_PATH", "LABEL_PATH"),
         action="append",
-        help="for all images, export the mean region signals for the atlas defined by the image/label files",
+        help="for all images, export region signals based on the atlas defined by the image/label files",
     )
     group.add_argument(
         "--minimum-atlas-coverage",
