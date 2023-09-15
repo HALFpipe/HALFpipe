@@ -24,6 +24,7 @@ key_to_bids_map: Mapping[str, str] = dict(
     mean_seed_tsnr="MeanSeedTSNR",
     mean_component_tsnr="MeanComponentTSNR",
     mean_atlas_tsnr="MeanAtlasTSNR",
+    halfpipe_version="HALFpipeVersion",
 )
 
 key_from_bids_map: Mapping[str, str] = {v: k for k, v in key_to_bids_map.items()}

@@ -11,6 +11,7 @@ from typing import Any, Literal, Sequence
 
 import pandas as pd
 
+from .... import __version__
 from ....design import Design, group_design, intercept_only_design, make_design_tsv
 from ....logging import logger
 from ....result.aggregate import summarize_metadata
@@ -158,6 +159,15 @@ class BetweenBase:
         if model_name is not None:
             result["tags"]["model"] = model_name
         result["images"] = images
+
+        sources: list[str] = list()
+        sources.extend(str(cope_path) for cope_path in cope_paths)
+        if var_cope_paths is not None:
+            sources.extend(str(var_cope_path) for var_cope_path in var_cope_paths)
+        sources.extend(str(mask_path) for mask_path in mask_paths)
+        result["metadata"]["sources"] = sources
+        result["metadata"]["halfpipe_version"] = __version__
+
         results.append(result)
 
         # Per-contrast results
