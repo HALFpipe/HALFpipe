@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Tuple
@@ -121,9 +121,14 @@ def build_parser() -> ArgumentParser:
     return parser
 
 
-def parse_args(args=None, namespace=None) -> Tuple:
+def parse_args(
+    argv: list[str] | None = None, namespace: Namespace | None = None
+) -> Tuple:
     parser = build_parser()
-    opts = parser.parse_args(args, namespace)
+    opts = parser.parse_args(argv, namespace)
+
+    if opts is None:
+        raise RuntimeError("No options were parsed")
 
     if opts.version is True:
         import sys

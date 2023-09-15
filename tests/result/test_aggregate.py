@@ -123,11 +123,10 @@ def test_aggregate_resultdicts() -> None:
     result = summarize_metadata(result)
 
     subjects = result["tags"]["sub"]
-    assert len(subjects) == 3
+    assert subjects == ["a", "b", "c"]
 
     stat = result["images"]["stat"]
-    assert isinstance(stat, list)
-    assert len(stat) == 3
+    assert stat == ["a", "b", "c"]
 
     fd_perc = result["vals"]["fd_perc"]
     assert isinstance(fd_perc, str)

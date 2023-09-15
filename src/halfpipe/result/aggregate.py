@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from more_itertools import collapse
 from pyrsistent import freeze, pmap, thaw
@@ -46,7 +46,14 @@ def group_across(
         if not isinstance(tags, dict):
             raise ValueError("Tags must be a dictionary")
 
-        across_value = str(tags.pop(across_key))
+        across_value = tags.pop(across_key)
+        if not isinstance(across_value, str):
+            if isinstance(across_value, list) and len(across_value) == 1:
+                across_value = across_value[0]
+        if not isinstance(across_value, str):
+            raise ValueError(
+                f'Expected "{across_key}" value to be a string, got "{across_value}" instead'
+            )
 
         index = pmap(
             {key: value for key, value in tags.items() if isinstance(value, str)}
@@ -105,7 +112,7 @@ def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]
     return expanded_groups
 
 
-def merge_data(elements: set[Element]) -> ResultDict:
+def merge_data(elements: Iterable[Element]) -> ResultDict:
     # Find all field name attribute name pairs in the set of elements
     keys: set[tuple[ResultKey, str]] = set(
         chain.from_iterable(element.data.keys() for element in elements)
@@ -132,7 +139,6 @@ def merge_data(elements: set[Element]) -> ResultDict:
 def aggregate_results(
     rr: list[ResultDict],
     across_key: str,
-    summarize_metadata: bool = True,
 ) -> tuple[list[ResultDict], list[ResultDict]]:
     groups = group_across(rr, across_key)
     expanded_groups = group_expand(groups)
@@ -141,11 +147,12 @@ def aggregate_results(
     bypass: list[ResultDict] = list()
 
     for index, elements in expanded_groups.items():
+        sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
         tags: dict[str, Any] = {
-            across_key: [element.across_value for element in elements]
+            across_key: [element.across_value for element in sorted_elements]
         }
         tags |= index
-        u = merge_data(elements)
+        u = merge_data(sorted_elements)
         u["tags"] |= tags
 
         if len(elements) > 1:
