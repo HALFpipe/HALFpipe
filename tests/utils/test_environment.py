@@ -12,8 +12,8 @@ from halfpipe.utils.environment import setup_freesurfer_env
 
 logger = logging.getLogger()
 
-good_opts, _ = parse_args(["--fs-license-file", "/etc/hosts"])
-bad_opts, _ = parse_args(["--fs-license-file", "/dev/null"])
+good_opts, _ = parse_args(argv=["--fs-license-file", "/etc/hosts"])
+bad_opts, _ = parse_args(argv=["--fs-license-file", "/dev/null"])
 
 
 def test_freesurfer_env_works_with_env_set():

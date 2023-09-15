@@ -17,17 +17,6 @@ jobs:
       tag: ${{ steps.build_tag.outputs.tag }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
-        with:
-          images: name/app
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -48,27 +37,30 @@ jobs:
         id: build_tag
         shell: bash
         env:
-          GITHUB_REF: ${{ github.ref }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          github_ref: ${{ github.ref }}
+          github_repository: ${{ github.repository }}
         run: |
-          VERSION=$(echo "${GITHUB_REF}" | cut -d '/' -f 3)
-          if [[ "$VERSION" == "main" ]]; then
-            VERSION=latest
+          version=$(echo "${github_ref}" | cut -d '/' -f 3)
+          if [[ "$version" == "main" ]]; then
+            version="latest"
           fi
-          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          echo "::set-output name=repo::${REPO}"
-          echo "::set-output name=tag::${REPO}:${VERSION}"
+          name=$(echo "${github_repository}" | tr '[:upper:]' '[:lower:]')
+          echo "repo=${name}" >> ${GITHUB_OUTPUT}
+          echo "tag=${name}:${version}" >> ${GITHUB_OUTPUT}
+
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
-          push: true
-          context: .
+          context: "."
           file: ./Dockerfile
           platforms: linux/amd64
           cache-from: type=registry,ref=${{ steps.build_tag.outputs.repo }}:latest
           cache-to: type=inline
+          push: true
           tags: |
             ${{ steps.build_tag.outputs.tag }}
             ghcr.io/${{ steps.build_tag.outputs.tag }}
@@ -108,13 +100,14 @@ jobs:
       - name: Convert to Singularity
         shell: bash
         env:
-          DOCKER_IMAGE_NAME: ${{ needs.docker_build.outputs.tag }}
+          docker_image_name: ${{ needs.docker_build.outputs.tag }}
         run: |
-          SINGULARITY_IMAGE_NAME="$(echo -n ${DOCKER_IMAGE_NAME} | tr -c '[:alnum:].' '-').singularity"  # we need to add a suffix because docker2singularity removes the last dot and everything that follows
+          # We need to add a suffix because docker2singularity removes the last dot and everything that follows
+          singularity_image_name="$(echo -n ${docker_image_name} | tr -c '[:alnum:].' '-').singularity"
           mkdir -p -v /output
           docker-entrypoint.sh /docker2singularity.sh \
-            --name ${SINGULARITY_IMAGE_NAME} \
-            ${DOCKER_IMAGE_NAME}
+            --name ${singularity_image_name} \
+            ${docker_image_name}
 
       - name: Upload to server
         shell: bash

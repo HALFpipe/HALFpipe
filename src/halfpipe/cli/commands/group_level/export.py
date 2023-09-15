@@ -61,7 +61,7 @@ class ImagePaths:
 
     @cached_property
     def effect_image(self) -> nib.analyze.AnalyzeImage:
-        return nib.nifti1.load(self.mask)
+        return nib.nifti1.load(self.effect)
 
     @cached_property
     def mask_image(self) -> nib.analyze.AnalyzeImage:
@@ -75,7 +75,7 @@ class ImagePaths:
         self, statistic: Statistic
     ) -> tuple[Statistic, nib.analyze.AnalyzeImage]:
         if statistic == Statistic.effect:
-            return statistic, nib.nifti1.load(self.effect)
+            return statistic, self.effect_image
         elif statistic == Statistic.cohensD:
             if self.sigmasquareds is None:
                 logger.info(
@@ -120,13 +120,9 @@ class ImagePaths:
 
             t = np.zeros_like(effect)
             t[mask] = effect[mask] / np.sqrt(variance[mask])
-
-            standardized_coefficient = np.zeros_like(effect)
-            standardized_coefficient[mask] = t[mask] / np.sqrt(t[mask] ** 2 + dof[mask])
-
             standardized_coefficient_fisherz = np.zeros_like(effect)
             standardized_coefficient_fisherz[mask] = np.arctanh(
-                standardized_coefficient[mask]
+                t[mask] / np.sqrt(np.square(t[mask]) + dof[mask])
             )
 
             standardized_coefficient_image = new_img_like(
@@ -256,7 +252,7 @@ def export(
         pool.join()
 
     # Transpose subjects and atlases
-    signal_columns = (list(c) for c in zip(*signal_rows))
+    signal_columns = list(list(c) for c in zip(*signal_rows))
 
     for atlas, signal_column in zip(atlases, signal_columns):
         # Unpack signal/coverage
