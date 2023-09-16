@@ -196,6 +196,50 @@ def test_aggregate_resultdicts_heterogenous() -> None:
     assert len(subjects) == 3
 
 
+def test_aggregate_resultdicts_missing_tag() -> None:
+    results: list[ResultDict] = list()
+    for sub in ["a", "b", "c"]:
+        for run in ["01", "02"]:
+            results.append(
+                {
+                    "tags": dict(sub=sub, run=run),
+                    "images": dict(stat=sub),
+                    "vals": dict(),
+                    "metadata": dict(),
+                }
+            )
+    results.append(
+        {
+            "tags": dict(sub="d", run="01"),
+            "images": dict(stat="d"),
+            "vals": dict(),
+            "metadata": dict(),
+        }
+    )
+    results.append(
+        {
+            "tags": dict(sub="x"),
+            "images": dict(stat="x"),
+            "vals": dict(),
+            "metadata": dict(),
+        }
+    )
+
+    aggregated_results, other_results = aggregate_results(results, across_key="run")
+    sub_a, sub_b, sub_c = aggregated_results
+    assert sub_a["tags"] == {"run": ["01", "02"], "sub": "a"}
+    assert sub_b["tags"] == {"run": ["01", "02"], "sub": "b"}
+    assert sub_c["tags"] == {"run": ["01", "02"], "sub": "c"}
+    assert len(other_results) == 2
+
+    aggregated_results, other_results = aggregate_results(
+        [*aggregated_results, *other_results], across_key="sub"
+    )
+    (result,) = aggregated_results
+    assert result["tags"] == {"sub": ["a", "b", "c", "d", "x"]}
+    assert len(other_results) == 0
+
+
 @pytest.mark.timeout(4)
 def test_aggregate_many() -> None:
     results: list[ResultDict] = list()

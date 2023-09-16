@@ -10,6 +10,7 @@ from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
+from ... import __version__
 from ...fixes import MapNode, Node
 from ...interfaces.fixes.flameo import FLAMEO
 from ...interfaces.image_maths.merge import Merge, MergeMask
@@ -84,10 +85,12 @@ def init_stats_wf(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
             imagekeys=["design_matrix", "contrast_matrix", *modelfit_model_outputs],
+            metadatakeys=["sources", "halfpipe_version"],
             deletekeys=["contrast"],
         ),
         name="make_resultdicts_a",
     )
+    make_resultdicts_a.inputs.halfpipe_version = __version__
 
     statmaps = [
         modelfit_aliases[m] if m in modelfit_aliases else m
@@ -97,7 +100,7 @@ def init_stats_wf(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
             imagekeys=statmaps,
-            metadatakeys=["critical_z"],
+            metadatakeys=["critical_z", "sources", "halfpipe_version"],
             missingvalues=[
                 None,
                 False,
@@ -105,6 +108,7 @@ def init_stats_wf(
         ),
         name="make_resultdicts_b",
     )
+    make_resultdicts_b.inputs.halfpipe_version = __version__
 
     if model is not None:
         make_resultdicts_a.inputs.model = model.name
@@ -175,6 +179,14 @@ def init_stats_wf(
     workflow.connect(
         aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict"
     )
+
+    # make sources metadata
+    merge_sources = pe.Node(niu.Merge(3), name="merge_sources")
+    workflow.connect(extract_from_resultdict, "effect", merge_sources, "in1")
+    workflow.connect(extract_from_resultdict, "variance", merge_sources, "in2")
+    workflow.connect(extract_from_resultdict, "mask", merge_sources, "in3")
+    workflow.connect(merge_sources, "out", make_resultdicts_a, "sources")
+    workflow.connect(merge_sources, "out", make_resultdicts_b, "sources")
 
     # copy over aggregated metadata and tags to outputs
     for make_resultdicts_node in [make_resultdicts_a, make_resultdicts_b]:

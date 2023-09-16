@@ -137,15 +137,22 @@ def merge_data(elements: Iterable[Element]) -> ResultDict:
 
 
 def aggregate_results(
-    rr: list[ResultDict],
+    results: list[ResultDict],
     across_key: str,
 ) -> tuple[list[ResultDict], list[ResultDict]]:
-    groups = group_across(rr, across_key)
+    results_with_across_key: list[ResultDict] = list()
+    results_without_across_key: list[ResultDict] = list()
+    for result in results:
+        if across_key in result["tags"]:
+            results_with_across_key.append(result)
+        else:
+            results_without_across_key.append(result)
+
+    groups = group_across(results_with_across_key, across_key)
     expanded_groups = group_expand(groups)
 
-    aggregated: list[ResultDict] = list()
-    bypass: list[ResultDict] = list()
-
+    aggregated_results: list[ResultDict] = list()
+    other_results: list[ResultDict] = list()
     for index, elements in expanded_groups.items():
         sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
         tags: dict[str, Any] = {
@@ -156,11 +163,13 @@ def aggregate_results(
         u["tags"] |= tags
 
         if len(elements) > 1:
-            aggregated.append(u)
+            aggregated_results.append(u)
         else:
-            bypass.append(u)
+            other_results.append(u)
 
-    return aggregated, bypass
+    other_results.extend(results_without_across_key)
+
+    return aggregated_results, other_results
 
 
 def summarize(values: list[Any]) -> Any:

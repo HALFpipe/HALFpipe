@@ -19,7 +19,7 @@ mpmath >= 1.1.0
 gmpy2 >= 2.0.8
 pandas >= 1.2.0
 patsy >= 0.5.2
-statsmodels >= 0.12.2
+statsmodels >= 0.14
 tabulate >= 0.8.9
 pint >= 0.17
 

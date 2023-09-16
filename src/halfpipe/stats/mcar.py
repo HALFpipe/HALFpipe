@@ -2,9 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import warnings
+
 import numpy as np
 import statsmodels.api as sm
-from statsmodels.tools.sm_exceptions import PerfectSeparationError
+from statsmodels.tools.sm_exceptions import (
+    PerfectSeparationError,
+    PerfectSeparationWarning,
+)
 
 from .base import demean
 from .heterogeneity import Heterogeneity
@@ -33,7 +38,10 @@ class MCARTest(Heterogeneity):
 
         try:
             model = sm.Logit(is_missing.ravel().astype(float), z, missing="drop")
-            result = model.fit(disp=False, warn_convergence=False)
+            with warnings.catch_warnings():
+                # Treat perfect separation as an error
+                warnings.simplefilter("error", PerfectSeparationWarning)
+                result = model.fit(disp=False, warn_convergence=False)
 
             chisq = result.llr
             dof = result.df_model
@@ -42,5 +50,9 @@ class MCARTest(Heterogeneity):
             voxel_dict = dict(mcarchisq=chisq, mcardof=dof, mcarz=zstat)
             voxel_result = {coordinate: voxel_dict}
             return voxel_result
-        except (PerfectSeparationError, np.linalg.LinAlgError):
+        except (
+            PerfectSeparationError,
+            PerfectSeparationWarning,
+            np.linalg.LinAlgError,
+        ):
             return None
