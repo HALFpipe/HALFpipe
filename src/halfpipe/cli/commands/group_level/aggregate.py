@@ -29,7 +29,7 @@ def apply_aggregate(
 
     results = design.results
     for key in design.aggregate:
-        results, bypass = aggregate_results(results, key)
+        results, other_results = aggregate_results(results, key)
 
         logger.info(f'Will run {len(results):d} models at level "{key}"')
         with Pool(processes=n_procs) as pool:
@@ -41,8 +41,17 @@ def apply_aggregate(
                 )
             )
 
-        results.extend(bypass)
+        results.extend(other_results)
+        for result in results:
+            # Remove list fields
+            result["tags"] = {
+                key: value
+                for key, value in result["tags"].items()
+                if isinstance(value, str)
+            }
+
         results = [summarize_metadata(result) for result in results]
+
     # Set in design object
     design.results = results
 
@@ -54,10 +63,6 @@ def map_fixed_effects_aggregate(
 
     model_directory = Path.cwd() / f"model-{key}"
     model_directory.mkdir(exist_ok=exist_ok, parents=True)
-
-    tags = {
-        key: value for key, value in result["tags"].items() if isinstance(value, str)
-    }  # filter out list fields
 
     images = result["images"]
     result["images"] = dict()
@@ -120,7 +125,6 @@ def map_fixed_effects_aggregate(
         logger.debug(f'Removing unused file "{input_path}"')
         input_path.unlink()
 
-    result["tags"] = tags
     result["images"] = images
 
     return result
