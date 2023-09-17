@@ -204,5 +204,8 @@ def summarize_metadata(
             key = (field_name, attribute_name)
             if key in source_keys:
                 continue
-            attribute_dict[attribute_name] = summarize(attribute_dict[attribute_name])
+            value = attribute_dict[attribute_name]
+            if not isinstance(value, list):
+                continue
+            attribute_dict[attribute_name] = summarize(value)
     return result
