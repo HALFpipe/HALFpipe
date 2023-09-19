@@ -41,7 +41,7 @@ et-xmlfile==1.1.0
     # via openpyxl
 etelemetry==0.3.0
     # via nipype
-fasteners==0.18
+fasteners==0.19
     # via -r requirements.in
 filelock==3.12.1
     # via nipype
