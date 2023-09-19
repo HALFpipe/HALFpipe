@@ -172,7 +172,7 @@ niworkflows @ git+https://github.com/HippocampusGirl/niworkflows@1.3.9+halfpipe.
     #   smriprep
 num2words==0.5.12
     # via pybids
-numpy==1.25.2
+numpy==1.26.0
     # via
     #   -r requirements.in
     #   contourpy
