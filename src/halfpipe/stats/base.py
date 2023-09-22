@@ -39,7 +39,7 @@ class ModelAlgorithm(ABC):
         cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series
     ) -> Path:
         coordinates = series.index.tolist()
-        values = tuple(series.values)
+        values = series.values.tolist()
 
         shape: list[int] = list(reference_image.shape[:3])
         (k,) = set(
@@ -60,7 +60,7 @@ class ModelAlgorithm(ABC):
         else:
             array = np.full(shape, np.nan, dtype=np.float64)
 
-        array[*zip(*coordinates)] = np.vstack(values).squeeze()
+        array[*zip(*coordinates)] = np.stack(values).squeeze()
 
         image = new_img_like(reference_image, array, copy_header=True)
         image.header.set_data_dtype(np.float64)

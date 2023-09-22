@@ -37,15 +37,15 @@ class MCARTest(Heterogeneity):
             return None  # zero variance
 
         try:
-            model = sm.Logit(is_missing.ravel().astype(float), z, missing="drop")
             with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
                 # Treat perfect separation as an error
                 warnings.simplefilter("error", PerfectSeparationWarning)
-                warnings.simplefilter("ignore", RuntimeWarning)
+                model = sm.Logit(is_missing.ravel().astype(float), z, missing="drop")
                 result = model.fit(disp=False, warn_convergence=False)
 
-            chisq = result.llr
-            dof = result.df_model
+                chisq = result.llr
+                dof = result.df_model
             zstat = chisq2z_convert(chisq, dof)
 
             voxel_dict = dict(mcarchisq=chisq, mcardof=dof, mcarz=zstat)

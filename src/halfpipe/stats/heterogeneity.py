@@ -17,14 +17,18 @@ from .flame1 import flame1_prepare_data
 
 class MoM:
     @staticmethod
-    def i2(y, z, s):
+    def i2(
+        y: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        s: npt.NDArray[np.float64],
+    ) -> float:
         """
         Chen et al. 2012
         """
 
         b = y
         x = z
-        w0 = np.diag(1.0 / np.ravel(s))
+        w0 = np.diag(1.0 / s.ravel())
 
         n, p = x.shape
 
@@ -39,62 +43,78 @@ class MoM:
 
         trp0 = np.trace(p0)
 
-        τ2 = (q - (n - p - 1)) / trp0
+        τ2 = ((q - (n - p - 1)) / trp0).item()
         if τ2 < 0:
             τ2 = 0
 
         h2 = τ2 * trp0 / (n - p - 1) + 1
-        i2 = float((h2 - 1) / h2)
+        i2 = (h2 - 1) / h2
 
         return i2
 
 
 class ReML:
     @staticmethod
-    def model(ϑ: float, x: np.ndarray | None, s: np.ndarray):
+    def model(ϑ: float, x: npt.NDArray[np.float64] | None, s: npt.NDArray[np.float64]):
         σg = ϑ
 
         if σg < 0:
             return None, None, None
 
-        vinv = np.diag(np.ravel(1.0 / (s + σg)))
+        inverse_variance = np.reciprocal(1.0 / (s + σg)).ravel()
 
         if x is None:
-            return vinv, None, None
+            return inverse_variance, None, None
 
-        a = x.T @ vinv
+        a = x.T * inverse_variance
         b = a @ x
 
         # projection matrix
-        p = vinv - a.T @ np.linalg.lstsq(b, a, rcond=None)[0]
-        return vinv, p, b
+        p = np.diag(inverse_variance) - a.T @ np.linalg.lstsq(b, a, rcond=None)[0]
+        return inverse_variance, p, b
 
     @classmethod
-    def fit(cls, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
+    def fit(
+        cls,
+        y: npt.NDArray[np.float64],
+        x: npt.NDArray[np.float64] | None,
+        s: npt.NDArray[np.float64],
+    ):
         return optimize.minimize_scalar(cls.neg_log_lik, args=(y, x, s), method="brent")
 
     @classmethod
-    def neg_log_lik(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
+    def neg_log_lik(
+        cls,
+        ϑ: float,
+        y: npt.NDArray[np.float64],
+        x: npt.NDArray[np.float64] | None,
+        s: npt.NDArray[np.float64],
+    ) -> float:
         vinv, p, b = cls.model(ϑ, x, s)
 
         if vinv is None:
             return inf
 
-        _, log_det_vinv = np.linalg.slogdet(vinv)
-        neg_log_lik = -float(log_det_vinv) / 2
+        log_det_vinv = np.log(vinv).sum()
+        neg_log_lik = -0.5 * log_det_vinv
 
         if p is None or b is None:
             return neg_log_lik
 
         _, log_det_xvinvx = np.linalg.slogdet(b)
-        neg_log_lik += float(log_det_xvinvx) / 2
+        neg_log_lik += 0.5 * log_det_xvinvx
+        neg_log_lik += 0.5 * (y.T @ p @ y)
 
-        neg_log_lik += float(y.T @ p @ y) / 2
-
-        return neg_log_lik
+        return neg_log_lik.item()
 
     @classmethod
-    def jacobian(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
+    def jacobian(
+        cls,
+        ϑ: float,
+        y: npt.NDArray[np.float64],
+        x: npt.NDArray[np.float64] | None,
+        s: npt.NDArray[np.float64],
+    ):
         _, p, b = cls.model(ϑ, x, s)
 
         if p is None or b is None:
@@ -103,13 +123,19 @@ class ReML:
         return float(np.trace(p) - y.T @ p @ p @ y)
 
     @classmethod
-    def hessian(cls, ϑ: float, y: np.ndarray, x: np.ndarray | None, s: np.ndarray):
+    def hessian(
+        cls,
+        ϑ: float,
+        y: npt.NDArray[np.float64],
+        x: npt.NDArray[np.float64] | None,
+        s: npt.NDArray[np.float64],
+    ) -> float:
         _, p, b = cls.model(ϑ, x, s)
 
         if p is None or b is None:
             return nan
 
-        return float(y.T @ p @ p @ p @ y)
+        return (y.T @ p @ p @ p @ y).item()
 
 
 class ML:
@@ -137,7 +163,7 @@ class ML:
         if x is None:
             return neg_log_lik
 
-        r: np.ndarray = y - x @ γ
+        r: npt.NDArray[np.float64] = y - x @ γ
         neg_log_lik += float(r.T @ vinv @ r) / 2
 
         return neg_log_lik
@@ -145,14 +171,14 @@ class ML:
 
 class InvGammaML:
     @classmethod
-    def fit(cls, x: np.ndarray):
+    def fit(cls, x: npt.NDArray[np.float64]):
         a, _, scale = stats.invgamma.fit(x, floc=0)
         ϑ = np.array([a, scale])
 
         return ϑ
 
     @staticmethod
-    def neg_log_lik(ϑ: np.ndarray, x: np.ndarray):
+    def neg_log_lik(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
         a, b = ϑ
 
         if a < 0 or b < 0:
@@ -166,7 +192,7 @@ class InvGammaML:
         return -n * a * log(b) + n * log(special.gamma(a)) + a * u + u + b * v
 
     @staticmethod
-    def jacobian(ϑ: np.ndarray, x: np.ndarray):
+    def jacobian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
         a, b = ϑ
 
         if a < 0 or b < 0:
@@ -185,7 +211,7 @@ class InvGammaML:
         )
 
     @staticmethod
-    def hessian(ϑ: np.ndarray, x: np.ndarray):
+    def hessian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
         a, b = ϑ
 
         if a < 0 or b < 0:
@@ -204,14 +230,12 @@ class InvGammaML:
 def het_on_voxel(y, z, s):
     assert not np.any(s < 0), "Variance needs to be non-negative"
 
-    # scale to avoid numerical issues
-
+    # Scale to avoid numerical issues
     norm = np.std(y)
     y_norm = y / norm
     s_norm = s / (norm * norm)
 
-    # calculate beta
-
+    # Calculate beta
     neg_log_lik_fe = ReML.neg_log_lik(0, y_norm, z, s_norm)
 
     res = ReML.fit(y_norm, z, s_norm)
@@ -221,15 +245,13 @@ def het_on_voxel(y, z, s):
     beta = np.array([res.x, var_res])
     beta *= norm * norm
 
-    # calculate lrt
-
+    # Calculate likelihood ratio test
     chisq = 2 * (neg_log_lik_fe - neg_log_lik_me)
 
     pseudor2 = 1 - neg_log_lik_me / neg_log_lik_fe
     pseudor2 = max(0, min(1, pseudor2))
 
-    # calculate other
-
+    # Calculate other statistics
     i2 = MoM.i2(y_norm, z, s_norm)
 
     ϑ = InvGammaML.fit(s)
@@ -268,9 +290,9 @@ class Heterogeneity(ModelAlgorithm):
     @staticmethod
     def voxel_calc(
         coordinate: tuple[int, int, int],
-        y: np.ndarray,
-        z: np.ndarray,
-        s: np.ndarray,
+        y: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        s: npt.NDArray[np.float64],
         cmatdict: dict,
     ) -> dict | None:
         _ = cmatdict
@@ -278,7 +300,7 @@ class Heterogeneity(ModelAlgorithm):
 
         try:
             voxel_dict = het_on_voxel(y, z, s)
-        except (np.linalg.LinAlgError, AssertionError, ValueError, SystemError):
+        except (np.linalg.LinAlgError, SystemError):
             return None
         except Exception as e:
             logger.warning(f"Unexpected exception for voxel {coordinate}", exc_info=e)
