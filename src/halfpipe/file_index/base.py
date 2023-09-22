@@ -55,7 +55,7 @@ class FileIndex:
             values = self.paths_by_tags[key]
             if value is not None:
                 if value not in values:
-                    logger.info(f'Unknown value "{value}"')
+                    logger.debug(f'Unknown value "{value}"')
                     return None
                 paths: set[AnyPath] = values[value]
             else:

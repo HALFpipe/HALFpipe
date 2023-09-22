@@ -41,6 +41,7 @@ class MCARTest(Heterogeneity):
             with warnings.catch_warnings():
                 # Treat perfect separation as an error
                 warnings.simplefilter("error", PerfectSeparationWarning)
+                warnings.simplefilter("ignore", RuntimeWarning)
                 result = model.fit(disp=False, warn_convergence=False)
 
             chisq = result.llr

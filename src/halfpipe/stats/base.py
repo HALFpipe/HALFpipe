@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generator, Literal
+from typing import Iterator, Literal
 
 import nibabel as nib
 import numpy as np
@@ -36,13 +36,12 @@ class ModelAlgorithm(ABC):
 
     @classmethod
     def write_map(
-        cls, ref_img: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series
-    ):
+        cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series
+    ) -> Path:
         coordinates = series.index.tolist()
-        values = series.values
+        values = tuple(series.values)
 
-        shape: list[int] = list(ref_img.shape[:3])
-
+        shape: list[int] = list(reference_image.shape[:3])
         (k,) = set(
             (1,)
             if isinstance(value, (int, float))
@@ -57,25 +56,22 @@ class ModelAlgorithm(ABC):
             shape = shape[:3]  # squeeze
 
         if out_name.startswith("mask"):
-            arr = np.full(shape, False)
-
+            array = np.full(shape, False, dtype=np.bool_)
         else:
-            arr = np.full(shape, np.nan, dtype=np.float64)
+            array = np.full(shape, np.nan, dtype=np.float64)
 
-        for coordinate, value in zip(coordinates, values):
-            arr[coordinate] = value
+        array[*zip(*coordinates)] = np.vstack(values).squeeze()
 
-        img = new_img_like(ref_img, arr, copy_header=True)
-        assert isinstance(img.header, nib.nifti1.Nifti1Header)
-        img.header.set_data_dtype(np.float64)
+        image = new_img_like(reference_image, array, copy_header=True)
+        image.header.set_data_dtype(np.float64)
 
-        fname = Path.cwd() / f"{out_name}.nii.gz"
-        nib.loadsave.save(img, fname)
+        image_path = Path.cwd() / f"{out_name}.nii.gz"
+        nib.loadsave.save(image, image_path)
 
-        return fname
+        return image_path
 
 
-def listwise_deletion(*args: np.ndarray) -> Generator[np.ndarray, None, None]:
+def listwise_deletion(*args: np.ndarray) -> Iterator[np.ndarray]:
     available = np.all(np.concatenate([np.isfinite(a) for a in args], axis=1), axis=1)
 
     for a in args:

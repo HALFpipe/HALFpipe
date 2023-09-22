@@ -5,7 +5,8 @@ FROM nipreps/fmriprep:20.2.7
 RUN mkdir /ext /host \
  && chmod a+rwx /ext /host
 
-ENV PATH="/usr/local/miniconda/bin:$PATH"
+ENV PATH="/usr/local/miniconda/bin:$PATH" \
+    MAMBA_EXE="/usr/local/miniconda/bin/mamba"
 
 # Use `/var/cache` for downloaded resources instead of
 # `/home/fmriprep/.cache`, because it is less likely to be
@@ -24,7 +25,7 @@ RUN --mount=source=requirements.txt,target=/requirements.txt \
         "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh" \
         --output /tmp/miniconda.sh \
  && bash /tmp/miniconda.sh -b -p /usr/local/miniconda \
- && mamba install --yes "python=3.11" "pip" "gdb" "nodejs" \
+ && mamba install --yes "python=3.11" "pip" "gdb" "nodejs" "gsl" \
  && /install-requirements.sh \
         --requirements-file /requirements.txt \
  && sync \

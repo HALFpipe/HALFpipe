@@ -3,48 +3,66 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from math import isclose, isfinite, isnan, nan
-from typing import Any, Literal
+from math import isclose, isfinite, nan
+from typing import Any, Literal, NamedTuple
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize_scalar
+import scipy
+from numpy import typing as npt
 
 from ..utils.format import format_workflow
 from .base import ModelAlgorithm, demean, listwise_deletion
 from .miscmaths import f2z_convert, t2z_convert
 
 
-def calcgam(beta, y, z, s) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    weights = s + beta
+def calcgam(
+    beta: float,
+    y: npt.NDArray[np.float64],
+    covariates: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    variance = (s + beta).ravel()
+    inverse_variance = np.reciprocal(variance)
 
-    iU = np.diag(1.0 / np.ravel(weights))
+    scaled_covariates = covariates.transpose() * inverse_variance
+    gram_matrix = np.atleast_2d(scaled_covariates @ covariates)
 
-    tmp = z.T @ iU
-    ziUz = np.atleast_2d(tmp @ z)
+    regression_weights, _, _, _ = np.linalg.lstsq(
+        gram_matrix, scaled_covariates @ y, rcond=None
+    )
 
-    gam = np.linalg.lstsq(ziUz, tmp @ y, rcond=None)[0]
-
-    return gam, iU, ziUz
+    return regression_weights, inverse_variance, gram_matrix
 
 
-def marg_posterior_energy(ex, y, z, s):
+def marg_posterior_energy(
+    ex: float,
+    y: npt.NDArray[np.float64],
+    z: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
     if ex < 0 or isclose(ex, 0.0):
         return 1e32  # very large value
 
     try:
-        gam, iU, ziUz = calcgam(ex, y, z, s)
+        regression_weights, inverse_variance, gram_matrix = calcgam(ex, y, z, s)
     except np.linalg.LinAlgError:
         return 1e32
 
-    _, iU_logdet = np.linalg.slogdet(iU)
-    _, ziUz_logdet = np.linalg.slogdet(ziUz)
+    inverse_variance_logarithmic_determinant = np.log(inverse_variance).sum()
+    _, gram_matrix_logarithmic_determinant = np.linalg.slogdet(gram_matrix)
 
-    energy = -(
-        0.5 * float(iU_logdet)
-        - 0.5 * float(ziUz_logdet)
-        - 0.5 * float(y.T @ iU @ y - gam.T @ ziUz @ gam)
+    energy = float(
+        -0.5
+        * (
+            inverse_variance_logarithmic_determinant
+            - gram_matrix_logarithmic_determinant
+            - (
+                (y.T * inverse_variance) @ y
+                - regression_weights.T @ gram_matrix @ regression_weights
+            ).item()
+        )
     )
 
     if not isfinite(energy):
@@ -53,16 +71,19 @@ def marg_posterior_energy(ex, y, z, s):
     return energy
 
 
-def solveforbeta(y, z, s):
-    res = minimize_scalar(marg_posterior_energy, args=(y, z, s), method="brent")
-    fu = res.x
-
-    beta = max(1e-10, fu)
-
+def solveforbeta(
+    y: npt.NDArray[np.float64], z: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
+) -> float:
+    result = scipy.optimize.minimize_scalar(
+        marg_posterior_energy, args=(y, z, s), method="brent"
+    )
+    beta = max(1e-10, result.x)
     return beta
 
 
-def flame_stage1_onvoxel(y, z, s):
+def flame_stage1_onvoxel(
+    y: npt.NDArray[np.float64], z: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     norm = np.std(y)
 
     if isclose(norm, 0):
@@ -76,42 +97,64 @@ def flame_stage1_onvoxel(y, z, s):
 
     beta = solveforbeta(y, z, s)
 
-    gam, _, ziUz = calcgam(beta, y, z, s)
+    regression_weights, _, gram_matrix = calcgam(beta, y, z, s)
 
-    gam *= norm
-    ziUz /= np.square(norm)
+    regression_weights *= norm
+    gram_matrix /= np.square(norm)
 
-    return gam, ziUz
-
-
-def t_ols_contrast(mn, inverse_covariance, dof, tcontrast):
-    a = np.linalg.lstsq(inverse_covariance, tcontrast.T, rcond=None)[0]
-    varcope = float(tcontrast @ a)
-
-    cope = float(tcontrast @ mn)
-
-    if isnan(cope) or isnan(varcope) or isclose(varcope, 0) or varcope < 0:
-        t = np.nan  # avoid warnings
-
-    else:
-        t = cope / np.sqrt(varcope)
-
-    z = t2z_convert(t, dof)
-
-    return cope, varcope, t, z
+    return regression_weights, gram_matrix
 
 
-def f_ols_contrast(mn, inverse_covariance, dof1, dof2, fcontrast):
-    cope = fcontrast @ mn
+class TContrastResult(NamedTuple):
+    cope: float
+    var_cope: float
+    t: float
+    z: float
 
-    a = fcontrast @ np.linalg.lstsq(inverse_covariance, fcontrast.T, rcond=None)[0]
+
+def t_ols_contrast(
+    regression_weights: npt.NDArray[np.float64],
+    gram_matrix: npt.NDArray[np.float64],
+    degrees_of_freedom: int,
+    t_contrast: npt.NDArray[np.float64],
+) -> TContrastResult:
+    cope = (t_contrast @ regression_weights).ravel().item()
+
+    a = np.linalg.lstsq(gram_matrix, t_contrast.T, rcond=None)[0]
+    var_cope = (t_contrast @ a).ravel().item()
+
+    t = cope / np.sqrt(var_cope)
+    z = t2z_convert(t, degrees_of_freedom)
+
+    return TContrastResult(cope, var_cope, t, z)
+
+
+class FContrastResult(NamedTuple):
+    cope: npt.NDArray[np.float64]
+    var_cope: npt.NDArray[np.float64]
+    t: npt.NDArray[np.float64]
+    f: float
+    z: float
+
+
+def f_ols_contrast(
+    regression_weights: npt.NDArray[np.float64],
+    gram_matrix: npt.NDArray[np.float64],
+    numerator_degrees_of_freedom: int,
+    denominator_degrees_of_freedom: int,
+    f_contrast: npt.NDArray[np.float64],
+):
+    cope = (f_contrast @ regression_weights).ravel()
+
+    a = f_contrast @ np.linalg.lstsq(gram_matrix, f_contrast.T, rcond=None)[0]
+    var_cope = np.diag(a)
+
+    t = cope / np.sqrt(var_cope)
     b = np.linalg.lstsq(a, cope, rcond=None)[0]
+    f = float(cope.T @ b) / numerator_degrees_of_freedom
+    z = f2z_convert(f, numerator_degrees_of_freedom, denominator_degrees_of_freedom)
 
-    f = float(cope.T @ b) / dof1
-
-    z = f2z_convert(f, dof1, dof2)
-
-    return cope, f, z
+    return FContrastResult(cope, var_cope, t, f, z)
 
 
 def flame1_contrast(mn, inverse_covariance, npts, cmat):
@@ -121,12 +164,15 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
     if n == 1:
         tdoflower = npts - nevs
-        cope, varcope, t, z = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
-
-        mask = isfinite(z)
-
+        r = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
+        mask = isfinite(r.z)
         return dict(
-            cope=cope, var_cope=varcope, dof=tdoflower, tstat=t, zstat=z, mask=mask
+            cope=r.cope,
+            var_cope=r.var_cope,
+            dof=tdoflower,
+            tstat=r.t,
+            zstat=r.z,
+            mask=mask,
         )
 
     elif n > 1:
@@ -134,11 +180,17 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
         fdof2lower = npts - nevs
 
-        cope, f, z = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
-
-        mask = isfinite(z)
-
-        return dict(cope=cope, fstat=f, dof=[fdof1, fdof2lower], zstat=z, mask=mask)
+        r = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
+        mask = isfinite(r.z)
+        return dict(
+            cope=r.cope,
+            var_cope=r.var_cope,
+            tstat=r.t,
+            fstat=r.f,
+            dof=[fdof1, fdof2lower],
+            zstat=r.z,
+            mask=mask,
+        )
 
 
 def flame1_prepare_data(y: np.ndarray, z: np.ndarray, s: np.ndarray):
@@ -190,38 +242,50 @@ class FLAME1(ModelAlgorithm):
 
         voxel_result: dict[str, dict[tuple[int, int, int], Any]] = defaultdict(dict)
 
-        for name, cmat in cmatdict.items():
-            try:
-                r = flame1_contrast(mn, inverse_covariance, npts, cmat)
-                voxel_result[name][coordinate] = r
-            except (np.linalg.LinAlgError, SystemError):
-                continue
+        with np.errstate(all="raise"):
+            for name, cmat in cmatdict.items():
+                try:
+                    r = flame1_contrast(mn, inverse_covariance, npts, cmat)
+                    voxel_result[name][coordinate] = r
+                except (np.linalg.LinAlgError, FloatingPointError, SystemError):
+                    continue
 
         return voxel_result
 
     @classmethod
     def write_outputs(
-        cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict
+        cls,
+        reference_image: nib.analyze.AnalyzeImage,
+        contrast_matrices: dict,
+        voxel_results: dict,
     ) -> dict[str, list[Literal[False] | str]]:
         output_files: dict[str, list[Literal[False] | str]] = dict()
 
         for output_name in cls.contrast_outputs:
-            output_files[output_name] = [False] * len(cmatdict)
+            output_files[output_name] = [False] * len(contrast_matrices)
 
-        for i, contrast_name in enumerate(cmatdict.keys()):  # cmatdict is ordered
+        for i, contrast_name in enumerate(
+            contrast_matrices.keys()
+        ):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]
+            results_frame = pd.DataFrame.from_records(contrast_results)
 
-            rdf = pd.DataFrame.from_records(contrast_results)
+            # Ensure that we always output a mask
+            if "mask" not in results_frame.index:
+                empty_mask = pd.Series(
+                    data=False, index=results_frame.columns, name="mask"
+                )
+                results_frame = results_frame.append(empty_mask)  # type: ignore
+            # Ensure that we always output a zstat
+            if "zstat" not in results_frame.index:
+                empty_zstat = pd.Series(
+                    data=nan, index=results_frame.columns, name="zstat"
+                )
+                results_frame = results_frame.append(empty_zstat)  # type: ignore
 
-            if "mask" not in rdf.index:  # ensure that we always output a mask
-                rdf = rdf.append(pd.Series(data=False, index=rdf.columns, name="mask"))  # type: ignore
-
-            if "zstat" not in rdf.index:  # ensure that we always output a zstat
-                rdf = rdf.append(pd.Series(data=nan, index=rdf.columns, name="zstat"))  # type: ignore
-
-            for map_name, series in rdf.iterrows():
-                out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
-                fname = cls.write_map(ref_img, out_name, series)
+            for map_name, series in results_frame.iterrows():
+                output_prefix = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
+                fname = cls.write_map(reference_image, output_prefix, series)
 
                 if map_name in frozenset(["dof"]):
                     output_name = str(map_name)

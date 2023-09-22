@@ -11,6 +11,8 @@ from halfpipe.resource import get as get_resource
 
 from .resource import setup as setup_test_resources
 
+os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
+
 
 @pytest.fixture(scope="session")
 def wakemandg_hensonrn_raw(tmp_path_factory):

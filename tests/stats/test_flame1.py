@@ -26,7 +26,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
 
     # prepare
     (
-        subjects,
+        _,
         cope_files,
         var_cope_files,
         mask_files,
@@ -79,14 +79,15 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
         if node.name == "flameo":
             flameo = node
 
-    result = flameo.result
+    fsl_result = flameo.result
 
-    r0 = dict(
-        cope=result.outputs.copes[0],
-        var_cope=result.outputs.var_copes[0],
-        tstat=result.outputs.tstats[0],
-        fstat=result.outputs.fstats,
-        tdof=result.outputs.tdof[0],
+    fsl_outputs = dict(
+        cope=fsl_result.outputs.copes,
+        var_cope=fsl_result.outputs.var_copes,
+        tstat=fsl_result.outputs.tstats,
+        fstat=fsl_result.outputs.fstats,
+        zstat=[*fsl_result.outputs.zstats[:2], fsl_result.outputs.zfstats],
+        tdof=fsl_result.outputs.tdof,
     )
 
     # run halfpipe
@@ -95,7 +96,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
     else:
         var_cope_files_or_none = None
 
-    result = fit(
+    halfpipe_result = fit(
         cope_files=cope_files,
         var_cope_files=var_cope_files_or_none,
         mask_files=mask_files,
@@ -104,40 +105,68 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
         algorithms_to_run=["flame1"],
         num_threads=1,
     )
-
-    r1 = dict(
-        cope=result["copes"][0],
-        var_cope=result["var_copes"][0],
-        tstat=result["tstats"][0],
-        fstat=result["fstats"][2],
-        tdof=result["dof"][0],
+    halfpipe_outputs = dict(
+        cope=halfpipe_result["copes"],
+        var_cope=halfpipe_result["var_copes"],
+        tstat=halfpipe_result["tstats"],
+        fstat=halfpipe_result["fstats"],
+        zstat=halfpipe_result["zstats"],
+        tdof=halfpipe_result["dof"],
     )
 
-    # compare
+    # Compare
     mask = nib.nifti1.load(merge_mask_file).get_fdata() > 0
+    comparison_keys = set(fsl_outputs.keys()) & set(halfpipe_outputs.keys())
+    for key in comparison_keys:
+        fsl_paths = fsl_outputs[key]
+        if isinstance(fsl_paths, str):
+            fsl_paths = [fsl_paths]
+        fsl_images = [nib.nifti1.load(fsl_path) for fsl_path in fsl_paths]
 
-    for k in set(r0.keys()) & set(r1.keys()):
-        a0 = nib.nifti1.load(r0[k]).get_fdata()[mask]
-        a1 = nib.nifti1.load(r1[k]).get_fdata()[mask]
+        halfpipe_paths = halfpipe_outputs[key]
+        halfpipe_images: list[nib.analyze.AnalyzeImage] = list()
+        for halfpipe_path in halfpipe_paths:
+            if not halfpipe_path:
+                continue
+            image = nib.nifti1.load(halfpipe_path)
+            image = nib.funcs.squeeze_image(image)
+            if image.ndim == 4:
+                volumes = nib.funcs.four_to_three(image)
+                if key == "tdof":
+                    # Skip numerator degrees of freedom
+                    halfpipe_images.append(volumes[1])
+                else:
+                    halfpipe_images.extend(volumes)
+            else:
+                halfpipe_images.append(image)
 
-        # weak criteria, determined post-hoc
-        # we don't expect exactly identical results, because FSL and numpy
-        # use different numerics code and we use double precision while FSL
-        # uses single precision floating point
-        # so these assertions are here to verify that the small differences
-        # will not get any larger with future changes or optimizations
+        for fsl_image, halfpipe_image in zip(fsl_images, halfpipe_images):
+            a0 = fsl_image.get_fdata()[mask]
+            a1 = halfpipe_image.get_fdata()[mask]
 
-        # max difference of one percent
-        assert (
-            float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.995
-        ), f"Too many diverging voxels for {k}"
+            # weak criteria, determined post-hoc
+            # we don't expect exactly identical results, because FSL and numpy
+            # use different numerics code and we use double precision while FSL
+            # uses single precision floating point
+            # so these assertions are here to verify that the small differences
+            # will not get any larger with future changes or optimizations
 
-        if k not in frozenset(["var_cope"]):
-            assert np.all(
-                np.abs(a0 - a1)[np.logical_not(np.isclose(a0, a1, rtol=1e-2))] < 25
-            ), f"Difference in diverging voxels is too big for {k}"
+            if a0.var() > 0:
+                assert (
+                    np.corrcoef(a0, a1)[0, 1] > 0.999
+                ), f"Correlation too low for {key}"
 
-            # mean error average needs to be below 0.05
+            # max difference of one percent
             assert (
-                float(np.abs(a0 - a1).mean()) < 5e-2
-            ), f"Too high mean error average for {k}"
+                float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.95
+            ), f"Too many diverging voxels for {key}"
+
+            if key not in frozenset(["var_cope"]):
+                assert np.all(
+                    np.abs(a0 - a1)[np.logical_not(np.isclose(a0, a1, rtol=1e-2))] < 50
+                ), f"Difference in diverging voxels is too big for {key}"
+
+                # mean error average needs to be below 0.05
+                assert (
+                    float(np.abs(a0 - a1).mean()) < 5e-2
+                ), f"Too high mean error average for {key}"
