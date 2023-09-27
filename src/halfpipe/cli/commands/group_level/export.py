@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import abstractmethod
+from collections import Counter
 from contextlib import nullcontext
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -256,14 +257,23 @@ def export(
 
     for atlas, signal_column in zip(atlases, signal_columns):
         # Unpack signal/coverage
-        statistics: set[str | None] = set(signal.statistic for signal in signal_column)
-        if len(statistics) > 1:
-            raise ValueError(
+        statistics_counter: Counter[str | None] = Counter(
+            signal.statistic for signal in signal_column
+        )
+        most_common_statistic, _ = statistics_counter.most_common(1)[0]
+        if len(statistics_counter) > 1:
+            signal_column = [
+                signal
+                for signal in signal_column
+                if signal.statistic == most_common_statistic
+            ]
+            logger.warning(
                 "Inconsistent statistics were used across subjects. "
                 "Please check that processing completed for all subjects "
-                "and that all required outputs are available"
+                f"and that all required outputs are available. Using {most_common_statistic} "
+                f"as it is the most common ({statistics_counter})"
             )
-        (statistic,) = statistics
+        statistic = most_common_statistic
         signal_array: npt.NDArray = np.vstack(
             [signal.array for signal in signal_column]
         )
