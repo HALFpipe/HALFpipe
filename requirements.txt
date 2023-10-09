@@ -391,7 +391,7 @@ wrapt==1.15.0
     # via formulaic
 xlrd==2.0.1
     # via -r requirements.in
-xlsxwriter==3.1.4
+xlsxwriter==3.1.7
     # via -r requirements.in
 
 # The following packages are considered to be unsafe in a requirements file:
