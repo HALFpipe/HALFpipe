@@ -58,7 +58,7 @@ class ReML:
     def model(ϑ: float, x: npt.NDArray[np.float64] | None, s: npt.NDArray[np.float64]):
         σg = ϑ
 
-        if σg < 0:
+        if np.isclose(σg, 0) or σg < 0:
             return None, None, None
 
         inverse_variance = np.reciprocal(1.0 / (s + σg)).ravel()
