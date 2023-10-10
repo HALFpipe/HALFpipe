@@ -12,22 +12,28 @@ fail() {
     exit "${2-1}"
 }
 
-while true ; do
+while true; do
     case "$1" in
-        -r|--requirements-file)
-            case "$2" in
-                "") shift 2 ;;
-                *) requirements_files+=("$2") ; shift 2 ;;
-            esac ;;
-        --) shift ; break ;;
-        *) fail "internal error!" ;;
+    -r | --requirements-file)
+        case "$2" in
+        "") shift 2 ;;
+        *)
+            requirements_files+=("$2")
+            shift 2
+            ;;
+        esac
+        ;;
+    --)
+        shift
+        break
+        ;;
+    *) fail "internal error!" ;;
     esac
 done
 
 if [[ "${#requirements_files[@]}" -lt 1 ]]; then
     fail "missing required --requirements-file parameter"
 fi
-
 
 run_cmd() {
     command="$*"
@@ -61,8 +67,8 @@ while read -r requirement; do
 
     printf '%s\n' --------------------
 
-    if run_cmd "mamba install --dry-run \"${requirement}\" >/dev/null"; then
-        printf 'Using conda for package "%s"\n' "${requirement}"
+    if run_cmd "${MAMBA_EXE} install --dry-run \"${requirement}\" >/dev/null"; then
+        printf "Using $(basename "${MAMBA_EXE}") for package \"%s\"\n" "${requirement}"
         conda_packages+=("${requirement}")
     else
         printf 'Using pip for package "%s"\n' "${requirement}"
@@ -73,12 +79,11 @@ while read -r requirement; do
 
 done < <(grep --no-filename -v '#' "${requirements_files[@]}")
 
-
-if ! run_cmd mamba install --yes "${conda_packages[@]}"; then
-  exit 1
+if ! run_cmd "${MAMBA_EXE}" install --yes "${conda_packages[@]}"; then
+    exit 1
 fi
 # We assume that all python dependencies have already been resolved by `pip-compile`,
 # so there will be no conflicts when we ask `pip` to install them.
 if ! run_cmd pip install --no-deps "${pip_packages[@]}"; then
-  exit 1
+    exit 1
 fi

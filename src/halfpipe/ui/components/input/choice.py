@@ -76,6 +76,8 @@ class SingleChoiceInputView(CallableView):
         elif (self.isVertical and c == Key.Up) or (
             not self.isVertical and c == Key.Left
         ):
+            if self.cur_index is None:
+                return
             self.cur_index = max(0, self.cur_index - 1)
             self.update()
         elif (
@@ -83,6 +85,8 @@ class SingleChoiceInputView(CallableView):
             or (not self.isVertical and c == Key.Right)
             or c == Key.Tab
         ):
+            if self.cur_index is None:
+                return
             self.cur_index = min(len(self.options) - 1, self.cur_index + 1)
             self.update()
         elif isinstance(c, Key):

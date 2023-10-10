@@ -18,16 +18,12 @@ jobs:
       matrix:
         chunk:
           - interfaces
-          - stats
           - workflows
           - feature_extraction
           - other
         include:
           - chunk: interfaces
             args: "tests/interfaces"
-            runs-on: ubuntu-latest
-          - chunk: stats
-            args: "tests/stats"
             runs-on: ubuntu-latest
           - chunk: workflows
             args: "tests/workflows -k 'not test_feature_extraction'"
@@ -36,7 +32,7 @@ jobs:
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
             runs-on: self-hosted
           - chunk: other
-            args: "--ignore=tests/interfaces --ignore=tests/stats --ignore=tests/workflows"
+            args: "--ignore=tests/interfaces --ignore=tests/workflows"
             runs-on: self-hosted
 
     runs-on: ${{ matrix.runs-on }}
@@ -128,5 +124,5 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ${{ steps.collect.file  }}
+          file: ${{ steps.collect.file }}
           fail_ci_if_error: true
