@@ -164,3 +164,6 @@ Sessionx.vim
 
 # Local History for Visual Studio Code
 .history/
+
+# Direnv
+.direnv
