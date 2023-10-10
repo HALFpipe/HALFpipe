@@ -17,22 +17,14 @@ jobs:
     strategy:
       matrix:
         chunk:
-          - interfaces
-          - workflows
           - feature_extraction
           - other
         include:
-          - chunk: interfaces
-            args: "tests/interfaces"
-            runs-on: ubuntu-latest
-          - chunk: workflows
-            args: "tests/workflows -k 'not test_feature_extraction'"
-            runs-on: ubuntu-latest
           - chunk: feature_extraction
             args: "tests/workflows/test_workflow.py::test_feature_extraction"
             runs-on: self-hosted
           - chunk: other
-            args: "--ignore=tests/interfaces --ignore=tests/workflows"
+            args: "-k 'not test_feature_extraction'"
             runs-on: self-hosted
 
     runs-on: ${{ matrix.runs-on }}
