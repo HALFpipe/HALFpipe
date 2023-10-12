@@ -44,6 +44,7 @@ run_cmd() {
         printf "%s\n" "${command}"
     fi
 
+    # shellcheck disable=SC2294
     eval "$@"
 
     exit_code=$?
@@ -67,23 +68,46 @@ while read -r requirement; do
 
     printf '%s\n' --------------------
 
-    if run_cmd "${MAMBA_EXE} install --dry-run \"${requirement}\" >/dev/null"; then
-        printf "Using $(basename "${MAMBA_EXE}") for package \"%s\"\n" "${requirement}"
-        conda_packages+=("${requirement}")
-    else
+    requirement_variations=(
+        "${requirement}"
+        "${requirement//-/_}"
+        "${requirement//-/.}"
+    )
+    mapfile -t requirement_variations < <(
+        printf "%s\n" "${requirement_variations[@]}" | sort -u
+    )
+    echo "Checking package ${requirement_variations[0]}"
+    if [ ${#requirement_variations[@]} -gt 1 ]; then
+        echo "Also checking name variations" "${requirement_variations[@]:1}"
+    fi
+
+    package_manager="none"
+    for requirement_variation in "${requirement_variations[@]}"; do
+        if run_cmd "mamba install --dry-run  --use-local \"${requirement_variation}\" >/dev/null"; then
+            printf 'Using mamba for package "%s"\n' "${requirement_variation}"
+            conda_packages+=("${requirement_variation}")
+            package_manager="mamba"
+            break
+        fi
+    done
+
+    if [ "${package_manager}" = "none" ]; then
         printf 'Using pip for package "%s"\n' "${requirement}"
         pip_packages+=("\"${requirement}\"")
+        package_manager="pip"
     fi
 
     printf '%s\n' --------------------
 
 done < <(grep --no-filename -v '#' "${requirements_files[@]}")
 
-if ! run_cmd "${MAMBA_EXE}" install --yes "${conda_packages[@]}"; then
+if ! run_cmd mamba install --yes --use-local "${conda_packages[@]}"; then
     exit 1
 fi
 # We assume that all python dependencies have already been resolved by `pip-compile`,
 # so there will be no conflicts when we ask `pip` to install them.
-if ! run_cmd pip install --no-deps "${pip_packages[@]}"; then
-    exit 1
+if [ ${#pip_packages[@]} -gt 1 ]; then
+    if ! run_cmd pip install --no-deps "${pip_packages[@]}"; then
+        exit 1
+    fi
 fi

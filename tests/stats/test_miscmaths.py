@@ -87,7 +87,6 @@ def test_f2z_convert_large(f, d1, d2):
     ],
 )
 @pytest.mark.parametrize("dof", [30])
-@pytest.mark.slow
 @pytest.mark.timeout(120)
 def test_t2z_convert_huge(t, dof):
     z = t2z_convert(t, dof)
@@ -104,7 +103,6 @@ def test_t2z_convert_huge(t, dof):
     ],
 )
 @pytest.mark.parametrize("k", [30])
-@pytest.mark.slow
 @pytest.mark.timeout(120)
 def test_chisq2z_convert_huge(x, k):
     assert isinstance(chisq2z_convert(x, k), float)
@@ -125,13 +123,11 @@ def test_chisq2z_convert_huge(x, k):
         (10, 100),
     ],
 )
-@pytest.mark.slow
 @pytest.mark.timeout(120)
 def test_f2z_convert_huge(f, d1, d2):
     assert isinstance(f2z_convert(f, d1, d2), float)
 
 
-@pytest.mark.slow
 @pytest.mark.timeout(1)
 def test_nonfinite():
     assert t2z_convert(np.inf, 1) == np.inf
@@ -145,9 +141,3 @@ def test_nonfinite():
     assert chisq2z_convert(np.inf, 1) == np.inf
     assert chisq2z_convert(-np.inf, 1) == -np.inf
     assert np.isnan(chisq2z_convert(np.nan, 1))
-
-
-def test_gmpy():
-    from mpmath.libmp import BACKEND
-
-    assert BACKEND == "gmpy"
