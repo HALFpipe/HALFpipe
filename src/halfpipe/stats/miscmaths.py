@@ -57,8 +57,6 @@ c_feclearexcept = types.ExternalFunction(
     ),
 )
 
-from .gsl import tdistribution_logcdf
-
 
 @njit
 def clear_floatstatus() -> None:
