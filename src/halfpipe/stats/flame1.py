@@ -3,13 +3,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from math import isclose, isfinite, nan
 from typing import Any, Literal, NamedTuple
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy
+from numba import njit
 from numpy import typing as npt
 
 from ..utils.format import format_workflow
@@ -17,6 +17,7 @@ from .base import ModelAlgorithm, demean, listwise_deletion
 from .miscmaths import f2z_convert, t2z_convert
 
 
+@njit
 def calcgam(
     beta: float,
     y: npt.NDArray[np.float64],
@@ -30,29 +31,22 @@ def calcgam(
     gram_matrix = np.atleast_2d(scaled_covariates @ covariates)
 
     regression_weights, _, _, _ = np.linalg.lstsq(
-        gram_matrix, scaled_covariates @ y, rcond=None
+        gram_matrix, scaled_covariates @ y, rcond=-1.0
     )
 
     return regression_weights, inverse_variance, gram_matrix
 
 
+@njit
 def marg_posterior_energy(
     ex: float,
     y: npt.NDArray[np.float64],
     z: npt.NDArray[np.float64],
     s: npt.NDArray[np.float64],
 ) -> float:
-    if ex < 0 or isclose(ex, 0.0):
-        return 1e32  # very large value
-
-    try:
-        regression_weights, inverse_variance, gram_matrix = calcgam(ex, y, z, s)
-    except np.linalg.LinAlgError:
-        return 1e32
-
+    regression_weights, inverse_variance, gram_matrix = calcgam(ex, y, z, s)
     inverse_variance_logarithmic_determinant = np.log(inverse_variance).sum()
     _, gram_matrix_logarithmic_determinant = np.linalg.slogdet(gram_matrix)
-
     energy = float(
         -0.5
         * (
@@ -65,18 +59,30 @@ def marg_posterior_energy(
         )
     )
 
-    if not isfinite(energy):
-        return 1e32
-
     return energy
+
+
+def wrapper(
+    ex: float,
+    y: npt.NDArray[np.float64],
+    z: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
+    if ex < 0 or np.isclose(ex, 0.0):
+        return 1e32  # very large value
+    try:
+        energy = marg_posterior_energy(ex, y, z, s)
+        if np.isfinite(energy):
+            return energy
+    except np.linalg.LinAlgError:
+        pass
+    return 1e32
 
 
 def solveforbeta(
     y: npt.NDArray[np.float64], z: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
 ) -> float:
-    result = scipy.optimize.minimize_scalar(
-        marg_posterior_energy, args=(y, z, s), method="brent"
-    )
+    result = scipy.optimize.minimize_scalar(wrapper, args=(y, z, s), method="brent")
     beta = max(1e-10, result.x)
     return beta
 
@@ -86,7 +92,7 @@ def flame_stage1_onvoxel(
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     norm = np.std(y)
 
-    if isclose(norm, 0):
+    if np.isclose(norm, 0):
         raise ValueError("Dependent variable has zero variance")
 
     y /= norm
@@ -165,7 +171,7 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
     if n == 1:
         tdoflower = npts - nevs
         r = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
-        mask = isfinite(r.z)
+        mask = np.isfinite(r.z)
         return dict(
             cope=r.cope,
             var_cope=r.var_cope,
@@ -181,7 +187,7 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
         fdof2lower = npts - nevs
 
         r = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
-        mask = isfinite(r.z)
+        mask = np.isfinite(r.z)
         return dict(
             cope=r.cope,
             var_cope=r.var_cope,
@@ -279,7 +285,7 @@ class FLAME1(ModelAlgorithm):
             # Ensure that we always output a zstat
             if "zstat" not in results_frame.index:
                 empty_zstat = pd.Series(
-                    data=nan, index=results_frame.columns, name="zstat"
+                    data=np.nan, index=results_frame.columns, name="zstat"
                 )
                 results_frame = results_frame.append(empty_zstat)  # type: ignore
 
