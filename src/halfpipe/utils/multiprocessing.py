@@ -89,17 +89,25 @@ S = TypeVar("S")
 
 
 def make_pool_or_null_context(
-    input_iterator: Iterable[T],
+    iterable: Iterable[T],
     callable: Callable[[T], S],
     num_threads: int = 1,
     chunksize: int | None = 1,
     iteration_order: IterationOrder = IterationOrder.UNORDERED,
 ) -> tuple[ContextManager, Iterator[S]]:
     if num_threads < 2:
-        return nullcontext(), map(callable, input_iterator)
+        return nullcontext(), map(callable, iterable)
 
-    if isinstance(input_iterator, Sized):
-        num_threads = min(len(input_iterator), num_threads)
+    if isinstance(iterable, Sized):
+        num_threads = min(len(iterable), num_threads)
+        # Apply logic from pool.map (multiprocessing/pool.py#L481) here as well
+        if chunksize is None:
+            chunksize, extra = divmod(len(iterable), num_threads * 4)
+            if extra:
+                chunksize += 1
+    if chunksize is None:
+        chunksize = 1
+
     pool = Pool(processes=num_threads)
     if iteration_order is IterationOrder.ORDERED:
         map_function = pool.imap
@@ -107,6 +115,6 @@ def make_pool_or_null_context(
         map_function = pool.imap_unordered
     else:
         raise ValueError(f"Unknown iteration order {iteration_order}")
-    output_iterator: Iterator = map_function(callable, input_iterator, chunksize)
+    output_iterator: Iterator = map_function(callable, iterable, chunksize)
     cm: ContextManager = pool
     return cm, output_iterator
