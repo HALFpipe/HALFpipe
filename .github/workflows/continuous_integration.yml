@@ -14,25 +14,30 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        chunk:
-          - feature_extraction
-          - other
-        include:
-          - chunk: feature_extraction
-            args: "tests/workflows/test_workflow.py::test_feature_extraction"
-            runs-on: self-hosted
-          - chunk: other
-            args: "-k 'not test_feature_extraction'"
-            runs-on: self-hosted
-
-    runs-on: ${{ matrix.runs-on }}
-    container: ghcr.io/halfpipe/halfpipe:latest
-
+    runs-on: self-hosted
     timeout-minutes: 360
-
     steps:
+    - name: Set up build tag
+      id: build_tag
+      shell: python
+      run: |
+        _, ref_type, ref_id = "${{ github.ref }}".split("/")[:3]
+        if ref_type == "heads":
+          version = ref_id
+        elif ref_type == "tags":
+          version = ref_id
+        elif ref_type == "pull":
+          version = "pr" + ref_id
+        else:
+          raise ValueError(f"Unknown ref type: {ref_type}")
+        version=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
+        version=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
+        if [[ "$version" == "main" ]]; then
+          version="latest"
+        fi
+        name=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+        echo "repo=${name}" >> ${GITHUB_OUTPUT}
+        echo "tag=${name}:${version}" >> ${GITHUB_OUTPUT}
     - name: Cache data
       uses: actions/cache@v3
       with:
@@ -40,29 +45,75 @@ jobs:
         key: ${{ runner.os }}-home
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build container
+      uses: docker/build-push-action@v5
+      with:
+        context: "."
+        file: "./Dockerfile"
+        platforms: linux/amd64
+        cache-from: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache
+        cache-to: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache,compression=zstd,mode=max
+        load: true
+        push: false
+        labels: |
+          org.opencontainers.image.title=${{ github.event.repository.name }}
+          org.opencontainers.image.url=${{ github.event.repository.html_url }}
+          org.opencontainers.image.source=${{ github.event.repository.html_url }}
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.created=${{ github.event.repository.updated_at}}
+
+    - name: Start build container
+      run: echo ${GITHUB_TOKEN} | docker login -u ${GITHUB_ACTOR} --password-stdin docker.pkg.github.com;
+        docker run -d --name build
+        -w $PWD
+        -v /home/runner:/home/runner
+        -u $(id -u):$(id -g)
+        --entrypoint tail
+        docker.pkg.github.com/crac/docker-build/image:ubuntu-16.04
+        -f /dev/null
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Test with pytest with coverage
       shell: bash
       env:
         PYTHONDONTWRITEBYTECODE: 1
-        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
+        GITHUB_ACTIONS: true  # Enable pytest-github-actions-annotate-failures
       run: |
-        pip install \
-          --requirement requirements.txt \
-          --requirement requirements-test.txt
 
-        FREESURFER_LICENSE_BASE64="bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg=="
-        echo ${FREESURFER_LICENSE_BASE64} \
-          | base64 --decode > ${FREESURFER_HOME}/license.txt
 
-        python -m pytest ${{ matrix.args }} --cov --cov-report=xml
+        py.test \
+          --cov --cov-report=xml --dist=load \
+          --numprocesses=2
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
       with:
-        name: coverage_${{ matrix.chunk }}
-        path: ./coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        fail_ci_if_error: true
+
+    - name: Push container
+      if: isnt a pull
+      uses: docker/build-push-action@v5
+      with:
+        context: "."
+        file: "./Dockerfile"
+        platforms: linux/amd64
+        cache-from: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache
+        cache-to: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache,compression=zstd,mode=max
+        load: false
+        push: true
+        labels: |
+          org.opencontainers.image.title=${{ github.event.repository.name }}
+          org.opencontainers.image.url=${{ github.event.repository.html_url }}
+          org.opencontainers.image.source=${{ github.event.repository.html_url }}
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.created=${{ github.event.repository.updated_at}}
 
   lint:
     runs-on: ubuntu-latest
@@ -92,29 +143,3 @@ jobs:
 
           VALIDATE_PYTHON_MYPY: true
           PYTHON_MYPY_CONFIG_FILE: mypy.ini
-
-  coverage:
-    needs: test
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-
-      - name: Collect coverage files
-        id: collect
-        shell: bash
-        run: |
-          FILE=$(find . -name "coverage.xml" | paste --serial --delimiters=, -)
-          echo "file=${FILE}" >> ${GITHUB_OUTPUT}
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ${{ steps.collect.file }}
-          fail_ci_if_error: true
