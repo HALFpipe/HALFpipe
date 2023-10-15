@@ -9,7 +9,7 @@ import zipfile
 from os import path as op
 from pathlib import Path
 from shutil import copyfile
-from typing import Generator
+from typing import Iterator
 
 AnyPath = pathlib.Path | zipfile.Path
 
@@ -114,7 +114,7 @@ def is_hidden(path: Path | str) -> bool:
     return Path(path).stem[0] == "."
 
 
-def iterdir(dirname: str | Path, dironly: bool) -> Generator[str, None, None]:
+def iterdir(dirname: str | Path, dironly: bool) -> Iterator[str]:
     """
     adapted from cpython glob
     """
@@ -140,19 +140,16 @@ def rlistdir(
     dirname: str | Path,
     dironly: bool = False,
     maxdepth: int | None = None,
-) -> Generator[str, None, None]:
+) -> Iterator[str]:
     """
     adapted from cpython glob
     """
-
     if maxdepth is not None:
         maxdepth -= 1
-
     names = list(iterdir(dirname, dironly))
     for x in names:
         path = op.join(dirname, x) if dirname else x
         yield path
-
         if maxdepth is None or maxdepth > 0:
             yield from rlistdir(path, dironly)
 
@@ -162,7 +159,7 @@ def recursive_list_directory(
     only_directories: bool = False,
     enter_archives: bool = False,
     max_depth: int | None = None,
-) -> Generator[AnyPath, None, None]:
+) -> Iterator[AnyPath]:
     if max_depth is not None:
         max_depth -= 1
     if isinstance(path, str):

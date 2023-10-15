@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Iterable
 
 from ..file_index.bids import BIDSIndex
 from ..result.base import ResultDict
@@ -41,14 +41,15 @@ def find_derivatives_directories(
 
 
 def collect_halfpipe_derivatives(
-    path: str | AnyPath, max_depth: int = 1
+    paths: Iterable[str | AnyPath], max_depth: int = 1, num_threads: int = 1
 ) -> list[ResultDict]:
     index = BIDSIndex()
-    for derivatives_directory in find_derivatives_directories(
-        "halfpipe", path, max_depth=max_depth
-    ):
-        index.put(derivatives_directory)
+    for path in paths:
+        for derivatives_directory in find_derivatives_directories(
+            "halfpipe", path, max_depth=max_depth
+        ):
+            index.put(derivatives_directory)
 
-    results = load_images(index)
+    results = load_images(index, num_threads=num_threads)
 
     return results

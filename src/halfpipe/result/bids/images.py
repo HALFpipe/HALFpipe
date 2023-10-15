@@ -4,6 +4,7 @@
 
 import re
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 from typing import Mapping
 
@@ -13,6 +14,7 @@ from ...file_index.base import FileIndex
 from ...logging import logger
 from ...model.tags.schema import entities
 from ...stats.algorithms import algorithms
+from ...utils.multiprocessing import make_pool_or_null_context
 from ...utils.path import copy_if_newer, split_ext
 from ..base import ResultDict
 from .base import make_bids_path
@@ -119,18 +121,27 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
     return dict(result)
 
 
-def load_images(file_index: FileIndex) -> list[ResultDict]:
+def load_images(file_index: FileIndex, num_threads: int = 1) -> list[ResultDict]:
     image_group_entities = set(entities) - {"stat", "algorithm"}
 
+    groups = file_index.get_tag_groups(image_group_entities)
+    cm, iterator = make_pool_or_null_context(
+        groups,
+        callable=partial(_load_result, file_index),
+        num_threads=num_threads,
+        chunksize=None,
+    )
+
     results = list()
-    for group in tqdm(
-        file_index.get_tag_groups(image_group_entities),
-        desc="loading image metadata",
-    ):
-        result = _load_result(file_index, group)
-        if result is None:
-            continue
-        results.append(result)
+    with cm:
+        for result in tqdm(
+            iterator,
+            desc="loading image metadata",
+            total=len(groups),
+        ):
+            if result is None:
+                continue
+            results.append(result)
 
     return results
 

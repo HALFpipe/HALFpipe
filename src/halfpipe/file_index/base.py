@@ -12,10 +12,14 @@ from ..logging import logger
 from ..utils.path import AnyPath
 
 
+def create_defaultdict_of_set() -> defaultdict[str, set[AnyPath]]:
+    return defaultdict(set)
+
+
 class FileIndex:
     def __init__(self) -> None:
         self.paths_by_tags: dict[str, dict[str, set[AnyPath]]] = defaultdict(
-            lambda: defaultdict(set)
+            create_defaultdict_of_set
         )
         self.tags_by_paths: dict[AnyPath, dict[str, str]] = defaultdict(dict)
 
