@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from contextlib import chdir
-from multiprocessing import cpu_count
 from pathlib import Path
 
 from nipype.interfaces import fsl
@@ -15,14 +14,14 @@ from ....logging import logger
 from ....result.aggregate import aggregate_results, summarize_metadata
 from ....result.base import ResultDict
 from ....utils.hash import b32_digest
-from ....utils.multiprocessing import Pool
+from ....utils.multiprocessing import make_pool_or_null_context
 from .base import aliases
 from .design import DesignBase
 
 
 def apply_aggregate(
     design: DesignBase,
-    n_procs: int = cpu_count(),
+    num_threads: int,
 ) -> None:
     if design.aggregate is None:
         return
@@ -32,10 +31,15 @@ def apply_aggregate(
         results, other_results = aggregate_results(results, key)
 
         logger.info(f'Will run {len(results):d} models at level "{key}"')
-        with Pool(processes=n_procs) as pool:
+        cm, iterator = make_pool_or_null_context(
+            results,
+            callable=map_fixed_effects_aggregate,
+            num_threads=num_threads,
+        )
+        with cm:
             results = list(
                 tqdm(
-                    pool.imap_unordered(map_fixed_effects_aggregate, results),
+                    iterator,
                     total=len(results),
                     desc=f'aggregate "{key}"',
                 )

@@ -3,9 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from contextlib import nullcontext
 from pathlib import Path
-from typing import ContextManager, Iterator, Literal, NamedTuple, Sequence, Type
+from typing import Iterator, Literal, NamedTuple, Sequence, Type
 
 import nibabel as nib
 import numpy as np
@@ -15,7 +14,7 @@ from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
 
 from ..design import FContrast, TContrast, parse_design
-from ..utils.multiprocessing import Pool
+from ..utils.multiprocessing import make_pool_or_null_context
 from .algorithms import algorithms, make_algorithms_dict
 from .base import ModelAlgorithm
 
@@ -188,17 +187,9 @@ def fit(
         algorithms_to_run,
     )
 
-    # setup run
-    if num_threads < 2:
-        pool: Pool | None = None
-        iterator: Iterator = map(voxel_calc, voxel_data)
-        cm: ContextManager = nullcontext()
-    else:
-        pool = Pool(processes=num_threads)
-        iterator = pool.imap_unordered(voxel_calc, voxel_data, chunksize=2**9)
-        cm = pool
-
-    # run
+    cm, iterator = make_pool_or_null_context(
+        voxel_data, voxel_calc, num_threads=num_threads, chunksize=2**9
+    )
     voxel_results: dict[str, dict] = defaultdict(lambda: defaultdict(dict))
     with cm:
         for x in tqdm(iterator, unit="voxels", desc="model fit"):

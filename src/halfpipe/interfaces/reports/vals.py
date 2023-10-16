@@ -66,7 +66,7 @@ class CalcMean(SimpleInterface):
 
         elif mask_img is not None:
             mean = mean_signals(in_img, mask_img)
-            self._results["mean"] = float(mean[0])
+            self._results["mean"] = float(mean[0].item())
 
         vals: dict[str, Any] = dict()
         self._results["vals"] = vals

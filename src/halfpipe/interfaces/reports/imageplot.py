@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import nibabel as nib
 import numpy as np
-from matplotlib import cm
+from matplotlib import colormaps
 from nilearn.plotting import plot_anat, plot_epi
 from nipype.interfaces.base import File, isdefined, traits
 from niworkflows.interfaces.report_base import (
@@ -74,7 +74,7 @@ class PlotEpi(ReportingInterface):
                 cut_coords=cuts[dimension],
                 title=label,
                 colorbar=(dimension == "z"),
-                cmap=cm.get_cmap("gray"),
+                cmap=colormaps.get_cmap("gray"),
                 **plot_params,
             )
 

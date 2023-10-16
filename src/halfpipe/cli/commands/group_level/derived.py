@@ -23,7 +23,7 @@ from ....logging import logger
 from ....model.tags.resultdict import resultdict_entities
 from ....result.bids.base import make_bids_prefix
 from ....result.variables import Continuous
-from ....utils.multiprocessing import Pool
+from ....utils.multiprocessing import make_pool_or_null_context
 from ....utils.nipype import run_workflow
 from ....utils.path import AnyPath
 from ....workflows.constants import constants
@@ -53,7 +53,7 @@ def apply_derived(
 
 def calculate_jacobian(
     task: tuple[str, AnyPath],
-) -> tuple[str, Path]:
+) -> tuple[str, Path | None]:
     """
     Calculates the jacobian for a given subject and transform path using a nipype workflow.
     All files are save din the current directory.
@@ -73,7 +73,14 @@ def calculate_jacobian(
             transform_path,
         )
         wf.base_dir = temporary_directory
-        graph = run_workflow(wf)
+        try:
+            graph = run_workflow(wf)
+        except Exception as e:
+            logger.warning(
+                f'Failed to calculate jacobian for subject {subject} with transform "{transform_path}"',
+                exc_info=e,
+            )
+            return subject, None
         (scale_jacobian,) = [
             node for node in graph.nodes if node.name == "scale_jacobian"
         ]
@@ -88,7 +95,7 @@ class ImagingVariables:
     design_base: DesignBase
 
     @property
-    def n_procs(self) -> int:
+    def num_threads(self) -> int:
         return self.arguments.nipype_n_procs
 
     @cached_property
@@ -106,7 +113,7 @@ class ImagingVariables:
         return index
 
     @cached_property
-    def jacobian_paths(self) -> dict[str, AnyPath]:
+    def jacobian_paths(self) -> dict[str, Path]:
         index = self.fmriprep_derivatives
 
         query = {
@@ -135,15 +142,24 @@ class ImagingVariables:
                 continue
             tasks[subject] = transform_path
 
-        with Pool(processes=self.n_procs) as pool:
-            data: dict[str, AnyPath] = dict(
-                tqdm(
-                    pool.imap_unordered(calculate_jacobian, tasks.items()),
-                    total=len(tasks),
-                    desc="calculating jacobians",
-                    unit="subjects",
-                )
-            )
+        cm, iterator = make_pool_or_null_context(
+            tasks.items(),
+            callable=calculate_jacobian,
+            num_threads=self.num_threads,
+        )
+        with cm:
+            data: dict[str, Path] = dict()
+            for subject, jacobian_path in tqdm(
+                iterator,
+                total=len(tasks),
+                desc="calculating jacobians",
+                unit="subjects",
+            ):
+                if subject is None:
+                    raise ValueError("Subject is None")
+                if jacobian_path is None:
+                    continue
+                data[subject] = jacobian_path
 
         return data
 

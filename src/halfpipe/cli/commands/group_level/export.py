@@ -4,12 +4,11 @@
 
 from abc import abstractmethod
 from collections import Counter
-from contextlib import nullcontext
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property, partial
 from pathlib import Path
-from typing import ContextManager, Iterator, Self, Sequence
+from typing import Self, Sequence
 
 import nibabel as nib
 import numpy as np
@@ -24,7 +23,7 @@ from ....logging import logger
 from ....signals import mean_signals, mode_signals
 from ....stats.fit import load_data
 from ....utils.format import format_like_bids
-from ....utils.multiprocessing import Pool
+from ....utils.multiprocessing import IterationOrder, Pool, make_pool_or_null_context
 
 
 def load_atlas(
@@ -232,25 +231,21 @@ def export(
         ImagePaths(**dict(zip(images.keys(), paths))) for paths in zip(*images.values())
     ]
 
-    # Only start a pool if we are using more than one thread
-    if num_threads < 2:
-        pool: Pool | None = None
-        it: Iterator[list[AtlasSignals]] = map(inner, image_paths_list)
-        cm: ContextManager = nullcontext()
-    else:
-        pool = Pool(processes=num_threads)
-        it = pool.imap(inner, image_paths_list)
-        cm = pool
-
+    cm, iterator = make_pool_or_null_context(
+        image_paths_list,
+        callable=inner,
+        num_threads=num_threads,
+        iteration_order=IterationOrder.ORDERED,
+    )
     with cm:
         # Top list level is subjects, second level is atlases
         signal_rows: list[list[AtlasSignals]] = list(
-            tqdm(it, unit="images", desc="extracting signals", total=num_inputs)
+            tqdm(iterator, unit="images", desc="extracting signals", total=num_inputs)
         )
 
-    if pool is not None:
-        pool.terminate()
-        pool.join()
+    if isinstance(cm, Pool):
+        cm.terminate()
+        cm.join()
 
     # Transpose subjects and atlases
     signal_columns = list(list(c) for c in zip(*signal_rows))

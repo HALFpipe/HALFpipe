@@ -4,8 +4,10 @@
 
 import multiprocessing.pool as mp_pool
 import os
+from contextlib import nullcontext
+from enum import Enum, auto
 from multiprocessing import active_children, get_context
-from typing import Any
+from typing import Any, Callable, ContextManager, Iterable, Iterator, Sized, TypeVar
 
 mp_context = get_context("spawn")
 
@@ -75,3 +77,44 @@ class Pool(mp_pool.Pool):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         super().__exit__(exc_type, exc_value, traceback)
         self.join()
+
+
+class IterationOrder(Enum):
+    ORDERED = auto()
+    UNORDERED = auto()
+
+
+T = TypeVar("T")
+S = TypeVar("S")
+
+
+def make_pool_or_null_context(
+    iterable: Iterable[T],
+    callable: Callable[[T], S],
+    num_threads: int = 1,
+    chunksize: int | None = 1,
+    iteration_order: IterationOrder = IterationOrder.UNORDERED,
+) -> tuple[ContextManager, Iterator[S]]:
+    if num_threads < 2:
+        return nullcontext(), map(callable, iterable)
+
+    if isinstance(iterable, Sized):
+        num_threads = min(len(iterable), num_threads)
+        # Apply logic from pool.map (multiprocessing/pool.py#L481) here as well
+        if chunksize is None:
+            chunksize, extra = divmod(len(iterable), num_threads * 4)
+            if extra:
+                chunksize += 1
+    if chunksize is None:
+        chunksize = 1
+
+    pool = Pool(processes=num_threads)
+    if iteration_order is IterationOrder.ORDERED:
+        map_function = pool.imap
+    elif iteration_order is IterationOrder.UNORDERED:
+        map_function = pool.imap_unordered
+    else:
+        raise ValueError(f"Unknown iteration order {iteration_order}")
+    output_iterator: Iterator = map_function(callable, iterable, chunksize)
+    cm: ContextManager = pool
+    return cm, output_iterator

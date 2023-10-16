@@ -34,11 +34,13 @@ def run(arguments: Namespace):
     output_directory = init_workdir(output_directory, arguments.fs_root)
 
     # Index the input directories
-    results: list[ResultDict] = list()
-    for input_directory in arguments.input_directory:
-        results.extend(
-            collect_halfpipe_derivatives(resolve(input_directory, arguments.fs_root))
-        )
+    input_directories = [
+        resolve(input_directory, arguments.fs_root)
+        for input_directory in arguments.input_directory
+    ]
+    results: list[ResultDict] = collect_halfpipe_derivatives(
+        input_directories, num_threads=arguments.nipype_n_procs
+    )
 
     if len(results) == 0:
         raise ValueError("No inputs found")
@@ -164,7 +166,7 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
         chdir(temporary_directory),
     ):
         # Within-subject aggregation step
-        apply_aggregate(design_base, n_procs=arguments.nipype_n_procs)
+        apply_aggregate(design_base, num_threads=arguments.nipype_n_procs)
 
         # Add derived variables and images
         apply_derived(arguments, design_base)
