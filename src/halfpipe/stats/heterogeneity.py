@@ -8,7 +8,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy
-from numba import njit
 from numpy import typing as npt
 
 from ..logging import logger
@@ -16,7 +15,6 @@ from .base import ModelAlgorithm
 from .flame1 import flame1_prepare_data
 
 
-@njit
 def method_of_moments_i_squared(
     y: npt.NDArray[np.float64],
     z: npt.NDArray[np.float64],
@@ -59,7 +57,6 @@ class ReMLTerms(NamedTuple):
     gram_matrix: npt.NDArray[np.float64]
 
 
-@njit
 def reml_terms(
     ϑ: float, x: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
 ) -> ReMLTerms:
@@ -75,7 +72,6 @@ def reml_terms(
     return ReMLTerms(inverse_variance, projection_matrix, gram_matrix)
 
 
-@njit
 def reml_neg_log_lik(
     ϑ: float,
     y: npt.NDArray[np.float64],
@@ -106,7 +102,6 @@ def reml_fit(
     )
 
 
-@njit
 def reml_jacobian(
     ϑ: float,
     y: npt.NDArray[np.float64],
@@ -118,7 +113,6 @@ def reml_jacobian(
     return float(np.trace(p) - y.T @ p @ p @ y)
 
 
-@njit
 def reml_hessian(
     ϑ: float,
     y: npt.NDArray[np.float64],
@@ -130,7 +124,6 @@ def reml_hessian(
     return (y.T @ p @ p @ p @ y).item()
 
 
-@njit
 def ml_neg_log_lik(
     ϑ: float,
     y: npt.NDArray[np.floating],

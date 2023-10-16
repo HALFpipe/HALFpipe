@@ -9,7 +9,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy
-from numba import njit
 from numpy import typing as npt
 
 from ..utils.format import format_workflow
@@ -17,7 +16,6 @@ from .base import ModelAlgorithm, demean, listwise_deletion
 from .miscmaths import f2z_convert, t2z_convert
 
 
-@njit
 def calcgam(
     beta: float,
     y: npt.NDArray[np.float64],
@@ -37,7 +35,6 @@ def calcgam(
     return regression_weights, inverse_variance, gram_matrix
 
 
-@njit
 def marg_posterior_energy(
     ex: float,
     y: npt.NDArray[np.float64],

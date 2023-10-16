@@ -285,7 +285,8 @@ class ImagingVariables:
 
     def apply_jacobian(self) -> None:
         for subject, path in self.jacobian_paths.items():
-            self.design_base.results.append(
+            self.design_base.results.insert(
+                0,
                 {
                     "tags": {
                         "sub": subject,
@@ -297,7 +298,7 @@ class ImagingVariables:
                     },
                     "metadata": {},
                     "vals": {},
-                }
+                },
             )
 
     def apply(self) -> None:
