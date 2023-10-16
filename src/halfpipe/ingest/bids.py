@@ -18,6 +18,7 @@ from ..model.tags import entities, entity_longnames
 from ..utils.format import format_like_bids
 from ..utils.hash import int_digest
 from ..utils.path import rlistdir, split_ext
+from .database import Database
 
 bids_config = Config.load("bids")
 bids_version = "1.4.0"
@@ -30,7 +31,7 @@ def get_bids_metadata(database, file_path) -> dict:
 
 
 class BidsDatabase:
-    def __init__(self, database) -> None:
+    def __init__(self, database: Database) -> None:
         self.database = database
 
         # indexed by bids_path
@@ -50,7 +51,8 @@ class BidsDatabase:
             return bids_path  # already added
 
         tags = self.database.tags(file_path)
-        assert isinstance(tags, dict)
+        if not isinstance(tags, dict):
+            raise ValueError(f'File "{file_path}" has no tags')
 
         bids_tags = dict()
         for k, v in tags.items():
@@ -152,7 +154,6 @@ class BidsDatabase:
             json.dump(dataset_description, f, indent=4)
 
         # image files
-
         for bids_path, file_path in self.file_paths.items():
             assert bids_path is not None
             bids_path = Path(bidsdir) / bids_path
@@ -170,7 +171,6 @@ class BidsDatabase:
             bids_path.symlink_to(relative_file_path)
 
         # sidecar files
-
         for bids_path in self.file_paths.keys():
             metadata = self._metadata.get(bids_path)
 
@@ -192,7 +192,6 @@ class BidsDatabase:
                     f.write(jsonstr)
 
         # remove unnecessary files
-
         files_to_keep = set()
         for bids_path in bids_paths:
             relative_bids_path = relpath(bids_path, start=bidsdir)

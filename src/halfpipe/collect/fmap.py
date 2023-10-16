@@ -25,6 +25,7 @@ def collect_fieldmaps(
     bold_file_tags = database.tags(bold_file_path)
     if bold_file_tags is None:
         return list()
+    bold_file_tags = bold_file_tags.copy()  # Ensure modification has no side effects
 
     sub = bold_file_tags.get("sub")
     if sub is None:
