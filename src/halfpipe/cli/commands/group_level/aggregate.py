@@ -109,11 +109,15 @@ def map_fixed_effects_aggregate(
 
     cope_file = flameo.outputs.copes
     var_cope_file = flameo.outputs.var_copes
+    tstat = flameo.outputs.tstats
+    tdof = flameo.outputs.tdof
     zstat = flameo.outputs.zstats
 
     images = dict(
         effect=Path(cope_file),
         variance=Path(var_cope_file),
+        t=Path(tstat),
+        dof=Path(tdof),
         z=Path(zstat),
         mask=Path(mask_file),
     )
