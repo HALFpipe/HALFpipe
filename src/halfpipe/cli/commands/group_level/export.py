@@ -56,6 +56,7 @@ class ImagePaths:
 
     variance: Path | None = None
     sigmasquareds: Path | None = None
+    t: Path | None = None
     dof: Path | None = None
     z: Path | None = None
 
