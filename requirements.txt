@@ -59,8 +59,10 @@ h5py==3.10.0
     # via nitransforms
 idna==3.4
     # via requests
-imageio==2.32.0
-    # via scikit-image
+imageio==2.31.5
+    # via
+    #   -r requirements.in
+    #   scikit-image
 indexed-gzip==1.8.7
     # via
     #   fmriprep
@@ -170,7 +172,7 @@ num2words==0.5.13
     # via pybids
 numba==0.58.1
     # via -r requirements.in
-numpy==1.26.1
+numpy==1.26.0
     # via
     #   -r requirements.in
     #   contourpy
@@ -233,7 +235,7 @@ patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==10.0.1
+pillow==10.1.0
     # via
     #   imageio
     #   matplotlib

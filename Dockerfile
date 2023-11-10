@@ -4,12 +4,10 @@ FROM condaforge/mambaforge:latest as builder
 
 RUN mamba install --yes "boa" "conda-verify"
 RUN --mount=source=recipes/rmath,target=/rmath \
-    --mount=source=recipes/conda_build_config.yaml,target=/conda_build_config.yaml \
     conda mambabuild --no-anaconda-upload "rmath" && \
     conda build purge
 
 RUN --mount=source=recipes/traits,target=/traits \
-    --mount=source=recipes/conda_build_config.yaml,target=/conda_build_config.yaml \
     conda mambabuild --no-anaconda-upload "traits" && \
     conda build purge
 
