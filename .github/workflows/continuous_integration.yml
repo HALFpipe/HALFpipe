@@ -68,49 +68,57 @@ jobs:
           registry = "${{ secrets.REGISTRY }}"
           token = "${{ secrets.GITHUB_TOKEN }}"
 
+          repository_data = Github(token).get_repo(repository)
           repository_owner, repository_name = repository.lower().split("/")
           reference, type, name = ref.split("/")[:3]
           if reference != "refs":
               raise ValueError(f"Unknown reference: {reference}")
           if type == "heads":
-              version = {"main": "latest"}.get(name, name)
+              tag = {"main": "latest"}.get(name, name)
               push = True
           elif type == "tags":
-              version = name
+              tag = name
               push = True
           elif type == "pull":
-              version = f"{type}-{name}"
+              tag = f"{type}-{name}"
               push = False
           else:
               raise ValueError(f"Unknown reference type: {type}")
 
-          cache_from = f"type=registry,ref={registry}/{repository_name}:buildcache"
+          path = f"{registry}/{repository_name}"
+          cache_from = f"type=registry,ref={path}:buildcache"
           output = dict(
               cache_from=cache_from,
               cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
+              labels=[
+                  f'org.opencontainers.image.created="{pushed_at}"',
+                  f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
+                  f'org.opencontainers.image.url="{url}"',
+                  f'org.opencontainers.image.documentation="{url}"',
+                  f'org.opencontainers.image.source="{url}"',
+                  f'org.opencontainers.image.version="{get_version()}"',
+                  f'org.opencontainers.image.revision="{sha}"',
+                  f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
+                  f'org.opencontainers.image.title="{repository_name}"',
+                  f'org.opencontainers.image.description="{repository_data.description}"',
+              ],
               push=str(push).lower(),
-              tag=f"{registry}/{repository_name}:{version}",
+              build_tag=f"{path}:{tag}",
+              push_tags=[
+                  f"{path}:{tag}",
+                  f"docker.io/{repository_owner}/{repository_name}:{tag}",
+                  f"ghcr.io/{repository_owner}/{repository_name}:{tag}",
+              ]
+              if push
+              else [],
           )
-
-          repository_data = Github(token).get_repo(repository)
-
-          labels = [
-              f'org.opencontainers.image.created="{pushed_at}"',
-              f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
-              f'org.opencontainers.image.url="{url}"',
-              f'org.opencontainers.image.documentation="{url}"',
-              f'org.opencontainers.image.source="{url}"',
-              f'org.opencontainers.image.version="{get_version()}"',
-              f'org.opencontainers.image.revision="{sha}"',
-              f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
-              f'org.opencontainers.image.title="{repository_name}"',
-              f'org.opencontainers.image.description="{repository_data.description}"',
-          ]
 
           with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
               for key, value in output.items():
-                  file_handle.write(f"{key}={value}\n")
-              file_handle.write("\n".join(["labels<<eof", *labels, "eof"]) + "\n")
+                  if isinstance(value, list):
+                      file_handle.write("\n".join([f"{key}<<eof", *value, "eof"]) + "\n")
+                  else:
+                      file_handle.write(f"{key}={value}\n")
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build container
@@ -126,7 +134,7 @@ jobs:
           platforms: linux/amd64
           push: false
           tags: |
-            ${{ steps.metadata.outputs.tag }}
+            ${{ steps.metadata.outputs.build_tag }}
 
       - name: Cache data
         uses: actions/cache@v3
@@ -142,7 +150,7 @@ jobs:
             --workdir="/halfpipe" \
             --rm \
             --entrypoint="tail" \
-            ${{ steps.metadata.outputs.tag }} \
+            ${{ steps.metadata.outputs.build_tag }} \
             --follow /dev/null
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -174,7 +182,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ steps.metadata.outputs.tag }}
+            ${{ steps.metadata.outputs.push_tags }}
 
   lint:
     runs-on: ubuntu-latest
