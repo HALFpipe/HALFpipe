@@ -110,7 +110,7 @@ marshmallow-enum==1.5.1
     # via -r requirements.in
 marshmallow-oneofschema==3.0.1
     # via -r requirements.in
-matplotlib==3.8.0
+matplotlib==3.8.1
     # via
     #   -r requirements.in
     #   nitime
@@ -328,7 +328,9 @@ seaborn==0.13.0
     #   -r requirements.in
     #   niworkflows
 setuptools-scm[toml]==8.0.4
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   setuptools-scm
 simplejson==3.19.2
     # via nipype
 six==1.16.0
