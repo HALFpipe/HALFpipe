@@ -63,7 +63,7 @@ jobs:
           else:
               raise ValueError(f"Unknown reference type: {type}")
 
-          cache_from = (f"type=registry,ref={registry}/{repository_name}:buildcache",)
+          cache_from = f"type=registry,ref={registry}/{repository_name}:buildcache"
           output = dict(
               cache_from=cache_from,
               cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
@@ -74,16 +74,16 @@ jobs:
           repository_data = Github(token).get_repo(repository)
 
           labels = [
-              f'org.opencontainers.image.created=""',
+              f'org.opencontainers.image.created="{pushed_at}"',
               f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
-              f'org.opencontainers.image.url="${url}"',
-              f'org.opencontainers.image.documentation="${url}"',
-              f'org.opencontainers.image.source="${url}"',
-              f'org.opencontainers.image.version="${get_version()}"',
-              f'org.opencontainers.image.revision="${sha}"',
-              f'org.opencontainers.image.licenses="${repository_data.license.spdx_id}"',
-              f'org.opencontainers.image.title="${repository_name}"',
-              f'org.opencontainers.image.description="${repository_data.description}"',
+              f'org.opencontainers.image.url="{url}"',
+              f'org.opencontainers.image.documentation="{url}"',
+              f'org.opencontainers.image.source="{url}"',
+              f'org.opencontainers.image.version="{get_version()}"',
+              f'org.opencontainers.image.revision="{sha}"',
+              f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
+              f'org.opencontainers.image.title="{repository_name}"',
+              f'org.opencontainers.image.description="{repository_data.description}"',
           ]
 
           with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
