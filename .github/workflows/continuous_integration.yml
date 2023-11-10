@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Check out full history for `setuptools_scm`
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
