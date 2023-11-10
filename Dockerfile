@@ -19,9 +19,11 @@ COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
     "python=3.11" "pip" "gdb" "nodejs" "rmath"
 RUN --mount=source=requirements.txt,target=/requirements.txt \
+    --mount=source=requirements-test.txt,target=/requirements-test.txt \
     --mount=source=install-requirements.sh,target=/install-requirements.sh \
     /install-requirements.sh \
     --requirements-file /requirements.txt \
+    --requirements-file /requirements-test.txt \
     && sync \
     && mamba clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \

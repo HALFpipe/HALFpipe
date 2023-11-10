@@ -17,129 +17,161 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 360
     steps:
-    - name: Set up build tag
-      id: build_tag
-      shell: python
-      run: |
-        _, ref_type, ref_id = "${{ github.ref }}".split("/")[:3]
-        if ref_type == "heads":
-          version = ref_id
-        elif ref_type == "tags":
-          version = ref_id
-        elif ref_type == "pull":
-          version = "pr" + ref_id
-        else:
-          raise ValueError(f"Unknown ref type: {ref_type}")
-        version=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
-        version=$(echo "${{ github.ref }}" | cut -d '/' -f 3)
-        if [[ "$version" == "main" ]]; then
-          version="latest"
-        fi
-        name=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        echo "repo=${name}" >> ${GITHUB_OUTPUT}
-        echo "tag=${name}:${version}" >> ${GITHUB_OUTPUT}
-    - name: Cache data
-      uses: actions/cache@v3
-      with:
-        path: /home
-        key: ${{ runner.os }}-home
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: >
+            3.11
+          check-latest: true'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install PyGithub setuptools_scm
+      - name: Set up metadata
+        id: metadata
+        shell: python
+        run: |
+          import os
 
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build container
-      uses: docker/build-push-action@v5
-      with:
-        context: "."
-        file: "./Dockerfile"
-        platforms: linux/amd64
-        cache-from: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache
-        cache-to: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache,compression=zstd,mode=max
-        load: true
-        push: false
-        labels: |
-          org.opencontainers.image.title=${{ github.event.repository.name }}
-          org.opencontainers.image.url=${{ github.event.repository.html_url }}
-          org.opencontainers.image.source=${{ github.event.repository.html_url }}
-          org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.created=${{ github.event.repository.updated_at}}
-
-    - name: Start build container
-      run: echo ${GITHUB_TOKEN} | docker login -u ${GITHUB_ACTOR} --password-stdin docker.pkg.github.com;
-        docker run -d --name build
-        -w $PWD
-        -v /home/runner:/home/runner
-        -u $(id -u):$(id -g)
-        --entrypoint tail
-        docker.pkg.github.com/crac/docker-build/image:ubuntu-16.04
-        -f /dev/null
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Test with pytest with coverage
-      shell: bash
-      env:
-        PYTHONDONTWRITEBYTECODE: 1
-        GITHUB_ACTIONS: true  # Enable pytest-github-actions-annotate-failures
-      run: |
+          from github import Github
+          from setuptools_scm import get_version
 
 
-        py.test \
-          --cov --cov-report=xml --dist=load \
-          --numprocesses=2
+          pushed_at = "${{ github.event.repository.pushed_at }}"
+          ref = "${{ github.ref }}"
+          repository = "${{ github.repository }}"
+          sha = "${{ github.sha }}"
+          url = "${{ github.event.repository.html_url }}"
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
-        fail_ci_if_error: true
+          registry = "${{ secrets.REGISTRY }}"
+          token = "${{ secrets.GITHUB_TOKEN }}"
 
-    - name: Push container
-      if: isnt a pull
-      uses: docker/build-push-action@v5
-      with:
-        context: "."
-        file: "./Dockerfile"
-        platforms: linux/amd64
-        cache-from: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache
-        cache-to: type=registry,ref=${{ secrets.REGISTRY }}/${{ steps.build_tag.outputs.repo }}:buildcache,compression=zstd,mode=max
-        load: false
-        push: true
-        labels: |
-          org.opencontainers.image.title=${{ github.event.repository.name }}
-          org.opencontainers.image.url=${{ github.event.repository.html_url }}
-          org.opencontainers.image.source=${{ github.event.repository.html_url }}
-          org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.created=${{ github.event.repository.updated_at}}
+          repository_owner, repository_name = repository.lower().split("/")
+          reference, type, name = ref.split("/")[:3]
+          if reference != "refs":
+              raise ValueError(f"Unknown reference: {reference}")
+          if type == "heads":
+              version = {"main": "latest"}.get(name, name)
+              push = True
+          elif type == "tags":
+              version = name
+              push = True
+          elif type == "pull":
+              version = f"{type}-{name}"
+              push = False
+          else:
+              raise ValueError(f"Unknown reference type: {type}")
+
+          cache_from = (f"type=registry,ref={registry}/{repository_name}:buildcache",)
+          output = dict(
+              cache_from=cache_from,
+              cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
+              push=str(push).lower(),
+              tag=f"{registry}/{repository_name}:{version}",
+          )
+
+          repository_data = Github(token).get_repo(repository)
+
+          labels = [
+              f'org.opencontainers.image.created=""',
+              f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
+              f'org.opencontainers.image.url="${url}"',
+              f'org.opencontainers.image.documentation="${url}"',
+              f'org.opencontainers.image.source="${url}"',
+              f'org.opencontainers.image.version="${get_version()}"',
+              f'org.opencontainers.image.revision="${sha}"',
+              f'org.opencontainers.image.licenses="${repository_data.license.spdx_id}"',
+              f'org.opencontainers.image.title="${repository_name}"',
+              f'org.opencontainers.image.description="${repository_data.description}"',
+          ]
+
+          with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
+              for key, value in output.items():
+                  file_handle.write(f"{key}={value}\n")
+              file_handle.write("\n".join(["labels<<eof", *labels, "eof"]) + "\n")
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build container
+        uses: docker/build-push-action@v5
+        with:
+          cache-from: ${{ steps.metadata.outputs.cache_from }}
+          cache-to: ${{ steps.metadata.outputs.cache_to }}
+          context: "."
+          file: "./Dockerfile"
+          labels: |
+            ${{ steps.metadata.outputs.labels }}
+          load: true
+          platforms: linux/amd64
+          push: false
+          tags: |
+            ${{ steps.metadata.outputs.tag }}
+
+      - name: Cache data
+        uses: actions/cache@v3
+        with:
+          key: test-cache
+          path: /cache
+      - name: Setup integration test container
+        run: |
+          docker run --detach \
+            --name="test" \
+            --volume="/cache:/var/cache" \
+            --volume="$(pwd):/halfpipe" \
+            --workdir="/halfpipe" \
+            --rm \
+            --entrypoint="tail" \
+            ${{ steps.metadata.outputs.tag }} \
+            --follow /dev/null
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run integration tests
+        shell: docker exec test bash -e {0}
+        env:
+          # Enable pytest-github-actions-annotate-failures
+          GITHUB_ACTIONS: true
+        run: |
+          py.test \
+            --cov --cov-report=xml --dist=load \
+            --numprocesses=2
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: true
+      - name: Push container
+        if: ${{ steps.metadata.outputs.push }}
+        uses: docker/build-push-action@v5
+        with:
+          cache-from: ${{ steps.metadata.outputs.cache_from }}
+          cache-to: ${{ steps.metadata.outputs.cache_to }}
+          context: "."
+          file: "./Dockerfile"
+          labels: |
+            ${{ steps.metadata.outputs.labels }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.metadata.outputs.tag }}
 
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
       - name: Lint
         uses: super-linter/super-linter/slim@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: WARN
-
           DEFAULT_BRANCH: main
           LINTER_RULES_PATH: .
-
-          VALIDATE_ALL_CODEBASE: true
-
-          VALIDATE_PYTHON_BLACK: true
-
-          VALIDATE_PYTHON_ISORT: true
           PYTHON_ISORT_CONFIG_FILE: pyproject.toml
-
-          VALIDATE_PYTHON_FLAKE8: true
           PYTHON_FLAKE8_CONFIG_FILE: .flake8
-
-          VALIDATE_PYTHON_MYPY: true
           PYTHON_MYPY_CONFIG_FILE: mypy.ini
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_ISORT: true
+          VALIDATE_PYTHON_MYPY: true
