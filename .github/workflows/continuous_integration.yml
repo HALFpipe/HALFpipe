@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: >
             3.11
-          check-latest: true'
+          check-latest: true
       - name: Install Python dependencies
         run: |
           python -m pip install PyGithub setuptools_scm
