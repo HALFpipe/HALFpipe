@@ -89,7 +89,7 @@ jobs:
           cache_from = f"type=registry,ref={path}:buildcache"
           output = dict(
               cache_from=cache_from,
-              cache_to=f"{cache_from},compression=zstd,mode=max",  # if push else ""
+              cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
               labels=[
                   f'org.opencontainers.image.created="{pushed_at}"',
                   f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
@@ -143,13 +143,14 @@ jobs:
           path: /resource-cache
       - name: Setup integration test container
         run: |
-          docker run --detach \
+          docker run \
+            --detach \
+            --rm \
             --name="test" \
             --volume="/resource-cache:/var/cache/halfpipe" \
             --volume="/home/runner:/home/runner" \
             --volume="$(pwd):/halfpipe" \
             --workdir="/halfpipe" \
-            --rm \
             --entrypoint="tail" \
             ${{ steps.metadata.outputs.build_tag }} \
             --follow /dev/null
@@ -172,12 +173,15 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           fail_ci_if_error: true
-      - name: Push container
-        if: ${{ steps.metadata.outputs.push }}
+      - name: Stop integration test container
+        run: |
+          docker kill test
+
+      - name: Push container to registry
+        if: ${{ steps.metadata.outputs.push == 'true' }}
         uses: docker/build-push-action@v5
         with:
           cache-from: ${{ steps.metadata.outputs.cache_from }}
-          cache-to: ${{ steps.metadata.outputs.cache_to }}
           context: "."
           file: "./Dockerfile"
           labels: |
@@ -186,6 +190,9 @@ jobs:
           push: true
           tags: |
             ${{ steps.metadata.outputs.push_tags }}
+      # - name: Build Singularity 3.x container
+      #   run: |
+      #     docker run --rm quay.io/singularity/docker2singularity:
 
   lint:
     runs-on: ubuntu-latest
