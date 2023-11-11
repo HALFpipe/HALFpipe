@@ -139,13 +139,13 @@ jobs:
       - name: Cache data
         uses: actions/cache@v3
         with:
-          key: test-cache
-          path: /test-cache
+          key: resource-cache
+          path: /resource-cache
       - name: Setup integration test container
         run: |
           docker run --detach \
             --name="test" \
-            --volume="/test-cache:/var/cache" \
+            --volume="/resource-cache:/var/cache/halfpipe" \
             --volume="/home/runner:/home/runner" \
             --volume="$(pwd):/halfpipe" \
             --workdir="/halfpipe" \
