@@ -89,7 +89,7 @@ jobs:
           cache_from = f"type=registry,ref={path}:buildcache"
           output = dict(
               cache_from=cache_from,
-              cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
+              cache_to=f"{cache_from},compression=zstd,mode=max",  # if push else ""
               labels=[
                   f'org.opencontainers.image.created="{pushed_at}"',
                   f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
