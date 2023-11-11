@@ -162,7 +162,7 @@ jobs:
           GITHUB_ACTIONS: true
         run: |
           echo ${{ secrets.FREESURFER_LICENSE_BASE64 }} | \
-            base64 --decode > license.txt
+            base64 --decode > ${FREESURFER_HOME}/license.txt
           py.test \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
