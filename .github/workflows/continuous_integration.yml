@@ -13,9 +13,28 @@ on:
       - edited
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Lint
+        uses: super-linter/super-linter/slim@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOG_LEVEL: WARN
+          DEFAULT_BRANCH: main
+          LINTER_RULES_PATH: .
+          PYTHON_ISORT_CONFIG_FILE: pyproject.toml
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
+          PYTHON_MYPY_CONFIG_FILE: mypy.ini
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_ISORT: true
+          VALIDATE_PYTHON_MYPY: true
   test:
     runs-on: self-hosted
-    timeout-minutes: 360
     steps:
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -48,7 +67,11 @@ jobs:
           check-latest: true
       - name: Install Python dependencies
         run: |
-          python -m pip install PyGithub setuptools_scm
+          python -m pip install \
+            awscli \
+            pygithub \
+            setuptools_scm
+
       - name: Set up metadata
         id: metadata
         shell: python
@@ -111,6 +134,7 @@ jobs:
               ]
               if push
               else [],
+              singularity_name=f"{repository_name}-{tag}.sif",
           )
 
           with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
@@ -190,27 +214,50 @@ jobs:
           push: true
           tags: |
             ${{ steps.metadata.outputs.push_tags }}
-      # - name: Build Singularity 3.x container
-      #   run: |
-      #     docker run --rm quay.io/singularity/docker2singularity:
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Lint
-        uses: super-linter/super-linter/slim@v5
+      - name: Build Singularity 2.x container
+        if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LOG_LEVEL: WARN
-          DEFAULT_BRANCH: main
-          LINTER_RULES_PATH: .
-          PYTHON_ISORT_CONFIG_FILE: pyproject.toml
-          PYTHON_FLAKE8_CONFIG_FILE: .flake8
-          PYTHON_MYPY_CONFIG_FILE: mypy.ini
-          VALIDATE_ALL_CODEBASE: true
-          VALIDATE_PYTHON_BLACK: true
-          VALIDATE_PYTHON_FLAKE8: true
-          VALIDATE_PYTHON_ISORT: true
-          VALIDATE_PYTHON_MYPY: true
+          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
+          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+        run: |
+          mkdir --parents singularity-2
+          docker run \
+            --privileged \
+            --rm \
+            --volume="/var/run/docker.sock:/var/run/docker.sock" \
+            --volume="$(pwd)/singularity-2:/output" \
+            quay.io/singularity/docker2singularity:v2.6 \
+            --name ${{ steps.metadata.outputs.singularity_name }} \
+            ${{ steps.metadata.outputs.build_tag }}
+          image_file=$(find singularity-2 -type f | head --lines=1)
+          aws s3 mv \
+            --acl public-read \
+            ${image_file} \
+            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
+
+      - name: Build Singularity container
+        if: ${{ steps.metadata.outputs.push == 'true' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
+          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+        run: |
+          mkdir --parents singularity
+          docker run \
+            --rm \
+            --volume="/var/run/docker.sock:/var/run/docker.sock" \
+            --volume="$(pwd)/singularity:/output" \
+            quay.io/singularity/singularity:v4.0.1 \
+            build \
+            --disable-cache \
+            /output/${{ steps.metadata.outputs.singularity_name }} \
+            docker-daemon://${{ steps.metadata.outputs.build_tag }}
+          image_file=$(find singularity -type f | head --lines=1)
+          aws s3 mv \
+            --acl public-read \
+            ${image_file} \
+            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
