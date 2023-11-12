@@ -25,29 +25,30 @@ def _get_slice_orders(n_slices):
     return orders
 
 
-def slice_timing_str(slice_times):
+def slice_timing_str(slice_times) -> str:
     slice_times = np.array(slice_times)
 
-    values, inverse, counts = np.unique(slice_times, return_inverse=True, return_counts=True)  # type: ignore
+    values, inverse, counts = np.unique(
+        slice_times, return_inverse=True, return_counts=True
+    )
 
     counts = set(counts)
     if len(counts) != 1:
-        return "unknown"
+        return "unknown multi-band"
 
     (multiband_factor,) = counts
 
     order = inverse[: len(values)]
 
     orders = _get_slice_orders(len(order))
-
     for name, indices in orders.items():
-        if np.allclose(order, indices):  # type: ignore
+        if np.allclose(order, indices):
             if multiband_factor > 1:
                 return f" {name} with multi-band acceleration factor {multiband_factor}"
             else:
                 return name
 
-    return "unknown"
+    return "unknown single-band"
 
 
 def str_slice_timing(

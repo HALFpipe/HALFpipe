@@ -13,6 +13,7 @@ from nipype.pipeline import engine as pe
 
 from halfpipe.interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
 from halfpipe.interfaces.image_maths.merge import merge, merge_mask
+from halfpipe.logging import logger
 from halfpipe.stats.fit import fit
 
 from .base import Dataset
@@ -144,29 +145,44 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
             a0 = fsl_image.get_fdata()[mask]
             a1 = halfpipe_image.get_fdata()[mask]
 
-            # weak criteria, determined post-hoc
-            # we don't expect exactly identical results, because FSL and numpy
+            # Weak criteria, determined post-hoc
+            # We don't expect exactly identical results, because FSL and numpy
             # use different numerics code and we use double precision while FSL
             # uses single precision floating point
             # so these assertions are here to verify that the small differences
             # will not get any larger with future changes or optimizations
 
             if a0.var() > 0:
+                correlation = np.corrcoef(a0, a1)[0, 1].item()
+                logger.info(f"Correlation for {key}: {correlation}")
+                assert correlation > 0.999, f"Correlation too low for {key}"
+
+            diverging_voxels = np.logical_not(np.isclose(a0, a1, rtol=1e-2))
+            if diverging_voxels.any():
+                diverging_voxel_proportion = diverging_voxels.mean().item()
+                logger.info(
+                    f"Diverging voxel proportion for {key}: {diverging_voxel_proportion}"
+                )
                 assert (
-                    np.corrcoef(a0, a1)[0, 1] > 0.999
-                ), f"Correlation too low for {key}"
+                    diverging_voxel_proportion < 0.05
+                ), f"Too many diverging voxels for {key}"
+            else:
+                logger.info(f"No diverging voxels for {key}")
 
-            # max difference of one percent
-            assert (
-                float(np.isclose(a0, a1, rtol=1e-2).mean()) > 0.95
-            ), f"Too many diverging voxels for {key}"
+            if key in frozenset(["var_cope"]):  # Skip these for varcope
+                continue
 
-            if key not in frozenset(["var_cope"]):
+            if diverging_voxels.any():
+                difference_in_diverging_voxels = np.abs(a0 - a1)[diverging_voxels]
+                logger.info(
+                    f"Max difference in diverging voxels for {key}: "
+                    f"{difference_in_diverging_voxels.max()}"
+                )
                 assert np.all(
-                    np.abs(a0 - a1)[np.logical_not(np.isclose(a0, a1, rtol=1e-2))] < 50
+                    difference_in_diverging_voxels < 50
                 ), f"Difference in diverging voxels is too big for {key}"
 
-                # mean error average needs to be below 0.05
-                assert (
-                    float(np.abs(a0 - a1).mean()) < 5e-2
-                ), f"Too high mean error average for {key}"
+            # Mean error needs to be below 0.05
+            mean_error = np.abs(a0 - a1).mean()
+            logger.info(f"Mean error average for {key}: {mean_error}")
+            assert float(mean_error) < 5e-2, f"Too high mean error average for {key}"

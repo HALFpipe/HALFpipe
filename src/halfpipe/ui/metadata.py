@@ -347,7 +347,7 @@ class CheckMetadataStep(Step):
             for i, val in enumerate(vals):
                 if val is not None:
                     sts = slice_timing_str(val)
-                    if sts == "unknown":
+                    if "unknown" in sts:
                         val = np.array(val)
                         sts = np.array2string(val, max_line_width=256)
                         if len(sts) > 128:

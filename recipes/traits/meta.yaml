@@ -1,0 +1,38 @@
+{% set version = "6.3.2" %}
+
+package:
+  name: traits
+  version: {{ version }}
+
+source:
+  fn: traits-{{ version }}.tar.gz
+  url: https://pypi.io/packages/source/t/traits/traits-{{ version }}.tar.gz
+  sha256: 4520ef4a675181f38be4a5bab1b1d5472691597fe2cfe4faf91023e89407e2c6
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  build:
+    - python                                 # [build_platform != target_platform]
+    - cross-python_{{ target_platform }}     # [build_platform != target_platform]
+    - {{ compiler('c') }}
+  host:
+    - pip
+    - python
+    - setuptools
+  run:
+    - python
+  run_constrained:
+    - traitsui >=7.0
+
+test:
+  imports:
+    - traits
+
+about:
+  home: https://docs.enthought.com/traits
+  license: BSD-3-Clause
+  license_file: LICENSE.txt
+  summary: traits - explicitly typed attributes for Python

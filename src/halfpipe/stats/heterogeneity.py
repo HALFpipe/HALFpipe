@@ -2,229 +2,207 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from math import inf, log, nan, pi
+from typing import NamedTuple
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
+import scipy
 from numpy import typing as npt
-from scipy import optimize, special, stats
 
 from ..logging import logger
 from .base import ModelAlgorithm
 from .flame1 import flame1_prepare_data
 
 
-class MoM:
-    @staticmethod
-    def i2(
-        y: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        s: npt.NDArray[np.float64],
-    ) -> float:
-        """
-        Chen et al. 2012
-        """
+def method_of_moments_i_squared(
+    y: npt.NDArray[np.float64],
+    z: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
+    """
+    Chen et al. 2012
+    """
 
-        b = y
-        x = z
-        w0 = np.diag(1.0 / s.ravel())
+    b = y
+    x = z
+    w0 = np.diag(1.0 / s.ravel())
 
-        n, p = x.shape
+    n, p = x.shape
 
-        w0x = w0 @ x
-        hat = np.linalg.lstsq(x.T @ w0x, w0x.T, rcond=None)[0]
-        a0 = hat @ b
+    w0x = w0 @ x
+    hat = np.linalg.lstsq(x.T @ w0x, w0x.T, rcond=-1.0)[0]
+    a0 = hat @ b
 
-        r = b - x @ a0
-        q = r.T @ w0 @ r
+    r = b - x @ a0
+    q = r.T @ w0 @ r
 
-        p0 = w0 - w0x @ hat
+    p0 = w0 - w0x @ hat
 
-        trp0 = np.trace(p0)
+    trp0 = np.trace(p0)
 
-        τ2 = ((q - (n - p - 1)) / trp0).item()
-        if τ2 < 0:
-            τ2 = 0
+    τ2 = ((q - (n - p - 1)) / trp0).item()
+    if τ2 < 0:
+        τ2 = 0
 
-        h2 = τ2 * trp0 / (n - p - 1) + 1
-        i2 = (h2 - 1) / h2
+    h2 = τ2 * trp0 / (n - p - 1) + 1
+    i2 = (h2 - 1) / h2
 
-        return i2
+    return i2
 
 
-class ReML:
-    @staticmethod
-    def model(ϑ: float, x: npt.NDArray[np.float64] | None, s: npt.NDArray[np.float64]):
-        σg = ϑ
-
-        if np.isclose(σg, 0) or σg < 0:
-            return None, None, None
-
-        inverse_variance = np.reciprocal(1.0 / (s + σg)).ravel()
-
-        if x is None:
-            return inverse_variance, None, None
-
-        a = x.T * inverse_variance
-        b = a @ x
-
-        # projection matrix
-        p = np.diag(inverse_variance) - a.T @ np.linalg.lstsq(b, a, rcond=None)[0]
-        return inverse_variance, p, b
-
-    @classmethod
-    def fit(
-        cls,
-        y: npt.NDArray[np.float64],
-        x: npt.NDArray[np.float64] | None,
-        s: npt.NDArray[np.float64],
-    ):
-        return optimize.minimize_scalar(cls.neg_log_lik, args=(y, x, s), method="brent")
-
-    @classmethod
-    def neg_log_lik(
-        cls,
-        ϑ: float,
-        y: npt.NDArray[np.float64],
-        x: npt.NDArray[np.float64] | None,
-        s: npt.NDArray[np.float64],
-    ) -> float:
-        vinv, p, b = cls.model(ϑ, x, s)
-
-        if vinv is None:
-            return inf
-
-        log_det_vinv = np.log(vinv).sum()
-        neg_log_lik = -0.5 * log_det_vinv
-
-        if p is None or b is None:
-            return neg_log_lik
-
-        _, log_det_xvinvx = np.linalg.slogdet(b)
-        neg_log_lik += 0.5 * log_det_xvinvx
-        neg_log_lik += 0.5 * (y.T @ p @ y)
-
-        return neg_log_lik.item()
-
-    @classmethod
-    def jacobian(
-        cls,
-        ϑ: float,
-        y: npt.NDArray[np.float64],
-        x: npt.NDArray[np.float64] | None,
-        s: npt.NDArray[np.float64],
-    ):
-        _, p, b = cls.model(ϑ, x, s)
-
-        if p is None or b is None:
-            return nan
-
-        return float(np.trace(p) - y.T @ p @ p @ y)
-
-    @classmethod
-    def hessian(
-        cls,
-        ϑ: float,
-        y: npt.NDArray[np.float64],
-        x: npt.NDArray[np.float64] | None,
-        s: npt.NDArray[np.float64],
-    ) -> float:
-        _, p, b = cls.model(ϑ, x, s)
-
-        if p is None or b is None:
-            return nan
-
-        return (y.T @ p @ p @ p @ y).item()
+class ReMLTerms(NamedTuple):
+    inverse_variance: npt.NDArray[np.float64]
+    projection_matrix: npt.NDArray[np.float64]
+    gram_matrix: npt.NDArray[np.float64]
 
 
-class ML:
-    @staticmethod
-    def neg_log_lik(
-        ϑ: float,
-        y: npt.NDArray[np.floating],
-        x: npt.NDArray[np.floating] | None,
-        s: npt.NDArray[np.floating],
-        γ: npt.NDArray[np.floating],
-    ):
-        σg = ϑ
+def reml_terms(
+    ϑ: float, x: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
+) -> ReMLTerms:
+    inverse_variance = np.reciprocal(1.0 / (s + ϑ)).ravel()
 
-        if σg < 0:
-            return inf
+    a = x.T * inverse_variance
+    gram_matrix = a @ x
 
-        vinv = np.diag(np.ravel(1.0 / (s + σg)))
+    # projection matrix
+    projection_matrix = (
+        np.diag(inverse_variance) - a.T @ np.linalg.lstsq(gram_matrix, a, rcond=-1.0)[0]
+    )
+    return ReMLTerms(inverse_variance, projection_matrix, gram_matrix)
 
-        n = y.size
-        neg_log_lik = n * np.log(2 * pi) / 2
 
-        _, log_det_vinv = np.linalg.slogdet(vinv)
-        neg_log_lik += -float(log_det_vinv) / 2
+def reml_neg_log_lik(
+    ϑ: float,
+    y: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
+    if np.isclose(ϑ, 0) or ϑ < 0:
+        return np.inf
+    terms = reml_terms(ϑ, x, s)
 
-        if x is None:
-            return neg_log_lik
+    logarithmic_determinant = np.log(terms.inverse_variance).sum()
+    neg_log_lik = -0.5 * logarithmic_determinant
 
-        r: npt.NDArray[np.float64] = y - x @ γ
-        neg_log_lik += float(r.T @ vinv @ r) / 2
+    _, log_det_xvinvx = np.linalg.slogdet(terms.gram_matrix)
+    neg_log_lik += 0.5 * log_det_xvinvx
+    neg_log_lik += 0.5 * (y.T @ terms.projection_matrix @ y).item()
 
+    return neg_log_lik.item()
+
+
+def reml_fit(
+    y: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> scipy.optimize.OptimizeResult:
+    return scipy.optimize.minimize_scalar(
+        reml_neg_log_lik, args=(y, x, s), method="brent"
+    )
+
+
+def reml_jacobian(
+    ϑ: float,
+    y: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
+    terms = reml_terms(ϑ, x, s)
+    p = terms.projection_matrix
+    return float(np.trace(p) - y.T @ p @ p @ y)
+
+
+def reml_hessian(
+    ϑ: float,
+    y: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64],
+    s: npt.NDArray[np.float64],
+) -> float:
+    terms = reml_terms(ϑ, x, s)
+    p = terms.projection_matrix
+    return (y.T @ p @ p @ p @ y).item()
+
+
+def ml_neg_log_lik(
+    ϑ: float,
+    y: npt.NDArray[np.floating],
+    x: npt.NDArray[np.floating] | None,
+    s: npt.NDArray[np.floating],
+    γ: npt.NDArray[np.floating],
+):
+    if ϑ < 0:
+        return np.inf
+    vinv = np.diag(np.ravel(1.0 / (s + ϑ)))
+
+    n = y.size
+    neg_log_lik = n * np.log(2 * np.pi) / 2
+
+    _, log_det_vinv = np.linalg.slogdet(vinv)
+    neg_log_lik += -log_det_vinv.item() / 2
+
+    if x is None:
         return neg_log_lik
 
+    r: npt.NDArray[np.float64] = y - x @ γ
+    neg_log_lik += float(r.T @ vinv @ r) / 2
 
-class InvGammaML:
-    @classmethod
-    def fit(cls, x: npt.NDArray[np.float64]):
-        a, _, scale = stats.invgamma.fit(x, floc=0)
-        ϑ = np.array([a, scale])
+    return neg_log_lik
 
-        return ϑ
 
-    @staticmethod
-    def neg_log_lik(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
-        a, b = ϑ
+def inv_gamma_ml_fit(x: npt.NDArray[np.float64]):
+    a, _, scale = scipy.stats.invgamma.fit(x, floc=0)
+    ϑ = np.array([a, scale])
+    return ϑ
 
-        if a < 0 or b < 0:
-            return inf
 
-        n = x.size
+def inv_gamma_ml_neg_log_lik(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
+    a, b = ϑ
 
-        u = np.sum(np.log(x))
-        v = np.sum(1 / x)
+    if a < 0 or b < 0:
+        return np.inf
 
-        return -n * a * log(b) + n * log(special.gamma(a)) + a * u + u + b * v
+    n = x.size
 
-    @staticmethod
-    def jacobian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
-        a, b = ϑ
+    u = np.sum(np.log(x))
+    v = np.sum(1 / x)
 
-        if a < 0 or b < 0:
-            return np.array([nan] * 2)
+    return -n * a * np.log(b) + n * np.log(scipy.special.gamma(a)) + a * u + u + b * v
 
-        n = x.size
 
-        u = np.sum(np.log(x))
-        v = np.sum(1 / x)
+def inv_gamma_ml_jacobian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
+    a, b = ϑ
 
-        return np.array(
-            [
-                -n * log(b) + n * special.digamma(a) + u,
-                -n * a / b + v,
-            ]
-        )
+    if a < 0 or b < 0:
+        return np.array([np.nan] * 2)
 
-    @staticmethod
-    def hessian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
-        a, b = ϑ
+    n = x.size
 
-        if a < 0 or b < 0:
-            return np.array([[nan] * 2] * 2)
+    u = np.sum(np.log(x))
+    v = np.sum(1 / x)
 
-        n = x.size
+    return np.array(
+        [
+            -n * np.log(b) + n * scipy.special.digamma(a) + u,
+            -n * a / b + v,
+        ]
+    )
 
-        return n * np.array(
-            [
-                [special.polygamma(1, a), -1 / b],
-                [-1 / b, a / np.square(b)],
-            ]
-        )
+
+def inv_gamma_ml_hessian(ϑ: npt.NDArray[np.float64], x: npt.NDArray[np.float64]):
+    a, b = ϑ
+
+    if a < 0 or b < 0:
+        return np.array([[np.nan] * 2] * 2)
+
+    n = x.size
+
+    return n * np.array(
+        [
+            [scipy.special.polygamma(1, a), -1 / b],
+            [-1 / b, a / np.square(b)],
+        ]
+    )
 
 
 def het_on_voxel(y, z, s):
@@ -236,26 +214,28 @@ def het_on_voxel(y, z, s):
     s_norm = s / (norm * norm)
 
     # Calculate beta
-    neg_log_lik_fe = ReML.neg_log_lik(0, y_norm, z, s_norm)
+    neg_log_lik_fe = reml_neg_log_lik(0, y_norm, z, s_norm)
 
-    res = ReML.fit(y_norm, z, s_norm)
+    res = reml_fit(y_norm, z, s_norm)
     neg_log_lik_me = res.fun
 
-    var_res = 1 / ReML.hessian(res.x, y_norm, z, s_norm)
+    var_res = 1 / reml_hessian(res.x, y_norm, z, s_norm)
     beta = np.array([res.x, var_res])
     beta *= norm * norm
 
     # Calculate likelihood ratio test
     chisq = 2 * (neg_log_lik_fe - neg_log_lik_me)
 
-    pseudor2 = 1 - neg_log_lik_me / neg_log_lik_fe
-    pseudor2 = max(0, min(1, pseudor2))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        pseudor2 = 1 - neg_log_lik_me / neg_log_lik_fe
+    if np.isfinite(pseudor2):
+        pseudor2 = max(0, min(1, pseudor2))
 
     # Calculate other statistics
-    i2 = MoM.i2(y_norm, z, s_norm)
+    i_squared = method_of_moments_i_squared(y_norm, z, s_norm)
 
-    ϑ = InvGammaML.fit(s)
-    var_ϑ = np.linalg.inv(InvGammaML.hessian(ϑ, s))
+    ϑ = inv_gamma_ml_fit(s)
+    var_ϑ = np.linalg.inv(inv_gamma_ml_hessian(ϑ, s))
     gamma = np.vstack([ϑ, var_ϑ])
 
     n = s.size
@@ -269,7 +249,7 @@ def het_on_voxel(y, z, s):
         hetbeta=beta,
         hetgamma=gamma,
         hettypical=typical,
-        heti2=i2,
+        heti2=i_squared,
         hetpseudor2=pseudor2,
         hetchisq=chisq,
     )

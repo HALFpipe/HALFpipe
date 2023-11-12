@@ -13,108 +13,251 @@ on:
       - edited
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        chunk:
-          - feature_extraction
-          - other
-        include:
-          - chunk: feature_extraction
-            args: "tests/workflows/test_workflow.py::test_feature_extraction"
-            runs-on: self-hosted
-          - chunk: other
-            args: "-k 'not test_feature_extraction'"
-            runs-on: self-hosted
-
-    runs-on: ${{ matrix.runs-on }}
-    container: ghcr.io/halfpipe/halfpipe:latest
-
-    timeout-minutes: 360
-
-    steps:
-    - name: Cache data
-      uses: actions/cache@v3
-      with:
-        path: /home
-        key: ${{ runner.os }}-home
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Test with pytest with coverage
-      shell: bash
-      env:
-        PYTHONDONTWRITEBYTECODE: 1
-        GITHUB_ACTIONS: true  # enable pytest-github-actions-annotate-failures
-      run: |
-        pip install \
-          --requirement requirements.txt \
-          --requirement requirements-test.txt
-
-        FREESURFER_LICENSE_BASE64="bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg=="
-        echo ${FREESURFER_LICENSE_BASE64} \
-          | base64 --decode > ${FREESURFER_HOME}/license.txt
-
-        python -m pytest ${{ matrix.args }} --cov --cov-report=xml
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage_${{ matrix.chunk }}
-        path: ./coverage.xml
-
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
       - name: Lint
         uses: super-linter/super-linter/slim@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: WARN
-
           DEFAULT_BRANCH: main
           LINTER_RULES_PATH: .
-
-          VALIDATE_ALL_CODEBASE: true
-
-          VALIDATE_PYTHON_BLACK: true
-
-          VALIDATE_PYTHON_ISORT: true
           PYTHON_ISORT_CONFIG_FILE: pyproject.toml
-
-          VALIDATE_PYTHON_FLAKE8: true
           PYTHON_FLAKE8_CONFIG_FILE: .flake8
-
-          VALIDATE_PYTHON_MYPY: true
           PYTHON_MYPY_CONFIG_FILE: mypy.ini
-
-  coverage:
-    needs: test
-
-    runs-on: ubuntu-latest
-
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_ISORT: true
+          VALIDATE_PYTHON_MYPY: true
+  test:
+    runs-on: self-hosted
     steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-
-      - name: Collect coverage files
-        id: collect
-        shell: bash
+        uses: actions/checkout@v4
+        with:
+          # Check out full history for `setuptools_scm`
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: >
+            3.12
+          check-latest: true
+      - name: Install Python dependencies
         run: |
-          FILE=$(find . -name "coverage.xml" | paste --serial --delimiters=, -)
-          echo "file=${FILE}" >> ${GITHUB_OUTPUT}
+          python -m pip install \
+            awscli \
+            pygithub \
+            setuptools_scm
 
+      - name: Set up metadata
+        id: metadata
+        shell: python
+        run: |
+          import os
+
+          from github import Github
+          from setuptools_scm import get_version
+
+
+          pushed_at = "${{ github.event.repository.pushed_at }}"
+          ref = "${{ github.ref }}"
+          repository = "${{ github.repository }}"
+          sha = "${{ github.sha }}"
+          url = "${{ github.event.repository.html_url }}"
+
+          registry = "${{ secrets.REGISTRY }}"
+          token = "${{ secrets.GITHUB_TOKEN }}"
+
+          repository_data = Github(token).get_repo(repository)
+          repository_owner, repository_name = repository.lower().split("/")
+          reference, type, name = ref.split("/")[:3]
+          if reference != "refs":
+              raise ValueError(f"Unknown reference: {reference}")
+          if type == "heads":
+              tag = {"main": "latest"}.get(name, name)
+              push = True
+          elif type == "tags":
+              tag = name
+              push = True
+          elif type == "pull":
+              tag = f"{type}-{name}"
+              push = False
+          else:
+              raise ValueError(f"Unknown reference type: {type}")
+
+          path = f"{registry}/{repository_name}"
+          cache_from = f"type=registry,ref={path}:buildcache"
+          output = dict(
+              cache_from=cache_from,
+              cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
+              labels=[
+                  f'org.opencontainers.image.created="{pushed_at}"',
+                  f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
+                  f'org.opencontainers.image.url="{url}"',
+                  f'org.opencontainers.image.documentation="{url}"',
+                  f'org.opencontainers.image.source="{url}"',
+                  f'org.opencontainers.image.version="{get_version()}"',
+                  f'org.opencontainers.image.revision="{sha}"',
+                  f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
+                  f'org.opencontainers.image.title="{repository_name}"',
+                  f'org.opencontainers.image.description="{repository_data.description}"',
+              ],
+              push=str(push).lower(),
+              build_tag=f"{repository_name}:{tag}",
+              push_tags=[
+                  f"{path}:{tag}",
+                  f"docker.io/{repository_owner}/{repository_name}:{tag}",
+                  f"ghcr.io/{repository_owner}/{repository_name}:{tag}",
+              ]
+              if push
+              else [],
+              singularity_name=f"{repository_name}-{tag}.sif",
+          )
+
+          with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
+              for key, value in output.items():
+                  if isinstance(value, list):
+                      file_handle.write("\n".join([f"{key}<<eof", *value, "eof"]) + "\n")
+                  else:
+                      file_handle.write(f"{key}={value}\n")
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build container
+        uses: docker/build-push-action@v5
+        with:
+          cache-from: ${{ steps.metadata.outputs.cache_from }}
+          cache-to: ${{ steps.metadata.outputs.cache_to }}
+          context: "."
+          file: "./Dockerfile"
+          labels: |
+            ${{ steps.metadata.outputs.labels }}
+          load: true
+          platforms: linux/amd64
+          push: false
+          tags: |
+            ${{ steps.metadata.outputs.build_tag }}
+
+      - name: Cache data
+        uses: actions/cache@v3
+        with:
+          key: resource-cache
+          path: /resource-cache
+      - name: Setup integration test container
+        run: |
+          docker run \
+            --detach \
+            --rm \
+            --name="test" \
+            --volume="/resource-cache:/var/cache/halfpipe" \
+            --volume="/home/runner:/home/runner" \
+            --volume="$(pwd):/halfpipe" \
+            --workdir="/halfpipe" \
+            --entrypoint="tail" \
+            ${{ steps.metadata.outputs.build_tag }} \
+            --follow /dev/null
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run integration tests
+        shell: docker exec test bash -e {0}
+        env:
+          # Enable pytest-github-actions-annotate-failures
+          GITHUB_ACTIONS: true
+        run: |
+          echo ${{ secrets.FREESURFER_LICENSE_BASE64 }} | \
+            base64 --decode > ${FREESURFER_HOME}/license.txt
+          py.test \
+            --cov --cov-report=xml --dist=load \
+            --numprocesses=2
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ${{ steps.collect.file }}
+          file: ./coverage.xml
           fail_ci_if_error: true
+      - name: Stop integration test container
+        run: |
+          docker kill test
+
+      - name: Push container to registry
+        if: ${{ steps.metadata.outputs.push == 'true' }}
+        uses: docker/build-push-action@v5
+        with:
+          cache-from: ${{ steps.metadata.outputs.cache_from }}
+          context: "."
+          file: "./Dockerfile"
+          labels: |
+            ${{ steps.metadata.outputs.labels }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.metadata.outputs.push_tags }}
+
+      - name: Build Singularity 2.x container
+        if: ${{ steps.metadata.outputs.push == 'true' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
+          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+        run: |
+          mkdir --parents singularity-2
+          docker run \
+            --privileged \
+            --rm \
+            --volume="/var/run/docker.sock:/var/run/docker.sock" \
+            --volume="$(pwd)/singularity-2:/output" \
+            quay.io/singularity/docker2singularity:v2.6 \
+            --name ${{ steps.metadata.outputs.singularity_name }} \
+            ${{ steps.metadata.outputs.build_tag }}
+          image_file=$(find singularity-2 -type f | head --lines=1)
+          aws s3 mv \
+            --acl public-read \
+            ${image_file} \
+            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
+
+      - name: Build Singularity container
+        if: ${{ steps.metadata.outputs.push == 'true' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
+          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
+          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+        run: |
+          mkdir --parents singularity
+          docker run \
+            --rm \
+            --volume="/var/run/docker.sock:/var/run/docker.sock" \
+            --volume="$(pwd)/singularity:/output" \
+            quay.io/singularity/singularity:v4.0.1 \
+            build \
+            --disable-cache \
+            /output/${{ steps.metadata.outputs.singularity_name }} \
+            docker-daemon://${{ steps.metadata.outputs.build_tag }}
+          image_file=$(find singularity -type f | head --lines=1)
+          aws s3 mv \
+            --acl public-read \
+            ${image_file} \
+            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/

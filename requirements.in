@@ -1,8 +1,8 @@
-# Build system packages.
-setuptools_scm[toml]>=6.2
+# Build system packages
+setuptools_scm>=6.2
 wheel
 
-# Neuroimaging packages.
+# Neuroimaging packages
 fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
 smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
 niworkflows >= 1.3.10
@@ -12,29 +12,28 @@ nibabel >= 4.0.0
 templateflow >= 0.7.1
 pybids >= 0.13.1
 
-# Data science packages.
+# Data science packages
 numpy >= 1.20
 scipy >=1.8.0,!=1.8.1
-mpmath >= 1.1.0
-gmpy2 >= 2.0.8
+numba
 pandas >= 1.2.0
 patsy >= 0.5.2
 statsmodels >= 0.14
 tabulate >= 0.8.9
 pint >= 0.17
 
-# Plotting packages.
+# Plotting packages
 matplotlib
 seaborn >= 0.11.1
 svgutils >= 0.3.1
 
-# Packages to deal with different spreadsheet formats.
+# Packages to deal with different spreadsheet formats
 odfpy >= 1.4.1
 xlrd >= 1.0.0
 openpyxl >= 3.0.7
 XlsxWriter >= 1.4.4
 
-# utilities
+# Utilities
 flufl.lock >= 5.0.3
 psutil >= 5.8.0
 threadpoolctl

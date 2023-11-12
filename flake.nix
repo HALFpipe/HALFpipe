@@ -13,10 +13,10 @@
           config.allowUnfree = true;
         };
 
-        pythonPackages = with pkgs.python311Packages; [ pip-tools ];
+        python = (pkgs.python311.withPackages
+          (py: with py; [ pip-tools setuptools_scm ]));
       in {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ python311 ] ++ pythonPackages;
-        };
+        devShells.default =
+          pkgs.mkShell { buildInputs = with pkgs; [ python ]; };
       });
 }
