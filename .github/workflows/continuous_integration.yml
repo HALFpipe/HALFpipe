@@ -218,10 +218,9 @@ jobs:
       - name: Build Singularity 2.x container
         if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
-          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
-          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
           mkdir --parents singularity-2
           docker run \
@@ -236,15 +235,14 @@ jobs:
           aws s3 mv \
             --acl public-read \
             ${image_file} \
-            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
+            s3://downloadfmri/singularity/
 
       - name: Build Singularity container
         if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DIGITALOCEAN_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DIGITALOCEAN_SECRET_KEY }}
-          AWS_ENDPOINT_URL: "${{ secrets.DIGITALOCEAN_REGION }}.digitaloceanspaces.com"
-          DIGITALOCEAN_SPACE_NAME: ${{ secrets.DIGITALOCEAN_SPACE_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
           mkdir --parents singularity
           docker run \
@@ -260,4 +258,4 @@ jobs:
           aws s3 mv \
             --acl public-read \
             ${image_file} \
-            s3://${DIGITALOCEAN_SPACE_NAME}/singularity/
+            s3://downloadfmri/singularity/
