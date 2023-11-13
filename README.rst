@@ -157,11 +157,11 @@ requires approximately 5 gigabytes of storage.
 
    -  -  Singularity
       -  3.x
-      -  https://download.fmri.science/singularity/halfpipe-halfpipe-latest.sif
+      -  https://download.fmri.science/singularity/halfpipe-latest.sif
 
    -  -  Singularity
       -  2.x
-      -  https://download.fmri.science/singularity/halfpipe-halfpipe-latest.simg
+      -  https://download.fmri.science/singularity/halfpipe-latest.simg
 
    -  -  Docker
       -  ..
