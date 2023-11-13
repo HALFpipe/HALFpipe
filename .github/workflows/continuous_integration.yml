@@ -233,9 +233,10 @@ jobs:
             ${{ steps.metadata.outputs.build_tag }}
           image_file=$(find singularity-2 -type f | head --lines=1)
           aws s3 mv \
+            --only-show-errors \
             --acl public-read \
             ${image_file} \
-            s3://downloadfmri/singularity/
+            s3://singularity/
 
       - name: Build Singularity container
         if: ${{ steps.metadata.outputs.push == 'true' }}
@@ -256,6 +257,7 @@ jobs:
             docker-daemon://${{ steps.metadata.outputs.build_tag }}
           image_file=$(find singularity -type f | head --lines=1)
           aws s3 mv \
+            --only-show-errors \
             --acl public-read \
             ${image_file} \
-            s3://downloadfmri/singularity/
+            s3://singularity/
