@@ -5,7 +5,9 @@
 #    pip-compile requirements-test.in
 #
 coverage[toml]==7.3.2
-    # via pytest-cov
+    # via
+    #   coverage
+    #   pytest-cov
 execnet==2.0.2
     # via pytest-xdist
 iniconfig==2.0.0
@@ -32,5 +34,5 @@ pytest-github-actions-annotate-failures==0.2.0
     # via -r requirements-test.in
 pytest-timeout==2.2.0
     # via -r requirements-test.in
-pytest-xdist==3.3.1
+pytest-xdist==3.4.0
     # via -r requirements-test.in
