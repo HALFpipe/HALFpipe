@@ -6,10 +6,14 @@ from ..ingest.bids import BidsDatabase
 from ..logging import logger
 from ..utils.image import nvol
 from .fmap import collect_fieldmaps
+from ..workflows.post_processing.factory import post_processing_factory
+from ..workflows.features.factory import feature_factory
 
 
 def collect_bold_files(
-    database, post_processing_factory, feature_factory
+    database: Database,
+    post_processing_factory: PostProcessingFactory,
+    feature_factory: FeatureFactory,
 ) -> dict[str, list[str]]:
     """
     Collects and organizes associated files for bold files in the dataset.
@@ -30,9 +34,9 @@ def collect_bold_files(
     ----------
     database : Database
         The database containing information about the dataset.
-    post_processing_factory : Factory
+    post_processing_factory : PostProcessingFactory
         The factory for post-processing information.
-    feature_factory : Factory
+    feature_factory : FeatureFactory
         The factory for feature information.
 
     Returns

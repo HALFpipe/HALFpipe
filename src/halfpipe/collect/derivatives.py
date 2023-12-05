@@ -18,8 +18,8 @@ def find_derivatives_directories(
     Browse the directory structure to find directories containing derivatives.
 
     The search starts from the specified path and looks for directories
-    named "derivatives" that contain the specified name. The function then returns paths to these
-    derivative directories.
+    named "derivatives" that contain the specified name. The function then returns
+    paths to these derivative directories.
 
     Parameters
     ----------
