@@ -3,11 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from ..ingest.bids import BidsDatabase
+from ..ingest.database import Database
 from ..logging import logger
 from ..utils.image import nvol
 from .fmap import collect_fieldmaps
-from ..workflows.post_processing.factory import post_processing_factory
-from ..workflows.features.factory import feature_factory
+from ..workflows.post_processing.factory import PostProcessingFactory
+from ..workflows.features.factory import FeatureFactory
 
 
 def collect_bold_files(
