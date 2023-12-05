@@ -11,6 +11,29 @@ from ..utils.format import inflect_engine as pe
 
 
 def collect_pe_dir(database: Database, c: str):
+    """
+    Collects and canonicalizes the phase encoding direction for a given file.
+
+    The function fills the metadata for the specified file with the phase encoding
+    direction information and then retrieves and canonicalizes the phase encoding
+    direction using the `canonicalize_direction_code` function. The function assumes
+    that the specified file contains the necessary metadata field and relies on the
+    `canonicalize_direction_code` function to handle variations in encoding
+    direction codes.
+
+    Parameters
+    ----------
+    database : Database
+        The database containing information about the dataset.
+    c : str
+        The file path or identifier for which the phase encoding direction is
+        collected.
+
+    Returns
+    -------
+    str
+        The canonicalized phase encoding direction for the specified file.
+    """
     database.fillmetadata("phase_encoding_direction", [c])
     pe_dir = canonicalize_direction_code(
         database.metadata(c, "phase_encoding_direction"),
@@ -22,6 +45,35 @@ def collect_pe_dir(database: Database, c: str):
 def collect_fieldmaps(
     database: Database, bold_file_path: str, silent: bool = False
 ) -> list[str]:
+    """
+    Collects and filters field map files associated with a given functional source file.
+
+    The function identifies and filters field map files associated with the specified
+    functional source file in the provided database. It filters based on subject,
+    datatype ('fmap'), and, if applicable, the session. The function further filters
+    out incomplete field maps and pepolar images, logging relevant information.
+
+    The function uses metadata from the provided database to filter and select
+    field maps. It logs information about skipped field maps and pepolar images based
+    on completeness and matching phase encoding directions. The returned list is sorted
+    for consistency.
+
+    Parameters
+    ----------
+    database : Database
+        The database containing information about the dataset.
+    bold_file_path : str
+        The path to the functional source file for which field maps are collected.
+    silent : bool, optional
+        If True, suppresses logging of information about skipped field maps.
+
+    Returns
+    -------
+    list[str]
+        A list of paths to the collected and filtered field map files associated with
+        the specified functional source file. The list is sorted for consistency.
+
+    """
     bold_file_tags = database.tags(bold_file_path)
     if bold_file_tags is None:
         return list()

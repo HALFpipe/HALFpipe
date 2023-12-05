@@ -9,6 +9,34 @@ from ..logging import logger
 def collect_events(
     database: Database, source_file: str
 ) -> tuple[str | tuple[str, str], ...] | None:
+    """
+    Collects events associated with a specific functional source file.
+
+    The function retrieves events related to a given functional source file from
+    the database. It looks for files with the same task and datatype 'func' and
+    suffix 'events'. Events can be either single files or pairs of files (filename,
+    condition), where the condition is specified in a '.txt' file.
+
+    If events are stored in pairs with a '.txt' extension, the tuple contains
+    (filename, condition). Otherwise, it contains a single filename.
+
+    If the specified source file lacks a task tag, a warning is logged, and None is
+    returned.
+
+    Parameters
+    ----------
+    database : Database
+        The database containing information about the dataset.
+    source_file : str
+        The path to the functional source file for which events are collected.
+
+    Returns
+    -------
+    tuple[str or tuple[str, str], ...] or None
+        A tuple containing file paths or pairs of file paths and conditions
+        associated with the specified functional source file. Returns None if no
+        events are found.
+    """
     task = database.tagval(source_file, "task")
     if not isinstance(task, str):
         logger.warning(
