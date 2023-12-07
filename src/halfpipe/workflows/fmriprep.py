@@ -289,7 +289,9 @@ class FmriprepFactory(Factory):
                     inputattrs & outputattrs
                 ) - connected_attrs  # find common attr names
 
-                actually_connected_attrs: Set[Any] = set()  # todo: Replace 'Any' with the actual expected type if known
+                actually_connected_attrs: Set[
+                    Any
+                ] = set()  # todo: Replace 'Any' with the actual expected type if known
                 for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
                     _, infields = zip(*datadict.get("connect", []))
                     actually_connected_attrs.update(infields)
