@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import Any, Optional, Set
 from unittest.mock import patch
 
 from fmriprep import config
@@ -161,7 +160,7 @@ class FmriprepFactory(Factory):
         config_file = nipype_dir / f"fmriprep.config.{uuidstr}.toml"
         config.to_filename(config_file)
 
-        retval: dict[str, Any] = dict()
+        retval: dict[str, pe.Workflow] = dict()
 
         with patch("niworkflows.utils.misc.check_valid_fs_license") as mock:
             mock.return_value = True
@@ -282,16 +281,14 @@ class FmriprepFactory(Factory):
         def _connect(hierarchy) -> None:
             wf = hierarchy[-1]
 
-            outputnode: Optional[pe.Node] = wf.get_node("outputnode")
+            outputnode: pe.Node | None = wf.get_node("outputnode")
             if outputnode is not None:
                 outputattrs = set(outputnode.outputs.copyable_trait_names())
                 attrs = (
                     inputattrs & outputattrs
                 ) - connected_attrs  # find common attr names
 
-                actually_connected_attrs: Set[
-                    Any
-                ] = set()  # todo: Replace 'Any' with the actual expected type if known
+                actually_connected_attrs: set[str] = set()
                 for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
                     _, infields = zip(*datadict.get("connect", []))
                     actually_connected_attrs.update(infields)
