@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Set
 from unittest.mock import patch
 
 from fmriprep import config
@@ -289,7 +289,9 @@ class FmriprepFactory(Factory):
                     inputattrs & outputattrs
                 ) - connected_attrs  # find common attr names
 
-                actually_connected_attrs = set()
+                actually_connected_attrs: Set[
+                    Any
+                ] = set()  # todo: Replace 'Any' with the actual expected type if known
                 for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
                     _, infields = zip(*datadict.get("connect", []))
                     actually_connected_attrs.update(infields)
