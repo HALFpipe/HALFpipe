@@ -6,9 +6,9 @@ from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
 from ..logging import logger
 from ..utils.image import nvol
-from .fmap import collect_fieldmaps
-from ..workflows.post_processing.factory import PostProcessingFactory
 from ..workflows.features.factory import FeatureFactory
+from ..workflows.post_processing.factory import PostProcessingFactory
+from .fmap import collect_fieldmaps
 
 
 def collect_bold_files(
