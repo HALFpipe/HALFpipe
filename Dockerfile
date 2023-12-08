@@ -2,6 +2,7 @@
 
 FROM condaforge/mambaforge:latest as builder
 
+RUN mamba update --all
 RUN mamba install --yes "boa" "conda-verify"
 RUN --mount=source=recipes/rmath,target=/rmath \
     conda mambabuild --no-anaconda-upload "rmath" && \
@@ -14,6 +15,7 @@ RUN --mount=source=recipes/traits,target=/traits \
 FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
+RUN mamba update --all
 RUN mamba install --yes --use-local \
     "python=3.11" "pip" "nodejs" "rmath"
 RUN --mount=source=requirements.txt,target=/requirements.txt \
