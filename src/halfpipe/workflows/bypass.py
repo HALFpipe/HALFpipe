@@ -8,9 +8,9 @@ from nipype.pipeline import engine as pe
 
 def init_bypass_wf(attrs=[], unconnected_attrs=[], name=None, suffix=None):
     """
-    This function initializes an instance of the Nipype Workflow class
-    that bypasses its input to the output. This allows you to skip a step in preprocessing
-    (i.e. a node in the workflow) without having to disconnect all of its inputs and outputs.
+    This function initializes a Nipype Workflow that can be used as a drop-in
+    replacement for another workflow, but that doesn't do any processing.
+    All the inputs defined by attrs will be passed directly to the outputnode.
 
     Parameters
     ----------
@@ -26,7 +26,7 @@ def init_bypass_wf(attrs=[], unconnected_attrs=[], name=None, suffix=None):
     Returns
     -------
     workflow : nipype.pipeline.engine.workflows.Workflow
-        The initialized Nipype workflow with input and output nodes connected.
+        The initialized Nipype workflow with inputnode and outputnode connected.
     """
 
     if suffix is not None:
