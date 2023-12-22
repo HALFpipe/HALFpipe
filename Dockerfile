@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1.4
 
 FROM condaforge/mambaforge:latest as builder
-
 RUN mamba update --all
 RUN mamba install --yes "boa" "conda-verify"
 RUN --mount=source=recipes/rmath,target=/rmath \
@@ -15,6 +14,8 @@ RUN --mount=source=recipes/traits,target=/traits \
 FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
+RUN apt update
+RUN apt install --yes --no-install-recommends build-essential 
 RUN mamba update --all
 RUN mamba install --yes --use-local \
     "python=3.11" "pip" "nodejs" "rmath"
@@ -28,7 +29,12 @@ RUN mamba clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
 
-FROM nipreps/fmriprep:20.2.7
+FROM --platform=linux/amd64 nipreps/fmriprep:20.2.7 as fmriprep-x86_64
+RUN which fmriprep
+
+FROM --platform=linux/arm64 condaforge/mambaforge:latest
+COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
+COPY --from=fmriprep-x86_64 /usr/local/miniconda/bin/fmriprep/ /opt/conda/bin/fmriprep/
 
 RUN mkdir /ext /host \
     && chmod a+rwx /ext /host
@@ -43,7 +49,7 @@ ENV PATH="/opt/conda/bin:$PATH" \
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
-RUN mv /home/fmriprep/.cache/templateflow /var/cache
+#! check this out RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
 # Re-install `conda` and all `python` packages
 RUN rm -rf /opt/conda
@@ -56,7 +62,6 @@ RUN python -c "from matplotlib import font_manager" \
     && sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
-# Download all resources
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
     python /resource.py
 
