@@ -30,11 +30,10 @@ RUN mamba clean --yes --all --force-pkgs-dirs \
     && rm -rf /opt/conda/conda-bld
 
 FROM --platform=linux/amd64 nipreps/fmriprep:20.2.7 as fmriprep-x86_64
-RUN which fmriprep
 
 FROM --platform=linux/arm64 condaforge/mambaforge:latest
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
-COPY --from=fmriprep-x86_64 /usr/local/miniconda/bin/fmriprep/ /opt/conda/bin/fmriprep/
+COPY --from=fmriprep-x86_64 / /opt/conda/bin/fmriprep/ 
 
 RUN mkdir /ext /host \
     && chmod a+rwx /ext /host
@@ -49,7 +48,8 @@ ENV PATH="/opt/conda/bin:$PATH" \
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
-#! check this out RUN mv /home/fmriprep/.cache/templateflow /var/cache
+#! check this out 
+# RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
 # Re-install `conda` and all `python` packages
 RUN rm -rf /opt/conda
