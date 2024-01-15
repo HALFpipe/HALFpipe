@@ -26,9 +26,36 @@ def init_atlas_based_connectivity_wf(
     memcalc=MemoryCalculator.default(),
 ) -> pe.Workflow:
     """
-    create workflow for brainatlas
+    Sets up a workflow that is able to perform atlas-based functional connectivity analysis.
+    
+    The workflow goes through the following steps by connecting operations in nodes:  
+    1 Create a resultdict for each atlas (node: `make_resultdicts`)  
+    2. Use preprocessed bold image to calculate time-course signal-to-noise ratio (SNR) (node: `tsnr`)
+    3. Resample atlas files to the reference space and resolution (node: `resample`)  
+    4. Compute the mean time-course SNR for each resampled atlas (node: `calcmean`)  
+    5. Calculate the functional connectivity metrics based on the resampled atlas (node: `connectivitymeasure`)  
+    6. Save the resultdicts to disk (node: `resultdict_datasink`)  
+    7. Return the resultdicts (node: `outputnode`)
 
+    Parameters  
+    ----------  
+    workdir : str or Path  
+        The working directory where all intermediate and output files will be stored.  
+    feature : feature object, optional
+        A feature object containing the atlases to be used in the analysis, by default None.
+    atlas_files : list of Path    
+        The paths to the atlas files containing the regions of interest for the analysis, by default None.  
+    atlas_spaces : list of str  
+        Specific atlas coordinate spaces to be used in the analysis, by default None.  
+    memcalc : MemoryCalculator, optional  
+        A memory calculator object for estimating and managing memory usage, by default MemoryCalculator.default().
+
+    Returns  
+    -------  
+    workflow : pe.Workflow  
+        A Nipype Workflow object configured for performing atlas-based functional connectivity analysis.
     """
+    
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
@@ -84,13 +111,12 @@ def init_atlas_based_connectivity_wf(
     )
     if feature is not None:
         make_resultdicts.inputs.feature = feature.name
+
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
     workflow.connect(inputnode, "atlas_names", make_resultdicts, "atlas")
-    workflow.connect(
-        inputnode, "repetition_time", make_resultdicts, "sampling_frequency"
-    )
+    workflow.connect(inputnode, "repetition_time", make_resultdicts, "sampling_frequency")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
@@ -122,20 +148,15 @@ def init_atlas_based_connectivity_wf(
         iterfield=["atlas_file"],
         mem_gb=memcalc.series_std_gb,
     )
+
     workflow.connect(inputnode, "bold", connectivitymeasure, "in_file")
     workflow.connect(inputnode, "mask", connectivitymeasure, "mask_file")
     workflow.connect(resample, "output_image", connectivitymeasure, "atlas_file")
 
     workflow.connect(connectivitymeasure, "time_series", make_resultdicts, "timeseries")
-    workflow.connect(
-        connectivitymeasure, "covariance", make_resultdicts, "covariance_matrix"
-    )
-    workflow.connect(
-        connectivitymeasure, "correlation", make_resultdicts, "correlation_matrix"
-    )
-    workflow.connect(
-        connectivitymeasure, "region_coverage", make_resultdicts, "coverage"
-    )
+    workflow.connect(connectivitymeasure, "covariance", make_resultdicts, "covariance_matrix")
+    workflow.connect(connectivitymeasure, "correlation", make_resultdicts, "correlation_matrix")
+    workflow.connect(connectivitymeasure, "region_coverage", make_resultdicts, "coverage")
 
     #
     tsnr = pe.Node(interface=nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)
