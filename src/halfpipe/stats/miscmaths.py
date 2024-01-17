@@ -3,16 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
-import sys
 from llvmlite import binding
 from numba import njit, vectorize
 from numba.core import types, typing
 
-if sys.platform == "darwin":
-    binding.load_library_permanently("libRmath.dylib")
-else: 
-    binding.load_library_permanently("libRmath.so")
-
+binding.load_library_permanently("libRmath.so")
 c_pt = types.ExternalFunction(
     "pt",
     typing.Signature(
@@ -103,7 +98,6 @@ def pchisq(
     lower_tail: bool = True,
     log_p: bool = False,
 ) -> float:
-    
     return c_pchisq(x, degrees_of_freedom, np.int32(lower_tail), np.int32(log_p))
 
 

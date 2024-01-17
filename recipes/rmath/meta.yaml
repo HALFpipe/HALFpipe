@@ -1,5 +1,3 @@
-{% set platform = target_platform or 'unknown' %}
-
 package:
   name: rmath
   version: 4.3.1
@@ -23,11 +21,7 @@ requirements:
 
 test:
   commands:
-    {% if platform.startswith("osx") %}
-    - test -f ${PREFIX}/lib/libRmath.dylib  # testing on macOS
-    {% else %}
-    - test -f ${PREFIX}/lib/libRmath.so     # testing on Linux and others
-    {% endif %}
+    - test -f ${PREFIX}/lib/libRmath.so
     - test -f ${PREFIX}/include/Rmath.h
 
 about:

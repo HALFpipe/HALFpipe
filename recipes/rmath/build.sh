@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e # Stop on any error
 export LIBnn=lib
 
-echo "Configuring..." # Configure with verbose output
 ./configure \
     --prefix="${PREFIX}" \
     --enable-lto=yes \
@@ -24,26 +22,13 @@ echo "Configuring..." # Configure with verbose output
     --with-readline=no \
     --with-recommended-packages=no \
     --with-tcltk=no \
-    --with-x=no || { echo "Configuration failed"; exit 1; }
+    --with-x=no
 
-echo "Entering src/nmath/standalone directory..."
-pushd src/nmath/standalone || { echo "Failed to enter src/nmath/standalone directory"; exit 1; }
+pushd src/nmath/standalone || exit
 
-# Determine number of cores for make command differently based on OS
-if [[ $(uname) == "Darwin" ]]; then
-    NUM_CORES=$(sysctl -n hw.ncpu)
-else
-    NUM_CORES=$(nproc)
-fi
+make --jobs="$(nproc)" shared
+make install
 
-echo "Building with ${NUM_CORES} cores..."
-make --jobs="${NUM_CORES}" shared || { echo "Make failed"; exit 1; }
-echo "Installing..."
-make install || { echo "Make install failed"; exit 1; }
+find "${PREFIX}"
 
-find "${PREFIX}" || { echo "Find command failed"; exit 1; }
-
-echo "Exiting src/nmath/standalone directory..."
 popd || exit
-
-echo "Build script completed successfully."
