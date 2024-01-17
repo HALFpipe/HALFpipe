@@ -5,7 +5,6 @@
 import sys
 
 import numpy as np
-import sys
 from llvmlite import binding
 from numba import njit, vectorize
 from numba.core import types, typing
@@ -105,7 +104,6 @@ def pchisq(
     lower_tail: bool = True,
     log_p: bool = False,
 ) -> float:
-    
     return c_pchisq(x, degrees_of_freedom, np.int32(lower_tail), np.int32(log_p))
 
 
