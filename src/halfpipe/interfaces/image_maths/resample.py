@@ -15,6 +15,28 @@ from ..fixes.applytransforms import ApplyTransforms, ApplyTransformsInputSpec
 
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
+    """
+    Input specification for the Resample interface. It inherits the input_image
+    trait from ApplyTransformsInputSpec and includes additional fields
+    specific to the resampling process.
+
+    Parameters
+    ----------
+    input_space : str, optional
+        The space of the input image
+    reference_space : str
+        The space of the reference image
+    reference_res : int, optional
+        The resolution of the reference image. Typically 1, 2, or 3.
+    lazy : bool
+        If True, resampling is performed only if necessary. By default True.
+    reference_image : path-like, optional
+        The path to the reference image to which the input image will be warped
+    transforms : list of path-like or 'identity', optional
+        A list of transform files or the string 'identity'. The transforms
+        are applied in reverse order. This is not a mandatory field.
+    """
+
     input_space = traits.Either(
         "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False
     )
@@ -41,9 +63,34 @@ class ResampleInputSpec(ApplyTransformsInputSpec):
 
 
 class Resample(ApplyTransforms):
+    """
+    This class extends a Nipype interface for resampling neuroimaging data. It
+    inherits from ApplyTransforms and uses the ResampleInputSpec for inputs.
+
+    Methods
+    -------
+    _run_interface(runtime, correct_return_codes=(0,))
+        Calls the resampling operation. Determines if resampling is
+        necessary based on input and reference image properties, applies
+        transformations, and handles the resampling process.
+    _list_outputs()
+        Returns the output file paths after resampling is complete. If
+        resampling is not performed, it returns the input image path.
+    """
+
     input_spec = ResampleInputSpec
 
     def _run_interface(self, runtime, correct_return_codes=(0,)):
+        """
+        This method executes the resampling operation by calling the parent
+        class ApplyTransforms, which wraps an ANTS command line call.
+
+        Returns
+        ----------
+        runtime : object
+            The runtime object from the Nipype interface.
+        """
+
         self.resample = False
 
         reference_space = self.inputs.reference_space
@@ -64,6 +111,7 @@ class Resample(ApplyTransforms):
             self.inputs.dimension = 3
 
         input_matches_reference = False
+        # Check if input image shape and affine matches reference image.
         if isdefined(self.inputs.input_image):
             input_image = nib.nifti1.load(self.inputs.input_image)
             reference_image = nib.nifti1.load(self.inputs.reference_image)
@@ -94,13 +142,16 @@ class Resample(ApplyTransforms):
         else:
             transforms = ["custom"]
 
+        # Only resample if necessary
         if (
             not input_matches_reference
             or set(transforms) != set(["identity"])
             or not self.inputs.lazy
         ):
             self.resample = True
-            runtime = super(Resample, self)._run_interface(
+            runtime = super(
+                Resample, self
+            )._run_interface(  # Use super class ApplyTransforms to apply transforms
                 runtime, correct_return_codes
             )
 
