@@ -10,10 +10,9 @@ from numba import njit, vectorize
 from numba.core import types, typing
 
 if sys.platform == "darwin":
-    binding.load_library_permanently("libRmath.dylib")
+    binding.load_library_permanently("libRmath.dylib")  # pragma: no cover
 else:
-    binding.load_library_permanently("libRmath.so")
-
+    binding.load_library_permanently("libRmath.so")  # pragma: no cover
 c_pt = types.ExternalFunction(
     "pt",
     typing.Signature(
