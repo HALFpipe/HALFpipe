@@ -31,7 +31,7 @@ We strongly urge users to cite these tools when publishing results obtained with
 - `ANTs Reference <https://stnava.github.io/ANTs/>`__
 - `fmriprep Reference <https://fmriprep.org/en/stable/>`__
 - `FreeSurfer Reference <https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferMethodsCitation>`__
-- `FSL Reference <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)`__
+- `FSL Reference <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki?>`__
 - `nipype Reference <https://nipype.readthedocs.io/en/1.8.6/about.html>`__
 
    Subscribe to our `mailing list <https://mailman.charite.de/mailman/listinfo/halfpipe-announcements>`_ to stay up to date with new developments and releases.
