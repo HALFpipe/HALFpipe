@@ -2,12 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import sys
+
 import numpy as np
 from llvmlite import binding
 from numba import njit, vectorize
 from numba.core import types, typing
 
-binding.load_library_permanently("libRmath.so")
+if sys.platform == "darwin":
+    binding.load_library_permanently("libRmath.dylib")  # pragma: no cover
+else:
+    binding.load_library_permanently("libRmath.so")  # pragma: no cover
 c_pt = types.ExternalFunction(
     "pt",
     typing.Signature(

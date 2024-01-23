@@ -1,7 +1,10 @@
 #!/bin/bash
 
+set -e # Stop on any error
+
 export LIBnn=lib
 
+echo "Configuring..." # Configure with verbose output
 ./configure \
     --prefix="${PREFIX}" \
     --enable-lto=yes \
@@ -24,11 +27,22 @@ export LIBnn=lib
     --with-tcltk=no \
     --with-x=no
 
-pushd src/nmath/standalone || exit
+echo "Entering src/nmath/standalone directory..."
+pushd src/nmath/standalone
 
-make --jobs="$(nproc)" shared
+# Determine number of cores for make command differently based on OS
+if [[ $(uname) == "Darwin" ]]; then
+    NUM_CORES=$(sysctl -n hw.ncpu)
+else
+    NUM_CORES=$(nproc)
+fi
+
+echo "Building with ${NUM_CORES} cores..."
+make --jobs="${NUM_CORES}" shared
+echo "Installing..."
 make install
 
-find "${PREFIX}"
+echo "Exiting src/nmath/standalone directory..."
+popd
 
-popd || exit
+echo "Build script completed successfully."
