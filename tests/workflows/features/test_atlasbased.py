@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from nilearn.image import new_img_like, resample_to_img
 
+from halfpipe.logging import logger
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.features.atlas_based_connectivity import (
@@ -87,9 +88,9 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
         for node_name in ["inputnode", "make_resultdicts", "calcmean"]
     ), "One or more expected nodes are missing"
 
-    print("Brainnetome shape: ", nib.nifti1.load(str(brainnetome_atlas)).shape)
-    print("Func file shape: ", nib.nifti1.load(str(func_file[0])).shape)
-    print("Mask file shape: ", nib.nifti1.load(str(func_file[1])).shape)
+    logger.info(f"Brainnetome shape: {nib.nifti1.load(str(brainnetome_atlas)).shape}")
+    logger.info(f"Func file shape: {nib.nifti1.load(str(func_file[0])).shape}")
+    logger.info(f"Mask file shape: {nib.nifti1.load(str(func_file[1])).shape}")
 
     run_workflow(wf)
 
