@@ -48,8 +48,8 @@ def brainnetome_atlas(wd: Path, func_file):
     brainnetome_path = wd / "atlas-Brainnetome_dseg.nii.gz"
 
     # Resample atlas to match the spatial dimensions of the functional image
-    func_img = nib.load(str(func_file[0]))
-    atlas_img = nib.load(str(brainnetome_path))
+    func_img = nib.nifti1.load(str(func_file[0]))
+    atlas_img = nib.nifti1.load(str(brainnetome_path))
     resampled_atlas = resample_to_img(atlas_img, func_img, interpolation="nearest")
     nib.loadsave.save(resampled_atlas, brainnetome_path)
 
@@ -87,14 +87,14 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
         for node_name in ["inputnode", "make_resultdicts", "calcmean"]
     ), "One or more expected nodes are missing"
 
-    print("Brainnetome shape: ", nib.load(str(brainnetome_atlas)).shape)
-    print("Func file shape: ", nib.load(str(func_file[0])).shape)
-    print("Mask file shape: ", nib.load(str(func_file[1])).shape)
+    print("Brainnetome shape: ", nib.nifti1.load(str(brainnetome_atlas)).shape)
+    print("Func file shape: ", nib.nifti1.load(str(func_file[0])).shape)
+    print("Mask file shape: ", nib.nifti1.load(str(func_file[1])).shape)
 
     run_workflow(wf)
 
     corr_mat_path = wd / "grouplevel" / "func" / "desc-correlation_matrix.tsv"
-    atlas_img = nib.load(str(brainnetome_atlas))
+    atlas_img = nib.nifti1.load(str(brainnetome_atlas))
     num_regions = (
         len(np.unique(atlas_img.get_fdata())) - 1
     )  # Subtract 1 to exclude background
