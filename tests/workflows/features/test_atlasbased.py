@@ -108,3 +108,12 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     assert np.allclose(
         correlation_matrix, correlation_matrix.T, equal_nan=True
     ), "Correlation matrix is not symmetric"
+    assert np.allclose(np.diag(correlation_matrix), 1), "Diagonal is not 1"
+    assert np.all(
+        (-1 <= correlation_matrix) & (correlation_matrix <= 1)
+    ), "Correlation matrix values are not between -1 and 1"
+
+    eigenvalues = np.linalg.eigvals(correlation_matrix)
+    assert np.all(
+        (eigenvalues > 0) | np.isclose(eigenvalues, 0)
+    ), "Correlation matrix is not positive-semidefinite"
