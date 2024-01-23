@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e # Stop on any error
+
 export LIBnn=lib
 
 echo "Configuring..." # Configure with verbose output
@@ -40,8 +41,6 @@ echo "Building with ${NUM_CORES} cores..."
 make --jobs="${NUM_CORES}" shared || { echo "Make failed"; exit 1; }
 echo "Installing..."
 make install || { echo "Make install failed"; exit 1; }
-
-find "${PREFIX}" || { echo "Find command failed"; exit 1; }
 
 echo "Exiting src/nmath/standalone directory..."
 popd || exit
