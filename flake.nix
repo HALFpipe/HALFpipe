@@ -14,7 +14,7 @@
         };
 
         python = (pkgs.python311.withPackages
-          (py: with py; [ pip-tools setuptools_scm ]));
+          (py: with py; [ pip-tools pygithub setuptools_scm ]));
       in {
         devShells.default =
           pkgs.mkShell { buildInputs = with pkgs; [ python ]; };
