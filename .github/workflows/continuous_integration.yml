@@ -189,8 +189,10 @@ jobs:
         env:
           # Enable pytest-github-actions-annotate-failures
           GITHUB_ACTIONS: true
+          FREESURFER_LICENSE_BASE64: |
+            bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg==
         run: |
-          echo ${{ secrets.FREESURFER_LICENSE_BASE64 }} | \
+          echo ${FREESURFER_LICENSE_BASE64} | \
             base64 --decode > ${FREESURFER_HOME}/license.txt
           py.test \
             --cov --cov-report=xml --dist=load \
