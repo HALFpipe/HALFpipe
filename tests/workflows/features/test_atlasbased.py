@@ -64,13 +64,10 @@ def wd(tmp_path_factory) -> Path:
     return tmp_path
 
 
-def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
+def test_atlas_init(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     """
     Checks for node existence and configuration
     Checks that the initialized workflow runs
-    Checks shape of the output of matrixes has atlas regions as dimensions
-    Checks that the matrixes are symmetric and positive-semidefinite
-    Checks coverage values are between 0 and 1
     """
 
     wf = init_atlas_based_connectivity_wf(
@@ -83,6 +80,7 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     wf.inputs.inputnode.bold = func_file[0]
     wf.inputs.inputnode.mask = func_file[1]
     wf.inputs.resample.reference_image = brainnetome_atlas
+    wf.inputs.connectivitymeasure.min_region_coverage = 0
 
     assert wf.name == "atlas_based_connectivity_wf"
     assert all(
@@ -96,13 +94,21 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
 
     run_workflow(wf)
 
+
+def test_atlas_output(wd: Path, func_file, brainnetome_atlas: Path) -> None:
+    """
+    Checks the output of the atlas-based connectivity workflow.
+    Validates correlation and covariance matrices, time series, and region coverage.
+    """
+
     # Corr matrix checks
-    corr_mat_path = wd / "grouplevel" / "func" / "desc-correlation_matrix.tsv"
     atlas_img = nib.nifti1.load(str(brainnetome_atlas))
     num_regions = (
         len(np.unique(atlas_img.get_fdata())) - 1
     )  # Subtract 1 to exclude background
-    correlation_matrix = np.loadtxt(corr_mat_path, delimiter="\t")
+    correlation_matrix = np.loadtxt(
+        wd / "grouplevel" / "func" / "desc-correlation_matrix.tsv", delimiter="\t"
+    )
     assert correlation_matrix.shape == (
         num_regions,
         num_regions,
@@ -121,8 +127,9 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     ), "Correlation matrix is not positive-semidefinite"
 
     # Cov matrix checks
-    cov_mat_path = wd / "grouplevel" / "func" / "desc-covariance_matrix.tsv"
-    covariance_matrix = np.loadtxt(cov_mat_path, delimiter="\t")
+    covariance_matrix = np.loadtxt(
+        wd / "grouplevel" / "func" / "desc-covariance_matrix.tsv", delimiter="\t"
+    )
     assert covariance_matrix.shape == (
         num_regions,
         num_regions,
@@ -132,8 +139,7 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     ), "Covariance matrix is not symmetric"
 
     # Time series check
-    ts_path = wd / "grouplevel" / "func" / "timeseries.tsv"
-    ts = np.loadtxt(ts_path, delimiter="\t")
+    ts = np.loadtxt(wd / "grouplevel" / "func" / "timeseries.tsv", delimiter="\t")
     func_shape = nib.nifti1.load(str(func_file[0])).shape
     assert (
         func_shape[3] == ts.shape[0]
@@ -141,6 +147,16 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     assert (
         num_regions == ts.shape[1]
     ), "Number of columns in timeseries.tsv does not match number of atlas regions"
+
+    # Validation check with alternative method for calculation of matrices
+    np_corr_matrix = np.corrcoef(ts.transpose())
+    np_cov_matrix = np.cov(ts.transpose())
+    assert np.allclose(
+        correlation_matrix, np_corr_matrix
+    ), "Output correlation matrix does not match direct calculation"
+    assert np.allclose(
+        covariance_matrix, np_cov_matrix
+    ), "Output covariance matrix does not match direct calculation"
 
     # Region coverage
     coverage_path = wd / "grouplevel" / "func" / "timeseries.json"

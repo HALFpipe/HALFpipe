@@ -80,7 +80,7 @@ def init_atlas_based_connectivity_wf(
         niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
     )
 
-    min_region_coverage = 1
+    min_region_coverage = 0
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
         if hasattr(feature, "min_region_coverage"):
