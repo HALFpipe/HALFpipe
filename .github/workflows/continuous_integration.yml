@@ -190,7 +190,7 @@ jobs:
           # Enable pytest-github-actions-annotate-failures
           GITHUB_ACTIONS: true
           FREESURFER_LICENSE_BASE64: |
-            bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg==
+            bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCiBwcWpTTUdWQWZjcXlKdW1SWHdYSGwzeTR4ZFBMblRWUlNPRVB6bXpGRGd3PQo=
         run: |
           # Install the Freesurfer license
           echo ${FREESURFER_LICENSE_BASE64} | \
