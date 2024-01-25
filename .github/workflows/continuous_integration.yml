@@ -185,15 +185,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run integration tests
-        shell: docker exec test bash -e {0}
+        shell: docker exec test bash -x -e {0}
         env:
           # Enable pytest-github-actions-annotate-failures
           GITHUB_ACTIONS: true
           FREESURFER_LICENSE_BASE64: |
             bGVhLndhbGxlckBjaGFyaXRlLmRlCjI3OTk5CiAqQ2R5NnNBR1BoQWlrCiBGU2t2cmduNFc0UXhRCg==
         run: |
+          # Install the Freesurfer license
           echo ${FREESURFER_LICENSE_BASE64} | \
             base64 --decode > ${FREESURFER_HOME}/license.txt
+          # Test that the Freesurfer license was installed correctly
+          mri_convert \
+            ${FREESURFER_HOME}/average/face.gca \
+            /tmp/face.nii || exit 1
+          # Run the integration tests
           py.test \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
