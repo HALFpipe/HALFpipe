@@ -192,11 +192,11 @@ jobs:
         run: |
           # Install the Freesurfer license
           cat > ${FREESURFER_HOME}/license.txt <<EOF
-          lea.waller@charite.de
-          27999
-           *Cdy6sAGPhAik
-           FSkvrgn4W4QxQ
-           pqjSMGVAfcqyJumRXwXHl3y4xdPLnTVRSOEPzmzFDgw=
+          halfpipe@fmri.science
+          73053
+           *C8FMo8yrzcZA
+           FSCA7.lDgNIow
+           e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Test that the Freesurfer license was installed correctly
           mri_convert \
