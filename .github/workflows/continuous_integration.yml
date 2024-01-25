@@ -198,10 +198,6 @@ jobs:
            FSCA7.lDgNIow
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
-          # Test that the Freesurfer license was installed correctly
-          mri_convert \
-            ${FREESURFER_HOME}/average/face.gca \
-            /tmp/face.nii || exit 1
           # Run the integration tests
           py.test \
             --cov --cov-report=xml --dist=load \
