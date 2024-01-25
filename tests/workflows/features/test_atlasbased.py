@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
 from pathlib import Path
 from zipfile import ZipFile
@@ -67,8 +68,9 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     """
     Checks for node existence and configuration
     Checks that the initialized workflow runs
-    Checks shape of the output correlation matrix has atlas regions as dimensions
-    Checks that the matrix is symmetric
+    Checks shape of the output of matrixes has atlas regions as dimensions
+    Checks that the matrixes are symmetric and positive-semidefinite
+    Checks coverage values are between 0 and 1
     """
 
     wf = init_atlas_based_connectivity_wf(
@@ -94,13 +96,13 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
 
     run_workflow(wf)
 
+    # Corr matrix checks
     corr_mat_path = wd / "grouplevel" / "func" / "desc-correlation_matrix.tsv"
     atlas_img = nib.nifti1.load(str(brainnetome_atlas))
     num_regions = (
         len(np.unique(atlas_img.get_fdata())) - 1
     )  # Subtract 1 to exclude background
     correlation_matrix = np.loadtxt(corr_mat_path, delimiter="\t")
-
     assert correlation_matrix.shape == (
         num_regions,
         num_regions,
@@ -117,3 +119,43 @@ def test_atlas_wf(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     assert np.all(
         (eigenvalues > 0) | np.isclose(eigenvalues, 0)
     ), "Correlation matrix is not positive-semidefinite"
+
+    # Cov matrix checks
+    cov_mat_path = wd / "grouplevel" / "func" / "desc-covariance_matrix.tsv"
+    covariance_matrix = np.loadtxt(cov_mat_path, delimiter="\t")
+    assert covariance_matrix.shape == (
+        num_regions,
+        num_regions,
+    ), "Covariance matrix shape does not match number of atlas regions"
+    assert np.allclose(
+        covariance_matrix, covariance_matrix.T
+    ), "Covariance matrix is not symmetric"
+
+    # Time series check
+    ts_path = wd / "grouplevel" / "func" / "timeseries.tsv"
+    ts = np.loadtxt(ts_path, delimiter="\t")
+    func_shape = nib.nifti1.load(str(func_file[0])).shape
+    assert (
+        func_shape[3] == ts.shape[0]
+    ), "Number of rows in timeseries.tsv does not match number of volumes"
+    assert (
+        num_regions == ts.shape[1]
+    ), "Number of columns in timeseries.tsv does not match number of atlas regions"
+
+    # Region coverage
+    coverage_path = wd / "grouplevel" / "func" / "timeseries.json"
+    with open(coverage_path, "r") as file:
+        coverage_data = json.load(file)
+    assert (
+        "Coverage" in coverage_data
+    ), "Missing 'Coverage' key in region coverage output"
+    coverage_values = coverage_data["Coverage"]
+    assert all(
+        isinstance(c, float) for c in coverage_values
+    ), "Coverage values are not all floats"
+    assert all(
+        0 <= c <= 1 for c in coverage_values
+    ), "Coverage values are not in the range [0, 1]"
+    assert (
+        len(coverage_values) == num_regions
+    ), "Number of coverage values does not match number of regions"
