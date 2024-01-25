@@ -60,9 +60,7 @@ h5py==3.10.0
 idna==3.4
     # via requests
 imageio==2.31.5
-    # via
-    #   -r requirements.in
-    #   scikit-image
+    # via scikit-image
 indexed-gzip==1.8.7
     # via
     #   fmriprep
@@ -235,7 +233,7 @@ patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==10.1.0
+pillow==10.2.0
     # via
     #   imageio
     #   matplotlib
