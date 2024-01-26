@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: >
             3.12
@@ -112,7 +112,6 @@ jobs:
               push_tags=[
                   f"{path}:{tag}",
                   f"docker.io/{repository_owner}/{repository_name}:{tag}",
-                  f"ghcr.io/{repository_owner}/{repository_name}:{tag}",
               ]
               if push
               else [],
@@ -132,13 +131,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        if: ${{ steps.metadata.outputs.push == 'true' }}
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
       - name: Login to container registry
         uses: docker/login-action@v3
         if: ${{ steps.metadata.outputs.push == 'true' }}
@@ -165,7 +157,7 @@ jobs:
             ${{ steps.metadata.outputs.build_tag }}
 
       - name: Cache data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: resource-cache
           path: /resource-cache
