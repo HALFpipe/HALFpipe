@@ -170,7 +170,7 @@ num2words==0.5.13
     # via pybids
 numba==0.58.1
     # via -r requirements.in
-numpy==1.26.0
+numpy==1.26.3
     # via
     #   -r requirements.in
     #   contourpy
