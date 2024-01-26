@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: >
             3.12
@@ -157,7 +157,7 @@ jobs:
             ${{ steps.metadata.outputs.build_tag }}
 
       - name: Cache data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: resource-cache
           path: /resource-cache
