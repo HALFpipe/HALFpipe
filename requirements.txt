@@ -106,7 +106,7 @@ marshmallow-dataclass==8.6.0
     # via -r requirements.in
 marshmallow-enum==1.5.1
     # via -r requirements.in
-marshmallow-oneofschema==3.0.1
+marshmallow-oneofschema==3.1.0
     # via -r requirements.in
 matplotlib==3.8.1
     # via
