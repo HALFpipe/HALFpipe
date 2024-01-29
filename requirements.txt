@@ -242,7 +242,7 @@ pint==0.22
     # via -r requirements.in
 prov==2.0.0
     # via nipype
-psutil==5.9.6
+psutil==5.9.8
     # via
     #   -r requirements.in
     #   flufl-lock
