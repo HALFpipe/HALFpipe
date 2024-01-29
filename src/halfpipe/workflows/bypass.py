@@ -7,6 +7,28 @@ from nipype.pipeline import engine as pe
 
 
 def init_bypass_wf(attrs=[], unconnected_attrs=[], name=None, suffix=None):
+    """
+    This function initializes a Nipype Workflow that can be used as a drop-in
+    replacement for another workflow, but that doesn't do any processing.
+    All the inputs defined by attrs will be passed directly to the outputnode.
+
+    Parameters
+    ----------
+    attrs : list of str
+        List of attribute names to be passed through the workflow.
+    unconnected_attrs : list of str
+        List of unconnected attribute names to be included in the output node.
+    name : str, optional
+        Name of the workflow. If not provided, a generic name will be used.
+    suffix : str, optional
+        Suffix to append to the workflow name for better identification.
+
+    Returns
+    -------
+    workflow : nipype.pipeline.engine.workflows.Workflow
+        The initialized Nipype workflow with inputnode and outputnode connected.
+    """
+
     if suffix is not None:
         name = f"{name}_{suffix}"
 
