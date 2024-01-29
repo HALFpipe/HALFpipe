@@ -49,6 +49,52 @@ def init_atlas_based_connectivity_wf(
     memcalc : MemoryCalculator, optional
         A memory calculator object for estimating and managing memory usage, by default MemoryCalculator.default().
 
+    Inputs
+    ------
+    tags : list of str
+        Tags for grouping and identifying features in the result dictionary.
+    vals : list of str
+        Values associated with the tags.
+    metadata : dict
+        Metadata information related to the input data.
+    bold : NIfTI image
+        Preprocessed BOLD fMRI image.
+    mask : NIfTI image
+        Brain mask for the BOLD image.
+    repetition_time : float
+        Repetition time of the BOLD acquisition.
+    atlas_names : list of str
+        Names of the atlases used in the analysis.
+    atlas_files : list of str or Path
+        Paths to the atlas files.
+    atlas_spaces : list of str
+        Coordinate spaces of the atlases.
+
+    Outputs
+    -------
+    timeseries : str or Path
+        String that points to a path with extracted time-series data (stored in timeseries.tsv)
+    covariance_matrix : str or Path
+        String that points to a path where the covariance matrix computed
+        from the time-series is written (stored in desc-covariance_matrix.tsv)
+    correlation_matrix :  str or Path
+        String that points to a path where the correlation matrix computed
+        from the time-series is written (stored in desc-correlation_matrix.tsv)
+    coverage : list of float
+        Computed region coverage information (stored in timeseries.json)
+    mean_atlas_tsnr : float or list of float
+        Mean time-course SNR for each atlas (stored timeseries.json)
+    atlas : list of str
+        Atlas names used in the analysis
+    metadata : dict
+        Metadata information related to the input data
+    sampling_frequency : float
+        Sampling frequency of the BOLD acquisition
+    tags : list of str
+        Tags for grouping and identifying features in the result dictionary
+    vals : list of str
+        Values associated with the tags
+
     Returns
     -------
     workflow : pe.Workflow

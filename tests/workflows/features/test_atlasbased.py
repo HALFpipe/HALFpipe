@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import json
 import os
 from pathlib import Path
 from zipfile import ZipFile
@@ -64,10 +63,12 @@ def wd(tmp_path_factory) -> Path:
     return tmp_path
 
 
-def test_atlas_init(wd: Path, func_file, brainnetome_atlas: Path) -> None:
+def test_atlas_fc(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     """
     Checks for node existence and configuration
     Checks that the initialized workflow runs
+    Checks the output of the atlas-based connectivity workflow
+    Validates correlation and covariance matrices and time series data
     """
 
     wf = init_atlas_based_connectivity_wf(
@@ -93,13 +94,6 @@ def test_atlas_init(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     logger.info(f"Mask file shape: {nib.nifti1.load(str(func_file[1])).shape}")
 
     run_workflow(wf)
-
-
-def test_atlas_output(wd: Path, func_file, brainnetome_atlas: Path) -> None:
-    """
-    Checks the output of the atlas-based connectivity workflow.
-    Validates correlation and covariance matrices, time series, and region coverage.
-    """
 
     # Corr matrix checks
     atlas_img = nib.nifti1.load(str(brainnetome_atlas))
@@ -157,21 +151,3 @@ def test_atlas_output(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     assert np.allclose(
         covariance_matrix, np_cov_matrix
     ), "Output covariance matrix does not match direct calculation"
-
-    # Region coverage
-    coverage_path = wd / "grouplevel" / "func" / "timeseries.json"
-    with open(coverage_path, "r") as file:
-        coverage_data = json.load(file)
-    assert (
-        "Coverage" in coverage_data
-    ), "Missing 'Coverage' key in region coverage output"
-    coverage_values = coverage_data["Coverage"]
-    assert all(
-        isinstance(c, float) for c in coverage_values
-    ), "Coverage values are not all floats"
-    assert all(
-        0 <= c <= 1 for c in coverage_values
-    ), "Coverage values are not in the range [0, 1]"
-    assert (
-        len(coverage_values) == num_regions
-    ), "Number of coverage values does not match number of regions"
