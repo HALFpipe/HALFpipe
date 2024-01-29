@@ -238,7 +238,7 @@ pillow==10.2.0
     #   imageio
     #   matplotlib
     #   scikit-image
-pint==0.22
+pint==0.23
     # via -r requirements.in
 prov==2.0.0
     # via nipype
