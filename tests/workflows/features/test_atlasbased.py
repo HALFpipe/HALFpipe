@@ -81,7 +81,6 @@ def test_atlas_fc(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     wf.inputs.inputnode.bold = func_file[0]
     wf.inputs.inputnode.mask = func_file[1]
     wf.inputs.resample.reference_image = brainnetome_atlas
-    wf.inputs.connectivitymeasure.min_region_coverage = 0
 
     assert wf.name == "atlas_based_connectivity_wf"
     assert all(
@@ -93,7 +92,16 @@ def test_atlas_fc(wd: Path, func_file, brainnetome_atlas: Path) -> None:
     logger.info(f"Func file shape: {nib.nifti1.load(str(func_file[0])).shape}")
     logger.info(f"Mask file shape: {nib.nifti1.load(str(func_file[1])).shape}")
 
-    run_workflow(wf)
+    flow = run_workflow(wf)
+
+    (resultdicts,) = [n for n in flow.nodes if n.name == "make_resultdicts"]
+    out = resultdicts.result.outputs.resultdicts
+
+    logger.info(f"Length of resultdicts: {len(out)}")
+    logger.info(
+        f"Keys of resultdicts: {out[0].keys()} and {out[1].keys()} and {out[2].keys()}"
+    )
+    logger.info(f"Resultdicts class: {out.__class__}")
 
     # Corr matrix checks
     atlas_img = nib.nifti1.load(str(brainnetome_atlas))
