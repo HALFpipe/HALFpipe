@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile-upstream:master
 
 FROM condaforge/mambaforge:latest as builder
 
@@ -16,7 +16,7 @@ FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
-    "python=3.11" "pip" "nodejs" "rmath"
+    "python=3.11" "pip" "nodejs" "rmath" "ants"
 RUN mamba update --yes --all
 RUN --mount=source=requirements.txt,target=/requirements.txt \
     --mount=source=requirements-test.txt,target=/requirements-test.txt \
@@ -33,25 +33,30 @@ FROM nipreps/fmriprep:20.2.7
 RUN mkdir /ext /host \
     && chmod a+rwx /ext /host
 
-ENV PATH="/opt/conda/bin:$PATH" \
-    MAMBA_EXE="/opt/conda/bin/mamba"
-
 # Use `/var/cache` for downloaded resources instead of
 # `/home/fmriprep/.cache`, because it is less likely to be
-# obscured by default container bind mounts when running
-# with Singularity
+# obscured by default bind mounts when running with
+# Singularity
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
-# Re-install `conda` and all `python` packages
-RUN rm -rf /opt/conda
+# Remove `conda` and `ants` installations
+RUN rm -rf /opt/conda /usr/lib/ants
+
+# Update path to reflect new `conda` location
+ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}" \
+    MAMBA_EXE="/opt/conda/bin/mamba"
+# Update the path to reflect new `ants` location
+ENV PATH="${PATH//:\/usr\/lib\/ants/}"
+
+# Copy `conda` from `install` stage
 COPY --from=install /opt/conda/ /opt/conda/
 
-# Re-apply matplotlib settings after updating
+# Re-apply `matplotlib` settings after re-installing `conda`
 # Taken from `fmriprep`
-# Pre-caches fonts, set 'Agg' as default backend for matplotlib
+# Pre-caches fonts, set 'Agg' as default backend for `matplotlib`
 RUN python -c "from matplotlib import font_manager" \
     && sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
@@ -60,10 +65,10 @@ RUN python -c "from matplotlib import font_manager" \
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
     python /resource.py
 
-# Add coinstac server components
+# Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
-# Install HALFpipe
+# Install `halfpipe`
 RUN --mount=target=/halfpipe \
     cp -r /halfpipe /tmp \
     && pip install --no-deps /tmp/halfpipe \
