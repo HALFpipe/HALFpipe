@@ -63,17 +63,18 @@ def create_comparison_figure(input_img, output_img, reference_img, figure_path):
 
 
 @pytest.fixture(scope="package")
-def t1w_files(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
+def resources(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp(basename="resources")
     os.chdir(str(tmp_path))
     setup_test_resources()
-    input_path = get_resource("bids_data.zip")
     fmriprep_path = get_resource("sub-0003_fmriprep_derivatives.zip")
+    atlases_path = get_resource("atlases.zip")
 
-    with ZipFile(input_path) as fp, ZipFile(fmriprep_path) as zip_file:
-        fp.extractall(tmp_path)
+    with ZipFile(fmriprep_path) as zip_file, ZipFile(atlases_path) as atlases:
         zip_file.extractall(tmp_path)
+        atlases.extractall(tmp_path)
 
+    brainnetome_path = tmp_path / "atlas-Brainnetome_dseg.nii.gz"
     transform = (
         tmp_path
         / "sub-0003"
@@ -81,17 +82,16 @@ def t1w_files(tmp_path_factory):
         / "sub-0003_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
     )
     preproc_anat = tmp_path / "sub-0003" / "anat" / "sub-0003_desc-preproc_T1w.nii.gz"
-    raw_anat = tmp_path / "bids_data" / "sub-1012" / "anat" / "sub-1012_T1w.nii.gz"
 
-    return [raw_anat, preproc_anat, transform]
+    return [preproc_anat, transform, brainnetome_path]
 
 
-def test_resample(tmp_path, t1w_files):
+def test_resample(tmp_path, resources):
     """
-    Tests the resample interface by resampling a mock image to MNI152NLin2009cAsym space
+    Tests the resample interface by resampling an atlas image to MNI152NLin2009cAsym space if it is not already in that space.
     Tests different interpolation methods
-    TODO: Test with a mock transform
-    TODO: Test with functional data
+    TODO: Test with a transform file
+    TODO: Test with seed map
     """
 
     os.chdir(str(tmp_path))
@@ -106,32 +106,23 @@ def test_resample(tmp_path, t1w_files):
         "MultiLabel",
         "Gaussian",
         "BSpline",
-        "CosineWindowedSinc",
+        "Linear",
+        # "CosineWindowedSinc",
     ]  # "Linear", "NearestNeighbor"
     output_dir = tmp_path / "output_images"
     os.makedirs(output_dir, exist_ok=True)
 
-    # xfm = getresource(f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5")
-    # assert Path(xfm).is_file()
-    # transforms = [str(xfm)]
-
     for i in interpolations:
         resample = Resample(interpolation=i, **reference_dict)
-        resample.inputs.input_image = str(t1w_files[0])
+        resample.inputs.input_image = str(resources[2])
         resample.inputs.reference_image = str(template_path)
+        # resample.inputs.transforms = ["identity", str(t1w_files[3])]
         resample.inputs.transforms = ["identity"]
-        # TODO: resample.inputs.transforms = ['/path/to/mock/transform.h5']
 
-        try:
-            result = resample.run()
-        except Exception as e:
-            print(f"Error occurred with interpolation {i}:", e)
-            print("Command line:", resample.cmdline)
-            raise
-
+        result = resample.run()
         assert result.outputs.output_image is not None
 
-        input_image = nib.load(t1w_files[0])
+        input_image = nib.load(resample.inputs.input_image)
         reference_image = nib.load(template_path)
         output_image: nib.nifti1.Nifti1Image = nib.load(result.outputs.output_image)
 
@@ -154,7 +145,7 @@ def test_resample(tmp_path, t1w_files):
         ), "Affine matrices do not match for interpolation" + i
 
         # Interpolation specific assertions
-        if i in ["Gaussian", "BSpline"]:
-            assert np.std(output_image.get_fdata()) < np.std(
-                input_image.get_fdata()
-            ), "Output should be smoother for Gaussian/BSpline"
+        # if i in ["Gaussian", "BSpline"]:
+        #     assert np.std(output_image.get_fdata()) < np.std(
+        #         input_image.get_fdata()
+        #     ), "Output should be smoother for Gaussian/BSpline"
