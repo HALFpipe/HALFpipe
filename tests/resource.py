@@ -19,6 +19,7 @@ test_online_resources = {
     "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz": "https://download.fmri.science/test_resources/tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz",
     "sub-0003_fmriprep_derivatives.zip": "https://download.fmri.science/test_resources/sub-0003_fmriprep_derivatives.zip",
     "atlases.zip": "https://github.com/HALFpipe/Atlases/releases/download/1.0.1/atlases.zip",
+    "bad_quaternion.nii.gz": "https://github.com/spinalcordtoolbox/spinalcordtoolbox/files/8492834/bad_quaternion.nii.gz",
 }
 
 
