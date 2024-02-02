@@ -21,8 +21,8 @@ group analysis. It provides state-of-the-art preprocessing using
 necessity to convert data to the `BIDS
 <https://bids-specification.readthedocs.io/en/stable/>`__ format.
 
-Tools from well-established neuroimaging software packages are combined either directly our through our dependencies,
-such as `ANTs <https://antspy.readthedocs.io/>`__ and `FreeSurfer <https://surfer.nmr.mgh.harvard.edu/>`__ for preprocessing,
+HALFpipe relies on tools from well-established neuroimaging software packages, either directly or through our dependencies,
+including as `ANTs <https://antspy.readthedocs.io/>`__ and `FreeSurfer <https://surfer.nmr.mgh.harvard.edu/>`__ for preprocessing,
 and `FSL <http://fsl.fmrib.ox.ac.uk/>`__ and `nipype <https://nipype.readthedocs.io/>`__ for calculating common resting-state and task-based fMRI features.
 We strongly urge users to acknowledge these tools when publishing results obtained with HALFpipe.
 
