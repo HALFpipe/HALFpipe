@@ -134,9 +134,11 @@ class ModelAggregateStep(Step):
             entity for entity in aggregate_order if entity in entitiesset
         ]  # maintain order
         display_strs = [
-            entity_display_aliases[entity]
-            if entity in entity_display_aliases
-            else entity
+            (
+                entity_display_aliases[entity]
+                if entity in entity_display_aliases
+                else entity
+            )
             for entity in self.entities
         ]
         self.options = [humanize(p.plural(display_str)) for display_str in display_strs]

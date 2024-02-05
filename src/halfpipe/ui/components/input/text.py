@@ -205,9 +205,11 @@ class MultiTextInputView(SingleChoiceInputView):
             dict(nchr_prepend=self.optionWidth + 1 + 1, tokenizefun=_tokenize)
         )
         self.children = [
-            self.text_input_type(**kwargs)
-            if val is None
-            else self.text_input_type(val, **kwargs)
+            (
+                self.text_input_type(**kwargs)
+                if val is None
+                else self.text_input_type(val, **kwargs)
+            )
             for val in initial_values
         ]
         for child in self.children:
@@ -405,9 +407,9 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
     def _getOutput(self):
         if self.selectedIndices is not None:
             return {
-                str(k): str(self.values[i][v])
-                if v > 0
-                else self.children[i]._getOutput()
+                str(k): (
+                    str(self.values[i][v]) if v > 0 else self.children[i]._getOutput()
+                )
                 for i, (k, v) in enumerate(zip(self.options, self.selectedIndices))
             }
 
