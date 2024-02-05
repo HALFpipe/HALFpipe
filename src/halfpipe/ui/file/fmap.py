@@ -97,9 +97,11 @@ class AcqToTaskMappingStep(Step):
             def _format_tags(tagset):
                 tagdict = dict(tagset)
                 return ", ".join(
-                    f'{e} "{tagdict[e]}"'
-                    if e not in entity_longnames
-                    else f'{entity_longnames[e]} "{tagdict[e]}"'
+                    (
+                        f'{e} "{tagdict[e]}"'
+                        if e not in entity_longnames
+                        else f'{entity_longnames[e]} "{tagdict[e]}"'
+                    )
                     for e in entities
                     if e in tagdict and tagdict[e] is not None
                 )

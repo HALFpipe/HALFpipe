@@ -21,8 +21,7 @@ def mean_signals(
     mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
-) -> npt.NDArray:
-    ...
+) -> npt.NDArray: ...
 
 
 @overload
@@ -33,8 +32,7 @@ def mean_signals(
     mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
-) -> tuple[npt.NDArray, list[float]]:
-    ...
+) -> tuple[npt.NDArray, list[float]]: ...
 
 
 def mean_signals(
@@ -135,8 +133,7 @@ def mode_signals(
     var_cope_img: nib.analyze.AnalyzeImage,
     modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[False] = False,
-) -> npt.NDArray:
-    ...
+) -> npt.NDArray: ...
 
 
 @overload
@@ -145,8 +142,7 @@ def mode_signals(
     var_cope_img: nib.analyze.AnalyzeImage,
     modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[True],
-) -> tuple[npt.NDArray, npt.NDArray]:
-    ...
+) -> tuple[npt.NDArray, npt.NDArray]: ...
 
 
 def mode_signals(

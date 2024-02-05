@@ -43,11 +43,11 @@ class ModelAlgorithm(ABC):
 
         shape: list[int] = list(reference_image.shape[:3])
         (k,) = set(
-            (1,)
-            if isinstance(value, (int, float))
-            else (len(value),)
-            if isinstance(value, (list, tuple))
-            else value.shape
+            (
+                (1,)
+                if isinstance(value, (int, float))
+                else (len(value),) if isinstance(value, (list, tuple)) else value.shape
+            )
             for value in values
         )
         shape.extend(k)

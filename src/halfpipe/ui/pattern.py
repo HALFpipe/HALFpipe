@@ -196,9 +196,11 @@ class FilePatternStep(Step):
 
         # convert to display
         schema_entities = [
-            self.entity_display_aliases[entity]
-            if entity in self.entity_display_aliases
-            else entity
+            (
+                self.entity_display_aliases[entity]
+                if entity in self.entity_display_aliases
+                else entity
+            )
             for entity in schema_entities
         ]
 

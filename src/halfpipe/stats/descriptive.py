@@ -35,9 +35,9 @@ class Descriptive(ModelAlgorithm):
         # make data frame
         zframe = pd.DataFrame(z)
 
-        voxel_result: Dict[
-            str, Dict[Tuple[int, int, int], Dict[str, float]]
-        ] = defaultdict(dict)
+        voxel_result: Dict[str, Dict[Tuple[int, int, int], Dict[str, float]]] = (
+            defaultdict(dict)
+        )
 
         for name, cmat in cmatdict.items():
             if name.lower() == "intercept":
