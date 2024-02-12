@@ -7,11 +7,17 @@ RUN mamba install --yes "boa" "conda-verify"
 
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi.
-RUN for pkg in rmath traits; do \
-        --mount=source=recipes/$pkg,target=/$pkg \
-        conda mambabuild --no-anaconda-upload $pkg && \
+COPY recipes /recipes
+RUN for pkg in rmath traits niflow-nypipe1-workflows; do \
+        conda mambabuild --no-anaconda-upload /recipes/$pkg && \
         conda build purge; \
     done
+
+# RUN for pkg in rmath traits niflow-nypipe-workflows; do \
+#         --mount=source=recipes/$pkg,target=/$pkg \
+#         conda mambabuild --no-anaconda-upload $pkg && \
+#         conda build purge; \
+#     done
 
 FROM condaforge/mambaforge:latest as install
 
