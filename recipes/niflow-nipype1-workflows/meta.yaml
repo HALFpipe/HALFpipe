@@ -1,0 +1,35 @@
+{% set version = "0.0.5" %}
+{% set name = "niflow-nipype1-workflows" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/n/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 4df3abd4d1fad60374fbd7b29b98a6c0cda2abb907c9ca571ff92de852818e3c
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+
+test:
+  imports:
+    - niflow.nipype1.workflows
+
+about:
+  home: https://github.com/niflows/nipype1-workflows
+  license: Apache-2.0
+  license_file: LICENSE.txt
+  summary: 'niflow-nipype1-workflows workflow package'
+
+extra:
+  recipe-maintainers:
+    - lalalavi
