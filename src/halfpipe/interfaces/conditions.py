@@ -37,19 +37,15 @@ class ApplyConditionOffset(SimpleInterface):
         onsets = subject_info.onsets
         durations = subject_info.durations
 
-        for condition, condition_onsets in zip(conditions, onsets):
+        for condition, condition_onsets in zip(conditions, onsets, strict=False):
             for i, onset in enumerate(condition_onsets):
                 onset -= scan_start
                 if onset < 0:
-                    logger.warning(
-                        f'Condition "{condition}" onset truncated from {onset:f} to {0.0:f} s.'
-                    )
+                    logger.warning(f'Condition "{condition}" onset truncated from {onset:f} to {0.0:f} s.')
                     onset = 0
                 condition_onsets[i] = onset
 
-        self._results["subject_info"] = Bunch(
-            conditions=conditions, onsets=onsets, durations=durations
-        )
+        self._results["subject_info"] = Bunch(conditions=conditions, onsets=onsets, durations=durations)
 
         return runtime
 
@@ -105,11 +101,11 @@ class ParseConditionFile(SimpleInterface):
         # remove empty or invalid conditions
         filtered_conditions = [
             (condition, onset, duration)
-            for condition, onset, duration in zip(conditions, onsets, durations)
+            for condition, onset, duration in zip(conditions, onsets, durations, strict=False)
             if len(onset) == len(duration) and len(onset) > 0
         ]
         assert len(filtered_conditions) > 0, "No events found"
-        conditions, onsets, durations = zip(*filtered_conditions)
+        conditions, onsets, durations = map(list, zip(*filtered_conditions, strict=False))
 
         # filter and re-write contrasts based on available conditions
         if isdefined(self.inputs.contrasts):
@@ -119,18 +115,16 @@ class ParseConditionFile(SimpleInterface):
                 if any(
                     condition not in conditions  # is missing
                     and not isclose(value, 0)  # but is part of the contrast
-                    for condition, value in zip(contrast_conditions, contrast_values)
+                    for condition, value in zip(contrast_conditions, contrast_values, strict=False)
                 ):
                     continue
 
                 filtered_contrast = [
                     (condition, value)
-                    for condition, value in zip(contrast_conditions, contrast_values)
+                    for condition, value in zip(contrast_conditions, contrast_values, strict=False)
                     if condition in conditions
                 ]
-                contrast_conditions, contrast_values = map(
-                    list, zip(*filtered_contrast)
-                )
+                contrast_conditions, contrast_values = map(list, zip(*filtered_contrast, strict=False))
 
                 new_contrasts.append(
                     (
@@ -145,8 +139,6 @@ class ParseConditionFile(SimpleInterface):
             self._results["contrasts"] = new_contrasts
 
         self._results["condition_names"] = list(conditions)
-        self._results["subject_info"] = Bunch(
-            conditions=conditions, onsets=onsets, durations=durations
-        )
+        self._results["subject_info"] = Bunch(conditions=conditions, onsets=onsets, durations=durations)
 
         return runtime

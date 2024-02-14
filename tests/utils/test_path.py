@@ -7,9 +7,8 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from nipype.interfaces.base.support import Bunch
-
 from halfpipe.utils.path import find_paths, recursive_list_directory, split_ext
+from nipype.interfaces.base.support import Bunch
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
 B = "/tmp/b.txt"
@@ -86,9 +85,7 @@ def test_recursive_list_directory(tmp_path: Path) -> None:
         zip_file1_path,
         *zip_file1_paths,
     ]
-    assert set(
-        map(str, recursive_list_directory(tmp_path, enter_archives=True))
-    ) == set(map(str, tmp_and_zip_paths))
+    assert set(map(str, recursive_list_directory(tmp_path, enter_archives=True))) == set(map(str, tmp_and_zip_paths))
 
     # # Test nested archives
     # zip_file2_path = tmp_path / "zip_file2.zip"

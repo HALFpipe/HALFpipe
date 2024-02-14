@@ -7,15 +7,14 @@ from json import dumps
 
 import numpy as np
 import pytest
-from pyrsistent import pmap
-
 from halfpipe.utils.json import TypeAwareJSONEncoder
+from pyrsistent import pmap
 
 
 def test_bool():
     x = np.int32(5) > np.int32(6)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
@@ -25,7 +24,7 @@ def test_bool():
 def test_int(cls):
     x = cls(5)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
@@ -34,7 +33,7 @@ def test_int(cls):
 def test_float():
     x = np.float32(5)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
@@ -43,7 +42,7 @@ def test_float():
 def test_pmap():
     x = pmap(dict(x=5))
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
@@ -56,10 +55,10 @@ def test_dataclass() -> None:
 
     x = TestDataclass(x=5)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=x))
 
     dumps(dict(x=x), cls=TypeAwareJSONEncoder)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         dumps(dict(x=TestDataclass), cls=TypeAwareJSONEncoder)

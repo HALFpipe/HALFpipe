@@ -7,10 +7,9 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+from halfpipe.interfaces.transformer import Transformer
 from nilearn.image import new_img_like
 from templateflow import api
-
-from halfpipe.interfaces.transformer import Transformer
 
 
 def test_transformer_nii(tmp_path: Path) -> None:
@@ -28,9 +27,7 @@ def test_transformer_nii(tmp_path: Path) -> None:
     test_img_data = np.zeros((*ref_mask_img.shape, n_volumes), dtype=float)
     test_img_data[ref_mask, :] = test_array
 
-    img: nib.analyze.AnalyzeImage = new_img_like(
-        ref_mask_img, test_img_data, copy_header=True
-    )
+    img: nib.analyze.AnalyzeImage = new_img_like(ref_mask_img, test_img_data, copy_header=True)
     if not isinstance(img.header, nib.nifti1.Nifti1Header):
         raise TypeError("Image header is not a Nifti1Header")
     img.header.set_data_dtype(np.float64)

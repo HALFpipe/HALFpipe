@@ -37,9 +37,7 @@ class AggregateResultdicts(IOBase):
         outputs = outputs.get()
 
         inputs = list()
-        for result in ravel(
-            [getattr(self.inputs, input_name) for input_name in self.input_names]
-        ):
+        for result in ravel([getattr(self.inputs, input_name) for input_name in self.input_names]):
             if isinstance(result, dict):
                 inputs.append(result)
             else:

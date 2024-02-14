@@ -19,13 +19,11 @@ class AdaptiveLock:
 
         self.methods: List[str] = ["fcntl", "hard_links", "delay"]
 
-        self.lock_instance = None
+        self.lock_instance: FcntlLock | FluflLock | None = None
 
     def lock(self, lock_file):
         if self.methods[0] == "hard_links":
-            self.lock_instance = FluflLock(
-                lock_file, lifetime=self.timeout
-            )  # seconds after which the lock is broken
+            self.lock_instance = FluflLock(lock_file, lifetime=self.timeout)  # seconds after which the lock is broken
 
             try:
                 self.lock_instance.lock(timeout=self.timeout)  # try for a long time
@@ -65,9 +63,7 @@ class AdaptiveLock:
         if self.methods[0] == "hard_links":
             if not isinstance(self.lock_instance, FluflLock):
                 raise ValueError("Lock instance is not a FluflLock")
-            self.lock_instance.unlock(
-                unconditionally=True
-            )  # Do not raise errors in unlock
+            self.lock_instance.unlock(unconditionally=True)  # Do not raise errors in unlock
             self.lock_instance = None
         elif self.methods[0] == "fcntl":
             if not isinstance(self.lock_instance, FcntlLock):

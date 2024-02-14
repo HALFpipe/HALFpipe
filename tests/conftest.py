@@ -6,7 +6,6 @@ import os
 import tarfile
 
 import pytest
-
 from halfpipe.resource import get as get_resource
 
 from .resource import setup as setup_test_resources
@@ -32,7 +31,11 @@ def wakemandg_hensonrn_raw(tmp_path_factory):
     data = {
         suffix: [
             tmp_path
-            / f"sub-{subject}_task-faces_feature-taskBased_taskcontrast-facesGtScrambled_model-aggregateTaskBasedAcrossRuns_contrast-intercept_{suffix}.nii.gz"
+            / (
+                f"sub-{subject}_task-faces_feature-taskBased_"
+                "taskcontrast-facesGtScrambled_model-aggregateTaskBasedAcrossRuns_"
+                f"contrast-intercept_{suffix}.nii.gz"
+            )
             for subject in subjects
         ]
         for suffix in suffixes

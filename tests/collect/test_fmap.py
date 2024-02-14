@@ -5,7 +5,6 @@
 from datetime import datetime
 
 import pytest
-
 from halfpipe.collect.fmap import collect_fieldmaps
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
@@ -23,9 +22,7 @@ from halfpipe.model.spec import Spec
     "use_dir_tag",
     [True, False],
 )
-def test_collect_fieldmaps_epi(
-    pe_dirs: list[str], expected_count: int, use_dir_tag: bool
-) -> None:
+def test_collect_fieldmaps_epi(pe_dirs: list[str], expected_count: int, use_dir_tag: bool) -> None:
     database = Database(Spec(datetime.now(), list()))
 
     bold_file_path = "bold.nii.gz"
@@ -198,9 +195,7 @@ def test_collect_fieldmaps_direct(case3_suffix, case3_count):
             tags=dict(sub="01"),
         )
     )
-    if (
-        len(files) < 3
-    ):  # clear files if expected count will be 0 (counting bold file as well here)
+    if len(files) < 3:  # clear files if expected count will be 0 (counting bold file as well here)
         files.clear()
 
     for file in files:

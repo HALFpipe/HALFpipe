@@ -8,7 +8,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import pytest
-
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 from halfpipe.interfaces.utility.remove_volumes import RemoveVolumes
 from halfpipe.resource import get as get_resource
@@ -32,9 +31,7 @@ def test_remove_volumes_tsv(tmp_path, header):
     data_file = tmp_path / "data.tsv"
     data_frame.to_csv(data_file, sep="\t", header=header, index=False)
 
-    remove_volumes = RemoveVolumes(
-        in_file=data_file, skip_vols=skip_vols, write_header=header
-    )
+    remove_volumes = RemoveVolumes(in_file=data_file, skip_vols=skip_vols, write_header=header)
 
     cwd = tmp_path / "remove_volumes"
     cwd.mkdir()
@@ -49,9 +46,7 @@ def test_remove_volumes_tsv(tmp_path, header):
 def test_remove_volumes_nii(tmp_path):
     setup_test_resources()
 
-    data_file = get_resource(
-        "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz"
-    )
+    data_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
 
     skip_vols = 3
 

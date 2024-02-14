@@ -4,10 +4,9 @@
 
 import nibabel as nib
 import numpy as np
-from nipype.algorithms import confounds as nac
-
 from halfpipe.interfaces.reports.tsnr import TSNR
 from halfpipe.resource import get as get_resource
+from nipype.algorithms import confounds as nac
 
 from ...resource import setup as setup_test_resources
 
@@ -15,9 +14,7 @@ from ...resource import setup as setup_test_resources
 def test_tsnr(tmp_path):
     setup_test_resources()
 
-    data_file = get_resource(
-        "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz"
-    )
+    data_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
 
     tsnr = TSNR(in_file=data_file)
 
@@ -39,6 +36,4 @@ def test_tsnr(tmp_path):
 
     reference_tsnr_image = nib.nifti1.load(result.outputs.tsnr_file)
 
-    assert np.allclose(
-        tsnr_image.get_fdata(), reference_tsnr_image.get_fdata(), atol=1e-5
-    )
+    assert np.allclose(tsnr_image.get_fdata(), reference_tsnr_image.get_fdata(), atol=1e-5)

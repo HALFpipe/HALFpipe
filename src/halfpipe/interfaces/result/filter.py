@@ -25,9 +25,7 @@ class FilterResultdictsInputSpec(BaseInterfaceInputSpec):
     filter_dicts = traits.List(traits.Any(), desc="filter list")
     variable_dicts = traits.List(traits.Any(), desc="variable list")
     spreadsheet = File(desc="spreadsheet", exists=True)
-    require_one_of_images = traits.List(
-        traits.Str(), desc="only keep resultdicts that have at least one of these keys"
-    )
+    require_one_of_images = traits.List(traits.Str(), desc="only keep resultdicts that have at least one of these keys")
     exclude_files = traits.List(traits.Str())
 
 

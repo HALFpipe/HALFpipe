@@ -26,7 +26,7 @@ from ..utils.format import format_like_bids, normalize_subject
 from ..utils.path import resolve
 from ..utils.table import SynchronizedTable
 from .base import IdentifiableWorkflow
-from .constants import constants
+from .constants import Constants
 
 max_chunk_size = 50  # subjects
 
@@ -44,18 +44,10 @@ def filter_subjects(subjects: list[str], opts: Namespace) -> list[str]:
         pass
 
     for pattern in opts.subject_exclude:
-        subjects = [
-            n
-            for n in subjects
-            if not fnmatch(n, pattern) and not fnmatch(format_like_bids(n), pattern)
-        ]
+        subjects = [n for n in subjects if not fnmatch(n, pattern) and not fnmatch(format_like_bids(n), pattern)]
 
     for pattern in opts.subject_include:
-        subjects = [
-            n
-            for n in subjects
-            if fnmatch(n, pattern) or fnmatch(format_like_bids(n), pattern)
-        ]
+        subjects = [n for n in subjects if fnmatch(n, pattern) or fnmatch(format_like_bids(n), pattern)]
 
     if opts.subject_list is not None:
         subject_list_path = resolve(opts.subject_list, opts.fs_root)
@@ -66,11 +58,7 @@ def filter_subjects(subjects: list[str], opts: Namespace) -> list[str]:
         subject_set |= set(map(normalize_subject, subject_set))
         subject_set |= set(map(format_like_bids, subject_set))
 
-        subjects = [
-            subject
-            for subject in subjects
-            if subject in subject_set or format_like_bids(subject) in subject_set
-        ]
+        subjects = [subject for subject in subjects if subject in subject_set or format_like_bids(subject) in subject_set]
 
     return subjects
 
@@ -176,9 +164,7 @@ def resolve_output_boundary(flat_graph, non_subject_nodes) -> dict[str, dict]:
     return input_source_dict
 
 
-def split_flat_graph(
-    flat_graph: nx.DiGraph, base_dir: str
-) -> tuple[dict[str, set[pe.Node]], dict[str, dict]]:
+def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str) -> tuple[dict[str, set[pe.Node]], dict[str, dict]]:
     subject_nodes: dict[str, set[pe.Node]] = defaultdict(set)
     for node in flat_graph:
         node.base_dir = base_dir  # make sure to use correct base path
@@ -217,9 +203,7 @@ def prepare_graph(config, base_dir, uuid, graph):
 
 
 def init_flat_graph(workflow, workdir) -> nx.DiGraph:
-    flat_graph = uncache_obj(
-        workdir, ".flat_graph", workflow.uuid, display_str="flat graph"
-    )
+    flat_graph = uncache_obj(workdir, ".flat_graph", workflow.uuid, display_str="flat graph")
     if flat_graph is not None:
         assert isinstance(flat_graph, nx.DiGraph)
         return flat_graph
@@ -231,9 +215,7 @@ def init_flat_graph(workflow, workdir) -> nx.DiGraph:
     return flat_graph
 
 
-def init_execgraph(
-    workdir: Path | str, workflow: IdentifiableWorkflow
-) -> dict[str, IdentifiableDiGraph]:
+def init_execgraph(workdir: Path | str, workflow: IdentifiableWorkflow) -> dict[str, IdentifiableDiGraph]:
     uuid = workflow.uuid
     assert uuid is not None
     uuidstr = str(uuid)[:8]
@@ -253,7 +235,7 @@ def init_execgraph(
 
     # init dirs
 
-    modeldir = Path(workdir) / constants.workflow_directory / "models_wf"
+    modeldir = Path(workdir) / Constants.workflow_directory / "models_wf"
     modeldir.mkdir(parents=True, exist_ok=True)
 
     # create or load execgraph
@@ -302,9 +284,7 @@ def init_execgraph(
 
     logger.info("Expanding subgraphs")
 
-    partial_prepare_graph = partial(
-        prepare_graph, workflow.config, workflow.base_dir, uuid
-    )
+    partial_prepare_graph = partial(prepare_graph, workflow.config, workflow.base_dir, uuid)
     for s, graph in graphs.items():
         graphs[s] = partial_prepare_graph(graph)
 

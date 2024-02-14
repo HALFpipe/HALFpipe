@@ -28,9 +28,7 @@ def _get_slice_orders(n_slices):
 def slice_timing_str(slice_times) -> str:
     slice_times = np.array(slice_times)
 
-    values, inverse, counts = np.unique(
-        slice_times, return_inverse=True, return_counts=True
-    )
+    values, inverse, counts = np.unique(slice_times, return_inverse=True, return_counts=True)
 
     counts = set(counts)
     if len(counts) != 1:
@@ -51,9 +49,7 @@ def slice_timing_str(slice_times) -> str:
     return "unknown single-band"
 
 
-def str_slice_timing(
-    order_str: str, n_slices: int, slice_duration: float
-) -> List[float]:
+def str_slice_timing(order_str: str, n_slices: int, slice_duration: float) -> List[float]:
     order = _get_slice_orders(n_slices)[order_str]
 
     timings: List[float] = [0.0] * n_slices

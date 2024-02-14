@@ -85,8 +85,7 @@ def make_script(workdir: Path, graphs: Dict[str, Any], opts):
 
     n_cpus = 2
     mem_gb: float = (
-        max(node.mem_gb for subject in subjects for node in graphs[subject].nodes) * 1.5
-        + 3.0
+        max(node.mem_gb for subject in subjects for node in graphs[subject].nodes) * 1.5 + 3.0
     )  # three gigabytes for the python process plus the actual memory
     mem_mb: int = int(ceil(mem_gb * 1024))
 
@@ -159,6 +158,4 @@ def make_script(workdir: Path, graphs: Dict[str, Any], opts):
         with open(Path(workdir) / stpath, "w") as f:
             f.write(st)
 
-    logger.log(
-        25, f"Cluster submission script templates were created at {p.join(stpaths)}"
-    )
+    logger.log(25, f"Cluster submission script templates were created at {p.join(stpaths)}")

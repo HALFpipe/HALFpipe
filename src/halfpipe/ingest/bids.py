@@ -68,9 +68,7 @@ class BidsDatabase:
             if bids_entity == "run":
                 if not v.isdecimal():  # enforce run to be numerical
                     run_identifier = str(int_digest(v))[:4]
-                    logger.warning(
-                        f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance'
-                    )
+                    logger.warning(f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance')
                     v = run_identifier
 
             if k in entities:
@@ -114,14 +112,14 @@ class BidsDatabase:
         return self.bids_tags.get(bids_path)
 
     @overload
-    def get_tag_value(self, bids_path: list[str], entity: str) -> list: ...
+    def get_tag_value(self, bids_path: list[str], entity: str) -> list:
+        ...
 
     @overload
-    def get_tag_value(self, bids_path: str, entity: str) -> str | None: ...
+    def get_tag_value(self, bids_path: str, entity: str) -> str | None:
+        ...
 
-    def get_tag_value(
-        self, bids_path: list[str] | str, entity: str
-    ) -> str | list | None:
+    def get_tag_value(self, bids_path: list[str] | str, entity: str) -> str | list | None:
         if isinstance(bids_path, (list, tuple)):  # vectorize
             return [self.get_tag_value(b, entity) for b in bids_path]
 
@@ -152,9 +150,10 @@ class BidsDatabase:
             json.dump(dataset_description, f, indent=4)
 
         # image files
-        for bids_path, file_path in self.file_paths.items():
-            assert bids_path is not None
-            bids_path = Path(bidsdir) / bids_path
+        for bids_path_str, file_path in self.file_paths.items():
+            if bids_path_str is None:
+                raise ValueError(f'File "{file_path}" has no BIDS path')
+            bids_path = Path(bidsdir) / bids_path_str
             bids_paths.add(bids_path)
             bids_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -169,14 +168,13 @@ class BidsDatabase:
             bids_path.symlink_to(relative_file_path)
 
         # sidecar files
-        for bids_path in self.file_paths.keys():
-            metadata = self._metadata.get(bids_path)
+        for bids_path_str in self.file_paths.keys():
+            metadata = self._metadata.get(bids_path_str)
 
             if metadata is not None and len(metadata) > 0:
+                bids_path = Path(bids_path_str)
                 basename, _ = split_ext(bids_path)
-                sidecar_path = (
-                    Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
-                )
+                sidecar_path = Path(bidsdir) / bids_path.parent / f"{basename}.json"
 
                 bids_paths.add(sidecar_path)
 

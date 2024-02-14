@@ -35,7 +35,7 @@ class NullQueue:
 Queue = NullQueue | JoinableQueue
 
 
-class context(object):
+class Context(object):
     _instance: ClassVar[Self | None] = None
 
     def __init__(self) -> None:
@@ -43,7 +43,7 @@ class context(object):
         self._worker: BaseProcess | None = None
 
     @classmethod
-    def instance(cls) -> context:
+    def instance(cls) -> Context:
         if cls._instance is None:
             with rlock:
                 if cls._instance is None:
@@ -58,9 +58,7 @@ class context(object):
             if not isinstance(instance._queue, JoinableQueue):
                 instance._queue = JoinableQueue(ctx=mp_context)
             if instance._worker is None:
-                instance._worker = mp_context.Process(
-                    target=run_worker, args=(instance._queue,)
-                )
+                instance._worker = mp_context.Process(target=run_worker, args=(instance._queue,))
                 instance._worker.start()
 
     @classmethod

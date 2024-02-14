@@ -26,7 +26,7 @@ from ....result.variables import Continuous
 from ....utils.multiprocessing import make_pool_or_null_context
 from ....utils.nipype import run_workflow
 from ....utils.path import AnyPath
-from ....workflows.constants import constants
+from ....workflows.constants import Constants
 from ....workflows.features.jacobian import init_jacobian_wf
 from .design import DesignBase
 
@@ -81,9 +81,7 @@ def calculate_jacobian(
                 exc_info=e,
             )
             return subject, None
-        (scale_jacobian,) = [
-            node for node in graph.nodes if node.name == "scale_jacobian"
-        ]
+        (scale_jacobian,) = [node for node in graph.nodes if node.name == "scale_jacobian"]
         temporary_jacobian_path = scale_jacobian.result.outputs.out_file
         copyfile(temporary_jacobian_path, jacobian_path)
     return subject, jacobian_path
@@ -126,9 +124,7 @@ class ImagingVariables:
         }
         transform_paths = index.get(**query)
         if transform_paths is None:
-            raise ValueError(
-                "Cannot calculate jacobian. No transforms found in the input directories"
-            )
+            raise ValueError("Cannot calculate jacobian. No transforms found in the input directories")
 
         tasks: dict[str, AnyPath] = dict()
         for transform_path in transform_paths:
@@ -136,9 +132,7 @@ class ImagingVariables:
             if subject is None:
                 continue
             elif subject in tasks:
-                logger.warning(
-                    f"Subject {subject} has multiple transforms in the index"
-                )
+                logger.warning(f"Subject {subject} has multiple transforms in the index")
                 continue
             tasks[subject] = transform_path
 
@@ -168,8 +162,8 @@ class ImagingVariables:
         brain_mask_paths = index.get(
             datatype="anat",
             sub=subject,
-            space=constants.reference_space,
-            res=str(constants.reference_res),
+            space=Constants.reference_space,
+            res=str(Constants.reference_res),
             desc="brain",
             suffix="mask",
             extension=".nii.gz",
@@ -215,9 +209,7 @@ class ImagingVariables:
             extension=".nii.gz",
         )
         if brain_mask_paths is None:
-            raise ValueError(
-                "Cannot calculate `total_intracranial_volume`. No brain masks found in the index"
-            )
+            raise ValueError("Cannot calculate `total_intracranial_volume`. No brain masks found in the index")
         data: dict[str, float] = dict()
         for brain_mask_path in tqdm(
             brain_mask_paths,
@@ -238,9 +230,7 @@ class ImagingVariables:
             voxel_volume: pint.Quantity = np.prod(voxel_size)  # type: ignore
 
             brain_mask = np.asanyarray(brain_mask_image.dataobj, dtype=bool)
-            total_intracranial_volume = (
-                np.count_nonzero(brain_mask) * voxel_volume
-            ).m_as(ureg.milliliter)
+            total_intracranial_volume = (np.count_nonzero(brain_mask) * voxel_volume).m_as(ureg.milliliter)
 
             data[subject] = total_intracranial_volume
 
@@ -254,11 +244,7 @@ class ImagingVariables:
         for result in self.design_base.results:
             vals = result["vals"]
 
-            tags = {
-                key: value
-                for key, value in result["tags"].items()
-                if key not in resultdict_entities
-            }
+            tags = {key: value for key, value in result["tags"].items() if key not in resultdict_entities}
             subject = tags.pop("sub")
 
             prefix = make_bids_prefix(tags)

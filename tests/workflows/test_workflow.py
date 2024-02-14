@@ -15,9 +15,6 @@ import nibabel as nib
 import pandas as pd
 import pytest
 from fmriprep import config
-from nilearn.image import new_img_like
-from templateflow.api import get as get_template
-
 from halfpipe.cli.parser import build_parser
 from halfpipe.cli.run import run_stage_run
 from halfpipe.ingest.database import Database
@@ -30,6 +27,8 @@ from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
+from nilearn.image import new_img_like
+from templateflow.api import get as get_template
 
 
 @pytest.fixture(scope="module")
@@ -102,13 +101,7 @@ def atlas_harvard_oxford(tmp_path_factory):
         fp.extractall(tmp_path)
 
     maps = {
-        m: (
-            tmp_path
-            / "data"
-            / "atlases"
-            / "HarvardOxford"
-            / f"HarvardOxford-{m}.nii.gz"
-        )
+        m: (tmp_path / "data" / "atlases" / "HarvardOxford" / f"HarvardOxford-{m}.nii.gz")
         for m in ("cort-prob-1mm", "cort-prob-2mm", "sub-prob-1mm", "sub-prob-2mm")
     }
     return maps
@@ -333,16 +326,12 @@ def test_feature_extraction(tmp_path, mock_spec):
 
     assert bold_image.shape[3] == preproc_image.shape[3] + skip_vols
 
-    (confounds_path,) = tmp_path.glob(
-        "derivatives/halfpipe/sub-*/func/*_desc-confounds_regressors.tsv"
-    )
+    (confounds_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_desc-confounds_regressors.tsv")
     confounds_frame = read_spreadsheet(confounds_path)
 
     assert bold_image.shape[3] == confounds_frame.shape[0] + skip_vols
 
-    template_path = get_template(
-        "MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w"
-    )
+    template_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w")
     template_image = nib.nifti1.load(template_path)
 
     assert bold_image.shape[:3] != template_image.shape  # sanity check

@@ -8,9 +8,8 @@ from zipfile import ZipFile
 
 import nibabel as nib
 import pytest
-from nilearn.image import new_img_like
-
 from halfpipe.resource import get as get_resource
+from nilearn.image import new_img_like
 
 from ..resource import setup as setup_test_resources
 
@@ -35,9 +34,7 @@ def bids_data(tmp_path_factory):
 
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
     bold_img = nib.nifti1.load(bold_file)
-    bold_data = bold_img.get_fdata()[
-        ..., :64
-    ]  # we don't need so many volumes for testing
+    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
     nib.loadsave.save(bold_img, bold_file)
 

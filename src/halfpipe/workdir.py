@@ -5,7 +5,7 @@
 from pathlib import Path
 from uuid import uuid4
 
-from .logging.base import logging_context
+from .logging.base import LoggingContext
 from .utils.path import resolve
 
 
@@ -43,6 +43,6 @@ def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path
             "For example, FAT32 and exFAT are incompatible."
         ) from e
 
-    logging_context.set_workdir(workdir_path)
+    LoggingContext.set_workdir(workdir_path)
 
     return workdir_path

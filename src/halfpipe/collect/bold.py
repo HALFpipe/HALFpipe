@@ -8,14 +8,10 @@ from ..utils.image import nvol
 from .fmap import collect_fieldmaps
 
 
-def collect_bold_files(
-    database, post_processing_factory, feature_factory
-) -> dict[str, list[str]]:
+def collect_bold_files(database, post_processing_factory, feature_factory) -> dict[str, list[str]]:
     # find bold files
 
-    bold_file_paths: set[str] = (
-        post_processing_factory.source_files | feature_factory.source_files
-    )
+    bold_file_paths: set[str] = post_processing_factory.source_files | feature_factory.source_files
     bold_file_paths_dict: dict[str, list[str]] = dict()
 
     # filter
@@ -77,15 +73,9 @@ def collect_bold_files(
         # scans that were cancelled or had technical difficulties and therefore
         # had to be restarted
 
-        nvol_dict = {
-            bold_file_path: nvol(bold_file_path) for bold_file_path in bold_file_pathset
-        }
+        nvol_dict = {bold_file_path: nvol(bold_file_path) for bold_file_path in bold_file_pathset}
         max_nvol = max(nvol_dict.values())
-        selected = set(
-            bold_file_path
-            for bold_file_path, nvol in nvol_dict.items()
-            if nvol == max_nvol
-        )
+        selected = set(bold_file_path for bold_file_path, nvol in nvol_dict.items() if nvol == max_nvol)
 
         # if the heuristic above doesn't work, we just choose the alphabetically
         # last one
@@ -98,10 +88,7 @@ def collect_bold_files(
 
         # log what happened
 
-        message_strs = [
-            f"Found {len(bold_file_pathset)-1:d} file with "
-            f'identical tags to {selectedbold_file_path}":'
-        ]
+        message_strs = [f"Found {len(bold_file_pathset)-1:d} file with " f'identical tags to {selectedbold_file_path}":']
 
         bold_file_path = next(iter(bold_file_pathset))
         for bold_file_path in bold_file_pathset:
@@ -109,13 +96,9 @@ def collect_bold_files(
                 message_strs.append(f'Excluding file "{bold_file_path}"')
 
         if nvol_dict[bold_file_path] < max_nvol:
-            message_strs.append(
-                "Decision criterion was: Image with the longest duration"
-            )
+            message_strs.append("Decision criterion was: Image with the longest duration")
         else:
-            message_strs.append(
-                "Decision criterion was: Last image when sorting alphabetically"
-            )
+            message_strs.append("Decision criterion was: Last image when sorting alphabetically")
 
         logger.warning("\n".join(message_strs))
 

@@ -24,9 +24,7 @@ inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 def _find_setting(setting_name, spec):
-    (setting,) = [
-        setting for setting in spec.settings if setting["name"] == setting_name
-    ]
+    (setting,) = [setting for setting in spec.settings if setting["name"] == setting_name]
     return setting
 
 
@@ -52,8 +50,9 @@ class FeatureFactory(Factory):
                 return True
         return False
 
-    def setup(self, raw_sources_dict=dict()):
-        self.wfs = dict()
+    def setup(self, raw_sources_dict: dict | None = None):
+        raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
+        self.wfs: dict[str, Any] = dict()
 
         for feature in self.ctx.spec.features:
             source_files = set(raw_sources_dict.keys())
@@ -68,7 +67,8 @@ class FeatureFactory(Factory):
                 source_file_raw_sources = raw_sources_dict[source_file]
                 self.create(source_file, feature, raw_sources=source_file_raw_sources)
 
-    def create(self, source_file, feature, raw_sources=[]) -> pe.Workflow | None:
+    def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
+        raw_sources = [] if raw_sources is None else raw_sources
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
         wf = hierarchy[-1]
 
@@ -77,19 +77,14 @@ class FeatureFactory(Factory):
         vwf = None
 
         memcalc = MemoryCalculator.from_bold_file(source_file)
-        kwargs: Dict[str, Any] = dict(
-            feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc
-        )
+        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc)
         if feature.type == "task_based":
             confounds_action = "select"
 
             condition_files = collect_events(database, source_file)
-            if (
-                condition_files is None or len(condition_files) == 0
-            ):  # we did not find any condition files
+            if condition_files is None or len(condition_files) == 0:  # we did not find any condition files
                 logger.warning(
-                    f'Skipping feature "{feature.name}" for "{source_file}" '
-                    "because no event files could be found"
+                    f'Skipping feature "{feature.name}" for "{source_file}" ' "because no event files could be found"
                 )
                 return None
 
@@ -104,8 +99,7 @@ class FeatureFactory(Factory):
 
             condition_units = None
             condition_units_set: set[str | None] = {
-                database.metadata(condition_file_path, "units")
-                for condition_file_path in condition_file_paths
+                database.metadata(condition_file_path, "units") for condition_file_path in condition_file_paths
             }
             if condition_units_set is not None:
                 if len(condition_units_set) == 1:
@@ -127,10 +121,7 @@ class FeatureFactory(Factory):
                 (seed_file,) = database.get(datatype="ref", suffix="seed", desc=seed)
                 kwargs["seed_files"].append(seed_file)
             database.fillmetadata("space", kwargs["seed_files"])
-            kwargs["seed_spaces"] = [
-                database.metadata(seed_file, "space")
-                for seed_file in kwargs["seed_files"]
-            ]
+            kwargs["seed_spaces"] = [database.metadata(seed_file, "space") for seed_file in kwargs["seed_files"]]
             vwf = init_seed_based_connectivity_wf(**kwargs)
         elif feature.type == "dual_regression":
             confounds_action = "select"
@@ -139,9 +130,7 @@ class FeatureFactory(Factory):
                 (map_file,) = database.get(datatype="ref", suffix="map", desc=map)
                 kwargs["map_files"].append(map_file)
             database.fillmetadata("space", kwargs["map_files"])
-            kwargs["map_spaces"] = [
-                database.metadata(map_file, "space") for map_file in kwargs["map_files"]
-            ]
+            kwargs["map_spaces"] = [database.metadata(map_file, "space") for map_file in kwargs["map_files"]]
             vwf = init_dualregression_wf(**kwargs)
         elif feature.type == "atlas_based_connectivity":
             confounds_action = "regression"
@@ -150,10 +139,7 @@ class FeatureFactory(Factory):
                 (atlas_file,) = database.get(datatype="ref", suffix="atlas", desc=atlas)
                 kwargs["atlas_files"].append(atlas_file)
             database.fillmetadata("space", kwargs["atlas_files"])
-            kwargs["atlas_spaces"] = [
-                database.metadata(atlas_file, "space")
-                for atlas_file in kwargs["atlas_files"]
-            ]
+            kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
             vwf = init_atlas_based_connectivity_wf(**kwargs)
         elif feature.type == "reho":
             confounds_action = "regression"
@@ -176,9 +162,7 @@ class FeatureFactory(Factory):
             if m is not None:
                 if hasattr(node.inputs, "repetition_time"):
                     database.fillmetadata("repetition_time", [source_file])
-                    node.inputs.repetition_time = database.metadata(
-                        source_file, "repetition_time"
-                    )
+                    node.inputs.repetition_time = database.metadata(source_file, "repetition_time")
                 if hasattr(node.inputs, "tags"):
                     node.inputs.tags = database.tags(source_file)
 

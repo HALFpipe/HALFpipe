@@ -31,8 +31,7 @@ def cgroup_memory_limit():
     proc_self_mountinfo = Path("/proc/self/mountinfo")
 
     # determine_type
-
-    cg_infos = dict(memory=dict(), cpuset=dict(), cpu=dict(), cpuacct=dict())
+    cg_infos: dict[str, dict] = dict(memory=dict(), cpuset=dict(), cpu=dict(), cpuacct=dict())
 
     # Read /proc/cgroups so as to be able to distinguish cgroups v2 vs cgroups v1.
     try:
@@ -41,9 +40,7 @@ def cgroup_memory_limit():
     except (OSError, IOError):
         return
     for p in cgroups_lines:
-        m = re.fullmatch(
-            r"(?P<name>\w+)\s(?P<hierarchy_id>\d+)\s\d+\s(?P<enabled>\d+)", p.strip()
-        )
+        m = re.fullmatch(r"(?P<name>\w+)\s(?P<hierarchy_id>\d+)\s\d+\s(?P<enabled>\d+)", p.strip())
         if m is None:
             continue
         name = m.group("name")
@@ -56,12 +53,8 @@ def cgroup_memory_limit():
                 enabled=(enabled == 1),
             )
 
-    is_cgroups_v2 = all(
-        cg_info.get("hierarchy_id") == 0 for cg_info in cg_infos.values()
-    )
-    all_controllers_enabled = all(
-        cg_info.get("enabled") is True for cg_info in cg_infos.values()
-    )
+    is_cgroups_v2 = all(cg_info.get("hierarchy_id") == 0 for cg_info in cg_infos.values())
+    all_controllers_enabled = all(cg_info.get("enabled") is True for cg_info in cg_infos.values())
 
     if not all_controllers_enabled:
         return
@@ -134,14 +127,10 @@ def cgroup_memory_limit():
     if "mount_path" not in memory_cgroup or "cgroup_path" not in memory_cgroup:
         return
 
-    memory_root_path = Path(
-        memory_cgroup.get("root_mount_path", "") + memory_cgroup.get("mount_path", "")
-    )
+    memory_root_path = Path(memory_cgroup.get("root_mount_path", "") + memory_cgroup.get("mount_path", ""))
 
     memory_cgroup_path = Path(
-        memory_cgroup.get("root_mount_path", "")
-        + memory_cgroup.get("mount_path", "")
-        + memory_cgroup.get("cgroup_path", "")
+        memory_cgroup.get("root_mount_path", "") + memory_cgroup.get("mount_path", "") + memory_cgroup.get("cgroup_path", "")
     )
 
     memory_cgroups_to_consider = set(
@@ -163,9 +152,9 @@ def cgroup_memory_limit():
         ]
 
     memory_limits = set()
-    for p in memory_cgroups_to_consider:
+    for path in memory_cgroups_to_consider:
         for f in memory_limit_files:
-            memory_file_name = p / f
+            memory_file_name = path / f
             if memory_file_name.is_file():
                 memory_limit = limit_from_file(memory_file_name)
                 if isinstance(memory_limit, int) and memory_limit > 0:
@@ -230,18 +219,12 @@ def memory_limit() -> float:
         ulimit_memory_limit(),
         cgroup_memory_limit(),
     ]
-    memory_limits_in_gigabytes = [
-        float(ml.m_as(ureg.gigabytes)) for ml in memory_limits if ml is not None
-    ]
+    memory_limits_in_gigabytes = [float(ml.m_as(ureg.gigabytes)) for ml in memory_limits if ml is not None]
 
-    memory_limit = (
-        min(memory_limits_in_gigabytes) * 0.9
-    )  # nipype uses 90% of max as a safety precaution
+    memory_limit = min(memory_limits_in_gigabytes) * 0.9  # nipype uses 90% of max as a safety precaution
 
     process = psutil.Process(pid=os.getpid())
     resident_set_size = process.memory_info().rss * ureg.bytes
-    memory_limit -= resident_set_size.m_as(
-        ureg.gigabytes
-    )  # subtract memory used by current process
+    memory_limit -= resident_set_size.m_as(ureg.gigabytes)  # subtract memory used by current process
 
     return memory_limit

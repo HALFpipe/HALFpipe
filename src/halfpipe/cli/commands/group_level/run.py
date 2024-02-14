@@ -34,13 +34,8 @@ def run(arguments: Namespace):
     output_directory = init_workdir(output_directory, arguments.fs_root)
 
     # Index the input directories
-    input_directories = [
-        resolve(input_directory, arguments.fs_root)
-        for input_directory in arguments.input_directory
-    ]
-    results: list[ResultDict] = collect_halfpipe_derivatives(
-        input_directories, num_threads=arguments.nipype_n_procs
-    )
+    input_directories = [resolve(input_directory, arguments.fs_root) for input_directory in arguments.input_directory]
+    results: list[ResultDict] = collect_halfpipe_derivatives(input_directories, num_threads=arguments.nipype_n_procs)
 
     if len(results) == 0:
         raise ValueError("No inputs found")
@@ -137,9 +132,7 @@ def apply_exclude(
     return results
 
 
-def apply_rename(
-    rename: list[tuple[str, str, str]] | None, results: list[ResultDict]
-) -> list[ResultDict]:
+def apply_rename(rename: list[tuple[str, str, str]] | None, results: list[ResultDict]) -> list[ResultDict]:
     """Handle the `--rename` argument"""
     if rename is None:
         return results

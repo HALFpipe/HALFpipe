@@ -48,9 +48,7 @@ class SpecSchema(Schema):
         validate=validate.OneOf(compatible_schema_versions),
         required=True,
     )
-    timestamp = fields.DateTime(
-        dump_default=datetime.now(), format=timestamp_format, required=True
-    )
+    timestamp = fields.DateTime(dump_default=datetime.now(), format=timestamp_format, required=True)
 
     global_settings = fields.Nested(GlobalSettingsSchema, dump_default={})
 
@@ -65,9 +63,7 @@ class SpecSchema(Schema):
         for field in ["settings", "features", "models"]:
             if field not in data:
                 continue  # validation error will be raised independently
-            names.extend(
-                [a["name"] if isinstance(a, dict) else a.name for a in data[field]]
-            )
+            names.extend([a["name"] if isinstance(a, dict) else a.name for a in data[field]])
         if len(names) > len(set(names)):
             raise ValidationError("Duplicate name")
 
@@ -91,9 +87,7 @@ class SpecSchema(Schema):
                 if suffix in desc_value_sets:
                     desc_value_set = desc_value_sets[suffix]
                     if desc in desc_value_set:
-                        raise ValidationError(
-                            f"{humanize(suffix)} names need to be unique"
-                        )
+                        raise ValidationError(f"{humanize(suffix)} names need to be unique")
 
                     desc_value_set.add(desc)
 
@@ -102,16 +96,12 @@ class SpecSchema(Schema):
         if "models" not in data or "files" not in data:
             return  # validation error will be raised independently
 
-        spreadsheets = set(
-            file.path for file in data["files"] if file.datatype == "spreadsheet"
-        )
+        spreadsheets = set(file.path for file in data["files"] if file.datatype == "spreadsheet")
 
         for model in data["models"]:
             if model.type == "lme":
                 if model.spreadsheet not in spreadsheets:
-                    raise ValidationError(
-                        f'Spreadsheet "{model.spreadsheet}" not found in files'
-                    )
+                    raise ValidationError(f'Spreadsheet "{model.spreadsheet}" not found in files')
 
     @post_load
     def make_object(self, data, **_):
@@ -226,9 +216,7 @@ def save_spec(
             logger.info(f'Moving previous spec file from "{path}" to "{backup_path}"')
 
             if backup_path.is_file():
-                logger.warning(
-                    'Overwriting "backup_path" due to `timestampstr` collision'
-                )
+                logger.warning('Overwriting "backup_path" due to `timestampstr` collision')
             path.rename(backup_path)
 
     spec_file_str = SpecSchema().dumps(spec, many=False, indent=4, sort_keys=False)

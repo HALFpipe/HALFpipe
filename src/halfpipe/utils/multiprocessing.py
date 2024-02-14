@@ -17,11 +17,11 @@ def mock_tqdm(iterable, *args, **kwargs):
 
 
 def get_init_args() -> tuple[set[int], dict[str, Any], dict[str, str], str]:
-    from ..logging.base import logging_context
+    from ..logging.base import LoggingContext
 
     return (
         os.sched_getaffinity(0),
-        logging_context.logging_args(),
+        LoggingContext.logging_args(),
         dict(os.environ),
         os.getcwd(),
     )

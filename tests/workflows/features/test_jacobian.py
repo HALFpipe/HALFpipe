@@ -6,7 +6,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.features.jacobian import init_jacobian_wf
@@ -30,12 +29,7 @@ def fmriprep_derivatives(tmp_path_factory) -> Path:
 @pytest.fixture(scope="session")
 def transform(fmriprep_derivatives: Path) -> Path:
     subject = "sub-0003"
-    return (
-        fmriprep_derivatives
-        / subject
-        / "anat"
-        / f"{subject}_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
-    )
+    return fmriprep_derivatives / subject / "anat" / f"{subject}_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
 
 
 def test_jacobian_wf(tmp_path: Path, transform: Path) -> None:

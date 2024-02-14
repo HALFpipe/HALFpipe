@@ -11,26 +11,20 @@ from .tags import entities
 
 class CutoffFilterSchema(Schema):
     type = fields.Str(dump_default="cutoff", validate=validate.Equal("cutoff"))
-    action = fields.Str(
-        dump_default="exclude", validate=validate.OneOf(["exclude"]), required=True
-    )
+    action = fields.Str(dump_default="exclude", validate=validate.OneOf(["exclude"]), required=True)
     field = fields.Str(required=True)
     cutoff = fields.Float(required=True)
 
 
 class GroupFilterSchema(Schema):
-    type = fields.Str(
-        dump_default="group", validate=validate.Equal("group"), required=True
-    )
+    type = fields.Str(dump_default="group", validate=validate.Equal("group"), required=True)
     action = fields.Str(validate=validate.OneOf(["include", "exclude"]), required=True)
     variable = fields.Str(required=True)
     levels = fields.List(fields.Str(), required=True)
 
 
 class MissingFilterSchema(Schema):
-    type = fields.Str(
-        dump_default="missing", validate=validate.Equal("missing"), required=True
-    )
+    type = fields.Str(dump_default="missing", validate=validate.Equal("missing"), required=True)
     action = fields.Str(validate=validate.OneOf(["include", "exclude"]), required=True)
     variable = fields.Str(required=True)
 

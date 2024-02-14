@@ -8,9 +8,7 @@ from halfpipe.file_index.bids import parse
 
 
 def test_parse():
-    path = Path(
-        "qtab/reports/sub-0003/figures/sub-0003_task-emotionalconflict_epi_norm_rpt.svg"
-    )
+    path = Path("qtab/reports/sub-0003/figures/sub-0003_task-emotionalconflict_epi_norm_rpt.svg")
     tags = parse(path)
 
     assert isinstance(tags, dict)
@@ -29,9 +27,7 @@ def test_parse():
 
     assert tags["suffix"] == "func"
 
-    path = Path(
-        "qtab/derivatives/fmriprep/sub-0194/anat/sub-0194_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5"
-    )
+    path = Path("qtab/derivatives/fmriprep/sub-0194/anat/sub-0194_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5")
     tags = parse(path)
 
     assert isinstance(tags, dict)

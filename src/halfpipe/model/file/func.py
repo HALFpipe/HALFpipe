@@ -50,9 +50,7 @@ class BoldFileSchema(BaseFileSchema):
                         path,
                     )
                 except Exception:
-                    logger.warning(
-                        f"Could not parse phase encoding direction from tag {direction} for {path}"
-                    )
+                    logger.warning(f"Could not parse phase encoding direction from tag {direction} for {path}")
         return in_data
 
 

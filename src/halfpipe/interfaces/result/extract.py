@@ -22,10 +22,11 @@ class ExtractFromResultdict(IOBase):
     input_spec = ExtractFromResultdictInputSpec
     output_spec = ExtractFromResultdictOutputSpec
 
-    def __init__(self, keys=[], aliases={}, **inputs):
+    def __init__(self, keys: list | None = None, aliases: dict | None = None, **inputs):
         super(ExtractFromResultdict, self).__init__(**inputs)
-        self._keys = keys
-        self._aliases = aliases
+
+        self._keys = [] if keys is None else keys
+        self._aliases = {} if aliases is None else aliases
 
     def _add_output_traits(self, base):
         return add_traits(base, self._keys)

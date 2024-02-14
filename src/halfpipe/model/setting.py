@@ -19,9 +19,7 @@ class GlobalSettingsSchema(Schema):
 
     use_bbr = fields.Boolean(dump_default=None, allow_none=True)
 
-    skull_strip_algorithm = fields.Str(
-        validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), dump_default="ants"
-    )
+    skull_strip_algorithm = fields.Str(validate=validate.OneOf(["none", "auto", "ants", "hdbet"]), dump_default="ants")
 
     run_mriqc = fields.Boolean(dump_default=False)
     run_fmriprep = fields.Boolean(dump_default=True)
@@ -56,9 +54,7 @@ class GlobalSettingsSchema(Schema):
     sloppy = fields.Boolean(dump_default=False)
 
     @pre_load
-    def fill_default_values(
-        self, in_data, **_
-    ):  # make load_default equal to dump_default
+    def fill_default_values(self, in_data, **_):  # make load_default equal to dump_default
         for k, v in self.fields.items():
             if k not in in_data:
                 in_data[k] = v.dump_default
@@ -74,9 +70,7 @@ class GrandMeanScalingSettingSchema(Schema):
 
 
 class GaussianHighpassSettingSchema(Schema):
-    type = fields.Str(
-        dump_default="gaussian", validate=validate.OneOf(["gaussian"]), required=True
-    )
+    type = fields.Str(dump_default="gaussian", validate=validate.OneOf(["gaussian"]), required=True)
     hp_width = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
     lp_width = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
 
@@ -108,9 +102,7 @@ class BaseSettingSchema(Schema):
         unknown = RAISE
         ordered = True
 
-    ica_aroma = fields.Bool(
-        allow_none=True
-    )  # none is allowed to signify that this step will be skipped
+    ica_aroma = fields.Bool(allow_none=True)  # none is allowed to signify that this step will be skipped
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped

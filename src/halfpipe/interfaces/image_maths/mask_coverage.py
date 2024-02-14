@@ -37,8 +37,10 @@ class MaskCoverage(IOBase):
     input_spec = MaskCoverageInputSpec
     output_spec = MaskCoverageOutputSpec
 
-    def __init__(self, keys=[], **inputs):
+    def __init__(self, keys: list[str] | None = None, **inputs):
         super(MaskCoverage, self).__init__(**inputs)
+        if keys is None:
+            keys = list()
         self._keys = keys
         add_traits(self.inputs, keys)
 
@@ -55,8 +57,8 @@ class MaskCoverage(IOBase):
             min_coverage = 1.0
         self._min_coverage = min_coverage
 
-        self._out_files = []
-        self._coverage = []
+        self._out_files: list[Path | None] = list()
+        self._coverage: list[float] = list()
 
         for in_file in self.inputs.in_files:
             in_img = nib.nifti1.load(in_file)

@@ -18,7 +18,7 @@ from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...utils.format import format_workflow
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -37,9 +37,7 @@ def _contrasts(design_file=None):
     contrast_mat = np.zeros((1, n))
     contrast_mat[0, 0] = 1
 
-    contrast_df = pd.DataFrame(
-        contrast_mat, index=[design_df.columns[0]], columns=design_df.columns
-    )
+    contrast_df = pd.DataFrame(contrast_mat, index=[design_df.columns[0]], columns=design_df.columns)
 
     out_with_header = Path.cwd() / "merge_with_header.tsv"
     contrast_df.to_csv(
@@ -60,11 +58,12 @@ def init_seed_based_connectivity_wf(
     feature=None,
     seed_files=None,
     seed_spaces=None,
-    memcalc=MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
     """
     create workflow to calculate seed connectivity maps
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
@@ -88,9 +87,7 @@ def init_seed_based_connectivity_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     min_seed_coverage = 1
     if feature is not None:
@@ -124,15 +121,11 @@ def init_seed_based_connectivity_wf(
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(
-        reference_space=constants.reference_space, reference_res=constants.reference_res
-    )
+    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
         Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
@@ -168,9 +161,7 @@ def init_seed_based_connectivity_wf(
     workflow.connect(maskseeds, "out_files", meants, "mask")
 
     #
-    design = pe.MapNode(
-        MergeColumns(2), iterfield=["in1", "column_names1"], name="design"
-    )
+    design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design")
     workflow.connect(meants, "out_file", design, "in1")
     workflow.connect(maskseeds, "names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")
@@ -214,9 +205,7 @@ def init_seed_based_connectivity_wf(
     workflow.connect(contrasts, "out_no_header", glm, "contrasts")
 
     # make dof volume
-    makedofvolume = pe.MapNode(
-        MakeDofVolume(), iterfield=["design"], name="makedofvolume"
-    )
+    makedofvolume = pe.MapNode(MakeDofVolume(), iterfield=["design"], name="makedofvolume")
     workflow.connect(inputnode, "bold", makedofvolume, "bold_file")
     workflow.connect(fillna, "out_no_header", makedofvolume, "design")
 
@@ -229,9 +218,7 @@ def init_seed_based_connectivity_wf(
     tsnr = pe.Node(nac.TSNR(), name="tsnr", mem_gb=2 * memcalc.series_std_gb)
     workflow.connect(inputnode, "bold", tsnr, "in_file")
 
-    calcmean = pe.MapNode(
-        CalcMean(), iterfield="mask", name="calcmean", mem_gb=memcalc.series_std_gb
-    )
+    calcmean = pe.MapNode(CalcMean(), iterfield="mask", name="calcmean", mem_gb=memcalc.series_std_gb)
     workflow.connect(maskseeds, "out_files", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 

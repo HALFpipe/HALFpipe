@@ -17,12 +17,16 @@ from ..memory import MemoryCalculator
 
 
 def init_reho_wf(
-    workdir: str | Path, feature=None, fwhm=None, memcalc=MemoryCalculator.default()
+    workdir: str | Path,
+    feature=None,
+    fwhm=None,
+    memcalc: MemoryCalculator | None = None,
 ):
     """
     create a workflow to do ReHo
 
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
         name = f"{format_workflow(feature.name)}"
     else:
@@ -34,14 +38,10 @@ def init_reho_wf(
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]
-        ),
+        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
@@ -65,9 +65,7 @@ def init_reho_wf(
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #

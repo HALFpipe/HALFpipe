@@ -6,7 +6,6 @@ from math import isclose
 from pathlib import Path
 
 import pytest
-
 from halfpipe.ingest.events import ConditionFile
 from halfpipe.resource import get as getresource
 
@@ -49,9 +48,7 @@ def test_parse_condition_file_txt(tmp_path: Path, suffix: str):
     "tsv_str,expected_conditions",
     [(tsv_str, ["go", "stop"]), (tsv_numeric_str, ["1", "2"]), (f"{tsv_header}\n", [])],
 )
-def test_parse_condition_file_tsv(
-    tmp_path: Path, tsv_str: str, expected_conditions: list[str]
-):
+def test_parse_condition_file_tsv(tmp_path: Path, tsv_str: str, expected_conditions: list[str]):
     file_name = tmp_path / "gonogo.tsv"
 
     with open(file_name, "w") as file_handle:

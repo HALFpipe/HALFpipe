@@ -79,9 +79,7 @@ class Continuous:
 
     @staticmethod
     def summarize(values: list[Continuous | None]) -> str | float | None:
-        means = list(
-            value.mean for value in values if value is not None and isfinite(value.mean)
-        )
+        means = list(value.mean for value in values if value is not None and isfinite(value.mean))
         if len(means) == 0:
             return None
 

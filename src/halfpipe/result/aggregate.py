@@ -34,9 +34,7 @@ class Element:
     data: Mapping[tuple[ResultKey, str], Any]
 
 
-def group_across(
-    results: list[ResultDict], across_key: str
-) -> dict[Index, set[Element]]:
+def group_across(results: list[ResultDict], across_key: str) -> dict[Index, set[Element]]:
     groups: dict[Index, set[Element]] = defaultdict(set)
 
     for i, result in enumerate(results):
@@ -51,13 +49,9 @@ def group_across(
             if isinstance(across_value, list) and len(across_value) == 1:
                 across_value = across_value[0]
         if not isinstance(across_value, str):
-            raise ValueError(
-                f'Expected "{across_key}" value to be a string, got "{across_value}" instead'
-            )
+            raise ValueError(f'Expected "{across_key}" value to be a string, got "{across_value}" instead')
 
-        index = pmap(
-            {key: value for key, value in tags.items() if isinstance(value, str)}
-        )
+        index = pmap({key: value for key, value in tags.items() if isinstance(value, str)})
 
         data_dict = {
             (field_name, attribute_name): freeze(attribute_value)
@@ -114,9 +108,7 @@ def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]
 
 def merge_data(elements: Iterable[Element]) -> ResultDict:
     # Find all field name attribute name pairs in the set of elements
-    keys: set[tuple[ResultKey, str]] = set(
-        chain.from_iterable(element.data.keys() for element in elements)
-    )
+    keys: set[tuple[ResultKey, str]] = set(chain.from_iterable(element.data.keys() for element in elements))
 
     sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
     result: ResultDict = {
@@ -155,9 +147,7 @@ def aggregate_results(
     other_results: list[ResultDict] = list()
     for index, elements in expanded_groups.items():
         sorted_elements = sorted(elements, key=attrgetter("numerical_index"))
-        tags: dict[str, Any] = {
-            across_key: [element.across_value for element in sorted_elements]
-        }
+        tags: dict[str, Any] = {across_key: [element.across_value for element in sorted_elements]}
         tags |= index
         u = merge_data(sorted_elements)
         u["tags"] |= tags
@@ -180,11 +170,12 @@ def summarize(values: list[Any]) -> Any:
         values (list): A list of values to summarize.
 
     Returns:
-        Any: The summarized value. If all values are continuous, returns a summary of the continuous values, which are the mean and standard deviation as a string.
-        If any value is categorical, returns a summary of the categorical values, which are the counts of each level.
+        Any: The summarized value. If all values are continuous, returns a summary of the continuous values,
+        which are the mean and standard deviation as a string. If any value is categorical, returns a summary
+        of the categorical values, which are the counts of each level.
     """
     continuous_values = list(map(Continuous.load, values))
-    if all(x is None or y is not None for x, y in zip(values, continuous_values)):
+    if all(x is None or y is not None for x, y in zip(values, continuous_values, strict=False)):
         return Continuous.summarize(continuous_values)
     else:
         categorical_values = list(map(Categorical.load, values))

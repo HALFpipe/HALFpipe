@@ -34,7 +34,7 @@ class Formatter(logging.Formatter):
         super(Formatter, self).__init__(fmt=fmt, datefmt=datefmt, style="{")
         self.converter = time.localtime
 
-    def formatException(self, exc_info):
+    def format_exception(self, exc_info):
         msg = stackprinter.format(exc_info)
         msg_indented = "    " + "\n    ".join(msg.split("\n")).strip()
         return msg_indented

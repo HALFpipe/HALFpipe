@@ -25,21 +25,7 @@ class DTypeWarningsFilter(Filter):
         return True
 
 
-pywarnings_to_ignore: list[str] = [
-    "ParserWarning",
-    "FutureWarning",
-    "DeprecationWarning",
-    "DependencyWarning",
-    # numpy
-    "RuntimeWarning: Mean of empty slice",
-    "`np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.",
-    "`np.int` is a deprecated alias for the builtin `int`. To silence this warning, use `int` by itself. Doing this will not modify any behavior and is safe. When replacing `np.int`, you may wish to use e.g. `np.int64` or `np.int32` to specify the precision. If you wish to review your current use, check the release note link for additional information.",
-    "`np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.",
-    # nipype
-    "cmp not installed",
-    "The trackvis interface has been deprecated and will be removed in v4.0; please use the 'nibabel.streamlines' interface.",
-    "This has not been fully tested. Please report any failures.",
-]
+pywarnings_to_ignore: list[str] = []
 
 pywarnings_to_hide: list[str] = [
     # numpy

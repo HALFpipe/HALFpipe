@@ -57,18 +57,14 @@ class ReMLTerms(NamedTuple):
     gram_matrix: npt.NDArray[np.float64]
 
 
-def reml_terms(
-    ϑ: float, x: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
-) -> ReMLTerms:
+def reml_terms(ϑ: float, x: npt.NDArray[np.float64], s: npt.NDArray[np.float64]) -> ReMLTerms:
     inverse_variance = np.reciprocal(1.0 / (s + ϑ)).ravel()
 
     a = x.T * inverse_variance
     gram_matrix = a @ x
 
     # projection matrix
-    projection_matrix = (
-        np.diag(inverse_variance) - a.T @ np.linalg.lstsq(gram_matrix, a, rcond=-1.0)[0]
-    )
+    projection_matrix = np.diag(inverse_variance) - a.T @ np.linalg.lstsq(gram_matrix, a, rcond=-1.0)[0]
     return ReMLTerms(inverse_variance, projection_matrix, gram_matrix)
 
 
@@ -97,9 +93,7 @@ def reml_fit(
     x: npt.NDArray[np.float64],
     s: npt.NDArray[np.float64],
 ) -> scipy.optimize.OptimizeResult:
-    return scipy.optimize.minimize_scalar(
-        reml_neg_log_lik, args=(y, x, s), method="brent"
-    )
+    return scipy.optimize.minimize_scalar(reml_neg_log_lik, args=(y, x, s), method="brent")
 
 
 def reml_jacobian(
@@ -293,9 +287,7 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(
-        cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict
-    ) -> dict:
+    def write_outputs(cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict) -> dict:
         output_files = dict()
 
         rdf = pd.DataFrame.from_records(voxel_results)

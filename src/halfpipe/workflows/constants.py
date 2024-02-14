@@ -5,7 +5,7 @@
 from typing import Final
 
 
-class constants:
+class Constants:
     reference_space: Final[str] = "MNI152NLin2009cAsym"
     reference_res: Final[int] = 2
 

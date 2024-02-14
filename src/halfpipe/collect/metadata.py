@@ -31,9 +31,7 @@ metadata_fields: frozenset[str] = frozenset(
 )
 
 
-def collect_metadata(
-    database: Database, path: Path | str, setting=None
-) -> dict[str, Any]:
+def collect_metadata(database: Database, path: Path | str, setting=None) -> dict[str, Any]:
     metadata: dict[str, Any] = OrderedDict()
 
     if setting is not None:
@@ -91,9 +89,7 @@ def collect_metadata(
 
     if not set(metadata.keys()).issubset(metadata_fields):
         unknown_keys = set(metadata.keys()) - metadata_fields
-        unknown_keys_str = inflect_engine.join(
-            [f'"{key}"' for key in sorted(unknown_keys)]
-        )
+        unknown_keys_str = inflect_engine.join([f'"{key}"' for key in sorted(unknown_keys)])
         raise ValueError(f"Collected unknown metadata keys {unknown_keys_str}")
 
     return metadata

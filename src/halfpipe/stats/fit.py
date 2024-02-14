@@ -49,29 +49,21 @@ def load_data(
     quiet: bool | None = None,
 ) -> tuple[nib.analyze.AnalyzeImage, nib.analyze.AnalyzeImage]:
     if len(cope_files) != len(mask_files):
-        raise ValueError(
-            f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})"
-        )
+        raise ValueError(f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})")
 
     # Load cope images.
-    cope_imgs = [
-        nib.funcs.squeeze_image(nib.nifti1.load(cope_file)) for cope_file in cope_files
-    ]
+    cope_imgs = [nib.funcs.squeeze_image(nib.nifti1.load(cope_file)) for cope_file in cope_files]
 
     (volume_shape,) = set(img.shape[:3] for img in cope_imgs)
     shape = volume_shape + (len(mask_files),)
 
     cope_data = np.empty(shape, dtype=float)
-    for i, cope_img in enumerate(
-        tqdm(cope_imgs, desc="loading cope images", leave=False, disable=quiet)
-    ):
+    for i, cope_img in enumerate(tqdm(cope_imgs, desc="loading cope images", leave=False, disable=quiet)):
         cope_data[..., i] = cope_img.get_fdata()
 
     # Load mask images.
     mask_data = np.empty(shape, dtype=bool)
-    for i, mask_file in enumerate(
-        tqdm(mask_files, desc="loading mask images", leave=False, disable=quiet)
-    ):
+    for i, mask_file in enumerate(tqdm(mask_files, desc="loading mask images", leave=False, disable=quiet)):
         mask_img = nib.funcs.squeeze_image(nib.nifti1.load(mask_file))
         mask_data[..., i] = np.asanyarray(mask_img.dataobj).astype(bool)
 
@@ -91,9 +83,7 @@ def load_data(
             )
         ):
             if var_cope_file is None:
-                raise ValueError(
-                    f'Missing var_cope file corresponding to "{cope_files[i]}"'
-                )
+                raise ValueError(f'Missing var_cope file corresponding to "{cope_files[i]}"')
             var_cope_img = nib.funcs.squeeze_image(nib.nifti1.load(var_cope_file))
             var_cope_data[..., i] = var_cope_img.get_fdata()
 
@@ -187,9 +177,7 @@ def fit(
         algorithms_to_run,
     )
 
-    cm, iterator = make_pool_or_null_context(
-        voxel_data, voxel_calc, num_threads=num_threads, chunksize=2**9
-    )
+    cm, iterator = make_pool_or_null_context(voxel_data, voxel_calc, num_threads=num_threads, chunksize=2**9)
     voxel_results: dict[str, dict] = defaultdict(lambda: defaultdict(dict))
     with cm:
         for x in tqdm(iterator, unit="voxels", desc="model fit"):

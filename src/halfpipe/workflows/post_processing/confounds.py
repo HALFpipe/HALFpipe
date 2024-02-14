@@ -27,15 +27,11 @@ def init_confounds_select_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold", "confounds", "confound_names", "mask", "vals"]
-        ),
+        niu.IdentityInterface(fields=["bold", "confounds", "confound_names", "mask", "vals"]),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold", "confounds_selected", "confounds", "mask", "vals"]
-        ),
+        niu.IdentityInterface(fields=["bold", "confounds_selected", "confounds", "mask", "vals"]),
         name="outputnode",
     )
     workflow.connect(inputnode, "bold", outputnode, "bold")
@@ -58,16 +54,15 @@ def init_confounds_select_wf(
 def init_confounds_regression_wf(
     name: str = "confounds_regression_wf",
     suffix: str | None = None,
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["bold", "confounds_selected", "confounds", "mask", "vals"]
-        ),
+        niu.IdentityInterface(fields=["bold", "confounds_selected", "confounds", "mask", "vals"]),
         name="inputnode",
     )
     outputnode = pe.Node(

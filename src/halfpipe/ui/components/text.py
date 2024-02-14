@@ -39,7 +39,7 @@ class Text(ABC):
         return str(self) == str(other)
 
     @abstractmethod
-    def drawAt(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
+    def draw_at(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
         raise NotImplementedError
 
 
@@ -74,7 +74,7 @@ class TextElement(Text):
         for c in self._value:
             yield c, self._color
 
-    def drawAt(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
+    def draw_at(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
         if y is None or x is None or layout is None:
             return
 
@@ -123,10 +123,10 @@ class TextElementCollection(Text):
         for el in self.text_elements:
             yield from el
 
-    def drawAt(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
+    def draw_at(self, y, x, layout, color=None, overridecolor=False, renderfun=None):
         size = 0
         for el in self.text_elements:
-            el.drawAt(
+            el.draw_at(
                 y,
                 x + size,
                 layout,

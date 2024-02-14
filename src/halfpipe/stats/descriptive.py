@@ -35,9 +35,7 @@ class Descriptive(ModelAlgorithm):
         # make data frame
         zframe = pd.DataFrame(z)
 
-        voxel_result: Dict[str, Dict[Tuple[int, int, int], Dict[str, float]]] = (
-            defaultdict(dict)
-        )
+        voxel_result: Dict[str, Dict[Tuple[int, int, int], Dict[str, float]]] = defaultdict(dict)
 
         for name, cmat in cmatdict.items():
             if name.lower() == "intercept":
@@ -51,9 +49,7 @@ class Descriptive(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(
-        cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: Dict, voxel_results: Dict
-    ) -> Dict:
+    def write_outputs(cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: Dict, voxel_results: Dict) -> Dict:
         output_files: Dict[str, List[Union[Literal[False], str]]] = dict()
 
         for output_name in cls.contrast_outputs:

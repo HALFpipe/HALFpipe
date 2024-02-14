@@ -38,9 +38,7 @@ def _find_sources(inpath, metadata) -> tuple[list[str] | None, str | None]:
             if isinstance(nipype_hash_file, (str, Path)):
                 nipype_hash_file = Path(nipype_hash_file)
 
-                match = re.match(
-                    r"_0x(?P<hash>[0-9a-f]{32})\.json", nipype_hash_file.name
-                )
+                match = re.match(r"_0x(?P<hash>[0-9a-f]{32})\.json", nipype_hash_file.name)
                 if match is not None:
                     file_hash = match.group("hash")
 
@@ -77,9 +75,7 @@ def datasink_reports(indicts, reports_directory):
             reports = indict.get("reports", dict())
 
             for key, inpath in reports.items():
-                outpath = reports_directory / make_bids_path(
-                    inpath, "report", tags, key
-                )
+                outpath = reports_directory / make_bids_path(inpath, "report", tags, key)
                 copy_if_newer(inpath, outpath)
 
                 file_hash = None
@@ -96,8 +92,7 @@ def datasink_reports(indicts, reports_directory):
                 if sources is not None:
                     outdict["sourcefiles"] = []
                     for source in sources:
-                        source = Path(source)
-                        if reports_directory.parent in source.parents:
+                        if reports_directory.parent in Path(source).parents:
                             source = op.relpath(source, start=reports_directory)
                         source_str = str(source)
                         if source_str not in outdict["sourcefiles"]:
@@ -131,10 +126,7 @@ def datasink_vals(indicts, reports_directory):
                         outdict[key] = continuous.mean
                         continue
 
-                    logger.warning(
-                        f'Omitting invalid key-value pair "{key}={value}"'
-                        " from reportvals.json"
-                    )
+                    logger.warning(f'Omitting invalid key-value pair "{key}={value}"' " from reportvals.json")
 
                 outdict.update(vals)
 
@@ -161,9 +153,7 @@ def datasink_preproc(indicts, reports_directory):
 
 
 class ResultdictDatasinkInputSpec(TraitedSpec):
-    base_directory = traits.Directory(
-        desc="Path to the base directory for storing data.", mandatory=True
-    )
+    base_directory = traits.Directory(desc="Path to the base directory for storing data.", mandatory=True)
     indicts = traits.List(traits.Dict(traits.Str(), traits.Any()))
 
 

@@ -7,7 +7,6 @@ from typing import Any
 from unittest import mock
 
 import pytest
-
 from halfpipe.ui.components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,
@@ -74,9 +73,7 @@ def test_setting_vals(bandpass_filter) -> None:
     )
 
     with (
-        mock.patch.object(
-            MultiCombinedNumberAndSingleChoiceInputView, "__call__"
-        ) as mcnsc,
+        mock.patch.object(MultiCombinedNumberAndSingleChoiceInputView, "__call__") as mcnsc,
         mock.patch.object(MultipleChoiceInputView, "__call__") as mc,
     ):
         instance: Any = step(app)

@@ -18,6 +18,8 @@ from ..logging import logger
 
 
 class Node(pe.Node):
+    _got_inputs: bool
+
     def __init__(
         self,
         interface,
@@ -64,7 +66,7 @@ class Node(pe.Node):
                 if self.allow_missing_input_source:
                     logger.warning(
                         f'Missing input file "{results_fname}". '
-                        "This may indicate that errors occured during previous processing steps.",
+                        "This may indicate that errors occurred during previous processing steps.",
                         exc_info=e,
                     )
                 else:
@@ -86,9 +88,7 @@ class Node(pe.Node):
                 if isinstance(conn, tuple):
                     value = getattr(outputs, conn[0])
                     if isdefined(value):
-                        output_value = evaluate_connect_function(
-                            conn[1], conn[2], value
-                        )
+                        output_value = evaluate_connect_function(conn[1], conn[2], value)
                 else:
                     output_name = conn
                     try:
@@ -129,9 +129,7 @@ class MapNode(pe.MapNode, Node):
         self.allow_undefined_iterfield: bool = allow_undefined_iterfield
 
     def _make_empty_results(self):
-        finalresult = InterfaceResult(
-            interface=[], runtime=[], provenance=[], inputs=[], outputs=self.outputs
-        )
+        finalresult = InterfaceResult(interface=[], runtime=[], provenance=[], inputs=[], outputs=self.outputs)
         if self.outputs:
             assert self.config is not None
             for key, _ in list(self.outputs.items()):

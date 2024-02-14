@@ -35,19 +35,13 @@ class ModelAlgorithm(ABC):
         raise NotImplementedError()
 
     @classmethod
-    def write_map(
-        cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series
-    ) -> Path:
+    def write_map(cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series) -> Path:
         coordinates = series.index.tolist()
         values = series.values.tolist()
 
         shape: list[int] = list(reference_image.shape[:3])
         (k,) = set(
-            (
-                (1,)
-                if isinstance(value, (int, float))
-                else (len(value),) if isinstance(value, (list, tuple)) else value.shape
-            )
+            ((1,) if isinstance(value, (int, float)) else (len(value),) if isinstance(value, (list, tuple)) else value.shape)
             for value in values
         )
         shape.extend(k)
@@ -60,7 +54,7 @@ class ModelAlgorithm(ABC):
         else:
             array = np.full(shape, np.nan, dtype=np.float64)
 
-        array[*zip(*coordinates)] = np.stack(values).squeeze()
+        array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
 
         image = new_img_like(reference_image, array, copy_header=True)
         image.header.set_data_dtype(np.float64)

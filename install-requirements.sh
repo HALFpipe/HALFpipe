@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-opts=$(getopt -o r: --long requirements-file: -n 'enigma-qc' -- "$@")
+opts=$(getopt -o r: --long requirements-file: -n 'install-requirements' -- "$@")
 eval set -- "$opts"
 
 verbose=1

@@ -58,27 +58,19 @@ class Transformer(SimpleInterface):
             elif ndim == 4:
                 volumes = nib.funcs.four_to_three(in_img)
             else:
-                raise ValueError(
-                    f'Unexpect number of dimensions {ndim:d} in "{in_file}"'
-                )
+                raise ValueError(f'Unexpect number of dimensions {ndim:d} in "{in_file}"')
 
             volume_shape = volumes[0].shape
             n_voxels = np.prod(volume_shape)
 
-            if (
-                isdefined(mask_file)
-                and isinstance(mask_file, str)
-                and Path(mask_file).is_file()
-            ):
+            if isdefined(mask_file) and isinstance(mask_file, str) and Path(mask_file).is_file():
                 mask_img = nib.funcs.squeeze_image(nib.nifti1.load(mask_file))
 
                 assert nvol(mask_img) == 1
                 assert np.allclose(mask_img.affine, in_img.affine)
 
                 mask_fdata = mask_img.get_fdata(dtype=np.float64)
-                mask_bin = np.logical_not(
-                    np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2))
-                )
+                mask_bin = np.logical_not(np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2)))
 
                 self.mask = mask_bin
                 n_voxels = np.count_nonzero(mask_bin)

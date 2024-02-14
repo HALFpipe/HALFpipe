@@ -53,4 +53,4 @@ def test_str_slice_timing():
         0.9725,
     ]
 
-    assert all(isclose(a, b, abs_tol=1e-2) for a, b in zip(timings, reference))
+    assert all(isclose(a, b, abs_tol=1e-2) for a, b in zip(timings, reference, strict=False))

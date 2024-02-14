@@ -8,11 +8,10 @@ from pathlib import Path
 
 import nipype.pipeline.engine as pe
 import pytest
-from nipype.interfaces import afni
-
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.smoothing import init_smoothing_wf
+from nipype.interfaces import afni
 
 from ...resource import setup as setup_test_resources
 
@@ -38,9 +37,7 @@ def test_smoothing_volume(tmp_path, target_fwhm):
 
     setup_test_resources()
 
-    in_file = get_resource(
-        "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz"
-    )
+    in_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
     brain_file = tmp_path / "brain.nii.gz"
     mask_file = tmp_path / "mask.nii.gz"
 
