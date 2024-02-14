@@ -1,0 +1,39 @@
+{% set name = "nitransforms" %}
+{% set version = "20.0.0rc5" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 650eb12155f01fae099298445cc33721b9935d9c880f54ec486ec4adf3bffe6e
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  host:
+    - pip
+    - python
+    - numpy
+    - scipy
+    - nibabel
+    - h5py
+  run:
+    - python
+    - numpy
+    - scipy
+    - h5py
+    - nibabel
+
+test:
+  imports:
+    - nitransforms
+
+about:
+  home: https://github.com/nipy/nitransforms
+  license: MIT
+  license_file: LICENSE.txt
+  summary: 'A development repo for nipy/nibabel#656'
