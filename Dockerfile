@@ -13,12 +13,6 @@ RUN for pkg in rmath traits niflow-nipype1-workflows; do \
         conda build purge; \
     done
 
-# RUN for pkg in rmath traits niflow-nypipe-workflows; do \
-#         --mount=source=recipes/$pkg,target=/$pkg \
-#         conda mambabuild --no-anaconda-upload $pkg && \
-#         conda build purge; \
-#     done
-
 FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
