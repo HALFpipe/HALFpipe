@@ -95,9 +95,6 @@ def make_pool_or_null_context(
     chunksize: int | None = 1,
     iteration_order: IterationOrder = IterationOrder.UNORDERED,
 ) -> tuple[ContextManager, Iterator[S]]:
-    if num_threads < 2:
-        return nullcontext(), map(callable, iterable)
-
     if isinstance(iterable, Sized):
         num_threads = min(len(iterable), num_threads)
         # Apply logic from pool.map (multiprocessing/pool.py#L481) here as well
@@ -107,6 +104,9 @@ def make_pool_or_null_context(
                 chunksize += 1
     if chunksize is None:
         chunksize = 1
+
+    if num_threads in {0, 1}:
+        return nullcontext(), map(callable, iterable)
 
     pool = Pool(processes=num_threads)
     if iteration_order is IterationOrder.ORDERED:
