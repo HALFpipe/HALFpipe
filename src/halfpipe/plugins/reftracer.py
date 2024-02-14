@@ -21,12 +21,8 @@ class PathReferenceTracer:
         self.grey: set[Path] = set()  # still has references from pending nodes
         self.white: set[Path] = set()
 
-        self.refs: dict[Path, set[Path]] = defaultdict(
-            set
-        )  # other paths that are referenced by a path
-        self.deps: dict[Path, set[Path]] = defaultdict(
-            set
-        )  # paths that a path depends on (inverse refs)
+        self.refs: dict[Path, set[Path]] = defaultdict(set)  # other paths that are referenced by a path
+        self.deps: dict[Path, set[Path]] = defaultdict(set)  # paths that a path depends on (inverse refs)
 
     def resolve(self, path) -> Path:
         if not isinstance(path, Path):
@@ -98,15 +94,13 @@ class PathReferenceTracer:
             return
 
         if node.input_source:
-            input_files, _ = zip(*node.input_source.values())
+            input_files, _ = zip(*node.input_source.values(), strict=False)
             for input_file in input_files:
                 from_path = self.resolve(input_file)
                 if from_path in self.black or from_path in self.grey:
                     self.add_ref(from_path, to_path)
                 else:
-                    logger.debug(
-                        f'{node.name} has untracked input_source "{input_file}"'
-                    )
+                    logger.debug(f'{node.name} has untracked input_source "{input_file}"')
 
     def set_node_complete(self, node, unmark: bool):
         to_path = self.node_resultfile_path(node)
@@ -147,21 +141,17 @@ class PathReferenceTracer:
                 if actual - predicted > 1:  # more than one gigabyte error
                     log_method = logger.warning
 
-                log_method(
-                    f'Memory usage for node "{node.fullname}" exceeds prediction '
-                    f"{predicted=} {actual=}"
-                )
+                log_method(f'Memory usage for node "{node.fullname}" exceeds prediction ' f"{predicted=} {actual=}")
 
             elif predicted - actual > 5:  # more than 5 gigabytes error
                 logger.warning(
-                    f'Memory usage for node "{node.fullname}" is significantly below prediction '
-                    f"{predicted=} {actual=}"
+                    f'Memory usage for node "{node.fullname}" is significantly below prediction ' f"{predicted=} {actual=}"
                 )
 
         except Exception:
             pass
 
-        stack = [*find_paths(getattr(result, "outputs"))]
+        stack = [*find_paths(result.outputs)]
         while len(stack) > 0:
             path = self.resolve(stack.pop())
 
@@ -196,9 +186,7 @@ class PathReferenceTracer:
         if len(paths) == 0:
             return
 
-        logger.info(
-            "[node dependencies finished] removing\n" + "\n".join(map(str, paths))
-        )
+        logger.info("[node dependencies finished] removing\n" + "\n".join(map(str, paths)))
 
         for path in paths:
             if path in self.weak_references:

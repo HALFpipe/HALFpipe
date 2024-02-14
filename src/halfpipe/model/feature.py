@@ -2,12 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
-
-from typing import Dict, List, Optional
-
 from marshmallow import Schema, fields, post_dump, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
@@ -16,10 +10,10 @@ from .setting import SmoothingSettingSchema
 
 
 class Feature:
-    def __init__(self, name: str, type: str, **kwargs) -> None:
+    def __init__(self, name, type: str, **kwargs) -> None:
         self.name = name
         self.type = type
-        self.contrasts: Optional[List[Dict]] = None
+        self.contrasts: list[dict] | None = None
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -71,15 +65,11 @@ class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
         validate=validate.Equal("seed_based_connectivity"),
     )
     seeds = fields.List(fields.Str())
-    min_seed_coverage = fields.Float(
-        dump_default=0.8, validate=validate.Range(min=0.0, max=1.0)
-    )
+    min_seed_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class DualRegressionFeatureSchema(BaseFeatureSchema):
-    type = fields.Str(
-        dump_default="dual_regression", validate=validate.Equal("dual_regression")
-    )
+    type = fields.Str(dump_default="dual_regression", validate=validate.Equal("dual_regression"))
     maps = fields.List(fields.Str())
 
 
@@ -89,9 +79,7 @@ class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
         validate=validate.Equal("atlas_based_connectivity"),
     )
     atlases = fields.List(fields.Str())
-    min_region_coverage = fields.Float(
-        dump_default=0.8, validate=validate.Range(min=0.0, max=1.0)
-    )
+    min_region_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 
 class ReHoFeatureSchema(BaseFeatureSchema):

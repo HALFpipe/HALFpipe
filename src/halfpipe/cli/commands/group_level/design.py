@@ -63,9 +63,7 @@ class DesignBase:
             data_frame = None
         else:
             data_frame = prepare_data_frame(spreadsheet, variables)
-            column_info = inflect_engine.join(
-                [f'"{column}"' for column in data_frame.columns]
-            )
+            column_info = inflect_engine.join([f'"{column}"' for column in data_frame.columns])
             logger.info(f"Initializing design base with variables {column_info}")
         return cls(
             model_name,
@@ -128,9 +126,7 @@ class DesignBase:
         logger.info(f'Removing variable "{name}" from design base')
         # Remove contrasts for the variable
         self.contrasts = [
-            contrast
-            for contrast in self.contrasts
-            if all(variable != name for variable in contrast["variable"])
+            contrast for contrast in self.contrasts if all(variable != name for variable in contrast["variable"])
         ]
         if name in self.data_frame:
             return self.data_frame.pop(name)
@@ -196,16 +192,12 @@ def apply_from_spec(
         results = filtered_results
         if len(results) == 0:
             # Print a nice error message
-            seen_inputs_str = inflect_engine.join(
-                [f'"{seen_input}"' for seen_input in sorted(seen_inputs)]
-            )
+            seen_inputs_str = inflect_engine.join([f'"{seen_input}"' for seen_input in sorted(seen_inputs)])
             model_inputs_str = inflect_engine.join(
                 [f'"{model_input}"' for model_input in sorted(model_inputs)],
                 conj="or",
             )
-            raise ValueError(
-                f"Found inputs {seen_inputs_str}, but need one of {model_inputs_str}"
-            )
+            raise ValueError(f"Found inputs {seen_inputs_str}, but need one of {model_inputs_str}")
 
         qc_exclude_files: list[Path] = [
             workdir / "exclude*.json",
@@ -306,7 +298,7 @@ def apply_from_arguments(
 
     categorical_variable = arguments.categorical_variable
     if categorical_variable is not None:
-        for name, levels in zip(categorical_variable, arguments.levels):
+        for name, levels in zip(categorical_variable, arguments.levels, strict=False):
             add_variable("categorical", name, levels=levels)
 
     missing_value_strategy = arguments.missing_value_strategy

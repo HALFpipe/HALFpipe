@@ -15,7 +15,7 @@ class Writer:
     terminator = "\n"
 
     def __init__(self, levelno=logging.DEBUG):
-        self.queue = Queue()
+        self.queue: Queue = Queue()
         self.can_write = Event()
         self.levelno = levelno
 
@@ -75,9 +75,7 @@ class Writer:
                 self.exception()
 
     def exception(self):
-        logging.warning(
-            f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True
-        )
+        logging.warning(f"Caught exception in {self.__class__.__name__}. Stopping", exc_info=True)
         self.can_write.clear()
 
     def check(self) -> bool:

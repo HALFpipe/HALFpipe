@@ -32,9 +32,7 @@ def dictionary_contains(target: dict, query: dict) -> bool:
     return True
 
 
-def map_setting_to_template(
-    target: dict[str, Any], setting_templates: dict[str, dict[str, Any]]
-) -> str | None:
+def map_setting_to_template(target: dict[str, Any], setting_templates: dict[str, dict[str, Any]]) -> str | None:
     for template_name, setting_template in setting_templates.items():
         logger.debug(f"Checking {template_name}")
         if dictionary_contains(target, setting_template):

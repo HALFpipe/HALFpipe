@@ -21,7 +21,8 @@ def mean_signals(
     mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
-) -> npt.NDArray: ...
+) -> npt.NDArray:
+    ...
 
 
 @overload
@@ -32,7 +33,8 @@ def mean_signals(
     mask_image: nib.analyze.AnalyzeImage | None = None,
     background_label: int = 0,
     min_region_coverage: float = 0,
-) -> tuple[npt.NDArray, list[float]]: ...
+) -> tuple[npt.NDArray, list[float]]:
+    ...
 
 
 def mean_signals(
@@ -71,9 +73,7 @@ def mean_signals(
             raise ValueError("Mask image and data image must have the same shape")
         if not np.allclose(mask_image.affine, data_image.affine):
             raise ValueError("Mask image and data image must have the same affine")
-        mask_image = nib.funcs.squeeze_image(
-            mask_image
-        )  # Remove trailing singleton dimensions.
+        mask_image = nib.funcs.squeeze_image(mask_image)  # Remove trailing singleton dimensions.
         if mask_image is None:
             raise RuntimeError("Failed to squeeze mask image")
         mask = np.asanyarray(mask_image.dataobj).astype(bool)
@@ -82,22 +82,16 @@ def mean_signals(
         labels = np.arange(0, label_count + 1, dtype=int)
 
         if not np.all(mask):
-            unmasked_counts = np.bincount(
-                np.ravel(atlas_volume), minlength=label_count + 1
-            )
+            unmasked_counts = np.bincount(np.ravel(atlas_volume), minlength=label_count + 1)
             unmasked_counts = unmasked_counts[: label_count + 1]
 
             atlas_volume[np.logical_not(mask)] = background_label
-            masked_counts = np.bincount(
-                np.ravel(atlas_volume), minlength=label_count + 1
-            )
+            masked_counts = np.bincount(np.ravel(atlas_volume), minlength=label_count + 1)
             masked_counts = masked_counts[: label_count + 1]
 
             has_voxels = unmasked_counts != 0
             region_coverage = np.zeros(label_count + 1)
-            region_coverage[has_voxels] = (
-                masked_counts[has_voxels] / unmasked_counts[has_voxels]
-            )
+            region_coverage[has_voxels] = masked_counts[has_voxels] / unmasked_counts[has_voxels]
 
             region_coverage_array[has_voxels] = region_coverage[has_voxels]
 
@@ -133,7 +127,8 @@ def mode_signals(
     var_cope_img: nib.analyze.AnalyzeImage,
     modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[False] = False,
-) -> npt.NDArray: ...
+) -> npt.NDArray:
+    ...
 
 
 @overload
@@ -142,7 +137,8 @@ def mode_signals(
     var_cope_img: nib.analyze.AnalyzeImage,
     modes_img: nib.analyze.AnalyzeImage,
     output_coverage: Literal[True],
-) -> tuple[npt.NDArray, npt.NDArray]: ...
+) -> tuple[npt.NDArray, npt.NDArray]:
+    ...
 
 
 def mode_signals(

@@ -11,9 +11,7 @@ from .base import BaseFileSchema
 
 class RefFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="ref", validate=validate.OneOf(["ref"]))
-    suffix = fields.Str(
-        dump_default="seed", validate=validate.OneOf(["seed", "map", "atlas"])
-    )
+    suffix = fields.Str(dump_default="seed", validate=validate.OneOf(["seed", "map", "atlas"]))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
     tags = fields.Nested(RefTagsSchema(), dump_default=dict())
     metadata = fields.Nested(RefMetadataSchema())

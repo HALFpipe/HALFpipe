@@ -83,9 +83,7 @@ class AcqToTaskMappingStep(Step):
         boldtags = sorted(
             set(
                 frozenset(
-                    (k, v)
-                    for k, v in ctx.database.tags(f).items()
-                    if k not in ["sub"] and k in entities and v is not None
+                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
                 )
                 for f in boldfilepaths
             )
@@ -97,11 +95,7 @@ class AcqToTaskMappingStep(Step):
             def _format_tags(tagset):
                 tagdict = dict(tagset)
                 return ", ".join(
-                    (
-                        f'{e} "{tagdict[e]}"'
-                        if e not in entity_longnames
-                        else f'{entity_longnames[e]} "{tagdict[e]}"'
-                    )
+                    (f'{e} "{tagdict[e]}"' if e not in entity_longnames else f'{entity_longnames[e]} "{tagdict[e]}"')
                     for e in entities
                     if e in tagdict and tagdict[e] is not None
                 )
@@ -111,13 +105,9 @@ class AcqToTaskMappingStep(Step):
 
             self.options = [_format_tags(t).capitalize() for t in boldtags]
             self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
-            selected_indices = [
-                self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags
-            ]
+            selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
-            self.input_view = MultiSingleChoiceInputView(
-                [*self.options], [*self.values], selectedIndices=selected_indices
-            )
+            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values], selectedIndices=selected_indices)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -137,7 +127,7 @@ class AcqToTaskMappingStep(Step):
         if self.result is not None:
             bold_fmap_tag_dict = {
                 boldtagset: self.fmaptags[self.values.index(self.result[option])]
-                for option, boldtagset in zip(self.options, self.boldtags)
+                for option, boldtagset in zip(self.options, self.boldtags, strict=False)
             }
 
             fmap_bold_tag_dict = dict()
@@ -145,9 +135,7 @@ class AcqToTaskMappingStep(Step):
                 if fmaptagset not in fmap_bold_tag_dict:
                     fmap_bold_tag_dict[fmaptagset] = boldtagset
                 else:
-                    fmap_bold_tag_dict[fmaptagset] = (
-                        fmap_bold_tag_dict[fmaptagset] | boldtagset
-                    )
+                    fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
 
             for specfileobj in ctx.spec.files:
                 if specfileobj.datatype != "fmap":
@@ -157,9 +145,7 @@ class AcqToTaskMappingStep(Step):
 
                 fmaptags = set(
                     frozenset(
-                        (k, v)
-                        for k, v in ctx.database.tags(f).items()
-                        if k not in ["sub"] and k in entities and v is not None
+                        (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
                     )
                     for f in map(attrgetter("path"), fmaplist)
                 )
@@ -180,7 +166,7 @@ class AcqToTaskMappingStep(Step):
                     if a[0] != b[0] and "sub" not in (a[0], b[0])
                 )
 
-                intended_for = dict()
+                intended_for: dict[str, list[str]] = dict()
                 for functag, fmaptag in mappings:
                     entity, val = functag
                     funcstr = f"{entity}.{val}"
@@ -316,12 +302,8 @@ class FmapTypeStep(BranchStep):
     header_str = "Specify the type of the field maps"
     options = {
         "EPI (blip-up blip-down)": EPIStep,
-        "Phase difference and magnitude (used by Siemens scanners)": get_magnitude_steps(
-            PhaseTypeStep
-        ),
-        "Scanner-computed field map and magnitude (used by GE / Philips scanners)": get_magnitude_steps(
-            FieldMapStep
-        ),
+        "Phase difference and magnitude (used by Siemens scanners)": get_magnitude_steps(PhaseTypeStep),
+        "Scanner-computed field map and magnitude (used by GE / Philips scanners)": get_magnitude_steps(FieldMapStep),
     }
 
 

@@ -55,17 +55,13 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
         assert isinstance(data_frame, pd.DataFrame)
         return data_frame
 
-    cleaned_file_str = re.sub(
-        r"[^\x00-\x7f]", "", file_str
-    )  # remove unicode characters, e.g. BOM
+    cleaned_file_str = re.sub(r"[^\x00-\x7f]", "", file_str)  # remove unicode characters, e.g. BOM
     file_lines = cleaned_file_str.splitlines()
 
     file_lines = [s for s in file_lines if len(s.strip()) > 0]
 
     comment_prefix: str | None = None
-    comment_m = re.match(
-        r"^(?P<prefix>[£$%^#/\\]+)", file_lines[0]
-    )  # detect prefix only at start of file
+    comment_m = re.match(r"^(?P<prefix>[£$%^#/\\]+)", file_lines[0])  # detect prefix only at start of file
     if comment_m is not None:
         comment_prefix = comment_m.group("prefix")
 
@@ -123,9 +119,7 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
             mean(
                 map(
                     float,
-                    map(
-                        str_is_convertible_to_float, re.split(kwargs["sep"], file_line)
-                    ),
+                    map(str_is_convertible_to_float, re.split(kwargs["sep"], file_line)),
                 )
             )
             for file_line in file_lines[:10]
@@ -154,9 +148,7 @@ def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
     if data_frame.columns[0] == "Unnamed: 0":
         # detect index_col that pandas may have missed
         if not any(
-            isinstance(s, float)
-            or (isinstance(s, str) and str_is_convertible_to_float(s))
-            for s in data_frame["Unnamed: 0"]
+            isinstance(s, float) or (isinstance(s, str) and str_is_convertible_to_float(s)) for s in data_frame["Unnamed: 0"]
         ):
             data_frame.set_index("Unnamed: 0", inplace=True)
             data_frame.index.rename(None, inplace=True)

@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
-
 from halfpipe.stats.base import listwise_deletion
 
 

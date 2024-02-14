@@ -35,7 +35,7 @@ def load_atlas(
     labels_frame = read_spreadsheet(labels_path)
     labels: dict[int, str] = dict()
     for label_tuple in labels_frame.itertuples(index=False):
-        # First columnn is the index, second is the name.
+        # First column is the index, second is the name.
         labels[int(label_tuple[0])] = format_like_bids(str(label_tuple[1]))
 
     image = nib.nifti1.load(image_path)
@@ -45,8 +45,8 @@ def load_atlas(
 class Statistic(Enum):
     z = auto()
     effect = auto()
-    standardizedEffect = auto()
-    cohensD = auto()
+    standardized_effect = auto()
+    cohens_d = auto()
 
 
 @dataclass
@@ -72,16 +72,12 @@ class ImagePaths:
     def mask_data(self) -> npt.NDArray[np.bool_]:
         return np.asanyarray(self.mask_image.dataobj, dtype=bool)
 
-    def get_data_image(
-        self, statistic: Statistic
-    ) -> tuple[Statistic, nib.analyze.AnalyzeImage]:
+    def get_data_image(self, statistic: Statistic) -> tuple[Statistic, nib.analyze.AnalyzeImage]:
         if statistic == Statistic.effect:
             return statistic, self.effect_image
-        elif statistic == Statistic.cohensD:
+        elif statistic == Statistic.cohens_d:
             if self.sigmasquareds is None:
-                logger.info(
-                    f'Cannot find sigmasquareds image for image "{self.effect}"'
-                )
+                logger.info(f'Cannot find sigmasquareds image for image "{self.effect}"')
                 return self.get_data_image(Statistic.effect)
             effect_image = self.effect_image
             sigmasquareds_image = nib.nifti1.load(self.sigmasquareds)
@@ -94,20 +90,18 @@ class ImagePaths:
             d[mask] = effect[mask] / np.sqrt(sigmasquareds[mask])
 
             d_image = new_img_like(effect_image, d, copy_header=True)
-            return Statistic.cohensD, d_image
+            return Statistic.cohens_d, d_image
         elif statistic == Statistic.z:
             if self.z is None:
                 logger.info(f'Cannot find z-statistic image for image "{self.effect}"')
                 return self.get_data_image(Statistic.effect)
             return Statistic.z, nib.nifti1.load(self.z)
-        elif statistic == Statistic.standardizedEffect:
+        elif statistic == Statistic.standardized_effect:
             if self.variance is None:
                 logger.info(f'Cannot find variance image for image "{self.effect}"')
                 return self.get_data_image(Statistic.z)
             if self.dof is None:
-                logger.info(
-                    f'Cannot find degrees of freedom image for image "{self.effect}"'
-                )
+                logger.info(f'Cannot find degrees of freedom image for image "{self.effect}"')
                 return self.get_data_image(Statistic.z)
 
             effect_image = self.effect_image
@@ -122,14 +116,10 @@ class ImagePaths:
             t = np.zeros_like(effect)
             t[mask] = effect[mask] / np.sqrt(variance[mask])
             standardized_coefficient_fisherz = np.zeros_like(effect)
-            standardized_coefficient_fisherz[mask] = np.arctanh(
-                t[mask] / np.sqrt(np.square(t[mask]) + dof[mask])
-            )
+            standardized_coefficient_fisherz[mask] = np.arctanh(t[mask] / np.sqrt(np.square(t[mask]) + dof[mask]))
 
-            standardized_coefficient_image = new_img_like(
-                effect_image, standardized_coefficient_fisherz, copy_header=True
-            )
-            return Statistic.standardizedEffect, standardized_coefficient_image
+            standardized_coefficient_image = new_img_like(effect_image, standardized_coefficient_fisherz, copy_header=True)
+            return Statistic.standardized_effect, standardized_coefficient_image
         else:
             raise NotImplementedError
 
@@ -165,7 +155,7 @@ class DiscreteAtlas(Atlas):
             output_coverage=True,
         )
 
-        if statistic == Statistic.standardizedEffect:
+        if statistic == Statistic.standardized_effect:
             # Undo Fisher z-transformation
             signals = np.tanh(signals)
 
@@ -189,12 +179,8 @@ class ProbabilisticAtlas(Atlas):
         var_cope_files = None
         if image_paths.variance is not None:
             var_cope_files = [image_paths.variance]
-        cope_img, var_cope_img = load_data(
-            [image_paths.effect], var_cope_files, [image_paths.mask], quiet=True
-        )
-        signals, coverage = mode_signals(
-            cope_img, var_cope_img, self.image, output_coverage=True
-        )
+        cope_img, var_cope_img = load_data([image_paths.effect], var_cope_files, [image_paths.mask], quiet=True)
+        signals, coverage = mode_signals(cope_img, var_cope_img, self.image, output_coverage=True)
         return AtlasSignals(signals, coverage)
 
     @classmethod
@@ -229,7 +215,7 @@ def export(
     inner = partial(get_signals, atlases)
 
     image_paths_list = [
-        ImagePaths(**dict(zip(images.keys(), paths))) for paths in zip(*images.values())
+        ImagePaths(**dict(zip(images.keys(), paths, strict=False))) for paths in zip(*images.values(), strict=False)
     ]
 
     cm, iterator = make_pool_or_null_context(
@@ -249,20 +235,14 @@ def export(
         cm.join()
 
     # Transpose subjects and atlases
-    signal_columns = list(list(c) for c in zip(*signal_rows))
+    signal_columns = list(list(c) for c in zip(*signal_rows, strict=False))
 
-    for atlas, signal_column in zip(atlases, signal_columns):
+    for atlas, signal_column in zip(atlases, signal_columns, strict=False):
         # Unpack signal/coverage
-        statistics_counter: Counter[str | None] = Counter(
-            signal.statistic for signal in signal_column
-        )
+        statistics_counter: Counter[str | None] = Counter(signal.statistic for signal in signal_column)
         most_common_statistic, _ = statistics_counter.most_common(1)[0]
         if len(statistics_counter) > 1:
-            signal_column = [
-                signal
-                for signal in signal_column
-                if signal.statistic == most_common_statistic
-            ]
+            signal_column = [signal for signal in signal_column if signal.statistic == most_common_statistic]
             logger.warning(
                 "Inconsistent statistics were used across subjects. "
                 "Please check that processing completed for all subjects "
@@ -270,12 +250,8 @@ def export(
                 f"as it is the most common ({statistics_counter})"
             )
         statistic = most_common_statistic
-        signal_array: npt.NDArray = np.vstack(
-            [signal.array for signal in signal_column]
-        )
-        coverage_array: npt.NDArray = np.vstack(
-            [signal.coverages for signal in signal_column]
-        )
+        signal_array: npt.NDArray = np.vstack([signal.array for signal in signal_column])
+        coverage_array: npt.NDArray = np.vstack([signal.coverages for signal in signal_column])
 
         for i in range(signal_array.shape[1]):
             label = atlas.labels[i + 1]
@@ -290,9 +266,7 @@ def export(
     atlas_coverage_frame = pd.DataFrame.from_dict(coverages)
     atlas_coverage_frame.index = pd.Index(subjects)
 
-    logger.info(
-        f"Exported {signals_frame.shape[1]} signals and {covariate_frame.shape[1]} covariates"
-    )
+    logger.info(f"Exported {signals_frame.shape[1]} signals and {covariate_frame.shape[1]} covariates")
 
     return signals_frame, covariate_frame, atlas_coverage_frame
 

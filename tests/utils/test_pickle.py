@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Callable
 
 import pytest
-
 from halfpipe.utils.pickle import load_pickle
 
 

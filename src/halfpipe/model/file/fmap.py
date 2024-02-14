@@ -16,9 +16,7 @@ from .base import BaseFileSchema, File
 
 class BaseFmapFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="fmap", validate=validate.Equal("fmap"))
-    suffix = fields.Str(
-        validate=validate.OneOf(["magnitude", "magnitude1", "magnitude2", "fieldmap"])
-    )
+    suffix = fields.Str(validate=validate.OneOf(["magnitude", "magnitude1", "magnitude2", "fieldmap"]))
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
 
     tags = fields.Nested(FmapTagsSchema(), dump_default=dict())

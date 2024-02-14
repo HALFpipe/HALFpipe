@@ -126,9 +126,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._rt = PathReferenceTracer(self._cwd)
 
     def _postrun_check(self):
-        shutdown_thread = Thread(
-            target=self.pool.shutdown, kwargs=dict(wait=True), daemon=True
-        )
+        shutdown_thread = Thread(target=self.pool.shutdown, kwargs=dict(wait=True), daemon=True)
         shutdown_thread.start()
         shutdown_thread.join(timeout=10)
         if shutdown_thread.is_alive():
@@ -148,9 +146,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         result_future.add_done_callback(self._async_callback)
         self._task_obj[self._taskid] = result_future
 
-        logger.debug(
-            "[MultiProc] Submitted task %s (taskid=%d).", node.fullname, self._taskid
-        )
+        logger.debug("[MultiProc] Submitted task %s (taskid=%d).", node.fullname, self._taskid)
         return self._taskid
 
     def _generate_dependency_list(self, graph):
@@ -183,12 +179,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             result = args.result()
             self._taskresult[result["taskid"]] = result
         except Exception as e:
-            running_tasks = [
-                self.procs[jobid].fullname for _, jobid in self.pending_tasks
-            ]
-            logger.exception(
-                f"Exception for {args} while running {running_tasks}", exc_info=e
-            )
+            running_tasks = [self.procs[jobid].fullname for _, jobid in self.pending_tasks]
+            logger.exception(f"Exception for {args} while running {running_tasks}", exc_info=e)
 
     def _remove_node_dirs(self):
         """

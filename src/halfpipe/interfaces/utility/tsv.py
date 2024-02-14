@@ -125,9 +125,7 @@ class MergeColumns(IOBase):
                 if isdefined(column_names):
                     if not isinstance(column_names, (list, tuple)):
                         column_names = [column_names]
-                    data_frame = data_frame.set_axis(
-                        column_names, axis="columns", copy=False
-                    )
+                    data_frame = data_frame.set_axis(column_names, axis="columns", copy=False)
 
                 data_frames.append(data_frame)
 
@@ -157,9 +155,7 @@ class MergeColumns(IOBase):
 
 class SelectColumnsInputSpec(TraitedSpec):
     in_file = File(exists=True, desc="input tsv file")
-    column_names = traits.List(
-        traits.Str, desc="list of column names, can be regular expressions"
-    )
+    column_names = traits.List(traits.Str, desc="list of column names, can be regular expressions")
 
 
 class SelectColumns(SimpleInterface):
@@ -177,11 +173,7 @@ class SelectColumns(SimpleInterface):
         filter = re.compile("^(" + "|".join(column_names) + ")$")
         dataframe = read_spreadsheet(inputpath)
         dataframe = dataframe[
-            [
-                column
-                for column in dataframe.columns
-                if filter.match(column) is not None and len(column_names) > 0
-            ]
+            [column for column in dataframe.columns if filter.match(column) is not None and len(column_names) > 0]
         ]
         self._results["out_with_header"] = Path.cwd() / "select_with_header.tsv"
         dataframe.to_csv(

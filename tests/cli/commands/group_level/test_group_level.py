@@ -9,22 +9,21 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy
-from nilearn.image import new_img_like
-from templateflow.api import get as get_template
-
 from halfpipe.cli.commands.group_level.export import Statistic
 from halfpipe.cli.parser import parse_args
 from halfpipe.resource import get as get_resource
 from halfpipe.stats.miscmaths import t2z_convert
-from halfpipe.workflows.constants import constants
+from halfpipe.workflows.constants import Constants
+from nilearn.image import new_img_like
+from templateflow.api import get as get_template
 
 from ....resource import setup as setup_test_resources
 
 
 def test_group_level(tmp_path: Path) -> None:
     template_query = dict(
-        template=constants.reference_space,
-        resolution=constants.reference_res,
+        template=Constants.reference_space,
+        resolution=Constants.reference_res,
         desc="brain",
     )
     template_path = get_template(**template_query, suffix="T1w")
@@ -126,12 +125,8 @@ def test_group_level(tmp_path: Path) -> None:
 
     column_prefix = "taskcontrast-wmLoadVsControl_atlas-Brainnetome_label-A10lL_stat-"
     assert np.allclose(phenotypes_frame[f"{column_prefix}z"], z_values, atol=1e-3)
-    assert np.allclose(
-        phenotypes_frame[f"{column_prefix}effect"], effect_values, atol=1e-3
-    )
-    assert np.allclose(
-        phenotypes_frame[f"{column_prefix}cohensD"], cohens_d_values, atol=1e-3
-    )
+    assert np.allclose(phenotypes_frame[f"{column_prefix}effect"], effect_values, atol=1e-3)
+    assert np.allclose(phenotypes_frame[f"{column_prefix}cohensD"], cohens_d_values, atol=1e-3)
     assert np.allclose(
         phenotypes_frame[f"{column_prefix}standardizedEffect"],
         np.sqrt(r_squared_values),

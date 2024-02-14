@@ -30,9 +30,7 @@ def calcgam(
     scaled_covariates = covariates.transpose() * inverse_variance
     gram_matrix = np.atleast_2d(scaled_covariates @ covariates)
 
-    regression_weights, _, _, _ = np.linalg.lstsq(
-        gram_matrix, scaled_covariates @ y, rcond=-1.0
-    )
+    regression_weights, _, _, _ = np.linalg.lstsq(gram_matrix, scaled_covariates @ y, rcond=-1.0)
 
     return regression_weights, inverse_variance, gram_matrix
 
@@ -52,10 +50,7 @@ def marg_posterior_energy(
         * (
             inverse_variance_logarithmic_determinant
             - gram_matrix_logarithmic_determinant
-            - (
-                (y.T * inverse_variance) @ y
-                - regression_weights.T @ gram_matrix @ regression_weights
-            ).item()
+            - ((y.T * inverse_variance) @ y - regression_weights.T @ gram_matrix @ regression_weights).item()
         )
     )
 
@@ -79,9 +74,7 @@ def wrapper(
     return 1e32
 
 
-def solveforbeta(
-    y: npt.NDArray[np.float64], z: npt.NDArray[np.float64], s: npt.NDArray[np.float64]
-) -> float:
+def solveforbeta(y: npt.NDArray[np.float64], z: npt.NDArray[np.float64], s: npt.NDArray[np.float64]) -> float:
     result = scipy.optimize.minimize_scalar(wrapper, args=(y, z, s), method="brent")
     beta = max(1e-10, result.x)
     return beta
@@ -170,14 +163,14 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
     if n == 1:
         tdoflower = npts - nevs
-        r = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
-        mask = np.isfinite(r.z)
+        t_contrast = t_ols_contrast(mn, inverse_covariance, tdoflower, cmat)
+        mask = np.isfinite(t_contrast.z)
         return dict(
-            cope=r.cope,
-            var_cope=r.var_cope,
+            cope=t_contrast.cope,
+            var_cope=t_contrast.var_cope,
             dof=tdoflower,
-            tstat=r.t,
-            zstat=r.z,
+            tstat=t_contrast.t,
+            zstat=t_contrast.z,
             mask=mask,
         )
 
@@ -186,15 +179,15 @@ def flame1_contrast(mn, inverse_covariance, npts, cmat):
 
         fdof2lower = npts - nevs
 
-        r = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
-        mask = np.isfinite(r.z)
+        f_contrast = f_ols_contrast(mn, inverse_covariance, fdof1, fdof2lower, cmat)
+        mask = np.isfinite(f_contrast.z)
         return dict(
-            cope=r.cope,
-            var_cope=r.var_cope,
-            tstat=r.t,
-            fstat=r.f,
+            cope=f_contrast.cope,
+            var_cope=f_contrast.var_cope,
+            tstat=f_contrast.t,
+            fstat=f_contrast.f,
             dof=[fdof1, fdof2lower],
-            zstat=r.z,
+            zstat=f_contrast.z,
             mask=mask,
         )
 
@@ -270,23 +263,17 @@ class FLAME1(ModelAlgorithm):
         for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(contrast_matrices)
 
-        for i, contrast_name in enumerate(
-            contrast_matrices.keys()
-        ):  # cmatdict is ordered
+        for i, contrast_name in enumerate(contrast_matrices.keys()):  # cmatdict is ordered
             contrast_results = voxel_results[contrast_name]
             results_frame = pd.DataFrame.from_records(contrast_results)
 
             # Ensure that we always output a mask
             if "mask" not in results_frame.index:
-                empty_mask = pd.Series(
-                    data=False, index=results_frame.columns, name="mask"
-                )
+                empty_mask = pd.Series(data=False, index=results_frame.columns, name="mask")
                 results_frame = results_frame.append(empty_mask)  # type: ignore
             # Ensure that we always output a zstat
             if "zstat" not in results_frame.index:
-                empty_zstat = pd.Series(
-                    data=np.nan, index=results_frame.columns, name="zstat"
-                )
+                empty_zstat = pd.Series(data=np.nan, index=results_frame.columns, name="zstat")
                 results_frame = results_frame.append(empty_zstat)  # type: ignore
 
             for map_name, series in results_frame.iterrows():

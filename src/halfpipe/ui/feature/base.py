@@ -42,9 +42,7 @@ class FeatureNameStep(Step):
             suggestion = f"{base}{index}"
             index += 1
 
-        self.input_view = TextInputView(
-            text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
-        )
+        self.input_view = TextInputView(text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -85,9 +83,7 @@ class FeatureTypeStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the feature type"))
 
-        self.input_view = SingleChoiceInputView(
-            list(self.options.keys()), isVertical=True
-        )
+        self.input_view = SingleChoiceInputView(list(self.options.keys()), isVertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))

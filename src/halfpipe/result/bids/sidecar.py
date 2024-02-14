@@ -40,9 +40,7 @@ def translate_sidecar(value: Any, translate_key: Callable[[str], str]):
     if not isinstance(value, dict):
         return value
 
-    return {
-        translate_key(k): translate_sidecar(v, translate_key) for k, v in value.items()
-    }
+    return {translate_key(k): translate_sidecar(v, translate_key) for k, v in value.items()}
 
 
 def translate_from_bids(key):
@@ -65,20 +63,14 @@ def load_sidecar(path: AnyPath) -> tuple[dict[str, Any], dict[str, Any]]:
         try:
             sidecar = json.load(file_handle)
         except json.JSONDecodeError:
-            logger.warning(
-                f'Could not load sidecar file "{sidecar_path}"', exc_info=True
-            )
+            logger.warning(f'Could not load sidecar file "{sidecar_path}"', exc_info=True)
             sidecar = dict()
 
     sidecar = translate_sidecar(sidecar, translate_from_bids)
 
-    metadata: dict[str, Any] = {
-        k: v for k, v in sidecar.items() if k in metadata_fields
-    }
+    metadata: dict[str, Any] = {k: v for k, v in sidecar.items() if k in metadata_fields}
 
-    vals: dict[str, Any] = {
-        k: v for k, v in sidecar.items() if k not in metadata_fields
-    }
+    vals: dict[str, Any] = {k: v for k, v in sidecar.items() if k not in metadata_fields}
 
     return metadata, vals
 
@@ -89,9 +81,7 @@ def save_sidecar(path: Path, metadata: dict[str, Any], vals: dict[str, Any]):
 
     sidecar = translate_sidecar(sidecar, translate_to_bids)
 
-    sidecar_json = json.dumps(
-        sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4
-    )
+    sidecar_json = json.dumps(sidecar, cls=TypeAwareJSONEncoder, sort_keys=True, indent=4)
 
     sidecar_path = get_sidecar_path(path)
     with sidecar_path.open("w") as file_handle:

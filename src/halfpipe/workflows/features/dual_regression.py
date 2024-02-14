@@ -18,7 +18,7 @@ from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...utils.format import format_workflow
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -50,9 +50,7 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
         contrast_columns = [*map_component_names, *confounds_df.columns]
     else:
         contrast_columns = [*map_component_names]
-    contrast_df = pd.DataFrame(
-        contrast_mat, index=map_component_names, columns=contrast_columns
-    )
+    contrast_df = pd.DataFrame(contrast_mat, index=map_component_names, columns=contrast_columns)
 
     kwargs = {
         "sep": "\t",
@@ -71,11 +69,12 @@ def init_dualregression_wf(
     feature=None,
     map_files=None,
     map_spaces=None,
-    memcalc=MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
     """
     create a workflow to calculate dual regression for ICA seeds
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
@@ -99,9 +98,7 @@ def init_dualregression_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     if feature is not None:
         inputnode.inputs.map_names = feature.maps
@@ -115,9 +112,7 @@ def init_dualregression_wf(
     #
     statmaps = ["effect", "variance", "z", "dof", "mask"]
     make_resultdicts_a = pe.Node(
-        MakeResultdicts(
-            tagkeys=["feature", "map"], imagekeys=["design_matrix", "contrast_matrix"]
-        ),
+        MakeResultdicts(tagkeys=["feature", "map"], imagekeys=["design_matrix", "contrast_matrix"]),
         name="make_resultdicts_a",
     )
     if feature is not None:
@@ -148,15 +143,11 @@ def init_dualregression_wf(
     merge_resultdicts = pe.Node(niu.Merge(2), name="merge_resultdicts")
     workflow.connect(make_resultdicts_a, "resultdicts", merge_resultdicts, "in1")
     workflow.connect(make_resultdicts_b, "resultdicts", merge_resultdicts, "in2")
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(
-        reference_space=constants.reference_space, reference_res=constants.reference_res
-    )
+    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
         Resample(interpolation="LanczosWindowedSinc", **reference_dict),
         name="resample",
@@ -203,14 +194,10 @@ def init_dualregression_wf(
     workflow.connect(spatialglm, "out_file", contrasts, "map_timeseries_file")
     workflow.connect(inputnode, "confounds_selected", contrasts, "confounds_file")
 
-    workflow.connect(
-        contrasts, "out_with_header", make_resultdicts_a, "contrast_matrix"
-    )
+    workflow.connect(contrasts, "out_with_header", make_resultdicts_a, "contrast_matrix")
     workflow.connect(contrasts, "map_component_names", make_resultdicts_b, "component")
 
-    design = pe.MapNode(
-        MergeColumns(2), iterfield=["in1", "column_names1"], name="design"
-    )
+    design = pe.MapNode(MergeColumns(2), iterfield=["in1", "column_names1"], name="design")
     workflow.connect(spatialglm, "out_file", design, "in1")
     workflow.connect(contrasts, "map_component_names", design, "column_names1")
     workflow.connect(inputnode, "confounds_selected", design, "in2")

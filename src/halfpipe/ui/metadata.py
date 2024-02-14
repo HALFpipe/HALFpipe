@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import ClassVar, Dict, Optional, Type
+from typing import ClassVar, Dict, Iterable, Optional, Type
 
 import numpy as np
 from inflection import humanize
@@ -13,6 +13,7 @@ from ..ingest.metadata.niftiheader import NiftiheaderLoader
 from ..ingest.metadata.slicetiming import slice_timing_str
 from ..ingest.spreadsheet import read_spreadsheet
 from ..logging import logger
+from ..model.file.base import File
 from ..model.metadata import slice_order_strs, space_codes
 from .components import (
     FileInputView,
@@ -22,6 +23,7 @@ from .components import (
     TextElement,
     TextView,
 )
+from .components.view import CallableView
 from .step import Step
 
 
@@ -78,21 +80,15 @@ class SliceTimingFileStep(Step):
 
         if self.filters is None:
             specfileobj = ctx.spec.files[-1]
-            self.specfileobjs = [specfileobj]
+            self.specfileobjs: Iterable[File] = [specfileobj]
 
-            self.filepaths = [
-                fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)
-            ]
+            self.filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)]
         else:
             self.filepaths = ctx.database.get(**self.filters)
-            self.specfileobjs = set(
-                ctx.database.specfileobj(filepath) for filepath in self.filepaths
-            )
+            self.specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in self.filepaths)
 
         for field in ["slice_encoding_direction", "repetition_time"]:
-            assert (
-                ctx.database.fillmetadata(field, self.filepaths) is True
-            )  # should have already been done, but can't hurt
+            assert ctx.database.fillmetadata(field, self.filepaths) is True  # should have already been done, but can't hurt
 
         header_str = f"Import {humankey} values{self.appendstr}"
         if unit is not None:
@@ -125,15 +121,9 @@ class SliceTimingFileStep(Step):
                 value = self.field.deserialize(valuelist)
 
                 for filepath in self.filepaths:
-                    slice_encoding_direction = ctx.database.metadata(
-                        filepath, "slice_encoding_direction"
-                    )
-                    slice_encoding_direction = canonicalize_direction_code(
-                        slice_encoding_direction, filepath
-                    )
-                    slice_encoding_axis = ["i", "j", "k"].index(
-                        slice_encoding_direction[0]
-                    )
+                    slice_encoding_direction = ctx.database.metadata(filepath, "slice_encoding_direction")
+                    slice_encoding_direction = canonicalize_direction_code(slice_encoding_direction, filepath)
+                    slice_encoding_axis = ["i", "j", "k"].index(slice_encoding_direction[0])
                     repetition_time = ctx.database.metadata(filepath, "repetition_time")
 
                     header, _ = NiftiheaderLoader.load(filepath)
@@ -141,8 +131,7 @@ class SliceTimingFileStep(Step):
                         n_slices = header.get_data_shape()[slice_encoding_axis]
                         if n_slices != len(value):
                             raise ValueError(
-                                f"Slice timing from file has {len(value):d} "
-                                f"values, but scans have {n_slices:d} slices"
+                                f"Slice timing from file has {len(value):d} " f"values, but scans have {n_slices:d} slices"
                             )
 
                     for i, time in enumerate(value):
@@ -155,9 +144,7 @@ class SliceTimingFileStep(Step):
                             )
 
             except Exception as e:
-                logger.warning(
-                    f'Failed to read slice timing from "{filepath}"', exc_info=e
-                )
+                logger.warning(f'Failed to read slice timing from "{filepath}"', exc_info=e)
                 self.message = TextElement(str(e), color=error_color)
                 continue  # try again for correct file
 
@@ -176,9 +163,7 @@ class SliceTimingFileStep(Step):
 
 
 class SetMetadataStep(Step):
-    def __init__(
-        self, app, filters, schema, key, suggestion, next_step_type, appendstr=""
-    ):
+    def __init__(self, app, filters, schema, key, suggestion, next_step_type, appendstr=""):
         super(SetMetadataStep, self).__init__(app)
 
         self.schema = schema
@@ -206,11 +191,7 @@ class SetMetadataStep(Step):
 
         self.aliases = {}
 
-        if (
-            field.validate is not None
-            and hasattr(field.validate, "choices")
-            or self.key == "slice_timing"
-        ):
+        if field.validate is not None and hasattr(field.validate, "choices") or self.key == "slice_timing":
             choices = None
             display_choices = None
 
@@ -233,16 +214,14 @@ class SetMetadataStep(Step):
                 choices = [*space_codes]
                 if self.key == "slice_encoding_direction":
                     choices = list(reversed(choices))[:2]  # hide uncommon options
-                display_choices = [
-                    display_str(direction_code_str(choice, None)) for choice in choices
-                ]
+                display_choices = [display_str(direction_code_str(choice, None)) for choice in choices]
 
             if display_choices is None:
                 display_choices = [display_str(choice) for choice in choices]
 
-            self.aliases = dict(zip(display_choices, choices))
+            self.aliases = dict(zip(display_choices, choices, strict=False))
 
-            self.input_view = SingleChoiceInputView(display_choices, isVertical=True)
+            self.input_view: CallableView = SingleChoiceInputView(display_choices, isVertical=True)
 
         elif isinstance(field, fields.Float):
             self.input_view = NumberInputView()
@@ -284,12 +263,10 @@ class SetMetadataStep(Step):
             value = self.field.deserialize(value)
 
             if self.filters is None:
-                specfileobjs = [ctx.spec.files[-1]]
+                specfileobjs: Iterable[File] = [ctx.spec.files[-1]]
             else:
                 filepaths = ctx.database.get(**self.filters)
-                specfileobjs = set(
-                    ctx.database.specfileobj(filepath) for filepath in filepaths
-                )
+                specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
 
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
@@ -326,10 +303,7 @@ class CheckMetadataStep(Step):
         humankey = display_str(self.key).lower()
 
         if self.filters is None:
-            filepaths = [
-                fileobj.path
-                for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])
-            ]
+            filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
         else:
             filepaths = [*ctx.database.get(**self.filters)]
 

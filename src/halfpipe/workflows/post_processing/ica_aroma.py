@@ -19,9 +19,7 @@ from ...interfaces.utility.tsv import MergeColumns
 from ..memory import MemoryCalculator
 
 
-def _aroma_column_names(
-    melodic_mix: str | None = None, aroma_noise_ics: str | None = None
-):
+def _aroma_column_names(melodic_mix: str | None = None, aroma_noise_ics: str | None = None):
     from math import ceil, log10
 
     from halfpipe.utils.matrix import load_vector, ncol
@@ -43,8 +41,9 @@ def _aroma_column_names(
 def init_ica_aroma_components_wf(
     workdir: str | None = None,
     name: str = "ica_aroma_components_wf",
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -62,9 +61,7 @@ def init_ica_aroma_components_wf(
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata", "aromavals"]
-        ),
+        niu.IdentityInterface(fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata", "aromavals"]),
         name="outputnode",
     )
 
@@ -76,9 +73,7 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     # create ICA-AROMA workflow
@@ -113,12 +108,8 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
     workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
-    workflow.connect(
-        inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std"
-    )
-    workflow.connect(
-        inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference"
-    )
+    workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+    workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
 
     # remove dummy scans from outputs
     skip_vols = pe.Node(
@@ -131,15 +122,9 @@ def init_ica_aroma_components_wf(
 
     # pass outputs to outputnode
     workflow.connect(skip_vols, "out_file", outputnode, "melodic_mix")
-    workflow.connect(
-        ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics"
-    )
-    workflow.connect(
-        ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata"
-    )
-    workflow.connect(
-        ica_aroma_wf, "ica_aroma.out_report", make_resultdicts, "ica_aroma"
-    )
+    workflow.connect(ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics")
+    workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
+    workflow.connect(ica_aroma_wf, "ica_aroma.out_report", make_resultdicts, "ica_aroma")
 
     return workflow
 
@@ -147,10 +132,11 @@ def init_ica_aroma_components_wf(
 def init_ica_aroma_regression_wf(
     workdir: str | None = None,
     name: str = "ica_aroma_regression_wf",
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
     suffix: str | None = None,
 ):
     """ """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
@@ -185,9 +171,7 @@ def init_ica_aroma_regression_wf(
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
@@ -200,9 +184,7 @@ def init_ica_aroma_regression_wf(
         name="aroma_column_names",
     )
     workflow.connect(inputnode, "melodic_mix", aroma_column_names, "melodic_mix")
-    workflow.connect(
-        inputnode, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics"
-    )
+    workflow.connect(inputnode, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics")
 
     # add melodic_mix to the matrix
     split_by_file_type = pe.Node(SplitByFileType(), name="split_by_file_type")
@@ -228,21 +210,17 @@ def init_ica_aroma_regression_wf(
     workflow.connect(merge, "out", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
     workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
-    workflow.connect(
-        aroma_column_names, "column_indices", filter_regressor, "filter_columns"
-    )
+    workflow.connect(aroma_column_names, "column_indices", filter_regressor, "filter_columns")
 
     workflow.connect(filter_regressor, "out_file", outputnode, "files")
 
     # We cannot do this in the ica_aroma_components_wf, as having two iterable node
     # with the same name downstream from each other leads nipype to consider them equal
-    # even if a joinnode is inbetween
+    # even if a joinnode is in between
     # Specifically, both ica_aroma_components_wf and fmriprep's func_preproc_wf use
     # the bold_std_trans_wf that has the iterable node "iterablesource"
     # This way there is no dependency
-    aromavals = pe.Node(
-        interface=UpdateVals(), name="aromavals", mem_gb=memcalc.volume_std_gb
-    )
+    aromavals = pe.Node(interface=UpdateVals(), name="aromavals", mem_gb=memcalc.volume_std_gb)
     workflow.connect(inputnode, "vals", aromavals, "vals")
     workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")
 

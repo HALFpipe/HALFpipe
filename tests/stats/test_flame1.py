@@ -8,13 +8,12 @@ from collections import OrderedDict
 import nibabel as nib
 import numpy as np
 import pytest
-from nipype.interfaces import fsl
-from nipype.pipeline import engine as pe
-
-from halfpipe.interfaces.fixes.flameo import FLAMEO as FSLFLAMEO
+from halfpipe.interfaces.fixes.flameo import FixFLAMEO
 from halfpipe.interfaces.image_maths.merge import merge, merge_mask
 from halfpipe.logging import logger
 from halfpipe.stats.fit import fit
+from nipype.interfaces import fsl
+from nipype.pipeline import engine as pe
 
 from .base import Dataset
 
@@ -22,7 +21,7 @@ from .base import Dataset
 @pytest.mark.slow
 @pytest.mark.timeout(1200)
 @pytest.mark.parametrize("use_var_cope", [True, False])
-def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
+def test_flame1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
     os.chdir(str(tmp_path))
 
     # prepare
@@ -57,7 +56,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
     )
 
     flameo = pe.Node(
-        FSLFLAMEO(
+        FixFLAMEO(
             run_mode="flame1",
             cope_file=merge_cope_file,
             mask_file=merge_mask_file,
@@ -141,7 +140,7 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
             else:
                 halfpipe_images.append(image)
 
-        for fsl_image, halfpipe_image in zip(fsl_images, halfpipe_images):
+        for fsl_image, halfpipe_image in zip(fsl_images, halfpipe_images, strict=False):
             a0 = fsl_image.get_fdata()[mask]
             a1 = halfpipe_image.get_fdata()[mask]
 
@@ -160,12 +159,8 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
             diverging_voxels = np.logical_not(np.isclose(a0, a1, rtol=1e-2))
             if diverging_voxels.any():
                 diverging_voxel_proportion = diverging_voxels.mean().item()
-                logger.info(
-                    f"Diverging voxel proportion for {key}: {diverging_voxel_proportion}"
-                )
-                assert (
-                    diverging_voxel_proportion < 0.05
-                ), f"Too many diverging voxels for {key}"
+                logger.info(f"Diverging voxel proportion for {key}: {diverging_voxel_proportion}")
+                assert diverging_voxel_proportion < 0.05, f"Too many diverging voxels for {key}"
             else:
                 logger.info(f"No diverging voxels for {key}")
 
@@ -174,13 +169,8 @@ def test_FLAME1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
 
             if diverging_voxels.any():
                 difference_in_diverging_voxels = np.abs(a0 - a1)[diverging_voxels]
-                logger.info(
-                    f"Max difference in diverging voxels for {key}: "
-                    f"{difference_in_diverging_voxels.max()}"
-                )
-                assert np.all(
-                    difference_in_diverging_voxels < 50
-                ), f"Difference in diverging voxels is too big for {key}"
+                logger.info(f"Max difference in diverging voxels for {key}: " f"{difference_in_diverging_voxels.max()}")
+                assert np.all(difference_in_diverging_voxels < 50), f"Difference in diverging voxels is too big for {key}"
 
             # Mean error needs to be below 0.05
             mean_error = np.abs(a0 - a1).mean()

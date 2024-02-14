@@ -47,7 +47,7 @@ def merge(in_files, dimension):
     movd_outarr = np.zeros(movd_shape, dtype=np.float64)
 
     i = 0
-    for in_img, size in zip(in_imgs, sizes):
+    for in_img, size in zip(in_imgs, sizes, strict=False):
         in_data = in_img.get_fdata()
         while len(in_data.shape) < idim + 1:
             in_data = np.expand_dims(in_data, len(in_data.shape))
@@ -82,12 +82,8 @@ def merge_mask(in_files):
 
 
 class MergeInputSpec(TraitedSpec):
-    in_files = traits.List(
-        File(desc="Image file(s) to resample", exists=True), mandatory=True
-    )
-    dimension = traits.Enum(
-        *dimensions, desc="dimension along which to merge", mandatory=True
-    )
+    in_files = traits.List(File(desc="Image file(s) to resample", exists=True), mandatory=True)
+    dimension = traits.Enum(*dimensions, desc="dimension along which to merge", mandatory=True)
 
 
 class MergeOutputSpec(TraitedSpec):
@@ -115,9 +111,7 @@ class Merge(SimpleInterface):
 
 
 class MergeMaskInputSpec(TraitedSpec):
-    in_files = traits.List(
-        File(desc="Image file(s) to resample", exists=True), mandatory=True
-    )
+    in_files = traits.List(File(desc="Image file(s) to resample", exists=True), mandatory=True)
 
 
 class MergeMask(SimpleInterface):

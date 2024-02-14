@@ -5,9 +5,8 @@
 import os
 
 import pytest
-from nibabel.testing import data_path
-
 from halfpipe.utils.image import nifti_dim, nvol
+from nibabel.testing import data_path
 
 
 @pytest.fixture

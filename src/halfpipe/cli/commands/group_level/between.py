@@ -103,12 +103,8 @@ class BetweenBase:
             if name not in design_base.variable_sets:
                 continue
             export_variables.extend(design_base.variable_sets[name])
-        variable_dict = {
-            name: design_base.drop_variable(name) for name in export_variables
-        }
-        variable_dict = {
-            name: value for name, value in variable_dict.items() if value is not None
-        }
+        variable_dict = {name: design_base.drop_variable(name) for name in export_variables}
+        variable_dict = {name: value for name, value in variable_dict.items() if value is not None}
         data_frame = pd.DataFrame(variable_dict)
         self.phenotype_frames.append(data_frame)
 
@@ -152,9 +148,7 @@ class BetweenBase:
         results: list[ResultDict] = list()
 
         # Top-level result
-        images: dict[str, str] = {
-            key: value for key, value in outputs.items() if isinstance(value, str)
-        }
+        images: dict[str, str] = {key: value for key, value in outputs.items() if isinstance(value, str)}
         result = summarize_metadata(result)
         if model_name is not None:
             result["tags"]["model"] = model_name
@@ -173,9 +167,7 @@ class BetweenBase:
         # Per-contrast results
         for i, contrast_name in enumerate(contrast_names):
             contrast_images = {
-                key: value[i]
-                for key, value in outputs.items()
-                if isinstance(value, list) and isinstance(value[i], str)
+                key: value[i] for key, value in outputs.items() if isinstance(value, list) and isinstance(value[i], str)
             }
             if len(contrast_images) == 0:
                 continue
@@ -199,13 +191,9 @@ class BetweenBase:
 
         atlases: list[Atlas] = list()
         if self.arguments.export_atlas is not None:
-            atlases.extend(
-                starmap(DiscreteAtlas.from_args, self.arguments.export_atlas)
-            )
+            atlases.extend(starmap(DiscreteAtlas.from_args, self.arguments.export_atlas))
         if self.arguments.export_modes is not None:
-            atlases.extend(
-                starmap(ProbabilisticAtlas.from_args, self.arguments.export_modes)
-            )
+            atlases.extend(starmap(ProbabilisticAtlas.from_args, self.arguments.export_modes))
 
         logger.info(f"Exporting atlases {atlases}")
         if len(atlases) == 0:

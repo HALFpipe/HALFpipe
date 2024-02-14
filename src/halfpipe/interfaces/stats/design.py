@@ -69,9 +69,7 @@ class InterceptOnlyDesign(SimpleInterface):
     output_spec = DesignOutputSpec
 
     def _run_interface(self, runtime):
-        regressors, contrasts, numbers, names = intercept_only_design(
-            self.inputs.n_copes
-        )
+        regressors, contrasts, numbers, names = intercept_only_design(self.inputs.n_copes)
         self._results["regressors"] = regressors
         self._results["contrasts"] = contrasts
         self._results["contrast_numbers"] = numbers

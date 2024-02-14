@@ -53,8 +53,7 @@ class PEDirMetadataSchema(BaseMetadataSchema):
     phase_encoding_direction = fields.Str(
         validate=validate.OneOf(direction_codes),
         metadata=dict(
-            description="The letters i, j, k correspond to the first, second and "
-            "third axis of the data in the NIFTI file."
+            description="The letters i, j, k correspond to the first, second and " "third axis of the data in the NIFTI file."
         ),
     )
 
@@ -91,7 +90,10 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         fields.Float(),
         metadata=dict(
             metadata=dict(
-                description="A list of times containing the time (in seconds) of each slice acquisition in relation to the beginning of volume acquisition."
+                description=(
+                    "A list of times containing the time (in seconds) of each slice acquisition in relation to the "
+                    "beginning of volume acquisition."
+                )
             ),
             unit="seconds",
         ),
@@ -105,17 +107,13 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
         if "slice_timing" not in data or "repetition_time" not in data:
             return  # nothing to validate
         if "slice_timing_code" in data and data["slice_timing_code"] is not None:
-            raise ValidationError(
-                "Cannot specify both slice_timing and slice_timing_code at the same time"
-            )
+            raise ValidationError("Cannot specify both slice_timing and slice_timing_code at the same time")
 
 
 class BIDSFmapMetadataSchema(BaseMetadataSchema):
     intended_for = fields.List(
         fields.Str(),
-        metadata=dict(
-            description="Contains one or more filenames with paths relative to the participant subfolder."
-        ),
+        metadata=dict(description="Contains one or more filenames with paths relative to the participant subfolder."),
     )
 
 
@@ -132,9 +130,7 @@ class PhaseDiffMetadataSchema(BaseMetadataSchema):
 class EventsMetadataSchema(BaseMetadataSchema):
     units = fields.Str(
         validate=validate.OneOf(["scans", "seconds"]),
-        metadata=dict(
-            description="The units in which onsets and durations are specified."
-        ),
+        metadata=dict(description="The units in which onsets and durations are specified."),
     )
 
 
@@ -165,6 +161,4 @@ metadata_schemas: list[Type[Schema]] = [
     BIDSFmapMetadataSchema,
 ]
 
-MetadataSchema = Schema.from_dict(
-    {k: v for schema in metadata_schemas for k, v in schema().fields.items()}
-)
+MetadataSchema = Schema.from_dict({k: v for schema in metadata_schemas for k, v in schema().fields.items()})

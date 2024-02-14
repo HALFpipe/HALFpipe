@@ -39,9 +39,7 @@ def run_stage_workflow(opts):
 
         omp_nthreads_origin = "inferred"
 
-    logger.info(
-        f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})"
-    )
+    logger.info(f"config.nipype.omp_nthreads={config.nipype.omp_nthreads} ({omp_nthreads_origin})")
 
     from ..workflows.base import init_workflow
     from ..workflows.execgraph import init_execgraph
@@ -101,9 +99,7 @@ def run_stage_run(opts: Namespace):
             graphs = obj
 
         else:
-            raise RuntimeError(
-                'Please specify the uuid of the execution graphs to run using "--uuid"'
-            )
+            raise RuntimeError('Please specify the uuid of the execution graphs to run using "--uuid"')
 
     if opts.nipype_resource_monitor is True:
         import nipype
@@ -172,9 +168,7 @@ def run_stage_run(opts: Namespace):
             logger.info(f"Not running chunk {opts.only_chunk_index} as is not defined")
             return
 
-        logger.info(
-            f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}"
-        )
+        logger.info(f"Will run subject level chunk {opts.only_chunk_index} of {n_chunks}")
 
         index_arrays = [index_arrays[zero_based_chunk_index]]
 
@@ -201,11 +195,7 @@ def run_stage_run(opts: Namespace):
 
     from nipype.interfaces import freesurfer as fs
 
-    if any(
-        isinstance(node.interface, fs.FSCommand)
-        for chunk in chunks_to_run
-        for node in chunk.nodes
-    ):
+    if any(isinstance(node.interface, fs.FSCommand) for chunk in chunks_to_run for node in chunk.nodes):
         from niworkflows.utils.misc import check_valid_fs_license
 
         if not check_valid_fs_license():
@@ -262,9 +252,7 @@ def run(opts, should_run):
     else:
         logger.info("Loading existing spec")
 
-    assert (
-        opts.workdir is not None
-    ), 'Missing working directory. Please specify using "--workdir"'
+    assert opts.workdir is not None, 'Missing working directory. Please specify using "--workdir"'
     assert Path(opts.workdir).is_dir(), "Working directory does not exist"
 
     if opts.fs_license_file is not None:
@@ -350,15 +338,13 @@ def main() -> None:
             if opts is not None:
                 from ..utils.time import format_current_time
 
-                profiler_instance.dump_stats(
-                    Path(opts.workdir) / f"profile.{format_current_time():s}.prof"
-                )
+                profiler_instance.dump_stats(Path(opts.workdir) / f"profile.{format_current_time():s}.prof")
 
-        from ..logging.base import logging_context
+        from ..logging.base import LoggingContext
         from ..logging.base import teardown as teardown_logging
 
         # ensure queued messages get printed
-        logging_context.enable_print()
+        LoggingContext.enable_print()
 
         teardown_logging()
 

@@ -8,14 +8,15 @@ from nipype.interfaces import fsl
 from niworkflows.interfaces.utility import KeySelect
 
 from ...interfaces.utility.remove_volumes import RemoveVolumes
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
 def init_fmriprep_adapter_wf(
     name: str = "fmriprep_adapter_wf",
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -42,7 +43,7 @@ def init_fmriprep_adapter_wf(
         run_without_submitting=True,
         nohash=True,
     )
-    select_std.inputs.key = f"{constants.reference_space}_res-{constants.reference_res}"
+    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
     workflow.connect(inputnode, "bold_std", select_std, "bold_std")
     workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
     workflow.connect(inputnode, "spatial_reference", select_std, "keys")

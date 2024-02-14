@@ -9,12 +9,13 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import ants, fsl
 
 from ...interfaces.image_maths.resample import Resample
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
 def init_jacobian_wf(
-    transform: Path | None = None, memcalc=MemoryCalculator.default()
+    transform: Path | None = None,
+    memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
     Workflow for calculating a jacobian determinant from a transform.
@@ -33,6 +34,7 @@ def init_jacobian_wf(
     workflow : Workflow
         The initialized workflow for calculating the jacobian determinant.
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name="jacobian_wf")
 
     # Input and output
@@ -52,8 +54,8 @@ def init_jacobian_wf(
             output_image="composite_transform.nii.gz",
             interpolation="LanczosWindowedSinc",
             print_out_composite_warp_file=True,
-            reference_space=constants.reference_space,
-            reference_res=constants.reference_res,
+            reference_space=Constants.reference_space,
+            reference_res=Constants.reference_res,
         ),
         name="create_composite_transform",
         mem_gb=memcalc.volume_gb * 10,  # TODO measure this
@@ -78,11 +80,9 @@ def init_jacobian_wf(
         name="create_jacobian",
         mem_gb=memcalc.volume_gb * 10,  # TODO measure this
     )
-    workflow.connect(
-        create_composite_transform, "output_image", create_jacobian, "deformationField"
-    )
+    workflow.connect(create_composite_transform, "output_image", create_jacobian, "deformationField")
 
-    voxel_volume = constants.reference_res**3
+    voxel_volume = Constants.reference_res**3
     scale_jacobian = pe.Node(
         fsl.ImageMaths(
             op_string=f"-mul {voxel_volume}",

@@ -34,6 +34,8 @@ class GrandMeanScaling(Transformer):
     in in_files
     """
 
+    scaling_factor: float | None
+
     input_spec = GrandMeanScalingInputSpec
     output_spec = GrandMeanScalingOutputSpec
 

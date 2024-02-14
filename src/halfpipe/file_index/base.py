@@ -18,15 +18,13 @@ def create_defaultdict_of_set() -> defaultdict[str, set[AnyPath]]:
 
 class FileIndex:
     def __init__(self) -> None:
-        self.paths_by_tags: dict[str, dict[str, set[AnyPath]]] = defaultdict(
-            create_defaultdict_of_set
-        )
+        self.paths_by_tags: dict[str, dict[str, set[AnyPath]]] = defaultdict(create_defaultdict_of_set)
         self.tags_by_paths: dict[AnyPath, dict[str, str]] = defaultdict(dict)
 
     @property
     def hexdigest(self) -> str:
         """
-        A fourty character hash code of the paths in the index, obtained using the `sha1` algorithm.
+        A forty character hash code of the paths in the index, obtained using the `sha1` algorithm.
         """
         hash_algorithm = sha1()
 
@@ -101,21 +99,16 @@ class FileIndex:
         if paths is None:
             return set(self.paths_by_tags[key].keys())
 
-        return set(
-            k for k, v in self.paths_by_tags[key].items() if not paths.isdisjoint(v)
-        )
+        return set(k for k, v in self.paths_by_tags[key].items() if not paths.isdisjoint(v))
 
-    def get_tag_groups(
-        self, keys: Container[str], paths: set[AnyPath] | None = None
-    ) -> list[Mapping[str, str]]:
+    def get_tag_groups(self, keys: Container[str], paths: set[AnyPath] | None = None) -> list[Mapping[str, str]]:
         from pyrsistent import pmap
 
         if paths is None:
             paths = set(self.tags_by_paths.keys())
 
         groups: set[Mapping[str, str]] = {
-            pmap({k: v for k, v in self.tags_by_paths[path].items() if k in keys})
-            for path in paths
+            pmap({k: v for k, v in self.tags_by_paths[path].items() if k in keys}) for path in paths
         }
 
         return [dict(group) for group in groups]

@@ -9,7 +9,7 @@ import curses
 import curses.ascii
 import enum
 import os
-import queue
+from queue import SimpleQueue
 
 
 class Key(enum.Enum):
@@ -26,7 +26,7 @@ class Key(enum.Enum):
 
 class Keyboard:
     def __init__(self):
-        self.queue = queue.SimpleQueue()
+        self.queue: SimpleQueue = SimpleQueue()
         self.state = ""
 
     def __call__(self, c):

@@ -9,7 +9,6 @@ from typing import OrderedDict as OrderedDictT
 from uuid import uuid4
 
 import pytest
-
 from halfpipe.cli.parser import build_parser
 from halfpipe.cluster import make_script
 

@@ -3,6 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 
+from halfpipe.ui.components.view import View
+
+
 class MockColor:
     def __getattribute__(self, _) -> int:
         return 0
@@ -13,8 +16,8 @@ class MockLayout:
         self.app = app
         self.color = MockColor()
 
-    def append(self, view):
-        view.layout = self
+    def append(self, view: View):
+        view._layout = self  # type: ignore
 
     def remove(self, _):
         pass

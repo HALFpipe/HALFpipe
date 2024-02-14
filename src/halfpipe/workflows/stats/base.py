@@ -12,7 +12,7 @@ from nipype.pipeline import engine as pe
 
 from ... import __version__
 from ...fixes import MapNode, Node
-from ...interfaces.fixes.flameo import FLAMEO
+from ...interfaces.fixes.flameo import FixFLAMEO
 from ...interfaces.image_maths.merge import Merge, MergeMask
 from ...interfaces.result.aggregate import AggregateResultdicts
 from ...interfaces.result.datasink import ResultdictDatasink
@@ -26,12 +26,8 @@ from ...utils.format import format_workflow
 from ...utils.ops import len_for_each, ravel
 from ..memory import MemoryCalculator
 
-modelfit_model_outputs = frozenset(
-    [output for a in algorithms.values() for output in a.model_outputs]
-)
-modelfit_contrast_outputs = frozenset(
-    [output for a in algorithms.values() for output in a.contrast_outputs]
-)
+modelfit_model_outputs = frozenset([output for a in algorithms.values() for output in a.model_outputs])
+modelfit_contrast_outputs = frozenset([output for a in algorithms.values() for output in a.contrast_outputs])
 modelfit_exclude: FrozenSet[str] = frozenset([])
 
 
@@ -62,8 +58,9 @@ def init_stats_wf(
     model,
     numinputs=1,
     variables=None,
-    memcalc=MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ):
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     name = f"{format_workflow(model.name)}_wf"
     workflow = pe.Workflow(name=name)
 
@@ -76,9 +73,7 @@ def init_stats_wf(
         allow_missing_input_source=True,
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     # setup outputs
     make_resultdicts_a = pe.Node(
@@ -92,10 +87,7 @@ def init_stats_wf(
     )
     make_resultdicts_a.inputs.halfpipe_version = __version__
 
-    statmaps = [
-        modelfit_aliases[m] if m in modelfit_aliases else m
-        for m in modelfit_contrast_outputs
-    ]
+    statmaps = [modelfit_aliases[m] if m in modelfit_aliases else m for m in modelfit_contrast_outputs]
     make_resultdicts_b = pe.Node(
         MakeResultdicts(
             tagkeys=["model", "contrast"],
@@ -121,9 +113,7 @@ def init_stats_wf(
 
     workflow.connect(merge_resultdicts_b, "out", outputnode, "resultdicts")
 
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=str(workdir)), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=str(workdir)), name="resultdict_datasink")
     workflow.connect(merge_resultdicts_b, "out", resultdict_datasink, "indicts")
 
     # merge inputs
@@ -143,17 +133,11 @@ def init_stats_wf(
             str(workdir / "reports" / "exclude*.json"),
         ],
     )
-    if (
-        hasattr(model, "filters")
-        and model.filters is not None
-        and len(model.filters) > 0
-    ):
+    if hasattr(model, "filters") and model.filters is not None and len(model.filters) > 0:
         filter_kwargs.update(dict(filter_dicts=model.filters))
     if hasattr(model, "spreadsheet"):
         if model.spreadsheet is not None and variables is not None:
-            filter_kwargs.update(
-                dict(spreadsheet=model.spreadsheet, variable_dicts=variables)
-            )
+            filter_kwargs.update(dict(spreadsheet=model.spreadsheet, variable_dicts=variables))
     filter_resultdicts = pe.Node(
         interface=FilterResultdicts(**filter_kwargs),
         name="filter_resultdicts",
@@ -161,7 +145,7 @@ def init_stats_wf(
     workflow.connect(merge_resultdicts_a, "out", filter_resultdicts, "in_dicts")
 
     # aggregate data structures
-    # output is a list where each element respresents a separate model run
+    # output is a list where each element represents a separate model run
     aggregate_resultdicts = pe.Node(
         AggregateResultdicts(numinputs=1, across=model.across),
         name="aggregate_resultdicts",
@@ -176,9 +160,7 @@ def init_stats_wf(
         allow_undefined_iterfield=True,
         name="extract_from_resultdict",
     )
-    workflow.connect(
-        aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict"
-    )
+    workflow.connect(aggregate_resultdicts, "resultdicts", extract_from_resultdict, "indict")
 
     # make sources metadata
     merge_sources = pe.Node(niu.Merge(3), name="merge_sources")
@@ -191,9 +173,7 @@ def init_stats_wf(
     # copy over aggregated metadata and tags to outputs
     for make_resultdicts_node in [make_resultdicts_a, make_resultdicts_b]:
         workflow.connect(extract_from_resultdict, "tags", make_resultdicts_node, "tags")
-        workflow.connect(
-            extract_from_resultdict, "metadata", make_resultdicts_node, "metadata"
-        )
+        workflow.connect(extract_from_resultdict, "metadata", make_resultdicts_node, "metadata")
         workflow.connect(extract_from_resultdict, "vals", make_resultdicts_node, "vals")
 
     # create models
@@ -235,9 +215,7 @@ def init_stats_wf(
     workflow.connect(modelspec, "contrast_names", make_resultdicts_b, "contrast")
 
     # run models
-    if model.type in [
-        "fe"
-    ]:  # fixed effects aggregate for multiple runs, sessions, etc.
+    if model.type in ["fe"]:  # fixed effects aggregate for multiple runs, sessions, etc.
         # pass length one inputs because we may want to use them on a higher level
         workflow.connect(
             aggregate_resultdicts,
@@ -248,15 +226,13 @@ def init_stats_wf(
 
         # need to merge
         mergenodeargs = {"iterfield": "in_files", "mem_gb": memcalc.volume_std_gb * 3}
-        mergemask = MapNode(MergeMask(), name="mergemask", **mergenodeargs)
+        mergemask = MapNode(MergeMask(), name="mergemask", allow_undefined_iterfield=False, **mergenodeargs)
         workflow.connect(extract_from_resultdict, "mask", mergemask, "in_files")
 
-        mergeeffect = MapNode(Merge(dimension="t"), name="mergeeffect", **mergenodeargs)
+        mergeeffect = MapNode(Merge(dimension="t"), name="mergeeffect", allow_undefined_iterfield=False, **mergenodeargs)
         workflow.connect(extract_from_resultdict, "effect", mergeeffect, "in_files")
 
-        mergevariance = MapNode(
-            Merge(dimension="t"), name="mergevariance", **mergenodeargs
-        )
+        mergevariance = MapNode(Merge(dimension="t"), name="mergevariance", allow_undefined_iterfield=False, **mergenodeargs)
         workflow.connect(extract_from_resultdict, "variance", mergevariance, "in_files")
 
         fe_run_mode = MapNode(
@@ -282,7 +258,7 @@ def init_stats_wf(
 
         # use FSL implementation
         modelfit = MapNode(
-            FLAMEO(),
+            FixFLAMEO(),
             name="modelfit",
             mem_gb=memcalc.volume_std_gb * 10,
             iterfield=[
@@ -301,9 +277,7 @@ def init_stats_wf(
         workflow.connect(mergevariance, "merged_file", modelfit, "var_cope_file")
         workflow.connect(multipleregressdesign, "design_mat", modelfit, "design_file")
         workflow.connect(multipleregressdesign, "design_con", modelfit, "t_con_file")
-        workflow.connect(
-            multipleregressdesign, "design_grp", modelfit, "cov_split_file"
-        )
+        workflow.connect(multipleregressdesign, "design_grp", modelfit, "cov_split_file")
 
         # mask output
         workflow.connect(mergemask, "merged_file", make_resultdicts_b, "mask")
@@ -325,9 +299,7 @@ def init_stats_wf(
         )
         workflow.connect(extract_from_resultdict, "mask", modelfit, "mask_files")
         workflow.connect(extract_from_resultdict, "effect", modelfit, "cope_files")
-        workflow.connect(
-            extract_from_resultdict, "variance", modelfit, "var_cope_files"
-        )
+        workflow.connect(extract_from_resultdict, "variance", modelfit, "var_cope_files")
 
         workflow.connect(modelspec, "regressors", modelfit, "regressors")
         workflow.connect(modelspec, "contrasts", modelfit, "contrasts")

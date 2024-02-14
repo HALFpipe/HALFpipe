@@ -20,9 +20,7 @@ from ..signals import mean_signals
 
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        desc="Image file(s) from where to extract the data", exists=True, mandatory=True
-    )
+    in_file = File(desc="Image file(s) from where to extract the data", exists=True, mandatory=True)
     mask_file = File(desc="Mask file", exists=True, mandatory=True)
     atlas_file = File(
         desc="Atlas image file defining the connectivity ROIs",

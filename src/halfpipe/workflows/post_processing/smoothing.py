@@ -12,13 +12,14 @@ from ..memory import MemoryCalculator
 
 def init_smoothing_wf(
     fwhm: float | None = None,
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
     name: str | None = None,
     suffix: str | None = None,
 ):
     """
     Smooths a volume within a mask while correcting for the mask edge
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if name is None:
         if fwhm is not None:
             name = f"smoothing_{int(float(fwhm) * 1e3):d}_wf"

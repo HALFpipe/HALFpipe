@@ -14,9 +14,7 @@ class AddAnotherImageOutputStep(YesNoStep):
     no_step_type = next_step_type
 
 
-ImageOutputSettingValsStep = get_setting_vals_steps(
-    AddAnotherImageOutputStep, noun="image"
-)
+ImageOutputSettingValsStep = get_setting_vals_steps(AddAnotherImageOutputStep, noun="image")
 
 ImageOutputSettingInitStep = get_setting_init_steps(
     ImageOutputSettingValsStep,

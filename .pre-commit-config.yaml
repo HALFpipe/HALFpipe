@@ -16,23 +16,21 @@ repos:
       - id: end-of-file-fixer
       - id: no-commit-to-branch
         args: ["--branch", "main"]
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
     hooks:
-      - id: black
-        language_version: python3.11
-        additional_dependencies: [click]
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
     hooks:
-      - id: isort
-        name: isort (python)
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
+      - id: codespell
+        types_or: [python, rst, markdown]
+        args: ["--ignore-words=.codespell-ignore"]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
-    - id: mypy
-      additional_dependencies: [types-chardet, types-requests, types-tabulate, typing_extensions]
+      - id: mypy
+        additional_dependencies:
+          [numpy, types-chardet, types-requests, types-tabulate, typing_extensions]

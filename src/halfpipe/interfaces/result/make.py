@@ -4,12 +4,14 @@
 
 import re
 from collections import defaultdict
+from typing import Any
 
 from nipype.interfaces.base import DynamicTraitedSpec, isdefined, traits
 from nipype.interfaces.io import IOBase, add_traits
 
 from ...model.resultdict import ResultdictSchema
 from ...model.utils import get_schema_entities
+from ...result.base import ResultDict
 from ...utils.copy import deepcopy
 from ...utils.ops import ravel
 from .base import ResultdictsOutputSpec
@@ -30,18 +32,38 @@ class MakeResultdicts(IOBase):
 
     def __init__(
         self,
-        dictkeys=["tags", "metadata", "vals"],
-        tagkeys=[],
-        valkeys=[],
-        imagekeys=[],
-        reportkeys=[],
-        metadatakeys=[],
-        nobroadcastkeys=[],
-        deletekeys=[],
-        missingvalues=[None],
+        dictkeys: list[str] | None = None,
+        tagkeys: list[str] | None = None,
+        valkeys: list[str] | None = None,
+        imagekeys: list[str] | None = None,
+        reportkeys: list[str] | None = None,
+        metadatakeys: list[str] | None = None,
+        nobroadcastkeys: list[str] | None = None,
+        deletekeys: list[str] | None = None,
+        missingvalues: list[Any] | None = None,
         **inputs,
     ):
         super(MakeResultdicts, self).__init__(**inputs)
+
+        if dictkeys is None:
+            dictkeys = ["tags", "metadata", "vals"]
+        if tagkeys is None:
+            tagkeys = list()
+        if valkeys is None:
+            valkeys = list()
+        if imagekeys is None:
+            imagekeys = list()
+        if reportkeys is None:
+            reportkeys = list()
+        if metadatakeys is None:
+            metadatakeys = list()
+        if nobroadcastkeys is None:
+            nobroadcastkeys = list()
+        if deletekeys is None:
+            deletekeys = list()
+        if missingvalues is None:
+            missingvalues = [None]
+
         add_traits(
             self.inputs,
             [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys],
@@ -63,7 +85,7 @@ class MakeResultdicts(IOBase):
         assert output_spec is not None
         outputs = output_spec.get()
 
-        inputs = [
+        inputs: list[tuple[str, str | None, Any]] = [
             (fieldname, None, getattr(self.inputs, fieldname))
             for fieldname in self._dictkeys
             if isdefined(getattr(self.inputs, fieldname))
@@ -80,7 +102,7 @@ class MakeResultdicts(IOBase):
             outputs["resultdicts"] = []
             return outputs
 
-        fieldnames, keys, values = map(list, zip(*inputs))
+        fieldnames, keys, values = map(list, zip(*inputs, strict=False))
 
         # remove undefined
         undefined_indices = set()
@@ -111,7 +133,7 @@ class MakeResultdicts(IOBase):
                     if nbroadcast is None:
                         nbroadcast = lens
                     else:
-                        nbroadcast = tuple(max(a, b) for a, b in zip(lens, nbroadcast))
+                        nbroadcast = tuple(max(a, b) for a, b in zip(lens, nbroadcast, strict=False))
                 else:
                     size = len(value)
                 if size > maxlen:
@@ -128,16 +150,10 @@ class MakeResultdicts(IOBase):
             if len(values[i]) == 0:
                 values[i] = [None] * maxlen
             if len(values[i]) != maxlen and len(ravel(values[i])) != maxlen:
-                if (
-                    nbroadcast is not None
-                    and len(values[i]) < maxlen
-                    and len(values[i]) == len(nbroadcast)
-                ):
-                    values[i] = ravel([[v] * m for m, v in zip(nbroadcast, values[i])])
+                if nbroadcast is not None and len(values[i]) < maxlen and len(values[i]) == len(nbroadcast):
+                    values[i] = ravel([[v] * m for m, v in zip(nbroadcast, values[i], strict=False)])
                 else:
-                    raise ValueError(
-                        f"Can't broadcast lists of lengths {len(values[i]):d} and {maxlen:d}"
-                    )
+                    raise ValueError(f"Can't broadcast lists of lengths {len(values[i]):d} and {maxlen:d}")
 
         # flatten
         for i in range(len(values)):
@@ -148,16 +164,14 @@ class MakeResultdicts(IOBase):
 
         # make resultdicts
         resultdicts = []
-        for valuetupl in zip(*values):
-            resultdict = defaultdict(dict)
-            for f, k, v in zip(fieldnames, keys, valuetupl):
+        for valuetupl in zip(*values, strict=False):
+            resultdict: ResultDict = defaultdict(dict)
+            for f, k, v in zip(fieldnames, keys, valuetupl, strict=False):
                 if k is None:
                     resultdict[f].update(v)
             # filter tags
-            resultdict["tags"] = {
-                k: v for k, v in resultdict["tags"].items() if k in resultdict_entities
-            }
-            for f, k, v in zip(fieldnames, keys, valuetupl):
+            resultdict["tags"] = {k: v for k, v in resultdict["tags"].items() if k in resultdict_entities}
+            for f, k, v in zip(fieldnames, keys, valuetupl, strict=False):
                 # actually add values
                 if k is not None and v not in self._missingvalues:
                     resultdict[f][k] = v
@@ -191,7 +205,7 @@ class MakeResultdicts(IOBase):
 
         # validate
         for i in range(len(resultdicts)):
-            assert len(resultdict_schema.validate(resultdicts[i])) == 0
+            assert len(resultdict_schema.validate(resultdicts[i])) == 0  # type: ignore
 
         outputs["resultdicts"] = resultdicts
         outputs["vals"] = resultdicts[0]["vals"]

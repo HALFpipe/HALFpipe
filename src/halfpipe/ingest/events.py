@@ -77,9 +77,7 @@ class ConditionFile:
                 raise ValueError(f'Missing condition name for file "{path}"')
             self.parse_txt(condition, path)
         else:
-            raise ValueError(
-                f'Cannot read condition file "{path}" with extension "{extension}"'
-            )
+            raise ValueError(f'Cannot read condition file "{path}" with extension "{extension}"')
 
     def parse_tsv(self, path: Path | str) -> None:
         data_frame = read_spreadsheet(path)
@@ -131,9 +129,7 @@ class ConditionFile:
             data_frame = read_spreadsheet(path)
 
             data_frame.rename(
-                columns=dict(
-                    zip(list(data_frame.columns)[:2], ["onsets", "durations"])
-                ),
+                columns=dict(zip(list(data_frame.columns)[:2], ["onsets", "durations"], strict=False)),
                 inplace=True,
             )
 

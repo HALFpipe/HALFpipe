@@ -9,12 +9,11 @@ import nibabel as nib
 import nipype.pipeline.engine as pe
 import numpy as np
 import pytest
-from nilearn.image import new_img_like
-from scipy.signal import welch
-
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.bandpass_filter import init_bandpass_filter_wf
+from nilearn.image import new_img_like
+from scipy.signal import welch
 
 from ...resource import setup as setup_test_resources
 
@@ -30,16 +29,12 @@ from ...resource import setup as setup_test_resources
         ("frequency_based", 0.01, 0.1),
     ],
 )
-def test_bandpass_filter_volume(
-    tmp_path: Path, bandpass_filter: tuple[str, float | None, float | None]
-) -> None:
+def test_bandpass_filter_volume(tmp_path: Path, bandpass_filter: tuple[str, float | None, float | None]) -> None:
     os.chdir(str(tmp_path))
 
     setup_test_resources()
 
-    image_file = get_resource(
-        "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz"
-    )
+    image_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
     mask_file = tmp_path / "mask.nii.gz"
 
     image = nib.nifti1.load(image_file)

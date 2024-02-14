@@ -106,9 +106,7 @@ def check_almost_equal(a: Any, b: Any) -> bool:
     elif isinstance(a, Collection) and isinstance(b, Collection):
         return check_almost_equal(sorted(a), sorted(b))
 
-    elif isinstance(a, (float, int, np.number)) and isinstance(
-        b, (float, int, np.number)
-    ):
+    elif isinstance(a, (float, int, np.number)) and isinstance(b, (float, int, np.number)):
         return isclose(a, b)
 
     return a == b
