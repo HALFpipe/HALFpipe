@@ -3,14 +3,49 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from ..ingest.bids import BidsDatabase
+from ..ingest.database import Database
 from ..logging import logger
 from ..utils.image import nvol
+from ..workflows.features.factory import FeatureFactory
+from ..workflows.post_processing.factory import PostProcessingFactory
 from .fmap import collect_fieldmaps
 
 
 def collect_bold_files(
-    database, post_processing_factory, feature_factory
+    database: Database,
+    post_processing_factory: PostProcessingFactory,
+    feature_factory: FeatureFactory,
 ) -> dict[str, list[str]]:
+    """
+    Collects and organizes associated files for bold files in the dataset.
+
+    The function combines source files from post-processing and feature factories
+    to find bold file paths. It then filters these bold files by ensuring the presence
+    of associated T1w anatomical files and functional sbrefs. For each bold file, it
+    collects associated file paths, including T1w anatomical files, fieldmaps, and
+    functional sbrefs.
+
+    Duplicate tags are checked using BIDS path information, and redundant bold files
+    are removed. Duplicates are further filtered based on a heuristic: the function
+    chooses the bold file with the longest duration or the last one when sorting
+    alphabetically. Excluded files and the decision criterion are logged using the
+    logger.
+
+    Parameters
+    ----------
+    database : Database
+        The database containing information about the dataset.
+    post_processing_factory : PostProcessingFactory
+        The factory for post-processing information.
+    feature_factory : FeatureFactory
+        The factory for feature information.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        A dictionary where keys are bold file paths, and values are lists of
+        associated file paths.
+    """
     # find bold files
 
     bold_file_paths: set[str] = (

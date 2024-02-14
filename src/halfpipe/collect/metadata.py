@@ -34,6 +34,35 @@ metadata_fields: frozenset[str] = frozenset(
 def collect_metadata(
     database: Database, path: Path | str, setting=None
 ) -> dict[str, Any]:
+    """
+    Collects metadata associated with a specified file path.
+
+    This function collects metadata associated with the specified file path in the
+    provided database. It includes information about the setting (if provided),
+    task name, acquisition voxel size, acquisition volume shape, number of volumes,
+    acquisition orientation, and slice timing. The function performs manual and
+    automated conversion of metadata based on the data type and available tags.
+
+    Parameters
+    ----------
+    database : Database
+        The database containing information about the dataset.
+    path : Union[Path, str]
+        The path to the file for which metadata is collected.
+    setting : Optional[Any], optional
+        Additional setting information to include in the metadata.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary containing the collected metadata.
+
+    Raises
+    ------
+    ValueError
+        If unknown metadata keys are collected.
+
+    """
     metadata: dict[str, Any] = OrderedDict()
 
     if setting is not None:
