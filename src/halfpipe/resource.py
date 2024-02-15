@@ -56,6 +56,8 @@ def download(url: str, target: str | Path | None = None) -> str | None:
     print(f"Downloading {url}")
 
     with requests.get(url, stream=True) as response:
+        response.raise_for_status()
+
         total_size = int(response.headers.get("content-length", 0))  # type: ignore
         block_size = 1024
 
