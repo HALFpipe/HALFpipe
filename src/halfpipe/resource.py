@@ -12,9 +12,9 @@ resource_dir.mkdir(exist_ok=True, parents=True)
 
 online_resources: dict[str, str] = {
     "index.html": "https://github.com/HALFpipe/QualityCheck/releases/download/0.4.1/index.html",
-    "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534327",
-    "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://api.figshare.com/v2/file/download/5534330",
-    "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://api.figshare.com/v2/file/download/22447958",
+    "tpl_MNI152NLin6Asym_from_MNI152NLin2009cAsym_mode_image_xfm.h5": "https://figshare.com/ndownloader/files/5534327",
+    "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://figshare.com/ndownloader/files/5534330",
+    "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://figshare.com/ndownloader/files/22447958",
 }
 
 
@@ -56,6 +56,8 @@ def download(url: str, target: str | Path | None = None) -> str | None:
     print(f"Downloading {url}")
 
     with requests.get(url, stream=True) as response:
+        response.raise_for_status()
+
         total_size = int(response.headers.get("content-length", 0))  # type: ignore
         block_size = 1024
 
