@@ -8,7 +8,7 @@ annotated-types==0.6.0
     # via pydantic
 astor==0.8.1
     # via formulaic
-atpublic==4.0
+atpublic==3.0.1
     # via flufl-lock
 attrs==23.1.0
     # via niworkflows
@@ -41,11 +41,11 @@ et-xmlfile==1.1.0
     # via openpyxl
 etelemetry==0.3.1
     # via nipype
-fasteners==0.19
+fasteners==0.17.3
     # via -r requirements.in
 filelock==3.13.1
     # via nipype
-flufl-lock==8.0.2
+flufl-lock==7.1
     # via -r requirements.in
 fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
@@ -81,7 +81,7 @@ joblib==1.3.2
     #   scikit-learn
 kiwisolver==1.4.5
     # via matplotlib
-line-profiler==4.1.2
+line-profiler==4.1.1
     # via -r requirements.in
 llvmlite==0.41.1
     # via numba
@@ -166,7 +166,7 @@ niworkflows==1.3.10
     #   fmriprep
     #   sdcflows
     #   smriprep
-num2words==0.5.13
+num2words==0.5.12
     # via pybids
 numba==0.58.1
     # via -r requirements.in
@@ -340,7 +340,7 @@ smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
     #   fmriprep
 sqlalchemy==1.3.24
     # via pybids
-stackprinter==0.2.10
+stackprinter==0.2.5
     # via -r requirements.in
 statsmodels==0.14.0
     # via -r requirements.in
@@ -384,7 +384,7 @@ typing-extensions==4.8.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via marshmallow-dataclass
-tzdata==2023.3
+python-tzdata==2023.3
     # via pandas
 urllib3==2.0.7
     # via requests

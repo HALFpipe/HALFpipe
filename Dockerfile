@@ -4,13 +4,14 @@ FROM condaforge/mambaforge:latest as builder
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
-RUN --mount=source=recipes/rmath,target=/rmath \
-    conda mambabuild --no-anaconda-upload "rmath" && \
-    conda build purge
 
-RUN --mount=source=recipes/traits,target=/traits \
-    conda mambabuild --no-anaconda-upload "traits" && \
-    conda build purge
+# Build all custom recipes in one command. We build our own conda packages to simplify
+# the environment creation process, as some of them were only available in pypi.
+COPY recipes /recipes
+RUN for pkg in rmath traits niflow-nipype1-workflows nitransforms pybids; do \
+        conda mambabuild --no-anaconda-upload /recipes/$pkg && \
+        conda build purge; \
+    done
 
 FROM condaforge/mambaforge:latest as install
 
