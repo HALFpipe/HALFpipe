@@ -11,14 +11,14 @@ source:
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install . --no-deps -vv
+  script: {{ PYTHON }} -m pip install . --no-deps -v
 
 requirements:
   host:
     - pip
-    - python
+    - python 3.11.*
   run:
-    - python
+    - python 3.11.*
     - duecredit
 
 

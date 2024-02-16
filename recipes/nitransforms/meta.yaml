@@ -16,13 +16,13 @@ build:
 requirements:
   host:
     - pip
-    - python
+    - python 3.11.*
     - numpy
     - scipy
     - nibabel
     - h5py
   run:
-    - python
+    - python 3.11.*
     - numpy
     - scipy
     - h5py
