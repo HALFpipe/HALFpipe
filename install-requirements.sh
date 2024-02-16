@@ -83,7 +83,7 @@ while read -r requirement; do
 
     package_manager="none"
     for requirement_variation in "${requirement_variations[@]}"; do
-        if run_cmd "mamba install --dry-run  --use-local \"${requirement_variation}\" >/dev/null"; then
+        if run_cmd "mamba install --dry-run  --use-local \"${requirement_variation}\""; then
             printf 'Using mamba for package "%s"\n' "${requirement_variation}"
             conda_packages+=("${requirement_variation}")
             package_manager="mamba"

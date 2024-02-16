@@ -18,7 +18,7 @@ build:
   entry_points:
     - pybids=bids.cli:cli
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv
+  script: {{ PYTHON }} -m pip install . -v
   number: 0
 
 requirements:
