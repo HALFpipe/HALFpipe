@@ -117,7 +117,7 @@ class SpreadsheetIdColumnStep(Step):
 
             self.varname_by_str = dict(zip(options, columns, strict=False))
 
-            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self.input_view = SingleChoiceInputView(options, is_vertical=True)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -205,7 +205,7 @@ class SpreadsheetSelectStep(Step):
 
             self.filepath_by_str = dict(zip(dsp_values, filepaths, strict=False))
 
-            self.input_view = SingleChoiceInputView(dsp_values, isVertical=True)
+            self.input_view = SingleChoiceInputView(dsp_values, is_vertical=True)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

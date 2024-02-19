@@ -192,7 +192,7 @@ class ModelFeaturesStep(Step):
 
             names = sorted(list(self.namesset))
 
-            self.input_view = MultipleChoiceInputView(names, checked=names, isVertical=True)
+            self.input_view = MultipleChoiceInputView(names, checked=names, is_vertical=True)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -258,7 +258,7 @@ class ModelTypeStep(Step):
 
     def setup(self, _):
         self._append_view(TextView("Specify model type"))
-        self.input_view = SingleChoiceInputView(list(self.options.keys()), isVertical=self.is_vertical)
+        self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=self.is_vertical)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 

@@ -2,11 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from __future__ import annotations
+
 import curses
+from typing import TYPE_CHECKING
 
 from .app import App
 from .keyboard import Keyboard
-from .view import View
+
+if TYPE_CHECKING:
+    from .view import View
 
 base_pad_width = 1024
 

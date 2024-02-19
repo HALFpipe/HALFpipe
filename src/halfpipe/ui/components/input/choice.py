@@ -356,9 +356,9 @@ class MultiSingleChoiceInputView(SingleChoiceInputView):
     def __init__(self, options, values, selected_indices=None, add_brackets=True, **kwargs):
         super().__init__(
             options,
-            isVertical=True,
+            is_vertical=True,
             add_brackets=False,
-            showSelectionAfterExit=False,
+            show_selection_after_exit=False,
             **kwargs,
         )
         self.selected_indices = selected_indices

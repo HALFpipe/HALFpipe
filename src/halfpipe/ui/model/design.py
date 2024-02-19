@@ -65,7 +65,7 @@ class InteractionTermsStep(Step):
 
         self.options = list(self.term_by_str.keys())
 
-        self.input_view = MultipleChoiceInputView(self.options, isVertical=True)
+        self.input_view = MultipleChoiceInputView(self.options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -109,7 +109,7 @@ class InteractionVariablesStep(Step):
 
         self.str_by_varname = dict(zip(varnames, options, strict=False))
 
-        self.input_view = MultipleChoiceInputView(options, isVertical=True)
+        self.input_view = MultipleChoiceInputView(options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -354,7 +354,7 @@ class VariableSelectStep(Step):
 
         self.varname_by_str = dict(zip(options, varnames, strict=False))
 
-        self.input_view = MultipleChoiceInputView(options, checked=options, isVertical=True)
+        self.input_view = MultipleChoiceInputView(options, checked=options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))

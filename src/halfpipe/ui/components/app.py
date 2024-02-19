@@ -10,7 +10,6 @@ from time import sleep
 from .color import Color
 from .cursor import Cursor
 from .keyboard import Keyboard
-from .layout import Layout
 
 frame_delay_seconds = 50.0 / 1000.0  # 20 fps
 
@@ -56,6 +55,8 @@ class App:
             raise _error
 
     def setup(self):
+        from .layout import Layout
+
         self.screen = curses.initscr()
 
         curses.start_color()

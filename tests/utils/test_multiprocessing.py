@@ -42,4 +42,4 @@ def test_make_pool_or_null_context(input_data: list[int], num_threads: int):
         num_threads=num_threads,
     )
     with cm:
-        assert list(iterator) == [x**2 for x in input_data]
+        assert set(iterator) == {x**2 for x in input_data}

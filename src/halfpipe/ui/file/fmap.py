@@ -107,7 +107,7 @@ class AcqToTaskMappingStep(Step):
             self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
-            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values], selectedIndices=selected_indices)
+            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values], selected_indices=selected_indices)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
