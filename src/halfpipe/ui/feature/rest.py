@@ -70,7 +70,7 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
                 self.tagval_by_str = dict(zip(dsp_values, tagvals, strict=False))
 
                 self.input_view = CombinedMultipleAndSingleChoiceInputView(
-                    dsp_values, [self.add_file_str], checked=dsp_values, isVertical=True
+                    dsp_values, [self.add_file_str], checked=dsp_values, is_vertical=True
                 )
 
                 self._append_view(self.input_view)

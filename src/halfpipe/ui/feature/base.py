@@ -83,7 +83,7 @@ class FeatureTypeStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the feature type"))
 
-        self.input_view = SingleChoiceInputView(list(self.options.keys()), isVertical=True)
+        self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))

@@ -257,7 +257,7 @@ def export(
             label = atlas.labels[i + 1]
             column = f"{column_prefix}_{atlas.name}_label-{label}"
             if statistic is not None:
-                column = f"{column}_stat-{statistic}"
+                column = f"{column}_stat-{format_like_bids(statistic)}"
             signals[column] = signal_array[:, i]
             coverages[column] = coverage_array[:, i]
 

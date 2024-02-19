@@ -221,7 +221,7 @@ class SetMetadataStep(Step):
 
             self.aliases = dict(zip(display_choices, choices, strict=False))
 
-            self.input_view: CallableView = SingleChoiceInputView(display_choices, isVertical=True)
+            self.input_view: CallableView = SingleChoiceInputView(display_choices, is_vertical=True)
 
         elif isinstance(field, fields.Float):
             self.input_view = NumberInputView()
@@ -373,7 +373,7 @@ class CheckMetadataStep(Step):
 
         if self.is_missing is False:
             self._append_view(TextView("Proceed with these values?"))
-            self.input_view = SingleChoiceInputView(["Yes", "No"], isVertical=False)
+            self.input_view = SingleChoiceInputView(["Yes", "No"], is_vertical=False)
             self._append_view(self.input_view)
 
         if self.show_summary is True or self.is_missing is False:

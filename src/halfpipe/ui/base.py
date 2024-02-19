@@ -50,7 +50,7 @@ class UseExistingSpecStep(Step):
             if len(self.existing_spec.models) > 0:
                 options.append(self.options[5])
 
-            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self.input_view = SingleChoiceInputView(options, is_vertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 

@@ -68,7 +68,7 @@ class FilePatternInputView(CallableView):
             forbidden_chars="'\"'",
             maxlen=256,
         )
-        self.suggestion_view = NestedSingleChoiceInputView(self, [], isVertical=True, add_brackets=False)
+        self.suggestion_view = NestedSingleChoiceInputView(self, [], is_vertical=True, add_brackets=False)
 
         self.message: Text = TextElement("")
         self.message_is_dirty = False

@@ -107,7 +107,7 @@ class BranchStep(Step):
             if hasattr(self, "header_str") and self.header_str is not None:
                 self._append_view(TextView(self.header_str))
 
-            self.input_view = SingleChoiceInputView(list(self.options.keys()), isVertical=self.is_vertical)
+            self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=self.is_vertical)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

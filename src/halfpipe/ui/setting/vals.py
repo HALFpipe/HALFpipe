@@ -79,7 +79,7 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 inverse_options = {v: k for k, v in self.options.items()}
                 suggestion = [inverse_options[s] for s in self.confs[-1] if s in inverse_options]
 
-            self.input_view = MultipleChoiceInputView(list(self.options.keys()), checked=suggestion, isVertical=True)
+            self.input_view = MultipleChoiceInputView(list(self.options.keys()), checked=suggestion, is_vertical=True)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))

@@ -256,7 +256,7 @@ class CopyContrastsStep(Step):
         if self.should_run:
             self._append_view(TextView("Use contrasts from existing feature?"))
             options = [feature.name for feature in self.features] + [self.skip_option]
-            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self.input_view = SingleChoiceInputView(options, is_vertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -323,7 +323,7 @@ class ConditionsSelectStep(Step):
             self.options,
             [self.add_file_str],
             checked=[*self.options],
-            isVertical=True,
+            is_vertical=True,
         )
 
         self._append_view(self.input_view)
