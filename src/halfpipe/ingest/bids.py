@@ -6,7 +6,7 @@ import json
 from os.path import relpath
 from pathlib import Path
 from shutil import rmtree
-from typing import overload
+from typing import Any, overload
 
 from bids.layout import Config
 from bids.layout.writing import build_path
@@ -24,7 +24,7 @@ bids_config = Config.load("bids")
 bids_version = "1.4.0"
 
 
-def get_bids_metadata(database, file_path) -> dict:
+def get_bids_metadata(database: Database, file_path: str | Path) -> dict[str, Any]:
     metadata = collect_metadata(database, file_path)
 
     return {camelize(key): value for key, value in metadata.items()}
@@ -99,13 +99,13 @@ class BidsDatabase:
 
         return bids_path
 
-    def to_bids(self, file_path):
+    def to_bids(self, file_path: str) -> str | None:
         return self.bids_paths.get(file_path)
 
-    def from_bids(self, bids_path):
+    def from_bids(self, bids_path: str) -> str | None:
         return self.file_paths.get(bids_path)
 
-    def tags(self, bids_path) -> dict | None:
+    def tags(self, bids_path: str) -> dict | None:
         """
         get a dictionary of entity -> value for a specific bids_path
         """
@@ -129,7 +129,7 @@ class BidsDatabase:
 
         return None
 
-    def write(self, bidsdir):
+    def write(self, bidsdir: str | Path):
         bidsdir = Path(bidsdir)
         if bidsdir.is_symlink():
             raise ValueError("Will not write to symlink")
