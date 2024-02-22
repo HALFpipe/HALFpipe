@@ -1,0 +1,33 @@
+FeatureSelectionScreen {
+        align: center middle;
+                height: auto;
+    OptionList {
+        align: center middle;
+        width: 100%;
+        height: auto;
+        text-style: bold;
+    }
+    OptionList > .option-list--separator {
+        color: white;
+    }
+    OptionList > .option-list--option-hover {
+        background: $accent;
+    }
+    #top_container {
+        border: thick $accent;
+        align: center middle;
+       /* background: 10% white;*/
+        height: 20;
+        width: 50;
+        content-align: center middle;
+    }
+    Button {
+        width: 10;
+    }
+    Horizontal {
+        width: 100%;
+        height: auto;
+        align: center top;
+        padding: 1;
+    }
+}

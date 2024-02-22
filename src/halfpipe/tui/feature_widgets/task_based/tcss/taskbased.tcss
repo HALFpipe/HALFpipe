@@ -1,0 +1,69 @@
+TaskBased {
+    #top_container_task_based {
+        align: center middle;
+    }
+    #images_to_use {
+        align: left middle;
+        border: green thick;
+        height: 12;
+        padding: 1;
+    }
+    #images_to_use_selection {
+        border: green thick;
+    }
+    #preprocessing {
+        align: center top;
+        padding: 1;
+        height: 18;
+        .switch_with_input_box{
+            height: 3;
+            color: white;
+        }
+    }
+    #notes {
+        margin: 1 0 0 0;
+        width: 100%;
+        color: white;
+    }
+    #confounds {
+        align: left middle;
+        height: 15;
+    }
+    #confounds_selection {
+        height: 11;
+    }
+    Button {
+        width: 100%;
+       /* width: 50%;
+        column-span: 1; */
+    }
+}
+
+SwitchWithInputBox {
+    Grid {
+        align: left middle;
+        grid-size: 3;
+        grid-columns: 40 10 15;
+    }
+    Static {
+        padding: 1 0 0 2;
+    }
+    #input_switch_input_box {
+        width: 14;
+    }
+}
+
+.components {
+        border: green thick;
+        border-title-background: green;
+        border-title-color: white;
+        border-title-style: bold;
+        align: center middle;
+        background: green 30%;
+        grid-size: 2;
+        grid-gutter: 1 2;
+        grid-rows: 1fr 3;
+        padding: 0 1;
+        width: 110;
+        height: auto;
+    }

@@ -1,0 +1,22 @@
+Confirm {
+    align: center middle;
+    #confirm_screen {
+        align: center top;
+        border: thick $warning;
+        width: 40;
+        height: 9;
+        #message {
+            color: red;
+            text-style: bold;
+         }
+        .message_container {
+        align: center middle;
+        }
+        .button_grid {
+            align: center bottom;
+            grid-size: 2;
+            grid-gutter: 1;
+            padding: 0 1 0 0;
+        }
+    }
+}
