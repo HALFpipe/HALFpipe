@@ -55,8 +55,8 @@ class BidsDatabase:
             raise ValueError(f'File "{file_path}" has no tags')
 
         bids_tags = dict()
-        for k, v in tags.items():
-            bids_entity = k
+        for entity, value in tags.items():
+            bids_entity = entity
 
             if bids_entity in entity_longnames:  # map to long names
                 bids_entity = entity_longnames[bids_entity]
@@ -66,23 +66,23 @@ class BidsDatabase:
                 bids_entity = "acquisition"
 
             if bids_entity == "run":
-                if not v.isdecimal():  # enforce run to be numerical
-                    run_identifier = str(int_digest(v))[:4]
-                    logger.warning(f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance')
-                    v = run_identifier
+                if not value.isdecimal():  # enforce run to be numerical
+                    run_identifier = str(int_digest(value))[:4]
+                    logger.warning(f'Converting run identifier "{value}" to number "{run_identifier}" for BIDS-compliance')
+                    value = run_identifier
 
-            if k in entities:
-                bids_tags[bids_entity] = format_like_bids(v)
+            if entity in entities:
+                bids_tags[bids_entity] = format_like_bids(value)
             else:
                 if tags.get("datatype") == "fmap":
-                    if k == "suffix":
-                        k = "fmap"
-                bids_tags[k] = v
+                    if entity == "suffix":
+                        entity = "fmap"
+                bids_tags[entity] = value
 
         bids_path_result = build_path(bids_tags, bids_config.default_path_patterns)
 
         if bids_path_result is None:
-            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}"')
+            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}" with tags "{bids_tags}"')
 
         bids_path = str(bids_path_result)
 

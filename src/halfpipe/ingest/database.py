@@ -261,7 +261,7 @@ class Database:
             ),
         )
 
-    def fillmetadata(self, key, filepaths):
+    def fillmetadata(self, key: str, filepaths: Iterable[str]):
         found = False
         found_all = True
         for filepath in filepaths:
