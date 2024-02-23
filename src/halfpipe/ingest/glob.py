@@ -5,6 +5,7 @@
 import fnmatch
 import re
 from os import path as op
+from pathlib import Path
 from typing import Callable, Container, Generator, Iterable
 
 from ..utils.path import iterdir, rlistdir
@@ -20,7 +21,7 @@ remove_tag_remainder_match = re.compile(r"(?P<oldtag>[^}]*?})")
 
 
 def tag_glob(
-    pathname: str, entities: Container[str] | None = None, dironly: bool = False
+    pathname: str | Path, entities: Container[str] | None = None, dironly: bool = False
 ) -> Generator[tuple[str, dict[str, str]], None, None]:
     """
     adapted from cpython glob

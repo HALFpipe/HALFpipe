@@ -46,7 +46,7 @@ class Factory(ABC):
 
         if bids_subject_id is None:
             if source_file is not None:
-                bids_path = bids_database.to_bids(source_file)
+                bids_path = bids_database.to_bids(str(source_file))
                 assert bids_path is not None
                 subject_id = bids_database.get_tag_value(bids_path, "subject")
             if subject_id is not None:

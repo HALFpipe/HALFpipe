@@ -89,7 +89,8 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
 
     for bold_file_path in bold_file_paths_dict.keys():
         bids_path = bids_database.to_bids(bold_file_path)
-        assert isinstance(bids_path, str)
+        if bids_path is None:
+            continue  # File is not used because it is a duplicate
 
         subject = database.tagval(bold_file_path, "sub")
         assert isinstance(subject, str)
