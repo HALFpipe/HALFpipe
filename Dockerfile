@@ -8,7 +8,7 @@ RUN mamba install --yes "boa" "conda-verify"
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi.
 COPY recipes /recipes
-RUN for pkg in rmath traits niflow-nipype1-workflows pybids nitransforms tedana templateflow niworkflows; do \
+RUN for pkg in rmath traits niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep; do \
         conda mambabuild --no-anaconda-upload /recipes/$pkg && \
         conda build purge; \
     done

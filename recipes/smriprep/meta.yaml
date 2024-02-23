@@ -1,0 +1,32 @@
+{% set name = "smriprep" %}
+{% set version = "0.7.2+halfpipe.2" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/HippocampusGirl/smriprep.git
+  git_rev: "{{ version }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps -v"
+
+requirements:
+  host:
+    - python 3.11.*
+    - pip
+  run:
+    - python 3.11.*
+
+test:
+  imports:
+    - smriprep
+
+about:
+  home: https://www.nipreps.org/smriprep/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: "sMRIprep - a robust and easy-to-use pipeline for preprocessing of structural magnetic resonance images (MRI) of the brain."

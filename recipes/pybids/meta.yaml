@@ -18,13 +18,13 @@ build:
   entry_points:
     - pybids=bids.cli:cli
   noarch: python
-  script: {{ PYTHON }} -m pip install . -v
+  script: {{ PYTHON }} -m pip install . --no-deps -v
   number: 0
 
 requirements:
   host:
     - pip
-    - python >=3.7
+    - python 3.11.*
     - setuptools >=30.3.0,!=61.0.0
   run:
     - bids-validator
@@ -34,7 +34,7 @@ requirements:
     - num2words
     - numpy
     - pandas >=0.23
-    - python >=3.7
+    - python 3.11.*
     - scipy
     - sqlalchemy <1.4.0.dev0
 
