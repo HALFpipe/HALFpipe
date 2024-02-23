@@ -47,7 +47,7 @@ filelock==3.13.1
     # via nipype
 flufl-lock==7.1
     # via -r requirements.in
-fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
+# fmriprep @ git+https://github.com/HippocampusGirl/fmriprep@20.2.7+halfpipe.2
     # via -r requirements.in
 fonttools==4.44.0
     # via matplotlib
@@ -317,7 +317,7 @@ scipy==1.11.3
     #   scikit-learn
     #   statsmodels
     #   tedana
-sdcflows @ git+https://github.com/HippocampusGirl/sdcflows@1.3.4+halfpipe.1
+# sdcflows @ git+https://github.com/HippocampusGirl/sdcflows@1.3.4+halfpipe.1
     # via
     #   -r requirements.in
     #   fmriprep
@@ -334,11 +334,11 @@ six==1.16.0
     #   isodate
     #   patsy
     #   python-dateutil
-smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
+# smriprep @ git+https://github.com/HippocampusGirl/smriprep@0.7.2+halfpipe.2
     # via
     #   -r requirements.in
     #   fmriprep
-sqlalchemy==1.3.24
+# sqlalchemy==1.3.24
     # via pybids
 stackprinter==0.2.5
     # via -r requirements.in
