@@ -53,6 +53,22 @@ def bids_data(tmp_path_factory):
     return bids_data_path
 
 
+@pytest.fixture(scope="session")
+def consistency_data(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp(basename="consistency_data")
+    os.chdir(str(tmp_path))
+    setup_test_resources()
+    input_path = get_resource("consistency.zip")
+
+    # change because it is not a zipfile
+    with ZipFile(input_path) as fp:
+        fp.extractall(tmp_path)
+
+    consistency_path = tmp_path / "consistency_data"
+
+    return consistency_path
+
+
 @pytest.fixture(scope="module")
 def task_events(tmp_path_factory, bids_data):
     tmp_path = tmp_path_factory.mktemp(basename="task_events")
