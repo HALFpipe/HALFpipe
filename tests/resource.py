@@ -20,7 +20,6 @@ test_online_resources = {
     "sub-0003_fmriprep_derivatives.zip": "https://download.fmri.science/test_resources/sub-0003_fmriprep_derivatives.zip",
     "atlases.zip": "https://github.com/HALFpipe/Atlases/releases/download/1.0.1/atlases.zip",
     "bad_quaternion.nii.gz": "https://github.com/spinalcordtoolbox/spinalcordtoolbox/files/8492834/bad_quaternion.nii.gz",
-    # "consistency.zip": "https://openneuro.org/datasets/ds004712/versions/1.0.2/download",  # openneuro dataset ds004712
 }
 
 

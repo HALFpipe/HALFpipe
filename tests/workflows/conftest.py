@@ -4,7 +4,6 @@
 
 import os
 import tarfile
-from copy import deepcopy
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
@@ -14,16 +13,15 @@ import nibabel as nib
 import pandas as pd
 import pytest
 from halfpipe.ingest.database import Database
-from halfpipe.model.feature import FeatureSchema
+from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
-from halfpipe.model.setting import SettingSchema
 from halfpipe.model.spec import Spec, SpecSchema
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 from nilearn.image import new_img_like
-from templateflow.api import get as get_template
 
 from ..resource import setup as setup_test_resources
+from .spec import make_spec
 
 
 @pytest.fixture(scope="package")
@@ -53,24 +51,8 @@ def bids_data(tmp_path_factory):
     return bids_data_path
 
 
-@pytest.fixture(scope="session")
-def consistency_data(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(basename="consistency_data")
-    os.chdir(str(tmp_path))
-    setup_test_resources()
-    input_path = get_resource("consistency.zip")
-
-    # change because it is not a zipfile
-    with ZipFile(input_path) as fp:
-        fp.extractall(tmp_path)
-
-    consistency_path = tmp_path / "consistency_data"
-
-    return consistency_path
-
-
 @pytest.fixture(scope="module")
-def task_events(tmp_path_factory, bids_data):
+def mock_task_events(tmp_path_factory, bids_data) -> File:
     tmp_path = tmp_path_factory.mktemp(basename="task_events")
 
     os.chdir(str(tmp_path))
@@ -124,11 +106,20 @@ def task_events(tmp_path_factory, bids_data):
     events_fname = Path.cwd() / "events.tsv"
     events.to_csv(events_fname, sep="\t", index=False, header=True)
 
-    return events_fname
+    return FileSchema().load(
+        dict(
+            datatype="func",
+            suffix="events",
+            extension=".tsv",
+            tags=dict(task="rest"),
+            path=str(events_fname),
+            metadata=dict(units="seconds"),
+        )
+    )
 
 
 @pytest.fixture(scope="module")
-def atlas_harvard_oxford(tmp_path_factory):
+def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -146,7 +137,7 @@ def atlas_harvard_oxford(tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
+def pcc_mask(tmp_path_factory, atlas_harvard_oxford: dict[str, Path]) -> Path:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -165,168 +156,39 @@ def pcc_mask(tmp_path_factory, atlas_harvard_oxford):
 
 
 @pytest.fixture(scope="function")
-def mock_spec(bids_data, task_events, pcc_mask):
-    spec_schema = SpecSchema()
-    spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
-    assert isinstance(spec, Spec)
-
-    spec.files = list(
-        map(
-            FileSchema().load,
-            [
-                dict(datatype="bids", path=str(bids_data)),
-                dict(
-                    datatype="func",
-                    suffix="events",
-                    extension=".tsv",
-                    tags=dict(task="rest"),
-                    path=str(task_events),
-                    metadata=dict(units="seconds"),
-                ),
-                dict(
-                    datatype="ref",
-                    suffix="map",
-                    extension=".nii.gz",
-                    tags=dict(desc="smith09"),
-                    path=str(get_resource("PNAS_Smith09_rsn10.nii.gz")),
-                    metadata=dict(space="MNI152NLin6Asym"),
-                ),
-                dict(
-                    datatype="ref",
-                    suffix="seed",
-                    extension=".nii.gz",
-                    tags=dict(desc="pcc"),
-                    path=str(pcc_mask),
-                    metadata=dict(space="MNI152NLin6Asym"),
-                ),
-                dict(
-                    datatype="ref",
-                    suffix="atlas",
-                    extension=".nii.gz",
-                    tags=dict(desc="schaefer2018"),
-                    path=str(
-                        get_template(
-                            "MNI152NLin2009cAsym",
-                            resolution=2,
-                            atlas="Schaefer2018",
-                            desc="400Parcels17Networks",
-                            suffix="dseg",
-                        )
-                    ),
-                    metadata=dict(space="MNI152NLin2009cAsym"),
-                ),
-            ],
-        )
+def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
+    bids_file = FileSchema().load(
+        dict(datatype="bids", path=str(bids_data)),
+    )
+    return make_spec(
+        dataset_files=[bids_file],
+        pcc_mask=pcc_mask,
+        event_file=mock_task_events,
     )
 
-    setting_base = dict(
-        confounds_removal=["(trans|rot)_[xyz]"],
-        grand_mean_scaling=dict(mean=10000.0),
-        ica_aroma=True,
-    )
 
-    spec.settings = list(
-        map(
-            SettingSchema().load,
-            [
-                dict(
-                    name="dualRegAndSeedCorrAndTaskBasedSetting",
-                    output_image=True,
-                    bandpass_filter=dict(type="gaussian", hp_width=125.0),
-                    smoothing=dict(fwhm=6.0),
-                    **setting_base,
-                ),
-                dict(
-                    name="fALFFUnfilteredSetting",
-                    output_image=False,
-                    **setting_base,
-                ),
-                dict(
-                    name="fALFFAndReHoAndCorrMatrixSetting",
-                    output_image=False,
-                    bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
-                    **setting_base,
-                ),
-            ],
-        )
-    )
+# @pytest.fixture(scope="function")
+# def consistency_spec(mock_spec):
+#     """
+#     Extend the mock_spec fixture to add extra file specification
+#     This fixture builds upon the existing mock_spec fixture, adding a new feature specifications.
+#     """
 
-    spec.features = list(
-        map(
-            FeatureSchema().load,
-            [
-                dict(
-                    name="taskBased",
-                    type="task_based",
-                    high_pass_filter_cutoff=125.0,
-                    conditions=["a", "b"],
-                    contrasts=[
-                        dict(name="a>b", type="t", values=dict(a=1.0, b=-1.0)),
-                    ],
-                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
-                ),
-                dict(
-                    name="seedCorr",
-                    type="seed_based_connectivity",
-                    seeds=["pcc"],
-                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
-                ),
-                dict(
-                    name="dualReg",
-                    type="dual_regression",
-                    maps=["smith09"],
-                    setting="dualRegAndSeedCorrAndTaskBasedSetting",
-                ),
-                dict(
-                    name="corrMatrix",
-                    type="atlas_based_connectivity",
-                    atlases=["schaefer2018"],
-                    setting="fALFFAndReHoAndCorrMatrixSetting",
-                ),
-                dict(
-                    name="reHo",
-                    type="reho",
-                    setting="fALFFAndReHoAndCorrMatrixSetting",
-                    smoothing=dict(fwhm=6.0),
-                ),
-                dict(
-                    name="fALFF",
-                    type="falff",
-                    setting="fALFFAndReHoAndCorrMatrixSetting",
-                    unfiltered_setting="fALFFUnfilteredSetting",
-                    smoothing=dict(fwhm=6.0),
-                ),
-            ],
-        )
-    )
+#     # Clone the spec to avoid modifying the original mock_spec
+#     consistency_spec = deepcopy(mock_spec)
 
-    spec.global_settings.update(dict(sloppy=True))
+#     new_feature = dict(
+#         name="corrMatrix",
+#         type="atlas_based_connectivity",
+#         atlases=["schaefer2018"],
+#         setting="fALFFAndReHoAndCorrMatrixSetting",
+#     )
 
-    return spec
+#     # new_settings ?
+#     # new_files ?
 
+#     # Load the feature
+#     new_feature_loaded = FeatureSchema().load(new_feature)
+#     consistency_spec.features.append(new_feature_loaded)
 
-@pytest.fixture(scope="function")
-def consistency_spec(mock_spec):
-    """
-    Extend the mock_spec fixture to add extra file specification
-    This fixture builds upon the existing mock_spec fixture, adding a new feature specifications.
-    """
-
-    # Clone the spec to avoid modifying the original mock_spec
-    consistency_spec = deepcopy(mock_spec)
-
-    new_feature = dict(
-        name="corrMatrix",
-        type="atlas_based_connectivity",
-        atlases=["schaefer2018"],
-        setting="fALFFAndReHoAndCorrMatrixSetting",
-    )
-
-    # new_settings ?
-    # new_files ?
-
-    # Load the feature
-    new_feature_loaded = FeatureSchema().load(new_feature)
-    consistency_spec.features.append(new_feature_loaded)
-
-    return consistency_spec
+#     return consistency_spec
