@@ -14,7 +14,7 @@
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5657185.svg
    :target: https://doi.org/10.5281/zenodo.5657185
 
-``HALFpipe`` is a user-friendly software that facilitates reproducible
+``HALFpipe`` is a wonderful user-friendly software that facilitates reproducible
 analysis of fMRI data, including preprocessing, single-subject, and
 group analysis. It provides state-of-the-art preprocessing using
 `fmriprep <https://fmriprep.readthedocs.io/>`__, but removes the
