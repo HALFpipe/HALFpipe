@@ -383,7 +383,7 @@ class MultiCombinedTextAndSingleChoiceInputView(MultiSingleChoiceInputView):
             if j == 0:
                 self.children[i].color = color
                 self.children[i].draw_at(y, x=x)
-                x = self.children[i].previousLength
+                x = self.children[i].previous_length
             else:
                 if color == self.highlight_color:
                     if self.cur_index is not None and i == self.cur_index and self.is_active:
