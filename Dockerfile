@@ -17,7 +17,7 @@ FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
-    "python=3.11" "pip" "nodejs" "rmath" "ants"
+    "python=3.11" "pip" "nodejs" "rmath" "ants" "datalad"
 RUN mamba update --yes --all
 RUN --mount=source=requirements.txt,target=/requirements.txt \
     --mount=source=requirements-test.txt,target=/requirements-test.txt \

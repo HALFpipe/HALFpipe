@@ -165,30 +165,3 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
         pcc_mask=pcc_mask,
         event_file=mock_task_events,
     )
-
-
-# @pytest.fixture(scope="function")
-# def consistency_spec(mock_spec):
-#     """
-#     Extend the mock_spec fixture to add extra file specification
-#     This fixture builds upon the existing mock_spec fixture, adding a new feature specifications.
-#     """
-
-#     # Clone the spec to avoid modifying the original mock_spec
-#     consistency_spec = deepcopy(mock_spec)
-
-#     new_feature = dict(
-#         name="corrMatrix",
-#         type="atlas_based_connectivity",
-#         atlases=["schaefer2018"],
-#         setting="fALFFAndReHoAndCorrMatrixSetting",
-#     )
-
-#     # new_settings ?
-#     # new_files ?
-
-#     # Load the feature
-#     new_feature_loaded = FeatureSchema().load(new_feature)
-#     consistency_spec.features.append(new_feature_loaded)
-
-#     return consistency_spec

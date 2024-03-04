@@ -21,6 +21,7 @@ patsy >= 0.5.2
 statsmodels >= 0.14
 tabulate >= 0.8.9
 pint >= 0.17
+datalad
 
 # Plotting packages
 matplotlib
