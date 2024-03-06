@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import subprocess
 import tarfile
 from math import inf
 from pathlib import Path
@@ -21,6 +22,7 @@ from halfpipe.utils.image import nvol
 from nilearn.image import new_img_like
 
 from ..resource import setup as setup_test_resources
+from .datasets import datasets, download_dataset
 from .spec import make_spec
 
 
@@ -123,6 +125,7 @@ def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
+    setup_test_resources()
 
     inputtarpath = get_resource("HarvardOxford.tgz")
 
@@ -164,4 +167,37 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
         dataset_files=[bids_file],
         pcc_mask=pcc_mask,
         event_file=mock_task_events,
+    )
+
+
+@pytest.fixture(scope="session")
+def consistency_datasets(tmp_path_factory):
+    dataset_root_paths = []
+
+    for dataset in datasets:
+        dataset_tmp_path = tmp_path_factory.mktemp(f"consistency_data_{dataset.name}")
+        os.chdir(str(dataset_tmp_path))
+        # Set git credentials because datalad uses git commands that sometimes need config info: https://github.com/datalad/datalad/issues/2272
+        subprocess.run(["git", "config", "--global", "user.email", "datalad-user@example.com"])
+        subprocess.run(["git", "config", "--global", "user.name", "DataLad User"])
+
+        downloaded_dataset = download_dataset(dataset_tmp_path, dataset)
+        assert Path(downloaded_dataset.path).exists(), f"Dataset directory {downloaded_dataset.path} does not exist"
+
+        # Add the root path of the downloaded dataset
+        dataset_root_paths.append(dataset_tmp_path)
+
+    return dataset_root_paths
+
+
+@pytest.fixture(scope="function", params=datasets)
+def consistency_spec(request, consistency_datasets, pcc_mask: Path):
+    dataset_root_path = consistency_datasets[datasets.index(request.param)]  # Retrieve the root path for the current datase
+    dataset_file = FileSchema().load(
+        dict(datatype="bids", path=str(dataset_root_path)),
+    )
+
+    return make_spec(
+        dataset_files=[dataset_file],
+        pcc_mask=pcc_mask,
     )
