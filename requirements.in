@@ -11,6 +11,7 @@ nipype >= 1.8.1
 nibabel >= 4.0.0
 templateflow >= 0.7.1
 pybids >= 0.13.1
+openneuro-py
 
 # Data science packages
 numpy >= 1.20
