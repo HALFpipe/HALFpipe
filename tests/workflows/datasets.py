@@ -42,6 +42,25 @@ datasets: list[Dataset] = [
             "sub-01/func/sub-01_task-rest_acq-MB8_sbref.nii.gz",
         ],
     ),
+    Dataset(
+        name="sleepy_brain",  # Has fieldmaps
+        openneuro_id="ds000201",
+        url="https://github.com/OpenNeuroDatasets/ds000201/blob/master/",
+        paths=[
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.json",
+            "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.json",
+            "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.nii.gz",
+            "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.nii.gz",
+            "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.json",
+        ],
+    ),
     # Dataset(
     #     name="adhd_200_neuroimage",  # 1.5 Tesla (old)
     #     url="https://datasets.datalad.org/adhd200/",
