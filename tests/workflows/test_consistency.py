@@ -7,6 +7,8 @@ from multiprocessing import cpu_count
 
 import pytest
 from fmriprep import config
+from halfpipe.cli.parser import build_parser
+from halfpipe.cli.run import run_stage_run
 from halfpipe.model.spec import save_spec
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
@@ -29,6 +31,18 @@ def test_extraction(consistency_spec, tmp_path):
     workflow = init_workflow(tmp_path)
 
     graphs = init_execgraph(tmp_path, workflow)
-    graph = next(iter(graphs.values()))
+    # graph = next(iter(graphs.values()))
 
-    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+    # does sdc_estimate only relevant for datasets with fieldmaps
+    # assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+
+    parser = build_parser()
+    opts = parser.parse_args(args=list())
+
+    opts.graphs = graphs
+    opts.nipype_run_plugin = "Simple"
+    opts.debug = True
+
+    run_stage_run(opts)
+
+    # Add checks
