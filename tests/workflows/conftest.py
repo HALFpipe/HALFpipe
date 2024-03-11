@@ -21,7 +21,6 @@ from halfpipe.utils.image import nvol
 from nilearn.image import new_img_like
 
 from ..resource import setup as setup_test_resources
-from .datasets import datasets, download_dataset
 from .spec import make_spec
 
 
@@ -166,53 +165,4 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
         dataset_files=[bids_file],
         pcc_mask=pcc_mask,
         event_file=mock_task_events,
-    )
-
-
-#! Use this if running unit test with datalad
-# @pytest.fixture(scope="session")
-# def consistency_datasets(tmp_path_factory):
-
-#     dataset_root_paths = []
-
-#     for dataset in datasets:
-#         dataset_tmp_path = tmp_path_factory.mktemp(f"consistency_data_{dataset.name}")
-#         os.chdir(str(dataset_tmp_path))
-#         # Set git credentials because datalad uses git commands that sometimes need config info: https://github.com/datalad/datalad/issues/2272
-#         subprocess.run(["git", "config", "--global", "user.email", "datalad-user@example.com"])
-#         subprocess.run(["git", "config", "--global", "user.name", "DataLad User"])
-
-
-#         downloaded_dataset = download_dataset(dataset_tmp_path, dataset)
-#         assert Path(downloaded_dataset.path).exists(), f"Dataset directory {downloaded_dataset.path} does not exist"
-
-#         # Add the root path of the downloaded dataset
-#         dataset_root_paths.append(dataset_tmp_path)
-
-#     return dataset_root_paths
-
-
-@pytest.fixture(scope="session")
-def consistency_datasets(tmp_path_factory):
-    dataset_root_paths = []
-
-    for dataset in datasets:
-        dataset_tmp_path = tmp_path_factory.mktemp(f"consistency_{dataset.name}")
-        downloaded_dataset = download_dataset(dataset_tmp_path, dataset)
-        assert Path(downloaded_dataset.path).exists(), f"Dataset directory {downloaded_dataset.path} does not exist"
-        dataset_root_paths.append(downloaded_dataset.path)
-
-    return dataset_root_paths
-
-
-@pytest.fixture(scope="function", params=datasets)
-def consistency_spec(request, consistency_datasets, pcc_mask: Path):
-    dataset_root_path = consistency_datasets[datasets.index(request.param)]  # Retrieve the root path for the current dataset
-    dataset_file = FileSchema().load(
-        dict(datatype="bids", path=str(dataset_root_path)),
-    )
-
-    return make_spec(
-        dataset_files=[dataset_file],
-        pcc_mask=pcc_mask,
     )

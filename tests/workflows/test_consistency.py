@@ -15,22 +15,28 @@ from halfpipe.model.spec import save_spec
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
 
-from .datasets import datasets
+from .datasets import Dataset, datasets
+from .spec import make_spec
 
 
 # Parametrize according to consistency_specs
-@pytest.mark.parametrize("consistency_spec", datasets, indirect=True)
-def test_extraction(consistency_spec, tmp_path):
+@pytest.mark.parametrize("dataset", datasets)
+def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """
     Run preprocessing and feature extraction for each of the four participants,
     coming from our list of datasets, then compare those to
     #TODO ENHANCEMENT: Instead of using parametrization of fixtures, do function calls.
     """
 
-    skip_vols = 3
-    consistency_spec.global_settings.update(dict(dummy_scans=skip_vols))
+    dataset_file = dataset.download(tmp_path)
+
+    spec = make_spec(
+        dataset_files=[dataset_file],
+        pcc_mask=pcc_mask,
+    )
+
     config.nipype.omp_nthreads = cpu_count()
-    save_spec(consistency_spec, workdir=tmp_path)
+    save_spec(spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
 
