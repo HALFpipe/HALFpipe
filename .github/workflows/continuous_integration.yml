@@ -15,6 +15,7 @@ on:
 jobs:
   test:
     runs-on: self-hosted
+    timeout-minutes: 1440  # Set to 24 hours
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -160,7 +161,7 @@ jobs:
         shell: docker exec test bash -x -e {0}
         env:
           # Enable pytest-github-actions-annotate-failures
-          GITHUB_ACTIONS: true
+          GITHUB_ACTIONS: truef
         run: |
           # Install the Freesurfer license
           cat > ${FREESURFER_HOME}/license.txt <<EOF

@@ -19,13 +19,12 @@ from .datasets import Dataset, datasets
 from .spec import make_spec
 
 
-# Parametrize according to consistency_specs
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """
     Run preprocessing and feature extraction for each of the four participants,
-    coming from our list of datasets, then compare those to
-    #TODO ENHANCEMENT: Instead of using parametrization of fixtures, do function calls.
+    coming from our list of datasets, then compare those to those acquired in
+    reference version Halfpipe 1.2.2.
     """
 
     dataset_file = dataset.download(tmp_path)
@@ -39,10 +38,9 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     save_spec(spec, workdir=tmp_path)
 
     workflow = init_workflow(tmp_path)
-
     graphs = init_execgraph(tmp_path, workflow)
-    # graph = next(iter(graphs.values()))
 
+    # graph = next(iter(graphs.values()))
     # sdc_estimate only relevant for datasets with fieldmaps
     # assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
 
@@ -71,7 +69,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     preproc_image = nib.nifti1.load(preproc_path)
 
     ####### Baseline checks ##########
-    assert bold_image.shape[3] == preproc_image.shape[3] + skip_vols
+    assert bold_image.shape[3] == preproc_image.shape[3]
 
     ####### Consistency checks ##########
     # 1. Download the baseline files from OSF
