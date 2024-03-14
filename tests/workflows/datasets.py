@@ -67,21 +67,24 @@ datasets: list[Dataset] = [
             "RawDataBIDS/NeuroIMAGE/T1w.json",
         ],
     ),
-    # this dataset is missing datasetDOI field and openneuro cannot handle it
     Dataset(
-        name="fmap_sequences",  # Has fieldmaps
-        openneuro_id="ds001600",
-        openneuro_url="https://github.com/OpenNeuroDatasets/ds001600/blob/master",
-        url="https://github.com/OpenNeuroDatasets/ds001600.git",
+        name="sleepy_brain",  # Has fieldmaps
+        openneuro_id="ds000201",
+        openneuro_url="https://github.com/OpenNeuroDatasets/ds000201/blob/master/",
+        url="https://github.com/OpenNeuroDatasets/ds000201.git",
         paths=[
-            "sub-1/fmap/sub-1_dir-PA_epi.nii.gz",
-            "sub-1/fmap/sub-1_dir-PA_epi.json",
-            "sub-1/fmap/sub-1_dir-AP_epi.nii.gz",
-            "sub-1/fmap/sub-1_dir-AP_epi.json",
-            "sub-1/func/sub-1_task-rest_acq-AP_bold.json",
-            "sub-1/func/sub-1_task-rest_acq-AP_bold.nii.gz",
-            "sub-1/anat/sub-1_T1w.nii.gz",
-            "sub-1/anat/sub-1_T1w.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.nii.gz",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.json",
+            "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.json",
+            "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.json",
+            "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.nii.gz",
+            "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.nii.gz",
+            "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.json",
         ],
     ),
 ]
