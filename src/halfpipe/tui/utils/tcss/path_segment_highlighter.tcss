@@ -1,0 +1,40 @@
+PathSegmentHighlighter {
+            align: center top;
+        Grid {
+            align: center middle;
+            grid-size: 4 1;
+            grid-gutter: 0 0  ;
+            padding: 0 0 0 0;
+        border: thick $accent;
+            height: 7;
+            width: 100;
+        }
+        ColorButton {
+        height: 4;
+        margin: 0 0;
+    /*    border: thick $accent;*/
+        margin: 1 2;
+                border-top: tall $panel-lighten-2;
+        border-bottom: tall $panel-darken-3;
+        }
+        Horizontal {
+        height: 5;
+        }
+    #path_widget_container {
+        height: 6;
+        align: center middle;
+        border: thick $accent;
+        width: 100;
+        overflow: hidden;
+    }
+    #path_widget {
+        height: 3;
+        width: 100;
+        content-align: center middle;
+        align: center middle;
+   /*     border: thick $accent;*/
+    }
+    ColorButton.activated {
+        tint: $background 30%;
+    }
+}
