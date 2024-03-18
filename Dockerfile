@@ -17,7 +17,7 @@ FROM condaforge/mambaforge:latest as install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
-    "python=3.11" "pip" "nodejs" "rmath" "ants"
+    "python=3.11" "pip" "nodejs" "rmath" "ants" "datalad"
 RUN mamba update --yes --all
 RUN --mount=source=requirements.txt,target=/requirements.txt \
     --mount=source=requirements-test.txt,target=/requirements-test.txt \
@@ -68,6 +68,10 @@ RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
 
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
+
+# Set global defaults for `git`
+RUN git config --global user.email "halfpipe@fmri.science" \
+    && git config --global user.name "halfpipe"
 
 # Install `halfpipe`
 RUN --mount=target=/halfpipe \

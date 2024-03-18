@@ -43,6 +43,8 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
 
     if not isinstance(obj.path, str):
         return None  # need path
+    if not exists(obj.path):
+        return None  # should exist
 
     path: str = obj.path
 
