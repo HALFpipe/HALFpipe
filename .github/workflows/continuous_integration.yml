@@ -12,6 +12,7 @@ on:
       - published
       - edited
 
+
 jobs:
   test:
     runs-on: self-hosted
@@ -161,7 +162,7 @@ jobs:
         shell: docker exec test bash -x -e {0}
         env:
           # Enable pytest-github-actions-annotate-failures
-          GITHUB_ACTIONS: truef
+          GITHUB_ACTIONS: true
         run: |
           # Install the Freesurfer license
           cat > ${FREESURFER_HOME}/license.txt <<EOF
@@ -172,7 +173,22 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test \
+          py.test -k 'not test_consistency' \
+            --cov --cov-report=xml --dist=load \
+            --numprocesses=2
+      - name: Run test_consistency only on release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Install the Freesurfer license
+          cat > ${FREESURFER_HOME}/license.txt <<EOF
+          halfpipe@fmri.science
+          73053
+          *C8FMo8yrzcZA
+          FSCA7.lDgNIow
+          e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
+          EOF
+          # Run the tests
+          py.test tests/workflows/test_consistency \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
       - name: Upload coverage to Codecov

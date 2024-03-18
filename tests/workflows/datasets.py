@@ -33,17 +33,17 @@ class Dataset:
 
 
 datasets: list[Dataset] = [
-    # Dataset(
-    #     name="on_harmony",  # single-band scan
-    #     openneuro_id="ds004712",
-    #     openneuro_url="https://github.com/OpenNeuroDatasets/ds004712/blob/master",
-    #     url="https://github.com/OpenNeuroDatasets/ds004712.git",
-    #     paths=[
-    #         "sub-13192/ses-NOT3GEM001/func/sub-13192_ses-NOT3GEM001_task-rest_acq-resopt2_bold.nii.gz",
-    #         "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.json",
-    #         "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.nii.gz",
-    #     ],
-    # ),
+    Dataset(
+        name="on_harmony",  # single-band scan
+        openneuro_id="ds004712",
+        openneuro_url="https://github.com/OpenNeuroDatasets/ds004712/blob/master",
+        url="https://github.com/OpenNeuroDatasets/ds004712.git",
+        paths=[
+            "sub-13192/ses-NOT3GEM001/func/sub-13192_ses-NOT3GEM001_task-rest_acq-resopt2_bold.nii.gz",
+            "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.json",
+            "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.nii.gz",
+        ],
+    ),
     Dataset(
         name="emory",  # multiband
         openneuro_id="ds003540",
@@ -55,18 +55,18 @@ datasets: list[Dataset] = [
             "sub-01/func/sub-01_task-rest_acq-MB8_sbref.nii.gz",
         ],
     ),
-    # Dataset(
-    #     name="adhd_200_neuroimage",  # 1.5 Tesla (old)
-    #     openneuro_url=None,
-    #     openneuro_id=None,
-    #     url="https://datasets.datalad.org/adhd200/",
-    #     paths=[
-    #         "RawDataBIDS/NeuroIMAGE/sub-7446626/ses-1/anat/sub-7446626_ses-1_run-1_T1w.nii.gz",
-    #         "RawDataBIDS/NeuroIMAGE/sub-7446626/ses-1/func/sub-7446626_ses-1_task-rest_run-1_bold.nii.gz",
-    #         "RawDataBIDS/NeuroIMAGE/task-rest_bold.json",
-    #         "RawDataBIDS/NeuroIMAGE/T1w.json",
-    #     ],
-    # ),
+    Dataset(
+        name="adhd_200_neuroimage",  # 1.5 Tesla (old)
+        openneuro_url=None,
+        openneuro_id=None,
+        url="https://datasets.datalad.org/adhd200/",
+        paths=[
+            "RawDataBIDS/NeuroIMAGE/sub-7446626/ses-1/anat/sub-7446626_ses-1_run-1_T1w.nii.gz",
+            "RawDataBIDS/NeuroIMAGE/sub-7446626/ses-1/func/sub-7446626_ses-1_task-rest_run-1_bold.nii.gz",
+            "RawDataBIDS/NeuroIMAGE/task-rest_bold.json",
+            "RawDataBIDS/NeuroIMAGE/T1w.json",
+        ],
+    ),
     Dataset(
         name="sleepy_brain",  # Has fieldmaps
         openneuro_id="ds000201",
