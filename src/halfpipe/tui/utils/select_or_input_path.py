@@ -230,7 +230,6 @@ class SelectCurrentWithInput(Horizontal):
         """When user types to prompt this method is triggered.
         when user selects option this method is triggered.
         """
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas")
         path = self.query_one("#label").value
         self.post_message(self.PromptChanged(path))
 
@@ -376,19 +375,14 @@ class SelectOrInputPath(Select):
     @on(SelectCurrentWithInput.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
         """Runs when input prompt is changed."""
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas 22222222222222")
-
         path = event.value
         self.post_message(self.PromptChanged(path))
         if os.path.exists(path):
-            print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas 33333333333333333", path)
             if path.endswith("/") and os.path.isdir(path):
-                print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas 44444444444444444")
                 # When user selects option this is triggered
                 self._setup_variables_for_options([(f, f) for f in create_path_option_list(base=path)])
                 self._setup_options_renderables()
         else:
-            print("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas 5555555555")
             # When user types to prompt this is triggered
             filepaths = []
             path_uncomplete = path
