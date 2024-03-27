@@ -1,0 +1,15 @@
+DataInput {
+/*border: thick red;*/
+    align: center top;
+ /*   width: 100%;*/
+    height: auto;
+  /*      border: white;*/
+    #data_input {
+   /* width: 110;*/
+    /*    width: 100%;*/
+    align: left top;
+    height: 7;
+            grid-size: 1;
+   /* border: green;*/
+    }
+}

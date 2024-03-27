@@ -1,0 +1,12 @@
+WorkDirectory {
+
+    align: center top;
+    height: auto;
+    #work_directory {
+
+    align: left top;
+    height: auto;
+            grid-size: 1;
+   /* border: green;*/
+    }
+}
