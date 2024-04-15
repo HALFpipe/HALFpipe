@@ -32,7 +32,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     reference version Halfpipe 1.2.2. The baseline check just checks
     that the feature extraction worked correctly.
 
-    Consistency check flow consist of:
+    Consistency check flow consists of:
     # 1. Downloading the baseline files from OSF
     # 2. TODO: Comparing all features
     # 3. TODO: Visualize comparison
@@ -82,7 +82,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
     ############ Consistency checks ##########
     setup_test_resources()
-    zip_path = get_resource("halfpipe122_baseline.zip")  # this will be done 1 time per dataset, split?
+    zip_path = get_resource("halfpipe122_baseline.zip")  # this will be done 1 time per dataset, split test?
 
     with ZipFile(zip_path) as zip_file:
         zip_file.extractall(tmp_path)
@@ -91,44 +91,13 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     assert isinstance(baseline_path, Path), "Baseline path did not return a Path object."
     assert any(baseline_path.iterdir()), "The extracted directory is empty."
 
-    # Compare FCs logic
-    if dataset.name == "on_harmony":
-        base_fc = (
-            baseline_path
-            / "dataset1_onharmony"
-            / "task_rest"
-            / "sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv"
-        )
-        current_fc = (
-            tmp_path
-            / "derivatives"
-            / "halfpipe"
-            / "sub-9040"
-            / "ses-1"
-            / "func"
-            / "task-rest"
-            / "sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv"
-        )
-        # add extra features here
-    elif dataset.name == "emory":
-        base_fc = (
-            baseline_path
-            / "dataset2_emory"
-            / "task_rest"
-            / "sub-01_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv"
-        )
-        current_fc = (
-            tmp_path
-            / "derivatives"
-            / "halfpipe"
-            / "sub-01"
-            / "func"
-            / "task-rest"
-            / "sub-01_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv"
-        )
-        # add...
-    # finish for all datasets
+    # Establish paths for all relevant files for comparison
+    base_paths = [baseline_path / path for path in dataset.osf_paths]
+    current_paths = [tmp_path / path for path in dataset.consistency_paths]
+    base_tsnr, base_fc, base_reho, base_seed, base_falff, base_dual = base_paths
+    current_tsnr, current_fc, current_reho, current_seed, current_falff, current_dual = current_paths
 
-    fc_fig, mean_abs_diff = compare_fcs(base_fc, current_fc)
     threshold = 0.3  # Example threshold?
+    fc_fig, mean_abs_diff = compare_fcs(base_fc, current_fc)
+
     assert mean_abs_diff < threshold, "Mean absolute difference is too high"

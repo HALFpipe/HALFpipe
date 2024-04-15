@@ -17,6 +17,14 @@ class Dataset:
     name: str
     url: str
     paths: list[str]
+    osf_paths: list[str]
+    # tsnr
+    # FC
+    # ReHo
+    # seed
+    # falff
+    # dual_Based
+    consistency_paths: list[str]
     openneuro_id: str | None
     openneuro_url: str | None
 
@@ -43,6 +51,22 @@ datasets: list[Dataset] = [
             "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.json",
             "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.nii.gz",
         ],
+        osf_paths=[
+            "dataset1_onharmony/tsnr",  # placeholder tsnr
+            "dataset1_onharmony/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",
+            "dataset1_onharmony/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-reHo_reho.nii.gz",
+            "dataset1_onharmony/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "dataset1_onharmony/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-fALFF_falff.nii.gz",
+            "dataset1_onharmony/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
+        ],
+        consistency_paths=[
+            "nipype/reports_wf/single_subject_13192_wf/func_preproc_ses_NOT3GEM001_task_rest_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz"
+            "derivatives/halfpipe/sub-13192/ses-NOT3GEM001/func/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv"
+            "derivatives/halfpipe/sub-13192/ses-NOT3GEM001/func/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-reHo_reho.nii.gz"
+            "derivatives/halfpipe/sub-13192/ses-NOT3GEM001/func/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz"
+            "derivatives/halfpipe/sub-13192/ses-NOT3GEM001/func/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-fALFF_falff.nii.gz"
+            "derivatives/halfpipe/sub-13192/ses-NOT3GEM001/func/task-rest/sub-13192_ses-NOT3GEM001_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz"
+        ],
     ),
     Dataset(
         name="emory",  # multiband
@@ -53,6 +77,22 @@ datasets: list[Dataset] = [
             "sub-01/anat/sub-01_T1w.nii.gz",
             "sub-01/func/sub-01_task-rest_acq-MB8_bold.nii.gz",
             "sub-01/func/sub-01_task-rest_acq-MB8_sbref.nii.gz",
+        ],
+        osf_paths=[
+            "dataset2_emory/tsnr",  # placeholder tsnr
+            "dataset2_emory/task-rest/sub-01_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",
+            "dataset2_emory/task-rest/sub-01_task-rest_feature-reHo_reho.nii.gz",
+            "dataset2_emory/task-rest/sub-01_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "dataset2_emory/task-rest/sub-01_task-rest_feature-fALFF_falff.nii.gz",
+            "dataset2_emory/task-rest/sub-01_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
+        ],
+        consistency_paths=[
+            "nipype/reports_wf/single_subject_01_wf/func_preproc_task_rest_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz",
+            "derivatives/halfpipe/sub-01/func/task-rest/sub-01_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",
+            "derivatives/halfpipe/sub-01/func/task-rest/sub-01_task-rest_feature-reHo_reho.nii.gz",
+            "derivatives/halfpipe/sub-01/func/task-rest/sub-01_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "derivatives/halfpipe/sub-01/func/task-rest/sub-01_task-rest_feature-fALFF_falff.nii.gz",
+            "derivatives/halfpipe/sub-01/func/task-rest/sub-01_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
         ],
     ),
     Dataset(
@@ -65,6 +105,22 @@ datasets: list[Dataset] = [
             "RawDataBIDS/NeuroIMAGE/sub-7446626/ses-1/func/sub-7446626_ses-1_task-rest_run-1_bold.nii.gz",
             "RawDataBIDS/NeuroIMAGE/task-rest_bold.json",
             "RawDataBIDS/NeuroIMAGE/T1w.json",
+        ],
+        osf_paths=[
+            "dataset3_adhd/tsnr",  # placeholder tsnr
+            "dataset3_adhd/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",
+            "dataset3_adhd/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-reHo_reho.nii.gz" "",
+            "dataset3_adhd/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "dataset3_adhd/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-fALFF_falff.nii.gz",
+            "dataset3_adhd/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
+        ],
+        consistency_paths=[
+            "nipype/reports_wf/single_subject_7446626_wf/func_preproc_ses_1_task_rest_run_1_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz",
+            "derivatives/halfpipe/sub-7446626/ses-1/func/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",
+            "derivatives/halfpipe/sub-7446626/ses-1/func/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-reHo_reho.nii.gz",
+            "derivatives/halfpipe/sub-7446626/ses-1/func/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "derivatives/halfpipe/sub-7446626/ses-1/func/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-fALFF_falff.nii.gz",
+            "derivatives/halfpipe/sub-7446626/ses-1/func/task-rest/sub-7446626_ses-1_task-rest_run-1_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
         ],
     ),
     Dataset(
@@ -85,6 +141,22 @@ datasets: list[Dataset] = [
             "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.nii.gz",
             "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.nii.gz",
             "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.json",
+        ],
+        osf_paths=[
+            "dataset4_sleepy/tsnr",  # placeholder tsnr
+            "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
+            "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
+            "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
+            "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
+        ],
+        consistency_paths=[
+            "nipype/reports_wf/single_subject_9040_wf/func_preproc_ses_1_task_rest_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz",
+            "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
+            "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
+            "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+            "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
+            "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",
         ],
     ),
 ]

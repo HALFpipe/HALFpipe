@@ -12,6 +12,8 @@ def compare_fcs(base_fc: Path, current_fc: Path):
     base_matrix = np.loadtxt(base_fc, delimiter="\t")
     current_matrix = np.loadtxt(current_fc, delimiter="\t")
     diff_matrix = np.triu(current_matrix) - np.triu(base_matrix)  # compute difference with one triangle
+
+    #! Correct this because it won't be able to handle the NaNs
     mean_abs_diff = np.abs(diff_matrix).mean()
 
     diff_matrix = (diff_matrix + diff_matrix.T) / 2  # Making it symmetric
@@ -20,8 +22,8 @@ def compare_fcs(base_fc: Path, current_fc: Path):
     cax = ax.imshow(diff_matrix, cmap="coolwarm", interpolation="nearest")
     fig.colorbar(cax)
     ax.set_title("Functional Connectivity difference matrix")
-    ax.set_xlabel("Regions")
-    ax.set_ylabel("Regions")
+    ax.set_xlabel("Atlas regions")
+    ax.set_ylabel("Atlas regions")
 
     return fig, mean_abs_diff
 
