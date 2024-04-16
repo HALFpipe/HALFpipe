@@ -112,12 +112,10 @@ class BidsDatabase:
         return self.bids_tags.get(bids_path)
 
     @overload
-    def get_tag_value(self, bids_path: list[str], entity: str) -> list:
-        ...
+    def get_tag_value(self, bids_path: list[str], entity: str) -> list: ...
 
     @overload
-    def get_tag_value(self, bids_path: str, entity: str) -> str | None:
-        ...
+    def get_tag_value(self, bids_path: str, entity: str) -> str | None: ...
 
     def get_tag_value(self, bids_path: list[str] | str, entity: str) -> str | list | None:
         if isinstance(bids_path, (list, tuple)):  # vectorize
