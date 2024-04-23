@@ -27,8 +27,9 @@ from ..utils.time import timestamp_format
 from .feature import FeatureSchema
 from .file.base import File
 from .file.schema import FileSchema
+from .global_settings import GlobalSettingsSchema
 from .model import ModelSchema
-from .setting import GlobalSettingsSchema, SettingSchema
+from .setting import SettingSchema
 
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
