@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
-FROM condaforge/mambaforge:latest as builder
+FROM condaforge/mambaforge:latest AS builder
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
@@ -9,11 +9,11 @@ RUN mamba install --yes "boa" "conda-verify"
 # the environment creation process, as some of them were only available in pypi.
 COPY recipes /recipes
 RUN for pkg in rmath traits niflow-nipype1-workflows nitransforms pybids; do \
-        conda mambabuild --no-anaconda-upload /recipes/$pkg && \
-        conda build purge; \
+    conda mambabuild --no-anaconda-upload /recipes/$pkg && \
+    conda build purge; \
     done
 
-FROM condaforge/mambaforge:latest as install
+FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
