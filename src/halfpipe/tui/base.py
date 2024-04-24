@@ -62,6 +62,7 @@ class MainApp(App):
         "./utils/tcss/file_browser.tcss",
         "./working_directory/tcss/working_directory.tcss",
         "./data_input/tcss/data_input.tcss",
+        "./utils/tcss/path_pattern_builder.tcss",
     ]
 
     BINDINGS = [
