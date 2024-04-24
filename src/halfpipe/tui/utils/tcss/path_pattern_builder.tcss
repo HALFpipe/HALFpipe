@@ -1,0 +1,385 @@
+/*#test_container {
+    height: 50;
+    background: white;
+}*/
+
+.non_bids_panels {
+    border: solid green;
+        border-title-background: green;
+        border-title-color: white;
+        border-title-style: bold;
+        height: auto;
+}
+
+#non_bids_panel {
+height: auto;
+offset-y: -7;
+}
+
+#add_button {
+    width: 10;
+}
+
+
+
+#static_file_pattern {
+    width: auto;
+    padding: 1;
+}
+
+.file_patterns {
+    width: 100;
+    height: 5;
+   border: solid red;
+}
+#icon_buttons_container {
+            grid-size: 3 1;
+width: 21;
+    dock: right;
+
+    height:20;
+
+}
+
+.icon_buttons {
+    width: 3;
+    height: 3;
+    margin: 0 1 0 0;
+    min-width: 6;
+
+}
+
+
+#feedback_and_confirm_panel {
+            border: thick $accent;
+            align: right middle;
+            content-align: right middle;
+    width: 100;
+    height: auto;
+    Static {
+        border: tall white;
+        width: auto;
+        column-span: 5;
+        row-span: 1;
+        width: 90;
+        content-align: center middle;
+    }
+    Button {
+        margin: 0 0 0 1;
+    }
+        #bottom_buttons {
+
+            grid-size: 2 1;
+            grid-gutter: 0 0  ;
+            padding: 0 0 0 0;
+            align: right middle;
+    content-align: right middle;
+            height: 7;
+            width: 40;
+            background: white;
+        }
+    Grid {
+    align: right middle;
+    }
+    #testtt {
+                align: right middle;
+    content-align: right middle;
+                height:5;
+                    layout: horizontal;
+                    padding: 1;
+                    margin: 0 0 -1 1;
+
+    }
+    #feedback_container {
+        layout: horizontal;
+        height: 3;
+    }
+}
+
+ListOfFiles {
+                align: center middle;
+    border: $accent tall;
+    width: 50;
+    height: 50;
+        Container {
+        height: auto;
+        width: auto;
+        border: $accent tall;
+    }
+    ScrollableContainer {
+        height: 20;
+        width: 100;
+    }
+    Pretty {
+    width: auto;
+    height: auto;
+    }
+    Button {
+    offset-x: 83 ;
+    }
+}
+
+FileItem {
+    height: 1;
+    border: red;
+}
+
+Select:focus > SelectCurrent {
+        border: tall $accent;
+    }
+
+
+
+
+InputWithColoredSuggestions > SelectOverlay {
+        width: 100%;
+        display: none;
+        height: auto;
+        max-height: 12;
+        overlay: screen;
+        constrain: y;
+        padding: 0 0 0 0;
+        background:                   $surface-lighten-1 ;
+       /* border: white;*/
+        offset-y: -3;
+    }
+
+    Select .up-arrow {
+        display:none;
+    }
+
+    Select.-expanded .down-arrow {
+        display:none;
+    }
+
+    Select.-expanded .up-arrow {
+        display: block;
+    }
+
+    Select.-expanded > SelectOverlay {
+        display: block;
+    }
+
+    Select.-expanded > SelectCurrent {
+        border: tall $accent;
+    }
+
+SelectCurrentWithInputAndSegmentHighlighting {
+
+        width: auto;
+        margin: 0 0 0 0;
+
+        border: none;
+     /*   outline: tall $accent;*/
+        outline: none;
+        content-align: center bottom;
+                background: transparent;
+        height: 6;
+        outline: red ;
+        padding: 1;
+        }
+
+    SelectCurrentWithInputAndSegmentHighlighting SegmentHighlighting {
+        width: 1fr;
+        height: 999;
+        color: $text-disabled;
+        background: transparent;
+        outline-top: $accent tall;
+        outline-bottom: $accent tall;
+        padding: 1;
+        border: none;
+
+    }
+
+    SelectCurrentWithInputAndSegmentHighlighting.-has-value SegmentHighlighting#label {
+        color: $text;
+    }
+    SelectCurrentWithInputAndSegmentHighlighting .arrow {
+        box-sizing: content-box;
+        width: 1;
+        height: 2;
+        padding: -1 1 0 0;
+        margin: 1 1 1 -1;
+        color: red;
+        background: transparent;
+        content-align: center bottom;
+  /*      border-bottom: $accent tall;*/
+
+    }
+
+
+SegmentHighlighting {
+
+    width: 10;
+    outline: none;
+    border:none;
+    color: white;
+}
+
+
+
+
+
+/*
+SelectCurrentWithInputAndSegmentHighlighting {
+        content-align: center top;
+ border: none;
+ outline: none;
+ width: 95;
+ padding: 0 2 0 0;
+}
+
+    SelectCurrentWithInputAndSegmentHighlighting .arrow {
+        box-sizing: content-box;
+        width: 1;
+        height: 2;
+        padding: -1 1 0 0;
+        margin: 1 1 1 -1;
+        color: red;
+        background: transparent;
+        content-align: center bottom;
+
+    }
+*/
+
+
+/*
+InputWithColoredSuggestions {
+border: green;
+width:80
+}
+*/
+
+PathPatternBuilder {
+
+        align: center top;
+        .panels {
+            align: center middle;
+            grid-size: 5 1;
+            grid-gutter: 0 0  ;
+            padding: 0 0 0 0;
+            border: thick $accent;
+            height: 7;
+            width: 100;
+        }
+        #input_prompt {
+            height: 999;
+            width: auto;
+            color: white;
+            outline: none;
+        }
+        ColorButton {
+        height: 4;
+        margin: 0 0;
+    /*    border: thick $accent;*/
+        margin: 1 2;
+                border-top: tall $panel-lighten-2;
+        border-bottom: tall $panel-darken-3;
+        }
+        /* also SelectCurrentWithInput */
+
+
+
+    /* inner */
+    #input_prompt_horizontal_scroll{
+        height:6 ;
+      /*  outline: red;
+        border: red;*/
+     /*   background: white;*/
+    }
+
+    #path_widget {
+        height: 15;
+        outline: red ;
+      /*          background: red;*/
+    /*    width: 100;*/
+       /* content-align: center middle;
+        align: center middle;*/
+    }
+    /* most upper container, needs to have the border */
+    #path_widget_container {
+        height: 8;
+
+        align: center middle;
+        border: thick $accent;
+        width: 100;
+        overflow: hidden;
+      /*                  background: green;*/
+      /*  background: white;*/
+    }
+
+    ColorButton.activated {
+        tint: $background 30%;
+    }
+}
+
+
+
+FileBrowserScreen {
+
+
+    Select > SelectOverlay {
+        width: 100%;
+        display: none;
+        height: auto;
+        max-height: 12;
+        overlay: screen;
+        constrain: y;
+    }
+
+    Select .up-arrow {
+        display:none;
+    }
+
+    Select.-expanded .down-arrow {
+        display:none;
+    }
+
+    Select.-expanded .up-arrow {
+        display: block;
+    }
+
+    Select.-expanded > SelectOverlay {
+        display: block;
+    }
+
+    Select.-expanded > SelectCurrent {
+        border: tall $accent;
+    }
+    SelectCurrentWithInput {
+        height: 3;
+        width: 100%;
+        margin: 0 0 0 0;
+        padding: 0 0 0 2;
+        border: none;
+        outline: tall $accent;
+        content-align: center bottom;
+                background: transparent;
+    }
+    SelectCurrentWithInput MyInput#label {
+        width: 1fr;
+        height: 3;
+        color: $text-disabled;
+        background: transparent;
+        outline-top: $accent tall;
+        outline-bottom: $accent tall;
+        padding: 1;
+        border: none;
+
+    }
+    SelectCurrentWithInput.-has-value MyInput#label {
+        color: $text;
+    }
+    SelectCurrentWithInput .arrow {
+        box-sizing: content-box;
+        width: 1;
+        height: 2;
+        padding: -1 1 0 0;
+        margin: 1 1 1 -1;
+        color: red;
+        background: transparent;
+        content-align: center bottom;
+
+    }
+
+}
