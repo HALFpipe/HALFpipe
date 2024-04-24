@@ -4,12 +4,19 @@ DataInput {
  /*   width: 100%;*/
     height: auto;
   /*      border: white;*/
-    #data_input {
+    #bids_panel {
    /* width: 110;*/
     /*    width: 100%;*/
     align: left top;
     height: 7;
             grid-size: 1;
    /* border: green;*/
+    }
+    Switch {
+
+    }
+    .label {
+    border: transparent;
+    width: auto;
     }
 }
