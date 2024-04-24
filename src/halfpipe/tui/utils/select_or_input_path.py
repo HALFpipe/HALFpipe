@@ -212,7 +212,9 @@ class SelectCurrentWithInput(Horizontal):
         self.placeholder = placeholder
 
     def compose(self) -> ComposeResult:
-        yield MyInput(name="select_input", placeholder=self.placeholder, id="label")
+        print("cccccccccccccccccccccccccccccomposed 22222222222")
+
+        yield MyInput(name="select_input", placeholder=self.placeholder, id="input_prompt")
         yield MyStatic("▼", classes="arrow down-arrow")
         yield MyStatic("▲", classes="arrow up-arrow")
 
@@ -223,14 +225,19 @@ class SelectCurrentWithInput(Horizontal):
             label: A renderable to display, or `None` for the placeholder.
         """
         self.new_placeholder = new_placeholder
+        print("kkkkkkkkkkkkkkkkkkkkkkkkkkk", new_placeholder)
         # This will change the MyInput widget value also and triggers "on_input_changed"
-        self.query_one("#label").value = self.placeholder if isinstance(new_placeholder, NoSelection) else new_placeholder
+        self.get_widget_by_id("input_prompt").value = (
+            self.placeholder if isinstance(new_placeholder, NoSelection) else new_placeholder
+        )
+        print("222kkkkkkkkkkkkkkkkkkkkkkkkkkk", self.get_widget_by_id("input_prompt").value)
 
     def on_input_changed(self, message):
         """When user types to prompt this method is triggered.
         when user selects option this method is triggered.
         """
-        path = self.query_one("#label").value
+        path = self.get_widget_by_id("input_prompt").value
+        print("paaaaaaaaaaaaaaaaaaaaaaaaaaaaath", path)
         self.post_message(self.PromptChanged(path))
 
     async def on_key(self, event: events.Key) -> None:
@@ -245,11 +252,11 @@ class SelectCurrentWithInput(Horizontal):
 
 class SelectOrInputPath(Select):
     DEFAULT_CSS = """
-    Select:focus > SelectCurrent {
+    SelectOrInputPath:focus > SelectCurrent {
         border: tall $accent;
     }
 
-    Select > SelectOverlay {
+    SelectOrInputPath > SelectOverlay {
         width: 100%;
         display: none;
         height: auto;
@@ -258,7 +265,7 @@ class SelectOrInputPath(Select):
         constrain: y;
     }
 
-    Select .up-arrow {
+    SelectOrInputPath .up-arrow {
         display:none;
     }
 
@@ -266,15 +273,15 @@ class SelectOrInputPath(Select):
         display:none;
     }
 
-    Select.-expanded .up-arrow {
+    SelectOrInputPath.-expanded .up-arrow {
         display: block;
     }
 
-    Select.-expanded > SelectOverlay {
+    SelectOrInputPath.-expanded > SelectOverlay {
         display: block;
     }
 
-    Select.-expanded > SelectCurrent {
+    SelectOrInputPath.-expanded > SelectCurrent {
         border: tall $accent;
     }
     """
@@ -286,22 +293,26 @@ class SelectOrInputPath(Select):
     value: var[SelectType | NoSelection] = var[Union[SelectType, NoSelection]]("")
     """The value of the selection."""
 
+    input_class = SelectCurrentWithInput
+
     @dataclass
     class PromptChanged(Message):
         """Inform ancestor the selection was changed."""
 
         value: str
 
-    def __init__(self, options, *, prompt_default: str = "", top_parent=None, **kwargs):
+    def __init__(self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None):
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
-        super().__init__(options, prompt=prompt_default, **kwargs)
+        super().__init__(options, prompt=prompt_default, id=id, classes=classes)
         self.top_parent = top_parent
         self._value: str = prompt_default
         self.prompt_default = prompt_default
         self._setup_variables_for_options(options)
 
+    #    self.append_prompt = append_prompt
+
     def compose(self) -> ComposeResult:
-        yield SelectCurrentWithInput(self._value)
+        yield self.input_class(self._value)
         yield SelectOverlay()
 
     def _setup_variables_for_options(
@@ -313,9 +324,10 @@ class SelectOrInputPath(Select):
         This method sets up `self._options` and `self._legal_values`.
         """
         self._options: list[tuple[RenderableType, SelectType | NoSelection]] = []
-        if self._allow_blank:
-            # use self.prompt to pass the default prompt value
-            self._options.append(("", self.prompt))
+        # if self._allow_blank:
+        #  if self.append_prompt:
+        # use self.prompt to pass the default prompt value
+        #      self._options.append(("", self.prompt))
         self._options.extend(options)
 
         if not self._options:
@@ -347,7 +359,7 @@ class SelectOrInputPath(Select):
         """Called when the user presses a key."""
         # Path suggestions
         if event.key == "shift+right":
-            select_current = self.query_one(SelectCurrentWithInput)
+            select_current = self.query_one(self.input_class)
             myinput = select_current.get_widget_by_id("label")
             current_path = myinput.value
             strings = (
@@ -367,39 +379,47 @@ class SelectOrInputPath(Select):
             self.expanded = True
             select_overlay.focus()
 
-    @on(SelectCurrentWithInput.PromptCloseOverlay)
+    @on(input_class.PromptCloseOverlay)
     def _select_current_with_input_prompt_close_overlay(self, event: SelectCurrentWithInput.PromptCloseOverlay):
         """When the Overlay is closed while the focus is on the input widget, keep the overlay closed."""
-        self.expanded = False
+        if self.input_class == SelectCurrentWithInput:
+            self.expanded = False
 
-    @on(SelectCurrentWithInput.PromptChanged)
+    @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
         """Runs when input prompt is changed."""
-        path = event.value
-        self.post_message(self.PromptChanged(path))
-        if os.path.exists(path):
-            if path.endswith("/") and os.path.isdir(path):
-                # When user selects option this is triggered
-                self._setup_variables_for_options([(f, f) for f in create_path_option_list(base=path)])
-                self._setup_options_renderables()
-        else:
-            # When user types to prompt this is triggered
-            filepaths = []
-            path_uncomplete = path
-            path = path.rsplit("/", 1)[0] if path.count("/") > 1 else "/"
+        print("ppppppppppppppppppppp", self.input_class)
+        print("ppppppppppppppppppppp", SelectCurrentWithInput)
+
+        if self.input_class == SelectCurrentWithInput:
+            print(" tssssssssssssssssss changed 22")
+            path = event.value
+            print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)
+            self.post_message(self.PromptChanged(path))
             if os.path.exists(path):
-                for f in os.scandir(path):
-                    filepath = f.path
-                    if f.is_dir():
-                        filepath += "/"
-                    if filepath.startswith(path_uncomplete):
-                        filepaths.append(filepath)
-                    filepaths.sort()
-                self.expanded = True
-                self._setup_variables_for_options([(f, f) for f in filepaths])
-                self._setup_options_renderables()
-        if os.path.isfile(path):
-            self.expanded = False
+                if path.endswith("/") and os.path.isdir(path):
+                    # When user selects option this is triggered
+                    self._setup_variables_for_options([(f, f) for f in create_path_option_list(base=path)])
+                    self._setup_options_renderables()
+            else:
+                # When user types to prompt this is triggered
+                filepaths = []
+                path_uncomplete = path
+                path = path.rsplit("/", 1)[0] if path.count("/") > 1 else "/"
+                if os.path.exists(path):
+                    for f in os.scandir(path):
+                        filepath = f.path
+                        if f.is_dir():
+                            filepath += "/"
+                        if filepath.startswith(path_uncomplete):
+                            filepaths.append(filepath)
+                        filepaths.sort()
+                    self.expanded = True
+                    self._setup_variables_for_options([(f, f) for f in filepaths])
+                    self._setup_options_renderables()
+            if os.path.isfile(path):
+                self.expanded = False
+            self.value = path
 
     @on(SelectOverlay.UpdateSelection)
     def _update_selection(self, event: SelectOverlay.UpdateSelection) -> None:
@@ -413,8 +433,10 @@ class SelectOrInputPath(Select):
     @on(SelectOverlay.Typing)
     async def _select_overlay_typing(self, event: SelectOverlay.Typing):
         """Passes the typing activity on overlay to the main widget and update the path."""
-        select_current = self.query_one(SelectCurrentWithInput)
-        myinput = select_current.query_one(MyInput)
+        select_current = self.query_one(self.input_class)
+        #  myinput = select_current.query_one(MyInput)
+        myinput = select_current.get_widget_by_id("input_prompt")
+        #
         myinput_current_value = myinput.value
         if event.value == "backspace":
             myinput.value = myinput_current_value[:-1]
@@ -441,7 +463,7 @@ class SelectOrInputPath(Select):
         """Update the current value when it changes."""
         # When user selects option this is triggered
         self._value = str(value)
-        select_current = self.query_one(SelectCurrentWithInput)
+        select_current = self.query_one(self.input_class)
         for index, (_, _value) in enumerate(self._options):
             if _value == value:
                 select_overlay = self.query_one(SelectOverlay)
@@ -452,10 +474,10 @@ class SelectOrInputPath(Select):
 
     def _watch_expanded(self, expanded: bool) -> None:
         """Display or hide overlay."""
-        # unchanged from the super, except SelectCurrent > SelectCurrentWithInput and no BLANK
+        # unchanged from the super, except SelectCurrent > self.input_class and no BLANK
         overlay = self.query_one(SelectOverlay)
         self.set_class(expanded, "-expanded")
-        select_current = self.query_one(SelectCurrentWithInput)
+        select_current = self.query_one(self.input_class)
         if expanded:
             value = self.value
             select_current.has_value = False
@@ -471,16 +493,20 @@ class SelectOrInputPath(Select):
 
     def action_show_overlay(self) -> None:
         """Show the overlay."""
-        # Unchanged from the super, except SelectCurrent > SelectCurrentWithInput and has value is not used here
+        # Unchanged from the super, except SelectCurrent > self.input_class and has value is not used here
         self.expanded = True
 
     def _validate_value(self, value: SelectType | NoSelection) -> SelectType | NoSelection:
         return value
 
     def change_prompt_from_parrent(self, new_value):
-        #    myinput = self.query_one(SelectCurrentWithInput).query_one(MyInput)
+        #    myinput = self.query_one(self.input_class).query_one(MyInput)
         if new_value != "/":
             new_value += "/"
         #   myinput.value = new_value+
-        select_current = self.query_one(SelectCurrentWithInput)
+        print("llllllllllllllllllllllllllllll", new_value)
+
+        select_current = self.query_one(self.input_class)
         select_current.update(new_value)
+
+    #  self.value = new_value
