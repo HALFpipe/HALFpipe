@@ -1,0 +1,67 @@
+FieldMapTypeModal {
+    #top_container {
+        border: thick $accent;
+
+    }
+    RadioSet {
+        height: 5;
+        width: 88;
+    }
+    Horizontal {
+    align: right middle;
+    }
+    Button {
+        margin: 0 1 1 1;
+    }
+    #title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+    }
+}
+
+
+#draggable_modal_screen_container_wrapper {
+    width: 90;
+    height: 14;
+    background: black;
+}
+
+
+WindowTitleBar {
+    layout: horizontal;
+    width: 100%;
+    height: 3;
+    background: $accent;
+    color: auto;
+    text-style: bold;
+}
+
+WindowTitleBar Button {
+    max-width: 6;
+    height: 3;
+    padding-top: 0;
+    padding-left: 0;
+    background: $accent;
+    border: none;
+}
+
+WindowTitleBar Button:hover {
+    border: none;
+    border-top: none;
+    border-bottom: none;
+    background: $accent;
+    color: black;
+    border: thick black;
+}
+
+WindowTitleBar Button:focus {
+        text-style: none;
+}
+
+.window_title {
+    width: 1fr;
+    height: 100%;
+    content-align: left middle;
+    padding-left: 1;
+}
