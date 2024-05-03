@@ -9,4 +9,16 @@ MainApp {
     #file_browser_tab {
         align: center top;
     }
+    HeaderTitle {
+        text-style: bold;
+    }
+    Header {
+        height: 1;
+        background: $accent;
+    }
+    Tab.-active {
+        text-style: bold;
+        color: $text;
+        background: $accent;
+    }
 }

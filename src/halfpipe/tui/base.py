@@ -9,7 +9,7 @@ from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Footer, TabbedContent, TabPane
+from textual.widgets import Footer, Header, TabbedContent, TabPane
 
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
@@ -87,12 +87,13 @@ class MainApp(App):
 
     def compose(self) -> ComposeResult:
         """Compose app with tabbed content."""
+        yield Header(id="header")
         with TabbedContent(initial="work_dir_tab"):
             with TabPane("Working directory", id="work_dir_tab"):
                 yield VerticalScroll(WorkDirectory(self, self.ctx, self.user_selections_dict, id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab"):
                 yield VerticalScroll(DataInput(self, self.ctx, self.available_images, id="input_data_content"))
-            with TabPane("Preprocessing", id="preprocessing_tab"):
+            with TabPane("General preprocessing settings", id="preprocessing_tab"):
                 yield VerticalScroll(Preprocessing(self.ctx, id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab"):
                 yield VerticalScroll(
@@ -102,7 +103,7 @@ class MainApp(App):
                 )
             with TabPane("General settings", id="misc_tab"):
                 yield VerticalScroll(GeneralSettings())
-            with TabPane("Output pre-processed", id="output_tab"):
+            with TabPane("Output pre-processed image", id="output_tab"):
                 yield VerticalScroll(
                     PreprocessedImageOutput(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
@@ -113,6 +114,8 @@ class MainApp(App):
         yield Footer()
 
     def on_mount(self):
+        self.title = "ENIGMA HALFpipe"
+        self.sub_title = "development version"
         self.push_screen(Welcome(id="welcome_screen"))
 
     def action_show_tab(self, tab: str) -> None:
