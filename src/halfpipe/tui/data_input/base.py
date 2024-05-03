@@ -1,28 +1,161 @@
 # -*- coding: utf-8 -*-
-# from utils.false_input_warning_screen import FalseInputWarning
-# from utils.confirm_screen import Confirm
+from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal, VerticalScroll
+from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
-from textual.widgets import Button, Static, Switch
+from textual.widgets import Button, Input, RadioButton, RadioSet, Static, Switch
 
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
 from ...model.file.bids import BidsFileSchema
 from ...model.tags import entities
 from ..utils.confirm_screen import Confirm
+from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.filebrowser import FileBrowser
-
-# from ..utils.path_segment_highlighter import PathSegmentHighlighter
-# from ...ui.components import (
-# FilePatternInputView,
-# SpacerView,
-# TextElement,
-# TextInputView,
-# TextView,
-# )
 from ..utils.non_bids_file_itemization import FileItem
+
+# TODO
+# For bids, this is automatic message
+# Found 0 field map image files
+# after putting BOLD images, i need this message
+# Check repetition time values
+# 18 images - 0.75 seconds
+# 36 images - 2.0 seconds
+# Proceed with these values?
+# [Yes] [No]
+# Specify repetition time in seconds
+# [0]
+
+
+class SetEchoTimeDifferenceModal(DraggableModalScreen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.title_bar.title = "Echo time difference"
+
+    def on_mount(self) -> None:
+        self.content.mount(
+            Vertical(
+                Static("Set Echo time difference in seconds"),
+                Input(""),
+                Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
+            )
+        )
+
+    @on(Button.Pressed, "#ok")
+    def _on_ok_button_pressed(self):
+        input_widget = self.query_one(Input)
+        if input_widget.value == "":
+            self.dismiss(Text("Not Specified!", "on red"))
+        else:
+            self.dismiss(Text(input_widget.value, "on green"))
+
+    @on(Button.Pressed, "#cancel")
+    def _on_cancel_button_pressed(self):
+        self.dismiss(None)
+
+
+class FieldMapFilesPanel(Widget):
+    def __init__(self, field_map_type="siemens", **kwargs) -> None:
+        """ """
+        super().__init__(**kwargs)
+        self.field_map_type = field_map_type
+        self.field_map_types_dict = {
+            "epi": "EPI (blip-up blip-down)",
+            "siemens": "Phase difference and magnitude (used by Siemens scanners)",
+            "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
+        }
+        self.echo_time = 0
+
+    def compose(self):
+        if self.field_map_type == "siemens":
+            yield Vertical(
+                Button("❌", id="delete_button", classes="icon_buttons"),
+                Horizontal(
+                    Static(Text("Echo time difference in seconds: ") + Text("Not Specified!", "on red"), id="echo_time"),
+                    Button("🖌", id="edit_button2", classes="icon_buttons"),
+                ),
+                FileItem(delete_button=False, classes="file_patterns", title="Path pattern of the magnitude image files"),
+                FileItem(
+                    delete_button=False,
+                    classes="file_patterns",
+                    title="Path pattern of the phase/phase difference image files",
+                ),
+                classes=self.field_map_type + "_panel",
+            )
+        elif self.field_map_type == "philips":
+            yield Vertical(
+                Button("❌", id="delete_button", classes="icon_buttons"),
+                FileItem(delete_button=False, classes="file_patterns", title="Path pattern of the field map image files"),
+                FileItem(delete_button=False, classes="file_patterns", title="Path pattern of the magnitude image files"),
+                classes=self.field_map_type + "_panel",
+            )
+        elif self.field_map_type == "epi":
+            yield Vertical(
+                Button("❌", id="delete_button", classes="icon_buttons"),
+                FileItem(
+                    delete_button=False, classes="file_patterns", title="Path pattern of the blip-up blip-down EPI image files"
+                ),
+                classes=self.field_map_type + "_panel",
+            )
+
+    def on_mount(self):
+        self.query(".{}_panel".format(self.field_map_type)).last(Vertical).border_title = self.field_map_types_dict[
+            self.field_map_type
+        ]
+        if self.field_map_type == "siemens":
+            self.app.push_screen(SetEchoTimeDifferenceModal(), self.update_echo_time)
+
+    def update_echo_time(self, echo_time):
+        # self.echo_time = variable
+        echo_time_static = self.get_widget_by_id("echo_time")
+        if echo_time_static is not None:
+            echo_time_static.update(Text("Echo time difference in seconds: ") + echo_time)
+
+    @on(Button.Pressed, "#delete_button")
+    def _on_delete_button_pressed(self):
+        """Remove the file pattern item."""
+        self.remove()
+
+    @on(Button.Pressed, "#edit_button2")
+    def _on_edit_button_pressed(self):
+        """Remove the file pattern item."""
+        self.app.push_screen(SetEchoTimeDifferenceModal(), self.update_echo_time)
+
+
+class FieldMapTypeModal(DraggableModalScreen):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.title_bar.title = "Field map type specification"
+        RadioButton.BUTTON_INNER = "X"
+        self.options = {
+            "epi": "EPI (blip-up blip-down)",
+            "siemens": "Phase difference and magnitude (used by Siemens scanners)",
+            "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
+        }
+
+    def on_mount(self) -> None:
+        """Called when the window is mounted."""
+        self.content.mount(
+            Container(
+                Static("Specify type of the field maps", id="title"),
+                RadioSet(*[RadioButton(self.options[key]) for key in self.options]),
+                Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
+                id="top_container",
+            )
+        )
+
+    @on(Button.Pressed, "#ok")
+    def _on_ok_button_pressed(self):
+        self.dismiss(self.choice)
+
+    @on(Button.Pressed, "#cancel")
+    def _on_cancel_button_pressed(self):
+        self.dismiss(None)
+
+    @on(RadioSet.Changed)
+    def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        self.choice = list(self.options.keys())[event.index]
 
 
 class DataInput(Widget):
@@ -33,15 +166,17 @@ class DataInput(Widget):
         self.available_images = available_images
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            "If 'on' then just selectthe BIDS top directory. Otherwise you must select file patterns"
-            "for T1-weighted image, BOLD image and event files.",
+        yield Container(
+            Static(
+                "If 'on' then just selectthe BIDS top directory. Otherwise you must select file patterns"
+                "for T1-weighted image, BOLD image and event files.",
+            ),
+            Horizontal(
+                Static("Data in BIDS format", id="bids_format_switch", classes="label"),
+                Switch(value=True),
+                #        classes="components",
+            ),
             id="instructions",
-            classes="components",
-        )
-        yield Horizontal(
-            Static("Data in BIDS format", id="bids_format_switch", classes="label"),
-            Switch(value=True),
             classes="components",
         )
         yield Grid(
@@ -50,6 +185,29 @@ class DataInput(Widget):
             classes="components",
         )
         with VerticalScroll(id="non_bids_panel", classes="components"):
+            yield Static(
+                "For each file type you need to create a 'path pattern' based on which all files of the particular type will \
+be queried. In the pop-up window, choose one particular file (use browse, or copy-paste) and highlight parts \
+of the string to be replaced by wildcards. You can also use type hints by starting typing '{' in front of the substring.",
+                id="help_top",
+            )
+            yield Static("Example: We have a particular T1 file and highlight parts with '0001' which represents subjects.")
+            yield Static(
+                Text(
+                    "/home/tomas/github/ds002785_v2/sub-0001/anat/sub-0001_T1w.nii.gz",
+                    spans=[(35, 39, "on red"), (49, 53, "on red")],
+                ),
+                classes="examples",
+            )
+            yield Static("After submitting the highlighted parts will be replaced with a particular wildcard type")
+            yield Static(
+                Text(
+                    "/home/tomas/github/ds002785_v2/sub-{subject}/anat/sub-{subject}_T1w.nii.gz",
+                    spans=[(35, 44, "on red"), (54, 63, "on red")],
+                ),
+                classes="examples",
+            )
+
             yield VerticalScroll(Button("Add", id="add_t1_image_button"), id="t1_image_panel", classes="non_bids_panels")
             yield VerticalScroll(Button("Add", id="add_bold_image_button"), id="bold_image_panel", classes="non_bids_panels")
             yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
@@ -59,7 +217,10 @@ class DataInput(Widget):
     # functional data
 
     def on_mount(self) -> None:
-        self.get_widget_by_id("instructions").border_title = "Data input"
+        self.get_widget_by_id("instructions").border_title = "Data format"
+        self.get_widget_by_id("bids_panel").border_title = "Path to BIDS directory"
+        self.get_widget_by_id("non_bids_panel").border_title = "Path pattern setup"
+
         self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
         self.get_widget_by_id("t1_image_panel").border_title = "T1-weighted image file pattern"
         self.get_widget_by_id("bold_image_panel").border_title = "BOLD image files patterns"
@@ -68,17 +229,30 @@ class DataInput(Widget):
 
     @on(Button.Pressed, "#add_t1_image_button")
     def _add_t1_image(self):
-        self.get_widget_by_id("t1_image_panel").mount(FileItem(classes="file_patterns"))
+        self.get_widget_by_id("t1_image_panel").mount(
+            FileItem(classes="file_patterns", title="T1-weighted image file pattern")
+        )
         self.refresh()
 
     @on(Button.Pressed, "#add_bold_image_button")
     def _add_bold_image(self):
-        self.get_widget_by_id("bold_image_panel").mount(FileItem(classes="file_patterns"))
+        self.get_widget_by_id("bold_image_panel").mount(FileItem(classes="file_patterns", title="BOLD image file pattern"))
         self.refresh()
 
     @on(Button.Pressed, "#add_event_file_button")
     def _add_event_file(self):
-        self.get_widget_by_id("event_file_panel").mount(FileItem(classes="file_patterns"))
+        self.get_widget_by_id("event_file_panel").mount(FileItem(classes="file_patterns", title="Event file pattern"))
+        self.refresh()
+
+    @on(Button.Pressed, "#add_field_map_button")
+    def _add_field_map_file(self):
+        self.app.push_screen(FieldMapTypeModal(), self._mount_field_item_group)
+
+    #  self.get_widget_by_id("event_file_panel").mount(FileItem(classes="file_patterns"))
+    #  self.refresh()
+
+    def _mount_field_item_group(self, field_map_type):
+        self.get_widget_by_id("field_map_panel").mount(FieldMapFilesPanel(field_map_type=field_map_type))
         self.refresh()
 
     def on_switch_changed(self, message):

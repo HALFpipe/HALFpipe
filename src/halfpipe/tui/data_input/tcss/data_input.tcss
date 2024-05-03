@@ -1,22 +1,129 @@
 DataInput {
-/*border: thick red;*/
     align: center top;
- /*   width: 100%;*/
     height: auto;
-  /*      border: white;*/
     #bids_panel {
-   /* width: 110;*/
-    /*    width: 100%;*/
-    align: left top;
-    height: 7;
-            grid-size: 1;
-   /* border: green;*/
+        align: left top;
+        height: 7;
+        grid-size: 1;
     }
     Switch {
 
     }
     .label {
-    border: transparent;
-    width: auto;
+        border: transparent;
+        width: auto;
+    }
+    Vertical {
+        border: thick red;
+        height: auto;
+    }
+    Static {
+
+    }
+    Container {
+        height: 2;
+    }
+    Horizontal {
+        align: center middle;
+        height: 3;
+    }
+    #help_top {
+        offset-y: 1;
+        height: 5;
+    }
+    .examples {
+    content-align: center middle;
+     border: grey;
+
+    }
+}
+
+SetEchoTimeDifferenceModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+        height: 14;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+    }
+    Static {
+         height: 3;
+         content-align: center middle;
+         text-style: bold;
+
+    }
+    Input {
+         width: 10;
+         border: tall $accent;
+         offset-x: 15;
+    }
+    Horizontal{
+        height: 4;
+        align: right bottom;
+        offset-x: 1;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+FieldMapFilesPanel {
+    border: none;
+    height: auto;
+    padding: 1 0 0 0 ;
+            #delete_button {
+            offset-x: 96;
+            min-width: 6;
+        }
+    .siemens_panel {
+        height: auto;
+        Horizontal {
+            border: red;
+            content-align: center middle;
+            height: 5;
+            width: 100;
+      /*      background: white;*/
+            Static {
+            height: 3;
+            width: auto;
+            border: transparent;
+            }
+            .icon_buttons {
+                width: 3;
+                margin: 0 1 0 0;
+                min-width: 6;
+            }
+        }
+
+    }
+    .epi_panel {
+        height: 10;
+        Vertical {
+        background: white;
+        }
+        Horizontal {
+            border: red;
+            content-align: center middle;
+            height: 5;
+            width: 100;
+      /*      background: white;*/
+            Static {
+            height: 3;
+            width: auto;
+            border: transparent;
+            }
+            .icon_buttons {
+                width: 3;
+                margin: 0 1 0 0;
+                min-width: 6;
+            }
+        }
+        #delete_button {
+            offset-x: 96;
+            min-width: 6;
+        }
     }
 }
