@@ -1,3 +1,5 @@
+
+
 DataInput {
     .non_bids_panels {
         border: solid green;
@@ -5,6 +7,7 @@ DataInput {
         border-title-color: white;
         border-title-style: bold;
         height: auto;
+        offset-y: 1;
     }
     .file_patterns {
         width: 100;
@@ -19,6 +22,7 @@ DataInput {
 
 
 FileItem {
+    layout: horizontal;
     height: 1;
     border: red;
     .icon_buttons {
@@ -32,11 +36,15 @@ FileItem {
         padding: 1;
     }
     #icon_buttons_container {
-        grid-size: 3 1;
-        width: 21;
-        dock: right;
-        height:20;
+       /* grid-size: 3 1;*/
+        width: auto;
+        /*dock: right;*/
+        height: 4;
+        border: none;
+        padding: 0 1;
+
     }
+
 }
 
 ListOfFiles {
@@ -140,12 +148,19 @@ SelectCurrentWithInputAndSegmentHighlighting .arrow {
 
 
 PathPatternBuilder {
+
+    #draggable_modal_screen_container_wrapper {
+            width: 100;
+            height: 35;
+            background: black;
+        }
     #feedback_and_confirm_panel {
         border: thick $accent;
         align: right middle;
         content-align: right middle;
         width: 100;
         height: auto;
+
         Static {
             border: tall white;
             width: auto;
@@ -153,6 +168,11 @@ PathPatternBuilder {
             row-span: 1;
             width: 90;
             content-align: center middle;
+        }
+        #show_button {
+            margin: 0 0 0 1;
+            align: left middle;
+            min-width: 6;
         }
         Button {
             margin: 0 0 0 1;
@@ -201,12 +221,13 @@ PathPatternBuilder {
     /* inner */
     #input_prompt_horizontal_scroll{
         height:6 ;
-        border: red;*/
+      /*  border: red;*/
     }
     #path_widget {
         height: 15;
         outline: red ;
     }
+
     /* most upper container, needs to have the border */
     #path_widget_container {
         height: 8;

@@ -7,9 +7,9 @@ sys.path.append("/home/tomas/github/HALFpipe/src/")
 from rich.text import Text
 from textual import events, on
 from textual.containers import Container, Grid, HorizontalScroll
-from textual.screen import ModalScreen
 from textual.widgets import Button, Static
 
+from halfpipe.tui.utils.draggable_modal_screen import DraggableModalScreen
 from halfpipe.tui.utils.file_browser_modal import FileBrowserModal
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.pattern_suggestor import (
@@ -130,7 +130,7 @@ class ColorButton(Button):
         path_widget.highlight_color = self.color
 
 
-class PathPatternBuilder(ModalScreen):
+class PathPatternBuilder(DraggableModalScreen):
     """
     Serves for creating a file pattern to search for e.g. T1 files.
     Consists of color button to switch between the highlight colors, the string itself,
@@ -144,53 +144,57 @@ class PathPatternBuilder(ModalScreen):
         path: str,
         highlight_colors=None,
         labels=None,
+        title="X",
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.title_bar.title = title
         self.path = path
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"] if highlight_colors is None else highlight_colors
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
 
-    def compose(self):
+    def on_mount(self) -> None:
+        """Called when the window is mounted."""
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
-        yield Grid(
-            *[
-                ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
-                for item in colors_and_labels.items()
-            ],
-            classes="panels",
-        )
-        yield HorizontalScroll(
-            InputWithColoredSuggestions(
-                [(Text(self.path), self.path)],
-                prompt_default=self.path,
-                colors_and_labels=colors_and_labels,
-                top_parent=self,
-                id="path_widget",
+        self.active_button_id = "button_" + self.labels[0]
+        self.content.mount(
+            Grid(
+                *[
+                    ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
+                    for item in colors_and_labels.items()
+                ],
+                classes="panels",
             ),
-            id="path_widget_container",
+            HorizontalScroll(
+                InputWithColoredSuggestions(
+                    [(Text(self.path), self.path)],
+                    prompt_default=self.path,
+                    colors_and_labels=colors_and_labels,
+                    top_parent=self,
+                    id="path_widget",
+                ),
+                id="path_widget_container",
+            ),
+            Grid(
+                Button("Browse", id="browse_button"),
+                Button("Reset highlights", id="reset_button"),
+                Button("Reset all", id="reset_all"),
+                Button("Submit", id="submit_button"),
+                classes="panels",
+            ),
+            Container(
+                Container(
+                    Static("Found 0 files.", id="feedback"),
+                    Button("👁", id="show_button", classes="icon_buttons"),
+                    id="feedback_container",
+                ),
+                Container(Button("OK", id="ok_button"), Button("Cancel", id="cancel_button"), id="testtt"),
+                id="feedback_and_confirm_panel",
+            ),
         )
-        yield Grid(
-            Button("Browse", id="browse_button"),
-            Button("Reset highlights", id="reset_button"),
-            Button("Reset all", id="reset_all"),
-            Button("Submit", id="submit_button"),
-            classes="panels",
-        )
-        with Container(id="feedback_and_confirm_panel"):
-            yield Container(
-                Static("Found 0 files.", id="feedback"),
-                Button("👁", id="show_button", classes="icon_buttons"),
-                id="feedback_container",
-            )
-            yield Container(Button("OK", id="ok_button"), Button("Cancel", id="cancel_button"), id="testtt")
-
-    def on_mount(self):
-        # active button at start
-        self.activate_pressed_button("button_" + self.labels[0])
 
     def deactivate_pressed_button(self):
         """Fade the button when inactive."""
