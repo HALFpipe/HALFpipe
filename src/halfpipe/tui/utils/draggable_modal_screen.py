@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from typing import Any
 
-from false_input_warning_screen import FalseInputWarning
 from textual import events, on
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal
 from textual.geometry import Offset
 from textual.reactive import var
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Placeholder, Static
+from textual.widgets import Button, Label, Static
 
 
 class WindowTitleBar(Container):
@@ -149,7 +148,7 @@ class DraggableModalScreen(ModalScreen):
 
     @on(Button.Pressed, ".window_close")
     def request_close(self):
-        self.dismiss(None)
+        self.dismiss()
 
 
 class FalseInputWarningTest(DraggableModalScreen):
@@ -199,22 +198,3 @@ class FalseInputWarningTest(DraggableModalScreen):
 
     def key_escape(self):
         self.dismiss(None)
-
-
-class MyApp(App):
-    def compose(self) -> ComposeResult:
-        yield Placeholder()
-
-    def on_key(self, event: events.Key) -> None:
-        if event.key == "q":
-            modal = DraggableModalScreen()
-            self.push_screen(modal)
-        if event.key == "w":
-            self.push_screen(FalseInputWarningTest("Enter the name!"))
-        if event.key == "e":
-            self.push_screen(FalseInputWarning("Enter the name!"))
-
-
-if __name__ == "__main__":
-    app = MyApp()
-    app.run()
