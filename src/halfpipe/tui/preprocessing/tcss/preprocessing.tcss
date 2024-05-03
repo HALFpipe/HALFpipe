@@ -1,0 +1,134 @@
+Preprocessing {
+    align: center middle;
+    height: auto;
+    #slice_timing {
+
+    }
+    .timing_setting_panels {
+        align: center middle;
+        margin: 1;
+    }
+    #select_slice_timing_panel {
+        offset-x: 2;
+    }
+    Switch {
+    }
+    .label {
+    border: transparent;
+    width: auto;
+    }
+
+    Container {
+
+    }
+    .description_labels {
+     border: transparent;
+     width: auto;
+     height: 7;
+    }
+
+    #remove_initial_volumes {
+       height: auto;
+       Static {
+
+       }
+    #remove_volumes_value {
+        border: green;
+        content-align: center middle;
+        width: 5;
+        }
+    }
+    #manualy_set_volumes_to_remove {
+
+    }
+    Select {
+    background: 40% red;
+    Horizontal {
+    align: left middle;
+    }
+    }
+    Horizontal {
+    align: center middle;
+     height: 3;
+    }
+    Select {
+        border: none;
+        width: 61;
+    }
+    .icon_buttons {
+        width: 3;
+        margin: 0 1 0 0;
+        min-width: 6;
+        offset-x: 1;
+    }
+}
+
+
+SetInitialVolumesRemovalModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+        height: 14;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+    }
+    Static {
+         height: 3;
+         content-align: center middle;
+         text-style: bold;
+
+    }
+    Input {
+         width: 10;
+         border: tall $accent;
+         offset-x: 15;
+    }
+    Horizontal{
+        height: 4;
+        align: right bottom;
+        offset-x: 1;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+SliceTimingModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 47;
+        height: 14;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+        align: center middle;
+    }
+    Static {
+         height: 1;
+         content-align: center middle;
+         text-style: bold;
+    }
+    #found_values {
+    height: 3;
+    border: $warning;
+
+    }
+    Input {
+         width: 10;
+         border: tall $accent;
+         offset-x: 15;
+    }
+    Horizontal{
+        height: 4;
+        dock:  bottom;
+        offset-x: 10;
+        Button {
+            margin: 1;
+        }
+    }
+}
