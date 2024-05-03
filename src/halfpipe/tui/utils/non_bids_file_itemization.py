@@ -6,7 +6,7 @@ sys.path.append("/home/tomas/github/HALFpipe/src/")
 
 from textual import on
 from textual.app import App
-from textual.containers import Grid, HorizontalScroll, VerticalScroll
+from textual.containers import Horizontal, HorizontalScroll, VerticalScroll
 from textual.widget import Widget
 from textual.widgets import Button, Static
 
@@ -15,25 +15,30 @@ from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
 
 class FileItem(Widget):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, delete_button=True, title="", **kwargs) -> None:
         """ """
         super().__init__(**kwargs)
         # dictionary for results from the PathPatternBuilder
         self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        self.delete_button = delete_button
+        self.title = title
 
     def compose(self):
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
-        with Grid(id="icon_buttons_container"):
+        with Horizontal(id="icon_buttons_container"):
             yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
-            yield Button("❌", id="delete_button", classes="icon_buttons")
+            if self.delete_button:
+                yield Button("❌", id="delete_button", classes="icon_buttons")
 
     def on_mount(self) -> None:
         self.get_widget_by_id("edit_button").tooltip = "Edit"
-        self.get_widget_by_id("delete_button").tooltip = "Delete"
+        if self.delete_button:
+            self.get_widget_by_id("delete_button").tooltip = "Delete"
         self.app.push_screen(
             PathPatternBuilder(
-                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz"
+                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                title=self.title,
             ),
             self._update_file_pattern,
         )
@@ -46,7 +51,8 @@ class FileItem(Widget):
         """
         self.app.push_screen(
             PathPatternBuilder(
-                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz"
+                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                title=self.title,
             ),
             self._update_file_pattern,
         )
