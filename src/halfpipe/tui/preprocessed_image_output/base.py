@@ -26,7 +26,7 @@ class PreprocessedImageOutput(FeatureSelection):
         )
 
     def on_mount(self) -> None:
-        self.get_widget_by_id("content_switcher").border_title = "First-level features"
+        self.get_widget_by_id("content_switcher").border_title = "Preprocessed image output"
 
     def action_add_feature(self) -> None:
         """Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget."""
