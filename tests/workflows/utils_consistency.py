@@ -2,10 +2,23 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import subprocess
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+def reorient_image(input_path, output_path):
+    """
+    Reorients the NIFTI image to standard orientation using fslreorient2std.
+    It will overwrite the original image with the reoriented one.
+    """
+    try:
+        # Overwrite the input file by setting output_path to input_path
+        subprocess.run(["fslreorient2std", input_path, output_path], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"An error occurred while reorienting the image: {e}") from e
 
 
 def compare_fcs(base_fc: Path, current_fc: Path):

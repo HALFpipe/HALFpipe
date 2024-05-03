@@ -75,7 +75,7 @@ def make_spec(
     base_setting = dict(
         confounds_removal=["(trans|rot)_[xyz]"],
         grand_mean_scaling=dict(mean=10000.0),
-        ica_aroma=True,
+        ica_aroma=False,
     )
     setting_schema = SettingSchema()
     glm_setting = setting_schema.load(
