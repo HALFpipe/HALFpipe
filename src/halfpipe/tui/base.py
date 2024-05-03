@@ -7,13 +7,14 @@ from rich.console import Console, RenderResult
 from rich_pixels import Pixels
 from textual import events
 from textual.app import App, ComposeResult
-from textual.containers import Container, Grid, VerticalScroll
+from textual.containers import Container, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Footer, Placeholder, TabbedContent, TabPane
+from textual.widgets import Footer, TabbedContent, TabPane
 
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
 from .general_settings.base import GeneralSettings
+from .preprocessed_image_output.base import PreprocessedImageOutput
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.context import Context
@@ -102,7 +103,11 @@ class MainApp(App):
             with TabPane("General settings", id="misc_tab"):
                 yield VerticalScroll(GeneralSettings())
             with TabPane("Output pre-processed", id="output_tab"):
-                yield Grid(Placeholder())
+                yield VerticalScroll(
+                    PreprocessedImageOutput(
+                        self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
+                    )
+                )
             with TabPane("Check and run", id="run_tab"):
                 yield VerticalScroll(RunCLX(self, self.ctx, self.user_selections_dict))
         yield Footer()

@@ -10,7 +10,6 @@ from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
 from ...model.file.bids import BidsFileSchema
 from ...model.tags import entities
-from ..utils.confirm_screen import Confirm
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.filebrowser import FileBrowser
 from ..utils.non_bids_file_itemization import FileItem
@@ -248,15 +247,11 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def _add_field_map_file(self):
         self.app.push_screen(FieldMapTypeModal(), self._mount_field_item_group)
 
-    #  self.get_widget_by_id("event_file_panel").mount(FileItem(classes="file_patterns"))
-    #  self.refresh()
-
     def _mount_field_item_group(self, field_map_type):
         self.get_widget_by_id("field_map_panel").mount(FieldMapFilesPanel(field_map_type=field_map_type))
         self.refresh()
 
     def on_switch_changed(self, message):
-        print("mmmmmmmmmmmmmmmmmmmmmmmm", message.value)
         if message.value:
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
@@ -277,9 +272,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                     )
                 )
 
-        self.top_parent.push_screen(
-            Confirm(text="Are data in BIDS format?", left_button_text="Yes", right_button_text="No"), confirmation
-        )
+        # self.top_parent.push_screen(
+        # Confirm(text="Are data in BIDS format?", left_button_text="Yes", right_button_text="No"), confirmation
+        # )
 
         self.feed_contex_and_extract_available_images(message.selected_path)
 
