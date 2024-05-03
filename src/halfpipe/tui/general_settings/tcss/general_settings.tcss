@@ -1,0 +1,162 @@
+.icon_buttons {
+        width: 3;
+        height: 3;
+        margin: 0 1 0 0;
+        min-width: 6;
+        offset-x: 1;
+    }
+
+LabelledSwitch {
+    width: 55;
+    height: 3;
+    Horizontal {
+        width: 50;
+    }
+    Static {
+        width: 28;
+        border: transparent;
+    }
+    Switch {
+        offset-x: -3;
+    }
+}
+
+StaticAndSelection {
+    height: 3;
+    width: 65;
+/*background: black;*/
+    Static {
+        width: 25;
+        border: transparent;
+    }
+    Select {
+            width: 30;
+        border: none;
+        Static {
+            border: none;
+        }
+    Horizontal {
+
+        Static#label {
+            width: 1fr;
+            height: auto;
+            color: $text-disabled;
+            background: transparent;
+        }
+
+        .arrow {
+            box-sizing: content-box;
+            width: 1;
+            height: 1;
+            padding: 0 0 0 1;
+            color: $text-muted;
+            background: transparent;
+        }
+    }
+    }
+
+
+}
+
+ChangeableStatic {
+    height: 3;
+    width: 55;
+    Static {
+        width: 26;
+        border: transparent;
+    }
+    #value_holder {
+        border: tall green;
+        width: auto;
+        padding: 0 2 0 2;
+    }
+}
+
+GeneralSettings {
+    align: center middle;
+    content-align: center middle;
+    height: auto;
+    Container {
+        height: 200;
+        #intro {
+            align: left middle;
+            width: 60;
+            height: 5;
+            border: black tall;
+            margin: 1;
+            Static {
+                 padding: 0 4;
+                 text-style: bold;
+             width: auto;
+             border: transparent;
+            }
+
+        }
+    }
+}
+
+
+ValueSetterModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+        height: 14;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+    }
+    Static {
+         height: 3;
+         content-align: center middle;
+         text-style: bold;
+
+    }
+    Input {
+         width: 10;
+         border: tall $accent;
+         offset-x: 15;
+    }
+    Horizontal{
+        height: 4;
+        align: right bottom;
+        offset-x: 1;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+
+HelpModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+        height: 12;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+    }
+    Static {
+         height: 3;
+         content-align: center middle;
+         text-style: bold;
+
+    }
+    Input {
+         width: 10;
+         border: tall $accent;
+         offset-x: 15;
+    }
+    Horizontal{
+        height: 6;
+        align: right bottom;
+        offset-x: 1;
+        Button {
+            margin: 1;
+        }
+    }
+}

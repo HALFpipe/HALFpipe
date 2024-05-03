@@ -13,6 +13,8 @@ from textual.widgets import Footer, Placeholder, TabbedContent, TabPane
 
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
+from .general_settings.base import GeneralSettings
+from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.context import Context
 from .working_directory.base import WorkDirectory
@@ -62,7 +64,10 @@ class MainApp(App):
         "./utils/tcss/file_browser.tcss",
         "./working_directory/tcss/working_directory.tcss",
         "./data_input/tcss/data_input.tcss",
+        "./preprocessing/tcss/preprocessing.tcss",
         "./utils/tcss/path_pattern_builder.tcss",
+        "./general_settings/tcss/general_settings.tcss",
+        "./dev.tcss",
     ]
 
     BINDINGS = [
@@ -86,14 +91,16 @@ class MainApp(App):
                 yield VerticalScroll(WorkDirectory(self, self.ctx, self.user_selections_dict, id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab"):
                 yield VerticalScroll(DataInput(self, self.ctx, self.available_images, id="input_data_content"))
+            with TabPane("Preprocessing", id="preprocessing_tab"):
+                yield VerticalScroll(Preprocessing(self.ctx, id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab"):
                 yield VerticalScroll(
                     FeatureSelection(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="feature_selection_content"
                     )
                 )
-            with TabPane("Misc", id="misc_tab"):
-                yield Grid(Placeholder())
+            with TabPane("General settings", id="misc_tab"):
+                yield VerticalScroll(GeneralSettings())
             with TabPane("Output pre-processed", id="output_tab"):
                 yield Grid(Placeholder())
             with TabPane("Check and run", id="run_tab"):
