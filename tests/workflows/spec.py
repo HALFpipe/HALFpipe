@@ -18,6 +18,8 @@ def make_spec(
     dataset_files: list[File],
     pcc_mask: Path,
     event_file: File | None = None,
+    confounds_chosen: list[str] | None = None,
+    ica_aroma: bool = True,  # default of True
 ) -> Spec:
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
@@ -73,10 +75,11 @@ def make_spec(
 
     # Set up settings
     base_setting = dict(
-        confounds_removal=["(trans|rot)_[xyz]"],
+        confounds_removal=confounds_chosen,
         grand_mean_scaling=dict(mean=10000.0),
-        ica_aroma=False,
+        ica_aroma=ica_aroma,  # Use the value of ica_aroma passed to make_spec
     )
+
     setting_schema = SettingSchema()
     glm_setting = setting_schema.load(
         dict(
