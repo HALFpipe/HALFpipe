@@ -161,10 +161,4 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     bids_file = FileSchema().load(
         dict(datatype="bids", path=str(bids_data)),
     )
-    return make_spec(
-        dataset_files=[bids_file],
-        pcc_mask=pcc_mask,
-        event_file=mock_task_events,
-        confounds_chosen=["(trans|rot)_[xyz]"],
-        ica_aroma=True,
-    )
+    return make_spec(dataset_files=[bids_file], pcc_mask=pcc_mask, event_file=mock_task_events)

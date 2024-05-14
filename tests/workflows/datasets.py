@@ -8,6 +8,7 @@ from pathlib import Path
 
 import datalad.api as dl
 import openneuro as on
+from halfpipe.file_index.bids import BIDSIndex
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
 
@@ -29,6 +30,14 @@ class Dataset:
     # falff
     # alff
     # dual_Based
+
+    @property
+    def subject_ids(self) -> set[str]:
+        index = BIDSIndex()
+        for path_str in self.paths:
+            path = Path(path_str)  # Convert string path to Path object
+            index.put(path)
+        return index.get_tag_values("sub")
 
     def download(self, tmp_path: Path) -> File:
         ds = dl.clone(source=self.url, path=str(tmp_path))
@@ -170,44 +179,45 @@ datasets: list[Dataset] = [
     #         # dual_Based
     #     ],
     # ),
-    # Dataset(
-    #     name="sleepy_brain",  # Has fieldmaps
-    #     openneuro_id="ds000201",
-    #     openneuro_url="https://github.com/OpenNeuroDatasets/ds000201/blob/master/",
-    #     url="https://github.com/OpenNeuroDatasets/ds000201.git",
-    #     paths=[
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.nii.gz",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.nii.gz",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.nii.gz",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.nii.gz",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.json",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.json",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.json",
-    #         "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.json",
-    #         "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.json",
-    #         "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.nii.gz",
-    #         "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.nii.gz",
-    #         "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.json",
-    #     ],
-    #     osf_paths=[
-    #         "dataset4_sleepy/tsnr",  # placeholder tsnr
-    #         "dataset4_sleepy/tsnr",  # placeholder tsnr_halfpipe
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-fALFF_alff.nii.gz",
-    #         "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",  # noqa: E501
-    #     ],
-    #     consistency_paths=[
-    #         "nipype/reports_wf/single_subject_9040_wf/func_preproc_ses_1_task_rest_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz",  # noqa: E501
-    #         # placeholder tsnr_halfpipe
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",  # noqa: E501
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-fALFF_alff.nii.gz",
-    #         "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",  # noqa: E501
-    #     ],
-    # ),
+    #     Dataset(
+    #         name="sleepy_brain",  # Has fieldmaps
+    #         openneuro_id="ds000201",
+    #         subject_id="9040",
+    #         openneuro_url="https://github.com/OpenNeuroDatasets/ds000201/blob/master/",
+    #         url="https://github.com/OpenNeuroDatasets/ds000201.git",
+    #         paths=[
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.nii.gz",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.nii.gz",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.nii.gz",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.nii.gz",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude1.json",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_magnitude2.json",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_phase1.json",
+    #             "sub-9040/ses-1/fmap/sub-9040_ses-1_phase2.json",
+    #             "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.json",
+    #             "sub-9040/ses-1/anat/sub-9040_ses-1_T1w.nii.gz",
+    #             "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.nii.gz",
+    #             "sub-9040/ses-1/func/sub-9040_ses-1_task-rest_bold.json",
+    #         ],
+    #         osf_paths=[
+    #             "dataset4_sleepy/tsnr",  # placeholder tsnr
+    #             "dataset4_sleepy/tsnr",  # placeholder tsnr_halfpipe
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-fALFF_alff.nii.gz",
+    #             "dataset4_sleepy/task_rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",  # noqa: E501
+    #         ],
+    #         consistency_paths=[
+    #             "nipype/reports_wf/single_subject_9040_wf/func_preproc_ses_1_task_rest_wf/func_report_wf/compute_tsnr/vol0000_xform-00000_merged_tsnr.nii.gz",  # noqa: E501
+    #             # placeholder tsnr_halfpipe
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-corrMatrix_atlas-schaefer2018_desc-correlation_matrix.tsv",  # noqa: E501
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-reHo_reho.nii.gz",
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-seedCorr_seed-pcc_stat-z_statmap.nii.gz",  # noqa: E501
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-fALFF_falff.nii.gz",
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-fALFF_alff.nii.gz",
+    #             "derivatives/halfpipe/sub-9040/ses-1/func/task-rest/sub-9040_ses-1_task-rest_feature-dualReg_map-smith09_component-1_stat-z_statmap.nii.gz",  # noqa: E501
+    #         ],
+    #     ),
 ]
