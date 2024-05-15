@@ -20,7 +20,7 @@ from .spec import TestSetting, make_spec
 
 settings_list: list[TestSetting] = [
     TestSetting(
-        name="No_noConfounds",
+        name="FalseComb0",
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -28,136 +28,119 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="Yes_noConfounds",
+        name="TrueComb0",
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=True,
         ),
     ),
-    # TestSetting(
-    #     name="Yes_comb1",
-    #     base_setting=dict(
-    #         confounds_removal=["a_comp_cor_0[0-4]"],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=True,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="Yes_comb2",
-    #     base_setting=dict(
-    #         confounds_removal=["(trans|rot)_[xyz]"],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=True,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="Yes_comb3",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "(trans|rot)_[xyz]",
-    #             "(trans|rot)_[xyz]_derivative1",
-    #             "(trans|rot)_[xyz]_power2",
-    #             "(trans|rot)_[xyz]_derivative1_power2",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=True,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="Yes_comb4",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "(trans|rot)_[xyz]",
-    #             "(trans|rot)_[xyz]_derivative1",
-    #             "(trans|rot)_[xyz]_power2",
-    #             "(trans|rot)_[xyz]_derivative1_power2",
-    #             "global_signal",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=True,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="Yes_comb5",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "global_signal",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=True,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="No_comb1",
-    #     base_setting=dict(
-    #         confounds_removal=["a_comp_cor_0[0-4]"],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=False,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="No_comb2",
-    #     base_setting=dict(
-    #         confounds_removal=["(trans|rot)_[xyz]"],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=False,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="No_comb3",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "(trans|rot)_[xyz]",
-    #             "(trans|rot)_[xyz]_derivative1",
-    #             "(trans|rot)_[xyz]_power2",
-    #             "(trans|rot)_[xyz]_derivative1_power2",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=False,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="No_comb4",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "(trans|rot)_[xyz]",
-    #             "(trans|rot)_[xyz]_derivative1",
-    #             "(trans|rot)_[xyz]_power2",
-    #             "(trans|rot)_[xyz]_derivative1_power2",
-    #             "global_signal",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=False,
-    #     ),
-    # ),
-    # TestSetting(
-    #     name="No_comb5",
-    #     base_setting=dict(
-    #         confounds_removal=[
-    #             "global_signal",
-    #         ],
-    #         grand_mean_scaling=dict(mean=10000.0),
-    #         ica_aroma=False,
-    #     ),
-    # ),
-    # None,
-    # ["a_comp_cor_0[0-4]"],
-    # ["(trans|rot)_[xyz]"],
-    # [
-    #     "(trans|rot)_[xyz]",
-    #     "(trans|rot)_[xyz]_derivative1",
-    #     "(trans|rot)_[xyz]_power2",
-    #     "(trans|rot)_[xyz]_derivative1_power2",
-    # ],
-    # [
-    #     "(trans|rot)_[xyz]",
-    #     "(trans|rot)_[xyz]_derivative1",
-    #     "(trans|rot)_[xyz]_power2",
-    #     "(trans|rot)_[xyz]_derivative1_power2",
-    #     "global_signal",
-    # ],
-    # ["global_signal"],
+    TestSetting(
+        name="TrueComb1",
+        base_setting=dict(
+            confounds_removal=["a_comp_cor_0[0-4]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="TrueComb2",
+        base_setting=dict(
+            confounds_removal=["(trans|rot)_[xyz]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="TrueComb3",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="TrueComb4",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="TrueComb5",
+        base_setting=dict(
+            confounds_removal=[
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="FalseComb1",
+        base_setting=dict(
+            confounds_removal=["a_comp_cor_0[0-4]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="FalseComb2",
+        base_setting=dict(
+            confounds_removal=["(trans|rot)_[xyz]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="FalseComb3",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="FalseComb4",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="FalseComb5",
+        base_setting=dict(
+            confounds_removal=[
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
 ]
 
 
