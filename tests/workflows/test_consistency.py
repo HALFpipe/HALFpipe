@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from itertools import product
+import zipfile
 from multiprocessing import cpu_count
 from pathlib import Path
 
@@ -144,13 +144,6 @@ settings_list: list[TestSetting] = [
 ]
 
 
-# {
-#   "name": "preproc",
-#   "filters": [],
-#   "output_image": true
-# }
-
-
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """
@@ -196,12 +189,55 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     index = BIDSIndex()
     index.put(tmp_path / "derivatives")
 
-    for dataset, test_setting in product(datasets, settings_list):  # loop through combi of dataset and settings
+    for dataset in datasets:
         for sub in dataset.subject_ids:
-            name = test_setting.name
-            matching_paths = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
-            assert matching_paths is not None and len(matching_paths) == 1
-            (corr_matrix_path,) = matching_paths
+            paths_to_zip = []
+            for test_setting in settings_list:
+                name = test_setting.name
+
+                corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
+                dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
+                falff = index.get(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")
+                alff = index.get(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")
+                reho = index.get(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")
+                pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
+                tsnr_fmriprep = index.get(
+                    sub=sub, suffix="tsnr", datatype="func"
+                )  # Do we want it ? There is only one per subject, not per setting
+
+                bold = index.get(
+                    sub=sub,
+                    suffix="bold",
+                    datatype="func",
+                    setting=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
+                    extension=".nii.gz",
+                )
+
+                # Calculate extra TSNR and store on the fly based on each testsetting or remove this?
+
+                for feature_name, feature_path in [
+                    ("correlation matrix", corr),
+                    ("dual regression", dual_reg),
+                    ("falff", falff),
+                    ("alff", alff),
+                    ("reho", reho),
+                    ("pcc", pcc),
+                    # ("tsnr_fmriprep", tsnr_fmriprep)
+                    # ("bold", bold)
+                ]:
+                    assert feature_path is not None and len(feature_path) == 1, f"Missing path for {name} {feature_name}"
+
+                paths_to_zip.extend(
+                    [list(corr)[0], list(dual_reg)[0], list(falff)[0], list(alff)[0], list(reho)[0], list(pcc)[0]]
+                )
+
+            # Zip them into one
+            #! add the two tsnr here?
+            zip_filename = f"Subject_{sub}_features.zip"
+            with zipfile.ZipFile(zip_filename, "w") as zipf:
+                for file in paths_to_zip:
+                    zipf.write(file, arcname=file.relative_to(tmp_path))
+            print(f"Created zip file: {zip_filename} with {paths_to_zip} inside")
 
     # raw_data = Path(specific_workdir) / "rawdata"
     # has_sessions = any(raw_data.glob("sub-*/ses-*"))
@@ -210,9 +246,6 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     #     (bold_path,) = specific_workdir.glob("rawdata/sub-*/ses-*/func/*_bold.nii.gz")
     # else:
     #     (bold_path,) = specific_workdir.glob("rawdata/sub-*/func/*_bold.nii.gz")
-
-    # # Reorient the BOLD image and overwrite the original file
-    # # reorient_image(bold_path, bold_path)  # Input = output path because we are overwriting
 
     # bold_image = nib.nifti1.load(bold_path)
 

@@ -22,14 +22,6 @@ class Dataset:
     openneuro_url: str
     paths: list[str]
     osf_paths: list[str]
-    # tsnr
-    # tsnr_halfpipe
-    # FC
-    # ReHo
-    # seed
-    # falff
-    # alff
-    # dual_Based
 
     @property
     def subject_ids(self) -> set[str]:
