@@ -12,12 +12,28 @@ from typing import Iterable
 
 # from textual._input import _InputRenderable
 from textual import on
-from textual.app import ComposeResult
 from textual.containers import Container, Grid
-from textual.screen import ModalScreen
 from textual.widgets import Button, DirectoryTree, Input
 
 from halfpipe.tui.utils.select_or_input_path import SelectOrInputPath, create_path_option_list
+
+from .draggable_modal_screen import DraggableModalScreen
+from .false_input_warning_screen import FalseInputWarning
+
+
+def path_test(path, isfile=False):
+    print("oooooooooooooooooooooooooooopath,", path)
+    if os.path.exists(path):
+        if os.access(path, os.W_OK):
+            if isfile:
+                result_info = "OK" if os.path.isfile(path) else "A directory was selected instead of a file!"
+            else:
+                result_info = "OK" if os.path.isdir(path) else "A file was selected instead of a directory!"
+        else:
+            result_info = "Permission denied."
+    else:
+        result_info = "File not found."
+    return result_info
 
 
 class FilteredDirectoryTree(DirectoryTree):
@@ -25,33 +41,36 @@ class FilteredDirectoryTree(DirectoryTree):
         return [path for path in paths if not path.name.startswith(".")]
 
 
-class FileBrowserModal(ModalScreen):
+class FileBrowserModal(DraggableModalScreen):
     """
     Here goes docstring.
     """
 
     CSS_PATH = ["tcss/file_browser.tcss"]
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, title="Browse", **kwargs) -> None:
         super().__init__(**kwargs)
         self.expanded_nodes: list = []
+        self.title_bar.title = title
 
-    def compose(self) -> ComposeResult:
+    def on_mount(self) -> None:
         base = "/"
-        yield Container(
-            FilteredDirectoryTree("/", classes="browse_tree", id="dir_tree"),
-            #     Input(placeholder="Set path to the " + self.path_to, id="path_input_box2"),
-            SelectOrInputPath(
-                [(f, f) for f in create_path_option_list(base=base, include_base=True)],
-                prompt_default=base,
-                top_parent=self,
-                id="path_input_box2",
-            ),
-            Grid(
-                Button("Ok", classes="button ok"),
-                Button("Cancel", classes="button cancel"),
-            ),
-            id="file_browser_screen",
+        self.content.mount(
+            Container(
+                FilteredDirectoryTree("/", classes="browse_tree", id="dir_tree"),
+                #     Input(placeholder="Set path to the " + self.path_to, id="path_input_box2"),
+                SelectOrInputPath(
+                    [(f, f) for f in create_path_option_list(base=base, include_base=True)],
+                    prompt_default=base,
+                    top_parent=self,
+                    id="path_input_box2",
+                ),
+                Grid(
+                    Button("Ok", classes="button ok"),
+                    Button("Cancel", classes="button cancel"),
+                ),
+                id="file_browser_screen",
+            )
         )
 
     @on(SelectOrInputPath.PromptChanged)
@@ -83,10 +102,12 @@ class FileBrowserModal(ModalScreen):
                     self.expanded_nodes.append(node)
 
     @on(FilteredDirectoryTree.DirectorySelected, ".browse_tree")
-    async def on_filtered_directory_tree_directory_selected(self, message):
+    @on(FilteredDirectoryTree.FileSelected, ".browse_tree")
+    async def on_filtered_directory_tree_directory_or_file_selected(self, message):
         self.selected_directory = message.path
         label = self.get_widget_by_id("path_input_box2")
         label.change_prompt_from_parrent(str(self.selected_directory))
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmm", message.path)
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
@@ -105,7 +126,18 @@ class FileBrowserModal(ModalScreen):
 
     def _confirm_window(self):
         self.update_from_input()
-        self.dismiss(self.selected_directory)
+        path_test_result = path_test(self.selected_directory)
+        if path_test_result == "OK":
+            self.dismiss(self.selected_directory)
+        else:
+            self.app.push_screen(
+                FalseInputWarning(
+                    warning_message=path_test_result,
+                    title="Error - Invalid path",
+                    id="invalid_path_warning_modal",
+                    classes="error_modal",
+                )
+            )
 
     def _cancel_window(self):
         self.dismiss(None)

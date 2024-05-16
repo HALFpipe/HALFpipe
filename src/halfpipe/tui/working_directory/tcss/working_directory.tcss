@@ -1,12 +1,45 @@
 WorkDirectory {
 
     align: center top;
-    height: auto;
+
     #work_directory {
 
     align: left top;
     height: auto;
+
             grid-size: 1;
    /* border: green;*/
+    #description {
+        height: 4;
+        padding: 1;
+        text-align: justify;
+    }
+    #work_dir_file_browser {
+
+        border: solid red;
+    }
+    }
+
+
+
+}
+
+#confirm_spec_load_modal {
+    #confirm_screen {
+        width: 45;
+        height: 10;
+    }
+    #draggable_modal_screen_container_wrapper {
+        width: 45;
+        height: 13;
+        background: black;
+    }
+}
+
+#confirm_override_spec_file_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 45;
+        height: 13;
+        background: black;
     }
 }

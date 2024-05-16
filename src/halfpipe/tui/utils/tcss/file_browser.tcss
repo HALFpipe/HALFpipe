@@ -12,11 +12,25 @@ FileBrowser{
     }
 }
 
+#invalid_path_warning_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+        height: 15;
+        background: black;
+    }
+}
+
 FileBrowserModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 62;
+        height: 35;
+        background: black;
+    }
     #file_browser_screen{
         border: thick $accent;
+        border-top: none;
         align: center top;
-        width: 60;
+        width: 62;
         height: 29;
         .browse_tree {
             height: 20;

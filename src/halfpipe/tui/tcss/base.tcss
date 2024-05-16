@@ -3,22 +3,31 @@ MainApp {
         align: center middle;
     }
     #welcome_image {
-    width: 70;
-    height: 33;
+    width: 108;
+    height: 46;
+    background: white;
     }
     #file_browser_tab {
         align: center top;
     }
     HeaderTitle {
         text-style: bold;
+
     }
     Header {
-        height: 1;
+        height: 3;
         background: $accent;
     }
     Tab.-active {
         text-style: bold;
         color: $text;
         background: $accent;
+    }
+    .tabs {
+        border: thick $accent;
+    }
+    .tabs2  {
+
+        padding: 0 0 0 0;
     }
 }

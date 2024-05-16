@@ -38,12 +38,13 @@ def find_common_start(strings):
 
 def create_path_option_list(base="/home/tomas/github/", include_base=False):
     filepaths = [base] if include_base else []
-    for f in os.scandir(base):
-        filepath = f.path
-        if f.is_dir():
-            filepath += "/"
-        filepaths.append(filepath)
-    filepaths.sort()
+    if os.access(base, os.W_OK):
+        for f in os.scandir(base):
+            filepath = f.path
+            if f.is_dir():
+                filepath += "/"
+            filepaths.append(filepath)
+        filepaths.sort()
     return filepaths
 
 
@@ -250,6 +251,22 @@ class SelectCurrentWithInput(Horizontal):
         self.set_class(has_value, "-has-value")
 
 
+# def simple_pass(path):
+# try:
+# with open(path, 'r') as f:
+# result_info = 'OK'
+# except FileNotFoundError:
+# # This exception is raised if the file does not exist
+# result_info = "File not found."
+# except PermissionError:
+# # This exception is raised if the permissions are not sufficient to open the file
+# result_info = "Permission denied."
+# except Exception as e:
+# # Catch any other exceptions that could be raised
+# result_info = f"An error occurred: {e}"
+# return result_info
+
+
 class SelectOrInputPath(Select):
     DEFAULT_CSS = """
     SelectOrInputPath:focus > SelectCurrent {
@@ -301,13 +318,17 @@ class SelectOrInputPath(Select):
 
         value: str
 
-    def __init__(self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None):
+    def __init__(
+        self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None
+    ):  # , path_test_function=None):
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
         super().__init__(options, prompt=prompt_default, id=id, classes=classes)
         self.top_parent = top_parent
         self._value: str = prompt_default
         self.prompt_default = prompt_default
         self._setup_variables_for_options(options)
+
+    #    self.path_test_function = simple_pass if path_test_function is None else path_test_function
 
     #    self.append_prompt = append_prompt
 
@@ -398,15 +419,22 @@ class SelectOrInputPath(Select):
             self.post_message(self.PromptChanged(path))
             if os.path.exists(path):
                 if path.endswith("/") and os.path.isdir(path):
+                    print("ppppppppppppppppppppppp", path)
+                    #     if self.path_test_function(path) == 'OK':
                     # When user selects option this is triggered
-                    self._setup_variables_for_options([(f, f) for f in create_path_option_list(base=path)])
-                    self._setup_options_renderables()
+                    path_suggestions = create_path_option_list(base=path)
+                    print("pppppppppppppppppp", path_suggestions)
+                    if path_suggestions != []:
+                        self._setup_variables_for_options([(f, f) for f in path_suggestions])
+                        self._setup_options_renderables()
+                #    else:
+                #        print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeror')
             else:
                 # When user types to prompt this is triggered
                 filepaths = []
                 path_uncomplete = path
                 path = path.rsplit("/", 1)[0] if path.count("/") > 1 else "/"
-                if os.path.exists(path):
+                if os.path.exists(path) and os.path.isdir(path):
                     for f in os.scandir(path):
                         filepath = f.path
                         if f.is_dir():
@@ -415,8 +443,9 @@ class SelectOrInputPath(Select):
                             filepaths.append(filepath)
                         filepaths.sort()
                     self.expanded = True
-                    self._setup_variables_for_options([(f, f) for f in filepaths])
-                    self._setup_options_renderables()
+                    if filepaths != []:
+                        self._setup_variables_for_options([(f, f) for f in filepaths])
+                        self._setup_options_renderables()
             if os.path.isfile(path):
                 self.expanded = False
             self.value = path
@@ -502,7 +531,8 @@ class SelectOrInputPath(Select):
     def change_prompt_from_parrent(self, new_value):
         #    myinput = self.query_one(self.input_class).query_one(MyInput)
         if new_value != "/":
-            new_value += "/"
+            if os.path.isdir(new_value):
+                new_value += "/"
         #   myinput.value = new_value+
         print("llllllllllllllllllllllllllllll", new_value)
 

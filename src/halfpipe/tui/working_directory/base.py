@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
 from dataclasses import dataclass
 
 from textual.app import ComposeResult
-from textual.containers import Grid
+from textual.containers import Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
+from textual.widgets import Static
 
 from ...model.spec import load_spec
+from ..utils.confirm_screen import Confirm
 
 # from utils.false_input_warning_screen import FalseInputWarning
 # from utils.confirm_screen import Confirm
@@ -40,21 +43,67 @@ class WorkDirectory(Widget):
         self.user_selections_dict: dict = user_selections_dict
 
     def compose(self) -> ComposeResult:
-        yield Grid(
+        yield Vertical(
+            Static(
+                "Set path to the working directory. Here all output will be stored. By selecting a directory with existing \
+spec.json file it is possible to load the therein configuration.",
+                id="description",
+            ),
             FileBrowser(app=self.top_parent, path_to="working directory", id="work_dir_file_browser"),
             id="work_directory",
             classes="components",
         )
 
     def on_file_browser_changed(self, message):
-        self.ctx.workdir = message.selected_path
-        self.existing_spec = load_spec(workdir=self.ctx.workdir)
+        def working_directory_override(override):
+            if override:
+                self.user_selections_from_spec()
+                self.value = True
+            else:
+                self.value = False
+                self.get_widget_by_id("work_dir_file_browser").update_input(None)
 
-        if self.existing_spec is not None:
-            self.user_selections_from_spec()
-            self.value = True
+        def existing_spec_file_decision(load):
+            if load:
+                self.user_selections_from_spec()
+                self.value = True
+            else:
+                self.app.push_screen(
+                    Confirm(
+                        "This action will override the existing spec in the selected working directory. Are you sure?",
+                        title="Override existing working directory",
+                        id="confirm_override_spec_file_modal",
+                        classes="confirm_warning",
+                    ),
+                    working_directory_override,
+                )
+                self.value = False
+
+        #  path_test_result = path_test(message.selected_path)
+        #  print('pppppppppppppp222', path_test_result)
+        if os.path.isdir(message.selected_path):
+            self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
+            self.ctx.workdir = message.selected_path
+            self.existing_spec = load_spec(workdir=self.ctx.workdir)
+            if self.existing_spec is not None:
+                self.app.push_screen(
+                    Confirm(
+                        "Existing spec file was found! Do you want to load the settings or override the working directory?",
+                        title="Spec file found",
+                        left_button_text="Load",
+                        right_button_text="Override",
+                        id="confirm_spec_load_modal",
+                        classes="confirm_warning",
+                    ),
+                    existing_spec_file_decision,
+                )
+            else:
+                self.value = False
         else:
-            self.value = False
+            self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
+
+    def on_mount(self) -> None:
+        self.get_widget_by_id("work_directory").border_title = "Select working directory"
 
     def user_selections_from_spec(self):
         """Feed the user_selections_dict with settings from the json file via the context object."""

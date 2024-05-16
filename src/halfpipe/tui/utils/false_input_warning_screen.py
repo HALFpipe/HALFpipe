@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
-from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal
-from textual.screen import ModalScreen
+from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Label
 
+from .draggable_modal_screen import DraggableModalScreen
 
-class FalseInputWarning(ModalScreen):
+
+class FalseInputWarning(DraggableModalScreen):
     CSS_PATH = ["tcss/false_input_warning.tcss"]
 
-    def __init__(self, warning_message) -> None:
+    def __init__(self, warning_message, title="", id: str | None = None, classes: str | None = None) -> None:
         self.warning_message = warning_message
-        super().__init__()
+        super().__init__(id=id, classes=classes)
+        self.title_bar.title = title
 
-    def compose(self) -> ComposeResult:
-        yield Grid(
-            Label(self.warning_message),
-            Horizontal(Button("Ok", variant="warning")),
+    def on_mount(self) -> None:
+        self.content.mount(
+            Vertical(
+                Label(self.warning_message),
+                Horizontal(Button("Ok", variant="error")),
+            )
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.app.pop_screen()
+        self.dismiss()
 
     def key_escape(self):
-        self.app.pop_screen()
+        self.dismiss()

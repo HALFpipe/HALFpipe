@@ -1,22 +1,51 @@
+
+
 Confirm {
-    align: center middle;
-    #confirm_screen {
-        align: center top;
-        border: thick $warning;
+    #draggable_modal_screen_container_wrapper {
         width: 40;
-        height: 9;
-        #message {
-            color: red;
-            text-style: bold;
-         }
-        .message_container {
-        align: center middle;
+        height: 10;
+        background: black;
+    }
+    Vertical {
+
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+    }
+    Static {
+         height: 3;
+         content-align: center middle;
+         text-style: bold;
+
+      	text-align: center;
+      	width: 40 ;
+      	margin: 1 1 1 1;
+
+    }
+
+    Horizontal{
+        height: 4;
+        align: right bottom;
+        offset-x: 2;
+        Button {
+            margin: 1;
         }
-        .button_grid {
-            align: center bottom;
-            grid-size: 2;
-            grid-gutter: 1;
-            padding: 0 1 0 0;
-        }
+    }
+    .window_title {
+        text-align: left;
+    }
+}
+
+.confirm_warning {
+    Vertical {
+        border-left: thick $warning;
+        border-right: thick $warning;
+        border-bottom: thick $warning;
+    }
+    WindowTitleBar {
+        background: $warning;
+    }
+    WindowTitleBar Button {
+        background: $warning;
     }
 }
