@@ -148,7 +148,7 @@ class DraggableModalScreen(ModalScreen):
 
     @on(Button.Pressed, ".window_close")
     def request_close(self):
-        self.dismiss()
+        self.dismiss(False)
 
 
 class FalseInputWarningTest(DraggableModalScreen):

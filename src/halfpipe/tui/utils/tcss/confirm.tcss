@@ -32,6 +32,7 @@ Confirm {
         }
     }
     .window_title {
+        height:auto;
         text-align: left;
     }
 }
@@ -47,5 +48,9 @@ Confirm {
     }
     WindowTitleBar Button {
         background: $warning;
+    }
+    .window_title {
+        color: black;
+        height:auto;
     }
 }

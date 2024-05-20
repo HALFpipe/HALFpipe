@@ -76,8 +76,17 @@ GeneralSettings {
     align: center middle;
     content-align: center middle;
     height: auto;
-    Container {
-        height: 200;
+    #description {
+        height: 4;
+        padding: 1;
+        text-align: justify;
+    }
+    #top_container {
+
+    }
+    #inner_container {
+        height: auto;
+        align: center middle;
         #intro {
             align: left middle;
             width: 60;

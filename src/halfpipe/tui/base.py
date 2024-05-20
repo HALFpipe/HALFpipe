@@ -22,6 +22,7 @@ from .general_settings.base import GeneralSettings
 from .preprocessed_image_output.base import PreprocessedImageOutput
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
+from .utils.confirm_screen import Confirm
 from .utils.context import Context
 from .utils.draggable_modal_screen import DraggableModalScreen
 from .working_directory.base import WorkDirectory
@@ -102,6 +103,29 @@ class HeaderCloseIcon(Widget):
         return self.icon
 
 
+class IsLockedModal(DraggableModalScreen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.title_bar.title = "Locked"
+
+    def on_mount(self) -> None:
+        self.content.mount(
+            Vertical(
+                Static("This tab is disabled", id="locked_tab"),
+                # Input(''),
+                Horizontal(Button("Dismiss", id="ok"), Button("UNLOCK 🔓", id="unlock")),
+            )
+        )
+
+    @on(Button.Pressed, "#ok")
+    def _on_ok_button_pressed(self):
+        self.dismiss(False)
+
+    @on(Button.Pressed, "#unlock")
+    def _on_unlock_button_pressed(self):
+        self.dismiss(True)
+
+
 class HeaderHelpIcon(Widget):
     """Display an 'icon' on the left of the header."""
 
@@ -169,10 +193,10 @@ class Welcome(ModalScreen):
         yield ImageContainer(id="welcome_image")
 
     def key_escape(self):
-        self.dismiss(False)
+        self.dismiss(True)
 
     def on_click(self, event: events.Click) -> None:
-        self.dismiss(False)
+        self.dismiss(True)
 
 
 class MainApp(App):
@@ -207,38 +231,48 @@ class MainApp(App):
     available_images: dict = {}
     user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        # this whole "welcome_is_dismissed" mechanism is only to circumvent somehow the fact that the widgets are not yet
+        # loaded and the app is already trying to access some of them via @on(TabbedContent.TabActivated)
+        # ideally this should be solved with async and await but for some reason that has other issues
+        self.welcome_is_dismissed = False
+
     def compose(self) -> ComposeResult:
         """Compose app with tabbed content."""
         yield MyHeader(id="header")
-        with TabbedContent(initial="work_dir_tab"):
+        with TabbedContent(id="tabs_manager"):
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
                 yield VerticalScroll(WorkDirectory(self, self.ctx, self.user_selections_dict, id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
                 yield VerticalScroll(DataInput(self, self.ctx, self.available_images, id="input_data_content"))
-            with TabPane("General preprocessing settings", id="preprocessing_tab", classes="tabs"):
+            with TabPane("General settings", id="misc_tab", classes="tabs"):
+                yield VerticalScroll(GeneralSettings(), id="misc_content")
+            with TabPane("🔒General preprocessing settings", id="preprocessing_tab", classes="tabs"):
                 yield VerticalScroll(Preprocessing(self.ctx, id="preprocessing_content"))
-            with TabPane("Features", id="feature_selection_tab", classes="tabs2"):
+            with TabPane("🔒Features", id="feature_selection_tab", classes="tabs2"):
                 yield VerticalScroll(
                     FeatureSelection(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="feature_selection_content"
                     )
                 )
-            with TabPane("General settings", id="misc_tab", classes="tabs"):
-                yield VerticalScroll(GeneralSettings())
-            with TabPane("Output pre-processed image", id="output_tab", classes="tabs2"):
+            with TabPane("🔒Output pre-processed image", id="preprocessed_output_tab", classes="tabs2"):
                 yield VerticalScroll(
                     PreprocessedImageOutput(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
                     )
                 )
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(RunCLX(self, self.ctx, self.user_selections_dict))
+                yield VerticalScroll(RunCLX(self, self.ctx, self.user_selections_dict), id="run_content")
         yield Footer()
 
     def on_mount(self):
+        def welcome_dismissed(message):
+            self.welcome_is_dismissed = message
+
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
-        self.push_screen(Welcome(id="welcome_screen"))
+        self.push_screen(Welcome(id="welcome_screen"), welcome_dismissed)
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
@@ -263,6 +297,42 @@ class MainApp(App):
                     self.get_widget_by_id("feature_selection_content").add_new_feature(
                         [self.user_selections_dict[name]["features"]["type"], name]
                     )
+
+    def update_tab_pane_label(self, tab_id):
+        this_tab_pane = self.get_widget_by_id(tab_id)
+        this_tab_pane.update(this_tab_pane.render_str("🔓") + this_tab_pane.label[1:])
+
+    @on(TabbedContent.TabActivated)
+    def on_tab_clicked(self, message):
+        def enable_tab(unlock_tab):
+            print("uuuuuuuuuuuuuuuuuuuuuuuu", unlock_tab)
+            if unlock_tab:
+                this_tab_content.disabled = False
+                self.update_tab_pane_label(tab_id)
+
+        #      this_tab_content.styles.opacity = '100%'
+        #  this_tab_pane.update(this_tab_pane.render_str('🔓')+this_tab_pane_current_label[1:])
+
+        if self.welcome_is_dismissed:
+            tab_id = message.tab.id
+            tab_content_id = tab_id[14:-3] + "content"
+            this_tab_content = self.get_widget_by_id(tab_content_id)
+
+            if this_tab_content.disabled:
+                self.push_screen(
+                    Confirm(
+                        "This tab is currently locked due to missing inputs in the Working and Data input tabs. However, \
+you can force to unlock it. How to proceed?",
+                        left_button_text="UNLOCK🔓",
+                        right_button_text="Dismiss",
+                        left_button_variant="error",
+                        right_button_variant="success",
+                        title="Tab lock warning",
+                        id="confirm_unlocking",
+                        classes="confirm_warning",
+                    ),
+                    enable_tab,
+                )
 
 
 # if __name__ == "__main__":

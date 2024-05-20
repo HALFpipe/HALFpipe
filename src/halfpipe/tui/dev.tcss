@@ -1,3 +1,28 @@
+#blockscreen{
+background: black 90%;
+offset-y: -30;
+offset-x: 0;
+opacity: 100%;
+
+width:100%;
+height:auto;
+align: center top;
+Button {
+height: 3;
+}
+}
+
+
+
+#title {
+    content-align-horizontal: center;
+    text-style: reverse;
+}
+
+#any-key {
+    content-align-horizontal: center;
+}
+
 QuitModal {
     #draggable_modal_screen_container_wrapper {
         width: 47;

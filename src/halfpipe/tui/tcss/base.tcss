@@ -18,10 +18,18 @@ MainApp {
         height: 3;
         background: $accent;
     }
+    Tab {
+        width: auto;
+        height: 2;
+        padding: 1 1 0 2;
+        text-align: center;
+      /*  color: 60% red;*/
+    }
     Tab.-active {
         text-style: bold;
         color: $text;
         background: $accent;
+
     }
     .tabs {
         border: thick $accent;
@@ -29,5 +37,35 @@ MainApp {
     .tabs2  {
 
         padding: 0 0 0 0;
+    }
+}
+
+
+#confirm_unlocking {
+    #draggable_modal_screen_container_wrapper {
+        width: 45;
+        height: 15;
+        background: black;
+    }
+    Static {
+    height: 5;
+    }
+    .window_title {
+        color: black;
+        height:auto;
+    }
+}
+
+.error_modal {
+    Vertical {
+        border-left: thick $error;
+        border-right: thick $error;
+        border-bottom: thick $error;
+    }
+    WindowTitleBar {
+        background: $error;
+    }
+    WindowTitleBar Button {
+        background: $error;
     }
 }

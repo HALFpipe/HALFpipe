@@ -76,7 +76,8 @@ class FileBrowserModal(DraggableModalScreen):
     @on(SelectOrInputPath.PromptChanged)
     def _select_or_input_path_changed(self, message):
         path = message.value
-        print("thisssssssssssssssssssssssssss path", path)
+        self.selected_directory = path
+        print("thisssssssssssssssssssssssssss path", path, "xxx", self.selected_directory)
         # scan over already expanded nodes
         opened_node_paths = [str(node.data.path) + "/" for node in self.expanded_nodes]
 
@@ -111,6 +112,7 @@ class FileBrowserModal(DraggableModalScreen):
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
+        print("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere???????????", self.get_widget_by_id("path_input_box2").value)
         self.selected_directory = self.get_widget_by_id("path_input_box2").value
 
     @on(Button.Pressed, "#file_browser_screen .ok")

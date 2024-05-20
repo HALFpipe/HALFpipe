@@ -20,9 +20,14 @@ class PreprocessedOutputOptions(TaskBased):
 
 
 class PreprocessedImageOutput(FeatureSelection):
-    def __init__(self, app, ctx, available_images, user_selections_dict, **kwargs) -> None:
+    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=True, **kwargs) -> None:
         super().__init__(
-            app=app, ctx=ctx, available_images=available_images, user_selections_dict=user_selections_dict, **kwargs
+            app=app,
+            ctx=ctx,
+            available_images=available_images,
+            user_selections_dict=user_selections_dict,
+            disabled=disabled,
+            **kwargs,
         )
 
     def on_mount(self) -> None:

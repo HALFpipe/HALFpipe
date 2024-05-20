@@ -1,6 +1,11 @@
+Preprocessing:disabled {
+    opacity: 50%;
+}
+
 Preprocessing {
     align: center middle;
     height: auto;
+
     #slice_timing {
 
     }

@@ -7,16 +7,7 @@ from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import (
-    Button,
-    ContentSwitcher,
-    Input,
-    Label,
-    ListItem,
-    ListView,
-    OptionList,
-    Placeholder,
-)
+from textual.widgets import Button, ContentSwitcher, Input, Label, ListItem, ListView, OptionList, Placeholder
 from textual.widgets.option_list import Option, Separator
 
 from ..utils.confirm_screen import Confirm
@@ -142,11 +133,11 @@ class FeatureSelection(Widget):
     BINDINGS = [("a", "add_feature", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
 
-    def __init__(self, app, ctx, available_images, user_selections_dict, **kwargs) -> None:
+    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=True, **kwargs) -> None:
         """Each created widget needs to have a unique id, even after deletion it cannot be recycled.
         The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
         """
-        super().__init__(**kwargs)
+        super().__init__(disabled=disabled, **kwargs)
         self.top_parent = app
         self.ctx = ctx
         self.available_images = available_images

@@ -415,6 +415,7 @@ class SelectOrInputPath(Select):
         if self.input_class == SelectCurrentWithInput:
             print(" tssssssssssssssssss changed 22")
             path = event.value
+            self.value = path
             print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)
             self.post_message(self.PromptChanged(path))
             if os.path.exists(path):
@@ -448,7 +449,7 @@ class SelectOrInputPath(Select):
                         self._setup_options_renderables()
             if os.path.isfile(path):
                 self.expanded = False
-            self.value = path
+            print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)
 
     @on(SelectOverlay.UpdateSelection)
     def _update_selection(self, event: SelectOverlay.UpdateSelection) -> None:

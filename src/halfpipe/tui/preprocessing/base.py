@@ -62,8 +62,8 @@ class SliceTimingModal(DraggableModalScreen):
 
 
 class Preprocessing(Widget):
-    def __init__(self, ctx, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, ctx, disabled=True, **kwargs) -> None:
+        super().__init__(**kwargs, disabled=disabled)
         self.ctx = ctx
         self.time_slicing_options = [
             "Sequential increasing (1, 2, ...)",

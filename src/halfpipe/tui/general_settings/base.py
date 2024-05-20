@@ -234,16 +234,22 @@ class GeneralSettings(Widget):
     def compose(self) -> ComposeResult:
         with Container(id="top_container", classes="components"):
             #       yield "dummy_scans": 0,
-            yield Horizontal(Static("Reset all values to default"), Button("reset", id="reset_button"), id="intro")
-            for key in self.global_settings.keys():
-                label = self.global_settings[key]["label"]
-                value = self.global_settings[key]["value"]
-                if isinstance(value, bool):
-                    yield LabelledSwitch(label, value, id=key)
-                elif isinstance(value, list):
-                    yield StaticAndSelection(label, options=value, help_message="Explain the functionality", id=key)
-                elif can_convert_to_float(value):
-                    yield ChangeableStatic(label, value, help_message="Explain the functionality", id=key)
+            yield Static(
+                "These are general recommended settings. If you are not 100% sure what you are doing, leave them as \
+they are.",
+                id="description",
+            )
+            with Container(id="inner_container"):
+                yield Horizontal(Static("Reset all values to default"), Button("reset", id="reset_button"), id="intro")
+                for key in self.global_settings.keys():
+                    label = self.global_settings[key]["label"]
+                    value = self.global_settings[key]["value"]
+                    if isinstance(value, bool):
+                        yield LabelledSwitch(label, value, id=key)
+                    elif isinstance(value, list):
+                        yield StaticAndSelection(label, options=value, help_message="Explain the functionality", id=key)
+                    elif can_convert_to_float(value):
+                        yield ChangeableStatic(label, value, help_message="Explain the functionality", id=key)
 
     def on_mount(self):
         self.get_widget_by_id("top_container").border_title = "General settings"

@@ -49,7 +49,7 @@ class WorkDirectory(Widget):
 spec.json file it is possible to load the therein configuration.",
                 id="description",
             ),
-            FileBrowser(app=self.top_parent, path_to="working directory", id="work_dir_file_browser"),
+            FileBrowser(app=self.top_parent, path_to="WORKING DIRECTORY", id="work_dir_file_browser"),
             id="work_directory",
             classes="components",
         )
@@ -83,6 +83,15 @@ spec.json file it is possible to load the therein configuration.",
         #  print('pppppppppppppp222', path_test_result)
         if os.path.isdir(message.selected_path):
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
+            # enable tabs
+            self.app.get_widget_by_id("preprocessing_content").disabled = False
+            self.app.get_widget_by_id("feature_selection_content").disabled = False
+            self.app.get_widget_by_id("preprocessed_output_content").disabled = False
+
+            self.app.update_tab_pane_label("--content-tab-preprocessing_tab")
+            self.app.update_tab_pane_label("--content-tab-feature_selection_tab")
+            self.app.update_tab_pane_label("--content-tab-preprocessed_output_tab")
+
             self.ctx.workdir = message.selected_path
             self.existing_spec = load_spec(workdir=self.ctx.workdir)
             if self.existing_spec is not None:
@@ -104,6 +113,7 @@ spec.json file it is possible to load the therein configuration.",
 
     def on_mount(self) -> None:
         self.get_widget_by_id("work_directory").border_title = "Select working directory"
+        self.disabled = False
 
     def user_selections_from_spec(self):
         """Feed the user_selections_dict with settings from the json file via the context object."""

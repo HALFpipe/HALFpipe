@@ -14,6 +14,8 @@ class Confirm(DraggableModalScreen):
         text="Are you sure?",
         left_button_text="Ok",
         right_button_text="Cancel",
+        left_button_variant="success",
+        right_button_variant="error",
         title="",
         id: str | None = None,
         classes: str | None = None,
@@ -22,6 +24,9 @@ class Confirm(DraggableModalScreen):
         self.text = text
         self.left_button_text = left_button_text
         self.right_button_text = right_button_text
+        self.left_button_variant = left_button_variant
+        self.right_button_variant = right_button_variant
+
         self.title_bar.title = title
 
     # def compose(self) -> ComposeResult:
@@ -40,8 +45,8 @@ class Confirm(DraggableModalScreen):
             Vertical(
                 Static(self.text, id="message"),
                 Horizontal(
-                    Button(self.left_button_text, variant="success", classes="button ok"),
-                    Button(self.right_button_text, variant="error", classes="button cancel"),
+                    Button(self.left_button_text, variant=self.left_button_variant, classes="button ok"),
+                    Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel"),
                     classes="button_grid",
                 ),
                 id="confirm_screen",
