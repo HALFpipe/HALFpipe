@@ -11,6 +11,8 @@ from typing import Tuple
 from .. import __version__
 from ..logging import logger
 from ..utils.path import is_empty
+from .commands.base import Command
+from .commands.check_consistency.command import CheckConsistencyCommand
 from .commands.group_level import GroupLevelCommand
 
 steps = ["spec-ui", "workflow", "run"]
@@ -104,8 +106,9 @@ def build_parser() -> ArgumentParser:
     debuggroup.add_argument("--watchdog", action="store_true", default=False)
 
     subparsers = parser.add_subparsers(dest="command")
-    commands = [
+    commands: list[Command] = [
         GroupLevelCommand(),
+        CheckConsistencyCommand(),
     ]
     for command in commands:
         command.setup(subparsers.add_parser)
