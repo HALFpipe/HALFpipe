@@ -69,6 +69,10 @@ RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
+# Add git config for datalad commands
+RUN git config --global user.name "Halfpipe" \
+    && git config --global user.email "halfpipe@fmri.science"
+
 # Install `halfpipe`
 RUN --mount=target=/halfpipe \
     cp -r /halfpipe /tmp \
