@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import zipfile
+from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 
@@ -177,7 +178,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     opts = parser.parse_args(args=list())
     opts.graphs = graphs
     opts.debug = True
-    opts.nipype_run_plugin = "Simple"  # "Simple", "MultiProc"
+    opts.nipype_run_plugin = "MultiProc"  # "Simple", "MultiProc"
     opts.workdir = tmp_path  # necessary when you choose MultiProc
 
     run_stage_run(opts)
@@ -188,109 +189,40 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     # Look for derivatives for comparison and zip them
     index = BIDSIndex()
     index.put(tmp_path / "derivatives")
+    spec_file = tmp_path / "spec.json"
 
-    for dataset in datasets:
-        for sub in dataset.subject_ids:
-            paths_to_zip = []
-            for test_setting in settings_list:
-                name = test_setting.name
+    for sub in dataset.subject_ids:
+        paths_to_zip = []
+        for test_setting in settings_list:
+            name = test_setting.name
 
-                corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
-                dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
-                falff = index.get(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")
-                alff = index.get(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")
-                reho = index.get(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")
-                pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
-                tsnr_fmriprep = index.get(
-                    sub=sub, suffix="tsnr", datatype="func"
-                )  # Do we want it ? There is only one per subject, not per setting
+            corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
+            dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
+            falff = index.get(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")
+            alff = index.get(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")
+            reho = index.get(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")
+            pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
 
-                bold = index.get(
-                    sub=sub,
-                    suffix="bold",
-                    datatype="func",
-                    setting=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
-                    extension=".nii.gz",
-                )
+            for feature_name, feature_path in [
+                ("correlation matrix", corr),
+                ("dual regression", dual_reg),
+                ("falff", falff),
+                ("alff", alff),
+                ("reho", reho),
+                ("pcc", pcc),
+            ]:
+                assert feature_path is not None and len(feature_path) == 1, f"Missing path for {name} {feature_name}"
 
-                # Calculate extra TSNR and store on the fly based on each testsetting or remove this?
+            paths_to_zip.extend([list(corr)[0], list(dual_reg)[0], list(falff)[0], list(alff)[0], list(reho)[0], list(pcc)[0]])
 
-                for feature_name, feature_path in [
-                    ("correlation matrix", corr),
-                    ("dual regression", dual_reg),
-                    ("falff", falff),
-                    ("alff", alff),
-                    ("reho", reho),
-                    ("pcc", pcc),
-                    # ("tsnr_fmriprep", tsnr_fmriprep)
-                    # ("bold", bold)
-                ]:
-                    assert feature_path is not None and len(feature_path) == 1, f"Missing path for {name} {feature_name}"
+        tsnr_fmriprep = index.get(sub=sub, suffix="tsnr", datatype="func")
+        paths_to_zip.extend([list(tsnr_fmriprep)[0], spec_file])
 
-                paths_to_zip.extend(
-                    [list(corr)[0], list(dual_reg)[0], list(falff)[0], list(alff)[0], list(reho)[0], list(pcc)[0]]
-                )
-
-            # Zip them into one
-            #! add the two tsnr here?
-            zip_filename = f"Subject_{sub}_features.zip"
-            with zipfile.ZipFile(zip_filename, "w") as zipf:
-                for file in paths_to_zip:
-                    zipf.write(file, arcname=file.relative_to(tmp_path))
-            print(f"Created zip file: {zip_filename} with {paths_to_zip} inside")
-
-    # raw_data = Path(specific_workdir) / "rawdata"
-    # has_sessions = any(raw_data.glob("sub-*/ses-*"))
-
-    # if has_sessions:
-    #     (bold_path,) = specific_workdir.glob("rawdata/sub-*/ses-*/func/*_bold.nii.gz")
-    # else:
-    #     (bold_path,) = specific_workdir.glob("rawdata/sub-*/func/*_bold.nii.gz")
-
-    # bold_image = nib.nifti1.load(bold_path)
-
-    # if has_sessions:
-    #     (preproc_path,) = specific_workdir.glob("derivatives/halfpipe/sub-*/ses-*/func/*_bold.nii.gz")
-    # else:
-    #     (preproc_path,) = specific_workdir.glob("derivatives/halfpipe/sub-*/func/*_bold.nii.gz")
-    # preproc_image = nib.nifti1.load(preproc_path)
-
-    # # Calculate extra TSNR and store on the fly
-    # tsnr = TSNR()
-    # tsnr.inputs.in_file = preproc_path
-    # tsnr_hp = tsnr.run()
-    # current_tsnr_halfpipe = tsnr_hp.outputs.out_file
-    # output_dir = os.path.dirname(preproc_path)  # Extracting directory from the file path
-    # os.makedirs(output_dir, exist_ok=True)
-    # output_file_path = os.path.join(output_dir, "tsnr_halfpipe.nii.gz")  # Define the full path for new TSNR
-    # shutil.copy(current_tsnr_halfpipe, output_file_path)  # Ccopy into new location
-
-    # ############   Baseline check   ##########
-    # assert bold_image.shape[3] == preproc_image.shape[3]
-
-    # ############ Consistency checks ##########
-    # setup_test_resources()
-    # zip_path = get_resource("halfpipe122_baseline.zip")  # this will be done 1 time per dataset, split test?
-
-    # with ZipFile(zip_path) as zip_file:
-    #     zip_file.extractall(tmp_path)
-
-    # baseline_path = tmp_path / "halfpipe122_baseline"
-    # assert isinstance(baseline_path, Path), "Baseline path did not return a Path object."
-    # assert any(baseline_path.iterdir()), "The extracted directory is empty."
-
-    # # Establish paths for all relevant files for comparison
-    # base_paths = [baseline_path / path for path in dataset.osf_paths]
-    # current_paths = [tmp_path / path for path in dataset.consistency_paths]
-    # base_tsnr, base_fc, base_reho, base_seed, base_falff, base_alff, base_dual = base_paths
-    # current_tsnr, current_fc, current_reho, current_seed, current_falff, current_alff, current_dual = current_paths
-    # #! add base_tsnr_halfpipe
-    # #! add current_tsnr_halfpipe
-
-    # # threshold = 0.3  # Example threshold?
-    # fc_fig, mean_abs_diff = compare_fcs(base_fc, current_fc)
-
-    # # assert mean_abs_diff < threshold, "Mean absolute difference is too high"
-
-    #! create zip file?
-    # ! if we are going to get rid of the nipype folder then we need to keep the fmriprep tsnr
+        # Create the zip file in the specified output directory
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        zip_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.zip"
+        zip_filepath = tmp_path / zip_filename
+        with zipfile.ZipFile(zip_filepath, "w") as zipf:
+            for file in paths_to_zip:
+                zipf.write(file, arcname=file.relative_to(tmp_path))
+        print(f"Created zip file: {zip_filepath}")
