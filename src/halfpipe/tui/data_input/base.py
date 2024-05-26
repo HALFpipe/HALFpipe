@@ -4,15 +4,9 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
-from textual.widgets import Button, Input, RadioButton, RadioSet, Static, Switch
+from textual.widgets import Button, Input, RadioButton, RadioSet, Static
 
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
-
-from ...model.file.bids import BidsFileSchema
-from ...model.tags import entities
-from ..utils.draggable_modal_screen import DraggableModalScreen
-from ..utils.filebrowser import FileBrowser
-from ..utils.non_bids_file_itemization import FileItem
 
 # TODO
 # For bids, this is automatic message
@@ -25,6 +19,150 @@ from ..utils.non_bids_file_itemization import FileItem
 # [Yes] [No]
 # Specify repetition time in seconds
 # [0]
+# There are 4 SummarySteps: FilePatternSummaryStep, AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
+# AnatSummaryStep > BoldSummaryStep > get_post_func_steps > FmapSummaryStep > END
+# get_post_func_steps: will now be checked in different tab
+# def get_post_func_steps(this_next_step_type: Optional[Type[Step]]) -> Type[Step]:
+# class DummyScansStep(Step):
+# class CheckBoldSliceTimingStep(CheckMetadataStep):
+# class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
+# class DoSliceTimingStep(YesNoStep):
+from ...model.file.anat import T1wFileSchema
+from ...model.file.bids import BidsFileSchema
+from ...model.file.fmap import (
+    BaseFmapFileSchema,
+)
+from ...model.file.func import BoldFileSchema
+from ...model.tags import entities
+from ...model.tags import entity_longnames as entity_display_aliases
+from ...model.utils import get_schema_entities
+from ...utils.format import inflect_engine as p
+from ..utils.custom_switch import TextSwitch
+from ..utils.draggable_modal_screen import DraggableModalScreen
+from ..utils.false_input_warning_screen import FalseInputWarning
+from ..utils.filebrowser import FileBrowser
+from ..utils.list_of_files_modal import ListOfFiles
+from ..utils.non_bids_file_itemization import FileItem
+
+
+class FilePatternSummaryStep:
+    def __init__(self, filetype_str, filedict, schema, ctx=None):
+        self.filetype_str = filetype_str
+        self.filedict = filedict
+        self.schema = schema
+        self.entities = get_schema_entities(schema)  # Assumes a function to extract schema entities
+
+        # Assuming ctx and database are accessible here
+        self.filepaths = ctx.database.get(**self.filedict)
+        self.message = messagefun(
+            ctx.database,
+            self.filetype_str,
+            self.filepaths,
+            self.entities,
+            entity_display_aliases,  # This should be defined somewhere accessible
+        )
+
+    @property
+    def get_message(self):
+        return self.message
+
+    @property
+    def get_summary(self):
+        return {"message": self.message, "files": self.filepaths}
+
+
+class AnatSummaryStep(FilePatternSummaryStep):
+    def __init__(self, ctx=None):
+        super().__init__(
+            filetype_str="T1-weighted image", filedict={"datatype": "anat", "suffix": "T1w"}, schema=T1wFileSchema, ctx=ctx
+        )
+
+
+class BoldSummaryStep(FilePatternSummaryStep):
+    def __init__(self, ctx=None):
+        super().__init__(
+            filetype_str="BOLD image", filedict={"datatype": "func", "suffix": "bold"}, schema=BoldFileSchema, ctx=ctx
+        )
+
+
+class FmapSummaryStep(FilePatternSummaryStep):
+    def __init__(self, ctx=None):
+        super().__init__(filetype_str="field map image", filedict={"datatype": "fmap"}, schema=BaseFmapFileSchema, ctx=ctx)
+
+
+# class FilePatternSummaryStep():
+# from ..model.tags import entity_longnames as entity_display_aliases
+
+# entity_display_aliases: ClassVar[Dict] = entity_display_aliases
+
+# filetype_str: ClassVar[str] = "file"
+# filedict: Dict[str, str] = dict()
+# schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
+
+# next_step_type: Optional[Type[Step]] = None
+
+# entities = get_schema_entities(self.schema)
+
+# filepaths = ctx.database.get(**self.filedict)
+# message = messagefun(
+# ctx.database,
+# self.filetype_str,
+# filepaths,
+# entities,
+# self.entity_display_aliases,
+# )
+
+# def get_message(self):
+# return message
+
+# class AnatSummaryStep(FilePatternSummaryStep):
+# filetype_str = "T1-weighted image"
+# filedict = {"datatype": "anat", "suffix": "T1w"}
+# schema = T1wFileSchema
+
+# #FuncSummaryStep = BoldSummaryStep
+# #next_step_type = FuncSummaryStep
+
+# class BoldSummaryStep(FilePatternSummaryStep):
+# filetype_str = "BOLD image"
+# filedict = {"datatype": "func", "suffix": "bold"}
+# schema = BoldFileSchema
+
+# #next_step_type = get_post_func_steps(FmapSummaryStep)
+
+# class FmapSummaryStep(FilePatternSummaryStep):
+# from ...model.file.fmap import BaseFmapFileSchema
+
+# filetype_str = "field map image"
+# filedict = {"datatype": "fmap"}
+# bold_filedict = {"datatype": "func", "suffix": "bold"}
+
+# schema = BaseFmapFileSchema
+
+# # next_step_type = FeaturesStep
+
+
+def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: dict | None = None):
+    entity_display_aliases = dict() if entity_display_aliases is None else entity_display_aliases
+    message = ""
+    if filepaths is not None:
+        message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
+        if len(filepaths) > 0:
+            n_by_tag = dict()
+            for tagname in tagnames:
+                tagvalset = database.tagvalset(tagname, filepaths=filepaths)
+                if tagvalset is not None:
+                    n_by_tag[tagname] = len(tagvalset)
+            tagmessages = [
+                p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
+                for tagname, n in n_by_tag.items()
+                if n > 0
+            ]
+            message += " "
+            message += "for"
+            message += " "
+            message += p.join(tagmessages)
+    return message
 
 
 class SetEchoTimeDifferenceModal(DraggableModalScreen):
@@ -157,6 +295,29 @@ class FieldMapTypeModal(DraggableModalScreen):
         self.choice = list(self.options.keys())[event.index]
 
 
+class DataSummaryLine(Widget):
+    def __init__(self, summary=None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.summary = {"message": "Found 0 files.", "files": []} if summary is None else summary
+
+    def compose(self) -> ComposeResult:
+        yield Horizontal(
+            Static(self.summary["message"], id="feedback"),
+            Button("👁", id="show_button", classes="icon_buttons"),
+            classes="feedback_container",
+        )
+
+    def update_summary(self, summary):
+        self.summary = summary
+        self.get_widget_by_id("feedback").update(self.summary["message"])
+        if len(self.summary["files"]) > 0:
+            self.styles.border = ("solid", "green")
+
+    @on(Button.Pressed, "#show_button")
+    def _on_show_button_pressed(self):
+        self.app.push_screen(ListOfFiles(self.summary))
+
+
 class DataInput(Widget):
     def __init__(self, app, ctx, available_images, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -172,15 +333,22 @@ class DataInput(Widget):
             ),
             Horizontal(
                 Static("Data in BIDS format", id="bids_format_switch", classes="label"),
-                Switch(value=True),
+                TextSwitch(value=True),
                 #        classes="components",
             ),
             id="instructions",
             classes="components",
         )
         yield Grid(
-            FileBrowser(app=self.top_parent, path_to="input data directory", id="data_input_file_browser"),
+            FileBrowser(app=self.top_parent, path_to="INPUT DATA DIRECTORY", id="data_input_file_browser"),
             id="bids_panel",
+            classes="components",
+        )
+        yield Vertical(
+            DataSummaryLine(id="feedback_anat"),
+            DataSummaryLine(id="feedback_bold"),
+            DataSummaryLine(id="feedback_fmap"),
+            id="bids_summary_panel",
             classes="components",
         )
         with VerticalScroll(id="non_bids_panel", classes="components"):
@@ -218,6 +386,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def on_mount(self) -> None:
         self.get_widget_by_id("instructions").border_title = "Data format"
         self.get_widget_by_id("bids_panel").border_title = "Path to BIDS directory"
+        self.get_widget_by_id("bids_summary_panel").border_title = "Data input file summary"
+
         self.get_widget_by_id("non_bids_panel").border_title = "Path pattern setup"
 
         self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
@@ -254,14 +424,19 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def on_switch_changed(self, message):
         if message.value:
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
+            self.get_widget_by_id("bids_summary_panel").styles.visibility = "visible"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
 
         else:
             self.get_widget_by_id("bids_panel").styles.visibility = "hidden"
+            self.get_widget_by_id("bids_summary_panel").styles.visibility = "hidden"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
 
     def on_file_browser_changed(self, message):
         """Trigger the data read by the Context after a file path is selected."""
+
+        def on_dismiss_this_modal(value):
+            self.get_widget_by_id("data_input_file_browser").update_input(None)
 
         def confirmation(respond: bool):
             print("bla")
@@ -272,11 +447,18 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                     )
                 )
 
-        # self.top_parent.push_screen(
-        # Confirm(text="Are data in BIDS format?", left_button_text="Yes", right_button_text="No"), confirmation
-        # )
-
-        self.feed_contex_and_extract_available_images(message.selected_path)
+        try:
+            self.feed_contex_and_extract_available_images(message.selected_path)
+        except:  # noqa E722
+            self.app.push_screen(
+                FalseInputWarning(
+                    warning_message="The selected data directory seems not be a BIDS directory!",
+                    title="Error - Non a bids directory",
+                    id="not_bids_dir_warning_modal",
+                    classes="error_modal",
+                ),
+                on_dismiss_this_modal,
+            )
 
     def feed_contex_and_extract_available_images(self, file_path):
         """Feed the Context object with the path to the data fields and extract available images."""
@@ -289,6 +471,20 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         db_entities, db_tags_set = self.ctx.database.multitagvalset(entities, filepaths=self.filepaths)
         self.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+
+        anat_summary_step = AnatSummaryStep(ctx=self.app.ctx)
+        bold_summary_step = BoldSummaryStep(ctx=self.app.ctx)
+        fmap_summary_step = FmapSummaryStep(ctx=self.app.ctx)
+
+        self.get_widget_by_id("feedback_anat").update_summary(anat_summary_step.get_summary)
+        self.get_widget_by_id("feedback_bold").update_summary(bold_summary_step.get_summary)
+        self.get_widget_by_id("feedback_fmap").update_summary(fmap_summary_step.get_summary)
+
+        # at this point, all went well, change border from red to green
+        self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
+        # contribute with True to show hidden tabs
+        self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        self.app.show_hidden_tabs()
 
     def manually_change_label(self, label):
         """If the input data folder was set by reading an existing json file via the working directory widget,

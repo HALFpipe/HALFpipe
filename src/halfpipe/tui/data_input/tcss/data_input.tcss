@@ -1,6 +1,32 @@
+DataSummaryLine {
+    height: auto;
+border: $warning;
+width: 100%;
+height: 5;
+align: center middle;
+    .feedback_container {
+            layout: horizontal;
+            height: 3;
+
+            width: 65;
+            align: left middle;
+            Static {
+                width: auto;
+                border: transparent;
+            }
+            Button {
+            dock: right;
+            }
+    }
+
+}
+
 DataInput {
     align: center top;
     height: auto;
+    #bids_summary_panel {
+        align: center middle;
+    }
     #bids_panel {
         align: left top;
         height: 7;
@@ -34,7 +60,16 @@ DataInput {
     .examples {
     content-align: center middle;
      border: grey;
+    }
+     #data_input_file_browser {
+            border: solid red;
+       }
+}
 
+#not_bids_dir_warning_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 41;
+        height: 12;
     }
 }
 
