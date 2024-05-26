@@ -133,7 +133,7 @@ class FeatureSelection(Widget):
     BINDINGS = [("a", "add_feature", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
 
-    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=True, **kwargs) -> None:
+    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=False, **kwargs) -> None:
         """Each created widget needs to have a unique id, even after deletion it cannot be recycled.
         The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
         """

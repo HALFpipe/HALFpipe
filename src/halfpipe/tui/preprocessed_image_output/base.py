@@ -20,7 +20,7 @@ class PreprocessedOutputOptions(TaskBased):
 
 
 class PreprocessedImageOutput(FeatureSelection):
-    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=True, **kwargs) -> None:
+    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=False, **kwargs) -> None:
         super().__init__(
             app=app,
             ctx=ctx,
