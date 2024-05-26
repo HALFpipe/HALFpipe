@@ -7,12 +7,13 @@ from textual.containers import Grid, ScrollableContainer, VerticalScroll
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, SelectionList, Static, Switch
+from textual.widgets import Input, SelectionList, Static
 from textual.widgets.selection_list import Selection
 
 from ....collect.events import collect_events
 from ....ingest.events import ConditionFile
 from ....model.filter import FilterSchema
+from ...utils.custom_switch import TextSwitch
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
@@ -40,7 +41,7 @@ class SwitchWithInputBox(Widget):
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            Switch(value=self.def_value is not None),
+            TextSwitch(value=self.def_value is not None),
             Input(value=self.def_value, placeholder="Value", id="input_switch_input_box"),
         )
 

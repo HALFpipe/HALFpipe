@@ -43,7 +43,7 @@ SwitchWithInputBox {
     Grid {
         align: left middle;
         grid-size: 3;
-        grid-columns: 40 10 15;
+        grid-columns: 40 16 15;
     }
     Static {
         padding: 1 0 0 2;
