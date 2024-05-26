@@ -38,6 +38,10 @@ MainApp {
 
         padding: 0 0 0 0;
     }
+        Tab.-hidden {
+        display: none;
+        background: red;
+    }
 }
 
 
