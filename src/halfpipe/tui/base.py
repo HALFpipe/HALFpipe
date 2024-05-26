@@ -10,7 +10,7 @@ from textual import events, on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.events import Click
-from textual.reactive import Reactive
+from textual.reactive import Reactive, reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Button, Footer, Header, Static, TabbedContent, TabPane
@@ -230,6 +230,8 @@ class MainApp(App):
     ctx = Context()
     available_images: dict = {}
     user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
+    flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
+    # input_data_load_is_success = False
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -248,15 +250,15 @@ class MainApp(App):
                 yield VerticalScroll(DataInput(self, self.ctx, self.available_images, id="input_data_content"))
             with TabPane("General settings", id="misc_tab", classes="tabs"):
                 yield VerticalScroll(GeneralSettings(), id="misc_content")
-            with TabPane("🔒General preprocessing settings", id="preprocessing_tab", classes="tabs"):
-                yield VerticalScroll(Preprocessing(self.ctx, id="preprocessing_content"))
-            with TabPane("🔒Features", id="feature_selection_tab", classes="tabs2"):
+            with TabPane("General preprocessing settings", id="preprocessing_tab", classes="tabs"):
+                yield VerticalScroll(Preprocessing(id="preprocessing_content"))
+            with TabPane("Features", id="feature_selection_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(
                     FeatureSelection(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="feature_selection_content"
                     )
                 )
-            with TabPane("🔒Output pre-processed image", id="preprocessed_output_tab", classes="tabs2"):
+            with TabPane("Output pre-processed image", id="preprocessed_output_tab", classes="tabs2"):
                 yield VerticalScroll(
                     PreprocessedImageOutput(
                         self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
@@ -268,11 +270,25 @@ class MainApp(App):
 
     def on_mount(self):
         def welcome_dismissed(message):
-            self.welcome_is_dismissed = message
+            self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
+            self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
+            self.get_widget_by_id("tabs_manager").hide_tab("preprocessed_output_tab")
+
+        #       self.welcome_is_dismissed = message
 
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
         self.push_screen(Welcome(id="welcome_screen"), welcome_dismissed)
+        # self.get_widget_by_id('tabs_manager')
+
+    def show_hidden_tabs(self):
+        if sum(self.flags_to_show_tabs.values()) == 1:
+            self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
+            self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
+            self.get_widget_by_id("tabs_manager").show_tab("preprocessed_output_tab")
+            #       self.input_data_load_is_success = True
+            self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_encoding_direction")
+            self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_timing")
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
@@ -302,7 +318,7 @@ class MainApp(App):
         this_tab_pane = self.get_widget_by_id(tab_id)
         this_tab_pane.update(this_tab_pane.render_str("🔓") + this_tab_pane.label[1:])
 
-    @on(TabbedContent.TabActivated)
+    # @on(TabbedContent.TabActivated)
     def on_tab_clicked(self, message):
         def enable_tab(unlock_tab):
             print("uuuuuuuuuuuuuuuuuuuuuuuu", unlock_tab)
