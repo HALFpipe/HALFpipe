@@ -79,18 +79,11 @@ spec.json file it is possible to load the therein configuration.",
                 )
                 self.value = False
 
-        #  path_test_result = path_test(message.selected_path)
-        #  print('pppppppppppppp222', path_test_result)
         if os.path.isdir(message.selected_path):
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
-            # enable tabs
-            self.app.get_widget_by_id("preprocessing_content").disabled = False
-            self.app.get_widget_by_id("feature_selection_content").disabled = False
-            self.app.get_widget_by_id("preprocessed_output_content").disabled = False
-
-            self.app.update_tab_pane_label("--content-tab-preprocessing_tab")
-            self.app.update_tab_pane_label("--content-tab-feature_selection_tab")
-            self.app.update_tab_pane_label("--content-tab-preprocessed_output_tab")
+            # show tabs
+            self.app.flags_to_show_tabs["from_working_dir_tab"] = True
+            self.app.show_hidden_tabs()
 
             self.ctx.workdir = message.selected_path
             self.existing_spec = load_spec(workdir=self.ctx.workdir)
