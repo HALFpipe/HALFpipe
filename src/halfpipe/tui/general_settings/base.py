@@ -14,6 +14,7 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, Select, Static, Switch
 
+from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 
 
@@ -81,9 +82,9 @@ class LabelledSwitch(Widget):
 
     def compose(self) -> ComposeResult:
         yield Horizontal(
-            Button("❓", id="help_button", classes="icon_buttons"),
+            #   Button("❓", id="help_button", classes="icon_buttons"),
             Static(self.label),
-            Switch(self.value),
+            TextSwitch(self.value),
         )
 
     def update_value(self, value):
@@ -123,7 +124,7 @@ class ChangeableStatic(Widget):
 
     def compose(self) -> ComposeResult:
         yield Horizontal(
-            Button("❓", id="help_button", classes="icon_buttons"),
+            #  Button("❓", id="help_button", classes="icon_buttons"),
             Static(self.label),
             Static(self.value, id="value_holder"),
             Button("🖌", id="edit_button", classes="icon_buttons"),
@@ -168,7 +169,7 @@ class StaticAndSelection(Widget):
 
     def compose(self) -> ComposeResult:
         yield Horizontal(
-            Button("❓", id="help_button", classes="icon_buttons"),
+            #         Button("❓", id="help_button", classes="icon_buttons"),
             Static(self.label),
             Select([(str(value), value) for value in self.options], value=self.options[0], allow_blank=False),
         )
@@ -197,6 +198,7 @@ class StaticAndSelection(Widget):
             return self.static_and_selection
 
 
+# ctx.spec.global_settings
 class GeneralSettings(Widget):
     def __init__(self):
         super().__init__()
@@ -261,6 +263,7 @@ they are.",
         print("global_settings_defaults", self.global_settings_defaults)
         self.global_settings[event.control.id]["value"] = event.value
         print("global_settings", self.global_settings)
+        self.app.ctx.spec.global_settings[event.control.id] = event.value
 
     @on(Button.Pressed, "#reset_button")
     def _on_reset_button_pressed(self):

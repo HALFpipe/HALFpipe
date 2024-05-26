@@ -1,3 +1,10 @@
+    TextSwitch {
+        border: tall transparent;
+        height: 3;
+        width: 16;
+        padding: 0 2;
+    }
+
 .icon_buttons {
         width: 3;
         height: 3;
