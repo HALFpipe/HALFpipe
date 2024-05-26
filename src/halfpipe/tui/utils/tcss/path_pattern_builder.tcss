@@ -16,7 +16,7 @@ DataInput {
     }
     #non_bids_panel {
         height: auto;
-        offset-y: -7;
+        offset-y: -24;
     }
 }
 
