@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
 
+
+import numpy as np
 from halfpipe.tui.utils.file_browser_modal import FileBrowserModal
+from inflection import humanize
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Button, Input, Select, Static, Switch
 
+from ...ingest.metadata.direction import direction_code_str
+from ...ingest.metadata.slicetiming import slice_timing_str
+from ...model.file.func import BoldFileSchema
+from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
+from ..utils.false_input_warning_screen import FalseInputWarning
 
 
 class SetInitialVolumesRemovalModal(DraggableModalScreen):
@@ -38,14 +46,15 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
 
 
 class SliceTimingModal(DraggableModalScreen):
-    def __init__(self, **kwargs):
+    def __init__(self, found_values_message="No foundings???", **kwargs):
         super().__init__(**kwargs)
+        self.found_values_message = found_values_message
         self.title_bar.title = "Check slice acquisition direction values"
 
     def on_mount(self) -> None:
         self.content.mount(
             Vertical(
-                Static("54 images - Inferior to superior", id="found_values"),
+                Static(self.found_values_message, id="found_values"),
                 Static("Proceed with these values?", id="question"),
                 # Input(''),
                 Horizontal(Button("Yes", id="ok"), Button("No", id="cancel")),
@@ -62,9 +71,9 @@ class SliceTimingModal(DraggableModalScreen):
 
 
 class Preprocessing(Widget):
-    def __init__(self, ctx, disabled=True, **kwargs) -> None:
+    def __init__(self, disabled=False, **kwargs) -> None:
         super().__init__(**kwargs, disabled=disabled)
-        self.ctx = ctx
+        self.ctx = self.app.ctx
         self.time_slicing_options = [
             "Sequential increasing (1, 2, ...)",
             "Sequential decreasing (... 2, 1)",
@@ -75,12 +84,13 @@ class Preprocessing(Widget):
             "                 ***Import from file***",
         ]
         self.slice_acquisition_direction = ["Inferior to superior", "Superior to inferior"]
+        self.slice_timing_message = ""
 
     def compose(self) -> ComposeResult:
         yield Container(
             Horizontal(
                 Static("Turn on slice timing", classes="description_labels"),
-                Switch(value=False, id="time_slicing_switch"),
+                TextSwitch(value=False, id="time_slicing_switch"),
             ),
             Horizontal(
                 Static("Slice timing", classes="label"),
@@ -100,7 +110,7 @@ class Preprocessing(Widget):
         yield Vertical(
             Horizontal(
                 Static("Detect non-steady-state via algorithm", classes="description_labels"),
-                Switch(False, id="via_algorithm_switch"),
+                TextSwitch(False, id="via_algorithm_switch"),
             ),
             Horizontal(
                 Static(
@@ -121,6 +131,117 @@ class Preprocessing(Widget):
         self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timing").styles.height = "5"
 
+    def check_meta_data(self, key="slice_encoding_direction") -> None:
+        #  self.key = "slice_encoding_direction"
+        self.key = key
+        self._append_view = []
+        ctx = self.ctx
+        self.schema = BoldFileSchema
+        self.show_summary = True
+
+        def _get_unit(schema, key):
+            field = _get_field(schema, key)
+            if field is not None:
+                return field.metadata.get("unit")
+
+        def _get_field(schema, key):
+            if isinstance(schema, type):
+                instance = schema()
+            else:
+                instance = schema
+            if "metadata" in instance.fields:
+                return _get_field(instance.fields["metadata"].nested, key)
+            return instance.fields.get(key)
+
+        def display_str(x):
+            if x == "MNI152NLin6Asym":
+                return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
+            elif x == "MNI152NLin2009cAsym":
+                return "MNI ICBM 2009c Nonlinear Asymmetric"
+            elif x == "slice_encoding_direction":
+                return "slice acquisition direction"
+            return humanize(x)
+
+        filedict = {"datatype": "func", "suffix": "bold"}
+
+        self.filters = filedict
+        self.appendstr = ""
+
+        humankey = display_str(self.key).lower()
+
+        if self.filters is None:
+            filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
+        else:
+            filepaths = [*ctx.database.get(**self.filters)]
+
+        ctx.database.fillmetadata(self.key, filepaths)
+
+        vals = [ctx.database.metadata(filepath, self.key) for filepath in filepaths]
+        self.suggestion = None
+
+        if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:
+            for i, val in enumerate(vals):
+                if val is not None:
+                    vals[i] = direction_code_str(val, filepaths[i])
+
+        elif self.key == "slice_timing":
+            for i, val in enumerate(vals):
+                if val is not None:
+                    sts = slice_timing_str(val)
+                    if "unknown" in sts:
+                        val = np.array(val)
+                        sts = np.array2string(val, max_line_width=256)
+                        if len(sts) > 128:
+                            sts = f"{sts[:128]}..."
+                    else:
+                        sts = humanize(sts)
+                    vals[i] = sts
+
+        if any(val is None for val in vals):
+            self.is_missing = True
+
+            if self.show_summary is True:
+                print(f"Missing {humankey} values")
+
+            vals = [val if val is not None else "missing" for val in vals]
+        else:
+            self.is_missing = False
+            print(f"Check {humankey} values{self.appendstr}")
+        ##########################
+        uniquevals, counts = np.unique(vals, return_counts=True)
+        order = np.argsort(counts)
+
+        column1 = []
+        for i in range(min(10, len(order))):
+            column1.append(f"{counts[i]} images")
+        column1width = max(len(s) for s in column1)
+
+        unit = _get_unit(self.schema, self.key)
+        if unit is None:
+            unit = ""
+
+        if self.key == "slice_timing":
+            unit = ""
+
+        if self.show_summary is True:
+            for i in range(min(10, len(order))):
+                display = display_str(f"{uniquevals[i]}")
+                if self.suggestion is None:
+                    self.suggestion = display
+                tablerow = f" {column1[i]:>{column1width}} - {display}"
+                if uniquevals[i] != "missing":
+                    tablerow = f"{tablerow} {unit}"
+                self._append_view.append((tablerow))
+
+            if len(order) > 10:
+                self._append_view.append(("..."))
+
+        print(self._append_view)
+        if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:
+            self.slice_encoding_direction_message = " ".join(self._append_view)
+        if self.key == "slice_timing":
+            self.slice_timing_message = " ".join(self._append_view)
+
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
         if message.value:
@@ -137,6 +258,13 @@ class Preprocessing(Widget):
     @on(Switch.Changed, "#time_slicing_switch")
     def on_time_slicing_switch_changed(self, message):
         def _update_slicing_direction(value):
+            if self.slice_timing_message != "":
+                self.app.push_screen(
+                    FalseInputWarning(
+                        warning_message="Missing slice timing values" + self.slice_timing_message, classes="error_modal"
+                    )
+                )
+
             slice_direction_widget = self.get_widget_by_id("select_slice_direction")
             if value:
                 slice_direction_widget.value = "Inferior to superior"
@@ -146,7 +274,9 @@ class Preprocessing(Widget):
             self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "visible"
             self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "visible"
             self.get_widget_by_id("slice_timing").styles.height = "auto"
-            self.app.push_screen(SliceTimingModal(), _update_slicing_direction)
+            self.app.push_screen(
+                SliceTimingModal(found_values_message=self.slice_encoding_direction_message), _update_slicing_direction
+            )
         else:
             self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "hidden"
             self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "hidden"
