@@ -14,9 +14,16 @@ class PreprocessedOutputOptions(TaskBased):
         self.get_widget_by_id("images_to_use").border_title = "Images to use"
         self.get_widget_by_id("confounds").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
-        self.get_widget_by_id("notes").border_title = "Notes"
-        self.get_widget_by_id("model_conditions_and_constrasts").styles.visibility = "hidden"
-        self.get_widget_by_id("confounds").styles.offset = (0, -13)
+        self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
+        self.get_widget_by_id("notes").remove()
+        self.get_widget_by_id("bandpass_filter_type").styles.visibility = "visible"
+        self.get_widget_by_id("grand_mean_scaling").styles.visibility = "visible"
+
+    def update_conditions_table(self):
+        condition_list = []
+        for value in self.get_widget_by_id("images_to_use_selection").selected:
+            condition_list += self.extract_conditions(entity="task", values=[value])
+        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
 
 
 class PreprocessedImageOutput(FeatureSelection):
@@ -47,10 +54,8 @@ class PreprocessedImageOutput(FeatureSelection):
         )
 
     def add_new_preprocessed_image(self, feature_name: str) -> None:
-        """Principle of adding a new feature lies in mounting a new widget while creating a new entry in the dictionary
-        to keep track of the selections which are later dumped into the Context object.
-        If this is a load or a duplication, then new entry is not created but read from the dictionary.
-        The dictionary entry was created elsewhere.
+        """
+        In the preprocessed image output we do not use the 'feature
         """
         if feature_name is not None:
             feature_type = "preprocessed_image"
@@ -63,9 +68,10 @@ class PreprocessedImageOutput(FeatureSelection):
             )
             # this dictionary will contain all made choices
             if feature_name not in self.user_selections_dict:
-                self.user_selections_dict[feature_name]["features"]["name"] = feature_name
-                self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
+                #       self.user_selections_dict[feature_name]["features"]["name"] = feature_name
+                #       self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
                 self.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
+                self.user_selections_dict[feature_name]["settings"]["output_image"] = True
             new_content_item = PreprocessedOutputOptions(
                 self.top_parent,
                 self.ctx,

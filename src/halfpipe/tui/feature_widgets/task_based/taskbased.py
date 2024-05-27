@@ -3,11 +3,11 @@ from dataclasses import dataclass
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, ScrollableContainer, VerticalScroll
+from textual.containers import Grid, ScrollableContainer, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, SelectionList, Static
+from textual.widgets import Input, Select, SelectionList, Static
 from textual.widgets.selection_list import Selection
 
 from ....collect.events import collect_events
@@ -47,7 +47,7 @@ class SwitchWithInputBox(Widget):
 
     def on_mount(self):
         if self.def_value is None:
-            self.query_one("Input").styles.visibility = "hidden"
+            self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
 
     def on_switch_changed(self):
         last_switch = self.query("Switch").last()
@@ -58,6 +58,39 @@ class SwitchWithInputBox(Widget):
             self.value = 0
 
     @on(Input.Changed, "#input_switch_input_box")
+    def update_from_input(self):
+        self.value = str(self.get_widget_by_id("input_switch_input_box").value)
+
+
+class SwitchWithSelect(SwitchWithInputBox):
+    @dataclass
+    class Changed(Message):
+        switch_with_select: "SwitchWithSelect"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.switch_with_select
+
+    def __init__(self, label="", options: list | None = None, **kwargs) -> None:
+        self.label = label
+        super().__init__(label=label, **kwargs)
+        self.options = [] if options is None else options
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Static(self.label),
+            TextSwitch(value=False),
+            Select(
+                [(str(value), value) for value in self.options],
+                value=self.options[0],
+                allow_blank=False,
+                id="input_switch_input_box",
+            ),
+        )
+
+    @on(Select.Changed, "#input_switch_input_box")
     def update_from_input(self):
         self.value = str(self.get_widget_by_id("input_switch_input_box").value)
 
@@ -134,7 +167,7 @@ class TaskBased(Widget):
                 id="images_to_use",
                 classes="components",
             )
-            with VerticalScroll(id="preprocessing", classes="components"):
+            with Vertical(id="preprocessing", classes="components"):
                 yield SwitchWithInputBox(
                     label="Smoothing (FWHM in mm)",
                     def_value=self.setting_dict["smoothing"]["fwhm"],
@@ -154,6 +187,18 @@ class TaskBased(Widget):
                     id="bandpass_filter_hp_width",
                 )
                 yield Static(note_1 + "\n" + note_2, classes="components", id="notes")
+                yield SwitchWithInputBox(
+                    label="Grand mean scaling",
+                    def_value=self.setting_dict["grand_mean_scaling"]["mean"],
+                    classes="switch_with_input_box additional_preprocessing_settings",
+                    id="grand_mean_scaling",
+                )
+                yield SwitchWithSelect(
+                    "Type of the temporal filter",
+                    options=["Gaussian-weighted", "Frequency-based"],
+                    id="bandpass_filter_type",
+                    classes="additional_preprocessing_settings",
+                )
             yield ModelConditionsAndContrasts(
                 self.top_parent,
                 all_possible_conditions,
@@ -178,9 +223,22 @@ class TaskBased(Widget):
         self.get_widget_by_id("images_to_use").border_title = "Images to use"
         self.get_widget_by_id("confounds").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
-        self.get_widget_by_id("notes").border_title = "Notes"
+        # self.get_widget_by_id("temporal_filter").styles.visibility = "hidden"
+        # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
+        # on_mount in subclasses is not entirely overridden and this one has also some effect
+        try:
+            self.get_widget_by_id("notes").border_title = "Notes"
+            self.get_widget_by_id("bandpass_filter_type").styles.visibility = "hidden"
+            self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
+        except:  # noqa E722
+            pass
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
+    def _on_selection_list_changed_images_to_use_selection(self):
+        # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
+        # subclass
+        self.update_conditions_table()
+
     def update_conditions_table(self):
         condition_list = []
         for value in self.get_widget_by_id("images_to_use_selection").selected:
@@ -202,11 +260,16 @@ class TaskBased(Widget):
 
         self.setting_dict["confounds_removal"] = confounds
 
+    @on(SwitchWithInputBox.Changed)
+    @on(SwitchWithSelect.Changed)
     def on_switch_with_input_box_changed(self, message):
-        the_id = message.switch_with_input_box.id
+        the_id = message.control.id
+        print("dddddddddddddddddddddddddd", the_id, message.value)
         if "bandpass_filter" in the_id:
             the_id = the_id.replace("bandpass_filter_", "")
             self.setting_dict["bandpass_filter"][the_id] = message.value
+        if "grand_mean_scaling" in the_id:
+            self.setting_dict[the_id]["mean"] = message.value
         else:
             self.feature_dict[the_id] = message.value
 

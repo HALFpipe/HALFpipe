@@ -2,6 +2,10 @@ TaskBased {
     #top_container_task_based {
         align: center middle;
     }
+    .additional_preprocessing_settings {
+        visibility: visible;
+
+    }
     #images_to_use {
         align: left middle;
         border: green thick;
@@ -14,7 +18,7 @@ TaskBased {
     #preprocessing {
         align: center top;
         padding: 1;
-        height: 18;
+        height: 19;
         .switch_with_input_box{
             height: 3;
             color: white;
@@ -40,6 +44,8 @@ TaskBased {
 }
 
 SwitchWithInputBox {
+    height: 3;
+    color: white;
     Grid {
         align: left middle;
         grid-size: 3;
@@ -52,6 +58,23 @@ SwitchWithInputBox {
         width: 14;
     }
 }
+
+SwitchWithSelect {
+    Grid {
+        align: left middle;
+        grid-size: 3;
+        grid-columns: 40 16 40;
+    }
+
+    #input_switch_input_box {
+        width: 30;
+
+        Static {
+            padding: 0 0 0 0;
+        }
+    }
+}
+
 
 .components {
         border: green thick;
