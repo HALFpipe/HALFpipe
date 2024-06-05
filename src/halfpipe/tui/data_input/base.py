@@ -328,8 +328,9 @@ class DataInput(Widget):
     def compose(self) -> ComposeResult:
         yield Container(
             Static(
-                "If 'on' then just selectthe BIDS top directory. Otherwise you must select file patterns"
-                "for T1-weighted image, BOLD image and event files.",
+                "If 'on' then just select the BIDS top directory. Otherwise you must select file patterns\
+for T1-weighted image, BOLD image and event files.",
+                id="description",
             ),
             Horizontal(
                 Static("Data in BIDS format", id="bids_format_switch", classes="label"),

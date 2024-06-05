@@ -2,6 +2,12 @@ Preprocessing:disabled {
     opacity: 50%;
 }
 
+#missing_time_slice_vals_warn_modal {
+    #draggable_modal_screen_container_wrapper {
+        height: 12;
+    }
+}
+
 Preprocessing {
     align: center middle;
     height: auto;

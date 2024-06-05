@@ -261,7 +261,10 @@ class Preprocessing(Widget):
             if self.slice_timing_message != "":
                 self.app.push_screen(
                     FalseInputWarning(
-                        warning_message="Missing slice timing values" + self.slice_timing_message, classes="error_modal"
+                        warning_message="Missing slice timing values" + self.slice_timing_message,
+                        title="Missing values!",
+                        id="missing_time_slice_vals_warn_modal",
+                        classes="error_modal",
                     )
                 )
 

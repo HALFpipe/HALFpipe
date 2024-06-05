@@ -43,8 +43,10 @@ DataInput {
         border: thick red;
         height: auto;
     }
-    Static {
-
+    #description {
+        height: 4;
+        padding: 1;
+        text-align: justify;
     }
     Container {
         height: 2;
