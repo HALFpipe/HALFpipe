@@ -13,7 +13,7 @@ from textual.events import Click
 from textual.reactive import Reactive, reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Button, Footer, Header, Static, TabbedContent, TabPane
+from textual.widgets import Button, Footer, Header, Placeholder, Static, TabbedContent, TabPane
 from textual.widgets._header import HeaderTitle
 
 from .data_input.base import DataInput
@@ -264,6 +264,8 @@ class MainApp(App):
                         self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
                     )
                 )
+            with TabPane("Models", id="models_tab", classes="tabs"):
+                yield VerticalScroll(Placeholder(), id="models_content")
             with TabPane("Check and run", id="run_tab", classes="tabs"):
                 yield VerticalScroll(RunCLX(self, self.ctx, self.user_selections_dict), id="run_content")
         yield Footer()
@@ -273,6 +275,7 @@ class MainApp(App):
             self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").hide_tab("preprocessed_output_tab")
+            self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
 
         #       self.welcome_is_dismissed = message
 
@@ -286,6 +289,7 @@ class MainApp(App):
             self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").show_tab("preprocessed_output_tab")
+            self.get_widget_by_id("tabs_manager").show_tab("models_tab")
             #       self.input_data_load_is_success = True
             self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_encoding_direction")
             self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_timing")
