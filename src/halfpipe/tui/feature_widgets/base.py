@@ -229,6 +229,7 @@ class FeatureSelection(Widget):
         If this is a load or a duplication, then new entry is not created but read from the dictionary.
         The dictionary entry was created elsewhere.
         """
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_feature, feature_widgets")
         if None not in new_feature_item:
             feature_type, feature_name = new_feature_item
             new_id = "feature_item_" + str(self._id_counter)

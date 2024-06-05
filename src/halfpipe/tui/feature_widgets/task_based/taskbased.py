@@ -7,7 +7,7 @@ from textual.containers import Grid, ScrollableContainer, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, Select, SelectionList, Static
+from textual.widgets import Input, Select, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
 
 from ....collect.events import collect_events
@@ -18,12 +18,8 @@ from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
 class SwitchWithInputBox(Widget):
-    value: reactive[bool] = reactive(None, init=False)
-
-    def __init__(self, label="", def_value: str | None = None, **kwargs) -> None:
-        self.label = label
-        self.def_value = str(def_value) if def_value is not None else None
-        super(SwitchWithInputBox, self).__init__(**kwargs)
+    value: reactive[bool] = reactive(None, init="")
+    switch_value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
     class Changed(Message):
@@ -35,27 +31,60 @@ class SwitchWithInputBox(Widget):
             """Alias for self.file_browser."""
             return self.switch_with_input_box
 
+    @dataclass
+    class SwitchChanged(Message):
+        switch_with_select: "SwitchWithInputBox"
+        switch_value: bool
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.switch_with_input_box
+
+    def __init__(self, label="", value: str | None = None, switch_value: bool = False, **kwargs) -> None:
+        self.label = label
+        self._reactive_switch_value = switch_value
+        self._reactive_value = str(value) if value is not None else None
+
+        super().__init__(**kwargs)
+
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))
+
+    def watch_switch_value(self) -> None:
+        self.post_message(self.SwitchChanged(self, self.switch_value))
 
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            TextSwitch(value=self.def_value is not None),
-            Input(value=self.def_value, placeholder="Value", id="input_switch_input_box"),
+            TextSwitch(value=self.value is not None),
+            Input(value=self.value, placeholder="Value", id="input_switch_input_box"),
         )
 
-    def on_mount(self):
-        if self.def_value is None:
-            self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
+    def update_label(self, label):
+        self.query_one(Static).update(label)
 
-    def on_switch_changed(self):
-        last_switch = self.query("Switch").last()
-        if last_switch.value:
+    def on_mount(self):
+        if self.switch_value is True or self.value is not None:
             self.get_widget_by_id("input_switch_input_box").styles.visibility = "visible"
         else:
             self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
-            self.value = 0
+
+    # def on_switch_changed(self):
+    # last_switch = self.query("Switch").last()
+    # if last_switch.value:
+    # self.get_widget_by_id("input_switch_input_box").styles.visibility = "visible"
+    # else:
+    # self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
+    # self.value = 0
+
+    @on(Switch.Changed)
+    def on_switch_changed(self, message):
+        self.switch_value = message.value
+        if self.switch_value is True:
+            self.get_widget_by_id("input_switch_input_box").styles.visibility = "visible"
+        else:
+            self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
 
     @on(Input.Changed, "#input_switch_input_box")
     def update_from_input(self):
@@ -73,6 +102,16 @@ class SwitchWithSelect(SwitchWithInputBox):
             """Alias for self.file_browser."""
             return self.switch_with_select
 
+    @dataclass
+    class SwitchChanged(Message):
+        switch_with_select: "SwitchWithSelect"
+        switch_value: bool
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.switch_with_select
+
     def __init__(self, label="", options: list | None = None, **kwargs) -> None:
         self.label = label
         super().__init__(label=label, **kwargs)
@@ -81,10 +120,10 @@ class SwitchWithSelect(SwitchWithInputBox):
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            TextSwitch(value=False),
+            TextSwitch(value=self.switch_value),
             Select(
-                [(str(value), value) for value in self.options],
-                value=self.options[0],
+                [(str(value[0]), value[1]) for value in self.options],
+                value=self.options[0][1],
                 allow_blank=False,
                 id="input_switch_input_box",
             ),
@@ -144,10 +183,12 @@ class TaskBased(Widget):
                 confounds_options[confound][1] = True
 
         self.confounds_options = confounds_options
+        print("111qqqqqqqqqqqqqqqqqqqq", this_user_selection_dict)
+        print("ppppppppppppppppppp", self.feature_dict)
 
     def compose(self) -> ComposeResult:
-        note_1 = "▪️ Grand mean scaling will be applied with a mean of 10000.0"
-        note_2 = "▪️ Temporal filtering will be applied using a gaussian-weighted filter"
+        # note_1 = "▪️ Grand mean scaling will be applied with a mean of 10000.0"
+        # note_2 = "▪️ Temporal filtering will be applied using a gaussian-weighted filter"
         # Here I need to get all possible conditions based on all possible images.
         all_condition_dict = {}
         all_possible_conditions = []
@@ -170,34 +211,36 @@ class TaskBased(Widget):
             with Vertical(id="preprocessing", classes="components"):
                 yield SwitchWithInputBox(
                     label="Smoothing (FWHM in mm)",
-                    def_value=self.setting_dict["smoothing"]["fwhm"],
+                    value=self.setting_dict["smoothing"]["fwhm"],
                     classes="switch_with_input_box",
                     id="smoothing",
                 )
-                yield SwitchWithInputBox(
-                    label="Low-pass filter width (in seconds)",
-                    def_value=self.setting_dict["bandpass_filter"]["lp_width"],
-                    classes="switch_with_input_box",
-                    id="bandpass_filter_lp_width",
-                )
-                yield SwitchWithInputBox(
-                    label="High-pass filter width (in seconds)",
-                    def_value=self.setting_dict["bandpass_filter"]["hp_width"],
-                    classes="switch_with_input_box",
-                    id="bandpass_filter_hp_width",
-                )
-                yield Static(note_1 + "\n" + note_2, classes="components", id="notes")
+
+                #      yield Static(note_1 + "\n" + note_2, classes="components", id="notes")
                 yield SwitchWithInputBox(
                     label="Grand mean scaling",
-                    def_value=self.setting_dict["grand_mean_scaling"]["mean"],
+                    value=self.setting_dict["grand_mean_scaling"]["mean"],
                     classes="switch_with_input_box additional_preprocessing_settings",
                     id="grand_mean_scaling",
                 )
                 yield SwitchWithSelect(
-                    "Type of the temporal filter",
-                    options=["Gaussian-weighted", "Frequency-based"],
+                    "Temporal filter",
+                    options=[("Gaussian-weighted", "gaussian"), ("Frequency-based", "frequency_based")],
+                    switch_value=True,
                     id="bandpass_filter_type",
                     classes="additional_preprocessing_settings",
+                )
+                yield SwitchWithInputBox(
+                    label="Low-pass temporal filter width \n(in seconds)",
+                    value=self.setting_dict["bandpass_filter"]["lp_width"],
+                    classes="switch_with_input_box",
+                    id="bandpass_filter_lp_width",
+                )
+                yield SwitchWithInputBox(
+                    label="High-pass temporal filter width \n(in seconds)",
+                    value=self.setting_dict["bandpass_filter"]["hp_width"],
+                    classes="switch_with_input_box",
+                    id="bandpass_filter_hp_width",
                 )
             yield ModelConditionsAndContrasts(
                 self.top_parent,
@@ -220,18 +263,23 @@ class TaskBased(Widget):
             )
 
     def on_mount(self) -> None:
+        print("mmmmmmmmmmmmmmmmmmmm mount superclass")
         self.get_widget_by_id("images_to_use").border_title = "Images to use"
         self.get_widget_by_id("confounds").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
+        if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
+            self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
+            self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
+
         # self.get_widget_by_id("temporal_filter").styles.visibility = "hidden"
         # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
         # on_mount in subclasses is not entirely overridden and this one has also some effect
-        try:
-            self.get_widget_by_id("notes").border_title = "Notes"
-            self.get_widget_by_id("bandpass_filter_type").styles.visibility = "hidden"
-            self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
-        except:  # noqa E722
-            pass
+        # try:
+        # self.get_widget_by_id("notes").border_title = "Notes"
+        # self.get_widget_by_id("bandpass_filter_type").styles.visibility = "hidden"
+        # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
+        # except:  # noqa E722
+        # pass
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
     def _on_selection_list_changed_images_to_use_selection(self):
@@ -260,16 +308,38 @@ class TaskBased(Widget):
 
         self.setting_dict["confounds_removal"] = confounds
 
+    @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
+    def setting_change_bandpass_filter_type(self, message):
+        print("heeeeeeeeeeeeeeeeere", message.switch_value)
+        if message.switch_value is True:
+            self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "visible"
+            self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
+            self.get_widget_by_id("preprocessing").styles.height = 19
+        else:
+            self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
+            self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
+            self.get_widget_by_id("preprocessing").styles.height = 13
+
     @on(SwitchWithInputBox.Changed)
     @on(SwitchWithSelect.Changed)
     def on_switch_with_input_box_changed(self, message):
+        # todo, need some unified simple global approach for the value passing
         the_id = message.control.id
+        if message.control.id == "bandpass_filter_type":
+            if message.value == "frequency_based":
+                self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
+                self.get_widget_by_id("bandpass_filter_hp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
+            elif message.value == "gaussian":
+                self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
+                self.get_widget_by_id("bandpass_filter_hp_width").update_label("Low-pass temporal filter width \n(in seconds)")
         print("dddddddddddddddddddddddddd", the_id, message.value)
         if "bandpass_filter" in the_id:
             the_id = the_id.replace("bandpass_filter_", "")
             self.setting_dict["bandpass_filter"][the_id] = message.value
-        if "grand_mean_scaling" in the_id:
+        elif "grand_mean_scaling" in the_id:
             self.setting_dict[the_id]["mean"] = message.value
+        elif "smoothing" in the_id:
+            self.setting_dict[the_id]["fwhm"] = message.value
         else:
             self.feature_dict[the_id] = message.value
 
