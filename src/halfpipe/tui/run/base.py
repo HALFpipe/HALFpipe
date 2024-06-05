@@ -37,16 +37,19 @@ class RunCLX(Widget):
     def dump_dict_to_contex(self):
         self.ctx.spec.features.clear()
         self.ctx.spec.settings.clear()
-
+        print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", self.user_selections_dict)
         for name in self.user_selections_dict:
             if name != "files":
-                featureobj = Feature(name=name, type=self.user_selections_dict[name]["features"]["type"])
-                self.ctx.spec.features.append(featureobj)
+                # for preprocessed image output there are no features, thus the dict is empty
+                if self.user_selections_dict[name]["features"] != {}:
+                    featureobj = Feature(name=name, type=self.user_selections_dict[name]["features"]["type"])
+                    self.ctx.spec.features.append(featureobj)
                 # for settings
                 settingdict: dict = {}
                 setting = {**settingdict}
                 setting["name"] = self.user_selections_dict[name]["settings"]["name"]
                 self.ctx.spec.settings.append(SettingSchema().load(setting, partial=True))
+                # here it is ok, because since it is empty, there are no iterations
                 for key in self.user_selections_dict[name]["features"]:
                     try:
                         setattr(self.ctx.spec.features[-1], key, self.user_selections_dict[name]["features"][key])
