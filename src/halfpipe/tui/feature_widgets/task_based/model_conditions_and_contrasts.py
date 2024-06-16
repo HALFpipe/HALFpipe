@@ -21,10 +21,10 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
 
     CSS_PATH = ["tcss/contrast_table_input_window.tcss"]
 
-    def __init__(self, table_row_index, current_col_labels, top_parent) -> None:
+    def __init__(self, table_row_index, current_col_labels) -> None:
         self.table_row_index = table_row_index
         self.current_col_labels = current_col_labels
-        self.top_parent = top_parent
+        #   self.top_parent = top_parent
         super().__init__()
 
     def compose(self) -> ComposeResult:
@@ -66,12 +66,12 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
 
     def _confirm_window(self):
         if self.get_widget_by_id("contrast_name").value in self.current_col_labels:
-            self.top_parent.push_screen(FalseInputWarning(warning_message="The selected column name already exists"))
+            self.app.push_screen(FalseInputWarning(warning_message="The selected column name already exists"))
         elif self.get_widget_by_id("contrast_name").value == "":
-            self.top_parent.push_screen(FalseInputWarning(warning_message="Specify contrast name!"))
+            self.app.push_screen(FalseInputWarning(warning_message="Specify contrast name!"))
         elif any(i.value == "" for i in self.query(".input_values")):
             print([i for i in self.query(".input_values")])
-            self.top_parent.push_screen(FalseInputWarning(warning_message="Fill all values!"))
+            self.app.push_screen(FalseInputWarning(warning_message="Fill all values!"))
         else:
             for i in self.query(".input_values"):
                 self.table_row_index[i.name] = i.value
@@ -103,7 +103,7 @@ class ModelConditionsAndContrasts(Widget):
     # if so, the selection and the table need an update
     condition_values: reactive[list] = reactive([], init=False)
 
-    def __init__(self, app, all_possible_conditions, feature_contrasts_dict=None, **kwargs) -> None:
+    def __init__(self, all_possible_conditions, feature_contrasts_dict=None, **kwargs) -> None:
         """The pandas dataframe is to remember all choices even when some images or conditions are turned off.
         This is because when they are turned on, the condition values will be also back.
         The feature_contrasts_dict is used when the widget is created either from read-in (from existing json file) or
@@ -113,7 +113,7 @@ class ModelConditionsAndContrasts(Widget):
         on change.
         """
         super().__init__(**kwargs)
-        self.top_parent = app
+        # self.top_parent = app
         self.feature_contrasts_dict = feature_contrasts_dict
 
         self.row_dict: dict = {}
@@ -218,11 +218,11 @@ class ModelConditionsAndContrasts(Widget):
             self.dump_contrast_values()
 
         # start with opening of the modal screen
-        self.top_parent.push_screen(
+        self.app.push_screen(
             ContrastTableInputWindow(
                 table_row_index=self.table_row_index,
                 current_col_labels=self.df.columns.values,
-                top_parent=self.top_parent,
+                # top_parent=self.top_parent,
             ),
             add_column,
         )

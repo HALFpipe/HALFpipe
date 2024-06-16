@@ -10,10 +10,8 @@ from ..feature_widgets.task_based.taskbased import TaskBased
 
 
 class PreprocessedOutputOptions(TaskBased):
-    def __init__(self, app, ctx, available_images, this_user_selection_dict, **kwargs) -> None:
-        super().__init__(
-            app=app, ctx=ctx, available_images=available_images, this_user_selection_dict=this_user_selection_dict, **kwargs
-        )
+    def __init__(self, this_user_selection_dict, **kwargs) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
         # no features for preprocessed image output!
         this_user_selection_dict["features"] = {}
 
@@ -36,12 +34,12 @@ class PreprocessedOutputOptions(TaskBased):
 
 
 class PreprocessedImageOutput(FeatureSelection):
-    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=False, **kwargs) -> None:
+    def __init__(self, disabled=False, **kwargs) -> None:
         super().__init__(
-            app=app,
-            ctx=ctx,
-            available_images=available_images,
-            user_selections_dict=user_selections_dict,
+            #  app=app,
+            # ctx=ctx,
+            # available_images=available_images,
+            # user_selections_dict=user_selections_dict,
             disabled=disabled,
             **kwargs,
         )
@@ -58,8 +56,8 @@ class PreprocessedImageOutput(FeatureSelection):
             # feature_type, feature_name
             self.add_new_preprocessed_image(value)
 
-        self.top_parent.push_screen(
-            FeatureNameInput(self, occupied_feature_names),
+        self.app.push_screen(
+            FeatureNameInput(occupied_feature_names),
             get_feature_name,
         )
 
@@ -87,11 +85,11 @@ class PreprocessedImageOutput(FeatureSelection):
             )
 
             # this dictionary will contain all made choices
-            if feature_name not in self.user_selections_dict:
+            if feature_name not in self.app.user_selections_dict:
                 #       self.user_selections_dict[feature_name]["features"]["name"] = feature_name
                 #       self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
-                self.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
-                self.user_selections_dict[feature_name]["settings"]["output_image"] = True
+                self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
+                self.app.user_selections_dict[feature_name]["settings"]["output_image"] = True
             print(
                 "33333aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "add_new_preprocessed_image",
@@ -100,10 +98,10 @@ class PreprocessedImageOutput(FeatureSelection):
             )
 
             new_content_item = PreprocessedOutputOptions(
-                self.top_parent,
-                self.ctx,
-                self.available_images,
-                this_user_selection_dict=self.user_selections_dict[feature_name],
+                #                self.top_parent,
+                #                self.ctx,
+                #    self.available_images,
+                this_user_selection_dict=self.app.user_selections_dict[feature_name],
                 id=new_id,
                 classes=feature_type,
             )

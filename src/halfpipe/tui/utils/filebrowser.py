@@ -41,9 +41,9 @@ class FileBrowser(Widget):
     def watch_selected_path(self) -> None:
         self.post_message(self.Changed(self, self.selected_path))
 
-    def __init__(self, app, path_to, modal_title="Browse", **kwargs) -> None:
+    def __init__(self, path_to, modal_title="Browse", **kwargs) -> None:
         super().__init__(**kwargs)
-        self.top_parent = app
+        #    self.top_parent = app
         self.path_to = path_to
         self.modal_title = modal_title
 
@@ -54,7 +54,7 @@ class FileBrowser(Widget):
 
     @on(Button.Pressed, "#file_browser_edit_button")
     def open_browse_window(self):
-        self.top_parent.push_screen(FileBrowserModal(title=self.modal_title), self.update_input)
+        self.app.push_screen(FileBrowserModal(title=self.modal_title), self.update_input)
 
     @on(Input.Submitted, "#path_input_box")
     def update_from_input(self):

@@ -23,6 +23,12 @@ height: 3;
     content-align-horizontal: center;
 }
 
+#event_files_type_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+    }
+}
+
 QuitModal {
     #draggable_modal_screen_container_wrapper {
         width: 47;
@@ -69,7 +75,12 @@ QuitModal {
         border: solid black;
     }
 
-FieldMapTypeModal {
+SelectionModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 90;
+        height: 14;
+        background: black;
+    }
     #top_container {
         border: thick $accent;
 
@@ -92,12 +103,21 @@ FieldMapTypeModal {
 }
 
 
-#draggable_modal_screen_container_wrapper {
-    width: 90;
-    height: 14;
-    background: black;
-}
+DoubleSelectionModal {
+    Static {
+    padding: 0 1;
+    }
+    #draggable_modal_screen_container_wrapper {
+        width: 50;
+        height: 18;
+        background: black;
+    }
+        RadioSet {
+        height: 4;
+        width: 48;
 
+    }
+}
 
 WindowTitleBar {
     layout: horizontal;

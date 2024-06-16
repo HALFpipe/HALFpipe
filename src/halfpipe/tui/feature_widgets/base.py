@@ -41,8 +41,8 @@ class FeatureNameInput(ModalScreen):
 
     CSS_PATH = ["tcss/feature_name_input.tcss"]
 
-    def __init__(self, top_parent, occupied_feature_names) -> None:
-        self.top_parent = top_parent
+    def __init__(self, occupied_feature_names) -> None:
+        #   self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
 
@@ -75,9 +75,9 @@ class FeatureNameInput(ModalScreen):
     def _confirm_window(self):
         feature_name = self.get_widget_by_id("feature_name").value
         if feature_name == "":
-            self.top_parent.push_screen(FalseInputWarning("Enter the name!"))
+            self.app.push_screen(FalseInputWarning("Enter the name!"))
         elif feature_name in self.occupied_feature_names:
-            self.top_parent.push_screen(FalseInputWarning("Name already exists!\nUse another one."))
+            self.app.push_screen(FalseInputWarning("Name already exists!\nUse another one."))
         else:
             self.dismiss(feature_name)
 
@@ -90,8 +90,8 @@ class FeatureSelectionScreen(ModalScreen[str]):
 
     CSS_PATH = "tcss/feature_selection_screen.tcss"
 
-    def __init__(self, top_parent, occupied_feature_names) -> None:
-        self.top_parent = top_parent
+    def __init__(self, occupied_feature_names) -> None:
+        #    self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
 
@@ -109,8 +109,8 @@ class FeatureSelectionScreen(ModalScreen[str]):
             if feature_name is not None:
                 self.dismiss((message.option.id, feature_name))
 
-        self.top_parent.push_screen(
-            FeatureNameInput(self.top_parent, self.occupied_feature_names),
+        self.app.push_screen(
+            FeatureNameInput(self.occupied_feature_names),
             get_feature_name,
         )
 
@@ -133,15 +133,15 @@ class FeatureSelection(Widget):
     BINDINGS = [("a", "add_feature", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
 
-    def __init__(self, app, ctx, available_images, user_selections_dict, disabled=False, **kwargs) -> None:
+    def __init__(self, disabled=False, **kwargs) -> None:
         """Each created widget needs to have a unique id, even after deletion it cannot be recycled.
         The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
         """
         super().__init__(disabled=disabled, **kwargs)
-        self.top_parent = app
-        self.ctx = ctx
-        self.available_images = available_images
-        self.user_selections_dict = user_selections_dict
+        # self.top_parent = app
+        #   self.ctx = ctx
+        # self.available_images = available_images
+        #    self.app.user_selections_dict = user_selections_dict
         self._id_counter = 0
         self.feature_items: dict = {}
 
@@ -196,14 +196,14 @@ class FeatureSelection(Widget):
                     FEATURES_MAP[self.feature_items[currently_selected_id].type],
                     old_feature_name,
                 )
-                self.user_selections_dict[new_feature_name] = self.user_selections_dict.pop(old_feature_name)
-                self.user_selections_dict[new_feature_name]["features"]["name"] = new_feature_name
-                self.user_selections_dict[new_feature_name]["features"]["setting"] = new_feature_name + "Setting"
-                self.user_selections_dict[new_feature_name]["settings"]["name"] = new_feature_name + "Setting"
+                self.app.user_selections_dict[new_feature_name] = self.app.user_selections_dict.pop(old_feature_name)
+                self.app.user_selections_dict[new_feature_name]["features"]["name"] = new_feature_name
+                self.app.user_selections_dict[new_feature_name]["features"]["setting"] = new_feature_name + "Setting"
+                self.app.user_selections_dict[new_feature_name]["settings"]["name"] = new_feature_name + "Setting"
 
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
-        await self.top_parent.push_screen(
-            FeatureNameInput(self.top_parent, occupied_feature_names),
+        await self.app.push_screen(
+            FeatureNameInput(occupied_feature_names),
             action_rename_feature,
         )
 
@@ -218,8 +218,8 @@ class FeatureSelection(Widget):
     def action_add_feature(self) -> None:
         """Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget."""
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
-        self.top_parent.push_screen(
-            FeatureSelectionScreen(self.top_parent, occupied_feature_names),
+        self.app.push_screen(
+            FeatureSelectionScreen(occupied_feature_names),
             self.add_new_feature,
         )
 
@@ -240,16 +240,16 @@ class FeatureSelection(Widget):
                 classes="items",
             )
             # this dictionary will contain all made choices
-            if feature_name not in self.user_selections_dict:
-                self.user_selections_dict[feature_name]["features"]["name"] = feature_name
-                self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
-                self.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
+            if feature_name not in self.app.user_selections_dict:
+                self.app.user_selections_dict[feature_name]["features"]["name"] = feature_name
+                self.app.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
+                self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
             if feature_type == "task_based":
                 new_content_item = TaskBased(
-                    self.top_parent,
-                    self.ctx,
-                    self.available_images,
-                    this_user_selection_dict=self.user_selections_dict[feature_name],
+                    #   self.top_parent,
+                    #   self.ctx,
+                    #  self.app.available_images,
+                    this_user_selection_dict=self.app.user_selections_dict[feature_name],
                     id=new_id,
                     classes=feature_type,
                 )
@@ -274,9 +274,9 @@ class FeatureSelection(Widget):
                 name = self.feature_items[current_id].name
                 self.get_widget_by_id(current_id).remove()
                 self.feature_items.pop(current_id)
-                self.user_selections_dict.pop(name)
+                self.app.user_selections_dict.pop(name)
 
-        self.top_parent.push_screen(Confirm(), confirmation)
+        self.app.push_screen(Confirm(), confirmation)
 
     def action_duplicate_feature(self):
         """Duplicating feature by a deep copy of the dictionary entry and then mounting a new widget while
@@ -285,11 +285,11 @@ class FeatureSelection(Widget):
         current_id = self.get_widget_by_id("content_switcher").current
         feature_name = self.feature_items[current_id].name
         feature_name_copy = feature_name + "Copy"
-        self.user_selections_dict[feature_name_copy] = copy.deepcopy(self.user_selections_dict[feature_name])
-        self.user_selections_dict[feature_name_copy]["features"]["name"] = feature_name_copy
-        self.user_selections_dict[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
-        self.user_selections_dict[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
-        self.add_new_feature([self.user_selections_dict[feature_name_copy]["features"]["type"], feature_name_copy])
+        self.app.user_selections_dict[feature_name_copy] = copy.deepcopy(self.app.user_selections_dict[feature_name])
+        self.app.user_selections_dict[feature_name_copy]["features"]["name"] = feature_name_copy
+        self.app.user_selections_dict[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
+        self.app.user_selections_dict[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
+        self.add_new_feature([self.app.user_selections_dict[feature_name_copy]["features"]["type"], feature_name_copy])
 
     def action_sort_features(self):
         """Sorting alphabetically and by feature type."""

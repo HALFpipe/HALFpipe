@@ -159,6 +159,7 @@ class PathPatternBuilder(DraggableModalScreen):
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
+        print("cccccccccccccccccccccccccccccccc", colors_and_labels)
         self.active_button_id = "button_" + self.labels[0]
         self.content.mount(
             Grid(

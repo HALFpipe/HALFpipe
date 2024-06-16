@@ -11,6 +11,7 @@ from textual.widgets import Static
 
 from ...model.spec import load_spec
 from ..utils.confirm_screen import Confirm
+from ..utils.context import ctx
 
 # from utils.false_input_warning_screen import FalseInputWarning
 # from utils.confirm_screen import Confirm
@@ -31,16 +32,14 @@ class WorkDirectory(Widget):
 
     def __init__(
         self,
-        app,
-        ctx,
-        user_selections_dict: dict,
+        #    user_selections_dict: dict,
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
         super().__init__(id=id, classes=classes)
-        self.top_parent = app
-        self.ctx = ctx
-        self.user_selections_dict: dict = user_selections_dict
+
+    #      self.top_parent = app
+    #   self.user_selections_dict: dict = user_selections_dict
 
     def compose(self) -> ComposeResult:
         yield Vertical(
@@ -49,7 +48,7 @@ class WorkDirectory(Widget):
 spec.json file it is possible to load the therein configuration.",
                 id="description",
             ),
-            FileBrowser(app=self.top_parent, path_to="WORKING DIRECTORY", id="work_dir_file_browser"),
+            FileBrowser(path_to="WORKING DIRECTORY", id="work_dir_file_browser"),
             id="work_directory",
             classes="components",
         )
@@ -85,8 +84,8 @@ spec.json file it is possible to load the therein configuration.",
             self.app.flags_to_show_tabs["from_working_dir_tab"] = True
             self.app.show_hidden_tabs()
 
-            self.ctx.workdir = message.selected_path
-            self.existing_spec = load_spec(workdir=self.ctx.workdir)
+            ctx.workdir = message.selected_path
+            self.existing_spec = load_spec(workdir=ctx.workdir)
             if self.existing_spec is not None:
                 self.app.push_screen(
                     Confirm(
@@ -111,15 +110,15 @@ spec.json file it is possible to load the therein configuration.",
     def user_selections_from_spec(self):
         """Feed the user_selections_dict with settings from the json file via the context object."""
         if self.existing_spec is not None:
-            self.user_selections_dict["files"]["path"] = self.existing_spec.files[0].path
+            self.app.user_selections_dict["files"]["path"] = self.existing_spec.files[0].path
             for feature in self.existing_spec.features:
                 for method_name in ["conditions", "contrasts", "high_pass_filter_cutoff", "hrf", "name", "setting", "type"]:
-                    self.user_selections_dict[feature.name]["features"][method_name] = getattr(feature, method_name)
+                    self.app.user_selections_dict[feature.name]["features"][method_name] = getattr(feature, method_name)
 
                 for setting in self.existing_spec.settings:
-                    if setting["name"] == self.user_selections_dict[feature.name]["features"]["setting"]:
+                    if setting["name"] == self.app.user_selections_dict[feature.name]["features"]["setting"]:
                         for key in setting:
-                            self.user_selections_dict[feature.name]["settings"][key] = setting[key]
+                            self.app.user_selections_dict[feature.name]["settings"][key] = setting[key]
 
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))

@@ -14,6 +14,7 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, Select, Static, Switch
 
+from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 
@@ -263,7 +264,7 @@ they are.",
         print("global_settings_defaults", self.global_settings_defaults)
         self.global_settings[event.control.id]["value"] = event.value
         print("global_settings", self.global_settings)
-        self.app.ctx.spec.global_settings[event.control.id] = event.value
+        ctx.spec.global_settings[event.control.id] = event.value
 
     @on(Button.Pressed, "#reset_button")
     def _on_reset_button_pressed(self):

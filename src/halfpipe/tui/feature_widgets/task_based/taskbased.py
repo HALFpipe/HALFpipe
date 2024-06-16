@@ -13,6 +13,7 @@ from textual.widgets.selection_list import Selection
 from ....collect.events import collect_events
 from ....ingest.events import ConditionFile
 from ....model.filter import FilterSchema
+from ...utils.context import ctx
 from ...utils.custom_switch import TextSwitch
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
@@ -135,16 +136,16 @@ class SwitchWithSelect(SwitchWithInputBox):
 
 
 class TaskBased(Widget):
-    def __init__(self, app, ctx, available_images, this_user_selection_dict, **kwargs) -> None:
+    def __init__(self, this_user_selection_dict, **kwargs) -> None:
         """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
         this_user_selection_dict is empty and the nested keys need some initialization. On the other
         hand, if a new widget is created automatically then this dictionary is not empty and these
         values are then used for the various widgets within this widget.
         """
         super().__init__(**kwargs)
-        self.top_parent = app
-        self.ctx = ctx
-        self.available_images = available_images
+        # self.top_parent = app
+        # self.ctx = ctx
+        # self.available_images = available_images
 
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
@@ -162,7 +163,7 @@ class TaskBased(Widget):
             self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
         if "grand_mean_scaling" not in self.setting_dict:
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
-        self.images_to_use = {"task": {task: False for task in self.available_images["task"]}}
+        self.images_to_use = {"task": {task: False for task in self.app.available_images["task"]}}
         for image in self.setting_dict["filters"][0]["values"]:
             self.images_to_use["task"][image] = True
 
@@ -243,7 +244,6 @@ class TaskBased(Widget):
                     id="bandpass_filter_hp_width",
                 )
             yield ModelConditionsAndContrasts(
-                self.top_parent,
                 all_possible_conditions,
                 feature_contrasts_dict=self.feature_dict["contrasts"],
                 id="model_conditions_and_constrasts",
@@ -353,11 +353,11 @@ class TaskBased(Widget):
                 "values": values,
             }
         )
-        return get_conditions(self.ctx, _filter)
+        return get_conditions(_filter)
 
 
-def get_conditions(ctx, _filter):
-    bold_file_paths = find_bold_file_paths(ctx, _filter)
+def get_conditions(_filter):
+    bold_file_paths = find_bold_file_paths(_filter)
 
     conditions: list[str] = list()
     seen = set()
@@ -379,7 +379,7 @@ def get_conditions(ctx, _filter):
     return conditions
 
 
-def find_bold_file_paths(ctx, _filter):
+def find_bold_file_paths(_filter):
     bold_file_paths = ctx.database.get(datatype="func", suffix="bold")
 
     if bold_file_paths is None:

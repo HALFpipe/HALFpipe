@@ -23,7 +23,6 @@ from .preprocessed_image_output.base import PreprocessedImageOutput
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
-from .utils.context import Context
 from .utils.draggable_modal_screen import DraggableModalScreen
 from .working_directory.base import WorkDirectory
 
@@ -227,7 +226,6 @@ class MainApp(App):
     ]
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
 
-    ctx = Context()
     available_images: dict = {}
     user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
     flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
@@ -245,29 +243,21 @@ class MainApp(App):
         yield MyHeader(id="header")
         with TabbedContent(id="tabs_manager"):
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
-                yield VerticalScroll(WorkDirectory(self, self.ctx, self.user_selections_dict, id="work_dir_content"))
+                yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
-                yield VerticalScroll(DataInput(self, self.ctx, self.available_images, id="input_data_content"))
+                yield VerticalScroll(DataInput(id="input_data_content"))
             with TabPane("General settings", id="misc_tab", classes="tabs"):
                 yield VerticalScroll(GeneralSettings(), id="misc_content")
             with TabPane("General preprocessing settings", id="preprocessing_tab", classes="tabs"):
                 yield VerticalScroll(Preprocessing(id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab", classes="tabs2 -hidden"):
-                yield VerticalScroll(
-                    FeatureSelection(
-                        self, self.ctx, self.available_images, self.user_selections_dict, id="feature_selection_content"
-                    )
-                )
+                yield VerticalScroll(FeatureSelection(id="feature_selection_content"))
             with TabPane("Output pre-processed image", id="preprocessed_output_tab", classes="tabs2"):
-                yield VerticalScroll(
-                    PreprocessedImageOutput(
-                        self, self.ctx, self.available_images, self.user_selections_dict, id="preprocessed_output_content"
-                    )
-                )
+                yield VerticalScroll(PreprocessedImageOutput(id="preprocessed_output_content"))
             with TabPane("Models", id="models_tab", classes="tabs"):
                 yield VerticalScroll(Placeholder(), id="models_content")
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(RunCLX(self, self.ctx, self.user_selections_dict), id="run_content")
+                yield VerticalScroll(RunCLX(self.user_selections_dict), id="run_content")
         yield Footer()
 
     def on_mount(self):
@@ -291,8 +281,9 @@ class MainApp(App):
             self.get_widget_by_id("tabs_manager").show_tab("preprocessed_output_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
             #       self.input_data_load_is_success = True
-            self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_encoding_direction")
-            self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_timing")
+
+    #      self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_encoding_direction")
+    #      self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_timing")
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""

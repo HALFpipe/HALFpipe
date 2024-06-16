@@ -13,6 +13,7 @@ from textual.widgets import Button, Input, Select, Static, Switch
 from ...ingest.metadata.direction import direction_code_str
 from ...ingest.metadata.slicetiming import slice_timing_str
 from ...model.file.func import BoldFileSchema
+from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
@@ -73,7 +74,7 @@ class SliceTimingModal(DraggableModalScreen):
 class Preprocessing(Widget):
     def __init__(self, disabled=False, **kwargs) -> None:
         super().__init__(**kwargs, disabled=disabled)
-        self.ctx = self.app.ctx
+        # self.ctx = self.app.ctx
         self.time_slicing_options = [
             "Sequential increasing (1, 2, ...)",
             "Sequential decreasing (... 2, 1)",
@@ -135,7 +136,7 @@ class Preprocessing(Widget):
         #  self.key = "slice_encoding_direction"
         self.key = key
         self._append_view = []
-        ctx = self.ctx
+        # ctx = self.ctx
         self.schema = BoldFileSchema
         self.show_summary = True
 

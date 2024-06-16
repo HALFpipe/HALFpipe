@@ -118,6 +118,9 @@ class SegmentHighlighting(Input):
         # copy this here, so that once we hit the reset button we get it back
         self.original_value = path
 
+    def update_colors_and_labels(self, new_colors_and_labels):
+        self.colors_and_labels = new_colors_and_labels
+
     @property
     def _value(self) -> Text:
         """Value rendered as text."""
@@ -268,6 +271,7 @@ class SegmentHighlighting(Input):
         # self.original_value = self.value
         self.reset_highlights()
         for start, end, color in sorted(highlights, reverse=False, key=lambda x: x[0]):
+            print("cccccccccccccccccc22222222222", self.colors_and_labels)
             label = self.colors_and_labels[color[3:]]
             # calculate by how much longer/shorter is the replacement string, this varies from label to label
             extra = len(label) + 2 - (end - start)
@@ -315,6 +319,9 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
         yield MyStatic("▼", classes="arrow down-arrow")
         yield MyStatic("▲", classes="arrow up-arrow")
 
+    def update_colors_and_labels(self, new_colors_and_labels):
+        self.get_widget_by_id("input_prompt").update_colors_and_labels(new_colors_and_labels)
+
 
 class InputWithColoredSuggestions(SelectOrInputPath):
     # Switches the Input class, in the standard one, there is MyInput(Input)
@@ -324,6 +331,9 @@ class InputWithColoredSuggestions(SelectOrInputPath):
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
         super().__init__(options=options, prompt_default=prompt_default, id=id, classes=classes)
         self.colors_and_labels = colors_and_labels
+
+    def on_mount(self):
+        self.input_class.get_widget_by_id(self, id="input_prompt").update_colors_and_labels(self.colors_and_labels)
 
     @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
