@@ -1,34 +1,25 @@
 
 
 Confirm {
-    #draggable_modal_screen_container_wrapper {
-        width: 40;
-        height: 10;
-        background: black;
-    }
-    Vertical {
 
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
-    }
     Static {
-         height: 3;
+         height: auto;
          content-align: center middle;
          text-style: bold;
 
       	text-align: center;
-      	width: 40 ;
+      	width: auto ;
       	margin: 1 1 1 1;
 
     }
 
     Horizontal{
-        height: 4;
+        height: auto;
+        width: 100%;
         align: right bottom;
-        offset-x: 2;
+        offset-x: 0;
         Button {
-            margin: 1;
+            margin: 0 1;
         }
     }
     .window_title {
@@ -38,7 +29,7 @@ Confirm {
 }
 
 .confirm_warning {
-    Vertical {
+    #draggable_modal_screen_container_wrapper {
         border-left: thick $warning;
         border-right: thick $warning;
         border-bottom: thick $warning;

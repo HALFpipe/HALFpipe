@@ -25,29 +25,75 @@ FileBrowserModal {
         width: 62;
         height: 35;
         background: black;
+        Horizontal{
+
+            height: auto;
+            width: 100%;
+            align: right bottom;
+            offset-x: 0;
+        Button {
+            margin: 0 1;
+        }
     }
+        .browse_tree {
+            height: 25;
+            padding: 0 1 0 1;
+            border-bottom: tall $accent;
+         }
+         #path_input_box2{
+             border: none;
+         }
+
+    SelectCurrentWithInput {
+        height: 3;
+        width: 100%;
+        margin: 0 0 0 0;
+        padding: 0 0 0 0;
+        border: none;
+        outline: tall $accent;
+        content-align: center bottom;
+        background: transparent;
+        MyInput {
+             border: tall white;
+         }
+    }
+    SelectCurrentWithInput MyInput#label {
+        width: 1fr;
+        height: 3;
+        color: $text-disabled;
+        background: transparent;
+        outline-top: $accent tall;
+        outline-bottom: $accent tall;
+        padding: 1;
+        border: none;
+
+    }
+
+    SelectCurrentWithInput .arrow {
+        box-sizing: content-box;
+
+        width: 1;
+        height: 2;
+        padding: -1 1 0 0;
+        margin: 1 1 1 -1;
+        color: red;
+        background: transparent;
+        content-align: center bottom;
+
+    }
+    }
+    /*
     #file_browser_screen{
         border: thick $accent;
         border-top: none;
         align: center top;
         width: 62;
         height: 29;
-        .browse_tree {
-            height: 20;
-            padding: 0 1 0 1;
-            border-bottom: tall $accent;
-         }
-        Grid {
-            border-top: tall $accent;
-            grid-size: 2;
-            grid-gutter: 1;
-            padding: 0 1 0 0;
-            .ok_button {
-                width: 100;
-            }
-        }
+
+
         Button {
             width: 100;
         }
     }
+    */
 }

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from textual import on
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal
 from textual.widgets import Button, Static
 
 from .draggable_modal_screen import DraggableModalScreen
@@ -19,6 +19,7 @@ class Confirm(DraggableModalScreen):
         title="",
         id: str | None = None,
         classes: str | None = None,
+        width=None,
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.text = text
@@ -28,6 +29,7 @@ class Confirm(DraggableModalScreen):
         self.right_button_variant = right_button_variant
 
         self.title_bar.title = title
+        print("IIIIIIIIIIINIT Sub Confirm")
 
     # def compose(self) -> ComposeResult:
     # yield Container(
@@ -42,22 +44,24 @@ class Confirm(DraggableModalScreen):
 
     def on_mount(self) -> None:
         self.content.mount(
-            Vertical(
-                Static(self.text, id="message"),
-                Horizontal(
-                    Button(self.left_button_text, variant=self.left_button_variant, classes="button ok"),
-                    Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel"),
-                    classes="button_grid",
-                ),
-                id="confirm_screen",
-            )
+            # VerticalScroll(
+            Static(self.text, id="message"),
+            Horizontal(
+                Button(self.left_button_text, variant=self.left_button_variant, classes="button ok"),
+                Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel"),
+                classes="button_grid",
+            ),
+            #    id="confirm_screen",
+            # )
         )
+        # self.content.add_class('
+        print("OOOOOOOOOOOOOOONmount Sub Confirm")
 
-    @on(Button.Pressed, "#confirm_screen .ok")
+    @on(Button.Pressed, ".button_grid .ok")
     def ok(self):
         self._confirm_window()
 
-    @on(Button.Pressed, "#confirm_screen .cancel")
+    @on(Button.Pressed, ".button_grid .cancel")
     def cancel(self):
         self._cancel_window()
 

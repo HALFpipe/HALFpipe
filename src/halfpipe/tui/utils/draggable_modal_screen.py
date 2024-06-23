@@ -16,7 +16,7 @@ class WindowTitleBar(Container):
     DEFAULT_CSS = """
         WindowTitleBar {
             layout: horizontal;
-            width: 100%;
+            width: auto;
             height: 3;
             background: $accent;
             color: auto;
@@ -95,21 +95,38 @@ class DraggableModalScreen(ModalScreen):
          }
 
         #draggable_modal_screen_container_wrapper {
-            width: 40;
-            height: 14;
-            background: white;
+            width: auto;
+            height: auto;
+            border-left: thick $accent;
+            border-right: thick $accent;
+            border-bottom: thick $accent;
         }
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.content = Container(classes="window_content")
         self.title_bar = WindowTitleBar()
+        self.content = Container(self.title_bar, id="draggable_modal_screen_container_wrapper", classes="window_content")
+
         # mouse_at_drag_start also servers as "is dragging"
         self.mouse_at_drag_start: Offset | None = None
+        print("IIIIIIIIIIINIT Super DraggableModalScreen")
 
     def compose(self) -> ComposeResult:
-        yield Container(self.title_bar, self.content, id="draggable_modal_screen_container_wrapper")
+        print(
+            "ssssssssssuper compose",
+        )
+        #  yield Container(self.title_bar, self.content, id="draggable_modal_screen_container_wrapper")
+        #      yield self.title_bar
+        yield self.content
+
+    def on_mount(self):
+        #  print('aaaaaaaaaaaaaa', self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.width)
+        #  print('aaaaaaaaaaaaaa', self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.height)
+        print("aaaaaaaaaaaaaa", self.content.styles.width)
+        print("aaaaaaaaaaaaaa", self.content.styles.height)
+        #    self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.width = 10
+        print("OOOOOOOOOOOOOOOOn mount Super DraggableModalScreen")
 
     def on_mouse_move(self, event: events.MouseMove) -> None:
         """Called when the user moves the mouse."""

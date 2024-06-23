@@ -12,7 +12,20 @@ height: 3;
 }
 }
 
+#check_meta_data_modal {
+    #message {
+         height: auto;
+         content-align: center middle;
+    }
+}
 
+
+
+#select_value_modal{
+    Input {
+
+    }
+}
 
 #title {
     content-align-horizontal: center;
@@ -77,29 +90,33 @@ QuitModal {
 
 SelectionModal {
     #draggable_modal_screen_container_wrapper {
-        width: 90;
-        height: 14;
+
         background: black;
     }
-    #top_container {
-        border: thick $accent;
-
-    }
     RadioSet {
-        height: 5;
-        width: 88;
+
+        height: auto;
+        width: auto;
     }
-    Horizontal {
-    align: right middle;
+    Horizontal{
+        height: auto;
+        width: 100%;
+        align: right bottom;
+        offset-x: 0;
+        Button {
+            margin: 0 1;
+        }
     }
-    Button {
-        margin: 0 1 1 1;
-    }
+
     #title {
-        height: 1;
         content-align: center middle;
         text-style: bold;
+         content-align: center middle;
+      	text-align: center;
+      	width: auto ;
+      	margin: 1 1 0 1;
     }
+
 }
 
 

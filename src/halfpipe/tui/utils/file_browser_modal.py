@@ -12,7 +12,7 @@ from typing import Iterable
 
 # from textual._input import _InputRenderable
 from textual import on
-from textual.containers import Container, Grid
+from textual.containers import Horizontal
 from textual.widgets import Button, DirectoryTree, Input
 
 from halfpipe.tui.utils.select_or_input_path import SelectOrInputPath, create_path_option_list
@@ -56,21 +56,18 @@ class FileBrowserModal(DraggableModalScreen):
     def on_mount(self) -> None:
         base = "/"
         self.content.mount(
-            Container(
-                FilteredDirectoryTree("/", classes="browse_tree", id="dir_tree"),
-                #     Input(placeholder="Set path to the " + self.path_to, id="path_input_box2"),
-                SelectOrInputPath(
-                    [(f, f) for f in create_path_option_list(base=base, include_base=True)],
-                    prompt_default=base,
-                    top_parent=self,
-                    id="path_input_box2",
-                ),
-                Grid(
-                    Button("Ok", classes="button ok"),
-                    Button("Cancel", classes="button cancel"),
-                ),
-                id="file_browser_screen",
-            )
+            FilteredDirectoryTree("/", classes="browse_tree", id="dir_tree"),
+            #     Input(placeholder="Set path to the " + self.path_to, id="path_input_box2"),
+            SelectOrInputPath(
+                [(f, f) for f in create_path_option_list(base=base, include_base=True)],
+                prompt_default=base,
+                top_parent=self,
+                id="path_input_box2",
+            ),
+            Horizontal(
+                Button("Ok", classes="button ok"),
+                Button("Cancel", classes="button cancel"),
+            ),
         )
 
     @on(SelectOrInputPath.PromptChanged)
@@ -115,11 +112,11 @@ class FileBrowserModal(DraggableModalScreen):
         print("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere???????????", self.get_widget_by_id("path_input_box2").value)
         self.selected_directory = self.get_widget_by_id("path_input_box2").value
 
-    @on(Button.Pressed, "#file_browser_screen .ok")
+    @on(Button.Pressed, ".ok")
     def ok(self):
         self._confirm_window()
 
-    @on(Button.Pressed, "#file_browser_screen .cancel")
+    @on(Button.Pressed, ".cancel")
     def cancel(self):
         self._cancel_window()
 
