@@ -65,3 +65,11 @@ class RunCLX(Widget):
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
+        # print('ccccccccccccccccccccccccccccccc ctx.spec.files', [f.path for f in ctx.spec.files])
+        # #try:
+        # print('1111111111ccccccccccccccccccccc', ctx.database.fromspecfileobj(ctx.spec.files[-1]))
+        # la =  ctx.database.fromspecfileobj(ctx.spec.files[-1])
+        # if la is not None:
+        # print('2222ccccccccccccccccccccccc',[f.path for f in ctx.database.fromspecfileobj(ctx.spec.files[-1])])
+        # #except:
+        # #   print('failed')
