@@ -1,0 +1,47 @@
+
+
+Confirm {
+
+    Static {
+         height: auto;
+         content-align: center middle;
+         text-style: bold;
+
+      	text-align: center;
+      	width: auto ;
+      	margin: 1 1 1 1;
+
+    }
+
+    Horizontal{
+        height: auto;
+        width: 100%;
+        align: right top;
+        offset-x: 0;
+        Button {
+            margin: 0 1;
+        }
+    }
+    .window_title {
+        height:auto;
+        text-align: left;
+    }
+}
+
+.confirm_warning {
+    #draggable_modal_screen_container_wrapper {
+        border-left: thick $warning;
+        border-right: thick $warning;
+        border-bottom: thick $warning;
+    }
+    WindowTitleBar {
+        background: $warning;
+    }
+    WindowTitleBar Button {
+        background: $warning;
+    }
+    .window_title {
+        color: black;
+        height:auto;
+    }
+}
