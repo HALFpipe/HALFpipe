@@ -16,7 +16,7 @@ Confirm {
     Horizontal{
         height: auto;
         width: 100%;
-        align: right bottom;
+        align: right top;
         offset-x: 0;
         Button {
             margin: 0 1;

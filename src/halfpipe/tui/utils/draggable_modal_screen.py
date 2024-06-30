@@ -110,23 +110,13 @@ class DraggableModalScreen(ModalScreen):
 
         # mouse_at_drag_start also servers as "is dragging"
         self.mouse_at_drag_start: Offset | None = None
-        print("IIIIIIIIIIINIT Super DraggableModalScreen")
+
+    # print("IIIIIIIIIIINIT Super DraggableModalScreen")
 
     def compose(self) -> ComposeResult:
-        print(
-            "ssssssssssuper compose",
-        )
         #  yield Container(self.title_bar, self.content, id="draggable_modal_screen_container_wrapper")
         #      yield self.title_bar
         yield self.content
-
-    def on_mount(self):
-        #  print('aaaaaaaaaaaaaa', self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.width)
-        #  print('aaaaaaaaaaaaaa', self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.height)
-        print("aaaaaaaaaaaaaa", self.content.styles.width)
-        print("aaaaaaaaaaaaaa", self.content.styles.height)
-        #    self.get_widget_by_id('draggable_modal_screen_container_wrapper').styles.width = 10
-        print("OOOOOOOOOOOOOOOOn mount Super DraggableModalScreen")
 
     def on_mouse_move(self, event: events.MouseMove) -> None:
         """Called when the user moves the mouse."""

@@ -23,32 +23,38 @@ class Confirm(DraggableModalScreen):
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.text = text
-        self.left_button_text = left_button_text
-        self.right_button_text = right_button_text
-        self.left_button_variant = left_button_variant
-        self.right_button_variant = right_button_variant
+        # self.left_button_text = left_button_text
+        # self.right_button_text = right_button_text
+        # self.left_button_variant = left_button_variant
+        # self.right_button_variant = right_button_variant
 
         self.title_bar.title = title
-        print("IIIIIIIIIIINIT Sub Confirm")
 
-    # def compose(self) -> ComposeResult:
-    # yield Container(
-    # Container(Label(self.text, id="message"), classes="message_container"),
-    # Grid(
-    # Button(self.left_button_text, variant="success", classes="button ok"),
-    # Button(self.right_button_text, variant="error", classes="button cancel"),
-    # classes="button_grid",
-    # ),
-    # id="confirm_screen",
-    # )
+        # this here allows to use the modal just with one button, either outputting True or False (left/right)
+        # use button_text = False to disable the button
+        active_incides = [i for i, val in enumerate([left_button_text, right_button_text]) if val is not False]
+        if len(active_incides) == 1:
+            active_index = active_incides[0]
+            self.buttons = [
+                Button(
+                    [left_button_text, right_button_text][active_index],
+                    variant=[left_button_variant, right_button_variant][active_index],
+                    classes=["button ok", "button cancel"][active_index],
+                )
+            ]
+        else:
+            self.buttons = [
+                Button(left_button_text, variant=left_button_variant, classes="button ok"),
+                Button(right_button_text, variant=right_button_variant, classes="button cancel"),
+            ]
+        print("IIIIIIIIIIINIT Sub Confirm", self.buttons)
 
     def on_mount(self) -> None:
         self.content.mount(
             # VerticalScroll(
             Static(self.text, id="message"),
             Horizontal(
-                Button(self.left_button_text, variant=self.left_button_variant, classes="button ok"),
-                Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel"),
+                *self.buttons,
                 classes="button_grid",
             ),
             #    id="confirm_screen",
