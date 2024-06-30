@@ -26,7 +26,11 @@ from ...model.tags import entity_longnames as entity_display_aliases
 from ...model.utils import get_schema_entities
 from ...utils.path import split_ext
 from ..utils.context import ctx
-from .meta_data_steps import CheckBoldPhaseEncodingDirectionStep, CheckMetadataStep, CheckPhaseDiffEchoTimeDiffStep
+from .meta_data_steps import (
+    CheckMetadataStep,
+    CheckPhaseDiffEchoTimeDiffStep,
+    CheckRepetitionTimeStep,
+)
 
 entity_colors = {
     "sub": "red",
@@ -336,11 +340,14 @@ class BoldStep(FilePatternStep):
     filetype_str = "BOLD image"
     filedict = {"datatype": "func", "suffix": "bold"}
 
-    # def __init__(self, app=None, path=""):
-    #     super().__init__(app=app, path=path)
+    next_step_type = CheckRepetitionTimeStep
 
-    # next_step_type = CheckBoldEffectiveEchoSpacingStep #ok
-    next_step_type = CheckBoldPhaseEncodingDirectionStep  # ok
 
+# testings:
+# def __init__(self, app=None, path=""):
+#     super().__init__(app=app, path=path)
+
+# next_step_type = CheckBoldEffectiveEchoSpacingStep #ok
+# next_step_type = CheckBoldPhaseEncodingDirectionStep  # ok
 
 #     return self.next_step_type(self.app)(ctx)

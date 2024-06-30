@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 from typing import ClassVar, Dict, Iterable, Optional, Type
 
@@ -171,7 +172,18 @@ class SliceTimingFileStep:
 
 
 class SetMetadataStep:
-    def __init__(self, filters, schema, key, suggestion, appendstr="", app=None):
+    def __init__(
+        self,
+        filters,
+        schema,
+        key,
+        suggestion,
+        appendstr="",
+        app=None,
+        next_step_type=None,
+        callback=None,
+        callback_message=None,
+    ):
         # super(SetMetadataStep, self).__init__(app)
 
         self.schema = schema
@@ -185,21 +197,28 @@ class SetMetadataStep:
         self._append_view: list[str] = []
         self.input_view: list[str] = []
         self.app = app
-        #      self.next_step_type = next_step_type
+        self.next_step_type = next_step_type
+        self.callback = callback
+        self.humankey = display_str(self.key)  # .lower()
 
+        self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
+        if callback_message is not None:
+            self.callback_message.update({self.humankey: []})
+
+    def run(self):
         #  def setup(self, _):
-        humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
         field = self.field
 
-        header_str = f"Specify {humankey}{self.appendstr}"
+        header_str = f"Specify {self.humankey}{self.appendstr}"
         if unit is not None and self.key != "slice_timing":
             header_str += f" in {unit}"
 
         self._append_view.append(header_str)
 
         self.aliases = {}
+        self.possible_options = None
 
         if field.validate is not None and hasattr(field.validate, "choices") or self.key == "slice_timing":
             choices = None
@@ -230,7 +249,7 @@ class SetMetadataStep:
                 display_choices = [display_str(choice) for choice in choices]
 
             self.aliases = dict(zip(display_choices, choices, strict=False))
-            possible_options = dict(zip(choices, display_choices, strict=False))
+            self.possible_options = dict(zip(choices, display_choices, strict=False))
 
             print("aaaaaaaaaaa self.aliases", self.aliases)
             #    self.input_view: CallableView = SingleChoiceInputView(display_choices, is_vertical=True)
@@ -241,13 +260,14 @@ class SetMetadataStep:
                 SelectionModal(
                     title="Select value",
                     instructions=header_str,
-                    options=possible_options,
+                    options=self.possible_options,
                     id="set_value_modal",
                 ),
                 self.next,
             )
 
             print("display_choicesdisplay_choices00aaaaaaaaaaaaaaaaaaaaaaaa", display_choices)
+            print("possible_optionspossible_optionspossible_optionspossible_options", self.possible_options)
 
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
@@ -267,6 +287,7 @@ class SetMetadataStep:
         # self._append_view(SpacerView(1))
         print("00aaaaaaaaaaaaaaaaaaaaaaaa", self._append_view)
         print("01aaaaaaaaaaaaaaaaaaaaaaaa", self.input_view)
+        return "finished"
 
     # def run(self, _):
     # self.result = self.input_view
@@ -275,7 +296,11 @@ class SetMetadataStep:
     # return True
 
     def next(self, result):
-        print("ccccccccccccccccccccccccccc", result)
+        print("ccccccccccccccccccccccccccc222", result)
+        if self.possible_options is not None:
+            self.callback_message[self.humankey] = [self.possible_options[result]]
+        else:
+            self.callback_message[self.humankey] = [result]
 
         if result is not None:
             key = self.key
@@ -312,9 +337,35 @@ class SetMetadataStep:
                 specfileobj.metadata[key] = value
         print("2aaaaaaaaaaaaaaaaaaaaaaaa", self._append_view)
         print("3aaaaaaaaaaaaaaaaaaaaaaaa", self.input_view)
+        #     self.callback_message += self._append_view
+
+        if self.next_step_type is not None:
+            self.next_step_instance = self.next_step_type(
+                app=self.app, callback=self.callback, callback_message=self.callback_message
+            )
+            self.next_step_instance.run()
+            # self.next_step_type(app=self.app)
+        else:
+            if self.callback is not None:
+                self.callback(self.callback_message)
+
+
+class SimpleTestClass:
+    test = "bla"
+
+    def __init__(self):
+        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated", self.test)
+
+
+class SubSimpleTestClass2(SimpleTestClass):
+    test = "alb"
+    # def __init__(self):
+    #   print('wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated', self.test)
 
 
 class CheckMetadataStep:
+    test = "bla"
+
     schema: ClassVar[Type[Schema]]
 
     key: ClassVar[str]
@@ -322,16 +373,24 @@ class CheckMetadataStep:
 
     filters: ClassVar[Optional[Dict[str, str]]] = None
 
-    next_step_type: None
+    next_step_type: Type[CheckMetadataStep] | None = None
 
     show_summary: ClassVar[bool] = True
 
     def _should_skip(self, _):
         return False
 
-    def __init__(self, app):
+    def __init__(self, app=None, callback=None, callback_message=None):
         # def setup(self, ctx):
+
         self.app = app
+        self.callback = callback
+        self.humankey = display_str(self.key)
+        self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
+        if callback_message is not None:
+            self.callback_message.update({self.humankey: []})
+        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated callback_message", callback_message, self.callback_message)
+
         self.is_first_run = True
         self.should_skip = self._should_skip(ctx)
         self.choice = None
@@ -341,9 +400,11 @@ class CheckMetadataStep:
             self.is_missing = True
             return
 
-        # def setup(self):
+    #   self.next_step_type = next_step_type
 
-        humankey = display_str(self.key)
+    def evaluate(self):
+        print("ssssssssssssssssssssselft", self)
+        #   print('ssssssssssssssssssssssssssssssss', self.next_step_type)
 
         if self.filters is None:
             filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
@@ -377,12 +438,13 @@ class CheckMetadataStep:
             self.is_missing = True
 
             if self.show_summary is True:
-                self._append_view.append(f"Missing {humankey} values\n")
+                self._append_view.append(f"Missing {self.humankey} values\n")
 
             vals = [val if val is not None else "missing" for val in vals]
         else:
             self.is_missing = False
-            self._append_view.append(f"Check {humankey} values{self.appendstr}\n")
+            self._append_view.append(f"Check {self.humankey} values{self.appendstr}\n")
+        #  self.evaluated_object = f"{self.humankey} values{self.appendstr}"
 
         assert isinstance(vals, list)
 
@@ -411,12 +473,13 @@ class CheckMetadataStep:
                 if uniquevals[i] != "missing":
                     tablerow = f"{tablerow} {unit}"
                 self._append_view.append(tablerow + "\n")
+                self.callback_message[self.humankey].append(tablerow + "\n")
             #           self._append_view(TextView(tablerow))
 
             if len(order) > 10:
                 self._append_view.append("...")
 
-        print("0000aaaaaaaaaaaa", self._append_view)
+        #   print("0000aaaaaaaaaaaa", self._append_view)
 
         if self.is_missing is False:
             self._append_view.append("Proceed with these values?")
@@ -428,54 +491,109 @@ class CheckMetadataStep:
             pass
             # self._append_view(SpacerView(1))
 
+    def run(self):
+        self.evaluate()
+
         # def run(self, _):
-        # if self.is_missing:
+        if self.is_missing:
+            # print('hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere')
+            self.app.push_screen(
+                Confirm(
+                    " ".join(self._append_view),
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Missing images",
+                    id="missing_images_modal",
+                    classes="confirm_warning",
+                ),
+                self.next,
+            )
+        # if self.callback is not None:
+        #    self.callback()
         # return self.is_first_run
         # else:
         # self.choice = self.input_view()
         # if self.choice is None:
         # return False
         # return True
+        else:
+            print("aaaaaaaaaaaa", self._append_view)
+            print("aaaaaaaaaaaa", self.input_view)
 
-        print("aaaaaaaaaaaa", self._append_view)
-        print("aaaaaaaaaaaa", self.input_view)
+            # rise modal here
+            self.app.push_screen(
+                Confirm(
+                    " ".join(self._append_view),
+                    left_button_text="YES",
+                    right_button_text="NO",
+                    left_button_variant="error",
+                    right_button_variant="success",
+                    title="Check meta data",
+                    id="check_meta_data_modal",
+                    classes="confirm_warning",
+                ),
+                self.next,
+            )
+        # self.app.message = self._append_view
 
-        # rise modal here
-        self.app.push_screen(
-            Confirm(
-                " ".join(self._append_view),
-                left_button_text="YES",
-                right_button_text="NO",
-                left_button_variant="error",
-                right_button_variant="success",
-                title="Check meta data",
-                id="check_meta_data_modal",
-                classes="confirm_warning",
-            ),
-            self.next,
-        )
-
-    # return self._append_view
+    # return 'finished'
 
     def next(self, choice):
         # if self.is_first_run or not self.is_missing:
         # self.is_first_run = False
         # choice = 'No'
+        print("self.callback_messageself.callback_messageself.callback_message", self.callback_message)
+
+        self.test_text = "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas at next"
         print("cccccccccccccccccchoice", choice)
-        if choice is True:
-            pass
+        #     self.callback_message += self._append_view[1:-1]
+        if choice is True and self.next_step_type is not None:
+            print(" choice is True *********************************************************************")
+            next_step_instance = self.next_step_type(
+                app=self.app, callback=self.callback, callback_message=self.callback_message
+            )
+            next_step_instance.run()
+        # pass
+        # this is not correct, should try to trigger next step maybe...........................................
+        #  if self.next_step_type is not None:
+        #  self.next_step_type(app=self.app)
         # assert self.next_step_type is not None
         # return self.next_step_type(self.app)(ctx)
+        elif choice is True and self.next_step_type is None:
+            self.callback(self.callback_message)
         elif choice is False:
-            SetMetadataStep(
+            print(" choice is False xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx SetMetadataStepSetMetadataStepSetMetadataStep")
+            set_instance_step = SetMetadataStep(
                 self.filters,
                 self.schema,
                 self.key,
                 self.suggestion,
-                #        self.next_step_type,
                 appendstr=self.appendstr,
                 app=self.app,
+                next_step_type=self.next_step_type,
+                callback=self.callback,
+                callback_message=self.callback_message,
             )
+            set_instance_step.run()
+
+    # # def test(self):
+    # # print( 'ggggggggggggggggggggggg')
+
+    # return self._append_view
+
+
+class SubSimpleTestClass(CheckMetadataStep):
+    test = "alb"
+    # def __init__(self):
+    #   print('wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated', self.test)
+
+    # # def setup(self):
+    # self.test_text = '00000000000000000000000000000000000000'
+    # print('cccccccccccccccccccccccccccreating class')
+    # print(self.next_step_type)
+    #    self.run()
 
 
 class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
@@ -524,3 +642,165 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
         filepaths = [*ctx.database.get(**filedict)]
         suffixvalset = ctx.database.tagvalset("suffix", filepaths=filepaths)
         return suffixvalset.isdisjoint(["phase1", "phase2", "phasediff"])
+
+
+class CheckRepetitionTimeStep(CheckMetadataStep):
+    key = "repetition_time"
+
+    filetype_str = "BOLD image"
+    filedict = {"datatype": "func", "suffix": "bold"}
+    schema = BoldFileSchema
+
+
+# TODO ASAP
+"""
+class AcqToTaskMappingStep:
+    def setup(self):
+        self.is_first_run = True
+
+        self.result = None
+
+        fmapfilepaths = ctx.database.get(**filedict)
+        fmaptags = sorted(
+            set(
+                frozenset(
+                    (k, v)
+                    for k, v in ctx.database.tags(f).items()
+                    if k not in ["sub", "dir"] and k in entities and v is not None
+                )
+                for f in fmapfilepaths
+            )
+        )
+        self.fmaptags = fmaptags
+
+        boldfilepaths = ctx.database.get(**bold_filedict)
+        boldtags = sorted(
+            set(
+                frozenset(
+                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                )
+                for f in boldfilepaths
+            )
+        )
+        self.boldtags = boldtags
+
+        if len(fmaptags) > 0:
+
+            def _format_tags(tagset):
+                tagdict = dict(tagset)
+                return ", ".join(
+                    (f'{e} "{tagdict[e]}"' if e not in entity_longnames else f'{entity_longnames[e]} "{tagdict[e]}"')
+                    for e in entities
+                    if e in tagdict and tagdict[e] is not None
+                )
+
+            self.is_predefined = False
+            self._append_view(TextView("Assign field maps to functional images"))
+
+            self.options = [_format_tags(t).capitalize() for t in boldtags]
+            self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
+            selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
+
+            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values], selected_indices=selected_indices)
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+        else:
+            self.is_predefined = True
+
+    def run(self, ctx):
+        if self.is_predefined:
+            return self.is_first_run
+        else:
+            self.result = self.input_view()
+            if self.result is None:
+                return False
+            return True
+
+    def next(self, ctx):
+        if self.result is not None:
+            bold_fmap_tag_dict = {
+                boldtagset: self.fmaptags[self.values.index(self.result[option])]
+                for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+            }
+
+            fmap_bold_tag_dict = dict()
+            for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
+                if fmaptagset not in fmap_bold_tag_dict:
+                    fmap_bold_tag_dict[fmaptagset] = boldtagset
+                else:
+                    fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
+
+            for specfileobj in ctx.spec.files:
+                if specfileobj.datatype != "fmap":
+                    continue
+
+                fmaplist = ctx.database.fromspecfileobj(specfileobj)
+
+                fmaptags = set(
+                    frozenset(
+                        (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                    )
+                    for f in map(attrgetter("path"), fmaplist)
+                )
+
+                def _expand_fmaptags(tagset):
+                    if any(a == "acq" for a, _ in tagset):
+                        return tagset
+                    else:
+                        return tagset | frozenset([("acq", "null")])
+
+                mappings = set(
+                    (a, b)
+                    for fmap in fmaptags
+                    for a, b in product(
+                        fmap_bold_tag_dict.get(fmap, list()),
+                        _expand_fmaptags(fmap),
+                    )
+                    if a[0] != b[0] and "sub" not in (a[0], b[0])
+                )
+
+                intended_for: dict[str, list[str]] = dict()
+                for functag, fmaptag in mappings:
+                    entity, val = functag
+                    funcstr = f"{entity}.{val}"
+                    entity, val = fmaptag
+                    fmapstr = f"{entity}.{val}"
+                    if fmapstr not in intended_for:
+                        intended_for[fmapstr] = list()
+                    intended_for[fmapstr].append(funcstr)
+
+                specfileobj.intended_for = intended_for
+
+        if self.is_first_run or not self.is_predefined:
+            self.is_first_run = False
+            return CheckBoldEffectiveEchoSpacingStep(self.app)(ctx)
+"""
+
+
+class CheckBoldSliceTimingStep(CheckMetadataStep):
+    schema = BoldFileSchema
+    filetype_str = "BOLD image"
+    key = "slice_timing"
+    filters = {"datatype": "func", "suffix": "bold"}
+
+    def _should_skip(self, ctx):
+        if self.key in ctx.already_checked:
+            return True
+        ctx.already_checked.add(self.key)
+        return False
+
+
+class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
+    schema = BoldFileSchema
+    filetype_str = "BOLD image"
+    key = "slice_encoding_direction"
+    filters = {"datatype": "func", "suffix": "bold"}
+
+    next_step_type = CheckBoldSliceTimingStep
+
+    def _should_skip(self, ctx):
+        if self.key in ctx.already_checked:
+            return True
+        ctx.already_checked.add(self.key)
+        return False
