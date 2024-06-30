@@ -18,7 +18,6 @@ from textual.widgets._header import HeaderTitle
 
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
-from .general_settings.base import GeneralSettings
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
@@ -245,8 +244,8 @@ class MainApp(App):
                 yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
                 yield VerticalScroll(DataInput(id="input_data_content"))
-            with TabPane("General settings", id="misc_tab", classes="tabs"):
-                yield VerticalScroll(GeneralSettings(), id="misc_content")
+            #   with TabPane("General settings", id="misc_tab", classes="tabs"):
+            #       yield VerticalScroll(GeneralSettings(), id="misc_content")
             with TabPane("General preprocessing settings", id="preprocessing_tab", classes="tabs"):
                 yield VerticalScroll(Preprocessing(id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab", classes="tabs2 -hidden"):

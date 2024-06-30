@@ -11,9 +11,15 @@ Preprocessing:disabled {
 Preprocessing {
     align: center middle;
     height: auto;
-
+    #functional_settings {
+        height: 7;
+    }
+    #anatomical_settings {
+        height: auto;
+    }
     #slice_timing {
-
+        offset-y: 1;
+        width: auto;
     }
     .timing_setting_panels {
         align: center middle;
@@ -40,6 +46,7 @@ Preprocessing {
 
     #remove_initial_volumes {
        height: auto;
+       width: auto;
        Static {
 
        }

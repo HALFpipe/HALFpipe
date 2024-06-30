@@ -94,161 +94,54 @@ class Preprocessing(Widget):
 
     def compose(self) -> ComposeResult:
         yield Container(
-            Horizontal(
-                Static("Turn on slice timing", classes="description_labels"),
-                TextSwitch(value=False, id="time_slicing_switch"),
+            Container(
+                Horizontal(
+                    Static("Turn on slice timing", classes="description_labels"),
+                    TextSwitch(value=False, id="time_slicing_switch"),
+                ),
+                Static("", id="slice_timming_info"),
+                id="slice_timing",
+                classes="components",
             ),
-            Static("", id="slice_timming_info"),
-            # Horizontal(
-            # Static("Slice timing", classes="label"),
-            # Select([(str(value), value) for value in self.time_slicing_options], id="select_slice_timing"),
-            # id="select_slice_timing_panel",
-            # classes="timing_setting_panels",
-            # ),
-            # Horizontal(
-            # Static("Slice direction", classes="label"),
-            # Select([(str(value), value) for value in self.slice_acquisition_direction], id="select_slice_direction"),
-            # id="select_slice_direction_panel",
-            # classes="timing_setting_panels",
-            # ),
-            id="slice_timing",
+            Vertical(
+                Horizontal(
+                    Static("Detect non-steady-state via algorithm", classes="description_labels"),
+                    TextSwitch(False, id="via_algorithm_switch"),
+                ),
+                Horizontal(
+                    Static(
+                        "Remove initial volumes from scans",
+                        id="manualy_set_volumes_to_remove_label",
+                        classes="description_labels",
+                    ),
+                    Static("0", id="remove_volumes_value"),
+                    Button("🖌", id="edit_button", classes="icon_buttons"),
+                    id="manualy_set_volumes_to_remove",
+                ),
+                id="remove_initial_volumes",
+                classes="components",
+            ),
+            id="anatomical_settings",
             classes="components",
         )
-        yield Vertical(
+        yield Container(
             Horizontal(
-                Static("Detect non-steady-state via algorithm", classes="description_labels"),
-                TextSwitch(False, id="via_algorithm_switch"),
+                Static("Run recon all", classes="description_labels"),
+                TextSwitch(value=False, id="run_recon_all"),
             ),
-            Horizontal(
-                Static(
-                    "Remove initial volumes from scans", id="manualy_set_volumes_to_remove_label", classes="description_labels"
-                ),
-                Static("0", id="remove_volumes_value"),
-                Button("🖌", id="edit_button", classes="icon_buttons"),
-                id="manualy_set_volumes_to_remove",
-            ),
-            id="remove_initial_volumes",
+            id="functional_settings",
             classes="components",
         )
 
     def on_mount(self) -> None:
         self.get_widget_by_id("slice_timing").border_title = "Slice timing"
+        self.get_widget_by_id("anatomical_settings").border_title = "Anatomical settings"
+        self.get_widget_by_id("functional_settings").border_title = "Functional settings"
         self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
         #  self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "hidden"
         #  self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timing").styles.height = "5"
-
-    # def check_meta_data(self, key="slice_encoding_direction") -> None:
-    # #  self.key = "slice_encoding_direction"
-    # self.key = key
-    # self._append_view = []
-    # # ctx = self.ctx
-    # self.schema = BoldFileSchema
-    # self.show_summary = True
-
-    # def _get_unit(schema, key):
-    # field = _get_field(schema, key)
-    # if field is not None:
-    # return field.metadata.get("unit")
-
-    # def _get_field(schema, key):
-    # if isinstance(schema, type):
-    # instance = schema()
-    # else:
-    # instance = schema
-    # if "metadata" in instance.fields:
-    # return _get_field(instance.fields["metadata"].nested, key)
-    # return instance.fields.get(key)
-
-    # def display_str(x):
-    # if x == "MNI152NLin6Asym":
-    # return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
-    # elif x == "MNI152NLin2009cAsym":
-    # return "MNI ICBM 2009c Nonlinear Asymmetric"
-    # elif x == "slice_encoding_direction":
-    # return "slice acquisition direction"
-    # return humanize(x)
-
-    # filedict = {"datatype": "func", "suffix": "bold"}
-
-    # self.filters = filedict
-    # self.appendstr = ""
-
-    # humankey = display_str(self.key).lower()
-
-    # if self.filters is None:
-    # filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
-    # else:
-    # filepaths = [*ctx.database.get(**self.filters)]
-
-    # ctx.database.fillmetadata(self.key, filepaths)
-
-    # vals = [ctx.database.metadata(filepath, self.key) for filepath in filepaths]
-    # self.suggestion = None
-
-    # if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:
-    # for i, val in enumerate(vals):
-    # if val is not None:
-    # vals[i] = direction_code_str(val, filepaths[i])
-
-    # elif self.key == "slice_timing":
-    # for i, val in enumerate(vals):
-    # if val is not None:
-    # sts = slice_timing_str(val)
-    # if "unknown" in sts:
-    # val = np.array(val)
-    # sts = np.array2string(val, max_line_width=256)
-    # if len(sts) > 128:
-    # sts = f"{sts[:128]}..."
-    # else:
-    # sts = humanize(sts)
-    # vals[i] = sts
-
-    # if any(val is None for val in vals):
-    # self.is_missing = True
-
-    # if self.show_summary is True:
-    # print(f"Missing {humankey} values")
-
-    # vals = [val if val is not None else "missing" for val in vals]
-    # else:
-    # self.is_missing = False
-    # print(f"Check {humankey} values{self.appendstr}")
-    # ##########################
-    # uniquevals, counts = np.unique(vals, return_counts=True)
-    # order = np.argsort(counts)
-
-    # column1 = []
-    # for i in range(min(10, len(order))):
-    # column1.append(f"{counts[i]} images")
-    # column1width = max(len(s) for s in column1)
-
-    # unit = _get_unit(self.schema, self.key)
-    # if unit is None:
-    # unit = ""
-
-    # if self.key == "slice_timing":
-    # unit = ""
-
-    # if self.show_summary is True:
-    # for i in range(min(10, len(order))):
-    # display = display_str(f"{uniquevals[i]}")
-    # if self.suggestion is None:
-    # self.suggestion = display
-    # tablerow = f" {column1[i]:>{column1width}} - {display}"
-    # if uniquevals[i] != "missing":
-    # tablerow = f"{tablerow} {unit}"
-    # self._append_view.append((tablerow))
-
-    # if len(order) > 10:
-    # self._append_view.append(("..."))
-
-    # print(self._append_view)
-    # if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:
-    # self.slice_encoding_direction_message = " ".join(self._append_view)
-    # if self.key == "slice_timing":
-    # self.slice_timing_message = " ".join(self._append_view)
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
@@ -263,6 +156,10 @@ class Preprocessing(Widget):
             self.get_widget_by_id("edit_button").styles.visibility = "visible"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "visible"
 
+    @on(Switch.Changed, "#run_recon_all")
+    def on_run_recon_all_switch_changed(self, event):
+        ctx.spec.global_settings["run_reconall"] = event.value
+
     @on(Switch.Changed, "#time_slicing_switch")
     async def on_time_slicing_switch_changed(self, message):
         if message.value is True:
@@ -270,31 +167,12 @@ class Preprocessing(Widget):
             self.get_widget_by_id("slice_timing").styles.height = "auto"
 
             ctx.spec.global_settings["slice_timing"] = True
-            print("iiiiiiiiiiiiiiiii am here again")
-            # try:
-            # metadata_step_instance.test()
-            # print(metadata_step_instance, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeexists')
-            # except:
-            # print('ddddddddddddddddddddddddddddddddddddoes not exist')
-            # metadata_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, next_step_type=CheckBoldSliceTimingStep)
-            # metadata_step_instance.__init__(self.app, next_step_type=CheckBoldSliceTimingStep)
-            #   await asyncio.create_task(self.trigger_metadata_step())
-            # meta_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, next_step_type=CheckBoldSliceTimingStep)
 
-            #  next_step_instance = CheckBoldSliceTimingStep()
             meta_step_instance = CheckBoldSliceEncodingDirectionStep(
                 self.app, callback=self.callback_func
             )  # , next_step_type=next_step_instance)
             #   SubSimpleTestClass()
             meta_step_instance.run()
-            # if result == 'finished':
-            # print('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrresult', result)
-            # next_step_instance = CheckBoldSliceTimingStep(self.app)
-            # next_step_instance.run()
-            # meta_step_instance = CheckBoldSliceTimingStep(self.app)
-        #   #meta_step_instance.run()
-        #   await self.trigger_metadata_step(CheckBoldSliceEncodingDirectionStep)
-        #    self.trigger_metadata_step2(CheckBoldSliceTimingStep)
 
         else:
             ctx.spec.global_settings["slice_timing"] = False
@@ -308,22 +186,6 @@ class Preprocessing(Widget):
             info_string += key + ": " + " ".join(message_dict[key]) + "\n"
 
         self.get_widget_by_id("slice_timming_info").update(info_string)
-
-    # async def trigger_metadata_step(self):
-    # meta_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, next_step_type=CheckBoldSliceTimingStep)
-    # await meta_step_instance.run()
-    # asyncio.get_event_loop().set_debug(True)
-    # return True
-    # def _update_slicing_direction(value):
-    # if self.slice_timing_message != "":
-    # self.app.push_screen(
-    # FalseInputWarning(
-    # warning_message="Missing slice timing values" + self.slice_timing_message,
-    # title="Missing values!",
-    # id="missing_time_slice_vals_warn_modal",
-    # classes="error_modal",
-    # )
-    # )
 
     # slice_direction_widget = self.get_widget_by_id("select_slice_direction")
     # if value:
