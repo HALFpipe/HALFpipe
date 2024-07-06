@@ -28,6 +28,8 @@ from ...utils.path import split_ext
 from ..utils.context import ctx
 from .meta_data_steps import (
     CheckMetadataStep,
+    CheckPhase1EchoTimeStep,
+    CheckPhase2EchoTimeStep,
     CheckPhaseDiffEchoTimeDiffStep,
     CheckRepetitionTimeStep,
 )
@@ -72,12 +74,17 @@ class FilePatternStep:
     schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
     next_step_type: None | type[CheckMetadataStep] = None
 
-    def __init__(self, path="", app=None):
+    def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
         self.entities = get_schema_entities(self.schema)  # Assumes a function to extract schema entities
         self.path = path
         self.app = app
         # setup
         self.fileobj: File | None = None
+
+        self.callback = callback
+        self.callback_message = callback_message  # if callback_message is not None else {self.filetype_str: []}
+        # if callback_message is not None:
+        #     self.callback_message.update({self.filetype_str: []})
 
         schema_entities = get_schema_entities(self.schema)
         schema_entities = [entity for entity in reversed(entities) if entity in schema_entities]  # keep order
@@ -86,6 +93,7 @@ class FilePatternStep:
             (self.entity_display_aliases[entity] if entity in self.entity_display_aliases else entity)
             for entity in schema_entities
         ]
+        self.id_key = id_key
 
         # need original entities for this
         self.entity_colors_list = [entity_colors[entity] for entity in schema_entities]
@@ -138,9 +146,18 @@ class FilePatternStep:
         # next
         ctx.spec.files.append(self.fileobj)
         ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
+        ctx.cache[self.id_key]["files"][self.filetype_str] = filedict
 
+        print("heeeeeeeeeeeeeeeeeeeeeeereeeeeeeeeeeeeeeeeeeeeeeeeee", self.next_step_type)
         if self.next_step_type is not None:
-            self.next_step_type(self.app)
+            self.next_step_instance = self.next_step_type(
+                app=self.app,
+                callback=self.callback,
+                callback_message=self.callback_message,
+                id_key=self.id_key,
+                sub_id_key=self.filetype_str,
+            )
+            self.next_step_instance.run()
 
 
 class AnatStep(FilePatternStep):
@@ -241,10 +258,6 @@ class FmapFilePatternStep(FilePatternStep):
     filedict = {"datatype": "fmap"}
 
 
-# def __init__(self, app=None, path=""):
-#    super().__init__(path=path, app=app)
-
-
 class FieldMapStep(FmapFilePatternStep):
     required_in_path_entities = ["subject"]
     header_str = "Path pattern of the field map image"
@@ -264,8 +277,6 @@ class EPIStep(FmapFilePatternStep):
     schema = EPIFmapFileSchema
     filedict = {**FmapFilePatternStep.filedict, "suffix": "epi"}
 
-    # next_step_type = HasMoreFmapStep
-
 
 class Magnitude1Step(FmapFilePatternStep):
     header_str = "Path pattern of first set of magnitude image"
@@ -274,8 +285,6 @@ class Magnitude1Step(FmapFilePatternStep):
     filetype_str = "first set of magnitude image"
     filedict = {**FmapFilePatternStep.filedict, "suffix": "magnitude1"}
     schema = BaseFmapFileSchema
-
-    # #next_step_type = m_next_step_type
 
 
 class Magnitude2Step(FmapFilePatternStep):
@@ -297,9 +306,7 @@ class Phase1Step(FmapFilePatternStep):
     filedict = {**FmapFilePatternStep.filedict, "suffix": "phase1"}
     schema = PhaseFmapFileSchema
 
-
-# next_step_type = CheckPhase1EchoTimeStep #ok
-# next_step_type = CheckBoldPhaseEncodingDirectionStep #ok
+    next_step_type = CheckPhase1EchoTimeStep
 
 
 class Phase2Step(FmapFilePatternStep):
@@ -309,8 +316,8 @@ class Phase2Step(FmapFilePatternStep):
     filetype_str = "second set of phase image"
     filedict = {**FmapFilePatternStep.filedict, "suffix": "phase2"}
     schema = PhaseFmapFileSchema
-    # next_step_type = CheckBoldEffectiveEchoSpacingStep #todo
-    # next_step_type = CheckPhase2EchoTimeStep
+
+    next_step_type = CheckPhase2EchoTimeStep
 
 
 class PhaseDiffStep(FmapFilePatternStep):
@@ -321,14 +328,7 @@ class PhaseDiffStep(FmapFilePatternStep):
     filedict = {**FmapFilePatternStep.filedict, "suffix": "phasediff"}
     schema = PhaseDiffFmapFileSchema
 
-    #   next_step_type = CheckPhaseDiffEchoTimeDiffStep #ok
-    #  next_step_type = CheckBoldEffectiveEchoSpacingStep #ok
-    # next_step_type = CheckPhase1EchoTimeStep #ok
-    next_step_type = CheckPhaseDiffEchoTimeDiffStep  # ok
-    # next_step_type = CheckBoldEffectiveEchoSpacingStep #ok
-
-
-#  next_step_type = CheckBoldPhaseEncodingDirectionStep #ok
+    next_step_type = CheckPhaseDiffEchoTimeDiffStep
 
 
 class BoldStep(FilePatternStep):
@@ -341,13 +341,3 @@ class BoldStep(FilePatternStep):
     filedict = {"datatype": "func", "suffix": "bold"}
 
     next_step_type = CheckRepetitionTimeStep
-
-
-# testings:
-# def __init__(self, app=None, path=""):
-#     super().__init__(app=app, path=path)
-
-# next_step_type = CheckBoldEffectiveEchoSpacingStep #ok
-# next_step_type = CheckBoldPhaseEncodingDirectionStep  # ok
-
-#     return self.next_step_type(self.app)(ctx)

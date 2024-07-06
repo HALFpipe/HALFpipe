@@ -18,11 +18,12 @@ from ..utils.context import ctx
 
 
 class RunCLX(Widget):
-    def __init__(self, user_selections_dict, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         #  self.top_parent = app
         #  self.ctx = ctx
-        self.user_selections_dict = user_selections_dict
+
+    #  ctx.cache = user_selections_dict
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer():
@@ -36,31 +37,32 @@ class RunCLX(Widget):
         )
 
     def dump_dict_to_contex(self):
+        print("ccccccccccccccccccc", ctx.cache)
         ctx.spec.features.clear()
         ctx.spec.settings.clear()
-        print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", self.user_selections_dict)
-        for name in self.user_selections_dict:
+        print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", ctx.cache)
+        for name in ctx.cache:
             if name != "files":
                 # for preprocessed image output there are no features, thus the dict is empty
-                if self.user_selections_dict[name]["features"] != {}:
-                    featureobj = Feature(name=name, type=self.user_selections_dict[name]["features"]["type"])
+                if ctx.cache[name]["features"] != {}:
+                    featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                     ctx.spec.features.append(featureobj)
                 # for settings
                 settingdict: dict = {}
                 setting = {**settingdict}
-                setting["name"] = self.user_selections_dict[name]["settings"]["name"]
+                setting["name"] = ctx.cache[name]["settings"]["name"]
                 ctx.spec.settings.append(SettingSchema().load(setting, partial=True))
                 # here it is ok, because since it is empty, there are no iterations
-                for key in self.user_selections_dict[name]["features"]:
+                for key in ctx.cache[name]["features"]:
                     try:
-                        setattr(ctx.spec.features[-1], key, self.user_selections_dict[name]["features"][key])
+                        setattr(ctx.spec.features[-1], key, ctx.cache[name]["features"][key])
                     except Exception:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
-                for key in self.user_selections_dict[name]["settings"]:
+                for key in ctx.cache[name]["settings"]:
                     try:
-                        setattr(ctx.spec.settings[-1], key, self.user_selections_dict[name]["settings"][key])
+                        setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
                     except Exception:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")

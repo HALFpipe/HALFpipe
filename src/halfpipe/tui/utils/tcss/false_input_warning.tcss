@@ -1,36 +1,31 @@
 FalseInputWarning {
- #draggable_modal_screen_container_wrapper {
-        width: 40;
-        height: 10;
-        background: black;
-    }
     Vertical {
-        height: 9;
+        height: auto;
+        width: auto;
         background: $surface;
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
     }
     Static {
-         height: 3;
+         height: auto;
          content-align: center middle;
          text-style: bold;
 
       	text-align: center;
-      	width: 37;
-      	margin: 1 0 0 1;
+      	width: auto ;
+      	margin: 1 1 1 1;
 
     }
 
     Horizontal{
-        height: 4;
-        align: center bottom;
-        offset-x: 2;
+        height: auto;
+        width: 100%;
+        align: right top;
+        offset-x: 0;
         Button {
-            margin: 1;
+            margin: 0 1;
         }
     }
     .window_title {
+        height:auto;
         text-align: left;
     }
 

@@ -2,7 +2,7 @@
 from typing import List
 
 from textual import on
-from textual.containers import Container, Horizontal
+from textual.containers import Horizontal
 from textual.widgets import Button, RadioButton, RadioSet, Static
 
 from ..utils.draggable_modal_screen import DraggableModalScreen
@@ -15,6 +15,11 @@ class SelectionModal(DraggableModalScreen):
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
         self.options = {"a": "A", "b": "B"} if options is None else options
+        self.widgets_to_mount = [
+            Static(self.instructions, id="title"),
+            RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
+            Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
+        ]
         # self.container_to_mount = Container(
         # Static(self.instructions, id="title"),
         # RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
@@ -25,11 +30,12 @@ class SelectionModal(DraggableModalScreen):
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
-        self.content.mount(
-            Static(self.instructions, id="title"),
-            RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
-            Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-        )
+        self.content.mount(*self.widgets_to_mount)
+        # self.content.mount(
+        # Static(self.instructions, id="title"),
+        # RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
+        # Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
+        # )
 
     @on(Button.Pressed, "#ok")
     def _on_ok_button_pressed(self):
@@ -51,14 +57,14 @@ class DoubleSelectionModal(SelectionModal):
         self.instructions = instructions
         self.options = options
         self.choice: List[str] = ["default_choice??? todo", "1"]
-        self.container_to_mount = Container(
+        self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
             RadioSet(*[RadioButton(self.options[0][key]) for key in self.options[0]], id="radio_set_0"),
             Static(self.instructions[1], id="title_1"),
             RadioSet(*[RadioButton(self.options[1][key]) for key in self.options[1]], id="radio_set_1"),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-            id="top_container",
-        )
+            #  id="top_container",
+        ]
 
     def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.control.id == "radio_set_0":

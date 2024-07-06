@@ -11,6 +11,7 @@ from textual.widgets import Button, ContentSwitcher, Input, Label, ListItem, Lis
 from textual.widgets.option_list import Option, Separator
 
 from ..utils.confirm_screen import Confirm
+from ..utils.context import ctx
 from ..utils.false_input_warning_screen import FalseInputWarning
 from .task_based.preprocessed_image_output import PreprocessedOutputOptions
 from .task_based.taskbased import TaskBased
@@ -144,7 +145,7 @@ class FeatureSelection(Widget):
         # self.top_parent = app
         #   self.ctx = ctx
         # self.available_images = available_images
-        #    self.app.user_selections_dict = user_selections_dict
+        #    ctx.cache = user_selections_dict
         self._id_counter = 0
         self.feature_items: dict = {}
 
@@ -199,10 +200,10 @@ class FeatureSelection(Widget):
                     FEATURES_MAP[self.feature_items[currently_selected_id].type],
                     old_feature_name,
                 )
-                self.app.user_selections_dict[new_feature_name] = self.app.user_selections_dict.pop(old_feature_name)
-                self.app.user_selections_dict[new_feature_name]["features"]["name"] = new_feature_name
-                self.app.user_selections_dict[new_feature_name]["features"]["setting"] = new_feature_name + "Setting"
-                self.app.user_selections_dict[new_feature_name]["settings"]["name"] = new_feature_name + "Setting"
+                ctx.cache[new_feature_name] = ctx.cache.pop(old_feature_name)
+                ctx.cache[new_feature_name]["features"]["name"] = new_feature_name
+                ctx.cache[new_feature_name]["features"]["setting"] = new_feature_name + "Setting"
+                ctx.cache[new_feature_name]["settings"]["name"] = new_feature_name + "Setting"
 
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
         await self.app.push_screen(
@@ -243,23 +244,23 @@ class FeatureSelection(Widget):
                 classes="items",
             )
             # this dictionary will contain all made choices
-            if feature_name not in self.app.user_selections_dict:
+            if feature_name not in ctx.cache:
                 if feature_type != "preprocessed_image":
-                    self.app.user_selections_dict[feature_name]["features"]["name"] = feature_name
-                    self.app.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
-                    self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
+                    ctx.cache[feature_name]["features"]["name"] = feature_name
+                    ctx.cache[feature_name]["features"]["setting"] = feature_name + "Setting"
+                    ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
                 else:
-                    self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
-                    self.app.user_selections_dict[feature_name]["settings"]["output_image"] = True
+                    ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
+                    ctx.cache[feature_name]["settings"]["output_image"] = True
             if feature_type == "task_based":
                 new_content_item = TaskBased(
-                    this_user_selection_dict=self.app.user_selections_dict[feature_name],
+                    this_user_selection_dict=ctx.cache[feature_name],
                     id=new_id,
                     classes=feature_type,
                 )
             elif feature_type == "preprocessed_image":
                 new_content_item = PreprocessedOutputOptions(
-                    this_user_selection_dict=self.app.user_selections_dict[feature_name],
+                    this_user_selection_dict=ctx.cache[feature_name],
                     id=new_id,
                     classes=feature_type,
                 )
@@ -280,7 +281,7 @@ class FeatureSelection(Widget):
     # In the preprocessed image output we do not use the 'feature
     # """
     # print(
-    # "11111aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_preprocessed_image", "preprocessed", self.app.user_selections_dict
+    # "11111aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_preprocessed_image", "preprocessed", ctx.cache
     # )
     # if feature_name is not None:
     # feature_type = "preprocessed_image"
@@ -295,32 +296,32 @@ class FeatureSelection(Widget):
     # "22222aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     # "add_new_preprocessed_image",
     # "preprocessed",
-    # self.app.user_selections_dict,
+    # ctx.cache,
     # )
 
     # # this dictionary will contain all made choices
-    # if feature_name not in self.app.user_selections_dict:
+    # if feature_name not in ctx.cache:
     # #       self.user_selections_dict[feature_name]["features"]["name"] = feature_name
     # #       self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
-    # self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
-    # self.app.user_selections_dict[feature_name]["settings"]["output_image"] = True
+    # ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
+    # ctx.cache[feature_name]["settings"]["output_image"] = True
     # print(
     # "33333aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     # "add_new_preprocessed_image",
     # "preprocessed",
-    # self.app.user_selections_dict,
+    # ctx.cache,
     # )
 
     # new_content_item = PreprocessedOutputOptions(
     # #                self.top_parent,
     # #                self.ctx,
     # #    self.available_images,
-    # this_user_selection_dict=self.app.user_selections_dict[feature_name],
+    # this_user_selection_dict=ctx.cache[feature_name],
     # id=new_id,
     # classes=feature_type,
     # )
     # print(
-    # "33333bbbbbbbbbbbbbbbbbbbbbbbbbbb", "add_new_preprocessed_image", "preprocessed", self.app.user_selections_dict
+    # "33333bbbbbbbbbbbbbbbbbbbbbbbbbbb", "add_new_preprocessed_image", "preprocessed", ctx.cache
     # )
     # self.get_widget_by_id("list").mount(new_list_item)
     # self.get_widget_by_id("content_switcher").mount(new_content_item)
@@ -331,7 +332,7 @@ class FeatureSelection(Widget):
     # )
     # self.get_widget_by_id("content_switcher").styles.border_title_color = "red"
     # self._id_counter += 1
-    # print("44444dddddddddddddddddddd", self.app.user_selections_dict)
+    # print("44444dddddddddddddddddddd", ctx.cache)
 
     def action_delete_feature(self) -> None:
         """Unmount the feature and delete its entry from dictionaries."""
@@ -342,7 +343,7 @@ class FeatureSelection(Widget):
                 name = self.feature_items[current_id].name
                 self.get_widget_by_id(current_id).remove()
                 self.feature_items.pop(current_id)
-                self.app.user_selections_dict.pop(name)
+                ctx.cache.pop(name)
 
         self.app.push_screen(Confirm(), confirmation)
 
@@ -353,11 +354,11 @@ class FeatureSelection(Widget):
         current_id = self.get_widget_by_id("content_switcher").current
         feature_name = self.feature_items[current_id].name
         feature_name_copy = feature_name + "Copy"
-        self.app.user_selections_dict[feature_name_copy] = copy.deepcopy(self.app.user_selections_dict[feature_name])
-        self.app.user_selections_dict[feature_name_copy]["features"]["name"] = feature_name_copy
-        self.app.user_selections_dict[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
-        self.app.user_selections_dict[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
-        self.add_new_feature([self.app.user_selections_dict[feature_name_copy]["features"]["type"], feature_name_copy])
+        ctx.cache[feature_name_copy] = copy.deepcopy(ctx.cache[feature_name])
+        ctx.cache[feature_name_copy]["features"]["name"] = feature_name_copy
+        ctx.cache[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
+        ctx.cache[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
+        self.add_new_feature([ctx.cache[feature_name_copy]["features"]["type"], feature_name_copy])
 
     def action_sort_features(self):
         """Sorting alphabetically and by feature type."""

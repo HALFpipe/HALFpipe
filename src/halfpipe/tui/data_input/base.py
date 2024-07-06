@@ -60,16 +60,13 @@ class FieldMapFilesPanel(Widget):
         }
         self.echo_time = 0
         self.step_classes = step_classes
+        print("thissssssssssssssssssssssss id", self.id)
 
     def compose(self):
         yield Vertical(
             Button("❌", id="delete_button", classes="icon_buttons"),
             *[
-                FileItem(
-                    delete_button=False,
-                    classes="file_patterns",
-                    pattern_class=step_class,
-                )
+                FileItem(delete_button=False, classes="file_patterns", pattern_class=step_class, id_key=self.id)
                 for step_class in self.step_classes
             ],
             classes=self.field_map_type + "_panel",
@@ -80,16 +77,17 @@ class FieldMapFilesPanel(Widget):
             self.field_map_type
         ]
 
-    def update_echo_time(self, echo_time):
-        # self.echo_time = variable
-        echo_time_static = self.get_widget_by_id("echo_time")
-        if echo_time_static is not None:
-            echo_time_static.update(Text("Echo time difference in seconds: ") + echo_time)
+    # def update_echo_time(self, echo_time):
+    # # self.echo_time = variable
+    # echo_time_static = self.get_widget_by_id("echo_time")
+    # if echo_time_static is not None:
+    # echo_time_static.update(Text("Echo time difference in seconds: ") + echo_time)
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
         """Remove the file pattern item."""
         self.remove()
+        ctx.cache.pop(self.id)
 
     @on(Button.Pressed, "#edit_button2")
     def _on_edit_button_pressed(self):
@@ -125,6 +123,7 @@ class DataSummaryLine(Widget):
 class DataInput(Widget):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self._id_counter = 0
 
     def compose(self) -> ComposeResult:
         yield Container(
@@ -179,7 +178,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
             yield VerticalScroll(Button("Add", id="add_t1_image_button"), id="t1_image_panel", classes="non_bids_panels")
             yield VerticalScroll(Button("Add", id="add_bold_image_button"), id="bold_image_panel", classes="non_bids_panels")
-            yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
+            # move this to features tab somewhere
+
+            # yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
             yield VerticalScroll(Button("Add", id="add_field_map_button"), id="field_map_panel", classes="non_bids_panels")
 
     # anatomical/structural data
@@ -195,7 +196,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
         self.get_widget_by_id("t1_image_panel").border_title = "T1-weighted image file pattern"
         self.get_widget_by_id("bold_image_panel").border_title = "BOLD image files patterns"
-        self.get_widget_by_id("event_file_panel").border_title = "Event files patterns"
+        # self.get_widget_by_id("event_file_panel").border_title = "Event files patterns"
         self.get_widget_by_id("field_map_panel").border_title = "Field maps"
 
     @on(Button.Pressed, "#add_t1_image_button")
@@ -213,13 +214,10 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     @on(Button.Pressed, "#add_event_file_button")
     def _add_event_file(self):
         def mount_file_item_widget(event_file_type):
-            print("qqqqqqqqqqqqqqqqqqqqq", event_file_type)
             events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
             if event_file_type == "bids":
-                print("heeeeeeeeeeeeeeeeeeeeeeeeere")
                 events_step_type = TsvEventsStep
             elif event_file_type == "fsl":
-                print("hhhhhhhhhhhhhhhhe")
                 events_step_type = TxtEventsStep
             elif event_file_type == "spm":
                 events_step_type = MatEventsStep
@@ -311,7 +309,6 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         )
         # get string whether siemens or philips
         field_map_type = field_map_user_choices[0].split("_")[0]
-        print("ggggggggggggggggggggggggg", field_map_type)
         # find which classes are needed
         step_classes: List[FilePatternStep] = []
 
@@ -336,8 +333,11 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         print("2qqqqqqqqqqqqqqqqqssssssssss step_classes", step_classes)
         if field_map_type is not None:
             self.get_widget_by_id("field_map_panel").mount(
-                FieldMapFilesPanel(field_map_type=field_map_type, step_classes=step_classes)
+                FieldMapFilesPanel(
+                    field_map_type=field_map_type, step_classes=step_classes, id="field_maps_" + str(self._id_counter)
+                )
             )
+            self._id_counter += 1
             self.refresh()
 
     def on_switch_changed(self, message):

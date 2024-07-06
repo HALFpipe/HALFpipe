@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-from collections import defaultdict
-from typing import Any
 
 from PIL import Image
 from rich.console import Console, RenderResult
@@ -21,6 +19,7 @@ from .feature_widgets.base import FeatureSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
+from .utils.context import ctx
 from .utils.draggable_modal_screen import DraggableModalScreen
 from .working_directory.base import WorkDirectory
 
@@ -225,7 +224,7 @@ class MainApp(App):
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
 
     available_images: dict = {}
-    user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
+    #  user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
     flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
     # input_data_load_is_success = False
 
@@ -255,7 +254,7 @@ class MainApp(App):
             with TabPane("Group level models", id="models_tab", classes="tabs"):
                 yield VerticalScroll(Placeholder(), id="models_content")
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(RunCLX(self.user_selections_dict), id="run_content")
+                yield VerticalScroll(RunCLX(), id="run_content")
         yield Footer()
 
     def on_mount(self):
@@ -296,15 +295,13 @@ class MainApp(App):
         are fed via the input_data_content widget.
         """
         if message.value:
-            self.get_widget_by_id("input_data_content").feed_contex_and_extract_available_images(
-                self.user_selections_dict["files"]["path"]
-            )
-            self.get_widget_by_id("input_data_content").manually_change_label(self.user_selections_dict["files"]["path"])
-            for name in self.user_selections_dict:
+            self.get_widget_by_id("input_data_content").feed_contex_and_extract_available_images(ctx.cache["files"]["path"])
+            self.get_widget_by_id("input_data_content").manually_change_label(ctx.cache["files"]["path"])
+            for name in ctx.cache:
                 # Need to avoid key 'files' in the dictionary, since this only key is not a feature.
                 if name != "files":
                     self.get_widget_by_id("feature_selection_content").add_new_feature(
-                        [self.user_selections_dict[name]["features"]["type"], name]
+                        [ctx.cache[name]["features"]["type"], name]
                     )
 
     def update_tab_pane_label(self, tab_id):

@@ -51,46 +51,9 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
                 raise ValueError(f'Unknown dummy_scans value "{value}"')
 
 
-class SliceTimingModal(DraggableModalScreen):
-    def __init__(self, found_values_message="No foundings???", **kwargs):
-        super().__init__(**kwargs)
-        self.found_values_message = found_values_message
-        self.title_bar.title = "Check slice acquisition direction values"
-
-    def on_mount(self) -> None:
-        self.content.mount(
-            Vertical(
-                Static(self.found_values_message, id="found_values"),
-                Static("Proceed with these values?", id="question"),
-                # Input(''),
-                Horizontal(Button("Yes", id="ok"), Button("No", id="cancel")),
-            )
-        )
-
-    @on(Button.Pressed, "#ok")
-    def _on_ok_button_pressed(self):
-        self.dismiss(True)
-
-    @on(Button.Pressed, "#cancel")
-    def _on_cancel_button_pressed(self):
-        self.dismiss(False)
-
-
 class Preprocessing(Widget):
     def __init__(self, disabled=False, **kwargs) -> None:
         super().__init__(**kwargs, disabled=disabled)
-        # self.ctx = self.app.ctx
-        self.time_slicing_options = [
-            "Sequential increasing (1, 2, ...)",
-            "Sequential decreasing (... 2, 1)",
-            "Alternating increasing even first (2, 4, ... 1, 3, ...)",
-            "Alternating increasing odd first (1, 3, ... 2, 4, ...)",
-            "Alternating decreasing even first (... 3, 1, ... 4, 2)",
-            "Alternating decreasing odd first (... 4, 2, ... 3, 1)",
-            "                 ***Import from file***",
-        ]
-        self.slice_acquisition_direction = ["Inferior to superior", "Superior to inferior"]
-        self.slice_timing_message = ""
 
     def compose(self) -> ComposeResult:
         yield Container(
@@ -138,8 +101,6 @@ class Preprocessing(Widget):
         self.get_widget_by_id("anatomical_settings").border_title = "Anatomical settings"
         self.get_widget_by_id("functional_settings").border_title = "Functional settings"
         self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
-        #  self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "hidden"
-        #  self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timing").styles.height = "5"
 
@@ -168,51 +129,19 @@ class Preprocessing(Widget):
 
             ctx.spec.global_settings["slice_timing"] = True
 
-            meta_step_instance = CheckBoldSliceEncodingDirectionStep(
-                self.app, callback=self.callback_func
-            )  # , next_step_type=next_step_instance)
-            #   SubSimpleTestClass()
+            meta_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, callback=self.callback_func)
             meta_step_instance.run()
-
         else:
             ctx.spec.global_settings["slice_timing"] = False
             self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
             self.get_widget_by_id("slice_timing").styles.height = "5"
 
     def callback_func(self, message_dict):
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", message_dict)
         info_string = ""
         for key in message_dict:
             info_string += key + ": " + " ".join(message_dict[key]) + "\n"
 
         self.get_widget_by_id("slice_timming_info").update(info_string)
-
-    # slice_direction_widget = self.get_widget_by_id("select_slice_direction")
-    # if value:
-    # slice_direction_widget.value = "Inferior to superior"
-    # slice_direction_widget.styles.background = "50% green"
-
-    # if message.value:
-    # self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "visible"
-    # self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "visible"
-    # self.get_widget_by_id("slice_timing").styles.height = "auto"
-    # self.app.push_screen(
-    # SliceTimingModal(found_values_message=self.slice_encoding_direction_message), _update_slicing_direction
-    # )
-    # else:
-    # self.get_widget_by_id("select_slice_timing_panel").styles.visibility = "hidden"
-    # self.get_widget_by_id("select_slice_direction_panel").styles.visibility = "hidden"
-    # self.get_widget_by_id("slice_timing").styles.height = "5"
-
-    # @on(Select.Changed)
-    # def on_select_changed(self, event):
-    # select_widget = event.control
-    # if event.value != select_widget.BLANK:
-    # select_widget.styles.background = "50% green"
-    # if "Import from file" in event.value:
-    # self.app.push_screen(FileBrowserModal(), self._add_slice_timing_from_file)
-    # else:
-    # select_widget.styles.background = "40% red"
 
     def _add_slice_timing_from_file(self, path):
         select_widget = self.get_widget_by_id("select_slice_timing")

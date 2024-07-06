@@ -183,6 +183,8 @@ class SetMetadataStep:
         next_step_type=None,
         callback=None,
         callback_message=None,
+        id_key="",
+        sub_id_key=None,
     ):
         # super(SetMetadataStep, self).__init__(app)
 
@@ -200,7 +202,8 @@ class SetMetadataStep:
         self.next_step_type = next_step_type
         self.callback = callback
         self.humankey = display_str(self.key)  # .lower()
-
+        self.id_key = id_key
+        self.sub_id_key = sub_id_key
         self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
         if callback_message is not None:
             self.callback_message.update({self.humankey: []})
@@ -334,14 +337,24 @@ class SetMetadataStep:
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
+                if "metadata" not in ctx.cache[self.id_key]["files"][self.sub_id_key]:
+                    ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"] = dict()
                 specfileobj.metadata[key] = value
+                ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
+                print("sssssssssssssssspecfileobjspecfileobjspecfileobj", specfileobj)
+
+                print("vvvvvvvvvvvvvvvvvvvvvvvvvalue", value)
         print("2aaaaaaaaaaaaaaaaaaaaaaaa", self._append_view)
         print("3aaaaaaaaaaaaaaaaaaaaaaaa", self.input_view)
         #     self.callback_message += self._append_view
 
         if self.next_step_type is not None:
             self.next_step_instance = self.next_step_type(
-                app=self.app, callback=self.callback, callback_message=self.callback_message
+                app=self.app,
+                callback=self.callback,
+                callback_message=self.callback_message,
+                id_key=self.id_key,
+                sub_id_key=self.sub_id_key,
             )
             self.next_step_instance.run()
             # self.next_step_type(app=self.app)
@@ -380,7 +393,7 @@ class CheckMetadataStep:
     def _should_skip(self, _):
         return False
 
-    def __init__(self, app=None, callback=None, callback_message=None):
+    def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
         # def setup(self, ctx):
 
         self.app = app
@@ -389,7 +402,13 @@ class CheckMetadataStep:
         self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
         if callback_message is not None:
             self.callback_message.update({self.humankey: []})
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated callback_message", callback_message, self.callback_message)
+        print(
+            "wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated callback_message",
+            callback_message,
+            self.callback_message,
+        )
+        self.id_key = id_key
+        self.sub_id_key = sub_id_key
 
         self.is_first_run = True
         self.should_skip = self._should_skip(ctx)
@@ -552,7 +571,11 @@ class CheckMetadataStep:
         if choice is True and self.next_step_type is not None:
             print(" choice is True *********************************************************************")
             next_step_instance = self.next_step_type(
-                app=self.app, callback=self.callback, callback_message=self.callback_message
+                app=self.app,
+                callback=self.callback,
+                callback_message=self.callback_message,
+                id_key=self.id_key,
+                sub_id_key=self.sub_id_key,
             )
             next_step_instance.run()
         # pass
@@ -575,6 +598,8 @@ class CheckMetadataStep:
                 next_step_type=self.next_step_type,
                 callback=self.callback,
                 callback_message=self.callback_message,
+                id_key=self.id_key,
+                sub_id_key=self.sub_id_key,
             )
             set_instance_step.run()
 

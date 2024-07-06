@@ -14,6 +14,8 @@ from textual.widgets import Button, Static
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
+from ..utils.false_input_warning_screen import SimpleMessageModal
+
 # TODO
 # For bids, this is automatic message
 # Found 0 field map image files
@@ -143,25 +145,39 @@ from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
 
 class FileItem(Widget):
-    def __init__(self, delete_button=True, title="", pattern_class=None, **kwargs) -> None:
+    def __init__(self, delete_button=True, title="", pattern_class=None, id_key="", **kwargs) -> None:
         """ """
         super().__init__(**kwargs)
         # dictionary for results from the PathPatternBuilder
         self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
         self.delete_button = delete_button
         self.title = pattern_class.header_str
-        self.PatternClass = pattern_class
+        self.pattern_class = pattern_class
+        self.id_key = id_key
         print(
             "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
-            self.PatternClass.get_entities,
-            self.PatternClass.get_entity_colors_list,
-            self.PatternClass.get_required_entities,
+            self.pattern_class.get_entities,
+            self.pattern_class.get_entity_colors_list,
+            self.pattern_class.get_required_entities,
         )
         print("FileItem aaaaaaaaaaaaaaaa", pattern_class.header_str)
+        if self.pattern_class.next_step_type is not None:
+            print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
+            self.pattern_class.callback = self.callback_func
+        self.pattern_class.id_key = id_key
+
+    def callback_func(self, message_dict):
+        info_string = ""
+        for key in message_dict:
+            info_string += key + ": " + " ".join(message_dict[key]) + "\n"
+
+        self.callback_message = info_string
 
     def compose(self):
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
+            if self.pattern_class.callback is not None:
+                yield Button(" ℹ", id="info_button", classes="icon_buttons")
             yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
             if self.delete_button:
@@ -173,10 +189,12 @@ class FileItem(Widget):
             self.get_widget_by_id("delete_button").tooltip = "Delete"
         self.app.push_screen(
             PathPatternBuilder(
-                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                #  path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                #  path="/home/tomas/github/ds005115/sub-01/ses-01/fmap/sub-01_ses-01_phasediff.nii.gz",
+                path="/home/tomas/github/ds005115/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz",
                 title=self.title,
-                highlight_colors=self.PatternClass.get_entity_colors_list,
-                labels=self.PatternClass.get_entities,
+                highlight_colors=self.pattern_class.get_entity_colors_list,
+                labels=self.pattern_class.get_entities,
             ),
             self._update_file_pattern,
         )
@@ -189,7 +207,9 @@ class FileItem(Widget):
         """
         self.app.push_screen(
             PathPatternBuilder(
-                path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                # path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                path="/home/tomas/github/ds005115/sub-01/ses-01/fmap/sub-01_ses-01_phasediff.nii.gz",
+                # path="/home/tomas/github/ds005115/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz",
                 title=self.title,
             ),
             self._update_file_pattern,
@@ -212,7 +232,7 @@ class FileItem(Widget):
         print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
         # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
         # obj.setup()
-        self.PatternClass.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
@@ -223,6 +243,12 @@ class FileItem(Widget):
     def _on_show_button_pressed(self):
         """Shows a modal with the list of files found using the given pattern."""
         self.app.push_screen(ListOfFiles(self.pattern_match_results))
+
+    @on(Button.Pressed, "#info_button")
+    def _on_info_button_pressed(self):
+        """Shows a modal with the list of files found using the given pattern."""
+        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.callback_message)
+        self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
 
 
 class Main(App):

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # from .ui.components import SingleChoiceInputView, SpacerView, TextElement, TextView
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 from ...ingest.database import Database
 
@@ -48,6 +50,7 @@ class Context:
         self.debug = False
         self.already_checked: set[str] = set()
         self._initialized = True
+        self.cache: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
 
     def put(self, fileobj):
         self.database.put(fileobj)

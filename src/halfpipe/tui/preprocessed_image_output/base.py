@@ -16,15 +16,10 @@ class PreprocessedOutputOptions(TaskBased):
         this_user_selection_dict["features"] = {}
 
     def on_mount(self) -> None:
-        print("mmmmmmmmmmmmmmmmmmmm mount subclass")
         self.get_widget_by_id("images_to_use").border_title = "Images to use"
         self.get_widget_by_id("confounds").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
-        #  self.get_widget_by_id("notes").remove()
-        #  self.get_widget_by_id("bandpass_filter_type").styles.visibility = "visible"
-        #  self.get_widget_by_id("grand_mean_scaling").styles.visibility = "visible"
-        print("aaaaaaaaaaa", self.app.user_selections_dict)
 
     def update_conditions_table(self):
         condition_list = []
@@ -35,14 +30,7 @@ class PreprocessedOutputOptions(TaskBased):
 
 class PreprocessedImageOutput(FeatureSelection):
     def __init__(self, disabled=False, **kwargs) -> None:
-        super().__init__(
-            #  app=app,
-            # ctx=ctx,
-            # available_images=available_images,
-            # user_selections_dict=user_selections_dict,
-            disabled=disabled,
-            **kwargs,
-        )
+        super().__init__(disabled=disabled, **kwargs)
 
     def on_mount(self) -> None:
         self.get_widget_by_id("content_switcher").border_title = "Preprocessed image output"
@@ -65,9 +53,6 @@ class PreprocessedImageOutput(FeatureSelection):
         """
         In the preprocessed image output we do not use the 'feature
         """
-        print(
-            "11111aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_preprocessed_image", "preprocessed", self.app.user_selections_dict
-        )
         if feature_name is not None:
             feature_type = "preprocessed_image"
             new_id = "feature_item_" + str(self._id_counter)
@@ -77,37 +62,18 @@ class PreprocessedImageOutput(FeatureSelection):
                 id=new_id,
                 classes="items",
             )
-            print(
-                "22222aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "add_new_preprocessed_image",
-                "preprocessed",
-                self.app.user_selections_dict,
-            )
 
             # this dictionary will contain all made choices
             if feature_name not in self.app.user_selections_dict:
-                #       self.user_selections_dict[feature_name]["features"]["name"] = feature_name
-                #       self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
                 self.app.user_selections_dict[feature_name]["settings"]["name"] = feature_name + "Setting"
                 self.app.user_selections_dict[feature_name]["settings"]["output_image"] = True
-            print(
-                "33333aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "add_new_preprocessed_image",
-                "preprocessed",
-                self.app.user_selections_dict,
-            )
 
             new_content_item = PreprocessedOutputOptions(
-                #                self.top_parent,
-                #                self.ctx,
-                #    self.available_images,
                 this_user_selection_dict=self.app.user_selections_dict[feature_name],
                 id=new_id,
                 classes=feature_type,
             )
-            print(
-                "33333bbbbbbbbbbbbbbbbbbbbbbbbbbb", "add_new_preprocessed_image", "preprocessed", self.app.user_selections_dict
-            )
+
             self.get_widget_by_id("list").mount(new_list_item)
             self.get_widget_by_id("content_switcher").mount(new_content_item)
             self.get_widget_by_id("content_switcher").current = new_id
@@ -117,4 +83,3 @@ class PreprocessedImageOutput(FeatureSelection):
             )
             self.get_widget_by_id("content_switcher").styles.border_title_color = "red"
             self._id_counter += 1
-            print("44444dddddddddddddddddddd", self.app.user_selections_dict)
