@@ -1,0 +1,71 @@
+FalseInputWarning_test {
+    Grid {
+        grid-size:1 2;
+        grid-rows: 1fr 3;
+        padding: 0 1;
+        width: 40;
+        height: 11;
+        border: thick $warning;
+        background: $surface;
+    }
+    Label {
+        height: 1fr;
+        width: 1fr;
+        content-align: center middle;
+        color: $warning;
+    }
+    Horizontal {
+        align: center middle;
+    }
+    Button {
+        width: 50%;
+    }
+}
+
+DraggableModalScreen {
+    align: center middle;
+ }
+
+#draggable_modal_screen_container_wrapper {
+    width: 40;
+    height: 14;
+    background: white;
+}
+
+WindowTitleBar {
+    layout: horizontal;
+    width: 100%;
+    height: 3;
+    background: $accent;
+    color: auto;
+    text-style: bold;
+}
+
+WindowTitleBar Button {
+    max-width: 6;
+    height: 3;
+    padding-top: 0;
+    padding-left: 0;
+    background: $accent;
+    border: none;
+}
+
+WindowTitleBar Button:hover {
+    border: none;
+    border-top: none;
+    border-bottom: none;
+    background: $accent;
+    color: black;
+    border: thick black;
+}
+
+WindowTitleBar Button:focus {
+        text-style: none;
+}
+
+.window_title {
+    width: 1fr;
+    height: 100%;
+    content-align: left middle;
+    padding-left: 1;
+}

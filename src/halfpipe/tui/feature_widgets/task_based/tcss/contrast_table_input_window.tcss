@@ -1,0 +1,38 @@
+ContrastTableInputWindow {
+    #the_window {
+        border: thick $accent;
+        width: 50;
+        height: 25;
+        background: $surface;
+    }
+    #button_grid {
+        dock: bottom;
+        height: auto;
+        grid-size: 2;
+        padding: 0 1;
+        grid-gutter: 1 1;
+    }
+    #contrast_name {
+        width: 100%;
+    }
+    .row_element {
+        layout: grid;
+        align: center middle;
+        grid-size: 2;
+        height: 5;
+        border: thick solid green;
+    }
+    .input_values {
+        padding: 0 1;
+        width: 35%;
+        height: 3;
+    }
+    Label {
+       text-style: bold;
+       height: 3;
+       content-align: left middle;
+    }
+    Button {
+        width: 100%;
+    }
+}
