@@ -139,4 +139,4 @@ class FileBrowserModal(DraggableModalScreen):
             )
 
     def _cancel_window(self):
-        self.dismiss(None)
+        self.dismiss("")

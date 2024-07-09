@@ -382,30 +382,31 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     def feed_contex_and_extract_available_images(self, file_path):
         """Feed the Context object with the path to the data fields and extract available images."""
-        ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
+        if len(file_path) > 0:
+            ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
 
-        bold_filedict = {"datatype": "func", "suffix": "bold"}
-        filepaths = ctx.database.get(**bold_filedict)
-        print("bbbbbbbbbbbbbbbbbbbbbbbbbbbb", file_path, filepaths)
-        self.filepaths = list(filepaths)
-        assert len(self.filepaths) > 0
+            bold_filedict = {"datatype": "func", "suffix": "bold"}
+            filepaths = ctx.database.get(**bold_filedict)
+            print("bbbbbbbbbbbbbbbbbbbbbbbbbbbb", file_path, filepaths)
+            self.filepaths = list(filepaths)
+            assert len(self.filepaths) > 0
 
-        db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=self.filepaths)
-        self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+            db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=self.filepaths)
+            self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
 
-        anat_summary_step = AnatSummaryStep()
-        bold_summary_step = BoldSummaryStep()
-        fmap_summary_step = FmapSummaryStep()
+            anat_summary_step = AnatSummaryStep()
+            bold_summary_step = BoldSummaryStep()
+            fmap_summary_step = FmapSummaryStep()
 
-        self.get_widget_by_id("feedback_anat").update_summary(anat_summary_step.get_summary)
-        self.get_widget_by_id("feedback_bold").update_summary(bold_summary_step.get_summary)
-        self.get_widget_by_id("feedback_fmap").update_summary(fmap_summary_step.get_summary)
+            self.get_widget_by_id("feedback_anat").update_summary(anat_summary_step.get_summary)
+            self.get_widget_by_id("feedback_bold").update_summary(bold_summary_step.get_summary)
+            self.get_widget_by_id("feedback_fmap").update_summary(fmap_summary_step.get_summary)
 
-        # at this point, all went well, change border from red to green
-        self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
-        # contribute with True to show hidden tabs
-        self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        self.app.show_hidden_tabs()
+            # at this point, all went well, change border from red to green
+            self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
+            # contribute with True to show hidden tabs
+            self.app.flags_to_show_tabs["from_input_data_tab"] = True
+            self.app.show_hidden_tabs()
 
     def manually_change_label(self, label):
         """If the input data folder was set by reading an existing json file via the working directory widget,
