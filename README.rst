@@ -747,36 +747,29 @@ Group-level
 ===========
 
 -  |  For task-based group-level analyses, HALFpipe outputs the statistical maps for the effect, the variance, the degrees of freedom of the variance, and the t-statistic and z-statistic for each linear model that is specified, much as for the first-level features. These models are fit per session, task, first-level feature, first-level task contrast, and group-level contrast, where these exist.
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.nii.gz``
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-variance_statmap.nii.gz``
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-dof_statmap.nii.gz``	
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-t_statmap.nii.gz``	
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-z_statmap.nii.gz``
-
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.nii.gz``
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-variance_statmap.nii.gz``
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-dof_statmap.nii.gz``	
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-t_statmap.nii.gz``	
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-z_statmap.nii.gz``
+   |  
 -  |  For every contrast, the mean and standard deviation of the regressor used in the analysis.
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mean.nii.gz``
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_std.nii.gz``
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mean.nii.gz``
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_std.nii.gz``
+   |  
 -  |  For every contrast, the corresponding brain mask is output beside the statistical maps. Masks do not differ between different features calculated, they are only copied out repeatedly for convenience	
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mask.nii.gz``
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mask.nii.gz``
+   |  
 -  |  For every model (even when a linear effect model has been specified), the intercept is output as one contrast, capturing the main effect of the first-level feature(s) investigated, treating all other group-level variables in that model as covariates of no interest. 
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-Intercept…``
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-Intercept…``
+   |  
 -  |  For every contrast, a .json file containing a summary of the processing settings, a list of the raw data files that were used for the analysis, and important summary statistics. The "CriticalZ" value found here corresponds to the z-score value at which you should threshold the group-level statistical map to achieve a family-wise-error-corrected alpha<0.05. 
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.json``
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.json``
+   |  
 -  |  The design and contrast matrix used for the final model will be outputted alongside the statistical maps
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-design_matrix.tsv``
-
-   ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-contrast_matrix.tsv``
-
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-design_matrix.tsv``
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-contrast_matrix.tsv``
+   |  
 
 
 *****************
