@@ -518,13 +518,13 @@ Shown first is the user interface method.
 
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?``
-            #. ``Exclude subjects based on movement?`
+            #. ``Exclude subjects based on movement?``
 
             -  ``Yes``
 
                #. ``Specify the maximum allowed mean framewise displacement in mm``
                #. ``Specify the maximum allowed percentage of frames above the framewise 
-               displacement threshold of [FD max from above]``
+               displacement threshold of (FD max from above)``
 
             -  ``No`` Continue
 
@@ -544,7 +544,7 @@ Shown first is the user interface method.
 
                #. ``Specify the maximum allowed mean framewise displacement in mm``
                #. ``Specify the maximum allowed percentage of frames above the framewise 
-               displacement threshold of [FD max from above]``
+               displacement threshold of (FD max from above)``
 
             -  ``No`` Continue
 
