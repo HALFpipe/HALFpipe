@@ -510,100 +510,73 @@ Shown first is the user interface method.
 
 #. ``Specify group-level model?``
 
-
    -  ``Yes``
-
 
       #. ``Specify model type``
 
-
          -  ``Intercept-only``
-
 
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?``
             #. ``Exclude subjects based on movement?``
 
-
                -  ``Yes``
-
 
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
                   #. ``Specify the maximum allowed percentage of frames above the framewise 
                      displacement threshold of (FD max from above)``
 
-
                -  ``No`` Continue
 
-
          -  ``Linear model`` 
-
 
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?``
             #. ``Specify the path of the covariates/group data spreadsheet file``
 
-
                #. ``Specify the column containing subject names``
                #. ``Specify the column data types``
                #. ``Specify the subjects to use``
 
-
             #. ``Exclude subjects based on movement?``
 
-
                -  ``Yes``
-
 
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
                   #. ``Specify the maximum allowed percentage of frames above the framewise 
                      displacement threshold of (FD max from above)``
 
-
                -  ``No`` Continue
 
-
             #. ``Specify the variables to add to the model``
-
 
                -  ``Listwise deletion``
                -  ``Mean substitution``
 
-
             #. ``Specify additional contrasts for categorical variables?``
 
-
                -  ``Yes``
-
 
                   #. ``Specify contrast name``
                   #. ``Specify the categorical variable for this contrast``
                   #. ``Specify contrast values``
                   #. ``Add another contrast?`` Loop back to a.
 
-
                -  ``No`` Continue
-
 
             #. ``Specify interaction terms?``
 
-
                -  ``Yes``
-
 
                   #. ``Specify the variables for which to calculate interaction terms``
                   #. ``Select which interaction terms to add to the model``
 
-
                -  ``No`` Continue
-
 
             #. ``Add another group-level model?``
 
-
                -  ``Yes`` Loop back to a.
                -  ``No`` User interface will close and processing will begin
-
 
 
 *************************************************
