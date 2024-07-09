@@ -510,48 +510,35 @@ Shown first is the user interface method.
 
 #. ``Specify group-level model?``
 
-
-
-
-
-
-
-
-
-
-
-
-
-
    -  ``Yes``
 
       #. ``Specify model type``
 
-         -  ``Intercept-only``
+         -  ``Intercept-only`` This will apply an intercept-only model that captures a main effect of one or more of the first-level features.
 
             #. ``Specify model name``
-            #. ``Aggregate scan-level statistics before analysis?``
+            #. ``Aggregate scan-level statistics before analysis?`` This option may appear if there are multiple subject-level statistical images created, such as for multiple runs or sessions. If this option is selected (with an asterisk) then these features will be aggregated at the subject-level prior to group-level analysis. If the option is not selected, then all of the statistical images of each subject’s first-level features will be entered into the group-level analysis, treating them as if they were independent observations from different subjects, therefore this option is generally not preferred. 
             #. ``Exclude subjects based on movement?``
 
                -  ``Yes``
 
-                  #. ``Specify the maximum allowed mean framewise displacement in mm``
+                  #. ``Specify the maximum allowed mean framewise displacement in mm`` By selecting 0.5, this will exclude all subjects (or runs/sessions for a subject if ‘aggregation of scan-level statistics before analysis’ is not selected above) with a mean framewise displacement (root-mean-square) >0.5 mm. If aggregation of scan-level statistics before analysis is selected, the aggregate image will be used in the group-level analyses, therefore the average framewise displacement of all images used for the aggregate image will be compared to the value set here – if it is exceeded, the subject will be excluded from analysis.  
                   #. ``Specify the maximum allowed percentage of frames above the framewise 
                      displacement threshold of (FD max from above)``
 
-               -  ``No`` Continue
+               -  ``No`` All subjects are retained for analyses regardless of movement.
 
-         -  ``Linear model`` 
+         -  ``Linear model`` This will apply a linear model that captures main and/or interaction effects of one or more variables that must be present in a covariate/group data spreadsheet file. This file must contain a column with subject ID names identical to those used for the functional data. 
 
             #. ``Specify model name``
-            #. ``Aggregate scan-level statistics before analysis?``
-            #. ``Specify the path of the covariates/group data spreadsheet file``
+            #. ``Aggregate scan-level statistics before analysis?`` See above
+            #. ``Specify the path of the covariates/group data spreadsheet file`` Can be a .csv, .txt, .tsv, or .xlsx file
 
                #. ``Specify the column containing subject names``
-               #. ``Specify the column data types``
-               #. ``Specify the subjects to use``
+               #. ``Specify the column data types`` Note that the black option is selected, the grey option is not. Toggle left/right keys to select or deselect options and up/down keys to move through the list of variables in your spreadsheet file.
+               #. ``Specify the subjects to use`` Select the subjects to include in this analysis by their categorical variables. For multiple categorical variables, the intersection of the groups will be used.
 
-            #. ``Exclude subjects based on movement?``
+            #. ``Exclude subjects based on movement?`` See above
 
                -  ``Yes``
 
@@ -561,17 +548,17 @@ Shown first is the user interface method.
 
                -  ``No`` Continue
 
-            #. ``Specify the variables to add to the model``
+            #. ``Specify the variables to add to the model`` For all variables that are selected here, the model will output a main effect, controlling for all other variables selected by treating them as covariates of no interest. Anything not selected at this stage will be left entirely out of the model.
 
-               -  ``Listwise deletion``
-               -  ``Mean substitution``
+               -  ``Listwise deletion`` Will remove subjects with a missing value from analysis entirely.
+               -  ``Mean substitution`` For continuous variables, will impute the average of all subjects with a valid observation for this variable.
 
-            #. ``Specify additional contrasts for categorical variables?``
+            #. ``Specify additional contrasts for categorical variables?`` Contrasts for the mean across all subjects, and for all variables will be generated automatically. If you would like to output additional contrasts between particular groups, this should be specified here. 
 
                -  ``Yes``
 
                   #. ``Specify contrast name``
-                  #. ``Specify the categorical variable for this contrast``
+                  #. ``Specify the categorical variable for this contrast`` Toggle left/right to move through variables and press enter to select.
                   #. ``Specify contrast values``
                   #. ``Add another contrast?`` Loop back to a.
 
@@ -589,7 +576,9 @@ Shown first is the user interface method.
             #. ``Add another group-level model?``
 
                -  ``Yes`` Loop back to a.
-               -  ``No`` User interface will close and processing will begin
+               -  ``No`` End of menu
+
+			User interface will close and processing will begin
 
 
 *************************************************
