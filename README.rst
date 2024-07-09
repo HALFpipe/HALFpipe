@@ -511,7 +511,7 @@ Shown first is the user interface method.
 #. ``Specify group-level model?``
 
    -  ``Yes``
-   
+
       #. ``Specify model type``
 
          -  ``Intercept-only``
@@ -519,7 +519,7 @@ Shown first is the user interface method.
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?``
             #. ``Exclude subjects based on movement?``
-            
+
                -  ``Yes``
 
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
@@ -533,13 +533,13 @@ Shown first is the user interface method.
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?``
             #. ``Specify the path of the covariates/group data spreadsheet file``
-            
+
                #. ``Specify the column containing subject names``
                #. ``Specify the column data types``
                #. ``Specify the subjects to use``
 
             #. ``Exclude subjects based on movement?``
-            
+
                -  ``Yes``
                
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
@@ -554,7 +554,7 @@ Shown first is the user interface method.
                -  ``Mean substitution``
 
             #. ``Specify additional contrasts for categorical variables?``
-            
+
                -  ``Yes``
 
                   #. ``Specify contrast name``
@@ -574,7 +574,7 @@ Shown first is the user interface method.
                -  ``No`` Continue
 
             #. ``Add another group-level model?``
-
+            
                -  ``Yes`` Loop back to a.
                -  ``No`` User interface will close and processing will begin
 
