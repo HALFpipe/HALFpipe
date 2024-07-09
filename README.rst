@@ -759,7 +759,6 @@ Group-level
 
 
 -  |  For every contrast, the mean and standard deviation of the regressor used in the analysis.
-   
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mean.nii.gz``
 
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_std.nii.gz``
@@ -771,13 +770,13 @@ Group-level
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-Intercept…``
 
 -  |  For every contrast, a .json file containing a summary of the processing settings, a list of the raw data files that were used for the analysis, and important summary statistics. The "CriticalZ" value found here corresponds to the z-score value at which you should threshold the group-level statistical map to achieve a family-wise-error-corrected alpha<0.05. 
-
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.json``
 
 -  |  The design and contrast matrix used for the final model will be outputted alongside the statistical maps
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-design_matrix.tsv``
 
    ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-contrast_matrix.tsv``
+
 
 
 *****************
