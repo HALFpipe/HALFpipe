@@ -509,7 +509,7 @@ the user interface, or using a ‘group-level’ command directly in the termina
 Shown first is the user interface method.
 
 #. ``Specify group-level model?``
-
+   
    -  ``Yes``
 
       #. ``Specify model type``
@@ -578,7 +578,7 @@ Shown first is the user interface method.
                -  ``Yes`` Loop back to a.
                -  ``No`` User interface will close and processing will begin
 
-               
+
 *************************************************
  Running on a high-performance computing cluster
 *************************************************
