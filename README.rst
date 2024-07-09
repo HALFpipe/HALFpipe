@@ -541,11 +541,11 @@ Shown first is the user interface method.
             #. ``Exclude subjects based on movement?``
 
                -  ``Yes``
-               
+
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
                   #. ``Specify the maximum allowed percentage of frames above the framewise 
                      displacement threshold of (FD max from above)``
-                     
+
                -  ``No`` Continue
 
             #. ``Specify the variables to add to the model``
@@ -561,20 +561,20 @@ Shown first is the user interface method.
                   #. ``Specify the categorical variable for this contrast``
                   #. ``Specify contrast values``
                   #. ``Add another contrast?`` Loop back to a.
-                  
+
                -  ``No`` Continue
 
             #. ``Specify interaction terms?``
-            
+
                -  ``Yes``
-               
+
                   #. ``Specify the variables for which to calculate interaction terms``
                   #. ``Select which interaction terms to add to the model``
-                  
+
                -  ``No`` Continue
 
             #. ``Add another group-level model?``
-            
+
                -  ``Yes`` Loop back to a.
                -  ``No`` User interface will close and processing will begin
 
