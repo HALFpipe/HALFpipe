@@ -574,6 +574,7 @@ Shown first is the user interface method.
             -  ``No`` Continue
 
             #. ``Add another group-level model?``
+
             -  ``Yes`` Loop back to a.
             -  ``No`` User interface will close and processing will begin
 
