@@ -502,10 +502,10 @@ other words, first-level analyses.
 Models
 ======
 
-Models are statistical analyses that are carried out on the features. 
-Often these are known as second-level or group-level analyses. 
-There are currently two ways in which to run these analyses, either through 
-the user interface, or using a ‘group-level’ command directly in the terminal. 
+Models are statistical analyses that are carried out on the features.
+Often these are known as second-level or group-level analyses.
+There are currently two ways in which to run these analyses, either through
+the user interface, or using a ‘group-level’ command directly in the terminal.
 Shown first is the user interface method.
 
 #. ``Specify group-level model?``
@@ -517,18 +517,18 @@ Shown first is the user interface method.
          -  ``Intercept-only`` This will apply an intercept-only model that captures a main effect of one or more of the first-level features.
 
             #. ``Specify model name``
-            #. ``Aggregate scan-level statistics before analysis?`` This option may appear if there are multiple subject-level statistical images created, such as for multiple runs or sessions. If this option is selected (with an asterisk) then these features will be aggregated at the subject-level prior to group-level analysis. If the option is not selected, then all of the statistical images of each subject’s first-level features will be entered into the group-level analysis, treating them as if they were independent observations from different subjects, therefore this option is generally not preferred. 
+            #. ``Aggregate scan-level statistics before analysis?`` This option may appear if there are multiple subject-level statistical images created, such as for multiple runs or sessions. If this option is selected (with an asterisk) then these features will be aggregated at the subject-level prior to group-level analysis. If the option is not selected, then all of the statistical images of each subject’s first-level features will be entered into the group-level analysis, treating them as if they were independent observations from different subjects, therefore this option is generally not preferred.
             #. ``Exclude subjects based on movement?``
 
                -  ``Yes``
 
-                  #. ``Specify the maximum allowed mean framewise displacement in mm`` By selecting 0.5, this will exclude all subjects (or runs/sessions for a subject if ‘aggregation of scan-level statistics before analysis’ is not selected above) with a mean framewise displacement (root-mean-square) >0.5 mm. If aggregation of scan-level statistics before analysis is selected, the aggregate image will be used in the group-level analyses, therefore the average framewise displacement of all images used for the aggregate image will be compared to the value set here – if it is exceeded, the subject will be excluded from analysis.  
-                  #. ``Specify the maximum allowed percentage of frames above the framewise 
+                  #. ``Specify the maximum allowed mean framewise displacement in mm`` By selecting 0.5, this will exclude all subjects (or runs/sessions for a subject if ‘aggregation of scan-level statistics before analysis’ is not selected above) with a mean framewise displacement (root-mean-square) >0.5 mm. If aggregation of scan-level statistics before analysis is selected, the aggregate image will be used in the group-level analyses, therefore the average framewise displacement of all images used for the aggregate image will be compared to the value set here – if it is exceeded, the subject will be excluded from analysis.
+                  #. ``Specify the maximum allowed percentage of frames above the framewise
                      displacement threshold of (FD max from above)``
 
                -  ``No`` All subjects are retained for analyses regardless of movement.
 
-         -  ``Linear model`` This will apply a linear model that captures main and/or interaction effects of one or more variables that must be present in a covariate/group data spreadsheet file. This file must contain a column with subject ID names identical to those used for the functional data. 
+         -  ``Linear model`` This will apply a linear model that captures main and/or interaction effects of one or more variables that must be present in a covariate/group data spreadsheet file. This file must contain a column with subject ID names identical to those used for the functional data.
 
             #. ``Specify model name``
             #. ``Aggregate scan-level statistics before analysis?`` See above
@@ -543,7 +543,7 @@ Shown first is the user interface method.
                -  ``Yes``
 
                   #. ``Specify the maximum allowed mean framewise displacement in mm``
-                  #. ``Specify the maximum allowed percentage of frames above the framewise 
+                  #. ``Specify the maximum allowed percentage of frames above the framewise
                      displacement threshold of (FD max from above)``
 
                -  ``No`` Continue
@@ -553,7 +553,7 @@ Shown first is the user interface method.
                -  ``Listwise deletion`` Will remove subjects with a missing value from analysis entirely.
                -  ``Mean substitution`` For continuous variables, will impute the average of all subjects with a valid observation for this variable.
 
-            #. ``Specify additional contrasts for categorical variables?`` Contrasts for the mean across all subjects, and for all variables will be generated automatically. If you would like to output additional contrasts between particular groups, this should be specified here. 
+            #. ``Specify additional contrasts for categorical variables?`` Contrasts for the mean across all subjects, and for all variables will be generated automatically. If you would like to output additional contrasts between particular groups, this should be specified here.
 
                -  ``Yes``
 
@@ -749,27 +749,27 @@ Group-level
 -  |  For task-based group-level analyses, HALFpipe outputs the statistical maps for the effect, the variance, the degrees of freedom of the variance, and the t-statistic and z-statistic for each linear model that is specified, much as for the first-level features. These models are fit per session, task, first-level feature, first-level task contrast, and group-level contrast, where these exist.
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.nii.gz``
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-variance_statmap.nii.gz``
-   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-dof_statmap.nii.gz``	
-   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-t_statmap.nii.gz``	
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-dof_statmap.nii.gz``
+   |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-t_statmap.nii.gz``
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-z_statmap.nii.gz``
-   |  
+   |
 -  |  For every contrast, the mean and standard deviation of the regressor used in the analysis.
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mean.nii.gz``
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_std.nii.gz``
-   |  
--  |  For every contrast, the corresponding brain mask is output beside the statistical maps. Masks do not differ between different features calculated, they are only copied out repeatedly for convenience	
+   |
+-  |  For every contrast, the corresponding brain mask is output beside the statistical maps. Masks do not differ between different features calculated, they are only copied out repeatedly for convenience
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_mask.nii.gz``
-   |  
--  |  For every model (even when a linear effect model has been specified), the intercept is output as one contrast, capturing the main effect of the first-level feature(s) investigated, treating all other group-level variables in that model as covariates of no interest. 
+   |
+-  |  For every model (even when a linear effect model has been specified), the intercept is output as one contrast, capturing the main effect of the first-level feature(s) investigated, treating all other group-level variables in that model as covariates of no interest.
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-Intercept…``
-   |  
--  |  For every contrast, a .json file containing a summary of the processing settings, a list of the raw data files that were used for the analysis, and important summary statistics. The "CriticalZ" value found here corresponds to the z-score value at which you should threshold the group-level statistical map to achieve a family-wise-error-corrected alpha<0.05. 
+   |
+-  |  For every contrast, a .json file containing a summary of the processing settings, a list of the raw data files that were used for the analysis, and important summary statistics. The "CriticalZ" value found here corresponds to the z-score value at which you should threshold the group-level statistical map to achieve a family-wise-error-corrected alpha<0.05.
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/-…/…_task-…_feature-…_taskcontrast-…_model-…_contrast-…_stat-effect_statmap.json``
-   |  
+   |
 -  |  The design and contrast matrix used for the final model will be outputted alongside the statistical maps
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-design_matrix.tsv``
    |  ``grouplevel/…/func/task-…feature-…taskcontrast-…/model-…/…_task-…_feature-…_taskcontrast-…_model-…_desc-contrast_matrix.tsv``
-   |  
+   |
 
 
 *****************
