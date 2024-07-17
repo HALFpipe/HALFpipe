@@ -517,12 +517,12 @@ Shown first is the user interface method.
          -  ``Intercept-only`` This will apply an intercept-only model that captures a main effect of one or more of the first-level features.
 
             #. ``Specify model name``
-            #. ``Aggregate scan-level statistics before analysis?`` This option may appear if there are multiple subject-level statistical images created, such as for multiple runs or sessions. If this option is selected (with an asterisk) then these features will be aggregated at the subject-level prior to group-level analysis. If the option is not selected, then group-level analyses will be performed separately for each listed first-level feature. 
+            #. ``Aggregate scan-level statistics before analysis?`` This option may appear if there are multiple subject-level statistical images created, such as for multiple runs or sessions. If this option is selected (with an asterisk) then these features will be aggregated at the subject-level prior to group-level analysis. If the option is not selected, then group-level analyses will be performed separately for each listed first-level feature.
             #. ``Exclude subjects based on movement?``
 
                -  ``Yes``
 
-                  #. ``Specify the maximum allowed mean framewise displacement in mm`` By selecting 0.5, this will exclude all subjects (or runs/sessions for a subject if ‘aggregation of scan-level statistics before analysis’ is not selected above) with a mean framewise displacement (root-mean-square) >0.5 mm. If aggregation of scan-level statistics before analysis is selected, the threshold will be applied to individual runs/sessions before the aggregate image is used in the group-level analyses. This may have important consequences if your require all runs to be present for a group-level analysis, for example if not all conditions are present in each run. 
+                  #. ``Specify the maximum allowed mean framewise displacement in mm`` By selecting 0.5, this will exclude all subjects (or runs/sessions for a subject if ‘aggregation of scan-level statistics before analysis’ is not selected above) with a mean framewise displacement (root-mean-square) >0.5 mm. If aggregation of scan-level statistics before analysis is selected, the threshold will be applied to individual runs/sessions before the aggregate image is used in the group-level analyses. This may have important consequences if your require all runs to be present for a group-level analysis, for example if not all conditions are present in each run.
                   #. ``Specify the maximum allowed percentage of frames above the framewise
                      displacement threshold of (FD max from above)``
 
@@ -535,7 +535,7 @@ Shown first is the user interface method.
             #. ``Specify the path of the covariates/group data spreadsheet file`` Can be a .csv, .txt, .tsv, or .xlsx file
 
                #. ``Specify the column containing subject names``
-               #. ``Specify the column data types`` Note that the black option is selected, the grey option is not. Toggle left/right keys to select or deselect options and up/down keys to move through the list of variables in your spreadsheet file.  
+               #. ``Specify the column data types`` Note that the black option is selected, the grey option is not. Toggle left/right keys to select or deselect options and up/down keys to move through the list of variables in your spreadsheet file.
                #. ``Specify the subjects to use`` Select the subjects to include in this analysis by their categorical variables. For multiple categorical variables, the intersection of the groups will be used.
 
             #. ``Exclude subjects based on movement?`` See above
@@ -551,7 +551,7 @@ Shown first is the user interface method.
             #. ``Specify the variables to add to the model`` For all variables that are selected here, the model will output a main effect, controlling for all other variables selected by treating them as covariates of no interest. Anything not selected at this stage will be left entirely out of the model. All selected variables will be demeaned before being added to the model. Categorical variables are first dummy-coded, meaning  it is also possible to have string values for categorical variables.
 
                -  ``Listwise deletion`` Will remove subjects with a missing value from analysis entirely.
-               -  ``Mean substitution`` For both continuous and categorical variables, will impute the average of all subjects with a valid observation for this variable. Since variables  are first demeaned, and categorical variables are dummy-coded, this means a value of '0' will be used for missing data in the group-level design matrix.  
+               -  ``Mean substitution`` For both continuous and categorical variables, will impute the average of all subjects with a valid observation for this variable. Since variables  are first demeaned, and categorical variables are dummy-coded, this means a value of '0' will be used for missing data in the group-level design matrix.
 
             #. ``Specify additional contrasts for categorical variables?`` For each variable, for the mean across all subjects, one contrast will be generated. This means that by default, there is only an omnibus F-test for categorical variables with more than two levels. If you would like to output additional contrasts between particular groups, this should be specified here.
 
