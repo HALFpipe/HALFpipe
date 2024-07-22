@@ -148,21 +148,9 @@ settings_list: list[TestSetting] = [
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """
-    Run preprocessing and feature extraction for each of the four participants,
-    coming from our list of datasets, then compare features to those acquired in
-    reference version Halfpipe 1.2.2. Standard TSNR is calculated inside the
-    fmriprep workflows. Since we do a bit more preprocessing in halfpipe,
-    we calculate an extra TSNR.
-
-    The baseline check checks that the feature extraction worked correctly.
-
-    Consistency check flow consists of:
-    # 1. Downloading the baseline files from OSF
-    # 2. TODO: Comparing all features
-    # 3. TODO: Visualize comparison
-
-    Base threshold of variability should be based on running halfpipe 1000 times
-    or taking fmriprep example?
+    Run preprocessing and feature extraction for each of the participants coming the list of datasets,
+    and each of the settings coming from settings_list. Standard TSNR is calculated inside thefmriprep workflows.
+    We create a zip file with all the features, tsnr and spec file, per participant.
     """
 
     dataset_file = dataset.download(tmp_path)
@@ -182,11 +170,10 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     opts.workdir = tmp_path  # necessary when you choose MultiProc
 
     run_stage_run(opts)
+    # OR: Run another halfpipe version (not implemented)
 
-    # OR: Run another halfpipe version
     # subprocess.call(["docker", "run", "--volume", f"{tmp_path}:{tmp_path}", "--rm", "halfpipe/halfpipe:1.2.2 "])
 
-    # Look for derivatives for comparison and zip them
     index = BIDSIndex()
     index.put(tmp_path / "derivatives")
     spec_file = tmp_path / "spec.json"
@@ -196,6 +183,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         for test_setting in settings_list:
             name = test_setting.name
 
+            timeseries = index.get(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", task="rest", extension=".tsv")
             corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
             dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
             falff = index.get(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")
@@ -204,6 +192,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
 
             for feature_name, feature_path in [
+                ("timeseries", timeseries),
                 ("correlation matrix", corr),
                 ("dual regression", dual_reg),
                 ("falff", falff),
@@ -213,7 +202,17 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             ]:
                 assert feature_path is not None and len(feature_path) == 1, f"Missing path for {name} {feature_name}"
 
-            paths_to_zip.extend([list(corr)[0], list(dual_reg)[0], list(falff)[0], list(alff)[0], list(reho)[0], list(pcc)[0]])
+            paths_to_zip.extend(
+                [
+                    list(timeseries)[0],
+                    list(corr)[0],
+                    list(dual_reg)[0],
+                    list(falff)[0],
+                    list(alff)[0],
+                    list(reho)[0],
+                    list(pcc)[0],
+                ]
+            )
 
         tsnr_fmriprep = index.get(sub=sub, suffix="tsnr", datatype="func")
         paths_to_zip.extend([list(tsnr_fmriprep)[0], spec_file])
