@@ -183,6 +183,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         for test_setting in settings_list:
             name = test_setting.name
 
+            # Search for files we want to save in each setting
             timeseries = index.get(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", task="rest", extension=".tsv")
             corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
             dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
@@ -191,6 +192,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             reho = index.get(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")
             pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
 
+            # Check that halfpipe processing generated those files
             for feature_name, feature_path in [
                 ("timeseries", timeseries),
                 ("correlation matrix", corr),
@@ -204,18 +206,19 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
             paths_to_zip.extend(
                 [
-                    list(timeseries)[0],
-                    list(corr)[0],
-                    list(dual_reg)[0],
-                    list(falff)[0],
-                    list(alff)[0],
-                    list(reho)[0],
-                    list(pcc)[0],
+                    list(timeseries or [])[0],
+                    list(corr or [])[0],
+                    list(dual_reg or [])[0],
+                    list(falff or [])[0],
+                    list(alff or [])[0],
+                    list(reho or [])[0],
+                    list(pcc or [])[0],
                 ]
             )
 
+        # Search for files we want to save at the subject level
         tsnr_fmriprep = index.get(sub=sub, suffix="tsnr", datatype="func")
-        paths_to_zip.extend([list(tsnr_fmriprep)[0], spec_file])
+        paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -223,5 +226,10 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         zip_filepath = tmp_path / zip_filename
         with zipfile.ZipFile(zip_filepath, "w") as zipf:
             for file in paths_to_zip:
-                zipf.write(file, arcname=file.relative_to(tmp_path))
+                # Ensure file is a Path instance and convert it to string if needed
+                if isinstance(file, Path):
+                    zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
+                else:
+                    raise TypeError(f"Unexpected type for file: {type(file)}")
+
         print(f"Created zip file: {zip_filepath}")
