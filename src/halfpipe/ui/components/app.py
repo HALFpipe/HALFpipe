@@ -2,29 +2,28 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
 import curses
-import queue
 import threading
+from queue import SimpleQueue
 from time import sleep
 
 from .color import Color
 from .cursor import Cursor
 from .keyboard import Keyboard
-from .layout import Layout
 
-frameDelaySeconds = 50.0 / 1000.0  # 20 fps
+frame_delay_seconds = 50.0 / 1000.0  # 20 fps
 
 
 class App:
     def __init__(self):
         self.should_quit = False
 
-        self.queue = queue.SimpleQueue()
+        self.queue: SimpleQueue = SimpleQueue()
         self.condition = threading.Condition()
         self.thread = threading.Thread(target=self.main)
+
+        self.color: Color | None = None
+        self.keyboard: Keyboard | None = None
 
     def __enter__(self):
         with self.condition:
@@ -46,7 +45,7 @@ class App:
                 self.condition.notify_all()
             while not self.should_quit:
                 self.loop()
-                sleep(frameDelaySeconds)
+                sleep(frame_delay_seconds)
         except Exception as e:
             _error = e
         finally:
@@ -56,6 +55,8 @@ class App:
             raise _error
 
     def setup(self):
+        from .layout import Layout
+
         self.screen = curses.initscr()
 
         curses.start_color()
@@ -70,7 +71,7 @@ class App:
         self.color = Color()
         self.keyboard = Keyboard()
         self.layout = Layout(self)
-        self.isDirty = False
+        self.is_dirty = False
 
     def cleanup(self):
         Cursor.show()
@@ -86,16 +87,16 @@ class App:
             if c == -1:  # no character available
                 break
             if c == curses.KEY_RESIZE:  # resize
-                self.isDirty = True
-            else:
+                self.is_dirty = True
+            elif self.keyboard is not None:
                 self.keyboard(c)
 
         while not self.queue.empty():
             func = self.queue.get_nowait()
             assert func is not None and callable(func)
             func()
-            self.isDirty = True
+            self.is_dirty = True
 
-        if self.isDirty:
+        if self.is_dirty:
             self.layout.draw()
-            self.isDirty = False
+            self.is_dirty = False

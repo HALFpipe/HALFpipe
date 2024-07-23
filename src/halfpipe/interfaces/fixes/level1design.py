@@ -8,9 +8,7 @@ from nipype.interfaces.base import traits
 
 class Level1DesignInputSpec(fslm.Level1DesignInputSpec):
     bases = traits.Either(
-        traits.Dict(
-            traits.Enum("dgamma"), traits.Dict(traits.Enum("derivs"), traits.Bool)
-        ),
+        traits.Dict(traits.Enum("dgamma"), traits.Dict(traits.Enum("derivs"), traits.Bool)),
         traits.Dict(
             traits.Enum("gamma"),
             traits.Dict(traits.Enum("derivs", "gammasigma", "gammadelay")),
@@ -22,9 +20,7 @@ class Level1DesignInputSpec(fslm.Level1DesignInputSpec):
         traits.Dict(traits.Enum("none"), traits.Dict()),
         traits.Dict(traits.Enum("none"), traits.Enum(None)),
         mandatory=True,
-        desc=(
-            "name of basis function and options e.g., " "{'dgamma': {'derivs': True}}"
-        ),
+        desc=("name of basis function and options e.g., " "{'dgamma': {'derivs': True}}"),
     )
 
 

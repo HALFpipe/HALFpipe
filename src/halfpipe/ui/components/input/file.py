@@ -2,9 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
+""" """
 
-"""
 import os
 from os import path as op
 
@@ -18,14 +17,10 @@ from .text import TextInputView, common_chars
 class FileInputView(CallableView):
     def __init__(self, base_path=None, exists=True, messagefun=None, **kwargs):
         super(FileInputView, self).__init__(**kwargs)
-        self.text_input_view = TextInputView(
-            base_path, messagefun=messagefun, forbidden_chars="'\"'", maxlen=256
-        )
-        self.text_input_view.update = self.update
-        self.suggestion_view = SingleChoiceInputView(
-            [], isVertical=True, addBrackets=False
-        )
-        self.suggestion_view.update = self.update
+        self.text_input_view = TextInputView(base_path, messagefun=messagefun, forbidden_chars="'\"'", maxlen=256)
+        self.text_input_view.update = self.update  # type: ignore
+        self.suggestion_view = SingleChoiceInputView([], is_vertical=True, add_brackets=False)
+        self.suggestion_view.update = self.update  # type: ignore
 
         self.matching_files = []
         self.cur_dir = None
@@ -42,14 +37,14 @@ class FileInputView(CallableView):
 
     def setup(self):
         super(FileInputView, self).setup()
-        self.text_input_view.layout = self.layout
+        self.text_input_view._layout = self.layout
         self.text_input_view.setup()
-        self.suggestion_view.layout = self.layout
+        self.suggestion_view._layout = self.layout
         self.suggestion_view.setup()
 
     def _before_call(self):
         self.text_input_view._before_call()
-        self.text_input_view.isActive = True
+        self.text_input_view.is_active = True
         self._scan_files()
 
     def _is_ok(self):
@@ -61,7 +56,7 @@ class FileInputView(CallableView):
                 return False
         return True
 
-    def _getOutput(self):
+    def _get_output(self):
         if self.text is not None:
             try:
                 path = str(self.text).strip()
@@ -107,29 +102,25 @@ class FileInputView(CallableView):
         self.matching_files = new_matching_files
         self.suggestion_view.set_options(self.matching_files)
 
-    def _handleKey(self, c):
+    def _handle_key(self, c):
         if c == Key.Break:
             self.text = None
             self.suggestion_view.set_options([])
-            self.isActive = False
-        elif (
-            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
-        ):
+            self.is_active = False
+        elif self.suggestion_view.is_active and self.suggestion_view.cur_index is not None:
             if c == Key.Up and self.suggestion_view.cur_index == 0:
                 self.suggestion_view.offset = 0
                 self.suggestion_view.cur_index = None
-                self.suggestion_view.isActive = False
-                self.text_input_view.isActive = True
+                self.suggestion_view.is_active = False
+                self.text_input_view.is_active = True
                 self.text_input_view._before_call()
                 self.update()
             elif c == Key.Return or c == Key.Right:
-                self.text = op.join(
-                    op.dirname(str(self.text)), str(self.suggestion_view._getOutput())
-                )
+                self.text = op.join(op.dirname(str(self.text)), str(self.suggestion_view._get_output()))
                 self._scan_files()
                 self.suggestion_view.cur_index = None
-                self.suggestion_view.isActive = False
-                self.text_input_view.isActive = True
+                self.suggestion_view.is_active = False
+                self.text_input_view.is_active = True
                 self.text_input_view.cur_index = len(self.text)
                 self.text_input_view._before_call()
                 self.update()
@@ -138,12 +129,12 @@ class FileInputView(CallableView):
                 self._scan_files()
                 self.update()
             else:
-                self.suggestion_view._handleKey(c)
+                self.suggestion_view._handle_key(c)
         else:
             cur_text = self.text
             if c == Key.Down and len(self.matching_files) > 0:
-                self.suggestion_view.isActive = True
-                self.text_input_view.isActive = False
+                self.suggestion_view.is_active = True
+                self.text_input_view.is_active = False
                 self.suggestion_view._before_call()
                 self.update()
             elif c == Key.Tab and len(self.matching_files) > 0:
@@ -153,33 +144,39 @@ class FileInputView(CallableView):
             elif c == Key.Return:
                 if self._is_ok():
                     self.suggestion_view.set_options([])
-                    self.suggestion_view.isActive = False
-                    self.text_input_view.isActive = False
-                    self.isActive = False
+                    self.suggestion_view.is_active = False
+                    self.text_input_view.is_active = False
+                    self.is_active = False
             else:
-                if not self.text_input_view.isActive:
-                    self.suggestion_view.isActive = False
-                    self.text_input_view.isActive = True
+                if not self.text_input_view.is_active:
+                    self.suggestion_view.is_active = False
+                    self.text_input_view.is_active = True
                     self.text_input_view._before_call()
                     self.update()
-                self.text_input_view._handleKey(c)
+                self.text_input_view._handle_key(c)
 
             if self.text is not None and self.text != cur_text:
                 # was changed
                 self._scan_files()
                 self.update()
 
-    def drawAt(self, y):
+    def draw_at(self, y: int | None) -> int | None:
         if y is None:
-            return
+            return None
         size = 0
-        size += self.text_input_view.drawAt(y + size)
-        size += self.suggestion_view.drawAt(y + size)
 
-        if self.text_input_view._viewWidth > self._viewWidth:
-            self._viewWidth = self.text_input_view._viewWidth
-        if self.suggestion_view._viewWidth > self._viewWidth:
-            self._viewWidth = self.suggestion_view._viewWidth
+        text_size = self.text_input_view.draw_at(y + size)
+        suggestion_size = self.suggestion_view.draw_at(y + size)
+
+        if text_size is not None:
+            size += text_size
+        if suggestion_size is not None:
+            size += suggestion_size
+
+        if self.text_input_view._view_width > self._view_width:
+            self._view_width = self.text_input_view._view_width
+        if self.suggestion_view._view_width > self._view_width:
+            self._view_width = self.suggestion_view._view_width
 
         return size
 

@@ -20,21 +20,13 @@ def test_tag_glob(tmp_path: Path) -> None:
 
     for i in range(10):
         for j in range(1, 3):
-            file_path = (
-                tmp_path
-                / f"sub-{i:02d}"
-                / f"{_random_string()}_T1w_{_random_string()}_run-{j:02d}.txt"
-            )
+            file_path = tmp_path / f"sub-{i:02d}" / f"{_random_string()}_T1w_{_random_string()}_run-{j:02d}.txt"
             file_path.parent.mkdir(exist_ok=True)
             file_path.touch()
 
             ground_truth[str(file_path)] = dict(subject=i, run=j)
 
-            file_path = (
-                tmp_path
-                / f"sub-{i:02d}"
-                / f"{_random_string()}_T2w_{_random_string()}_run-{j:02d}.txt"
-            )
+            file_path = tmp_path / f"sub-{i:02d}" / f"{_random_string()}_T2w_{_random_string()}_run-{j:02d}.txt"
             file_path.parent.mkdir(exist_ok=True)
             file_path.touch()
 

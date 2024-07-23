@@ -6,14 +6,10 @@ from ..ingest.database import Database
 from ..logging import logger
 
 
-def collect_events(
-    database: Database, source_file: str
-) -> tuple[str | tuple[str, str], ...] | None:
+def collect_events(database: Database, source_file: str) -> tuple[str | tuple[str, str], ...] | None:
     task = database.tagval(source_file, "task")
     if not isinstance(task, str):
-        logger.warning(
-            f'Cannot collect events for "{source_file}" because it has no task tag'
-        )
+        logger.warning(f'Cannot collect events for "{source_file}" because it has no task tag')
         return None
     # Get from database
     candidates: tuple[str, ...] | None = database.associations(

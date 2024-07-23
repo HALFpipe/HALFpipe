@@ -8,14 +8,13 @@ from random import seed
 import nibabel as nib
 import numpy as np
 import pytest
-from nipype.interfaces import fsl
-
 from halfpipe.interfaces.fslnumpy.regfilt import FilterRegressor
+from nipype.interfaces import fsl
 
 
 @pytest.mark.slow
 @pytest.mark.timeout(60)
-def test_FilterRegressor(tmp_path):
+def test_filter_regressor(tmp_path):
     seed(a=0x5E6128C4)
 
     os.chdir(str(tmp_path))

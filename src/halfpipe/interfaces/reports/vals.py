@@ -59,9 +59,7 @@ class CalcMean(SimpleInterface):
         elif isdefined(self.inputs.parcellation):
             atlas_img = nib.nifti1.load(self.inputs.parcellation)
             parc_mean_signals = mean_signals(in_img, atlas_img, mask_image=mask_img)
-            parc_mean_signals_list = list(
-                map(float, np.ravel(parc_mean_signals).tolist())
-            )
+            parc_mean_signals_list = list(map(float, np.ravel(parc_mean_signals).tolist()))
             self._results["mean"] = parc_mean_signals_list
 
         elif mask_img is not None:
@@ -92,10 +90,10 @@ class UpdateVals(IOBase):
     input_spec = UpdateValsInputSpec
     output_spec = UpdateValsOutputSpec
 
-    def __init__(self, fields=[], **inputs):
+    def __init__(self, fields: list | None = None, **inputs):
         super().__init__(**inputs)
 
-        self.fields = fields
+        self.fields = [] if fields is None else fields
         add_traits(self.inputs, [*self.fields])
 
     def _list_outputs(self):
@@ -131,12 +129,8 @@ class UpdateVals(IOBase):
 
         if isdefined(self.inputs.aroma_metadata):
             aroma_metadata = self.inputs.aroma_metadata
-            is_noise_component = [
-                c["MotionNoise"] is True for c in aroma_metadata.values()
-            ]
-            vals["aroma_noise_frac"] = float(
-                np.array(is_noise_component).astype(float).mean()
-            )
+            is_noise_component = [c["MotionNoise"] is True for c in aroma_metadata.values()]
+            vals["aroma_noise_frac"] = float(np.array(is_noise_component).astype(float).mean())
 
         for field in self.fields:
             value = getattr(self.inputs, field, None)

@@ -11,9 +11,7 @@ from ..result.bids.images import load_images
 from ..utils.path import AnyPath, recursive_list_directory
 
 
-def find_derivatives_directories(
-    name: str, path: str | AnyPath, max_depth: int = 1
-) -> Generator[AnyPath, None, None]:
+def find_derivatives_directories(name: str, path: str | AnyPath, max_depth: int = 1) -> Generator[AnyPath, None, None]:
     if isinstance(path, str):
         path = Path(path)
     if isinstance(path, Path):
@@ -40,14 +38,10 @@ def find_derivatives_directories(
         yield path
 
 
-def collect_halfpipe_derivatives(
-    paths: Iterable[str | AnyPath], max_depth: int = 1, num_threads: int = 1
-) -> list[ResultDict]:
+def collect_halfpipe_derivatives(paths: Iterable[str | AnyPath], max_depth: int = 1, num_threads: int = 1) -> list[ResultDict]:
     index = BIDSIndex()
     for path in paths:
-        for derivatives_directory in find_derivatives_directories(
-            "halfpipe", path, max_depth=max_depth
-        ):
+        for derivatives_directory in find_derivatives_directories("halfpipe", path, max_depth=max_depth):
             index.put(derivatives_directory)
 
     results = load_images(index, num_threads=num_threads)

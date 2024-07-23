@@ -20,9 +20,7 @@ def init_setting_output_wf(workdir: str | None = None, setting_name: str | None 
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["tags", "vals", "metadata", "bold", "confounds", "mask"]
-        ),
+        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "confounds", "mask"]),
         name="inputnode",
     )
 
@@ -46,9 +44,7 @@ def init_setting_output_wf(workdir: str | None = None, setting_name: str | None 
     workflow.connect(inputnode, "mask", make_resultdicts, "brain_mask")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     # TODO fix this

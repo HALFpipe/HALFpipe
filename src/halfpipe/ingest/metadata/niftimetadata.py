@@ -11,21 +11,20 @@ from numpy import typing as npt
 from templateflow import api
 
 from ...logging import logger
+from ...model.file.base import File
 from ...model.metadata import axis_codes, templates
+from .base import Loader
 from .direction import canonicalize_direction_code
 from .niftiheader import NiftiheaderLoader
 from .slicetiming import str_slice_timing
 
 template_origin_sets = {
-    template: set(
-        tuple(value["origin"])
-        for value in api.get_metadata(template).get("res", dict()).values()
-    )
+    template: set(tuple(value["origin"]) for value in api.get_metadata(template).get("res", dict()).values())
     for template in templates
 }
 
 
-class NiftiheaderMetadataLoader:
+class NiftiheaderMetadataLoader(Loader):
     cache: dict[str, Any] = dict()
 
     @staticmethod
@@ -35,7 +34,7 @@ class NiftiheaderMetadataLoader:
     def __init__(self, loader):
         self.loader = loader
 
-    def fill(self, fileobj, key):
+    def fill(self, fileobj: File, key: str) -> bool:
         if key in fileobj.metadata:
             return True
 
@@ -46,7 +45,7 @@ class NiftiheaderMetadataLoader:
 
         header, descripdict = res
 
-        value = None
+        value: Any = None
 
         if header is None or descripdict is None:
             return False
@@ -61,14 +60,11 @@ class NiftiheaderMetadataLoader:
                 n_slices = None
 
                 if self.loader.fill(fileobj, "slice_encoding_direction"):
-                    slice_encoding_direction = fileobj.metadata.get(
-                        "slice_encoding_direction"
-                    )
+                    slice_encoding_direction = fileobj.metadata.get("slice_encoding_direction")
+                    assert isinstance(slice_encoding_direction, str)
 
                     if slice_encoding_direction not in axis_codes:
-                        slice_encoding_direction = canonicalize_direction_code(
-                            slice_encoding_direction, fileobj.path
-                        )
+                        slice_encoding_direction = canonicalize_direction_code(slice_encoding_direction, fileobj.path)
 
                     assert (
                         slice_encoding_direction in axis_codes
@@ -78,13 +74,10 @@ class NiftiheaderMetadataLoader:
                     header.set_dim_info(slice=slice_dim)
                     n_slices = header.get_data_shape()[slice_dim]
 
-                repetition_time = None
                 if not self.loader.fill(fileobj, "repetition_time"):
                     logger.info(f'Could not get repetition_time for "{fileobj.path}"')
                     return False
-                repetition_time = (
-                    fileobj.metadata["repetition_time"] * 1000
-                )  # needs to be in milliseconds
+                repetition_time: float = fileobj.metadata["repetition_time"] * 1000  # needs to be in milliseconds
 
                 nifti_slice_duration = header.get_slice_duration()
                 if n_slices is not None and repetition_time is not None:
@@ -93,8 +86,7 @@ class NiftiheaderMetadataLoader:
                     if (
                         nifti_slice_duration > slice_duration  # too long
                         or nifti_slice_duration * n_slices
-                        < repetition_time
-                        - 2 * slice_duration  # too short with fudge factor
+                        < repetition_time - 2 * slice_duration  # too short with fudge factor
                     ):
                         logger.info(
                             f"Image file header entry slice_duration ({nifti_slice_duration:f} ms) is "
@@ -112,9 +104,7 @@ class NiftiheaderMetadataLoader:
                 if slice_timing_code is None:
                     slice_times: Iterable[float] = header.get_slice_times()  # type: ignore
                 else:
-                    slice_times = str_slice_timing(
-                        slice_timing_code, n_slices, nifti_slice_duration
-                    )
+                    slice_times = str_slice_timing(slice_timing_code, n_slices, nifti_slice_duration)
                 slice_times = [s / 1000.0 for s in slice_times]  # need to be in seconds
                 if not all(isclose(slice_time, 0.0) for slice_time in slice_times):
                     value = slice_times
@@ -130,31 +120,30 @@ class NiftiheaderMetadataLoader:
                     zooms = header.get_zooms()
 
                     if zooms is None or len(zooms) != 4:
-                        logger.info(
-                            f'Missing repetition_time in image file header zooms "{zooms}"'
-                        )
+                        logger.info(f'Missing repetition_time in image file header zooms "{zooms}"')
                         return False
 
-                    value = float(zooms[3])
+                    repetition_time = float(zooms[3])
 
                     units = header.get_xyzt_units()
                     if units is not None and len(units) == 2:
                         _, t_unit = units
 
                         if t_unit == "msec":
-                            value /= 1e3
+                            repetition_time /= 1e3
                         elif t_unit == "usec":
-                            value /= 1e6
+                            repetition_time /= 1e6
                         elif t_unit != "sec":
                             logger.info(
                                 f'Unknown repetition_time units "{t_unit}" specified. '
-                                f'Assuming {value:f} seconds for "{fileobj.path}"'
+                                f'Assuming {repetition_time:f} seconds for "{fileobj.path}"'
                             )
                     else:
                         logger.info(
-                            f"Missing units for repetition_time. "
-                            f'Assuming {value:f} seconds for "{fileobj.path}"'
+                            f"Missing units for repetition_time. " f'Assuming {repetition_time:f} seconds for "{fileobj.path}"'
                         )
+
+                    value = repetition_time
 
             elif key == "echo_time":
                 if "echo_time" in descripdict:

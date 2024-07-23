@@ -32,7 +32,7 @@ def find_paths(obj):
     from nipype.interfaces.base.specs import BaseTraitedSpec
     from nipype.interfaces.base.support import InterfaceResult
 
-    paths = []
+    paths: list[Path | str] = []
     stack = [obj]
     while len(stack) > 0:
         obj = stack.pop()

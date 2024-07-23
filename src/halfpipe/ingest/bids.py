@@ -6,7 +6,7 @@ import json
 from os.path import relpath
 from pathlib import Path
 from shutil import rmtree
-from typing import overload
+from typing import Any, overload
 
 from bids.layout import Config
 from bids.layout.writing import build_path
@@ -24,7 +24,7 @@ bids_config = Config.load("bids")
 bids_version = "1.4.0"
 
 
-def get_bids_metadata(database, file_path) -> dict:
+def get_bids_metadata(database: Database, file_path: str | Path) -> dict[str, Any]:
     metadata = collect_metadata(database, file_path)
 
     return {camelize(key): value for key, value in metadata.items()}
@@ -55,8 +55,8 @@ class BidsDatabase:
             raise ValueError(f'File "{file_path}" has no tags')
 
         bids_tags = dict()
-        for k, v in tags.items():
-            bids_entity = k
+        for entity, value in tags.items():
+            bids_entity = entity
 
             if bids_entity in entity_longnames:  # map to long names
                 bids_entity = entity_longnames[bids_entity]
@@ -66,25 +66,23 @@ class BidsDatabase:
                 bids_entity = "acquisition"
 
             if bids_entity == "run":
-                if not v.isdecimal():  # enforce run to be numerical
-                    run_identifier = str(int_digest(v))[:4]
-                    logger.warning(
-                        f'Converting run identifier "{v}" to number "{run_identifier}" for BIDS-compliance'
-                    )
-                    v = run_identifier
+                if not value.isdecimal():  # enforce run to be numerical
+                    run_identifier = str(int_digest(value))[:4]
+                    logger.warning(f'Converting run identifier "{value}" to number "{run_identifier}" for BIDS-compliance')
+                    value = run_identifier
 
-            if k in entities:
-                bids_tags[bids_entity] = format_like_bids(v)
+            if entity in entities:
+                bids_tags[bids_entity] = format_like_bids(value)
             else:
                 if tags.get("datatype") == "fmap":
-                    if k == "suffix":
-                        k = "fmap"
-                bids_tags[k] = v
+                    if entity == "suffix":
+                        entity = "fmap"
+                bids_tags[entity] = value
 
         bids_path_result = build_path(bids_tags, bids_config.default_path_patterns)
 
         if bids_path_result is None:
-            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}"')
+            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}" with tags "{bids_tags}"')
 
         bids_path = str(bids_path_result)
 
@@ -101,13 +99,13 @@ class BidsDatabase:
 
         return bids_path
 
-    def to_bids(self, file_path):
+    def to_bids(self, file_path: str) -> str | None:
         return self.bids_paths.get(file_path)
 
-    def from_bids(self, bids_path):
+    def from_bids(self, bids_path: str) -> str | None:
         return self.file_paths.get(bids_path)
 
-    def tags(self, bids_path) -> dict | None:
+    def tags(self, bids_path: str) -> dict | None:
         """
         get a dictionary of entity -> value for a specific bids_path
         """
@@ -119,9 +117,7 @@ class BidsDatabase:
     @overload
     def get_tag_value(self, bids_path: str, entity: str) -> str | None: ...
 
-    def get_tag_value(
-        self, bids_path: list[str] | str, entity: str
-    ) -> str | list | None:
+    def get_tag_value(self, bids_path: list[str] | str, entity: str) -> str | list | None:
         if isinstance(bids_path, (list, tuple)):  # vectorize
             return [self.get_tag_value(b, entity) for b in bids_path]
 
@@ -131,7 +127,7 @@ class BidsDatabase:
 
         return None
 
-    def write(self, bidsdir):
+    def write(self, bidsdir: str | Path):
         bidsdir = Path(bidsdir)
         if bidsdir.is_symlink():
             raise ValueError("Will not write to symlink")
@@ -152,9 +148,10 @@ class BidsDatabase:
             json.dump(dataset_description, f, indent=4)
 
         # image files
-        for bids_path, file_path in self.file_paths.items():
-            assert bids_path is not None
-            bids_path = Path(bidsdir) / bids_path
+        for bids_path_str, file_path in self.file_paths.items():
+            if bids_path_str is None:
+                raise ValueError(f'File "{file_path}" has no BIDS path')
+            bids_path = Path(bidsdir) / bids_path_str
             bids_paths.add(bids_path)
             bids_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -169,14 +166,13 @@ class BidsDatabase:
             bids_path.symlink_to(relative_file_path)
 
         # sidecar files
-        for bids_path in self.file_paths.keys():
-            metadata = self._metadata.get(bids_path)
+        for bids_path_str in self.file_paths.keys():
+            metadata = self._metadata.get(bids_path_str)
 
             if metadata is not None and len(metadata) > 0:
+                bids_path = Path(bids_path_str)
                 basename, _ = split_ext(bids_path)
-                sidecar_path = (
-                    Path(bidsdir) / Path(bids_path).parent / f"{basename}.json"
-                )
+                sidecar_path = Path(bidsdir) / bids_path.parent / f"{basename}.json"
 
                 bids_paths.add(sidecar_path)
 

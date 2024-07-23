@@ -31,9 +31,7 @@ metadata_fields: frozenset[str] = frozenset(
 )
 
 
-def collect_metadata(
-    database: Database, path: Path | str, setting=None
-) -> dict[str, Any]:
+def collect_metadata(database: Database, path: Path | str, setting=None) -> dict[str, Any]:
     metadata: dict[str, Any] = OrderedDict()
 
     if setting is not None:
@@ -52,7 +50,7 @@ def collect_metadata(
         # automated conversion
         metadata_keys = get_nested_schema_field_names(instance, "metadata")
         for key in metadata_keys:
-            database.fillmetadata(key, [path])
+            database.fillmetadata(key, [str(path)])
             value = database.metadata(path, key)
 
             if value is not None:
@@ -64,7 +62,7 @@ def collect_metadata(
                         logger.warning(f'Cannot find "{key}" for "{path}"', exc_info=e)
                         continue
                 if key == "slice_timing_code":
-                    if not database.fillmetadata("slice_timing", [path]):
+                    if not database.fillmetadata("slice_timing", [str(path)]):
                         continue
                     key = "slice_timing"
                     value = database.metadata(path, key)
@@ -91,9 +89,7 @@ def collect_metadata(
 
     if not set(metadata.keys()).issubset(metadata_fields):
         unknown_keys = set(metadata.keys()) - metadata_fields
-        unknown_keys_str = inflect_engine.join(
-            [f'"{key}"' for key in sorted(unknown_keys)]
-        )
+        unknown_keys_str = inflect_engine.join([f'"{key}"' for key in sorted(unknown_keys)])
         raise ValueError(f"Collected unknown metadata keys {unknown_keys_str}")
 
     return metadata

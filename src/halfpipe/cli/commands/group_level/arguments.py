@@ -6,9 +6,7 @@ from argparse import ArgumentParser
 
 
 def setup_argument_parser(argument_parser: ArgumentParser):
-    group = argument_parser.add_argument_group(
-        title="paths", description="define the input and output paths"
-    )
+    group = argument_parser.add_argument_group(title="paths", description="define the input and output paths")
     group.add_argument(
         "--input-directory",
         "--working-directory",
@@ -28,9 +26,7 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="the directory to write the results to",
     )
 
-    group = argument_parser.add_argument_group(
-        title="filter", description="Arguments for filtering the inputs"
-    )
+    group = argument_parser.add_argument_group(title="filter", description="Arguments for filtering the inputs")
     group.add_argument(
         "--include",
         type=str,
@@ -82,9 +78,7 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="the strategy to use for handling missing values in the covariates",
     )
 
-    group = argument_parser.add_argument_group(
-        title="modify", description="Arguments for modifying the inputs"
-    )
+    group = argument_parser.add_argument_group(title="modify", description="Arguments for modifying the inputs")
     group.add_argument(
         "--rename",
         type=str,
@@ -102,9 +96,7 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="aggregate the images across the given tags with a fixed effects model",
     )
 
-    group = argument_parser.add_argument_group(
-        title="design", description="arguments for defining the design"
-    )
+    group = argument_parser.add_argument_group(title="design", description="arguments for defining the design")
     group.add_argument(
         "--from-spec",
         default=False,
@@ -200,9 +192,7 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="remove the variable from the covariates",
     )
 
-    group = argument_parser.add_argument_group(
-        title="stats", description="arguments for defining the statistics to run"
-    )
+    group = argument_parser.add_argument_group(title="stats", description="arguments for defining the statistics to run")
     algorithms = ("descriptive", "flame1", "heterogeneity", "mcartest")
     group.add_argument(
         "--algorithm",
@@ -213,9 +203,7 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         help="the algorithms to run for the analysis",
     )
 
-    group = argument_parser.add_argument_group(
-        title="export", description="arguments for exporting variables"
-    )
+    group = argument_parser.add_argument_group(title="export", description="arguments for exporting variables")
     group.add_argument(
         "--export-variable",
         type=str,
@@ -244,5 +232,8 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         "--minimum-atlas-coverage",
         type=float,
         default=0.5,
-        help="the minimum proportion of voxels in each atlas region that must be covered by the subject-specific mask for region to be included in the analysis",
+        help=(
+            "the minimum proportion of voxels in each atlas region that must be covered by the subject-specific mask for "
+            "region to be included in the analysis"
+        ),
     )

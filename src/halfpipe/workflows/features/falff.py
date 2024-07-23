@@ -17,7 +17,10 @@ from ..memory import MemoryCalculator
 
 
 def init_falff_wf(
-    workdir: str | Path, feature=None, fwhm=None, memcalc=MemoryCalculator.default()
+    workdir: str | Path,
+    feature=None,
+    fwhm=None,
+    memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
     Calculate Amplitude of low frequency oscillations(ALFF) and
@@ -34,6 +37,7 @@ def init_falff_wf(
     <https://github.com/FCP-INDI/C-PAC/blob/master/CPAC/alff/alff.py>
 
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
         name = f"{format_workflow(feature.name)}"
     else:
@@ -45,18 +49,14 @@ def init_falff_wf(
 
     # input
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]
-        ),
+        niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]),
         name="inputnode",
     )
     unfiltered_inputnode = pe.Node(
         niu.IdentityInterface(fields=["bold", "mask"]),
         name="unfiltered_inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
@@ -78,24 +78,18 @@ def init_falff_wf(
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     # standard deviation of the filtered image
-    stddev_filtered = pe.Node(
-        afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb
-    )
+    stddev_filtered = pe.Node(afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb)
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
     workflow.connect(inputnode, "bold", stddev_filtered, "in_file")
     workflow.connect(inputnode, "mask", stddev_filtered, "mask")
 
     # standard deviation of the unfiltered image
-    stddev_unfiltered = pe.Node(
-        afni.TStat(), name="stddev_unfiltered", mem_gb=memcalc.series_std_gb
-    )
+    stddev_unfiltered = pe.Node(afni.TStat(), name="stddev_unfiltered", mem_gb=memcalc.series_std_gb)
     stddev_unfiltered.inputs.outputtype = "NIFTI_GZ"
     stddev_unfiltered.inputs.options = "-stdev"
     workflow.connect(unfiltered_inputnode, "bold", stddev_unfiltered, "in_file")
@@ -114,16 +108,12 @@ def init_falff_wf(
     workflow.connect(stddev_filtered, "out_file", merge, "in1")
     workflow.connect(falff, "out_file", merge, "in2")
 
-    smooth = pe.MapNode(
-        LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth"
-    )
+    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth")
     workflow.connect(merge, "out", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
-    zscore = pe.MapNode(
-        ZScore(), iterfield="in_file", name="zscore", mem_gb=memcalc.volume_std_gb
-    )
+    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore", mem_gb=memcalc.volume_std_gb)
     workflow.connect(smooth, "out_file", zscore, "in_file")
     workflow.connect(inputnode, "mask", zscore, "mask")
 

@@ -14,7 +14,7 @@ from ...interfaces.reports.tsnr import TSNR
 from ...interfaces.reports.vals import CalcMean, UpdateVals
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -22,10 +22,11 @@ def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
     return skip_vols * repetition_time
 
 
-def init_func_report_wf(
-    workdir=None, name="func_report_wf", memcalc=MemoryCalculator.default()
-):
-    """ """
+def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalculator | None = None):
+    """
+    Also creates initial vals
+    """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
     #
@@ -60,7 +61,7 @@ def init_func_report_wf(
         run_without_submitting=True,
         nohash=True,
     )
-    select_std.inputs.key = f"{constants.reference_space}_res-{constants.reference_res}"
+    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
     workflow.connect(inputnode, "bold_std", select_std, "bold_std")
     workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
     workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
@@ -89,13 +90,11 @@ def init_func_report_wf(
     workflow.connect(inputnode, "fallback", make_resultdicts, "fallback_registration")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    for fr, frd in zip(fmriprep_reports, fmriprep_reportdatasinks):
+    for fr, frd in zip(fmriprep_reports, fmriprep_reportdatasinks, strict=False):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
     # EPI -> mni
@@ -121,9 +120,7 @@ def init_func_report_wf(
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
-    reference_dict = dict(
-        reference_space=constants.reference_space, reference_res=constants.reference_res
-    )
+    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     reference_dict["input_space"] = reference_dict["reference_space"]
     resample = pe.Node(
         Resample(interpolation="MultiLabel", **reference_dict),

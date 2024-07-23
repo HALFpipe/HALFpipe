@@ -15,12 +15,8 @@ from ..fixes.applytransforms import ApplyTransforms, ApplyTransformsInputSpec
 
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
-    input_space = traits.Either(
-        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False
-    )
-    reference_space = traits.Either(
-        "MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True
-    )
+    input_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False)
+    reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
     reference_res = traits.Int(mandatory=False)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
 
@@ -47,9 +43,7 @@ class Resample(ApplyTransforms):
         self.resample = False
 
         reference_space = self.inputs.reference_space
-        reference_res = (
-            self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
-        )
+        reference_res = self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
 
         if not isdefined(self.inputs.reference_image):
             if reference_res is not None:
@@ -84,9 +78,7 @@ class Resample(ApplyTransforms):
             input_space = self.inputs.input_space
             if isdefined(input_space):
                 if input_space != reference_space:
-                    xfm = getresource(
-                        f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5"
-                    )
+                    xfm = getresource(f"tpl_{reference_space}_from_{input_space}_mode_image_xfm.h5")
                     assert Path(xfm).is_file()
                     transforms = [str(xfm)]
 
@@ -94,15 +86,9 @@ class Resample(ApplyTransforms):
         else:
             transforms = ["custom"]
 
-        if (
-            not input_matches_reference
-            or set(transforms) != set(["identity"])
-            or not self.inputs.lazy
-        ):
+        if not input_matches_reference or set(transforms) != set(["identity"]) or not self.inputs.lazy:
             self.resample = True
-            runtime = super(Resample, self)._run_interface(
-                runtime, correct_return_codes
-            )
+            runtime = super(Resample, self)._run_interface(runtime, correct_return_codes)
 
         return runtime
 

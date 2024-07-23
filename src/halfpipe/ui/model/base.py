@@ -31,9 +31,9 @@ def _resolve_across(ctx, inputname):
             return []
     for obj in ctx.spec.models:
         if inputname == obj.name:
-            in_across = set(tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs)
-            assert len(in_across) == 1, "Cannot resolve across"
-            (in_across,) = in_across
+            in_across_set = set(tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs)
+            assert len(in_across_set) == 1, "Cannot resolve across"
+            (in_across,) = in_across_set
             return [*in_across, obj.across]
     raise ValueError(f'Input "{inputname}" not found')
 
@@ -59,10 +59,7 @@ def _get_fe_aggregate(ctx, inputname, across):
 
     # need to create
 
-    display_strs = [
-        entity_display_aliases[entity] if entity in entity_display_aliases else entity
-        for entity in across
-    ]
+    display_strs = [entity_display_aliases[entity] if entity in entity_display_aliases else entity for entity in across]
     acrossstr = " then ".join([p.plural(display_str) for display_str in display_strs])
     inputname_with_spaces = humanize(underscore(inputname))
     basename = format_like_bids(f"aggregate {inputname_with_spaces} across {acrossstr}")
@@ -79,9 +76,7 @@ def _get_fe_aggregate(ctx, inputname, across):
         aggregatename = f"{basename}{i}"
         i += 1
 
-    modelobj = FixedEffectsModelSchema().load(
-        {"name": aggregatename, "inputs": [inputname], "type": "fe", "across": entity}
-    )
+    modelobj = FixedEffectsModelSchema().load({"name": aggregatename, "inputs": [inputname], "type": "fe", "across": entity})
     assert isinstance(modelobj, Model)
     ctx.spec.models.insert(-1, modelobj)
 
@@ -116,39 +111,24 @@ class ModelAggregateStep(Step):
             filters = setting_filters[obj.setting]
             feature_filepaths = [*filepaths]
             if filters is not None and len(filters) > 0:
-                feature_filepaths = ctx.database.applyfilters(
-                    feature_filepaths, filters
-                )
-            self.feature_entities[obj.name], _ = ctx.database.multitagvalset(
-                aggregate_order, filepaths=feature_filepaths
-            )
+                feature_filepaths = ctx.database.applyfilters(feature_filepaths, filters)
+            self.feature_entities[obj.name], _ = ctx.database.multitagvalset(aggregate_order, filepaths=feature_filepaths)
 
-        entitiesset = set.union(
-            *[set(entitylist) for entitylist in self.feature_entities.values()]
-        )
+        entitiesset = set.union(*[set(entitylist) for entitylist in self.feature_entities.values()])
 
         across = ctx.spec.models[-1].across
         assert across not in entitiesset
 
-        self.entities = [
-            entity for entity in aggregate_order if entity in entitiesset
-        ]  # maintain order
+        self.entities = [entity for entity in aggregate_order if entity in entitiesset]  # maintain order
         display_strs = [
-            (
-                entity_display_aliases[entity]
-                if entity in entity_display_aliases
-                else entity
-            )
-            for entity in self.entities
+            (entity_display_aliases[entity] if entity in entity_display_aliases else entity) for entity in self.entities
         ]
         self.options = [humanize(p.plural(display_str)) for display_str in display_strs]
 
-        self.optionstr_by_entity = dict(zip(self.entities, self.options))
+        self.optionstr_by_entity = dict(zip(self.entities, self.options, strict=False))
 
         if len(self.options) > 0:
-            self._append_view(
-                TextView("Aggregate scan-level statistics before analysis?")
-            )
+            self._append_view(TextView("Aggregate scan-level statistics before analysis?"))
             self.input_view = MultipleChoiceInputView(
                 self.options,
                 checked=[option for option in self.options if option != "task"],
@@ -166,7 +146,7 @@ class ModelAggregateStep(Step):
             return True
 
     def next(self, ctx):
-        to_aggregate = dict()
+        to_aggregate: dict[str, list[str]] = dict()
         if self.choice is not None:
             for entity in self.entities:
                 optionstr = self.optionstr_by_entity[entity]
@@ -176,14 +156,12 @@ class ModelAggregateStep(Step):
                     if entity not in feature_entities:
                         continue
                     if featurename not in to_aggregate:
-                        to_aggregate[featurename] = []
+                        to_aggregate[featurename] = list()
                     to_aggregate[featurename].append(entity)
 
         for i, inputname in enumerate(ctx.spec.models[-1].inputs):
             if inputname in to_aggregate:
-                ctx.spec.models[-1].inputs[i] = _get_fe_aggregate(
-                    ctx, inputname, to_aggregate[inputname]
-                )
+                ctx.spec.models[-1].inputs[i] = _get_fe_aggregate(ctx, inputname, to_aggregate[inputname])
 
         if len(self.options) > 0 or self.is_first_run:
             self.is_first_run = False
@@ -203,11 +181,7 @@ class ModelFeaturesStep(Step):
 
         assert ctx.spec.features is not None
 
-        self.namesset = set(
-            feature.name
-            for feature in ctx.spec.features
-            if feature.type not in ["atlas_based_connectivity"]
-        )
+        self.namesset = set(feature.name for feature in ctx.spec.features if feature.type not in ["atlas_based_connectivity"])
 
         assert len(self.namesset) > 0
 
@@ -218,9 +192,7 @@ class ModelFeaturesStep(Step):
 
             names = sorted(list(self.namesset))
 
-            self.input_view = MultipleChoiceInputView(
-                names, checked=names, isVertical=True
-            )
+            self.input_view = MultipleChoiceInputView(names, checked=names, is_vertical=True)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -236,9 +208,7 @@ class ModelFeaturesStep(Step):
 
     def next(self, ctx):
         if self.choice is not None:
-            ctx.spec.models[-1].inputs = [
-                feature for feature, is_selected in self.choice.items() if is_selected
-            ]
+            ctx.spec.models[-1].inputs = [feature for feature, is_selected in self.choice.items() if is_selected]
         elif len(self.namesset) == 1:
             ctx.spec.models[-1].inputs = [*self.namesset]
 
@@ -263,9 +233,7 @@ class ModelNameStep(Step):
             suggestion = f"{base}{index}"
             index += 1
 
-        self.input_view = TextInputView(
-            text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
-        )
+        self.input_view = TextInputView(text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -290,9 +258,7 @@ class ModelTypeStep(Step):
 
     def setup(self, _):
         self._append_view(TextView("Specify model type"))
-        self.input_view = SingleChoiceInputView(
-            list(self.options.keys()), isVertical=self.is_vertical
-        )
+        self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=self.is_vertical)
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
 
@@ -320,10 +286,7 @@ class HasModelStep(YesNoStep):
     def _should_run(self, ctx):
         if hasattr(ctx.spec, "features") and ctx.spec.features is not None:
             for feature in ctx.spec.features:
-                if (
-                    hasattr(feature, "type")
-                    and feature.type != "atlas_based_connectivity"
-                ):
+                if hasattr(feature, "type") and feature.type != "atlas_based_connectivity":
                     return True
 
         self.choice = "No"

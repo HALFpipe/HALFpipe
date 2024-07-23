@@ -11,11 +11,13 @@ import marshmallow.exceptions
 from inflection import underscore
 from marshmallow import EXCLUDE
 
+from ...model.file.base import File
 from ...model.metadata import MetadataSchema
 from ...utils.path import split_ext
+from .base import Loader
 
 
-class SidecarMetadataLoader:
+class SidecarMetadataLoader(Loader):
     @staticmethod
     @lru_cache(maxsize=None)
     def load_json(file_path) -> Dict:
@@ -48,9 +50,7 @@ class SidecarMetadataLoader:
 
             if "EchoTime1" in in_data and "EchoTime2" in in_data:
                 if "EchoTimeDifference" not in in_data:
-                    in_data["EchoTimeDifference"] = abs(
-                        float(in_data["EchoTime1"]) - float(in_data["EchoTime2"])
-                    )
+                    in_data["EchoTimeDifference"] = abs(float(in_data["EchoTime1"]) - float(in_data["EchoTime2"]))
 
             # parse
 
@@ -62,7 +62,7 @@ class SidecarMetadataLoader:
 
         return sidecar
 
-    def fill(self, fileobj, key):
+    def fill(self, fileobj: File, key: str) -> bool:
         sidecar = self.load(fileobj.path)
 
         value = sidecar.get(key)

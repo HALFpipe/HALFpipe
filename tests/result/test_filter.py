@@ -8,7 +8,6 @@ from types import FunctionType
 import numpy as np
 import pandas as pd
 import pytest
-
 from halfpipe.design import prepare_data_frame
 from halfpipe.model.filter import FilterSchema
 from halfpipe.model.variable import VariableSchema
@@ -35,9 +34,7 @@ def test_filter_group(action: str, tmp_path):
     assert isinstance(variable, dict)
     variables.append(variable)
 
-    variable = variable_schema.load(
-        dict(type="categorical", name="a", levels=["a", "b", "c", "d"])
-    )
+    variable = variable_schema.load(dict(type="categorical", name="a", levels=["a", "b", "c", "d"]))
     assert isinstance(variable, dict)
     variables.append(variable)
 

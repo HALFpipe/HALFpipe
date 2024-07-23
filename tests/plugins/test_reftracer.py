@@ -8,9 +8,8 @@ from typing import Any
 
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
-from nipype import config
-
 from halfpipe.plugins.reftracer import PathReferenceTracer
+from nipype import config
 
 
 def add(a, b):
@@ -31,7 +30,7 @@ def make_node(name):
     )
 
 
-def test_PathReferenceTracer(tmp_path: Path):
+def test_path_reference_tracer(tmp_path: Path):
     os.chdir(str(tmp_path))
 
     wf = pe.Workflow("w", base_dir=Path.cwd())
@@ -128,7 +127,7 @@ def select(a, b):
     return b
 
 
-def test_PathReferenceTracer_indirect_refs(tmp_path: Path):
+def test_path_reference_tracer_indirect_refs(tmp_path: Path):
     os.chdir(str(tmp_path))
 
     config.set_default_config()
@@ -138,7 +137,9 @@ def test_PathReferenceTracer_indirect_refs(tmp_path: Path):
 
     x = pe.Node(
         interface=niu.Function(
-            function=totxt, input_names=["a", "b"], output_names=["c", "d"]  # type: ignore
+            function=totxt,
+            input_names=["a", "b"],
+            output_names=["c", "d"],  # type: ignore
         ),
         name="x",
     )
@@ -146,18 +147,14 @@ def test_PathReferenceTracer_indirect_refs(tmp_path: Path):
     x.inputs.b = 2
 
     y = pe.Node(
-        interface=niu.Function(
-            function=select, input_names=["a", "b"], output_names="c"
-        ),
+        interface=niu.Function(function=select, input_names=["a", "b"], output_names="c"),
         name="y",
     )
     wf.connect(x, "c", y, "a")
     wf.connect(x, "d", y, "b")
 
     z = pe.Node(
-        interface=niu.Function(
-            function=select, input_names=["a", "b"], output_names="c"
-        ),
+        interface=niu.Function(function=select, input_names=["a", "b"], output_names="c"),
         name="z",
     )
     wf.connect(y, "c", z, "a")
@@ -244,7 +241,7 @@ def test_PathReferenceTracer_indirect_refs(tmp_path: Path):
     )
 
 
-def test_PathReferenceTracer_nested(tmp_path: Path):
+def test_path_reference_tracer_nested(tmp_path: Path):
     os.chdir(str(tmp_path))
 
     wf = pe.Workflow("w")

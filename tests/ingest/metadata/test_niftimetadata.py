@@ -5,7 +5,6 @@
 import nibabel as nib
 import numpy as np
 import pytest
-
 from halfpipe.ingest.metadata.niftimetadata import NiftiheaderMetadataLoader
 from halfpipe.model.file.base import File
 
@@ -15,7 +14,7 @@ class MockLoader:
         return True
 
 
-def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
+def test_nifti_header_metadata_loader_repetition_time_3d(tmp_path):
     size = (2, 3, 4)
 
     fname = str(tmp_path / "test.nii")
@@ -31,7 +30,7 @@ def test_NiftiheaderMetadataLoader_repetition_time_3d(tmp_path):
 
 
 @pytest.mark.parametrize("units", ["msec", "usec", "sec", "unknown"])
-def test_NiftiheaderMetadataLoader_repetition_time_units(tmp_path, units):
+def test_nifti_header_metadata_loader_repetition_time_units(tmp_path, units):
     size = (1, 2, 3, 4)
     repetition_time = 1.234  # seconds
 
@@ -62,7 +61,7 @@ def test_NiftiheaderMetadataLoader_repetition_time_units(tmp_path, units):
 
 
 @pytest.mark.parametrize("nifti_slice_duration", [0.0, 42, 70])
-def test_NiftiheaderMetadataLoader_slice_timing(tmp_path, nifti_slice_duration):
+def test_nifti_header_metadata_loader_slice_timing(tmp_path, nifti_slice_duration):
     size = (10, 10, 60, 125)
     repetition_time = 2.5  # seconds
 

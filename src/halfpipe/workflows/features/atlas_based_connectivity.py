@@ -14,7 +14,7 @@ from ...interfaces.reports.vals import CalcMean
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -23,12 +23,13 @@ def init_atlas_based_connectivity_wf(
     feature=None,
     atlas_files=None,
     atlas_spaces=None,
-    memcalc=MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
     create workflow for brainatlas
 
     """
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
         name = f"{format_workflow(feature.name)}_wf"
     else:
@@ -51,9 +52,7 @@ def init_atlas_based_connectivity_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["resultdicts"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
     min_region_coverage = 1
     if feature is not None:
@@ -88,22 +87,16 @@ def init_atlas_based_connectivity_wf(
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
     workflow.connect(inputnode, "atlas_names", make_resultdicts, "atlas")
-    workflow.connect(
-        inputnode, "repetition_time", make_resultdicts, "sampling_frequency"
-    )
+    workflow.connect(inputnode, "repetition_time", make_resultdicts, "sampling_frequency")
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
     #
-    resultdict_datasink = pe.Node(
-        ResultdictDatasink(base_directory=workdir), name="resultdict_datasink"
-    )
+    resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(
-        reference_space=constants.reference_space, reference_res=constants.reference_res
-    )
+    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
         Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
@@ -115,9 +108,7 @@ def init_atlas_based_connectivity_wf(
 
     #
     connectivitymeasure = pe.MapNode(
-        ConnectivityMeasure(
-            background_label=0, min_region_coverage=min_region_coverage
-        ),
+        ConnectivityMeasure(background_label=0, min_region_coverage=min_region_coverage),
         name="connectivitymeasure",
         iterfield=["atlas_file"],
         mem_gb=memcalc.series_std_gb,
@@ -127,15 +118,9 @@ def init_atlas_based_connectivity_wf(
     workflow.connect(resample, "output_image", connectivitymeasure, "atlas_file")
 
     workflow.connect(connectivitymeasure, "time_series", make_resultdicts, "timeseries")
-    workflow.connect(
-        connectivitymeasure, "covariance", make_resultdicts, "covariance_matrix"
-    )
-    workflow.connect(
-        connectivitymeasure, "correlation", make_resultdicts, "correlation_matrix"
-    )
-    workflow.connect(
-        connectivitymeasure, "region_coverage", make_resultdicts, "coverage"
-    )
+    workflow.connect(connectivitymeasure, "covariance", make_resultdicts, "covariance_matrix")
+    workflow.connect(connectivitymeasure, "correlation", make_resultdicts, "correlation_matrix")
+    workflow.connect(connectivitymeasure, "region_coverage", make_resultdicts, "coverage")
 
     #
     tsnr = pe.Node(interface=nac.TSNR(), name="tsnr", mem_gb=memcalc.series_std_gb)

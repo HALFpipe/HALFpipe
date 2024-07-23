@@ -2,14 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
+""" """
 
-"""
 import curses
 import curses.ascii
 import enum
 import os
-import queue
+from queue import SimpleQueue
 
 
 class Key(enum.Enum):
@@ -26,7 +25,7 @@ class Key(enum.Enum):
 
 class Keyboard:
     def __init__(self):
-        self.queue = queue.SimpleQueue()
+        self.queue: SimpleQueue = SimpleQueue()
         self.state = ""
 
     def __call__(self, c):

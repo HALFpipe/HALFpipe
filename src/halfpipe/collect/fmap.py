@@ -19,9 +19,7 @@ def collect_pe_dir(database: Database, c: str):
     return pe_dir
 
 
-def collect_fieldmaps(
-    database: Database, bold_file_path: str, silent: bool = False
-) -> list[str]:
+def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> list[str]:
     bold_file_tags = database.tags(bold_file_path)
     if bold_file_tags is None:
         return list()
@@ -66,18 +64,14 @@ def collect_fieldmaps(
             continue
         magnitude: list[str] = magnitude_map[suffix]
 
-        has_magnitude = any(
-            database.tagval(c, "suffix") in magnitude for c in candidates
-        )
+        has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
         if not has_magnitude:
             incomplete.add(c)
 
     if len(incomplete) > 0:
         if silent is not True:
             incomplete_str = pe.join(sorted(incomplete))
-            logger.info(
-                f"Skipping field maps {incomplete_str} due to missing magnitude images"
-            )
+            logger.info(f"Skipping field maps {incomplete_str} due to missing magnitude images")
         candidates -= incomplete
 
     # Filter pepolar
@@ -96,12 +90,8 @@ def collect_fieldmaps(
             check_pes(epi_fmaps, collect_pe_dir(database, bold_file_path))
         except ValueError:
             if silent is not True:
-                incomplete_str = pe.join(
-                    sorted(f'"{c}" with direction {dir}' for c, dir in epi_fmaps)
-                )
-                logger.info(
-                    f"Skipping field maps {incomplete_str} because they do not have matched phase encoding directions"
-                )
+                incomplete_str = pe.join(sorted(f'"{c}" with direction {dir}' for c, dir in epi_fmaps))
+                logger.info(f"Skipping field maps {incomplete_str} because they do not have matched phase encoding directions")
             candidates -= set(c for c, _ in epi_fmaps)
 
     return sorted(candidates)

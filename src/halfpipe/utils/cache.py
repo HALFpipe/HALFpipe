@@ -37,7 +37,7 @@ def uncache_obj(
 
         if obj is not None:
             if uuid is not None and hasattr(obj, "uuid"):
-                obj_uuid = getattr(obj, "uuid")
+                obj_uuid = obj.uuid
                 if obj_uuid is None or str(obj_uuid) != str(uuid):
                     return None
 
@@ -69,9 +69,7 @@ def cache_obj(
     cache_file_path = str(Path(workdir) / _make_cache_file_path(type_str, uuid))
 
     if isinstance(obj, Mapping):
-        with open_shelf(
-            cache_file_path, flag="n", protocol=pickle.HIGHEST_PROTOCOL, writeback=True
-        ) as shelf:
+        with open_shelf(cache_file_path, flag="n", protocol=pickle.HIGHEST_PROTOCOL, writeback=True) as shelf:
             shelf.update(obj)
 
     else:

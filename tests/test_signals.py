@@ -10,19 +10,16 @@ from zipfile import ZipFile
 import nibabel as nib
 import numpy as np
 import pytest
-from nilearn.image import new_img_like
-
 from halfpipe.resource import get as get_resource
 from halfpipe.signals import mean_signals, mode_signals
 from halfpipe.stats.fit import load_data
 from halfpipe.utils.matrix import atleast_4d
+from nilearn.image import new_img_like
 
 from .resource import setup as setup_test_resources
 
 
-def test_mean_signals(
-    tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any]]
-) -> None:
+def test_mean_signals(tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any]]) -> None:
     os.chdir(str(tmp_path))
 
     cope_files = wakemandg_hensonrn_raw["stat-effect_statmap"]
@@ -42,9 +39,7 @@ def test_mean_signals(
     brainnetome_image = nib.nifti1.load(brainnetome_path)
     assert isinstance(brainnetome_image, nib.analyze.AnalyzeImage)
 
-    brainnetome_signals, coverages = mean_signals(
-        cope_image, brainnetome_image, mask_image=mask_image, output_coverage=True
-    )
+    brainnetome_signals, coverages = mean_signals(cope_image, brainnetome_image, mask_image=mask_image, output_coverage=True)
     assert np.all(np.isfinite(brainnetome_signals))
     assert np.all(np.isfinite(coverages))
     assert all(0 <= coverage <= 1 for coverage in coverages)
@@ -61,9 +56,7 @@ def test_mean_signals(
     combined = np.concatenate((brainnetome, schaefer), axis=3)
     combined_image = new_img_like(brainnetome_image, combined)
 
-    combined_signals, coverages = mean_signals(
-        cope_image, combined_image, mask_image=mask_image, output_coverage=True
-    )
+    combined_signals, coverages = mean_signals(cope_image, combined_image, mask_image=mask_image, output_coverage=True)
     assert np.all(np.isfinite(combined_signals))
     assert np.all(np.isfinite(coverages))
     assert all(0 <= coverage <= 1 for coverage in coverages)
@@ -72,9 +65,7 @@ def test_mean_signals(
 
 
 @pytest.mark.timeout(600)
-def test_mode_signals(
-    tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any]]
-) -> None:
+def test_mode_signals(tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any]]) -> None:
     os.chdir(str(tmp_path))
 
     cope_files = wakemandg_hensonrn_raw["stat-effect_statmap"]
@@ -84,9 +75,7 @@ def test_mode_signals(
     copes_img, var_copes_img = load_data(cope_files, var_cope_files, mask_files)
 
     setup_test_resources()
-    modes_path = get_resource(
-        "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz"
-    )
+    modes_path = get_resource("tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz")
     modes_img = nib.nifti1.load(modes_path)
     assert isinstance(modes_img, nib.analyze.AnalyzeImage)
 

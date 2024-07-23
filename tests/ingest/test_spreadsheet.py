@@ -12,7 +12,6 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 import pytest
-
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 
 vest_str = """/NumWaves       2
@@ -78,20 +77,10 @@ def test_loadspreadsheet_dtypes(
     n_rows = 10
 
     records: OrderedDict[str, List[Union[str, float]]] = OrderedDict(
-        [
-            (f"x{i}", [random_str(5) for _ in range(n_rows)])
-            for i in range(n_str_columns)
-        ]
+        [(f"x{i}", [random_str(5) for _ in range(n_rows)]) for i in range(n_str_columns)]
     )
 
-    records.update(
-        OrderedDict(
-            [
-                (f"y{i}", [random() for _ in range(n_rows)])
-                for i in range(n_float_columns)
-            ]
-        )
-    )
+    records.update(OrderedDict([(f"y{i}", [random() for _ in range(n_rows)]) for i in range(n_float_columns)]))
 
     data_frame = pd.DataFrame.from_records(records)
     data_frame = data_frame.set_axis(
@@ -110,11 +99,11 @@ def test_loadspreadsheet_dtypes(
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns, strict=False))
 
     assert all(
         isclose(a, b) if isinstance(a, float) else a == b
-        for a, b in zip(data_frame.values.ravel(), spreadsheet.values.ravel())
+        for a, b in zip(data_frame.values.ravel(), spreadsheet.values.ravel(), strict=False)
     )
 
 
@@ -189,9 +178,7 @@ def test_loadspreadsheet_delimited(
 ):
     file_name = tmp_path / f"data{extension}"
 
-    comment_str = "\n".join(
-        f"{comment_prefix}comment{i}" for i in range(1, n_comment_lines + 1)
-    )
+    comment_str = "\n".join(f"{comment_prefix}comment{i}" for i in range(1, n_comment_lines + 1))
     if len(comment_str) > 0:
         comment_str += "\n"
 
@@ -227,7 +214,7 @@ def test_loadspreadsheet_delimited(
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns, strict=False))
 
     assert np.allclose(data_frame.values, spreadsheet.values)
 
@@ -235,9 +222,7 @@ def test_loadspreadsheet_delimited(
 @pytest.mark.parametrize("header", [True, False])
 @pytest.mark.parametrize("index", [False])
 @pytest.mark.parametrize("extension", [".ods", ".xls", ".xlsx"])
-def test_loadspreadsheet_excel(
-    tmp_path: Path, data_frame: pd.DataFrame, header: bool, index: bool, extension: str
-):
+def test_loadspreadsheet_excel(tmp_path: Path, data_frame: pd.DataFrame, header: bool, index: bool, extension: str):
     file_name = tmp_path / f"data{extension}"
 
     kwargs = dict()
@@ -245,17 +230,15 @@ def test_loadspreadsheet_excel(
     if extension == ".ods":
         kwargs["engine"] = "odf"
 
-    data_frame.to_excel(
-        file_name, header=header, index=index, sheet_name="sheet", **kwargs
-    )
+    data_frame.to_excel(file_name, header=header, index=index, sheet_name="sheet", **kwargs)
 
     spreadsheet = read_spreadsheet(file_name)
 
     if header:
-        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns))
+        assert all(a == b for a, b in zip(data_frame.columns, spreadsheet.columns, strict=False))
 
     if index:
-        assert all(a == b for a, b in zip(data_frame.index, spreadsheet.index))
+        assert all(a == b for a, b in zip(data_frame.index, spreadsheet.index, strict=False))
 
 
 def test_loadspreadsheet_vest(tmp_path):

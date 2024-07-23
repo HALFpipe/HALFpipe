@@ -76,13 +76,7 @@ class QCDecisionMaker:
         else:
             rating = Rating[rating_str.upper()]
 
-        tags = pmap(
-            {
-                tag: self._normalize_value(tag, value)
-                for tag, value in entry.items()
-                if tag != "rating"
-            }
-        )
+        tags = pmap({tag: self._normalize_value(tag, value) for tag, value in entry.items() if tag != "rating"})
 
         self.index[tags].add(rating)
         if "type" in tags:
@@ -97,9 +91,7 @@ class QCDecisionMaker:
             indices: Iterator[PMap] = map(pmap, powerset(tags.items()))
         else:
             indices = (
-                subset.set("type", rating_type)
-                for subset in map(pmap, powerset(tags.items()))
-                for rating_type in self.types
+                subset.set("type", rating_type) for subset in map(pmap, powerset(tags.items())) for rating_type in self.types
             )
 
         for index in indices:
@@ -111,11 +103,7 @@ class QCDecisionMaker:
             relevant_tags = pmap(tags)
         else:
             relevant_tags = pmap(
-                {
-                    tag: self._normalize_value(tag, value)
-                    for tag, value in tags.items()
-                    if tag in self.relevant_tag_names
-                }
+                {tag: self._normalize_value(tag, value) for tag, value in tags.items() if tag in self.relevant_tag_names}
             )
 
         rating: Rating = max(self.iterate_ratings(relevant_tags))

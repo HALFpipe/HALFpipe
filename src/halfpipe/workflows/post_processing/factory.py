@@ -5,7 +5,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from math import isclose
-from typing import Callable, Hashable
+from typing import Callable, Generic, Hashable, TypeVar
 
 from nipype.pipeline import engine as pe
 
@@ -14,10 +14,11 @@ from ...logging import logger
 from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
 from ..bypass import init_bypass_wf
-from ..factory import Factory
+from ..factory import Factory, FactoryContext
+from ..fmriprep import FmriprepFactory
 from ..memory import MemoryCalculator
 from ..resampling.factory import AltBOLDFactory
-from .bandpass_filter import init_bandpass_filter_wf
+from .bandpass_filter import BandpassFilterTuple, init_bandpass_filter_wf
 from .confounds import init_confounds_regression_wf, init_confounds_select_wf
 from .fmriprep_adapter import init_fmriprep_adapter_wf
 from .grand_mean_scaling import init_grand_mean_scaling_wf
@@ -28,23 +29,23 @@ from .smoothing import init_smoothing_wf
 
 alphabet = "abcdefghijklmnopqrstuvwxzy"
 
+T = TypeVar("T", bound=Hashable)
+
 
 @dataclass(frozen=True)
-class SettingTuple:
-    value: Hashable | None
+class SettingTuple(Generic[T]):
+    value: T
     suffix: str | None
 
 
 @dataclass(frozen=True)
-class LookupTuple:
-    setting_tuple: SettingTuple
+class LookupTuple(Generic[T]):
+    setting_tuple: SettingTuple[T]
     memcalc: MemoryCalculator
 
 
 class ICAAROMAComponentsFactory(Factory):
-    def __init__(
-        self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory
-    ):
+    def __init__(self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory):
         super(ICAAROMAComponentsFactory, self).__init__(ctx)
 
         self.alt_bold_factory = alt_bold_factory
@@ -65,9 +66,7 @@ class ICAAROMAComponentsFactory(Factory):
             connect = True
 
             memcalc = MemoryCalculator.from_bold_file(source_file)
-            vwf = init_ica_aroma_components_wf(
-                workdir=str(self.ctx.workdir), memcalc=memcalc
-            )
+            vwf = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir), memcalc=memcalc)
 
             for node in vwf._get_all_nodes():
                 memcalc.patch_mem_gb(node)
@@ -82,9 +81,7 @@ class ICAAROMAComponentsFactory(Factory):
         if connect:
             inputnode.inputs.tags = self.ctx.database.tags(source_file)
             self.ctx.database.fillmetadata("repetition_time", [source_file])
-            inputnode.inputs.repetition_time = self.ctx.database.metadata(
-                source_file, "repetition_time"
-            )
+            inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
             self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
             self.fmriprep_factory.connect(hierarchy, inputnode, source_file=source_file)
 
@@ -113,30 +110,26 @@ class LookupFactory(Factory):
 
         if isinstance(self.previous_factory, LookupFactory):
             if len(self.previous_factory.tpl_by_setting_name) > 0:
-                previous_tpls.extend(
-                    set(self.previous_factory.tpl_by_setting_name.values())
-                )
+                previous_tpls.extend(set(self.previous_factory.tpl_by_setting_name.values()))
 
                 # 2**16 values for suffix should be sufficient to avoid collisions
                 newsuffixes = [b32_digest(tpl)[:4] for tpl in previous_tpls]
 
-                newsuffix_by_prevtpl = dict(zip(previous_tpls, newsuffixes))
+                newsuffix_by_prevtpl = dict(zip(previous_tpls, newsuffixes, strict=False))
 
         suffixes = []
         for name in setting_names:
             suffix = None
             if isinstance(self.previous_factory, LookupFactory):
                 if isinstance(newsuffix_by_prevtpl, dict):
-                    suffix = newsuffix_by_prevtpl[
-                        self.previous_factory.tpl_by_setting_name[name]
-                    ]
+                    suffix = newsuffix_by_prevtpl[self.previous_factory.tpl_by_setting_name[name]]
             suffixes.append(suffix)
 
         tpls = map(self._tpl, self.ctx.spec.settings)
 
         self.tpl_by_setting_name = {
             setting_name: SettingTuple(tpl, suffix)
-            for setting_name, tpl, suffix in zip(setting_names, tpls, suffixes)
+            for setting_name, tpl, suffix in zip(setting_names, tpls, suffixes, strict=False)
         }
 
     @abstractmethod
@@ -153,20 +146,14 @@ class LookupFactory(Factory):
     def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, _):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
-            inputnode.inputs.repetition_time = self.ctx.database.metadata(
-                source_file, "repetition_time"
-            )
+            inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
             inputnode.inputs.tags = self.ctx.database.tags(source_file)
-        self.previous_factory.connect(
-            hierarchy, inputnode, source_file=source_file, setting_name=setting_name
-        )
+        self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
-            logger.debug(
-                f"Creating workflow with {self.__class__.__name__} for {lookup_tuple}"
-            )
+            logger.debug(f"Creating workflow with {self.__class__.__name__} for {lookup_tuple}")
             prototype = self._prototype(lookup_tuple)
             self.wf_factories[lookup_tuple] = deepcopyfactory(prototype)
 
@@ -201,9 +188,7 @@ class LookupFactory(Factory):
         hierarchy.append(vwf)
 
         if connect_inputs:
-            self._connect_inputs(
-                hierarchy, inputnode, source_file, setting_name, lookup_tuple
-            )
+            self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
         outputnode = vwf.get_node("outputnode")
 
@@ -232,9 +217,7 @@ class SmoothingFactory(LookupFactory):
             raise ValueError
 
         if fwhm <= 0 or isclose(fwhm, 0):
-            return init_bypass_wf(
-                attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix
-            )
+            return init_bypass_wf(attrs=["files", "mask", "vals"], name="no_smoothing_wf", suffix=suffix)
 
         return init_smoothing_wf(fwhm=fwhm, memcalc=lookup_tuple.memcalc, suffix=suffix)
 
@@ -265,18 +248,13 @@ class GrandMeanScalingFactory(LookupFactory):
         assert isinstance(mean, (float, int, str))
         mean = float(mean)
 
-        return init_grand_mean_scaling_wf(
-            mean=mean, memcalc=lookup_tuple.memcalc, suffix=suffix
-        )
+        return init_grand_mean_scaling_wf(mean=mean, memcalc=lookup_tuple.memcalc, suffix=suffix)
 
     def _tpl(self, setting) -> Hashable:
         grand_mean_scaling_dict = setting.get("grand_mean_scaling")
 
         grand_mean_scaling = None
-        if (
-            isinstance(grand_mean_scaling_dict, dict)
-            and grand_mean_scaling_dict.get("mean") is not None
-        ):
+        if isinstance(grand_mean_scaling_dict, dict) and grand_mean_scaling_dict.get("mean") is not None:
             mean = grand_mean_scaling_dict["mean"]
             grand_mean_scaling = f"{mean:f}"
 
@@ -310,24 +288,18 @@ class ICAAROMARegressionFactory(LookupFactory):
         ica_aroma = setting.get("ica_aroma") is True
         return ica_aroma
 
-    def _connect_inputs(
-        self, hierarchy, inputnode, source_file, setting_name, lookup_tuple: LookupTuple
-    ):
-        super(ICAAROMARegressionFactory, self)._connect_inputs(
-            hierarchy, inputnode, source_file, setting_name, lookup_tuple
-        )
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple: LookupTuple):
+        super(ICAAROMARegressionFactory, self)._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
         setting_tuple = lookup_tuple.setting_tuple
         ica_aroma = setting_tuple.value
 
         if ica_aroma is True:
-            self.ica_aroma_components_factory.connect(
-                hierarchy, inputnode, source_file=source_file, setting_name=setting_name
-            )
+            self.ica_aroma_components_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
 
 class BandpassFilterFactory(LookupFactory):
-    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
+    def _prototype(self, lookup_tuple: LookupTuple[BandpassFilterTuple]) -> pe.Workflow:
         setting_tuple = lookup_tuple.setting_tuple
         suffix = setting_tuple.suffix
         bandpass_filter = setting_tuple.value
@@ -340,32 +312,25 @@ class BandpassFilterFactory(LookupFactory):
             )
 
         return init_bandpass_filter_wf(
-            bandpass_filter=bandpass_filter, memcalc=lookup_tuple.memcalc, suffix=suffix  # type: ignore
+            bandpass_filter=bandpass_filter,
+            memcalc=lookup_tuple.memcalc,
+            suffix=suffix,  # type: ignore
         )
 
     def _tpl(self, setting) -> Hashable:
         bandpass_filter_dict = setting.get("bandpass_filter")
 
         bandpass_filter = None
-        if (
-            isinstance(bandpass_filter_dict, dict)
-            and bandpass_filter_dict.get("type") is not None
-        ):
+        if isinstance(bandpass_filter_dict, dict) and bandpass_filter_dict.get("type") is not None:
             if bandpass_filter_dict.get("type") == "gaussian":
-                if (
-                    bandpass_filter_dict.get("lp_width") is not None
-                    or bandpass_filter_dict.get("hp_width") is not None
-                ):
+                if bandpass_filter_dict.get("lp_width") is not None or bandpass_filter_dict.get("hp_width") is not None:
                     bandpass_filter = (
                         "gaussian",
                         bandpass_filter_dict.get("lp_width"),
                         bandpass_filter_dict.get("hp_width"),
                     )
             elif bandpass_filter_dict.get("type") == "frequency_based":
-                if (
-                    bandpass_filter_dict.get("low") is not None
-                    or bandpass_filter_dict.get("high") is not None
-                ):
+                if bandpass_filter_dict.get("low") is not None or bandpass_filter_dict.get("high") is not None:
                     bandpass_filter = (
                         "frequency_based",
                         bandpass_filter_dict.get("low"),
@@ -401,9 +366,7 @@ class ConfoundsSelectFactory(LookupFactory):
             )
 
         assert isinstance(confound_names, (list, tuple))
-        return init_confounds_select_wf(
-            confound_names=list(confound_names), suffix=suffix
-        )
+        return init_confounds_select_wf(confound_names=list(confound_names), suffix=suffix)
 
     def _tpl(self, setting) -> Hashable:
         confounds_removal = setting.get("confounds_removal")
@@ -441,44 +404,26 @@ class ConfoundsRegressionFactory(LookupFactory):
 
 
 class PostProcessingFactory(Factory):
-    def __init__(self, ctx, fmriprep_factory):
+    def __init__(self, ctx: FactoryContext, fmriprep_factory: FmriprepFactory) -> None:
         super().__init__(ctx)
 
         self.fmriprep_factory = fmriprep_factory
 
         self.alt_bold_factory = AltBOLDFactory(ctx, self.fmriprep_factory)
-        self.ica_aroma_components_factory = ICAAROMAComponentsFactory(
-            ctx, self.fmriprep_factory, self.alt_bold_factory
-        )
-        self.fmriprep_adapter_factory = FmriprepAdapterFactory(
-            ctx, self.fmriprep_factory
-        )
+        self.ica_aroma_components_factory = ICAAROMAComponentsFactory(ctx, self.fmriprep_factory, self.alt_bold_factory)
+        self.fmriprep_adapter_factory = FmriprepAdapterFactory(ctx, self.fmriprep_factory)
         self.smoothing_factory = SmoothingFactory(ctx, self.fmriprep_adapter_factory)
-        self.grand_mean_scaling_factory = GrandMeanScalingFactory(
-            ctx, self.smoothing_factory
-        )
+        self.grand_mean_scaling_factory = GrandMeanScalingFactory(ctx, self.smoothing_factory)
         self.ica_aroma_regression_factory = ICAAROMARegressionFactory(
             ctx, self.grand_mean_scaling_factory, self.ica_aroma_components_factory
         )
-        self.bandpass_filter_factory = BandpassFilterFactory(
-            ctx, self.ica_aroma_regression_factory
-        )
+        self.bandpass_filter_factory = BandpassFilterFactory(ctx, self.ica_aroma_regression_factory)
 
-        self.setting_adapter_factory = SettingAdapterFactory(
-            ctx, self.bandpass_filter_factory
-        )
-        self.confounds_select_factory = ConfoundsSelectFactory(
-            ctx, self.setting_adapter_factory
-        )
-        self.confounds_regression_factory = ConfoundsRegressionFactory(
-            ctx, self.confounds_select_factory
-        )
+        self.setting_adapter_factory = SettingAdapterFactory(ctx, self.bandpass_filter_factory)
+        self.confounds_select_factory = ConfoundsSelectFactory(ctx, self.setting_adapter_factory)
+        self.confounds_regression_factory = ConfoundsRegressionFactory(ctx, self.confounds_select_factory)
 
-        setting_names = set(
-            setting["name"]
-            for setting in self.ctx.spec.settings
-            if setting.get("output_image") is True
-        )
+        setting_names = set(setting["name"] for setting in self.ctx.spec.settings if setting.get("output_image") is True)
         self.source_files = self.get_source_files(setting_names)
 
     def get_source_files(self, setting_names) -> set[str]:
@@ -490,9 +435,7 @@ class PostProcessingFactory(Factory):
                 if filters is None or len(filters) == 0:
                     return bold_file_paths
                 else:
-                    source_files |= self.ctx.database.applyfilters(
-                        bold_file_paths, filters
-                    )
+                    source_files |= self.ctx.database.applyfilters(bold_file_paths, filters)
         return source_files
 
     def setup(self, raw_sources_dict: dict | None = None) -> None:
@@ -513,9 +456,7 @@ class PostProcessingFactory(Factory):
 
         for setting in self.ctx.spec.settings:
             setting_output_wf_factory = deepcopyfactory(
-                init_setting_output_wf(
-                    workdir=str(self.ctx.workdir), setting_name=setting["name"]
-                )
+                init_setting_output_wf(workdir=str(self.ctx.workdir), setting_name=setting["name"])
             )
 
             if setting.get("output_image") is not True:
@@ -528,9 +469,7 @@ class PostProcessingFactory(Factory):
                 source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
-                hierarchy = self._get_hierarchy(
-                    "post_processing_wf", source_file=source_file
-                )
+                hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
 
                 wf = setting_output_wf_factory()
                 hierarchy[-1].add_nodes([wf])
@@ -560,9 +499,9 @@ class PostProcessingFactory(Factory):
                 )
 
     def get(self, source_file, setting_name, confounds_action=None):
-        self.ica_aroma_components_factory.get(
-            source_file
-        )  # make sure ica aroma components are always calculated
+        if self.ctx.spec.global_settings["run_aroma"] is True:
+            # Make sure ica aroma components are calculated when enabled
+            self.ica_aroma_components_factory.get(source_file)
         if confounds_action == "select":
             return self.confounds_select_factory.get(source_file, setting_name)
         elif confounds_action == "regression":

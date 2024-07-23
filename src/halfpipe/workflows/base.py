@@ -7,7 +7,6 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
-from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -15,7 +14,7 @@ from ..logging import logger
 from ..model.spec import Spec, load_spec
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
-from .constants import constants
+from .constants import Constants
 from .convert import convert_all
 from .factory import FactoryContext
 from .features import FeatureFactory
@@ -32,6 +31,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     :param workdir
     :param spec
     """
+    from ..collect.bold import collect_bold_files
 
     if not spec:
         spec = load_spec(workdir=workdir)
@@ -55,9 +55,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
 
-    workflow = IdentifiableWorkflow(
-        name=constants.workflow_directory, base_dir=workdir, uuid=uuid
-    )
+    workflow = IdentifiableWorkflow(name=Constants.workflow_directory, base_dir=workdir, uuid=uuid)
     workflow.config["execution"].update(
         dict(
             create_report=True,  # each node writes a text file with inputs and outputs
@@ -70,12 +68,9 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
         )
     )
 
-    if len(spec.features) == 0 and not any(
-        setting.get("output_image") is True for setting in spec.settings
-    ):
+    if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
         raise RuntimeError(
-            "Nothing to do. Please specify features to calculate and/or select to output "
-            "a preprocessed image"
+            "Nothing to do. Please specify features to calculate and/or select to output " "a preprocessed image"
         )
 
     # create factories
@@ -86,9 +81,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     feature_factory = FeatureFactory(ctx, post_processing_factory)
     stats_factory = StatsFactory(ctx, feature_factory)
 
-    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(
-        database, post_processing_factory, feature_factory
-    )
+    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
 
     # write out
 
@@ -96,7 +89,8 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
 
     for bold_file_path in bold_file_paths_dict.keys():
         bids_path = bids_database.to_bids(bold_file_path)
-        assert isinstance(bids_path, str)
+        if bids_path is None:
+            continue  # File is not used because it is a duplicate
 
         subject = database.tagval(bold_file_path, "sub")
         assert isinstance(subject, str)

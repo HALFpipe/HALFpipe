@@ -7,7 +7,6 @@ from typing import Mapping
 
 import numpy as np
 import pytest
-
 from halfpipe.result.aggregate import aggregate_results, summarize, summarize_metadata
 from halfpipe.result.base import ResultDict
 from halfpipe.result.variables import Categorical, Continuous
@@ -232,9 +231,7 @@ def test_aggregate_resultdicts_missing_tag() -> None:
     assert sub_c["tags"] == {"run": ["01", "02"], "sub": "c"}
     assert len(other_results) == 2
 
-    aggregated_results, other_results = aggregate_results(
-        [*aggregated_results, *other_results], across_key="sub"
-    )
+    aggregated_results, other_results = aggregate_results([*aggregated_results, *other_results], across_key="sub")
     (result,) = aggregated_results
     assert result["tags"] == {"sub": ["a", "b", "c", "d", "x"]}
     assert len(other_results) == 0
@@ -258,11 +255,9 @@ def test_aggregate_many() -> None:
 
     for i in range(1, n + 1):
         for j in range(1, 4):
-            tags: dict[str, str | list[str]] = dict(
-                sub=f"{i:02d}", task="y", run=f"{j:02d}"
-            )
+            tags: dict[str, str | list[str]] = dict(sub=f"{i:02d}", task="y", run=f"{j:02d}")
 
-            if j == 1:  # make heterogenous
+            if j == 1:  # make heterogeneous
                 tags["model"] = "aggregateAcrossDirs"
             if j in [2, 3]:
                 tags["acq"] = "extra"

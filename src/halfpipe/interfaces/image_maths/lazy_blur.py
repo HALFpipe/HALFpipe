@@ -18,9 +18,7 @@ class LazyBlurToFWHM(afni.BlurToFWHM):
 
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         if self.should_run:
-            return super(LazyBlurToFWHM, self)._run_interface(
-                runtime, correct_return_codes
-            )
+            return super(LazyBlurToFWHM, self)._run_interface(runtime, correct_return_codes)
 
         runtime.stdout = ""
         runtime.stderr = ""

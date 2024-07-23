@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Dict, List, Optional, Type
+from typing import Any
 
 from ...model.filter import FilterSchema, GroupFilterSchema
 from ..components import (
@@ -19,12 +19,12 @@ from .utils import format_column
 
 def get_cutoff_filter_steps(cutoff_filter_next_step_type):
     class BaseCutoffFilterStep(Step):
-        number_input_args = dict()
+        number_input_args: dict[str, Any] = dict()
 
-        header_str: Optional[str] = None
-        filter_field: Optional[str] = None
+        header_str: str | None = None
+        filter_field: str | None = None
 
-        next_step_type: Type[Step]
+        next_step_type: type[Step]
 
         def setup(self, _):
             self._append_view(TextView(self.header_str))
@@ -40,10 +40,7 @@ def get_cutoff_filter_steps(cutoff_filter_next_step_type):
             return True
 
         def next(self, ctx):
-            if (
-                not hasattr(ctx.spec.models[-1], "filters")
-                or ctx.spec.models[-1].filters is None
-            ):
+            if not hasattr(ctx.spec.models[-1], "filters") or ctx.spec.models[-1].filters is None:
                 ctx.spec.models[-1].filters = []
 
             filter_obj = FilterSchema().load(
@@ -94,16 +91,10 @@ class SubjectGroupFilterStep(Step):
         self.is_first_run = True
         self.should_run = False
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = [
-            variable.copy()
-            for variable in self.variables
-            if variable["type"] == "categorical"
-        ]
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = [variable.copy() for variable in self.variables if variable["type"] == "categorical"]
 
-        self.choice: Optional[List[Dict[str, bool]]] = None
+        self.choice: list[dict[str, bool]] | None = None
 
         if len(self.variables) > 0:
             self.should_run = True
@@ -119,9 +110,7 @@ class SubjectGroupFilterStep(Step):
             options = [format_column(variable["name"]) for variable in self.variables]
             values = [[*variable["levels"]] for variable in self.variables]  # make copy
 
-            self.input_view = MultiMultipleChoiceInputView(
-                options, values, checked=values
-            )
+            self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)
 
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
@@ -142,19 +131,14 @@ class SubjectGroupFilterStep(Step):
                     return True
 
     def next(self, ctx):
-        if (
-            not hasattr(ctx.spec.models[-1], "filters")
-            or ctx.spec.models[-1].filters is None
-        ):
+        if not hasattr(ctx.spec.models[-1], "filters") or ctx.spec.models[-1].filters is None:
             ctx.spec.models[-1].filters = []
 
         if len(self.variables) > 0:
             assert self.choice is not None
-            for variable, checked in zip(self.variables, self.choice):
+            for variable, checked in zip(self.variables, self.choice, strict=False):
                 if not all(checked.values()):
-                    levels = [
-                        str(k) for k, is_selected in checked.items() if is_selected
-                    ]
+                    levels = [str(k) for k, is_selected in checked.items() if is_selected]
                     ctx.spec.models[-1].filters.append(
                         GroupFilterSchema().load(
                             {

@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import cast
+
 from inflection import humanize, underscore
 
 from ...model.filter import FilterSchema
@@ -27,9 +29,9 @@ def feature_namefun(ctx):
     return name
 
 
-def get_setting_init_steps(
-    next_step_type, settingdict={}, namefun=feature_namefun, noun="setting"
-):
+def get_setting_init_steps(next_step_type, settingdict: dict | None = None, namefun=feature_namefun, noun="setting"):
+    settingdict = {} if settingdict is None else settingdict
+
     class SettingFilterStep(Step):
         def _format_tag(self, tag):
             return f'"{tag}"'
@@ -43,15 +45,13 @@ def get_setting_init_steps(
             self.filepaths = list(filepaths)
             assert len(self.filepaths) > 0
 
-            db_entities, db_tags_set = ctx.database.multitagvalset(
-                entities, filepaths=self.filepaths
-            )
+            db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=self.filepaths)
 
             self.entities = []
             options = []
             self.tagval_by_str = {}
             values = []
-            for entity, tagvals_list in zip(db_entities, zip(*db_tags_set)):
+            for entity, tagvals_list in zip(db_entities, zip(*db_tags_set, strict=False), strict=False):
                 if entity == "sub":
                     continue
 
@@ -73,7 +73,7 @@ def get_setting_init_steps(
                     row = [f'"{tagval}"' for tagval in tagvals]
                     values.append(row)
 
-                    self.tagval_by_str.update(dict(zip(row, tagvals)))
+                    self.tagval_by_str.update(dict(zip(row, tagvals, strict=False)))
 
             if len(options) == 0:
                 self.should_run = False
@@ -81,9 +81,7 @@ def get_setting_init_steps(
                 self.should_run = True
                 self._append_view(TextView("Specify images to use"))
 
-                self.input_view = MultiMultipleChoiceInputView(
-                    options, values, checked=values
-                )
+                self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)
 
                 self._append_view(self.input_view)
                 self._append_view(SpacerView(1))
@@ -104,7 +102,7 @@ def get_setting_init_steps(
                 if ctx.spec.settings[-1].get("filters") is None:
                     ctx.spec.settings[-1]["filters"] = []
 
-                for entity, checked in zip(self.entities, self.choice):
+                for entity, checked in zip(self.entities, self.choice, strict=False):
                     if all(checked.values()):
                         continue
 
@@ -139,7 +137,7 @@ def get_setting_init_steps(
             assert ctx.spec.settings is not None
             self.names = set(setting["name"] for setting in ctx.spec.settings)
 
-            if "name" in settingdict:
+            if "name" in cast(dict, settingdict):
                 pass
             elif namefun is not None:
                 self._name = namefun(ctx)
@@ -173,7 +171,7 @@ def get_setting_init_steps(
                 return True
 
         def next(self, ctx):
-            setting = {**settingdict}
+            setting = {**settingdict} if settingdict is not None else {}
 
             if self._name is not None:
                 assert self._name not in self.names, f"Duplicate {noun} name"

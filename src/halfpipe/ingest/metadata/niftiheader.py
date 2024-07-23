@@ -14,9 +14,7 @@ from ...utils.path import split_ext
 
 ureg = pint.UnitRegistry()
 
-descrip_pattern = re.compile(
-    r"(?P<var_name>\w+)=(?P<value>(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)(?P<unit>s|ms|us)?"
-)
+descrip_pattern = re.compile(r"(?P<var_name>\w+)=(?P<value>(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)(?P<unit>s|ms|us)?")
 
 
 def parse_descrip(header: nib.nifti1.Nifti1Header) -> dict[str, float]:
@@ -71,9 +69,7 @@ class NiftiheaderLoader:
     cache: dict[str, tuple[nib.nifti1.Nifti1Header, dict[str, float]]] = dict()
 
     @classmethod
-    def load(
-        cls, nifti_file: str
-    ) -> Tuple[Optional[nib.nifti1.Nifti1Header], Optional[Dict]]:
+    def load(cls, nifti_file: str) -> Tuple[Optional[nib.nifti1.Nifti1Header], Optional[Dict]]:
         if nifti_file in cls.cache:
             return cls.cache[nifti_file]
 
@@ -85,9 +81,7 @@ class NiftiheaderLoader:
         try:
             img = nib.nifti1.load(nifti_file)
         except Exception as e:
-            logger.warning(
-                f'Caught error loading file "{nifti_file}": %s', e, exc_info=True
-            )
+            logger.warning(f'Caught error loading file "{nifti_file}": %s', e, exc_info=True)
             return None, None
 
         header = img.header.copy()

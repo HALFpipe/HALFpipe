@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
-FROM condaforge/mambaforge:latest as builder
+FROM condaforge/mambaforge:latest AS builder
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
@@ -13,7 +13,7 @@ RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids ni
         conda build purge; \
     done
 
-FROM condaforge/mambaforge:latest as install
+FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
@@ -68,6 +68,10 @@ RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
 
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
+
+# Add git config for datalad commands
+RUN git config --global user.name "Halfpipe" \
+    && git config --global user.email "halfpipe@fmri.science"
 
 # Install `halfpipe`
 RUN --mount=target=/halfpipe \

@@ -51,7 +51,7 @@ def parse(path: AnyPath) -> dict[str, str] | None:
         suffixes.insert(0, values.pop(-1))
 
     # Merge other suffixes with their preceding tag value
-    for i, (key, value) in enumerate(zip(keys, values)):
+    for i, (key, value) in enumerate(zip(keys, values, strict=False)):
         if i < 1:
             continue
         if key is None:
@@ -66,7 +66,7 @@ def parse(path: AnyPath) -> dict[str, str] | None:
     parent_name = Path(str(path.parent)).name
     if parent_name in ("anat", "func", "fmap"):
         tags["datatype"] = parent_name
-    for key, value in zip(keys, values):
+    for key, value in zip(keys, values, strict=False):
         if key is not None:
             tags[key] = value
     return tags

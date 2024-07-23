@@ -6,7 +6,6 @@ import logging
 import os
 
 import pytest
-
 from halfpipe.cli.parser import parse_args
 from halfpipe.utils.environment import setup_freesurfer_env
 

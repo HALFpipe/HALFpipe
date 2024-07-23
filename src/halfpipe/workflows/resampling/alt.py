@@ -9,17 +9,17 @@ from nipype.pipeline import engine as pe
 from niworkflows.utils.spaces import Reference, SpatialReferences
 
 from ...resource import get as get_resource
-from ..constants import constants
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
 def init_alt_bold_std_trans_wf(
     name="alt_bold_std_trans_wf",
-    spaces=SpatialReferences(
-        Reference.from_string("MNI152NLin6Asym:res-2"), checkpoint=True
-    ),
-    memcalc=MemoryCalculator.default(),
+    spaces: SpatialReferences | None = None,
+    memcalc: MemoryCalculator | None = None,
 ):
+    spaces = SpatialReferences(Reference.from_string("MNI152NLin6Asym:res-2"), checkpoint=True) if spaces is None else spaces
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
@@ -49,8 +49,7 @@ def init_alt_bold_std_trans_wf(
     #
     mergexfm = pe.MapNode(niu.Merge(numinputs=2), iterfield="in1", name="mergexfm")
     mergexfm.inputs.in1 = [
-        get_resource(f"tpl_{alt}_from_{constants.reference_space}_mode_image_xfm.h5")
-        for alt in alt_reference_spaces
+        get_resource(f"tpl_{alt}_from_{Constants.reference_space}_mode_image_xfm.h5") for alt in alt_reference_spaces
     ]
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in2")
 
@@ -72,9 +71,7 @@ def init_alt_bold_std_trans_wf(
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.name_source")
     workflow.connect(inputnode, "bold_split", bold_std_trans_wf, "inputnode.bold_split")
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.hmc_xforms")
-    workflow.connect(
-        inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.itk_bold_to_t1"
-    )
+    workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.itk_bold_to_t1")
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.bold_mask")
     workflow.connect(inputnode, "out_warp", bold_std_trans_wf, "inputnode.fieldwarp")
 

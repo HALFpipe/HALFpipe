@@ -2,15 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""
-
-"""
 import logging
 import os
 from operator import attrgetter
 from os import path as op
 from threading import Event, Thread
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import inflect
 
@@ -54,9 +51,9 @@ class NestedSingleChoiceInputView(SingleChoiceInputView):
 class FilePatternInputView(CallableView):
     def __init__(
         self,
-        entities: List[str],
-        required_entities=[],
-        entity_colors_list=["ired", "igreen", "imagenta", "icyan", "iyellow"],
+        entities: list[str],
+        required_entities: list[str] | None = None,
+        entity_colors_list: list[str] | None = None,
         dironly=False,
         base_path=None,
         **kwargs,
@@ -71,9 +68,7 @@ class FilePatternInputView(CallableView):
             forbidden_chars="'\"'",
             maxlen=256,
         )
-        self.suggestion_view = NestedSingleChoiceInputView(
-            self, [], isVertical=True, addBrackets=False
-        )
+        self.suggestion_view = NestedSingleChoiceInputView(self, [], is_vertical=True, add_brackets=False)
 
         self.message: Text = TextElement("")
         self.message_is_dirty = False
@@ -85,14 +80,18 @@ class FilePatternInputView(CallableView):
         self.is_ok = False
 
         self.entities = entities
+        if required_entities is None:
+            required_entities = list()
         self.required_entities = required_entities
+        if entity_colors_list is None:
+            entity_colors_list = ["ired", "igreen", "imagenta", "icyan", "iyellow"]
         self.entity_colors_list = entity_colors_list
-        self.color_by_tag: Optional[Dict[str, Any]] = None
-        self.tag_suggestions: List[Text] = []
+        self.color_by_tag: dict[str, Any] | None = None
+        self.tag_suggestions: list[Text] = []
         self.is_suggesting_entities = False
         self.tab_pressed = False
 
-        self._scan_thread = None
+        self._scan_thread: Thread | None = None
         self._is_scanning = True
         self._scan_requested_event = Event()
         self._scan_complete_event = Event()
@@ -110,7 +109,7 @@ class FilePatternInputView(CallableView):
         if isinstance(msg, Text):
             self.message = msg
         else:
-            self.message = self._tokenize(msg, addBrackets=False)
+            self.message = self._tokenize(msg, add_brackets=False)
         self.message_is_dirty = True
 
     def _suggest_entities(self):
@@ -124,15 +123,15 @@ class FilePatternInputView(CallableView):
         self.is_suggesting_entities = False
         self._update_suggestion_view(self.matching_files)
 
-    def _update_suggestion_view(self, options: List[Text]):
+    def _update_suggestion_view(self, options: list[Text]):
         options = sorted(options, key=attrgetter("value"))
         self.suggestion_view.set_options(options)
 
         self._scan_complete_event.set()
         self.update()
 
-    def _tokenize(self, text, addBrackets=True):
-        if addBrackets:
+    def _tokenize(self, text, add_brackets=True):
+        if add_brackets:
             text = f"[{text}]"
 
         tokens = tokenize.split(text)
@@ -147,7 +146,7 @@ class FilePatternInputView(CallableView):
             if matchobj is not None:
                 tag_name = matchobj.group("tag_name")
                 assert self.color_by_tag is not None
-                color = self.color_by_tag.get(tag_name, self.highlightColor)
+                color = self.color_by_tag.get(tag_name, self.highlight_color)
 
             text_element_collection.append(TextElement(token, color=color))
 
@@ -159,20 +158,20 @@ class FilePatternInputView(CallableView):
     def setup(self):
         super(FilePatternInputView, self).setup()
 
-        self.text_input_view.layout = self.layout
+        self.text_input_view._layout = self.layout
         self.text_input_view.setup()
 
-        self.suggestion_view.layout = self.layout
+        self.suggestion_view._layout = self.layout
         self.suggestion_view.setup()
 
         self.color_by_tag = {
             entity: self.layout.color.from_string(color_str)
-            for entity, color_str in zip(self.entities, self.entity_colors_list)
+            for entity, color_str in zip(self.entities, self.entity_colors_list, strict=False)
         }
 
     def _before_call(self):
         self.text_input_view._before_call()
-        self.text_input_view.isActive = True
+        self.text_input_view.is_active = True
 
         self._scan_thread = Thread(target=self._scan_files_loop)
         self._is_scanning = True
@@ -182,13 +181,14 @@ class FilePatternInputView(CallableView):
 
     def _after_call(self):
         self._is_scanning = False
-        self._scan_thread.join()
+        if self._scan_thread is not None:
+            self._scan_thread.join()
         super()._after_call()
 
     def _is_ok(self):
         return self.is_ok
 
-    def _getOutput(self):
+    def _get_output(self):
         if self.text is not None:
             path = str(self.text).strip()
             return resolve(path)
@@ -242,9 +242,7 @@ class FilePatternInputView(CallableView):
 
                         newtext += text[cur_index:]
 
-                        self.tag_suggestions.append(
-                            self._tokenize(newtext, addBrackets=False)
-                        )
+                        self.tag_suggestions.append(self._tokenize(newtext, add_brackets=False))
 
                     self._suggest_entities()
                     is_suggestion_done = True
@@ -261,9 +259,7 @@ class FilePatternInputView(CallableView):
 
             newpathname = pathname + "{suggestion:.*}"
             newpathname = resolve(newpathname)
-            tag_glob_generator = tag_glob(
-                newpathname, self.entities + ["suggestion"], self.dironly
-            )
+            tag_glob_generator = tag_glob(newpathname, self.entities + ["suggestion"], self.dironly)
 
             new_suggestions = set()
             suggestiontempl = op.basename(newpathname)
@@ -279,13 +275,9 @@ class FilePatternInputView(CallableView):
             try:
                 for filepath, tagdict in tag_glob_generator:
                     if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-                        suggestionstr = suggestion_match.sub(
-                            tagdict["suggestion"], suggestiontempl
-                        )
+                        suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
                         if op.isdir(filepath):
-                            suggestionstr = op.join(
-                                suggestionstr, ""
-                            )  # add trailing slash
+                            suggestionstr = op.join(suggestionstr, "")  # add trailing slash
                         new_suggestions.add(suggestionstr)
 
                     elif _is_candidate(filepath):
@@ -307,17 +299,11 @@ class FilePatternInputView(CallableView):
 
             tagsetdict = {}
             if len(tagdictlist) > 0:
-                tagsetdict = {
-                    k: set(dic[k] for dic in tagdictlist)
-                    for k in tagdictlist[0]
-                    if k != "suggestion"
-                }
+                tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
 
             nfile = len(filepaths)
 
-            has_all_required_entities = all(
-                entity in tagsetdict for entity in self.required_entities
-            )
+            has_all_required_entities = all(entity in tagsetdict for entity in self.required_entities)
             logger.debug(f"has_all_required_entities={has_all_required_entities}")
 
             if not self.message_is_dirty:
@@ -335,23 +321,14 @@ class FilePatternInputView(CallableView):
                         value += " "
                         value += "for"
                         value += " "
-                        tagmessages = [
-                            p.inflect(f"{len(v)} plural('{k}', {len(v)})")
-                            for k, v in tagsetdict.items()
-                        ]
+                        tagmessages = [p.inflect(f"{len(v)} plural('{k}', {len(v)})") for k, v in tagsetdict.items()]
                         value += p.join(tagmessages)
 
                 else:
                     color = self.layout.color.iyellow
                     value = "Missing"
                     value += " "
-                    value += p.join(
-                        [
-                            f"{{{entity}}}"
-                            for entity in self.required_entities
-                            if entity not in tagsetdict
-                        ]
-                    )
+                    value += p.join([f"{{{entity}}}" for entity in self.required_entities if entity not in tagsetdict])
                 self.message = TextElement(value, color)
 
             self.message_is_dirty = False
@@ -362,12 +339,10 @@ class FilePatternInputView(CallableView):
                 self.is_ok = False
 
             if not is_suggestion_done:
-                self.matching_files = [
-                    self._tokenize(s, addBrackets=False) for s in new_suggestions
-                ]
+                self.matching_files = [self._tokenize(s, add_brackets=False) for s in new_suggestions]
                 self._suggest_matches()
 
-    def _handleKey(self, c):
+    def _handle_key(self, c):
         cur_text = str(self.text)
         cur_index = self.text_input_view.cur_index
 
@@ -380,8 +355,8 @@ class FilePatternInputView(CallableView):
                 return
 
             if self.is_suggesting_entities or len(self.matching_files) > 0:
-                self.suggestion_view.isActive = True
-                self.text_input_view.isActive = False
+                self.suggestion_view.is_active = True
+                self.text_input_view.is_active = False
                 self.suggestion_view._before_call()
                 needs_update = True
 
@@ -390,8 +365,8 @@ class FilePatternInputView(CallableView):
 
             self.suggestion_view.offset = 0
             self.suggestion_view.cur_index = None
-            self.suggestion_view.isActive = False
-            self.text_input_view.isActive = True
+            self.suggestion_view.is_active = False
+            self.text_input_view.is_active = True
             self.text_input_view._before_call()
             needs_update = True
 
@@ -413,18 +388,16 @@ class FilePatternInputView(CallableView):
         if c == Key.Break:
             self.text = None
             self.suggestion_view.set_options([])
-            self.isActive = False
+            self.is_active = False
 
-        elif (
-            self.suggestion_view.isActive and self.suggestion_view.cur_index is not None
-        ):
+        elif self.suggestion_view.is_active and self.suggestion_view.cur_index is not None:
             self.tab_pressed = False
 
             if c == Key.Up and self.suggestion_view.cur_index == 0:  # exit and discard
                 _exit_suggestion_view()
 
             elif c == Key.Return or c == Key.Right:  # exit and choose
-                selection = str(self.suggestion_view._getOutput())
+                selection = str(self.suggestion_view._get_output())
 
                 _apply_suggestion(selection)
                 _exit_suggestion_view()
@@ -433,7 +406,7 @@ class FilePatternInputView(CallableView):
                 self.text = op.dirname(str(self.text))
 
             else:
-                self.suggestion_view._handleKey(c)
+                self.suggestion_view._handle_key(c)
         else:
             if c == Key.Down:
                 _enter_suggestion_view()
@@ -459,19 +432,19 @@ class FilePatternInputView(CallableView):
             elif c == Key.Return:
                 if self._is_ok() and self._scan_complete_event.is_set():
                     self.suggestion_view.set_options([])
-                    self.suggestion_view.isActive = False
-                    self.text_input_view.isActive = False
-                    self.isActive = False
+                    self.suggestion_view.is_active = False
+                    self.text_input_view.is_active = False
+                    self.is_active = False
                 else:
                     logger.debug("Ignoring return key because input is not ok.")
 
             else:
-                if not self.text_input_view.isActive:
-                    self.suggestion_view.isActive = False
-                    self.text_input_view.isActive = True
+                if not self.text_input_view.is_active:
+                    self.suggestion_view.is_active = False
+                    self.text_input_view.is_active = True
                     self.text_input_view._before_call()
                     self.update()
-                self.text_input_view._handleKey(c)
+                self.text_input_view._handle_key(c)
 
             if c != Key.Tab:
                 self.tab_pressed = False
@@ -488,22 +461,22 @@ class FilePatternInputView(CallableView):
         if needs_update:
             self.update()
 
-    def drawAt(self, y):
+    def draw_at(self, y):
         if y is not None:
             size: int = 0
 
-            text_input_view_draw_size = self.text_input_view.drawAt(y + size)
+            text_input_view_draw_size = self.text_input_view.draw_at(y + size)
             if isinstance(text_input_view_draw_size, int):
                 size += text_input_view_draw_size
 
-            suggestion_view_draw_size = self.suggestion_view.drawAt(y + size)
+            suggestion_view_draw_size = self.suggestion_view.draw_at(y + size)
             if isinstance(suggestion_view_draw_size, int):
                 size += suggestion_view_draw_size
 
-            self._viewWidth = max(
-                self._viewWidth,
-                self.text_input_view._viewWidth,
-                self.suggestion_view._viewWidth,
+            self._view_width = max(
+                self._view_width,
+                self.text_input_view._view_width,
+                self.suggestion_view._view_width,
             )
 
             return size

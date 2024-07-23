@@ -68,9 +68,7 @@ def build_parser() -> ArgumentParser:
     )
     rungroup.add_argument("--subject-list", type=str, help="select subjects that match")
 
-    rungroup.add_argument(
-        "--n-chunks", type=int, help="merge subject workflows to n chunks"
-    )
+    rungroup.add_argument("--n-chunks", type=int, help="merge subject workflows to n chunks")
     rungroup.add_argument(
         "--max-chunk-size",
         type=int,
@@ -78,19 +76,13 @@ def build_parser() -> ArgumentParser:
         default=64,
     )
     rungroup.add_argument("--subject-chunks", action="store_true", default=False)
-    rungroup.add_argument(
-        "--only-chunk-index", type=int, help="select which chunk to run"
-    )
+    rungroup.add_argument("--only-chunk-index", type=int, help="select which chunk to run")
     rungroup.add_argument("--only-model-chunk", action="store_true", default=False)
 
     rungroup.add_argument("--nipype-memory-gb", type=float)
-    rungroup.add_argument(
-        "--nipype-n-procs", "--n-procs", "--num-threads", type=int, default=cpu_count()
-    )
+    rungroup.add_argument("--nipype-n-procs", "--n-procs", "--num-threads", type=int, default=cpu_count())
     rungroup.add_argument("--nipype-run-plugin", type=str, default="MultiProc")
-    rungroup.add_argument(
-        "--nipype-resource-monitor", action="store_true", default=False
-    )
+    rungroup.add_argument("--nipype-resource-monitor", action="store_true", default=False)
     rungroup.add_argument(
         "--keep",
         choices=["all", "some", "none"],
@@ -121,9 +113,7 @@ def build_parser() -> ArgumentParser:
     return parser
 
 
-def parse_args(
-    argv: list[str] | None = None, namespace: Namespace | None = None
-) -> Tuple:
+def parse_args(argv: list[str] | None = None, namespace: Namespace | None = None) -> Tuple:
     parser = build_parser()
     opts = parser.parse_args(argv, namespace)
 
@@ -136,9 +126,9 @@ def parse_args(
         print(__version__)
         sys.exit(0)
 
-    from ..logging.base import logging_context
+    from ..logging.base import LoggingContext
 
-    logging_context.enable_print()
+    LoggingContext.enable_print()
 
     debug = opts.debug
     if debug:
@@ -146,7 +136,7 @@ def parse_args(
 
         from ..logging.base import setup as setup_logging
 
-        setup_logging(logging_context.queue(), levelno=logging.DEBUG)
+        setup_logging(LoggingContext.queue(), levelno=logging.DEBUG)
 
     if opts.watchdog is True:
         from ..watchdog import init_watchdog
@@ -160,7 +150,7 @@ def parse_args(
 
     verbose = opts.verbose
     if verbose:
-        logging_context.enable_verbose()
+        LoggingContext.enable_verbose()
 
     should_run = {step: True for step in steps}
 
@@ -194,12 +184,7 @@ def parse_args(
                 Path("/"),
             ]
             # Prepend fix for Docker for Mac/Windows
-            fs_root_candidates.extend(
-                [
-                    fs_root_candidate / "host_mnt"
-                    for fs_root_candidate in fs_root_candidates
-                ]
-            )
+            fs_root_candidates.extend([fs_root_candidate / "host_mnt" for fs_root_candidate in fs_root_candidates])
 
             for fs_root_candidate in fs_root_candidates:
                 if not is_empty(fs_root_candidate):

@@ -46,7 +46,7 @@ class Factory(ABC):
 
         if bids_subject_id is None:
             if source_file is not None:
-                bids_path = bids_database.to_bids(source_file)
+                bids_path = bids_database.to_bids(str(source_file))
                 assert bids_path is not None
                 subject_id = bids_database.get_tag_value(bids_path, "subject")
             if subject_id is not None:
@@ -87,9 +87,7 @@ class Factory(ABC):
 
         require_workflow(name)
 
-        single_subject_wf_name = self._single_subject_wf_name(
-            source_file=source_file, subject_id=subject_id
-        )
+        single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
 
         if single_subject_wf_name is not None:
             require_workflow(single_subject_wf_name)
@@ -107,9 +105,7 @@ class Factory(ABC):
     def get(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def connect_common_attrs(
-        self, outputhierarchy, outputnode, inputhierarchy, inputnode
-    ):
+    def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode):
         if isinstance(outputnode, str):
             outputnode = outputhierarchy[-1].get_node(outputnode)
         if isinstance(inputnode, str):
@@ -120,14 +116,10 @@ class Factory(ABC):
         attrs = inputattrs & outputattrs  # find common attr names
 
         for attr in attrs:
-            self.connect_attr(
-                outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr
-            )
+            self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
         return attrs
 
-    def connect_attr(
-        self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr
-    ):
+    def connect_attr(self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 

@@ -115,9 +115,7 @@ class ResolvedSpec:
         if len(tagglobres) == 0:
             logger.warning(f'No files found for query "{fileobj.path}"')
 
-        tmplstr = tag_parse.sub(
-            "{\\g<tag_name>}", fileobj.path
-        )  # remove regex information from path if present
+        tmplstr = tag_parse.sub("{\\g<tag_name>}", fileobj.path)  # remove regex information from path if present
 
         resolved_files: list[File] = list()
 
@@ -136,9 +134,7 @@ class ResolvedSpec:
 
             filedict["tmplstr"] = tmplstr
 
-            logger.debug(
-                f'Resolved "{pformat(filedict)}" from "{pformat(file_schema.dump(fileobj))}"'
-            )
+            logger.debug(f'Resolved "{pformat(filedict)}" from "{pformat(file_schema.dump(fileobj))}"')
 
             resolved_fileobj = file_schema.load(filedict)
             assert isinstance(resolved_fileobj, File)
@@ -206,9 +202,7 @@ class ResolvedSpec:
             for intended_for_path in intended_for_paths:
                 intended_for[intended_for_path] = linked_fmap_tags
 
-        informed_by: dict[
-            frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]
-        ] = defaultdict(list)
+        informed_by: dict[frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]] = defaultdict(list)
         for file in resolved_files:
             file_tags = frozenset(file.tags.items())
 
@@ -222,9 +216,7 @@ class ResolvedSpec:
                 for func_tag, linked_fmap_tag in product(func_tags, linked_fmap_tags):
                     if func_tag[0] == "sub" or linked_fmap_tag[0] == "sub":
                         continue
-                    if (
-                        func_tag[0] == linked_fmap_tag[0]
-                    ):  # only map between different entities
+                    if func_tag[0] == linked_fmap_tag[0]:  # only map between different entities
                         continue
                     mappings.add((func_tag, linked_fmap_tag))
 

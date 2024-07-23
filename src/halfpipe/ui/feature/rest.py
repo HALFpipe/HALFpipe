@@ -67,10 +67,10 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
 
                 dsp_values = [f'"{value}"' for value in tagvals]
 
-                self.tagval_by_str = dict(zip(dsp_values, tagvals))
+                self.tagval_by_str = dict(zip(dsp_values, tagvals, strict=False))
 
                 self.input_view = CombinedMultipleAndSingleChoiceInputView(
-                    dsp_values, [self.add_file_str], checked=dsp_values, isVertical=True
+                    dsp_values, [self.add_file_str], checked=dsp_values, is_vertical=True
                 )
 
                 self._append_view(self.input_view)
@@ -87,16 +87,10 @@ def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
 
         def next(self, ctx):
             if self.choice is not None and isinstance(self.choice, dict):
-                tagvals = [
-                    self.tagval_by_str[dsp_str]
-                    for dsp_str, is_selected in self.choice.items()
-                    if is_selected
-                ]
+                tagvals = [self.tagval_by_str[dsp_str] for dsp_str, is_selected in self.choice.items() if is_selected]
                 setattr(ctx.spec.features[-1], featurefield, tagvals)
 
-            if (self.is_first_run and self.is_missing) or (
-                not self.is_missing and self.choice == self.add_file_str
-            ):
+            if (self.is_first_run and self.is_missing) or (not self.is_missing and self.choice == self.add_file_str):
                 self.is_first_run = False
                 return AddStep(self.app)(ctx)
 
@@ -117,11 +111,7 @@ class MinSeedCoverageStep(Step):
         self.result = None
 
         self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
-        self._append_view(
-            TextView(
-                "Functional images that do not meet the requirement will be skipped"
-            )
-        )
+        self._append_view(TextView("Functional images that do not meet the requirement will be skipped"))
 
         self.valset = set()
 
@@ -155,9 +145,7 @@ class MinSeedCoverageStep(Step):
         return this_next_step_type(self.app)(ctx)
 
 
-SeedBasedConnectivityRefStep = get_ref_steps(
-    "seed", "seeds", "binary seed mask", MinSeedCoverageStep
-)
+SeedBasedConnectivityRefStep = get_ref_steps("seed", "seeds", "binary seed mask", MinSeedCoverageStep)
 DualRegressionRefStep = get_ref_steps("map", "maps", "spatial map", next_step_type)
 
 
@@ -169,11 +157,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
         self.result = None
 
         self._append_view(TextView(f"Specify {self.noun} by individual brain mask"))
-        self._append_view(
-            TextView(
-                "Atlas region signals that do not reach the requirement are set to n/a"
-            )
-        )
+        self._append_view(TextView("Atlas region signals that do not reach the requirement are set to n/a"))
 
         self.valset = set()
 
@@ -207,9 +191,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
         return this_next_step_type(self.app)(ctx)
 
 
-AtlasBasedConnectivityRefStep = get_ref_steps(
-    "atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep
-)
+AtlasBasedConnectivityRefStep = get_ref_steps("atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep)
 
 
 SeedBasedConnectivitySettingInitStep = get_setting_init_steps(
@@ -248,27 +230,17 @@ def on_falff_setting(ctx):
 
     unfiltered_setting = deepcopy(ctx.spec.settings[-1])
     unfiltered_setting["name"] = name
-    del unfiltered_setting[
-        "bandpass_filter"
-    ]  # remove bandpass filter, keep everything else
+    del unfiltered_setting["bandpass_filter"]  # remove bandpass filter, keep everything else
     ctx.spec.settings.append(unfiltered_setting)
 
     ctx.spec.features[-1].unfiltered_setting = name
 
 
-ReHoSettingValsStep = get_setting_vals_steps(
-    AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature
-)
-ReHoSettingInitStep = get_setting_init_steps(
-    ReHoSettingValsStep, settingdict=settingdict
-)
+ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
+ReHoSettingInitStep = get_setting_init_steps(ReHoSettingValsStep, settingdict=settingdict)
 
-FALFFSettingValsStep = get_setting_vals_steps(
-    AddAnotherFeatureStep, oncompletefn=on_falff_setting
-)
-FALFFSettingInitStep = get_setting_init_steps(
-    FALFFSettingValsStep, settingdict=settingdict
-)
+FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
+FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)
 
 SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep

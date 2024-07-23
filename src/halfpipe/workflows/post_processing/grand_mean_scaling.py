@@ -11,10 +11,11 @@ from ..memory import MemoryCalculator
 
 def init_grand_mean_scaling_wf(
     mean: float | None = None,
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
+    memcalc: MemoryCalculator | None = None,
     name: str | None = None,
     suffix: str | None = None,
 ):
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if name is None:
         if mean is not None:
             mean = float(mean)
@@ -30,9 +31,7 @@ def init_grand_mean_scaling_wf(
         niu.IdentityInterface(fields=["files", "mask", "mean", "vals"]),
         name="inputnode",
     )
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode"
-    )
+    outputnode = pe.Node(niu.IdentityInterface(fields=["files", "mask", "vals"]), name="outputnode")
 
     workflow.connect(inputnode, "mask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
@@ -40,13 +39,11 @@ def init_grand_mean_scaling_wf(
     if mean is not None:
         inputnode.inputs.mean = float(mean)
 
-    grandmeanscaling = pe.Node(
-        GrandMeanScaling(), name="grandmeanscaling", mem_gb=2 * memcalc.series_std_gb
-    )
-    workflow.connect(inputnode, "files", grandmeanscaling, "files")
-    workflow.connect(inputnode, "mask", grandmeanscaling, "mask")
-    workflow.connect(inputnode, "mean", grandmeanscaling, "mean")
+    grand_mean_scaling = pe.Node(GrandMeanScaling(), name="grand_mean_scaling", mem_gb=2 * memcalc.series_std_gb)
+    workflow.connect(inputnode, "files", grand_mean_scaling, "files")
+    workflow.connect(inputnode, "mask", grand_mean_scaling, "mask")
+    workflow.connect(inputnode, "mean", grand_mean_scaling, "mean")
 
-    workflow.connect(grandmeanscaling, "files", outputnode, "files")
+    workflow.connect(grand_mean_scaling, "files", outputnode, "files")
 
     return workflow

@@ -217,7 +217,7 @@ Bug fixes
    implementing a helper function
 -  Fix outputting source files for the quality check web app (#62)
 -  Fix assigning field maps to specific functional images, which is done
-   by a mapping between field map taks and functional image tags. The
+   by a mapping between field map task and functional image tags. The
    mapping is automatically inferred for BIDS datasets and manually
    specified otherwise (#66)
 -  Force re-calculation of ``nipype`` workflows after ``HALFpipe``

@@ -31,9 +31,7 @@ statmap_keys: frozenset[str] = frozenset(
         "sigmasquareds",
     ]
 )
-has_sidecar_keys: frozenset[str] = frozenset(
-    ["effect", "reho", "falff", "alff", "bold", "timeseries"]
-)
+has_sidecar_keys: frozenset[str] = frozenset(["effect", "reho", "falff", "alff", "bold", "timeseries"])
 has_sidecar_extensions: frozenset[str] = frozenset([".nii", ".nii.gz", ".tsv"])
 
 
@@ -72,9 +70,7 @@ def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
 
     elif key in algorithms["mcartest"].model_outputs:
         key = re.sub(r"^mcar", "", key)
-        return make_bids_path(
-            inpath, "image", tags, "statmap", algorithm="mcar", stat=key
-        )
+        return make_bids_path(inpath, "image", tags, "statmap", algorithm="mcar", stat=key)
 
     else:
         return make_bids_path(inpath, "image", tags, key)
@@ -114,8 +110,7 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict |
             extensions = {split_ext(image_file)[-1] for image_file in image_files}
             if not extensions.isdisjoint(has_sidecar_extensions):
                 logger.warning(
-                    f"Could not find metadata for files {image_files}. "
-                    "Check if the `.json` sidecar files are present."
+                    f"Could not find metadata for files {image_files}. " "Check if the `.json` sidecar files are present."
                 )
 
     return dict(result)

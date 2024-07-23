@@ -34,14 +34,12 @@ def get_schema_entities(schema):
     return get_nested_schema_field_names(schema, "tags")
 
 
-def get_type_schema(
-    base_schema: Type[OneOfSchema], database, file_path
-) -> Type[Schema]:
+def get_type_schema(base_schema: Type[OneOfSchema], database, file_path) -> Type[Schema]:
     # traverse schemas to find subclass
     schema: Type[OneOfSchema] = base_schema
     while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
-        type_field = getattr(schema, "type_field")
-        type_schemas = getattr(schema, "type_schemas")
+        type_field = schema.type_field
+        type_schemas = schema.type_schemas
         v = database.tagval(file_path, type_field)
         schema = type_schemas[v]
     return schema

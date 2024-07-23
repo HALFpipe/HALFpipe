@@ -4,6 +4,7 @@
 
 import numpy as np
 from nipype.interfaces.base import traits
+from numpy import typing as npt
 
 from ..transformer import Transformer, TransformerInputSpec
 
@@ -49,11 +50,11 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
     if hp_sigma > 0:
         c0 = None
         for t in range(sourcetsize):
-            A = 0
-            B = np.zeros((m,), dtype=array.dtype)
-            C = 0
-            D = np.zeros((m,), dtype=array.dtype)
-            N = 0
+            a: float = 0.0
+            b: npt.NDArray = np.zeros((m,), dtype=array.dtype)
+            c: float | npt.NDArray = 0.0
+            d: npt.NDArray = np.zeros((m,), dtype=array.dtype)
+            n: float = 0.0
 
             for tt in range(
                 max(t - hp_mask_size_minus, 0),
@@ -61,15 +62,15 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
             ):
                 dt = tt - t
                 w = hp_exp[dt]
-                A += w * dt
-                B += w * array[:, tt]
-                C += w * dt * dt
-                D += w * dt * array[:, tt]
-                N += w
+                a += w * dt
+                b += w * array[:, tt]
+                c += w * dt * dt
+                d += w * dt * array[:, tt]
+                n += w
 
-            tmpdenom = C * N - A * A
+            tmpdenom = c * n - a * a
             if not np.isclose(tmpdenom, 0):
-                c = (B * C - A * D) / tmpdenom
+                c = (b * c - a * d) / tmpdenom
                 if c0 is None:
                     c0 = c
                 array2[:, t] = c0 + array[:, t] - c
@@ -82,20 +83,20 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
 
     if lp_sigma > 0:
         for t in range(sourcetsize):
-            total = np.zeros((m,), dtype=array.dtype)
+            lp_total = np.zeros((m,), dtype=array.dtype)
             sum = 0
 
             for tt in range(
                 max(t - lp_mask_size_minus, 0),
                 min(t + lp_mask_size_plus, sourcetsize - 1) + 1,
             ):
-                total += array[:, tt] * lp_exp[tt - t]
+                lp_total += array[:, tt] * lp_exp[tt - t]
                 sum += lp_exp[tt - t]
 
             if sum > 0:
-                array2[:, t] = total / sum
+                array2[:, t] = lp_total / sum
             else:
-                array2[:, t] = total
+                array2[:, t] = lp_total
 
         np.copyto(array, array2)
 

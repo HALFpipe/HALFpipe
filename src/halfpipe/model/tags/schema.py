@@ -2,19 +2,19 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from .anat import schemas as AnatTagsSchemas
-from .base import schemas as BaseTagsSchemas
-from .fmap import schemas as FmapTagsSchemas
-from .func import schemas as FuncTagsSchemas
-from .ref import schemas as RefTagsSchemas
+from .anat import schemas as anat_tags_schemas
+from .base import schemas as base_tags_schemas
+from .fmap import schemas as fmap_tags_schemas
+from .func import schemas as func_tags_schemas
+from .ref import schemas as ref_tags_schemas
 from .resultdict import ResultdictTagsSchema, resultdict_entities
 
 schemas = [
-    *BaseTagsSchemas,
-    *AnatTagsSchemas,
-    *FuncTagsSchemas,
-    *FmapTagsSchemas,
-    *RefTagsSchemas,
+    *base_tags_schemas,
+    *anat_tags_schemas,
+    *func_tags_schemas,
+    *fmap_tags_schemas,
+    *ref_tags_schemas,
     ResultdictTagsSchema,
 ]
 

@@ -8,14 +8,13 @@ from random import seed
 import nibabel as nib
 import numpy as np
 import pytest
-from nipype.interfaces import fsl
-
 from halfpipe.interfaces.fslnumpy.tempfilt import TemporalFilter
+from nipype.interfaces import fsl
 
 
 @pytest.mark.slow
 @pytest.mark.timeout(60)
-def test_TemporalFilter(tmp_path):
+def test_temporal_filter(tmp_path):
     seed(a=0x4D3C732F)
 
     array = np.random.rand(10, 10, 10, 100) * 1000 + 10000

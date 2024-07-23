@@ -802,7 +802,7 @@ workflow, and run.
    available, or the ``spec.json`` is changed, for example to add a new
    feature or group model). Otherwise, the ``uuid`` stays the same.
    Therefore, if a workflow file with the calculated ``uuid`` already
-   exists, then we do not need to run this stage. We can simple re-use
+   exists, then we do not need to run this stage. We can simple reuse
    the workflow from the existing file, and save some time.
 
 -  In this stage, we can also decide to split the execution into chunks.

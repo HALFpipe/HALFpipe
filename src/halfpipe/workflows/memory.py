@@ -11,7 +11,7 @@ from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
-from .constants import constants
+from .constants import Constants
 
 ureg = pint.UnitRegistry()
 
@@ -30,8 +30,8 @@ class MemoryCalculator(NamedTuple):
         volume_gb, series_gb = cls.calc_bold_gb((x, y, z, t))
 
         reference_file = get_template(
-            constants.reference_space,
-            resolution=constants.reference_res,
+            Constants.reference_space,
+            resolution=Constants.reference_res,
             desc="brain",
             suffix="mask",
         )

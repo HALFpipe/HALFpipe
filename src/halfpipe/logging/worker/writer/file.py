@@ -5,6 +5,7 @@
 import re
 from pathlib import Path
 from random import gauss
+from typing import IO
 
 from ....utils.lock import AdaptiveLock
 from .base import Writer
@@ -17,7 +18,7 @@ class FileWriter(Writer, AdaptiveLock):
         Writer.__init__(self, **kwargs)
         AdaptiveLock.__init__(self)
         self.filename: Path | None = None
-        self.stream = None
+        self.stream: IO[str] | None = None
 
     @property
     def delay(self) -> float:
@@ -32,9 +33,7 @@ class FileWriter(Writer, AdaptiveLock):
     def acquire(self):
         assert self.filename is not None
 
-        lock_file = str(
-            self.filename.parent / f".{self.filename.name}.lock"
-        )  # hidden lock file
+        lock_file = str(self.filename.parent / f".{self.filename.name}.lock")  # hidden lock file
         self.lock(lock_file)
 
         self.stream = open(self.filename, mode="a", encoding="utf-8")

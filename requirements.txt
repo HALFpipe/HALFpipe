@@ -4,20 +4,37 @@
 #
 #    pip-compile requirements.in
 #
+aiofiles==23.2.1
+    # via openneuro-py
+annexremote==1.6.5
+    # via datalad
 annotated-types==0.6.0
     # via pydantic
+anyio==4.3.0
+    # via httpx
 astor==0.8.1
     # via formulaic
 atpublic==3.0.1
     # via flufl-lock
 attrs==23.1.0
     # via niworkflows
+backports-tarfile==1.1.1
+    # via jaraco-context
 bids-validator==1.13.1
     # via pybids
+boto==2.49.0
+    # via datalad
 certifi==2023.7.22
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+cffi==1.16.0
+    # via cryptography
 chardet==5.2.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   datalad
 charset-normalizer==3.3.2
     # via requests
 ci-info==0.3.0
@@ -27,14 +44,21 @@ click==8.1.7
     #   niflow-nipype1-workflows
     #   nipype
     #   pybids
+    #   typer
 contourpy==1.2.0
     # via matplotlib
+cryptography==42.0.7
+    # via secretstorage
 cycler==0.12.1
     # via matplotlib
+datalad==1.0.2
+    # via -r requirements.in
 decorator==4.4.2
     # via networkx
 defusedxml==0.7.1
     # via odfpy
+distro==1.9.0
+    # via datalad
 docopt==0.6.2
     # via num2words
 et-xmlfile==1.1.0
@@ -42,7 +66,9 @@ et-xmlfile==1.1.0
 etelemetry==0.3.1
     # via nipype
 fasteners==0.17.3
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   datalad
 filelock==3.13.1
     # via nipype
 flufl-lock==7.1
@@ -55,12 +81,27 @@ formulaic==0.2.4
     # via pybids
 future==0.18.3
     # via niflow-nipype1-workflows
+graphql-core==3.2.3
+    # via sgqlc
+h11==0.14.0
+    # via httpcore
 h5py==3.10.0
     # via nitransforms
-idna==3.4
-    # via requests
+httpcore==1.0.5
+    # via httpx
+httpx==0.27.0
+    # via openneuro-py
+humanize==4.9.0
+    # via datalad
+idna==3.7
+    # via
+    #   anyio
+    #   httpx
+    #   requests
 imageio==2.31.5
     # via scikit-image
+importlib-metadata==7.1.0
+    # via keyring
 indexed-gzip==1.8.7
     # via
     #   fmriprep
@@ -71,14 +112,34 @@ inflection==0.5.1
     # via -r requirements.in
 interface-meta==1.3.0
     # via formulaic
+iso8601==2.1.0
+    # via datalad
 isodate==0.6.1
     # via rdflib
-jinja2==3.1.3
+jaraco-classes==3.4.0
+    # via
+    #   keyring
+    #   keyrings-alt
+jaraco-context==5.3.0
+    # via
+    #   keyring
+    #   keyrings-alt
+jaraco-functools==4.0.1
+    # via keyring
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
+jinja2==3.1.4
     # via niworkflows
 joblib==1.3.2
     # via
     #   nilearn
     #   scikit-learn
+keyring==25.2.1
+    # via datalad
+keyrings-alt==5.0.1
+    # via datalad
 kiwisolver==1.4.5
     # via matplotlib
 line-profiler==4.1.1
@@ -88,12 +149,16 @@ llvmlite==0.41.1
 lockfile==0.12.2
     # via smriprep
 looseversion==1.3.0
-    # via nipype
+    # via
+    #   datalad
+    #   nipype
 lxml==4.9.3
     # via
     #   nilearn
     #   prov
     #   svgutils
+markdown-it-py==3.0.0
+    # via rich
 markupsafe==2.1.3
     # via jinja2
 marshmallow==3.20.1
@@ -116,8 +181,15 @@ matplotlib==3.8.1
     #   seaborn
     #   smriprep
     #   tedana
+mdurl==0.1.2
+    # via markdown-it-py
 more-itertools==10.1.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   jaraco-classes
+    #   jaraco-functools
+msgpack==1.0.8
+    # via datalad
 mypy-extensions==1.0.0
     # via typing-inspect
 networkx==2.5.1
@@ -201,10 +273,13 @@ numpy==1.26.3
     #   tifffile
 odfpy==1.4.1
     # via -r requirements.in
+openneuro-py==2024.2.0
+    # via -r requirements.in
 openpyxl==3.1.2
     # via -r requirements.in
 packaging==23.2
     # via
+    #   datalad
     #   etelemetry
     #   marshmallow
     #   matplotlib
@@ -229,17 +304,23 @@ pandas==2.2.0
     #   tedana
 parse==1.20.1
     # via -r requirements.in
+patool==2.2.0
+    # via datalad
 patsy==0.5.3
     # via
     #   -r requirements.in
     #   statsmodels
-pillow==10.2.0
+pillow==10.3.0
     # via
     #   imageio
     #   matplotlib
     #   scikit-image
 pint==0.23
     # via -r requirements.in
+platformdirs==4.2.2
+    # via
+    #   datalad
+    #   openneuro-py
 prov==2.0.0
     # via nipype
 psutil==5.9.8
@@ -255,12 +336,16 @@ pybids==0.14.1
     #   sdcflows
     #   smriprep
     #   templateflow
+pycparser==2.22
+    # via cffi
 pydantic==2.4.2
     # via inflect
 pydantic-core==2.10.1
     # via pydantic
 pydot==1.4.2
     # via nipype
+pygments==2.18.0
+    # via rich
 pympler==1.0.1
     # via -r requirements.in
 pyparsing==3.1.1
@@ -276,6 +361,8 @@ python-dateutil==2.8.2
     #   nipype
     #   pandas
     #   prov
+python-gitlab==4.5.0
+    # via datalad
 pytz==2023.3.post1
     # via pandas
 pywavelets==1.4.1
@@ -289,13 +376,21 @@ rdflib==7.0.0
     # via
     #   nipype
     #   prov
-requests==2.31.0
+requests==2.32.2
     # via
     #   -r requirements.in
+    #   datalad
     #   etelemetry
     #   fmriprep
     #   nilearn
+    #   openneuro-py
+    #   python-gitlab
+    #   requests-toolbelt
     #   templateflow
+requests-toolbelt==1.0.0
+    # via python-gitlab
+rich==13.7.1
+    # via typer
 scikit-image==0.19.3
     # via niworkflows
 scikit-learn==1.3.2
@@ -325,8 +420,14 @@ seaborn==0.13.2
     # via
     #   -r requirements.in
     #   niworkflows
+secretstorage==3.3.3
+    # via keyring
 setuptools-scm==8.0.4
     # via -r requirements.in
+sgqlc==16.3
+    # via openneuro-py
+shellingham==1.5.4
+    # via typer
 simplejson==3.19.2
     # via nipype
 six==1.16.0
@@ -338,6 +439,10 @@ smriprep==0.7.2+halfpipe.2
     # via
     #   -r requirements.in
     #   fmriprep
+sniffio==1.3.1
+    # via
+    #   anyio
+    #   httpx
 sqlalchemy==1.3.24
     # via pybids
 stackprinter==0.2.5
@@ -369,11 +474,16 @@ tifffile==2023.9.26
 toml==0.10.2
     # via fmriprep
 tqdm==4.66.1
-    # via templateflow
+    # via
+    #   datalad
+    #   openneuro-py
+    #   templateflow
 traits==6.3.2
     # via nipype
 transforms3d==0.4.1
     # via niworkflows
+typer[all]==0.12.3
+    # via openneuro-py
 typing-extensions==4.8.0
     # via
     #   inflect
@@ -381,10 +491,11 @@ typing-extensions==4.8.0
     #   pydantic
     #   pydantic-core
     #   setuptools-scm
+    #   typer
     #   typing-inspect
 typing-inspect==0.9.0
     # via marshmallow-dataclass
-python-tzdata==2023.3
+tzdata==2024.1
     # via pandas
 urllib3==2.0.7
     # via requests
@@ -396,6 +507,8 @@ xlrd==2.0.1
     # via -r requirements.in
 xlsxwriter==3.1.9
     # via -r requirements.in
+zipp==3.18.2
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -9,7 +9,7 @@ from types import MethodType
 
 warnings.filterwarnings("ignore")  # catch all warnings while loading modules
 
-from .context import context as logging_context  # noqa: E402
+from .context import Context as LoggingContext  # noqa: E402
 from .filter import DTypeWarningsFilter, PyWarningsFilter  # noqa: E402
 from .formatter import ColorFormatter  # noqa: E402
 from .handler import QueueHandler  # noqa: E402
@@ -37,8 +37,8 @@ def showwarning(message, category, filename, lineno, _=None, line=None):
 
 
 def setup_context():
-    logging_context.setup_worker()
-    queue = logging_context.queue()
+    LoggingContext.setup_worker()
+    queue = LoggingContext.queue()
     assert isinstance(queue, JoinableQueue)
     setup(queue)
 
@@ -82,7 +82,7 @@ def setup(queue, levelno=logging.INFO):
     setup_loggers()
 
     from fmriprep.config import loggers as fmriprep_loggers
-    from nipype.utils.logger import Logging as nipype_logging
+    from nipype.utils.logger import Logging as NipypeLogging
 
     setup_loggers()  # re-do setup
 
@@ -96,12 +96,12 @@ def setup(queue, levelno=logging.INFO):
     def empty_init(_):
         pass
 
-    nipype_logging.__init__ = empty_method
-    nipype_logging.enable_file_logging = empty_method
-    nipype_logging.disable_file_logging = empty_method
-    nipype_logging.update_logging = empty_method
+    NipypeLogging.__init__ = empty_method
+    NipypeLogging.enable_file_logging = empty_method
+    NipypeLogging.disable_file_logging = empty_method
+    NipypeLogging.update_logging = empty_method
     fmriprep_loggers.init = MethodType(empty_init, fmriprep_loggers)
 
 
 def teardown():
-    logging_context.teardown_worker()
+    LoggingContext.teardown_worker()

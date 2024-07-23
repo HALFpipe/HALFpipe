@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .. import __version__
 from ..logging import logger
-from ..logging.base import logging_context
+from ..logging.base import LoggingContext
 from ..model.spec import load_spec, save_spec
 from ..workdir import init_workdir
 from .components import (
@@ -50,7 +50,7 @@ class UseExistingSpecStep(Step):
             if len(self.existing_spec.models) > 0:
                 options.append(self.options[5])
 
-            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self.input_view = SingleChoiceInputView(options, is_vertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -141,9 +141,7 @@ class FirstStep(Step):
         for line in self._welcome_text():
             self._append_view(TextView(line))
         self._append_view(SpacerView(1))
-        self._append_view(
-            TextView("Please report any problems or leave suggestions at")
-        )
+        self._append_view(TextView("Please report any problems or leave suggestions at"))
         self._append_view(TextView("https://github.com/HALFpipe/HALFpipe/issues"))
         self._append_view(SpacerView(1))
         self.is_first_run = True
@@ -160,7 +158,7 @@ class FirstStep(Step):
 
 
 def init_spec_ui(workdir: Path | None = None, debug: bool = False) -> Path:
-    logging_context.disable_print()
+    LoggingContext.disable_print()
 
     fs_root = Path(UIConfig.fs_root)
 
@@ -180,7 +178,7 @@ def init_spec_ui(workdir: Path | None = None, debug: bool = False) -> Path:
     with app:
         app_ctx = FirstStep(app)(base_ctx)
 
-    logging_context.enable_print()
+    LoggingContext.enable_print()
 
     if app_ctx is not None:
         assert app_ctx.workdir is not None

@@ -24,9 +24,7 @@ class QueueHandler(Handler):
 
             short_msg = self.format(short_record)
 
-            obj = LogMessage(
-                short_msg=short_msg, long_msg=long_msg, levelno=record.levelno
-            )
+            obj = LogMessage(short_msg=short_msg, long_msg=long_msg, levelno=record.levelno)
             self.queue.put(obj)
         except Exception:
             self.handleError(record)

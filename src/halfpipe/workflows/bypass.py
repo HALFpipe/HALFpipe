@@ -6,7 +6,7 @@ import nipype.interfaces.utility as niu
 from nipype.pipeline import engine as pe
 
 
-def init_bypass_wf(attrs=[], unconnected_attrs=[], name=None, suffix=None):
+def init_bypass_wf(attrs: list | None = None, unconnected_attrs: list | None = None, name=None, suffix=None):
     """
     This function initializes a Nipype Workflow that can be used as a drop-in
     replacement for another workflow, but that doesn't do any processing.
@@ -28,6 +28,8 @@ def init_bypass_wf(attrs=[], unconnected_attrs=[], name=None, suffix=None):
     workflow : nipype.pipeline.engine.workflows.Workflow
         The initialized Nipype workflow with inputnode and outputnode connected.
     """
+    attrs = [] if attrs is None else attrs
+    unconnected_attrs = [] if unconnected_attrs is None else unconnected_attrs
 
     if suffix is not None:
         name = f"{name}_{suffix}"

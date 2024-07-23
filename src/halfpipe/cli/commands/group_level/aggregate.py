@@ -48,11 +48,7 @@ def apply_aggregate(
         results.extend(other_results)
         for result in results:
             # Remove list fields
-            result["tags"] = {
-                key: value
-                for key, value in result["tags"].items()
-                if isinstance(value, str)
-            }
+            result["tags"] = {key: value for key, value in result["tags"].items() if isinstance(value, str)}
 
         results = [summarize_metadata(result) for result in results]
 
@@ -60,9 +56,7 @@ def apply_aggregate(
     design.results = results
 
 
-def map_fixed_effects_aggregate(
-    result: ResultDict, exist_ok: bool = False
-) -> ResultDict:
+def map_fixed_effects_aggregate(result: ResultDict, exist_ok: bool = False) -> ResultDict:
     key = b32_digest(result)[:8]
 
     model_directory = Path.cwd() / f"model-{key}"

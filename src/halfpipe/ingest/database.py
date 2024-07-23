@@ -127,10 +127,7 @@ class Database:
     def get(self, **filters: str) -> set[str]:
         res = None
         for tagname, tagval in filters.items():
-            if (
-                tagname in self.filepaths_by_tags
-                and tagval in self.filepaths_by_tags[tagname]
-            ):
+            if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:
                 cur_set = self.filepaths_by_tags[tagname][tagval]
                 if res is not None:
                     res &= cur_set
@@ -207,9 +204,7 @@ class Database:
             return tuple(matching_files)
         return None
 
-    def associations2(
-        self, optional_tags: Mapping[str, str], mandatory_tags: Mapping[str, str]
-    ) -> tuple[str, ...] | None:
+    def associations2(self, optional_tags: Mapping[str, str], mandatory_tags: Mapping[str, str]) -> tuple[str, ...] | None:
         matching_files = self.get(**mandatory_tags)
         for entity in reversed(entities):  # from high to low priority
             if entity not in self.filepaths_by_tags:
@@ -260,16 +255,13 @@ class Database:
         return (
             entitylist,
             set(
-                tuple(
-                    self.tags_by_filepaths[filepath].get(entity)
-                    for entity in entitylist
-                )
+                tuple(self.tags_by_filepaths[filepath].get(entity) for entity in entitylist)
                 for filepath in filepaths
                 if filepath in self.tags_by_filepaths
             ),
         )
 
-    def fillmetadata(self, key, filepaths):
+    def fillmetadata(self, key: str, filepaths: Iterable[str]):
         found = False
         found_all = True
         for filepath in filepaths:

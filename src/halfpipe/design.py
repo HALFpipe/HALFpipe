@@ -35,14 +35,11 @@ def _check_multicollinearity(matrix):
 
     rank = np.linalg.matrix_rank(matrix)
 
-    logger.info(
-        f"max_singular={max_singular} min_singular={min_singular} " f"rank={rank}"
-    )
+    logger.info(f"max_singular={max_singular} min_singular={min_singular} " f"rank={rank}")
 
     if min_singular == 0:
         logger.warning(
-            "Detected multicollinearity in the computed group-level analysis model."
-            + "Please double-check your model design."
+            "Detected multicollinearity in the computed group-level analysis model." + "Please double-check your model design."
         )
 
 
@@ -128,10 +125,7 @@ def _generate_rhs(contrasts, columns_var_gt_0) -> list[Term]:
     for contrast in contrasts:
         if contrast["type"] == "infer":
             if not columns_var_gt_0[contrast["variable"]].all():
-                logger.warning(
-                    f'Not adding term "{contrast["variable"]}" to design matrix '
-                    "because it has zero variance"
-                )
+                logger.warning(f'Not adding term "{contrast["variable"]}" to design matrix ' "because it has zero variance")
                 continue
             # For every term in the model a contrast of type infer needs to be specified
             rhs.append(Term([LookupFactor(name) for name in contrast["variable"]]))
@@ -144,7 +138,7 @@ FContrast = tuple[str, Literal["F"], list[TContrast]]
 
 
 def _make_contrasts_list(
-    contrast_matrices: list[tuple[str, pd.DataFrame]]
+    contrast_matrices: list[tuple[str, pd.DataFrame]],
 ) -> tuple[Sequence[TContrast | FContrast], list[str], list[str]]:
     contrasts: list[TContrast | FContrast] = list()
     contrast_names = []
@@ -154,9 +148,7 @@ def _make_contrasts_list(
 
         if contrast_matrix.shape[0] == 1:
             contrast_vector = contrast_matrix.iloc[0]
-            contrasts.append(
-                (contrast_name, "T", list(contrast_vector.index), list(contrast_vector))
-            )
+            contrasts.append((contrast_name, "T", list(contrast_vector.index), list(contrast_vector)))
 
             contrast_names.append(contrast_name)
 
@@ -168,9 +160,7 @@ def _make_contrasts_list(
             tcontrasts: list[TContrast] = list()
             for i, contrast_vector in contrast_matrix.iterrows():
                 tname = f"{contrast_name}_{i:d}"
-                tcontrasts.append(
-                    (tname, "T", list(contrast_vector.index), list(contrast_vector))
-                )
+                tcontrasts.append((tname, "T", list(contrast_vector.index), list(contrast_vector)))
             contrasts.extend(tcontrasts)  # Add T contrasts to the model
             # Then add the F contrast
             contrasts.append((contrast_name, "F", tcontrasts))
@@ -233,12 +223,9 @@ def group_design(
 
     # Prepare lsmeans
     unique_values_categorical = [
-        (0.0,) if is_numeric_dtype(data_frame[f]) else data_frame[f].unique()
-        for f in data_frame.columns
+        (0.0,) if is_numeric_dtype(data_frame[f]) else data_frame[f].unique() for f in data_frame.columns
     ]
-    grid = pd.DataFrame(
-        list(product(*unique_values_categorical)), columns=data_frame.columns
-    )
+    grid = pd.DataFrame(list(product(*unique_values_categorical)), columns=data_frame.columns)
     reference_dmat = dmatrix(dmat.design_info, grid, return_type="dataframe")
     assert isinstance(reference_dmat, pd.DataFrame)
 
@@ -246,9 +233,7 @@ def group_design(
     contrast_matrices: list[tuple[str, pd.DataFrame]] = []
 
     for field, columnslice in dmat.design_info.term_name_slices.items():
-        constraint = {
-            column: 0 for column in dmat.design_info.column_names[columnslice]
-        }
+        constraint = {column: 0 for column in dmat.design_info.column_names[columnslice]}
         contrast = dmat.design_info.linear_constraint(constraint)
 
         assert np.all(contrast.variable_names == dmat.columns)
@@ -296,19 +281,13 @@ def group_design(
     npts, nevs = dmat.shape
 
     if nevs >= npts:
-        logger.warning(
-            "Reverting to simple intercept only design. \n"
-            f"nevs ({nevs}) >= npts ({npts})"
-        )
+        logger.warning("Reverting to simple intercept only design. \n" f"nevs ({nevs}) >= npts ({npts})")
         return intercept_only_design(len(subjects))
 
     regressor_list: dict[str, list[float]] = OrderedDict(
-        (str(name), values)
-        for name, values in dmat.to_dict(orient="list", into=OrderedDict).items()
+        (str(name), values) for name, values in dmat.to_dict(orient="list", into=OrderedDict).items()
     )
-    contrast_list, contrast_numbers, contrast_names = _make_contrasts_list(
-        contrast_matrices
-    )
+    contrast_list, contrast_numbers, contrast_names = _make_contrasts_list(contrast_matrices)
 
     return Design(regressor_list, contrast_list, contrast_numbers, contrast_names)
 
@@ -356,9 +335,7 @@ def parse_design(
     contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
 
     def make_contrast_matrix(conditions, weights) -> npt.NDArray:
-        contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[
-            design_matrix.columns
-        ]
+        contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[design_matrix.columns]
         assert isinstance(contrast_matrix, pd.Series)
         return contrast_matrix.to_numpy(dtype=np.float64)[np.newaxis, :]
 
@@ -374,9 +351,7 @@ def parse_design(
             for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore
                 child_contrast_matrix = make_contrast_matrix(conditions, weights)
                 if child_contrast_name in contrast_matrices:
-                    assert np.allclose(
-                        contrast_matrices[child_contrast_name], child_contrast_matrix
-                    )
+                    assert np.allclose(contrast_matrices[child_contrast_name], child_contrast_matrix)
                     del contrast_matrices[child_contrast_name]
                 child_contrast_matrices.append(child_contrast_matrix)
             contrast_matrix = np.concatenate(child_contrast_matrices, axis=0)

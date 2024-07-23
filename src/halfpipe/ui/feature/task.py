@@ -82,9 +82,7 @@ class ConfirmInconsistentStep(YesNoStep):
     no_step_type = None
 
     def __init__(self, app, noun, this_next_step_type: Type[Step]):
-        self.header_str = (
-            f"Do you really want to use inconsistent {noun} across features?"
-        )
+        self.header_str = f"Do you really want to use inconsistent {noun} across features?"
         self.yes_step_type = this_next_step_type
         super(ConfirmInconsistentStep, self).__init__(app)
 
@@ -120,9 +118,7 @@ class HighPassFilterCutoffStep(Step):
         if len(self.valset) > 0:
             suggestion = (next(iter(self.valset)),)
 
-        self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
-            self.display_strs, ["Skip"], initial_values=suggestion
-        )
+        self.input_view = MultiCombinedNumberAndSingleChoiceInputView(self.display_strs, ["Skip"], initial_values=suggestion)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -147,9 +143,7 @@ class HighPassFilterCutoffStep(Step):
         this_next_step_type = next_step_type
 
         if len(self.valset) == 1 and value not in self.valset:
-            return ConfirmInconsistentStep(
-                self.app, f"{self.noun} values", this_next_step_type
-            )(ctx)
+            return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
 
         return this_next_step_type(self.app)(ctx)
 
@@ -174,7 +168,7 @@ class ContrastValuesStep(Step):
 
         conditions = ctx.spec.features[-1].conditions
         self.options = [format_variable(condition) for condition in conditions]
-        self.varname_by_str = dict(zip(self.options, conditions))
+        self.varname_by_str = dict(zip(self.options, conditions, strict=False))
 
         self.input_view = MultiNumberInputView(self.options)
 
@@ -189,10 +183,7 @@ class ContrastValuesStep(Step):
 
     def next(self, ctx):
         if self.result is not None:
-            newdict = {
-                varname: self.result[dsp]
-                for dsp, varname in self.varname_by_str.items()
-            }
+            newdict = {varname: self.result[dsp] for dsp, varname in self.varname_by_str.items()}
             ctx.spec.features[-1].contrasts[-1]["values"] = newdict
 
         return AddAnotherContrastStep(self.app)(ctx)
@@ -200,19 +191,14 @@ class ContrastValuesStep(Step):
 
 class ContrastNameStep(Step):
     def setup(self, ctx):
-        if (
-            not hasattr(ctx.spec.features[-1], "contrasts")
-            or ctx.spec.features[-1].contrasts is None
-        ):
+        if not hasattr(ctx.spec.features[-1], "contrasts") or ctx.spec.features[-1].contrasts is None:
             ctx.spec.features[-1].contrasts = []
 
         if len(ctx.spec.features[-1].contrasts) == 0:
             self._append_view(TextView("Specify contrasts"))
             self._append_view(SpacerView(1))
 
-        self.names = set(
-            contrast.get("name") for contrast in ctx.spec.features[-1].contrasts
-        )
+        self.names = set(contrast.get("name") for contrast in ctx.spec.features[-1].contrasts)
 
         base = "contrast"
         index = 1
@@ -223,9 +209,7 @@ class ContrastNameStep(Step):
 
         self._append_view(TextView("Specify contrast name"))
 
-        self.input_view = TextInputView(
-            text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
-        )
+        self.input_view = TextInputView(text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -272,7 +256,7 @@ class CopyContrastsStep(Step):
         if self.should_run:
             self._append_view(TextView("Use contrasts from existing feature?"))
             options = [feature.name for feature in self.features] + [self.skip_option]
-            self.input_view = SingleChoiceInputView(options, isVertical=True)
+            self.input_view = SingleChoiceInputView(options, is_vertical=True)
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
@@ -286,10 +270,7 @@ class CopyContrastsStep(Step):
             return True
 
     def _copy_contrasts(self, ctx):
-        if (
-            not hasattr(ctx.spec.features[-1], "contrasts")
-            or ctx.spec.features[-1].contrasts is None
-        ):
+        if not hasattr(ctx.spec.features[-1], "contrasts") or ctx.spec.features[-1].contrasts is None:
             ctx.spec.features[-1].contrasts = []
 
         assert self.choice is not None
@@ -303,11 +284,7 @@ class CopyContrastsStep(Step):
         assert isinstance(source_feature.contrasts, list)
 
         for contrast in source_feature.contrasts:
-            new_values = {
-                k: v
-                for k, v in contrast["values"].items()
-                if k in ctx.spec.features[-1].conditions
-            }
+            new_values = {k: v for k, v in contrast["values"].items() if k in ctx.spec.features[-1].conditions}
 
             new_contrast = dict(name=contrast["name"], values=new_values)
 
@@ -340,13 +317,13 @@ class ConditionsSelectStep(Step):
         conditions = ctx.spec.features[-1].conditions
         assert len(conditions) > 0, "No conditions found"
         self.options = [format_variable(condition) for condition in conditions]
-        self.str_by_varname = dict(zip(conditions, self.options))
+        self.str_by_varname = dict(zip(conditions, self.options, strict=False))
 
         self.input_view = CombinedMultipleAndSingleChoiceInputView(
             self.options,
             [self.add_file_str],
             checked=[*self.options],
-            isVertical=True,
+            is_vertical=True,
         )
 
         self._append_view(self.input_view)

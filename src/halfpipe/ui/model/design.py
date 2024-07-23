@@ -40,9 +40,7 @@ def apply_filters_to_variables(filters, variables):
                     varlevels &= filterlevels
                 elif action == "exclude":
                     varlevels -= filterlevels
-                variable["levels"] = [
-                    level for level in variable["levels"] if level in varlevels
-                ]  # maintain order
+                variable["levels"] = [level for level in variable["levels"] if level in varlevels]  # maintain order
     variables = [
         variablesdict[variable["name"]]
         for variable in variables
@@ -57,23 +55,17 @@ class InteractionTermsStep(Step):
         self.variables = variables
 
     def setup(self, _):
-        self._append_view(
-            TextView("Select which interaction terms to add to the model")
-        )
+        self._append_view(TextView("Select which interaction terms to add to the model"))
 
         nvar = len(self.variables)
 
-        terms = list(
-            chain.from_iterable(
-                combinations(self.variables, i) for i in range(2, nvar + 1)
-            )
-        )
+        terms = list(chain.from_iterable(combinations(self.variables, i) for i in range(2, nvar + 1)))
 
         self.term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
 
         self.options = list(self.term_by_str.keys())
 
-        self.input_view = MultipleChoiceInputView(self.options, isVertical=True)
+        self.input_view = MultipleChoiceInputView(self.options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -90,9 +82,7 @@ class InteractionTermsStep(Step):
                 continue
             termtpl = list(self.term_by_str[var_str])
 
-            contrast = InferredTypeContrastSchema().load(
-                {"type": "infer", "variable": termtpl}
-            )
+            contrast = InferredTypeContrastSchema().load({"type": "infer", "variable": termtpl})
 
             ctx.spec.models[-1].contrasts.append(contrast)
 
@@ -103,37 +93,23 @@ class InteractionVariablesStep(Step):
     def setup(self, ctx):
         self.choice: Optional[List[str]] = None
 
-        self._append_view(
-            TextView("Specify the variables for which to calculate interaction terms")
-        )
+        self._append_view(TextView("Specify the variables for which to calculate interaction terms"))
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = apply_filters_to_variables(
-            ctx.spec.models[-1].filters, self.variables
-        )
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
         contrastvariables = set(
-            ravel(
-                contrast["variable"]
-                for contrast in ctx.spec.models[-1].contrasts
-                if contrast.get("type") == "infer"
-            )
+            ravel(contrast["variable"] for contrast in ctx.spec.models[-1].contrasts if contrast.get("type") == "infer")
         )  # names of all variables added to the model in the previous step
-        self.variables = [
-            variable
-            for variable in self.variables
-            if variable["name"] in contrastvariables
-        ]
+        self.variables = [variable for variable in self.variables if variable["name"] in contrastvariables]
 
         assert len(self.variables) > 0, "No variables to calculate interaction terms"
 
         varnames = [variable["name"] for variable in self.variables]
         options = [format_column(varname) for varname in varnames]
 
-        self.str_by_varname = dict(zip(varnames, options))
+        self.str_by_varname = dict(zip(varnames, options, strict=False))
 
-        self.input_view = MultipleChoiceInputView(options, isVertical=True)
+        self.input_view = MultipleChoiceInputView(options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -145,11 +121,7 @@ class InteractionVariablesStep(Step):
             checked = self.input_view()
             if checked is None:
                 return False
-            self.choice = [
-                variable["name"]
-                for variable in self.variables
-                if checked[self.str_by_varname[variable["name"]]]
-            ]
+            self.choice = [variable["name"] for variable in self.variables if checked[self.str_by_varname[variable["name"]]]]
             if len(self.choice) > 1:
                 break
         return True
@@ -167,11 +139,7 @@ class AddInteractionTerms(YesNoStep):
 
     def _should_run(self, ctx):
         contrastvariables = set(
-            ravel(
-                contrast["variable"]
-                for contrast in ctx.spec.models[-1].contrasts
-                if contrast.get("type") == "infer"
-            )
+            ravel(contrast["variable"] for contrast in ctx.spec.models[-1].contrasts if contrast.get("type") == "infer")
         )  # names of all variables added to the model in the previous step
 
         if len(contrastvariables) > 1:
@@ -192,12 +160,8 @@ class ContrastValuesStep(Step):
 
         (varname,) = ctx.spec.models[-1].contrasts[-1].get("variable")
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = apply_filters_to_variables(
-            ctx.spec.models[-1].filters, self.variables
-        )
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
 
         variables_by_name = {variable["name"]: variable for variable in self.variables}
 
@@ -223,34 +187,23 @@ class ContrastValuesStep(Step):
 
 class ContrastVariableStep(Step):
     def setup(self, ctx):
-        self._append_view(
-            TextView("Specify the categorical variable for this contrast")
-        )
+        self._append_view(TextView("Specify the categorical variable for this contrast"))
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = apply_filters_to_variables(
-            ctx.spec.models[-1].filters, self.variables
-        )
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
         contrastvariables = set(
-            ravel(
-                contrast["variable"]
-                for contrast in ctx.spec.models[-1].contrasts
-                if contrast.get("type") == "infer"
-            )
+            ravel(contrast["variable"] for contrast in ctx.spec.models[-1].contrasts if contrast.get("type") == "infer")
         )  # names of all variables added to the model in the previous step
         self.variables = [
             variable
             for variable in self.variables
-            if variable["type"] == "categorical"
-            and variable["name"] in contrastvariables
+            if variable["type"] == "categorical" and variable["name"] in contrastvariables
         ]
 
         varnames = [variable["name"] for variable in self.variables]
         options = [format_column(varname) for varname in varnames]
 
-        self.varname_by_str = dict(zip(options, varnames))
+        self.varname_by_str = dict(zip(options, varnames, strict=False))
 
         self.input_view = SingleChoiceInputView(options)
         self._append_view(self.input_view)
@@ -271,17 +224,10 @@ class ContrastVariableStep(Step):
 
 class ContrastNameStep(Step):
     def setup(self, ctx):
-        if (
-            not hasattr(ctx.spec.models[-1], "contrasts")
-            or ctx.spec.models[-1].contrasts is None
-        ):
+        if not hasattr(ctx.spec.models[-1], "contrasts") or ctx.spec.models[-1].contrasts is None:
             ctx.spec.models[-1].contrasts = []
 
-        self.names = set(
-            contrast["name"]
-            for contrast in ctx.spec.models[-1].contrasts
-            if "name" in contrast
-        )
+        self.names = set(contrast["name"] for contrast in ctx.spec.models[-1].contrasts if "name" in contrast)
 
         base = "contrast"
         index = 1
@@ -292,9 +238,7 @@ class ContrastNameStep(Step):
 
         self._append_view(TextView("Specify contrast name"))
 
-        self.input_view = TextInputView(
-            text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None
-        )
+        self.input_view = TextInputView(text=suggestion, isokfun=lambda text: forbidden_chars.search(text) is None)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -328,17 +272,10 @@ class HaveContrastsStep(YesNoStep):
         variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
         variables = apply_filters_to_variables(ctx.spec.models[-1].filters, variables)
         contrastvariables = set(
-            ravel(
-                contrast["variable"]
-                for contrast in ctx.spec.models[-1].contrasts
-                if contrast.get("type") == "infer"
-            )
+            ravel(contrast["variable"] for contrast in ctx.spec.models[-1].contrasts if contrast.get("type") == "infer")
         )  # names of all variables added to the model in the previous step
         variables = [
-            variable
-            for variable in variables
-            if variable["type"] == "categorical"
-            and variable["name"] in contrastvariables
+            variable for variable in variables if variable["type"] == "categorical" and variable["name"] in contrastvariables
         ]
         if len(variables) == 0:
             self.choice = "No"
@@ -346,9 +283,7 @@ class HaveContrastsStep(YesNoStep):
         return True
 
     def setup(self, ctx):
-        instruction_str0 = (
-            "Contrasts for the mean across all subjects, and for all variables "
-        )
+        instruction_str0 = "Contrasts for the mean across all subjects, and for all variables "
         self._append_view(TextView(instruction_str0))
         self._append_view(TextView("will be generated automatically"))
         self._append_view(SpacerView(1))
@@ -362,32 +297,18 @@ class VariableMissingActionStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the action for missing values"))
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = apply_filters_to_variables(
-            ctx.spec.models[-1].filters, self.variables
-        )
-        self.variables = [
-            variable for variable in self.variables if variable["type"] != "id"
-        ]
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
+        self.variables = [variable for variable in self.variables if variable["type"] != "id"]
         contrastvariables = set(
-            ravel(
-                contrast["variable"]
-                for contrast in ctx.spec.models[-1].contrasts
-                if contrast.get("type") == "infer"
-            )
+            ravel(contrast["variable"] for contrast in ctx.spec.models[-1].contrasts if contrast.get("type") == "infer")
         )
-        self.variables = [
-            variable
-            for variable in self.variables
-            if variable["name"] in contrastvariables
-        ]
+        self.variables = [variable for variable in self.variables if variable["name"] in contrastvariables]
 
         varnames = [variable["name"] for variable in self.variables]
         options = [format_column(varname) for varname in varnames]
 
-        self.varname_by_str = dict(zip(options, varnames))
+        self.varname_by_str = dict(zip(options, varnames, strict=False))
 
         self.input_view = MultiSingleChoiceInputView(options, self.values)
 
@@ -424,24 +345,16 @@ class VariableSelectStep(Step):
     def setup(self, ctx):
         self._append_view(TextView("Specify the variables to add to the model"))
 
-        self.variables = ctx.database.metadata(
-            ctx.spec.models[-1].spreadsheet, "variables"
-        )
-        self.variables = apply_filters_to_variables(
-            ctx.spec.models[-1].filters, self.variables
-        )
-        self.variables = [
-            variable for variable in self.variables if variable["type"] != "id"
-        ]
+        self.variables = ctx.database.metadata(ctx.spec.models[-1].spreadsheet, "variables")
+        self.variables = apply_filters_to_variables(ctx.spec.models[-1].filters, self.variables)
+        self.variables = [variable for variable in self.variables if variable["type"] != "id"]
 
         varnames = [variable["name"] for variable in self.variables]
         options = [format_column(varname) for varname in varnames]
 
-        self.varname_by_str = dict(zip(options, varnames))
+        self.varname_by_str = dict(zip(options, varnames, strict=False))
 
-        self.input_view = MultipleChoiceInputView(
-            options, checked=options, isVertical=True
-        )
+        self.input_view = MultipleChoiceInputView(options, checked=options, is_vertical=True)
 
         self._append_view(self.input_view)
         self._append_view(SpacerView(1))
@@ -455,24 +368,15 @@ class VariableSelectStep(Step):
     def next(self, ctx):
         if self.variables is None:
             return None
-        if (
-            not hasattr(ctx.spec.models[-1], "contrasts")
-            or ctx.spec.models[-1].contrasts is None
-        ):
+        if not hasattr(ctx.spec.models[-1], "contrasts") or ctx.spec.models[-1].contrasts is None:
             ctx.spec.models[-1].contrasts = []
 
         assert self.choice is not None
-        checkedvarnames = set(
-            self.varname_by_str[option]
-            for option, checked in self.choice.items()
-            if checked
-        )
+        checkedvarnames = set(self.varname_by_str[option] for option, checked in self.choice.items() if checked)
 
         for variable in self.variables:
             if variable["name"] in checkedvarnames:
-                contrast = InferredTypeContrastSchema().load(
-                    {"type": "infer", "variable": [variable["name"]]}
-                )
+                contrast = InferredTypeContrastSchema().load({"type": "infer", "variable": [variable["name"]]})
                 ctx.spec.models[-1].contrasts.append(contrast)
 
         return VariableMissingActionStep(self.app)(ctx)

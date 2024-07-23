@@ -22,9 +22,7 @@ def _calc_sigma(
 
     if lp_width is not None or hp_width is not None:
         if not isinstance(repetition_time, float):
-            raise ValueError(
-                f'Invalid repetition time "{repetition_time}" ({type(repetition_time)})'
-            )
+            raise ValueError(f'Invalid repetition time "{repetition_time}" ({type(repetition_time)})')
         if lp_width is not None:
             lp_sigma = lp_width / (2.0 * repetition_time)
         if hp_width is not None:
@@ -54,12 +52,16 @@ def _bandpass_arg(low, high) -> str:
         return f"-passband {low:f} {high:f}"
 
 
+BandpassFilterTuple = tuple[str, float | None, float | None]
+
+
 def init_bandpass_filter_wf(
-    bandpass_filter: tuple[str, float | None, float | None],
+    bandpass_filter: BandpassFilterTuple,
     name: str | None = None,
     suffix: str | None = None,
-    memcalc: MemoryCalculator = MemoryCalculator.default(),
-):
+    memcalc: MemoryCalculator | None = None,
+) -> pe.Workflow:
+    memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     type, low, high = bandpass_filter
 
     if name is None:
@@ -75,9 +77,7 @@ def init_bandpass_filter_wf(
     workflow = pe.Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=["files", "mask", "low", "high", "vals", "repetition_time"]
-        ),
+        niu.IdentityInterface(fields=["files", "mask", "low", "high", "vals", "repetition_time"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -169,9 +169,7 @@ def init_bandpass_filter_wf(
         workflow.connect(inputnode, "repetition_time", tproject, "TR")
         workflow.connect(makeoutfname, "out_file", tproject, "out_file")
 
-        fromafni = pe.MapNode(
-            FromAFNI(), iterfield=["in_file", "metadata"], name="fromafni"
-        )
+        fromafni = pe.MapNode(FromAFNI(), iterfield=["in_file", "metadata"], name="fromafni")
         workflow.connect(toafni, "metadata", fromafni, "metadata")
         workflow.connect(tproject, "out_file", fromafni, "in_file")
 

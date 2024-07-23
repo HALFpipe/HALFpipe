@@ -22,9 +22,7 @@ def add_setting_adapter(workflow):
         name="bold_adapter",
     )
     tsv_adapter = pe.Node(
-        niu.Function(
-            input_names=["obj"], output_names=["confounds"], function=first_str
-        ),
+        niu.Function(input_names=["obj"], output_names=["confounds"], function=first_str),
         name="tsv_adapter",
     )
     workflow.connect(split_by_file_type, "nifti_files", bold_adapter, "obj")

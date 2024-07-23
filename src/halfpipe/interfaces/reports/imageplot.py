@@ -27,9 +27,7 @@ from ...resource import get as getresource
 from ...utils.image import nvol
 
 
-def robust_set_limits_in_mask(
-    data_img: nib.analyze.AnalyzeImage, mask_img: nib.analyze.AnalyzeImage
-) -> dict[str, float]:
+def robust_set_limits_in_mask(data_img: nib.analyze.AnalyzeImage, mask_img: nib.analyze.AnalyzeImage) -> dict[str, float]:
     plot_params: dict[str, float] = dict()
 
     mask = np.asanyarray(mask_img.dataobj).astype(bool)
@@ -135,9 +133,7 @@ class PlotRegistration(ReportingInterface):
                 **plot_params,
             )
 
-            display.add_contours(
-                parc_img, levels=levels, colors=colors, linewidths=0.25
-            )
+            display.add_contours(parc_img, levels=levels, colors=colors, linewidths=0.25)
             display.add_contours(mask_img, levels=[0.5], colors="r", linewidths=0.5)
 
             label = None  # only on first
