@@ -23,6 +23,9 @@ def bids_data(tmp_path_factory):
     setup_test_resources()
     input_path = get_resource("bids_data.zip")
 
+    print("MYCOOLFILE" * 80)
+    print(open(input_path).read())
+
     with ZipFile(input_path) as fp:
         fp.extractall(tmp_path)
 
