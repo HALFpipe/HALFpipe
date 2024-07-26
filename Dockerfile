@@ -17,8 +17,10 @@ FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
-    "python=3.11" "pip" "nodejs" "rmath" "ants" "libitk=5.3.0"
-RUN mamba update --yes --all --exclude libitk
+    "python=3.11" "pip" "nodejs" "rmath" "ants"
+RUN mamba update --yes --all
+RUN mamba install --yes "libitk=5.3.0"
+
 RUN --mount=source=requirements.txt,target=/requirements.txt \
     --mount=source=requirements-test.txt,target=/requirements-test.txt \
     --mount=source=install-requirements.sh,target=/install-requirements.sh \
