@@ -13,7 +13,7 @@ class MriqcFactory(Factory):
         raise NotImplementedError()
 
     def get(self, *args, **kwargs):
-        return super().get(*args, **kwargs)
+        return super().get(*args, **kwargs)  # type: ignore
 
     def connect(self, nodehierarchy, node, *args, **kwargs):
         return super().connect(nodehierarchy, node, *args, **kwargs)

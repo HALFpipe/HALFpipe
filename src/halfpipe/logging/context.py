@@ -9,7 +9,7 @@ from multiprocessing.process import BaseProcess
 from multiprocessing.queues import JoinableQueue
 from pathlib import Path
 from threading import RLock
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar
 
 from ..utils.multiprocessing import mp_context
 from .worker import run as run_worker
@@ -36,7 +36,7 @@ Queue = NullQueue | JoinableQueue
 
 
 class Context(object):
-    _instance: ClassVar[Self | None] = None
+    _instance: ClassVar[Context | None] = None
 
     def __init__(self) -> None:
         self._queue: Queue = NullQueue()
