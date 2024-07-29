@@ -473,7 +473,7 @@ tifffile==2023.9.26
     # via scikit-image
 toml==0.10.2
     # via fmriprep
-tqdm==4.66.1
+tqdm==4.66.3
     # via
     #   datalad
     #   openneuro-py
