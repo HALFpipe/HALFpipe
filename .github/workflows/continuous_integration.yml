@@ -122,8 +122,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build container
-        if: ${{ github.event_name != 'pull_request' }}
-        # Skip building container for pull requests to increase speed of feedback
         uses: docker/build-push-action@v5
         with:
           cache-from: ${{ steps.metadata.outputs.cache_from }}
@@ -173,10 +171,9 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test tests/workflows/test_workflow.py::test_with_fieldmaps -s
-          # py.test \
-          #  --cov --cov-report=xml --dist=load \
-          #  --numprocesses=2
+          py.test \
+            --cov --cov-report=xml --dist=load \
+            --numprocesses=2
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
