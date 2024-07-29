@@ -393,7 +393,7 @@ rich==13.7.1
     # via typer
 scikit-image==0.19.3
     # via niworkflows
-scikit-learn==1.3.2
+scikit-learn==1.5.0
     # via
     #   nilearn
     #   niworkflows
