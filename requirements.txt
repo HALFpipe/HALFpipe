@@ -507,7 +507,7 @@ xlrd==2.0.1
     # via -r requirements.in
 xlsxwriter==3.1.9
     # via -r requirements.in
-zipp==3.18.2
+zipp==3.19.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
