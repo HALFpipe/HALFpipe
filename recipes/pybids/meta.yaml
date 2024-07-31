@@ -36,7 +36,7 @@ requirements:
     - pandas >=0.23
     - python 3.11.*
     - scipy
-    - sqlalchemy <1.4.0.dev0
+    - sqlalchemy # <1.4.0.dev0  # we build our own sqlalchemy
 
 test:
   imports:

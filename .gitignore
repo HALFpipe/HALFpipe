@@ -134,6 +134,7 @@ dmypy.json
 #
 # nipype/
 work/
+vi/
 
 # For vim
 # Swap
