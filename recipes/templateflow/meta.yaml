@@ -1,6 +1,9 @@
 {% set name = "templateflow" %}
 {% set version = "0.8.1" %}
 
+# Dependencies derived from
+# https://github.com/templateflow/python-client/blob/0.8.1/setup.cfg
+
 package:
   name: {{ name|lower }}
   version: {{ version }}
@@ -21,6 +24,8 @@ requirements:
   run:
     - python 3.11.*
     - pybids >=0.12.1
+    - requests
+    - tqdm
 
 test:
   imports:
