@@ -1,6 +1,9 @@
 {% set name = "smriprep" %}
 {% set version = "0.7.2+halfpipe.2" %}
 
+# Requirements derived from
+# https://github.com/HippocampusGirl/smriprep/blob/halfpipe/setup.cfg
+
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
@@ -19,7 +22,17 @@ requirements:
     - pip
   run:
     - python 3.11.*
-
+    - indexed_gzip>=0.8.8
+    - lockfile
+    - matplotlib>=2.2.0
+    - nibabel>=3.0.1
+    - nipype>=1.5.1
+    - niworkflows #>= 1.4.0, < 1.6
+    - numpy
+    - packaging
+    - pybids>=0.11.1
+    - pyyaml
+    - templateflow>=0.6
 test:
   imports:
     - smriprep

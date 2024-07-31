@@ -23,7 +23,7 @@ requirements:
     - pip
   run:
     - python 3.11.*
-    - pybids >=0.12.1
+    - pybids>=0.12.1
     - requests
     - tqdm
 
