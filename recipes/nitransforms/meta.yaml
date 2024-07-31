@@ -1,6 +1,9 @@
 {% set name = "nitransforms" %}
 {% set version = "20.0.0rc5" %}
 
+# Dependencies derived from:
+# https://github.com/nipy/nitransforms/blob/20.0.0rc5/setup.cfg
+
 package:
   name: {{ name }}
   version: {{ version }}

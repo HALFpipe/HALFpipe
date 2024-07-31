@@ -40,7 +40,7 @@ requirements:
     - seaborn
     - svgutils # == 0.3.1  # https://github.com/nipreps/niworkflows/issues/595
     - transforms3d
-    - git templateflow >= 0.6
+    - git templateflow>=0.6
 
 
 test:
