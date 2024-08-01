@@ -13,7 +13,7 @@ source:
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
+  script: {{ PYTHON }} -m pip install --default-timeout=100 --no-deps --ignore-installed .
   # skip: true  # [py>310]
 
 requirements:
