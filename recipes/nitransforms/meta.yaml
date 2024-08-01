@@ -21,13 +21,13 @@ requirements:
     - pip
     - python 3.11.*
     - numpy
-    - scipy
+    - scipy=1.11.3
     - nibabel
     - h5py
   run:
     - python 3.11.*
     - numpy
-    - scipy
+    - scipy=1.11.3
     - h5py
     - nibabel
 
