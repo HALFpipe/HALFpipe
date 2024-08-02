@@ -24,7 +24,7 @@ bids-validator==1.13.1
     # via pybids
 boto==2.49.0
     # via datalad
-certifi==2023.7.22
+certifi==2024.7.4
     # via
     #   httpcore
     #   httpx
