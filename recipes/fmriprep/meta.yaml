@@ -24,7 +24,7 @@ requirements:
     - python 3.11.*
     - nipype
     - indexed_gzip>=0.8.8
-    - networkx~=2.5.0
+    - networkx #==2.5.0
     - nibabel>=3.0
     - nipype>=1.5.1
     - nilearn #~=0.6.2
@@ -53,16 +53,16 @@ test:
     - fmriprep.cli.workflow
     - fmriprep._warnings
     - fmriprep.utils.meepi
-    - fmriprep.utils.telemetry
+    # - fmriprep.utils.telemetry
     - fmriprep.utils.misc
     - fmriprep.utils.confounds
     - fmriprep.utils.bids
     - fmriprep.utils.debug
     - fmriprep.interfaces.patches
     - fmriprep.interfaces.workbench
-    - fmriprep.interfaces.maths
+    # - fmriprep.interfaces.maths
     - fmriprep.interfaces.multiecho
-    - fmriprep.interfaces.gifti
+    # - fmriprep.interfaces.gifti
     - fmriprep.interfaces.reports
     - fmriprep.interfaces.confounds
     - fmriprep.config
