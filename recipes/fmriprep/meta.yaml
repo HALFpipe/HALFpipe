@@ -59,12 +59,12 @@ test:
     - fmriprep.utils.bids
     # - fmriprep.utils.debug
     - fmriprep.interfaces.patches
-    - fmriprep.interfaces.workbench
-    # - fmriprep.interfaces.maths
     - fmriprep.interfaces.multiecho
-    # - fmriprep.interfaces.gifti
     - fmriprep.interfaces.reports
     - fmriprep.interfaces.confounds
+    # - fmriprep.interfaces.gifti
+    # - fmriprep.interfaces.workbench
+    # - fmriprep.interfaces.maths
     - fmriprep.config
     - fmriprep.workflows.bold.confounds
     - fmriprep.workflows.bold.resampling
