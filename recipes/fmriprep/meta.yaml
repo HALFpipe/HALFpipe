@@ -57,7 +57,7 @@ test:
     - fmriprep.utils.misc
     - fmriprep.utils.confounds
     - fmriprep.utils.bids
-    - fmriprep.utils.debug
+    # - fmriprep.utils.debug
     - fmriprep.interfaces.patches
     - fmriprep.interfaces.workbench
     # - fmriprep.interfaces.maths
