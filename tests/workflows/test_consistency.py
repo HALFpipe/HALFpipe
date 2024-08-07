@@ -200,7 +200,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
         # Search for files we want to save at the subject level and save to list
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
-        paths_to_zip.extend([tsnr_fmriprep] + [spec_file])
+        paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
