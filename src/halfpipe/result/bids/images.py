@@ -20,24 +20,15 @@ from ..base import ResultDict
 from .base import make_bids_path
 from .sidecar import load_sidecar, save_sidecar
 
-statmap_keys: frozenset[str] = frozenset(
-    [
-        "effect",
-        "variance",
-        "z",
-        "t",
-        "f",
-        "dof",
-        "sigmasquareds",
-    ]
-)
+boldmap_keys: frozenset[str] = frozenset(["tsnr"])
+statmap_keys: frozenset[str] = frozenset(["effect", "variance", "z", "t", "f", "dof", "sigmasquareds"])
 has_sidecar_keys: frozenset[str] = frozenset(["effect", "reho", "falff", "alff", "bold", "timeseries"])
 has_sidecar_extensions: frozenset[str] = frozenset([".nii", ".nii.gz", ".tsv"])
 
 
 def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
     suffix = tags["suffix"]
-    if suffix == "statmap":
+    if suffix in ["boldmap", "statmap"]:
         if "stat" not in tags:
             return None
 
@@ -55,7 +46,9 @@ def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
 
 def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
     if key in statmap_keys:  # apply rule
-        return make_bids_path(inpath, "image", tags, "statmap", stat=key)
+        return make_bids_path(inpath, "image", tags, suffix="statmap", stat=key)
+    elif key in boldmap_keys:  # apply rule
+        return make_bids_path(inpath, "image", tags, suffix="boldmap", stat=key)
 
     elif key in algorithms["heterogeneity"].model_outputs:
         key = re.sub(r"^het", "", key)
@@ -67,13 +60,12 @@ def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
             algorithm="heterogeneity",
             stat=key,
         )
-
     elif key in algorithms["mcartest"].model_outputs:
         key = re.sub(r"^mcar", "", key)
-        return make_bids_path(inpath, "image", tags, "statmap", algorithm="mcar", stat=key)
+        return make_bids_path(inpath, "image", tags, suffix="statmap", algorithm="mcar", stat=key)
 
     else:
-        return make_bids_path(inpath, "image", tags, key)
+        return make_bids_path(inpath, "image", tags, suffix=key)
 
 
 def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict | None:

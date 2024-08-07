@@ -15,7 +15,26 @@ def test_images(tmp_path: Path):
     with statmap_path.open("w") as file_handle:
         file_handle.write("test")  # File cannot be empty, because we skip empty files
 
-    result: ResultDict = {
+    extra: ResultDict = {
+        "vals": {
+            "dummy_scans": 0,
+        },
+        "metadata": {
+            "acquisition_orientation": "LAS",
+        },
+    }
+    result1: ResultDict = {
+        "tags": {
+            "task": "faces",
+            "run": "07",
+            "sub": "01",
+        },
+        "images": {
+            "tsnr": statmap_path,
+        },
+        **extra,
+    }
+    result2: ResultDict = {
         "tags": {
             "task": "faces",
             "feature": "taskBased1",
@@ -30,25 +49,36 @@ def test_images(tmp_path: Path):
             "dof": statmap_path,
             "z": statmap_path,
         },
-        "vals": {
-            "dummy_scans": 0,
-        },
-        "metadata": {
-            "acquisition_orientation": "LAS",
-        },
+        **extra,
     }
+    results = [result1, result2]
 
-    save_images([result], tmp_path)
+    save_images(results, tmp_path)
+    derivatives_path = tmp_path / "derivatives" / "halfpipe"
+
+    assert (derivatives_path / "sub-01" / "func" / "sub-01_task-faces_run-07_stat-tsnr_boldmap.nii.gz").is_file()
 
     index = BIDSIndex()
-    index.put(tmp_path / "derivatives" / "halfpipe")
+    index.put(derivatives_path)
 
-    (actual,) = load_images(index)
+    loaded_results = load_images(index)
+    assert len(loaded_results) == 2
+
+    loaded_result1: ResultDict | None = None
+    loaded_result2: ResultDict | None = None
+    for loaded_result in loaded_results:
+        if "taskcontrast" in loaded_result["tags"]:
+            loaded_result2 = loaded_result
+        else:
+            loaded_result1 = loaded_result
+
+    assert loaded_result1 is not None
+    assert loaded_result2 is not None
 
     test_case = TestCase()
     test_case.maxDiff = None
 
-    test_case.assertDictEqual(result["tags"], actual["tags"])
-    test_case.assertDictEqual(result["vals"], actual["vals"])
-    test_case.assertDictEqual(result["metadata"], actual["metadata"])
-    assert result["images"].keys() == actual["images"].keys()
+    test_case.assertDictEqual(result2["tags"], loaded_result2["tags"])
+    test_case.assertDictEqual(result2["vals"], loaded_result2["vals"])
+    test_case.assertDictEqual(result2["metadata"], loaded_result2["metadata"])
+    assert result2["images"].keys() == loaded_result2["images"].keys()
