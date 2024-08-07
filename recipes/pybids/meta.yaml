@@ -49,6 +49,3 @@ test:
 about:
   home: http://github.com/bids-standard/pybids
   summary: 'bids: interface with datasets conforming to BIDS'
-  license: MIT
-  license_file:
-    - LICENSE

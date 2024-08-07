@@ -33,7 +33,4 @@ test:
 
 about:
   home: https://github.com/templateflow/templateflow
-  license: Apache-2.0
-  license_family: Apache
-  license_file: LICENSE
   summary: 'The Template Flow Client, an assistant to query and fetch templates from TemplateFlow.'

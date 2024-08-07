@@ -37,6 +37,4 @@ test:
 
 about:
   home: https://github.com/nipy/nitransforms
-  license: MIT
-  license_file: LICENSE.txt
   summary: 'A development repo for nipy/nibabel#656'
