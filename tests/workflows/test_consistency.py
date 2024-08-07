@@ -22,7 +22,7 @@ from .spec import TestSetting, make_spec
 
 settings_list: list[TestSetting] = [
     TestSetting(
-        name="FalseComb0",
+        name="FalseNoConfounds",  # was FalseComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -30,7 +30,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb0",
+        name="TrueNoConfounds",  # was TrueComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -38,7 +38,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb1",
+        name="TrueOnlyCompCorr",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -46,7 +46,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb2",
+        name="TrueOnlyMotion",  # was TrueComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -54,7 +54,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb3",
+        name="TrueSimple",  # was TrueComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -67,7 +67,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb4",
+        name="TrueSimpleGSR",  # was TrueComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -81,7 +81,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueComb5",
+        name="TrueOnlyGSR",  # was TrueComb5
         base_setting=dict(
             confounds_removal=[
                 "global_signal",
@@ -91,7 +91,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseComb1",
+        name="FalseOnlyCompCorr",  # was FalseComb1
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -99,7 +99,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseComb2",
+        name="FalseOnlyMotion",  # was FalseComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -107,7 +107,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseComb3",
+        name="FalseSimple",  # was FalseComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -120,7 +120,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseComb4",
+        name="FalseSimpleGSR",  # was FalseComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -134,7 +134,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseComb5",
+        name="FalseOnlyGSR",  # was FalseComb5
         base_setting=dict(
             confounds_removal=[
                 "global_signal",
@@ -199,8 +199,8 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
                 paths_to_zip.extend(list(feature_path))
 
         # Search for files we want to save at the subject level and save to list
-        tsnr_fmriprep = index.get(sub=sub, suffix="tsnr", datatype="func")
-        paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
+        tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
+        paths_to_zip.extend([tsnr_fmriprep] + [spec_file])
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
