@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
 FROM condaforge/mambaforge:latest AS builder
-FROM condaforge/mambaforge:latest AS builder
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
@@ -14,7 +13,6 @@ RUN for pkg in rmath traits niflow-nipype1-workflows nitransforms pybids; do \
     conda build purge; \
     done
 
-FROM condaforge/mambaforge:latest AS install
 FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/

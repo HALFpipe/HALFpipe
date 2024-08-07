@@ -12,6 +12,7 @@ from fmriprep import config
 from halfpipe.cli.parser import build_parser
 from halfpipe.cli.run import run_stage_run
 from halfpipe.file_index.bids import BIDSIndex
+from halfpipe.logging import logger
 from halfpipe.model.spec import save_spec
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
@@ -171,7 +172,6 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
     run_stage_run(opts)
     # OR: Run another halfpipe version (not implemented)
-
     # subprocess.call(["docker", "run", "--volume", f"{tmp_path}:{tmp_path}", "--rm", "halfpipe/halfpipe:1.2.2 "])
 
     index = BIDSIndex()
@@ -183,40 +183,22 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         for test_setting in settings_list:
             name = test_setting.name
 
-            # Search for files we want to save in each setting
-            timeseries = index.get(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", task="rest", extension=".tsv")
-            corr = index.get(sub=sub, feature=f"{name}CorrMatrix", desc="correlation", suffix="matrix")
-            dual_reg = index.get(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")
-            falff = index.get(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")
-            alff = index.get(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")
-            reho = index.get(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")
-            pcc = index.get(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")
-
-            # Check that halfpipe processing generated those files
-            for feature_name, feature_path in [
-                ("timeseries", timeseries),
-                ("correlation matrix", corr),
-                ("dual regression", dual_reg),
-                ("falff", falff),
-                ("alff", alff),
-                ("reho", reho),
-                ("pcc", pcc),
+            for title, kwargs in [
+                ("Timeseries", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", task="rest", extension=".tsv")),
+                ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="matrix", desc="correlation")),
+                ("Dualreg", dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")),
+                ("Falff", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")),
+                ("Alff", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")),
+                ("ReHo", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")),
+                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")),
             ]:
-                assert feature_path is not None and len(feature_path) == 1, f"Missing path for {name} {feature_name}"
+                feature_path = index.get(**kwargs)
+                assert (
+                    feature_path is not None and len(feature_path) == 1
+                ), f"Incorrect path for {name} {title}: {feature_path}"
+                paths_to_zip.extend(list(feature_path))
 
-            paths_to_zip.extend(
-                [
-                    list(timeseries or [])[0],
-                    list(corr or [])[0],
-                    list(dual_reg or [])[0],
-                    list(falff or [])[0],
-                    list(alff or [])[0],
-                    list(reho or [])[0],
-                    list(pcc or [])[0],
-                ]
-            )
-
-        # Search for files we want to save at the subject level
+        # Search for files we want to save at the subject level and save to list
         tsnr_fmriprep = index.get(sub=sub, suffix="tsnr", datatype="func")
         paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
 
@@ -227,9 +209,8 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         with zipfile.ZipFile(zip_filepath, "w") as zipf:
             for file in paths_to_zip:
                 # Ensure file is a Path instance and convert it to string if needed
-                if isinstance(file, Path):
-                    zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
-                else:
+                if not isinstance(file, Path):
                     raise TypeError(f"Unexpected type for file: {type(file)}")
+                zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
 
-        print(f"Created zip file: {zip_filepath}")
+        logger.info(f"Created zip file: {zip_filepath}")
