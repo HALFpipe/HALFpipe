@@ -11,7 +11,7 @@ source:
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install . --no-deps -vv
+  script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv
 
 requirements:
   host:
@@ -26,10 +26,4 @@ test:
 
 about:
   home: https://github.com/niflows/nipype1-workflows
-  license: Apache-2.0
-  license_file: LICENSE.txt
   summary: 'niflow-nipype1-workflows workflow package'
-
-extra:
-  recipe-maintainers:
-    - lalalavi
