@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     get_template("OASIS30ANTs")
 
-    spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
+    spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIPediatricAsym"]
     for space in spaces:
         paths = get_template(space, atlas=None, resolution=(1, 2))
         if not isinstance(paths, list) or len(paths) == 0:
