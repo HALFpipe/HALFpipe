@@ -49,6 +49,11 @@ class Confirm(DraggableModalScreen):
             ]
         print("IIIIIIIIIIINIT Sub Confirm", self.buttons)
 
+    def on_resize(self):
+        self.get_widget_by_id("message").styles.width = (
+            self.get_widget_by_id("draggable_modal_screen_container_wrapper").container_size.width - 2
+        )
+
     def on_mount(self) -> None:
         self.content.mount(
             # VerticalScroll(

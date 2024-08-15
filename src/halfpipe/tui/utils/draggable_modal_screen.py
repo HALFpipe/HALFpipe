@@ -105,13 +105,27 @@ class DraggableModalScreen(ModalScreen):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.title_bar = WindowTitleBar()
+        self.title_bar = WindowTitleBar(id="window_title_bar")
         self.content = Container(self.title_bar, id="draggable_modal_screen_container_wrapper", classes="window_content")
 
         # mouse_at_drag_start also servers as "is dragging"
         self.mouse_at_drag_start: Offset | None = None
 
     # print("IIIIIIIIIIINIT Super DraggableModalScreen")
+
+    def on_resize(self):
+        print(
+            'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww self.title_bar.query_one(".window_title").styles.width ',
+            self.title_bar.query_one(".window_title").styles.width,
+        )
+        print(
+            "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww draggable_modal_screen_container_wrapper ",
+            self.get_widget_by_id("draggable_modal_screen_container_wrapper").container_size,
+        )
+        self.get_widget_by_id("window_title_bar").styles.width = self.get_widget_by_id(
+            "draggable_modal_screen_container_wrapper"
+        ).container_size.width
+        print("ssssss", self._size)
 
     def compose(self) -> ComposeResult:
         #  yield Container(self.title_bar, self.content, id="draggable_modal_screen_container_wrapper")

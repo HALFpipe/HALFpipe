@@ -27,10 +27,21 @@ DataInput {
     #bids_summary_panel {
         align: center middle;
     }
+
+    #field_maps_button_panel {
+        align: left middle;
+        margin: 0 1;
+        height: auto;
+    }
     #bids_panel {
         align: left top;
         height: 7;
         grid-size: 1;
+    }
+    #non_bids_panel {
+        Button {
+        margin: 1 0 0 1;
+    }
     }
     Switch {
 
@@ -66,6 +77,16 @@ DataInput {
      #data_input_file_browser {
             border: solid red;
        }
+
+    #confirm_button_container {
+    border: transparent;
+    align: center middle;
+    width: 104;
+    height: 5;
+        Button {
+        margin: 0 0 0 0;
+    }
+    }
 }
 
 #not_bids_dir_warning_modal {
@@ -110,11 +131,16 @@ SetEchoTimeDifferenceModal {
 FieldMapFilesPanel {
     border: none;
     height: auto;
-    padding: 1 0 0 0 ;
-            #delete_button {
-            offset-x: 96;
-            min-width: 6;
-        }
+    padding:1 0 0 0 ;
+    #delete_button {
+        offset-x: 94;
+        min-width: 6;
+    }
+    .icon_buttons {
+        width: 3;
+        margin: 0 1 0 0;
+        min-width: 6;
+    }
     .siemens_panel {
         height: auto;
         Horizontal {
@@ -128,11 +154,7 @@ FieldMapFilesPanel {
             width: auto;
             border: transparent;
             }
-            .icon_buttons {
-                width: 3;
-                margin: 0 1 0 0;
-                min-width: 6;
-            }
+
         }
 
     }
@@ -152,11 +174,7 @@ FieldMapFilesPanel {
             width: auto;
             border: transparent;
             }
-            .icon_buttons {
-                width: 3;
-                margin: 0 1 0 0;
-                min-width: 6;
-            }
+
         }
         #delete_button {
             offset-x: 96;

@@ -90,14 +90,15 @@ QuitModal {
 
 SelectionModal {
     #draggable_modal_screen_container_wrapper {
-
+        width: 81;
         background: black;
+
     }
     RadioSet {
-
         height: auto;
         width: auto;
     }
+
     Horizontal{
         height: auto;
         width: 100%;

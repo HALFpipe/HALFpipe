@@ -211,15 +211,16 @@ class MainApp(App):
         "./utils/tcss/path_pattern_builder.tcss",
         "./general_settings/tcss/general_settings.tcss",
         "./dev.tcss",
+        "./utils/tcss/radio_set_changed.tcss",
     ]
 
     BINDINGS = [
         ("w", "show_tab('work_dir')", "Working directory"),
         ("i", "show_tab('input_data')", "Input data"),
-        ("e", "show_tab('features')", "Features"),
-        ("m", "show_tab('misc')", "Misc"),
-        ("o", "show_tab('output')", "Output"),
-        ("r", "show_tab('paul')", "Run"),
+        #  ("e", "show_tab('features')", "Features"),
+        #  ("m", "show_tab('misc')", "Misc"),
+        #  ("o", "show_tab('output')", "Output"),
+        #  ("r", "show_tab('run')", "Run"),
     ]
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
 
@@ -301,7 +302,7 @@ class MainApp(App):
                 # Need to avoid key 'files' in the dictionary, since this only key is not a feature.
                 if name != "files":
                     self.get_widget_by_id("feature_selection_content").add_new_feature(
-                        [ctx.cache[name]["features"]["type"], name]
+                        [ctx.cache[name]["features"]["type"], name]  # type: ignore[index]
                     )
 
     def update_tab_pane_label(self, tab_id):

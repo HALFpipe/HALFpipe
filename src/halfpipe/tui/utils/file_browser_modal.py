@@ -17,12 +17,11 @@ from textual.widgets import Button, DirectoryTree, Input
 
 from halfpipe.tui.utils.select_or_input_path import SelectOrInputPath, create_path_option_list
 
+from .confirm_screen import Confirm
 from .draggable_modal_screen import DraggableModalScreen
-from .false_input_warning_screen import FalseInputWarning
 
 
 def path_test(path, isfile=False):
-    print("oooooooooooooooooooooooooooopath,", path)
     if os.path.exists(path):
         if os.access(path, os.W_OK):
             if isfile:
@@ -48,10 +47,11 @@ class FileBrowserModal(DraggableModalScreen):
 
     CSS_PATH = ["tcss/file_browser.tcss"]
 
-    def __init__(self, title="Browse", **kwargs) -> None:
+    def __init__(self, title="Browse", path_test_function=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.expanded_nodes: list = []
         self.title_bar.title = title
+        self.path_test_function = path_test if path_test_function is None else path_test_function
 
     def on_mount(self) -> None:
         base = "/"
@@ -125,16 +125,26 @@ class FileBrowserModal(DraggableModalScreen):
 
     def _confirm_window(self):
         self.update_from_input()
-        path_test_result = path_test(self.selected_directory)
+        path_test_result = self.path_test_function(self.selected_directory)
         if path_test_result == "OK":
             self.dismiss(self.selected_directory)
         else:
+            # self.app.push_screen(
+            # FalseInputWarning(
+            # warning_message=path_test_result,
+            # title="Error - Invalid path",
+            # id="invalid_path_warning_modal",
+            # classes="error_modal",
+            # )
+            # )
             self.app.push_screen(
-                FalseInputWarning(
-                    warning_message=path_test_result,
+                Confirm(
+                    path_test_result,
                     title="Error - Invalid path",
+                    left_button_text=False,
+                    right_button_text="OK",
                     id="invalid_path_warning_modal",
-                    classes="error_modal",
+                    classes="confirm_error",
                 )
             )
 

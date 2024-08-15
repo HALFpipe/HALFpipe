@@ -155,10 +155,12 @@ class PathPatternBuilder(DraggableModalScreen):
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
+        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere labels", labels)
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", self.highlight_colors, self.labels)
         print("cccccccccccccccccccccccccccccccc", colors_and_labels)
         self.active_button_id = "button_" + self.labels[0]
         self.content.mount(
@@ -167,7 +169,7 @@ class PathPatternBuilder(DraggableModalScreen):
                     ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
                     for item in colors_and_labels.items()
                 ],
-                classes="panels",
+                id="color_button_panel",
             ),
             HorizontalScroll(
                 InputWithColoredSuggestions(
@@ -184,7 +186,7 @@ class PathPatternBuilder(DraggableModalScreen):
                 Button("Reset highlights", id="reset_button"),
                 Button("Reset all", id="reset_all"),
                 Button("Submit", id="submit_button"),
-                classes="panels",
+                id="button_panel",
             ),
             Container(
                 Container(
@@ -196,6 +198,7 @@ class PathPatternBuilder(DraggableModalScreen):
                 id="feedback_and_confirm_panel",
             ),
         )
+        self.get_widget_by_id("color_button_panel").styles.grid_size_columns = len(self.labels)
 
     def deactivate_pressed_button(self):
         """Fade the button when inactive."""

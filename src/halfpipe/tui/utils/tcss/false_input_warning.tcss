@@ -1,9 +1,5 @@
 FalseInputWarning {
-    Vertical {
-        height: auto;
-        width: auto;
-        background: $surface;
-    }
+
     Static {
          height: auto;
          content-align: center middle;

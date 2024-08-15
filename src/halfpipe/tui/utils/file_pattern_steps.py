@@ -41,9 +41,9 @@ entity_colors = {
     "task": "cyan",
     "dir": "yellow",
     "condition": "orange",
-    "desc": "orange",
-    "acq": "cyan",
-    "echo": "orange",
+    "desc": "blue",  # Changed to blue for uniqueness
+    "acq": "purple",  # Changed to purple for uniqueness
+    "echo": "brown",  # Changed to brown for uniqueness
 }
 
 
@@ -146,7 +146,9 @@ class FilePatternStep:
         # next
         ctx.spec.files.append(self.fileobj)
         ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
-        ctx.cache[self.id_key]["files"][self.filetype_str] = filedict
+        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiid key", self.id_key)
+        # ctx.cache[self.id_key]["files"][self.filetype_str] = self.fileobj
+        ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         print("heeeeeeeeeeeeeeeeeeeeeeereeeeeeeeeeeeeeeeeeeeeeeeeee", self.next_step_type)
         if self.next_step_type is not None:

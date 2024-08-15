@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from itertools import product
+from operator import attrgetter
 from typing import ClassVar, Dict, Iterable, Optional, Type
 
 import numpy as np
@@ -20,12 +22,14 @@ from ...model.file.func import (
     BoldFileSchema,
 )
 from ...model.metadata import slice_order_strs, space_codes
+from ...model.tags import entities, entity_longnames
 
 # from ..logging import logger
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.selection_modal import SelectionModal
 from ..utils.set_value_modal import SetValueModal
+from .multichoice_radioset import MultipleRadioSetModal
 
 
 def display_str(x):
@@ -337,10 +341,12 @@ class SetMetadataStep:
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
-                if "metadata" not in ctx.cache[self.id_key]["files"][self.sub_id_key]:
-                    ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"] = dict()
+                #  if "metadata" not in ctx.cache[self.id_key]["files"][self.sub_id_key]:
+                #      ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"] = dict()
                 specfileobj.metadata[key] = value
-                ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
+                #  ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
+
+                ctx.cache[self.id_key]["files"] = specfileobj  # type: ignore[assignment]
                 print("sssssssssssssssspecfileobjspecfileobjspecfileobj", specfileobj)
 
                 print("vvvvvvvvvvvvvvvvvvvvvvvvvalue", value)
@@ -659,7 +665,7 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
     appendstr = " for the functional data"
     bold_filedict = {"datatype": "func", "suffix": "bold"}
     filters = bold_filedict
-    # next_step_type = CheckBoldPhaseEncodingDirectionStep
+    next_step_type = CheckBoldPhaseEncodingDirectionStep
     filedict = {"datatype": "fmap"}
 
     def _should_skip(self, ctx):
@@ -678,14 +684,25 @@ class CheckRepetitionTimeStep(CheckMetadataStep):
 
 
 # TODO ASAP
-"""
 class AcqToTaskMappingStep:
-    def setup(self):
+    filedict = {"datatype": "fmap"}
+    bold_filedict = {"datatype": "func", "suffix": "bold"}
+
+    def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
+        # def setup(self, ctx):
         self.is_first_run = True
 
         self.result = None
+        self.app = app
+        self.callback = callback
 
-        fmapfilepaths = ctx.database.get(**filedict)
+        self.callback = callback
+        self.callback_message = callback_message if callback_message is not None else {"AcqToTaskMapping": []}
+        if callback_message is not None:
+            self.callback_message.update({"AcqToTaskMapping": []})
+
+    def evaluate(self):
+        fmapfilepaths = ctx.database.get(**self.filedict)
         fmaptags = sorted(
             set(
                 frozenset(
@@ -698,7 +715,7 @@ class AcqToTaskMappingStep:
         )
         self.fmaptags = fmaptags
 
-        boldfilepaths = ctx.database.get(**bold_filedict)
+        boldfilepaths = ctx.database.get(**self.bold_filedict)
         boldtags = sorted(
             set(
                 frozenset(
@@ -708,6 +725,15 @@ class AcqToTaskMappingStep:
             )
         )
         self.boldtags = boldtags
+        print("fffffffffffffffffffffffff", fmaptags)
+        print("eeeeeeeeeeeeeeeeeeeeeeeee", entities)
+
+        print("fffffffffffffffffffffffff fmapfilepaths", fmapfilepaths)
+
+        for f in fmapfilepaths:
+            for k, v in ctx.database.tags(f).items():
+                #     if k not in ["sub"] and k in entities and v is not None:
+                print("kkkkkkkkkkkvvvvvvvvvvvvvvvffffffffffff", k, v, f)
 
         if len(fmaptags) > 0:
 
@@ -720,34 +746,75 @@ class AcqToTaskMappingStep:
                 )
 
             self.is_predefined = False
-            self._append_view(TextView("Assign field maps to functional images"))
+
+            self._append_view = []
+            self.input_view = []
+            self._append_view.append("Assign field maps to functional images")
 
             self.options = [_format_tags(t).capitalize() for t in boldtags]
             self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
-            self.input_view = MultiSingleChoiceInputView([*self.options], [*self.values], selected_indices=selected_indices)
-            self._append_view(self.input_view)
-            self._append_view(SpacerView(1))
+            self.input_view.append(([*self.options], [*self.values], selected_indices))
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXx self._append_view, self.input_view", self._append_view, self.input_view)
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx111 fmaptags", fmaptags)
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx222 values", self.values)
+
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx333 self.options", self.options)
+
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx444 boldtags", boldtags)
+            #            self._append_view(self.input_view)
+            #       self._append_view(SpacerView(1))
+
+            for option, boldtagset in zip(self.options, self.boldtags, strict=False):
+                print("option:::", option, "       boldtagset:::", boldtagset)
 
         else:
             self.is_predefined = True
 
-    def run(self, ctx):
-        if self.is_predefined:
-            return self.is_first_run
-        else:
-            self.result = self.input_view()
-            if self.result is None:
-                return False
-            return True
+    def run(self):
+        self.evaluate()
 
-    def next(self, ctx):
-        if self.result is not None:
+        if self.is_predefined:
+            self.next(None)
+        #    return self.is_first_run
+        else:
+            # rise modal here
+            self.app.push_screen(
+                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options), self.next
+            )
+
+    #            self.result = self.input_view
+    #  if self.result is None:
+    #      return False
+    #    return True
+
+    def next(self, results):
+        if results is not None:
+            # fmaptags = [frozenset({('task', 'test1')}), frozenset({('task', 'rest_bold')}), frozenset({('task', 'test2')}),
+            #   frozenset({('task', 'test3-1')}), frozenset({('task', 'test3-2')})]
+            # values= ['Field map task "test1"', 'Field map task "rest_bold"', 'Field map task "test2"',
+            #   'Field map task "test3-1"', 'Field map task "test3-2"']
+            # options = ['Task "rest_bold"', 'Task "blabla_bold"']
+            # {boldtags[1]: fmaptags[values.index('Field map task "test2"')]}
+            # {frozenset({('task', 'blabla_bold')}): frozenset({('task', 'test2')})}
+            # For the option from the options list the result will output some of the value from the values list which will
+            # then give the index in the values list which is then used to select the right object from the fmaptags
+            # self.result[option] is some value from the value list
+
+            # bold_fmap_tag_dict = {
+            # boldtagset: self.fmaptags[self.values.index(result[option])]
+            # for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+            # }
+            self.callback_message["AcqToTaskMapping"] = results
+
             bold_fmap_tag_dict = {
-                boldtagset: self.fmaptags[self.values.index(self.result[option])]
+                boldtagset: self.fmaptags[results[option]]
                 for option, boldtagset in zip(self.options, self.boldtags, strict=False)
             }
+
+            #  for option, boldtagset in zip(self.options, self.boldtags, strict=False):
+            #      print(option, boldtagset)
 
             fmap_bold_tag_dict = dict()
             for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
@@ -756,9 +823,13 @@ class AcqToTaskMappingStep:
                 else:
                     fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
 
+            #                 ctx.cache[self.id_key]["files"] = specfileobj
+
             for specfileobj in ctx.spec.files:
                 if specfileobj.datatype != "fmap":
                     continue
+
+                print("pppppppppppppppppppppppppppppppppp specfileobj.path", specfileobj.path)
 
                 fmaplist = ctx.database.fromspecfileobj(specfileobj)
 
@@ -797,10 +868,22 @@ class AcqToTaskMappingStep:
 
                 specfileobj.intended_for = intended_for
 
-        if self.is_first_run or not self.is_predefined:
-            self.is_first_run = False
-            return CheckBoldEffectiveEchoSpacingStep(self.app)(ctx)
-"""
+                for name in ctx.cache:
+                    if ctx.cache[name]["files"] != {}:
+                        if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[union-attr]
+                            ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[union-attr]
+
+        # if self.is_first_run or not self.is_predefined:
+        #    self.is_first_run = False
+        # return CheckBoldEffectiveEchoSpacingStep(self.app)
+        next_step_instance = CheckBoldEffectiveEchoSpacingStep(
+            app=self.app,
+            callback=self.callback,
+            callback_message=self.callback_message,
+            # id_key=self.id_key,
+            #  sub_id_key=self.sub_id_key,
+        )
+        next_step_instance.run()
 
 
 class CheckBoldSliceTimingStep(CheckMetadataStep):

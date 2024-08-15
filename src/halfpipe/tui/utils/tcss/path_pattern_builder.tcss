@@ -10,7 +10,7 @@ DataInput {
         offset-y: 1;
     }
     .file_patterns {
-        width: 100;
+        width: auto;
         height: 5;
         border: solid red;
     }
@@ -25,26 +25,25 @@ FileItem {
     layout: horizontal;
     height: 1;
     border: red;
+
     .icon_buttons {
         width: 3;
         height: 3;
         margin: 0 1 0 0;
         min-width: 6;
+        offset-y: -1;
     }
     #static_file_pattern {
         width: auto;
         padding: 1;
+
     }
     #icon_buttons_container {
-       /* grid-size: 3 1;*/
         width: auto;
-        /*dock: right;*/
         height: 4;
         border: none;
         padding: 0 1;
-
     }
-
 }
 
 ListOfFiles {
@@ -150,12 +149,12 @@ SelectCurrentWithInputAndSegmentHighlighting .arrow {
 PathPatternBuilder {
 
     #draggable_modal_screen_container_wrapper {
-            width: 100;
-            height: 35;
+            width: 101;
+            height: 34;
             background: black;
         }
     #feedback_and_confirm_panel {
-        border: thick $accent;
+        border: thick transparent;
         align: right middle;
         content-align: right middle;
         width: 100;
@@ -170,7 +169,7 @@ PathPatternBuilder {
             content-align: center middle;
         }
         #show_button {
-            margin: 0 0 0 1;
+            margin: 0 0 0 0;
             align: left middle;
             min-width: 6;
         }
@@ -197,20 +196,32 @@ PathPatternBuilder {
             layout: horizontal;
             padding: 1;
             margin: 0 0 -1 1;
+
         }
         #feedback_container {
             layout: horizontal;
             height: 3;
         }
     }
-    .panels {
+    #button_panel {
         align: center middle;
         grid-size: 5 1;
         grid-gutter: 0 0  ;
+        padding: 1 0 0 0;
+        border-bottom: thick $accent;
+        height: 7;
+        width: 100%;
+        offset-x: 0;
+    }
+    #color_button_panel {
+        align: center middle;
+        grid-size: 5 1;
+        grid-gutter: 1 1;
         padding: 0 0 0 0;
         border: thick $accent;
         height: 7;
-        width: 100;
+        width: 100%;
+        border: transparent;
     }
     #input_prompt {
         height: 999;
@@ -232,15 +243,16 @@ PathPatternBuilder {
     #path_widget_container {
         height: 8;
         align: center middle;
-        border: thick $accent;
-        width: 100;
+        border-top: thick $accent;
+        border-bottom: thick $accent;
+        width: 100%;
         overflow: hidden;
     }
     ColorButton {
         height: 4;
         margin: 0 0;
     /*    border: thick $accent;*/
-        margin: 1 2;
+        margin: 1 0;
         border-top: tall $panel-lighten-2;
         border-bottom: tall $panel-darken-3;
     }

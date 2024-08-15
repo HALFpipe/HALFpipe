@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+from typing import Type
 
 import numpy as np
 from textual import on
@@ -13,8 +14,11 @@ from textual.widgets.option_list import Option, Separator
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.false_input_warning_screen import FalseInputWarning
+from ..utils.non_bids_file_itemization import FileItem
+from ..utils.selection_modal import SelectionModal
 from .task_based.preprocessed_image_output import PreprocessedOutputOptions
 from .task_based.taskbased import TaskBased
+from .utils.meta_data_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
 
 # from ...model.spec import SpecSchema
 
@@ -374,3 +378,38 @@ class FeatureSelection(Widget):
         sort_children(self.current_order[0])
         sort_children(self.current_order[1])
         self.current_order = [self.current_order[1], self.current_order[0]]
+
+    # TODO
+
+    @on(Button.Pressed, "#add_event_file_button")
+    def _add_event_file(self):
+        def mount_file_item_widget(event_file_type):
+            events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
+            if event_file_type == "bids":
+                events_step_type = TsvEventsStep
+            elif event_file_type == "fsl":
+                events_step_type = TxtEventsStep
+            elif event_file_type == "spm":
+                events_step_type = MatEventsStep
+            if events_step_type is not None:
+                self.get_widget_by_id("event_file_panel").mount(
+                    FileItem(classes="file_patterns", pattern_class=events_step_type())
+                )
+                self.refresh()
+            else:
+                print("isssssssssssssssssssssss none")
+
+        options = {
+            "spm": "SPM multiple conditions",
+            "fsl": "FSL 3-column",
+            "bids": "BIDS TSV",
+        }
+        self.app.push_screen(
+            SelectionModal(
+                title="Event file type specification",
+                instructions="Specify the event file type",
+                options=options,
+                id="event_files_type_modal",
+            ),
+            mount_file_item_widget,
+        )

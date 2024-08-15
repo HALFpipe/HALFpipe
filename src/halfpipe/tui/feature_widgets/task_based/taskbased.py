@@ -157,7 +157,7 @@ class TaskBased(Widget):
         if "bandpass_filter" not in self.setting_dict:
             self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": None, "lp_width": None}
         if "smoothing" not in self.setting_dict:
-            self.setting_dict["smoothing"] = {"fwhm": None}
+            self.setting_dict["smoothing"] = {"fwhm": 0}
 
         if "filters" not in self.setting_dict:
             self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]

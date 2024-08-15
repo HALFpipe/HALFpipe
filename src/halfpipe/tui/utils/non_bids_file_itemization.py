@@ -14,6 +14,7 @@ from textual.widgets import Button, Static
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
+from ..utils.context import ctx
 from ..utils.false_input_warning_screen import SimpleMessageModal
 
 # TODO
@@ -145,15 +146,23 @@ from ..utils.false_input_warning_screen import SimpleMessageModal
 
 
 class FileItem(Widget):
-    def __init__(self, delete_button=True, title="", pattern_class=None, id_key="", **kwargs) -> None:
+    def __init__(
+        self,
+        id: str | None = None,
+        classes: str | None = None,
+        delete_button=True,
+        title="",
+        pattern_class=None,
+        id_key="",
+        **kwargs,
+    ) -> None:
         """ """
-        super().__init__(**kwargs)
+        super().__init__(id=id, classes=classes, **kwargs)
         # dictionary for results from the PathPatternBuilder
         self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
         self.delete_button = delete_button
         self.title = pattern_class.header_str
         self.pattern_class = pattern_class
-        self.id_key = id_key
         print(
             "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
             self.pattern_class.get_entities,
@@ -164,7 +173,7 @@ class FileItem(Widget):
         if self.pattern_class.next_step_type is not None:
             print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
             self.pattern_class.callback = self.callback_func
-        self.pattern_class.id_key = id_key
+        self.pattern_class.id_key = id
 
     def callback_func(self, message_dict):
         info_string = ""
@@ -232,11 +241,16 @@ class FileItem(Widget):
         print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
         # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
         # obj.setup()
-        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+        # fix this because sometimes this can be just ordinary string
+        if isinstance(pattern_match_results["file_pattern"], str):
+            self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+        else:
+            self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
         """Remove the file pattern item."""
+        ctx.cache.pop(self.id)
         self.remove()
 
     @on(Button.Pressed, "#show_button")
