@@ -115,7 +115,7 @@ class FeatureSelectionScreen(DraggableModalScreen):
     #     yield
 
     def on_mount(self) -> None:
-        self.content.mount(self.option_list, Horizontal(Button("Cancel"), id="botton_container"))
+        self.content.mount(self.option_list, Horizontal(Button("Cancel", id="cancel_button"), id="botton_container"))
 
     # def on_mount(self) -> None:
 
@@ -129,9 +129,9 @@ class FeatureSelectionScreen(DraggableModalScreen):
             get_feature_name,
         )
 
-    @on(Button.Pressed)
+    @on(Button.Pressed, "#cancel_button")
     def key_escape(self):
-        self.dismiss((None,))
+        self.dismiss(False)
 
 
 class FeatureItem:
@@ -245,7 +245,7 @@ class FeatureSelection(Widget):
         The dictionary entry was created elsewhere.
         """
         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_feature, feature_widgets")
-        if None not in new_feature_item:
+        if new_feature_item is not False:
             feature_type, feature_name = new_feature_item
             new_id = "feature_item_" + str(self._id_counter)
             self.feature_items[new_id] = FeatureItem(feature_type, feature_name)
