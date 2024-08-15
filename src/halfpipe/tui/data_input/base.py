@@ -2,6 +2,7 @@
 
 from typing import List
 
+import pandas as pd
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
@@ -399,22 +400,27 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         number_of_t1_files = 0
         number_of_bold_files = 0
         number_of_field_map_files = 0
-        for i in range(self.t1_file_pattern_counter):
-            print("iiiiiii", i)
-            number_of_t1_files += len(
-                self.get_widget_by_id("t1_image_panel")
-                .get_widget_by_id("t1_file_pattern_" + str(i))
-                .pattern_match_results["files"]
-            )
-        for i in range(self.bold_file_pattern_counter):
-            number_of_bold_files += len(
-                self.get_widget_by_id("bold_image_panel")
-                .get_widget_by_id("bold_file_pattern_" + str(i))
-                .pattern_match_results["files"]
-            )
-        for i in range(self.field_map_file_pattern_counter):
-            number_of_field_map_files += self.get_widget_by_id("field_map_file_pattern_" + str(i)).get_number_of_found_files()
-            print(self.get_widget_by_id("field_map_file_pattern_" + str(i)).get_number_of_found_files())
+        index_list = pd.DataFrame.from_dict(ctx.cache)
+        print("lllllllllllllllllllllll", index_list)
+
+        if "files" in index_list.index:
+            print("lllllllllllllllllllllll", index_list.loc["files",].index)
+            for widget_id in list(pd.DataFrame.from_dict(ctx.cache).loc["files",].index):
+                if widget_id.startswith("t1_file_pattern_"):
+                    # for i in range(self.t1_file_pattern_counter):
+                    print("iiiiiii")
+                    number_of_t1_files += len(
+                        self.get_widget_by_id("t1_image_panel").get_widget_by_id(widget_id).pattern_match_results["files"]
+                    )
+                if widget_id.startswith("bold_file_pattern_"):
+                    #    for i in range(self.bold_file_pattern_counter):
+                    number_of_bold_files += len(
+                        self.get_widget_by_id("bold_image_panel").get_widget_by_id(widget_id).pattern_match_results["files"]
+                    )
+                if widget_id.startswith("field_map_file_pattern_"):
+                    # for i in range(self.field_map_file_pattern_counter):
+                    number_of_field_map_files += self.get_widget_by_id(widget_id).get_number_of_found_files()
+                    print(self.get_widget_by_id(widget_id).get_number_of_found_files())
 
         warning_string = ""
         if any(value == 0 for value in [number_of_t1_files, number_of_bold_files, number_of_field_map_files]):

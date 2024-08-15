@@ -226,31 +226,35 @@ class FileItem(Widget):
 
     def _update_file_pattern(self, pattern_match_results):
         """Update various variables based on the results from the PathPatternBuilder"""
-        self.pattern_match_results = pattern_match_results
-        # Update the static label using the file pattern.
-        self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
-        # Tooltip telling us how many files were  found.
-        self.get_widget_by_id("show_button").tooltip = pattern_match_results["message"]
-        # If 0 files were found, the border is red, otherwise green.
-        if len(pattern_match_results["files"]) > 0:
-            self.styles.border = ("solid", "green")
-        else:
-            self.styles.border = ("solid", "red")
+        if pattern_match_results is not False:
+            self.pattern_match_results = pattern_match_results
+            # Update the static label using the file pattern.
+            self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
+            # Tooltip telling us how many files were  found.
+            self.get_widget_by_id("show_button").tooltip = pattern_match_results["message"]
+            # If 0 files were found, the border is red, otherwise green.
+            if len(pattern_match_results["files"]) > 0:
+                self.styles.border = ("solid", "green")
+            else:
+                self.styles.border = ("solid", "red")
 
-        # try to push to ctx
-        print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
-        # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
-        # obj.setup()
-        # fix this because sometimes this can be just ordinary string
-        if isinstance(pattern_match_results["file_pattern"], str):
-            self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-        else:
-            self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+            # try to push to ctx
+            print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
+            # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
+            # obj.setup()
+            # fix this because sometimes this can be just ordinary string
+            if isinstance(pattern_match_results["file_pattern"], str):
+                self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+            else:
+                self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
         """Remove the file pattern item."""
-        ctx.cache.pop(self.id)
+        # Creation of the FileItem does not automatically imply creation in the cache.
+        # For this a pattern needs to be created. By cancelling the modal, the widget is created but the filepattern is not.
+        if self.id in ctx.cache:
+            ctx.cache.pop(self.id)
         self.remove()
 
     @on(Button.Pressed, "#show_button")

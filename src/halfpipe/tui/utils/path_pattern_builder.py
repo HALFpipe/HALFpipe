@@ -290,5 +290,7 @@ class PathPatternBuilder(DraggableModalScreen):
     def key_enter(self):
         self.get_widget_by_id("input_prompt").submit_path()
 
+    #  def key_escape(self):
+    #      self.get_widget_by_id("input_prompt").reset_highlights()
     def key_escape(self):
-        self.get_widget_by_id("input_prompt").reset_highlights()
+        self.dismiss(False)
