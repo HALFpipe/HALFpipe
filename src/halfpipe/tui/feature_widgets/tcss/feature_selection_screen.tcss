@@ -1,11 +1,22 @@
 FeatureSelectionScreen {
-        align: center middle;
-                height: auto;
+    #draggable_modal_screen_container_wrapper {
+        width: 50;
+        height: 23;
+        min-width: 50;
+        min-height: 15;
+
+        WindowTitleBar {
+            dock: top;
+        }
+
+    }
     OptionList {
-        align: center middle;
+        offset-y: 0;
         width: 100%;
-        height: auto;
+        height: 16;
         text-style: bold;
+
+
     }
     OptionList > .option-list--separator {
         color: white;
@@ -13,21 +24,15 @@ FeatureSelectionScreen {
     OptionList > .option-list--option-hover {
         background: $accent;
     }
-    #top_container {
-        border: thick $accent;
-        align: center middle;
-       /* background: 10% white;*/
-        height: 20;
-        width: 50;
-        content-align: center middle;
-    }
+
     Button {
         width: 10;
     }
-    Horizontal {
+    #botton_container {
         width: 100%;
-        height: auto;
+        height: 5;
+
         align: center top;
-        padding: 1;
+
     }
 }

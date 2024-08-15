@@ -5,7 +5,7 @@ from typing import Type
 import numpy as np
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
+from textual.containers import Container, Grid, Horizontal, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Button, ContentSwitcher, Input, Label, ListItem, ListView, OptionList, Placeholder
@@ -13,6 +13,7 @@ from textual.widgets.option_list import Option, Separator
 
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
+from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
 from ..utils.file_pattern_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
 from ..utils.non_bids_file_itemization import FileItem
@@ -93,7 +94,7 @@ class FeatureNameInput(ModalScreen):
         self.dismiss(None)
 
 
-class FeatureSelectionScreen(ModalScreen[str]):
+class FeatureSelectionScreen(DraggableModalScreen):
     """Modal screen where user selects type of the new feature."""
 
     CSS_PATH = "tcss/feature_selection_screen.tcss"
@@ -102,15 +103,21 @@ class FeatureSelectionScreen(ModalScreen[str]):
         #    self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
+        self.option_list = OptionList(id="options")
+        for f in FEATURES_MAP:
+            # option_list = self.get_widget_by_id("options")
+            self.option_list.add_option(Option(FEATURES_MAP[f], id=f))
+            self.option_list.add_option(Separator())
 
-    def compose(self) -> ComposeResult:
-        yield Vertical(OptionList(id="options"), Horizontal(Button("Cancel")), id="top_container")
+        self.title_bar.title = "Choose first level feature"
+
+    #  def compose(self) -> ComposeResult:
+    #     yield
 
     def on_mount(self) -> None:
-        for f in FEATURES_MAP:
-            option_list = self.get_widget_by_id("options")
-            option_list.add_option(Option(FEATURES_MAP[f], id=f))
-            option_list.add_option(Separator())
+        self.content.mount(self.option_list, Horizontal(Button("Cancel"), id="botton_container"))
+
+    # def on_mount(self) -> None:
 
     def on_option_list_option_selected(self, message: OptionList.OptionSelected) -> None:
         def get_feature_name(feature_name: str | None) -> None:
