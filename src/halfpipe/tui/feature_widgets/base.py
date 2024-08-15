@@ -14,11 +14,11 @@ from textual.widgets.option_list import Option, Separator
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.false_input_warning_screen import FalseInputWarning
+from ..utils.file_pattern_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
 from ..utils.non_bids_file_itemization import FileItem
 from ..utils.selection_modal import SelectionModal
 from .task_based.preprocessed_image_output import PreprocessedOutputOptions
 from .task_based.taskbased import TaskBased
-from .utils.meta_data_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
 
 # from ...model.spec import SpecSchema
 

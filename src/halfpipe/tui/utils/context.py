@@ -2,7 +2,7 @@
 # from .ui.components import SingleChoiceInputView, SpacerView, TextElement, TextView
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 # class Context:
 # def __init__(self) -> None:
@@ -19,7 +19,6 @@ from typing import Any, Union
 # self.database.put(fileobj)
 # return len(self.spec.files) - 1
 from ...ingest.database import Database
-from ...model.file.base import File
 
 # from ..logging import logger
 from ...model.spec import Spec, SpecSchema
@@ -49,7 +48,7 @@ class Context:
         self.debug = False
         self.already_checked: set[str] = set()
         self._initialized = True
-        self.cache: defaultdict[str, defaultdict[str, Union[dict[str, Any], File]]] = defaultdict(lambda: defaultdict(dict))
+        self.cache: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
 
     def put(self, fileobj):
         self.database.put(fileobj)
