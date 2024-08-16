@@ -18,13 +18,13 @@ build:
   entry_points:
     - pybids=bids.cli:cli
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv
+  script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v
   number: 0
 
 requirements:
   host:
     - pip
-    - python >=3.7
+    - python 3.11.*
     - setuptools >=30.3.0,!=61.0.0
   run:
     - bids-validator
@@ -34,9 +34,9 @@ requirements:
     - num2words
     - numpy
     - pandas >=0.23
-    - python >=3.7
+    - python 3.11.*
     - scipy
-    - sqlalchemy <1.4.0.dev0
+    - sqlalchemy # <1.4.0.dev0  # we build our own sqlalchemy
 
 test:
   imports:
@@ -49,6 +49,3 @@ test:
 about:
   home: http://github.com/bids-standard/pybids
   summary: 'bids: interface with datasets conforming to BIDS'
-  license: MIT
-  license_file:
-    - LICENSE
