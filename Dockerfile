@@ -10,7 +10,7 @@ RUN mamba install --yes "boa" "conda-verify"
 COPY recipes /recipes
 COPY recipes/conda_build_config.yaml /root/conda_build_config.yaml
 
-RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep; do \
+RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep halfpipe; do \
         conda mambabuild --no-anaconda-upload --use-local /recipes/$pkg && \
         conda build purge; \
     done
@@ -20,14 +20,18 @@ FROM condaforge/mambaforge:latest AS install
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
     "python=3.11" "pip" "nodejs" "rmath" "ants"
+RUN mamba install --yes --use-local /opt/conda/conda-bld/linux-64/*.tar.bz2
 RUN mamba update --yes --all
 
-RUN --mount=source=requirements.txt,target=/requirements.txt \
-    --mount=source=requirements-test.txt,target=/requirements-test.txt \
-    --mount=source=install-requirements.sh,target=/install-requirements.sh \
-    /install-requirements.sh \
-    --requirements-file /requirements.txt \
-    --requirements-file /requirements-test.txt
+
+
+# RUN --mount=source=requirements.txt,target=/requirements.txt \
+#     --mount=source=requirements-test.txt,target=/requirements-test.txt \
+#     --mount=source=install-requirements.sh,target=/install-requirements.sh \
+#     /install-requirements.sh \
+#     --requirements-file /requirements.txt \
+#     --requirements-file /requirements-test.txt
+
 RUN mamba clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
