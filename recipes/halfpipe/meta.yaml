@@ -56,7 +56,7 @@ requirements:
     - chardet
     - pympler>=0.9
     - stackprinter>=0.2.5
-    - line-profiler>=4.0.1
+    - line_profiler>=4.0.1
     - pyrsistent>=0.18.1
     - requests>=2.25.1
     - inflect>=5.3.0
