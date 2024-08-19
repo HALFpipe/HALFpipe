@@ -862,7 +862,18 @@ Paths: define the input and output paths
    --workdir PATH
    --wd PATH
 
-All mean the same and are interchangeable, point to one or more input directories containing the HALFpipe derivatives.
+All mean the same and are interchangeable, point to one or more HALFpipe working directories that have finished processing and quality control by pointing to the derivatives/halfpipe folder in your working directory.
+
+   For example, if you have one working directory (the most common case):
+
+   ``--input-directory \
+   /mnt/data/berlin/derivatives/halfpipe \`` 
+   
+   And if you have, for example, processed two study sites in two different working directories: 
+
+   ``--input-directory \
+   /mnt/data/berlin/derivatives/halfpipe \
+   /mnt/data/paris/derivatives/halfpipe \``
 
 
 .. code:: bash
@@ -876,15 +887,20 @@ Both flags mean the same, point to the directory to write the results to.
 Filter: arguments for filtering the inputs
 =====================
 
-There are several ways to filter the first-level features that are included in the group-level analyses, including on the basis of tags. Tags may be one of: ``feature``, ``setting``, ``seed``, ``map``, ``component``, ``atlas``, ``task``, ``taskcontrast``. 
+There are several ways to filter the first-level features that are included in the group-level analyses, including on the basis of tags. Tags may be any of the first level features, including: ``sub``, ``feature``, ``setting``, ``seed``, ``map``, ``component``, ``atlas``, ``task``, ``taskcontrast``. 
 
 .. code:: bash
 
     --include TAG VALUE  
     --include-list TAG PATH   
 
-A tag and a value may be specified. Will include only images with this tag and value. If multiple are specified, images must match one of them. Examples may be ``--include task TOL`` or ``--include feature ICAAROMA``.
-Alternatively, a tag and a path to a file may be specified. Will include only images with this tag and any of the values in the file.
+A tag and a value may be specified. Will include only images with this tag and value. If multiple different tags are specified, images must match all of them, but if multiple values of the same tag are specified, images must match one of them. Alternatively, a tag and a path to a file may be specified. Will include only images with this tag and any of the values in the file.
+
+   For example:
+
+   ``--include task TOL \
+   --include feature ICAAROMA \
+   --include-list sub subject-list.txt \``
 
 
 .. code:: bash
@@ -894,14 +910,30 @@ Alternatively, a tag and a path to a file may be specified. Will include only im
 
 A tag and a value/path may be specified. Will exclude images with this tag and value, or any of the values in the file.
 
+.. code:: bash
+
+    --qc-exclude-file PATH
+
+A path to one or more output files from the `quality assessment step of the imaging manual <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__ may be specified. This way scans with bad quality will automatically be skipped.
+
+   For example if you only have one file:
+
+   ``--qc-exclude-file  \
+   /mnt/data/halfpipe/exclude.json \`` 
+   
+   Or if you have multiple files: 
+
+   ``--qc-exclude-file \
+   /mnt/data/halfpipe/exclude_lea.json \
+   /mnt/data/halfpipe/exclude_susanne.json \``
+
 
 .. code:: bash
 
     --fd-mean-cutoff NUMBER
     --fd-perc-cutoff PERCENTAGE
 
-Will exclude subjects with a mean framewise displacement and/or a percentage of high framewise displacement volumes above these cutoffs. The defaults are 0.5mm mean framewise displacement and 10% of frames above this threshhold.
-
+Will exclude subjects with a mean framewise displacement and/or a percentage of high framewise displacement volumes above these cutoffs. The defaults are 0.5mm mean framewise displacement and 10% of frames above this threshhold. These will be processed in addition to the exclude files from the previous step(s).
 
 .. code:: bash
     
@@ -917,13 +949,25 @@ Modify: arguments for modifying the inputs
 
   --rename TAG FROM TO
 
-If you are combining subjects across different samples for a group-level analysis, sometimes known as a mega-analysis, you may find that different samples have different naming of tasks, processing settings, task contrasts, etc. In this case, HALFpipe allows you to combine these different first-level features across subjects, but they must first have a uniform naming convention. Instead of changing the file names in the derivatives folder, HALFpipe makes use of this flag to temporarily modify inputs by changing all values of tag from the value ``FROM`` to the value ``TO``. For example ``--rename task TowerOfLondon TOL``. 
+If you are combining subjects across different samples for a group-level analysis, sometimes known as a mega-analysis, you may find that different samples have different naming of tasks, processing settings, task contrasts, etc. In this case, HALFpipe allows you to combine these different first-level features across subjects, but they must first have a uniform naming convention. Instead of changing the file names in the derivatives folder, HALFpipe makes use of this flag to temporarily modify inputs by changing all values of tag from the value ``FROM`` to the value ``TO``. 
+
+   For example:
+
+   ``--rename task TowerOfLondon TOL``
 
 .. code:: bash
 
-  --aggregate across [across ...]
+  --aggregate TAG
 
-Will aggregate the images across the given tags with a fixed effects model.
+If you have multiple runs or sessions, then you can use this flag to aggregate them. Will aggregate the images across the given tag with a fixed effects model.
+   
+   For example, if you have two runs for each participant:
+
+   ``--aggregate run \`` will give you one averaged output per participant. 
+
+   Alternatively for multiple  sessions:
+
+   ``--aggregate ses \``
 
 
 Design:  arguments for defining the design
