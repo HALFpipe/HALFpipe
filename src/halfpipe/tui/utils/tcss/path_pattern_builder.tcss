@@ -48,24 +48,27 @@ FileItem {
 
 ListOfFiles {
     align: center middle;
-    border: $accent tall;
-    width: 50;
-    height: 50;
-    Container {
-        height: auto;
-        width: auto;
-        border: $accent tall;
-    }
     ScrollableContainer {
-        height: 20;
-        width: 100;
+        height: auto;
+        width: 110;
+        border: green;
+        align: center top;
     }
-    Pretty {
+    #message {
+        border: transparent;
+        width: auto;
+    }
+
+    #file_list {
+        min-height: 10;
         width: auto;
         height: auto;
     }
-    Button {
-        offset-x: 83 ;
+    #close_button_container {
+        width: 110;
+        height: 3;
+
+        align: right bottom;
     }
 }
 

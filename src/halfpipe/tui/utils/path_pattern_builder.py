@@ -11,12 +11,13 @@ from textual.widgets import Button, Static
 
 from halfpipe.tui.utils.draggable_modal_screen import DraggableModalScreen
 from halfpipe.tui.utils.file_browser_modal import FileBrowserModal
-from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.pattern_suggestor import (
     InputWithColoredSuggestions,
     SegmentHighlighting,
     SelectCurrentWithInputAndSegmentHighlighting,
 )
+
+from .utils.confirm_screen import SimpleMessageModal
 
 
 # utilities
@@ -275,7 +276,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#show_button")
     def _remove_self(self):
-        self.app.push_screen(ListOfFiles(self.pattern_match_results))
+        self.app.push_screen(SimpleMessageModal(self.pattern_match_results))
 
     async def on_key(self, event: events.Key):
         """Handles keyboard events to move the cursor and toggle highlighting mode."""

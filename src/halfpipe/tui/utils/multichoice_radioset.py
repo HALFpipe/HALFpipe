@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
+#    from _radio_set2 import RadioSet
+#    from draggable_modal_screen import DraggableModalScreen
+import numpy as np
+from textual import on
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal
+from textual.containers import Horizontal, ScrollableContainer
+from textual.widget import Widget
 from textual.widgets import Button, Label, RadioButton
 
-try:
-    from ._radio_set2 import RadioSet
-    from .draggable_modal_screen import DraggableModalScreen
-except:
-    from _radio_set2 import RadioSet
-    from draggable_modal_screen import DraggableModalScreen
-
-from textual import on
-from textual.containers import ScrollableContainer
-from textual.widget import Widget
+from ._radio_set2 import RadioSet
+from .draggable_modal_screen import DraggableModalScreen
 
 
 class MultipleRadioSet(Widget):
@@ -35,24 +32,40 @@ class MultipleRadioSet(Widget):
         )
 
     def compose(self) -> ComposeResult:
-        hmax_length = max([len(i) for i in self.horizontal_label_set])
+        #     hmax_length = max([len(i) for i in self.horizontal_label_set])
         vmax_length = max([len(i) for i in self.vertical_label_set])
+        hmax_vertical_length = 1
+
+        print("beeeeeeeeeeeeeeeeeeeeeeeeefore", self.horizontal_label_set)
+        # modify the h labels so that if there is a label on multiple lines, the longest line becomes wrapped with spaces
+        for i, h_val in enumerate(self.horizontal_label_set):
+            split_label = [h for h in h_val.split("\n")]
+            hmax_vertical_length = max([hmax_vertical_length, len(split_label)])
+            index_longest_line = np.argmax([len(h) for h in split_label])
+            split_label[index_longest_line] = "  " + split_label[index_longest_line] + "  "
+            self.horizontal_label_set[i] = "\n".join(split_label)
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaafter", self.horizontal_label_set)
 
         # with  ScrollableContainer(id='top_container'):
         with Horizontal(id="h_label_container"):
-            for h_label in [" " * (vmax_length - 2)] + self.horizontal_label_set:
-                yield Label("  " + h_label + "  ", classes="h_labels")
+            for h_label in [" " * (vmax_length + 2)] + self.horizontal_label_set:
+                this_label = Label(h_label, classes="h_labels")
+                # set height of the hlabels to the one with the most lines
+                this_label.styles.height = hmax_vertical_length
+                yield this_label
         for i, v_label in enumerate(self.vertical_label_set):
             with Horizontal(classes="radio_table_rows"):
                 yield Label(v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
                 with RadioSet(classes="row_radio_sets_" + str(i)):
-                    for j, h_val in enumerate(self.horizontal_label_set):
+                    for j, _ in enumerate(self.horizontal_label_set):
                         yield RadioButton(classes="radio_column_" + str(j), value=(j - 1))
 
     def on_mount(self):
         for i, h_val in enumerate(self.horizontal_label_set):
             for this_radio_button in self.query(".radio_column_" + str(i)):
-                this_radio_button.styles.width = len(h_val) + 5
+                # if there is a line break in the label, we count the length of the longest line
+                h_val_length = max([len(h) for h in h_val.split("\n")])
+                this_radio_button.styles.width = h_val_length + 1
                 this_radio_button.styles.content_align = ("center", "middle")
 
     def get_selections(self):
@@ -130,14 +143,10 @@ class Main(App):
                 horizontal_label_set=[
                     "h_label1",
                     "h_lab2",
-                    "h_long_label3",
+                    "h_long_label3\n_long_label3----\n_long_label3",
                     "4",
                     "h_label5",
                     "h_label5",
-                    "h_label5",
-                    "h_label1",
-                    "h_lab2",
-                    "h_long_label3",
                     "4",
                     "h_label5",
                     "h_label5",

@@ -5,17 +5,22 @@ import sys
 sys.path.append("/home/tomas/github/HALFpipe/src/")
 
 
+from dataclasses import dataclass
+
+from rich.text import Text
 from textual import on
 from textual.app import App
 from textual.containers import Horizontal, HorizontalScroll, VerticalScroll
+from textual.message import Message
+from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Static
 
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
 
+from ..utils.confirm_screen import SimpleMessageModal
 from ..utils.context import ctx
-from ..utils.false_input_warning_screen import SimpleMessageModal
 
 # TODO
 # For bids, this is automatic message
@@ -146,6 +151,18 @@ from ..utils.false_input_warning_screen import SimpleMessageModal
 
 
 class FileItem(Widget):
+    success_value: reactive[bool] = reactive(None, init=False)
+
+    @dataclass
+    class SuccessChanged(Message):
+        file_item: "FileItem"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_item
+
     def __init__(
         self,
         id: str | None = None,
@@ -176,9 +193,18 @@ class FileItem(Widget):
         self.pattern_class.id_key = id
 
     def callback_func(self, message_dict):
-        info_string = ""
+        info_string = Text("")
         for key in message_dict:
-            info_string += key + ": " + " ".join(message_dict[key]) + "\n"
+            # if there is only one item, we do not separate items on new lines
+            if len(message_dict[key]) <= 1:
+                sep_char = ""
+                separ_line = "-" * (len(key) + len(message_dict[key]) + 3)
+            else:
+                sep_char = "\n"
+                separ_line = "-" * (max([len(s) for s in [key] + message_dict[key]]) + 3)
+            info_string += Text(key + ": " + sep_char, style="bold green") + Text(
+                " ".join(message_dict[key]) + separ_line, style="white"
+            )
 
         self.callback_message = info_string
 
@@ -235,8 +261,10 @@ class FileItem(Widget):
             # If 0 files were found, the border is red, otherwise green.
             if len(pattern_match_results["files"]) > 0:
                 self.styles.border = ("solid", "green")
+                self.success_value = True
             else:
                 self.styles.border = ("solid", "red")
+                self.success_value = False
 
             # try to push to ctx
             print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
@@ -267,6 +295,9 @@ class FileItem(Widget):
         """Shows a modal with the list of files found using the given pattern."""
         print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.callback_message)
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
+
+    def watch_success_value(self) -> None:
+        self.post_message(self.SuccessChanged(self, self.success_value))
 
 
 class Main(App):

@@ -29,8 +29,3 @@ class FalseInputWarning(DraggableModalScreen):
 
     def key_escape(self):
         self.dismiss()
-
-
-class SimpleMessageModal(FalseInputWarning):
-    def __init__(self, warning_message, title="", id: str | None = None, classes: str | None = None) -> None:
-        super().__init__(warning_message, title=title, id=id, classes=classes, button_variant="default")

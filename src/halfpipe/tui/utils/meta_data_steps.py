@@ -305,9 +305,9 @@ class SetMetadataStep:
     def next(self, result):
         print("ccccccccccccccccccccccccccc222", result)
         if self.possible_options is not None:
-            self.callback_message[self.humankey] = [self.possible_options[result]]
+            self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
         else:
-            self.callback_message[self.humankey] = [result]
+            self.callback_message[self.humankey] = [str(result) + "\n"]
 
         if result is not None:
             key = self.key
@@ -713,6 +713,7 @@ class AcqToTaskMappingStep:
                 for f in fmapfilepaths
             )
         )
+        fmaptags = [f for f in fmaptags if f != frozenset()]  # do not include empty set!
         self.fmaptags = fmaptags
 
         boldfilepaths = ctx.database.get(**self.bold_filedict)
@@ -725,7 +726,9 @@ class AcqToTaskMappingStep:
             )
         )
         self.boldtags = boldtags
-        print("fffffffffffffffffffffffff", fmaptags)
+        print("fffffffffffffffffffffffff self.fmaptags", self.fmaptags)
+        print("fffffffffffffffffffffffff self.boldtags", self.boldtags)
+
         print("eeeeeeeeeeeeeeeeeeeeeeeee", entities)
 
         print("fffffffffffffffffffffffff fmapfilepaths", fmapfilepaths)
@@ -737,10 +740,18 @@ class AcqToTaskMappingStep:
 
         if len(fmaptags) > 0:
 
-            def _format_tags(tagset):
+            def _format_tags(tagset, break_lines=False):
                 tagdict = dict(tagset)
+                if break_lines is True:
+                    break_char = "\n"
+                else:
+                    break_char = ""
                 return ", ".join(
-                    (f'{e} "{tagdict[e]}"' if e not in entity_longnames else f'{entity_longnames[e]} "{tagdict[e]}"')
+                    (
+                        f'{break_char}{e}:"{tagdict[e]}"'
+                        if e not in entity_longnames
+                        else f'{entity_longnames[e]} "{tagdict[e]}"'
+                    )
                     for e in entities
                     if e in tagdict and tagdict[e] is not None
                 )
@@ -752,7 +763,7 @@ class AcqToTaskMappingStep:
             self._append_view.append("Assign field maps to functional images")
 
             self.options = [_format_tags(t).capitalize() for t in boldtags]
-            self.values = [f"Field map {_format_tags(t)}".strip() for t in fmaptags]
+            self.values = [f"Field map {_format_tags(t, break_lines=True)}".strip() for t in fmaptags]
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
             self.input_view.append(([*self.options], [*self.values], selected_indices))
@@ -806,7 +817,10 @@ class AcqToTaskMappingStep:
             # boldtagset: self.fmaptags[self.values.index(result[option])]
             # for option, boldtagset in zip(self.options, self.boldtags, strict=False)
             # }
-            self.callback_message["AcqToTaskMapping"] = results
+            #   self.callback_message["AcqToTaskMapping"] = {option: results[option] for i, option in enumerate(self.options)}
+            self.callback_message["AcqToTaskMapping"] = [
+                f"{key} >===< {self.values[results[key]]}".replace("\n", "") + "\n" for key in results
+            ]
 
             bold_fmap_tag_dict = {
                 boldtagset: self.fmaptags[results[option]]
@@ -870,8 +884,8 @@ class AcqToTaskMappingStep:
 
                 for name in ctx.cache:
                     if ctx.cache[name]["files"] != {}:
-                        if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[union-attr]
-                            ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[union-attr]
+                        if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
+                            ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
 
         # if self.is_first_run or not self.is_predefined:
         #    self.is_first_run = False

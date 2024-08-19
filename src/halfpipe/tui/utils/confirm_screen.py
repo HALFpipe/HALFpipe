@@ -20,6 +20,8 @@ class Confirm(DraggableModalScreen):
         id: str | None = None,
         classes: str | None = None,
         width=None,
+        message_widget=Static,
+        #     message_container=None
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.text = text
@@ -29,7 +31,7 @@ class Confirm(DraggableModalScreen):
         # self.right_button_variant = right_button_variant
 
         self.title_bar.title = title
-
+        self.message_widget = message_widget
         # this here allows to use the modal just with one button, either outputting True or False (left/right)
         # use button_text = False to disable the button
         active_incides = [i for i, val in enumerate([left_button_text, right_button_text]) if val is not False]
@@ -56,17 +58,12 @@ class Confirm(DraggableModalScreen):
 
     def on_mount(self) -> None:
         self.content.mount(
-            # VerticalScroll(
-            Static(self.text, id="message"),
+            self.message_widget(self.text, id="message"),
             Horizontal(
                 *self.buttons,
                 classes="button_grid",
             ),
-            #    id="confirm_screen",
-            # )
         )
-        # self.content.add_class('
-        print("OOOOOOOOOOOOOOONmount Sub Confirm")
 
     @on(Button.Pressed, ".button_grid .ok")
     def ok(self):
@@ -84,3 +81,17 @@ class Confirm(DraggableModalScreen):
 
     def _cancel_window(self):
         self.dismiss(False)
+
+
+class SimpleMessageModal(Confirm):
+    def __init__(self, text, title="", id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(
+            text,
+            title=title,
+            id=id,
+            classes=classes,
+            left_button_text=False,
+            right_button_text="Close",
+            right_button_variant="default",
+            message_widget=Static,
+        )
