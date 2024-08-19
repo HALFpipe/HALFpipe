@@ -22,7 +22,7 @@ from .spec import TestSetting, make_spec
 
 settings_list: list[TestSetting] = [
     TestSetting(
-        name="FalseNoConfounds",  # was FalseComb0
+        name="noConfounds",  # was FalseComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -30,7 +30,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueNoConfounds",  # was TrueComb0
+        name="icaAroma",  # was TrueComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -38,7 +38,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueOnlyCompCorr",  # was TrueComb1
+        name="icaAromaACompCor",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -46,7 +46,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueOnlyMotion",  # was TrueComb2
+        name="icaAromaMotionParameters",  # was TrueComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -54,7 +54,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueSimple",  # was TrueComb3
+        name="icaAromaSimple",  # was TrueComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -67,7 +67,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueSimpleGSR",  # was TrueComb4
+        name="icaAromaSimpleGSR",  # was TrueComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -81,7 +81,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="TrueOnlyGSR",  # was TrueComb5
+        name="icaAromaGSR",  # was TrueComb5
         base_setting=dict(
             confounds_removal=[
                 "global_signal",
@@ -91,7 +91,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseOnlyCompCorr",  # was FalseComb1
+        name="aCompCor",  # was FalseComb1
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -99,7 +99,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseOnlyMotion",  # was FalseComb2
+        name="motionParameters",  # was FalseComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -107,7 +107,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseSimple",  # was FalseComb3
+        name="simple",  # was FalseComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -120,7 +120,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseSimpleGSR",  # was FalseComb4
+        name="simpleGSR",  # was FalseComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -134,7 +134,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="FalseOnlyGSR",  # was FalseComb5
+        name="GSR",  # was FalseComb5
         base_setting=dict(
             confounds_removal=[
                 "global_signal",
