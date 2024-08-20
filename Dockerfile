@@ -61,6 +61,11 @@ ENV PATH="${PATH//:\/usr\/lib\/ants/}"
 # Copy `conda` from `install` stage
 COPY --from=install /opt/conda/ /opt/conda/
 
+# List all installed packages
+RUN conda list
+RUN mamba list
+RUN python -c "import sys; print('Python sys.path:', sys.path)"
+
 # Re-apply `matplotlib` settings after re-installing `conda`
 # Taken from `fmriprep`
 # Pre-caches fonts, set 'Agg' as default backend for `matplotlib`
