@@ -112,10 +112,13 @@ class Preprocessing(Widget):
             )
             self.get_widget_by_id("edit_button").styles.visibility = "hidden"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "hidden"
+            ctx.spec.global_settings["dummy_scans"] = None
         else:
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update("Remove initial volumes from scans")
             self.get_widget_by_id("edit_button").styles.visibility = "visible"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "visible"
+            # rais imidietely the modal
+            self._on_edit_button_pressed()
 
     @on(Switch.Changed, "#run_recon_all")
     def on_run_recon_all_switch_changed(self, event):
@@ -164,3 +167,8 @@ class Preprocessing(Widget):
         if value is not None:
             remove_volumes_value_widget.update(value)
             remove_volumes_value_widget.styles.border = ("solid", "green")
+            #  if isinstance(value, (int, float)):
+            ctx.spec.global_settings["dummy_scans"] = int(value)
+
+    #  else:
+    #      raise ValueError(f'Unknown dummy_scans value "{value}"')
