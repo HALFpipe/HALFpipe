@@ -94,12 +94,12 @@ def make_spec(
 
     # Set up settings and features
     for test_setting in test_settings:
-        new_func(spec, test_setting, event_file)
+        add_settings_and_features_to_spec(spec, test_setting, event_file)
 
     return spec
 
 
-def new_func(spec: Spec, test_setting: TestSetting, event_file: File | None) -> None:
+def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, event_file: File | None) -> None:
     setting_schema = SettingSchema()
     name = test_setting.name
     base_setting = test_setting.base_setting
