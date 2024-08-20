@@ -271,10 +271,11 @@ class FileItem(Widget):
             # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
             # obj.setup()
             # fix this because sometimes this can be just ordinary string
-            if isinstance(pattern_match_results["file_pattern"], str):
-                self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-            else:
-                self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+            if len(pattern_match_results["files"]) > 0:
+                if isinstance(pattern_match_results["file_pattern"], str):
+                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+                else:
+                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
