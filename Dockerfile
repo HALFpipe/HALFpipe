@@ -62,8 +62,8 @@ ENV PATH="${PATH//:\/usr\/lib\/ants/}"
 COPY --from=install /opt/conda/ /opt/conda/
 
 # List all installed packages
-RUN conda list
 RUN mamba list
+RUN mamba info --envs
 RUN python -c "import sys; print('Python sys.path:', sys.path)"
 
 # Re-apply `matplotlib` settings after re-installing `conda`
