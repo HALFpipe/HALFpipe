@@ -17,7 +17,7 @@ from halfpipe.tui.utils.pattern_suggestor import (
     SelectCurrentWithInputAndSegmentHighlighting,
 )
 
-from .utils.confirm_screen import SimpleMessageModal
+from .confirm_screen import SimpleMessageModal
 
 
 # utilities
