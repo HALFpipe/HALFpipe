@@ -89,6 +89,8 @@ acknowledge these tools when publishing results obtained with HALFpipe.
    -  `Working directory <#working-directory>`__
    -  `Data file system root <#data-file-system-root>`__
 
+-  `Run group-levels using command-line flag <#run-group-levels-using-command-line-flag>`__
+
 -  `Contact <#contact>`__
 
 .. raw:: html
@@ -848,7 +850,11 @@ Run group-levels using command-line flag
 
 An alternative to setting up group-level analyses in the user interface is to use the ‘group-level’ command directly in the terminal or in a script. The benefit of this approach is that it does not require you to have specified group-level contrasts when setting up the first-level feature extraction. Currently, HALFpipe does not support running group-level analyses from first-level features using the user interface. Instead, if you have already extracted first-level features and attempt to add group-level models in the user interface, HALFpipe will re-run all first-level feature extraction again. Therefore, this command is a more efficient way to run group-level models, both on high-performance clusters and on single workstations. 
 
-To use this command, run the HALFpipe container adding the flag  ``group-level`` to the end of the command. For example  ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif group-level``
+To use this command, run the HALFpipe container adding the flag  ``group-level`` to the end of the command. 
+
+   For example:
+   
+   ``singularity run --containall --bind /:/ext halfpipe-halfpipe-latest.sif group-level``
 
 There are multiple flags that allow you to specify paths, filter and modify inputs, define the design, and specify other model information. Not all these flags must be specified, but those that are compulsory are indicated with an asterisk (*). In general, HALFpipe adopts an inclusive approach to running group-levels in this way, so that anything that is not explicitly omitted or excluded from the model will be run. 
 
@@ -894,7 +900,7 @@ There are several ways to filter the first-level features that are included in t
     --include TAG VALUE  
     --include-list TAG PATH   
 
-A tag and a value may be specified. Will include only images with this tag and value. If multiple different tags are specified, images must match all of them, but if multiple values of the same tag are specified, images must match one of them. Alternatively, a tag and a path to a file may be specified. Will include only images with this tag and any of the values in the file.
+A tag and a value may be specified. Will include only images with this tag and value. Multiple different tags can be specified (for example to include a specific task and a specific feature), in which case images must match all of the tags. Likewise, multiple values of the same tag can specified (for example to include two different tasks), and in this case images must match one of the tags. Alternatively, a tag and a path to a file may be specified. The file must be a text file with one entry per line. Will include only images with this tag and any of the values in the file.
 
    For example:
 
@@ -949,11 +955,12 @@ Modify: arguments for modifying the inputs
 
   --rename TAG FROM TO
 
-If you are combining subjects across different samples for a group-level analysis, sometimes known as a mega-analysis, you may find that different samples have different naming of tasks, processing settings, task contrasts, etc. In this case, HALFpipe allows you to combine these different first-level features across subjects, but they must first have a uniform naming convention. Instead of changing the file names in the derivatives folder, HALFpipe makes use of this flag to temporarily modify inputs by changing all values of tag from the value ``FROM`` to the value ``TO``. 
+If you are combining subjects across different samples for a group-level analysis, sometimes known as a mega-analysis, you may find that different samples have different naming of tasks, processing settings, task contrasts, etc. For example, you may have data for a task called “TowerOfLondon” from one sample in one input directory and the task “TOL” from another sample in another input directory. Even though they refer to the same type of task, their names are different, and HALFpipe will not combine them by default (instead giving two different outputs with lots of missing values). In this case, HALFpipe allows you to combine these different first-level features across subjects, but they must first have a uniform naming convention. Instead of changing the file names in the derivatives folder, HALFpipe makes use of this flag to temporarily modify inputs by changing all values of tag from the value ``FROM`` to the value ``TO``. 
 
    For example:
 
-   ``--rename task TowerOfLondon TOL``
+   ``--rename task TowerOfLondon TOL \
+   --rename taskcontrast TolVsCount wmLoadVsControl``
 
 .. code:: bash
 
@@ -977,7 +984,7 @@ Design:  arguments for defining the design
 
   --from-spec PATH
 
-The path to a working directory may be specified. Will load the model and filter from the working directory's ``spec.json`` file.
+The path to a working directory may be specified. Will load the model and filter from the working directory's ``spec.json`` file, if a group-level model was specified using the user interface. This therefore provides an alternative way to specify group-level models without using all the design arguments shown here, but rather by using the user interface to create or update a ``spec.json`` file, then running only the group-level model using the ‘group-level’ command. This might be particularly useful if you are working on an HPC, or if you previously specified only first-level feature extraction in the user interface but later want to add group-level models.
 
 .. code:: bash
 
@@ -987,15 +994,9 @@ The name of the model to use may be specified if running from a spec file. This 
 
 .. code:: bash
 
-  --qc-exclude-files PATH
-
-The path to one or more ``exclude.json`` files generated by the quality check web interface may be specified.
-
-.. code:: bash
-
   --spreadsheet PATH
                         
-The path to the spreadsheet containing model covariates may be specified. Requires specifying ``--id-column``.
+The path to the spreadsheet containing group-level covariates may be specified. All common formats (CSV, TSV, XLSX) are supported. Requires specifying ``--id-column``.
 
 .. code:: bash
 
@@ -1013,13 +1014,36 @@ The name of the variable to be added to the model as a categorical variable may 
 
   --levels LEVELS
 
-The levels of the categorical variable must be specified. For example ``--levels M F``. 
+The levels of the categorical variable must be specified. All levels that should be included in the analysis should be listed. Any participants that have levels not listed will be seen as missing data by the command.
+
+   For example:
+   
+   ``--levels M F`` 
 
 .. code:: bash
 
   --continuous-variable VARIABLE
 
 The name of the variable to be added to the model as a continuous variable may be specified.
+
+.. code:: bash
+
+  --drop-variable VARIABLE
+
+A variable name may be specified. Will remove the variable from the covariates, so that it does not go into the subsequent analyses. This can be useful when you want to use a column from the spreadsheet to create a derived variable, but not as a covariate itself.
+
+   For example:
+   
+   ``--derived-variable age "age_in_months / 12" \
+   --drop-variable age_in_months``
+
+This option can also be useful when you have a grouping variable, and want to exclude one group from analyses.
+
+   For example:
+   
+   ``--categorical-variable group \
+   --levels control \
+   --drop-variable group``
 
 
 Derived: arguments for adding variables and images derived from the data
@@ -1029,25 +1053,25 @@ Derived: arguments for adding variables and images derived from the data
 
   --imaging-variable VARIABLE
 
-One of the following may be specified: ``fd_mean``, ``fd_perc``, ``mean_gm_tsnr``, ``aroma_noise_frac``, ``total_intracranial_volume``, ``jacobian_mean`` ,``jacobian_variance``. Will add this variable to the model as a continuous variable.
+One of the following may be specified: ``fd_mean``, ``fd_perc``, ``mean_gm_tsnr``, ``aroma_noise_frac``, ``total_intracranial_volume``, ``jacobian_mean`` , ``jacobian_variance``. Will add this variable to the model as a continuous variable.
 
 .. code:: bash
 
   --derived-variable VARIABLE
 
-A variable name and formula may be specified. Will add this variable to the model as a variable derived from existing variables via the specified formula. For example ``--derived-variable …``.
+A variable name and formula may be specified. Will add this variable to the model as a variable derived from existing variables via the specified formula. 
+
+   For example 
+   
+   ``--derived-variable age_squared "age**2" \
+   --derived-variable sex_by_age "(sex == 'male') * age" \
+   --derived-variable sex_by_age_squared "(sex == 'male') * (age ** 2)"``
 
 .. code:: bash
 
   --derived-image jacobian
  
 Currently the only available option is ``jacobian``. Will calculate this image from the data and add it to the model.
-
-.. code:: bash
-
-  --drop-variable VARIABLE
-
-A variable name may be specified. Will remove the variable from the covariates.
 
 
 Stats:   arguments for defining the statistics to run
@@ -1057,7 +1081,7 @@ Stats:   arguments for defining the statistics to run
 
   --algorithm ALGORITHM *
 
-One of the following must be specified: ``descriptive``, ``flame1``, ``heterogeneity``, ``mcartest``. Will run the algorithms to run for the analysis.
+One or more of the following must be specified: ``descriptive``, ``flame1``, ``heterogeneity``, ``mcartest``. Will run the algorithms for the analysis.
 
 
 Export: arguments for exporting variables
