@@ -338,6 +338,12 @@ class SetMetadataStep:
                 filepaths = ctx.database.get(**self.filters)
                 specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
 
+                print("filepathsfilepathsfilepathsfilepathsfilepaths", filepaths)
+                print(
+                    "ctx.database.specfileobj(filepath) for filepath in filepaths",
+                    [ctx.database.specfileobj(filepath) for filepath in filepaths],
+                )
+                print("specfileobjsspecfileobjsspecfileobjsspecfileobjs", specfileobjs)
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
@@ -346,7 +352,28 @@ class SetMetadataStep:
                 specfileobj.metadata[key] = value
                 #  ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
 
-                ctx.cache[self.id_key]["files"] = specfileobj  # type: ignore[assignment]
+                print("ddddddddddddddddddddddddddddd specfileobjspecfileobj", dir(specfileobj))
+
+            print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkey", self.key)
+            # update all fileobjs in the ctx.cache, we use the filters to filter only those to which this applies
+
+            for widget_id, the_dict in ctx.cache.items():
+                # should always be there
+                if "files" in the_dict:
+                    if isinstance(the_dict["files"], File):
+                        is_ok = True
+                        if self.filters is not None:
+                            if the_dict["files"].datatype != self.filters.get("datatype"):
+                                is_ok = False
+                            if the_dict["files"].suffix != self.filters.get("suffix"):
+                                is_ok = False
+                        if is_ok:
+                            # add dict if it does not exist
+                            if not hasattr(ctx.cache[widget_id]["files"], "metadata"):
+                                ctx.cache[widget_id]["files"].metadata = dict()
+                            ctx.cache[widget_id]["files"].metadata[key] = value
+
+                # ctx.cache[self.id_key]["files"] = specfileobj  # type: ignore[assignment]
                 print("sssssssssssssssspecfileobjspecfileobjspecfileobj", specfileobj)
 
                 print("vvvvvvvvvvvvvvvvvvvvvvvvvalue", value)

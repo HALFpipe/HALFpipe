@@ -7,6 +7,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Button, Input, Static, Switch
 
+from ...model.file.base import File
 from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
@@ -138,6 +139,21 @@ class Preprocessing(Widget):
             ctx.spec.global_settings["slice_timing"] = False
             self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
             self.get_widget_by_id("slice_timing").styles.height = "5"
+
+            # need to delete in from all the bold filebojs
+            for widget_id, the_dict in ctx.cache.items():
+                # should always be there
+                if "files" in the_dict:
+                    if isinstance(the_dict["files"], File):
+                        is_ok = True
+                        if the_dict["files"].datatype != "func":
+                            is_ok = False
+                        if the_dict["files"].suffix != "bold":
+                            is_ok = False
+                        if is_ok:
+                            # add dict if it does not exist
+                            ctx.cache[widget_id]["files"].metadata.pop("slice_timing_code", None)
+                            ctx.cache[widget_id]["files"].metadata.pop("slice_encoding_direction", None)
 
     def callback_func(self, message_dict):
         info_string = ""
