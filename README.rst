@@ -575,7 +575,7 @@ Shown first is the user interface method.
 
             #. ``Add another group-level model?``
 
-               -  ``Yes`` Loop back to a.
+               -  ``Yes`` Loop back to ``a. Specify model type``.
                -  ``No`` End of menu
 
 			User interface will close and processing will begin
