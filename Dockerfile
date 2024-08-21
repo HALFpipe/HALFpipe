@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile-upstream:master
 
+ARG FMRIPREP_VERSION=20.2.7
+
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi
 FROM condaforge/mambaforge:latest AS builder
-ARG FMRIPREP_VERSION=20.2.7
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
