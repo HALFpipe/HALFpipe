@@ -3,6 +3,7 @@
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi
 FROM condaforge/mambaforge:latest AS builder
+ARG FMRIPREP_VERSION=20.2.7
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
@@ -11,7 +12,7 @@ COPY recipes /recipes
 # We manually specify the numpy version here to silence an irrelevant warning as per
 # https://github.com/conda/conda-build/issues/3170
 RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep halfpipe; do \
-        conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local /recipes/$pkg  && \
+        conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local /recipes/${FMRIPREP_VERSION}/$pkg  && \
         conda build purge; \
     done
 
@@ -34,7 +35,7 @@ RUN python -c "from matplotlib import font_manager" && \
         $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Create the final image based on existing fmriprep image
-FROM nipreps/fmriprep:20.2.7
+FROM nipreps/fmriprep:${FMRIPREP_VERSION}
 
 # Create these empty directories, so that they can be used for singularity
 # bind mounts later
