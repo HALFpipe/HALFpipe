@@ -8,7 +8,6 @@ FROM condaforge/mambaforge:latest AS builder
 
 # Ensure the ARG is available in this stage of the Dockerfile
 ARG FMRIPREP_VERSION
-RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
 COPY recipes /recipes
 
