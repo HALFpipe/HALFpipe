@@ -88,8 +88,7 @@ acknowledge these tools when publishing results obtained with HALFpipe.
       <#choose-which-parts-to-run-or-to-skip>`__
    -  `Working directory <#working-directory>`__
    -  `Data file system root <#data-file-system-root>`__
-
--  `Run group-levels using command-line flag <#run-group-levels-using-command-line-flag>`__
+   -  `Run group-levels using command-line flag <#run-group-levels-using-command-line-flag>`__
 
 -  `Contact <#contact>`__
 
