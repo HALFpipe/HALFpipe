@@ -19,6 +19,7 @@ requirements:
     - python=3.11.*
   run:
     - python=3.11.*
+    - future>=0.18.3
 
 test:
   imports:
