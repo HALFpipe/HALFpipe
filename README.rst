@@ -242,7 +242,6 @@ shell environment by default, so we don’t need to pass an option.
  User interface
 ****************
 
-   Outdated
 
 The user interface asks a series of questions about your data and the
 analyses you want to run. In each question, you can press ``Control+C``
@@ -305,10 +304,16 @@ files are available in BIDS format, then this step can be skipped.
 
    -  ``Yes``
 
-      #. ``Check slice acquisition direction values``
-      #. ``Check slice timing values``
+      #. ``Check slice acquisition direction`` / ``Specify slice acquisition direction``
+      #. ``Check slice timing values`` / ``Specify slice timing`` 
 
    -  ``No`` Skip this step
+
+#. ``Remove initial volumes from scans?``
+
+   -  ``Enter number of volumes to remove``
+
+   -  ``Detect non-steady state via algorithm``
 
 #. ``Specify field maps?`` If the data was imported from a BIDS
    directory, this step will be omitted.
@@ -337,10 +342,11 @@ files are available in BIDS format, then this step can be skipped.
 
       #. ``Add more field maps?`` Loop back to 1
 
-      #. ``Specify effective echo spacing for the functional data in
-         seconds``
+      #. ``Assign field maps to functional images``
 
-      #. ``Specify phase encoding direction for the functional data``
+      #. ``Check phase encoding direction values for the functional data`` / ``Specify phase encoding direction for the functional data`` 
+
+      #. ``Check effective echo spacing for the functional data in seconds`` / ``Specify effective echo spacing for the functional data in seconds``
 
    -  ``No`` Skip this step
 
