@@ -23,10 +23,12 @@ FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
-    "python=3.11" "nodejs" "halfpipe" && \
+    "python=3.11" "nodejs" "halfpipe" "sqlite" && \
     mamba clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
+
+RUN sqlite3 --version
 
 # Re-apply `matplotlib` settings after re-installing conda. This silences
 # a warning that will otherwise be printed every time `matplotlib` is imported.
@@ -74,6 +76,8 @@ COPY --from=install /opt/conda/ /opt/conda/
 # Therefore, we update the `PATH` to reflect new conda location
 ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}" \
     MAMBA_EXE="/opt/conda/bin/mamba"
+
+RUN sqlite3 --version
 
 # Download all resources
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
