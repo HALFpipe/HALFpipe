@@ -21,7 +21,6 @@ requirements:
     - python 3.11.*
     - pip
   run:
-    #Updated
     - python 3.11.*
     - looseversion
     - nipype>=1.8.5

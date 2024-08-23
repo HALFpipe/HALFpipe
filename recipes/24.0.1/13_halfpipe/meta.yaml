@@ -10,7 +10,7 @@ package:
 
 source:
   git_url: https://github.com/HALFpipe/HALFpipe.git
-  git_rev: "{{ version }}" # will this be a problem?
+  git_rev: "{{ version }}"
 
 build:
   number: 0
