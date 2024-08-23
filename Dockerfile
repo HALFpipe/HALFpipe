@@ -18,11 +18,6 @@ RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
     conda build purge; \
 done
 
-RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep halfpipe; do \
-        conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local /recipes/${FMRIPREP_VERSION}/$pkg  && \
-        conda build purge; \
-    done
-
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/mambaforge:latest AS install
 
