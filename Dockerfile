@@ -13,6 +13,11 @@ COPY recipes /recipes
 
 # We manually specify the numpy version here to silence an irrelevant warning as per
 # https://github.com/conda/conda-build/issues/3170
+RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
+    conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local $recipe && \
+    conda build purge; \
+done
+
 RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep halfpipe; do \
         conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local /recipes/${FMRIPREP_VERSION}/$pkg  && \
         conda build purge; \
