@@ -228,6 +228,7 @@ class MainApp(App):
     #  user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
     flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
     # input_data_load_is_success = False
+    is_bids = True
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

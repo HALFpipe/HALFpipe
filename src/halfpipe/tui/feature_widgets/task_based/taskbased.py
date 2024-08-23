@@ -3,11 +3,11 @@ from dataclasses import dataclass
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, ScrollableContainer, Vertical
+from textual.containers import Grid, ScrollableContainer, Vertical, VerticalScroll
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, Select, SelectionList, Static, Switch
+from textual.widgets import Button, Input, Select, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
 
 from ....collect.events import collect_events
@@ -15,6 +15,9 @@ from ....ingest.events import ConditionFile
 from ....model.filter import FilterSchema
 from ...utils.context import ctx
 from ...utils.custom_switch import TextSwitch
+from ...utils.file_pattern_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
+from ...utils.non_bids_file_itemization import FileItem
+from ...utils.selection_modal import SelectionModal
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
@@ -191,14 +194,14 @@ class TaskBased(Widget):
         # note_1 = "▪️ Grand mean scaling will be applied with a mean of 10000.0"
         # note_2 = "▪️ Temporal filtering will be applied using a gaussian-weighted filter"
         # Here I need to get all possible conditions based on all possible images.
-        all_condition_dict = {}
+        #        all_condition_dict = {}
         all_possible_conditions = []
         for v in self.images_to_use["task"].keys():
-            all_condition_dict[v] = self.extract_conditions(entity="task", values=[v])
+            #            all_condition_dict[v] = self.extract_conditions(entity="task", values=[v])
             all_possible_conditions += self.extract_conditions(entity="task", values=[v])
 
         with ScrollableContainer(id="top_container_task_based"):
-            yield Grid(
+            yield Vertical(
                 SelectionList[str](
                     *[
                         Selection(image, image, self.images_to_use["task"][image])
@@ -216,7 +219,6 @@ class TaskBased(Widget):
                     classes="switch_with_input_box",
                     id="smoothing",
                 )
-
                 #      yield Static(note_1 + "\n" + note_2, classes="components", id="notes")
                 yield SwitchWithInputBox(
                     label="Grand mean scaling",
@@ -271,6 +273,20 @@ class TaskBased(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
 
+        if self.app.is_bids is not True:
+            self.get_widget_by_id("images_to_use").mount(
+                VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
+            )
+            self.get_widget_by_id("event_file_panel").border_title = "Event files patterns"
+
+        # all_images = self.images_to_use["task"].keys()
+        # print('all_imagesall_imagesall_images', all_images)
+
+        # for value in self.images_to_use["task"].keys():
+        # conditions = self.extract_conditions(entity="task", values=[value])
+        # print('conditionsconditionsconditionsconditions', value, '/////', conditions)
+        #   if conditions == []:
+
         # self.get_widget_by_id("temporal_filter").styles.visibility = "hidden"
         # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
         # on_mount in subclasses is not entirely overridden and this one has also some effect
@@ -285,12 +301,22 @@ class TaskBased(Widget):
     def _on_selection_list_changed_images_to_use_selection(self):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
+
+        # try to update it here?
+        all_possible_conditions = []
+        for v in self.images_to_use["task"].keys():
+            all_possible_conditions += self.extract_conditions(entity="task", values=[v])
+        self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
+
+        print("all_possible_conditionsall_possible_conditionsall_possible_conditions222222", all_possible_conditions)
         self.update_conditions_table()
 
     def update_conditions_table(self):
         condition_list = []
         for value in self.get_widget_by_id("images_to_use_selection").selected:
             condition_list += self.extract_conditions(entity="task", values=[value])
+
+        print("update_conditions_tableupdate_conditions_tableupdate_conditions_table  condition_list", condition_list)
         self.feature_dict["conditions"] = condition_list
         self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
@@ -355,6 +381,40 @@ class TaskBased(Widget):
         )
         return get_conditions(_filter)
 
+    # TODO
+    @on(Button.Pressed, "#add_event_file_button")
+    def _on_button_add_event_file_pressed(self):
+        def mount_file_item_widget(event_file_type):
+            events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
+            if event_file_type == "bids":
+                events_step_type = TsvEventsStep
+            elif event_file_type == "fsl":
+                events_step_type = TxtEventsStep
+            elif event_file_type == "spm":
+                events_step_type = MatEventsStep
+            if events_step_type is not None:
+                self.get_widget_by_id("event_file_panel").mount(
+                    FileItem(classes="file_patterns", pattern_class=events_step_type())
+                )
+                self.refresh()
+            else:
+                print("isssssssssssssssssssssss none")
+
+        options = {
+            "spm": "SPM multiple conditions",
+            "fsl": "FSL 3-column",
+            "bids": "BIDS TSV",
+        }
+        self.app.push_screen(
+            SelectionModal(
+                title="Event file type specification",
+                instructions="Specify the event file type",
+                options=options,
+                id="event_files_type_modal",
+            ),
+            mount_file_item_widget,
+        )
+
 
 def get_conditions(_filter):
     bold_file_paths = find_bold_file_paths(_filter)
@@ -363,6 +423,7 @@ def get_conditions(_filter):
     seen = set()
     for bold_file_path in bold_file_paths:
         event_file_paths = collect_events(ctx.database, bold_file_path)
+        print("event_file_pathsevent_file_pathsevent_file_paths", event_file_paths)
         if event_file_paths is None:
             continue
 
@@ -375,7 +436,7 @@ def get_conditions(_filter):
                 conditions.append(condition)
 
         seen.add(event_file_paths)
-
+    print("conditionsconditionsconditionsconditions", conditions)
     return conditions
 
 

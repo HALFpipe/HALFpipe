@@ -132,6 +132,23 @@ class ModelConditionsAndContrasts(Widget):
             self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
             self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
+    def update_all_possible_conditions(self, all_possible_conditions):
+        # self.row_dict: dict = {}
+        self.df = pd.DataFrame()
+        self.df["condition"] = all_possible_conditions
+        self.df.set_index("condition", inplace=True)
+        self.default_conditions = []
+        # if there are dict entries then set defaults
+        if self.feature_contrasts_dict != []:
+            # convert dict to pandas
+            for contrast_dict in self.feature_contrasts_dict:
+                #   for row_index in self.df.index:
+                for condition_name in contrast_dict["values"]:
+                    self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
+
+            self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
+            self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
+
     def watch_condition_values(self) -> None:
         self.update_condition_selection()
 

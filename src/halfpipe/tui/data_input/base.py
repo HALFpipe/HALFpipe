@@ -477,6 +477,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         # if warning_string == '' and self.association_done is True:
         self.app.flags_to_show_tabs["from_input_data_tab"] = True
         self.app.show_hidden_tabs()
+        # extract images (tasks)
+        self.get_available_images()
 
     @on(Button.Pressed, "#associate_button")
     def _on_associate_button_pressed(self):
@@ -533,11 +535,13 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     def on_switch_changed(self, message):
         if message.value:
+            self.app.is_bids = True
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
             self.get_widget_by_id("bids_summary_panel").styles.visibility = "visible"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
 
         else:
+            self.app.is_bids = False
             self.get_widget_by_id("bids_panel").styles.visibility = "hidden"
             self.get_widget_by_id("bids_summary_panel").styles.visibility = "hidden"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
@@ -547,12 +551,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         ctx.cache["bids"]["files"] = message.selected_path
         self.feed_contex_and_extract_available_images()
 
-    def feed_contex_and_extract_available_images(self):
-        """Feed the Context object with the path to the data fields and extract available images."""
-
-        #  def on_dismiss_this_modal(value):
-        #     self.get_widget_by_id("data_input_file_browser").update_input(None)
-
+    def get_available_images(self):
         # if len(file_path) > 0:
         #  ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
 
@@ -565,6 +564,16 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=filepaths)
         self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+        print("ssssssssssssssssssssssssssssssssssss", db_entities, db_tags_set)
+        print("ssssssssssssssssssssssssssssssssssss", self.app.available_images)
+
+    def feed_contex_and_extract_available_images(self):
+        """Feed the Context object with the path to the data fields and extract available images."""
+
+        #  def on_dismiss_this_modal(value):
+        #     self.get_widget_by_id("data_input_file_browser").update_input(None)
+
+        self.get_available_images()
 
         anat_summary_step = AnatSummaryStep()
         bold_summary_step = BoldSummaryStep()

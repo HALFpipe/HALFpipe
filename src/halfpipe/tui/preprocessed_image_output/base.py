@@ -7,6 +7,7 @@ from textual.widgets import (
 
 from ..feature_widgets.base import FeatureItem, FeatureNameInput, FeatureSelection
 from ..feature_widgets.task_based.taskbased import TaskBased
+from ..utils.context import ctx
 
 
 class PreprocessedOutputOptions(TaskBased):
@@ -69,7 +70,7 @@ class PreprocessedImageOutput(FeatureSelection):
                 self.app.user_selections_dict[feature_name]["settings"]["output_image"] = True
 
             new_content_item = PreprocessedOutputOptions(
-                this_user_selection_dict=self.app.user_selections_dict[feature_name],
+                this_user_selection_dict=ctx.cache.user_selections_dict[feature_name],
                 id=new_id,
                 classes=feature_type,
             )
