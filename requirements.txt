@@ -45,6 +45,8 @@ click==8.1.7
     #   nipype
     #   pybids
     #   typer
+colorama==0.4.6
+    # via typer
 contourpy==1.2.0
     # via matplotlib
 cryptography==42.0.7
