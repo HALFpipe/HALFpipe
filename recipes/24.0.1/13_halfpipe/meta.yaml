@@ -29,11 +29,11 @@ requirements:
     - wheel
     - fmriprep
     - smriprep
-    - niworkflows>=1.3.10
+    - niworkflows
     - sdcflows
     - nibabel>=4.0.0
-    - templateflow>=0.7.1
-    - pybids>=0.13.1
+    - templateflow
+    - pybids
     - openneuro-py
     - numpy>=1.20
     - scipy>=1.8.2
@@ -43,7 +43,7 @@ requirements:
     - statsmodels>=0.14
     - tabulate>=0.8.9
     - pint>=0.17
-    - datalad==1.0.2
+    - datalad #==1.0.2
     - matplotlib
     - seaborn>=0.11.1
     - svgutils>=0.3.1
