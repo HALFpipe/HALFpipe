@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
-ARG FMRIPREP_VERSION=24.0.1
+ARG FMRIPREP_VERSION=20.2.7
 
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi
