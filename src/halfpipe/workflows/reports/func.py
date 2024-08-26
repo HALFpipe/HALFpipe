@@ -74,6 +74,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     #
     make_resultdicts = pe.Node(
         MakeResultdicts(
+            imagekeys=["tsnr"],
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprep_reports],
             valkeys=[
                 "dummy_scans",
@@ -113,6 +114,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
     workflow.connect(select_std, "bold_std", tsnr, "in_file")
     workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
+    workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")

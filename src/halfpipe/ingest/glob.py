@@ -41,7 +41,10 @@ def tag_glob(
         dirs = [(dirname, dict())]
     for dirname, dirtagdict in dirs:
         for name, tagdict in _tag_glob_in_dir(dirname, basename, entities, dironly, dirtagdict):
-            yield (op.join(dirname, name), _combine_tagdict(dirtagdict, tagdict))
+            full_name = op.join(dirname, name)
+            if not op.exists(full_name):
+                continue
+            yield (full_name, _combine_tagdict(dirtagdict, tagdict))
 
 
 def _combine_tagdict(a: dict[str, str], b: dict[str, str]) -> dict[str, str]:

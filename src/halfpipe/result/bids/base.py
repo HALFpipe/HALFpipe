@@ -67,7 +67,7 @@ def make_bids_path(
     if "feature" in tags:  # Make subfolders for all feature outputs
         if folder_entities is None:
             folder_entities = ["task"]
-            if "sub" not in tags:
+            if "sub" not in tags:  # Only for group level outputs
                 folder_entities.extend(first_level_entities)
 
     if folder_entities is not None:

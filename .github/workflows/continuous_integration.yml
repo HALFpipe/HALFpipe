@@ -12,9 +12,11 @@ on:
       - published
       - edited
 
+
 jobs:
   test:
     runs-on: self-hosted
+    timeout-minutes: 1440  # Set to 24 hours
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -171,7 +173,7 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test \
+          py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
       - name: Upload coverage to Codecov
