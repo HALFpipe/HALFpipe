@@ -38,7 +38,7 @@ requirements:
     - scikit-learn
     - scipy
     - seaborn
-    - svgutils # == 0.3.1  # https://github.com/nipreps/niworkflows/issues/595
+    - svgutils==0.3.1  # https://github.com/nipreps/niworkflows/issues/595
     - transforms3d
     - templateflow>=0.6
 
