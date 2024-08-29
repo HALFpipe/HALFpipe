@@ -1,54 +1,74 @@
 TaskBased {
     #top_container_task_based {
-        align: center middle;
+        align: center top;
     }
     .additional_preprocessing_settings {
         visibility: visible;
+    }
+    #model_conditions_and_constrasts {
+    height: auto;
+    }
+    .non_bids_panels {
+        border: solid green;
+        border-title-background: green;
+        border-title-color: white;
+        border-title-style: bold;
+    }
+    .file_patterns {
+        width: auto;
+        height: 5;
+        border: solid red;
+    }
+    #top_event_file_panel {
+        height: auto;
+        align: center top;
 
     }
-    .non_bids_panel {
-        Button {
-        margin: 1 0 0 1;
-    }
-    }
     #event_file_panel {
-        border: red;
+
+        border: none;
+        align: left top;
+        background: transparent;
+        width: 110;
         height: auto;
+
         Button {
             width: auto;
+            height: 3;
+           margin: 1 0 0 1;
         }
     FileItem {
-    layout: horizontal;
-    height: 5;
-    border: red;
-    .icon_buttons {
-        width: 3;
-        height: 3;
-        margin: 0 1 0 0;
-        min-width: 6;
-        offset-y: 0;
-    }
-    #static_file_pattern {
-        width: auto;
-        padding: 1;
-        color: white;
-    }
-    #icon_buttons_container {
-        width: auto;
-        height: 4;
-        border: none;
-        padding: 0 1;
+        layout: horizontal;
+        height: 5;
+        border: red;
+        .icon_buttons {
+            width: 3;
+            height: 3;
+            margin: 0 1 0 0;
+            min-width: 6;
+            offset-y: 0;
+        }
+        #static_file_pattern {
+            width: auto;
+            padding: 1;
+            color: white;
+        }
+        #icon_buttons_container {
+            width: auto;
+            height: 4;
+            border: none;
+            padding: 0 1;
+        }
     }
 }
-    }
     #images_to_use {
-        align: left middle;
+        align: center top;
         border: green thick;
-        height: 25;
-        padding: 1;
+        height: auto;
     }
     #images_to_use_selection {
-        border: green thick;
+        background: 0%;
+        height: auto;
     }
     #preprocessing {
         align: center top;

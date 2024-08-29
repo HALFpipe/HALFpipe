@@ -152,9 +152,30 @@ from ..utils.context import ctx
 
 class FileItem(Widget):
     success_value: reactive[bool] = reactive(None, init=False)
+    pattern_match_results: reactive[dict] = reactive({"file_pattern": "", "message": "Found 0 files.", "files": []}, init=True)
+
+    @dataclass
+    class IsDeleted(Message):
+        file_item: "FileItem"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_item
 
     @dataclass
     class SuccessChanged(Message):
+        file_item: "FileItem"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_item
+
+    @dataclass
+    class PathPatternChanged(Message):
         file_item: "FileItem"
         value: str
 
@@ -171,26 +192,32 @@ class FileItem(Widget):
         title="",
         pattern_class=None,
         id_key="",
+        load_object=None,
         **kwargs,
     ) -> None:
         """ """
         super().__init__(id=id, classes=classes, **kwargs)
         # dictionary for results from the PathPatternBuilder
-        self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        #    self.pattern_match_results =
         self.delete_button = delete_button
-        self.title = pattern_class.header_str
-        self.pattern_class = pattern_class
-        print(
-            "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
-            self.pattern_class.get_entities,
-            self.pattern_class.get_entity_colors_list,
-            self.pattern_class.get_required_entities,
-        )
-        print("FileItem aaaaaaaaaaaaaaaa", pattern_class.header_str)
-        if self.pattern_class.next_step_type is not None:
-            print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
-            self.pattern_class.callback = self.callback_func
-        self.pattern_class.id_key = id
+        self.pattern_class = None if pattern_class is None else pattern_class
+        self.title = "Not implemented yet"
+        if self.pattern_class is not None:
+            self.title = self.pattern_class.header_str
+            print(
+                "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
+                self.pattern_class.get_entities,
+                self.pattern_class.get_entity_colors_list,
+                self.pattern_class.get_required_entities,
+            )
+            print("FileItem aaaaaaaaaaaaaaaa", pattern_class.header_str)
+            if self.pattern_class.next_step_type is not None:
+                print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
+                self.pattern_class.callback = self.callback_func
+            self.pattern_class.id_key = id
+
+        self.load_object = load_object
+        self.border_title = "id: " + str(id)
 
     def callback_func(self, message_dict):
         info_string = Text("")
@@ -209,30 +236,44 @@ class FileItem(Widget):
         self.callback_message = info_string
 
     def compose(self):
+        print("11111111111111111111111 compose")
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
-            if self.pattern_class.callback is not None:
-                yield Button(" ℹ", id="info_button", classes="icon_buttons")
+            if self.pattern_class is not None:
+                if self.pattern_class.callback is not None:
+                    yield Button(" ℹ", id="info_button", classes="icon_buttons")
             yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
             if self.delete_button:
                 yield Button("❌", id="delete_button", classes="icon_buttons")
 
     def on_mount(self) -> None:
-        self.get_widget_by_id("edit_button").tooltip = "Edit"
-        if self.delete_button:
-            self.get_widget_by_id("delete_button").tooltip = "Delete"
-        self.app.push_screen(
-            PathPatternBuilder(
-                #  path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
-                #  path="/home/tomas/github/ds005115/sub-01/ses-01/fmap/sub-01_ses-01_phasediff.nii.gz",
-                path="/home/tomas/github/ds005115/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz",
-                title=self.title,
-                highlight_colors=self.pattern_class.get_entity_colors_list,
-                labels=self.pattern_class.get_entities,
-            ),
-            self._update_file_pattern,
-        )
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount 222")
+        if self.load_object is None:
+            self.get_widget_by_id("edit_button").tooltip = "Edit"
+            if self.delete_button:
+                self.get_widget_by_id("delete_button").tooltip = "Delete"
+            self.app.push_screen(
+                PathPatternBuilder(
+                    #  path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
+                    #  path="/home/tomas/github/ds005115/sub-01/ses-01/fmap/sub-01_ses-01_phasediff.nii.gz",
+                    path="/home/tomas/github/ds005115/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz",
+                    title=self.title,
+                    highlight_colors=self.pattern_class.get_entity_colors_list,
+                    labels=self.pattern_class.get_entities,
+                ),
+                self._update_file_pattern,
+            )
+        else:
+            if isinstance(self.load_object, dict):
+                self._update_file_pattern(self.load_object)
+            else:
+                pattern_load = {}
+                pattern_load["file_pattern"] = self.load_object.path
+                pattern_load["message"] = "This was loaded from somewhere."
+                pattern_load["files"] = []
+                print("dddddddddddddddddddddddddor self.load_object", dir(self.load_object))
+                self._update_file_pattern(pattern_load)
 
     @on(Button.Pressed, "#edit_button")
     def _on_edit_button_pressed(self):
@@ -250,6 +291,11 @@ class FileItem(Widget):
             self._update_file_pattern,
         )
 
+    @property
+    def get_pattern_match_results(self):
+        return self.pattern_match_results
+
+    # runs after the PathPatternBuilder modal
     def _update_file_pattern(self, pattern_match_results):
         """Update various variables based on the results from the PathPatternBuilder"""
         if pattern_match_results is not False:
@@ -272,10 +318,18 @@ class FileItem(Widget):
             # obj.setup()
             # fix this because sometimes this can be just ordinary string
             if len(pattern_match_results["files"]) > 0:
-                if isinstance(pattern_match_results["file_pattern"], str):
-                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-                else:
-                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+                try:
+                    if isinstance(pattern_match_results["file_pattern"], str):
+                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+                    else:
+                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+                except:
+                    print("bbbbbbbbbbla")
+        else:
+            # delete it self if cancelled and was not existing before
+            if self.pattern_match_results["file_pattern"] == "":
+                self.remove_all_duplicates()
+                self.remove()
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
@@ -284,6 +338,8 @@ class FileItem(Widget):
         # For this a pattern needs to be created. By cancelling the modal, the widget is created but the filepattern is not.
         if self.id in ctx.cache:
             ctx.cache.pop(self.id)
+        self.remove_all_duplicates()
+        print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
         self.remove()
 
     @on(Button.Pressed, "#show_button")
@@ -299,6 +355,16 @@ class FileItem(Widget):
 
     def watch_success_value(self) -> None:
         self.post_message(self.SuccessChanged(self, self.success_value))
+
+    def watch_pattern_match_results(self) -> None:
+        self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
+
+    def remove_all_duplicates(self):
+        for w in self.app.walk_children(FileItem):
+            print("w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
+            # remove itself standardly later
+            if w.id == self.id and w != self:
+                w.remove()
 
 
 class Main(App):

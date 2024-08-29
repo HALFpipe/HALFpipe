@@ -23,11 +23,13 @@ ModelConditionsAndContrasts {
     #contrast_table_upper {
         /*width: auto;*/
         height: auto;
+        content-align: center middle;
         border: solid;
+        margin: 1 0;
     }
-    Horizontal {
-        align: right middle;
-        height: auto;
+    #button_panel {
+        align: right top;
+        height: 8;
     }
     Button {
         margin: 0 1;

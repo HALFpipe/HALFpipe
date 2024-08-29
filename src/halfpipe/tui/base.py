@@ -229,6 +229,7 @@ class MainApp(App):
     flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
     # input_data_load_is_success = False
     is_bids = True
+    event_widget_list = []
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -263,7 +264,6 @@ class MainApp(App):
         def welcome_dismissed(message):
             self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
-            # self.get_widget_by_id("tabs_manager").hide_tab("preprocessed_output_tab")
             self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
 
         #       self.welcome_is_dismissed = message

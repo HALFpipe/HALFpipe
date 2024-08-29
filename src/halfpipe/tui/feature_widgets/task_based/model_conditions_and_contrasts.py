@@ -4,7 +4,7 @@ from itertools import cycle
 import pandas as pd
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal, ScrollableContainer, VerticalScroll
+from textual.containers import Grid, Horizontal, HorizontalScroll, VerticalScroll
 from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
@@ -117,20 +117,21 @@ class ModelConditionsAndContrasts(Widget):
         self.feature_contrasts_dict = feature_contrasts_dict
 
         self.row_dict: dict = {}
-        self.df = pd.DataFrame()
-        self.df["condition"] = all_possible_conditions
-        self.df.set_index("condition", inplace=True)
-        self.default_conditions = []
-        # if there are dict entries then set defaults
-        if self.feature_contrasts_dict != []:
-            # convert dict to pandas
-            for contrast_dict in self.feature_contrasts_dict:
-                #   for row_index in self.df.index:
-                for condition_name in contrast_dict["values"]:
-                    self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
+        self.update_all_possible_conditions(all_possible_conditions)
+        # self.df = pd.DataFrame()
+        # self.df["condition"] = all_possible_conditions
+        # self.df.set_index("condition", inplace=True)
+        # self.default_conditions = []
+        # # if there are dict entries then set defaults
+        # if self.feature_contrasts_dict != []:
+        # # convert dict to pandas
+        # for contrast_dict in self.feature_contrasts_dict:
+        # #   for row_index in self.df.index:
+        # for condition_name in contrast_dict["values"]:
+        # self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
 
-            self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
-            self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
+        # self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
+        # self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
     def update_all_possible_conditions(self, all_possible_conditions):
         # self.row_dict: dict = {}
@@ -157,7 +158,7 @@ class ModelConditionsAndContrasts(Widget):
             *[Selection(condition, condition, initial_state=True, id=condition) for condition in self.default_conditions],
             id="model_conditions_selection",
         )
-        yield ScrollableContainer(
+        yield HorizontalScroll(
             DataTable(zebra_stripes=True, header_height=2, id="contrast_table"),
             id="contrast_table_upper",
         )
@@ -165,10 +166,11 @@ class ModelConditionsAndContrasts(Widget):
             Button("Add contrast values", classes="add_button"),
             Button("Remove contrast values", classes="delete_button"),
             Button("Sort table", classes="sort_button"),
+            id="button_panel",
         )
 
     def on_mount(self) -> None:
-        self.get_widget_by_id("contrast_table").border_title = "Table of Contrast Values"
+        self.get_widget_by_id("contrast_table_upper").border_title = "Table of Contrast Values"
         table = self.query_one(DataTable)
         # to init the table, stupid but nothing else worked
         table.add_column(label="temp", key="temp")

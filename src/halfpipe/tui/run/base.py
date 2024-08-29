@@ -18,6 +18,7 @@ from ...model.setting import SettingSchema
 # from utils.false_input_warning_screen import FalseInputWarning
 # from utils.confirm_screen import Confirm
 from ...model.spec import SpecSchema
+from ..feature_widgets.task_based.taskbased import TaskBased
 from ..utils.context import ctx
 
 
@@ -44,6 +45,14 @@ class RunCLX(Widget):
 
     def dump_dict_to_contex(self):
         print("ccccccccccccccccccc", pd.DataFrame.from_dict(ctx.cache).index, pd.DataFrame.from_dict(ctx.cache).columns)
+        #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :].index)
+        #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :])
+        #      for item in pd.DataFrame.from_dict(ctx.cache).loc['files', :].index:
+        #          print(pd.DataFrame.from_dict(ctx.cache).loc['files', item])
+
+        print("children teeeeeeeeeeeeeeeeeeeeeeeeest", self.app.walk_children(TaskBased))
+        for w in self.app.walk_children(TaskBased):
+            w.refresh_event_list()
         # the cache key logic goes like this: first it is the particular name of the main item, for example a feature called
         # 'foo' will produce a key "foo" this is the "name". Second, it is the main group type of the item, if it is the
         # feature then the group type is feature, if it is for example bold file pattern then it is the bold file pattern,

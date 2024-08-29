@@ -272,7 +272,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#cancel_button")
     def _close(self, event: Button.Pressed):
-        self.dismiss()
+        self.dismiss(False)
 
     @on(Button.Pressed, "#show_button")
     def _remove_self(self):

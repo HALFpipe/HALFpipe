@@ -169,6 +169,7 @@ class FeatureSelection(Widget):
             ListView(id="list", classes="list"),
             id="sidebar",
         )
+        #  yield EventFilePanel()
         yield ContentSwitcher(id="content_switcher")
 
     def on_mount(self) -> None:

@@ -7,7 +7,7 @@ from textual.containers import Grid, ScrollableContainer, Vertical, VerticalScro
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Button, Input, Select, SelectionList, Static, Switch
+from textual.widgets import Input, Select, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
 
 from ....collect.events import collect_events
@@ -15,9 +15,8 @@ from ....ingest.events import ConditionFile
 from ....model.filter import FilterSchema
 from ...utils.context import ctx
 from ...utils.custom_switch import TextSwitch
-from ...utils.file_pattern_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
+from ...utils.event_file_widget import EventFilePanel
 from ...utils.non_bids_file_itemization import FileItem
-from ...utils.selection_modal import SelectionModal
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
@@ -149,9 +148,9 @@ class TaskBased(Widget):
         # self.top_parent = app
         # self.ctx = ctx
         # self.available_images = available_images
-
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
+        self.event_file_pattern_counter = 0
 
         if "contrasts" not in self.feature_dict:
             self.feature_dict["contrasts"] = []
@@ -187,8 +186,6 @@ class TaskBased(Widget):
                 confounds_options[confound][1] = True
 
         self.confounds_options = confounds_options
-        print("111qqqqqqqqqqqqqqqqqqqq", this_user_selection_dict)
-        print("ppppppppppppppppppp", self.feature_dict)
 
     def compose(self) -> ComposeResult:
         # note_1 = "▪️ Grand mean scaling will be applied with a mean of 10000.0"
@@ -201,7 +198,7 @@ class TaskBased(Widget):
             all_possible_conditions += self.extract_conditions(entity="task", values=[v])
 
         with ScrollableContainer(id="top_container_task_based"):
-            yield Vertical(
+            yield VerticalScroll(
                 SelectionList[str](
                     *[
                         Selection(image, image, self.images_to_use["task"][image])
@@ -264,7 +261,7 @@ class TaskBased(Widget):
                 classes="components",
             )
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         print("mmmmmmmmmmmmmmmmmmmm mount superclass")
         self.get_widget_by_id("images_to_use").border_title = "Images to use"
         self.get_widget_by_id("confounds").border_title = "Remove confounds"
@@ -272,13 +269,29 @@ class TaskBased(Widget):
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
-
+        #
+        #  if self.app.is_bids is not True:
+        #  self.get_widget_by_id("event_file_panel").styles.visibility = 'hidden'
+        # self.get_widget_by_id("preprocessing").styles.offset = (0, -7)
+        # self.get_widget_by_id("model_conditions_and_constrasts").styles.offset = (0, -7)
+        # self.get_widget_by_id("confounds").styles.offset = (0, -7)
+        #   else:
         if self.app.is_bids is not True:
-            self.get_widget_by_id("images_to_use").mount(
-                VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
+            await self.mount(
+                EventFilePanel(id="top_event_file_panel", classes="components"), after=self.get_widget_by_id("images_to_use")
             )
-            self.get_widget_by_id("event_file_panel").border_title = "Event files patterns"
+            self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
+        # test method 1
+        # for item in pd.DataFrame.from_dict(ctx.cache).loc['files', :].index:
+        # if item.startswith('event'):
+        # print(pd.DataFrame.from_dict(ctx.cache).loc['files', item])
+        # self.query_one(EventFilePanel).create_file_item(load_object=pd.DataFrame.from_dict(ctx.cache).loc['files', item])
+
+    def refresh_event_list(self):
+        print("rrrrrrrrrrrrrrrrrrrrefresh", self.walk_children(FileItem))
+        print("self.app.event_widget_listself.app.event_widget_list", self.app.event_widget_list)
+        print("ssssssssssset test", set(self.app.event_widget_list) - set(self.walk_children(FileItem)))
         # all_images = self.images_to_use["task"].keys()
         # print('all_imagesall_imagesall_images', all_images)
 
@@ -381,39 +394,60 @@ class TaskBased(Widget):
         )
         return get_conditions(_filter)
 
-    # TODO
-    @on(Button.Pressed, "#add_event_file_button")
-    def _on_button_add_event_file_pressed(self):
-        def mount_file_item_widget(event_file_type):
-            events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
-            if event_file_type == "bids":
-                events_step_type = TsvEventsStep
-            elif event_file_type == "fsl":
-                events_step_type = TxtEventsStep
-            elif event_file_type == "spm":
-                events_step_type = MatEventsStep
-            if events_step_type is not None:
-                self.get_widget_by_id("event_file_panel").mount(
-                    FileItem(classes="file_patterns", pattern_class=events_step_type())
-                )
-                self.refresh()
-            else:
-                print("isssssssssssssssssssssss none")
+    # # TODO
+    # @on(Button.Pressed, "#add_event_file_button")
+    # def _on_button_add_event_file_pressed(self):
+    # self.create_file_item(load_object=None)
 
-        options = {
-            "spm": "SPM multiple conditions",
-            "fsl": "FSL 3-column",
-            "bids": "BIDS TSV",
-        }
-        self.app.push_screen(
-            SelectionModal(
-                title="Event file type specification",
-                instructions="Specify the event file type",
-                options=options,
-                id="event_files_type_modal",
-            ),
-            mount_file_item_widget,
-        )
+    # def create_file_item(self, load_object=None):
+    # def mount_file_item_widget(event_file_type):
+    # events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
+    # if event_file_type == "bids":
+    # events_step_type = TsvEventsStep
+    # elif event_file_type == "fsl":
+    # events_step_type = TxtEventsStep
+    # elif event_file_type == "spm":
+    # events_step_type = MatEventsStep
+    # if events_step_type is not None:
+    # the_file_item = FileItem(
+    # id="event_file_pattern_" + str(self.event_file_pattern_counter),
+    # classes="file_patterns",
+    # pattern_class=events_step_type()
+    # )
+    # self.get_widget_by_id("event_file_panel").mount(
+    # the_file_item
+    # )
+    # self.event_file_pattern_counter += 1
+    # #       self.app.event_widget_list.append(copy.deepcopy(the_file_item))
+    # self.refresh()
+    # else:
+    # print("isssssssssssssssssssssss none")
+
+    # if load_object is None:
+    # options = {
+    # "spm": "SPM multiple conditions",
+    # "fsl": "FSL 3-column",
+    # "bids": "BIDS TSV",
+    # }
+    # self.app.push_screen(
+    # SelectionModal(
+    # title="Event file type specification",
+    # instructions="Specify the event file type",
+    # options=options,
+    # id="event_files_type_modal",
+    # ),
+    # mount_file_item_widget,
+    # )
+    # else:
+    # print('llllllllllllllllllllllllllllllllllll load_obj', load_object.path)
+    # self.get_widget_by_id("event_file_panel").mount(
+    # FileItem(
+    # id="event_file_pattern_" + str(self.event_file_pattern_counter),
+    # classes="file_patterns",
+    # load_object=load_object
+    # )
+    # )
+    # self.event_file_pattern_counter += 1
 
 
 def get_conditions(_filter):
