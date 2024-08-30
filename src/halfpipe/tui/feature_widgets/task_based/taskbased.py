@@ -16,7 +16,6 @@ from ....model.filter import FilterSchema
 from ...utils.context import ctx
 from ...utils.custom_switch import TextSwitch
 from ...utils.event_file_widget import EventFilePanel
-from ...utils.non_bids_file_itemization import FileItem
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
@@ -288,34 +287,34 @@ class TaskBased(Widget):
         # print(pd.DataFrame.from_dict(ctx.cache).loc['files', item])
         # self.query_one(EventFilePanel).create_file_item(load_object=pd.DataFrame.from_dict(ctx.cache).loc['files', item])
 
-    def refresh_event_list(self):
-        print("rrrrrrrrrrrrrrrrrrrrefresh", self.walk_children(FileItem))
-        print("self.app.event_widget_listself.app.event_widget_list", self.app.event_widget_list)
-        print("ssssssssssset test", set(self.app.event_widget_list) - set(self.walk_children(FileItem)))
-        # all_images = self.images_to_use["task"].keys()
-        # print('all_imagesall_imagesall_images', all_images)
+    # def refresh_event_list(self):
+    # print("rrrrrrrrrrrrrrrrrrrrefresh", self.walk_children(FileItem))
+    # print("self.app.event_widget_listself.app.event_widget_list", self.app.event_widget_list)
+    # print("ssssssssssset test", set(self.app.event_widget_list) - set(self.walk_children(FileItem)))
+    # all_images = self.images_to_use["task"].keys()
+    # print('all_imagesall_imagesall_images', all_images)
 
-        # for value in self.images_to_use["task"].keys():
-        # conditions = self.extract_conditions(entity="task", values=[value])
-        # print('conditionsconditionsconditionsconditions', value, '/////', conditions)
-        #   if conditions == []:
+    # for value in self.images_to_use["task"].keys():
+    # conditions = self.extract_conditions(entity="task", values=[value])
+    # print('conditionsconditionsconditionsconditions', value, '/////', conditions)
+    #   if conditions == []:
 
-        # self.get_widget_by_id("temporal_filter").styles.visibility = "hidden"
-        # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
-        # on_mount in subclasses is not entirely overridden and this one has also some effect
-        # try:
-        # self.get_widget_by_id("notes").border_title = "Notes"
-        # self.get_widget_by_id("bandpass_filter_type").styles.visibility = "hidden"
-        # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
-        # except:  # noqa E722
-        # pass
+    # self.get_widget_by_id("temporal_filter").styles.visibility = "hidden"
+    # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
+    # on_mount in subclasses is not entirely overridden and this one has also some effect
+    # try:
+    # self.get_widget_by_id("notes").border_title = "Notes"
+    # self.get_widget_by_id("bandpass_filter_type").styles.visibility = "hidden"
+    # self.get_widget_by_id("grand_mean_scaling").styles.visibility = "hidden"
+    # except:  # noqa E722
+    # pass
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
     def _on_selection_list_changed_images_to_use_selection(self):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
 
-        # try to update it here?
+        # try to update it here? this refresh the whole contition list every time that image is changed
         all_possible_conditions = []
         for v in self.images_to_use["task"].keys():
             all_possible_conditions += self.extract_conditions(entity="task", values=[v])

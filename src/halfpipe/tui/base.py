@@ -297,8 +297,8 @@ class MainApp(App):
         are fed via the input_data_content widget.
         """
         if message.value:
-            self.get_widget_by_id("input_data_content").feed_contex_and_extract_available_images(ctx.cache["files"]["path"])
-            self.get_widget_by_id("input_data_content").manually_change_label(ctx.cache["files"]["path"])
+            self.get_widget_by_id("input_data_content").feed_contex_and_extract_available_images()
+            self.get_widget_by_id("input_data_content").manually_change_label(ctx.cache["bids"]["files"]["path"])
             for name in ctx.cache:
                 # Need to avoid key 'files' in the dictionary, since this only key is not a feature.
                 if name != "files":

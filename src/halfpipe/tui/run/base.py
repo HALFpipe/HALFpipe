@@ -51,8 +51,12 @@ class RunCLX(Widget):
         #          print(pd.DataFrame.from_dict(ctx.cache).loc['files', item])
 
         print("children teeeeeeeeeeeeeeeeeeeeeeeeest", self.app.walk_children(TaskBased))
-        for w in self.app.walk_children(TaskBased):
-            w.refresh_event_list()
+
+        print("lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
+        ctx.database.filepaths_by_tags: dict[str, dict[str, set[str]]] = dict()
+        ctx.database.tags_by_filepaths: dict[str, dict[str, str]] = dict()
+        #    for w in self.app.walk_children(TaskBased):
+        #        w.refresh_event_list()
         # the cache key logic goes like this: first it is the particular name of the main item, for example a feature called
         # 'foo' will produce a key "foo" this is the "name". Second, it is the main group type of the item, if it is the
         # feature then the group type is feature, if it is for example bold file pattern then it is the bold file pattern,
@@ -66,6 +70,8 @@ class RunCLX(Widget):
             ctx.spec.files.clear()
 
         print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", ctx.cache)
+        print("2222lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
+
         for name in ctx.cache:
             #  if name != "files":
             print("nnnnnnnnnnnnnnnnnnnnnnname", name)

@@ -96,15 +96,51 @@ class EventFilePanel(Widget):
 
     @on(FileItem.PathPatternChanged)
     def _on_update_all_instances(self, event):
+        # creating copies to all feature tasks
+        # the one that was is the latest one, create new instances
         print(
-            "event.control.id, event.control.get_pattern_match_results",
+            "oooooooooooooooooooooooooooooooooooo  event.control.id == self.current_event_file_pattern_id:",
             event.control.id,
-            event.control.get_pattern_match_results,
+            self.current_event_file_pattern_id,
         )
-
         if event.control.id == self.current_event_file_pattern_id:
+            # loop through the all existing event file panels
             for w in self.app.walk_children(EventFilePanel):
+                # create new fileitem in every other EventFilePanel
                 if w != self:
-                    w.get_widget_by_id("event_file_panel").mount(
-                        FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
+                    file_items_ids_in_other_event_file_panel = [
+                        other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
+                    ]
+                    # id does not exist, mount new FileItem
+                    print(
+                        "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
+                        event.control.id,
+                        " ::: ",
+                        file_items_ids_in_other_event_file_panel,
                     )
+                    if event.control.id not in file_items_ids_in_other_event_file_panel:
+                        w.get_widget_by_id("event_file_panel").mount(
+                            FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
+                        )
+                    # exists, need to change that particular one
+
+    #    for w in self.app.walk_children(EventFilePanel):
+    #        old_file_pattern = w.get_widget_by_id('event_file_panel').get_widget_by_id(event.control.id).pattern_match_results
+    #        print('ooooooooooooooooooooooooooooooo old_file_pattern event.value', old_file_pattern, event.value)
+    #        if old_file_pattern != event.value:
+    #            w.get_widget_by_id('event_file_panel').get_widget_by_id(event.control.id).pattern_match_results = event.value
+
+    # print('event.control.id, event.control.get_pattern_match_results', event.control.id, event.control.get_pattern_match_results)
+    # # creating copies to all feature tasks
+    # # the one that was is the latest one, create new instances
+    # if event.control.id == self.current_event_file_pattern_id:
+    # # loop through the all existing event file panels
+    # for w in self.app.walk_children(EventFilePanel):
+    # # create new fileitem in every other EventFilePanel
+    # if w != self:
+    # w.get_widget_by_id('event_file_panel').mount(FileItem(
+    # id=event.control.id,
+    # classes="file_patterns",
+    # load_object=event.value
+    # )
+    # )

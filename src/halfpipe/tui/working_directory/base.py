@@ -110,15 +110,15 @@ spec.json file it is possible to load the therein configuration.",
     def user_selections_from_spec(self):
         """Feed the user_selections_dict with settings from the json file via the context object."""
         if self.existing_spec is not None:
-            self.app.user_selections_dict["files"]["path"] = self.existing_spec.files[0].path
+            ctx.cache["bids"]["files"]["path"] = self.existing_spec.files[0].path
             for feature in self.existing_spec.features:
                 for method_name in ["conditions", "contrasts", "high_pass_filter_cutoff", "hrf", "name", "setting", "type"]:
-                    self.app.user_selections_dict[feature.name]["features"][method_name] = getattr(feature, method_name)
+                    ctx.cache[feature.name]["features"][method_name] = getattr(feature, method_name)
 
                 for setting in self.existing_spec.settings:
-                    if setting["name"] == self.app.user_selections_dict[feature.name]["features"]["setting"]:
+                    if setting["name"] == ctx.cache[feature.name]["features"]["setting"]:
                         for key in setting:
-                            self.app.user_selections_dict[feature.name]["settings"][key] = setting[key]
+                            ctx.cache[feature.name]["settings"][key] = setting[key]
 
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))

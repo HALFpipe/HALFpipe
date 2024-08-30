@@ -218,6 +218,7 @@ class FileItem(Widget):
 
         self.load_object = load_object
         self.border_title = "id: " + str(id)
+        self.from_edit = False
 
     def callback_func(self, message_dict):
         info_string = Text("")
@@ -281,6 +282,7 @@ class FileItem(Widget):
         Opens modal for selecting the search file pattern.
         The results from this modal goes then to _update_file_pattern function.
         """
+        self.from_edit = True
         self.app.push_screen(
             PathPatternBuilder(
                 # path="/home/tomas/github/ds002785_v2/sub-0001/func/sub-0001_task-emomatching_acq-seq_bold.nii.gz",
@@ -325,6 +327,11 @@ class FileItem(Widget):
                         self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
                 except:
                     print("bbbbbbbbbbla")
+
+            if self.from_edit:
+                self.update_all_duplicates()
+        #    self.update_all_duplicates()
+
         else:
             # delete it self if cancelled and was not existing before
             if self.pattern_match_results["file_pattern"] == "":
@@ -365,6 +372,15 @@ class FileItem(Widget):
             # remove itself standardly later
             if w.id == self.id and w != self:
                 w.remove()
+
+    def update_all_duplicates(self):
+        for w in self.app.walk_children(FileItem):
+            print("w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
+            # remove itself standardly later
+            if w.id == self.id and w != self:
+                if w.pattern_match_results != self.pattern_match_results:
+                    w._update_file_pattern(self.pattern_match_results)
+        self.from_edit = False
 
 
 class Main(App):
