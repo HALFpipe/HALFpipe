@@ -124,7 +124,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           cache-to: ${{ steps.metadata.outputs.cache_to }}
@@ -188,7 +188,7 @@ jobs:
 
       - name: Push container to registry
         if: ${{ steps.metadata.outputs.push == 'true' }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           context: "."
