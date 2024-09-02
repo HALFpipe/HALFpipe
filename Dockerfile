@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
-ARG FMRIPREP_VERSION=20.2.7
+ARG FMRIPREP_VERSION=24.0.1
 
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi
@@ -55,7 +55,9 @@ RUN mv /home/fmriprep/.cache/templateflow /var/cache
 # We install ants previously using conda (through a dependency in the halfpipe
 # recipe), to get an important bug fix (#691). We delete the ants that came with
 # fmriprep and update the `PATH` to reflect the new ants location
-RUN rm -rf /usr/lib/ants
+# We remove conda folder that comes with fmrirprep layer since we only want to keep
+# our own conda environment in the container.
+RUN rm -rf /usr/lib/ants /opt/conda
 ENV PATH="${PATH//:\/usr\/lib\/ants/}"
 
 # Add `coinstac` server components
