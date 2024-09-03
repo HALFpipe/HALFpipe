@@ -18,13 +18,13 @@ from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
-from .utils.confirm_screen import Confirm
-from .utils.context import ctx
 from .utils.draggable_modal_screen import DraggableModalScreen
 from .working_directory.base import WorkDirectory
 
 
 class HelpModal(DraggableModalScreen):
+    """Help modal at the main screen. Triggered by the "?" at the right corner."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.title_bar.title = "Help"
@@ -33,7 +33,6 @@ class HelpModal(DraggableModalScreen):
         self.content.mount(
             Vertical(
                 Static("Some help", id="question"),
-                # Input(''),
                 Horizontal(Button("Ok", id="ok")),
             )
         )
@@ -44,6 +43,8 @@ class HelpModal(DraggableModalScreen):
 
 
 class QuitModal(DraggableModalScreen):
+    """Quit modal at the main screen. Triggered by the "X" at the right corner."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.title_bar.title = "Quit"
@@ -52,7 +53,6 @@ class QuitModal(DraggableModalScreen):
         self.content.mount(
             Vertical(
                 Static("Do you really want to quit?", id="question"),
-                # Input(''),
                 Horizontal(Button("Yes", id="ok"), Button("No", id="cancel")),
             )
         )
@@ -99,29 +99,6 @@ class HeaderCloseIcon(Widget):
         return self.icon
 
 
-class IsLockedModal(DraggableModalScreen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.title_bar.title = "Locked"
-
-    def on_mount(self) -> None:
-        self.content.mount(
-            Vertical(
-                Static("This tab is disabled", id="locked_tab"),
-                # Input(''),
-                Horizontal(Button("Dismiss", id="ok"), Button("UNLOCK 🔓", id="unlock")),
-            )
-        )
-
-    @on(Button.Pressed, "#ok")
-    def _on_ok_button_pressed(self):
-        self.dismiss(False)
-
-    @on(Button.Pressed, "#unlock")
-    def _on_unlock_button_pressed(self):
-        self.dismiss(True)
-
-
 class HeaderHelpIcon(Widget):
     """Display an 'icon' on the left of the header."""
 
@@ -164,6 +141,8 @@ class MyHeader(Header):
 
 
 class RichImage:
+    """Convert the image to a Rich image."""
+
     def __rich_console__(self, console: Console, options) -> RenderResult:
         with Image.open("./halfpipe/tui/images/halfpipe_logo_v2.png") as image:
             pixels = Pixels.from_image(image, resize=(110, 92))  # 105, 92
@@ -171,6 +150,8 @@ class RichImage:
 
 
 class ImageContainer(Container):
+    """Create a container for the image."""
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -182,6 +163,8 @@ class ImageContainer(Container):
 
 
 class Welcome(ModalScreen):
+    """Intro screen with an intro image."""
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -196,8 +179,6 @@ class Welcome(ModalScreen):
 
 
 class MainApp(App):
-    """An example of tabbed content."""
-
     CSS_PATH = [
         "tcss/base.tcss",
         "./feature_widgets/tcss/base.tcss",
@@ -214,29 +195,27 @@ class MainApp(App):
         "./utils/tcss/radio_set_changed.tcss",
     ]
 
+    # TODO: The non active tabs should not show the bindings.
     BINDINGS = [
-        ("w", "show_tab('work_dir')", "Working directory"),
-        ("i", "show_tab('input_data')", "Input data"),
-        #  ("e", "show_tab('features')", "Features"),
-        #  ("m", "show_tab('misc')", "Misc"),
-        #  ("o", "show_tab('output')", "Output"),
-        #  ("r", "show_tab('run')", "Run"),
+        ("w", "show_tab('work_dir_tab')", "Working directory"),
+        ("i", "show_tab('input_data_tab')", "Input data"),
+        ("f", "show_tab('feature_selection_tab')", "Features"),
+        ("p", "show_tab('preprocessing_tab')", "General preprocessing settings"),
+        ("g", "show_tab('models_tab')", "Group level models"),
+        ("r", "show_tab('run_tab')", "Check and run"),
     ]
+
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
 
+    # maybe rename to available_tasks? this is a top level class variable that contains available tasks.
     available_images: dict = {}
-    #  user_selections_dict: defaultdict[str, defaultdict[str, dict[str, Any]]] = defaultdict(lambda: defaultdict(dict))
+    # if both flags are True, then we show the hidden tabs.
     flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
-    # input_data_load_is_success = False
+    # flag for bids/non bids data input
     is_bids = True
-    event_widget_list = []
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        # this whole "welcome_is_dismissed" mechanism is only to circumvent somehow the fact that the widgets are not yet
-        # loaded and the app is already trying to access some of them via @on(TabbedContent.TabActivated)
-        # ideally this should be solved with async and await but for some reason that has other issues
-        self.welcome_is_dismissed = False
 
     def compose(self) -> ComposeResult:
         """Compose app with tabbed content."""
@@ -246,14 +225,10 @@ class MainApp(App):
                 yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
                 yield VerticalScroll(DataInput(id="input_data_content"))
-            #   with TabPane("General settings", id="misc_tab", classes="tabs"):
-            #       yield VerticalScroll(GeneralSettings(), id="misc_content")
             with TabPane("General preprocessing settings", id="preprocessing_tab", classes="tabs"):
                 yield VerticalScroll(Preprocessing(id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(FeatureSelection(id="feature_selection_content"))
-            # with TabPane("Output pre-processed image", id="preprocessed_output_tab", classes="tabs2"):
-            # yield VerticalScroll(PreprocessedImageOutput(id="preprocessed_output_content"))
             with TabPane("Group level models", id="models_tab", classes="tabs"):
                 yield VerticalScroll(Placeholder(), id="models_content")
             with TabPane("Check and run", id="run_tab", classes="tabs"):
@@ -261,28 +236,21 @@ class MainApp(App):
         yield Footer()
 
     def on_mount(self):
-        def welcome_dismissed(message):
-            self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
-            self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
-            self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
-
-        #       self.welcome_is_dismissed = message
+        # hide these tabs until we have data input and the working folder
+        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
 
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
-        self.push_screen(Welcome(id="welcome_screen"), welcome_dismissed)
-        # self.get_widget_by_id('tabs_manager')
+        self.push_screen(Welcome(id="welcome_screen"))
 
     def show_hidden_tabs(self):
-        if sum(self.flags_to_show_tabs.values()) == 1:
+        # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
+        if sum(self.flags_to_show_tabs.values()) >= 1:
             self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
-            # self.get_widget_by_id("tabs_manager").show_tab("preprocessed_output_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
-            #       self.input_data_load_is_success = True
-
-    #      self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_encoding_direction")
-    #      self.get_widget_by_id("preprocessing_content").check_meta_data(key="slice_timing")
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
@@ -291,58 +259,3 @@ class MainApp(App):
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark: bool = not self.dark
-
-    def on_work_directory_changed(self, message):
-        """When a path to a directory with existing json file is selected, the Context object and available images
-        are fed via the input_data_content widget.
-        """
-        if message.value:
-            self.get_widget_by_id("input_data_content").feed_contex_and_extract_available_images()
-            self.get_widget_by_id("input_data_content").manually_change_label(ctx.cache["bids"]["files"]["path"])
-            for name in ctx.cache:
-                # Need to avoid key 'files' in the dictionary, since this only key is not a feature.
-                if name != "files":
-                    self.get_widget_by_id("feature_selection_content").add_new_feature(
-                        [ctx.cache[name]["features"]["type"], name]  # type: ignore[index]
-                    )
-
-    def update_tab_pane_label(self, tab_id):
-        this_tab_pane = self.get_widget_by_id(tab_id)
-        this_tab_pane.update(this_tab_pane.render_str("🔓") + this_tab_pane.label[1:])
-
-    # @on(TabbedContent.TabActivated)
-    def on_tab_clicked(self, message):
-        def enable_tab(unlock_tab):
-            print("uuuuuuuuuuuuuuuuuuuuuuuu", unlock_tab)
-            if unlock_tab:
-                this_tab_content.disabled = False
-                self.update_tab_pane_label(tab_id)
-
-        #      this_tab_content.styles.opacity = '100%'
-        #  this_tab_pane.update(this_tab_pane.render_str('🔓')+this_tab_pane_current_label[1:])
-
-        if self.welcome_is_dismissed:
-            tab_id = message.tab.id
-            tab_content_id = tab_id[14:-3] + "content"
-            this_tab_content = self.get_widget_by_id(tab_content_id)
-
-            if this_tab_content.disabled:
-                self.push_screen(
-                    Confirm(
-                        "This tab is currently locked due to missing inputs in the Working and Data input tabs. However, \
-you can force to unlock it. How to proceed?",
-                        left_button_text="UNLOCK🔓",
-                        right_button_text="Dismiss",
-                        left_button_variant="error",
-                        right_button_variant="success",
-                        title="Tab lock warning",
-                        id="confirm_unlocking",
-                        classes="confirm_warning",
-                    ),
-                    enable_tab,
-                )
-
-
-# if __name__ == "__main__":
-# app = TabbedApp()
-# app.run()
