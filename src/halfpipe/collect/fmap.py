@@ -9,7 +9,8 @@ from ..utils.format import inflect_engine as pe
 
 
 def check_pes(epi_fmaps, pe_dir):
-    """Check whether there are images with matched PE."""
+    """Check whether there are images with matched PE.
+    Note: Function backported from sdcworkflows 1.3.5."""
     opposed_pe = False
     matched_pe = False
 

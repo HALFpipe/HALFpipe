@@ -50,7 +50,7 @@ requirements:
     - fsldownloads::fsl-bet2=2111.4
     - fsldownloads::fsl-flirt=2111.2
     - fsldownloads::fsl-fast4=2111.3
-    - fsldownloads::fsl-fugue=2201.4
+    - fsldownloads::fsl-fugue=2201.3
     - fsldownloads::fsl-mcflirt=2111.0
     - fsldownloads::fsl-miscmaths=2203.2
     - fsldownloads::fsl-topup=2203.2
