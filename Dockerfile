@@ -13,8 +13,11 @@ COPY recipes /recipes
 
 # We manually specify the numpy version here to silence an irrelevant warning as per
 # https://github.com/conda/conda-build/issues/3170
+# We also need to add the channel for FSL in the command line call
+# because there is no obvious solution to add channels in recipes
+# https://github.com/conda/conda-build/issues/532
 RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
-    conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local $recipe && \
+    conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local $recipe -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/  && \
     conda build purge; \
 done
 

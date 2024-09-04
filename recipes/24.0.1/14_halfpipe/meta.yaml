@@ -75,9 +75,7 @@ requirements:
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
-    - fsl-flameo
-  channels:
-    - https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/
+    - fsl-flameo # fsldownloads::fsl-flameo ?
 
 
 test:
