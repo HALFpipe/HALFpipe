@@ -75,7 +75,8 @@ requirements:
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
-    - fsl-flameo # fsldownloads::fsl-flameo ?
+    - fsldownloads::fsl-flameo
+    # add fsl_regfilt???
 
 
 test:
