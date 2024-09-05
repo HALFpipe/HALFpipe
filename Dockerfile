@@ -8,7 +8,7 @@ FROM condaforge/mambaforge:latest AS builder
 
 # Ensure the ARG is available in this stage of the Dockerfile
 ARG FMRIPREP_VERSION
-RUN mamba install --yes "boa" "conda-verify"
+RUN mamba install --yes "python=3.11" "boa" "conda-verify"
 COPY recipes /recipes
 
 # We manually specify the numpy version here to silence an irrelevant warning as per
