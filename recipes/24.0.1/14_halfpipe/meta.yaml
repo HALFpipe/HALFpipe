@@ -76,6 +76,7 @@ requirements:
     - pytest-timeout
     - pytest-xdist
     - fsldownloads::fsl-flameo
+    - libzlib=1.2.13 #pin
     # add fsl_regfilt???
 
 
