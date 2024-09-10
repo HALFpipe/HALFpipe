@@ -8,7 +8,7 @@ FROM condaforge/mambaforge:latest AS builder
 
 # Ensure the ARG is available in this stage of the Dockerfile
 ARG FMRIPREP_VERSION
-RUN mamba install --yes "boa" "conda-verify" "python=3.11"
+RUN mamba install --yes "boa" "python=3.11"
 COPY recipes /recipes
 
 # We need to add the channel for FSL in the command line call
@@ -19,12 +19,17 @@ COPY recipes /recipes
 # We manually specify the numpy version here to silence an irrelevant warning as per
 # https://github.com/conda/conda-build/issues/3170
 
-
 RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
-    conda mambabuild --numpy "1.24" --no-anaconda-upload -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ -c HCC $recipe && \
-    conda build purge; \
-done
-
+    conda mambabuild \
+    --numpy "1.24" \
+    --exclusive-config-file /recipes/conda_build_config.yaml \
+    --no-anaconda-upload \
+    --channel local \
+    --channel conda-forge \
+    --channel https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ \
+    $recipe || exit 1; \
+    done
+RUN conda build purge
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/mambaforge:latest AS install
@@ -36,7 +41,7 @@ RUN mamba install --yes -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fs
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
 
-    # "hcc::afni=23.1.10"
+# "hcc::afni=23.1.10"
 
 # Re-apply `matplotlib` settings after re-installing conda. This silences
 # a warning that will otherwise be printed every time `matplotlib` is imported.
@@ -44,7 +49,7 @@ RUN mamba install --yes -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fs
 # Taken from fmriprep's Dockerfile
 RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
-        $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
+    $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Create the final image based on existing fmriprep image
 # We need to pull this image because we use their versions of FreeSurfer, AFNI?, workbench and c3d
