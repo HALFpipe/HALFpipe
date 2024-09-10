@@ -18,10 +18,13 @@ COPY recipes /recipes
 # channels may conflict with each other: https://github.com/conda/conda-libmamba-solver/pull/242
 # We manually specify the numpy version here to silence an irrelevant warning as per
 # https://github.com/conda/conda-build/issues/3170
+
+
 RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
-    conda mambabuild --numpy "1.24" --no-anaconda-upload -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ $recipe && \
+    conda mambabuild --numpy "1.24" --no-anaconda-upload -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ -c HCC $recipe && \
     conda build purge; \
 done
+
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/mambaforge:latest AS install
@@ -33,6 +36,8 @@ RUN mamba install --yes -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fs
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
 
+    # "hcc::afni=23.1.10"
+
 # Re-apply `matplotlib` settings after re-installing conda. This silences
 # a warning that will otherwise be printed every time `matplotlib` is imported.
 # This command re-caches fonts and sets 'Agg' as default backend for `matplotlib`.
@@ -42,7 +47,7 @@ RUN python -c "from matplotlib import font_manager" && \
         $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Create the final image based on existing fmriprep image
-# We need to pull this image because we use their versions of FreeSurfer, AFNI, workbench and c3d
+# We need to pull this image because we use their versions of FreeSurfer, AFNI?, workbench and c3d
 FROM nipreps/fmriprep:${FMRIPREP_VERSION}
 
 # Create these empty directories, so that they can be used for singularity
@@ -61,8 +66,9 @@ RUN mv /home/fmriprep/.cache/templateflow /var/cache
 # We install ants previously using conda (through a dependency in the halfpipe
 # recipe), to get an important bug fix (#691). We delete the ants that came with
 # fmriprep and update the `PATH` to reflect the new ants location
-# We remove conda folder that comes with fmrirprep layer since we only want to keep
+# We remove conda folder that comes with fmriprep layer since we only want to keep
 # our own conda environment in the container.
+# Maybe we delete afni as well?
 RUN rm -rf /usr/lib/ants /opt/conda
 ENV PATH="${PATH//:\/usr\/lib\/ants/}"
 

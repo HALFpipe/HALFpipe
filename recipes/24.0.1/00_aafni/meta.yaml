@@ -1,0 +1,115 @@
+{% set name = "afni" %}
+{% set version = "24.2.05" %}
+{% set sha = "31323b171ece3d6fcb5cc8915cf87006c6050e92" %}
+
+# Recipe taken from
+# https://github.com/unlhcc/hcc-conda-recipes/blob/master/recipes/afni/23.1.10/meta.yaml
+# Sha is from https://github.com/afni/afni/releases/tag/AFNI_24.2.05
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/afni/afni/archive/refs/tags/{{ name }}_{{ version }}.tar.gz
+  sha: {{ sha }}
+  # patches:
+  #   - 001-pip-install-no-editable.patch
+  #   - 002-git-describe.patch
+
+build:
+  number: 0
+  # skip: True # [osx or py<36]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ cdt('mesa-libgl-devel') }}
+    - {{ cdt('mesa-libegl-devel') }}
+    - cmake
+    - make
+    - datalad
+  host:
+    - python 3.11.*
+    - pip
+    - freetype
+    - openmotif-dev
+    - gsl
+    - xorg-libx11
+    - xorg-libxt
+    - xorg-libxext
+    - xorg-libxi
+    - xorg-libxft
+    - xorg-libxcb
+    - xorg-libxpm
+    - xorg-libxmu
+    - libglu
+    - glib
+    - expat
+    - freeglut
+    - tcsh
+    - r-base
+  run:
+    - python 3.11.*
+    - numpy >=1.14.5
+    - matplotlib-base
+    - freetype
+    - openmotif
+    - gsl
+    - xorg-libx11
+    - xorg-libxt
+    - xorg-libxext
+    - xorg-libxi
+    - xorg-libxft
+    - xorg-libxcb
+    - xorg-libxpm
+    - xorg-libxmu
+    - libglu
+    - hcc::glib
+    - hcc::expat
+    - hcc::freeglut
+    - hcc::r-phia
+    - hcc::r-afex
+    - hcc::r-base
+    - hcc::r-snow
+    - hcc::r-nlme
+    - hcc::r-lme4
+    - hcc::r-paran
+    - hcc::r-brms
+    - hcc::r-shiny
+    - hcc::r-shinydashboard
+    - hcc::r-plotly
+    - hcc::r-colourpicker
+    - hcc::r-data.table
+    - hcc::r-gplots
+    - hcc::r-rcolorbrewer
+    - hcc::r-psych
+    - hcc::r-ggplot2
+    - hcc::r-ggridges
+    - hcc::r-dplyr
+    - hcc::r-tidyr
+    - hcc::r-scales
+    - hcc::r-corrplot
+    - hcc::r-metafor
+    - hcc::ffmpeg
+    - hcc::netpbm
+hcc::
+test:
+  commands:
+    - afni --help
+    - afni_system_check.py -check_all
+  imports:
+    - afnipy
+
+about:
+  home: https://afni.nimh.nih.gov/afni
+  summary: "AFNI is a suite of programs for looking at and analyzing 3D brain images."
+  license: GPL-2.0
+  license_family: GPL
+  license_file: doc/README/README.copyright
+  dev_url: https://github.com/afni/afni
+
+extra:
+  container:
+    extended-base: True

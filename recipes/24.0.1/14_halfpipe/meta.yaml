@@ -76,9 +76,10 @@ requirements:
     - pytest-timeout
     - pytest-xdist
     - fsldownloads::fsl-flameo
-    - libzlib=1.2.13 #pin
-    # add fsl_regfilt???
-
+    - fsldownloads::fsl-utils # This contains fsl_regfilt
+    - libzlib=1.2.13
+    # - hcc::afni>=23.1.10
+    # We get our own afni because the one with fmriprep misses functions
 
 test:
   imports:
