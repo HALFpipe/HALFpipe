@@ -74,7 +74,7 @@ requirements:
     - pytest-timeout
     - pytest-xdist
     - fsldownloads::fsl-flameo
-    - fsldownloads::fsl-utils # This contains fsl_regfilt
+    - fsldownloads::fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
     - afni-3dfwhmx
     - afni-3dtproject
 
