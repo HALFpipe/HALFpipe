@@ -18,15 +18,13 @@ build:
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - pip
   run:
     - ants
     - rmath
-    - python 3.11.*
+    - python
     - nipype>=1.8.1
-    - setuptools_scm>=6.2
-    - wheel
     - fmriprep
     - smriprep
     - niworkflows
@@ -77,9 +75,8 @@ requirements:
     - pytest-xdist
     - fsldownloads::fsl-flameo
     - fsldownloads::fsl-utils # This contains fsl_regfilt
-    - libzlib=1.2.13
-    # - hcc::afni>=23.1.10
-    # We get our own afni because the one with fmriprep misses functions
+    - afni-3dfwhmx
+    - afni-3dtproject
 
 test:
   imports:
