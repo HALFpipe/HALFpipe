@@ -95,7 +95,6 @@ ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}" \
     MAMBA_EXE="/opt/conda/bin/mamba"
 
 ENV PATH="/opt/conda/bin:$PATH"
-# activate environment?
 RUN /bin/bash -c "source /opt/conda/bin/activate base && conda list"
 
 # Download all resources
