@@ -24,6 +24,23 @@ from halfpipe.model.spec import Spec
     ),
 )
 def test_resolve_bids(tmp_path: Path, openneuro_id: str):
+    def get_files_from_openneuro(query, gql_url, retries=3):
+        for attempt in range(retries):
+            r = requests.post(gql_url, json={"query": query})
+            if r.status_code == 200:
+                try:
+                    return json.loads(r.text)
+                except json.JSONDecodeError as e:
+                    raise RuntimeError(f"Failed to parse JSON response: {e}") from e
+            else:
+                if attempt < retries - 1:
+                    print(f"Attempt {attempt + 1} failed with status {r.status_code}. Retrying...")
+                else:
+                    raise RuntimeError(
+                        f"Failed to fetch file listing after {retries} attempts. "
+                        f"Status code: {r.status_code}, Response: {r.text}"
+                    )
+
     # Get file names with GraphQL request
     query_example = f"""query{{
     snapshot(datasetId: "{openneuro_id}", tag: "1.0.0"){{
@@ -40,11 +57,7 @@ def test_resolve_bids(tmp_path: Path, openneuro_id: str):
 
     gql_url = "https://openneuro.org/crn/graphql"
 
-    r = requests.post(gql_url, json={"query": query_example})
-    if not r.status_code == 200:
-        raise RuntimeError("Could not fetch file listing")
-
-    json_file = json.loads(r.text)
+    json_file = get_files_from_openneuro(query_example, gql_url)
 
     def recursive_walk_wpath(neuro_dict, file_list: list[str] | None = None, build_path=None):
         if file_list is None:
@@ -78,8 +91,7 @@ def test_resolve_bids(tmp_path: Path, openneuro_id: str):
                         }}
                     }}
                 }}"""
-            r = requests.post(gql_url, json={"query": query})
-            json_dict = json.loads(r.text)
+            json_dict = get_files_from_openneuro(query, gql_url)
             recursive_walk_wpath(json_dict, build_path=build_path)
         return file_list
 

@@ -6,8 +6,12 @@ from fmriprep import config
 
 try:
     from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf  # not sure if it is a drop-in replacement yet
+
+    init_resample_wf = init_bold_volumetric_resample_wf
 except ImportError:
     from fmriprep.workflows.bold.resampling import init_bold_std_trans_wf
+
+    init_resample_wf = init_bold_std_trans_wf
 
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -59,7 +63,7 @@ def init_alt_bold_std_trans_wf(
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in2")
 
     #
-    bold_std_trans_wf = init_bold_std_trans_wf(
+    bold_std_trans_wf = init_resample_wf(
         freesurfer=False,
         mem_gb=memcalc.volume_std_gb,
         omp_nthreads=config.nipype.omp_nthreads,
