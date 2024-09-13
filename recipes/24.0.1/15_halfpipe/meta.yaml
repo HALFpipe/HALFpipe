@@ -78,6 +78,7 @@ requirements:
     - afni-3dfwhmx
     - afni-3dtproject
     - fmripost_aroma
+    - afni-3dblurtofwhm
 
 test:
   imports:
