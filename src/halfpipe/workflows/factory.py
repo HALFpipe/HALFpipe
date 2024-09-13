@@ -57,9 +57,12 @@ class Factory(ABC):
 
         return None
 
-    def _bold_wf_name(self, source_file):
+    def _bold_wf_name(self, source_file, prefix="func_preproc_"):
+        # New implementation by fmriprep requires passing a prefix:
+        # https://github.com/nipreps/fmriprep/blob/6c61481e044116a06488fe43871fe4f6b1de6cf5/fmriprep/workflows/bold/base.py#L734
+        # So I chose the prefix that the previous version of _get_wf_name used to add to remain consistent.
         bidspath = self.ctx.bids_database.to_bids(source_file)
-        return _get_wf_name(bidspath)
+        return _get_wf_name(bidspath, prefix)
 
     def _get_hierarchy(
         self,

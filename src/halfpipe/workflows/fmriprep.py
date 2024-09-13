@@ -129,7 +129,7 @@ class FmriprepFactory(Factory):
                 "dummy_scans": global_settings["dummy_scans"],  # remove initial non-steady state volumes
                 # bold_reg_wf config
                 "use_bbr": global_settings["use_bbr"],
-                "bold2t1w_dof": global_settings["bold2t1w_dof"],
+                "bold2anat_dof": global_settings["bold2t1w_dof"],
                 # sdcflows config
                 "fmap_bspline": global_settings["fmap_bspline"],
                 "force_syn": global_settings["force_syn"],
@@ -210,6 +210,7 @@ class FmriprepFactory(Factory):
             inputnode.inputs.tags = {"sub": subject_id}
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
+            # here is the crash??
 
         for bold_file_path in bold_file_paths:
             hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
@@ -289,6 +290,10 @@ class FmriprepFactory(Factory):
 
         wf = hierarchy[-1]
 
+        # Debugging block to inspect available nodes
+        nodes = wf.list_node_names()
+        print(f"Available nodes in the workflow: {nodes}")
+
         # anat only
         anat_wf = wf.get_node("anat_preproc_wf")
 
@@ -326,6 +331,9 @@ class FmriprepFactory(Factory):
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
 
+            # import pdb
+            # pdb.set_trace()
+
             if "bold_split" in inputattrs:
                 splitnode = wf.get_node("split_opt_comb")
                 if splitnode is None:
@@ -341,6 +349,7 @@ class FmriprepFactory(Factory):
             while wf.get_node("anat_preproc_wf") is None:
                 hierarchy.pop()
                 wf = hierarchy[-1]
+                # here breaks
 
             anat_wf = wf.get_node("anat_preproc_wf")
 
