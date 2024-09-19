@@ -226,6 +226,7 @@ def init_taskbased_wf(
     workflow.connect(stats, "out_stat", cutoff, "obj")
 
     # actually estimate the first level model
+    # tconf_file is not taken anymore by nipype interface?
     modelestimate = pe.Node(
         fsl.FILMGLS(smooth_autocorr=True, mask_size=5),
         name="modelestimate",

@@ -3,8 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from math import nan
+from pathlib import Path
 
-from fmriprep import config
+from fmripost_aroma import config
 
 try:
     from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
@@ -23,12 +24,37 @@ from ...interfaces.utility.tsv import MergeColumns
 from ..memory import MemoryCalculator
 
 
-def _aroma_column_names(melodic_mix: str | None = None, aroma_noise_ics: str | None = None):
+def _aroma_column_names(mixing: str | None = None, aroma_noise_ics: str | None = None):
+    """
+    Generate column names for ICA components, labeling them as either "noise" or "signal"
+    based on the input of ICA-AROMA identified noise components.
+
+    Parameters
+    ----------
+    mixing
+        FSL MELODIC mixing matrix
+    aroma_noise_ics
+        used to be: CSV of noise components identified by ICA-AROMA,
+        now this output seems to have disappeared
+
+    Example
+    -------
+    If there are 10 ICA components in the mixing matrix and components 3 and 7 are identified as noise,
+    the function would return:
+    >>> column_names, column_indices = _aroma_column_names(mixing_matrix, aroma_noise_ics)
+    >>> print(column_names)
+    ['aroma_signal_001', 'aroma_signal_002', 'aroma_noise_003',
+     'aroma_signal_004', 'aroma_signal_005', 'aroma_signal_006',
+     'aroma_noise_007', 'aroma_signal_008', 'aroma_signal_009', 'aroma_signal_010']
+    >>> print(column_indices)
+    [3, 7]
+    """
+
     from math import ceil, log10
 
     from halfpipe.utils.matrix import load_vector, ncol
 
-    n_components = ncol(melodic_mix)
+    n_components = ncol(mixing)
     column_indices: list[int] = list(map(int, load_vector(aroma_noise_ics)))
 
     leading_zeros = int(ceil(log10(n_components)))
@@ -59,13 +85,12 @@ def init_ica_aroma_components_wf(
                 "tags",
                 "skip_vols",
                 "repetition_time",
-                "movpar_file",
             ]
         ),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["aroma_noise_ics", "melodic_mix", "aroma_metadata", "aromavals"]),
+        niu.IdentityInterface(fields=["aroma_noise_ics", "mixing", "features_metadata", "aromavals", "aroma_features"]),
         name="outputnode",
     )
 
@@ -80,27 +105,26 @@ def init_ica_aroma_components_wf(
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    # create ICA-AROMA workflow
-    err_on_aroma_warn: bool = False
-    if config.workflow.aroma_err_on_warn is not None:
-        err_on_aroma_warn = config.workflow.aroma_err_on_warn
+    # Set the dimensionality of the MELODIC ICA decomposition.
+    # (default: -200, i.e., estimate <=200 components)
     aroma_melodic_dim = -200
-    if config.workflow.aroma_melodic_dim is not None:
-        aroma_melodic_dim = config.workflow.aroma_melodic_dim
+    if config.workflow.melodic_dim is not None:
+        aroma_melodic_dim = config.workflow.melodic_dim
+
+    #! There is a new config for fmripost_aroma:
+    # config needs to come from fmripost_aroma, not fmriprep
+    config.workflow.melodic_dim = aroma_melodic_dim
+    config.workflow.denoise_method = None  # disable denoising data
+    config.execution.output_dir = Path(workdir) / "derivatives"
+
+    # create ICA-AROMA workflow
     ica_aroma_wf = init_ica_aroma_wf(
-        mem_gb=memcalc.series_std_gb,
+        mem_gb={"resampled": memcalc.series_std_gb},
         metadata={"RepetitionTime": nan},
-        omp_nthreads=config.nipype.omp_nthreads,
-        err_on_aroma_warn=err_on_aroma_warn,
-        aroma_melodic_dim=aroma_melodic_dim,
-        name="ica_aroma_wf",
+        bold_file="",
     )
 
-    # disable qactually denoising the data
-    ica_aroma_node = ica_aroma_wf.get_node("ica_aroma")
-    assert isinstance(ica_aroma_node, pe.Node)
-    ica_aroma_node.inputs.denoise_type = "no"
-
+    # ? Are these still duplicates
     # remove duplicate nodes
     add_nonsteady = ica_aroma_wf.get_node("add_nonsteady")
     ds_report_ica_aroma = ica_aroma_wf.get_node("ds_report_ica_aroma")
@@ -109,11 +133,11 @@ def init_ica_aroma_components_wf(
     # connect inputs to ICA-AROMA
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
-    workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
+    # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
     workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
     workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
-    workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
+    # workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
 
     # remove dummy scans from outputs
     skip_vols = pe.Node(
@@ -121,14 +145,15 @@ def init_ica_aroma_components_wf(
         name="skip_vols",
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(ica_aroma_wf, "outputnode.melodic_mix", skip_vols, "in_file")
+    workflow.connect(ica_aroma_wf, "outputnode.mixing", skip_vols, "in_file")
     workflow.connect(inputnode, "skip_vols", skip_vols, "skip_vols")
 
     # pass outputs to outputnode
-    workflow.connect(skip_vols, "out_file", outputnode, "melodic_mix")
-    workflow.connect(ica_aroma_wf, "outputnode.aroma_noise_ics", outputnode, "aroma_noise_ics")
-    workflow.connect(ica_aroma_wf, "outputnode.aroma_metadata", outputnode, "aroma_metadata")
-    workflow.connect(ica_aroma_wf, "ica_aroma.out_report", make_resultdicts, "ica_aroma")
+    workflow.connect(skip_vols, "out_file", outputnode, "mixing")
+    workflow.connect(ica_aroma_wf, "outputnode.aroma_features", outputnode, "aroma_features")
+    workflow.connect(ica_aroma_wf, "outputnode.features_metadata", outputnode, "features_metadata")
+    workflow.connect(ica_aroma_wf, "ica_aroma.aroma_noise_ics", outputnode, "aroma_noise_ics")
+    workflow.connect(ica_aroma_wf, "aroma_rpt.out_report", make_resultdicts, "ica_aroma")
 
     return workflow
 
@@ -153,7 +178,7 @@ def init_ica_aroma_regression_wf(
                 "mask",
                 "tags",
                 "vals",
-                "melodic_mix",
+                "mixing",
                 "aroma_metadata",
                 "aroma_noise_ics",
             ]
@@ -181,22 +206,22 @@ def init_ica_aroma_regression_wf(
     #
     aroma_column_names = pe.Node(
         interface=niu.Function(
-            input_names=["melodic_mix", "aroma_noise_ics"],
+            input_names=["mixing", "aroma_noise_ics"],
             output_names=["column_names", "column_indices"],
             function=_aroma_column_names,
         ),
         name="aroma_column_names",
     )
-    workflow.connect(inputnode, "melodic_mix", aroma_column_names, "melodic_mix")
+    workflow.connect(inputnode, "mixing", aroma_column_names, "mixing")
     workflow.connect(inputnode, "aroma_noise_ics", aroma_column_names, "aroma_noise_ics")
 
-    # add melodic_mix to the matrix
+    # add mixing to the matrix (used to be melodic_mix)
     split_by_file_type = pe.Node(SplitByFileType(), name="split_by_file_type")
     workflow.connect(inputnode, "files", split_by_file_type, "files")
 
     merge_columns = pe.Node(MergeColumns(2), name="merge_columns")
     workflow.connect(split_by_file_type, "tsv_files", merge_columns, "in1")
-    workflow.connect(inputnode, "melodic_mix", merge_columns, "in2")
+    workflow.connect(inputnode, "mixing", merge_columns, "in2")
     workflow.connect(aroma_column_names, "column_names", merge_columns, "column_names2")
 
     merge = pe.Node(niu.Merge(2), name="merge")
@@ -213,7 +238,7 @@ def init_ica_aroma_regression_wf(
 
     workflow.connect(merge, "out", filter_regressor, "in_file")
     workflow.connect(inputnode, "mask", filter_regressor, "mask")
-    workflow.connect(inputnode, "melodic_mix", filter_regressor, "design_file")
+    workflow.connect(inputnode, "mixing", filter_regressor, "design_file")
     workflow.connect(aroma_column_names, "column_indices", filter_regressor, "filter_columns")
 
     workflow.connect(filter_regressor, "out_file", outputnode, "files")

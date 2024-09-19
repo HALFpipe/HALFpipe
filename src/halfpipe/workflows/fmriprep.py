@@ -45,6 +45,10 @@ class FmriprepFactory(Factory):
         super(FmriprepFactory, self).__init__(ctx)
 
     def setup(self, workdir, bold_file_paths: set[str]) -> set[str]:
+        """
+        This needs to be documented.
+        """
+
         spec = self.ctx.spec
         database = self.ctx.database
         bids_database = self.ctx.bids_database
@@ -129,7 +133,7 @@ class FmriprepFactory(Factory):
                 "dummy_scans": global_settings["dummy_scans"],  # remove initial non-steady state volumes
                 # bold_reg_wf config
                 "use_bbr": global_settings["use_bbr"],
-                "bold2anat_dof": global_settings["bold2t1w_dof"],
+                "bold2anat_dof": global_settings["bold2t1w_dof"],  # this one changed name in new fmriprep
                 # sdcflows config
                 "fmap_bspline": global_settings["fmap_bspline"],
                 "force_syn": global_settings["force_syn"],
@@ -156,9 +160,10 @@ class FmriprepFactory(Factory):
 
         retval: dict[str, pe.Workflow] = dict()
 
+        # We call build_workflow to set up all nodes
         with patch("niworkflows.utils.misc.check_valid_fs_license") as mock:
             mock.return_value = True
-            build_workflow(config_file, retval)
+            build_workflow(config_file, retval)  #
 
         fmriprep_wf = retval["workflow"]
         assert isinstance(fmriprep_wf, pe.Workflow)
@@ -167,7 +172,7 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy("fmriprep_wf", source_file=bold_file_path)[-1]
+            func_preproc_wf = self._get_hierarchy("fmriprep_24_0_wf", source_file=bold_file_path)[-1]
 
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
@@ -183,12 +188,15 @@ class FmriprepFactory(Factory):
                     logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
 
             # disable preproc output to save disk space
-            func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
-            assert isinstance(func_derivatives_wf, pe.Workflow)
-            for name in ["ds_bold_surfs", "ds_bold_std"]:
-                node = func_derivatives_wf.get_node(name)
-                if isinstance(node, pe.Node):
-                    func_derivatives_wf.remove_nodes([node])
+            # func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
+
+            # ? THIS DOESN'T SEEM TO EXIST ANYMORE
+            # pdb.set_trace()
+            # assert isinstance(func_derivatives_wf, pe.Workflow)
+            # for name in ["ds_bold_surfs", "ds_bold_std"]:
+            #     node = func_derivatives_wf.get_node(name)
+            #     if isinstance(node, pe.Node):
+            #         func_derivatives_wf.remove_nodes([node])
 
             # patch memory usage
             memcalc = MemoryCalculator.from_bold_file(bold_file_path)
@@ -210,7 +218,6 @@ class FmriprepFactory(Factory):
             inputnode.inputs.tags = {"sub": subject_id}
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
-            # here is the crash??
 
         for bold_file_path in bold_file_paths:
             hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
@@ -258,6 +265,7 @@ class FmriprepFactory(Factory):
             wf = hierarchy[-1]
 
             outputnode: pe.Node | None = wf.get_node("outputnode")
+
             if outputnode is not None:
                 outputattrs = set(outputnode.outputs.copyable_trait_names())
                 attrs = (inputattrs & outputattrs) - connected_attrs  # find common attr names
@@ -286,34 +294,39 @@ class FmriprepFactory(Factory):
                     dsattrs.remove(attr)
                     connected_attrs.add(attr)
 
-        hierarchy = self._get_hierarchy("fmriprep_wf", source_file=source_file, subject_id=subject_id)
+        hierarchy = self._get_hierarchy("fmriprep_24_0_wf", source_file=source_file, subject_id=subject_id)
 
         wf = hierarchy[-1]
 
-        # Debugging block to inspect available nodes
-        nodes = wf.list_node_names()
-        print(f"Available nodes in the workflow: {nodes}")
-
         # anat only
-        anat_wf = wf.get_node("anat_preproc_wf")
+        # anat_wf = wf.get_node("anat_preproc_wf")
+        # TODO: Is anat_fit a perfect substitute of anat_preproc?
+        anat_wf = wf.get_node(
+            "anat_fit_wf"
+        )  # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/base.py#L317?
 
         if anat_wf is None:
             # func first
             _connect(hierarchy)
 
             if "skip_vols" in inputattrs:
-                initial_boldref_wf = wf.get_node("initial_boldref_wf")
+                initial_boldref_wf = wf.get_node("bold_fit_wf")
+                # initial_boldref_wf doesn't exist anymore
+
                 assert isinstance(initial_boldref_wf, pe.Workflow)
                 outputnode = initial_boldref_wf.get_node("outputnode")
                 self.connect_attr(
                     [*hierarchy, initial_boldref_wf],
                     outputnode,
-                    "skip_vols",
+                    "dummy_scans",
                     nodehierarchy,
                     node,
                     "skip_vols",
                 )
                 connected_attrs.add("skip_vols")
+                # connect dummy_scans (bold_fit_wf)
+                # to skip_vols (bold_confounds_wf)
+                # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/bold/base.py#L679
 
             for name in [
                 "bold_bold_trans_wf",
@@ -331,9 +344,6 @@ class FmriprepFactory(Factory):
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
 
-            # import pdb
-            # pdb.set_trace()
-
             if "bold_split" in inputattrs:
                 splitnode = wf.get_node("split_opt_comb")
                 if splitnode is None:
@@ -346,15 +356,16 @@ class FmriprepFactory(Factory):
             if func_report_wf is not None:
                 _connect([*report_hierarchy, func_report_wf])
 
-            while wf.get_node("anat_preproc_wf") is None:
+            while wf.get_node("anat_fit_wf") is None:
                 hierarchy.pop()
                 wf = hierarchy[-1]
-                # here breaks
 
-            anat_wf = wf.get_node("anat_preproc_wf")
+            anat_wf = wf.get_node("anat_fit_wf")
 
         assert isinstance(anat_wf, pe.Workflow)
-        for name in ["anat_norm_wf", "anat_reports_wf"]:
+        for name in ["register_template_wf", "anat_reports_wf"]:
+            # anat_norm_wf does not exist anymore
+            # it is now register_template_wf (+ resample_template?)
             wf = anat_wf.get_node(name)
             _connect([*hierarchy, anat_wf, wf])
         _connect([*hierarchy, anat_wf])

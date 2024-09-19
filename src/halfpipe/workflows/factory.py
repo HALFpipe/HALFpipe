@@ -53,14 +53,15 @@ class Factory(ABC):
                 bids_subject_id = format_like_bids(subject_id)
 
         if bids_subject_id is not None:
-            return "single_subject_%s_wf" % bids_subject_id
+            return "sub_%s_wf" % bids_subject_id
+            # the naming has changed from single_subject_% to sub_% in fmriprep24
 
         return None
 
-    def _bold_wf_name(self, source_file, prefix="func_preproc_"):
-        # New implementation by fmriprep requires passing a prefix:
-        # https://github.com/nipreps/fmriprep/blob/6c61481e044116a06488fe43871fe4f6b1de6cf5/fmriprep/workflows/bold/base.py#L734
-        # So I chose the prefix that the previous version of _get_wf_name used to add to remain consistent.
+    def _bold_wf_name(self, source_file, prefix="bold"):
+        # New implementation by fmriprep requires passing a prefix
+        # since that is what fmriprep preprends to the bold workflows:
+        # https://github.com/nipreps/fmriprep/blob/73189de5ee576ffc73ab432b7419304d44ce5776/fmriprep/workflows/bold/base.py#L195
         bidspath = self.ctx.bids_database.to_bids(source_file)
         return _get_wf_name(bidspath, prefix)
 
@@ -72,6 +73,14 @@ class Factory(ABC):
         childname: str | None = None,
         create_ok: bool = True,
     ):
+        """
+        Retrieve or create a hierarchy of workflows.
+        This method builds a list of workflows starting from the main workflow in
+        the context (`ctx.workflow`), adding sub-workflows as needed based on the
+        `name`, `source_file`, `subject_id`, and `childname` arguments. It ensures
+        that each workflow exists, creating them if allowed (`create_ok=True`).
+        """
+
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
 
         def require_workflow(child_name):
