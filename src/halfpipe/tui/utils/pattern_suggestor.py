@@ -350,8 +350,12 @@ class InputWithColoredSuggestions(SelectOrInputPath):
         if sugestion_strings is not None:
             # We do not want to show the whole path with the suggestions, but only the last part
             # We find the index of the string break using these two lines.
-            color_start = sugestion_strings["subject"].spans[0].start
-            last_path_break = [i for i, j in enumerate(sugestion_strings["subject"].plain[:color_start]) if j == "/"][-1] + 1
+            # color_start = sugestion_strings["subject"].spans[0].start
+            # last_path_break = [i for i, j in enumerate(sugestion_strings["subject"].plain[:color_start]) if j == "/"][-1] + 1
+            # start with the first tag in the list
+            first_key = next(iter(sugestion_strings))
+            color_start = sugestion_strings[first_key].spans[0].start
+            last_path_break = [i for i, j in enumerate(sugestion_strings[first_key].plain[:color_start]) if j == "/"][-1] + 1
             # Remember how many characters are missing due to the now showing the whole string. This is then used to offset
             # the highlights correctly once the prompt is updated.
             self.missing_offset = last_path_break

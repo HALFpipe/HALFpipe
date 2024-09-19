@@ -17,7 +17,7 @@ from textual.widget import Widget
 from textual.widgets import Button, Static
 
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
-from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder
+from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder, evaluate_files
 
 from ..utils.confirm_screen import SimpleMessageModal
 from ..utils.context import ctx
@@ -193,6 +193,7 @@ class FileItem(Widget):
         pattern_class=None,
         id_key="",
         load_object=None,
+        callback_message=None,
         **kwargs,
     ) -> None:
         """ """
@@ -219,6 +220,7 @@ class FileItem(Widget):
         self.load_object = load_object
         self.border_title = "id: " + str(id)
         self.from_edit = False
+        self.callback_message = callback_message
 
     def callback_func(self, message_dict):
         info_string = Text("")
@@ -240,9 +242,9 @@ class FileItem(Widget):
         print("11111111111111111111111 compose")
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
-            if self.pattern_class is not None:
-                if self.pattern_class.callback is not None:
-                    yield Button(" ℹ", id="info_button", classes="icon_buttons")
+            if (self.pattern_class and self.pattern_class.callback) or self.callback_message:
+                yield Button(" ℹ", id="info_button", classes="icon_buttons")
+
             yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
             if self.delete_button:
@@ -250,6 +252,7 @@ class FileItem(Widget):
 
     def on_mount(self) -> None:
         print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount 222")
+        print("----------self.load_object self.load_object self.load_object ------------", self.load_object)
         if self.load_object is None:
             self.get_widget_by_id("edit_button").tooltip = "Edit"
             if self.delete_button:
@@ -271,8 +274,10 @@ class FileItem(Widget):
             else:
                 pattern_load = {}
                 pattern_load["file_pattern"] = self.load_object.path
-                pattern_load["message"] = "This was loaded from somewhere."
-                pattern_load["files"] = []
+                message, filepaths = evaluate_files(self.load_object.path.replace("{sub}", "{subject}"))
+                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa message, filepathsmessage, filepaths", message, filepaths)
+                pattern_load["message"] = message
+                pattern_load["files"] = filepaths
                 print("dddddddddddddddddddddddddor self.load_object", dir(self.load_object))
                 self._update_file_pattern(pattern_load)
 
@@ -297,6 +302,10 @@ class FileItem(Widget):
     def get_pattern_match_results(self):
         return self.pattern_match_results
 
+    @property
+    def get_callback_message(self):
+        return self.callback_message
+
     # runs after the PathPatternBuilder modal
     def _update_file_pattern(self, pattern_match_results):
         """Update various variables based on the results from the PathPatternBuilder"""
@@ -320,13 +329,13 @@ class FileItem(Widget):
             # obj.setup()
             # fix this because sometimes this can be just ordinary string
             if len(pattern_match_results["files"]) > 0:
-                try:
-                    if isinstance(pattern_match_results["file_pattern"], str):
-                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-                    else:
-                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
-                except:
-                    print("bbbbbbbbbbla")
+                #  try:
+                if isinstance(pattern_match_results["file_pattern"], str):
+                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+                else:
+                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+            # except:
+            #    print("bbbbbbbbbbla")
 
             if self.from_edit:
                 self.update_all_duplicates()

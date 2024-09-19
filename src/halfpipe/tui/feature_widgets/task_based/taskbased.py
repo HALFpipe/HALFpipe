@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, ScrollableContainer, Vertical, VerticalScroll
+from textual.containers import Grid, ScrollableContainer, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -144,9 +144,6 @@ class TaskBased(Widget):
         values are then used for the various widgets within this widget.
         """
         super().__init__(**kwargs)
-        # self.top_parent = app
-        # self.ctx = ctx
-        # self.available_images = available_images
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
@@ -164,7 +161,7 @@ class TaskBased(Widget):
             self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
         if "grand_mean_scaling" not in self.setting_dict:
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
-        self.images_to_use = {"task": {task: False for task in self.app.available_images["task"]}}
+        self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
         for image in self.setting_dict["filters"][0]["values"]:
             self.images_to_use["task"][image] = True
 
@@ -197,15 +194,9 @@ class TaskBased(Widget):
             all_possible_conditions += self.extract_conditions(entity="task", values=[v])
 
         with ScrollableContainer(id="top_container_task_based"):
-            yield VerticalScroll(
-                SelectionList[str](
-                    *[
-                        Selection(image, image, self.images_to_use["task"][image])
-                        for image in self.images_to_use["task"].keys()
-                    ],
-                    id="images_to_use_selection",
-                ),
-                id="images_to_use",
+            yield SelectionList[str](
+                *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"].keys()],
+                id="images_to_use_selection",
                 classes="components",
             )
             with Vertical(id="preprocessing", classes="components"):
@@ -247,23 +238,19 @@ class TaskBased(Widget):
                 id="model_conditions_and_constrasts",
                 classes="components",
             )
-            yield Grid(
-                SelectionList[str](
-                    *[
-                        Selection(self.confounds_options[key][0], key, self.confounds_options[key][1])
-                        for key in self.confounds_options
-                    ],
-                    classes="components",
-                    id="confounds_selection",
-                ),
-                id="confounds",
+            yield SelectionList[str](
+                *[
+                    Selection(self.confounds_options[key][0], key, self.confounds_options[key][1])
+                    for key in self.confounds_options
+                ],
                 classes="components",
+                id="confounds_selection",
             )
 
     async def on_mount(self) -> None:
         print("mmmmmmmmmmmmmmmmmmmm mount superclass")
-        self.get_widget_by_id("images_to_use").border_title = "Images to use"
-        self.get_widget_by_id("confounds").border_title = "Remove confounds"
+        self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+        self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
@@ -277,7 +264,8 @@ class TaskBased(Widget):
         #   else:
         if self.app.is_bids is not True:
             await self.mount(
-                EventFilePanel(id="top_event_file_panel", classes="components"), after=self.get_widget_by_id("images_to_use")
+                EventFilePanel(id="top_event_file_panel", classes="file_panel components"),
+                after=self.get_widget_by_id("images_to_use_selection"),
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
@@ -314,7 +302,7 @@ class TaskBased(Widget):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
 
-        # try to update it here? this refresh the whole contition list every time that image is changed
+        # try to update it here? this refresh the whole condition list every time that image is changed
         all_possible_conditions = []
         for v in self.images_to_use["task"].keys():
             all_possible_conditions += self.extract_conditions(entity="task", values=[v])

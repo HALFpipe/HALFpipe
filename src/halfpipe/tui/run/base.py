@@ -13,6 +13,7 @@ from textual.widget import Widget
 from textual.widgets import Button, Pretty
 
 from ...model.feature import Feature
+from ...model.file.bids import BidsFileSchema
 from ...model.setting import SettingSchema
 
 # from utils.false_input_warning_screen import FalseInputWarning
@@ -44,6 +45,12 @@ class RunCLX(Widget):
         )
 
     def dump_dict_to_contex(self):
+        entity = "desc"
+        filters = {"datatype": "ref", "suffix": "atlas"}
+        filepaths = ctx.database.get(**filters)
+        tagvals = ctx.database.tagvalset(entity, filepaths=filepaths)
+        print("tagvalstagvalstagvalstagvals", tagvals)
+
         print("ccccccccccccccccccc", pd.DataFrame.from_dict(ctx.cache).index, pd.DataFrame.from_dict(ctx.cache).columns)
         #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :].index)
         #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :])
@@ -66,8 +73,7 @@ class RunCLX(Widget):
         ctx.spec.features.clear()
         ctx.spec.settings.clear()
         print("vvvvvvvvvvvvvvvvvvvvvvv", ctx.cache["bids"])
-        if ctx.cache["bids"]["files"] == {}:
-            ctx.spec.files.clear()
+        ctx.spec.files.clear()
 
         print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", ctx.cache)
         print("2222lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
@@ -120,10 +126,16 @@ class RunCLX(Widget):
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
+            if ctx.cache["bids"]["files"] != {} and name == "bids":
+                ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))
+
             if ctx.cache[name]["files"] != {} and name != "bids":
+                print('thissssssssss ctx.cache[name]["files"]', name, "---", ctx.cache[name]["files"])
                 ctx.spec.files.append(ctx.cache[name]["files"])
                 ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
             self.old_cache = copy.deepcopy(ctx.cache)
+        ctx.refresh_available_images()
+
         # print('ccccccccccccccccccccccccccccccc ctx.spec.files', [f.path for f in ctx.spec.files])
         # #try:
         # print('1111111111ccccccccccccccccccccc', ctx.database.fromspecfileobj(ctx.spec.files[-1]))

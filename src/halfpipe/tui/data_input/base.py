@@ -10,7 +10,6 @@ from textual.containers import Container, Grid, Horizontal, Vertical, VerticalSc
 from textual.widget import Widget
 from textual.widgets import Button, Static
 
-from ...model.tags import entities
 from ..utils.confirm_screen import Confirm, SimpleMessageModal
 from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
@@ -115,25 +114,6 @@ class FieldMapFilesPanel(Widget):
             self.query(".{}_panel".format(self.field_map_type)).last(Vertical).styles.border = ("thick", "green")
         else:
             self.query(".{}_panel".format(self.field_map_type)).last(Vertical).styles.border = ("thick", "red")
-
-    # def get_number_of_found_files(self):
-    # number_of_field_map_files = 1
-    # for i in range(len(self.step_classes)):
-    # # The multiplying is here on purpose. Because all of the entries of the whole panel, i.e., magnitude, phase files
-    # # have to have a non zero number of files. If just one has a zero found files, then something is not right/
-    # print(
-    # "ttttttttttttttttttttttttttttt len fmaps",
-    # len(self.get_widget_by_id(self.id + "_" + str(i)).pattern_match_results["files"]),
-    # )
-    # number_of_field_map_files *= len(self.get_widget_by_id(self.id + "_" + str(i)).pattern_match_results["files"])
-    # return number_of_field_map_files
-
-    # @on(Button.Pressed, "#edit_button2")
-    # def _on_edit_button_pressed(self):
-    # """Remove the file pattern item."""
-
-
-#      self.app.push_screen(SetEchoTimeDifferenceModal(), self.update_echo_time)
 
 
 class DataSummaryLine(Widget):
@@ -307,22 +287,32 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "hidden"
 
     @on(Button.Pressed, "#add_t1_image_button")
-    def _add_t1_image(self):
-        self.get_widget_by_id("t1_image_panel").mount(
+    async def on_button_add_t1_image_button_pressed(self):
+        await self.add_t1_image(load_object=None)
+
+    async def add_t1_image(self, load_object=None):
+        await self.get_widget_by_id("t1_image_panel").mount(
             FileItem(
-                id="t1_file_pattern_" + str(self.t1_file_pattern_counter), classes="file_patterns", pattern_class=AnatStep()
+                id="t1_file_pattern_" + str(self.t1_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=AnatStep(),
+                load_object=load_object,
             )
         )
         self.t1_file_pattern_counter += 1
         self.refresh()
 
     @on(Button.Pressed, "#add_bold_image_button")
-    def _add_bold_image(self):
-        self.get_widget_by_id("bold_image_panel").mount(
+    async def on_button_add_bold_image_button(self):
+        await self.add_bold_image(load_object=None)
+
+    async def add_bold_image(self, load_object=None):
+        await self.get_widget_by_id("bold_image_panel").mount(
             FileItem(
                 id="bold_file_pattern_" + str(self.bold_file_pattern_counter),
                 classes="file_patterns",
                 pattern_class=BoldStep(app=self.app),
+                load_object=load_object,
             )
         )
         self.bold_file_pattern_counter += 1
@@ -475,10 +465,14 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 )
             )
         # if warning_string == '' and self.association_done is True:
-        self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        self.app.show_hidden_tabs()
+        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        #  self.app.show_hidden_tabs()
         # extract images (tasks)
-        self.get_available_images()
+        ctx.refresh_available_images()
+        tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        tab_manager_widget.show_tab("preprocessing_tab")
+        tab_manager_widget.show_tab("feature_selection_tab")
+        tab_manager_widget.show_tab("models_tab")
 
     @on(Button.Pressed, "#associate_button")
     def _on_associate_button_pressed(self):
@@ -534,7 +528,10 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.refresh()
 
     def on_switch_changed(self, message):
-        if message.value:
+        self.toggle_bids_non_bids_format(message.value)
+
+    def toggle_bids_non_bids_format(self, value):
+        if value:
             self.app.is_bids = True
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
             self.get_widget_by_id("bids_summary_panel").styles.visibility = "visible"
@@ -551,29 +548,35 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         ctx.cache["bids"]["files"] = message.selected_path
         self.feed_contex_and_extract_available_images()
 
-    def get_available_images(self):
-        # if len(file_path) > 0:
-        #  ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
+    # self.app.show_hidden_tabs()
 
-        bold_filedict = {"datatype": "func", "suffix": "bold"}
-        filepaths = ctx.database.get(**bold_filedict)
-
-        # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbb", file_path, filepaths)
-        # self.filepaths = list(filepaths)
-        # if len(self.filepaths) > 0:
-
-        db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=filepaths)
-        self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
-        print("ssssssssssssssssssssssssssssssssssss", db_entities, db_tags_set)
-        print("ssssssssssssssssssssssssssssssssssss", self.app.available_images)
+    # def get_available_images(self):
+    #     # if len(file_path) > 0:
+    #     #  ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
+    #
+    #     bold_filedict = {"datatype": "func", "suffix": "bold"}
+    #     filepaths = ctx.database.get(**bold_filedict)
+    #
+    #     print("get_available_images bbbbbbbbbbbbbbbbbbbbbbbbbbbb", filepaths)
+    #     # self.filepaths = list(filepaths)
+    #     # if len(self.filepaths) > 0:
+    #
+    #     db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=filepaths)
+    #     self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+    #     print("get_available_imagesssssssssssssssssssssssssssssssssssss", db_entities, db_tags_set)
+    #     print("get_available_images ssssssssssssssssssssssssssssssssssss", self.app.available_images)
 
     def feed_contex_and_extract_available_images(self):
         """Feed the Context object with the path to the data fields and extract available images."""
+        # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        # if sum(self.app.flags_to_show_tabs.values()) >= 1:
+        #     tab_manager_widget.show_tab("preprocessing_tab")
+        #     tab_manager_widget.show_tab("feature_selection_tab")
+        #     tab_manager_widget.show_tab("models_tab")
 
         #  def on_dismiss_this_modal(value):
         #     self.get_widget_by_id("data_input_file_browser").update_input(None)
-
-        self.get_available_images()
 
         anat_summary_step = AnatSummaryStep()
         bold_summary_step = BoldSummaryStep()
@@ -585,9 +588,14 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         # at this point, all went well, change border from red to green
         self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
+
         # contribute with True to show hidden tabs
-        self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        self.app.show_hidden_tabs()
+        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        # self.app.show_hidden_tabs()
+        print("self.app.flags_to_show_tabsself.app.flags_to_show_tabs", self.app.flags_to_show_tabs)
+        print("wwwwwwwwwwwwwwhat self is here??????", self.walk_children())
+        # self.app.show_hidden_tabs()
+
         # else:
         # # self.app.push_screen(
         # # FalseInputWarning(

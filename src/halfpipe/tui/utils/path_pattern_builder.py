@@ -50,7 +50,7 @@ def evaluate_files(newpathname):
         return op.normpath(abspath)
 
     # fix this, the task was not here
-    schema_entities = ["subject", "session", "run", "acquisition", "task"]
+    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas"]
     #   entity_colors_list = ["ired", "igreen", "imagenta", "icyan"]
     # required_in_path_entities = ["subject"]
     #   required_entities = required_in_path_entities
@@ -93,9 +93,9 @@ def evaluate_files(newpathname):
         tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
 
     # temporary fix
-    if "subject" not in newpathname:
-        filepaths = []
-        tagdictlist = []
+    #    if "subject" not in newpathname:
+    #        filepaths = []
+    #        tagdictlist = []
 
     nfile = len(filepaths)
 
@@ -246,6 +246,8 @@ class PathPatternBuilder(DraggableModalScreen):
         else:
             match_feedback_message, filepaths = evaluate_files(event.value)
             self.path = event.value
+        print("oooooooooooooooooooooo is i am here?????????", self.path)
+        print("ooooooooooooooooo", match_feedback_message, filepaths)
 
         highlights = self.get_widget_by_id("input_prompt").current_highlights
         self.get_widget_by_id("feedback").update(match_feedback_message)

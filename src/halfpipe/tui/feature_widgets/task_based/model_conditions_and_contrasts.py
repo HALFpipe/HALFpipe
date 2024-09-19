@@ -215,6 +215,21 @@ class ModelConditionsAndContrasts(Widget):
         self.sort_by_row_label(default="by_group")
         self.dump_contrast_values()
 
+        # set the height based on the number of rows
+        self.get_widget_by_id("contrast_table_upper").styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection").selected) + 6
+        )
+        print("heeeeeeeeeeeeeeeeeeeeeeeeeeeight", len(self.get_widget_by_id("model_conditions_selection").selected) + 6)
+        print("oooooooooooooooooooooooooooooooooo", len(self.get_widget_by_id("model_conditions_selection")._values))
+        self.get_widget_by_id("model_conditions_selection").styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection")._values) + 2
+        )
+        self.styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection").selected)
+            + len(self.get_widget_by_id("model_conditions_selection")._values)
+            + 14
+        )
+
     def action_add_column(self):
         """Add column with new contrast values to te table."""
 

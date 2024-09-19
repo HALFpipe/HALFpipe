@@ -21,6 +21,7 @@ from ...model.file.fmap import (
 from ...model.file.func import (
     BoldFileSchema,
 )
+from ...model.file.ref import RefFileSchema
 from ...model.metadata import slice_order_strs, space_codes
 from ...model.tags import entities, entity_longnames
 
@@ -953,3 +954,8 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
             return True
         ctx.already_checked.add(self.key)
         return False
+
+
+class CheckSpaceStep(CheckMetadataStep):
+    schema = RefFileSchema
+    key = "space"

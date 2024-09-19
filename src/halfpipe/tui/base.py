@@ -248,9 +248,10 @@ class MainApp(App):
     def show_hidden_tabs(self):
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         if sum(self.flags_to_show_tabs.values()) >= 1:
-            self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("models_tab")
+            print("wwwwwwwwwwwwwwwwwwwwwwhere is the self here????", self.app.walk_children())
+            # self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
+            # self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
+            # self.get_widget_by_id("tabs_manager").show_tab("models_tab")
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""

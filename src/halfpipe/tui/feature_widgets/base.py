@@ -14,7 +14,10 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
+from .task_based.atlas_based import AtlasBased
+from .task_based.dual_reg import DualReg
 from .task_based.preprocessed_image_output import PreprocessedOutputOptions
+from .task_based.seed_based import SeedBased
 from .task_based.taskbased import TaskBased
 
 # from ...model.spec import SpecSchema
@@ -22,9 +25,9 @@ from .task_based.taskbased import TaskBased
 
 FEATURES_MAP = {
     "task_based": "Task-based",
-    "seed": "Seed-based connectivity",
-    "dual_reg": "Dual regression",
-    "atlas": "Atlas-based connectivity matrix",
+    "seed_based_connectivity": "Seed-based connectivity",
+    "dual_regression": "Dual regression",
+    "atlas_based_connectivity": "Atlas-based connectivity matrix",
     "reho": "ReHo",
     "falff": "fALFF",
     "preprocessed_image": "Output preprocessed image",
@@ -32,9 +35,9 @@ FEATURES_MAP = {
 
 FEATURES_MAP_colors = {
     "task_based": "crimson",
-    "seed": "silver",
-    "dual_reg": "ansi_bright_cyan",
-    "atlas": "blueviolet",
+    "seed_based_connectivity": "silver",
+    "dual_regression": "ansi_bright_cyan",
+    "atlas_based_connectivity": "blueviolet",
     "reho": "slategray",
     "falff": "magenta",
     "preprocessed_image": "white",
@@ -107,13 +110,8 @@ class FeatureSelectionScreen(DraggableModalScreen):
 
         self.title_bar.title = "Choose first level feature"
 
-    #  def compose(self) -> ComposeResult:
-    #     yield
-
     def on_mount(self) -> None:
         self.content.mount(self.option_list, Horizontal(Button("Cancel", id="cancel_button"), id="botton_container"))
-
-    # def on_mount(self) -> None:
 
     def on_option_list_option_selected(self, message: OptionList.OptionSelected) -> None:
         def get_feature_name(feature_name: str | None) -> None:
@@ -234,14 +232,15 @@ class FeatureSelection(Widget):
         #  events_type_instance = EventsTypeStep()
         #  events_type_instance.run()
 
-        """Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget."""
+        """Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature
+        widget."""
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
         self.app.push_screen(
             FeatureSelectionScreen(occupied_feature_names),
             self.add_new_feature,
         )
 
-    def add_new_feature(self, new_feature_item: list) -> None:
+    async def add_new_feature(self, new_feature_item: list | bool) -> None:
         """Principle of adding a new feature lies in mounting a new widget while creating a new entry in the dictionary
         to keep track of the selections which are later dumped into the Context object.
         If this is a load or a duplication, then new entry is not created but read from the dictionary.
@@ -267,21 +266,27 @@ class FeatureSelection(Widget):
                     ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
                     ctx.cache[feature_name]["settings"]["output_image"] = True
             if feature_type == "task_based":
-                new_content_item = TaskBased(
-                    this_user_selection_dict=ctx.cache[feature_name],
-                    id=new_id,
-                    classes=feature_type,
-                )
+                feature_type_class = TaskBased
+            elif feature_type == "seed_based_connectivity":
+                feature_type_class = SeedBased
+            elif feature_type == "dual_regression":
+                feature_type_class = DualReg
+            elif feature_type == "atlas_based_connectivity":
+                feature_type_class = AtlasBased
             elif feature_type == "preprocessed_image":
-                new_content_item = PreprocessedOutputOptions(
+                feature_type_class = PreprocessedOutputOptions
+            else:
+                feature_type_class = None
+            if feature_type_class is not None:
+                new_content_item = feature_type_class(
                     this_user_selection_dict=ctx.cache[feature_name],
                     id=new_id,
-                    classes=feature_type,
+                    classes="feature",
                 )
             else:
                 new_content_item = Placeholder(str(self._id_counter), id=new_id, classes=feature_type)
-            self.get_widget_by_id("list").mount(new_list_item)
-            self.get_widget_by_id("content_switcher").mount(new_content_item)
+            await self.get_widget_by_id("list").mount(new_list_item)
+            await self.get_widget_by_id("content_switcher").mount(new_content_item)
             self.get_widget_by_id("content_switcher").current = new_id
             self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
                 FEATURES_MAP[self.feature_items[new_id].type],

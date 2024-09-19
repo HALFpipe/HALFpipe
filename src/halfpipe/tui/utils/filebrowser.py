@@ -92,6 +92,8 @@ def path_test_for_bids(path, isfile=False):
     if result_info == "OK":
         bold_filedict = {"datatype": "func", "suffix": "bold"}
         ctx.put(BidsFileSchema().load({"datatype": "bids", "path": path}))
+        ctx.refresh_available_images()
+
         if len(list(ctx.database.get(**bold_filedict))) == 0:
             result_info = "The selected data directory seems not be a BIDS directory! No BOLD files found!"
             ctx.spec.files.pop()

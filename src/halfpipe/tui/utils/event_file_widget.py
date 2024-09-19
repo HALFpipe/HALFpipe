@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
+from dataclasses import dataclass
+from typing import Type
+
+from rich.text import Text
 from textual import on
 from textual.containers import VerticalScroll
+from textual.message import Message
+from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button
 
-from .file_pattern_steps import EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
+from .file_pattern_steps import AddAtlasImageStep, EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
 from .non_bids_file_itemization import FileItem
 from .selection_modal import SelectionModal
 
@@ -19,14 +25,14 @@ class EventFilePanel(Widget):
         self.current_event_file_pattern_id = None
 
     def compose(self):
-        yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
+        yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel")
 
     @on(Button.Pressed, "#add_event_file_button")
-    def _on_button_add_event_file_pressed(self):
-        self.create_file_item(load_object=None)
+    async def _on_button_add_event_file_pressed(self):
+        await self.create_file_item(load_object=None)
 
-    def create_file_item(self, load_object=None):
-        def mount_file_item_widget(event_file_type):
+    async def create_file_item(self, load_object=None):
+        async def mount_file_item_widget(event_file_type):
             events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
             if event_file_type == "bids":
                 events_step_type = TsvEventsStep
@@ -41,10 +47,9 @@ class EventFilePanel(Widget):
                     pattern_class=events_step_type(),
                 )
 
-                self.get_widget_by_id("event_file_panel").mount(the_file_item)
+                await self.get_widget_by_id("event_file_panel").mount(the_file_item)
                 self.current_event_file_pattern_id = "event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter)
 
-                #          print('1the_file_item.pattern_match_resultsthe_file_item.pattern_match_results', self.get_widget_by_id("event_file_panel").query_one(FileItem).pattern_match_results)
                 EventFilePanel.event_file_pattern_counter += 1
                 #  print('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr', result, dir(result))
 
@@ -73,30 +78,44 @@ class EventFilePanel(Widget):
 
         else:
             print("llllllllllllllllllllllllllllllllllll load_obj", load_object.path)
-            self.get_widget_by_id("event_file_panel").mount(
+            if load_object.extension == ".tsv":
+                events_step_type = TsvEventsStep
+            elif load_object.extension == ".fsl":
+                events_step_type = TxtEventsStep
+            elif load_object.extension == ".spm":
+                events_step_type = MatEventsStep
+            await self.get_widget_by_id("event_file_panel").mount(
                 FileItem(
                     id="event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter),
                     classes="file_patterns",
                     load_object=load_object,
+                    pattern_class=events_step_type(),
                 )
             )
             EventFilePanel.event_file_pattern_counter += 1
 
     def on_mount(self):
+        print(
+            "self.app.walk_children(EventFilePanel)[self.app.walk_children(EventFilePanel)[",
+            self.app.walk_children(EventFilePanel),
+        )
         # use first event file panel widget to make copies for the newly created one
-        first_event_file_panel_widget = self.app.walk_children(EventFilePanel)[0]
-        # only use if it is not the first one!
-        if first_event_file_panel_widget != self:
-            for file_item_widget in first_event_file_panel_widget.walk_children(FileItem):
-                self.get_widget_by_id("event_file_panel").mount(
-                    FileItem(
-                        id=file_item_widget.id, classes="file_patterns", load_object=file_item_widget.get_pattern_match_results
+        if self.app.walk_children(EventFilePanel) != []:
+            first_event_file_panel_widget = self.app.walk_children(EventFilePanel)[0]
+            # only use if it is not the first one!
+            if first_event_file_panel_widget != self:
+                for file_item_widget in first_event_file_panel_widget.walk_children(FileItem):
+                    self.get_widget_by_id("event_file_panel").mount(
+                        FileItem(
+                            id=file_item_widget.id,
+                            classes="file_patterns",
+                            load_object=file_item_widget.get_pattern_match_results,
+                        )
                     )
-                )
 
     @on(FileItem.PathPatternChanged)
     def _on_update_all_instances(self, event):
-        # creating copies to all feature tasks
+        # creating copies to all feature tasks, also when a new fileitem is added, then it is copied to other widgets
         # the one that was is the latest one, create new instances
         print(
             "oooooooooooooooooooooooooooooooooooo  event.control.id == self.current_event_file_pattern_id:",
@@ -118,6 +137,7 @@ class EventFilePanel(Widget):
                         " ::: ",
                         file_items_ids_in_other_event_file_panel,
                     )
+                    # this part will copy the fileitem to other file panels in other features
                     if event.control.id not in file_items_ids_in_other_event_file_panel:
                         w.get_widget_by_id("event_file_panel").mount(
                             FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
@@ -130,7 +150,6 @@ class EventFilePanel(Widget):
     #        if old_file_pattern != event.value:
     #            w.get_widget_by_id('event_file_panel').get_widget_by_id(event.control.id).pattern_match_results = event.value
 
-    # print('event.control.id, event.control.get_pattern_match_results', event.control.id, event.control.get_pattern_match_results)
     # # creating copies to all feature tasks
     # # the one that was is the latest one, create new instances
     # if event.control.id == self.current_event_file_pattern_id:
@@ -144,3 +163,143 @@ class EventFilePanel(Widget):
     # load_object=event.value
     # )
     # )
+
+
+class AtlasFilePanel(Widget):
+    file_pattern_counter = 0
+    id_string = "atlas_file_panel"
+    file_item_id_base = "atlas_file_pattern_"
+    the_class = None
+    pattern_class = AddAtlasImageStep
+    current_file_pattern_id = None
+    value: reactive[bool] = reactive(None, init=False)
+
+    @dataclass
+    class Changed(Message):
+        atlas_file_panel: "AtlasFilePanel"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.atlas_file_panel
+
+    def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(id=id, classes=classes)
+        type(self).the_class = self.__class__  # Sets the_class at the class level
+
+    #          self.current_atlas_file_pattern_id = None
+
+    def callback_func(self, message_dict):
+        info_string = Text("")
+        for key in message_dict:
+            print("kkkkkkkkkkkkk", message_dict[key], key)
+            # if there is only one item, we do not separate items on new lines
+            print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
+            if len(message_dict[key]) <= 1:
+                print(
+                    "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
+                    (len(key) + len(message_dict[key]) + 3),
+                    len(key),
+                    len(message_dict[key]),
+                )
+                sep_char = ""
+                separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
+            else:
+                sep_char = "\n"
+                separ_line = "-" * (max([len(s) for s in [key] + message_dict[key]]) + 3)
+            info_string += Text(key + ": " + sep_char, style="bold green") + Text(
+                " ".join(message_dict[key]) + separ_line + "\n", style="white"
+            )
+
+        self.callback_message = info_string
+
+    #    self.value = info_string
+
+    def watch_value(self) -> None:
+        self.post_message(self.Changed(self, self.value))
+
+    def compose(self):
+        yield VerticalScroll(Button("Add", id="add_file_button"), id=self.id_string)
+
+    @on(Button.Pressed, "#add_file_button")
+    async def _on_button_add_atlas_file_pressed(self):
+        await self.create_file_item(load_object=None)
+
+    async def create_file_item(self, load_object=None):
+        async def mount_file_item_widget():
+            the_file_item = FileItem(
+                id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
+            )
+            # regular FileItem mount when user clicks "Add" and creates the file pattern
+            await self.get_widget_by_id(self.id_string).mount(the_file_item)
+            print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: mount_file_item_widget")
+            self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
+
+            self.the_class.file_pattern_counter += 1
+            self.refresh()
+
+        if load_object is None:
+            await mount_file_item_widget()
+        else:
+            await self.get_widget_by_id(self.id_string).mount(
+                FileItem(
+                    id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                    classes="file_patterns",
+                    load_object=load_object,
+                    pattern_class=self.pattern_class(),
+                )
+            )
+            print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: async def create_file_item(self, load_object=None)")
+            self.the_class.file_pattern_counter += 1
+
+    def on_mount(self):
+        # use first event file panel widget to make copies for the newly created one
+        if self.app.walk_children(self.the_class) != []:
+            first_file_panel_widget = self.app.walk_children(self.the_class)[0]
+            # only use if it is not the first one!
+            if first_file_panel_widget != self:
+                print("*******************************am i creating fileitems???????????????")
+                for file_item_widget in first_file_panel_widget.walk_children(FileItem):
+                    # mounting FileItems when a new Feature is added, this basically copies FileItems from the
+                    # very first Feature
+                    self.get_widget_by_id(self.id_string).mount(
+                        FileItem(
+                            id=file_item_widget.id,
+                            classes="file_patterns",
+                            load_object=file_item_widget.get_pattern_match_results,
+                            callback_message=file_item_widget.get_callback_message,
+                        )
+                    )
+                    print("------------ file_item_widget. get_callback_message", file_item_widget.get_callback_message)
+                    print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: on_mount")
+
+    @on(FileItem.PathPatternChanged)
+    def _on_update_all_instances(self, event):
+        self.value = event.value
+        # creating copies to all feature tasks
+        # the one that was is the latest one, create new instances
+        print("aaaaaaaaaaaat least heeeeeeeeeeeereeeeeeeee?", event.control.id, "-----", self.current_file_pattern_id)
+        if event.control.id == self.current_file_pattern_id:
+            # loop through the all existing event file panels
+            for w in self.app.walk_children(self.the_class):
+                # create new fileitem in every other EventFilePanel
+                print("iiiiiiiiiiiiiiiiiam i getting hereeeeeeeeeeeee????? self.the_class", self.the_class)
+                if w != self:
+                    file_items_ids_in_other_file_panel = [
+                        other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
+                    ]
+                    # id does not exist, mount new FileItem
+                    print(
+                        "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
+                        event.control.id,
+                        " ::: ",
+                        file_items_ids_in_other_file_panel,
+                    )
+                    if event.control.id not in file_items_ids_in_other_file_panel:
+                        w.get_widget_by_id(self.id_string).mount(
+                            FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
+                        )
+                        print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
