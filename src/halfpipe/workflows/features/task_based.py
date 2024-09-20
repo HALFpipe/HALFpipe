@@ -226,12 +226,16 @@ def init_taskbased_wf(
     workflow.connect(stats, "out_stat", cutoff, "obj")
 
     # actually estimate the first level model
-    # tconf_file is not taken anymore by nipype interface?
+    # ? tconf_file is not taken anymore by nipype interface?
     modelestimate = pe.Node(
         fsl.FILMGLS(smooth_autocorr=True, mask_size=5),
         name="modelestimate",
         mem_gb=memcalc.series_std_gb * 1.5,
     )
+
+    # pdb.set_trace()
+    # FILMGLS is not detecting the right version of FSL
+    # FSL DIR needs to be set: fmriprep 20 dockerfile
     workflow.connect(inputnode, "bold", modelestimate, "in_file")
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
     workflow.connect(modelgen, "design_file", modelestimate, "design_file")

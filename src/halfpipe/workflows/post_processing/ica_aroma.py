@@ -123,6 +123,7 @@ def init_ica_aroma_components_wf(
         metadata={"RepetitionTime": nan},
         bold_file="",
     )
+    # ? Write unit test for this
 
     # ? Are these still duplicates
     # remove duplicate nodes

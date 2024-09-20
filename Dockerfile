@@ -41,8 +41,6 @@ RUN mamba install --yes -c local -c conda-forge -c https://fsl.fmrib.ox.ac.uk/fs
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
 
-# "hcc::afni=23.1.10"
-
 # Re-apply `matplotlib` settings after re-installing conda. This silences
 # a warning that will otherwise be printed every time `matplotlib` is imported.
 # This command re-caches fonts and sets 'Agg' as default backend for `matplotlib`.
@@ -94,7 +92,28 @@ COPY --from=install /opt/conda/ /opt/conda/
 ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}" \
     MAMBA_EXE="/opt/conda/bin/mamba"
 
+# We set up our own FSLDIR variable. We used to inherit from fmriprep in version 20,
+# but in 24.0.1 they placed it at /opt/conda/envs/fmriprep and we want to get rid
+# of that location to prevent conflicts between our environment and fmriprep's one
+ENV LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    PYTHONNOUSERSITE=1 \
+    FSLDIR="/opt/conda/" \
+    # options:
+    # /opt/conda/share/fsl
+    # /opt/conda/bin/fsl
+    # possible we need to do /opt/conda/ instead
+    FSLOUTPUTTYPE="NIFTI_GZ" \
+    FSLMULTIFILEQUIT="TRUE" \
+    FSLLOCKDIR="" \
+    FSLMACHINELIST="" \
+    FSLREMOTECALL="" \
+    FSLGECUDAQ="cuda.q"
+
+ENV PATH="$FSLDIR/bin:$PATH"
 ENV PATH="/opt/conda/bin:$PATH"
+# ? source /opt/conda/etc/fslconf/fsl.sh
+
 RUN /bin/bash -c "source /opt/conda/bin/activate base && conda list"
 
 # Download all resources
