@@ -50,7 +50,7 @@ def evaluate_files(newpathname):
         return op.normpath(abspath)
 
     # fix this, the task was not here
-    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas"]
+    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map"]
     #   entity_colors_list = ["ired", "igreen", "imagenta", "icyan"]
     # required_in_path_entities = ["subject"]
     #   required_entities = required_in_path_entities

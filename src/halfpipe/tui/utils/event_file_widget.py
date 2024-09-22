@@ -12,7 +12,15 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button
 
-from .file_pattern_steps import AddAtlasImageStep, EventsStep, MatEventsStep, TsvEventsStep, TxtEventsStep
+from .file_pattern_steps import (
+    AddAtlasImageStep,
+    AddBinarySeedMapStep,
+    AddSpatialMapStep,
+    EventsStep,
+    MatEventsStep,
+    TsvEventsStep,
+    TxtEventsStep,
+)
 from .non_bids_file_itemization import FileItem
 from .selection_modal import SelectionModal
 
@@ -165,24 +173,46 @@ class EventFilePanel(Widget):
     # )
 
 
-class AtlasFilePanel(Widget):
+class FilePanelTemplate(Widget):
     file_pattern_counter = 0
+    class_name = "AtlasFilePanel"
     id_string = "atlas_file_panel"
     file_item_id_base = "atlas_file_pattern_"
     the_class = None
     pattern_class = AddAtlasImageStep
     current_file_pattern_id = None
     value: reactive[bool] = reactive(None, init=False)
+    # cache: reactive[dict] = reactive(ctx.cache)
+
+    @dataclass
+    class FileItemIsDeleted(Message):
+        file_item: Widget
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_item
 
     @dataclass
     class Changed(Message):
-        atlas_file_panel: "AtlasFilePanel"
+        atlas_file_panel: Widget
         value: str
 
         @property
         def control(self):
             """Alias for self.file_browser."""
             return self.atlas_file_panel
+
+    # @dataclass
+    # class CacheChanged(Message):
+    #     atlas_file_panel: "AtlasFilePanel"
+    #     value: str
+    #
+    #     @property
+    #     def control(self):
+    #         """Alias for self.file_browser."""
+    #         return self.atlas_file_panel
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(id=id, classes=classes)
@@ -218,6 +248,10 @@ class AtlasFilePanel(Widget):
 
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))
+
+    # def watch_cache(self) -> None:
+    #     print('cccccccccccccccccccahce chaaaaaaaaaaaaaaaaaaaaaaahned')
+    #     self.post_message(self.CacheChanged(self, self.cache))
 
     def compose(self):
         yield VerticalScroll(Button("Add", id="add_file_button"), id=self.id_string)
@@ -276,6 +310,12 @@ class AtlasFilePanel(Widget):
                     print("------------ file_item_widget. get_callback_message", file_item_widget.get_callback_message)
                     print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: on_mount")
 
+    @on(FileItem.IsDeleted)
+    def test(self, message):
+        message.control.remove()
+        print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv******")
+        self.post_message(self.FileItemIsDeleted(self, message.control.id))
+
     @on(FileItem.PathPatternChanged)
     def _on_update_all_instances(self, event):
         self.value = event.value
@@ -303,3 +343,24 @@ class AtlasFilePanel(Widget):
                             FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
                         )
                         print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
+
+
+class AtlasFilePanel(FilePanelTemplate):
+    class_name = "AtlasFilePanel"
+    id_string = "atlas_file_panel"
+    file_item_id_base = "atlas_file_pattern_"
+    pattern_class = AddAtlasImageStep
+
+
+class SeedMapFilePanel(FilePanelTemplate):
+    class_name = "SeedMapFilePanel"
+    id_string = "seed_map_file_panel"
+    file_item_id_base = "seed_map_file_pattern_"
+    pattern_class = AddBinarySeedMapStep
+
+
+class SpatialMapFilePanel(FilePanelTemplate):
+    class_name = "SpatialMapFilePanel"
+    id_string = "spatial_map_file_panel"
+    file_item_id_base = "spatial_map_file_pattern_"
+    pattern_class = AddSpatialMapStep

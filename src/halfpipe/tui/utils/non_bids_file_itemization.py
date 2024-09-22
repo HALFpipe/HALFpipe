@@ -153,11 +153,12 @@ from ..utils.context import ctx
 class FileItem(Widget):
     success_value: reactive[bool] = reactive(None, init=False)
     pattern_match_results: reactive[dict] = reactive({"file_pattern": "", "message": "Found 0 files.", "files": []}, init=True)
+    delete_value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
     class IsDeleted(Message):
         file_item: "FileItem"
-        value: str
+        value: bool
 
         @property
         def control(self):
@@ -270,6 +271,7 @@ class FileItem(Widget):
             )
         else:
             if isinstance(self.load_object, dict):
+                print("dddddddddddddddddddddddddddd loadobject dict", self.load_object)
                 self._update_file_pattern(self.load_object)
             else:
                 pattern_load = {}
@@ -330,10 +332,11 @@ class FileItem(Widget):
             # fix this because sometimes this can be just ordinary string
             if len(pattern_match_results["files"]) > 0:
                 #  try:
-                if isinstance(pattern_match_results["file_pattern"], str):
-                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-                else:
-                    self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+                if self.pattern_class is not None:
+                    if isinstance(pattern_match_results["file_pattern"], str):
+                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+                    else:
+                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
             # except:
             #    print("bbbbbbbbbbla")
 
@@ -348,7 +351,7 @@ class FileItem(Widget):
                 self.remove()
 
     @on(Button.Pressed, "#delete_button")
-    def _on_delete_button_pressed(self):
+    async def _on_delete_button_pressed(self):
         """Remove the file pattern item."""
         # Creation of the FileItem does not automatically imply creation in the cache.
         # For this a pattern needs to be created. By cancelling the modal, the widget is created but the filepattern is not.
@@ -356,7 +359,12 @@ class FileItem(Widget):
             ctx.cache.pop(self.id)
         self.remove_all_duplicates()
         print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-        self.remove()
+        self.delete_value = True
+        self.post_message(self.IsDeleted(self, self.delete_value))
+        # await self.remove()
+
+    async def watch_delete_value(self) -> None:
+        self.post_message(self.IsDeleted(self, self.delete_value))
 
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self):

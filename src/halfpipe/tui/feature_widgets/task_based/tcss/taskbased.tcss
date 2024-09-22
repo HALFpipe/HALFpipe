@@ -82,7 +82,7 @@ height: auto;
     #preprocessing {
         align: center top;
         padding: 1;
-        height: 19;
+        height: 32;
         .switch_with_input_box{
             height: 3;
             color: white;
@@ -100,7 +100,12 @@ height: auto;
 */
     #confounds_selection {
         height: auto;
-        padding: 1 0 1 3;
+        padding: 1 0 0 1;
+        border: green;
+        offset-y: 1;
+        border-title-background: green;
+        border-title-color: white;
+        border-title-style: bold;
     }
     Button {
         width: 100%;

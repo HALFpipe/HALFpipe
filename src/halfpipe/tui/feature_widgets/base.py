@@ -14,10 +14,12 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
-from .task_based.atlas_based import AtlasBased
-from .task_based.dual_reg import DualReg
+from .task_based.atlas_based import AtlasBased, DualReg, SeedBased
+
+# from .task_based.dual_reg import DualReg
 from .task_based.preprocessed_image_output import PreprocessedOutputOptions
-from .task_based.seed_based import SeedBased
+
+# from .task_based.seed_based import SeedBased
 from .task_based.taskbased import TaskBased
 
 # from ...model.spec import SpecSchema
