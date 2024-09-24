@@ -52,13 +52,13 @@ FeatureSelection {
     .task_based {
     color: crimson;
     }
-    .seed {
+    .seed_based_connectivity {
     color: silver;
     }
-    .dual_reg {
+    .dual_regression {
     color: ansi_bright_cyan;
     }
-    .atlas {
+    .atlas_based_connectivity {
     color: blueviolet;
     }
     .reho {
@@ -66,5 +66,8 @@ FeatureSelection {
     }
     .falff {
     color: magenta;
+    }
+    .preprocessed_image {
+    color: white;
     }
 }

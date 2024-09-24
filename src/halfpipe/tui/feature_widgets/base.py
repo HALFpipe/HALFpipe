@@ -14,13 +14,13 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
-from .task_based.atlas_based import AtlasBased, DualReg, SeedBased
+from .task_based.atlas_based import AtlasBased, DualReg, Falff, PreprocessedOutputOptions, ReHo, SeedBased, TaskBased
 
 # from .task_based.dual_reg import DualReg
-from .task_based.preprocessed_image_output import PreprocessedOutputOptions
+# from .task_based.preprocessed_image_output import PreprocessedOutputOptions
 
 # from .task_based.seed_based import SeedBased
-from .task_based.taskbased import TaskBased
+# from .task_based.taskbased import TaskBased
 
 # from ...model.spec import SpecSchema
 
@@ -242,17 +242,20 @@ class FeatureSelection(Widget):
             self.add_new_feature,
         )
 
-    async def add_new_feature(self, new_feature_item: list | bool) -> None:
+    async def add_new_feature(self, new_feature_item: tuple | bool) -> None:
         """Principle of adding a new feature lies in mounting a new widget while creating a new entry in the dictionary
         to keep track of the selections which are later dumped into the Context object.
         If this is a load or a duplication, then new entry is not created but read from the dictionary.
         The dictionary entry was created elsewhere.
         """
         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_feature, feature_widgets")
-        if new_feature_item is not False:
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa222 new_feature_item", new_feature_item)
+
+        if isinstance(new_feature_item, tuple):
             feature_type, feature_name = new_feature_item
             new_id = "feature_item_" + str(self._id_counter)
             self.feature_items[new_id] = FeatureItem(feature_type, feature_name)
+            # the pseudo class here is to set a particular text color in the left panel
             new_list_item = ListItem(
                 Label(feature_name, id=new_id, classes="labels " + feature_type),
                 id=new_id,
@@ -277,6 +280,10 @@ class FeatureSelection(Widget):
                 feature_type_class = AtlasBased
             elif feature_type == "preprocessed_image":
                 feature_type_class = PreprocessedOutputOptions
+            elif feature_type == "reho":
+                feature_type_class = ReHo
+            elif feature_type == "falff":
+                feature_type_class = Falff
             else:
                 feature_type_class = None
             if feature_type_class is not None:
@@ -368,7 +375,7 @@ class FeatureSelection(Widget):
 
         self.app.push_screen(Confirm(), confirmation)
 
-    def action_duplicate_feature(self):
+    async def action_duplicate_feature(self):
         """Duplicating feature by a deep copy of the dictionary entry and then mounting a new widget while
         loading defaults from this copy.
         """
@@ -379,7 +386,7 @@ class FeatureSelection(Widget):
         ctx.cache[feature_name_copy]["features"]["name"] = feature_name_copy
         ctx.cache[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
         ctx.cache[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
-        self.add_new_feature([ctx.cache[feature_name_copy]["features"]["type"], feature_name_copy])
+        await self.add_new_feature((ctx.cache[feature_name_copy]["features"]["type"], feature_name_copy))
 
     def action_sort_features(self):
         """Sorting alphabetically and by feature type."""
