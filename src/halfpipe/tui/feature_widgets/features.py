@@ -8,12 +8,14 @@ from textual.widget import Widget
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
-from ...utils.context import ctx
-from ...utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
-from ...utils.non_bids_file_itemization import FileItem
+from ..utils.context import ctx
+from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
+from ..utils.non_bids_file_itemization import FileItem
+from ..utils.utils import extract_conditions, extract_name_part
+
 from .custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
-from .utils import extract_conditions, extract_name_part
+
 
 
 class FeatureTemplate(Widget):

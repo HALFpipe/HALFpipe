@@ -3,10 +3,10 @@
 
 import re
 
-from ....collect.events import collect_events
-from ....ingest.events import ConditionFile
-from ....model.filter import FilterSchema
-from ...utils.context import ctx
+from ...collect.events import collect_events
+from ...ingest.events import ConditionFile
+from ...model.filter import FilterSchema
+from .context import ctx
 
 
 def extract_name_part(template_path, file_path, suffix="atlas"):

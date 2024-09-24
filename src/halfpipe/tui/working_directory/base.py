@@ -11,7 +11,7 @@ from textual.widget import Widget
 from textual.widgets import Static
 
 from ...model.spec import load_spec
-from ..feature_widgets.task_based.taskbased import TaskBased
+from ..feature_widgets.features import TaskBased
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.event_file_widget import EventFilePanel

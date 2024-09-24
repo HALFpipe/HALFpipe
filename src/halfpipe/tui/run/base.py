@@ -19,7 +19,7 @@ from ...model.setting import SettingSchema
 # from utils.false_input_warning_screen import FalseInputWarning
 # from utils.confirm_screen import Confirm
 from ...model.spec import SpecSchema
-from ..feature_widgets.task_based.taskbased import TaskBased
+from ..feature_widgets.features import TaskBased
 from ..utils.context import ctx
 
 

@@ -11,7 +11,7 @@ from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Label, SelectionList
 from textual.widgets.selection_list import Selection
 
-from ...utils.false_input_warning_screen import FalseInputWarning
+from ..utils.false_input_warning_screen import FalseInputWarning
 
 cursors = cycle(["column", "row", "cell"])
 

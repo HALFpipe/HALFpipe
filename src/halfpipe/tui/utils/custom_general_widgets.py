@@ -10,8 +10,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input, Select, Static, Switch
 
-from ...utils.custom_switch import TextSwitch
-from .taskbased import SwitchWithInputBox, SwitchWithSelect
+from .custom_switch import TextSwitch
 
 
 class SwitchWithInputBox(Widget):

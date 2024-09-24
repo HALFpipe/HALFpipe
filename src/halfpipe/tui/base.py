@@ -182,8 +182,8 @@ class MainApp(App):
     CSS_PATH = [
         "tcss/base.tcss",
         "./feature_widgets/tcss/base.tcss",
-        "./feature_widgets/task_based/tcss/taskbased.tcss",
-        "./feature_widgets/task_based/tcss/model_conditions_and_contrasts.tcss",
+        "./feature_widgets/tcss/taskbased.tcss",
+        "./feature_widgets/tcss/model_conditions_and_contrasts.tcss",
         #  "./utils/tcss/file_browser.tcss",
         "./utils/tcss/file_browser.tcss",
         "./working_directory/tcss/working_directory.tcss",

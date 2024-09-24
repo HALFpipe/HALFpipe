@@ -14,7 +14,7 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
-from .task_based.atlas_based import AtlasBased, DualReg, Falff, PreprocessedOutputOptions, ReHo, SeedBased, TaskBased
+from .features import AtlasBased, DualReg, Falff, PreprocessedOutputOptions, ReHo, SeedBased, TaskBased
 
 # from .task_based.dual_reg import DualReg
 # from .task_based.preprocessed_image_output import PreprocessedOutputOptions
