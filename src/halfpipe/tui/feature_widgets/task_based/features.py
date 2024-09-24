@@ -13,7 +13,6 @@ from ...utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanel
 from ...utils.non_bids_file_itemization import FileItem
 from .custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
-
 from .utils import extract_conditions, extract_name_part
 
 
