@@ -19,6 +19,7 @@ from ...model.setting import SettingSchema
 # from utils.false_input_warning_screen import FalseInputWarning
 # from utils.confirm_screen import Confirm
 from ...model.spec import SpecSchema
+from ...utils.copy import deepcopy
 from ..feature_widgets.features import TaskBased
 from ..utils.context import ctx
 
@@ -60,8 +61,8 @@ class RunCLX(Widget):
         print("children teeeeeeeeeeeeeeeeeeeeeeeeest", self.app.walk_children(TaskBased))
 
         print("lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
-        ctx.database.filepaths_by_tags: dict[str, dict[str, set[str]]] = dict()
-        ctx.database.tags_by_filepaths: dict[str, dict[str, str]] = dict()
+        ctx.database.filepaths_by_tags = dict()
+        ctx.database.tags_by_filepaths = dict()
         #    for w in self.app.walk_children(TaskBased):
         #        w.refresh_event_list()
         # the cache key logic goes like this: first it is the particular name of the main item, for example a feature called
@@ -109,7 +110,7 @@ class RunCLX(Widget):
                 featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                 ctx.spec.features.append(featureobj)
                 for key in ctx.cache[name]["features"]:
-                    print("wwwwwwwwwwworking on the features!!!!!!!")
+                    print("wwwwwwwwwwworking on the features!!!!!!!", key, " ---", ctx.cache[name]["features"][key])
                     try:
                         setattr(ctx.spec.features[-1], key, ctx.cache[name]["features"][key])
                     except Exception:
@@ -131,6 +132,13 @@ class RunCLX(Widget):
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
+                print("unfiltered_settingunfiltered_settingunfiltered_setting found!!!", ctx.cache[name])
+                # this is for the case of falff
+                if "unfiltered_setting" in ctx.cache[name]:
+                    unfiltered_setting = deepcopy(ctx.spec.settings[-1])
+                    unfiltered_setting["name"] = ctx.cache[name]["unfiltered_setting"]["name"]
+                    unfiltered_setting["bandpass_filter"] = None  # remove bandpass filter, keep everything else
+                    ctx.spec.settings.append(unfiltered_setting)
 
             if ctx.cache["bids"]["files"] != {} and name == "bids":
                 ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))

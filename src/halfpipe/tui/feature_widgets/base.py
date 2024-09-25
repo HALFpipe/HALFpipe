@@ -239,8 +239,6 @@ class FeatureSelection(Widget):
         If this is a load or a duplication, then new entry is not created but read from the dictionary.
         The dictionary entry was created elsewhere.
         """
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_feature, feature_widgets")
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa222 new_feature_item", new_feature_item)
 
         if isinstance(new_feature_item, tuple):
             feature_type, feature_name = new_feature_item
@@ -259,8 +257,9 @@ class FeatureSelection(Widget):
                     ctx.cache[feature_name]["features"]["setting"] = feature_name + "Setting"
                     ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
                 else:
-                    ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
+                    ctx.cache[feature_name]["settings"]["name"] = feature_name + "UnfilteredSetting"
                     ctx.cache[feature_name]["settings"]["output_image"] = True
+            feature_type_class: type
             if feature_type == "task_based":
                 feature_type_class = TaskBased
             elif feature_type == "seed_based_connectivity":
@@ -275,8 +274,6 @@ class FeatureSelection(Widget):
                 feature_type_class = ReHo
             elif feature_type == "falff":
                 feature_type_class = Falff
-            else:
-                feature_type_class = None
             if feature_type_class is not None:
                 new_content_item = feature_type_class(
                     this_user_selection_dict=ctx.cache[feature_name],

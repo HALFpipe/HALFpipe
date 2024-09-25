@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
@@ -23,13 +24,13 @@ class FeatureTemplate(Widget):
     type = ""
     file_panel_class = FilePanelTemplate
 
-    def __init__(self, this_user_selection_dict, **kwargs) -> None:
+    def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
         """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
         this_user_selection_dict is empty and the nested keys need some initialization. On the other
         hand, if a new widget is created automatically then this dictionary is not empty and these
         values are then used for the various widgets within this widget.
         """
-        super().__init__(**kwargs)
+        super().__init__(id=id, classes=classes)
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
@@ -192,18 +193,6 @@ class FeatureTemplate(Widget):
     def on_tag_selection_changed(self, selection_list):
         self.feature_dict[self.featurefield] = selection_list.control.selected
 
-    @on(SelectionList.SelectedChanged, "#confounds_selection")
-    def feed_feature_dict_confounds(self):
-        confounds = self.get_widget_by_id("confounds_selection").selected.copy()
-        # "ICA-AROMA" is in a separate field, so here this is taken care of
-        if "ICA-AROMA" in self.get_widget_by_id("confounds_selection").selected:
-            confounds.remove("ICA-AROMA")
-            self.setting_dict["ica_aroma"] = True
-        else:
-            self.setting_dict["ica_aroma"] = False
-
-        self.setting_dict["confounds_removal"] = confounds
-
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
         if message.switch_value is True:
@@ -266,6 +255,18 @@ class FeatureTemplate(Widget):
     def _on_selection_list_changed(self):
         self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
 
+    @on(SelectionList.SelectedChanged, "#confounds_selection")
+    def feed_feature_dict_confounds(self):
+        confounds = self.get_widget_by_id("confounds_selection").selected.copy()
+        # "ICA-AROMA" is in a separate field, so here this is taken care of
+        if "ICA-AROMA" in self.get_widget_by_id("confounds_selection").selected:
+            confounds.remove("ICA-AROMA")
+            self.setting_dict["ica_aroma"] = True
+        else:
+            self.setting_dict["ica_aroma"] = False
+
+        self.setting_dict["confounds_removal"] = confounds
+
 
 class AtlasBased(FeatureTemplate):
     entity = "desc"
@@ -288,7 +289,7 @@ class AtlasBased(FeatureTemplate):
             )
             yield self.preprocessing_panel
 
-    def on_mount(self):
+    async def on_mount(self) -> None:
         try:
             self.get_widget_by_id("minimum_coverage").border_title = "Minimum coverage"
         except Exception:
@@ -377,7 +378,7 @@ class PreprocessedOutputOptions(TaskBased):
         # no features for preprocessed image output!
         this_user_selection_dict["features"] = {}
 
-    def on_mount(self):
+    async def on_mount(self) -> None:
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
 
 
@@ -392,9 +393,6 @@ class ReHo(FeatureTemplate):
         if "smoothing" in self.setting_dict:
             del self.setting_dict["smoothing"]
 
-    # def update_smoothing_entry(self, value):
-    #     self.feature_dict[the_id]["fwhm"] = message.value
-
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel
@@ -406,3 +404,11 @@ class ReHo(FeatureTemplate):
 
 class Falff(ReHo):
     """Essentially same as ReHo"""
+
+    type = "falff"
+
+    def __init__(self, this_user_selection_dict, **kwargs) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
+        self.feature_dict["unfiltered_setting"] = self.feature_dict["name"] + "UnfilteredSetting"
+        this_user_selection_dict["unfiltered_setting"]["name"] = self.feature_dict["name"] + "UnfilteredSetting"
+        self.unfiltered_settings_dict = this_user_selection_dict["unfiltered_setting"]
