@@ -122,10 +122,16 @@ class RunCLX(Widget):
                     print("wwwwwwwwwwworking on the settings!!!!!!!")
                     try:
                         setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
+                        # if there are no filters, than put there just empty list
+                        if key == "filters":
+                            print("fffffffffffffffffffffff", ctx.cache[name]["settings"][key])
+                            if ctx.cache[name]["settings"][key][0]["values"] == []:
+                                setattr(ctx.spec.settings[-1], key, [])
                     except Exception:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
+
             if ctx.cache["bids"]["files"] != {} and name == "bids":
                 ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))
 

@@ -1,69 +1,24 @@
 # -*- coding: utf-8 -*-
-import sys
 
 from PIL import Image
 from rich.console import Console, RenderResult
 from rich_pixels import Pixels
-from textual import events, on
+from textual import events
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.containers import Container, VerticalScroll
 from textual.events import Click
 from textual.reactive import Reactive, reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Button, Footer, Header, Placeholder, Static, TabbedContent, TabPane
+from textual.widgets import Footer, Header, Placeholder, TabbedContent, TabPane
 from textual.widgets._header import HeaderTitle
 
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
-from .utils.draggable_modal_screen import DraggableModalScreen
+from .utils.confirm_screen import Confirm
 from .working_directory.base import WorkDirectory
-
-
-class HelpModal(DraggableModalScreen):
-    """Help modal at the main screen. Triggered by the "?" at the right corner."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.title_bar.title = "Help"
-
-    def on_mount(self) -> None:
-        self.content.mount(
-            Vertical(
-                Static("Some help", id="question"),
-                Horizontal(Button("Ok", id="ok")),
-            )
-        )
-
-    @on(Button.Pressed, "#ok")
-    def _on_ok_button_pressed(self):
-        self.dismiss(False)
-
-
-class QuitModal(DraggableModalScreen):
-    """Quit modal at the main screen. Triggered by the "X" at the right corner."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.title_bar.title = "Quit"
-
-    def on_mount(self) -> None:
-        self.content.mount(
-            Vertical(
-                Static("Do you really want to quit?", id="question"),
-                Horizontal(Button("Yes", id="ok"), Button("No", id="cancel")),
-            )
-        )
-
-    @on(Button.Pressed, "#ok")
-    def _on_ok_button_pressed(self):
-        sys.exit()
-
-    @on(Button.Pressed, "#cancel")
-    def _on_cancel_button_pressed(self):
-        self.dismiss(False)
 
 
 class HeaderCloseIcon(Widget):
@@ -88,7 +43,26 @@ class HeaderCloseIcon(Widget):
     async def on_click(self, event: Click) -> None:
         """Launch the command palette when icon is clicked."""
         event.stop()
-        await self.app.push_screen(QuitModal())
+
+        def quit(modal_value):
+            if modal_value:
+                exit()
+            else:
+                pass
+
+        await self.app.push_screen(
+            Confirm(
+                "Do you really want to quit?",
+                left_button_text="YES",
+                right_button_text="NO",
+                left_button_variant="error",
+                right_button_variant="success",
+                title="Quit?",
+                id="quit_modal",
+                classes="confirm_warning",
+            ),
+            quit,
+        )
 
     def render(self) -> RenderResult:
         """Render the header icon.
@@ -115,14 +89,24 @@ class HeaderHelpIcon(Widget):
         background: $foreground 10%;
     }
     """
-
-    icon = Reactive("❓")
     """The character to use as the icon within the header."""
+    icon = Reactive("❓")
+    help_string = "Here should be some general help :) Or maybe link to manual?"
 
     async def on_click(self, event: Click) -> None:
         """Launch the command palette when icon is clicked."""
         event.stop()
-        await self.app.push_screen(HelpModal())
+        await self.app.push_screen(
+            Confirm(
+                self.help_string,
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="default",
+                title="Help",
+                id="help_modal",
+                #   classes="confirm_warning",
+            )
+        )
 
     def render(self) -> RenderResult:
         """Render the header icon.

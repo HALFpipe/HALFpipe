@@ -9,20 +9,14 @@ from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
 from ..utils.context import ctx
+from ..utils.custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
 from ..utils.non_bids_file_itemization import FileItem
 from ..utils.utils import extract_conditions, extract_name_part
-from .custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 
 class FeatureTemplate(Widget):
-    # entity = 'desc'
-    # filters = {"datatype": "ref", "suffix": "atlas"}
-    # featurefield = 'atlases'
-    # type = "atlas_based_connectivity"
-    # file_panel_class = AtlasFilePanel
-
     entity = ""
     filters = {"datatype": "", "suffix": ""}
     featurefield = ""
@@ -41,10 +35,8 @@ class FeatureTemplate(Widget):
         self.event_file_pattern_counter = 0
         filepaths = ctx.database.get(**self.filters)
         self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
-        print("-----------init   self.tagvalsself.tagvalsself.tagvalsself.tagvals", self.tagvals)
-        if self.tagvals == None:
+        if self.tagvals is None:
             self.tagvals = []
-        print("-----------init2   self.tagvalsself.tagvalsself.tagvalsself.tagvals", self.tagvals)
 
         if "contrasts" not in self.feature_dict:
             self.feature_dict["contrasts"] = []
@@ -109,13 +101,13 @@ class FeatureTemplate(Widget):
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
                 value=self.setting_dict["bandpass_filter"]["lp_width"],
-                classes="switch_with_input_box",
+                classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_lp_width",
             ),
             SwitchWithInputBox(
                 label="High-pass temporal filter width \n(in seconds)",
                 value=self.setting_dict["bandpass_filter"]["hp_width"],
-                classes="switch_with_input_box",
+                classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_hp_width",
             ),
             SelectionList[str](
@@ -151,12 +143,11 @@ class FeatureTemplate(Widget):
 
     @on(file_panel_class.FileItemIsDeleted, "#top_file_panel")
     def on_file_panel_file_item_is_deleted(self, message):
-        print("iiiiiiiiiiiit waaaaaaaaaaaaaaaas finally propaged heeeeeeeeeeeeereeeeeeeeeeeee", message)
         self.update_tag_selection_by_children_walk(set([]))
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message):
-        tagvals = set([])
+        tagvals: set[list] = set([])
         template_path = message.value["file_pattern"]
         if isinstance(template_path, Text):
             template_path = template_path.plain
@@ -172,7 +163,6 @@ class FeatureTemplate(Widget):
     def update_tag_selection_by_children_walk(self, tagvals: set):
         if self.app.walk_children(self.file_panel_class) != []:
             for w in self.walk_children(self.file_panel_class)[0].walk_children(FileItem):
-                print("--------------w.pattern_match_results-----------", w.pattern_match_results)
                 template_path = w.pattern_match_results["file_pattern"]
                 if isinstance(template_path, Text):
                     template_path = template_path.plain
@@ -183,19 +173,8 @@ class FeatureTemplate(Widget):
                             for file_path in w.pattern_match_results["files"]
                         ]
                     )
-                    print(
-                        "*/*/***//",
-                        set(
-                            [
-                                extract_name_part(template_path, file_path, suffix=suffix)
-                                for file_path in w.pattern_match_results["files"]
-                            ]
-                        ),
-                    )
-        print("tttttttttttttabvals,", tagvals)
 
         self.get_widget_by_id("tag_selection").clear_options()
-        print("///////////////////////////////////////////")
         for tagval in tagvals:
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
 
@@ -211,7 +190,6 @@ class FeatureTemplate(Widget):
 
     @on(SelectionList.SelectedChanged, "#tag_selection")
     def on_tag_selection_changed(self, selection_list):
-        print("eeeeeeeeeeeeeeeeeeeeeeeeee message on_tag_selection_changed ", selection_list)
         self.feature_dict[self.featurefield] = selection_list.control.selected
 
     @on(SelectionList.SelectedChanged, "#confounds_selection")
@@ -227,8 +205,7 @@ class FeatureTemplate(Widget):
         self.setting_dict["confounds_removal"] = confounds
 
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
-    def setting_change_bandpass_filter_type(self, message):
-        print("heeeeeeeeeeeeeeeeere", message.switch_value)
+    def _on_bandpass_filter_type_switch_changed(self, message):
         if message.switch_value is True:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "visible"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
@@ -240,32 +217,54 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("preprocessing").styles.height = 26
             self.get_widget_by_id("confounds_selection").styles.offset = (0, -5)
 
-    @on(LabelWithInputBox.Changed)
-    def on_label_with_input_box_changed(self, message):
+    @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
+    def _on_bandpass_filter_type_changed(self, message):
+        if message.value == "frequency_based":
+            self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
+            self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in Hertz)")
+            self.setting_dict["bandpass_filter"]["low"] = self.setting_dict["bandpass_filter"]["lp_width"]
+            self.setting_dict["bandpass_filter"]["high"] = self.setting_dict["bandpass_filter"]["hp_width"]
+            self.setting_dict["bandpass_filter"].pop("lp_width")
+            self.setting_dict["bandpass_filter"].pop("hp_width")
+        elif message.value == "gaussian":
+            self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
+            self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in seconds)")
+            # on mount the app also runs through this part and since 'frequency_based' was never set, the low and high
+            # do not exist
+            if "low" in self.setting_dict["bandpass_filter"]:
+                self.setting_dict["bandpass_filter"]["lp_width"] = self.setting_dict["bandpass_filter"]["low"]
+                self.setting_dict["bandpass_filter"]["hp_width"] = self.setting_dict["bandpass_filter"]["high"]
+                self.setting_dict["bandpass_filter"].pop("low")
+                self.setting_dict["bandpass_filter"].pop("high")
+
+        self.setting_dict["bandpass_filter"]["type"] = message.value
+
+    @on(LabelWithInputBox.Changed, "#minimum_coverage")
+    def _on_label_with_input_box_changed(self, message):
         self.feature_dict["min_region_coverage"] = message.value
 
-    @on(SwitchWithInputBox.Changed)
-    @on(SwitchWithSelect.Changed)
-    def on_switch_with_input_box_changed(self, message):
-        # todo, need some unified simple global approach for the value passing
-        the_id = message.control.id
-        if message.control.id == "bandpass_filter_type":
-            if message.value == "frequency_based":
-                self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
-                self.get_widget_by_id("bandpass_filter_hp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
-            elif message.value == "gaussian":
-                self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
-                self.get_widget_by_id("bandpass_filter_hp_width").update_label("Low-pass temporal filter width \n(in seconds)")
-        print("dddddddddddddddddddddddddd", the_id, message.value)
-        if "bandpass_filter" in the_id:
-            the_id = the_id.replace("bandpass_filter_", "")
-            self.setting_dict["bandpass_filter"][the_id] = message.value
-        elif "grand_mean_scaling" in the_id:
-            self.setting_dict[the_id]["mean"] = message.value
-        elif "smoothing" in the_id:
-            self.setting_dict[the_id]["fwhm"] = message.value
-        else:
-            self.feature_dict[the_id] = message.value
+    @on(SwitchWithInputBox.Changed, "#grand_mean_scaling")
+    def _on_grand_mean_scaling_changed(self, message):
+        self.setting_dict["grand_mean_scaling"]["mean"] = message.value
+
+    @on(SwitchWithInputBox.Changed, ".bandpass_filter_values")
+    def _on_bandpass_filter_xp_width_changed(self, message):
+        the_id = message.control.id.replace("bandpass_filter_", "")
+        if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
+            mapping = {"lp_width": "low", "hp_width": "high"}
+            the_id = mapping.get(the_id)
+        self.setting_dict["bandpass_filter"][the_id] = message.value
+
+    @on(SwitchWithInputBox.Changed, "#smoothing")
+    def _on_smoothing_changed(self, message):
+        if "smoothing" in self.setting_dict:
+            self.setting_dict["smoothing"]["fwhm"] = message.value
+        elif "smoothing" in self.feature_dict:
+            self.feature_dict["smoothing"]["fwhm"] = message.value
+
+    @on(SelectionList.SelectedChanged, "#images_to_use_selection")
+    def _on_selection_list_changed(self):
+        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
 
 
 class AtlasBased(FeatureTemplate):
@@ -289,10 +288,10 @@ class AtlasBased(FeatureTemplate):
             )
             yield self.preprocessing_panel
 
-    def on_mount(self) -> None:
+    def on_mount(self):
         try:
             self.get_widget_by_id("minimum_coverage").border_title = "Minimum coverage"
-        except:
+        except Exception:
             pass
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
@@ -378,11 +377,24 @@ class PreprocessedOutputOptions(TaskBased):
         # no features for preprocessed image output!
         this_user_selection_dict["features"] = {}
 
-    def on_mount(self) -> None:
+    def on_mount(self):
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
 
 
 class ReHo(FeatureTemplate):
+    type = "reho"
+
+    def __init__(self, this_user_selection_dict, **kwargs) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
+        # in this case, smoothing is in features!!!
+        if "smoothing" not in self.feature_dict:
+            self.feature_dict["smoothing"] = {"fwhm": 0}
+        if "smoothing" in self.setting_dict:
+            del self.setting_dict["smoothing"]
+
+    # def update_smoothing_entry(self, value):
+    #     self.feature_dict[the_id]["fwhm"] = message.value
+
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel

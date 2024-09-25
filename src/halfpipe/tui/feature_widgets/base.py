@@ -16,15 +16,6 @@ from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
 from .features import AtlasBased, DualReg, Falff, PreprocessedOutputOptions, ReHo, SeedBased, TaskBased
 
-# from .task_based.dual_reg import DualReg
-# from .task_based.preprocessed_image_output import PreprocessedOutputOptions
-
-# from .task_based.seed_based import SeedBased
-# from .task_based.taskbased import TaskBased
-
-# from ...model.spec import SpecSchema
-
-
 FEATURES_MAP = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
@@ -303,64 +294,6 @@ class FeatureSelection(Widget):
             )
             self.get_widget_by_id("content_switcher").styles.border_title_color = FEATURES_MAP_colors[feature_type]
             self._id_counter += 1
-
-    # def add_new_preprocessed_image(self, feature_name: str) -> None:
-    # """
-    # In the preprocessed image output we do not use the 'feature
-    # """
-    # print(
-    # "11111aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "add_new_preprocessed_image", "preprocessed", ctx.cache
-    # )
-    # if feature_name is not None:
-    # feature_type = "preprocessed_image"
-    # new_id = "feature_item_" + str(self._id_counter)
-    # self.feature_items[new_id] = FeatureItem(feature_type, feature_name)
-    # new_list_item = ListItem(
-    # Label(feature_name, id=new_id, classes="labels " + feature_type),
-    # id=new_id,
-    # classes="items",
-    # )
-    # print(
-    # "22222aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    # "add_new_preprocessed_image",
-    # "preprocessed",
-    # ctx.cache,
-    # )
-
-    # # this dictionary will contain all made choices
-    # if feature_name not in ctx.cache:
-    # #       self.user_selections_dict[feature_name]["features"]["name"] = feature_name
-    # #       self.user_selections_dict[feature_name]["features"]["setting"] = feature_name + "Setting"
-    # ctx.cache[feature_name]["settings"]["name"] = feature_name + "Setting"
-    # ctx.cache[feature_name]["settings"]["output_image"] = True
-    # print(
-    # "33333aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    # "add_new_preprocessed_image",
-    # "preprocessed",
-    # ctx.cache,
-    # )
-
-    # new_content_item = PreprocessedOutputOptions(
-    # #                self.top_parent,
-    # #                self.ctx,
-    # #    self.available_images,
-    # this_user_selection_dict=ctx.cache[feature_name],
-    # id=new_id,
-    # classes=feature_type,
-    # )
-    # print(
-    # "33333bbbbbbbbbbbbbbbbbbbbbbbbbbb", "add_new_preprocessed_image", "preprocessed", ctx.cache
-    # )
-    # self.get_widget_by_id("list").mount(new_list_item)
-    # self.get_widget_by_id("content_switcher").mount(new_content_item)
-    # self.get_widget_by_id("content_switcher").current = new_id
-    # self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-    # "Preprocessed output",
-    # self.feature_items[new_id].name,
-    # )
-    # self.get_widget_by_id("content_switcher").styles.border_title_color = "red"
-    # self._id_counter += 1
-    # print("44444dddddddddddddddddddd", ctx.cache)
 
     def action_delete_feature(self) -> None:
         """Unmount the feature and delete its entry from dictionaries."""
