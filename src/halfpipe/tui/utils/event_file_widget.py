@@ -218,8 +218,9 @@ class FilePanelTemplate(Widget):
         super().__init__(id=id, classes=classes)
         type(self).the_class = self.__class__  # Sets the_class at the class level
         self.the_app = self.app
-        print('wwwwwwwwwwwwwwwwwwwwwwwwwwww on init', self.app.walk_children())
-        print('self._screen_stacksself._screen_stacksself._screen_stacks', self.app._screen_stacks['_default'])
+        print("wwwwwwwwwwwwwwwwwwwwwwwwwwww on init", self.app.walk_children())
+        print("self._screen_stacksself._screen_stacksself._screen_stacks", self.app._screen_stacks["_default"])
+
     #          self.current_atlas_file_pattern_id = None
 
     def callback_func(self, message_dict):
@@ -321,15 +322,23 @@ class FilePanelTemplate(Widget):
     @on(FileItem.IsFinished)
     async def _on_update_all_instances(self, event):
         self.value = event.value
-        print('************************** what is the event value?', event.value)
+        print("************************** what is the event value?", event.value)
         # creating copies to all feature tasks
         # the one that was is the latest one, create new instances
         # print('self._screen_stacksself._screen_stacksself._screen_stacks', self.app._screen_stacks)
-        print('222self._screen_stacksself._screen_stacksself._screen_stacks', self.app._screen_stacks['_default'][0].walk_children())
+        print(
+            "222self._screen_stacksself._screen_stacksself._screen_stacks",
+            self.app._screen_stacks["_default"][0].walk_children(),
+        )
 
         # print("aaaaaaaaaaaat least heeeeeeeeeeeereeeeeeeee?", event.control.id, "-----", self.current_file_pattern_id)
-        print('******************************** compare these two: event/control/id == self/current_file_pattern_id', event.control.id , ' === ', self.current_file_pattern_id)
-        if event.control.id == self.current_file_pattern_id and event.value['file_pattern'] != '':
+        print(
+            "******************************** compare these two: event/control/id == self/current_file_pattern_id",
+            event.control.id,
+            " === ",
+            self.current_file_pattern_id,
+        )
+        if event.control.id == self.current_file_pattern_id and event.value["file_pattern"] != "":
             # loop through the all existing event file panels
             # print('vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)', self.app.walk_children(self.the_class))
             # print('222 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)', self.app.walk_children())
@@ -337,18 +346,23 @@ class FilePanelTemplate(Widget):
             #
             # print('self.the_class-self.the_class-self.the_class', self.the_class)
             #
-            print('******************************** the loop goes over this self.app._screen_stacks[_default][0].walk_children((self.the_class))', self.app._screen_stacks['_default'][0].walk_children((self.the_class)))
-            for w in self.app._screen_stacks['_default'][0].walk_children((self.the_class)):
+            print(
+                "******************************** the loop goes over this self.app._screen_stacks[_default][0].walk_children((self.the_class))",
+                self.app._screen_stacks["_default"][0].walk_children((self.the_class)),
+            )
+            for w in self.app._screen_stacks["_default"][0].walk_children((self.the_class)):
                 # create new fileitem in every other EventFilePanel
-                print('******************************** this is the w: ', w)
+                print("******************************** this is the w: ", w)
                 # print("iiiiiiiiiiiiiiiiiam i getting hereeeeeeeeeeeee????? self.the_class", self.the_class)
-                print('******************************** this is the self: ', self)
+                print("******************************** this is the self: ", self)
                 if w != self:
-                    print('******************************** is w self? if no i see this (we have 2 different widgets of the same type but in different features)')
+                    print(
+                        "******************************** is w self? if no i see this (we have 2 different widgets of the same type but in different features)"
+                    )
                     file_items_ids_in_other_file_panel = [
                         other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
                     ]
-                    print('******************************** walk the w: ', w.walk_children(FileItem))
+                    print("******************************** walk the w: ", w.walk_children(FileItem))
                     # id does not exist, mount new FileItem
                     # print(
                     #     "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
@@ -356,8 +370,11 @@ class FilePanelTemplate(Widget):
                     #     " ::: ",
                     #     file_items_ids_in_other_file_panel,
                     # )
-                    print('********************************* we are going to try to mount these: file_items_ids_in_other_file_panel', file_items_ids_in_other_file_panel)
-                    print('********************************* if this is not in the list event.control.id', event.control.id)
+                    print(
+                        "********************************* we are going to try to mount these: file_items_ids_in_other_file_panel",
+                        file_items_ids_in_other_file_panel,
+                    )
+                    print("********************************* if this is not in the list event.control.id", event.control.id)
                     if event.control.id not in file_items_ids_in_other_file_panel:
                         await w.get_widget_by_id(self.id_string).mount(
                             FileItem(
@@ -367,7 +384,12 @@ class FilePanelTemplate(Widget):
                                 callback_message=event.control.get_callback_message,
                             )
                         )
-                        print('*****************', event.control.id, event.control.get_pattern_match_results, event.control.get_callback_message)
+                        print(
+                            "*****************",
+                            event.control.id,
+                            event.control.get_pattern_match_results,
+                            event.control.get_callback_message,
+                        )
                         # print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
 
 

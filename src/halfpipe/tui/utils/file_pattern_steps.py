@@ -35,7 +35,6 @@ from .meta_data_steps import (
     CheckRepetitionTimeStep,
     CheckSpaceStep,
 )
-from textual import on, work
 
 entity_colors = {
     "sub": "red",
@@ -153,7 +152,7 @@ class FilePatternStep:
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         if self.next_step_type is not None:
-            print('---------------------------- going to the next_step_type', self.next_step_type)
+            print("---------------------------- going to the next_step_type", self.next_step_type)
             self.next_step_instance = self.next_step_type(
                 app=self.app,
                 callback=self.callback,
@@ -164,6 +163,7 @@ class FilePatternStep:
             await self.next_step_instance.run()
         else:
             pass
+
 
 class AnatStep(FilePatternStep):
     required_in_path_entities = ["subject"]

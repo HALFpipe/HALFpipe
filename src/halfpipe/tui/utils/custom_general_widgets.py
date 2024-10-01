@@ -10,20 +10,9 @@ from textual.containers import Grid
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, Select, Static, Switch
+from textual.widgets import Button, Input, Select, Static, Switch
 
 from .custom_switch import TextSwitch
-import re
-from copy import deepcopy
-from dataclasses import dataclass
-from typing import Dict, List, Union
-
-from textual import on
-from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.message import Message
-from textual.widget import Widget
-from textual.widgets import Button, Input, Select, Static, Switch
 
 
 class SwitchWithInputBox(Widget):
@@ -176,8 +165,6 @@ class LabelWithInputBox(Widget):
     @on(Input.Changed, "#input_label_input_box")
     def update_from_input(self):
         self.value = str(self.get_widget_by_id("input_label_input_box").value)
-
-
 
 
 class LabelledSwitch(Widget):

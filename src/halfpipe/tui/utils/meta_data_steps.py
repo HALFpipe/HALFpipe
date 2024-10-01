@@ -31,7 +31,6 @@ from ..utils.context import ctx
 from ..utils.selection_modal import SelectionModal
 from ..utils.set_value_modal import SetValueModal
 from .multichoice_radioset import MultipleRadioSetModal
-from textual import on, work
 
 
 def display_str(x):
@@ -293,8 +292,8 @@ class SetMetadataStep:
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
-#        self._append_view = self._append_view + self.input_view
-        # self._append_view(SpacerView(1))
+    #        self._append_view = self._append_view + self.input_view
+    # self._append_view(SpacerView(1))
 
     # def run(self, _):
     # self.result = self.input_view
@@ -396,6 +395,7 @@ class SetMetadataStep:
                 return self.callback(self.callback_message)
             else:
                 return None
+
 
 class SimpleTestClass:
     test = "bla"
@@ -640,6 +640,7 @@ class CheckMetadataStep:
             await set_instance_step.run()
         else:
             pass
+
     # # def test(self):
     # # print( 'ggggggggggggggggggggggg')
 

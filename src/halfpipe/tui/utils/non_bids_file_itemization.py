@@ -8,15 +8,14 @@ sys.path.append("/home/tomas/github/HALFpipe/src/")
 from dataclasses import dataclass
 
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import App
 from textual.containers import Horizontal, HorizontalScroll, VerticalScroll
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Static
-from textual import on, work
-from textual.worker import Worker, WorkerState, WorkType
+from textual.worker import Worker, WorkerState
 
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder, evaluate_files
@@ -365,8 +364,7 @@ class FileItem(Widget):
                 self.remove_all_duplicates()
                 self.remove()
 
-
-    @work(exclusive=True, name='step_worker')
+    @work(exclusive=True, name="step_worker")
     async def execute_class(self):
         if self.pattern_class is not None:
             if isinstance(self.pattern_match_results["file_pattern"], str):
@@ -375,12 +373,12 @@ class FileItem(Widget):
                 await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"].plain)
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        print('test', event.handler_name)
-        print('test', event.namespace)
-        print('test', event.worker.name)
-        print('test', event.state)
+        print("test", event.handler_name)
+        print("test", event.namespace)
+        print("test", event.worker.name)
+        print("test", event.state)
         if event.state == WorkerState.SUCCESS:
-            print('i am finished with the taaaaaaaaaaask')
+            print("i am finished with the taaaaaaaaaaask")
             self.post_message(self.IsFinished(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#delete_button")
