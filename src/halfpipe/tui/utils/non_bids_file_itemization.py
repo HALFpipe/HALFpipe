@@ -15,6 +15,8 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Static
+from textual import on, work
+from textual.worker import Worker, WorkerState, WorkType
 
 from halfpipe.tui.utils.list_of_files_modal import ListOfFiles
 from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder, evaluate_files
@@ -185,6 +187,16 @@ class FileItem(Widget):
             """Alias for self.file_browser."""
             return self.file_item
 
+    @dataclass
+    class IsFinished(Message):
+        file_item: "FileItem"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_item
+
     def __init__(
         self,
         id: str | None = None,
@@ -333,10 +345,13 @@ class FileItem(Widget):
             if len(pattern_match_results["files"]) > 0:
                 #  try:
                 if self.pattern_class is not None:
-                    if isinstance(pattern_match_results["file_pattern"], str):
-                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
-                    else:
-                        self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+                    self.execute_class()
+                    # if isinstance(pattern_match_results["file_pattern"], str):
+                    #     self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
+                    # else:
+                    #     self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
+            # print('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr returned_value', returned_value)
+            # print('-------------------------------------- self.pattern_class.callback_message', self.pattern_class.callback_message)
             # except:
             #    print("bbbbbbbbbbla")
 
@@ -349,6 +364,24 @@ class FileItem(Widget):
             if self.pattern_match_results["file_pattern"] == "":
                 self.remove_all_duplicates()
                 self.remove()
+
+
+    @work(exclusive=True, name='step_worker')
+    async def execute_class(self):
+        if self.pattern_class is not None:
+            if isinstance(self.pattern_match_results["file_pattern"], str):
+                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"])
+            else:
+                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"].plain)
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        print('test', event.handler_name)
+        print('test', event.namespace)
+        print('test', event.worker.name)
+        print('test', event.state)
+        if event.state == WorkerState.SUCCESS:
+            print('i am finished with the taaaaaaaaaaask')
+            self.post_message(self.IsFinished(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#delete_button")
     async def _on_delete_button_pressed(self):

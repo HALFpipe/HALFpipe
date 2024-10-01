@@ -304,7 +304,7 @@ class SeedBased(AtlasBased):
     featurefield = "seeds"
     type = "seed_based_connectivity"
     file_panel_class = SeedMapFilePanel
-    minimum_coverage_label = "Minimum seed region coverage by individual brain mask"
+    minimum_coverage_label = "Minimum seed map region coverage by individual brain mask"
 
 
 class DualReg(AtlasBased):
@@ -313,6 +313,7 @@ class DualReg(AtlasBased):
     featurefield = "maps"
     type = "dual_regression"
     file_panel_class = SpatialMapFilePanel
+    minimum_coverage_label = "Minimum spatial map region coverage by individual brain mask"
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("minimum_coverage").remove()

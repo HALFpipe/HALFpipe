@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from textual import on
@@ -11,6 +13,17 @@ from textual.widget import Widget
 from textual.widgets import Input, Select, Static, Switch
 
 from .custom_switch import TextSwitch
+import re
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Dict, List, Union
+
+from textual import on
+from textual.app import ComposeResult
+from textual.containers import Container, Horizontal, Vertical
+from textual.message import Message
+from textual.widget import Widget
+from textual.widgets import Button, Input, Select, Static, Switch
 
 
 class SwitchWithInputBox(Widget):
@@ -53,7 +66,7 @@ class SwitchWithInputBox(Widget):
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            TextSwitch(value=self.value is not None),
+            TextSwitch(value=self.switch_value is not None),
             Input(value=self.value, placeholder="Value", id="input_switch_input_box"),
         )
 
@@ -163,3 +176,43 @@ class LabelWithInputBox(Widget):
     @on(Input.Changed, "#input_label_input_box")
     def update_from_input(self):
         self.value = str(self.get_widget_by_id("input_label_input_box").value)
+
+
+
+
+class LabelledSwitch(Widget):
+    def __init__(self, label, value, help_message="Explain the functionality", id=None):
+        super().__init__(id=id)
+        self.label = label
+        self.value = value
+        self.help_message = help_message
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            #   Button("❓", id="help_button", classes="icon_buttons"),
+            Static(self.label),
+            TextSwitch(self.value),
+        )
+
+    def update_value(self, value):
+        self.query_one(Switch).value = value
+
+    @on(Button.Pressed, "#help_button")
+    def _on_help_button_pressed(self):
+        self.app.push_screen(HelpModal(self.help_message))
+
+    @on(Switch.Changed)
+    def _on_select(self, event):
+        self.post_message(self.Changed(event.value, self))
+
+    @dataclass
+    class Changed(Message):
+        """Inform ancestor the selection was changed."""
+
+        value: str
+        labelled_switch: LabelledSwitch
+
+        @property
+        def control(self) -> LabelledSwitch:
+            """The Select that sent the message."""
+            return self.labelled_switch

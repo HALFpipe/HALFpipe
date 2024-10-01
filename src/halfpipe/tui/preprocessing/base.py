@@ -3,7 +3,7 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical, Grid
 from textual.widget import Widget
 from textual.widgets import Button, Input, Static, Switch
 
@@ -12,6 +12,8 @@ from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.meta_data_steps import CheckBoldSliceEncodingDirectionStep
+from ..utils.custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect, LabelledSwitch
+from ..utils.filebrowser import FileBrowser
 
 
 class SetInitialVolumesRemovalModal(DraggableModalScreen):
@@ -58,6 +60,14 @@ class Preprocessing(Widget):
 
     def compose(self) -> ComposeResult:
         yield Container(
+            Horizontal(
+                Static("Run recon all", classes="description_labels"),
+                TextSwitch(value=False, id="run_recon_all"),
+            ),
+            id="functional_settings",
+            classes="components",
+        )
+        yield Container(
             Container(
                 Horizontal(
                     Static("Turn on slice timing", classes="description_labels"),
@@ -88,22 +98,93 @@ class Preprocessing(Widget):
             id="anatomical_settings",
             classes="components",
         )
+
+##############################################################################################################################
         yield Container(
-            Horizontal(
-                Static("Run recon all", classes="description_labels"),
-                TextSwitch(value=False, id="run_recon_all"),
-            ),
-            id="functional_settings",
-            classes="components",
-        )
+                SwitchWithInputBox(
+                    label="Number of nipype omp threads",
+                    value='1',
+                    classes="switch_with_input_box",
+                    id="nipype-omp-nthreads",
+                ),
+                Horizontal(Static('Path to the freesurfer license', id='the_static'), FileBrowser(path_to="Path"), id='fs-license-file'),
+                LabelledSwitch('Generate workflow suitable for running on a cluster', False),
+            id="workflowgroup_settings",
+            classes = "components",
+         )
+        yield Container(
+                LabelledSwitch('Debug', False),
+                LabelledSwitch('Profile', False),
+                LabelledSwitch('Watchdog', False),
+            id="debuggroup_settings",
+            classes = "components",
+          )
+        yield Container(
+                SwitchWithInputBox(
+                    label="Merge subject workflows to n chunks",
+                    value='',
+                    switch_value=False,
+                    classes="switch_with_input_box",
+                    id="n-chunks",
+                ),
+                SwitchWithInputBox(
+                    label="Max chunk size",
+                    value='64',
+                    classes="switch_with_input_box",
+                    id="max-chunks",
+                ),
+                LabelledSwitch('Subject chunks', False),
+                SwitchWithInputBox(
+                    label="Select which chunk to run",
+                    value='',
+                    switch_value=False,
+                    classes="switch_with_input_box",
+                    id="only-chunk-index",
+                ),
+                LabelledSwitch('Watchdog', False, id = "nipype-resource-monitor"),
+                SwitchWithInputBox(
+                    label="Nipype memory in GB",
+                    value='64',
+                    classes="switch_with_input_box",
+                    id="nipype-memory-gb",
+                ),
+                SwitchWithInputBox(
+                    label="Nipype number of processes",
+                    value='',
+                    switch_value=False,
+                    classes="switch_with_input_box",
+                    id="num-threads",
+                ),
+                SwitchWithInputBox(
+                    label="Nipype run plugin",
+                    value='MultiProc',
+                    classes="switch_with_input_box",
+                    id="nipype-run-plugin",
+                ),
+                LabelledSwitch('Nipype resource monitor', False),
+                SwitchWithSelect(
+                    "Choose which intermediate files to keep",
+                    options = [("all", "all"), ("some", "some"), ("none", "none")],
+                    switch_value = True,
+                    id = "keep",
+                ),
+            id = "rungroup_settings",
+            classes = "components",
+          )
+##############################################################################################################################
 
     def on_mount(self) -> None:
         self.get_widget_by_id("slice_timing").border_title = "Slice timing"
-        self.get_widget_by_id("anatomical_settings").border_title = "Anatomical settings"
-        self.get_widget_by_id("functional_settings").border_title = "Functional settings"
+        self.get_widget_by_id("anatomical_settings").border_title = "Functional settings"
+        self.get_widget_by_id("functional_settings").border_title = "Anatomical settings"
         self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
         self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
         self.get_widget_by_id("slice_timing").styles.height = "5"
+
+        self.get_widget_by_id("workflowgroup_settings").border_title = "Workflow settings"
+        self.get_widget_by_id("debuggroup_settings").border_title = "Debug settings"
+        self.get_widget_by_id("rungroup_settings").border_title = "Run settings"
+
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
@@ -188,3 +269,6 @@ class Preprocessing(Widget):
 
     #  else:
     #      raise ValueError(f'Unknown dummy_scans value "{value}"')
+
+
+

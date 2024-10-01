@@ -31,6 +31,7 @@ from ..utils.context import ctx
 from ..utils.selection_modal import SelectionModal
 from ..utils.set_value_modal import SetValueModal
 from .multichoice_radioset import MultipleRadioSetModal
+from textual import on, work
 
 
 def display_str(x):
@@ -213,7 +214,7 @@ class SetMetadataStep:
         if callback_message is not None:
             self.callback_message.update({self.humankey: []})
 
-    def run(self):
+    async def run(self):
         #  def setup(self, _):
 
         unit = _get_unit(self.schema, self.key)
@@ -264,15 +265,15 @@ class SetMetadataStep:
             self.input_view += display_choices
             # mount selection choice,             display_choices
 
-            self.app.push_screen(
+            choice = await self.app.push_screen_wait(
                 SelectionModal(
                     title="Select value",
                     instructions=header_str,
                     options=self.possible_options,
                     id="set_value_modal",
-                ),
-                self.next,
+                )
             )
+            self.next(choice)
 
             print("display_choicesdisplay_choices00aaaaaaaaaaaaaaaaaaaaaaaa", display_choices)
             print("possible_optionspossible_optionspossible_optionspossible_options", self.possible_options)
@@ -280,22 +281,20 @@ class SetMetadataStep:
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
             # mount input modal
-            self.app.push_screen(
+            choice = await self.app.push_screen_wait(
                 SetValueModal(
                     title="Set value",
                     instructions=header_str,
                     id="select_value_modal",
-                ),
-                self.next,
+                )
             )
+            await self.next(choice)
+
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
-        self._append_view = self._append_view + self.input_view
+#        self._append_view = self._append_view + self.input_view
         # self._append_view(SpacerView(1))
-        print("00aaaaaaaaaaaaaaaaaaaaaaaa", self._append_view)
-        print("01aaaaaaaaaaaaaaaaaaaaaaaa", self.input_view)
-        return "finished"
 
     # def run(self, _):
     # self.result = self.input_view
@@ -303,7 +302,7 @@ class SetMetadataStep:
     # return False
     # return True
 
-    def next(self, result):
+    async def next(self, result):
         print("ccccccccccccccccccccccccccc222", result)
         if self.possible_options is not None:
             self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
@@ -390,12 +389,13 @@ class SetMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            self.next_step_instance.run()
+            await self.next_step_instance.run()
             # self.next_step_type(app=self.app)
         else:
             if self.callback is not None:
-                self.callback(self.callback_message)
-
+                return self.callback(self.callback_message)
+            else:
+                return None
 
 class SimpleTestClass:
     test = "bla"
@@ -544,13 +544,13 @@ class CheckMetadataStep:
             pass
             # self._append_view(SpacerView(1))
 
-    def run(self):
+    async def run(self):
         self.evaluate()
 
         # def run(self, _):
         if self.is_missing:
             # print('hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere')
-            self.app.push_screen(
+            choice = await self.app.push_screen_wait(
                 Confirm(
                     " ".join(self._append_view),
                     left_button_text=False,
@@ -560,9 +560,10 @@ class CheckMetadataStep:
                     title="Missing images",
                     id="missing_images_modal",
                     classes="confirm_warning",
-                ),
-                self.next,
+                )
             )
+            await self.next(choice)
+
         # if self.callback is not None:
         #    self.callback()
         # return self.is_first_run
@@ -576,7 +577,7 @@ class CheckMetadataStep:
             print("aaaaaaaaaaaa", self.input_view)
 
             # rise modal here
-            self.app.push_screen(
+            choice = await self.app.push_screen_wait(
                 Confirm(
                     " ".join(self._append_view),
                     left_button_text="YES",
@@ -586,14 +587,15 @@ class CheckMetadataStep:
                     title="Check meta data",
                     id="check_meta_data_modal",
                     classes="confirm_warning",
-                ),
-                self.next,
+                )
             )
+            await self.next(choice)
+
         # self.app.message = self._append_view
 
     # return 'finished'
 
-    def next(self, choice):
+    async def next(self, choice):
         # if self.is_first_run or not self.is_missing:
         # self.is_first_run = False
         # choice = 'No'
@@ -611,7 +613,7 @@ class CheckMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            next_step_instance.run()
+            await next_step_instance.run()
         # pass
         # this is not correct, should try to trigger next step maybe...........................................
         #  if self.next_step_type is not None:
@@ -619,7 +621,7 @@ class CheckMetadataStep:
         # assert self.next_step_type is not None
         # return self.next_step_type(self.app)(ctx)
         elif choice is True and self.next_step_type is None:
-            self.callback(self.callback_message)
+            return self.callback(self.callback_message)
         elif choice is False:
             print(" choice is False xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx SetMetadataStepSetMetadataStepSetMetadataStep")
             set_instance_step = SetMetadataStep(
@@ -635,8 +637,9 @@ class CheckMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            set_instance_step.run()
-
+            await set_instance_step.run()
+        else:
+            pass
     # # def test(self):
     # # print( 'ggggggggggggggggggggggg')
 

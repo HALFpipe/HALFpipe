@@ -79,6 +79,45 @@ Preprocessing {
         min-width: 6;
         offset-x: 1;
     }
+    SwitchWithInputBox {
+    Grid {
+        align: left middle;
+        grid-size: 3;
+        grid-columns: 50 16 15;
+    }
+    }
+    LabelledSwitch {
+        width: auto;
+        height: 3;
+        Grid {
+            align: left middle;
+            grid-size: 3;
+            grid-columns: 53 16 15;
+        }
+        Static {
+            offset-x: 1;
+            border: transparent;
+        }
+        Switch {
+            offset-x: -3;
+    }
+    }
+    #fs-license-file {
+        height: 5;
+        FileBrowser {
+            width: 60;
+            height: 5;
+
+            offset-x: 5;
+        }
+        #the_static {
+            width: 45;
+            offset-x: 2;
+            offset-y: 2;
+
+        }
+        
+    }
 }
 
 

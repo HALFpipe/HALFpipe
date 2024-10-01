@@ -81,6 +81,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
             # show tabs
             self.app.flags_to_show_tabs["from_working_dir_tab"] = True
+            self.app.show_hidden_tabs()
 
             ctx.workdir = message.selected_path
             self.existing_spec = load_spec(workdir=ctx.workdir)

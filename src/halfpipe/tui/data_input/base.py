@@ -569,8 +569,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def feed_contex_and_extract_available_images(self):
         """Feed the Context object with the path to the data fields and extract available images."""
         # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
-        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        # if sum(self.app.flags_to_show_tabs.values()) >= 1:
+        self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        self.app.show_hidden_tabs()
+        # if sum(self.app.flags_to_show_tabs.values()) > 1:
         #     tab_manager_widget.show_tab("preprocessing_tab")
         #     tab_manager_widget.show_tab("feature_selection_tab")
         #     tab_manager_widget.show_tab("models_tab")

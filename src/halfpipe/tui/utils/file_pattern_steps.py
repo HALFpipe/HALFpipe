@@ -35,6 +35,7 @@ from .meta_data_steps import (
     CheckRepetitionTimeStep,
     CheckSpaceStep,
 )
+from textual import on, work
 
 entity_colors = {
     "sub": "red",
@@ -120,7 +121,7 @@ class FilePatternStep:
     def get_required_entities(self):
         return self.required_entities
 
-    def push_path_to_context_obj(self, path):
+    async def push_path_to_context_obj(self, path):
         # run
         inv = {alias: entity for entity, alias in self.entity_display_aliases.items()}
 
@@ -148,12 +149,11 @@ class FilePatternStep:
         # next
         ctx.spec.files.append(self.fileobj)
         ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
-        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiid key", self.id_key)
         # ctx.cache[self.id_key]["files"][self.filetype_str] = self.fileobj
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
-        print("heeeeeeeeeeeeeeeeeeeeeeereeeeeeeeeeeeeeeeeeeeeeeeeee", self.next_step_type)
         if self.next_step_type is not None:
+            print('---------------------------- going to the next_step_type', self.next_step_type)
             self.next_step_instance = self.next_step_type(
                 app=self.app,
                 callback=self.callback,
@@ -161,8 +161,9 @@ class FilePatternStep:
                 id_key=self.id_key,
                 sub_id_key=self.filetype_str,
             )
-            self.next_step_instance.run()
-
+            await self.next_step_instance.run()
+        else:
+            pass
 
 class AnatStep(FilePatternStep):
     required_in_path_entities = ["subject"]
