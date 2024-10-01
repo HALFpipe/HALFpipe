@@ -2,11 +2,11 @@
 
 from typing import List
 
-import pandas as pd
 from rich.text import Text
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
+from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static
 
@@ -32,16 +32,6 @@ from ..utils.non_bids_file_itemization import FileItem
 from ..utils.selection_modal import DoubleSelectionModal, SelectionModal
 from ..utils.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
 
-# There are 4 SummarySteps: FilePatternSummaryStep, AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
-# AnatSummaryStep > BoldSummaryStep > get_post_func_steps > FmapSummaryStep > END
-# get_post_func_steps: will now be checked in different tab
-# def get_post_func_steps(this_next_step_type: Optional[Type[Step]]) -> Type[Step]:
-# class DummyScansStep(Step):
-# class CheckBoldSliceTimingStep(CheckMetadataStep):
-# class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
-# class DoSliceTimingStep(YesNoStep):
-####################################################################################
-
 
 class FieldMapFilesPanel(Widget):
     """
@@ -65,9 +55,8 @@ class FieldMapFilesPanel(Widget):
     """
 
     def __init__(
-        self, id: str | None = None, classes: str | None = None, field_map_type="siemens", step_classes=None, **kwargs
+        self, step_classes: list, field_map_type: str = "siemens", id: str | None = None, classes: str | None = None
     ) -> None:
-        """ """
         super().__init__(id=id, classes=classes)
         self.field_map_type = field_map_type
         self.field_map_types_dict = {
@@ -77,7 +66,6 @@ class FieldMapFilesPanel(Widget):
         }
         self.echo_time = 0
         self.step_classes = step_classes
-        print("thissssssssssssssssssssssss id", self.id)
 
     def compose(self):
         yield Vertical(
@@ -106,7 +94,8 @@ class FieldMapFilesPanel(Widget):
                 ctx.cache.pop(self.id + "_" + str(i))
 
     @on(FileItem.SuccessChanged)
-    def _on_file_item_success_changed(self, message):
+    def _on_file_item_success_changed(self, message: Message):
+        """Change widget border from green if files were successfully found, to red if no."""
         success_list = []
         for i in range(len(self.step_classes)):
             success_list.append(self.get_widget_by_id(self.id + "_" + str(i)).success_value)
@@ -121,7 +110,7 @@ class DataSummaryLine(Widget):
     Widget that displays a summary of data input, showing the number of files found. This applies only for the BIDS file type.
     """
 
-    def __init__(self, summary=None, **kwargs) -> None:
+    def __init__(self, summary: dict | None = None, id: str | None = None, classes: str | None = None) -> None:
         """
         Parameters
         ----------
@@ -129,7 +118,7 @@ class DataSummaryLine(Widget):
             A dictionary containing the summary message and list of files. If None, a default summary is used.
         **kwargs : dict
         """
-        super().__init__(**kwargs)
+        super().__init__(id=id, classes=classes)
         self.summary = {"message": "Found 0 files.", "files": []} if summary is None else summary
 
     def compose(self) -> ComposeResult:
@@ -147,7 +136,7 @@ class DataSummaryLine(Widget):
 
     def update_summary(self, summary):
         """
-        Updates the summary information displayed in the widget.
+        Updates the summary information displayed in the widget. Used exteranaly.
 
         Parameters
         ----------
@@ -156,6 +145,7 @@ class DataSummaryLine(Widget):
         """
         self.summary = summary
         self.get_widget_by_id("feedback").update(self.summary["message"])
+        # if there were some found files, then change border to green
         if len(self.summary["files"]) > 0:
             self.styles.border = ("solid", "green")
 
@@ -171,9 +161,9 @@ class DataInput(Widget):
     Nested in a tab in the main widget.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        #  self._id_counter = 0
+    def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(id=id, classes=classes)
+        # Use the following variable to catch outputs of the meta and summary steps.
         self.callback_message = ""
         """ These counters are used to create a unique widget ids. These ids are then used in the ctx.cache. If some pattern
         widget is deleted, this id is used to delete it also from the cache. So it maps widget to the made selections which
@@ -182,7 +172,32 @@ class DataInput(Widget):
         self.t1_file_pattern_counter = 0
         self.bold_file_pattern_counter = 0
         self.field_map_file_pattern_counter = 0
+        # Flag whether the association of the field maps was done or no.
         self.association_done = False
+
+    def callback_func(self, message_dict):
+        info_string = Text("")
+        for key in message_dict:
+            print("kkkkkkkkkkkkk", message_dict[key], key)
+            # if there is only one item, we do not separate items on new lines
+            print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
+            if len(message_dict[key]) <= 1:
+                print(
+                    "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
+                    (len(key) + len(message_dict[key]) + 3),
+                    len(key),
+                    len(message_dict[key]),
+                )
+                sep_char = ""
+                separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
+            else:
+                sep_char = "\n"
+                separ_line = "-" * (max([len(s) for s in [key] + message_dict[key]]) + 3)
+            info_string += Text(key + ": " + sep_char, style="bold green") + Text(
+                " ".join(message_dict[key]) + separ_line + "\n", style="white"
+            )
+
+        self.callback_message = info_string
 
     def compose(self) -> ComposeResult:
         """Switch in between the BIDS and non BIDS widgets."""
@@ -275,14 +290,11 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("instructions").border_title = "Data format"
         self.get_widget_by_id("bids_panel").border_title = "Path to BIDS directory"
         self.get_widget_by_id("bids_summary_panel").border_title = "Data input file summary"
-
         self.get_widget_by_id("non_bids_panel").border_title = "Path pattern setup"
-
-        self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
         self.get_widget_by_id("t1_image_panel").border_title = "T1-weighted image file pattern"
         self.get_widget_by_id("bold_image_panel").border_title = "BOLD image files patterns"
-        # self.get_widget_by_id("event_file_panel").border_title = "Event files patterns"
         self.get_widget_by_id("field_map_panel").border_title = "Field maps"
+        self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
         self.get_widget_by_id("associate_button").styles.visibility = "hidden"
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "hidden"
 
@@ -300,7 +312,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             )
         )
         self.t1_file_pattern_counter += 1
-        self.refresh()
+        # self.refresh()
 
     @on(Button.Pressed, "#add_bold_image_button")
     async def on_button_add_bold_image_button(self):
@@ -316,7 +328,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             )
         )
         self.bold_file_pattern_counter += 1
-        self.refresh()
+        # self.refresh()
 
     @on(Button.Pressed, "#add_field_map_button")
     def _add_field_map_file(self):
@@ -365,10 +377,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 )
                 self.field_map_file_pattern_counter += 1
                 self.refresh()
-            # self.get_widget_by_id('field_maps_button_panel').mount()
 
-        # mount new buttons after adding the field map
-
+        # actual start of the function, push modal to select the field map type and the mount appropriate FieldMapFilesPanel
         options = {
             "epi": "EPI (blip-up blip-down)",
             "siemens": "Phase difference and magnitude (used by Siemens scanners)",
@@ -382,112 +392,14 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 id="field_maps_type_modal",
             ),
             branch_field_maps,
-            #   self._mount_field_item_group # this was here before
         )
 
     def show_additional_buttons_in_field_map_panel(self):
+        # show new buttons after adding the field map
         self.get_widget_by_id("associate_button").styles.visibility = "visible"
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
 
-    def callback_func(self, message_dict):
-        info_string = Text("")
-        for key in message_dict:
-            print("kkkkkkkkkkkkk", message_dict[key], key)
-            # if there is only one item, we do not separate items on new lines
-            print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
-            if len(message_dict[key]) <= 1:
-                print(
-                    "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
-                    (len(key) + len(message_dict[key]) + 3),
-                    len(key),
-                    len(message_dict[key]),
-                )
-                sep_char = ""
-                separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
-            else:
-                sep_char = "\n"
-                separ_line = "-" * (max([len(s) for s in [key] + message_dict[key]]) + 3)
-            info_string += Text(key + ": " + sep_char, style="bold green") + Text(
-                " ".join(message_dict[key]) + separ_line + "\n", style="white"
-            )
-
-        self.callback_message = info_string
-
-    @work
-    @on(Button.Pressed, "#confirm_field_map_button")
-    async def _confirm_field_map_button(self):
-        number_of_t1_files = []
-        number_of_bold_files = []
-        number_of_field_map_files = []
-        index_list = pd.DataFrame.from_dict(ctx.cache)
-        print("lllllllllllllllllllllll", index_list)
-
-        for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
-            number_of_t1_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
-            number_of_bold_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
-            for sub_widget in widget.walk_children(FileItem):
-                number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
-
-        warning_string = ""
-        #  if any(value == 0 for value in [number_of_t1_files, number_of_bold_files, number_of_field_map_files]):
-        if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
-            warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
-        if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
-            warning_string += "No bold files found! Check or add the bold file pattern!\n"
-        if any(value == 0 for value in number_of_field_map_files) or not number_of_field_map_files:
-            warning_string += "No field map files found! Check or add the field map file pattern!"
-        if warning_string != "":
-            await self.app.push_screen_wait(
-                Confirm(
-                    warning_string,
-                    left_button_text=False,
-                    right_button_text="OK",
-                    #  left_button_variant=None,
-                    right_button_variant="default",
-                    title="Missing files",
-                    id="missing_files_modal",
-                    classes="confirm_warning",
-                )
-            )
-        if self.association_done is False:
-            await self.app.push_screen_wait(
-                Confirm(
-                    "Check for field map association! Button 'Associate'",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    #  left_button_variant=None,
-                    right_button_variant="default",
-                    title="Check association",
-                    id="association_modal",
-                    classes="confirm_warning",
-                )
-            )
-        # if warning_string == '' and self.association_done is True:
-        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        #  self.app.show_hidden_tabs()
-        # extract images (tasks)
-        ctx.refresh_available_images()
-        tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
-        tab_manager_widget.show_tab("preprocessing_tab")
-        tab_manager_widget.show_tab("feature_selection_tab")
-        tab_manager_widget.show_tab("models_tab")
-
-    @on(Button.Pressed, "#associate_button")
-    def _on_associate_button_pressed(self):
-        acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
-        acq_to_task_mapping_step_instance.run()
-        self.association_done = True
-
-    @on(Button.Pressed, "#info_field_maps_button")
-    def _on_info_button_pressed(self):
-        """Shows a modal with the list of files found using the given pattern."""
-        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.callback_message)
-        self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
-
-    def _mount_field_item_group(self, field_map_user_choices):
-        print("fffffffffffffffffffff", field_map_user_choices)
+    def _mount_field_item_group(self, field_map_user_choices: list | str):
         # wrap to list, because from the single selection, the choices is just a string and not a list
         field_map_user_choices = (
             field_map_user_choices if isinstance(field_map_user_choices, list) else [field_map_user_choices]
@@ -508,14 +420,6 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         if field_map_type == "philips":
             step_classes += [FieldMapStep()]
             step_classes = step_classes[::-1]
-        print(
-            "ooooooooooooo",
-            field_map_user_choices,
-            any("one_phase_image_file" in s for s in field_map_user_choices),
-            any("two_phase_image_file" in s for s in field_map_user_choices),
-        )
-        print("1qqqqqqqqqqqqqqqqqssssssssss step_classes", step_classes)
-        print("2qqqqqqqqqqqqqqqqqssssssssss step_classes", step_classes)
         if field_map_type is not None:
             self.get_widget_by_id("field_map_panel").mount(
                 FieldMapFilesPanel(
@@ -527,16 +431,88 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.field_map_file_pattern_counter += 1
             self.refresh()
 
-    def on_switch_changed(self, message):
+    @work
+    @on(Button.Pressed, "#confirm_field_map_button")
+    async def _confirm_field_map_button(self):
+        """This function makes checks on the user input non-bids files. If the mandatory T1 and bold files are present,
+        then the hidden tabs with features and etc. are made visible. This is done by looping over the panels and walking
+        their children, in particular, the FileItem widgets which contains the needed information about the number of found
+        files.
+        """
+        number_of_t1_files = []
+        number_of_bold_files = []
+        number_of_field_map_files = []
+        for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
+            number_of_t1_files.append(len(widget.pattern_match_results["files"]))
+        for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
+            number_of_bold_files.append(len(widget.pattern_match_results["files"]))
+        for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
+            for sub_widget in widget.walk_children(FileItem):
+                number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
+
+        warning_string = ""
+        if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
+            warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
+        if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
+            warning_string += "No bold files found! Check or add the bold file pattern!\n"
+        # Fields map are not mandatory, so this does not go to the warning string.
+        # if any(value == 0 for value in number_of_field_map_files) or not number_of_field_map_files:
+        #     warning_string += "No field map files found! Check or add the field map file pattern!"
+        # If the are field maps and the association was needed but was not done
+        if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
+            await self.app.push_screen_wait(
+                Confirm(
+                    "Check for field map association! Button 'Associate'",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Check association",
+                    id="association_modal",
+                    classes="confirm_warning",
+                )
+            )
+        if warning_string != "":
+            await self.app.push_screen_wait(
+                Confirm(
+                    warning_string,
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Missing files",
+                    id="missing_files_modal",
+                    classes="confirm_warning",
+                )
+            )
+        else:
+            # refresh available images so that the feature tab can use them
+            ctx.refresh_available_images()
+            # make hidden tabs visible
+            self.app.flags_to_show_tabs["from_input_data_tab"] = True
+            self.app.show_hidden_tabs()
+
+    @on(Button.Pressed, "#associate_button")
+    def _on_associate_button_pressed(self):
+        acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
+        acq_to_task_mapping_step_instance.run()
+        self.association_done = True
+
+    @on(Button.Pressed, "#info_field_maps_button")
+    def _on_info_button_pressed(self):
+        """Shows a modal with the list of files found using the given pattern."""
+        self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
+
+    def on_switch_changed(self, message: Message):
+        """Bids/Non-bids switch"""
         self.toggle_bids_non_bids_format(message.value)
 
     def toggle_bids_non_bids_format(self, value):
+        """Bids/Non-bids switch function"""
         if value:
             self.app.is_bids = True
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
             self.get_widget_by_id("bids_summary_panel").styles.visibility = "visible"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
-
         else:
             self.app.is_bids = False
             self.get_widget_by_id("bids_panel").styles.visibility = "hidden"
@@ -544,40 +520,15 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
 
     def on_file_browser_changed(self, message):
-        """Trigger the data read by the Context after a file path is selected."""
+        """Trigger the data read by the Context after a file path is selected (in bids case)."""
         ctx.cache["bids"]["files"] = message.selected_path
-        self.feed_contex_and_extract_available_images()
+        self.update_summaries()
 
-    # self.app.show_hidden_tabs()
-
-    # def get_available_images(self):
-    #     # if len(file_path) > 0:
-    #     #  ctx.put(BidsFileSchema().load({"datatype": "bids", "path": file_path}))
-    #
-    #     bold_filedict = {"datatype": "func", "suffix": "bold"}
-    #     filepaths = ctx.database.get(**bold_filedict)
-    #
-    #     print("get_available_images bbbbbbbbbbbbbbbbbbbbbbbbbbbb", filepaths)
-    #     # self.filepaths = list(filepaths)
-    #     # if len(self.filepaths) > 0:
-    #
-    #     db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=filepaths)
-    #     self.app.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
-    #     print("get_available_imagesssssssssssssssssssssssssssssssssssss", db_entities, db_tags_set)
-    #     print("get_available_images ssssssssssssssssssssssssssssssssssss", self.app.available_images)
-
-    def feed_contex_and_extract_available_images(self):
-        """Feed the Context object with the path to the data fields and extract available images."""
+    def update_summaries(self):
+        """Updates summary information and show hidden tabs (in bids case)."""
         # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
         self.app.flags_to_show_tabs["from_input_data_tab"] = True
         self.app.show_hidden_tabs()
-        # if sum(self.app.flags_to_show_tabs.values()) > 1:
-        #     tab_manager_widget.show_tab("preprocessing_tab")
-        #     tab_manager_widget.show_tab("feature_selection_tab")
-        #     tab_manager_widget.show_tab("models_tab")
-
-        #  def on_dismiss_this_modal(value):
-        #     self.get_widget_by_id("data_input_file_browser").update_input(None)
 
         anat_summary_step = AnatSummaryStep()
         bold_summary_step = BoldSummaryStep()
@@ -589,37 +540,3 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         # at this point, all went well, change border from red to green
         self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
-
-        # contribute with True to show hidden tabs
-        # self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        # self.app.show_hidden_tabs()
-        print("self.app.flags_to_show_tabsself.app.flags_to_show_tabs", self.app.flags_to_show_tabs)
-        print("wwwwwwwwwwwwwwhat self is here??????", self.walk_children())
-        # self.app.show_hidden_tabs()
-
-        # else:
-        # # self.app.push_screen(
-        # # FalseInputWarning(
-        # # warning_message="The selected data directory seems not be a BIDS directory!",
-        # # title="Error - Non a bids directory",
-        # # id="not_bids_dir_warning_modal",
-        # # classes="error_modal",
-        # # ),
-        # # on_dismiss_this_modal,
-        # # )
-        # self.app.push_screen(
-        # Confirm(
-        # "The selected data directory seems not be a BIDS directory!",
-        # title="Error - Non a bids directory",
-        # left_button_text=False,
-        # right_button_text="OK",
-        # id="not_bids_dir_warning_modal",
-        # classes="confirm_error",
-        # )
-        # )
-
-    def manually_change_label(self, label):
-        """If the input data folder was set by reading an existing json file via the working directory widget,
-        the label must be changed externally. This is done in the most top base.
-        """
-        self.get_widget_by_id("data_input_file_browser").update_input(label)
