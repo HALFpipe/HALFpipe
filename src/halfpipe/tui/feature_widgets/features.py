@@ -293,7 +293,8 @@ class FeatureTemplate(Widget):
         self.setting_dict["confounds_removal"] = confounds
 
 
-class AtlasBased(FeatureTemplate):
+
+class AtlasSeedDualRegBased(FeatureTemplate):
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}
     featurefield = "atlases"
@@ -322,8 +323,16 @@ class AtlasBased(FeatureTemplate):
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
 
+class AtlasBased(AtlasSeedDualRegBased):
+    entity = "desc"
+    filters = {"datatype": "ref", "suffix": "atlas"}
+    featurefield = "atlases"
+    type = "atlas_based_connectivity"
+    file_panel_class = AtlasFilePanel
+    minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
 
-class SeedBased(AtlasBased):
+
+class SeedBased(AtlasSeedDualRegBased):
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "seed"}
     featurefield = "seeds"
@@ -332,7 +341,7 @@ class SeedBased(AtlasBased):
     minimum_coverage_label = "Minimum seed map region coverage by individual brain mask"
 
 
-class DualReg(AtlasBased):
+class DualReg(AtlasSeedDualRegBased):
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "map"}
     featurefield = "maps"
