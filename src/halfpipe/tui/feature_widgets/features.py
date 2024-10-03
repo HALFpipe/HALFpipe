@@ -293,7 +293,6 @@ class FeatureTemplate(Widget):
         self.setting_dict["confounds_removal"] = confounds
 
 
-
 class AtlasSeedDualRegBased(FeatureTemplate):
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}
@@ -322,6 +321,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
             pass
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
+
 
 class AtlasBased(AtlasSeedDualRegBased):
     entity = "desc"
