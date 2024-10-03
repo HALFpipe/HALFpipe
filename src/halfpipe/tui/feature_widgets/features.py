@@ -49,8 +49,17 @@ class FeatureTemplate(Widget):
         if self.featurefield not in self.feature_dict:
             self.feature_dict[self.featurefield] = []
 
+        self.bandpass_filter_low_key = 'lp_width'
+        self.bandpass_filter_high_key = 'hp_width'
         if "bandpass_filter" not in self.setting_dict:
             self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": None, "lp_width": None}
+        else:
+            # if we are working with existing dict (i.e. loading from a spec file), then we must identify whether it is
+            # gaussian or frequency based filter, so that we can set the correct keys
+            if self.setting_dict["bandpass_filter"]['type'] == 'frequency_based':
+                self.bandpass_filter_low_key = 'low'
+                self.bandpass_filter_high_key = 'high'
+
         if "smoothing" not in self.setting_dict:
             self.setting_dict["smoothing"] = {"fwhm": 0}
 
@@ -59,8 +68,12 @@ class FeatureTemplate(Widget):
         if "grand_mean_scaling" not in self.setting_dict:
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
         self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
-        for image in self.setting_dict["filters"][0]["values"]:
-            self.images_to_use["task"][image] = True
+        if self.setting_dict["filters"] != []:
+            for image in self.setting_dict["filters"][0]["values"]:
+                self.images_to_use["task"][image] = True
+        else:
+            for image in self.images_to_use["task"]:
+                self.images_to_use["task"][image] = True
 
         confounds_options = {
             "ICA-AROMA": ["ICA-AROMA", False],
@@ -78,6 +91,18 @@ class FeatureTemplate(Widget):
             for confound in self.setting_dict["confounds_removal"]:
                 confounds_options[confound][1] = True
 
+        all_possible_conditions = []
+        for v in self.images_to_use["task"].keys():
+            all_possible_conditions += extract_conditions(entity="task", values=[v])
+
+        print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvalue self.feature_dict["contrasts"] ', self.feature_dict["contrasts"] )
+        if self.feature_dict["contrasts"] is not None:
+            self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
+                all_possible_conditions,
+                feature_contrasts_dict=self.feature_dict["contrasts"],
+                id="model_conditions_and_constrasts",
+                classes="components",
+            )
         self.confounds_options = confounds_options
         self.preprocessing_panel = Vertical(
             SwitchWithInputBox(
@@ -101,13 +126,13 @@ class FeatureTemplate(Widget):
             ),
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"]["lp_width"],
+                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_low_key ],
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_lp_width",
             ),
             SwitchWithInputBox(
                 label="High-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"]["hp_width"],
+                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_high_key ],
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_hp_width",
             ),
@@ -327,18 +352,11 @@ class TaskBased(FeatureTemplate):
     file_panel_class = EventFilePanel
 
     def compose(self) -> ComposeResult:
-        all_possible_conditions = []
-        for v in self.images_to_use["task"].keys():
-            all_possible_conditions += extract_conditions(entity="task", values=[v])
+
 
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel
-            yield ModelConditionsAndContrasts(
-                all_possible_conditions,
-                feature_contrasts_dict=self.feature_dict["contrasts"],
-                id="model_conditions_and_constrasts",
-                classes="components",
-            )
+            yield self.model_conditions_and_contrast_table
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:

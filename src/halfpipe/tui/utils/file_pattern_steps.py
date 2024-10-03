@@ -59,10 +59,6 @@ def display_str(x):
     return humanize(x)
 
 
-##################### CheckMetadataSteps
-
-
-################ FilePatternSteps
 
 
 class FilePatternStep:
@@ -173,24 +169,9 @@ class AnatStep(FilePatternStep):
 
     schema = T1wFileSchema
 
-    def __init__(self, path=""):
-        super().__init__(path=path)
+    # def __init__(self, path=""):
+    #     super().__init__(path=path)
 
-
-# def find_bold_file_paths():
-#     bold_file_paths = ctx.database.get(datatype="func", suffix="bold")
-#
-#     if bold_file_paths is None:
-#         raise ValueError("No BOLD files in database")
-#
-#     #  filters = ctx.spec.settings[-1].get("filters")
-#     filters = None
-#     bold_file_paths = set(bold_file_paths)
-#
-#     if filters is not None:
-#         bold_file_paths = ctx.database.applyfilters(bold_file_paths, filters)
-#
-#     return bold_file_paths
 
 
 class EventsStep(FilePatternStep):
@@ -201,31 +182,6 @@ class EventsStep(FilePatternStep):
     filedict = {"datatype": "func", "suffix": "events"}
     filetype_str = "event"
 
-    # def __init__(self, path=""):
-    # super().__init__(path=path)
-
-    # # setup
-    # bold_file_paths = find_bold_file_paths()
-
-    # taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
-    # if taskset is None:
-    # taskset = set()
-    # self.taskset = taskset
-
-    # if len(self.taskset) > 1:
-    # self.required_in_path_entities = ["task"]
-    # #        super(EventsStep, self).setup(ctx)
-
-    # # next
-    # if len(self.taskset) == 1:
-    # assert isinstance(self.fileobj, File)
-    # if self.fileobj.tags.get("task") is None:
-    # if "task" not in get_entities_in_path(self.fileobj.path):
-    # (self.fileobj.tags["task"],) = self.taskset
-
-    # return super(EventsStep, self).next(ctx)
-
-    #  @abstractmethod
     def _transform_extension(self, ext):
         raise NotImplementedError()
 
@@ -236,7 +192,6 @@ class MatEventsStep(EventsStep):
     def _transform_extension(self, ext):
         assert ext == ".mat"
         return ext
-
 
 # next_step_type = CheckUnitsStep
 
@@ -385,225 +340,3 @@ class AddBinarySeedMapStep(FilePatternStep):
     ask_if_missing_entities = ["desc"]
     required_in_path_entities = []
 
-
-###############################################################################################################################
-# def find_bold_file_paths():
-#     bold_file_paths = ctx.database.get(datatype="func", suffix="bold")
-#
-#     if bold_file_paths is None:
-#         raise ValueError("No BOLD files in database")
-#
-#     filters = ctx.spec.settings[-1].get("filters")
-#     bold_file_paths = set(bold_file_paths)
-#
-#     if filters is not None:
-#         bold_file_paths = ctx.database.applyfilters(bold_file_paths, filters)
-#
-#     return bold_file_paths
-#
-#
-# def get_conditions():
-#     bold_file_paths = find_bold_file_paths()
-#
-#     conditions: list[str] = list()
-#     seen = set()
-#     for bold_file_path in bold_file_paths:
-#         event_file_paths = collect_events(ctx.database, bold_file_path)
-#
-#         if event_file_paths is None:
-#             continue
-#
-#         if event_file_paths in seen:
-#             continue
-#
-#         cf = ConditionFile(data=event_file_paths)
-#         for condition in cf.conditions:  # maintain order
-#             if condition not in conditions:
-#                 conditions.append(condition)
-#
-#         seen.add(event_file_paths)
-#
-#     ctx.spec.features[-1].conditions = conditions
-
-
-# # start with this one, we assume that the "images" are already extracted
-# # This should be now modal and the choice should trigger one of the EventsSteps which essentially leads to another modal,
-# # the path pattern builder. From that the conditions should be then extracted by the ConditionsSelectStep
-# class EventsTypeStep:
-#     header_str = "Specify the event file type"
-#     options = {
-#         MatEventsStep: "SPM multiple conditions",
-#         TxtEventsStep: "FSL 3-column",
-#         TsvEventsStep: "BIDS TSV",
-#     }
-#
-#     def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
-#         self.app = app
-#
-#     # self.force_run = force_run
-#
-#     def setup(self):
-#         #  self.is_first_run = True
-#         self.should_run = False
-#
-#         # try to load conditions if not available
-#         get_conditions(ctx)
-#
-#         if (
-#             not hasattr(ctx.spec.features[-1], "conditions")
-#             or ctx.spec.features[-1].conditions is None
-#             or len(ctx.spec.features[-1].conditions) == 0
-#             #       or self.force_run
-#         ):  # check if load was successful
-#             self.should_run = True
-#
-#     def run(self):
-#         self.setup()
-#         self.run2()
-#         print("i am hereeeeee")
-#
-#     @work
-#     async def run2(self):
-#         if self.should_run:
-#             self.app.push_screen_wait(
-#                 SelectionModal(title="Event file type", instructions=header_str, options=self.options),
-#                 self.next,
-#             )
-#         else:
-#             self.next(None)
-#         #  return super(EventsTypeStep, self).run(ctx)
-#
-#     #   return self.is_first_run
-#
-#     def next(self, events_type_step):
-#         if self.should_run:  # if it is neccessery to run the modal
-#             print("run the EventsTypeStep!!!!!!!!!!!!")
-#             # events_type_step_instance = events_type_step()
-#             # events_type_step_instance.run()
-#         # return super(EventsTypeStep, self).next(ctx)
-#         else:  # if we can go directly to the condition extraction
-#             #  if self.is_first_run:
-#             #      self.is_first_run = False
-#             print("run the ConditionsSelectStep!!!!!!!!!!!!")
-#             # conditions_select_step_instance = ConditionsSelectStep(self.app)
-#             # conditions_select_step_instance.run()
-#             # else:
-#             #    return
-
-
-###########################
-# for consistency, somehow adapt this:
-# it is done differently in new TUI somewhere else, i think!
-
-#
-# class SettingFilterStep:
-#     def _format_tag(self, tag):
-#         return f'"{tag}"'
-#
-#     def setup(self):
-#         self.is_first_run = True
-#         self.choice = None
-#
-#         bold_filedict = {"datatype": "func", "suffix": "bold"}
-#         filepaths = ctx.database.get(**bold_filedict)
-#         self.filepaths = list(filepaths)
-#         assert len(self.filepaths) > 0
-#
-#         db_entities, db_tags_set = ctx.database.multitagvalset(entities, filepaths=self.filepaths)
-#
-#         self.entities = []
-#         options = []
-#         self.tagval_by_str = {}
-#         values = []
-#         for entity, tagvals_list in zip(db_entities, zip(*db_tags_set, strict=False), strict=False):
-#             if entity == "sub":
-#                 continue
-#
-#             tagvals_set = set(tagvals_list)
-#             if 1 < len(tagvals_set) < 16:
-#                 self.entities.append(entity)
-#
-#                 entity_str = entity
-#                 if entity_str in entity_display_aliases:
-#                     entity_str = entity_display_aliases[entity_str]
-#                 entity_str = humanize(entity_str)
-#                 options.append((entity_str, entity_colors[entity]))
-#
-#                 if None in tagvals_set:
-#                     tagvals_set.remove(None)
-#
-#                 tagvals = sorted(list(tagvals_set))
-#
-#                 row = [f'"{tagval}"' for tagval in tagvals]
-#                 values.append(row)
-#
-#                 self.tagval_by_str.update(dict(zip(row, tagvals, strict=False)))
-#
-#         print("oooooooooooooooooooooooooooptions vvvvvvvvvvvvalues", options, values)
-#         self.choice = values[0]
-#         if len(options) == 0:
-#             self.should_run = False
-#         else:
-#             self.should_run = True
-#
-#     #      self._append_view(TextView("Specify images to use"))
-#
-#     #     self.input_view = MultiMultipleChoiceInputView(options, values, checked=values)
-#
-#     #    self._append_view(self.input_view)
-#     #    self._append_view(SpacerView(1))
-#
-#     def run(self):
-#         self.setup()
-#         print("self.should_runself.should_runself.should_runself.should_run", self.should_run)
-#         # if not self.should_run:
-#         # return self.is_first_run
-#         # else:
-#         # #self.choice = self.input_view()
-#         # #if self.choice is None:
-#         # #    return False
-#         # return True
-#         self.next()
-#
-#     def next(self):
-#         self.choice = [{'"anticipation"': True, '"emomatching"': True, '"gstroop"': True, '"workingmemory"': True}]
-#         print(
-#             "elf.choiceelf.choiceelf.choice",
-#             self.choice,
-#         )
-#         print("ctx.spec.settingsctx.spec.settingsctx.spec.settings", ctx.spec.settings)
-#         if self.choice is not None:
-#             filter_schema = FilterSchema()
-#
-#             # if ctx.spec.settings[-1].get("filters") is None:
-#             #     ctx.spec.settings[-1]["filters"] = []
-#
-#             for entity, checked in zip(self.entities, self.choice, strict=False):
-#                 print("entity, checkedentity, checked entity, checked:::::::::::::::", entity, checked)
-#
-#                 if all(checked.values()):
-#                     continue
-#                 assert any(checked.values())
-#
-#                 selected_tagvals = []
-#                 for tag_str, is_selected in checked.items():
-#                     if is_selected:
-#                         selected_tagvals.append(self.tagval_by_str[tag_str])
-#                 print("eeeeeeeeeeeeeeeeeeeeeentity entity selected_tagvals,:::", entity, ":::", selected_tagvals)
-#                 _filter = filter_schema.load(
-#                     {
-#                         "type": "tag",
-#                         "action": "include",
-#                         "entity": entity,
-#                         "values": selected_tagvals,
-#                     }
-#                 )
-#                 #     ctx.spec.settings[-1]["filters"].append(_filter)
-#                 print("filterfilterfilterfilterfilterfilter", _filter)
-#
-#         if self.should_run or self.is_first_run:
-#             print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa i am here")
-#             self.is_first_run = False
-#             # return next_step_type(self.app)(ctx)
-#             events_type_instance = EventsTypeStep()
-#             events_type_instance.run()

@@ -166,11 +166,14 @@ class ModelConditionsAndContrasts(Widget):
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         # read table defaults if there are some
+        print('ttttttttttttttttttttest self*feature_contrasts_dict', self.feature_contrasts_dict)
         if self.feature_contrasts_dict is not None:
             for contrast_dict in self.feature_contrasts_dict:
                 table.add_column(contrast_dict["name"], key=contrast_dict["name"])
+                print('iiiiiiiiiiiiiis adding columnnnnnnnnnnnnnnnn??????????', contrast_dict["name"])
                 for row_key in table.rows:
                     table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+                    print('iiiiiiiiiiiiiis adding row_key??????????', contrast_dict["values"][row_key.value])
 
     #       self._update_row_dict()
 
@@ -190,10 +193,6 @@ class ModelConditionsAndContrasts(Widget):
         # if there are less rows in the table than in selection, we need to find which one we need to add
         elif len(self.get_widget_by_id("model_conditions_selection").selected) > len(table.rows):
             out = list(set(self.get_widget_by_id("model_conditions_selection").selected) - set(row_dict.keys()))
-            # for c in table.columns:
-            # for r in table.rows:
-            # print("1", c.value)
-            # print("2", table.get_cell(r, c))
             print(self.df)
             [table.add_row(*self.df.loc[o].values, label=o, key=o) for o in out]
 
@@ -205,8 +204,6 @@ class ModelConditionsAndContrasts(Widget):
         self.get_widget_by_id("contrast_table_upper").styles.height = (
             len(self.get_widget_by_id("model_conditions_selection").selected) + 6
         )
-        print("heeeeeeeeeeeeeeeeeeeeeeeeeeeight", len(self.get_widget_by_id("model_conditions_selection").selected) + 6)
-        print("oooooooooooooooooooooooooooooooooo", len(self.get_widget_by_id("model_conditions_selection")._values))
         self.get_widget_by_id("model_conditions_selection").styles.height = (
             len(self.get_widget_by_id("model_conditions_selection")._values) + 2
         )

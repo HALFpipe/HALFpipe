@@ -8,8 +8,9 @@ from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Static
+from textual.widgets import Button, Static, Switch
 
+from ..utils.filebrowser import FileBrowser
 from ..utils.confirm_screen import Confirm, SimpleMessageModal
 from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
@@ -299,36 +300,40 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "hidden"
 
     @on(Button.Pressed, "#add_t1_image_button")
-    async def on_button_add_t1_image_button_pressed(self):
+    async def _on_button_add_t1_image_button_pressed(self):
         await self.add_t1_image(load_object=None)
 
-    async def add_t1_image(self, load_object=None):
+    async def add_t1_image(self, pattern_class=True, load_object=None, message_dict=None):
+        pattern_class = AnatStep(app=self.app) if pattern_class is True else None
         await self.get_widget_by_id("t1_image_panel").mount(
             FileItem(
                 id="t1_file_pattern_" + str(self.t1_file_pattern_counter),
                 classes="file_patterns",
-                pattern_class=AnatStep(),
+                pattern_class=pattern_class,
                 load_object=load_object,
+                message_dict=message_dict
             )
         )
         self.t1_file_pattern_counter += 1
-        # self.refresh()
+        return "t1_file_pattern_" + str(self.t1_file_pattern_counter),
 
     @on(Button.Pressed, "#add_bold_image_button")
-    async def on_button_add_bold_image_button(self):
+    async def _on_button_add_bold_image_button(self):
         await self.add_bold_image(load_object=None)
 
-    async def add_bold_image(self, load_object=None):
+    async def add_bold_image(self, pattern_class=True, load_object=None, message_dict=None):
+        pattern_class = BoldStep(app=self.app) if pattern_class is True else None
         await self.get_widget_by_id("bold_image_panel").mount(
             FileItem(
                 id="bold_file_pattern_" + str(self.bold_file_pattern_counter),
                 classes="file_patterns",
-                pattern_class=BoldStep(app=self.app),
+                pattern_class=pattern_class,
                 load_object=load_object,
+                message_dict=message_dict
             )
         )
         self.bold_file_pattern_counter += 1
-        # self.refresh()
+        return "bold_file_pattern_" + str(self.bold_file_pattern_counter)
 
     @on(Button.Pressed, "#add_field_map_button")
     def _add_field_map_file(self):
@@ -502,11 +507,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """Shows a modal with the list of files found using the given pattern."""
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
 
+    @on(Switch.Changed)
     def on_switch_changed(self, message: Message):
         """Bids/Non-bids switch"""
         self.toggle_bids_non_bids_format(message.value)
 
-    def toggle_bids_non_bids_format(self, value):
+    def toggle_bids_non_bids_format(self, value: bool):
         """Bids/Non-bids switch function"""
         if value:
             self.app.is_bids = True
@@ -519,16 +525,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.get_widget_by_id("bids_summary_panel").styles.visibility = "hidden"
             self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
 
-    def on_file_browser_changed(self, message):
+    @on(FileBrowser.Changed)
+    def _on_file_browser_changed(self, message: Message):
         """Trigger the data read by the Context after a file path is selected (in bids case)."""
         ctx.cache["bids"]["files"] = message.selected_path
+        self.app.flags_to_show_tabs["from_input_data_tab"] = True
+        self.app.show_hidden_tabs()
         self.update_summaries()
 
     def update_summaries(self):
         """Updates summary information and show hidden tabs (in bids case)."""
         # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
-        self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        self.app.show_hidden_tabs()
 
         anat_summary_step = AnatSummaryStep()
         bold_summary_step = BoldSummaryStep()

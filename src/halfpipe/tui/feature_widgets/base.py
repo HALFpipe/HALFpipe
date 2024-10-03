@@ -239,8 +239,8 @@ class FeatureSelection(Widget):
         If this is a load or a duplication, then new entry is not created but read from the dictionary.
         The dictionary entry was created elsewhere.
         """
-
-        if isinstance(new_feature_item, tuple):
+        print('new_feature_itemnew_feature_itemnew_feature_itemnew_feature_item', new_feature_item)
+        if isinstance(new_feature_item, tuple) or isinstance(new_feature_item, list):
             feature_type, feature_name = new_feature_item
             new_id = "feature_item_" + str(self._id_counter)
             self.feature_items[new_id] = FeatureItem(feature_type, feature_name)

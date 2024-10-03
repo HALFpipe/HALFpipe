@@ -31,6 +31,7 @@ from ..utils.context import ctx
 from ..utils.selection_modal import SelectionModal
 from ..utils.set_value_modal import SetValueModal
 from .multichoice_radioset import MultipleRadioSetModal
+from textual import on, work
 
 
 def display_str(x):
@@ -42,10 +43,6 @@ def display_str(x):
         return "slice acquisition direction"
     return humanize(x)
 
-
-##################### CheckMetadataSteps
-
-
 def _get_field(schema, key):
     if isinstance(schema, type):
         instance = schema()
@@ -54,7 +51,6 @@ def _get_field(schema, key):
     if "metadata" in instance.fields:
         return _get_field(instance.fields["metadata"].nested, key)
     return instance.fields.get(key)
-
 
 def _get_unit(schema, key):
     field = _get_field(schema, key)
@@ -259,7 +255,6 @@ class SetMetadataStep:
             self.aliases = dict(zip(display_choices, choices, strict=False))
             self.possible_options = dict(zip(choices, display_choices, strict=False))
 
-            print("aaaaaaaaaaa self.aliases", self.aliases)
             #    self.input_view: CallableView = SingleChoiceInputView(display_choices, is_vertical=True)
             self.input_view += display_choices
             # mount selection choice,             display_choices
@@ -273,9 +268,6 @@ class SetMetadataStep:
                 )
             )
             self.next(choice)
-
-            print("display_choicesdisplay_choices00aaaaaaaaaaaaaaaaaaaaaaaa", display_choices)
-            print("possible_optionspossible_optionspossible_optionspossible_options", self.possible_options)
 
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
@@ -292,8 +284,8 @@ class SetMetadataStep:
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
-    #        self._append_view = self._append_view + self.input_view
-    # self._append_view(SpacerView(1))
+#        self._append_view = self._append_view + self.input_view
+        # self._append_view(SpacerView(1))
 
     # def run(self, _):
     # self.result = self.input_view
@@ -302,7 +294,6 @@ class SetMetadataStep:
     # return True
 
     async def next(self, result):
-        print("ccccccccccccccccccccccccccc222", result)
         if self.possible_options is not None:
             self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
         else:
@@ -337,12 +328,6 @@ class SetMetadataStep:
                 filepaths = ctx.database.get(**self.filters)
                 specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
 
-                print("filepathsfilepathsfilepathsfilepathsfilepaths", filepaths)
-                print(
-                    "ctx.database.specfileobj(filepath) for filepath in filepaths",
-                    [ctx.database.specfileobj(filepath) for filepath in filepaths],
-                )
-                print("specfileobjsspecfileobjsspecfileobjsspecfileobjs", specfileobjs)
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
@@ -351,9 +336,6 @@ class SetMetadataStep:
                 specfileobj.metadata[key] = value
                 #  ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
 
-                print("ddddddddddddddddddddddddddddd specfileobjspecfileobj", dir(specfileobj))
-
-            print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkey", self.key)
             # update all fileobjs in the ctx.cache, we use the filters to filter only those to which this applies
 
             for widget_id, the_dict in ctx.cache.items():
@@ -373,11 +355,6 @@ class SetMetadataStep:
                             ctx.cache[widget_id]["files"].metadata[key] = value
 
                 # ctx.cache[self.id_key]["files"] = specfileobj  # type: ignore[assignment]
-                print("sssssssssssssssspecfileobjspecfileobjspecfileobj", specfileobj)
-
-                print("vvvvvvvvvvvvvvvvvvvvvvvvvalue", value)
-        print("2aaaaaaaaaaaaaaaaaaaaaaaa", self._append_view)
-        print("3aaaaaaaaaaaaaaaaaaaaaaaa", self.input_view)
         #     self.callback_message += self._append_view
 
         if self.next_step_type is not None:
@@ -396,22 +373,7 @@ class SetMetadataStep:
             else:
                 return None
 
-
-class SimpleTestClass:
-    test = "bla"
-
-    def __init__(self):
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated", self.test)
-
-
-class SubSimpleTestClass2(SimpleTestClass):
-    test = "alb"
-    # def __init__(self):
-    #   print('wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated', self.test)
-
-
 class CheckMetadataStep:
-    test = "bla"
 
     schema: ClassVar[Type[Schema]]
 
@@ -436,11 +398,7 @@ class CheckMetadataStep:
         self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
         if callback_message is not None:
             self.callback_message.update({self.humankey: []})
-        print(
-            "wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated callback_message",
-            callback_message,
-            self.callback_message,
-        )
+
         self.id_key = id_key
         self.sub_id_key = sub_id_key
 
@@ -456,8 +414,6 @@ class CheckMetadataStep:
     #   self.next_step_type = next_step_type
 
     def evaluate(self):
-        print("ssssssssssssssssssssselft", self)
-        #   print('ssssssssssssssssssssssssssssssss', self.next_step_type)
 
         if self.filters is None:
             filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
@@ -501,7 +457,6 @@ class CheckMetadataStep:
 
         assert isinstance(vals, list)
 
-        print("vvvvvvvvvvvvvals", vals)
         uniquevals, counts = np.unique(vals, return_counts=True)
         order = np.argsort(counts)
 
@@ -509,7 +464,6 @@ class CheckMetadataStep:
         for i in range(min(10, len(order))):
             column1.append(f"{counts[i]} images")
         column1width = max(len(s) for s in column1)
-        print("ccccccccccccccccc", column1width)
         unit = _get_unit(self.schema, self.key)
         if unit is None:
             unit = ""
@@ -527,12 +481,10 @@ class CheckMetadataStep:
                     tablerow = f"{tablerow} {unit}"
                 self._append_view.append(tablerow + "\n")
                 self.callback_message[self.humankey].append(tablerow + "\n")
-            #           self._append_view(TextView(tablerow))
 
             if len(order) > 10:
                 self._append_view.append("...")
 
-        #   print("0000aaaaaaaaaaaa", self._append_view)
 
         if self.is_missing is False:
             self._append_view.append("Proceed with these values?")
@@ -542,14 +494,12 @@ class CheckMetadataStep:
 
         if self.show_summary is True or self.is_missing is False:
             pass
-            # self._append_view(SpacerView(1))
 
     async def run(self):
         self.evaluate()
 
         # def run(self, _):
         if self.is_missing:
-            # print('hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere')
             choice = await self.app.push_screen_wait(
                 Confirm(
                     " ".join(self._append_view),
@@ -563,19 +513,7 @@ class CheckMetadataStep:
                 )
             )
             await self.next(choice)
-
-        # if self.callback is not None:
-        #    self.callback()
-        # return self.is_first_run
-        # else:
-        # self.choice = self.input_view()
-        # if self.choice is None:
-        # return False
-        # return True
         else:
-            print("aaaaaaaaaaaa", self._append_view)
-            print("aaaaaaaaaaaa", self.input_view)
-
             # rise modal here
             choice = await self.app.push_screen_wait(
                 Confirm(
@@ -591,21 +529,12 @@ class CheckMetadataStep:
             )
             await self.next(choice)
 
-        # self.app.message = self._append_view
-
-    # return 'finished'
-
     async def next(self, choice):
         # if self.is_first_run or not self.is_missing:
         # self.is_first_run = False
         # choice = 'No'
-        print("self.callback_messageself.callback_messageself.callback_message", self.callback_message)
 
-        self.test_text = "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwas at next"
-        print("cccccccccccccccccchoice", choice)
-        #     self.callback_message += self._append_view[1:-1]
         if choice is True and self.next_step_type is not None:
-            print(" choice is True *********************************************************************")
             next_step_instance = self.next_step_type(
                 app=self.app,
                 callback=self.callback,
@@ -623,7 +552,6 @@ class CheckMetadataStep:
         elif choice is True and self.next_step_type is None:
             return self.callback(self.callback_message)
         elif choice is False:
-            print(" choice is False xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx SetMetadataStepSetMetadataStepSetMetadataStep")
             set_instance_step = SetMetadataStep(
                 self.filters,
                 self.schema,
@@ -641,22 +569,6 @@ class CheckMetadataStep:
         else:
             pass
 
-    # # def test(self):
-    # # print( 'ggggggggggggggggggggggg')
-
-    # return self._append_view
-
-
-class SubSimpleTestClass(CheckMetadataStep):
-    test = "alb"
-    # def __init__(self):
-    #   print('wwwwwwwwwwwwwwwwwwwwwwwwwwwas initiated', self.test)
-
-    # # def setup(self):
-    # self.test_text = '00000000000000000000000000000000000000'
-    # print('cccccccccccccccccccccccccccreating class')
-    # print(self.next_step_type)
-    #    self.run()
 
 
 class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
@@ -668,9 +580,7 @@ class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
 class CheckPhase1EchoTimeStep(CheckMetadataStep):
     schema = PhaseFmapFileSchema
     key = "echo_time"
-
-
-# next_step_type = Phase2Step
+    # next_step_type = Phase2Step
 
 
 class CheckPhase2EchoTimeStep(CheckMetadataStep):
@@ -758,17 +668,11 @@ class AcqToTaskMappingStep:
             )
         )
         self.boldtags = boldtags
-        print("fffffffffffffffffffffffff self.fmaptags", self.fmaptags)
-        print("fffffffffffffffffffffffff self.boldtags", self.boldtags)
 
-        print("eeeeeeeeeeeeeeeeeeeeeeeee", entities)
-
-        print("fffffffffffffffffffffffff fmapfilepaths", fmapfilepaths)
-
-        for f in fmapfilepaths:
-            for k, v in ctx.database.tags(f).items():
-                #     if k not in ["sub"] and k in entities and v is not None:
-                print("kkkkkkkkkkkvvvvvvvvvvvvvvvffffffffffff", k, v, f)
+        # for f in fmapfilepaths:
+        #     for k, v in ctx.database.tags(f).items():
+        #         #     if k not in ["sub"] and k in entities and v is not None:
+        #         print("kkkkkkkkkkkvvvvvvvvvvvvvvvffffffffffff", k, v, f)
 
         if len(fmaptags) > 0:
 
@@ -799,18 +703,9 @@ class AcqToTaskMappingStep:
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
             self.input_view.append(([*self.options], [*self.values], selected_indices))
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXx self._append_view, self.input_view", self._append_view, self.input_view)
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx111 fmaptags", fmaptags)
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx222 values", self.values)
 
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx333 self.options", self.options)
-
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXx444 boldtags", boldtags)
-            #            self._append_view(self.input_view)
-            #       self._append_view(SpacerView(1))
-
-            for option, boldtagset in zip(self.options, self.boldtags, strict=False):
-                print("option:::", option, "       boldtagset:::", boldtagset)
+            # for option, boldtagset in zip(self.options, self.boldtags, strict=False):
+            #     print("option:::", option, "       boldtagset:::", boldtagset)
 
         else:
             self.is_predefined = True
@@ -820,7 +715,6 @@ class AcqToTaskMappingStep:
 
         if self.is_predefined:
             self.next(None)
-        #    return self.is_first_run
         else:
             # rise modal here
             self.app.push_screen(
@@ -859,9 +753,6 @@ class AcqToTaskMappingStep:
                 for option, boldtagset in zip(self.options, self.boldtags, strict=False)
             }
 
-            #  for option, boldtagset in zip(self.options, self.boldtags, strict=False):
-            #      print(option, boldtagset)
-
             fmap_bold_tag_dict = dict()
             for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
                 if fmaptagset not in fmap_bold_tag_dict:
@@ -875,10 +766,7 @@ class AcqToTaskMappingStep:
                 if specfileobj.datatype != "fmap":
                     continue
 
-                print("pppppppppppppppppppppppppppppppppp specfileobj.path", specfileobj.path)
-
                 fmaplist = ctx.database.fromspecfileobj(specfileobj)
-
                 fmaptags = set(
                     frozenset(
                         (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
