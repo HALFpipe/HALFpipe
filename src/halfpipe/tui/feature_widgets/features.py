@@ -49,16 +49,16 @@ class FeatureTemplate(Widget):
         if self.featurefield not in self.feature_dict:
             self.feature_dict[self.featurefield] = []
 
-        self.bandpass_filter_low_key = 'lp_width'
-        self.bandpass_filter_high_key = 'hp_width'
+        self.bandpass_filter_low_key = "lp_width"
+        self.bandpass_filter_high_key = "hp_width"
         if "bandpass_filter" not in self.setting_dict:
             self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": None, "lp_width": None}
         else:
             # if we are working with existing dict (i.e. loading from a spec file), then we must identify whether it is
             # gaussian or frequency based filter, so that we can set the correct keys
-            if self.setting_dict["bandpass_filter"]['type'] == 'frequency_based':
-                self.bandpass_filter_low_key = 'low'
-                self.bandpass_filter_high_key = 'high'
+            if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
+                self.bandpass_filter_low_key = "low"
+                self.bandpass_filter_high_key = "high"
 
         if "smoothing" not in self.setting_dict:
             self.setting_dict["smoothing"] = {"fwhm": 0}
@@ -95,7 +95,7 @@ class FeatureTemplate(Widget):
         for v in self.images_to_use["task"].keys():
             all_possible_conditions += extract_conditions(entity="task", values=[v])
 
-        print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvalue self.feature_dict["contrasts"] ', self.feature_dict["contrasts"] )
+        print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvalue self.feature_dict["contrasts"] ', self.feature_dict["contrasts"])
         if self.feature_dict["contrasts"] is not None:
             self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
                 all_possible_conditions,
@@ -126,13 +126,13 @@ class FeatureTemplate(Widget):
             ),
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_low_key ],
+                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_low_key],
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_lp_width",
             ),
             SwitchWithInputBox(
                 label="High-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_high_key ],
+                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_high_key],
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_hp_width",
             ),
@@ -352,8 +352,6 @@ class TaskBased(FeatureTemplate):
     file_panel_class = EventFilePanel
 
     def compose(self) -> ComposeResult:
-
-
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel
             yield self.model_conditions_and_contrast_table

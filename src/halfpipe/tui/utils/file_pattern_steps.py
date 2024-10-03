@@ -59,8 +59,6 @@ def display_str(x):
     return humanize(x)
 
 
-
-
 class FilePatternStep:
     entity_display_aliases = entity_display_aliases
     header_str = ""
@@ -173,7 +171,6 @@ class AnatStep(FilePatternStep):
     #     super().__init__(path=path)
 
 
-
 class EventsStep(FilePatternStep):
     header_str = "Event file pattern"
     required_in_path_entities: List[str] = list()
@@ -192,6 +189,7 @@ class MatEventsStep(EventsStep):
     def _transform_extension(self, ext):
         assert ext == ".mat"
         return ext
+
 
 # next_step_type = CheckUnitsStep
 
@@ -339,4 +337,3 @@ class AddBinarySeedMapStep(FilePatternStep):
 
     ask_if_missing_entities = ["desc"]
     required_in_path_entities = []
-

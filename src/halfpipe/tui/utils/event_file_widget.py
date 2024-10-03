@@ -2,7 +2,6 @@
 
 
 from dataclasses import dataclass
-from typing import Type
 
 from rich.text import Text
 from textual import on
@@ -16,7 +15,6 @@ from .file_pattern_steps import (
     AddAtlasImageStep,
     AddBinarySeedMapStep,
     AddSpatialMapStep,
-    EventsStep,
     MatEventsStep,
     TsvEventsStep,
     TxtEventsStep,
@@ -300,7 +298,6 @@ class FilePanelTemplate(Widget):
             self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
             self.the_class.file_pattern_counter += 1
 
-
     def on_mount(self):
         # use first event file panel widget to make copies for the newly created one
         if self.app.walk_children(self.the_class) != []:
@@ -403,7 +400,6 @@ class FilePanelTemplate(Widget):
                         # print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
 
 
-
 class EventFilePanel(FilePanelTemplate):
     class_name = "EventFilePanel"
     id_string = "event_file_panel"
@@ -411,18 +407,20 @@ class EventFilePanel(FilePanelTemplate):
     pattern_class = None
 
     async def add_file_item_pressed(self):
-        options = {"spm": "SPM multiple conditions",
-                   "fsl": "FSL 3-column",
-                   "bids": "BIDS TSV",
-                   }
-        choice = await self.app.push_screen_wait( SelectionModal(
-                                            title="Event file type specification",
-                                            instructions="Specify the event file type",
-                                            options=options,
-                                            id="event_files_type_modal",
-                                            )
-                                          )
-        options_class_map = {'spm': MatEventsStep, 'fsl':TxtEventsStep, 'bids':TsvEventsStep}
+        options = {
+            "spm": "SPM multiple conditions",
+            "fsl": "FSL 3-column",
+            "bids": "BIDS TSV",
+        }
+        choice = await self.app.push_screen_wait(
+            SelectionModal(
+                title="Event file type specification",
+                instructions="Specify the event file type",
+                options=options,
+                id="event_files_type_modal",
+            )
+        )
+        options_class_map = {"spm": MatEventsStep, "fsl": TxtEventsStep, "bids": TsvEventsStep}
         self.pattern_class = options_class_map[choice]
         await self.create_file_item(load_object=None)
 

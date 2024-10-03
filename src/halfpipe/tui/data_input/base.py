@@ -10,7 +10,6 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
 
-from ..utils.filebrowser import FileBrowser
 from ..utils.confirm_screen import Confirm, SimpleMessageModal
 from ..utils.context import ctx
 from ..utils.custom_switch import TextSwitch
@@ -26,7 +25,7 @@ from ..utils.file_pattern_steps import (
     Phase2Step,
     PhaseDiffStep,
 )
-from ..utils.filebrowser import FileBrowserForBIDS
+from ..utils.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..utils.list_of_files_modal import ListOfFiles
 from ..utils.meta_data_steps import AcqToTaskMappingStep
 from ..utils.non_bids_file_itemization import FileItem
@@ -311,11 +310,11 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 classes="file_patterns",
                 pattern_class=pattern_class,
                 load_object=load_object,
-                message_dict=message_dict
+                message_dict=message_dict,
             )
         )
         self.t1_file_pattern_counter += 1
-        return "t1_file_pattern_" + str(self.t1_file_pattern_counter),
+        return ("t1_file_pattern_" + str(self.t1_file_pattern_counter),)
 
     @on(Button.Pressed, "#add_bold_image_button")
     async def _on_button_add_bold_image_button(self):
@@ -329,7 +328,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 classes="file_patterns",
                 pattern_class=pattern_class,
                 load_object=load_object,
-                message_dict=message_dict
+                message_dict=message_dict,
             )
         )
         self.bold_file_pattern_counter += 1

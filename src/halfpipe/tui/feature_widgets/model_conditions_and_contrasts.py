@@ -166,14 +166,14 @@ class ModelConditionsAndContrasts(Widget):
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         # read table defaults if there are some
-        print('ttttttttttttttttttttest self*feature_contrasts_dict', self.feature_contrasts_dict)
+        print("ttttttttttttttttttttest self*feature_contrasts_dict", self.feature_contrasts_dict)
         if self.feature_contrasts_dict is not None:
             for contrast_dict in self.feature_contrasts_dict:
                 table.add_column(contrast_dict["name"], key=contrast_dict["name"])
-                print('iiiiiiiiiiiiiis adding columnnnnnnnnnnnnnnnn??????????', contrast_dict["name"])
+                print("iiiiiiiiiiiiiis adding columnnnnnnnnnnnnnnnn??????????", contrast_dict["name"])
                 for row_key in table.rows:
                     table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
-                    print('iiiiiiiiiiiiiis adding row_key??????????', contrast_dict["values"][row_key.value])
+                    print("iiiiiiiiiiiiiis adding row_key??????????", contrast_dict["values"][row_key.value])
 
     #       self._update_row_dict()
 

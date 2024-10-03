@@ -31,7 +31,6 @@ from ..utils.context import ctx
 from ..utils.selection_modal import SelectionModal
 from ..utils.set_value_modal import SetValueModal
 from .multichoice_radioset import MultipleRadioSetModal
-from textual import on, work
 
 
 def display_str(x):
@@ -43,6 +42,7 @@ def display_str(x):
         return "slice acquisition direction"
     return humanize(x)
 
+
 def _get_field(schema, key):
     if isinstance(schema, type):
         instance = schema()
@@ -51,6 +51,7 @@ def _get_field(schema, key):
     if "metadata" in instance.fields:
         return _get_field(instance.fields["metadata"].nested, key)
     return instance.fields.get(key)
+
 
 def _get_unit(schema, key):
     field = _get_field(schema, key)
@@ -284,8 +285,8 @@ class SetMetadataStep:
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
-#        self._append_view = self._append_view + self.input_view
-        # self._append_view(SpacerView(1))
+    #        self._append_view = self._append_view + self.input_view
+    # self._append_view(SpacerView(1))
 
     # def run(self, _):
     # self.result = self.input_view
@@ -373,8 +374,8 @@ class SetMetadataStep:
             else:
                 return None
 
-class CheckMetadataStep:
 
+class CheckMetadataStep:
     schema: ClassVar[Type[Schema]]
 
     key: ClassVar[str]
@@ -414,7 +415,6 @@ class CheckMetadataStep:
     #   self.next_step_type = next_step_type
 
     def evaluate(self):
-
         if self.filters is None:
             filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
         else:
@@ -484,7 +484,6 @@ class CheckMetadataStep:
 
             if len(order) > 10:
                 self._append_view.append("...")
-
 
         if self.is_missing is False:
             self._append_view.append("Proceed with these values?")
@@ -568,7 +567,6 @@ class CheckMetadataStep:
             await set_instance_step.run()
         else:
             pass
-
 
 
 class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):

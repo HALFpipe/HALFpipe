@@ -7,10 +7,10 @@ sys.path.append("/home/tomas/github/HALFpipe/src/")
 
 from dataclasses import dataclass
 
+from inflection import humanize
 from rich.text import Text
 from textual import on, work
-from textual.app import App
-from textual.containers import Horizontal, HorizontalScroll, VerticalScroll
+from textual.containers import Horizontal, HorizontalScroll
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -22,7 +22,7 @@ from halfpipe.tui.utils.path_pattern_builder import PathPatternBuilder, evaluate
 
 from ..utils.confirm_screen import SimpleMessageModal
 from ..utils.context import ctx
-from inflection import humanize
+
 
 class FileItem(Widget):
     success_value: reactive[bool] = reactive(None, init=False)
@@ -120,10 +120,12 @@ class FileItem(Widget):
             else:
                 sep_char = "\n"
                 separ_line = "-" * (max([len(s) for s in [key] + message_dict[key]]) + 3)
-            message_value = ''
+            message_value = ""
             for message in message_dict[key]:
-                message_value += message+' ' if message.endswith('\n') else message+"\n"
-            info_string += Text(humanize(key) + ": " + sep_char, style="bold green") + Text(message_value + separ_line, style="white")
+                message_value += message + " " if message.endswith("\n") else message + "\n"
+            info_string += Text(humanize(key) + ": " + sep_char, style="bold green") + Text(
+                message_value + separ_line, style="white"
+            )
         return info_string
 
     def callback_func(self, message_dict):
@@ -174,9 +176,9 @@ class FileItem(Widget):
                 print("dddddddddddddddddddddddddor self.load_object", dir(self.load_object))
                 self._update_file_pattern(pattern_load)
         if (self.pattern_class and self.pattern_class.callback) or self.callback_message:
-            self.get_widget_by_id('info_button').styles.visibility = 'visible'
+            self.get_widget_by_id("info_button").styles.visibility = "visible"
         else:
-            self.get_widget_by_id('info_button').remove()
+            self.get_widget_by_id("info_button").remove()
 
     @on(Button.Pressed, "#edit_button")
     def _on_edit_button_pressed(self):
@@ -277,7 +279,7 @@ class FileItem(Widget):
         self.remove_all_duplicates()
         print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
         # self.delete_value = True
-        self.post_message(self.IsDeleted(self, 'yes'))
+        self.post_message(self.IsDeleted(self, "yes"))
         # await self.remove()
 
     # async def watch_delete_value(self) -> None:
