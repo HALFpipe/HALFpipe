@@ -8,8 +8,9 @@ from random import seed
 import nibabel as nib
 import numpy as np
 import pytest
-from halfpipe.interfaces.fslnumpy.tempfilt import TemporalFilter
 from nipype.interfaces import fsl
+
+from halfpipe.interfaces.fslnumpy.tempfilt import TemporalFilter
 
 
 @pytest.mark.slow

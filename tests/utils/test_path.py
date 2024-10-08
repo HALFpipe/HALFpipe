@@ -7,8 +7,9 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from halfpipe.utils.path import find_paths, recursive_list_directory, split_ext
 from nipype.interfaces.base.support import Bunch
+
+from halfpipe.utils.path import find_paths, recursive_list_directory, split_ext
 
 A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
 B = "/tmp/b.txt"

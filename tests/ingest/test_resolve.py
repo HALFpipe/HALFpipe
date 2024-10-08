@@ -10,6 +10,7 @@ import nibabel as nib
 import numpy as np
 import pytest
 import requests
+
 from halfpipe.ingest.resolve import ResolvedSpec
 from halfpipe.model.file.base import File
 from halfpipe.model.spec import Spec

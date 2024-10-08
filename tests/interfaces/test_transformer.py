@@ -7,9 +7,10 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
-from halfpipe.interfaces.transformer import Transformer
 from nilearn.image import new_img_like
 from templateflow import api
+
+from halfpipe.interfaces.transformer import Transformer
 
 
 def test_transformer_nii(tmp_path: Path) -> None:
