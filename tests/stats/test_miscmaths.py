@@ -6,8 +6,9 @@ import sys
 
 import numpy as np
 import pytest
-from halfpipe.stats.miscmaths import chisq2z_convert, f2z_convert, t2z_convert
 from scipy import stats
+
+from halfpipe.stats.miscmaths import chisq2z_convert, f2z_convert, t2z_convert
 
 
 def t2z_convert_numpy(t, dof):

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 import pytest
+
 from halfpipe.stats.fit import fit
 
 from .conftest import Dataset

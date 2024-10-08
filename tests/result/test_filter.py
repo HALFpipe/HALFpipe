@@ -8,6 +8,7 @@ from types import FunctionType
 import numpy as np
 import pandas as pd
 import pytest
+
 from halfpipe.design import prepare_data_frame
 from halfpipe.model.filter import FilterSchema
 from halfpipe.model.variable import VariableSchema

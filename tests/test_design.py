@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from halfpipe.design import group_design, prepare_data_frame
 
 tsv_str = """SubjID\tSex\tSite.\tRecur\tAD

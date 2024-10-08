@@ -7,6 +7,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
+
 from halfpipe.ui.components import (
     MultiCombinedNumberAndSingleChoiceInputView,
     MultipleChoiceInputView,

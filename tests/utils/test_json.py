@@ -7,8 +7,9 @@ from json import dumps
 
 import numpy as np
 import pytest
-from halfpipe.utils.json import TypeAwareJSONEncoder
 from pyrsistent import pmap
+
+from halfpipe.utils.json import TypeAwareJSONEncoder
 
 
 def test_bool():

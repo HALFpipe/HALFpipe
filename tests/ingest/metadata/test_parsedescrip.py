@@ -2,6 +2,7 @@
 
 import nibabel as nib
 import pytest
+
 from halfpipe.ingest.metadata.niftiheader import parse_descrip  # noqa
 
 

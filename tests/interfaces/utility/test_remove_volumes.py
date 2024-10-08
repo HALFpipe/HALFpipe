@@ -8,6 +8,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import pytest
+
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 from halfpipe.interfaces.utility.remove_volumes import RemoveVolumes
 from halfpipe.resource import get as get_resource

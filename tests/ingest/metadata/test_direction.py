@@ -6,6 +6,7 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+
 from halfpipe.ingest.metadata.direction import get_axcodes_set
 from halfpipe.resource import get as get_resource
 

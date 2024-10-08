@@ -4,9 +4,10 @@
 
 import nibabel as nib
 import numpy as np
+from nipype.algorithms import confounds as nac
+
 from halfpipe.interfaces.reports.tsnr import TSNR
 from halfpipe.resource import get as get_resource
-from nipype.algorithms import confounds as nac
 
 from ...resource import setup as setup_test_resources
 
