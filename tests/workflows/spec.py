@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from templateflow.api import get as get_template
+
 from halfpipe.ingest.events import ConditionFile
 from halfpipe.model.feature import FeatureSchema
 from halfpipe.model.file.base import File
@@ -13,7 +15,6 @@ from halfpipe.model.file.schema import FileSchema
 from halfpipe.model.setting import SettingSchema
 from halfpipe.model.spec import Spec, SpecSchema
 from halfpipe.resource import get as get_resource
-from templateflow.api import get as get_template
 
 
 @dataclass

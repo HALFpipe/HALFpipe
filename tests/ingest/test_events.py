@@ -6,6 +6,7 @@ from math import isclose
 from pathlib import Path
 
 import pytest
+
 from halfpipe.ingest.events import ConditionFile
 from halfpipe.resource import get as getresource
 
