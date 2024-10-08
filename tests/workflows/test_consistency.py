@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from fmriprep import config
+
 from halfpipe.cli.parser import build_parser
 from halfpipe.cli.run import run_stage_run
 from halfpipe.file_index.bids import BIDSIndex

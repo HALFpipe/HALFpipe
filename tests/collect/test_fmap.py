@@ -5,6 +5,7 @@
 from datetime import datetime
 
 import pytest
+
 from halfpipe.collect.fmap import collect_fieldmaps
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File

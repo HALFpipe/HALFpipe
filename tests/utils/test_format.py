@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import pytest
+
 from halfpipe.utils.format import format_like_bids, format_workflow
 
 

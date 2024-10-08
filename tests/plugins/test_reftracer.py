@@ -8,8 +8,9 @@ from typing import Any
 
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
-from halfpipe.plugins.reftracer import PathReferenceTracer
 from nipype import config
+
+from halfpipe.plugins.reftracer import PathReferenceTracer
 
 
 def add(a, b):

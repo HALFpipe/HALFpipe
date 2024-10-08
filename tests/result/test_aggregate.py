@@ -7,6 +7,7 @@ from typing import Mapping
 
 import numpy as np
 import pytest
+
 from halfpipe.result.aggregate import aggregate_results, summarize, summarize_metadata
 from halfpipe.result.base import ResultDict
 from halfpipe.result.variables import Categorical, Continuous

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+
 from halfpipe.collect.bold import collect_bold_files
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File

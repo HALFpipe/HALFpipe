@@ -8,12 +8,13 @@ from collections import OrderedDict
 import nibabel as nib
 import numpy as np
 import pytest
+from nipype.interfaces import fsl
+from nipype.pipeline import engine as pe
+
 from halfpipe.interfaces.fixes.flameo import FixFLAMEO
 from halfpipe.interfaces.image_maths.merge import merge, merge_mask
 from halfpipe.logging import logger
 from halfpipe.stats.fit import fit
-from nipype.interfaces import fsl
-from nipype.pipeline import engine as pe
 
 from .base import Dataset
 

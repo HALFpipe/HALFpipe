@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
 from halfpipe.utils.ops import check_almost_equal, first_float, first_str
 
 

@@ -6,9 +6,10 @@ from random import seed
 
 import numpy as np
 import pandas as pd
+from nipype.interfaces import afni
+
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 from halfpipe.interfaces.utility.afni import FromAFNI, ToAFNI
-from nipype.interfaces import afni
 
 
 def test_afni(tmp_path):

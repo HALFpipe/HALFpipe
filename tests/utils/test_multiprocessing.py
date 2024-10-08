@@ -5,6 +5,7 @@
 from multiprocessing import active_children
 
 import pytest
+
 from halfpipe.utils.multiprocessing import Pool, make_pool_or_null_context
 
 
