@@ -1,0 +1,176 @@
+#blockscreen{
+background: black 90%;
+offset-y: -30;
+offset-x: 0;
+opacity: 100%;
+
+width:100%;
+height:auto;
+align: center top;
+Button {
+height: 3;
+}
+}
+
+#check_meta_data_modal {
+    #message {
+         height: auto;
+         content-align: center middle;
+    }
+}
+
+
+
+#select_value_modal{
+    Input {
+
+    }
+}
+
+#title {
+    content-align-horizontal: center;
+    text-style: reverse;
+}
+
+#any-key {
+    content-align-horizontal: center;
+}
+
+#event_files_type_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+    }
+}
+
+QuitModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 47;
+        height: 11;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+        align: center middle;
+    }
+    Static {
+         height: 1;
+         content-align: center middle;
+         text-style: bold;
+    }
+    Horizontal{
+        height: 4;
+        dock:  bottom;
+        offset-x: 10;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+
+    HeaderCloseIcon {
+        dock: right;
+        padding: 0 1;
+        width: 6;
+        offset-x: 0;
+        content-align: right middle;
+        border: solid black;
+    }
+
+    HeaderHelpIcon {
+        dock: right;
+        padding: 0 1;
+        width: 6;
+        offset-x: -5;
+        content-align: right middle;
+        border: solid black;
+    }
+
+SelectionModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 81;
+        background: black;
+
+    }
+    RadioSet {
+        height: auto;
+        width: auto;
+    }
+
+    Horizontal{
+        height: auto;
+        width: 100%;
+        align: right bottom;
+        offset-x: 0;
+        Button {
+            margin: 0 1;
+        }
+    }
+
+    #title {
+        content-align: center middle;
+        text-style: bold;
+         content-align: center middle;
+      	text-align: center;
+      	width: auto ;
+      	margin: 1 1 0 1;
+    }
+
+}
+
+
+DoubleSelectionModal {
+    Static {
+    padding: 0 1;
+    }
+    #draggable_modal_screen_container_wrapper {
+        width: 50;
+        height: 18;
+        background: black;
+    }
+        RadioSet {
+        height: 4;
+        width: 48;
+
+    }
+}
+
+WindowTitleBar {
+    layout: horizontal;
+    width: 100%;
+    height: 3;
+    background: $accent;
+    color: auto;
+    text-style: bold;
+}
+
+WindowTitleBar Button {
+    max-width: 6;
+    height: 3;
+    padding-top: 0;
+    padding-left: 0;
+    background: $accent;
+    border: none;
+}
+
+WindowTitleBar Button:hover {
+    border: none;
+    border-top: none;
+    border-bottom: none;
+    background: $accent;
+    color: black;
+    border: thick black;
+}
+
+WindowTitleBar Button:focus {
+        text-style: none;
+}
+
+.window_title {
+    width: 1fr;
+    height: 100%;
+    content-align: left middle;
+    padding-left: 1;
+}
