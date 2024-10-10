@@ -4,8 +4,7 @@ import copy
 import numpy as np
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, Horizontal, VerticalScroll
-from textual.screen import ModalScreen
+from textual.containers import Grid, Horizontal, VerticalScroll
 from textual.widget import Widget
 from textual.widgets import Button, ContentSwitcher, Input, Label, ListItem, ListView, OptionList, Placeholder
 from textual.widgets.option_list import Option, Separator
@@ -13,7 +12,6 @@ from textual.widgets.option_list import Option, Separator
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
-from ..utils.false_input_warning_screen import FalseInputWarning
 from .features import AtlasBased, DualReg, Falff, PreprocessedOutputOptions, ReHo, SeedBased, TaskBased
 
 FEATURES_MAP = {
@@ -37,7 +35,7 @@ FEATURES_MAP_colors = {
 }
 
 
-class FeatureNameInput(ModalScreen):
+class FeatureNameInput(DraggableModalScreen):
     """Modal screen where the user can type the name of the new widget (or when renaming)."""
 
     CSS_PATH = ["tcss/feature_name_input.tcss"]
@@ -46,27 +44,27 @@ class FeatureNameInput(ModalScreen):
         #   self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
+        self.title_bar.title = "Feature name"
 
-    def compose(self) -> ComposeResult:
-        yield Container(
+    def on_mount(self) -> None:
+        self.content.mount(
             Input(
                 placeholder="Enter feature name",
                 id="feature_name",
                 classes="feature_name",
             ),
-            Grid(
-                Button("Ok", classes="button ok"),
-                Button("Cancel", classes="button cancel"),
+            Horizontal(
+                Button("Ok", id="ok", classes="button"),
+                Button("Cancel", id="cancel", classes="button"),
                 classes="button_grid",
             ),
-            id="feature_name_input_screen",
         )
 
-    @on(Button.Pressed, "#feature_name_input_screen .ok")
+    @on(Button.Pressed, "#ok")
     def ok(self):
         self._confirm_window()
 
-    @on(Button.Pressed, "#feature_name_input_screen .cancel")
+    @on(Button.Pressed, "#cancel")
     def cancel(self):
         self._cancel_window()
 
@@ -76,9 +74,30 @@ class FeatureNameInput(ModalScreen):
     def _confirm_window(self):
         feature_name = self.get_widget_by_id("feature_name").value
         if feature_name == "":
-            self.app.push_screen(FalseInputWarning("Enter the name!"))
+            self.app.push_screen(
+                Confirm(
+                    "Enter a name!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Missing name",
+                    classes="confirm_error",
+                )
+            )
+
         elif feature_name in self.occupied_feature_names:
-            self.app.push_screen(FalseInputWarning("Name already exists!\nUse another one."))
+            self.app.push_screen(
+                Confirm(
+                    "Name already exists!\nUse another one.",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Existing name",
+                    classes="confirm_error",
+                )
+            )
         else:
             self.dismiss(feature_name)
 

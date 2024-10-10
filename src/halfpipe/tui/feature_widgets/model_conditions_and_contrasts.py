@@ -181,6 +181,8 @@ class ModelConditionsAndContrasts(Widget):
                 self.set_heights()
             else:
                 self.styles.height = 1
+        else:
+            self.styles.height = 1
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
     def update_table(self) -> None:

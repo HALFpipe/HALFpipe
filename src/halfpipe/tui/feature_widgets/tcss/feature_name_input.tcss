@@ -1,24 +1,19 @@
 FeatureNameInput {
-    align: center middle;
-    #feature_name_input_screen {
-        align: center top;
-        border: thick $accent;
+        align: center middle;
         width: 60;
         height: 9;
         .feature_name {
             height: 3;
-            padding: 0 1 0 1;
+            width: 40;
+            margin: 2;
          }
         .button_grid {
-            grid-size: 2;
-            grid-gutter: 1;
-            padding: 1 1 0 0;
-            .ok_button {
-                width: 100;
-            }
+            width: 100%;
+            height: auto;
+
+            align: right middle;
         }
         .button {
-            width: 100;
+            margin: 0 1 0 0;
         }
-    }
 }
