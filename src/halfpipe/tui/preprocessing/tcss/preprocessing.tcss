@@ -11,10 +11,10 @@ Preprocessing:disabled {
 Preprocessing {
     align: center middle;
     height: auto;
-    #functional_settings {
+    #anatomical_settings {
         height: 7;
     }
-    #anatomical_settings {
+    #functional_settings {
         height: auto;
     }
     #slice_timing {
