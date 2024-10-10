@@ -4,6 +4,7 @@
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
+from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, Static, Switch
 
@@ -17,6 +18,12 @@ from ..utils.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 
 
 class SetInitialVolumesRemovalModal(DraggableModalScreen):
+    """
+    SetInitialVolumesRemovalModal(DraggableModalScreen):
+        A class that represents a modal screen for setting the number of initial volumes to remove
+        from a dataset. Inherits from DraggableModalScreen.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.title_bar.title = "Remove initial volumes"
@@ -42,32 +49,33 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
     def _on_cancel_button_pressed(self):
         self.dismiss(None)
 
-    def next(self, result):
-        # detect_str = "Detect non-steady-state via algorithm"
-        if self.result is not None:
-            value = next(iter(self.result.values()))
-            if isinstance(value, (int, float)):
-                ctx.spec.global_settings["dummy_scans"] = int(value)
-            elif value == self.detect_str:
-                ctx.spec.global_settings["dummy_scans"] = None
-            else:
-                raise ValueError(f'Unknown dummy_scans value "{value}"')
+    # def next(self, result):
+    #     # detect_str = "Detect non-steady-state via algorithm"
+    #     if self.result is not None:
+    #         value = next(iter(self.result.values()))
+    #         if isinstance(value, (int, float)):
+    #             ctx.spec.global_settings["dummy_scans"] = int(value)
+    #         elif value == self.detect_str:
+    #             ctx.spec.global_settings["dummy_scans"] = None
+    #         else:
+    #             raise ValueError(f'Unknown dummy_scans value "{value}"')
 
 
 class Preprocessing(Widget):
-    def __init__(self, disabled=False, **kwargs) -> None:
-        super().__init__(**kwargs, disabled=disabled)
-
+    def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(id=id, classes=classes)
+        # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs
+        # firstly to be redefined and then the widget recomposed as is done in the working_directory widget.
         self.default_settings = {"run_reconall": False, "slice_timing": False, "via_algorithm_switch": False, "dummy_scans": 0}
 
     def compose(self) -> ComposeResult:
-        print("dddddddddddddddddddddddddddddddddddddddddddddddddddddefs", self.default_settings)
-        functional_settings_panel = Container(
+        # Widgets for settings that go to the json files
+        anatomical_settings_panel = Container(
             Horizontal(
                 Static("Run recon all", classes="description_labels"),
                 TextSwitch(value=self.default_settings["run_reconall"], id="run_reconall"),
             ),
-            id="functional_settings",
+            id="anatomical_settings",
             classes="components",
         )
         slice_timming_info_panel = Static("", id="slice_timming_info")
@@ -98,14 +106,14 @@ class Preprocessing(Widget):
             id="remove_initial_volumes",
             classes="components",
         )
-        anatomical_settings_panel = Container(
+        functional_settings_panel = Container(
             slice_timing_panel,
             remove_initial_volumes_panel,
-            id="anatomical_settings",
+            id="functional_settings",
             classes="components",
         )
 
-        ##############################################################################################################################
+        # Setting widgets for halfpipe settings
         workflowgroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Number of nipype omp threads",
@@ -180,9 +188,12 @@ class Preprocessing(Widget):
             id="rungroup_settings",
             classes="components",
         )
-
-        functional_settings_panel.border_title = "Anatomical settings"
-        anatomical_settings_panel.border_title = "Functional settings"
+        # The titles and the other styling settings need to be set in the compose because on load from a spec file
+        # the settings from the spec file are passed as the default_settings variable and the whole widget needs to be
+        # recomposed. When recomposing, the titles and etc. are deleted and can be newly added when they are defined
+        # only in the compose function.
+        functional_settings_panel.border_title = "Functional settings"
+        anatomical_settings_panel.border_title = "Anatomical settings"
         slice_timing_panel.border_title = "Slice timing"
         slice_timing_panel.styles.height = "5"
         remove_initial_volumes_panel.border_title = "Initial volumes removal"
@@ -197,22 +208,6 @@ class Preprocessing(Widget):
         yield workflowgroup_settings_panel
         yield debuggroup_settings_panel
         yield rungroup_settings_panel
-
-    ##########################################################################################################################
-    #
-    # def on_mount(self) -> None:
-    #     self.make_titles()
-    #
-    # def make_titles(self):
-    #     # self.get_widget_by_id("slice_timing").border_title = "Slice timing"
-    #     # self.get_widget_by_id("anatomical_settings").border_title = "Functional settings"
-    #     # self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
-    #     # self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
-    #     # self.get_widget_by_id("slice_timing").styles.height = "5"
-    #
-    #     # self.get_widget_by_id("workflowgroup_settings").border_title = "Workflow settings"
-    #     # self.get_widget_by_id("debuggroup_settings").border_title = "Debug settings"
-    #     # self.get_widget_by_id("rungroup_settings").border_title = "Run settings"
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
@@ -231,11 +226,11 @@ class Preprocessing(Widget):
             self._on_edit_button_pressed()
 
     @on(Switch.Changed, "#run_reconall")
-    def on_run_reconall_switch_changed(self, event):
-        ctx.spec.global_settings["run_reconall"] = event.value
+    def on_run_reconall_switch_changed(self, message: Message):
+        ctx.spec.global_settings["run_reconall"] = message.value
 
     @on(Switch.Changed, "#time_slicing_switch")
-    async def on_time_slicing_switch_changed(self, message):
+    async def on_time_slicing_switch_changed(self, message: Message):
         if message.value is True:
             self.get_widget_by_id("slice_timming_info").styles.visibility = "visible"
             self.get_widget_by_id("slice_timing").styles.height = "auto"
@@ -264,14 +259,27 @@ class Preprocessing(Widget):
                             ctx.cache[widget_id]["files"].metadata.pop("slice_timing_code", None)
                             ctx.cache[widget_id]["files"].metadata.pop("slice_encoding_direction", None)
 
-    def callback_func(self, message_dict):
+    def callback_func(self, message_dict: dict):
+        """
+        The callback function is passed to the FilePattern or CheckMetaData classes where they gather all of the messages
+        so that the user can view them again.
+
+        Parameters
+        ----------
+        message_dict : dict
+            Dictionary containing key-value pairs where keys are strings
+            and values are lists of strings. This dictionary is used to
+            generate a formatted string with the key and concatenated
+            values for each entry.
+        """
         info_string = ""
         for key in message_dict:
             info_string += key + ": " + " ".join(message_dict[key]) + "\n"
 
         self.get_widget_by_id("slice_timming_info").update(info_string)
 
-    def _add_slice_timing_from_file(self, path):
+    def _add_slice_timing_from_file(self, path: str):
+        # I think that this is a TODO
         select_widget = self.get_widget_by_id("select_slice_timing")
         if path is not None:
             self.time_slicing_options.insert(-1, path)
@@ -285,15 +293,11 @@ class Preprocessing(Widget):
 
     @on(Button.Pressed, "#edit_button")
     def _on_edit_button_pressed(self):
-        self.app.push_screen(SetInitialVolumesRemovalModal(), self.update_remove_initial_volumes_value)
+        def update_remove_initial_volumes_value(value: None | str):
+            remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
+            if value is not None:
+                remove_volumes_value_widget.update(value)
+                remove_volumes_value_widget.styles.border = ("solid", "green")
+                ctx.spec.global_settings["dummy_scans"] = int(value)
 
-    def update_remove_initial_volumes_value(self, value):
-        remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
-        if value is not None:
-            remove_volumes_value_widget.update(value)
-            remove_volumes_value_widget.styles.border = ("solid", "green")
-            #  if isinstance(value, (int, float)):
-            ctx.spec.global_settings["dummy_scans"] = int(value)
-
-    #  else:
-    #      raise ValueError(f'Unknown dummy_scans value "{value}"')
+        self.app.push_screen(SetInitialVolumesRemovalModal(), update_remove_initial_volumes_value)

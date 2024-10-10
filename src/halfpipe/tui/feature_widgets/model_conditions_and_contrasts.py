@@ -81,11 +81,6 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
         self.dismiss(None)
 
 
-# class ModelConditionsAndContrasts(Widget):
-#     def compose(self) -> ComposeResult:
-#         yield Label('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-
-
 class ModelConditionsAndContrasts(Widget):
     BORDER_TITLE = "Model conditions & contrast vales"
 
@@ -108,7 +103,13 @@ class ModelConditionsAndContrasts(Widget):
     # if so, the selection and the table need an update
     condition_values: reactive[list] = reactive([], init=False)
 
-    def __init__(self, all_possible_conditions, feature_contrasts_dict=None, **kwargs) -> None:
+    def __init__(
+        self,
+        all_possible_conditions: list,
+        feature_contrasts_dict: list | None = None,
+        id: str | None = None,
+        classes: str | None = None,
+    ) -> None:
         """The pandas dataframe is to remember all choices even when some images or conditions are turned off.
         This is because when they are turned on, the condition values will be also back.
         The feature_contrasts_dict is used when the widget is created either from read-in (from existing json file) or
@@ -117,26 +118,26 @@ class ModelConditionsAndContrasts(Widget):
         with the images selection list from the upper widget. Also one needs to properly store and recover table values
         on change.
         """
-        super().__init__(**kwargs)
-        # self.top_parent = app
+        super().__init__(id=id, classes=classes)
         self.feature_contrasts_dict = feature_contrasts_dict
 
         self.row_dict: dict = {}
         self.update_all_possible_conditions(all_possible_conditions)
 
-    def update_all_possible_conditions(self, all_possible_conditions):
+    def update_all_possible_conditions(self, all_possible_conditions: list) -> None:
         # self.row_dict: dict = {}
         self.df = pd.DataFrame()
         self.df["condition"] = all_possible_conditions
         self.df.set_index("condition", inplace=True)
         self.default_conditions = []
         # if there are dict entries then set defaults
-        if self.feature_contrasts_dict != []:
-            # convert dict to pandas
-            for contrast_dict in self.feature_contrasts_dict:
-                #   for row_index in self.df.index:
-                for condition_name in contrast_dict["values"]:
-                    self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
+        if self.feature_contrasts_dict:  # Ensure it is not None
+            if self.feature_contrasts_dict != []:
+                # convert dict to pandas
+                for contrast_dict in self.feature_contrasts_dict:
+                    #   for row_index in self.df.index:
+                    for condition_name in contrast_dict["values"]:
+                        self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
 
             self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
             self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
@@ -171,19 +172,15 @@ class ModelConditionsAndContrasts(Widget):
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         # read table defaults if there are some
-        print("ttttttttttttttttttttest self*feature_contrasts_dict", self.feature_contrasts_dict)
-        if self.feature_contrasts_dict != []:
-            for contrast_dict in self.feature_contrasts_dict:
-                table.add_column(contrast_dict["name"], key=contrast_dict["name"])
-                print("iiiiiiiiiiiiiis adding columnnnnnnnnnnnnnnnn??????????", contrast_dict["name"])
-                for row_key in table.rows:
-                    table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
-                    print("iiiiiiiiiiiiiis adding row_key??????????", contrast_dict["values"][row_key.value])
-            self.set_heights()
-        else:
-            self.styles.height = 1
-
-    #       self._update_row_dict()
+        if self.feature_contrasts_dict:  # Ensure it is not None
+            if self.feature_contrasts_dict != []:
+                for contrast_dict in self.feature_contrasts_dict:
+                    table.add_column(contrast_dict["name"], key=contrast_dict["name"])
+                    for row_key in table.rows:
+                        table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+                self.set_heights()
+            else:
+                self.styles.height = 1
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
     def update_table(self) -> None:
@@ -311,7 +308,13 @@ class ModelConditionsAndContrasts(Widget):
         self.update_table()
         self.dump_contrast_values()
 
-    def sort_by_row_label(self, default=None):
+    def sort_by_row_label(self, default: str | None = None):
+        """
+        Parameters
+        ----------
+        default : str, optional
+            Custom sort type to override the default cycling sort types.
+        """
         condition_selection = self.get_widget_by_id("model_conditions_selection")
         groups = list(condition_selection._option_ids.keys())
         table = self.get_widget_by_id("contrast_table")
@@ -330,14 +333,12 @@ class ModelConditionsAndContrasts(Widget):
                 return value
 
             sort_function = identity_func
-        #   sort_function = lambda condition: condition
         else:
 
             def find_group_index(element):
                 return next(i for i, key in enumerate(groups) if element == key)
 
             sort_function = find_group_index
-        #     sort_function = lambda element: next(i for i, key in enumerate(groups) if element == key)
 
         if "reverse" in sort_type:
             reverse = True
@@ -352,10 +353,11 @@ class ModelConditionsAndContrasts(Widget):
 
         table.remove_column("condition")
 
-    def dump_contrast_values(self):
+    def dump_contrast_values(self) -> None:
         table = self.get_widget_by_id("contrast_table")
         df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
-        self.feature_contrasts_dict.clear()
-        # Iterate over each column in the DataFrame
-        for column in df_filtered.columns:
-            self.feature_contrasts_dict.append({"type": "t", "name": column, "values": df_filtered[column].to_dict()})
+        if self.feature_contrasts_dict:  # Ensure it is not None
+            self.feature_contrasts_dict.clear()
+            # Iterate over each column in the DataFrame
+            for column in df_filtered.columns:
+                self.feature_contrasts_dict.append({"type": "t", "name": column, "values": df_filtered[column].to_dict()})
