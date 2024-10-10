@@ -70,7 +70,7 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
         elif self.get_widget_by_id("contrast_name").value == "":
             self.app.push_screen(FalseInputWarning(warning_message="Specify contrast name!"))
         elif any(i.value == "" for i in self.query(".input_values")):
-            print([i for i in self.query(".input_values")])
+            # print([i for i in self.query(".input_values")])
             self.app.push_screen(FalseInputWarning(warning_message="Fill all values!"))
         else:
             for i in self.query(".input_values"):
@@ -79,6 +79,11 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
 
     def _cancel_window(self):
         self.dismiss(None)
+
+
+# class ModelConditionsAndContrasts(Widget):
+#     def compose(self) -> ComposeResult:
+#         yield Label('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
 
 
 class ModelConditionsAndContrasts(Widget):
@@ -167,13 +172,16 @@ class ModelConditionsAndContrasts(Widget):
         table.zebra_stripes = True
         # read table defaults if there are some
         print("ttttttttttttttttttttest self*feature_contrasts_dict", self.feature_contrasts_dict)
-        if self.feature_contrasts_dict is not None:
+        if self.feature_contrasts_dict != []:
             for contrast_dict in self.feature_contrasts_dict:
                 table.add_column(contrast_dict["name"], key=contrast_dict["name"])
                 print("iiiiiiiiiiiiiis adding columnnnnnnnnnnnnnnnn??????????", contrast_dict["name"])
                 for row_key in table.rows:
                     table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
                     print("iiiiiiiiiiiiiis adding row_key??????????", contrast_dict["values"][row_key.value])
+            self.set_heights()
+        else:
+            self.styles.height = 1
 
     #       self._update_row_dict()
 
@@ -200,6 +208,9 @@ class ModelConditionsAndContrasts(Widget):
         self.sort_by_row_label(default="by_group")
         self.dump_contrast_values()
 
+        self.set_heights()
+
+    def set_heights(self):
         # set the height based on the number of rows
         self.get_widget_by_id("contrast_table_upper").styles.height = (
             len(self.get_widget_by_id("model_conditions_selection").selected) + 6

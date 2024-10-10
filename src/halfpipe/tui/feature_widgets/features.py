@@ -12,7 +12,6 @@ from textual.widgets.selection_list import Selection
 from ..utils.context import ctx
 from ..utils.custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
-from ..utils.non_bids_file_itemization import FileItem
 from ..utils.utils import extract_conditions, extract_name_part
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
@@ -36,8 +35,20 @@ class FeatureTemplate(Widget):
         self.event_file_pattern_counter = 0
         filepaths = ctx.database.get(**self.filters)
         self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
+
+        print("xxxxxxxxxxxxxxxxxxxxxxx", ctx.cache)
+        print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO 0", self.tagvals)
+        # Keys to check
+        tag_keys = ["seeds", "atlases", "maps"]
+        existing_tag = next((tag for tag in tag_keys if tag in self.feature_dict), None)
+        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.id)
+        if existing_tag is not None:
+            self.tagvals = set(self.feature_dict[existing_tag])
+        print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO", self.tagvals)
         if self.tagvals is None:
             self.tagvals = []
+        print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO2", self.tagvals)
+        print("xxxxxxxxxxxxxxxxxxxxxxx2", ctx.cache)
 
         if "contrasts" not in self.feature_dict:
             self.feature_dict["contrasts"] = []
@@ -97,6 +108,7 @@ class FeatureTemplate(Widget):
 
         print('vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvalue self.feature_dict["contrasts"] ', self.feature_dict["contrasts"])
         if self.feature_dict["contrasts"] is not None:
+            print("creeeeeeeeeeeeeeeeeeeating the tableeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
                 all_possible_conditions,
                 feature_contrasts_dict=self.feature_dict["contrasts"],
@@ -153,12 +165,16 @@ class FeatureTemplate(Widget):
             id="images_to_use_selection",
             classes="components",
         )
+        print("self.tagvalsself.tagvalsself.tagvalsself.tagvalsself.tagvals", self.tagvals)
+        self.tag_panel = SelectionList[str](
+            *[Selection(tag, tag, True) for tag in self.tagvals], id="tag_selection", classes="components"
+        )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
-            yield SelectionList[str](*[], id="tag_selection", classes="components")
+            # yield self.tag_panel
             yield LabelWithInputBox(
                 label="Minimum atlas region coverage by individual brain mask",
                 value=self.feature_dict["min_region_coverage"],
@@ -169,40 +185,66 @@ class FeatureTemplate(Widget):
 
     @on(file_panel_class.FileItemIsDeleted, "#top_file_panel")
     def on_file_panel_file_item_is_deleted(self, message):
+        print("------------------------------------------- file_panel_class.FileItemIsDeleted")
         self.update_tag_selection_by_children_walk(set([]))
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message):
-        tagvals: set[list] = set([])
+        tagvals = set(self.tagvals)
         template_path = message.value["file_pattern"]
         if isinstance(template_path, Text):
             template_path = template_path.plain
 
-        tagvals = tagvals | set(
+        all_tagvals_based_on_the_current_file_patterns = set(
             [
                 extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
                 for file_path in message.value["files"]
             ]
         )
+        if all_tagvals_based_on_the_current_file_patterns == {None}:
+            all_tagvals_based_on_the_current_file_patterns = set(
+                [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
+            )
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tagvals, all_tagvals_based_on_the_current_file_patterns)
+        print("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVv", tagvals ^ all_tagvals_based_on_the_current_file_patterns)
+        tagvals = tagvals ^ all_tagvals_based_on_the_current_file_patterns
+        print("firrrrrrrrrrrrrrrrrrrst try tagvals: ", tagvals)
+        # if tagvals == {None}:
+        #     tagvals = set(
+        #         [
+        #             extract_name_part(template_path, file_path, suffix='desc')
+        #             for file_path in message.value["files"]
+        #         ]
+        #     )
+        print("secoooooooooooooooodddd try tagvals: ", tagvals)
+        print("ppppppppppppppppppppppppppppppatern", template_path)
+        print(
+            "--------------------------------------- file_panel_class.Changed === tagvals",
+            tagvals,
+            " === files: ",
+            message.value["files"],
+            " === id: ",
+            self.id,
+        )
         self.update_tag_selection_by_children_walk(tagvals)
 
     def update_tag_selection_by_children_walk(self, tagvals: set):
-        if self.app.walk_children(self.file_panel_class) != []:
-            for w in self.walk_children(self.file_panel_class)[0].walk_children(FileItem):
-                template_path = w.pattern_match_results["file_pattern"]
-                if isinstance(template_path, Text):
-                    template_path = template_path.plain
-                    suffix = self.filters["suffix"]
-                    tagvals = tagvals | set(
-                        [
-                            extract_name_part(template_path, file_path, suffix=suffix)
-                            for file_path in w.pattern_match_results["files"]
-                        ]
-                    )
-
-        self.get_widget_by_id("tag_selection").clear_options()
+        # if self.app.walk_children(self.file_panel_class) != []:
+        #     for w in self.walk_children(self.file_panel_class)[0].walk_children(FileItem):
+        #         template_path = w.pattern_match_results["file_pattern"]
+        #         if isinstance(template_path, Text):
+        #             template_path = template_path.plain
+        #             suffix = self.filters["suffix"]
+        #             tagvals = tagvals | set(
+        #                 [
+        #                     extract_name_part(template_path, file_path, suffix=suffix)
+        #                     for file_path in w.pattern_match_results["files"]
+        #                 ]
+        #             )
+        #
+        # self.get_widget_by_id("tag_selection").clear_options()
         for tagval in tagvals:
-            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
+            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=False))
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
@@ -214,9 +256,9 @@ class FeatureTemplate(Widget):
 
     #       self.get_widget_by_id("top_file_panel").border_title = self.filters['suffix'].capitalize()+" seed images"
 
-    @on(SelectionList.SelectedChanged, "#tag_selection")
-    def on_tag_selection_changed(self, selection_list):
-        self.feature_dict[self.featurefield] = selection_list.control.selected
+    # @on(SelectionList.SelectedChanged, "#tag_selection")
+    # def on_tag_selection_changed(self, selection_list):
+    #     self.feature_dict[self.featurefield] = selection_list.control.selected
 
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
@@ -305,7 +347,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
         with ScrollableContainer(id="top_container_task_based"):
             yield self.images_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
-            yield SelectionList[str](*[], id="tag_selection", classes="components")
+            yield self.tag_panel
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,
                 value=self.feature_dict["min_region_coverage"],
@@ -374,6 +416,7 @@ class TaskBased(FeatureTemplate):
                 after=self.get_widget_by_id("images_to_use_selection"),
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
+            # await self.mount(self.model_conditions_and_contrast_table, after=self.get_widget_by_id("top_event_file_panel"))
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
     def _on_selection_list_changed_images_to_use_selection(self):

@@ -26,8 +26,6 @@ from ..utils.context import ctx
 
 class FileItem(Widget):
     success_value: reactive[bool] = reactive(None, init=False)
-    # pattern_match_results: reactive[dict] = reactive({"file_pattern": "", "message": "Found 0 files.", "files": []}, init=True)
-    # delete_value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
     class IsDeleted(Message):
@@ -91,15 +89,15 @@ class FileItem(Widget):
         self.title = "Not implemented yet"
         if self.pattern_class is not None:
             self.title = self.pattern_class.header_str
-            print(
-                "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
-                self.pattern_class.get_entities,
-                self.pattern_class.get_entity_colors_list,
-                self.pattern_class.get_required_entities,
-            )
-            print("FileItem aaaaaaaaaaaaaaaa", pattern_class.header_str)
+            # print(
+            #     "FileItem ssssssssssssssssssssssssssssssssssssssssssssssssssss",
+            #     self.pattern_class.get_entities,
+            #     self.pattern_class.get_entity_colors_list,
+            #     self.pattern_class.get_required_entities,
+            # )
+            # print("FileItem aaaaaaaaaaaaaaaa", pattern_class.header_str)
             if self.pattern_class.next_step_type is not None:
-                print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
+                # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhas nextt steppp")
                 self.pattern_class.callback = self.callback_func
             self.pattern_class.id_key = id
 
@@ -107,8 +105,17 @@ class FileItem(Widget):
         self.border_title = "id: " + str(id)
         self.from_edit = False
         # self.callback_message = callback_message
-        self.callback_message = self.prettify_message_dict(message_dict) if message_dict is not None else None
+        print("ccccccccccccccccccccccccccccccccc init self.callback_message", callback_message)
+        #
+        # self.callback_message = callback_message
+        #
+        if message_dict is not None and callback_message is None:
+            self.callback_message = self.prettify_message_dict(message_dict)
+        else:
+            self.callback_message = callback_message
+
         self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        print("2ccccccccccccccccccccccccccccccccc init self.callback_message", self.callback_message)
 
     def prettify_message_dict(self, message_dict):
         info_string = Text("")
@@ -132,7 +139,7 @@ class FileItem(Widget):
         self.callback_message = self.prettify_message_dict(message_dict)
 
     def compose(self):
-        print("11111111111111111111111 compose")
+        # print("11111111111111111111111 compose")
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
             yield Button(" ℹ", id="info_button", classes="icon_buttons")
@@ -143,8 +150,8 @@ class FileItem(Widget):
                 yield Button("❌", id="delete_button", classes="icon_buttons")
 
     def on_mount(self) -> None:
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount 222")
-        print("----------self.load_object self.load_object self.load_object ------------", self.load_object)
+        # print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount 222")
+        # print("----------self.load_object self.load_object self.load_object ------------", self.load_object)
 
         if self.load_object is None:
             self.get_widget_by_id("edit_button").tooltip = "Edit"
@@ -163,7 +170,7 @@ class FileItem(Widget):
             )
         else:
             if isinstance(self.load_object, dict):
-                print("dddddddddddddddddddddddddddd loadobject dict", self.load_object)
+                # print("isinstance(self.load_object, dict) dddddddddddddddddddddddddddd loadobject dict", self.load_object)
                 self._update_file_pattern(self.load_object)
             else:
                 pattern_load = {}
@@ -173,9 +180,10 @@ class FileItem(Widget):
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
                 # self.callback_message = self.load_object.metadata
-                print("dddddddddddddddddddddddddor self.load_object", dir(self.load_object))
+                # print("dddddddddddddddddddddddddor self.load_object", dir(self.load_object))
                 self._update_file_pattern(pattern_load)
         if (self.pattern_class and self.pattern_class.callback) or self.callback_message:
+            print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa self.callback_message :::", self.callback_message)
             self.get_widget_by_id("info_button").styles.visibility = "visible"
         else:
             self.get_widget_by_id("info_button").remove()
@@ -206,11 +214,12 @@ class FileItem(Widget):
         return self.callback_message
 
     # runs after the PathPatternBuilder modal
-    def _update_file_pattern(self, pattern_match_results):
+    @work(exclusive=True, name="update_worker")
+    async def _update_file_pattern(self, pattern_match_results):
         """Update various variables based on the results from the PathPatternBuilder"""
         if pattern_match_results is not False:
             self.pattern_match_results = pattern_match_results
-            self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
+            # self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
 
             # Update the static label using the file pattern.
             self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
@@ -225,25 +234,24 @@ class FileItem(Widget):
                 self.success_value = False
 
             # try to push to ctx
-            print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
+            # print("iiiiiiiiiiiiiiiiiiiiiiiiii", pattern_match_results["file_pattern"])
             # obj = AnatStep(ctx=self.app.ctx, path=pattern_match_results["file_pattern"].plain)
             # obj.setup()
             # fix this because sometimes this can be just ordinary string
             if len(pattern_match_results["files"]) > 0:
                 #  try:
                 if self.pattern_class is not None:
-                    self.execute_class()
+                    await self.execute_class()
                     # if isinstance(pattern_match_results["file_pattern"], str):
                     #     self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"])
                     # else:
                     #     self.pattern_class.push_path_to_context_obj(path=pattern_match_results["file_pattern"].plain)
             # print('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr returned_value', returned_value)
-            # print('-------------------------------------- self.pattern_class.callback_message', self.pattern_class.callback_message)
             # except:
             #    print("bbbbbbbbbbla")
 
             if self.from_edit:
-                self.update_all_duplicates()
+                await self.update_all_duplicates()
         #    self.update_all_duplicates()
 
         else:
@@ -252,22 +260,30 @@ class FileItem(Widget):
                 self.remove_all_duplicates()
                 self.remove()
 
-    @work(exclusive=True, name="step_worker")
+    # @work(exclusive=True, name="step_worker")
     async def execute_class(self):
         if self.pattern_class is not None:
             if isinstance(self.pattern_match_results["file_pattern"], str):
                 await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"])
+                print("vrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", self.pattern_class.callback)
             else:
                 await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"].plain)
+                print("2vrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", self.pattern_class.callback)
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
-        print("test", event.handler_name)
-        print("test", event.namespace)
-        print("test", event.worker.name)
-        print("test", event.state)
-        if event.state == WorkerState.SUCCESS:
-            print("i am finished with the taaaaaaaaaaask")
-            self.post_message(self.IsFinished(self, self.pattern_match_results))
+        # print("test", event.handler_name)
+        # print("test", event.namespace)
+        # print("test", event.worker.name)
+        # print("test", event.state)
+        # if event.worker.name == 'step_worker':
+        #     if event.state == WorkerState.SUCCESS:
+        #         print("i am finished with the taaaaaaaaaaask", self.get_callback_message)
+        #         self.post_message(self.IsFinished(self, self.pattern_match_results))
+        if event.worker.name == "update_worker":
+            if event.state == WorkerState.SUCCESS:
+                print("cccccccccccccccccccccccccccccccccall back heeeeeeeeeeeeeeere????", self.get_callback_message)
+                self.pattern_match_results["callback_message"] = self.get_callback_message
+                self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#delete_button")
     def _on_delete_button_pressed(self):
@@ -293,29 +309,29 @@ class FileItem(Widget):
     @on(Button.Pressed, "#info_button")
     def _on_info_button_pressed(self):
         """Shows a modal with the list of files found using the given pattern."""
-        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.callback_message)
+        # print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", self.callback_message)
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
 
-    def watch_success_value(self) -> None:
-        self.post_message(self.SuccessChanged(self, self.success_value))
+    # def watch_success_value(self) -> None:
+    #     self.post_message(self.SuccessChanged(self, self.success_value))
 
     # def watch_pattern_match_results(self) -> None:
     #     self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
 
     def remove_all_duplicates(self):
         for w in self.app.walk_children(FileItem):
-            print("remove_all_duplicates w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
+            # print("remove_all_duplicates w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
             # remove itself standardly later
             if w.id == self.id and w != self:
                 w.remove()
 
-    def update_all_duplicates(self):
+    async def update_all_duplicates(self):
         for w in self.app.walk_children(FileItem):
-            print("update_all_duplicates w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
+            # print("update_all_duplicates w.idw.idw.idw.idw.idw.idw.idw.idw.id", w.id)
             # remove itself standardly later
             if w.id == self.id and w != self:
                 if w.pattern_match_results != self.pattern_match_results:
-                    w._update_file_pattern(self.pattern_match_results)
+                    await w._update_file_pattern(self.pattern_match_results)
         self.from_edit = False
 
 

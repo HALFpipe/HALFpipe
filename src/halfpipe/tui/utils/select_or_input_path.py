@@ -213,7 +213,7 @@ class SelectCurrentWithInput(Horizontal):
         self.placeholder = placeholder
 
     def compose(self) -> ComposeResult:
-        print("cccccccccccccccccccccccccccccomposed 22222222222")
+        # print("cccccccccccccccccccccccccccccomposed 22222222222")
 
         yield MyInput(name="select_input", placeholder=self.placeholder, id="input_prompt")
         yield MyStatic("▼", classes="arrow down-arrow")
@@ -226,19 +226,19 @@ class SelectCurrentWithInput(Horizontal):
             label: A renderable to display, or `None` for the placeholder.
         """
         self.new_placeholder = new_placeholder
-        print("kkkkkkkkkkkkkkkkkkkkkkkkkkk", new_placeholder)
+        # print("kkkkkkkkkkkkkkkkkkkkkkkkkkk", new_placeholder)
         # This will change the MyInput widget value also and triggers "on_input_changed"
         self.get_widget_by_id("input_prompt").value = (
             self.placeholder if isinstance(new_placeholder, NoSelection) else new_placeholder
         )
-        print("222kkkkkkkkkkkkkkkkkkkkkkkkkkk", self.get_widget_by_id("input_prompt").value)
+        # print("222kkkkkkkkkkkkkkkkkkkkkkkkkkk", self.get_widget_by_id("input_prompt").value)
 
     def on_input_changed(self, message):
         """When user types to prompt this method is triggered.
         when user selects option this method is triggered.
         """
         path = self.get_widget_by_id("input_prompt").value
-        print("paaaaaaaaaaaaaaaaaaaaaaaaaaaaath", path)
+        # print("paaaaaaaaaaaaaaaaaaaaaaaaaaaaath", path)
         self.post_message(self.PromptChanged(path))
 
     async def on_key(self, event: events.Key) -> None:
@@ -409,11 +409,11 @@ class SelectOrInputPath(Select):
     @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
         """Runs when input prompt is changed."""
-        print("ppppppppppppppppppppp", self.input_class)
-        print("ppppppppppppppppppppp", SelectCurrentWithInput)
+        # print("ppppppppppppppppppppp", self.input_class)
+        # print("ppppppppppppppppppppp", SelectCurrentWithInput)
 
         if self.input_class == SelectCurrentWithInput:
-            print(" tssssssssssssssssss changed 22")
+            # print(" tssssssssssssssssss changed 22")
             path = event.value
             self.value = path
             print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)

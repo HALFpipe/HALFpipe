@@ -126,12 +126,14 @@ spec.json file it is possible to load the therein configuration.",
     @work(exclusive=True, name="cache_file_worker")
     async def cache_file_patterns(self):
         data_input_widget = self.app.get_widget_by_id("input_data_content")
-        feature_widget = self.app.get_widget_by_id("feature_selection_content")
-        tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
+
         #   event_file_panel_widget = self.get_widget_by_id('top_event_file_panel')
 
         # The philosophie here is that we copy the data from the existing spec file to the context cache and then create
-        # corresponging widgets. Through these widgets then it should be possible to further modify the spec file.
+        # corresponding widgets. Through these widgets then it should be possible to further modify the spec file.
         # The created widgets should avoid using step and meta classes upon creation as these triggers various user choice
         # modals.
         if self.existing_spec is not None:
@@ -141,11 +143,18 @@ spec.json file it is possible to load the therein configuration.",
             self.seed_map_file_objects = []
             self.spatial_map_file_objects = []
 
+            print(
+                "--------------------------------------------------------- self.existing_spec.global_settings",
+                self.existing_spec.global_settings,
+            )
+            preprocessing_widget.default_settings = self.existing_spec.global_settings
+            preprocessing_widget = preprocessing_widget.refresh(recompose=True)
+
             for f in self.existing_spec.files:
                 if f.datatype == "bids":
                     ctx.cache["bids"]["files"] = f.path
                     data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
-                    print("////////////////////////////////////////////////", f.path)
+                    # print('////////////////////////////////////////////////', f.path)
                     # this is the function used when we are loading bids data files, in also checks if the data
                     # folder contains bids files, and if yes, then it also extracts the tasks (images)
                     path_test_for_bids(f.path)
@@ -158,7 +167,7 @@ spec.json file it is possible to load the therein configuration.",
                     )
                     ctx.cache[widget_name]["files"] = f
 
-                    print("ffffffffffffffffffffffffffffffffffffffff bold load object", f.__dict__)
+                    # print('ffffffffffffffffffffffffffffffffffffffff bold load object', f.__dict__)
                 elif f.suffix == "T1w":
                     widget_name = await data_input_widget.add_t1_image(pattern_class=False, load_object=f, message_dict=None)
                     ctx.cache[widget_name]["files"] = f
@@ -171,9 +180,9 @@ spec.json file it is possible to load the therein configuration.",
                 elif f.suffix == "map":
                     self.spatial_map_file_objects.append(f)
 
-            bold_filedict = {"datatype": "func", "suffix": "bold"}
-            filepaths = ctx.database.get(**bold_filedict)
-            print("filepathsfilepathsfilepathsfilepathsfilepathsfilepaths", filepaths)
+            # bold_filedict = {"datatype": "func", "suffix": "bold"}
+            # filepaths = ctx.database.get(**bold_filedict)
+            # print('filepathsfilepathsfilepathsfilepathsfilepathsfilepaths', filepaths)
             ctx.refresh_available_images()
             data_input_widget.update_summaries()
 
@@ -187,8 +196,8 @@ spec.json file it is possible to load the therein configuration.",
             ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
             setting_feature_map[feature.__dict__["setting"]] = feature.name
         for setting in self.existing_spec.settings:
-            print("settingsettingsettingsettingsettingsettingsetting", setting, setting["name"])
-            print("settingsettingsettingsettingsettingsettingsetting name", setting["name"])
+            # print("settingsettingsettingsettingsettingsettingsetting", setting, setting["name"])
+            # print("settingsettingsettingsettingsettingsettingsetting name", setting["name"])
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
             # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
             #  ctx.cache[setting["name"][:-7]]["settings"] = setting
@@ -199,20 +208,20 @@ spec.json file it is possible to load the therein configuration.",
                 ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
 
         #     # Then create the widgets
-        print("fffffffffffffffffffffffffffffffirst time cache printtttttttttttttttttttt", ctx.cache)
+        #     print('fffffffffffffffffffffffffffffffirst time cache printtttttttttttttttttttt', ctx.cache)
         for top_name in ctx.cache:
             if ctx.cache[top_name]["features"] != {}:
-                print("ctx.cache[top_name]['features']ctx.cache[top_name]['features']", ctx.cache[top_name]["features"])
+                # print("ctx.cache[top_name]['features']ctx.cache[top_name]['features']", ctx.cache[top_name]["features"])
                 name = ctx.cache[top_name]["features"]["name"]
-                print("namenamenamename", name)
-                print(
-                    'ctx.cache[name]["features"]["type"]ctx.cache[name]["features"]["type"]',
-                    ctx.cache[name]["features"]["type"],
-                )
-                print('[ctx.cache[name]["features"][ctx.cache[name]["features"]', ctx.cache[name]["features"])
+                # print("namenamenamename", name)
+                # print(
+                #     'ctx.cache[name]["features"]["type"]ctx.cache[name]["features"]["type"]',
+                #     ctx.cache[name]["features"]["type"],
+                # )
+                # print('[ctx.cache[name]["features"][ctx.cache[name]["features"]', ctx.cache[name]["features"])
                 # how to solve this?
                 await feature_widget.add_new_feature([ctx.cache[name]["features"]["type"], name])
-        print("sssssssssssssssssssssecond time cache printtttttttttttttttttttt", ctx.cache)
+        # print('sssssssssssssssssssssecond time cache printtttttttttttttttttttt', ctx.cache)
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         print("test", event.handler_name)
@@ -228,24 +237,40 @@ spec.json file it is possible to load the therein configuration.",
                 await self.mount_file_panels()
 
     async def mount_file_panels(self):
+        print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
         feature_widget = self.app.get_widget_by_id("feature_selection_content")
         for file_object in self.event_file_objects:
-            await (
-                feature_widget.walk_children(TaskBased)[0].query_one(EventFilePanel).create_file_item(load_object=file_object)
+            message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
+            widget_name = await (
+                feature_widget.walk_children(TaskBased)[0]
+                .query_one(EventFilePanel)
+                .create_file_item(load_object=file_object, message_dict=message_dict)
             )
+            ctx.cache[widget_name]["files"] = file_object
+
         for file_object in self.atlas_file_objects:
-            await (
-                feature_widget.walk_children(AtlasBased)[0].query_one(AtlasFilePanel).create_file_item(load_object=file_object)
+            message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
+            widget_name = await (
+                feature_widget.walk_children(AtlasBased)[0]
+                .query_one(AtlasFilePanel)
+                .create_file_item(load_object=file_object, message_dict=message_dict)
             )
+            ctx.cache[widget_name]["files"] = file_object
+
         for file_object in self.seed_map_file_objects:
-            await (
+            message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
+            widget_name = await (
                 feature_widget.walk_children(SeedBased)[0]
                 .query_one(SeedMapFilePanel)
-                .create_file_item(load_object=file_object)
+                .create_file_item(load_object=file_object, message_dict=message_dict)
             )
+            ctx.cache[widget_name]["files"] = file_object
+
         for file_object in self.spatial_map_file_objects:
-            await (
+            message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
+            widget_name = await (
                 feature_widget.walk_children(DualReg)[0]
                 .query_one(SpatialMapFilePanel)
-                .create_file_item(load_object=file_object)
+                .create_file_item(load_object=file_object, message_dict=message_dict)
             )
+            ctx.cache[widget_name]["files"] = file_object

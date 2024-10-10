@@ -22,158 +22,6 @@ from .file_pattern_steps import (
 from .non_bids_file_itemization import FileItem
 from .selection_modal import SelectionModal
 
-#
-# class EventFilePanel(Widget):
-#     event_file_pattern_counter = 0
-#
-#     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
-#         super().__init__(id=id, classes=classes)
-#         self.current_event_file_pattern_id = None
-#
-#     def compose(self):
-#         yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel")
-#
-#     @on(Button.Pressed, "#add_event_file_button")
-#     async def _on_button_add_event_file_pressed(self):
-#         await self.create_file_item(load_object=None)
-#
-#     async def create_file_item(self, load_object=None):
-#         async def mount_file_item_widget(event_file_type):
-#             events_step_type: Type[EventsStep] | None = None  # Initialize with a default value
-#             if event_file_type == "bids":
-#                 events_step_type = TsvEventsStep
-#             elif event_file_type == "fsl":
-#                 events_step_type = TxtEventsStep
-#             elif event_file_type == "spm":
-#                 events_step_type = MatEventsStep
-#             if events_step_type is not None:
-#                 the_file_item = FileItem(
-#                     id="event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter),
-#                     classes="file_patterns",
-#                     pattern_class=events_step_type(),
-#                 )
-#
-#                 await self.get_widget_by_id("event_file_panel").mount(the_file_item)
-#                 self.current_event_file_pattern_id = "event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter)
-#
-#                 EventFilePanel.event_file_pattern_counter += 1
-#                 #  print('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr', result, dir(result))
-#
-#                 #     print('ssssssssssssssssssssssssssssssssshould append after this', the_file_item)
-#                 #     self.app.event_widget_list.append(copy.deepcopy(the_file_item))
-#                 #    print('self.app.event_widget_listself.app.event_widget_list', self.app.event_widget_list)
-#                 # self.refresh()
-#             else:
-#                 print("isssssssssssssssssssssss none")
-#
-#         if load_object is None:
-#             options = {
-#                 "spm": "SPM multiple conditions",
-#                 "fsl": "FSL 3-column",
-#                 "bids": "BIDS TSV",
-#             }
-#             self.app.push_screen(
-#                 SelectionModal(
-#                     title="Event file type specification",
-#                     instructions="Specify the event file type",
-#                     options=options,
-#                     id="event_files_type_modal",
-#                 ),
-#                 mount_file_item_widget,
-#             )
-#
-#         else:
-#             print("llllllllllllllllllllllllllllllllllll load_obj", load_object.path)
-#             if load_object.extension == ".tsv":
-#                 events_step_type = TsvEventsStep
-#             elif load_object.extension == ".fsl":
-#                 events_step_type = TxtEventsStep
-#             elif load_object.extension == ".spm":
-#                 events_step_type = MatEventsStep
-#             await self.get_widget_by_id("event_file_panel").mount(
-#                 FileItem(
-#                     id="event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter),
-#                     classes="file_patterns",
-#                     load_object=load_object,
-#                     pattern_class=events_step_type(),
-#                 )
-#             )
-#             self.current_event_file_pattern_id = "event_file_pattern_" + str(EventFilePanel.event_file_pattern_counter)
-#             EventFilePanel.event_file_pattern_counter += 1
-#
-#     def on_mount(self):
-#         print(
-#             "self.app.walk_children(EventFilePanel)[self.app.walk_children(EventFilePanel)[",
-#             self.app.walk_children(EventFilePanel),
-#         )
-#         # use first event file panel widget to make copies for the newly created one
-#         if self.app.walk_children(EventFilePanel) != []:
-#             first_event_file_panel_widget = self.app.walk_children(EventFilePanel)[0]
-#             # only use if it is not the first one!
-#             if first_event_file_panel_widget != self:
-#                 for file_item_widget in first_event_file_panel_widget.walk_children(FileItem):
-#                     self.get_widget_by_id("event_file_panel").mount(
-#                         FileItem(
-#                             id=file_item_widget.id,
-#                             classes="file_patterns",
-#                             load_object=file_item_widget.get_pattern_match_results,
-#                         )
-#                     )
-#
-#     @on(FileItem.PathPatternChanged)
-#     def _on_update_all_instances(self, event):
-#         # creating copies to all feature tasks, also when a new fileitem is added, then it is copied to other widgets
-#         # the one that was is the latest one, create new instances
-#         print(
-#             "oooooooooooooooooooooooooooooooooooo  event.control.id == self.current_event_file_pattern_id:",
-#             event.control.id,
-#             self.current_event_file_pattern_id,
-#         )
-#         if event.control.id == self.current_event_file_pattern_id:
-#             # loop through the all existing event file panels
-#             for w in self.app.walk_children(EventFilePanel):
-#                 # create new fileitem in every other EventFilePanel
-#                 print('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq self.app.walk_children(EventFilePanel)', self.app.walk_children(EventFilePanel))
-#                 if w != self:
-#                     file_items_ids_in_other_event_file_panel = [
-#                         other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
-#                     ]
-#                     # id does not exist, mount new FileItem
-#                     print(
-#                         "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
-#                         event.control.id,
-#                         " ::: ",
-#                         file_items_ids_in_other_event_file_panel,
-#                     )
-#                     # this part will copy the fileitem to other file panels in other features
-#                     if event.control.id not in file_items_ids_in_other_event_file_panel:
-#                         w.get_widget_by_id("event_file_panel").mount(
-#                             FileItem(id=event.control.id, classes="file_patterns", load_object=event.value)
-#                         )
-#                         print('wheeeeeeeeeeeeeeeeeeeere is this mounted to ', w.id)
-#                         print('-----------------event.valueevent.valueevent.valueevent.value----------------', event.value)
-#                     # exists, need to change that particular one
-#
-#     #    for w in self.app.walk_children(EventFilePanel):
-#     #        old_file_pattern = w.get_widget_by_id('event_file_panel').get_widget_by_id(event.control.id).pattern_match_results
-#     #        print('ooooooooooooooooooooooooooooooo old_file_pattern event.value', old_file_pattern, event.value)
-#     #        if old_file_pattern != event.value:
-#     #            w.get_widget_by_id('event_file_panel').get_widget_by_id(event.control.id).pattern_match_results = event.value
-#
-#     # # creating copies to all feature tasks
-#     # # the one that was is the latest one, create new instances
-#     # if event.control.id == self.current_event_file_pattern_id:
-#     # # loop through the all existing event file panels
-#     # for w in self.app.walk_children(EventFilePanel):
-#     # # create new fileitem in every other EventFilePanel
-#     # if w != self:
-#     # w.get_widget_by_id('event_file_panel').mount(FileItem(
-#     # id=event.control.id,
-#     # classes="file_patterns",
-#     # load_object=event.value
-#     # )
-#     # )
-
 
 class FilePanelTemplate(Widget):
     file_pattern_counter = 0
@@ -220,24 +68,24 @@ class FilePanelTemplate(Widget):
         super().__init__(id=id, classes=classes)
         type(self).the_class = self.__class__  # Sets the_class at the class level
         self.the_app = self.app
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwwww on init", self.app.walk_children())
-        print("self._screen_stacksself._screen_stacksself._screen_stacks", self.app._screen_stacks["_default"])
+        # print("wwwwwwwwwwwwwwwwwwwwwwwwwwww on init", self.app.walk_children())
+        # print("self._screen_stacksself._screen_stacksself._screen_stacks", self.app._screen_stacks["_default"])
 
     #          self.current_atlas_file_pattern_id = None
 
     def callback_func(self, message_dict):
         info_string = Text("")
         for key in message_dict:
-            print("kkkkkkkkkkkkk", message_dict[key], key)
+            # print("kkkkkkkkkkkkk", message_dict[key], key)
             # if there is only one item, we do not separate items on new lines
-            print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
+            # print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
             if len(message_dict[key]) <= 1:
-                print(
-                    "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
-                    (len(key) + len(message_dict[key]) + 3),
-                    len(key),
-                    len(message_dict[key]),
-                )
+                # print(
+                #     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
+                #     (len(key) + len(message_dict[key]) + 3),
+                #     len(key),
+                #     len(message_dict[key]),
+                # )
                 sep_char = ""
                 separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
             else:
@@ -268,7 +116,7 @@ class FilePanelTemplate(Widget):
     async def add_file_item_pressed(self):
         await self.create_file_item(load_object=None)
 
-    async def create_file_item(self, load_object=None):
+    async def create_file_item(self, load_object=None, message_dict=None):
         async def mount_file_item_widget():
             the_file_item = FileItem(
                 id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
@@ -291,12 +139,15 @@ class FilePanelTemplate(Widget):
                     id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
                     classes="file_patterns",
                     load_object=load_object,
+                    message_dict=message_dict,
                     # pattern_class=self.pattern_class(),
                 )
             )
-            print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: async def create_file_item(self, load_object=None)")
+            # print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in::::
+            # async def create_file_item(self, load_object=None)")
             self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
             self.the_class.file_pattern_counter += 1
+        return self.current_file_pattern_id
 
     def on_mount(self):
         # use first event file panel widget to make copies for the newly created one
@@ -322,7 +173,7 @@ class FilePanelTemplate(Widget):
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
         message.control.remove()
-        print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv******", message)
+        # print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv******", message)
         self.post_message(self.FileItemIsDeleted(self, message.control.id))
 
     @on(FileItem.IsFinished)
@@ -333,12 +184,12 @@ class FilePanelTemplate(Widget):
         # creating copies to all feature tasks
         # the one that was is the latest one, create new instances
         # print('self._screen_stacksself._screen_stacksself._screen_stacks', self.app._screen_stacks)
-        print(
-            "222self._screen_stacksself._screen_stacksself._screen_stacks",
-            self.app._screen_stacks["_default"][0].walk_children(),
-        )
+        # print(
+        #     "222self._screen_stacksself._screen_stacksself._screen_stacks",
+        #     self.app._screen_stacks["_default"][0].walk_children(),
+        # )
 
-        # print("aaaaaaaaaaaat least heeeeeeeeeeeereeeeeeeee?", event.control.id, "-----", self.current_file_pattern_id)
+        print("aaaaaaaaaaaat least heeeeeeeeeeeereeeeeeeee?", event.control.id, "-----", self.current_file_pattern_id)
         print(
             "******************************** compare these two: event/control/id == self/current_file_pattern_id",
             event.control.id,
@@ -347,38 +198,41 @@ class FilePanelTemplate(Widget):
         )
         if event.control.id == self.current_file_pattern_id and event.value["file_pattern"] != "":
             # loop through the all existing event file panels
-            # print('vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)', self.app.walk_children(self.the_class))
-            # print('222 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)', self.app.walk_children())
-            # print('333 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)', self.the_app.walk_children())
+            print("vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.app.walk_children(self.the_class))
+            print("222 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.app.walk_children())
+            print("333 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.the_app.walk_children())
             #
             # print('self.the_class-self.the_class-self.the_class', self.the_class)
             #
             print(
-                "******************************** the loop goes over this self.app._screen_stacks[_default][0].walk_children((self.the_class))",
+                "******************************** the loop goes over this "
+                "self.app._screen_stacks[_default][0].walk_children((self.the_class))",
                 self.app._screen_stacks["_default"][0].walk_children((self.the_class)),
             )
             for w in self.app._screen_stacks["_default"][0].walk_children((self.the_class)):
                 # create new fileitem in every other EventFilePanel
                 print("******************************** this is the w: ", w)
-                # print("iiiiiiiiiiiiiiiiiam i getting hereeeeeeeeeeeee????? self.the_class", self.the_class)
+                print("iiiiiiiiiiiiiiiiiam i getting hereeeeeeeeeeeee????? self.the_class", self.the_class)
                 print("******************************** this is the self: ", self)
                 if w != self:
-                    print(
-                        "******************************** is w self? if no i see this (we have 2 different widgets of the same type but in different features)"
-                    )
+                    # print(
+                    #     "******************************** is w self? if no i see this (we have 2 different widgets of the
+                    #     same type but in different features)"
+                    # )
                     file_items_ids_in_other_file_panel = [
                         other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
                     ]
                     print("******************************** walk the w: ", w.walk_children(FileItem))
                     # id does not exist, mount new FileItem
-                    # print(
-                    #     "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
-                    #     event.control.id,
-                    #     " ::: ",
-                    #     file_items_ids_in_other_file_panel,
-                    # )
                     print(
-                        "********************************* we are going to try to mount these: file_items_ids_in_other_file_panel",
+                        "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
+                        event.control.id,
+                        " ::: ",
+                        file_items_ids_in_other_file_panel,
+                    )
+                    print(
+                        "********************************* we are going to try to mount these: "
+                        "file_items_ids_in_other_file_panel",
                         file_items_ids_in_other_file_panel,
                     )
                     print("********************************* if this is not in the list event.control.id", event.control.id)
@@ -397,7 +251,8 @@ class FilePanelTemplate(Widget):
                             event.control.get_pattern_match_results,
                             event.control.get_callback_message,
                         )
-                        # print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
+                        print("cccccccccccccccccccccccccccccccccccccccccccccccccccc", event.control.get_callback_message)
+                        print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
 
 
 class EventFilePanel(FilePanelTemplate):

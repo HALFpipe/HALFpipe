@@ -6,7 +6,6 @@ import traceback
 from collections import defaultdict
 from typing import Any
 
-import pandas as pd
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.widget import Widget
@@ -20,7 +19,6 @@ from ...model.setting import SettingSchema
 # from utils.confirm_screen import Confirm
 from ...model.spec import SpecSchema
 from ...utils.copy import deepcopy
-from ..feature_widgets.features import TaskBased
 from ..utils.context import ctx
 
 
@@ -46,21 +44,21 @@ class RunCLX(Widget):
         )
 
     def dump_dict_to_contex(self):
-        entity = "desc"
-        filters = {"datatype": "ref", "suffix": "atlas"}
-        filepaths = ctx.database.get(**filters)
-        tagvals = ctx.database.tagvalset(entity, filepaths=filepaths)
-        print("tagvalstagvalstagvalstagvals", tagvals)
-
-        print("ccccccccccccccccccc", pd.DataFrame.from_dict(ctx.cache).index, pd.DataFrame.from_dict(ctx.cache).columns)
+        # entity = "desc"
+        # filters = {"datatype": "ref", "suffix": "atlas"}
+        # filepaths = ctx.database.get(**filters)
+        # tagvals = ctx.database.tagvalset(entity, filepaths=filepaths)
+        # print("tagvalstagvalstagvalstagvals", tagvals)
+        #
+        # print("ccccccccccccccccccc", pd.DataFrame.from_dict(ctx.cache).index, pd.DataFrame.from_dict(ctx.cache).columns)
         #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :].index)
         #      print('fffffffffiles only', pd.DataFrame.from_dict(ctx.cache).loc['files', :])
         #      for item in pd.DataFrame.from_dict(ctx.cache).loc['files', :].index:
         #          print(pd.DataFrame.from_dict(ctx.cache).loc['files', item])
 
-        print("children teeeeeeeeeeeeeeeeeeeeeeeeest", self.app.walk_children(TaskBased))
+        # print("children teeeeeeeeeeeeeeeeeeeeeeeeest", self.app.walk_children(TaskBased))
 
-        print("lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
+        # print("lets seeee this", ctx.database.filepaths_by_tags, "--------------", ctx.database.tags_by_filepaths)
         ctx.database.filepaths_by_tags = dict()
         ctx.database.tags_by_filepaths = dict()
         #    for w in self.app.walk_children(TaskBased):

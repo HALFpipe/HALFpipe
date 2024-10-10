@@ -271,7 +271,7 @@ class SegmentHighlighting(Input):
         # self.original_value = self.value
         self.reset_highlights()
         for start, end, color in sorted(highlights, reverse=False, key=lambda x: x[0]):
-            print("cccccccccccccccccc22222222222", self.colors_and_labels)
+            # print("cccccccccccccccccc22222222222", self.colors_and_labels)
             label = self.colors_and_labels[color[3:]]
             # calculate by how much longer/shorter is the replacement string, this varies from label to label
             extra = len(label) + 2 - (end - start)

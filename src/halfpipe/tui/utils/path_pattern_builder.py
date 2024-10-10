@@ -50,7 +50,7 @@ def evaluate_files(newpathname):
         return op.normpath(abspath)
 
     # fix this, the task was not here
-    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map"]
+    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map", "desc"]
     #   entity_colors_list = ["ired", "igreen", "imagenta", "icyan"]
     # required_in_path_entities = ["subject"]
     #   required_entities = required_in_path_entities
@@ -101,9 +101,9 @@ def evaluate_files(newpathname):
 
     #   has_all_required_entities = all(entity in tagsetdict for entity in required_entities)
 
-    print("filepaths", filepaths)
+    # print("filepaths", filepaths)
 
-    print("tagdictlist", tagdictlist)
+    # print("tagdictlist", tagdictlist)
     p = inflect.engine()
     value = p.inflect(f"Found {nfile} plural('file', {nfile})")
 
@@ -156,13 +156,13 @@ class PathPatternBuilder(DraggableModalScreen):
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
-        print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere labels", labels)
+        # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere labels", labels)
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
-        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", self.highlight_colors, self.labels)
-        print("cccccccccccccccccccccccccccccccc", colors_and_labels)
+        # print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", self.highlight_colors, self.labels)
+        # print("cccccccccccccccccccccccccccccccc", colors_and_labels)
         self.active_button_id = "button_" + self.labels[0]
         self.content.mount(
             Grid(
@@ -246,8 +246,8 @@ class PathPatternBuilder(DraggableModalScreen):
         else:
             match_feedback_message, filepaths = evaluate_files(event.value)
             self.path = event.value
-        print("oooooooooooooooooooooo is i am here?????????", self.path)
-        print("ooooooooooooooooo", match_feedback_message, filepaths)
+        # print("oooooooooooooooooooooo is i am here?????????", self.path)
+        # print("ooooooooooooooooo", match_feedback_message, filepaths)
 
         highlights = self.get_widget_by_id("input_prompt").current_highlights
         self.get_widget_by_id("feedback").update(match_feedback_message)

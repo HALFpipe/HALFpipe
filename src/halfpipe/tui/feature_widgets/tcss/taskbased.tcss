@@ -6,7 +6,7 @@
         visibility: visible;
     }
     #model_conditions_and_constrasts {
-    height: 1;
+    height: auto;
     }
     .non_bids_panels {
         border: solid green;

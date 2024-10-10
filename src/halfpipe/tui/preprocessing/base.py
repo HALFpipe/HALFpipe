@@ -58,49 +58,55 @@ class Preprocessing(Widget):
     def __init__(self, disabled=False, **kwargs) -> None:
         super().__init__(**kwargs, disabled=disabled)
 
+        self.default_settings = {"run_reconall": False, "slice_timing": False, "via_algorithm_switch": False, "dummy_scans": 0}
+
     def compose(self) -> ComposeResult:
-        yield Container(
+        print("dddddddddddddddddddddddddddddddddddddddddddddddddddddefs", self.default_settings)
+        functional_settings_panel = Container(
             Horizontal(
                 Static("Run recon all", classes="description_labels"),
-                TextSwitch(value=False, id="run_recon_all"),
+                TextSwitch(value=self.default_settings["run_reconall"], id="run_reconall"),
             ),
             id="functional_settings",
             classes="components",
         )
-        yield Container(
-            Container(
-                Horizontal(
-                    Static("Turn on slice timing", classes="description_labels"),
-                    TextSwitch(value=False, id="time_slicing_switch"),
-                ),
-                Static("", id="slice_timming_info"),
-                id="slice_timing",
-                classes="components",
+        slice_timming_info_panel = Static("", id="slice_timming_info")
+        slice_timing_panel = Container(
+            Horizontal(
+                Static("Turn on slice timing", classes="description_labels"),
+                TextSwitch(value=self.default_settings["slice_timing"], id="time_slicing_switch"),
             ),
-            Vertical(
-                Horizontal(
-                    Static("Detect non-steady-state via algorithm", classes="description_labels"),
-                    TextSwitch(False, id="via_algorithm_switch"),
-                ),
-                Horizontal(
-                    Static(
-                        "Remove initial volumes from scans",
-                        id="manualy_set_volumes_to_remove_label",
-                        classes="description_labels",
-                    ),
-                    Static("0", id="remove_volumes_value"),
-                    Button("🖌", id="edit_button", classes="icon_buttons"),
-                    id="manualy_set_volumes_to_remove",
-                ),
-                id="remove_initial_volumes",
-                classes="components",
+            slice_timming_info_panel,
+            id="slice_timing",
+            classes="components",
+        )
+        remove_initial_volumes_panel = Vertical(
+            Horizontal(
+                Static("Detect non-steady-state via algorithm", classes="description_labels"),
+                TextSwitch(False if self.default_settings["dummy_scans"] is not None else True, id="via_algorithm_switch"),
             ),
+            Horizontal(
+                Static(
+                    "Remove initial volumes from scans",
+                    id="manualy_set_volumes_to_remove_label",
+                    classes="description_labels",
+                ),
+                Static(str(self.default_settings["dummy_scans"]), id="remove_volumes_value"),
+                Button("🖌", id="edit_button", classes="icon_buttons"),
+                id="manualy_set_volumes_to_remove",
+            ),
+            id="remove_initial_volumes",
+            classes="components",
+        )
+        anatomical_settings_panel = Container(
+            slice_timing_panel,
+            remove_initial_volumes_panel,
             id="anatomical_settings",
             classes="components",
         )
 
         ##############################################################################################################################
-        yield Container(
+        workflowgroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Number of nipype omp threads",
                 value="1",
@@ -114,14 +120,15 @@ class Preprocessing(Widget):
             id="workflowgroup_settings",
             classes="components",
         )
-        yield Container(
+
+        debuggroup_settings_panel = Container(
             LabelledSwitch("Debug", False),
             LabelledSwitch("Profile", False),
             LabelledSwitch("Watchdog", False),
             id="debuggroup_settings",
             classes="components",
         )
-        yield Container(
+        rungroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Merge subject workflows to n chunks",
                 value="",
@@ -174,19 +181,38 @@ class Preprocessing(Widget):
             classes="components",
         )
 
-    ##############################################################################################################################
+        functional_settings_panel.border_title = "Anatomical settings"
+        anatomical_settings_panel.border_title = "Functional settings"
+        slice_timing_panel.border_title = "Slice timing"
+        slice_timing_panel.styles.height = "5"
+        remove_initial_volumes_panel.border_title = "Initial volumes removal"
+        slice_timming_info_panel.styles.visibility = "hidden"
 
-    def on_mount(self) -> None:
-        self.get_widget_by_id("slice_timing").border_title = "Slice timing"
-        self.get_widget_by_id("anatomical_settings").border_title = "Functional settings"
-        self.get_widget_by_id("functional_settings").border_title = "Anatomical settings"
-        self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
-        self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
-        self.get_widget_by_id("slice_timing").styles.height = "5"
+        workflowgroup_settings_panel.border_title = "Workflow settings"
+        debuggroup_settings_panel.border_title = "Debug settings"
+        rungroup_settings_panel.border_title = "Run settings"
 
-        self.get_widget_by_id("workflowgroup_settings").border_title = "Workflow settings"
-        self.get_widget_by_id("debuggroup_settings").border_title = "Debug settings"
-        self.get_widget_by_id("rungroup_settings").border_title = "Run settings"
+        yield functional_settings_panel
+        yield anatomical_settings_panel
+        yield workflowgroup_settings_panel
+        yield debuggroup_settings_panel
+        yield rungroup_settings_panel
+
+    ##########################################################################################################################
+    #
+    # def on_mount(self) -> None:
+    #     self.make_titles()
+    #
+    # def make_titles(self):
+    #     # self.get_widget_by_id("slice_timing").border_title = "Slice timing"
+    #     # self.get_widget_by_id("anatomical_settings").border_title = "Functional settings"
+    #     # self.get_widget_by_id("remove_initial_volumes").border_title = "Initial volumes removal"
+    #     # self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
+    #     # self.get_widget_by_id("slice_timing").styles.height = "5"
+    #
+    #     # self.get_widget_by_id("workflowgroup_settings").border_title = "Workflow settings"
+    #     # self.get_widget_by_id("debuggroup_settings").border_title = "Debug settings"
+    #     # self.get_widget_by_id("rungroup_settings").border_title = "Run settings"
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
@@ -204,8 +230,8 @@ class Preprocessing(Widget):
             # rais imidietely the modal
             self._on_edit_button_pressed()
 
-    @on(Switch.Changed, "#run_recon_all")
-    def on_run_recon_all_switch_changed(self, event):
+    @on(Switch.Changed, "#run_reconall")
+    def on_run_reconall_switch_changed(self, event):
         ctx.spec.global_settings["run_reconall"] = event.value
 
     @on(Switch.Changed, "#time_slicing_switch")

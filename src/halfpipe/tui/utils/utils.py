@@ -43,7 +43,7 @@ def get_conditions(_filter):
     seen = set()
     for bold_file_path in bold_file_paths:
         event_file_paths = collect_events(ctx.database, bold_file_path)
-        print("event_file_pathsevent_file_pathsevent_file_paths", event_file_paths)
+        # print("event_file_pathsevent_file_pathsevent_file_paths", event_file_paths)
         if event_file_paths is None:
             continue
 

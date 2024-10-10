@@ -178,16 +178,16 @@ class DataInput(Widget):
     def callback_func(self, message_dict):
         info_string = Text("")
         for key in message_dict:
-            print("kkkkkkkkkkkkk", message_dict[key], key)
+            # print("kkkkkkkkkkkkk", message_dict[key], key)
             # if there is only one item, we do not separate items on new lines
-            print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
+            # print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
             if len(message_dict[key]) <= 1:
-                print(
-                    "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
-                    (len(key) + len(message_dict[key]) + 3),
-                    len(key),
-                    len(message_dict[key]),
-                )
+                # print(
+                #     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
+                #     (len(key) + len(message_dict[key]) + 3),
+                #     len(key),
+                #     len(message_dict[key]),
+                # )
                 sep_char = ""
                 separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
             else:

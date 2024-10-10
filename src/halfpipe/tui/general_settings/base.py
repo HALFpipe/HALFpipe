@@ -201,8 +201,8 @@ class StaticAndSelection(Widget):
 
 # ctx.spec.global_settings
 class GeneralSettings(Widget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(id=id, classes=classes)
         self.global_settings: Dict[str, Dict[str, Union[str, bool, List[str]]]] = {
             "dummy_scans": {"label": "Dummy scans", "value": "0"},
             "slice_timing": {"label": "Slice timing", "value": False},
@@ -265,6 +265,11 @@ they are.",
         self.global_settings[event.control.id]["value"] = event.value
         print("global_settings", self.global_settings)
         ctx.spec.global_settings[event.control.id] = event.value
+
+    def update_global_settings_from_spec_dict(self, spec_global_settings):
+        if spec_global_settings is not None:
+            for key in spec_global_settings:
+                self.global_settings[key]["value"] = spec_global_settings[key]
 
     @on(Button.Pressed, "#reset_button")
     def _on_reset_button_pressed(self):
