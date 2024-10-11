@@ -19,29 +19,57 @@ from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 class FeatureTemplate(Widget):
     """
-    FeatureTemplate widget that handles the initialization and management of features and settings based on user inputs.
+    FeatureTemplate
 
-    Parameters
-    ----------
-    this_user_selection_dict : dict
-        Dictionary containing selected features and settings by the user.
-    id : str, optional
-        Identifier for the widget.
-    classes : str, optional
-        CSS classes for the widget.
+    A widget for creating and managing feature-based settings and selections within a user interface. This widget
+    handles both the initialization of a new widget and the loading of settings from a specification file, adapting
+    its behavior accordingly.
 
     Attributes
-    ----------------
+    ----------
     entity : str
-        Identifier for the entity.
+        An identifier for the type of entity the widget interacts with.
     filters : dict
-        Filters to be applied, with datatype and suffix.
+        A dictionary specifying the datatype and suffix to filter the database queries.
     featurefield : str
-        Field for specific feature.
+        The specific feature field in the settings.
     type : str
-        Type of the feature.
-    file_panel_class : class
-        Class for handling file panel.
+        The type of the feature.
+    file_panel_class : type
+        The class used for the file panel within this widget.
+    feature_dict : dict
+        A dictionary containing feature-specific settings and values.
+    setting_dict : dict
+        A dictionary containing general settings and configuration values.
+    event_file_pattern_counter : int
+        A counter for file patterns.
+    tagvals : list
+        A list of available tags for selection.
+    bandpass_filter_low_key : str
+        The key for the low-pass filter setting.
+    bandpass_filter_high_key : str
+        The key for the high-pass filter setting.
+    images_to_use : dict
+        A dictionary specifying which images to use, keyed by task.
+    confounds_options : dict
+        Available options for confounds removal, with their descriptions and default states.
+    preprocessing_panel : Vertical
+        A panel containing pre-processing options such as smoothing, mean scaling, and temporal filtering.
+    images_to_use_selection_panel : SelectionList
+        A panel containing the selection list of images to use.
+    tag_panel : SelectionList
+        A panel containing the selection list of tags.
+
+    Methods
+    -------
+    __init__(this_user_selection_dict, id=None, classes=None)
+        Initializes the widget with user selections and settings.
+    compose()
+        Composes the user interface elements within the widget.
+    on_file_panel_file_item_is_deleted(message)
+        Handles the event when a file item is deleted from the file panel.
+    on_file_panel_changed(message)
+        Handles the event when the file panel changes, updating the tag selection.
     """
 
     entity: str = ""
@@ -317,7 +345,33 @@ class FeatureTemplate(Widget):
 
 
 class AtlasSeedDualRegBased(FeatureTemplate):
-    """Super class for Atlas, Seed and DualReg feature options. These three subclasses contains the tag_panel."""
+    """
+    AtlasSeedDualRegBased is a superclass for managing Atlas, Seed and DualReg features.
+    These three subclasses contains the tag_panel.
+
+    Attributes
+    ----------
+    entity : str
+        Descriptive representation of the feature.
+    filters : dict
+        Dictionary containing datatype and suffix filters.
+    featurefield : str
+        The field specifying atlases.
+    type : str
+        Type of the feature, in this case, "atlas_based_connectivity".
+    file_panel_class : Type
+        Class used for the file panel in the GUI.
+    minimum_coverage_label : str
+        Label text for minimum atlas region coverage by individual brain mask.
+
+    Methods
+    -------
+    compose()
+        Constructs the GUI layout for atlas-based connectivity.
+
+    on_mount()
+        Handles actions to be taken when the component is mounted in the GUI.
+    """
 
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}
@@ -349,6 +403,27 @@ class AtlasSeedDualRegBased(FeatureTemplate):
 
 
 class AtlasBased(AtlasSeedDualRegBased):
+    """
+    A class used to represent Atlas-based connectivity analysis
+
+    Attributes
+    ----------
+    entity : str
+        A description of the entity, which in this context is "desc"
+    filters : dict
+        A dictionary containing filters for datatype and suffix
+            - datatype: "ref"
+            - suffix: "atlas"
+    featurefield : str
+        A field representing the atlas feature set, in this case "atlases"
+    type : str
+        The type of connectivity analysis, denoted as "atlas_based_connectivity"
+    file_panel_class : class
+        A reference to the class used for file panel, here it is AtlasFilePanel
+    minimum_coverage_label : str
+        A label describing the minimum coverage of atlas regions by individual brain mask
+    """
+
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}
     featurefield = "atlases"
@@ -358,6 +433,27 @@ class AtlasBased(AtlasSeedDualRegBased):
 
 
 class SeedBased(AtlasSeedDualRegBased):
+    """
+    Inherits from AtlasSeedDualRegBased and represents a connectivity analysis
+    using seed-based approach.
+
+    Attributes
+    ----------
+    entity : str
+        Description of the entity being analyzed.
+    filters : dict
+        Dictionary specifying filters for data type and suffix.
+    featurefield : str
+        Field name in the feature dataset.
+    type : str
+        Type of connectivity being analyzed.
+    file_panel_class : type
+        Class used for managing file panels.
+    minimum_coverage_label : str
+        Label for the minimum coverage requirement of seed map regions by
+        individual brain masks.
+    """
+
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "seed"}
     featurefield = "seeds"
@@ -367,6 +463,10 @@ class SeedBased(AtlasSeedDualRegBased):
 
 
 class DualReg(AtlasSeedDualRegBased):
+    """
+    class DualReg(AtlasSeedDualRegBased):
+    """
+
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "map"}
     featurefield = "maps"
@@ -379,6 +479,38 @@ class DualReg(AtlasSeedDualRegBased):
 
 
 class TaskBased(FeatureTemplate):
+    """
+    TaskBased class extends FeatureTemplate to encapsulate and manage the task-based feature operations.
+
+    Attributes
+    ----------
+    entity : str
+        The entity description for the task-based feature.
+    filters : dict
+        Additional filters applied to the feature.
+    featurefield : str
+        Field that encapsulates the feature data.
+    type : str
+        Type identifier for task-based feature.
+    file_panel_class : class
+        GUI panel class for handling event files.
+
+    Methods
+    -------
+    compose() -> ComposeResult
+        Constructs and lays out the GUI components required for task-based features.
+
+    on_mount() -> None
+        Actions to perform when the component is mounted, initializing the panel titles and managing event file panels.
+
+    _on_selection_list_changed_images_to_use_selection()
+        Handles updates when the image selection list changes, updating condition lists accordingly.
+
+    update_conditions_table()
+        Updates the conditions table based on the current selections, ensuring the feature and settings dictionaries are
+        accurate.
+    """
+
     entity = "desc"
     filters = {"datatype": "func", "suffix": "event"}
     featurefield = "events"
@@ -424,6 +556,24 @@ class TaskBased(FeatureTemplate):
 
 
 class PreprocessedOutputOptions(TaskBased):
+    """
+    PreprocessedOutputOptions(this_user_selection_dict, **kwargs)
+
+    Class for managing preprocessed image output options within a task-based framework.
+
+    Parameters
+    ----------
+    this_user_selection_dict : dict
+        Dictionary containing user selections.
+    **kwargs
+        Additional keyword arguments passed to the superclass.
+
+    Methods
+    -------
+    on_mount()
+        Async method to handle actions when the widget is mounted.
+    """
+
     def __init__(self, this_user_selection_dict, **kwargs) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
         # no features for preprocessed image output!
@@ -434,6 +584,29 @@ class PreprocessedOutputOptions(TaskBased):
 
 
 class ReHo(FeatureTemplate):
+    """
+    ReHo
+
+    A class that represents the Regional Homogeneity (ReHo) feature, which is a Measure of the similarity or coherence of the
+    time series of a given voxel with its nearest neighbors.
+
+    Attributes
+    ----------
+    type : str
+        A string representing the type of the feature.
+
+    Methods
+    -------
+    __init__(self, this_user_selection_dict, **kwargs)
+        Initializes the ReHo feature with given user selection dictionary and keyword arguments.
+
+    compose(self) -> ComposeResult
+        Composes the user interface elements required for the ReHo feature.
+
+    on_mount(self)
+        Async method that is called when the ReHo feature is mounted in the application.
+    """
+
     type = "reho"
 
     def __init__(self, this_user_selection_dict, **kwargs) -> None:
@@ -454,7 +627,25 @@ class ReHo(FeatureTemplate):
 
 
 class Falff(ReHo):
-    """Essentially same as ReHo"""
+    """
+    Falff(this_user_selection_dict, **kwargs)
+
+    A class that represents the falff feature inheriting from ReHo and initializes
+    specific unfiltered settings based on the user's selection dictionary.
+
+    Parameters
+    ----------
+    this_user_selection_dict : dict
+        Dictionary containing the user's selection.
+    **kwargs : dict
+        Additional keyword arguments passed to the ReHo initializer.
+
+    Attributes
+    ----------
+    unfiltered_settings_dict : dict
+        Dictionary containing settings specific to the unfiltered data derived
+        from the user's selection dictionary.
+    """
 
     type = "falff"
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# ok to review
 
 from textual import on
 from textual.app import ComposeResult
@@ -19,9 +19,23 @@ from ..utils.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 
 class SetInitialVolumesRemovalModal(DraggableModalScreen):
     """
-    SetInitialVolumesRemovalModal(DraggableModalScreen):
-        A class that represents a modal screen for setting the number of initial volumes to remove
-        from a dataset. Inherits from DraggableModalScreen.
+    SetInitialVolumesRemovalModal class
+
+    A draggable modal screen that allows users to set the number of initial volumes to remove.
+
+    Methods
+    -------
+    __init__(**kwargs)
+        Initializes the modal with a title.
+
+    on_mount()
+        Sets up the modal content including a prompt, input field, and OK/Cancel buttons.
+
+    _on_ok_button_pressed()
+        Handles the OK button press event, retrieves the input value, and dismisses the modal with the given input.
+
+    _on_cancel_button_pressed()
+        Handles the Cancel button press event and dismisses the modal with None.
     """
 
     def __init__(self, **kwargs):
@@ -49,19 +63,37 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
     def _on_cancel_button_pressed(self):
         self.dismiss(None)
 
-    # def next(self, result):
-    #     # detect_str = "Detect non-steady-state via algorithm"
-    #     if self.result is not None:
-    #         value = next(iter(self.result.values()))
-    #         if isinstance(value, (int, float)):
-    #             ctx.spec.global_settings["dummy_scans"] = int(value)
-    #         elif value == self.detect_str:
-    #             ctx.spec.global_settings["dummy_scans"] = None
-    #         else:
-    #             raise ValueError(f'Unknown dummy_scans value "{value}"')
-
 
 class Preprocessing(Widget):
+    """
+    Preprocessing is a widget that handles the configuration of various preprocessing settings for neuroimaging data.
+
+    Attributes
+    ----------
+    default_settings : dict
+        Default settings for preprocessing operations specified in the widget.
+
+    Methods
+    -------
+    __init__(id: str | None = None, classes: str | None = None) -> None
+        Initializes the Preprocessing widget with optional id and class attributes.
+
+    compose() -> ComposeResult
+        Constructs and arranges the different interactive components within the widget.
+
+    _on_via_algorithm_switch_changed(self, message)
+        Event handler for changes in the "via_algorithm_switch".
+
+    on_run_reconall_switch_changed(self, message: Message)
+        Event handler for changes in the "run_reconall" switch.
+
+    on_time_slicing_switch_changed(self, message: Message)
+        Asynchronous event handler for changes in the "time_slicing_switch".
+
+    callback_func(self, message_dict: dict)
+        Callback function to handle messages from the FilePattern or CheckMetaData classes.
+    """
+
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(id=id, classes=classes)
         # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs

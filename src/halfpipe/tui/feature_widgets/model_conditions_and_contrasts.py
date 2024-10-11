@@ -18,7 +18,35 @@ cursors = cycle(["column", "row", "cell"])
 
 
 class ContrastTableInputWindow(DraggableModalScreen):
-    """Modal screen to capture user's new contrast values."""
+    """
+    ContrastTableInputWindow
+
+    A modal window class for setting contrast values through a user interface.
+    Inherits from `DraggableModalScreen` and provides functionality to capture and
+    validate user inputs for contrast names and values.
+
+    Attributes
+    ----------
+    CSS_PATH : list
+        List containing paths to the CSS files for styling the window.
+
+    Methods
+    -------
+    __init__(table_row_index, current_col_labels)
+        Initializes the ContrastTableInputWindow instance with given row index and column labels.
+    on_mount()
+        Mounts the input widgets onto the window when the window is displayed.
+    ok()
+        Confirms the input values and performs validation checks.
+    cancel_window()
+        Cancels the window and dismisses it without saving user input.
+    key_escape()
+        Cancels the window and dismisses it when the escape key is pressed.
+    _confirm_window()
+        Validates the user inputs and updates the table row index if inputs are valid.
+    _cancel_window()
+        Dismisses the window without saving any user inputs.
+    """
 
     CSS_PATH = ["tcss/contrast_table_input_window.tcss"]
 
@@ -112,6 +140,70 @@ class ContrastTableInputWindow(DraggableModalScreen):
 
 
 class ModelConditionsAndContrasts(Widget):
+    """
+    ModelConditionsAndContrasts class manages the condition values and contrast values for a given dataset, enabling users to
+     add, remove, and update these values dynamically. It synchronizes selections between the condition list and the associated
+     data table, ensuring consistency with any external modifications. The class uses pandas DataFrames to store and retrieve
+     condition values, allowing seamless recovery and updating of data when required.
+
+    Attributes
+    ----------
+    BORDER_TITLE : str
+        Title of the border for the contrast values table.
+    BINDINGS : list
+        Key bindings for the add, remove, and submit actions.
+    sort_type_cycle : cycle
+        An iterator that cycles through sorting types: alphabetically, reverse_alphabetically, by_group, and reverse_by_group.
+    condition_values : reactive[list]
+        List of conditions in the selection, which can be modified externally and requires updates to the selection and table.
+
+    Methods
+    -------
+    __init__(all_possible_conditions, feature_contrasts_dict=None, id=None, classes=None)
+        Initializes the widget with available conditions, and an optional feature contrasts dictionary for pre-existing values.
+
+    update_all_possible_conditions(all_possible_conditions)
+        Updates the possible conditions in the data table and sets default conditions if a feature contrasts dictionary is
+        provided.
+
+    watch_condition_values()
+        Watches the condition values and triggers an update when they change.
+
+    compose()
+        Composes the widget elements, including the selection list, data table, and control buttons.
+
+    on_mount()
+        Sets up the table and other widget components on mounting, including reading any defaults from the feature contrasts
+        dictionary.
+
+    update_table()
+        Updates the data table based on changes in the selection list.
+
+    set_heights()
+        Adjusts the height of the widget and its components based on the number of rows in the selection list and data table.
+
+    action_add_column()
+        Adds a new column with contrast values to the data table.
+
+    action_remove_column()
+        Removes the currently selected column from the data table.
+
+    action_submit()
+        Submits the current contrast values, saving them for later use.
+
+    add_col()
+        Button event that triggers the action_add_column method.
+
+    remove_col()
+        Button event that triggers the action_remove_column method.
+
+    sort_cols()
+        Button event that triggers sorting of the table by row labels.
+
+    key_c()
+        Handles key press events for the data table.
+    """
+
     BORDER_TITLE = "Model conditions & contrast vales"
 
     BINDINGS = [

@@ -41,18 +41,33 @@ class FieldMapFilesPanel(Widget):
     For EPI this mounts only one FileItem widget, for Siemens and Philips the number of FileItem widgets varies
     since user can set different types of magnitude and phase files.
 
-    Parameters
+    Attributes
     ----------
-    id : str or None, optional
-        Unique identifier for the widget.
-    classes : str or None, optional
-        CSS classes to apply to the widget.
-    field_map_type : str, optional
-        Type of the field map, by default "siemens".
-    step_classes : list, optional
-        List of step classes to be used in the panel.
-    **kwargs : dict
-        Additional keyword arguments.
+    field_map_type : str
+        The type of field map being utilized, default is "siemens".
+    field_map_types_dict : dict
+        A dictionary mapping field map type keys to their corresponding descriptions.
+    echo_time : int
+        An attribute initialized to 0, likely used for managing timing properties.
+    step_classes : list
+        A list of step classes that determine the pattern classes for the file items.
+
+    Methods
+    -------
+    __init__(self, step_classes, field_map_type='siemens', id=None, classes=None):
+        Initializes the FieldMapFilesPanel widget with given step classes, field map type, id, and CSS classes.
+
+    compose(self):
+        Composes the widget's visual layout, yielding a Vertical layout containing file items and a delete button.
+
+    on_mount(self):
+        Sets the title for the panel based on the selected field map type after the widget is mounted.
+
+    _on_delete_button_pressed(self):
+        Removes the file pattern item and updates the context cache when the delete button is pressed.
+
+    _on_file_item_success_changed(self, message):
+        Changes widget border from green to red based on whether the files were successfully found.
     """
 
     def __init__(
@@ -108,27 +123,30 @@ class FieldMapFilesPanel(Widget):
 
 class DataSummaryLine(Widget):
     """
-    Widget that displays a summary of data input, showing the number of files found. This applies only for the BIDS file type.
+    DataSummaryLine class
+
+    This class represents a widget for displaying a summary of data processing, including a message and a list of files.
+
+    Methods
+    -------
+    __init__(summary: dict | None = None, id: str | None = None, classes: str | None = None)
+        Initializes the DataSummaryLine with an optional summary, id, and classes.
+
+    compose() -> ComposeResult
+        Composes the widget structure.
+
+    update_summary(summary)
+        Updates the summary data and the display message, and changes the border color if files are present.
+
+    _on_show_button_pressed()
+        Handles the event when the show button is pressed, displaying a list of files in a modal dialog.
     """
 
     def __init__(self, summary: dict | None = None, id: str | None = None, classes: str | None = None) -> None:
-        """
-        Parameters
-        ----------
-        summary : dict or None, optional
-            A dictionary containing the summary message and list of files. If None, a default summary is used.
-        **kwargs : dict
-        """
         super().__init__(id=id, classes=classes)
         self.summary = {"message": "Found 0 files.", "files": []} if summary is None else summary
 
     def compose(self) -> ComposeResult:
-        """
-        Yields
-        ------
-        Horizontal
-            A horizontal container with the summary message and a button to show the files.
-        """
         yield Horizontal(
             Static(self.summary["message"], id="feedback"),
             Button("👁", id="show_button", classes="icon_buttons"),
@@ -136,14 +154,6 @@ class DataSummaryLine(Widget):
         )
 
     def update_summary(self, summary):
-        """
-        Updates the summary information displayed in the widget. Used exteranaly.
-
-        Parameters
-        ----------
-        summary : dict
-            A dictionary containing the updated summary message and list of files.
-        """
         self.summary = summary
         self.get_widget_by_id("feedback").update(self.summary["message"])
         # if there were some found files, then change border to green
@@ -158,8 +168,48 @@ class DataSummaryLine(Widget):
 
 class DataInput(Widget):
     """
-    Widget that manages the input of data, including BIDS and non-BIDS data formats.
-    Nested in a tab in the main widget.
+    DataInput(id: str | None = None, classes: str | None = None)
+
+    A class representing a data input widget that can switch between handling BIDS and non-BIDS data formats.
+
+    Attributes:
+    -----------
+    callback_message : str
+        A variable to catch outputs of the meta and summary steps.
+    t1_file_pattern_counter : int
+        Used to create a unique widget ids for T1 file patterns.
+    bold_file_pattern_counter : int
+        Used to create a unique widget ids for BOLD file patterns.
+    field_map_file_pattern_counter : int
+        Used to create a unique widget ids for field map file patterns.
+    association_done : bool
+        Flag indicating whether the association of the field maps was done or not.
+
+    Methods:
+    --------
+    callback_func(message_dict)
+        Processes a dictionary of messages and updates the callback_message with formatted text.
+
+    compose() -> ComposeResult
+        Composes the structure of the widget, switching between BIDS and non-BIDS formats.
+
+    on_mount() -> None
+        Sets up the initial state and titles for various panels after the widget is mounted.
+
+    _on_button_add_t1_image_button_pressed()
+        Handles the event when the "Add T1 Image" button is pressed.
+
+    add_t1_image(pattern_class=True, load_object=None, message_dict=None)
+        Adds a T1 image file item to the T1 image panel.
+
+    _on_button_add_bold_image_button_pressed()
+        Handles the event when the "Add BOLD Image" button is pressed.
+
+    add_bold_image(pattern_class=True, load_object=None, message_dict=None)
+        Adds a BOLD image file item to the BOLD image panel.
+
+    _add_field_map_file()
+        Executes the process to add a field map file.
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:

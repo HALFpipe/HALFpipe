@@ -38,7 +38,37 @@ FEATURES_MAP_colors = {
 
 
 class FeatureNameInput(DraggableModalScreen):
-    """Modal screen where the user can type the name of the new widget (or when renaming)."""
+    """
+    FeatureNameInput Class for a Draggable Modal Screen input interface.
+
+    Attributes
+    ----------
+    CSS_PATH : list
+        The CSS paths used by the class.
+
+    Methods
+    -------
+    __init__(occupied_feature_names)
+        Initializes the FeatureNameInput class with occupied feature names.
+
+    on_mount()
+        Mounts the input field and buttons on the modal screen when it is created.
+
+    ok()
+        Handles the 'Ok' button press event.
+
+    cancel()
+        Handles the 'Cancel' button press event.
+
+    key_escape()
+        Handles escape key press to cancel the modal.
+
+    _confirm_window()
+        Confirms the input feature name and performs validation checks.
+
+    _cancel_window()
+        Closes the modal window without confirmation.
+    """
 
     CSS_PATH = ["tcss/feature_name_input.tcss"]
 
@@ -108,7 +138,34 @@ class FeatureNameInput(DraggableModalScreen):
 
 
 class FeatureSelectionScreen(DraggableModalScreen):
-    """Modal screen where user selects type of the new feature."""
+    """
+    FeatureSelectionScreen
+    ----------------------
+    A class to create a draggable modal screen for selecting features. It extends from DraggableModalScreen and is used to
+    present a list of features from which the first level feature can be chosen.
+
+    Attributes
+    ----------
+    CSS_PATH : str
+        The path to the CSS stylesheet used for this screen.
+    occupied_feature_names : list
+        List of feature names that are already occupied.
+    option_list : OptionList
+        An option list to display the available feature choices.
+    title_bar : TitleBar
+        The title bar displaying the title of the screen.
+
+    Methods
+    -------
+    __init__(occupied_feature_names) -> None
+        Initializes the FeatureSelectionScreen with occupied feature names and sets up the option list.
+    on_mount() -> None
+        Mounts the option list and the Cancel button to the screen.
+    on_option_list_option_selected(message: OptionList.OptionSelected) -> None
+        Handles the event where an option from the option list is selected, prompting the user to input a feature name.
+    key_escape(self)
+        Handles the escape action when the Cancel button is pressed, dismissing the screen without making a selection.
+    """
 
     CSS_PATH = "tcss/feature_selection_screen.tcss"
 
@@ -143,8 +200,15 @@ class FeatureSelectionScreen(DraggableModalScreen):
 
 
 class FeatureItem:
-    """This small class creates an object where the type and name of the features are stored.
-    The object is used when sorting the features.
+    """
+    FeatureItem class to represent a feature with a type and name.
+
+    Attributes
+    ----------
+    type : str
+        The type of the feature.
+    name : str
+        The name of the feature.
     """
 
     def __init__(self, _type, name):
@@ -153,6 +217,61 @@ class FeatureItem:
 
 
 class FeatureSelection(Widget):
+    """
+    FeatureSelection(Widget)
+    A widget for feature selection, allowing users to add, rename, duplicate, delete, and sort features.
+
+    Attributes
+    ----------
+    BINDINGS : list
+        A list of binding tuples for feature actions.
+    current_order : list
+        A list defining the default order of features.
+
+    Methods
+    -------
+    __init__(self, disabled=False, **kwargs) -> None
+        Each created widget needs to have a unique id, even after deletion it cannot be recycled.
+        The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
+
+    compose(self) -> ComposeResult
+        Generates the layout of the widget, including the sidebar with buttons and a content switcher.
+
+    on_mount(self) -> None
+        Sets the initial border title of the content switcher to "First-level features".
+
+    on_list_view_selected(self, event: ListView.Selected) -> None
+        Changes border title color according to the feature type.
+
+    add(self) -> None
+        Binds the "Add" button to the add_feature action.
+
+    delete(self) -> None
+        Binds the "Delete" button to the delete_feature action.
+
+    rename(self) -> None
+        Pops up a screen to set the new feature name. Afterwards the dictionary entry is also renamed.
+
+    duplicate(self) -> None
+        Binds the "Duplicate" button to the duplicate_feature action.
+
+    sort(self) -> None
+        Binds the "Sort" button to the sort_features action.
+
+    action_add_feature(self) -> None
+        Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget.
+
+    add_new_feature(self, new_feature_item: tuple | bool) -> None
+        Adds a new feature by mounting a new widget and creating a new entry in the dictionary to keep track of selections.
+
+    action_delete_feature(self) -> None
+        Unmount the feature and delete its entry from dictionaries.
+
+    action_duplicate_feature(self)
+        Duplicates the feature by a deep copy of the dictionary entry and then mounts a new widget while loading defaults from
+        this copy.
+    """
+
     BINDINGS = [("a", "add_feature", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
 
