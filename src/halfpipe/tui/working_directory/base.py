@@ -162,15 +162,17 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="cache_file_worker")
     async def cache_file_patterns(self):
+        data_input_widget = self.app.get_widget_by_id("input_data_content")
+        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
+
+        #   event_file_panel_widget = self.get_widget_by_id('top_event_file_panel')
+
         # The philosophie here is that we copy the data from the existing spec file to the context cache and then create
         # corresponding widgets. Through these widgets then it should be possible to further modify the spec file.
         # The created widgets should avoid using step and meta classes upon creation as these triggers various user choice
         # modals.
-        # To ensure correct order, stages are broken down to a separate processes.
-
-        data_input_widget = self.app.get_widget_by_id("input_data_content")
-        preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
-
         if self.existing_spec is not None:
             self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(False)
             self.event_file_objects = []
@@ -178,6 +180,10 @@ spec.json file it is possible to load the therein configuration.",
             self.seed_map_file_objects = []
             self.spatial_map_file_objects = []
 
+            print(
+                "--------------------------------------------------------- self.existing_spec.global_settings",
+                self.existing_spec.global_settings,
+            )
             preprocessing_widget.default_settings = self.existing_spec.global_settings
             preprocessing_widget = preprocessing_widget.refresh(recompose=True)
 
@@ -185,6 +191,7 @@ spec.json file it is possible to load the therein configuration.",
                 if f.datatype == "bids":
                     ctx.cache["bids"]["files"] = f.path
                     data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
+                    # print('////////////////////////////////////////////////', f.path)
                     # this is the function used when we are loading bids data files, in also checks if the data
                     # folder contains bids files, and if yes, then it also extracts the tasks (images)
                     path_test_for_bids(f.path)
@@ -197,6 +204,7 @@ spec.json file it is possible to load the therein configuration.",
                     )
                     ctx.cache[widget_name]["files"] = f
 
+                    # print('ffffffffffffffffffffffffffffffffffffffff bold load object', f.__dict__)
                 elif f.suffix == "T1w":
                     widget_name = await data_input_widget.add_t1_image(pattern_class=False, load_object=f, message_dict=None)
                     ctx.cache[widget_name]["files"] = f
@@ -209,39 +217,65 @@ spec.json file it is possible to load the therein configuration.",
                 elif f.suffix == "map":
                     self.spatial_map_file_objects.append(f)
 
+            # bold_filedict = {"datatype": "func", "suffix": "bold"}
+            # filepaths = ctx.database.get(**bold_filedict)
+            # print('filepathsfilepathsfilepathsfilepathsfilepathsfilepaths', filepaths)
             ctx.refresh_available_images()
             data_input_widget.update_summaries()
 
     @work(exclusive=True, name="feature_worker")
     async def mount_features(self):
         feature_widget = self.app.get_widget_by_id("feature_selection_content")
+
         setting_feature_map = {}
-        if self.existing_spec is not None:  # Add this check
+        if self.existing_spec is not None:
             for feature in self.existing_spec.features:
                 # print("self.existing_spec.featuresself.existing_spec.features", feature.__dict__)
+                ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
                 setting_feature_map[feature.__dict__["setting"]] = feature.name
             for setting in self.existing_spec.settings:
+                # print("settingsettingsettingsettingsettingsettingsetting", setting, setting["name"])
+                # print("settingsettingsettingsettingsettingsettingsetting name", setting["name"])
                 # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
+                # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
+                #  ctx.cache[setting["name"][:-7]]["settings"] = setting
                 if setting["output_image"] is not True:
                     ctx.cache[setting_feature_map[setting["name"]]]["settings"] = copy.deepcopy(setting)
                 else:
                     ctx.cache[setting["name"]]["features"] = {}
                     ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
 
-            # Then create the widgets
+            #     # Then create the widgets
+            #     print('fffffffffffffffffffffffffffffffirst time cache printtttttttttttttttttttt', ctx.cache)
             for top_name in ctx.cache:
                 if ctx.cache[top_name]["features"] != {}:
+                    # print("ctx.cache[top_name]['features']ctx.cache[top_name]['features']", ctx.cache[top_name]["features"])
                     name = ctx.cache[top_name]["features"]["name"]
+                    # print("namenamenamename", name)
+                    # print(
+                    #     'ctx.cache[name]["features"]["type"]ctx.cache[name]["features"]["type"]',
+                    #     ctx.cache[name]["features"]["type"],
+                    # )
+                    # print('[ctx.cache[name]["features"][ctx.cache[name]["features"]', ctx.cache[name]["features"])
+                    # how to solve this?
                     await feature_widget.add_new_feature([ctx.cache[name]["features"]["type"], name])
+            # print('sssssssssssssssssssssecond time cache printtttttttttttttttttttt', ctx.cache)
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        print("test", event.handler_name)
+        print("test", event.namespace)
+        print("test", event.worker.name)
+        print("test", event.state)
         if event.state == WorkerState.SUCCESS:
             if event.worker.name == "cache_file_worker":
+                print("i am finished with the taaaaaaaaaaask")
                 self.mount_features()
             if event.worker.name == "feature_worker":
+                print("i am finished with the taaaaaaaaaaask")
                 await self.mount_file_panels()
 
     async def mount_file_panels(self):
+        print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
         feature_widget = self.app.get_widget_by_id("feature_selection_content")
         for file_object in self.event_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
