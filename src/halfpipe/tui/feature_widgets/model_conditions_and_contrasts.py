@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
+# ok to review
 from itertools import cycle
 
 import pandas as pd
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal, HorizontalScroll, VerticalScroll
+from textual.containers import Grid, Horizontal, HorizontalScroll
 from textual.reactive import reactive
-from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Label, SelectionList
 from textual.widgets.selection_list import Selection
 
+from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.false_input_warning_screen import FalseInputWarning
 
 cursors = cycle(["column", "row", "cell"])
 
 
-class ContrastTableInputWindow(ModalScreen[str | None]):
+class ContrastTableInputWindow(DraggableModalScreen):
     """Modal screen to capture user's new contrast values."""
 
     CSS_PATH = ["tcss/contrast_table_input_window.tcss"]
@@ -27,7 +28,7 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
         #   self.top_parent = top_parent
         super().__init__()
 
-    def compose(self) -> ComposeResult:
+        # def compose(self) -> ComposeResult:
         input_elements = []
         for key, value in self.table_row_index.items():
             input_box = Input(
@@ -39,7 +40,7 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
             label = Label(key)
             label.tooltip = value
             input_elements.append(Horizontal(label, input_box, classes="row_element"))
-        yield VerticalScroll(
+        self.content = (
             Input(placeholder="Specify contrast name", id="contrast_name"),
             *input_elements,
             Grid(
@@ -47,11 +48,11 @@ class ContrastTableInputWindow(ModalScreen[str | None]):
                 Button("Cancel", classes="cancel_button"),
                 id="button_grid",
             ),
-            id="the_window",
         )
 
     def on_mount(self):
-        self.get_widget_by_id("the_window").border_title = "Contrast"
+        self.content.mount(*self.content)
+        # self.get_widget_by_id("the_window").border_title = "Contrast"
 
     @on(Button.Pressed, "ContrastTableInputWindow .ok_button")
     def bla(self):
@@ -178,11 +179,7 @@ class ModelConditionsAndContrasts(Widget):
                     table.add_column(contrast_dict["name"], key=contrast_dict["name"])
                     for row_key in table.rows:
                         table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
-                self.set_heights()
-            else:
-                self.styles.height = 1
-        else:
-            self.styles.height = 1
+        self.set_heights()
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
     def update_table(self) -> None:
@@ -210,18 +207,21 @@ class ModelConditionsAndContrasts(Widget):
         self.set_heights()
 
     def set_heights(self):
-        # set the height based on the number of rows
-        self.get_widget_by_id("contrast_table_upper").styles.height = (
-            len(self.get_widget_by_id("model_conditions_selection").selected) + 6
-        )
-        self.get_widget_by_id("model_conditions_selection").styles.height = (
-            len(self.get_widget_by_id("model_conditions_selection")._values) + 2
-        )
-        self.styles.height = (
-            len(self.get_widget_by_id("model_conditions_selection").selected)
-            + len(self.get_widget_by_id("model_conditions_selection")._values)
-            + 14
-        )
+        if self.condition_values != [] or self.feature_contrasts_dict != []:
+            # set the height based on the number of rows
+            self.get_widget_by_id("contrast_table_upper").styles.height = (
+                len(self.get_widget_by_id("model_conditions_selection").selected) + 6
+            )
+            self.get_widget_by_id("model_conditions_selection").styles.height = (
+                len(self.get_widget_by_id("model_conditions_selection")._values) + 2
+            )
+            self.styles.height = (
+                len(self.get_widget_by_id("model_conditions_selection").selected)
+                + len(self.get_widget_by_id("model_conditions_selection")._values)
+                + 14
+            )
+        else:
+            self.styles.height = 1
 
     def action_add_column(self):
         """Add column with new contrast values to te table."""
