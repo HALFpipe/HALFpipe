@@ -1,30 +1,30 @@
 ContrastTableInputWindow {
-    #the_window {
-        border: thick $accent;
-        width: 50;
-        height: 25;
-        background: $surface;
-    }
-    #button_grid {
+
+    #button_panel {
         dock: bottom;
         height: auto;
-        grid-size: 2;
-        padding: 0 1;
-        grid-gutter: 1 1;
+        width: 38;
+
+align: right top;
+padding: 1 0 0 0;
+        offset-x: -5;
     }
     #contrast_name {
-        width: 100%;
+        width: 42;
+        offset-x: 3;
+        margin: 1;
     }
     .row_element {
         layout: grid;
         align: center middle;
         grid-size: 2;
-        height: 5;
-        border: thick solid green;
+        height: 3;
+        width: 50;
+      /*  border: thick solid green;*/
     }
     .input_values {
         padding: 0 1;
-        width: 35%;
+        width: 15;
         height: 3;
     }
     Label {
@@ -33,6 +33,7 @@ ContrastTableInputWindow {
        content-align: left middle;
     }
     Button {
-        width: 100%;
+        width: 10;
+margin: 0 1;
     }
 }

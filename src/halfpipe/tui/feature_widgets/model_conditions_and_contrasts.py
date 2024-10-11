@@ -5,14 +5,14 @@ from itertools import cycle
 import pandas as pd
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal, HorizontalScroll
+from textual.containers import Horizontal, HorizontalScroll
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Label, SelectionList
 from textual.widgets.selection_list import Selection
 
+from ..utils.confirm_screen import Confirm
 from ..utils.draggable_modal_screen import DraggableModalScreen
-from ..utils.false_input_warning_screen import FalseInputWarning
 
 cursors = cycle(["column", "row", "cell"])
 
@@ -25,10 +25,9 @@ class ContrastTableInputWindow(DraggableModalScreen):
     def __init__(self, table_row_index, current_col_labels) -> None:
         self.table_row_index = table_row_index
         self.current_col_labels = current_col_labels
-        #   self.top_parent = top_parent
         super().__init__()
+        self.title_bar.title = "Set contrast values"
 
-        # def compose(self) -> ComposeResult:
         input_elements = []
         for key, value in self.table_row_index.items():
             input_box = Input(
@@ -40,22 +39,22 @@ class ContrastTableInputWindow(DraggableModalScreen):
             label = Label(key)
             label.tooltip = value
             input_elements.append(Horizontal(label, input_box, classes="row_element"))
-        self.content = (
+        self.widgets_to_mount = [
             Input(placeholder="Specify contrast name", id="contrast_name"),
             *input_elements,
-            Grid(
+            Horizontal(
                 Button("Ok", classes="ok_button"),
                 Button("Cancel", classes="cancel_button"),
-                id="button_grid",
+                id="button_panel",
             ),
-        )
+        ]
 
     def on_mount(self):
-        self.content.mount(*self.content)
+        self.content.mount(*self.widgets_to_mount)
         # self.get_widget_by_id("the_window").border_title = "Contrast"
 
     @on(Button.Pressed, "ContrastTableInputWindow .ok_button")
-    def bla(self):
+    def ok(self):
         self._confirm_window()
 
     @on(Button.Pressed, "ContrastTableInputWindow .cancel_button")
@@ -67,19 +66,49 @@ class ContrastTableInputWindow(DraggableModalScreen):
 
     def _confirm_window(self):
         if self.get_widget_by_id("contrast_name").value in self.current_col_labels:
-            self.app.push_screen(FalseInputWarning(warning_message="The selected column name already exists"))
+            self.app.push_screen(
+                Confirm(
+                    "The selected column name already exists",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Existing name",
+                    classes="confirm_error",
+                )
+            )
         elif self.get_widget_by_id("contrast_name").value == "":
-            self.app.push_screen(FalseInputWarning(warning_message="Specify contrast name!"))
+            self.app.push_screen(
+                Confirm(
+                    "Specify contrast name!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Existing name",
+                    classes="confirm_error",
+                )
+            )
         elif any(i.value == "" for i in self.query(".input_values")):
             # print([i for i in self.query(".input_values")])
-            self.app.push_screen(FalseInputWarning(warning_message="Fill all values!"))
+            self.app.push_screen(
+                Confirm(
+                    "Fill all values!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Existing name",
+                    classes="confirm_error",
+                )
+            )
         else:
             for i in self.query(".input_values"):
                 self.table_row_index[i.name] = i.value
             self.dismiss(self.get_widget_by_id("contrast_name").value)
 
     def _cancel_window(self):
-        self.dismiss(None)
+        self.dismiss(False)
 
 
 class ModelConditionsAndContrasts(Widget):
@@ -118,6 +147,8 @@ class ModelConditionsAndContrasts(Widget):
         The tricky part in this widget is to keep sync between the selection list and the table and on top of  that
         with the images selection list from the upper widget. Also one needs to properly store and recover table values
         on change.
+        The all_possible_conditions is a list of all conditions based on the available images (bold) files.
+        The feature_contrasts_dict is reference to the list in the ctx.cache!
         """
         super().__init__(id=id, classes=classes)
         self.feature_contrasts_dict = feature_contrasts_dict
@@ -132,7 +163,7 @@ class ModelConditionsAndContrasts(Widget):
         self.df.set_index("condition", inplace=True)
         self.default_conditions = []
         # if there are dict entries then set defaults
-        if self.feature_contrasts_dict:  # Ensure it is not None
+        if self.feature_contrasts_dict is not None:  # Ensure it is not None
             if self.feature_contrasts_dict != []:
                 # convert dict to pandas
                 for contrast_dict in self.feature_contrasts_dict:
@@ -173,7 +204,7 @@ class ModelConditionsAndContrasts(Widget):
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         # read table defaults if there are some
-        if self.feature_contrasts_dict:  # Ensure it is not None
+        if self.feature_contrasts_dict is not None:  # Ensure it is not None
             if self.feature_contrasts_dict != []:
                 for contrast_dict in self.feature_contrasts_dict:
                     table.add_column(contrast_dict["name"], key=contrast_dict["name"])
@@ -226,20 +257,16 @@ class ModelConditionsAndContrasts(Widget):
     def action_add_column(self):
         """Add column with new contrast values to te table."""
 
-        def add_column(new_column_name, new_column_values=None):
-            # value is just the column label
+        def add_column(new_column_name: str):  # , new_column_values=None):
+            # new_column_name is just the column label
             # is dictionary with the new column values
             table = self.get_widget_by_id("contrast_table")
 
-            value = new_column_name
-            if new_column_values is not None:
-                self.table_row_index = new_column_values
-
-            if value is not None:
-                table.add_column(value, default=1, key=value)
+            if new_column_name is not False:
+                table.add_column(new_column_name, default=1, key=new_column_name)
                 for row_key in table.rows:
-                    table.update_cell(row_key, value, self.table_row_index[row_key.value])
-                    self.df.loc[row_key.value, value] = self.table_row_index[row_key.value]
+                    table.update_cell(row_key, new_column_name, self.table_row_index[row_key.value])
+                    self.df.loc[row_key.value, new_column_name] = self.table_row_index[row_key.value]
             else:
                 pass
             self.dump_contrast_values()
@@ -249,7 +276,6 @@ class ModelConditionsAndContrasts(Widget):
             ContrastTableInputWindow(
                 table_row_index=self.table_row_index,
                 current_col_labels=self.df.columns.values,
-                # top_parent=self.top_parent,
             ),
             add_column,
         )
@@ -358,7 +384,8 @@ class ModelConditionsAndContrasts(Widget):
     def dump_contrast_values(self) -> None:
         table = self.get_widget_by_id("contrast_table")
         df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
-        if self.feature_contrasts_dict:  # Ensure it is not None
+
+        if self.feature_contrasts_dict is not None:  # Ensure it is not None
             self.feature_contrasts_dict.clear()
             # Iterate over each column in the DataFrame
             for column in df_filtered.columns:
