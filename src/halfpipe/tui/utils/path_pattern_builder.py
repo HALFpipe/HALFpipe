@@ -17,6 +17,7 @@ from halfpipe.tui.utils.pattern_suggestor import (
     SelectCurrentWithInputAndSegmentHighlighting,
 )
 
+from .confirm_screen import Confirm
 from .list_of_files_modal import ListOfFiles
 
 
@@ -157,6 +158,7 @@ class PathPatternBuilder(DraggableModalScreen):
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
         # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere labels", labels)
+        self.mandatory_tag = f"{{{self.labels[0]}}}"
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
@@ -272,7 +274,21 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#ok_button")
     def _ok(self, event: Button.Pressed):
-        self.dismiss(self.pattern_match_results)
+        print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", self.mandatory_tag)
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", self.pattern_match_results)
+        if self.mandatory_tag not in self.pattern_match_results["file_pattern"]:
+            self.app.push_screen(
+                Confirm(
+                    f"Mandatory tag missing!\n Set {self.mandatory_tag}!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Missing name",
+                    classes="confirm_error",
+                )
+            )
+        else:
+            self.dismiss(self.pattern_match_results)
 
     @on(Button.Pressed, "#cancel_button")
     def _close(self, event: Button.Pressed):
