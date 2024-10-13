@@ -168,13 +168,11 @@ class MainApp(App):
         "./feature_widgets/tcss/base.tcss",
         "./feature_widgets/tcss/taskbased.tcss",
         "./feature_widgets/tcss/model_conditions_and_contrasts.tcss",
-        #  "./utils/tcss/file_browser.tcss",
         "./utils/tcss/file_browser.tcss",
         "./working_directory/tcss/working_directory.tcss",
         "./data_input/tcss/data_input.tcss",
         "./preprocessing/tcss/preprocessing.tcss",
         "./utils/tcss/path_pattern_builder.tcss",
-        "./general_settings/tcss/general_settings.tcss",
         "./dev.tcss",
         "./utils/tcss/radio_set_changed.tcss",
     ]
