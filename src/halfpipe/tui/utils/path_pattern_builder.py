@@ -10,14 +10,14 @@ from textual.containers import Container, Grid, HorizontalScroll
 from textual.widgets import Button, Static
 
 from halfpipe.tui.utils.draggable_modal_screen import DraggableModalScreen
-from halfpipe.tui.utils.file_browser_modal import FileBrowserModal
+from halfpipe.tui.utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from halfpipe.tui.utils.pattern_suggestor import (
     InputWithColoredSuggestions,
     SegmentHighlighting,
     SelectCurrentWithInputAndSegmentHighlighting,
 )
 
-from .confirm_screen import SimpleMessageModal
+from .list_of_files_modal import ListOfFiles
 
 
 # utilities
@@ -164,12 +164,14 @@ class PathPatternBuilder(DraggableModalScreen):
         # print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", self.highlight_colors, self.labels)
         # print("cccccccccccccccccccccccccccccccc", colors_and_labels)
         self.active_button_id = "button_" + self.labels[0]
+        color_buttons = [
+            ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
+            for item in colors_and_labels.items()
+        ]
+        color_buttons[0].add_class("activated")
         self.content.mount(
             Grid(
-                *[
-                    ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
-                    for item in colors_and_labels.items()
-                ],
+                *color_buttons,
                 id="color_button_panel",
             ),
             HorizontalScroll(
@@ -214,7 +216,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#browse_button")
     def open_browse_window(self):
-        self.app.push_screen(FileBrowserModal(), self.update_input)
+        self.app.push_screen(FileBrowserModal(path_test_function=path_test_with_isfile_true), self.update_input)
 
     def update_input(self, selected_path: str) -> None:
         """Update the Prompt value."""
@@ -278,7 +280,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#show_button")
     def _remove_self(self):
-        self.app.push_screen(SimpleMessageModal(self.pattern_match_results))
+        self.app.push_screen(ListOfFiles(self.pattern_match_results))
 
     async def on_key(self, event: events.Key):
         """Handles keyboard events to move the cursor and toggle highlighting mode."""

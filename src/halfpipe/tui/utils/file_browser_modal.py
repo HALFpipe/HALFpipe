@@ -6,6 +6,7 @@ import sys
 # Add your path here (replace '/path/to/directory' with the actual path)
 sys.path.append("/home/tomas/github/HALFpipe/src/")
 
+import functools
 import os
 from pathlib import Path
 from typing import Iterable
@@ -33,6 +34,10 @@ def path_test(path, isfile=False):
     else:
         result_info = "File not found."
     return result_info
+
+
+# Partially apply path_test with isfile=True
+path_test_with_isfile_true = functools.partial(path_test, isfile=True)
 
 
 class FilteredDirectoryTree(DirectoryTree):

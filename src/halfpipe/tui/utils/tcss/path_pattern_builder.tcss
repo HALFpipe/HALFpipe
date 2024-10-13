@@ -258,8 +258,9 @@ PathPatternBuilder {
         margin: 1 0;
         border-top: tall $panel-lighten-2;
         border-bottom: tall $panel-darken-3;
+        tint: $background 60%;
     }
     ColorButton.activated {
-        tint: $background 30%;
+        tint: $background 0%;
     }
 }

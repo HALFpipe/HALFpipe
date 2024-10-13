@@ -5,7 +5,6 @@ import sys
 
 sys.path.append("/home/tomas/github/HALFpipe/src/")
 
-from dataclasses import dataclass
 
 from rich.cells import get_character_cell_size
 from rich.text import Text
@@ -282,14 +281,8 @@ class SegmentHighlighting(Input):
         # self.current_highlights is set to [] when new highlight session starts, existing highlights are thus copied to
         # self.previous_highlights
         self.previous_highlights = copy.deepcopy(self.current_highlights)
-        self.post_message(self.Submitted(self.value))
+        self.post_message(self.Submitted(self, self.value, None))
         self.refresh()
-
-    @dataclass
-    class Submitted(Message):
-        """Used when a submit button is pressed."""
-
-        value: str
 
     class Toggle(Message):
         """Request toggle overlay."""
