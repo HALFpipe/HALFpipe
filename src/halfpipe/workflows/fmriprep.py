@@ -233,7 +233,7 @@ class FmriprepFactory(Factory):
         return bold_file_paths
 
     def get(self, *args, **kwargs):
-        return super().get(*args, **kwargs)
+        return super().get(*args, **kwargs)  # type: ignore
 
     def connect(self, nodehierarchy, node, source_file=None, subject_id=None, **_) -> None:
         """

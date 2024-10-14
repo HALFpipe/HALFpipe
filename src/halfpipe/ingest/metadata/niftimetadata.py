@@ -61,6 +61,7 @@ class NiftiheaderMetadataLoader(Loader):
 
                 if self.loader.fill(fileobj, "slice_encoding_direction"):
                     slice_encoding_direction = fileobj.metadata.get("slice_encoding_direction")
+                    assert isinstance(slice_encoding_direction, str)
 
                     if slice_encoding_direction not in axis_codes:
                         slice_encoding_direction = canonicalize_direction_code(slice_encoding_direction, fileobj.path)

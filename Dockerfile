@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile-upstream:master
 
-FROM condaforge/mambaforge:latest as builder
+FROM condaforge/mambaforge:latest AS builder
 
 RUN mamba update --yes --all
 RUN mamba install --yes "boa" "conda-verify"
@@ -8,17 +8,20 @@ RUN mamba install --yes "boa" "conda-verify"
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi.
 COPY recipes /recipes
-RUN for pkg in rmath traits niflow-nipype1-workflows nitransforms pybids; do \
-        conda mambabuild --no-anaconda-upload /recipes/$pkg && \
+COPY recipes/conda_build_config.yaml /root/conda_build_config.yaml
+
+RUN for pkg in rmath traits nipype niflow-nipype1-workflows sqlalchemy pybids nitransforms tedana templateflow niworkflows sdcflows smriprep fmriprep; do \
+        conda mambabuild --no-anaconda-upload --use-local /recipes/$pkg && \
         conda build purge; \
     done
 
-FROM condaforge/mambaforge:latest as install
+FROM condaforge/mambaforge:latest AS install
 
 COPY --from=builder /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN mamba install --yes --use-local \
     "python=3.11" "pip" "nodejs" "rmath" "ants"
 RUN mamba update --yes --all
+
 RUN --mount=source=requirements.txt,target=/requirements.txt \
     --mount=source=requirements-test.txt,target=/requirements-test.txt \
     --mount=source=install-requirements.sh,target=/install-requirements.sh \
@@ -68,6 +71,10 @@ RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
 
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
+
+# Add git config for datalad commands
+RUN git config --global user.name "Halfpipe" \
+    && git config --global user.email "halfpipe@fmri.science"
 
 # Install `halfpipe`
 RUN --mount=target=/halfpipe \

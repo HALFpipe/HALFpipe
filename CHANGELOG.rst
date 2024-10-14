@@ -207,7 +207,7 @@ Bug fixes
 -  Fix misunderstanding of the output value ``resels`` of FSL’s
    ``smoothest`` command. The value refers to the size of a resel, not
    the number of them in the image. The helper function ``_critical_z``
-   now taked this into account now. (nipy/nipype#3316)
+   now takes this into account now. (nipy/nipype#3316)
 -  Fix naming of output files in ``derivatives/halfpipe`` and
    ``grouplevel`` folder so that capitalization is consistent with
    original IDs and names (#57)

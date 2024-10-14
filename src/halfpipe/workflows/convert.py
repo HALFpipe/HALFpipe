@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
-from typing import Dict, List
 
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -13,7 +12,7 @@ from ..logging import logger
 def convert_all(
     database: Database,
     bids_database: BidsDatabase,
-    bold_paths_dict: Dict[str, List[str]],
+    bold_paths_dict: dict[str, list[str]],
 ):
     for bold_path, associated_paths in bold_paths_dict.items():
         try:

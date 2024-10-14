@@ -14,7 +14,8 @@ from ...logging import logger
 from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
 from ..bypass import init_bypass_wf
-from ..factory import Factory
+from ..factory import Factory, FactoryContext
+from ..fmriprep import FmriprepFactory
 from ..memory import MemoryCalculator
 from ..resampling.factory import AltBOLDFactory
 from .bandpass_filter import BandpassFilterTuple, init_bandpass_filter_wf
@@ -403,7 +404,7 @@ class ConfoundsRegressionFactory(LookupFactory):
 
 
 class PostProcessingFactory(Factory):
-    def __init__(self, ctx, fmriprep_factory):
+    def __init__(self, ctx: FactoryContext, fmriprep_factory: FmriprepFactory) -> None:
         super().__init__(ctx)
 
         self.fmriprep_factory = fmriprep_factory
@@ -498,7 +499,9 @@ class PostProcessingFactory(Factory):
                 )
 
     def get(self, source_file, setting_name, confounds_action=None):
-        self.ica_aroma_components_factory.get(source_file)  # make sure ica aroma components are always calculated
+        if self.ctx.spec.global_settings["run_aroma"] is True:
+            # Make sure ica aroma components are calculated when enabled
+            self.ica_aroma_components_factory.get(source_file)
         if confounds_action == "select":
             return self.confounds_select_factory.get(source_file, setting_name)
         elif confounds_action == "regression":

@@ -31,7 +31,7 @@ def _resolve_across(ctx, inputname):
             return []
     for obj in ctx.spec.models:
         if inputname == obj.name:
-            in_across_set = set(tuple(_resolve_across(ctx, inpt)) for inpt in obj.inputs)
+            in_across_set = set(tuple(_resolve_across(ctx, input)) for input in obj.inputs)
             assert len(in_across_set) == 1, "Cannot resolve across"
             (in_across,) = in_across_set
             return [*in_across, obj.across]

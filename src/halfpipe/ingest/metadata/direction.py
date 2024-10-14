@@ -3,22 +3,41 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from pathlib import Path
 
 import nibabel as nib
+import numpy as np
+from numpy import typing as npt
 
 from ...model.metadata import axis_codes, direction_codes, space_codes
 from ..glob import tag_glob
 from .niftiheader import NiftiheaderLoader
 
 
-def get_axcodes_set(path_pattern: str):
-    axcodes_set = set()
+def get_axcodes_set(path_pattern: str | Path) -> set[tuple[str, str, str]]:
+    axcodes_set: set[tuple[str, str, str]] = set()
 
     for file_path, _ in tag_glob(path_pattern):
         header, _ = NiftiheaderLoader.load(file_path)
         if not isinstance(header, nib.nifti1.Nifti1Header):
             continue
-        axcodes_set.add(nib.orientations.aff2axcodes(header.get_best_affine()))
+
+        affines: list[npt.NDArray[np.float64]] = list()
+
+        try:
+            affines.append(header.get_qform())
+        except ValueError:
+            pass
+        try:
+            affines.append(header.get_sform())
+        except ValueError:
+            pass
+
+        for affine in affines:
+            axcodes = nib.orientations.aff2axcodes(affine)
+            if all(isinstance(axcode, str) for axcode in axcodes):
+                axcodes_set.add(axcodes)
+                break
 
     return axcodes_set
 
@@ -50,7 +69,7 @@ def invert_location(d):
     return {"r": "l", "l": "r", "p": "a", "a": "p", "s": "i", "i": "s"}[d]
 
 
-def canonicalize_direction_code(pedir_code, pat):
+def canonicalize_direction_code(pedir_code: str, pat):
     canonical_pedir_code = pedir_code
     if pedir_code not in axis_codes:
         if pedir_code not in space_codes:

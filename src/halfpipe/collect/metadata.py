@@ -50,7 +50,7 @@ def collect_metadata(database: Database, path: Path | str, setting=None) -> dict
         # automated conversion
         metadata_keys = get_nested_schema_field_names(instance, "metadata")
         for key in metadata_keys:
-            database.fillmetadata(key, [path])
+            database.fillmetadata(key, [str(path)])
             value = database.metadata(path, key)
 
             if value is not None:
@@ -62,7 +62,7 @@ def collect_metadata(database: Database, path: Path | str, setting=None) -> dict
                         logger.warning(f'Cannot find "{key}" for "{path}"', exc_info=e)
                         continue
                 if key == "slice_timing_code":
-                    if not database.fillmetadata("slice_timing", [path]):
+                    if not database.fillmetadata("slice_timing", [str(path)]):
                         continue
                     key = "slice_timing"
                     value = database.metadata(path, key)
