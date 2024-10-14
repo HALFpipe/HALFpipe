@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 from PIL import Image
 from rich.console import Console, RenderResult
 from rich_pixels import Pixels
@@ -19,6 +21,9 @@ from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
 from .working_directory.base import WorkDirectory
+
+# The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class HeaderCloseIcon(Widget):
@@ -128,7 +133,7 @@ class RichImage:
     """Convert the image to a Rich image."""
 
     def __rich_console__(self, console: Console, options) -> RenderResult:
-        with Image.open("./halfpipe/tui/images/halfpipe_logo_v2.png") as image:
+        with Image.open(os.path.join(BASE_DIR, "images/halfpipe_logo_v2.png")) as image:
             pixels = Pixels.from_image(image, resize=(110, 92))  # 105, 92
         return console.render(pixels)
 
@@ -164,17 +169,17 @@ class Welcome(ModalScreen):
 
 class MainApp(App):
     CSS_PATH = [
-        "tcss/base.tcss",
-        "./feature_widgets/tcss/base.tcss",
-        "./feature_widgets/tcss/taskbased.tcss",
-        "./feature_widgets/tcss/model_conditions_and_contrasts.tcss",
-        "./utils/tcss/file_browser.tcss",
-        "./working_directory/tcss/working_directory.tcss",
-        "./data_input/tcss/data_input.tcss",
-        "./preprocessing/tcss/preprocessing.tcss",
-        "./utils/tcss/path_pattern_builder.tcss",
-        "./dev.tcss",
-        "./utils/tcss/radio_set_changed.tcss",
+        os.path.join(BASE_DIR, "tcss/base.tcss"),
+        os.path.join(BASE_DIR, "feature_widgets/tcss/base.tcss"),
+        os.path.join(BASE_DIR, "feature_widgets/tcss/taskbased.tcss"),
+        os.path.join(BASE_DIR, "feature_widgets/tcss/model_conditions_and_contrasts.tcss"),
+        os.path.join(BASE_DIR, "utils/tcss/file_browser.tcss"),
+        os.path.join(BASE_DIR, "working_directory/tcss/working_directory.tcss"),
+        os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
+        os.path.join(BASE_DIR, "preprocessing/tcss/preprocessing.tcss"),
+        os.path.join(BASE_DIR, "utils/tcss/path_pattern_builder.tcss"),
+        os.path.join(BASE_DIR, "dev.tcss"),
+        os.path.join(BASE_DIR, "utils/tcss/radio_set_changed.tcss"),
     ]
 
     # TODO: The non active tabs should not show the bindings.
