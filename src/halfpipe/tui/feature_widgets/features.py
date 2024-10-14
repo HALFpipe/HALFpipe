@@ -152,17 +152,13 @@ class FeatureTemplate(Widget):
             for confound in self.setting_dict["confounds_removal"]:
                 confounds_options[confound][1] = True
 
-        all_possible_conditions = []
-        for v in self.images_to_use["task"].keys():
-            all_possible_conditions += extract_conditions(entity="task", values=[v])
-
-        if self.feature_dict["contrasts"] is not None:
-            self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
-                all_possible_conditions,
-                feature_contrasts_dict=self.feature_dict["contrasts"],
-                id="model_conditions_and_constrasts",
-                classes="components",
-            )
+        # if self.feature_dict["contrasts"] is not None:
+        #     self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
+        #         all_possible_conditions,
+        #         feature_contrasts_dict=self.feature_dict["contrasts"],
+        #         id="model_conditions_and_constrasts",
+        #         classes="components",
+        #     )
         self.confounds_options = confounds_options
         self.preprocessing_panel = Vertical(
             SwitchWithInputBox(
@@ -516,6 +512,21 @@ class TaskBased(FeatureTemplate):
     featurefield = "events"
     type = "task_based"
     file_panel_class = EventFilePanel
+
+    def __init__(self, this_user_selection_dict, **kwargs) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
+
+        all_possible_conditions = []
+        for v in self.images_to_use["task"].keys():
+            all_possible_conditions += extract_conditions(entity="task", values=[v])
+
+        if self.feature_dict["contrasts"] is not None:
+            self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
+                all_possible_conditions,
+                feature_contrasts_dict=self.feature_dict["contrasts"],
+                id="model_conditions_and_constrasts",
+                classes="components",
+            )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
