@@ -23,6 +23,18 @@ SelectOption: TypeAlias = "tuple[str, SelectType]"
 
 
 def find_common_start(strings):
+    """
+    Parameters
+    ----------
+    strings : list of str
+        A list of strings to find the common starting substring among them.
+
+    Returns
+    -------
+    str
+        The longest common starting substring found in all the input strings.
+        If no common start exists, returns an empty string.
+    """
     if not strings:
         return ""
 
@@ -37,6 +49,14 @@ def find_common_start(strings):
 
 
 def create_path_option_list(base="/home/tomas/github/", include_base=False):
+    """
+    Parameters
+    ----------
+    base : str, optional
+        The base directory path, default is "/home/tomas/github/".
+    include_base : bool, optional
+        Determines whether to include the base directory in the returned list, default is False.
+    """
     filepaths = [base] if include_base else []
     if os.access(base, os.W_OK):
         for f in os.scandir(base):
@@ -49,7 +69,32 @@ def create_path_option_list(base="/home/tomas/github/", include_base=False):
 
 
 class SelectOverlay(OptionList):
-    """The 'pop-up' overlay for the Select control."""
+    """
+    class SelectOverlay(OptionList):
+        A class representing an overlay for selecting options, extending OptionList.
+
+    Attributes
+    ----------
+    BINDINGS : list
+        Key bindings specific for the overlay, such as the escape key to dismiss.
+
+    Methods
+    -------
+    select(index: int | None)
+        Move selection.
+
+    action_dismiss()
+        Dismiss the overlay.
+
+    _on_blur(self, _event: events.Blur)
+        Dismiss the overlay when it loses focus.
+
+    on_option_list_option_selected(self, event: OptionList.OptionSelected)
+        Inform parent when an option is selected.
+
+    async on_key(self, event: events.Key)
+        Handle key events within the overlay.
+    """
 
     BINDINGS = [("escape", "dismiss")]
 
@@ -133,8 +178,23 @@ class SelectOverlay(OptionList):
 
 
 class MyInput(Input):
-    def __init__(self, shrink: bool = True, **kwargs) -> None:
-        super().__init__(**kwargs)
+    """
+    MyInput(shrink=True, id=None, classes=None)
+
+    A custom input class that allows additional functionality such as shrink.
+
+    Parameters
+    ----------
+    shrink : bool, optional
+        If True, enables the shrink property for the input, by default True.
+    id : str or None, optional
+        An optional identifier for the input instance, by default None.
+    classes : str or None, optional
+        Additional CSS classes to apply to the input instance, by default None.
+    """
+
+    def __init__(self, shrink: bool = True, id: str | None = None, classes: str | None = None, **kwargs) -> None:
+        super().__init__(id=id, classes=classes, **kwargs)
         self.shrink = shrink
 
     class Toggle(Message):
@@ -146,6 +206,10 @@ class MyInput(Input):
 
 
 class MyStatic(Static):
+    """
+    class Toggle(Message):
+    """
+
     class Toggle(Message):
         """Request toggle overlay."""
 
@@ -155,6 +219,18 @@ class MyStatic(Static):
 
 
 class SelectCurrentWithInput(Horizontal):
+    """
+    A custom widget that combines a selectable input field with additional
+    UI elements, such as toggling arrows, and handles various user interactions.
+
+    Attributes
+    ----------
+    DEFAULT_CSS : str
+        Default CSS styling for the widget.
+    has_value : var[bool]
+        A flag indicating whether the input field
+    """
+
     DEFAULT_CSS = """
     SelectCurrentWithInput {
         height: 3;
@@ -213,8 +289,6 @@ class SelectCurrentWithInput(Horizontal):
         self.placeholder = placeholder
 
     def compose(self) -> ComposeResult:
-        # print("cccccccccccccccccccccccccccccomposed 22222222222")
-
         yield MyInput(name="select_input", placeholder=self.placeholder, id="input_prompt")
         yield MyStatic("▼", classes="arrow down-arrow")
         yield MyStatic("▲", classes="arrow up-arrow")
@@ -226,19 +300,16 @@ class SelectCurrentWithInput(Horizontal):
             label: A renderable to display, or `None` for the placeholder.
         """
         self.new_placeholder = new_placeholder
-        # print("kkkkkkkkkkkkkkkkkkkkkkkkkkk", new_placeholder)
         # This will change the MyInput widget value also and triggers "on_input_changed"
         self.get_widget_by_id("input_prompt").value = (
             self.placeholder if isinstance(new_placeholder, NoSelection) else new_placeholder
         )
-        # print("222kkkkkkkkkkkkkkkkkkkkkkkkkkk", self.get_widget_by_id("input_prompt").value)
 
     def on_input_changed(self, message):
         """When user types to prompt this method is triggered.
         when user selects option this method is triggered.
         """
         path = self.get_widget_by_id("input_prompt").value
-        # print("paaaaaaaaaaaaaaaaaaaaaaaaaaaaath", path)
         self.post_message(self.PromptChanged(path))
 
     async def on_key(self, event: events.Key) -> None:
@@ -251,23 +322,17 @@ class SelectCurrentWithInput(Horizontal):
         self.set_class(has_value, "-has-value")
 
 
-# def simple_pass(path):
-# try:
-# with open(path, 'r') as f:
-# result_info = 'OK'
-# except FileNotFoundError:
-# # This exception is raised if the file does not exist
-# result_info = "File not found."
-# except PermissionError:
-# # This exception is raised if the permissions are not sufficient to open the file
-# result_info = "Permission denied."
-# except Exception as e:
-# # Catch any other exceptions that could be raised
-# result_info = f"An error occurred: {e}"
-# return result_info
-
-
 class SelectOrInputPath(Select):
+    """
+    SelectOrInputPath: A customizable selection widget that allows users to either select from a list or input a path.
+
+    Attributes
+    ----------
+    DEFAULT_CSS : str
+        The default CSS styling for the widget.
+    expanded : var[bool]
+    """
+
     DEFAULT_CSS = """
     SelectOrInputPath:focus > SelectCurrent {
         border: tall $accent;
@@ -318,19 +383,13 @@ class SelectOrInputPath(Select):
 
         value: str
 
-    def __init__(
-        self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None
-    ):  # , path_test_function=None):
+    def __init__(self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None):
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
         super().__init__(options, prompt=prompt_default, id=id, classes=classes)
         self.top_parent = top_parent
         self._value: str = prompt_default
         self.prompt_default = prompt_default
         self._setup_variables_for_options(options)
-
-    #    self.path_test_function = simple_pass if path_test_function is None else path_test_function
-
-    #    self.append_prompt = append_prompt
 
     def compose(self) -> ComposeResult:
         yield self.input_class(self._value)
@@ -345,10 +404,6 @@ class SelectOrInputPath(Select):
         This method sets up `self._options` and `self._legal_values`.
         """
         self._options: list[tuple[RenderableType, SelectType | NoSelection]] = []
-        # if self._allow_blank:
-        #  if self.append_prompt:
-        # use self.prompt to pass the default prompt value
-        #      self._options.append(("", self.prompt))
         self._options.extend(options)
 
         if not self._options:
@@ -409,27 +464,18 @@ class SelectOrInputPath(Select):
     @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
         """Runs when input prompt is changed."""
-        # print("ppppppppppppppppppppp", self.input_class)
-        # print("ppppppppppppppppppppp", SelectCurrentWithInput)
 
         if self.input_class == SelectCurrentWithInput:
-            # print(" tssssssssssssssssss changed 22")
             path = event.value
             self.value = path
-            print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)
             self.post_message(self.PromptChanged(path))
             if os.path.exists(path):
                 if path.endswith("/") and os.path.isdir(path):
-                    print("ppppppppppppppppppppppp", path)
-                    #     if self.path_test_function(path) == 'OK':
                     # When user selects option this is triggered
                     path_suggestions = create_path_option_list(base=path)
-                    print("pppppppppppppppppp", path_suggestions)
                     if path_suggestions != []:
                         self._setup_variables_for_options([(f, f) for f in path_suggestions])
                         self._setup_options_renderables()
-                #    else:
-                #        print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeror')
             else:
                 # When user types to prompt this is triggered
                 filepaths = []
@@ -449,7 +495,6 @@ class SelectOrInputPath(Select):
                         self._setup_options_renderables()
             if os.path.isfile(path):
                 self.expanded = False
-            print("vvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaluepath", path, self.value)
 
     @on(SelectOverlay.UpdateSelection)
     def _update_selection(self, event: SelectOverlay.UpdateSelection) -> None:
@@ -530,14 +575,9 @@ class SelectOrInputPath(Select):
         return value
 
     def change_prompt_from_parrent(self, new_value):
-        #    myinput = self.query_one(self.input_class).query_one(MyInput)
         if new_value != "/":
             if os.path.isdir(new_value):
                 new_value += "/"
-        #   myinput.value = new_value+
-        print("llllllllllllllllllllllllllllll", new_value)
 
         select_current = self.query_one(self.input_class)
         select_current.update(new_value)
-
-    #  self.value = new_value

@@ -7,6 +7,56 @@ from .draggable_modal_screen import DraggableModalScreen
 
 
 class Confirm(DraggableModalScreen):
+    """
+    Confirm(DraggableModalScreen)
+
+    A modal dialog window that prompts the user with a message and two buttons ("Ok" and "Cancel").
+    It allows customization of the button texts, button variants, and the message content.
+
+    Attributes
+    ----------
+    CSS_PATH : list of str
+        Path to the CSS file for styling the modal.
+
+    Methods
+    -------
+    __init__(
+        self,
+        text="Are you sure?",
+        left_button_text="Ok",
+        right_button_text="Cancel",
+        left_button_variant="success",
+        right_button_variant="error",
+        title="",
+        id: str | None = None,
+        classes: str | None = None,
+        width=None,
+        message_widget=Static,
+    ) -> None:
+        Initializes the Confirm modal with provided parameters.
+
+    on_resize()
+        Adjusts the width of the message widget based on the container's size.
+
+    on_mount()
+        Mounts the message widget and buttons to the modal content.
+
+    ok()
+        Handles the event when the "Ok" button is pressed.
+
+    cancel()
+        Handles the event when the "Cancel" button is pressed.
+
+    key_escape()
+        Handles the event when the Escape key is pressed.
+
+    _confirm_window()
+        Dismisses the modal and returns True.
+
+    _cancel_window()
+        Dismisses the modal and returns False.
+    """
+
     CSS_PATH = ["tcss/confirm.tcss"]
 
     def __init__(
@@ -21,14 +71,9 @@ class Confirm(DraggableModalScreen):
         classes: str | None = None,
         width=None,
         message_widget=Static,
-        #     message_container=None
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.text = text
-        # self.left_button_text = left_button_text
-        # self.right_button_text = right_button_text
-        # self.left_button_variant = left_button_variant
-        # self.right_button_variant = right_button_variant
 
         self.title_bar.title = title
         self.message_widget = message_widget
@@ -49,7 +94,6 @@ class Confirm(DraggableModalScreen):
                 Button(left_button_text, variant=left_button_variant, classes="button ok"),
                 Button(right_button_text, variant=right_button_variant, classes="button cancel"),
             ]
-        print("IIIIIIIIIIINIT Sub Confirm", self.buttons)
 
     def on_resize(self):
         self.get_widget_by_id("message").styles.width = (
@@ -84,6 +128,23 @@ class Confirm(DraggableModalScreen):
 
 
 class SimpleMessageModal(Confirm):
+    """
+    class SimpleMessageModal(Confirm):
+
+    Represents a simple message modal dialog with a customizable message and title.
+
+    Parameters
+    ----------
+    text : str
+        The message to be displayed in the modal.
+    title : str, optional
+        The title of the modal window (default is an empty string).
+    id : str or None, optional
+        The unique identifier for the modal (default is None).
+    classes : str or None, optional
+        Additional CSS classes to apply to the modal (default is None).
+    """
+
     def __init__(self, text, title="", id: str | None = None, classes: str | None = None) -> None:
         super().__init__(
             text,

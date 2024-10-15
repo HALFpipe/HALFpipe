@@ -8,7 +8,26 @@ from .draggable_modal_screen import DraggableModalScreen
 
 
 class ListOfFiles(DraggableModalScreen):
-    """Modal for showing the matched files using the given file pattern."""
+    """
+    ListOfFiles
+
+    A class that represents a modal screen displaying a list of files that match a certain pattern.
+
+    Parameters
+    ----------
+    pattern_match_results : dict
+        A dictionary containing the pattern match results with keys 'message' and 'files'.
+    **kwargs : dict
+        Additional keyword arguments passed to the parent class.
+
+    Methods
+    -------
+    on_mount()
+        Invoked when the screen is mounted. It mounts a message, a scrollable list of files, and a close button.
+
+    _on_close_button_pressed()
+        Handles the event when the close button is pressed. It removes the modal screen from the view.
+    """
 
     def __init__(self, pattern_match_results, **kwargs) -> None:
         super().__init__(**kwargs)

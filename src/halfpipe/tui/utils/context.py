@@ -25,8 +25,56 @@ from ...model.spec import Spec, SpecSchema
 from ...model.tags import entities
 
 
-# singleton
+# This is a singleton!
 class Context:
+    """
+    Context class to manage the application’s state and configuration.
+
+    This class implements the singleton pattern to ensure only one instance manages the spec, database,
+    working directory, cache, and other configuration aspects. It initializes the configuration from a default
+    spec schema and sets up the database connection.
+
+    Attributes
+    ----------
+    _instance: Context
+        Singleton instance of the Context class.
+    _initialized: bool
+        Flag to check if the instance has already been initialized.
+    spec: Spec
+        Specification object loaded with default values.
+    database: Database
+        Database instance initialized with the spec.
+    workdir: Path or None
+        Working directory path, initially set to None.
+    use_existing_spec: bool
+        Flag to determine if an existing spec should be used.
+    debug: bool
+        Debug mode flag.
+    already_checked: set of str
+        Set to keep track of already checked items.
+    cache: defaultdict
+        Nested default dictionary to maintain cache.
+    available_images: dict
+        Dictionary storing available images.
+
+    Methods
+    -------
+    __new__(cls, *args, **kwargs)
+        Creates a new instance if none exists, else returns the existing instance.
+
+    __init__(self)
+        Initializes the Context instance with default values.
+
+    put(self, fileobj)
+        Puts a file object into the database and returns the number of spec files.
+
+    refresh_available_images(self)
+        Refreshes the dictionary of available images by querying the database.
+
+    get_available_images(self)
+        Property to retrieve the available images dictionary.
+    """
+
     _instance = None
     _initialized: bool
 

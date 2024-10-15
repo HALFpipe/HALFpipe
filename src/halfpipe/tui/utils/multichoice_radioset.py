@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-#    from _radio_set2 import RadioSet
-#    from draggable_modal_screen import DraggableModalScreen
 import numpy as np
 from textual import on
 from textual.app import App, ComposeResult
@@ -13,6 +11,59 @@ from .draggable_modal_screen import DraggableModalScreen
 
 
 class MultipleRadioSet(Widget):
+    """
+    class MultipleRadioSet(Widget):
+        A widget that creates a set of radio buttons arranged in a table format,
+        with options specified by horizontal and vertical label sets.
+
+    Attributes
+    ----------
+    horizontal_label_set : list
+        The list of labels for horizontal radio button groups.
+    vertical_label_set : list
+        The list of labels for vertical radio button groups.
+
+    Methods
+    -------
+    compose()
+        Composes the widget by generating a table of radio buttons labeled by
+        the horizontal and vertical labels provided.
+    on_mount()
+        Called when the widget is initialized to set the widths and alignment
+        of radio buttons.
+    get_selections()
+        Retrieves the currently selected radio buttons for each row.
+
+    __init__(id=None, classes=None, horizontal_label_set=None, vertical_label_set=None)
+        Initializes the widget with optional ID, classes, horizontal and vertical label sets.
+
+    Parameters
+    ----------
+    id : str, optional
+        An identifier for the widget instance (default is None).
+    classes : str, optional
+        Space-separated list of style class names (default is None).
+    horizontal_label_set : list, optional
+        List of labels for the horizontal radio buttons (default is pre-defined labels).
+    vertical_label_set : list, optional
+        List of labels for the vertical radio buttons (default is pre-defined labels).
+
+    compose()
+        Constructs the layout of the widget with horizontal and vertical labels.
+
+    on_mount()
+        Configures the width and content alignment of each radio button
+        after the widget is mounted.
+
+    get_selections()
+        Returns the selected radio buttons for each row in a dictionary.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping each vertical label to its selected radio button.
+    """
+
     def __init__(
         self,
         id: str | None = None,
@@ -32,11 +83,9 @@ class MultipleRadioSet(Widget):
         )
 
     def compose(self) -> ComposeResult:
-        #     hmax_length = max([len(i) for i in self.horizontal_label_set])
         vmax_length = max([len(i) for i in self.vertical_label_set])
         hmax_vertical_length = 1
 
-        print("beeeeeeeeeeeeeeeeeeeeeeeeefore", self.horizontal_label_set)
         # modify the h labels so that if there is a label on multiple lines, the longest line becomes wrapped with spaces
         for i, h_val in enumerate(self.horizontal_label_set):
             split_label = [h for h in h_val.split("\n")]
@@ -44,7 +93,6 @@ class MultipleRadioSet(Widget):
             index_longest_line = np.argmax([len(h) for h in split_label])
             split_label[index_longest_line] = "  " + split_label[index_longest_line] + "  "
             self.horizontal_label_set[i] = "\n".join(split_label)
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaafter", self.horizontal_label_set)
 
         # with  ScrollableContainer(id='top_container'):
         with Horizontal(id="h_label_container"):
@@ -73,13 +121,43 @@ class MultipleRadioSet(Widget):
         for i, v_val in enumerate(self.vertical_label_set):
             for this_radio_set in self.query(".row_radio_sets_" + str(i)):
                 selections[v_val] = this_radio_set._selected
-                print("xxxxxxxxxxxxxxxxxxxxxxxx", v_val, ":   ", this_radio_set._selected)
         return selections
-
-    # _selected
 
 
 class MultipleRadioSetModal(DraggableModalScreen):
+    """
+    MultipleRadioSetModal
+    ---------------------
+
+    A modal dialog that allows the user to assign field maps to functional images
+    using a set of horizontally and vertically labeled radio buttons. This modal
+    is draggable and contains an 'OK' button to submit the selections.
+
+    Parameters
+    ----------
+    title : str, default "Field maps to functional images"
+        The title of the modal dialog.
+    id : str or None, default None
+        The unique identifier for this modal instance.
+    classes : str or None, default None
+        Additional CSS classes to style this modal.
+    width : optional
+        The width of the modal.
+    horizontal_label_set : list or None, default None
+        The labels to be used for the horizontal radio button set.
+    vertical_label_set : list or None, default None
+        The labels to be used for the vertical radio button set.
+
+    Methods
+    -------
+    on_mount() :
+        Asynchronously mounts the main content and UI elements in the modal.
+
+    ok() :
+        Event handler for the 'OK' button which captures the
+        selections made by the user and then dismisses the modal.
+    """
+
     CSS_PATH = ["tcss/confirm.tcss"]
 
     def __init__(
@@ -111,25 +189,35 @@ class MultipleRadioSetModal(DraggableModalScreen):
             ),
             Horizontal(Button("OK", id="ok"), classes="button_grid"),
         )
-        print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee self._container_size.width", self._container_size.width)
-
-    # def on_resize(self):
-    # if self._container_size.width > 150:
-    # outer_table_container = self.get_widget_by_id('outer_table_container')
-    # outer_table_container.width = 100
-    # print('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq self._container_size.width', self._container_size.width )
-    # #
-    #  self.title_bar.query_one(".window_title").styles.width = self._container_size.width
 
     @on(Button.Pressed, "#ok")
     def ok(self):
         selections = self.query_one(MultipleRadioSet).get_selections()
-        print("sssssssselections  ", selections)
         self.dismiss(selections)
 
 
 class Main(App):
-    CSS_PATH = "radio_set_changed.tcss"
+    """
+    Class for testing.
+
+    Attributes
+    ----------
+    CSS_PATH : str
+        Path to the CSS file to be used for styling.
+
+    Methods
+    -------
+    compose():
+        Defines the components to be rendered by the application.
+
+    on_button_show_modal_pressed(self):
+        Event handler for the button with id 'show_modal' to display a modal with multiple radio sets.
+
+    on_button_pressed(self):
+        Event handler for the button with id 'ok' to query and process the current radio set selections.
+    """
+
+    CSS_PATH = "tcss/radio_set_changed.tcss"
 
     def compose(self):
         yield Button("OK", id="ok")
@@ -159,9 +247,4 @@ class Main(App):
     @on(Button.Pressed, "#ok")
     def on_button_pressed(self):
         selections = self.query_one(MultipleRadioSet).get_selections()
-        print("sssssssselections  ", selections)
-
-
-if __name__ == "__main__":
-    app = Main()
-    app.run()
+        print(selections)

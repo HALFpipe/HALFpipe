@@ -1,28 +1,39 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
-
-# Add your path here (replace '/path/to/directory' with the actual path)
-sys.path.append("/home/tomas/github/HALFpipe/src/")
-
 import functools
 import os
 from pathlib import Path
 from typing import Iterable
 
-# from textual._input import _InputRenderable
 from textual import on
 from textual.containers import Horizontal
 from textual.widgets import Button, DirectoryTree, Input
 
-from halfpipe.tui.utils.select_or_input_path import SelectOrInputPath, create_path_option_list
-
 from .confirm_screen import Confirm
 from .draggable_modal_screen import DraggableModalScreen
+from .select_or_input_path import SelectOrInputPath, create_path_option_list
 
 
 def path_test(path, isfile=False):
+    """
+    Parameters
+    ----------
+    path : str
+        The path to the file or directory to be checked.
+    isfile : bool, optional
+        If True, the function expects the path to be a file. If False, it expects the path to be a directory. Default is False.
+
+    Returns
+    -------
+    str
+        A message indicating the result of the path check. Possible values are:
+        - "OK" if the path corresponds to the expected type (file or directory) and is writable.
+        - "A directory was selected instead of a file!" if isfile is True, but the path is a directory.
+        - "A file was selected instead of a directory!" if isfile is False, but the path is a file.
+        - "Permission denied." if the path is not writable.
+        - "File not found." if the path does not exist.
+    """
     if os.path.exists(path):
         if os.access(path, os.W_OK):
             if isfile:
@@ -41,13 +52,71 @@ path_test_with_isfile_true = functools.partial(path_test, isfile=True)
 
 
 class FilteredDirectoryTree(DirectoryTree):
+    """
+    FilteredDirectoryTree class provides functionality to filter out hidden files and directories
+    from a list of paths.
+
+    Methods
+    -------
+    filter_paths(paths)
+        Filters out paths that have names starting with a period, indicating hidden files or directories.
+
+    Parameters
+    ----------
+    paths : Iterable[Path]
+        A list of file and directory paths to filter.
+
+    Returns
+    -------
+    Iterable[Path]
+        A list of paths excluding those with names starting with a period.
+    """
+
     def filter_paths(self, paths: Iterable[Path]) -> Iterable[Path]:
         return [path for path in paths if not path.name.startswith(".")]
 
 
 class FileBrowserModal(DraggableModalScreen):
     """
-    Here goes docstring.
+    FileBrowserModal
+    A class that represents a draggable modal screen for browsing directories and selecting paths.
+
+    Attributes
+    ----------
+    CSS_PATH : list
+        Path to the CSS file for styling the file browser.
+
+    Methods
+    -------
+    __init__(title="Browse", path_test_function=None, **kwargs)
+        Initializes the FileBrowserModal.
+
+    on_mount()
+        Executed when the modal is mounted. Mounts the directory tree and path input components.
+
+    _select_or_input_path_changed(message)
+        Event handler for changes in the path selection or input. Manages the expansion and collapse of directory nodes.
+
+    on_filtered_directory_tree_directory_or_file_selected(message)
+        Event handler for directory or file selection changes. Updates the selected directory and path input prompt.
+
+    update_from_input()
+        Updates the selected directory based on input value from the path input box.
+
+    ok()
+        Confirms the selected path and calls the confirm window function.
+
+    cancel()
+        Cancels the file browsing and calls the cancel window function.
+
+    key_escape()
+        Cancels the file browsing when the escape key is pressed.
+
+    _confirm_window()
+        Validates the selected path and dismisses the modal if valid, otherwise shows an error message.
+
+    _cancel_window()
+        Dismisses the modal without selecting any path.
     """
 
     CSS_PATH = ["tcss/file_browser.tcss"]
@@ -79,7 +148,6 @@ class FileBrowserModal(DraggableModalScreen):
     def _select_or_input_path_changed(self, message):
         path = message.value
         self.selected_directory = path
-        print("thisssssssssssssssssssssssssss path", path, "xxx", self.selected_directory)
         # scan over already expanded nodes
         opened_node_paths = [str(node.data.path) + "/" for node in self.expanded_nodes]
 
@@ -110,11 +178,9 @@ class FileBrowserModal(DraggableModalScreen):
         self.selected_directory = message.path
         label = self.get_widget_by_id("path_input_box2")
         label.change_prompt_from_parrent(str(self.selected_directory))
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmm", message.path)
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
-        print("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere???????????", self.get_widget_by_id("path_input_box2").value)
         self.selected_directory = self.get_widget_by_id("path_input_box2").value
 
     @on(Button.Pressed, ".ok")
@@ -134,14 +200,6 @@ class FileBrowserModal(DraggableModalScreen):
         if path_test_result == "OK":
             self.dismiss(self.selected_directory)
         else:
-            # self.app.push_screen(
-            # FalseInputWarning(
-            # warning_message=path_test_result,
-            # title="Error - Invalid path",
-            # id="invalid_path_warning_modal",
-            # classes="error_modal",
-            # )
-            # )
             self.app.push_screen(
                 Confirm(
                     path_test_result,

@@ -50,12 +50,8 @@ def evaluate_files(newpathname):
 
         return op.normpath(abspath)
 
-    # fix this, the task was not here
+    # all possible entities
     schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map", "desc"]
-    #   entity_colors_list = ["ired", "igreen", "imagenta", "icyan"]
-    # required_in_path_entities = ["subject"]
-    #   required_entities = required_in_path_entities
-
     dironly = False
 
     tag_glob_generator = tag_glob(newpathname, schema_entities + ["suggestion"], dironly)
@@ -93,18 +89,8 @@ def evaluate_files(newpathname):
     if len(tagdictlist) > 0:
         tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
 
-    # temporary fix
-    #    if "subject" not in newpathname:
-    #        filepaths = []
-    #        tagdictlist = []
-
     nfile = len(filepaths)
 
-    #   has_all_required_entities = all(entity in tagsetdict for entity in required_entities)
-
-    # print("filepaths", filepaths)
-
-    # print("tagdictlist", tagdictlist)
     p = inflect.engine()
     value = p.inflect(f"Found {nfile} plural('file', {nfile})")
 
@@ -118,9 +104,23 @@ def evaluate_files(newpathname):
     return value, filepaths
 
 
-# Classes
 class ColorButton(Button):
-    """Sets current highlighting color by pressing the button."""
+    """
+    ColorButton
+
+    A subclass of Button that includes a customizable color attribute.
+    Sets current highlighting color by pressing the button.
+
+    Attributes
+    ----------
+    color : str
+        The color associated with the button, used for styling the background.
+
+    Methods
+    -------
+    on_click(event)
+        Handles the click event and sets the highlight color of a specific widget.
+    """
 
     def __init__(self, color: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -134,11 +134,64 @@ class ColorButton(Button):
 
 class PathPatternBuilder(DraggableModalScreen):
     """
-    Serves for creating a file pattern to search for e.g. T1 files.
-    Consists of color button to switch between the highlight colors, the string itself,
-    some edit buttons and Ok/Cancel buttons.
-    The key component is the InputWithColoredSuggestions which allows the string highlighting
+    PathPatternBuilder class provides a modal screen to allow users to interactively specify path patterns.
+    Consists of color button to switch between the highlight colors, the string itself, some edit buttons
+    and Ok/Cancel buttons. The key component is the InputWithColoredSuggestions which allows the string highlighting
     and supports also pattern suggestions.
+
+    Attributes
+    ----------
+    title_bar : TitleBar
+        Component that displays the title of the modal screen.
+    path : str
+        The initial file path provided.
+    highlight_colors : list of str
+        List of colors available for highlighting.
+    labels : list of str
+        List of labels used for tagging and identifying segments of the path.
+    pattern_match_results : dict
+        Dictionary that stores the current pattern, feedback message, and matched files.
+    original_value : str
+        The original file path value before user modifications.
+    mandatory_tag : str
+        A mandatory tag that needs to be present in the path pattern.
+
+    Methods
+    -------
+    __init__(path, highlight_colors=None, labels=None, title="X", *args, **kwargs)
+        Initializes a new instance of the PathPatternBuilder class.
+    on_mount()
+        Called when the window is mounted and initializes UI components.
+    deactivate_pressed_button()
+        Deactivates the currently active button.
+    activate_pressed_button(_id)
+        Activates the button with the given ID.
+    open_browse_window()
+        Opens a file browser modal window.
+    update_input(selected_path: str)
+        Updates the input prompt with the selected path.
+    reset_highlights()
+        Resets all highlights in the input prompt.
+    reset_all()
+        Resets all data and highlights in the input prompt.
+    submit_highlights()
+        Submits the highlighted path for processing.
+    _segment_highlighting_submitted(event)
+        Updates pattern_match_results based on the output of various methods.
+    activate_and_deactivate_press(event: Button.Pressed)
+        Activates and deactivates buttons based on the pressed event.
+    _ok(event: Button.Pressed)
+        Confirms the selected pattern and dismisses the modal if valid.
+    _close(event: Button.Pressed)
+        Closes the modal without taking action.
+    _remove_self()
+        Displays a list of files matching the current pattern.
+    on_key(event: events.Key)
+        Handles keyboard input to navigate and toggle highlights.
+    key_enter()
+        Submits the current path pattern when Enter is pressed.
+    key_escape()
+        Dismisses the modal when Escape is pressed.
     """
 
     def __init__(
@@ -157,14 +210,11 @@ class PathPatternBuilder(DraggableModalScreen):
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
-        # print("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhere labels", labels)
         self.mandatory_tag = f"{{{self.labels[0]}}}"
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
-        # print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", self.highlight_colors, self.labels)
-        # print("cccccccccccccccccccccccccccccccc", colors_and_labels)
         self.active_button_id = "button_" + self.labels[0]
         color_buttons = [
             ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
@@ -250,8 +300,6 @@ class PathPatternBuilder(DraggableModalScreen):
         else:
             match_feedback_message, filepaths = evaluate_files(event.value)
             self.path = event.value
-        # print("oooooooooooooooooooooo is i am here?????????", self.path)
-        # print("ooooooooooooooooo", match_feedback_message, filepaths)
 
         highlights = self.get_widget_by_id("input_prompt").current_highlights
         self.get_widget_by_id("feedback").update(match_feedback_message)
@@ -274,8 +322,6 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#ok_button")
     def _ok(self, event: Button.Pressed):
-        print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", self.mandatory_tag)
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", self.pattern_match_results)
         if self.mandatory_tag not in self.pattern_match_results["file_pattern"]:
             self.app.push_screen(
                 Confirm(
@@ -311,7 +357,5 @@ class PathPatternBuilder(DraggableModalScreen):
     def key_enter(self):
         self.get_widget_by_id("input_prompt").submit_path()
 
-    #  def key_escape(self):
-    #      self.get_widget_by_id("input_prompt").reset_highlights()
     def key_escape(self):
         self.dismiss(False)

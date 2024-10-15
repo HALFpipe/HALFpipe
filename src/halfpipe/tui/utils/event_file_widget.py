@@ -24,15 +24,60 @@ from .selection_modal import SelectionModal
 
 
 class FilePanelTemplate(Widget):
+    """
+    FilePanelTemplate class manages a panel of files with interactive features.
+
+    Attributes
+    ----------
+    file_pattern_counter : int
+        Counter to track the number of file patterns.
+    class_name : str
+        Name of the class.
+    id_string : str
+        Identifier string for the file panel.
+    file_item_id_base : str
+        Base ID for file items.
+    the_class : type
+        Type of the class.
+    pattern_class : type
+        Pattern class to use for adding file steps.
+    current_file_pattern_id : str
+        ID of the current file pattern.
+    value : reactive[bool]
+        Reactive value that monitors the state.
+
+    Methods
+    -------
+    __init__(id=None, classes=None)
+        Initializes the FilePanelTemplate instance with optional id and classes.
+    callback_func(message_dict)
+        Processes a message dictionary and formats text messages for callback.
+    watch_value()
+        Posts a message when the value changes.
+    compose()
+        Yields a vertical scroll widget composition with an add button.
+    _on_button_add_file_item_pressed()
+        Handles the event when the add file item button is pressed.
+    add_file_item_pressed()
+        Initiates the creation of a new file item.
+    create_file_item(load_object=None, message_dict=None)
+        Creates and mounts a new file item widget.
+    on_mount()
+        Handles actions upon mounting the panel to the application.
+    _on_file_item_is_deleted(message)
+        Handles the event when a file item is deleted.
+    _on_update_all_instances(event)
+        Updates instances when a file item is finished or its path pattern changes.
+    """
+
     file_pattern_counter = 0
     class_name = "AtlasFilePanel"
     id_string = "atlas_file_panel"
     file_item_id_base = "atlas_file_pattern_"
     the_class = None
-    pattern_class = AddAtlasImageStep
+    pattern_class: type | None = AddAtlasImageStep
     current_file_pattern_id = None
     value: reactive[bool] = reactive(None, init=False)
-    # cache: reactive[dict] = reactive(ctx.cache)
 
     @dataclass
     class FileItemIsDeleted(Message):
@@ -54,38 +99,15 @@ class FilePanelTemplate(Widget):
             """Alias for self.file_browser."""
             return self.file_panel
 
-    # @dataclass
-    # class CacheChanged(Message):
-    #     atlas_file_panel: "AtlasFilePanel"
-    #     value: str
-    #
-    #     @property
-    #     def control(self):
-    #         """Alias for self.file_browser."""
-    #         return self.atlas_file_panel
-
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(id=id, classes=classes)
         type(self).the_class = self.__class__  # Sets the_class at the class level
         self.the_app = self.app
-        # print("wwwwwwwwwwwwwwwwwwwwwwwwwwww on init", self.app.walk_children())
-        # print("self._screen_stacksself._screen_stacksself._screen_stacks", self.app._screen_stacks["_default"])
-
-    #          self.current_atlas_file_pattern_id = None
 
     def callback_func(self, message_dict):
         info_string = Text("")
         for key in message_dict:
-            # print("kkkkkkkkkkkkk", message_dict[key], key)
-            # if there is only one item, we do not separate items on new lines
-            # print("lllllllllllllllllllllllllll len(message_dict[key])", len(message_dict[key]))
             if len(message_dict[key]) <= 1:
-                # print(
-                #     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am i here?",
-                #     (len(key) + len(message_dict[key]) + 3),
-                #     len(key),
-                #     len(message_dict[key]),
-                # )
                 sep_char = ""
                 separ_line = "-" * (len(key) + len(message_dict[key][0]) + 3)
             else:
@@ -97,14 +119,8 @@ class FilePanelTemplate(Widget):
 
         self.callback_message = info_string
 
-    #    self.value = info_string
-
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))
-
-    # def watch_cache(self) -> None:
-    #     print('cccccccccccccccccccahce chaaaaaaaaaaaaaaaaaaaaaaahned')
-    #     self.post_message(self.CacheChanged(self, self.cache))
 
     def compose(self):
         yield VerticalScroll(Button("Add", id="add_file_button"), id=self.id_string)
@@ -118,35 +134,35 @@ class FilePanelTemplate(Widget):
 
     async def create_file_item(self, load_object=None, message_dict=None):
         async def mount_file_item_widget():
-            the_file_item = FileItem(
-                id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
-                classes="file_patterns",
-                pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
-            )
-            # regular FileItem mount when user clicks "Add" and creates the file pattern
-            await self.get_widget_by_id(self.id_string).mount(the_file_item)
-            print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: mount_file_item_widget")
-            self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
+            if self.the_class is not None and self.pattern_class is not None:
+                the_file_item = FileItem(
+                    id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                    classes="file_patterns",
+                    pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
+                )
+                # regular FileItem mount when user clicks "Add" and creates the file pattern
+                await self.get_widget_by_id(self.id_string).mount(the_file_item)
+                self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
 
-            self.the_class.file_pattern_counter += 1
-            self.refresh()
+                self.the_class.file_pattern_counter += 1
+                self.refresh()
 
         if load_object is None:
             await mount_file_item_widget()
         else:
-            await self.get_widget_by_id(self.id_string).mount(
-                FileItem(
-                    id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
-                    classes="file_patterns",
-                    load_object=load_object,
-                    message_dict=message_dict,
-                    # pattern_class=self.pattern_class(),
+            if self.the_class is not None:
+                await self.get_widget_by_id(self.id_string).mount(
+                    FileItem(
+                        id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                        classes="file_patterns",
+                        load_object=load_object,
+                        message_dict=message_dict,
+                        # pattern_class=self.pattern_class(),
+                    )
                 )
-            )
-            # print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in::::
-            # async def create_file_item(self, load_object=None)")
-            self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
-            self.the_class.file_pattern_counter += 1
+
+                self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
+                self.the_class.file_pattern_counter += 1
         return self.current_file_pattern_id
 
     def on_mount(self):
@@ -155,7 +171,6 @@ class FilePanelTemplate(Widget):
             first_file_panel_widget = self.app.walk_children(self.the_class)[0]
             # only use if it is not the first one!
             if first_file_panel_widget != self:
-                print("*******************************am i creating fileitems???????????????")
                 for file_item_widget in first_file_panel_widget.walk_children(FileItem):
                     # mounting FileItems when a new Feature is added, this basically copies FileItems from the
                     # very first Feature
@@ -167,75 +182,27 @@ class FilePanelTemplate(Widget):
                             callback_message=file_item_widget.get_callback_message,
                         )
                     )
-                    print("------------ file_item_widget. get_callback_message", file_item_widget.get_callback_message)
-                    print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: on_mount")
 
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
         message.control.remove()
-        # print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv******", message)
         self.post_message(self.FileItemIsDeleted(self, message.control.id))
 
     @on(FileItem.IsFinished)
     @on(FileItem.PathPatternChanged)
     async def _on_update_all_instances(self, event):
         self.value = event.value
-        print("************************** what is the event value?", event.value)
         # creating copies to all feature tasks
         # the one that was is the latest one, create new instances
-        # print('self._screen_stacksself._screen_stacksself._screen_stacks', self.app._screen_stacks)
-        # print(
-        #     "222self._screen_stacksself._screen_stacksself._screen_stacks",
-        #     self.app._screen_stacks["_default"][0].walk_children(),
-        # )
-
-        print("aaaaaaaaaaaat least heeeeeeeeeeeereeeeeeeee?", event.control.id, "-----", self.current_file_pattern_id)
-        print(
-            "******************************** compare these two: event/control/id == self/current_file_pattern_id",
-            event.control.id,
-            " === ",
-            self.current_file_pattern_id,
-        )
         if event.control.id == self.current_file_pattern_id and event.value["file_pattern"] != "":
-            # loop through the all existing event file panels
-            print("vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.app.walk_children(self.the_class))
-            print("222 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.app.walk_children())
-            print("333 vvvvvvvvvvvvvvv self.app.walk_children(self.the_class)", self.the_app.walk_children())
-            #
-            # print('self.the_class-self.the_class-self.the_class', self.the_class)
-            #
-            print(
-                "******************************** the loop goes over this "
-                "self.app._screen_stacks[_default][0].walk_children((self.the_class))",
-                self.app._screen_stacks["_default"][0].walk_children((self.the_class)),
-            )
+            # loop through the all existing event file panel
             for w in self.app._screen_stacks["_default"][0].walk_children((self.the_class)):
                 # create new fileitem in every other EventFilePanel
-                print("******************************** this is the w: ", w)
-                print("iiiiiiiiiiiiiiiiiam i getting hereeeeeeeeeeeee????? self.the_class", self.the_class)
-                print("******************************** this is the self: ", self)
                 if w != self:
-                    # print(
-                    #     "******************************** is w self? if no i see this (we have 2 different widgets of the
-                    #     same type but in different features)"
-                    # )
                     file_items_ids_in_other_file_panel = [
                         other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
                     ]
-                    print("******************************** walk the w: ", w.walk_children(FileItem))
                     # id does not exist, mount new FileItem
-                    print(
-                        "iiiiiiiiiiiiiiiiiiiiiiiiiii ds event.control.id not in file_items_ids_in_other_event_file_panel",
-                        event.control.id,
-                        " ::: ",
-                        file_items_ids_in_other_file_panel,
-                    )
-                    print(
-                        "********************************* we are going to try to mount these: "
-                        "file_items_ids_in_other_file_panel",
-                        file_items_ids_in_other_file_panel,
-                    )
-                    print("********************************* if this is not in the list event.control.id", event.control.id)
                     if event.control.id not in file_items_ids_in_other_file_panel:
                         await w.get_widget_by_id(self.id_string).mount(
                             FileItem(
@@ -245,17 +212,33 @@ class FilePanelTemplate(Widget):
                                 callback_message=event.control.get_callback_message,
                             )
                         )
-                        print(
-                            "*****************",
-                            event.control.id,
-                            event.control.get_pattern_match_results,
-                            event.control.get_callback_message,
-                        )
-                        print("cccccccccccccccccccccccccccccccccccccccccccccccccccc", event.control.get_callback_message)
-                        print("--------------- mmmmmmmmmmmmmmmmmmmmmmmmounting in:::: _on_update_all_instances")
 
 
 class EventFilePanel(FilePanelTemplate):
+    """
+    EventFilePanel
+
+    A panel to manage event file pattern options, such as SPM, FSL, and BIDS.
+    Inherits from FilePanelTemplate.
+
+    Attributes
+    ----------
+    class_name : str
+        Class name identifier.
+    id_string : str
+        ID string identifier.
+    file_item_id_base : str
+        Base ID string for file items.
+    pattern_class : Class
+        Class reference for the pattern type selected.
+
+    Methods
+    -------
+    add_file_item_pressed(self)
+        Handle the action of adding a new file item, prompting the user to
+        specify the type of event file and set the corresponding pattern class.
+    """
+
     class_name = "EventFilePanel"
     id_string = "event_file_panel"
     file_item_id_base = "event_file_pattern_"
@@ -281,6 +264,21 @@ class EventFilePanel(FilePanelTemplate):
 
 
 class AtlasFilePanel(FilePanelTemplate):
+    """
+    A class to represent a panel for handling atlas files, inheriting from FilePanelTemplate.
+
+    Attributes
+    ----------
+    class_name : str
+        Name of the class.
+    id_string : str
+        Identifier string for the panel.
+    file_item_id_base : str
+        Base identifier for file items within this panel.
+    pattern_class : type
+        Class reference associated with the atlas image step functionality.
+    """
+
     class_name = "AtlasFilePanel"
     id_string = "atlas_file_panel"
     file_item_id_base = "atlas_file_pattern_"
@@ -288,6 +286,21 @@ class AtlasFilePanel(FilePanelTemplate):
 
 
 class SeedMapFilePanel(FilePanelTemplate):
+    """
+    A class to represent a panel for handling seed map files, inheriting from FilePanelTemplate.
+
+    Attributes
+    ----------
+    class_name : str
+        Name of the class.
+    id_string : str
+        Identifier string for the panel.
+    file_item_id_base : str
+        Base identifier for file items within this panel.
+    pattern_class : type
+        Class reference associated with the atlas image step functionality.
+    """
+
     class_name = "SeedMapFilePanel"
     id_string = "seed_map_file_panel"
     file_item_id_base = "seed_map_file_pattern_"
@@ -295,6 +308,21 @@ class SeedMapFilePanel(FilePanelTemplate):
 
 
 class SpatialMapFilePanel(FilePanelTemplate):
+    """
+    A class to represent a panel for handling spatial map files, inheriting from FilePanelTemplate.
+
+    Attributes
+    ----------
+    class_name : str
+        Name of the class.
+    id_string : str
+        Identifier string for the panel.
+    file_item_id_base : str
+        Base identifier for file items within this panel.
+    pattern_class : type
+        Class reference associated with the atlas image step functionality.
+    """
+
     class_name = "SpatialMapFilePanel"
     id_string = "spatial_map_file_panel"
     file_item_id_base = "spatial_map_file_pattern_"

@@ -9,6 +9,39 @@ from ..utils.draggable_modal_screen import DraggableModalScreen
 
 
 class SetValueModal(DraggableModalScreen):
+    """
+    SetValueModal class representing a modal screen for setting a value.
+
+    Parameters
+    ----------
+    instructions : str, optional
+        Instructions to be displayed at the top of the modal (default is "Set value").
+    left_button_text : str, optional
+        Text for the left button (default is "Ok").
+    right_button_text : str, optional
+        Text for the right button (default is "Cancel").
+    left_button_variant : str, optional
+        Variant type for the left button (default is "success").
+    right_button_variant : str, optional
+        Variant type for the right button (default is "error").
+    title : str, optional
+        Title for the modal (default is an empty string).
+    id : str or None, optional
+        An optional ID for the modal (default is None).
+    classes : str or None, optional
+        An optional string of classes for the modal (default is None).
+
+    Methods
+    -------
+    on_mount()
+        Method to mount the content of the modal which includes instructions, an input field, and two action buttons.
+    _on_ok_button_pressed()
+        Method to handle the event of the OK button being pressed. Dismisses the modal with the input value if not empty,
+        otherwise dismisses with "0".
+    _on_cancel_button_pressed()
+        Method to handle the event of the Cancel button being pressed. Dismisses the modal with value None.
+    """
+
     CSS_PATH = ["tcss/set_value_modal.tcss"]
 
     def __init__(

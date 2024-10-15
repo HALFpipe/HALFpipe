@@ -18,7 +18,31 @@ from .context import ctx
 
 class FileBrowser(Widget):
     """
-    Here goes docstring.
+    FileBrowser is a widget class for browsing files within a UI.
+
+    Attributes
+    ----------
+    DEFAULT_CSS : str
+        The default CSS styling for FileBrowser.
+    selected_path : reactive[str]
+        Reactive property to store the selected file path.
+
+    Methods
+    -------
+    watch_selected_path():
+        Watches for changes to the selected_path attribute and posts a message when it changes.
+    __init__(path_to="", modal_title="Browse", id: str | None = None, classes: str | None = None, **kwargs):
+        Initializes the FileBrowser widget with the specified path, title, ID, and CSS classes.
+    compose() -> ComposeResult:
+        Composes the internal layout of the FileBrowser widget.
+    on_button_pressed():
+        Handles the event when the browse button is pressed.
+    open_browse_window():
+        Opens the file browsing modal window.
+    update_from_input():
+        Updates the selected path based on user input from the input box.
+    update_input(selected_path: str):
+        Updates the internal state and UI with the selected path.
     """
 
     DEFAULT_CSS = """
@@ -47,7 +71,6 @@ class FileBrowser(Widget):
 
     def __init__(self, path_to="", modal_title="Browse", id: str | None = None, classes: str | None = None, **kwargs) -> None:
         super().__init__(id=id, classes=classes)
-        #    self.top_parent = app
         self.path_to = path_to
         self.modal_title = modal_title
 
@@ -61,7 +84,6 @@ class FileBrowser(Widget):
         self.open_browse_window()
 
     def open_browse_window(self):
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq...0")
         self.app.push_screen(FileBrowserModal(title=self.modal_title), self.update_input)
 
     @on(Input.Submitted, "#path_input_box")
@@ -69,9 +91,7 @@ class FileBrowser(Widget):
         self.update_input(self.get_widget_by_id("path_input_box").value)
 
     def update_input(self, selected_path: str) -> None:
-        print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuu", selected_path)
         if selected_path != "" and selected_path is not False:
-            print("uuuuuuuuuuuuuuuuuuuuuuuuuuuuu 11111111", selected_path)
             label = self.get_widget_by_id("path_input_box")
             label.update(self.path_to + ": " + str(selected_path))
             label.value = self.path_to + ": " + str(selected_path)
@@ -79,6 +99,21 @@ class FileBrowser(Widget):
 
 
 def path_test_for_bids(path, isfile=False):
+    """
+    Except for testing whether a correct type was selected (folder) or whether the user has permissions for the directory,
+    the function tests whether the folder contains a bids database by loading the directory and checking for bold files.
+    Parameters
+    ----------
+    path : str
+        The path to be tested.
+    isfile : bool, optional
+        Flag indicating whether the specified path should be a file (True) or a directory (False). Default is False.
+
+    Returns
+    -------
+    str
+        A string describing the result of the path validation, including potential errors or success messages.
+    """
     if os.path.exists(path):
         if os.access(path, os.W_OK):
             if isfile:
@@ -97,16 +132,21 @@ def path_test_for_bids(path, isfile=False):
         if len(list(ctx.database.get(**bold_filedict))) == 0:
             result_info = "The selected data directory seems not be a BIDS directory! No BOLD files found!"
             ctx.spec.files.pop()
-    #
     return result_info
 
 
 class FileBrowserForBIDS(FileBrowser):
-    # def __init__(self, path_to, modal_title="Browse", id: str | None = None, classes: str | None = None, **kwargs) -> None:
-    #     super().__init__(path_to=path_to, modal_title=modal_title, id=id, classes=classes)
+    """
+    FileBrowserForBIDS
+    A specialized file browser class for BIDS-compatible file selection.
+
+    Methods
+    -------
+    open_browse_window()
+        Opens a file browsing window with a modality filter for BIDS-compatible paths.
+    """
 
     def open_browse_window(self):
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
         self.app.push_screen(
             FileBrowserModal(title=self.modal_title, path_test_function=path_test_for_bids), self.update_input
         )

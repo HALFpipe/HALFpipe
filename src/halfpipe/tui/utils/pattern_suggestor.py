@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
-import sys
-
-sys.path.append("/home/tomas/github/HALFpipe/src/")
-
+import re  # Regular expressions for matching patterns in strings
 
 from rich.cells import get_character_cell_size
 from rich.text import Text
@@ -16,10 +13,10 @@ from textual.geometry import Offset
 from textual.message import Message
 from textual.widgets import Input
 
-from halfpipe.tui.utils.select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
+from .select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
 
 
-def merge_overlapping_tuples(tuples):
+def merge_overlapping_tuples(tuples) -> list:
     """
     This function is to merge overlapping highlighted parts of the string. For example, a highlight (3,5) exists
     and we make a new highlight (6,8), thus they will be merged to just one tuple (3,8).
@@ -43,11 +40,9 @@ def merge_overlapping_tuples(tuples):
     return merged
 
 
-def generate_strings(base_string, schema_entities_and_colors_dict):
+def generate_strings(base_string, schema_entities_and_colors_dict) -> dict | None:
     """Generate pattern suggestions"""
     schema_entities = schema_entities_and_colors_dict.keys()
-
-    import re  # Regular expressions for matching patterns in strings
 
     # Split the string at '{' but keep the delimiter to handle it in the loop
     parts = re.split(r"(\{)", base_string)
@@ -80,7 +75,160 @@ def generate_strings(base_string, schema_entities_and_colors_dict):
 
 
 class SegmentHighlighting(Input):
-    """Subclass of Input that supports string highlighting."""
+    """!
+    class SegmentHighlighting(Input):
+        Inherits from the Input class and provides functionalities to highlight segments in the text using mouse and keyboard.
+
+        Attributes
+        ----------
+        colors_and_labels : dict
+            A dictionary mapping colors to their respective labels.
+        highlight_start_position : int or None
+            Start position of the current highlight.
+        is_highlighting : bool
+            Indicates whether the widget is in highlighting mode.
+        previous_highlights : list
+            List to store previous highlights (start, end, color).
+        current_highlights : list
+            List to store current highlights (start, end, color).
+        highlight_start_direction : int or None
+            Direction in which highlighting started.
+        highlight_color : str
+            Default highlight color.
+        mouse_at_drag_start : Offset or None
+            Position of the mouse at the start of dragging.
+        old_drag : int
+            Old drag position to detect changes.
+        highlighting_with_mouse : bool
+            Indicates whether highlighting is done using the mouse.
+        original_value : str
+            Original value of the input.
+
+    def highlighting(self, text, current_highlights):
+        Highlighting function to stylize the text based on current highlights.
+
+        Parameters
+        ----------
+        text : Text
+            The text object to be highlighted.
+        current_highlights : list
+            List of tuples containing the start, end, and style information for each highlight.
+
+        Returns
+        -------
+        Text
+            Stylized text with highlights.
+
+    def __init__(self, path: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None, *args):
+        Initializes the SegmentHighlighting object.
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        colors_and_labels : dict
+            A dictionary mapping colors to their respective labels.
+        id : str or None, optional
+            The id for the widget.
+        classes : str or None, optional
+            Space-separated list of classes for styling purposes.
+
+    def update_colors_and_labels(self, new_colors_and_labels):
+        Updates the colors and labels mapping.
+
+        Parameters
+        ----------
+        new_colors_and_labels : dict
+            New dictionary mapping colors to their respective labels.
+
+    @property
+    def _value(self) -> Text:
+        Returns the value rendered as text, with or without highlights based on password protection.
+
+        Returns
+        -------
+        Text
+            Text object with or without highlights depending on the highlighter and password settings.
+
+    def action_cursor_left(self) -> None:
+        Moves the cursor one position to the left, stops highlighting if in highlighting mode.
+
+    def action_cursor_right(self) -> None:
+        Accepts an auto-completion or moves the cursor one position to the right, stops highlighting if in highlighting mode.
+
+    def action_cursor_left_highlight(self) -> None:
+        Moves the cursor one position to the left and starts highlighting.
+
+    def action_cursor_right_highlight(self) -> None:
+        Moves the cursor one position to the right and starts highlighting.
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        Prepares for highlighting when the mouse button is pressed down.
+
+        Parameters
+        ----------
+        event : events.MouseDown
+            Mouse down event data.
+
+    def on_mouse_move(self, event: events.MouseMove) -> None:
+        Handles the highlighting logic when the mouse is moved.
+
+        Parameters
+        ----------
+        event : events.MouseMove
+            Mouse move event data.
+
+    def on_mouse_up(self, event: events.MouseUp) -> None:
+        Resets the highlighting state when the mouse button is released.
+
+        Parameters
+        ----------
+        event : events.MouseUp
+            Mouse up event data.
+
+    def _start_highlighting(self, direction) -> None:
+        Starts or continues the highlighting process based on the cursor position and direction of movement.
+
+        Parameters
+        ----------
+        direction : int
+            Direction of cursor movement (-1 for left, +1 for right).
+
+    def _apend_highlight(self, start: int, end: int, color: str):
+        Appends a new highlight range and its color to the highlights list.
+
+        Parameters
+        ----------
+        start : int
+            Start position of the highlight.
+        end : int
+            End position of the highlight.
+        color : str
+            The color for the highlight.
+
+    def _stop_highlighting(self):
+        Stops the highlighting process and saves the current highlights.
+
+    def reset_highlights(self):
+        Clears all existing highlights.
+
+    def reset_all(self):
+        Clears all existing highlights and resets the input value to its original state.
+
+    def submit_path(self):
+        Submits the highlighted text, replacing highlighted segments with their respective labels.
+
+    class Toggle(Message):
+        Request toggle overlay.
+
+    async def _on_click(self, event: events.Click) -> None:
+        Informs the ancestor to toggle the overlay.
+
+        Parameters
+        ----------
+        event : events.Click
+            Click event data.
+    """
 
     # expand super class bindings, shift + left/right arrow, highlights
     Input.BINDINGS += [
@@ -94,14 +242,8 @@ class SegmentHighlighting(Input):
             text.stylize(style, s, e)
         return text
 
-    def __init__(
-        self,
-        path: str,
-        colors_and_labels: dict,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(*args, value=path, highlighter=self.highlighting, **kwargs)  #
+    def __init__(self, path: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None, *args, **kwargs):
+        super().__init__(*args, value=path, highlighter=self.highlighting, id=id, classes=classes, **kwargs)
         self.colors_and_labels = colors_and_labels
         self.highlight_start_position: None | int = None
         # Flag to indicate whether the widget is in highlighting mode.
@@ -267,10 +409,8 @@ class SegmentHighlighting(Input):
         start_offset = 0
         end_offset = 0
         highlights = copy.deepcopy(self.current_highlights)
-        # self.original_value = self.value
         self.reset_highlights()
         for start, end, color in sorted(highlights, reverse=False, key=lambda x: x[0]):
-            # print("cccccccccccccccccc22222222222", self.colors_and_labels)
             label = self.colors_and_labels[color[3:]]
             # calculate by how much longer/shorter is the replacement string, this varies from label to label
             extra = len(label) + 2 - (end - start)
@@ -279,7 +419,6 @@ class SegmentHighlighting(Input):
             self._apend_highlight(start + start_offset, end + end_offset, color)
             start_offset += extra
         # self.current_highlights is set to [] when new highlight session starts, existing highlights are thus copied to
-        # self.previous_highlights
         self.previous_highlights = copy.deepcopy(self.current_highlights)
         self.post_message(self.Submitted(self, self.value, None))
         self.refresh()
@@ -293,6 +432,22 @@ class SegmentHighlighting(Input):
 
 
 class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
+    """
+    class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
+        A class that extends SelectCurrentWithInput to add functionality for
+        segment highlighting within an input field. It highlights different
+        segments with specified colors and labels.
+
+    Methods
+    -------
+    compose()
+        Creates an instance of HorizontalScroll with SegmentHighlighting input
+        and yields it along with two static arrows.
+
+    update_colors_and_labels(new_colors_and_labels)
+        Updates the colors and labels for the input widget.
+    """
+
     def compose(self) -> ComposeResult:
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"]
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"]
@@ -317,6 +472,33 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
 
 
 class InputWithColoredSuggestions(SelectOrInputPath):
+    """
+    class InputWithColoredSuggestions(SelectOrInputPath):
+        An input class that extends SelectOrInputPath by adding colored suggestions for autocompletion and
+        highlighting segments.
+
+        Attributes
+        ----------
+        input_class : class
+            The class responsible for handling the input and segment highlighting.
+        colors_and_labels : dict
+            A dictionary mapping colors to labels for suggestion highlights.
+
+        Methods
+        -------
+        __init__(options, *, prompt_default="", top_parent=None, colors_and_labels=None, id=None, classes=None)
+            Initializes the input class with provided options and configurations.
+
+        on_mount()
+            Updates the widget's colors and labels when the class is mounted.
+
+        _select_current_with_input_prompt_changed(event)
+            Handles the event where the prompt changes, reversing the color-label dictionary and generating suggestion strings.
+
+        _update_selection(event)
+            Updates the current selection with the new suggestion and adjusts highlights accordingly.
+    """
+
     # Switches the Input class, in the standard one, there is MyInput(Input)
     input_class = SelectCurrentWithInputAndSegmentHighlighting
 

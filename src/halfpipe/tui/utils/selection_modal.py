@@ -9,8 +9,59 @@ from ..utils.draggable_modal_screen import DraggableModalScreen
 
 
 class SelectionModal(DraggableModalScreen):
-    def __init__(self, options=None, title="", instructions="Select", id: str | None = None, **kwargs) -> None:
-        super().__init__(id=id, **kwargs)
+    """
+    SelectionModal(options=None, title="", instructions="Select", id=None, classes=None)
+
+    Parameters
+    ----------
+    options : dict, optional
+        A dictionary containing the options for the radio buttons,
+        where keys are the option identifiers and values are the
+        display text for each option. If not provided, defaults to
+        {"a": "A", "b": "B"}.
+    title : str, optional
+        The title of the modal window, by default an empty string.
+    instructions : str, optional
+        Instructions or description to be displayed at the top of
+        the modal window, by default "Select".
+    id : str, optional
+        An optional identifier for the modal window, by default None.
+    classes : str, optional
+        An optional string of classes for applying styles to the
+        modal window, by default None.
+
+    Attributes
+    ----------
+    title_bar.title : str
+        Sets the title of the modal window.
+    instructions : str
+        Holds the instruction text for the modal window.
+    widgets_to_mount : list
+        A list of widgets to be mounted on the modal window, including
+        title, radio buttons, and OK/Cancel buttons.
+    choice : str or list
+        The selected choice from the radio buttons, defaults to a
+        placeholder "default_choice???todo".
+
+    Methods
+    -------
+    on_mount()
+        Called when the window is mounted. Mounts the content widgets.
+    _on_ok_button_pressed()
+        Handles the OK button press event, dismissing the modal window
+        with the current choice.
+    _on_cancel_button_pressed()
+        Handles the Cancel button press event, dismissing the modal
+        window with None value.
+    _on_radio_set_changed(event)
+        Handles the event when the radio button selection changes.
+        Updates the choice attribute with the selected option key.
+    """
+
+    def __init__(
+        self, options=None, title="", instructions="Select", id: str | None = None, classes: str | None = None
+    ) -> None:
+        super().__init__(id=id, classes=classes)
         self.title_bar.title = title
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
@@ -20,22 +71,12 @@ class SelectionModal(DraggableModalScreen):
             RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         ]
-        # self.container_to_mount = Container(
-        # Static(self.instructions, id="title"),
-        # RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
-        # Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-        # id="top_container",
-        # )
+
         self.choice: str | list = "default_choice??? todo"
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         self.content.mount(*self.widgets_to_mount)
-        # self.content.mount(
-        # Static(self.instructions, id="title"),
-        # RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
-        # Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-        # )
 
     @on(Button.Pressed, "#ok")
     def _on_ok_button_pressed(self):
@@ -52,8 +93,33 @@ class SelectionModal(DraggableModalScreen):
 
 
 class DoubleSelectionModal(SelectionModal):
-    def __init__(self, options=None, title="", instructions=None, id: str | None = None, **kwargs) -> None:
-        super().__init__(title=title, id=id, **kwargs)
+    """
+    class DoubleSelectionModal(SelectionModal):
+
+    A modal dialog that allows users to make a choice from two sets of radio buttons.
+
+    Parameters
+    ----------
+    options : list of dict, optional
+        A list containing two dictionaries where the keys are the unique identifiers and the values
+        are the corresponding option labels to display in the radio buttons.
+    title : str, optional
+        The title of the modal dialog (default is an empty string).
+    instructions : list of str, optional
+        A list containing two instructions, to be displayed above each set of radio buttons.
+    id : str, optional
+        The unique identifier for the modal (default is None).
+    classes : str, optional
+        The CSS classes to apply to the modal (default is None).
+
+    Methods
+    -------
+    _on_radio_set_changed(self, event: RadioSet.Changed) -> None
+        Updates the internal choice state when a radio button selection is changed.
+    """
+
+    def __init__(self, options=None, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(title=title, id=id, classes=classes)
         self.instructions = instructions
         self.options = options
         self.choice: List[str] = ["default_choice??? todo", "1"]
@@ -63,7 +129,6 @@ class DoubleSelectionModal(SelectionModal):
             Static(self.instructions[1], id="title_1"),
             RadioSet(*[RadioButton(self.options[1][key]) for key in self.options[1]], id="radio_set_1"),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-            #  id="top_container",
         ]
 
     def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:

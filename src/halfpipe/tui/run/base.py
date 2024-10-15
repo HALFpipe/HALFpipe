@@ -16,9 +16,6 @@ from textual.widgets import Button, Pretty
 from ...model.feature import Feature
 from ...model.file.bids import BidsFileSchema
 from ...model.setting import SettingSchema
-
-# from utils.false_input_warning_screen import FalseInputWarning
-# from utils.confirm_screen import Confirm
 from ...model.spec import SpecSchema
 from ...utils.copy import deepcopy
 from ..utils.context import ctx

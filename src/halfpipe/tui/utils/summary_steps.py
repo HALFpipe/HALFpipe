@@ -18,6 +18,25 @@ from ..utils.context import ctx
 
 
 def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: dict | None = None):
+    """
+    Parameters
+    ----------
+    database : DatabaseConnection
+        An instance of the database connection used to retrieve tag values.
+    filetype : str
+        The type of files that are being queried.
+    filepaths : list
+        A list of file paths that are being processed.
+    tagnames : list
+        A list of tags to be checked in the filepaths.
+    entity_display_aliases : dict, optional
+        An optional dictionary for aliasing tag names for display.
+
+    Returns
+    -------
+    str
+        A message indicating the number of files found and the distribution of tag values.
+    """
     entity_display_aliases = dict() if entity_display_aliases is None else entity_display_aliases
     message = ""
     if filepaths is not None:
@@ -41,6 +60,36 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
 
 
 class FilePatternSummaryStep:
+    """
+    Class FilePatternSummaryStep:
+        This class is used to generate a summary for a specific file pattern.
+        It includes retrieving file paths from a database, generating a message regarding those files, and
+        summarizing the information.
+
+    Attributes
+    ----------
+    entity_display_aliases : ClassVar[Dict]
+        A dictionary containing aliases for displaying various entities.
+    filetype_str : ClassVar[str]
+        A string representing the type of file.
+    filedict : Dict[str, str]
+        A dictionary that is used to retrieve file paths from the database.
+    schema : Union[Type[BaseFileSchema], Type[FileSchema]]
+        A schema to extract schema entities.
+
+    Methods
+    -------
+    __init__():
+        Initializes the FilePatternSummaryStep object by extracting schema entities, retrieving file paths from
+        the database, and generating a message.
+
+    get_message() -> str:
+        Returns the generated message.
+
+    get_summary() -> Dict[str, Union[str, List[str]]]:
+        Returns a summary dictionary containing the generated message and the file paths.
+    """
+
     entity_display_aliases: ClassVar[Dict] = entity_display_aliases
 
     filetype_str: ClassVar[str] = "file"
@@ -70,18 +119,61 @@ class FilePatternSummaryStep:
 
 
 class AnatSummaryStep(FilePatternSummaryStep):
+    """
+    AnatSummaryStep
+        Class representing a summary step for anatomical (T1-weighted) imaging files.
+
+    Attributes
+    ----------
+    filetype_str : str
+        Descriptive string for the type of file, indicating it is a "T1-weighted image".
+    filedict : dict
+        Dictionary defining the file pattern components, here specifying that the `datatype` is "anat" and the `suffix`
+        is "T1w".
+    schema : T1wFileSchema
+        Schema class used for validating and processing T1-weighted image files.
+    """
+
     filetype_str = "T1-weighted image"
     filedict = {"datatype": "anat", "suffix": "T1w"}
     schema = T1wFileSchema
 
 
 class BoldSummaryStep(FilePatternSummaryStep):
+    """
+    Class BoldSummaryStep
+        Class representing a summary step for functional BOLD files.
+
+    Attributes
+    ----------
+    filetype_str : str
+        Descriptive string for the type of file, indicating it is a BOLD image.
+    filedict : dict
+        Dictionary defining the file pattern components, here specifying that the `datatype` is "func"
+        and the `suffix` is "bold".
+    schema : BoldFileSchema
+        Schema class used for validating and processing BOLD image files.
+    """
+
     filetype_str = "BOLD image"
     filedict = {"datatype": "func", "suffix": "bold"}
     schema = BoldFileSchema
 
 
 class FmapSummaryStep(FilePatternSummaryStep):
+    """
+    A class representing a summary step for field map images.
+
+    Attributes
+    ----------
+    filetype_str : str
+        Descriptive string for the type of file, indicating it is a field map image.
+    filedict : dict
+        Dictionary defining the file pattern components, here specifying that the `datatype` is "fmap" .
+    schema : BaseFmapFileSchema
+        A schema class that defines the structure and constraints of the field map files.
+    """
+
     filetype_str = "field map image"
     filedict = {"datatype": "fmap"}
     schema = BaseFmapFileSchema

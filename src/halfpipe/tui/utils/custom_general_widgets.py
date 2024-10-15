@@ -17,6 +17,76 @@ from .custom_switch import TextSwitch
 
 
 class SwitchWithInputBox(Widget):
+    """
+    class SwitchWithInputBox(Widget):
+        A widget that combines a text input box with a toggle switch, allowing
+        for reactive UI changes based on the state of the switch and the input
+        value.
+
+    Attributes
+    ----------
+    value : reactive[bool]
+        The reactive value associated with the input box.
+    switch_value : reactive[bool]
+        The reactive value associated with the switch.
+
+    Events
+    ------
+    Changed
+        Event fired when the input box value changes.
+    SwitchChanged
+        Event fired when the switch value changes.
+
+    Methods
+    -------
+    __init__(label="", value: str | None = None, switch_value: bool = False, **kwargs)
+        Initializes the widget with an optional label, input value, and switch state.
+    watch_value()
+        Posts a Changed message when the input value changes.
+    watch_switch_value()
+        Posts a SwitchChanged message when the switch value changes.
+    compose() -> ComposeResult
+        Composes and yields the widget components (label, switch, input box).
+    update_label(label)
+        Updates the label component of the widget.
+    on_mount()
+        Configures the visibility of the input box based on the initial switch value.
+    on_switch_changed(message)
+        Handles the Switch.Changed event to update the switch value and input box visibility.
+    update_from_input()
+        Updates the widget's input value based on changes in the input box.
+
+    dataclass Changed(Message):
+        Message indicating that the input value has changed.
+
+        Attributes
+        ----------
+        switch_with_input_box : SwitchWithInputBox
+            Reference to the SwitchWithInputBox instance.
+        value : str
+            The new value of the input box.
+
+        Properties
+        ----------
+        control
+            Alias for `switch_with_input_box`.
+
+    dataclass SwitchChanged(Message):
+        Message indicating that the switch value has changed.
+
+        Attributes
+        ----------
+        switch_with_select : SwitchWithInputBox
+            Reference to the SwitchWithInputBox instance.
+        switch_value : bool
+            The new value of the switch.
+
+        Properties
+        ----------
+        control
+            Alias for `switch_with_input_box`.
+    """
+
     value: reactive[bool] = reactive(None, init="")
     switch_value: reactive[bool] = reactive(None, init=False)
 
@@ -91,6 +161,31 @@ class SwitchWithInputBox(Widget):
 
 
 class SwitchWithSelect(SwitchWithInputBox):
+    """
+    SwitchWithSelect Class
+    Inherits from SwitchWithInputBox to add a selection component along with a switch.
+
+    Attributes
+    ----------
+    label : str
+        The label to display alongside the switch and select components.
+    options : list
+        The options to display in the select component. Defaults to an empty list if not provided.
+
+    Methods
+    -------
+    compose()
+        Generates the components (Grid, Static, TextSwitch, and Select) to be displayed.
+    update_from_input()
+        Updates the value based on the selected item from the select component.
+
+    Changed(Message)
+        A message class used to notify when the switch_with_select component's value has changed.
+
+    SwitchChanged(Message)
+        A message class used to notify when the switch_with_select component's switch value has changed.
+    """
+
     @dataclass
     class Changed(Message):
         switch_with_select: "SwitchWithSelect"
@@ -134,6 +229,22 @@ class SwitchWithSelect(SwitchWithInputBox):
 
 
 class LabelWithInputBox(Widget):
+    """
+    A widget class that combines a label with an input box that reacts to changes.
+
+    value : reactive[bool]
+        A reactive property to hold the value of the input box, initially set to None.
+
+    Attributes
+    ----------
+    label_with_input_box : LabelWithInputBox
+        The LabelWithInputBox instance that triggered the change message.
+    value : str
+        The new value of the input box.
+    control : LabelWithInputBox
+        Property that provides an alias for accessing the associated LabelWithInputBox instance.
+    """
+
     value: reactive[bool] = reactive(None, init="")
 
     @dataclass
@@ -169,6 +280,29 @@ class LabelWithInputBox(Widget):
 
 
 class LabelledSwitch(Widget):
+    """
+    LabelledSwitch Class
+
+    A widget that consists of a label and a text switch, with additional functionality to display a help message.
+
+    Methods
+    -------
+    __init__(label, value, help_message="Explain the functionality", id=None)
+        Initializes the LabelledSwitch object with a label, value, help message, and an optional id.
+
+    compose()
+        Creates and returns the layout of the widget, including the static label and text switch.
+
+    update_value(value)
+        Updates the value of the switch.
+
+    _on_help_button_pressed()
+        Event handler that triggers when the help button is pressed, displaying a help modal.
+
+    _on_select(event)
+        Event handler that triggers when the switch value changes, posting a Changed message.
+    """
+
     def __init__(self, label, value, help_message="Explain the functionality", id=None):
         super().__init__(id=id)
         self.label = label

@@ -1,7 +1,3 @@
-FalseInputWarning {
-    align: center middle;
-}
-
 #false_input_dialog {
     grid-size: 1;
     grid-gutter: 1 2;
