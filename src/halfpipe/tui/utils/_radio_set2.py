@@ -14,7 +14,7 @@ from textual.reactive import var
 from textual.widgets._radio_button import RadioButton
 
 
-class RadioSet(Horizontal, can_focus=True, can_focus_children=False):
+class RadioSet(Horizontal):
     """Widget for grouping a collection of radio buttons into a set.
 
     When a collection of [`RadioButton`][textual.widgets.RadioButton]s are
