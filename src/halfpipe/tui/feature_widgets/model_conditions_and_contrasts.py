@@ -263,8 +263,8 @@ class ModelConditionsAndContrasts(Widget):
                     for condition_name in contrast_dict["values"]:
                         self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
 
-            self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
-            self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
+                self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
+                self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
     def watch_condition_values(self) -> None:
         self.update_condition_selection()
