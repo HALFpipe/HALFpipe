@@ -3,7 +3,7 @@
 FROM condaforge/mambaforge:latest AS builder
 
 RUN mamba update --yes --all
-RUN mamba install --yes "boa" "conda-verify"
+RUN mamba install -c conda-forge --yes "boa"
 
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them were only available in pypi.
