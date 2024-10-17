@@ -12,11 +12,10 @@ on:
       - published
       - edited
 
-
 jobs:
   test:
     runs-on: self-hosted
-    timeout-minutes: 1440  # Set to 24 hours
+    timeout-minutes: 1440 # Set to 24 hours
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: >
-            3.12
+          python-version: "3.12"
           check-latest: true
       - name: Install Python dependencies
         run: |
@@ -44,7 +42,6 @@ jobs:
 
           from github import Github
           from setuptools_scm import get_version
-
 
           pushed_at = "${{ github.event.repository.pushed_at }}"
           ref = "${{ github.ref }}"
@@ -76,7 +73,7 @@ jobs:
           cache_from = f"type=registry,ref={path}:buildcache"
           output = dict(
               cache_from=cache_from,
-              cache_to=f"{cache_from},compression=zstd,mode=max" if push else "",
+              cache_to=f"{cache_from},compression=zstd,mode=max,ignore-error=true" if push else "",
               labels=[
                   f'org.opencontainers.image.created="{pushed_at}"',
                   f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
@@ -123,9 +120,11 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        id: buildx
       - name: Build container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           cache-to: ${{ steps.metadata.outputs.cache_to }}
           context: "."
@@ -188,8 +187,9 @@ jobs:
 
       - name: Push container to registry
         if: ${{ steps.metadata.outputs.push == 'true' }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           cache-from: ${{ steps.metadata.outputs.cache_from }}
           context: "."
           file: "./Dockerfile"

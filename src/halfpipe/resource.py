@@ -45,7 +45,8 @@ def download(url: str, target: str | Path | None = None) -> str | None:
     from tqdm import tqdm
 
     if not url.startswith("http"):
-        assert isinstance(target, (str, Path))
+        if not isinstance(target, (str, Path)):
+            raise ValueError(f'Expected a string or Path, received "{target}"')
         return urllib_download(url, str(target))
 
     if target is not None:
@@ -79,7 +80,8 @@ def download(url: str, target: str | Path | None = None) -> str | None:
 
 
 def get(file_name: str | Path) -> str:
-    assert file_name in online_resources, f"Resource {file_name} not found"
+    if file_name not in online_resources:
+        raise ValueError(f"Resource {file_name} not found")
 
     file_path = resource_dir / file_name
     if file_path.exists():
@@ -91,7 +93,8 @@ def get(file_name: str | Path) -> str:
         import json
 
         jsonstr = download(resource[0])
-        assert isinstance(jsonstr, str)
+        if not isinstance(jsonstr, str):
+            raise ValueError(f"Expected a string, received {jsonstr}")
 
         accval = json.loads(jsonstr)
         for key in resource[1:]:
@@ -104,15 +107,15 @@ def get(file_name: str | Path) -> str:
 
 
 if __name__ == "__main__":
-    from templateflow import api as tfapi
+    from templateflow.api import get as get_template
 
-    tfapi.get("OASIS30ANTs")
+    get_template("OASIS30ANTs")
 
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
-        paths = tfapi.get(space, atlas=None, resolution=(1, 2))
-        assert isinstance(paths, list)
-        assert len(paths) > 0
+        paths = get_template(space, atlas=None, resolution=(1, 2))
+        if not isinstance(paths, list) or len(paths) == 0:
+            raise ValueError(f"Could not find paths for space {space}: templateflow.api.get returned {paths}")
 
     for file_name in online_resources.keys():
         get(file_name)

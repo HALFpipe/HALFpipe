@@ -1,9 +1,6 @@
 {% set name = "nitransforms" %}
 {% set version = "20.0.0rc5" %}
 
-# Dependencies derived from:
-# https://github.com/nipy/nitransforms/blob/20.0.0rc5/setup.cfg
-
 package:
   name: {{ name }}
   version: {{ version }}
@@ -16,6 +13,8 @@ build:
   number: 0
   script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv
 
+# Dependencies derived from:
+# https://github.com/nipy/nitransforms/blob/20.0.0rc5/setup.cfg
 requirements:
   host:
     - pip

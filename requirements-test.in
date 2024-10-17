@@ -1,9 +1,0 @@
--c requirements.txt
-
-# unit test
-pytest
-pytest-cov
-pytest-env
-pytest-github-actions-annotate-failures
-pytest-timeout
-pytest-xdist

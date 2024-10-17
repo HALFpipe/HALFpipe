@@ -16,9 +16,11 @@ build:
 requirements:
   host:
     - pip
-    - python
+    - python=3.11.*
   run:
-    - python
+    - python=3.11.*
+    - future>=0.18.3
+    - nipype
 
 test:
   imports:
