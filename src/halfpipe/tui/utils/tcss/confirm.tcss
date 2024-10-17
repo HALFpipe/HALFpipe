@@ -38,6 +38,24 @@ Confirm {
     }
 }
 
+.confirm_success {
+    #draggable_modal_screen_container_wrapper {
+        border-left: thick $success;
+        border-right: thick $success;
+        border-bottom: thick $success;
+    }
+    WindowTitleBar {
+        background: $success;
+    }
+    WindowTitleBar Button {
+        background: $success;
+    }
+    .window_title {
+        color: black;
+        height:auto;
+    }
+}
+
 .confirm_warning {
     #draggable_modal_screen_container_wrapper {
         border-left: thick $warning;

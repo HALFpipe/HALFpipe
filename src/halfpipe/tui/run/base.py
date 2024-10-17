@@ -19,6 +19,7 @@ from ...model.file.bids import BidsFileSchema
 from ...model.setting import SettingSchema
 from ...model.spec import SpecSchema, save_spec
 from ...utils.copy import deepcopy
+from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 
 
@@ -71,11 +72,21 @@ class RunCLX(Widget):
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
-        self.refresh_context()
-        save_spec(ctx.spec, workdir=ctx.workdir)
+        def save(value):
+            save_spec(ctx.spec, workdir=ctx.workdir)
 
-    #        with open(os.path.join(ctx.workdir, 'spec_new.json'), 'w') as json_file:
-    #            json.dump(self.json_data, json_file)
+        self.refresh_context()
+        self.app.push_screen(
+            Confirm(
+                "The spec file was saved to working directory!",
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="success",
+                title="Spec file saved",
+                classes="confirm_success",
+            ),
+            save,
+        )
 
     @on(Button.Pressed, "#refresh_button")
     def on_refresh_button_pressed(self):
