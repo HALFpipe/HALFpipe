@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
+import os
 import re
+import shutil
+from datetime import datetime
 
 from ...collect.events import collect_events
 from ...ingest.events import ConditionFile
@@ -137,3 +140,21 @@ def tag_the_string(tagvals):
         A new list with each original string element wrapped in double quotes.
     """
     return [f'"{tagval}"' for tagval in tagvals]
+
+
+def copy_and_rename_file(src_file):
+    # Get the directory, filename, and extension
+    dir_name, file_name = os.path.split(src_file)
+    file_base, file_ext = os.path.splitext(file_name)
+
+    # Create a timestamp in YYYY-MM-DD_HH-MM format
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+
+    # Create the new filename
+    new_file_name = f"{file_base}_{timestamp}{file_ext}"
+    new_file_path = os.path.join(dir_name, new_file_name)
+
+    # Copy the file and rename it
+    shutil.copy(src_file, new_file_path)
+
+    return new_file_path

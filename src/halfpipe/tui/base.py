@@ -177,6 +177,7 @@ class MainApp(App):
         os.path.join(BASE_DIR, "working_directory/tcss/working_directory.tcss"),
         os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
         os.path.join(BASE_DIR, "preprocessing/tcss/preprocessing.tcss"),
+        os.path.join(BASE_DIR, "run/tcss/run.tcss"),
         os.path.join(BASE_DIR, "utils/tcss/path_pattern_builder.tcss"),
         os.path.join(BASE_DIR, "dev.tcss"),
         os.path.join(BASE_DIR, "utils/tcss/radio_set_changed.tcss"),

@@ -197,8 +197,43 @@ class FileBrowserModal(DraggableModalScreen):
     def _confirm_window(self):
         self.update_from_input()
         path_test_result = self.path_test_function(self.selected_directory)
+
+        def ask_for_new_directory(value):
+            def create_new_directory(value):
+                if value is True:
+                    os.mkdir(self.selected_directory)
+                    self.dismiss(self.selected_directory)
+                else:
+                    pass
+
+            self.app.push_screen(
+                Confirm(
+                    "Do you want to create a new directory?",
+                    left_button_text="YES",
+                    right_button_text="NO",
+                    left_button_variant="error",
+                    right_button_variant="success",
+                    title="Create new directory",
+                    id="new_dir",
+                    classes="confirm_warning",
+                ),
+                create_new_directory,
+            )
+
         if path_test_result == "OK":
             self.dismiss(self.selected_directory)
+        elif path_test_result == "File not found.":
+            self.app.push_screen(
+                Confirm(
+                    path_test_result,
+                    title="Error - Invalid path",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    id="invalid_path_warning_modal",
+                    classes="confirm_error",
+                ),
+                ask_for_new_directory,
+            )
         else:
             self.app.push_screen(
                 Confirm(

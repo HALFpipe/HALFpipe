@@ -9,16 +9,15 @@ from textual import events, on
 from textual.containers import Container, Grid, HorizontalScroll
 from textual.widgets import Button, Static
 
-from halfpipe.tui.utils.draggable_modal_screen import DraggableModalScreen
-from halfpipe.tui.utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
-from halfpipe.tui.utils.pattern_suggestor import (
+from .confirm_screen import Confirm
+from .draggable_modal_screen import DraggableModalScreen
+from .file_browser_modal import FileBrowserModal, path_test_with_isfile_true
+from .list_of_files_modal import ListOfFiles
+from .pattern_suggestor import (
     InputWithColoredSuggestions,
     SegmentHighlighting,
     SelectCurrentWithInputAndSegmentHighlighting,
 )
-
-from .confirm_screen import Confirm
-from .list_of_files_modal import ListOfFiles
 
 
 # utilities
@@ -32,7 +31,7 @@ def evaluate_files(newpathname):
 
     import inflect
 
-    from halfpipe.ingest.glob import (
+    from ...ingest.glob import (
         suggestion_match,
         tag_glob,
     )

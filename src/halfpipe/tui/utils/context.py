@@ -109,7 +109,8 @@ class Context:
         filepaths = self.database.get(**bold_filedict)
 
         db_entities, db_tags_set = self.database.multitagvalset(entities, filepaths=filepaths)
-        self.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+        if db_entities != []:
+            self.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
 
     @property
     def get_available_images(self):

@@ -10,10 +10,9 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label
 
-from halfpipe.tui.utils.file_browser_modal import FileBrowserModal
-
 from ...model.file.bids import BidsFileSchema
 from .context import ctx
+from .file_browser_modal import FileBrowserModal
 
 
 class FileBrowser(Widget):

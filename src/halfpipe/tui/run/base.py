@@ -8,15 +8,16 @@ import traceback
 from collections import defaultdict
 from typing import Any
 
+from textual import on
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
+from textual.containers import Horizontal, ScrollableContainer
 from textual.widget import Widget
 from textual.widgets import Button, Pretty
 
 from ...model.feature import Feature
 from ...model.file.bids import BidsFileSchema
 from ...model.setting import SettingSchema
-from ...model.spec import SpecSchema
+from ...model.spec import SpecSchema, save_spec
 from ...utils.copy import deepcopy
 from ..utils.context import ctx
 
@@ -61,19 +62,32 @@ class RunCLX(Widget):
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.old_cache: defaultdict[str, defaultdict[str, dict[str, Any]]] | None = None
+        self.json_data = None
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer():
+            yield Horizontal(Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run"))
             yield Pretty("", id="this_output")
-            yield Button("Refresh")
 
-    def on_button_pressed(self):
+    @on(Button.Pressed, "#save_button")
+    def on_save_button_pressed(self):
+        self.refresh_context()
+        save_spec(ctx.spec, workdir=ctx.workdir)
+
+    #        with open(os.path.join(ctx.workdir, 'spec_new.json'), 'w') as json_file:
+    #            json.dump(self.json_data, json_file)
+
+    @on(Button.Pressed, "#refresh_button")
+    def on_refresh_button_pressed(self):
+        self.refresh_context()
+
+    def refresh_context(self):
         self.dump_dict_to_contex()
-        self.get_widget_by_id("this_output").update(
-            json.loads(SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False))
-        )
+        self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
+        if self.json_data is not None:
+            self.get_widget_by_id("this_output").update(json.loads(self.json_data))
 
-    def dump_dict_to_contex(self):
+    def dump_dict_to_contex(self, save=False):
         # the cache key logic goes like this: first it is the particular name of the main item, for example a feature called
         # 'foo' will produce a key "foo" this is the "name". Second, it is the main group type of the item, if it is the
         # feature then the group type is feature, if it is for example bold file pattern then it is the bold file pattern,
