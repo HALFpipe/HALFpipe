@@ -16,7 +16,7 @@ COPY recipes /recipes
 RUN for recipe in /recipes/${FMRIPREP_VERSION}/*; do \
     conda mambabuild --numpy "1.24" --no-anaconda-upload --use-local $recipe && \
     conda build purge; \
-done
+    done
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/mambaforge:latest AS install
@@ -34,7 +34,7 @@ RUN mamba install --yes --use-local \
 # Taken from fmriprep's Dockerfile
 RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
-        $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
+    $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
 # Create the final image based on existing fmriprep image
 FROM nipreps/fmriprep:${FMRIPREP_VERSION}
