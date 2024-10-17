@@ -58,4 +58,5 @@ more-itertools >= 8.7.0
 # Requirements for TUI
 rich==13.4.2
 rich-pixels==3.0.1
+pytest-textual-snapshot==1.0.0
 textual @ git+https://github.com/Textualize/textual.git@aced8548076ebdff34ab8f0e94dccfd315b24135

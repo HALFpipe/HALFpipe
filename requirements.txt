@@ -536,6 +536,8 @@ pillow==10.3.0
     # via rich-pixels
 pygments==2.18.0
     # via rich
+pytest-textual-snapshot==1.0.0
+    # via -r requirements.in
 rich-pixels==3.0.1
     # via -r requirements.in
 textual @ git+https://github.com/Textualize/textual.git@aced8548076ebdff34ab8f0e94dccfd315b24135
