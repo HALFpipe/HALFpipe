@@ -104,13 +104,13 @@ def get(file_name: str | Path) -> str:
 
 
 if __name__ == "__main__":
-    from templateflow import api as tfapi
+    from templateflow.api import get as get_template
 
-    tfapi.get("OASIS30ANTs")
+    get_template("OASIS30ANTs")
 
     spaces = ["MNI152NLin6Asym", "MNI152NLin2009cAsym"]
     for space in spaces:
-        paths = tfapi.get(space, atlas=None, resolution=(1, 2))
+        paths = get_template(space, atlas=None, resolution=(1, 2))
         assert isinstance(paths, list)
         assert len(paths) > 0
 
