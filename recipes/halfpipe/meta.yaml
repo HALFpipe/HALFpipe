@@ -18,8 +18,9 @@ requirements:
     - setuptools_scm>=6.2
     - wheel
   run:
-    - python 3.11.*
+    - ants
     - rmath # local
+    - python 3.11.*
     - fmriprep # local
     - numba
     - patsy>=0.5.2

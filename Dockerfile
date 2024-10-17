@@ -4,7 +4,7 @@ ARG fmriprep_version=20.2.7
 
 # Build all custom recipes in one command. We build our own conda packages to simplify
 # the environment creation process, as some of them are not available on conda-forge
-FROM condaforge/miniforge3:latest AS builder
+FROM condaforge/miniforge3 AS builder
 
 RUN conda config --system --set remote_max_retries 8 \
     --set remote_backoff_factor 2 \
@@ -97,7 +97,7 @@ RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
     conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/halfpipe"
 
 # We install built recipes and cleans unnecessary files such as static libraries
-FROM condaforge/miniforge3:latest AS install
+FROM condaforge/miniforge3 AS install
 
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN conda install --yes --use-local \
@@ -150,8 +150,7 @@ COPY --from=install /opt/conda/ /opt/conda/
 # Instead, halfpipe uses conda from the corresponding docker image,
 # where it is installed in `/opt/conda`.
 # Therefore, we update the `PATH` to reflect new conda location
-ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}" \
-    MAMBA_EXE="/opt/conda/bin/mamba"
+ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}"
 
 # Download all resources
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
