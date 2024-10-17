@@ -26,8 +26,8 @@ requirements:
     - indexed_gzip>=0.8.8
     - networkx
     - nibabel>=3.0
-    - nipype>=1.5.1 # local
-    - nilearn=0.10.2
+    - nipype # local
+    - nilearn==0.10.2
     - nitime
     - nitransforms # local
     - niworkflows # local
@@ -39,8 +39,8 @@ requirements:
     - requests
     - sdcflows # local
     - smriprep # local
-    - tedana==0.0.9a1 # local
-    - templateflow>=0.6 # local
+    - tedana # local
+    - templateflow # local
     - toml
 
 test:
