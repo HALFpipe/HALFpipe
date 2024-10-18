@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Mapping
 
 import pytest
+
 from halfpipe.exclude import Decision, QCDecisionMaker
 
 

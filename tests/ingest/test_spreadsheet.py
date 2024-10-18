@@ -12,6 +12,7 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 import pytest
+
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 
 vest_str = """/NumWaves       2

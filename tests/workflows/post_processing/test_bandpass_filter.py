@@ -9,11 +9,12 @@ import nibabel as nib
 import nipype.pipeline.engine as pe
 import numpy as np
 import pytest
+from nilearn.image import new_img_like
+from scipy.signal import welch
+
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.bandpass_filter import init_bandpass_filter_wf
-from nilearn.image import new_img_like
-from scipy.signal import welch
 
 from ...resource import setup as setup_test_resources
 

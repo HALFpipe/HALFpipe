@@ -11,13 +11,14 @@ from pathlib import Path
 import nibabel as nib
 import pytest
 from fmriprep import config
+from templateflow.api import get as get_template
+
 from halfpipe.cli.parser import build_parser
 from halfpipe.cli.run import run_stage_run
 from halfpipe.ingest.spreadsheet import read_spreadsheet
 from halfpipe.model.spec import save_spec
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
-from templateflow.api import get as get_template
 
 
 @pytest.mark.timeout(120)
