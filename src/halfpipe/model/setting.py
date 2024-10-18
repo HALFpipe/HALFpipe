@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from marshmallow import RAISE, Schema, fields, post_dump, validate
-from marshmallow_oneofschema import OneOfSchema
+from marshmallow_oneofschema.one_of_schema import OneOfSchema
 
 from .filter import FilterSchema
 
@@ -45,7 +45,7 @@ class BandpassFilterSettingSchema(OneOfSchema):
 
 
 class BaseSettingSchema(Schema):
-    class Meta:
+    class Meta(Schema.Meta):
         unknown = RAISE
         ordered = True
 

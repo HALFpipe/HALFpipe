@@ -135,6 +135,8 @@ dmypy.json
 # nipype/
 work/
 vi/
+# mac
+.DS_store
 
 # For vim
 # Swap

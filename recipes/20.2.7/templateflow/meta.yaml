@@ -1,9 +1,6 @@
 {% set name = "templateflow" %}
 {% set version = "0.8.1" %}
 
-# Dependencies derived from
-# https://github.com/templateflow/python-client/blob/0.8.1/setup.cfg
-
 package:
   name: {{ name|lower }}
   version: {{ version }}
@@ -16,7 +13,8 @@ build:
   number: 0
   script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v
 
-
+# Derived from
+# https://github.com/templateflow/python-client/blob/0.8.1/setup.cfg
 requirements:
   host:
     - python 3.11.*
