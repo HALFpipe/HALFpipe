@@ -111,11 +111,12 @@ class RunCLX(Widget):
         ctx.database.tags_by_filepaths = dict()
         ctx.spec.features.clear()
         ctx.spec.settings.clear()
+        ctx.spec.models.clear()
         ctx.spec.files.clear()
 
         # iterate now over the whole cache and fill the context object
         # the "name" is widget name carying the particular user choices, either a feature or file pattern
-        for name in ctx.cache:
+        for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
             if ctx.cache[name]["features"] != {}:
                 featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                 ctx.spec.features.append(featureobj)
@@ -133,8 +134,10 @@ class RunCLX(Widget):
                         setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
                         # if there are no filters, than put there just empty list
                         if key == "filters":
-                            if ctx.cache[name]["settings"][key][0]["values"] == []:
+                            if ctx.cache[name]["settings"]["filters"] == []:
                                 setattr(ctx.spec.settings[-1], key, [])
+                            elif ctx.cache[name]["settings"]["filters"] != []:
+                                ctx.cache[name]["settings"]["filters"][0]["values"] = []
                     except Exception:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")
@@ -152,6 +155,6 @@ class RunCLX(Widget):
             if ctx.cache[name]["files"] != {} and name != "bids":
                 ctx.spec.files.append(ctx.cache[name]["files"])
                 ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
-            self.old_cache = copy.deepcopy(ctx.cache)
+        self.old_cache = copy.deepcopy(ctx.cache)
         # refresh at the end available images
         ctx.refresh_available_images()
