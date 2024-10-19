@@ -2,9 +2,16 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from contextlib import AbstractContextManager
+from dataclasses import dataclass, field
 from os import getenv
 from pathlib import Path
+from types import TracebackType
 from typing import IO
+
+import requests
+import requests.adapters
+from urllib3.util.retry import Retry
 
 default_resource_dir = Path.home() / ".cache" / "halfpipe"
 resource_dir = Path(getenv("HALFPIPE_RESOURCE_DIR", str(default_resource_dir)))
@@ -16,6 +23,29 @@ online_resources: dict[str, str] = {
     "tpl_MNI152NLin2009cAsym_from_MNI152NLin6Asym_mode_image_xfm.h5": "https://figshare.com/ndownloader/files/5534330",
     "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://figshare.com/ndownloader/files/22447958",
 }
+
+
+@dataclass
+class Session(AbstractContextManager):
+    session: requests.Session = field(default_factory=requests.session)
+
+    def __post_init__(self):
+        max_retries = Retry(
+            total=8,
+            backoff_factor=10,
+            status_forcelist=tuple(range(400, 600)),
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+        for protocol in ["http", "https"]:
+            self.session.mount(f"{protocol}://", adapter)
+
+    def __enter__(self) -> requests.Session:
+        return self.session
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        self.session.close()
 
 
 def urllib_download(url: str, target: str):
@@ -41,7 +71,6 @@ def urllib_download(url: str, target: str):
 def download(url: str, target: str | Path | None = None) -> str | None:
     import io
 
-    import requests
     from tqdm import tqdm
 
     if not url.startswith("http"):
@@ -56,27 +85,27 @@ def download(url: str, target: str | Path | None = None) -> str | None:
 
     print(f"Downloading {url}")
 
-    with requests.get(url, stream=True) as response:
+    with Session() as session, session.get(url, stream=True) as response:
         response.raise_for_status()
 
-        total_size = int(response.headers.get("content-length", 0))  # type: ignore
+        total_size = int(response.headers.get("content-length", 0))
         block_size = 1024
 
         t = tqdm(total=total_size, unit="B", unit_scale=True)
 
-        for block in response.iter_content(block_size):  # type: ignore
-            if block:  # filter out keep-alive new chunks
+        for block in response.iter_content(block_size):
+            if block:  # Filter out keep-alive new chunks
                 t.update(len(block))
                 file_handle.write(block)
 
-    res = None
+    return_value = None
     if isinstance(file_handle, io.BytesIO):
-        res = file_handle.getvalue().decode()
+        return_value = file_handle.getvalue().decode()
 
     t.close()
     file_handle.close()
 
-    return res
+    return return_value
 
 
 def get(file_name: str | Path) -> str:
