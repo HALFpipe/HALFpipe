@@ -12,39 +12,55 @@ RUN conda config --system --set remote_max_retries 8 \
     --set remote_read_timeout_secs 240
 RUN conda install --yes "conda-build"
 
+RUN cat <<EOF > "/usr/bin/retry"
+#!/bin/bash
+set -euo pipefail
+timeout="1"
+attempt="1"
+until "\$@"; do
+    if [ "\${attempt}" -ge "5" ]; then
+        exit "$?"
+    fi
+    sleep "\${timeout}"
+    timeout=\$((timeout * 10))
+    attempt=\$((attempt + 1))
+done
+EOF
+RUN chmod "+x" "/usr/bin/retry"
+
 # We manually specify the numpy version for all conda build commands to silence
 # an irrelevant warning as per https://github.com/conda/conda-build/issues/3170
 
 FROM builder AS rmath
 RUN --mount=source=recipes/rmath,target=/rmath \
-    conda build --no-anaconda-upload --numpy "1.24" "rmath"
+    retry conda build --no-anaconda-upload --numpy "1.24" "rmath"
 
 FROM builder AS pytest-textual-snapshot
 RUN --mount=source=recipes/pytest-textual-snapshot,target=/pytest-textual-snapshot \
-    conda build --no-anaconda-upload --numpy "1.24" "pytest-textual-snapshot"
+    retry conda build --no-anaconda-upload --numpy "1.24" "pytest-textual-snapshot"
 
 FROM builder AS nipype
 RUN --mount=source=recipes/traits,target=/traits \
-    conda build --no-anaconda-upload --numpy "1.24" "traits"
+    retry conda build --no-anaconda-upload --numpy "1.24" "traits"
 RUN --mount=source=recipes/nipype,target=/nipype \
-    conda build --no-anaconda-upload --numpy "1.24" "nipype"
+    retry conda build --no-anaconda-upload --numpy "1.24" "nipype"
 RUN --mount=source=recipes/niflow-nipype1-workflows,target=/niflow-nipype1-workflows \
-    conda build --no-anaconda-upload --numpy "1.24" "niflow-nipype1-workflows"
+    retry conda build --no-anaconda-upload --numpy "1.24" "niflow-nipype1-workflows"
 
 FROM builder AS nitransforms
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/nitransforms,target=/nitransforms \
-    conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
+    retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 
 FROM builder AS tedana
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/tedana,target=/tedana \
-    conda build --no-anaconda-upload --numpy "1.24" "tedana"
+    retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS templateflow
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/templateflow,target=/templateflow \
-    conda build --no-anaconda-upload --numpy "1.24" "templateflow"
+    retry conda build --no-anaconda-upload --numpy "1.24" "templateflow"
 
 FROM builder AS niworkflows
 ARG fmriprep_version
@@ -53,7 +69,7 @@ COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/niworkflows,target=/niworkflows \
-    conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
+    retry conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
 
 FROM builder AS sdcflows
 ARG fmriprep_version
@@ -62,7 +78,7 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/sdcflows,target=/sdcflows \
-    conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
+    retry conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
 
 FROM builder AS smriprep
 ARG fmriprep_version
@@ -71,7 +87,7 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/smriprep,target=/smriprep \
-    conda build --no-anaconda-upload --numpy "1.24" "smriprep"
+    retry conda build --no-anaconda-upload --numpy "1.24" "smriprep"
 
 FROM builder AS fmriprep
 ARG fmriprep_version
@@ -82,7 +98,7 @@ COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/fmriprep,target=/fmriprep \
-    conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
+    retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS halfpipe
 COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
@@ -94,7 +110,7 @@ RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
     --mount=source=src,target=/halfpipe/src \
     --mount=source=pyproject.toml,target=/halfpipe/pyproject.toml \
     --mount=source=.git,target=/halfpipe/.git \
-    conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/halfpipe"
+    retry conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/halfpipe"
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/miniforge3 AS install
