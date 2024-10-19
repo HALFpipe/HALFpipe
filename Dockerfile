@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile-upstream:master
+# syntax=docker/dockerfile:1.10
 
 ARG fmriprep_version=20.2.7
 
