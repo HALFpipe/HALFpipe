@@ -130,8 +130,12 @@ RUN python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
     $( python -c "import matplotlib; print(matplotlib.matplotlib_fname())" )
 
-# Create the final image based on existing fmriprep image
-FROM nipreps/fmriprep:${fmriprep_version}
+FROM nipreps/fmriprep:${fmriprep_version} as base
+
+# Create the final image based on ubuntu
+FROM ubuntu:rolling
+
+COPY --from=base /home/fmriprep/.cache/templateflow /var/cache
 
 # Create these empty directories, so that they can be used for singularity
 # bind mounts later
@@ -144,7 +148,6 @@ RUN mkdir /ext /host \
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
-RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
 # We install ants previously using conda (through a dependency in the halfpipe
 # recipe), to get an important bug fix (#691). We delete the ants that came with
