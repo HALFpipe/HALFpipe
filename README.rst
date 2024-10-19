@@ -26,9 +26,10 @@ fly.
 `HALFpipe` relies on tools from well-established neuroimaging software
 packages, either directly or through our dependencies, including `ANTs
 <https://antspy.readthedocs.io/>`__, `FreeSurfer
-<https://surfer.nmr.mgh.harvard.edu/>`__,  `FSL <http://fsl.fmrib.ox.ac.uk/>`__
-and `nipype <https://nipype.readthedocs.io/>`__. We strongly urge users to
-acknowledge these tools when publishing results obtained with HALFpipe.
+<https://surfer.nmr.mgh.harvard.edu/>`__,  `FSL <http://fsl.fmrib.ox.ac.uk/>`__,
+`AFNI <https://afni.nimh.nih.gov/>`__ and `nipype <https://nipype.readthedocs.io/>`__.
+We strongly urge users to acknowledge these tools when publishing results obtained
+with HALFpipe.
 
    Subscribe to our `mailing list <https://mailman.charite.de/mailman/listinfo/halfpipe-announcements>`_ to stay up to date with new developments and releases.
 
