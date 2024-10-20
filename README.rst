@@ -2,11 +2,8 @@
  Welcome to ENIGMA ``HALFpipe``
 ################################
 
-.. image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
-
-.. image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
+.. image:: https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg
+   :target: https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml
 
 .. image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/HALFpipe/HALFpipe
