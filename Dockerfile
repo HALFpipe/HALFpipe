@@ -33,33 +33,41 @@ RUN chmod "+x" "/usr/bin/retry"
 
 FROM builder AS rmath
 RUN --mount=source=recipes/rmath,target=/rmath \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "rmath"
 
 FROM builder AS pytest-textual-snapshot
 RUN --mount=source=recipes/pytest-textual-snapshot,target=/pytest-textual-snapshot \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "pytest-textual-snapshot"
 
 FROM builder AS nipype
 RUN --mount=source=recipes/traits,target=/traits \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "traits"
 RUN --mount=source=recipes/nipype,target=/nipype \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nipype"
 RUN --mount=source=recipes/niflow-nipype1-workflows,target=/niflow-nipype1-workflows \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "niflow-nipype1-workflows"
 
 FROM builder AS nitransforms
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/nitransforms,target=/nitransforms \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 
 FROM builder AS tedana
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/tedana,target=/tedana \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS templateflow
 ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/templateflow,target=/templateflow \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "templateflow"
 
 FROM builder AS niworkflows
@@ -69,6 +77,7 @@ COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/niworkflows,target=/niworkflows \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
 
 FROM builder AS sdcflows
@@ -78,6 +87,7 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/sdcflows,target=/sdcflows \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
 
 FROM builder AS smriprep
@@ -87,6 +97,7 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/smriprep,target=/smriprep \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "smriprep"
 
 FROM builder AS fmriprep
@@ -98,6 +109,7 @@ COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/fmriprep,target=/fmriprep \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS halfpipe
@@ -110,15 +122,18 @@ RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
     --mount=source=src,target=/halfpipe/src \
     --mount=source=pyproject.toml,target=/halfpipe/pyproject.toml \
     --mount=source=.git,target=/halfpipe/.git \
+    --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/halfpipe"
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/miniforge3 AS install
 
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
-RUN conda install --yes --use-local \
-    "python=3.11" "nodejs" "halfpipe" "sqlite" && \
-    conda clean --yes --all --force-pkgs-dirs \
+RUN --mount=type=cache,target=/opt/conda/pkgs \
+    conda install --yes --use-local \
+    "python=3.11" "nodejs" "sqlite" "halfpipe"
+
+RUN conda clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \
     && rm -rf /opt/conda/conda-bld
 
