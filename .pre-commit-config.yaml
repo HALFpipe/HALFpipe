@@ -34,3 +34,4 @@ repos:
       - id: mypy
         additional_dependencies:
           [numpy, types-chardet, types-requests, types-tabulate, typing_extensions]
+        exclude: '.*\.svg$'  # Exclude .svg files from being checked by mypy
