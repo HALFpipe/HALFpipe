@@ -102,13 +102,15 @@ ENV LANG="C.UTF-8" \
     # options:
     # /opt/conda/share/fsl
     # /opt/conda/bin/fsl
-    # possible we need to do /opt/conda/ instead
+    # /opt/conda
     FSLOUTPUTTYPE="NIFTI_GZ" \
     FSLMULTIFILEQUIT="TRUE" \
     FSLLOCKDIR="" \
     FSLMACHINELIST="" \
     FSLREMOTECALL="" \
-    FSLGECUDAQ="cuda.q"
+    FSLGECUDAQ="cuda.q" \
+    FSLWISH="/opt/conda/bin/wish"
+    # point to FSLwish, but maybe not necessary since we dont want graphics
 
 ENV PATH="$FSLDIR/bin:$PATH"
 ENV PATH="/opt/conda/bin:$PATH"

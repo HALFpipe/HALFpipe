@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import pdb
 from math import isfinite
 from pathlib import Path
 
@@ -233,8 +234,9 @@ def init_taskbased_wf(
         mem_gb=memcalc.series_std_gb * 1.5,
     )
 
-    # pdb.set_trace()
+    pdb.set_trace()
     # FILMGLS is not detecting the right version of FSL
+
     # FSL DIR needs to be set: fmriprep 20 dockerfile
     workflow.connect(inputnode, "bold", modelestimate, "in_file")
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
