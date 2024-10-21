@@ -67,8 +67,15 @@ class RunCLX(Widget):
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer():
-            yield Horizontal(Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run"))
+            yield Horizontal(
+                Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run", id="run_button")
+            )
             yield Pretty("", id="this_output")
+
+    @on(Button.Pressed, "#run_button")
+    def on_run_button_pressed(self):
+        self.app._return_value = ctx.workdir
+        exit()
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):

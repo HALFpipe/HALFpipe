@@ -2,9 +2,9 @@
 
 import os
 
-from PIL import Image
-from rich.console import Console, RenderResult
-from rich_pixels import Pixels
+from rich.console import RenderResult
+
+# from rich_pixels import Pixels
 from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
@@ -132,10 +132,10 @@ class MyHeader(Header):
 class RichImage:
     """Convert the image to a Rich image."""
 
-    def __rich_console__(self, console: Console, options) -> RenderResult:
-        with Image.open(os.path.join(BASE_DIR, "images/halfpipe_logo_v2.png")) as image:
-            pixels = Pixels.from_image(image, resize=(110, 92))  # 105, 92
-        return console.render(pixels)
+    # def __rich_console__(self, console: Console, options) -> RenderResult:
+    #     with Image.open(os.path.join(BASE_DIR, "images/halfpipe_logo_v2.png")) as image:
+    #         pixels = Pixels.from_image(image, resize=(110, 92))  # 105, 92
+    #     return console.render(pixels)
 
 
 class ImageContainer(Container):
@@ -231,7 +231,7 @@ class MainApp(App):
 
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
-        self.push_screen(Welcome(id="welcome_screen"))
+        # self.push_screen(Welcome(id="welcome_screen"))
 
     def show_hidden_tabs(self):
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient

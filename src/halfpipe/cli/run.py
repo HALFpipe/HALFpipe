@@ -21,9 +21,10 @@ def run_stage_ui(opts: Namespace):
         from ..tui.base import MainApp
 
         app = MainApp()
-        app.run()
+        opts.workdir = app.run()
     else:
         opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
+        logger.info("workdir from tui:", opts.workdir)
 
 
 def run_stage_workflow(opts):
