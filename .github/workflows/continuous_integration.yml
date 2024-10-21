@@ -228,7 +228,7 @@ jobs:
             --only-show-errors \
             --acl public-read \
             ${image_file} \
-            s3://singularity/
+            s3://download-fmri-science/singularity/
 
       - name: Build Singularity container
         if: ${{ steps.metadata.outputs.push == 'true' }}
@@ -252,4 +252,4 @@ jobs:
             --only-show-errors \
             --acl public-read \
             ${image_file} \
-            s3://singularity/
+            s3://download-fmri-science/singularity/

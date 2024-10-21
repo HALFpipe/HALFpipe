@@ -2,11 +2,8 @@
  Welcome to ENIGMA ``HALFpipe``
 ################################
 
-.. image:: https://github.com/HALFpipe/HALFpipe/workflows/build/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22build%22
-
-.. image:: https://github.com/HALFpipe/HALFpipe/workflows/continuous%20integration/badge.svg
-   :target: https://github.com/HALFpipe/HALFpipe/actions?query=workflow%3A%22continuous+integration%22
+.. image:: https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg
+   :target: https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml
 
 .. image:: https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/HALFpipe/HALFpipe
@@ -26,9 +23,10 @@ fly.
 `HALFpipe` relies on tools from well-established neuroimaging software
 packages, either directly or through our dependencies, including `ANTs
 <https://antspy.readthedocs.io/>`__, `FreeSurfer
-<https://surfer.nmr.mgh.harvard.edu/>`__,  `FSL <http://fsl.fmrib.ox.ac.uk/>`__
-and `nipype <https://nipype.readthedocs.io/>`__. We strongly urge users to
-acknowledge these tools when publishing results obtained with HALFpipe.
+<https://surfer.nmr.mgh.harvard.edu/>`__,  `FSL <http://fsl.fmrib.ox.ac.uk/>`__,
+`AFNI <https://afni.nimh.nih.gov/>`__ and `nipype <https://nipype.readthedocs.io/>`__.
+We strongly urge users to acknowledge these tools when publishing results obtained
+with HALFpipe.
 
    Subscribe to our `mailing list <https://mailman.charite.de/mailman/listinfo/halfpipe-announcements>`_ to stay up to date with new developments and releases.
 
