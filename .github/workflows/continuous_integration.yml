@@ -175,6 +175,13 @@ jobs:
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
+    # Upload snapshot_report.html as an artifact
+      - name: Upload Snapshot Report
+        uses: actions/upload-artifact@v2
+        with:
+         name: snapshot-report
+          path: /halfpipe/snapshot_report.html
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
