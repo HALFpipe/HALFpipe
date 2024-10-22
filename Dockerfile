@@ -124,7 +124,8 @@ FROM builder AS sdcflows
 ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/sdcflows,target=/sdcflows \
     --mount=type=cache,target=/opt/conda/pkgs \
