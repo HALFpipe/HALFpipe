@@ -86,7 +86,8 @@ RUN --mount=source=recipes/${fmriprep_version}/nitransforms,target=/nitransforms
 
 FROM builder AS tedana
 ARG fmriprep_version
-COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
+RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/tedana,target=/tedana \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
@@ -103,6 +104,7 @@ ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 # needs templateflow, but we can use conda version. The templateflow we build is only necessary
 # for fmriprep 20
+RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/24.0.1/nireports,target=/nireports \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
@@ -111,8 +113,8 @@ FROM builder AS niworkflows
 ARG fmriprep_version
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
-COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -173,12 +175,11 @@ COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=rmath /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=pytest-textual-snapshot /opt/conda/conda-bld /opt/conda/conda-bld
 # RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
-COPY --from=afni /opt/conda/conda-bld /opt/conda/conda-bld;
-COPY --from=fmripost_aroma /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=afni /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=fmripost_aroma /opt/conda/conda-bld /opt/conda/conda-bld
 # fi
 RUN conda index /opt/conda/conda-bld
 # Mount .git folder too for setuptools_scm
-ARG fmriprep_version
 RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes/halfpipe \
     --mount=source=src,target=/halfpipe/src \
     --mount=source=pyproject.toml,target=/halfpipe/pyproject.toml \
