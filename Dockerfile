@@ -86,9 +86,7 @@ RUN --mount=source=recipes/${fmriprep_version}/nitransforms,target=/nitransforms
 
 FROM builder AS tedana
 ARG fmriprep_version
-# RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
 COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
 RUN --mount=source=recipes/${fmriprep_version}/tedana,target=/tedana \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
@@ -107,18 +105,14 @@ COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 # for fmriprep 20
 RUN --mount=source=recipes/24.0.1/nireports,target=/nireports \
     --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "templateflow"
+    retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
 
 FROM builder AS niworkflows
 ARG fmriprep_version
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
-# RUN if [ "$fmriprep_version" = "20.2.7" ]; then \
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
-# RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
 COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -128,9 +122,7 @@ FROM builder AS sdcflows
 ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
-# RUN if [ "$fmriprep_version" = "20.2.7" ]; then \
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/sdcflows,target=/sdcflows \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -140,12 +132,8 @@ FROM builder AS smriprep
 ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
-# RUN if [ "$fmriprep_version" = "20.2.7" ]; then \
 COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
-# RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
 COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/smriprep,target=/smriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -157,10 +145,8 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
-ARG fmriprep_version
-# RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
 COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld;
-# fi
+ARG fmriprep_version
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
