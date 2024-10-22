@@ -148,12 +148,12 @@ COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
 ARG fmriprep_version
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
+    retry conda build --no-anaconda-upload --numpy "1.24" -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public "fmriprep"
 
 #Exclusive from 24.0.1
 FROM builder AS fmripost_aroma
