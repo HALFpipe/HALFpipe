@@ -8,12 +8,13 @@ from pathlib import Path
 import nibabel as nib
 import nipype.pipeline.engine as pe
 import numpy as np
+from nilearn.image import new_img_like
+
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.grand_mean_scaling import (
     init_grand_mean_scaling_wf,
 )
-from nilearn.image import new_img_like
 
 from ...resource import setup as setup_test_resources
 

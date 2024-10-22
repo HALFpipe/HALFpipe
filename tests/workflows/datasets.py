@@ -8,6 +8,7 @@ from pathlib import Path
 
 import datalad.api as dl
 import openneuro as on
+
 from halfpipe.file_index.bids import BIDSIndex
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema

@@ -10,7 +10,7 @@ from typing import Any, Mapping
 logger = logging.getLogger("halfpipe")
 
 
-def run_stage_ui(opts):
+def run_stage_ui(opts: Namespace) -> None:
     from ..ui import init_spec_ui
     from ..ui.components.config import Config as UIConfig
 

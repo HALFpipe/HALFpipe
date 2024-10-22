@@ -8,10 +8,11 @@ from pathlib import Path
 
 import nipype.pipeline.engine as pe
 import pytest
+from nipype.interfaces import afni
+
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.post_processing.smoothing import init_smoothing_wf
-from nipype.interfaces import afni
 
 from ...resource import setup as setup_test_resources
 

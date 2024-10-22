@@ -12,13 +12,14 @@ from zipfile import ZipFile
 import nibabel as nib
 import pandas as pd
 import pytest
+from nilearn.image import new_img_like
+
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
 from halfpipe.model.spec import Spec, SpecSchema
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
-from nilearn.image import new_img_like
 
 from ..resource import setup as setup_test_resources
 from .spec import make_spec
