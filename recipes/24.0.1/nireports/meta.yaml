@@ -29,14 +29,14 @@ requirements:
     - importlib_resources>=5.12
     - nibabel>=3.0.1
     - nilearn>=0.5.2
-    - nipype
+    - nipype # local
     - numpy
     - pandas
     - pybids
     - pyyaml
     - seaborn
     - svgutils>= 0.3.4
-    - templateflow
+    - templateflow # local
 
 test:
   imports:
