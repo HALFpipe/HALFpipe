@@ -6,7 +6,8 @@ ARG fmriprep_version=24.0.1
 # the environment creation process, as some of them are not available on conda-forge
 FROM condaforge/miniforge3 AS builder
 
-RUN conda config --system --set remote_max_retries 8 \
+RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public \
+    && conda config --system --set remote_max_retries 10 \
     --set remote_backoff_factor 2 \
     --set remote_connect_timeout_secs 60 \
     --set remote_read_timeout_secs 240
@@ -153,7 +154,7 @@ ARG fmriprep_version
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public "fmriprep"
+    retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 #Exclusive from 24.0.1
 FROM builder AS fmripost_aroma
