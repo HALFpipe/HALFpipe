@@ -235,13 +235,16 @@ class FileItem(Widget):
         The results from this modal goes then to _update_file_pattern function.
         """
         self.from_edit = True
-        self.app.push_screen(
-            PathPatternBuilder(
-                path="/home/tomas/github/ds005115/sub-01/ses-01/fmap/sub-01_ses-01_phasediff.nii.gz",
-                title=self.title,
-            ),
-            self._update_file_pattern,
-        )
+        if self.pattern_class is not None:
+            self.app.push_screen(
+                PathPatternBuilder(
+                    path=self.pattern_match_results["file_pattern"],
+                    title=self.title,
+                    highlight_colors=self.pattern_class.get_entity_colors_list,
+                    labels=self.pattern_class.get_entities,
+                ),
+                self._update_file_pattern,
+            )
 
     @property
     def get_pattern_match_results(self):
@@ -250,6 +253,10 @@ class FileItem(Widget):
     @property
     def get_callback_message(self):
         return self.callback_message
+
+    @property
+    def get_pattern_class(self):
+        return self.pattern_class
 
     # runs after the PathPatternBuilder modal
     @work(exclusive=True, name="update_worker")

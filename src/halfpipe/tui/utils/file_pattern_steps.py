@@ -43,9 +43,9 @@ entity_colors = {
     "task": "cyan",
     "dir": "yellow",
     "condition": "orange",
-    "desc": "blue",  # Changed to blue for uniqueness
     "acq": "purple",  # Changed to purple for uniqueness
     "echo": "brown",  # Changed to brown for uniqueness
+    "desc": "red",  # there is only one entity when desc is used
 }
 
 

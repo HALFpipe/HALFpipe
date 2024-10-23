@@ -180,6 +180,7 @@ class FilePanelTemplate(Widget):
                             classes="file_patterns",
                             load_object=file_item_widget.get_pattern_match_results,
                             callback_message=file_item_widget.get_callback_message,
+                            pattern_class=file_item_widget.get_pattern_class,
                         )
                     )
 
@@ -192,26 +193,27 @@ class FilePanelTemplate(Widget):
     @on(FileItem.PathPatternChanged)
     async def _on_update_all_instances(self, event):
         self.value = event.value
-        # creating copies to all feature tasks
-        # the one that was is the latest one, create new instances
-        if event.control.id == self.current_file_pattern_id and event.value["file_pattern"] != "":
-            # loop through the all existing event file panel
-            for w in self.app._screen_stacks["_default"][0].walk_children((self.the_class)):
-                # create new fileitem in every other EventFilePanel
-                if w != self:
-                    file_items_ids_in_other_file_panel = [
-                        other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
-                    ]
-                    # id does not exist, mount new FileItem
-                    if event.control.id not in file_items_ids_in_other_file_panel:
-                        await w.get_widget_by_id(self.id_string).mount(
-                            FileItem(
-                                id=event.control.id,
-                                classes="file_patterns",
-                                load_object=event.control.get_pattern_match_results,
-                                callback_message=event.control.get_callback_message,
-                            )
-                        )
+
+    #     # creating copies to all feature tasks
+    #     # the one that was is the latest one, create new instances
+    #     if event.control.id == self.current_file_pattern_id and event.value["file_pattern"] != "":
+    #         # loop through the all existing event file panel
+    #         for w in self.app._screen_stacks["_default"][0].walk_children((self.the_class)):
+    #             # create new fileitem in every other EventFilePanel
+    #             if w != self:
+    #                 file_items_ids_in_other_file_panel = [
+    #                     other_file_item_widget.id for other_file_item_widget in w.walk_children(FileItem)
+    #                 ]
+    #                 # id does not exist, mount new FileItem
+    #                 if event.control.id not in file_items_ids_in_other_file_panel:
+    #                     await w.get_widget_by_id(self.id_string).mount(
+    #                         FileItem(
+    #                             id=event.control.id,
+    #                             classes="file_patterns",
+    #                             load_object=event.control.get_pattern_match_results,
+    #                             callback_message=event.control.get_callback_message,
+    #                         )
+    #                     )
 
 
 class EventFilePanel(FilePanelTemplate):

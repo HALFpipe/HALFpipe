@@ -231,6 +231,7 @@ class FeatureTemplate(Widget):
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message: Message):
+        print("ffffffffffffffffffffffile paneeeeeeeeeeeeeeeeeeel changed", message.value)
         tagvals = set(self.tagvals)
         template_path = message.value["file_pattern"]
         if isinstance(template_path, Text):
@@ -251,7 +252,7 @@ class FeatureTemplate(Widget):
 
     def update_tag_selection_by_children_walk(self, tagvals: set):
         for tagval in tagvals:
-            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=False))
+            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"

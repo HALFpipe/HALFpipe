@@ -284,8 +284,8 @@ class SelectCurrentWithInput(Horizontal):
     class Toggle(Message):
         """Request toggle overlay."""
 
-    def __init__(self, placeholder: str) -> None:
-        super().__init__()
+    def __init__(self, placeholder: str, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(id=id, classes=classes)
         self.placeholder = placeholder
 
     def compose(self) -> ComposeResult:
@@ -391,9 +391,14 @@ class SelectOrInputPath(Select):
         self.prompt_default = prompt_default
         self._setup_variables_for_options(options)
 
-    def compose(self) -> ComposeResult:
+    def prepare_compose(self):
         yield self.input_class(self._value)
         yield SelectOverlay()
+
+    def compose(self) -> ComposeResult:
+        # Collect results from prepare_compose
+        for widget in self.prepare_compose():
+            yield widget
 
     def _setup_variables_for_options(
         self,

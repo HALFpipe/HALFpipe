@@ -195,7 +195,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     def __init__(
         self,
-        path: str,
+        path: str | Text,
         highlight_colors=None,
         labels=None,
         title="X",
@@ -204,7 +204,7 @@ class PathPatternBuilder(DraggableModalScreen):
     ):
         super().__init__(*args, **kwargs)
         self.title_bar.title = title
-        self.path = path
+        self.path = path.plain if isinstance(path, Text) else path
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"] if highlight_colors is None else highlight_colors
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}

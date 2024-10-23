@@ -2,6 +2,7 @@
 
 import copy
 import re  # Regular expressions for matching patterns in strings
+from typing import Type, Union
 
 from rich.cells import get_character_cell_size
 from rich.text import Text
@@ -14,6 +15,26 @@ from textual.message import Message
 from textual.widgets import Input
 
 from .select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
+
+
+def find_tag_positions_by_color(input_string, color_tag_dict):
+    # List to store the results as tuples (start, end, color)
+    tag_positions = []
+
+    # Iterate over the dictionary (color as key, tag as value)
+    for color, tag in color_tag_dict.items():
+        # Pattern to match the tag inside curly braces
+        pattern = r"\{" + re.escape(tag) + r"\}"
+
+        # Find all matches
+        for match in re.finditer(pattern, input_string):
+            # always highlight
+            if not color.startswith("on"):
+                color = "on " + color
+            # Append a tuple with (start, end, color) to the list
+            tag_positions.append((match.start(), match.end(), color))
+
+    return tag_positions
 
 
 def merge_overlapping_tuples(tuples) -> list:
@@ -243,6 +264,7 @@ class SegmentHighlighting(Input):
         return text
 
     def __init__(self, path: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None, *args, **kwargs):
+        print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", colors_and_labels)
         super().__init__(*args, value=path, highlighter=self.highlighting, id=id, classes=classes, **kwargs)
         self.colors_and_labels = colors_and_labels
         self.highlight_start_position: None | int = None
@@ -250,7 +272,7 @@ class SegmentHighlighting(Input):
         self.is_highlighting = False
         # List to store highlight ranges (start, end) and their colors.
         self.previous_highlights: list = []
-        self.current_highlights: list = []
+        self.current_highlights: list = find_tag_positions_by_color(path, colors_and_labels)
         self.highlight_start_direction: None | int = None
         self.highlight_color = list(self.colors_and_labels.keys())[0]  # Default highlight color, start with the first one
         self.mouse_at_drag_start: Offset | None = None
@@ -258,9 +280,18 @@ class SegmentHighlighting(Input):
         self.highlighting_with_mouse = False
         # copy this here, so that once we hit the reset button we get it back
         self.original_value = path
+        print("__init____init____init____init____init__", self.current_highlights)
 
     def update_colors_and_labels(self, new_colors_and_labels):
         self.colors_and_labels = new_colors_and_labels
+
+    def on_mount(self):
+        print("vvaaaaaaaaaaaaaaaaaaaaaaaaaaaalue", self.value)
+        self.current_highlights = find_tag_positions_by_color(self.value, self.colors_and_labels)
+        print("on_mounton_mounton_mounton_mounton_mount", self.current_highlights)
+
+    def on_paste(self, event: events.Paste):
+        self.current_highlights = find_tag_positions_by_color(event.text, self.colors_and_labels)
 
     @property
     def _value(self) -> Text:
@@ -271,6 +302,7 @@ class SegmentHighlighting(Input):
             text = Text(self.value, no_wrap=True, overflow="ignore")
             if self.highlighter is not None:
                 text = self.highlighter(text, self.current_highlights)
+            print("_value_value_value_value_value_value_value", self.current_highlights)
             return text
 
     def action_cursor_left(self) -> None:
@@ -448,10 +480,14 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
         Updates the colors and labels for the input widget.
     """
 
+    def __init__(self, placeholder: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(placeholder=placeholder, id=id, classes=classes)
+        self.colors_and_labels = colors_and_labels
+
     def compose(self) -> ComposeResult:
-        self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"]
-        self.labels = ["subject", "Session", "Run", "Acquisition", "task"]
-        colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
+        # self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"]
+        # self.labels = ["subject", "Session", "Run", "Acquisition", "task"]
+        # colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
         # Need to change MyInput for SegmentHighlighting(Input) because both are subclass of Input
         # SegmentHighlighting(Input) and has this _apend_highlight
         yield HorizontalScroll(
@@ -459,7 +495,7 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
                 name="select_input",
                 placeholder=self.placeholder,
                 path=self.placeholder,
-                colors_and_labels=colors_and_labels,
+                colors_and_labels=self.colors_and_labels,
                 id="input_prompt",
             ),
             id="input_prompt_horizontal_scroll",
@@ -467,8 +503,8 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
         yield MyStatic("▼", classes="arrow down-arrow")
         yield MyStatic("▲", classes="arrow up-arrow")
 
-    def update_colors_and_labels(self, new_colors_and_labels):
-        self.get_widget_by_id("input_prompt").update_colors_and_labels(new_colors_and_labels)
+    # def update_colors_and_labels(self, new_colors_and_labels):
+    #     self.get_widget_by_id("input_prompt").update_colors_and_labels(new_colors_and_labels)
 
 
 class InputWithColoredSuggestions(SelectOrInputPath):
@@ -500,7 +536,9 @@ class InputWithColoredSuggestions(SelectOrInputPath):
     """
 
     # Switches the Input class, in the standard one, there is MyInput(Input)
-    input_class = SelectCurrentWithInputAndSegmentHighlighting
+    input_class: Type[Union[SelectCurrentWithInput, SelectCurrentWithInputAndSegmentHighlighting]] = (
+        SelectCurrentWithInputAndSegmentHighlighting
+    )
 
     def __init__(self, options, *, prompt_default: str = "", top_parent=None, colors_and_labels=None, id=None, classes=None):
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
@@ -509,6 +547,11 @@ class InputWithColoredSuggestions(SelectOrInputPath):
 
     def on_mount(self):
         self.input_class.get_widget_by_id(self, id="input_prompt").update_colors_and_labels(self.colors_and_labels)
+
+    def prepare_compose(self):
+        if issubclass(self.input_class, SelectCurrentWithInputAndSegmentHighlighting):
+            yield self.input_class(self._value, colors_and_labels=self.colors_and_labels)
+        yield SelectOverlay()
 
     @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
