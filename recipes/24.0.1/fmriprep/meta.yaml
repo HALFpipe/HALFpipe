@@ -47,13 +47,13 @@ requirements:
     - sdcflows>=2.8.1
     - smriprep>=0.15.0
     - templateflow>=24.1.0
-    - fsldownloads::fsl-bet2=2111.4
-    - fsldownloads::fsl-flirt=2111.2
-    - fsldownloads::fsl-fast4=2111.3
-    - fsldownloads::fsl-fugue=2201.3
-    - fsldownloads::fsl-mcflirt=2111.0
-    - fsldownloads::fsl-miscmaths=2203.2
-    - fsldownloads::fsl-topup=2203.2
+    - fsl-bet2=2111.4
+    - fsl-flirt=2111.2
+    - fsl-fast4=2111.3
+    - fsl-fugue=2201.3
+    - fsl-mcflirt=2111.0
+    - fsl-miscmaths=2203.2
+    - fsl-topup=2203.2
 
 test:
   imports:
