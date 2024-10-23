@@ -136,8 +136,8 @@ FROM builder AS smriprep
 ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld;
-COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld;
+COPY --from=templateflow /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/${fmriprep_version}/smriprep,target=/smriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -176,10 +176,8 @@ ARG fmriprep_version
 COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=rmath /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=pytest-textual-snapshot /opt/conda/conda-bld /opt/conda/conda-bld
-# RUN if [ "$fmriprep_version" = "24.0.1" ]; then \
 COPY --from=afni /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=fmripost_aroma /opt/conda/conda-bld /opt/conda/conda-bld
-# fi
 RUN conda index /opt/conda/conda-bld
 # Mount .git folder too for setuptools_scm
 RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes/halfpipe \
@@ -257,15 +255,20 @@ ENV LANG="C.UTF-8" \
     # options:
     # /opt/conda/share/fsl
     # /opt/conda/bin/fsl
-    # /opt/conda
+    # /opt/conda/bin
+    # /opt/conda/
     FSLOUTPUTTYPE="NIFTI_GZ" \
     FSLMULTIFILEQUIT="TRUE" \
     FSLLOCKDIR="" \
     FSLMACHINELIST="" \
     FSLREMOTECALL="" \
     FSLGECUDAQ="cuda.q" \
-    FSLWISH="/opt/conda/bin/wish"
+    FSLWISH="/opt/conda/bin/fslwish"
     # point to FSLwish, but maybe not necessary since we dont want graphics
+
+# Nipype expects fslversion in $FSLDIR/etc/fslversion
+# but in our container it is in /opt/conda/bin/version, so we symlink to it
+RUN ln -s /opt/conda/bin/fslversion /opt/conda/etc/fslversion
 
 ENV PATH="$FSLDIR/bin:$PATH"
 ENV PATH="/opt/conda/bin:$PATH"

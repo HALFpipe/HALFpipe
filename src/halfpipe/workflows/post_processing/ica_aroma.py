@@ -113,6 +113,8 @@ def init_ica_aroma_components_wf(
 
     #! There is a new config for fmripost_aroma:
     # config needs to come from fmripost_aroma, not fmriprep
+    if workdir is None:
+        raise ValueError("`workdir` must be provided and cannot be None.")
     config.workflow.melodic_dim = aroma_melodic_dim
     config.workflow.denoise_method = None  # disable denoising data
     config.execution.output_dir = Path(workdir) / "derivatives"

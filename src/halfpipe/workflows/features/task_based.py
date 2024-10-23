@@ -226,6 +226,9 @@ def init_taskbased_wf(
     )
     workflow.connect(stats, "out_stat", cutoff, "obj")
 
+    # fslversion = fsl.Info.version()
+    pdb.set_trace()
+
     # actually estimate the first level model
     # ? tconf_file is not taken anymore by nipype interface?
     modelestimate = pe.Node(
@@ -234,7 +237,6 @@ def init_taskbased_wf(
         mem_gb=memcalc.series_std_gb * 1.5,
     )
 
-    pdb.set_trace()
     # FILMGLS is not detecting the right version of FSL
 
     # FSL DIR needs to be set: fmriprep 20 dockerfile
