@@ -145,6 +145,7 @@ class FileItem(Widget):
         load_object=None,
         callback_message=None,
         message_dict=None,
+        execute_pattern_class_on_mount=True,
     ) -> None:
         """ """
         super().__init__(id=id, classes=classes)
@@ -166,6 +167,7 @@ class FileItem(Widget):
             self.callback_message = callback_message
 
         self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        self.execute_pattern_class_on_mount = execute_pattern_class_on_mount
 
     def prettify_message_dict(self, message_dict):
         info_string = Text("")
@@ -276,7 +278,7 @@ class FileItem(Widget):
                 self.styles.border = ("solid", "red")
                 self.success_value = False
             if len(pattern_match_results["files"]) > 0:
-                if self.pattern_class is not None:
+                if self.pattern_class is not None and self.execute_pattern_class_on_mount:
                     await self.execute_class()
 
             if self.from_edit:

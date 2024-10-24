@@ -150,16 +150,26 @@ class FilePanelTemplate(Widget):
         if load_object is None:
             await mount_file_item_widget()
         else:
+            # Mounting, for example, when loading the spec file
             if self.the_class is not None:
-                await self.get_widget_by_id(self.id_string).mount(
-                    FileItem(
-                        id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
-                        classes="file_patterns",
-                        load_object=load_object,
-                        message_dict=message_dict,
-                        # pattern_class=self.pattern_class(),
+                # EventFilePanel has pattern_class=None by default, since when user is adding it, he/she is prompt to
+                # specify the type. However, if loading from a spec file, we need to determine this by the extension of the
+                # item in the spec file
+                if self.pattern_class is None:
+                    extension_mapping = {".tsv": TsvEventsStep, ".mat": MatEventsStep, ".txt": TxtEventsStep}
+                    self.pattern_class = extension_mapping.get(load_object.__dict__["extension"])
+
+                if self.pattern_class is not None:
+                    await self.get_widget_by_id(self.id_string).mount(
+                        FileItem(
+                            id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                            classes="file_patterns",
+                            load_object=load_object,
+                            message_dict=message_dict,
+                            pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
+                            execute_pattern_class_on_mount=False,
+                        )
                     )
-                )
 
                 self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
                 self.the_class.file_pattern_counter += 1
