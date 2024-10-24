@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
-
-sys.path.append("/home/tomas/github/HALFpipe/src/")
+import re
 
 from rich.text import Text
 from textual import events, on
@@ -21,6 +19,17 @@ from .pattern_suggestor import (
 
 
 # utilities
+def check_wrapped_tags(path, tags):
+    # Regular expression to check for keywords wrapped in curly braces
+    pattern = r"\{(" + "|".join(tags) + r")\}"
+
+    # Search for the pattern in the input string
+    match = re.search(pattern, path)
+
+    # Return True if a match is found, otherwise False
+    return bool(match)
+
+
 def evaluate_files(newpathname):
     """
     Function to evaluate how many and what files were found based on the provided file pattern.
@@ -53,6 +62,8 @@ def evaluate_files(newpathname):
     schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map", "desc"]
     dironly = False
 
+    # empty string gives strange behaviour!
+    newpathname = newpathname if newpathname != "" else "/"
     tag_glob_generator = tag_glob(newpathname, schema_entities + ["suggestion"], dironly)
 
     new_suggestions = set()
@@ -81,6 +92,7 @@ def evaluate_files(newpathname):
 
             if _scan_requested_event.is_set():
                 break
+
     except ValueError as e:
         print("Error scanning files: %s", e)
 
