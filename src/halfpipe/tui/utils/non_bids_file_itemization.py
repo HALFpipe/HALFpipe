@@ -267,7 +267,25 @@ class FileItem(Widget):
         if pattern_match_results is not False:
             self.pattern_match_results = pattern_match_results
             # Update the static label using the file pattern.
-            self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
+            from .pattern_suggestor import find_tag_positions_by_color
+
+            def highlighting(text, current_highlights):
+                """Highlighting function, needs to be defined before init."""
+                for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
+                    text.stylize(style, s, e)
+                return text
+
+            if self.pattern_class is not None:
+                colors_and_labels = dict(
+                    zip(self.pattern_class.get_entity_colors_list, self.pattern_class.get_entities, strict=False)
+                )
+                current_highlights = find_tag_positions_by_color(pattern_match_results["file_pattern"], colors_and_labels)
+            else:
+                current_highlights = []
+            self.get_widget_by_id("static_file_pattern").update(
+                highlighting(Text(pattern_match_results["file_pattern"]), current_highlights)
+            )
+            # self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
             # Tooltip telling us how many files were  found.
             self.get_widget_by_id("show_button").tooltip = pattern_match_results["message"]
             # If 0 files were found, the border is red, otherwise green.

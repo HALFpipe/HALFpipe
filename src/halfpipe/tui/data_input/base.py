@@ -345,7 +345,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     async def _on_button_add_t1_image_button_pressed(self):
         await self.add_t1_image(load_object=None)
 
-    async def add_t1_image(self, pattern_class=True, load_object=None, message_dict=None):
+    async def add_t1_image(self, pattern_class=True, load_object=None, message_dict=None, execute_pattern_class_on_mount=True):
         pattern_class = AnatStep(app=self.app) if pattern_class is True else None
         await self.get_widget_by_id("t1_image_panel").mount(
             FileItem(
@@ -354,6 +354,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 pattern_class=pattern_class,
                 load_object=load_object,
                 message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
             )
         )
         self.t1_file_pattern_counter += 1
@@ -363,7 +364,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     async def _on_button_add_bold_image_button(self):
         await self.add_bold_image(load_object=None)
 
-    async def add_bold_image(self, pattern_class=True, load_object=None, message_dict=None):
+    async def add_bold_image(
+        self, pattern_class=True, load_object=None, message_dict=None, execute_pattern_class_on_mount=True
+    ):
         pattern_class = BoldStep(app=self.app) if pattern_class is True else None
         await self.get_widget_by_id("bold_image_panel").mount(
             FileItem(
@@ -372,6 +375,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 pattern_class=pattern_class,
                 load_object=load_object,
                 message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
             )
         )
         self.bold_file_pattern_counter += 1

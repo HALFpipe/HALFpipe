@@ -185,6 +185,9 @@ spec.json file it is possible to load the therein configuration.",
             preprocessing_widget = preprocessing_widget.refresh(recompose=True)
 
             for f in self.existing_spec.files:
+                # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
+                # here we replace it back for the consistency.
+                f.__dict__["path"] = f.__dict__["path"].replace("sub", "subject")
                 if f.datatype == "bids":
                     ctx.cache["bids"]["files"] = f.path
                     data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
@@ -196,20 +199,24 @@ spec.json file it is possible to load the therein configuration.",
                 elif f.suffix == "bold":
                     message_dict = {i: [str(f.metadata[i])] for i in f.metadata if i == "repetition_time"}
                     widget_name = await data_input_widget.add_bold_image(
-                        pattern_class=False, load_object=f, message_dict=message_dict
+                        load_object=f, message_dict=message_dict, execute_pattern_class_on_mount=False
                     )
                     ctx.cache[widget_name]["files"] = f
-
                 elif f.suffix == "T1w":
-                    widget_name = await data_input_widget.add_t1_image(pattern_class=False, load_object=f, message_dict=None)
+                    widget_name = await data_input_widget.add_t1_image(
+                        load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                    )
                     ctx.cache[widget_name]["files"] = f
                 elif f.suffix == "events":
                     self.event_file_objects.append(f)
                 elif f.suffix == "atlas":
+                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "atlas")
                     self.atlas_file_objects.append(f)
                 elif f.suffix == "seed":
+                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "seed")
                     self.seed_map_file_objects.append(f)
                 elif f.suffix == "map":
+                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "map")
                     self.spatial_map_file_objects.append(f)
 
             ctx.refresh_available_images()
