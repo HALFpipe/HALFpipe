@@ -213,6 +213,7 @@ class FileItem(Widget):
                         title=self.title,
                         highlight_colors=self.pattern_class.get_entity_colors_list,
                         labels=self.pattern_class.get_entities,
+                        pattern_class=self.pattern_class,
                     ),
                     self._update_file_pattern,
                 )
@@ -245,6 +246,7 @@ class FileItem(Widget):
                     title=self.title,
                     highlight_colors=self.pattern_class.get_entity_colors_list,
                     labels=self.pattern_class.get_entities,
+                    pattern_class=self.pattern_class,
                 ),
                 self._update_file_pattern,
             )
@@ -276,6 +278,13 @@ class FileItem(Widget):
                 current_highlights = find_tag_positions_by_color(pattern_match_results["file_pattern"], colors_and_labels)
             else:
                 current_highlights = []
+
+            # ensure that this is a string before wrapping it as rich Text
+            pattern_match_results["file_pattern"] = (
+                pattern_match_results["file_pattern"].plain
+                if isinstance(pattern_match_results["file_pattern"], Text)
+                else pattern_match_results["file_pattern"]
+            )
             self.get_widget_by_id("static_file_pattern").update(
                 highlighting(Text(pattern_match_results["file_pattern"]), current_highlights)
             )

@@ -114,6 +114,12 @@ class FilePatternStep:
     def get_required_entities(self):
         return self.required_entities
 
+    def check_extension(self, path):
+        filedict = {**self.filedict, "path": path, "tags": {}}
+        _, ext = split_ext(path)
+        filedict["extension"] = self._transform_extension(ext)
+        self.schema().load(filedict)
+
     async def push_path_to_context_obj(self, path):
         # run
         inv = {alias: entity for entity, alias in self.entity_display_aliases.items()}

@@ -25,6 +25,9 @@ def highlighting(text, current_highlights):
 
 
 def find_tag_positions_by_color(input_string, color_tag_dict):
+    # ensure that this is not a rich Text, but a normal string
+    input_string = input_string.plain if isinstance(input_string, Text) else input_string
+
     # List to store the results as tuples (start, end, color)
     tag_positions = []
 

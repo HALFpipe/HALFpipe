@@ -19,6 +19,19 @@ from .pattern_suggestor import (
 
 
 # utilities
+def convert_validation_error_to_string(error):
+    # `error.messages` contains the validation errors as a dictionary
+    result = []
+
+    for field, messages in error.messages.items():
+        # Join the list of error messages for each field into a single string
+        messages_str = ", ".join(messages)
+        result.append(f"{field}: {messages_str}")
+
+    # Return all error messages concatenated into a single string, separated by '; '
+    return "; ".join(result)
+
+
 def check_wrapped_tags(path, tags):
     # Regular expression to check for keywords wrapped in curly braces
     pattern = r"\{(" + "|".join(tags) + r")\}"
@@ -211,6 +224,7 @@ class PathPatternBuilder(DraggableModalScreen):
         highlight_colors=None,
         labels=None,
         title="X",
+        pattern_class=None,
         *args,
         **kwargs,
     ):
@@ -222,6 +236,9 @@ class PathPatternBuilder(DraggableModalScreen):
         self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
         self.mandatory_tag = f"{{{self.labels[0]}}}"
+        # TODO: since now we are always passing the particular pattern_class to the path_pattern_builder, we do not need
+        # to pass colors and labels separately, thus this needs to be cleaned through the whole code
+        self.pattern_class = pattern_class
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
@@ -338,6 +355,29 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#ok_button")
     def _ok(self, event: Button.Pressed):
+        # Here wer try to catch the Marshmallow schema error, if the extension is wrong
+        try:
+            path = (
+                self.pattern_match_results["file_pattern"].plain
+                if isinstance(self.pattern_match_results["file_pattern"], Text)
+                else self.pattern_match_results["file_pattern"]
+            )
+            self.pattern_class.check_extension(path)
+            self._ok_part_two()
+        except Exception as e:
+            self.app.push_screen(
+                Confirm(
+                    convert_validation_error_to_string(e),
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="File pattern error",
+                    classes="confirm_error",
+                )
+            )
+
+    def _ok_part_two(self):
+        # if all is good from '_ok', continue here
         if self.mandatory_tag not in self.pattern_match_results["file_pattern"]:
             self.app.push_screen(
                 Confirm(
