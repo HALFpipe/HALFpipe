@@ -11,12 +11,12 @@ build:
 
 requirements:
   host:
-    - python
+    - python 3.11.*
     - pip
   run:
     - ants
     - rmath
-    - python
+    - python 3.11.*
     - nipype>=1.8.1
     - fmriprep
     - smriprep
@@ -66,6 +66,7 @@ requirements:
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
+    - python
     - fsl-flameo
     - fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
     - afni-3dfwhmx
