@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-import pdb
 from math import isfinite
 from pathlib import Path
 
@@ -227,7 +226,7 @@ def init_taskbased_wf(
     workflow.connect(stats, "out_stat", cutoff, "obj")
 
     # fslversion = fsl.Info.version()
-    pdb.set_trace()
+    # pdb.set_trace()
 
     # actually estimate the first level model
     # ? tconf_file is not taken anymore by nipype interface?

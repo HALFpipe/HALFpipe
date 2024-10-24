@@ -69,6 +69,8 @@ def test_feature_extraction(tmp_path, mock_spec):
     graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
+    # pdb.set_trace()
+    # CREATE NEW ASSERTION because sdc_estimate_wf is not existing anymore
     assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
 
     parser = build_parser()

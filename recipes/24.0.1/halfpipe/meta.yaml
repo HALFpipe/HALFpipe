@@ -1,16 +1,9 @@
-{% set name = "halfpipe" %}
-{% set version = "4f8396c73523239e004bf2f320f4e76b626c0dea" %}
-
-# Dependencies derived from:
-# requirements.in
-
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "halfpipe"
+  version: "unknown"
 
 source:
-  git_url: https://github.com/HALFpipe/HALFpipe.git
-  git_rev: "{{ version }}"
+  git_url: ../../..
 
 build:
   number: 0
@@ -73,8 +66,8 @@ requirements:
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
-    - fsldownloads::fsl-flameo
-    - fsldownloads::fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
+    - fsl-flameo
+    - fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
     - afni-3dfwhmx
     - afni-3dtproject
     - fmripost_aroma
