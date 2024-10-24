@@ -239,6 +239,7 @@ class PathPatternBuilder(DraggableModalScreen):
                 Button("Browse", id="browse_button"),
                 Button("Reset highlights", id="reset_button"),
                 Button("Reset all", id="reset_all"),
+                Button("Clear all", id="clear_all"),
                 Button("Submit", id="submit_button"),
                 id="button_panel",
             ),
@@ -282,6 +283,10 @@ class PathPatternBuilder(DraggableModalScreen):
     @on(Button.Pressed, "#reset_all")
     def reset_all(self):
         self.get_widget_by_id("input_prompt").reset_all()
+
+    @on(Button.Pressed, "#clear_all")
+    def clear_all(self):
+        self.get_widget_by_id("input_prompt").value = ""
 
     @on(Button.Pressed, "#submit_button")
     def submit_highlights(self):

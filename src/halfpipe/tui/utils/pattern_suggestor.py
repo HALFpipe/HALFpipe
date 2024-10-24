@@ -17,6 +17,13 @@ from textual.widgets import Input
 from .select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
 
 
+def highlighting(text, current_highlights):
+    """Highlighting function, needs to be defined before init."""
+    for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
+        text.stylize(style, s, e)
+    return text
+
+
 def find_tag_positions_by_color(input_string, color_tag_dict):
     # List to store the results as tuples (start, end, color)
     tag_positions = []
@@ -257,15 +264,15 @@ class SegmentHighlighting(Input):
         Binding("shift+right", "cursor_right_highlight", "cursor_highlight", show=False),
     ]
 
-    def highlighting(self, text, current_highlights):
-        """Highlighting function, needs to be defined before init."""
-        for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
-            text.stylize(style, s, e)
-        return text
+    # def highlighting(self, text, current_highlights):
+    #     """Highlighting function, needs to be defined before init."""
+    #     for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
+    #         text.stylize(style, s, e)
+    #     return text
 
     def __init__(self, path: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None, *args, **kwargs):
         print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", colors_and_labels)
-        super().__init__(*args, value=path, highlighter=self.highlighting, id=id, classes=classes, **kwargs)
+        super().__init__(*args, value=path, highlighter=highlighting, id=id, classes=classes, **kwargs)
         self.colors_and_labels = colors_and_labels
         self.highlight_start_position: None | int = None
         # Flag to indicate whether the widget is in highlighting mode.

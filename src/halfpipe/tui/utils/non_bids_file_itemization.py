@@ -17,6 +17,7 @@ from ..utils.confirm_screen import SimpleMessageModal
 from ..utils.context import ctx
 from ..utils.list_of_files_modal import ListOfFiles
 from ..utils.path_pattern_builder import PathPatternBuilder, evaluate_files
+from .pattern_suggestor import find_tag_positions_by_color, highlighting
 
 
 class FileItem(Widget):
@@ -221,7 +222,7 @@ class FileItem(Widget):
             else:
                 pattern_load = {}
                 pattern_load["file_pattern"] = self.load_object.path
-                message, filepaths = evaluate_files(self.load_object.path.replace("{sub}", "{subject}"))
+                message, filepaths = evaluate_files(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
                 self._update_file_pattern(pattern_load)
@@ -267,13 +268,6 @@ class FileItem(Widget):
         if pattern_match_results is not False:
             self.pattern_match_results = pattern_match_results
             # Update the static label using the file pattern.
-            from .pattern_suggestor import find_tag_positions_by_color
-
-            def highlighting(text, current_highlights):
-                """Highlighting function, needs to be defined before init."""
-                for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
-                    text.stylize(style, s, e)
-                return text
 
             if self.pattern_class is not None:
                 colors_and_labels = dict(

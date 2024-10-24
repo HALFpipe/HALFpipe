@@ -187,7 +187,7 @@ spec.json file it is possible to load the therein configuration.",
             for f in self.existing_spec.files:
                 # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
                 # here we replace it back for the consistency.
-                f.__dict__["path"] = f.__dict__["path"].replace("sub", "subject")
+                f.__dict__["path"] = f.__dict__["path"].replace("{sub}", "{subject}")
                 if f.datatype == "bids":
                     ctx.cache["bids"]["files"] = f.path
                     data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
@@ -210,13 +210,13 @@ spec.json file it is possible to load the therein configuration.",
                 elif f.suffix == "events":
                     self.event_file_objects.append(f)
                 elif f.suffix == "atlas":
-                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "atlas")
+                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{atlas}")
                     self.atlas_file_objects.append(f)
                 elif f.suffix == "seed":
-                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "seed")
+                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{seed}")
                     self.seed_map_file_objects.append(f)
                 elif f.suffix == "map":
-                    f.__dict__["path"] = f.__dict__["path"].replace("desc", "map")
+                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{map}")
                     self.spatial_map_file_objects.append(f)
 
             ctx.refresh_available_images()
