@@ -1,0 +1,45 @@
+{% set name = "fmripost_aroma" %}
+{% set version = "0.0.5" %}
+
+# Dependencies derived from:
+# https://github.com/nipreps/fmripost-aroma/blob/d84d680417bed05eda6a4db6374f2825f4893721/pyproject.toml
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/nipreps/fmripost-aroma.git
+  git_rev: "{{ version }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+
+requirements:
+  host:
+    - python 3.11.*
+    - hatchling
+    - hatch-vcs
+  run:
+    - python 3.11.*
+    - fmriprep
+    - nipype>=1.8.5
+    - nitransforms==23.0.1
+    - nireports
+    - niworkflows
+    - sdcflows
+    - smriprep
+    - typer
+
+test:
+  imports:
+    - fmripost_aroma
+
+
+about:
+  home: https://www.nipreps.org/fmriprep/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: "fMRIprep - a robust and easy-to-use pipeline for preprocessing of functional magnetic resonance images (fMRI) of the brain."

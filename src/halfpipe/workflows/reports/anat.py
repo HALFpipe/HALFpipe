@@ -5,7 +5,12 @@
 from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
+
+try:
+    from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
+except ImportError:
+    from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
+
 from niworkflows.interfaces.utility import KeySelect
 from niworkflows.utils.spaces import SpatialReferences
 
