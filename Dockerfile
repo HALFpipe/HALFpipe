@@ -194,7 +194,7 @@ RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownlo
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN --mount=type=cache,target=/opt/conda/pkgs \
     conda install --yes --use-local \
-    "python=3.11" "nodejs" "sqlite" "halfpipe"
+    "python=3.11" "libzlib=1.2.13" "nodejs" "sqlite" "halfpipe"
 
 RUN conda clean --yes --all --force-pkgs-dirs \
     && find /opt/conda -follow -type f -name "*.a" -delete \
