@@ -13,6 +13,8 @@ requirements:
   host:
     - python 3.11.*
     - pip
+    - setuptools_scm>=6.2
+    - wheel
   run:
     - ants
     - rmath
@@ -73,6 +75,9 @@ requirements:
     - afni-3dtproject
     - fmripost_aroma
     - afni-3dblurtofwhm
+      # experimental user interface
+    - textual==0.60.0
+    - pytest-textual-snapshot
 
 test:
   imports:

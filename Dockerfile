@@ -180,13 +180,12 @@ COPY --from=afni /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=fmripost_aroma /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 # Mount .git folder too for setuptools_scm
-RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes/halfpipe \
+RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes/${fmriprep_version}/halfpipe \
     --mount=source=src,target=/halfpipe/src \
     --mount=source=pyproject.toml,target=/halfpipe/pyproject.toml \
     --mount=source=.git,target=/halfpipe/.git \
     --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/halfpipe"
-     #change this
+    retry conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/${fmriprep_version}/halfpipe"
 
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/miniforge3 AS install
@@ -267,16 +266,8 @@ ENV LANG="C.UTF-8" \
     FSLWISH="/opt/conda/bin/fslwish"
     # point to FSLwish, but maybe not necessary since we dont want graphics
 
-# Nipype expects fslversion in $FSLDIR/etc/fslversion
-# but in our container it is in /opt/conda/bin/version, so we symlink to it
-RUN ln -s /opt/conda/bin/fslversion /opt/conda/etc/fslversion
-
 ENV PATH="$FSLDIR/bin:$PATH"
-ENV PATH="/opt/conda/bin:$PATH"
-# ? source /opt/conda/etc/fslconf/fsl.sh
-
 RUN /bin/bash -c "source /opt/conda/bin/activate base && conda list"
-
 
 # Download all resources
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
