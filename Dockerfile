@@ -190,6 +190,7 @@ RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes
 # We install built recipes and cleans unnecessary files such as static libraries
 FROM condaforge/miniforge3 AS install
 
+RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN --mount=type=cache,target=/opt/conda/pkgs \
     conda install --yes --use-local \
