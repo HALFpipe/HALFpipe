@@ -233,7 +233,7 @@ class PathPatternBuilder(DraggableModalScreen):
         self.path = path.plain if isinstance(path, Text) else path
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"] if highlight_colors is None else highlight_colors
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
-        self.pattern_match_results = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
+        self.pattern_match_results: dict = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
         self.mandatory_tag = f"{{{self.labels[0]}}}"
         # TODO: since now we are always passing the particular pattern_class to the path_pattern_builder, we do not need

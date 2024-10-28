@@ -59,13 +59,13 @@ class SelectionModal(DraggableModalScreen):
     """
 
     def __init__(
-        self, options=None, title="", instructions="Select", id: str | None = None, classes: str | None = None
+        self, options=None | dict, title="", instructions="Select", id: str | None = None, classes: str | None = None
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.title_bar.title = title
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
-        self.options = {"a": "A", "b": "B"} if options is None else options
+        self.options: dict = {"a": "A", "b": "B"} if options is None else options
         self.widgets_to_mount = [
             Static(self.instructions, id="title"),
             RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
@@ -121,7 +121,7 @@ class DoubleSelectionModal(SelectionModal):
     def __init__(self, options=None, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(title=title, id=id, classes=classes)
         self.instructions = instructions
-        self.options = options
+        self.options: dict = options
         self.choice: List[str] = ["default_choice??? todo", "1"]
         self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
