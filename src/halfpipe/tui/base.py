@@ -240,6 +240,11 @@ class MainApp(App):
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
 
+    def hide_tabs(self):
+        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
+
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
         self.get_child_by_type(TabbedContent).active = tab

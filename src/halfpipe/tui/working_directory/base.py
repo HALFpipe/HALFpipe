@@ -3,6 +3,7 @@
 
 import copy
 import os
+from collections import defaultdict
 
 from textual import on, work
 from textual.app import ComposeResult
@@ -18,6 +19,7 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
 from ..utils.filebrowser import FileBrowser, path_test_for_bids
+from ..utils.non_bids_file_itemization import FileItem
 from ..utils.utils import copy_and_rename_file
 
 
@@ -221,6 +223,29 @@ spec.json file it is possible to load the therein configuration.",
 
             ctx.refresh_available_images()
             data_input_widget.update_summaries()
+            if ctx.get_available_images == {}:
+                self.data_input_success = await self.app.push_screen_wait(
+                    Confirm(
+                        "No bold files found! The data input directory in \n"
+                        "the spec.json seems to be not available on your computer!",
+                        title="Error",
+                        left_button_text=False,
+                        right_button_text="OK",
+                        id="input_data_directory_error_modal",
+                        classes="confirm_error",
+                    )
+                )
+                # clear all inputs, basically restart the inputs on the TUI
+                for file_item in self.app.walk_children(FileItem):
+                    file_item.remove()
+                ctx.cache = defaultdict(lambda: defaultdict(dict))
+                self.app.flags_to_show_tabs["from_input_data_tab"] = False
+                self.app.flags_to_show_tabs["from_working_dir_tab"] = False
+                self.app.hide_tabs()
+                self.get_widget_by_id("work_dir_file_browser").update_input("")
+                ctx.workdir = None
+            else:
+                self.data_input_success = True
 
     @work(exclusive=True, name="feature_worker")
     async def mount_features(self):
@@ -248,7 +273,7 @@ spec.json file it is possible to load the therein configuration.",
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.state == WorkerState.SUCCESS:
-            if event.worker.name == "cache_file_worker":
+            if event.worker.name == "cache_file_worker" and self.data_input_success is True:
                 self.mount_features()
             if event.worker.name == "feature_worker":
                 await self.mount_file_panels()
