@@ -74,8 +74,7 @@ class RunCLX(Widget):
 
     @on(Button.Pressed, "#run_button")
     def on_run_button_pressed(self):
-        self.app._return_value = ctx.workdir
-        exit()
+        self.app.exit(result=ctx.workdir)
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
