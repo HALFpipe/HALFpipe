@@ -70,7 +70,7 @@ jobs:
               raise ValueError(f"Unknown reference type: {type}")
 
           path = f"{registry}/{repository_name}"
-          cache_from = f"type=registry,ref={path}:buildcache,ignore-error"
+          cache_from = f"type=registry,ref={path}:buildcache"
           output = dict(
               cache_from=cache_from,
               cache_to=f"{cache_from},compression=zstd,mode=max,ignore-error=true" if push else "",
@@ -175,8 +175,7 @@ jobs:
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
-
-      # Upload snapshot_report.html as an artifact
+    # Upload snapshot_report.html as an artifact
       - name: Upload Snapshot Report
         uses: actions/upload-artifact@v3
         with:
