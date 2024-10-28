@@ -267,6 +267,8 @@ ENV LANG="C.UTF-8" \
     FSLWISH="/opt/conda/bin/fslwish"
     # point to FSLwish, but maybe not necessary since we dont want graphics
 
+RUN echo "6.0.4" > /opt/conda/bin/fslversion
+
 ENV PATH="$FSLDIR/bin:$PATH"
 RUN /bin/bash -c "source /opt/conda/bin/activate base && conda list"
 
