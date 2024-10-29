@@ -4,6 +4,7 @@
 
 import json
 import os
+import pdb
 import shutil
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -69,7 +70,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     graphs = init_execgraph(tmp_path, workflow)
     graph = next(iter(graphs.values()))
 
-    # pdb.set_trace()
+    pdb.set_trace()
     # CREATE NEW ASSERTION because sdc_estimate_wf is not existing anymore
     assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
 

@@ -131,13 +131,6 @@ def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
     with tarfile.open(inputtarpath) as fp:
         fp.extractall(tmp_path)
 
-    # try:
-    #     with tarfile.open(inputtarpath) as fp:
-    #         fp.extractall(tmp_path)
-    #     print("File extracted successfully")
-    # except EOFError:
-    #     raise RuntimeError(f"The file {inputtarpath} is incomplete or corrupted.")
-
     maps = {
         m: (tmp_path / "data" / "atlases" / "HarvardOxford" / f"HarvardOxford-{m}.nii.gz")
         for m in ("cort-prob-1mm", "cort-prob-2mm", "sub-prob-1mm", "sub-prob-2mm")
