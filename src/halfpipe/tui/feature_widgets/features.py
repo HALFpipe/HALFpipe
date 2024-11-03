@@ -128,13 +128,19 @@ class FeatureTemplate(Widget):
             self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
         if "grand_mean_scaling" not in self.setting_dict:
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
-        self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
-        if self.setting_dict["filters"] != []:
-            for image in self.setting_dict["filters"][0]["values"]:
-                self.images_to_use["task"][image] = True
+        self.images_to_use: dict | None
+        if ctx.get_available_images != {}:
+            self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
         else:
-            for image in self.images_to_use["task"]:
-                self.images_to_use["task"][image] = True
+            self.images_to_use = None
+
+        if self.images_to_use is not None:
+            if self.setting_dict["filters"] != []:
+                for image in self.setting_dict["filters"][0]["values"]:
+                    self.images_to_use["task"][image] = True
+            else:
+                for image in self.images_to_use["task"]:
+                    self.images_to_use["task"][image] = True
 
         confounds_options = {
             "ICA-AROMA": ["ICA-AROMA", False],
@@ -204,18 +210,20 @@ class FeatureTemplate(Widget):
             classes="components",
         )
 
-        self.images_to_use_selection_panel = SelectionList[str](
-            *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"].keys()],
-            id="images_to_use_selection",
-            classes="components",
-        )
+        if self.images_to_use is not None:
+            self.images_to_use_selection_panel = SelectionList[str](
+                *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"].keys()],
+                id="images_to_use_selection",
+                classes="components",
+            )
         self.tag_panel = SelectionList[str](
             *[Selection(tag, tag, True) for tag in self.tagvals], id="tag_selection", classes="components"
         )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
-            yield self.images_to_use_selection_panel
+            if self.images_to_use is not None:
+                yield self.images_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
             yield LabelWithInputBox(
                 label="Minimum atlas region coverage by individual brain mask",
@@ -255,7 +263,8 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
 
     async def on_mount(self) -> None:
-        self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+        if self.images_to_use is not None:
+            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
@@ -379,7 +388,8 @@ class AtlasSeedDualRegBased(FeatureTemplate):
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
-            yield self.images_to_use_selection_panel
+            if self.images_to_use is not None:
+                yield self.images_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
             yield self.tag_panel
             yield LabelWithInputBox(
@@ -517,26 +527,29 @@ class TaskBased(FeatureTemplate):
     def __init__(self, this_user_selection_dict, **kwargs) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
 
-        all_possible_conditions = []
-        for v in self.images_to_use["task"].keys():
-            all_possible_conditions += extract_conditions(entity="task", values=[v])
+        if self.images_to_use is not None:
+            all_possible_conditions = []
+            for v in self.images_to_use["task"].keys():
+                all_possible_conditions += extract_conditions(entity="task", values=[v])
 
-        if self.feature_dict["contrasts"] is not None:
-            self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
-                all_possible_conditions,
-                feature_contrasts_dict=self.feature_dict["contrasts"],
-                id="model_conditions_and_constrasts",
-                classes="components",
-            )
+            if self.feature_dict["contrasts"] is not None:
+                self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
+                    all_possible_conditions,
+                    feature_contrasts_dict=self.feature_dict["contrasts"],
+                    id="model_conditions_and_constrasts",
+                    classes="components",
+                )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
-            yield self.images_to_use_selection_panel
-            yield self.model_conditions_and_contrast_table
+            if self.images_to_use is not None:
+                yield self.images_to_use_selection_panel
+                yield self.model_conditions_and_contrast_table
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
-        self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+        if self.images_to_use is not None:
+            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
         if self.app.is_bids is not True:
             await self.mount(
                 EventFilePanel(id="top_event_file_panel", classes="file_panel components"),
@@ -550,11 +563,12 @@ class TaskBased(FeatureTemplate):
         # subclass
         # try to update it here? this refresh the whole condition list every time that image is changed
         all_possible_conditions = []
-        for v in self.images_to_use["task"].keys():
-            all_possible_conditions += extract_conditions(entity="task", values=[v])
-        self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
+        if self.images_to_use is not None:
+            for v in self.images_to_use["task"].keys():
+                all_possible_conditions += extract_conditions(entity="task", values=[v])
+            self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
 
-        self.update_conditions_table()
+            self.update_conditions_table()
 
     def update_conditions_table(self):
         condition_list = []
