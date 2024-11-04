@@ -64,7 +64,7 @@ def filter_subjects(subjects: list[str], opts: Namespace) -> list[str]:
 
 
 def extract_subject_name(hierarchy):
-    m = re.fullmatch(r"single_subject_(?P<subjectname>.+)_wf", hierarchy[2])
+    m = re.fullmatch(r"sub_(?P<subjectname>.+)_wf", hierarchy[2])
     if m is not None:
         return m.group("subjectname")
 

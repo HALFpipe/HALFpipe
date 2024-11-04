@@ -8,7 +8,6 @@ import shutil
 from multiprocessing import cpu_count
 from pathlib import Path
 
-# import pdb
 import nibabel as nib
 import pytest
 from fmriprep import config
@@ -70,7 +69,6 @@ def test_feature_extraction(tmp_path, mock_spec):
     graphs = init_execgraph(tmp_path, workflow)
     # graph = next(iter(graphs.values()))
 
-    # pdb.set_trace()
     # CREATE NEW ASSERTION because sdc_estimate_wf is not existing anymore
     # assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
 

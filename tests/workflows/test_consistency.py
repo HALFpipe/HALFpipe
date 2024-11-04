@@ -156,7 +156,6 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """
 
     dataset_file = dataset.download(tmp_path)
-
     spec = make_spec(dataset_files=[dataset_file], pcc_mask=pcc_mask, test_settings=settings_list)
     config.nipype.omp_nthreads = cpu_count()
     save_spec(spec, workdir=tmp_path)

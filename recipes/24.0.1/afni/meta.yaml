@@ -33,13 +33,13 @@ requirements:
     - f2c
     - expat
     - gts
-    - freeglut
+    - freeglut # not in macos
     - qhull
     - dcm2niix
     - xorg-libxt
-    - "openmotif-dev>=2.3.8"
+    - "openmotif-dev>=2.3.8" # not in macos
     - libjpeg-turbo
-    - xorg-libxpm
+    - xorg-libxpm # not in macos
     - xorg-libxmu
     - xorg-libxft
     - libxml2
