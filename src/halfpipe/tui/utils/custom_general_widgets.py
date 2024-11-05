@@ -110,7 +110,7 @@ class SwitchWithInputBox(Widget):
             """Alias for self.file_browser."""
             return self.switch_with_input_box
 
-    def __init__(self, label="", value: str | None = None, switch_value: bool = False, **kwargs) -> None:
+    def __init__(self, label="", value: str | None = None, switch_value: bool = True, **kwargs) -> None:
         self.label = label
         self._reactive_switch_value = switch_value
         self._reactive_value = str(value) if value is not None else None
@@ -126,15 +126,21 @@ class SwitchWithInputBox(Widget):
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            TextSwitch(value=self.switch_value is not None),
+            TextSwitch(value=self.switch_value, id="the_switch"),
             Input(value=self.value, placeholder="Value", id="input_switch_input_box"),
         )
 
     def update_label(self, label):
         self.query_one(Static).update(label)
 
+    def update_value(self, value):
+        self.get_widget_by_id("input_switch_input_box").value = value
+
+    def update_switch_value(self, value):
+        self.get_widget_by_id("the_switch").value = value
+
     def on_mount(self):
-        if self.switch_value is True or self.value is not None:
+        if self.switch_value is True:  # or self.value is not None:
             self.get_widget_by_id("input_switch_input_box").styles.visibility = "visible"
         else:
             self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
@@ -157,7 +163,7 @@ class SwitchWithInputBox(Widget):
 
     @on(Input.Changed, "#input_switch_input_box")
     def update_from_input(self):
-        self.value = str(self.get_widget_by_id("input_switch_input_box").value)
+        self.value = self.get_widget_by_id("input_switch_input_box").value
 
 
 class SwitchWithSelect(SwitchWithInputBox):

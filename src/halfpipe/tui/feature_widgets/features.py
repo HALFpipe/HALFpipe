@@ -113,7 +113,7 @@ class FeatureTemplate(Widget):
         self.bandpass_filter_low_key = "lp_width"
         self.bandpass_filter_high_key = "hp_width"
         if "bandpass_filter" not in self.setting_dict:
-            self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": None, "lp_width": None}
+            self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": 125, "lp_width": None}
         else:
             # if we are working with existing dict (i.e. loading from a spec file), then we must identify whether it is
             # gaussian or frequency based filter, so that we can set the correct keys
@@ -189,6 +189,7 @@ class FeatureTemplate(Widget):
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
                 value=self.setting_dict["bandpass_filter"][self.bandpass_filter_low_key],
+                switch_value=False,
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_lp_width",
             ),
@@ -239,7 +240,6 @@ class FeatureTemplate(Widget):
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message: Message):
-        print("ffffffffffffffffffffffile paneeeeeeeeeeeeeeeeeeel changed", message.value)
         tagvals = set(self.tagvals)
         template_path = message.value["file_pattern"]
         if isinstance(template_path, Text):
@@ -293,18 +293,30 @@ class FeatureTemplate(Widget):
         if message.value == "frequency_based":
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in Hertz)")
-            self.setting_dict["bandpass_filter"]["low"] = self.setting_dict["bandpass_filter"]["lp_width"]
-            self.setting_dict["bandpass_filter"]["high"] = self.setting_dict["bandpass_filter"]["hp_width"]
+            # set defaults on toggle
+            self.get_widget_by_id("bandpass_filter_lp_width").update_value("0.01")
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(True)
+            self.get_widget_by_id("bandpass_filter_hp_width").update_value("0.1")
+            self.setting_dict["bandpass_filter"]["low"] = "0.01"
+            self.setting_dict["bandpass_filter"]["high"] = "0.1"
+            # self.setting_dict["bandpass_filter"]["low"] = self.setting_dict["bandpass_filter"]["lp_width"]
+            # self.setting_dict["bandpass_filter"]["high"] = self.setting_dict["bandpass_filter"]["hp_width"]
             self.setting_dict["bandpass_filter"].pop("lp_width")
             self.setting_dict["bandpass_filter"].pop("hp_width")
         elif message.value == "gaussian":
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in seconds)")
+            # set defaults on toggle
+            self.get_widget_by_id("bandpass_filter_lp_width").update_value(None)
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(False)
+            self.get_widget_by_id("bandpass_filter_hp_width").update_value("125")
             # on mount the app also runs through this part and since 'frequency_based' was never set, the low and high
             # do not exist
             if "low" in self.setting_dict["bandpass_filter"]:
-                self.setting_dict["bandpass_filter"]["lp_width"] = self.setting_dict["bandpass_filter"]["low"]
-                self.setting_dict["bandpass_filter"]["hp_width"] = self.setting_dict["bandpass_filter"]["high"]
+                self.setting_dict["bandpass_filter"]["lp_width"] = None
+                self.setting_dict["bandpass_filter"]["hp_width"] = "125"
+                # self.setting_dict["bandpass_filter"]["lp_width"] = self.setting_dict["bandpass_filter"]["low"]
+                # self.setting_dict["bandpass_filter"]["hp_width"] = self.setting_dict["bandpass_filter"]["high"]
                 self.setting_dict["bandpass_filter"].pop("low")
                 self.setting_dict["bandpass_filter"].pop("high")
 
