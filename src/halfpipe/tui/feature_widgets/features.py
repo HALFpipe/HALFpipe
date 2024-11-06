@@ -10,6 +10,7 @@ from textual.widget import Widget
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
+from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
@@ -130,7 +131,7 @@ class FeatureTemplate(Widget):
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
         self.images_to_use: dict | None
         if ctx.get_available_images != {}:
-            self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
+            self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
         else:
             self.images_to_use = None
 
@@ -569,10 +570,26 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
-    @on(SelectionList.SelectedChanged, "#images_to_use_selection")
-    def _on_selection_list_changed_images_to_use_selection(self):
+    @on(SelectionList.SelectionToggled, "#images_to_use_selection")
+    def _on_selection_list_changed_images_to_use_selection(self, message):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
+
+        # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
+        # more-less the same. If there are no choices user gets an error and all options are selected again.
+        if len(self.get_widget_by_id("images_to_use_selection").selected) == 0:
+            self.app.push_screen(
+                Confirm(
+                    "You must selected at least one image!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No images!",
+                    classes="confirm_error",
+                )
+            )
+            self.get_widget_by_id("images_to_use_selection").select_all()
+
         # try to update it here? this refresh the whole condition list every time that image is changed
         all_possible_conditions = []
         if self.images_to_use is not None:

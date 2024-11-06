@@ -99,6 +99,7 @@ class RunCLX(Widget):
         self.refresh_context()
 
     def refresh_context(self):
+        print(ctx.cache)
         self.dump_dict_to_contex()
         self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
         if self.json_data is not None:
@@ -140,10 +141,13 @@ class RunCLX(Widget):
                         setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
                         # if there are no filters, than put there just empty list
                         if key == "filters":
-                            if ctx.cache[name]["settings"]["filters"] == []:
+                            if ctx.cache[name]["settings"]["filters"] == [] or set(
+                                ctx.cache[name]["settings"]["filters"][0]["values"]
+                            ) == set(ctx.get_available_images["task"]):
                                 setattr(ctx.spec.settings[-1], key, [])
-                            elif ctx.cache[name]["settings"]["filters"] != []:
-                                ctx.cache[name]["settings"]["filters"][0]["values"] = []
+                            # WHY I WAS DOING THIS???
+                            # elif ctx.cache[name]["settings"]["filters"] != []:
+                            #     ctx.cache[name]["settings"]["filters"][0]["values"] = []
                     except Exception:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         print(f"An exception occurred: {exc_value}")

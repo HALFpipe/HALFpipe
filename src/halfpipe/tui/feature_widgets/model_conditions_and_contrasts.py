@@ -118,7 +118,6 @@ class ContrastTableInputWindow(DraggableModalScreen):
                 )
             )
         elif any(i.value == "" for i in self.query(".input_values")):
-            # print([i for i in self.query(".input_values")])
             self.app.push_screen(
                 Confirm(
                     "Fill all values!",
@@ -244,7 +243,7 @@ class ModelConditionsAndContrasts(Widget):
         """
         super().__init__(id=id, classes=classes)
         self.feature_contrasts_dict = feature_contrasts_dict
-
+        self.all_possible_conditions = all_possible_conditions
         self.row_dict: dict = {}
         self.update_all_possible_conditions(all_possible_conditions)
 
@@ -302,6 +301,7 @@ class ModelConditionsAndContrasts(Widget):
                     table.add_column(contrast_dict["name"], key=contrast_dict["name"])
                     for row_key in table.rows:
                         table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+        self.condition_values = self.all_possible_conditions
         self.set_heights()
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
@@ -320,7 +320,6 @@ class ModelConditionsAndContrasts(Widget):
         # if there are less rows in the table than in selection, we need to find which one we need to add
         elif len(self.get_widget_by_id("model_conditions_selection").selected) > len(table.rows):
             out = list(set(self.get_widget_by_id("model_conditions_selection").selected) - set(row_dict.keys()))
-            print(self.df)
             [table.add_row(*self.df.loc[o].values, label=o, key=o) for o in out]
 
         self.table_row_index = dict.fromkeys(sorted([r.value for r in table.rows]))
@@ -344,7 +343,7 @@ class ModelConditionsAndContrasts(Widget):
                 + 14
             )
         else:
-            self.styles.height = 1
+            self.styles.height = 20
 
     def action_add_column(self):
         """Add column with new contrast values to te table."""
