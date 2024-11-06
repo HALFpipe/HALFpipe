@@ -141,10 +141,29 @@ class RunCLX(Widget):
                         setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
                         # if there are no filters, than put there just empty list
                         if key == "filters":
-                            if ctx.cache[name]["settings"]["filters"] == [] or set(
-                                ctx.cache[name]["settings"]["filters"][0]["values"]
-                            ) == set(ctx.get_available_images["task"]):
+                            # if ctx.cache[name]["settings"]["filters"] == [] or set(
+                            #     ctx.cache[name]["settings"]["filters"][0]["values"]
+                            # ) == set(ctx.get_available_images["task"]):
+                            #     setattr(ctx.spec.settings[-1], key, [])
+                            #
+                            # if any(isinstance(item, dict) and "values" in item for item in ctx.cache[name]
+                            # ["settings"]["filters"]):
+                            #     if ctx.cache[name]["settings"]["filters"][0]["values"] == []:
+                            #         setattr(ctx.spec.settings[-1], key, [])
+
+                            # this should replace the many ifs above
+                            filters = ctx.cache[name]["settings"]["filters"]
+                            task_images = ctx.get_available_images["task"]
+
+                            # Check if filters is empty, matches task images, or contains an empty 'values' list in
+                            # any dictionary
+                            if (
+                                not filters
+                                or set(filters[0].get("values", [])) == set(task_images)
+                                or any(isinstance(item, dict) and "values" in item and not item["values"] for item in filters)
+                            ):
                                 setattr(ctx.spec.settings[-1], key, [])
+
                             # WHY I WAS DOING THIS???
                             # elif ctx.cache[name]["settings"]["filters"] != []:
                             #     ctx.cache[name]["settings"]["filters"][0]["values"] = []
