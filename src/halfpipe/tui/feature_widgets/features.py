@@ -539,7 +539,8 @@ class TaskBased(FeatureTemplate):
 
     def __init__(self, this_user_selection_dict, **kwargs) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
-
+        if "conditions" not in self.feature_dict:
+            self.feature_dict["conditions"] = []
         if self.images_to_use is not None:
             all_possible_conditions = []
             for v in self.images_to_use["task"].keys():
@@ -549,6 +550,7 @@ class TaskBased(FeatureTemplate):
                 self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
                     all_possible_conditions,
                     feature_contrasts_dict=self.feature_dict["contrasts"],
+                    feature_conditions_list=self.feature_dict["conditions"],
                     id="model_conditions_and_constrasts",
                     classes="components",
                 )
@@ -604,7 +606,6 @@ class TaskBased(FeatureTemplate):
         for value in self.get_widget_by_id("images_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])
 
-        self.feature_dict["conditions"] = condition_list
         self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list

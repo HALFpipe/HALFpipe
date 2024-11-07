@@ -99,7 +99,6 @@ class RunCLX(Widget):
         self.refresh_context()
 
     def refresh_context(self):
-        print(ctx.cache)
         self.dump_dict_to_contex()
         self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
         if self.json_data is not None:

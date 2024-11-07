@@ -227,7 +227,8 @@ class ModelConditionsAndContrasts(Widget):
     def __init__(
         self,
         all_possible_conditions: list,
-        feature_contrasts_dict: list | None = None,
+        feature_contrasts_dict: list,
+        feature_conditions_list: list,
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
@@ -243,6 +244,7 @@ class ModelConditionsAndContrasts(Widget):
         """
         super().__init__(id=id, classes=classes)
         self.feature_contrasts_dict = feature_contrasts_dict
+        self.feature_conditions_list = feature_conditions_list
         self.all_possible_conditions = all_possible_conditions
         self.row_dict: dict = {}
         self.update_all_possible_conditions(all_possible_conditions)
@@ -254,16 +256,16 @@ class ModelConditionsAndContrasts(Widget):
         self.df.set_index("condition", inplace=True)
         self.default_conditions = []
         # if there are dict entries then set defaults
-        if self.feature_contrasts_dict is not None:  # Ensure it is not None
-            if self.feature_contrasts_dict != []:
-                # convert dict to pandas
-                for contrast_dict in self.feature_contrasts_dict:
-                    #   for row_index in self.df.index:
-                    for condition_name in contrast_dict["values"]:
-                        self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
+        # if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        if self.feature_contrasts_dict != []:
+            # convert dict to pandas
+            for contrast_dict in self.feature_contrasts_dict:
+                #   for row_index in self.df.index:
+                for condition_name in contrast_dict["values"]:
+                    self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
 
-                self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
-                self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
+            self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
+            self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
     def watch_condition_values(self) -> None:
         self.update_condition_selection()
@@ -295,12 +297,12 @@ class ModelConditionsAndContrasts(Widget):
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         # read table defaults if there are some
-        if self.feature_contrasts_dict is not None:  # Ensure it is not None
-            if self.feature_contrasts_dict != []:
-                for contrast_dict in self.feature_contrasts_dict:
-                    table.add_column(contrast_dict["name"], key=contrast_dict["name"])
-                    for row_key in table.rows:
-                        table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+        # if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        if self.feature_contrasts_dict != []:
+            for contrast_dict in self.feature_contrasts_dict:
+                table.add_column(contrast_dict["name"], key=contrast_dict["name"])
+                for row_key in table.rows:
+                    table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
         self.condition_values = self.all_possible_conditions
         self.set_heights()
 
@@ -476,8 +478,11 @@ class ModelConditionsAndContrasts(Widget):
         table = self.get_widget_by_id("contrast_table")
         df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
 
-        if self.feature_contrasts_dict is not None:  # Ensure it is not None
-            self.feature_contrasts_dict.clear()
-            # Iterate over each column in the DataFrame
-            for column in df_filtered.columns:
-                self.feature_contrasts_dict.append({"type": "t", "name": column, "values": df_filtered[column].to_dict()})
+        #  if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        self.feature_contrasts_dict.clear()
+        # Iterate over each column in the DataFrame
+        for column in df_filtered.columns:
+            self.feature_contrasts_dict.append({"type": "t", "name": column, "values": df_filtered[column].to_dict()})
+
+        self.feature_conditions_list.clear()
+        self.feature_conditions_list.extend(df_filtered.index.values)
