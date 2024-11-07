@@ -180,18 +180,18 @@ class FmriprepFactory(Factory):
                 continue
 
             if len(collect_fieldmaps(database, bold_file_path, silent=True)) > 0:  # has fieldmaps
-                if func_preproc_wf.get_node("sdc_estimate_wf") is None:
+                # pdb.set_trace() We find 4 fieldmaps, but there is no sdc_estimate_wf
+                if func_preproc_wf.get_node("sdc_estimate_wf") is None:  #! needs to change because this does not exist anymore
                     logger.warning(f'fMRIPrep did not detect field maps for file "{bold_file_path}"')
 
             if global_settings["slice_timing"] is True:
-                if func_preproc_wf.get_node("bold_stc_wf") is None:
+                if func_preproc_wf.get_node("bold_stc_wf") is None:  #! needs to change because this does not exist anymore
                     logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
 
             # disable preproc output to save disk space
             # func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
 
-            # ? THIS DOESN'T SEEM TO EXIST ANYMORE
-            # pdb.set_trace()
+            # ! func_derivatives_wf does not exist anymore, but ds_bold_std is part of bold workflows
             # assert isinstance(func_derivatives_wf, pe.Workflow)
             # for name in ["ds_bold_surfs", "ds_bold_std"]:
             #     node = func_derivatives_wf.get_node(name)
@@ -236,6 +236,9 @@ class FmriprepFactory(Factory):
             inputnode.inputs.fd_thres = global_settings["fd_thres"]
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
+
+            # insert spatial_reference to the node here?
+
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
 
         return bold_file_paths
@@ -282,14 +285,22 @@ class FmriprepFactory(Factory):
                 attrs &= actually_connected_attrs
 
                 for attr in attrs:
+                    logger.warning(
+                        f"Connecting output attribute '{attr}' from node '{outputnode.fullname}' "
+                        f"to input attribute '{attr}' of node '{node.fullname}'"
+                    )
                     self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
                     connected_attrs.add(attr)
 
-            for attr in list(dsattrs):
+            for attr in list(dsattrs):  # Same logic for datasinked attributes? Why separate
                 childtpl = _find_child(hierarchy, attr)
                 if childtpl is not None:
                     childhierarchy, childnode = childtpl
                     childhierarchy, childnode, childattr = _find_input(childhierarchy, childnode, "in_file")
+                    logger.warning(
+                        f"Connecting output attribute '{childattr}' from node '{childnode.fullname}' "
+                        f"to input attribute '{attr}' of node '{node.fullname}'"
+                    )
                     self.connect_attr(childhierarchy, childnode, childattr, nodehierarchy, node, attr)
                     dsattrs.remove(attr)
                     connected_attrs.add(attr)
@@ -299,8 +310,6 @@ class FmriprepFactory(Factory):
         wf = hierarchy[-1]
 
         # anat only
-        # anat_wf = wf.get_node("anat_preproc_wf")
-        # TODO: Is anat_fit a perfect substitute of anat_preproc?
         anat_wf = wf.get_node(
             "anat_fit_wf"
         )  # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/base.py#L317?
@@ -311,7 +320,7 @@ class FmriprepFactory(Factory):
 
             if "skip_vols" in inputattrs:
                 initial_boldref_wf = wf.get_node("bold_fit_wf")
-                # initial_boldref_wf doesn't exist anymore
+                # initial_boldref_wf does not exist anymore
 
                 assert isinstance(initial_boldref_wf, pe.Workflow)
                 outputnode = initial_boldref_wf.get_node("outputnode")
@@ -328,17 +337,23 @@ class FmriprepFactory(Factory):
                 # to skip_vols (bold_confounds_wf)
                 # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/bold/base.py#L679
 
+            # pdb.set_trace() #Bruteforced connections until they work
             for name in [
-                "bold_bold_trans_wf",
-                "bold_hmc_wf",
-                "final_boldref_wf",
-                "bold_reg_wf",
-                "sdc_estimate_wf",
-                "sdc_bypass_wf",
-                "sdc_unwarp_report_wf",
-                "bold_std_trans_wf",
+                # "bold_bold_trans_wf",     # does not exist in 24
+                "bold_fit_wf",
+                "bold_native_wf",
+                "bold_anat_wf",  # new
+                # "bold_hmc_wf",            # Part of bold_fit now
+                # "final_boldref_wf",       # does not exist in 24
+                "bold_reg_wf",  # Part of bold_fit
+                # "sdc_estimate_wf",        # does not exist in 24
+                # "sdc_bypass_wf",          # does not exist in 24
+                # "sdc_unwarp_report_wf",   # does not exist in 24
+                # "bold_std_trans_wf",      #! seems to be renamed, we inherited input to select_std from here
+                "bold_std_wf",
                 "bold_surf_wf",
                 "bold_confounds_wf",
+                "carpetplot_wf",  # new
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
@@ -352,7 +367,7 @@ class FmriprepFactory(Factory):
                 connected_attrs.add("bold_split")
 
             report_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
-            func_report_wf = report_hierarchy[-1].get_node("func_report_wf")  # this is not part of fmriprep
+            func_report_wf = report_hierarchy[-1].get_node("func_report_wf")
             if func_report_wf is not None:
                 _connect([*report_hierarchy, func_report_wf])
 
@@ -363,9 +378,11 @@ class FmriprepFactory(Factory):
             anat_wf = wf.get_node("anat_fit_wf")
 
         assert isinstance(anat_wf, pe.Workflow)
+        # pdb.set_trace()
         for name in ["register_template_wf", "anat_reports_wf"]:
-            # anat_norm_wf does not exist anymore
-            # it is now register_template_wf (+ resample_template?)
+            # ? Ask lea. Why did we only connect "anat_reports_wf", "anat_norm_wf"?
+            # ? if we do anat_wf.list_node_names() we see many more.
+            # ? e.g. Why not connect brain_extraction_wf
             wf = anat_wf.get_node(name)
             _connect([*hierarchy, anat_wf, wf])
         _connect([*hierarchy, anat_wf])
