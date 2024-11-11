@@ -192,7 +192,7 @@ class MainApp(App):
         ("p", "show_tab('preprocessing_tab')", "General preprocessing settings"),
         ("g", "show_tab('models_tab')", "Group level models"),
         ("r", "show_tab('run_tab')", "Check and run"),
-        ("x", "reload", "reload"),
+        # ("x", "reload", "reload"),
     ]
 
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
@@ -255,8 +255,8 @@ class MainApp(App):
         """An action to toggle dark mode."""
         self.dark: bool = not self.dark
 
-    def action_reload(self):
-        self.reload_ui()
+    # def action_reload(self):
+    #     self.reload_ui()
 
     def reload_ui(self) -> None:
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
