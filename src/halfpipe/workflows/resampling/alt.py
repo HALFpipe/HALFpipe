@@ -61,7 +61,7 @@ def init_alt_bold_std_trans_wf(
         jacobian=True,  # TODO: True or false? no documentation in FMRIPREP https://github.com/nipreps/fmriprep/blob/master/fmriprep/workflows/bold/apply.py#L19
         mem_gb={"resampled": memcalc.volume_std_gb},  # was memcalc.volume_std_gb
         omp_nthreads=config.nipype.omp_nthreads,
-        name="bold_volumetric_resample_wf",
+        name="bold_std_trans_wf",  # ?? bold_volumetric_resample_wf
     )
 
     bold_std_trans_wf_inputnode = bold_std_trans_wf.get_node("inputnode")

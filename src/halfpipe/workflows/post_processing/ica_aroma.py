@@ -68,6 +68,7 @@ def _aroma_column_names(mixing: str | None = None, aroma_noise_ics: str | None =
     return column_names, column_indices
 
 
+#! has to change
 def init_ica_aroma_components_wf(
     workdir: str | None = None,
     name: str = "ica_aroma_components_wf",
@@ -79,11 +80,13 @@ def init_ica_aroma_components_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "alt_bold_std",
-                "alt_bold_mask_std",
-                "alt_spatial_reference",
-                "tags",
+                # "alt_bold_std",
+                # "alt_bold_mask_std",
+                # "alt_spatial_reference",
+                "alt_bold_file",
+                "alt_resampling_reference" "tags",
                 "skip_vols",
+                "bold_file",  # ? maybe not
                 "repetition_time",
             ]
         ),
@@ -123,9 +126,9 @@ def init_ica_aroma_components_wf(
     ica_aroma_wf = init_ica_aroma_wf(
         mem_gb={"resampled": memcalc.series_std_gb},
         metadata={"RepetitionTime": nan},
-        bold_file="",
+        bold_file="placeholder_bold_file.nii.gz",  # ? can't pass the bold_file
+        # https://github.com/nipreps/fmripost-aroma/blob/5d5b065ba50e3143252dea4ef66368b145d87763/src/fmripost_aroma/workflows/aroma.py#L77C1-L78C1
     )
-    # ? Write unit test for this
 
     # ? Are these still duplicates
     # remove duplicate nodes
@@ -136,11 +139,31 @@ def init_ica_aroma_components_wf(
     # connect inputs to ICA-AROMA
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
-    # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
-    workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
-    workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+    workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
+    # workflow.connect(inputnode, "bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+
+    # workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
+    #  workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+
+    # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
     # workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
+
+    # Disconnect existing source_file inputs and connect alt_bold_file from inputnode
+    ds_nodes = [
+        "ds_report_ica_aroma",
+        "ds_components",
+        "ds_mixing",
+        "ds_aroma_features",
+        "ds_aroma_confounds",
+        "ds_report_metrics",
+    ]
+
+    for node_name in ds_nodes:
+        node = ica_aroma_wf.get_node(node_name)
+        if node is not None:
+            # Directly connect alt_bold_file, which we generate ourselves in  init_alt_bold_std_trans_wf
+            workflow.connect(inputnode, "alt_bold_file", node, "source_file")
 
     # remove dummy scans from outputs
     skip_vols = pe.Node(

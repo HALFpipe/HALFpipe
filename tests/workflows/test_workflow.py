@@ -67,10 +67,11 @@ def test_feature_extraction(tmp_path, mock_spec):
     workflow = init_workflow(tmp_path)
 
     graphs = init_execgraph(tmp_path, workflow)
-    # graph = next(iter(graphs.values()))
+    graph = next(iter(graphs.values()))
 
-    # CREATE NEW ASSERTION because sdc_estimate_wf is not existing anymore
-    # assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+    # Ensure key workflows exist
+    assert any("anat_fit_wf" in u.fullname for u in graph.nodes), "Anat workflow missing."
+    assert any("bold_fit_wf" in u.fullname for u in graph.nodes), "Bold workflow missing."
 
     parser = build_parser()
     opts = parser.parse_args(args=list())
@@ -102,6 +103,9 @@ def test_feature_extraction(tmp_path, mock_spec):
 
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
+    # TODO: Create an assertion that checks for workfloes that are specific
+    # to processing with field maps
+
     bids_path = tmp_path / "bids"
     shutil.copytree(bids_data, bids_path)
 
@@ -142,4 +146,4 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
     graphs = init_execgraph(workdir, workflow)
     graph = next(iter(graphs.values()))
 
-    assert any("sdc_estimate_wf" in u.fullname for u in graph.nodes)
+    assert any("anat_fit_wf" in u.fullname for u in graph.nodes), "Anat workflow missing."

@@ -220,7 +220,7 @@ def run_stage_run(opts: Namespace):
             firstnode = next(iter(chunk.nodes()))
             if firstnode is not None:
                 assert isinstance(firstnode, pe.Node)
-                # pdb.set_trace()
+                logger.warning(f"Running chunk with {len(chunk.nodes())} nodes. First node: {firstnode.fullname}")
                 runner.run(chunk, updatehash=False, config=firstnode.config)
         except Exception as e:
             if opts.debug:

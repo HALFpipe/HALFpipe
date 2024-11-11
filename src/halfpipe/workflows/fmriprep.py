@@ -238,6 +238,7 @@ class FmriprepFactory(Factory):
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
             # insert spatial_reference to the node here?
+            # 'ds_bold_std_wf.resample_mask.bold_' in original space.
 
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
 
@@ -248,7 +249,7 @@ class FmriprepFactory(Factory):
 
     def connect(self, nodehierarchy, node, source_file=None, subject_id=None, **_) -> None:
         """
-        connect equally names attrs
+        This method connects equally named attributes of nodes.
         preferentially use datasinked outputs
         """
 
@@ -337,7 +338,6 @@ class FmriprepFactory(Factory):
                 # to skip_vols (bold_confounds_wf)
                 # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/bold/base.py#L679
 
-            # pdb.set_trace() #Bruteforced connections until they work
             for name in [
                 # "bold_bold_trans_wf",     # does not exist in 24
                 "bold_fit_wf",
@@ -354,6 +354,7 @@ class FmriprepFactory(Factory):
                 "bold_surf_wf",
                 "bold_confounds_wf",
                 "carpetplot_wf",  # new
+                "ds_bold_std_wf",  # ?
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
@@ -370,6 +371,8 @@ class FmriprepFactory(Factory):
             func_report_wf = report_hierarchy[-1].get_node("func_report_wf")
             if func_report_wf is not None:
                 _connect([*report_hierarchy, func_report_wf])
+
+            # print(list(func_report_wf._graph.in_edges(data=True)))
 
             while wf.get_node("anat_fit_wf") is None:
                 hierarchy.pop()

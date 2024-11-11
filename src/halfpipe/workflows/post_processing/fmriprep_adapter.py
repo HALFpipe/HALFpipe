@@ -24,7 +24,8 @@ def init_fmriprep_adapter_wf(
             fields=[
                 "bold_std",
                 "bold_mask_std",
-                "spatial_reference",
+                # "spatial_reference", # not used anymore
+                "resampling_reference",
                 "skip_vols",
                 "confounds",
                 "vals",
@@ -46,7 +47,7 @@ def init_fmriprep_adapter_wf(
     select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
     workflow.connect(inputnode, "bold_std", select_std, "bold_std")
     workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
-    workflow.connect(inputnode, "spatial_reference", select_std, "keys")
+    workflow.connect(inputnode, "resampling_reference", select_std, "keys")
 
     #
     apply_mask = pe.Node(
