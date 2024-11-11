@@ -20,6 +20,7 @@ from .feature_widgets.base import FeatureSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
+from .utils.context import ctx
 from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
@@ -191,6 +192,7 @@ class MainApp(App):
         ("p", "show_tab('preprocessing_tab')", "General preprocessing settings"),
         ("g", "show_tab('models_tab')", "Group level models"),
         ("r", "show_tab('run_tab')", "Check and run"),
+        ("x", "reload", "reload"),
     ]
 
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
@@ -252,3 +254,34 @@ class MainApp(App):
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark: bool = not self.dark
+
+    def action_reload(self):
+        self.reload_ui()
+
+    def reload_ui(self) -> None:
+        self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
+        self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
+        self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
+        self.get_widget_by_id("work_dir_content").refresh(recompose=True, layout=True)
+
+        feature_selection_content = self.app.get_widget_by_id("feature_selection_tab").get_widget_by_id(
+            "feature_selection_content"
+        )
+        feature_selection_content.feature_items.clear()
+        ctx.database.filepaths_by_tags.clear()
+        ctx.database.tags_by_filepaths.clear()
+        ctx.spec.features.clear()
+        ctx.spec.settings.clear()
+        ctx.spec.models.clear()
+        ctx.spec.files.clear()
+        ctx.cache.clear()
+        # set global settings to defaults use the defaults dictionary at preprocessing_content widget
+        for key in self.get_widget_by_id("preprocessing_content").default_settings:
+            ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
+        # for w in self.walk_children(FeatureTemplate):
+        #     current_id = w.id
+        #     w.remove()
+        #     name = feature_selection_content.feature_items[current_id].name
+        #     feature_selection_content.get_widget_by_id(current_id).remove()
+        #     feature_selection_content.feature_items.pop(current_id)
+        #     ctx.cache.pop(name)

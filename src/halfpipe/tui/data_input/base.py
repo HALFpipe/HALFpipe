@@ -243,8 +243,9 @@ class DataInput(Widget):
         self.callback_message = info_string
 
     def compose(self) -> ComposeResult:
+        # First we define widgets (panels) in order to be able later put titles on them
         """Switch in between the BIDS and non BIDS widgets."""
-        yield Container(
+        instructions_panel = Container(
             Static(
                 "If 'on' then just select the BIDS top directory. Otherwise you must select file patterns\
 for T1-weighted image, BOLD image and event files.",
@@ -259,13 +260,13 @@ for T1-weighted image, BOLD image and event files.",
             classes="components",
         )
         """ If BIDS is ON: """
-        yield Grid(
+        bids_panel = Grid(
             FileBrowserForBIDS(path_to="INPUT DATA DIRECTORY", id="data_input_file_browser"),
             id="bids_panel",
             classes="components",
         )
         """ This shows files found automatically when path to a BIDS folder is selected. """
-        yield Vertical(
+        bids_summary_panel = Vertical(
             DataSummaryLine(id="feedback_anat"),
             DataSummaryLine(id="feedback_bold"),
             DataSummaryLine(id="feedback_fmap"),
@@ -273,73 +274,87 @@ for T1-weighted image, BOLD image and event files.",
             classes="components",
         )
         """ If non-BIDS is ON: """
-        with VerticalScroll(id="non_bids_panel", classes="components"):
-            """ Some instructions at the beginning. """
-            yield Static(
+        # """ For anatomical/structural (T1) file patterns. """
+        t1_image_panel = VerticalScroll(
+            Button("Add", id="add_t1_image_button"), id="t1_image_panel", classes="non_bids_panels"
+        )
+        # """ For functional (BOLDS) file patterns. """
+        bold_image_panel = VerticalScroll(
+            Button("Add", id="add_bold_image_button"), id="bold_image_panel", classes="non_bids_panels"
+        )
+        # """ For fields map (magnitude, phase,...) file patterns. """
+        associate_button = Button("Associate", id="associate_button")
+        info_field_maps_button = Button("Info", id="info_field_maps_button")
+        field_map_panel = VerticalScroll(
+            Horizontal(
+                Button("Add", id="add_field_map_button"),
+                associate_button,
+                info_field_maps_button,
+                id="field_maps_button_panel",
+            ),
+            id="field_map_panel",
+            classes="non_bids_panels",
+        )
+        non_bids_panel = VerticalScroll(
+            # """ Some instructions at the beginning. """
+            Static(
                 "For each file type you need to create a 'path pattern' based on which all files of the particular type will \
 be queried. In the pop-up window, choose one particular file (use browse, or copy-paste) and highlight parts \
 of the string to be replaced by wildcards. You can also use type hints by starting typing '{' in front of the substring.",
                 id="help_top",
-            )
-            yield Static("Example: We have a particular T1 file and highlight parts with '0001' which represents subjects.")
-            yield Static(
+            ),
+            Static("Example: We have a particular T1 file and highlight parts with '0001' which represents subjects."),
+            Static(
                 Text(
                     "/home/tomas/github/ds002785_v2/sub-0001/anat/sub-0001_T1w.nii.gz",
                     spans=[(35, 39, "on red"), (49, 53, "on red")],
                 ),
                 classes="examples",
-            )
-            yield Static("After submitting the highlighted parts will be replaced with a particular wildcard type")
-            yield Static(
+            ),
+            Static("After submitting the highlighted parts will be replaced with a particular wildcard type"),
+            Static(
                 Text(
                     "/home/tomas/github/ds002785_v2/sub-{subject}/anat/sub-{subject}_T1w.nii.gz",
                     spans=[(35, 44, "on red"), (54, 63, "on red")],
                 ),
                 classes="examples",
-            )
-            """ For anatomical/structural (T1) file patterns. """
-            yield VerticalScroll(Button("Add", id="add_t1_image_button"), id="t1_image_panel", classes="non_bids_panels")
-            """ For functional (BOLDS) file patterns. """
-            yield VerticalScroll(Button("Add", id="add_bold_image_button"), id="bold_image_panel", classes="non_bids_panels")
-            """ For fields map (magnitude, phase,...) file patterns. """
-            yield VerticalScroll(
-                Horizontal(
-                    Button("Add", id="add_field_map_button"),
-                    Button("Associate", id="associate_button"),
-                    Button("Info", id="info_field_maps_button"),
-                    id="field_maps_button_panel",
-                ),
-                id="field_map_panel",
-                classes="non_bids_panels",
-            )
-            """ If all file patterns for non-BIDS are selected, user should confirm so that we can trigger the functional/field
-                file matching and CheckBoldEffectiveEchoSpacingStep and CheckBoldPhaseEncodingDirectionStep.
-                After this is done, any editing should be prohibited and the features and other remaining tabs should become
-                visible.
-            """
-            yield VerticalScroll(
+            ),
+            t1_image_panel,
+            bold_image_panel,
+            field_map_panel,
+            # """ If all file patterns for non-BIDS are selected, user should confirm so that we can trigger the
+            #     functional/field file matching and CheckBoldEffectiveEchoSpacingStep and CheckBoldPhaseEncodingDirectionStep.
+            #     After this is done, any editing should be prohibited and the features and other remaining tabs should become
+            #     visible.
+            # """
+            VerticalScroll(
                 Button("Confirm", id="confirm_field_map_button", variant="error"),
                 id="confirm_button_container",
                 classes="non_bids_panels",
-            )
+            ),
+            id="non_bids_panel",
+            classes="components",
+        )
 
-            # TODO: shift this to features
-            # yield VerticalScroll(Button("Add", id="add_event_file_button"), id="event_file_panel", classes="non_bids_panels")
-
-    def on_mount(self) -> None:
         """
         Sets up the initial state and titles for various panels after the widget is mounted.
         """
-        self.get_widget_by_id("instructions").border_title = "Data format"
-        self.get_widget_by_id("bids_panel").border_title = "Path to BIDS directory"
-        self.get_widget_by_id("bids_summary_panel").border_title = "Data input file summary"
-        self.get_widget_by_id("non_bids_panel").border_title = "Path pattern setup"
-        self.get_widget_by_id("t1_image_panel").border_title = "T1-weighted image file pattern"
-        self.get_widget_by_id("bold_image_panel").border_title = "BOLD image files patterns"
-        self.get_widget_by_id("field_map_panel").border_title = "Field maps"
-        self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
-        self.get_widget_by_id("associate_button").styles.visibility = "hidden"
-        self.get_widget_by_id("info_field_maps_button").styles.visibility = "hidden"
+        instructions_panel.border_title = "Data format"
+        bids_panel.border_title = "Path to BIDS directory"
+        bids_summary_panel.border_title = "Data input file summary"
+        non_bids_panel.border_title = "Path pattern setup"
+        t1_image_panel.border_title = "T1-weighted image file pattern"
+        bold_image_panel.border_title = "BOLD image files patterns"
+        field_map_panel.border_title = "Field maps"
+        non_bids_panel.styles.visibility = "hidden"
+        associate_button.styles.visibility = "hidden"
+        info_field_maps_button.styles.visibility = "hidden"
+
+        # now populate the generator
+        yield instructions_panel
+        yield bids_panel
+        yield bids_summary_panel
+        yield non_bids_panel
 
     @on(Button.Pressed, "#add_t1_image_button")
     async def _on_button_add_t1_image_button_pressed(self):

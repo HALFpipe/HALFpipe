@@ -78,7 +78,7 @@ class WorkDirectory(Widget):
         super().__init__(id=id, classes=classes)
 
     def compose(self) -> ComposeResult:
-        yield Vertical(
+        work_directory = Vertical(
             Static(
                 "Set path to the working directory. Here all output will be stored. By selecting a directory with existing \
 spec.json file it is possible to load the therein configuration.",
@@ -88,10 +88,9 @@ spec.json file it is possible to load the therein configuration.",
             id="work_directory",
             classes="components",
         )
+        work_directory.border_title = "Select working directory"
 
-    def on_mount(self) -> None:
-        self.get_widget_by_id("work_directory").border_title = "Select working directory"
-        self.disabled = False
+        yield work_directory
 
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
