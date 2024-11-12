@@ -137,6 +137,10 @@ async def check_and_run_tab_refresh(pilot) -> None:
     await pilot.press("r")
     # refresh
     await pilot.click(offset=(83, 9))
+    # save
+    await pilot.click(offset=(100, 9))
+    # press 'Ok' to dismiss the modal
+    await pilot.click(offset=(117, 31))
 
 
 async def scroll_screen_down_spec(pilot) -> None:

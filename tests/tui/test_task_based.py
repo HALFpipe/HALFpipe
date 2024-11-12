@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from functools import partial
 from pathlib import Path
 
@@ -66,6 +67,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
         await scroll_screen_down_spec(pilot)
+        os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / "spec_task_based.json")
 
     # Map stages to the tasks they should trigger
     tasks_by_stage = {
