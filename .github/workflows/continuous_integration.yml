@@ -180,7 +180,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: snapshot-report
-          path: ./snapshot_report.html
+          path: /halfpipe/snapshot_report.html
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
