@@ -3,7 +3,7 @@
 from functools import partial
 from pathlib import Path
 
-from pilot_functions import (
+from .pilot_functions import (
     _load_data,
     _set_work_dir,
     add_contrast_value_column,
