@@ -177,6 +177,12 @@ jobs:
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
       - name: Upload Snapshot Report
+        echo "Checking contents of /halfpipe"
+        ls -R /halfpipe
+        echo "Checking contents of ./"
+        ls -R ./
+        echo "Running find"
+        find . -iname "*snap*"
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
