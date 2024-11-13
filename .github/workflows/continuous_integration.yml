@@ -178,16 +178,16 @@ jobs:
     # Upload snapshot_report.html as an artifact
       - name: List files in halfpipe directory
         run: |
-        echo "Checking contents of /halfpipe"
-        ls -R /halfpipe
+          echo "Checking contents of /halfpipe"
+          ls -R /halfpipe
       - name: List files in current directory
         run: |
-        echo "Checking contents of /halfpipe"
-        ls -R ./
+          echo "Checking contents of /halfpipe"
+          ls -R ./
       - name: Find the report
         run: |
-        echo "Checking contents of /halfpipe"
-        find . -iname "*snap*"
+          echo "Checking contents of /halfpipe"
+          find . -iname "*snap*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
