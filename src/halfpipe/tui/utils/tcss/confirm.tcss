@@ -1,5 +1,5 @@
 Confirm {
-    height:auto;
+    height: auto;
     width: auto;
     #draggable_modal_screen_container_wrapper {
         width: auto;
@@ -14,15 +14,14 @@ Confirm {
         }
     }
     Static {
-
         height: auto;
         content-align: center middle;
         text-style: bold;
-      	text-align: center;
-      	width: auto;
-      	margin: 1 1 1 1;
+        text-align: center;
+        width: auto;
+        margin: 1 1 1 1;
     }
-    Horizontal{
+    Horizontal {
         height: auto;
         width: 100%;
         align: right top;
@@ -32,9 +31,8 @@ Confirm {
         }
     }
     .window_title {
-        height:auto;
+        height: auto;
         text-align: left;
-
     }
 }
 
@@ -52,7 +50,7 @@ Confirm {
     }
     .window_title {
         color: black;
-        height:auto;
+        height: auto;
     }
 }
 
@@ -70,7 +68,7 @@ Confirm {
     }
     .window_title {
         color: black;
-        height:auto;
+        height: auto;
     }
 }
 
@@ -85,10 +83,9 @@ Confirm {
     }
     WindowTitleBar Button {
         background: $error;
-
     }
     .window_title {
         color: black;
-        height:auto;
+        height: auto;
     }
 }

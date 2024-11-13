@@ -8,7 +8,7 @@ EditFeatures {
         .feature_name {
             height: 3;
             padding: 0 1 0 1;
-         }
+        }
         .button_grid {
             grid-size: 3;
             grid-gutter: 1;

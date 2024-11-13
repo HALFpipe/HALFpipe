@@ -1,29 +1,26 @@
-#blockscreen{
-background: black 90%;
-offset-y: -30;
-offset-x: 0;
-opacity: 100%;
+#blockscreen {
+    background: black 90%;
+    offset-y: -30;
+    offset-x: 0;
+    opacity: 100%;
 
-width:100%;
-height:auto;
-align: center top;
-Button {
-height: 3;
-}
+    width: 100%;
+    height: auto;
+    align: center top;
+    Button {
+        height: 3;
+    }
 }
 
 #check_meta_data_modal {
     #message {
-         height: auto;
-         content-align: center middle;
+        height: auto;
+        content-align: center middle;
     }
 }
 
-
-
-#select_value_modal{
+#select_value_modal {
     Input {
-
     }
 }
 
@@ -55,13 +52,13 @@ QuitModal {
         align: center middle;
     }
     Static {
-         height: 1;
-         content-align: center middle;
-         text-style: bold;
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
     }
-    Horizontal{
+    Horizontal {
         height: 4;
-        dock:  bottom;
+        dock: bottom;
         offset-x: 10;
         Button {
             margin: 1;
@@ -69,37 +66,35 @@ QuitModal {
     }
 }
 
+HeaderCloseIcon {
+    dock: right;
+    padding: 0 1;
+    width: 6;
+    offset-x: 0;
+    content-align: right middle;
+    border: solid black;
+}
 
-    HeaderCloseIcon {
-        dock: right;
-        padding: 0 1;
-        width: 6;
-        offset-x: 0;
-        content-align: right middle;
-        border: solid black;
-    }
-
-    HeaderHelpIcon {
-        dock: right;
-        padding: 0 1;
-        width: 6;
-        offset-x: -5;
-        content-align: right middle;
-        border: solid black;
-    }
+HeaderHelpIcon {
+    dock: right;
+    padding: 0 1;
+    width: 6;
+    offset-x: -5;
+    content-align: right middle;
+    border: solid black;
+}
 
 SelectionModal {
     #draggable_modal_screen_container_wrapper {
         width: 81;
         background: black;
-
     }
     RadioSet {
         height: auto;
         width: auto;
     }
 
-    Horizontal{
+    Horizontal {
         height: auto;
         width: 100%;
         align: right bottom;
@@ -112,28 +107,25 @@ SelectionModal {
     #title {
         content-align: center middle;
         text-style: bold;
-         content-align: center middle;
-      	text-align: center;
-      	width: auto ;
-      	margin: 1 1 0 1;
+        content-align: center middle;
+        text-align: center;
+        width: auto;
+        margin: 1 1 0 1;
     }
-
 }
-
 
 DoubleSelectionModal {
     Static {
-    padding: 0 1;
+        padding: 0 1;
     }
     #draggable_modal_screen_container_wrapper {
         width: 50;
         height: 18;
         background: black;
     }
-        RadioSet {
+    RadioSet {
         height: 4;
         width: 48;
-
     }
 }
 
@@ -165,7 +157,7 @@ WindowTitleBar Button:hover {
 }
 
 WindowTitleBar Button:focus {
-        text-style: none;
+    text-style: none;
 }
 
 .window_title {
@@ -175,23 +167,21 @@ WindowTitleBar Button:focus {
     padding-left: 1;
 }
 
-
-
 /* these were copied from deleted tccs fomr general settings */
-    TextSwitch {
-        border: tall transparent;
-        height: 3;
-        width: 16;
-        padding: 0 2;
-    }
+TextSwitch {
+    border: tall transparent;
+    height: 3;
+    width: 16;
+    padding: 0 2;
+}
 
 .icon_buttons {
-        width: 3;
-        height: 3;
-        margin: 0 1 0 0;
-        min-width: 6;
-        offset-x: 1;
-    }
+    width: 3;
+    height: 3;
+    margin: 0 1 0 0;
+    min-width: 6;
+    offset-x: 1;
+}
 
 LabelledSwitch {
     width: 55;
@@ -211,38 +201,35 @@ LabelledSwitch {
 StaticAndSelection {
     height: 3;
     width: 65;
-/*background: black;*/
+    /*background: black;*/
     Static {
         width: 25;
         border: transparent;
     }
     Select {
-            width: 30;
+        width: 30;
         border: none;
         Static {
             border: none;
         }
-    Horizontal {
+        Horizontal {
+            Static#label {
+                width: 1fr;
+                height: auto;
+                color: $text-disabled;
+                background: transparent;
+            }
 
-        Static#label {
-            width: 1fr;
-            height: auto;
-            color: $text-disabled;
-            background: transparent;
-        }
-
-        .arrow {
-            box-sizing: content-box;
-            width: 1;
-            height: 1;
-            padding: 0 0 0 1;
-            color: $text-muted;
-            background: transparent;
+            .arrow {
+                box-sizing: content-box;
+                width: 1;
+                height: 1;
+                padding: 0 0 0 1;
+                color: $text-muted;
+                background: transparent;
+            }
         }
     }
-    }
-
-
 }
 
 ChangeableStatic {
@@ -269,7 +256,6 @@ GeneralSettings {
         text-align: justify;
     }
     #top_container {
-
     }
     #inner_container {
         height: auto;
@@ -281,16 +267,14 @@ GeneralSettings {
             border: black tall;
             margin: 1;
             Static {
-                 padding: 0 4;
-                 text-style: bold;
-             width: auto;
-             border: transparent;
+                padding: 0 4;
+                text-style: bold;
+                width: auto;
+                border: transparent;
             }
-
         }
     }
 }
-
 
 ValueSetterModal {
     #draggable_modal_screen_container_wrapper {
@@ -304,17 +288,16 @@ ValueSetterModal {
         border-bottom: thick $accent;
     }
     Static {
-         height: 3;
-         content-align: center middle;
-         text-style: bold;
-
+        height: 3;
+        content-align: center middle;
+        text-style: bold;
     }
     Input {
-         width: 10;
-         border: tall $accent;
-         offset-x: 15;
+        width: 10;
+        border: tall $accent;
+        offset-x: 15;
     }
-    Horizontal{
+    Horizontal {
         height: 4;
         align: right bottom;
         offset-x: 1;
@@ -323,7 +306,6 @@ ValueSetterModal {
         }
     }
 }
-
 
 HelpModal {
     #draggable_modal_screen_container_wrapper {
@@ -337,17 +319,16 @@ HelpModal {
         border-bottom: thick $accent;
     }
     Static {
-         height: 3;
-         content-align: center middle;
-         text-style: bold;
-
+        height: 3;
+        content-align: center middle;
+        text-style: bold;
     }
     Input {
-         width: 10;
-         border: tall $accent;
-         offset-x: 15;
+        width: 10;
+        border: tall $accent;
+        offset-x: 15;
     }
-    Horizontal{
+    Horizontal {
         height: 6;
         align: right bottom;
         offset-x: 1;

@@ -1,24 +1,23 @@
 DataSummaryLine {
     height: auto;
-border: $warning;
-width: 100%;
-height: 5;
-align: center middle;
+    border: $warning;
+    width: 100%;
+    height: 5;
+    align: center middle;
     .feedback_container {
-            layout: horizontal;
-            height: 3;
+        layout: horizontal;
+        height: 3;
 
-            width: 65;
-            align: left middle;
-            Static {
-                width: auto;
-                border: transparent;
-            }
-            Button {
+        width: 65;
+        align: left middle;
+        Static {
+            width: auto;
+            border: transparent;
+        }
+        Button {
             dock: right;
-            }
+        }
     }
-
 }
 
 DataInput {
@@ -40,11 +39,10 @@ DataInput {
     }
     #non_bids_panel {
         Button {
-        margin: 1 0 0 1;
-    }
+            margin: 1 0 0 1;
+        }
     }
     Switch {
-
     }
     .label {
         border: transparent;
@@ -71,21 +69,21 @@ DataInput {
         height: 5;
     }
     .examples {
-    content-align: center middle;
-     border: grey;
+        content-align: center middle;
+        border: grey;
     }
-     #data_input_file_browser {
-            border: solid red;
-       }
+    #data_input_file_browser {
+        border: solid red;
+    }
 
     #confirm_button_container {
-    border: transparent;
-    align: center middle;
-    width: 104;
-    height: 5;
+        border: transparent;
+        align: center middle;
+        width: 104;
+        height: 5;
         Button {
-        margin: 0 0 0 0;
-    }
+            margin: 0 0 0 0;
+        }
     }
 }
 
@@ -108,17 +106,16 @@ SetEchoTimeDifferenceModal {
         border-bottom: thick $accent;
     }
     Static {
-         height: 3;
-         content-align: center middle;
-         text-style: bold;
-
+        height: 3;
+        content-align: center middle;
+        text-style: bold;
     }
     Input {
-         width: 10;
-         border: tall $accent;
-         offset-x: 15;
+        width: 10;
+        border: tall $accent;
+        offset-x: 15;
     }
-    Horizontal{
+    Horizontal {
         height: 4;
         align: right bottom;
         offset-x: 1;
@@ -131,7 +128,7 @@ SetEchoTimeDifferenceModal {
 FieldMapFilesPanel {
     border: none;
     height: auto;
-    padding:1 0 0 0 ;
+    padding: 1 0 0 0;
     #delete_button {
         offset-x: 94;
         min-width: 6;
@@ -148,33 +145,30 @@ FieldMapFilesPanel {
             content-align: center middle;
             height: 5;
             width: 100;
-      /*      background: white;*/
+            /*      background: white;*/
             Static {
-            height: 3;
-            width: auto;
-            border: transparent;
+                height: 3;
+                width: auto;
+                border: transparent;
             }
-
         }
-
     }
     .epi_panel {
         height: 10;
         Vertical {
-        background: white;
+            background: white;
         }
         Horizontal {
             border: red;
             content-align: center middle;
             height: 5;
             width: 100;
-      /*      background: white;*/
+            /*      background: white;*/
             Static {
-            height: 3;
-            width: auto;
-            border: transparent;
+                height: 3;
+                width: auto;
+                border: transparent;
             }
-
         }
         #delete_button {
             offset-x: 96;

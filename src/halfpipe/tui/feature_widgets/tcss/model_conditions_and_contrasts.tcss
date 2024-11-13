@@ -5,10 +5,8 @@ ModelConditionsAndContrasts {
         color: white;
         margin: 1 0 0 0;
         border: thick green;
-
     }
     #contrast_table {
-
         scrollbar-gutter: stable;
         .datatable--header {
             color: white;
@@ -28,8 +26,6 @@ ModelConditionsAndContrasts {
         content-align: center middle;
         border: solid;
         padding: 1;
-
-
     }
     #button_panel {
         align: right top;
@@ -39,5 +35,4 @@ ModelConditionsAndContrasts {
             width: 25;
         }
     }
-
 }

@@ -50,24 +50,24 @@ FeatureSelection {
         margin: 0 0 0 0;
     }
     .task_based {
-    color: crimson;
+        color: crimson;
     }
     .seed_based_connectivity {
-    color: silver;
+        color: silver;
     }
     .dual_regression {
-    color: ansi_bright_cyan;
+        color: ansi_bright_cyan;
     }
     .atlas_based_connectivity {
-    color: blueviolet;
+        color: blueviolet;
     }
     .reho {
-    color: slategray;
+        color: slategray;
     }
     .falff {
-    color: magenta;
+        color: magenta;
     }
     .preprocessed_image {
-    color: white;
+        color: white;
     }
 }

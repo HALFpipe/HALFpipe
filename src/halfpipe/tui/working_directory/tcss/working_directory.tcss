@@ -11,15 +11,13 @@ WorkDirectory {
         }
         #work_dir_file_browser {
             border: solid red;
-       }
+        }
     }
-        #top_event_file_panel {
+    #top_event_file_panel {
         height: auto;
         align: center top;
-
     }
     .file_panel {
-
         border: none;
         align: left top;
         background: transparent;
@@ -29,31 +27,31 @@ WorkDirectory {
         Button {
             width: auto;
             height: 3;
-           margin: 1 0 0 1;
+            margin: 1 0 0 1;
         }
-    FileItem {
-        layout: horizontal;
-        height: 5;
-        border: red;
-        .icon_buttons {
-            width: 3;
-            height: 3;
-            margin: 0 1 0 0;
-            min-width: 6;
-            offset-y: 0;
+        FileItem {
+            layout: horizontal;
+            height: 5;
+            border: red;
+            .icon_buttons {
+                width: 3;
+                height: 3;
+                margin: 0 1 0 0;
+                min-width: 6;
+                offset-y: 0;
+            }
+            #static_file_pattern {
+                width: auto;
+                padding: 1;
+                color: white;
+            }
+            #icon_buttons_container {
+                width: auto;
+                height: 4;
+                border: none;
+                padding: 0 1;
+            }
         }
-        #static_file_pattern {
-            width: auto;
-            padding: 1;
-            color: white;
-        }
-        #icon_buttons_container {
-            width: auto;
-            height: 4;
-            border: none;
-            padding: 0 1;
-        }
-    }
     }
 }
 

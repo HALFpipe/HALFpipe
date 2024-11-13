@@ -8,15 +8,12 @@ FeatureSelectionScreen {
         WindowTitleBar {
             dock: top;
         }
-
     }
     OptionList {
         offset-y: 0;
         width: 100%;
         height: 16;
         text-style: bold;
-
-
     }
     /*
     OptionList > .option-list--separator {
@@ -34,6 +31,5 @@ FeatureSelectionScreen {
         height: 5;
 
         align: center top;
-
     }
 }

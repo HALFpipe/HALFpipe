@@ -1,8 +1,8 @@
 MultipleRadioSet {
-    height:auto;
+    height: auto;
     width: auto;
     MultipleRadioSet {
-        height:auto;
+        height: auto;
         width: auto;
     }
     #h_label_container {
@@ -15,13 +15,11 @@ MultipleRadioSet {
     }
     .v_labels {
         border-right: solid white;
-        background: $accent-lighten-3    ;
-
+        background: $accent-lighten-3;
     }
-    .h_labels{
+    .h_labels {
         border-right: solid white;
-        background: $accent-lighten-3    ;
-
+        background: $accent-lighten-3;
     }
     RadioSet {
         border: none;
@@ -29,7 +27,7 @@ MultipleRadioSet {
     .radio_table_rows {
         height: auto;
         width: auto;
-     }
+    }
     #label_container {
         height: auto;
     }
@@ -49,18 +47,18 @@ MultipleRadioSetModal {
         max-height: 100;
         scrollbar-gutter: stable;
     }
-     #instructions {
-         border: solid transparent;
-     }
-     Static {
-         height: auto;
-         content-align: center middle;
-         text-style: bold;
-         text-align: center;
-         width: auto ;
+    #instructions {
+        border: solid transparent;
+    }
+    Static {
+        height: auto;
+        content-align: center middle;
+        text-style: bold;
+        text-align: center;
+        width: auto;
     }
     .window_title {
-        height:auto;
+        height: auto;
         text-align: left;
         offset-y: 1;
     }

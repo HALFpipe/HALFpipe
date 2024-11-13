@@ -31,43 +31,40 @@ Preprocessing {
     Switch {
     }
     .label {
-    border: transparent;
-    width: auto;
+        border: transparent;
+        width: auto;
     }
 
     Container {
-
     }
     .description_labels {
-     border: transparent;
-     width: auto;
-     height: 7;
+        border: transparent;
+        width: auto;
+        height: 7;
     }
 
     #remove_initial_volumes {
-       height: auto;
-       width: auto;
-       Static {
-
-       }
-    #remove_volumes_value {
-        border: green;
-        content-align: center middle;
-        width: 5;
+        height: auto;
+        width: auto;
+        Static {
+        }
+        #remove_volumes_value {
+            border: green;
+            content-align: center middle;
+            width: 5;
         }
     }
     #manualy_set_volumes_to_remove {
-
     }
     Select {
-    background: 40% red;
-    Horizontal {
-    align: left middle;
+        background: 40% red;
+        Horizontal {
+            align: left middle;
+        }
     }
-    }
     Horizontal {
-    align: center middle;
-     height: 3;
+        align: center middle;
+        height: 3;
     }
     Select {
         border: none;
@@ -80,11 +77,11 @@ Preprocessing {
         offset-x: 1;
     }
     SwitchWithInputBox {
-    Grid {
-        align: left middle;
-        grid-size: 3;
-        grid-columns: 50 16 15;
-    }
+        Grid {
+            align: left middle;
+            grid-size: 3;
+            grid-columns: 50 16 15;
+        }
     }
     LabelledSwitch {
         width: auto;
@@ -100,7 +97,7 @@ Preprocessing {
         }
         Switch {
             offset-x: -3;
-    }
+        }
     }
     #fs-license-file {
         height: 5;
@@ -114,12 +111,9 @@ Preprocessing {
             width: 45;
             offset-x: 2;
             offset-y: 2;
-
         }
-
     }
 }
-
 
 SetInitialVolumesRemovalModal {
     #draggable_modal_screen_container_wrapper {
@@ -133,17 +127,16 @@ SetInitialVolumesRemovalModal {
         border-bottom: thick $accent;
     }
     Static {
-         height: 3;
-         content-align: center middle;
-         text-style: bold;
-
+        height: 3;
+        content-align: center middle;
+        text-style: bold;
     }
     Input {
-         width: 10;
-         border: tall $accent;
-         offset-x: 15;
+        width: 10;
+        border: tall $accent;
+        offset-x: 15;
     }
-    Horizontal{
+    Horizontal {
         height: 4;
         align: right bottom;
         offset-x: 1;
@@ -166,23 +159,22 @@ SliceTimingModal {
         align: center middle;
     }
     Static {
-         height: 1;
-         content-align: center middle;
-         text-style: bold;
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
     }
     #found_values {
-    height: 3;
-    border: $warning;
-
+        height: 3;
+        border: $warning;
     }
     Input {
-         width: 10;
-         border: tall $accent;
-         offset-x: 15;
+        width: 10;
+        border: tall $accent;
+        offset-x: 15;
     }
-    Horizontal{
+    Horizontal {
         height: 4;
-        dock:  bottom;
+        dock: bottom;
         offset-x: 10;
         Button {
             margin: 1;
