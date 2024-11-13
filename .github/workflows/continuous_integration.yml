@@ -176,13 +176,19 @@ jobs:
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
-      - name: Upload Snapshot Report
+      - name: List files in halfpipe directory
+        run: |
         echo "Checking contents of /halfpipe"
         ls -R /halfpipe
-        echo "Checking contents of ./"
+      - name: List files in current directory
+        run: |
+        echo "Checking contents of /halfpipe"
         ls -R ./
-        echo "Running find"
+      - name: Find the report
+        run: |
+        echo "Checking contents of /halfpipe"
         find . -iname "*snap*"
+      - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
