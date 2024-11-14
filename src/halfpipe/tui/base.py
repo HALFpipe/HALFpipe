@@ -25,6 +25,7 @@ from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from ..logging.base import LoggingContext
 
 
 class HeaderCloseIcon(Widget):
@@ -205,6 +206,7 @@ class MainApp(App):
     is_bids = True
 
     def __init__(self, **kwargs) -> None:
+        LoggingContext.disable_print()
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
