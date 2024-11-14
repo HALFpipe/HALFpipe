@@ -193,7 +193,7 @@ jobs:
       - name: 22Find the report
         run: |
           echo "Checking contents of /halfpipe"
-          find / -iname "*snap*"     
+          find / -iname "*snap*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
