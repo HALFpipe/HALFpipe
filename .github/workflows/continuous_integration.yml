@@ -172,7 +172,7 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-            py.test -k 'test_work_dir_tab and test_bids_data_input_tab and test_task_based_features_p1 and test_task_based_features_p2 and test_task_based_features_final' \
+          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow' \
             --cov --cov-report=xml --dist=load --trace -v\
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
