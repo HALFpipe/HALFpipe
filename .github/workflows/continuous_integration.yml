@@ -172,8 +172,8 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals' \
-            --dist=load --trace -v\
+          py.test -k 'not test_consistency' \
+            --dist=load \
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
       - name: List files in halfpipe directory
