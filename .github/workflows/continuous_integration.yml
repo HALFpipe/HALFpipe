@@ -173,7 +173,7 @@ jobs:
           EOF
           # Run the integration tests
             py.test -k 'test_work_dir_tab and test_bids_data_input_tab and test_task_based_features_p1 and test_task_based_features_p2 and test_task_based_features_final' \
-            --cov --cov-report=xml --dist=load \
+            --cov --cov-report=xml --dist=load --trace -v\
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
       - name: List files in halfpipe directory
