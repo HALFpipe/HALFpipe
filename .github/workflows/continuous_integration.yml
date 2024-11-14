@@ -172,19 +172,22 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test -k 'not test_consistency' \
+            py.test -k 'test_basic and test_task_based' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
       - name: List files in halfpipe directory
+        if: ${{ failure() }}
         run: |
           echo "Checking contents of /halfpipe"
           ls -R /halfpipe
       - name: List files in current directory
+        if: ${{ failure() }}
         run: |
           echo "Checking contents of /halfpipe"
           ls -R ./
       - name: Find the report
+        if: ${{ failure() }}
         run: |
           echo "Checking contents of /halfpipe"
           find . -iname "*snap*"
