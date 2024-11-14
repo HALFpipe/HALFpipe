@@ -309,7 +309,6 @@ class FmriprepFactory(Factory):
         hierarchy = self._get_hierarchy("fmriprep_24_0_wf", source_file=source_file, subject_id=subject_id)
 
         wf = hierarchy[-1]
-
         # anat only
         anat_wf = wf.get_node(
             "anat_fit_wf"
@@ -321,7 +320,7 @@ class FmriprepFactory(Factory):
 
             if "skip_vols" in inputattrs:
                 initial_boldref_wf = wf.get_node("bold_fit_wf")
-                # initial_boldref_wf does not exist anymore
+                # "initial_boldref_wf" does not exist anymore
 
                 assert isinstance(initial_boldref_wf, pe.Workflow)
                 outputnode = initial_boldref_wf.get_node("outputnode")
@@ -350,11 +349,9 @@ class FmriprepFactory(Factory):
                 # "sdc_bypass_wf",          # does not exist in 24
                 # "sdc_unwarp_report_wf",   # does not exist in 24
                 # "bold_std_trans_wf",      #! seems to be renamed, we inherited input to select_std from here
-                "bold_std_wf",
                 "bold_surf_wf",
                 "bold_confounds_wf",
                 "carpetplot_wf",  # new
-                "ds_bold_std_wf",  # ?
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
@@ -372,7 +369,7 @@ class FmriprepFactory(Factory):
             if func_report_wf is not None:
                 _connect([*report_hierarchy, func_report_wf])
 
-            # print(list(func_report_wf._graph.in_edges(data=True)))
+            # pprint(list(func_report_wf._graph.in_edges(data=True)))
 
             while wf.get_node("anat_fit_wf") is None:
                 hierarchy.pop()
@@ -381,14 +378,29 @@ class FmriprepFactory(Factory):
             anat_wf = wf.get_node("anat_fit_wf")
 
         assert isinstance(anat_wf, pe.Workflow)
-        # pdb.set_trace()
-        for name in ["register_template_wf", "anat_reports_wf"]:
+        for name in [
+            "msm_sulc_wf",
+            "register_template_wf",
+            "anat_reports_wf",
+            "brain_extraction_wf",
+            "anat_ribbon_wf",
+            "refinement_wf",
+            "ds_template_wf",
+        ]:
             # ? Ask lea. Why did we only connect "anat_reports_wf", "anat_norm_wf"?
             # ? if we do anat_wf.list_node_names() we see many more.
             # ? e.g. Why not connect brain_extraction_wf
+            # ! Why is get_node not able to connect some of these and others yes
             wf = anat_wf.get_node(name)
-            _connect([*hierarchy, anat_wf, wf])
+            if wf is not None:
+                _connect([*hierarchy, anat_wf, wf])
+                logger.warning(f"Connected node '{name}' in 'anat_fit_wf'")
+                logger.warning(f"anat_fit_wf '{anat_wf.list_node_names()}'")
+            else:
+                logger.warning(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
         _connect([*hierarchy, anat_wf])
+
+        # TODO anat_wf.write_graph(graph2use="colored", format="png", simple_form=True, graph2use_hierarchical=True)
 
         if connected_attrs != inputattrs:
             missing_attrs: list[str] = sorted(inputattrs - connected_attrs)
