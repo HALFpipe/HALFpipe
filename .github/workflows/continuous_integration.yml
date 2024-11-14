@@ -173,14 +173,14 @@ jobs:
           EOF
           # Run the integration tests
           py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow' \
-            --cov --cov-report=xml --dist=load --trace -v\
+            --dist=load --trace -v\
             --numprocesses=2
     # Upload snapshot_report.html as an artifact
       - name: List files in halfpipe directory
         if: ${{ failure() }}
         run: |
-          echo "Checking contents of /halfpipe"
-          ls -R /halfpipe
+          echo "Checking contents of ../"
+          ls -R ../
       - name: List files in current directory
         if: ${{ failure() }}
         run: |
@@ -191,6 +191,27 @@ jobs:
         run: |
           echo "Checking contents of /halfpipe"
           find . -iname "*snap*"
+      - name: Find the report again
+        if: ${{ failure() }}
+        run: |
+          echo "Checking contents of /halfpipe"
+          find .. -iname "*snap*"
+      - name: 22List files in halfpipe directory
+        run: |
+          echo "Checking contents of ../"
+          ls -R ../
+      - name: 22List files in current directory
+        run: |
+          echo "Checking contents of /halfpipe"
+          ls -R ./
+      - name: 22Find the report
+        run: |
+          echo "Checking contents of /halfpipe"
+          find . -iname "*snap*"
+      - name: 22Find the report again
+        run: |
+          echo "Checking contents of /halfpipe"
+          find .. -iname "*snap*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
