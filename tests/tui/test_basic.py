@@ -18,7 +18,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
         #  work_dir_path = str(work_dir_path)
-        work_dir_path = "/makethisfail"
+        work_dir_path = "/makethisfail/"
 
     if stage == "work_tab":
         await _set_work_dir(pilot, work_dir_path)

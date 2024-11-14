@@ -15,6 +15,7 @@ from .pilot_functions import (
     preprocessing_options,
     remove_confounds,
     scroll_screen_down,
+    scroll_screen_down_spec
 )
 
 # this is for later

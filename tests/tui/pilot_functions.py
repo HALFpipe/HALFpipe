@@ -144,5 +144,5 @@ async def check_and_run_tab_refresh(pilot) -> None:
 
 
 async def scroll_screen_down_spec(pilot) -> None:
-    # scroll screen (different layout than in features
+    # scroll screen (different layout than in features)
     await pilot.click(offset=(200, 49))
