@@ -179,39 +179,21 @@ jobs:
       - name: List files in halfpipe directory
         if: ${{ failure() }}
         run: |
-          echo "Checking contents of ../"
-          ls -R ../
-      - name: List files in current directory
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /halfpipe"
-          ls -R ./
+          echo "Checking contents of /"
+          ls -R /
       - name: Find the report
         if: ${{ failure() }}
         run: |
           echo "Checking contents of /halfpipe"
-          find . -iname "*snap*"
-      - name: Find the report again
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /halfpipe"
-          find .. -iname "*snap*"
+          find / -iname "*snap*"
       - name: 22List files in halfpipe directory
         run: |
-          echo "Checking contents of ../"
-          ls -R ../
-      - name: 22List files in current directory
-        run: |
-          echo "Checking contents of /halfpipe"
-          ls -R ./
+          echo "Checking contents of /"
+          ls -R /
       - name: 22Find the report
         run: |
           echo "Checking contents of /halfpipe"
-          find . -iname "*snap*"
-      - name: 22Find the report again
-        run: |
-          echo "Checking contents of /halfpipe"
-          find .. -iname "*snap*"
+          find / -iname "*snap*"     
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
