@@ -177,7 +177,7 @@ jobs:
             --numprocesses=2
       - name: Upload Snapshot Report
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
