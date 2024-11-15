@@ -257,22 +257,25 @@ class EventFilePanel(FilePanelTemplate):
     pattern_class = None
 
     async def add_file_item_pressed(self):
+        async def proceed_with_choice(choice):
+            options_class_map = {"spm": MatEventsStep, "fsl": TxtEventsStep, "bids": TsvEventsStep}
+            self.pattern_class = options_class_map[choice]
+            await self.create_file_item(load_object=None)
+
         options = {
             "spm": "SPM multiple conditions",
             "fsl": "FSL 3-column",
             "bids": "BIDS TSV",
         }
-        choice = await self.app.push_screen_wait(
+        self.app.push_screen(
             SelectionModal(
                 title="Event file type specification",
                 instructions="Specify the event file type",
                 options=options,
                 id="event_files_type_modal",
-            )
+            ),
+            proceed_with_choice,
         )
-        options_class_map = {"spm": MatEventsStep, "fsl": TxtEventsStep, "bids": TsvEventsStep}
-        self.pattern_class = options_class_map[choice]
-        await self.create_file_item(load_object=None)
 
 
 class AtlasFilePanel(FilePanelTemplate):

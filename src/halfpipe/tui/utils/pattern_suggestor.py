@@ -312,7 +312,6 @@ class SegmentHighlighting(Input):
             text = Text(self.value, no_wrap=True, overflow="ignore")
             if self.highlighter is not None:
                 text = self.highlighter(text, self.current_highlights)
-            print("_value_value_value_value_value_value_value", self.current_highlights)
             return text
 
     def action_cursor_left(self) -> None:

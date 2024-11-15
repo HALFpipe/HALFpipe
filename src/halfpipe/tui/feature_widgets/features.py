@@ -239,30 +239,6 @@ class FeatureTemplate(Widget):
     def on_file_panel_file_item_is_deleted(self, message: Message):
         self.update_tag_selection_by_children_walk(set([]))
 
-    @on(file_panel_class.Changed, "#top_file_panel")
-    def on_file_panel_changed(self, message: Message):
-        tagvals = set(self.tagvals)
-        template_path = message.value["file_pattern"]
-        if isinstance(template_path, Text):
-            template_path = template_path.plain
-
-        all_tagvals_based_on_the_current_file_patterns = set(
-            [
-                extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
-                for file_path in message.value["files"]
-            ]
-        )
-        if all_tagvals_based_on_the_current_file_patterns == {None}:
-            all_tagvals_based_on_the_current_file_patterns = set(
-                [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
-            )
-        tagvals = tagvals ^ all_tagvals_based_on_the_current_file_patterns
-        self.update_tag_selection_by_children_walk(tagvals)
-
-    def update_tag_selection_by_children_walk(self, tagvals: set):
-        for tagval in tagvals:
-            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
-
     async def on_mount(self) -> None:
         if self.images_to_use is not None:
             self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
@@ -421,6 +397,30 @@ class AtlasSeedDualRegBased(FeatureTemplate):
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
 
+    @on(file_panel_class.Changed, "#top_file_panel")
+    def on_file_panel_changed(self, message: Message):
+        tagvals = set(self.tagvals)
+        template_path = message.value["file_pattern"]
+        if isinstance(template_path, Text):
+            template_path = template_path.plain
+
+        all_tagvals_based_on_the_current_file_patterns = set(
+            [
+                extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
+                for file_path in message.value["files"]
+            ]
+        )
+        if all_tagvals_based_on_the_current_file_patterns == {None}:
+            all_tagvals_based_on_the_current_file_patterns = set(
+                [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
+            )
+        tagvals = tagvals ^ all_tagvals_based_on_the_current_file_patterns
+        self.update_tag_selection_by_children_walk(tagvals)
+
+    def update_tag_selection_by_children_walk(self, tagvals: set):
+        for tagval in tagvals:
+            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
+
 
 class AtlasBased(AtlasSeedDualRegBased):
     """
@@ -572,6 +572,7 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
+    @on(file_panel_class.Changed, "#top_event_file_panel")
     @on(SelectionList.SelectionToggled, "#images_to_use_selection")
     def _on_selection_list_changed_images_to_use_selection(self, message):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
