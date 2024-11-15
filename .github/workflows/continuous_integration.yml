@@ -172,35 +172,15 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test -k 'not test_consistency and not test_workflow' \
-            --dist=load \
+          py.test -k 'not test_consistency' \
+            --cov --cov-report=xml --dist=load \
             --numprocesses=2
-    # Upload snapshot_report.html as an artifact
-      - name: List files in halfpipe directory
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /"
-          ls -R /
-      - name: Find the report
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /halfpipe"
-          find / -iname "*snap*"
-      - name: 22List files in halfpipe directory
-        run: |
-          echo "Checking contents of /"
-          ls -R /
-      - name: 22Find the report
-        run: |
-          echo "Checking contents of /halfpipe"
-          find / -iname "*snap*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
