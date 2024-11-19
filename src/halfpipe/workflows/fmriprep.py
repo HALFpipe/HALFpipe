@@ -150,7 +150,9 @@ class FmriprepFactory(Factory):
                 #
                 "output_spaces": " ".join(output_spaces),
                 #
-                "sloppy": global_settings["sloppy"],  # used for unit testing
+                "sloppy": global_settings["sloppy"],  # used for unit testing,
+                #
+                "level": "full",
             }
         )
         nipype_dir = Path(workdir) / Constants.workflow_directory
