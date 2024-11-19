@@ -84,7 +84,8 @@ def init_ica_aroma_components_wf(
                 # "alt_bold_mask_std",
                 # "alt_spatial_reference",
                 "alt_bold_file",
-                "alt_resampling_reference" "tags",
+                "alt_resampling_reference",
+                "tags",
                 "skip_vols",
                 "bold_file",  # ? maybe not
                 "repetition_time",

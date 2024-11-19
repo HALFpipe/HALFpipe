@@ -397,7 +397,7 @@ class FmriprepFactory(Factory):
             if wf is not None:
                 _connect([*hierarchy, anat_wf, wf])
                 logger.warning(f"Connected node '{name}' in 'anat_fit_wf'")
-                logger.warning(f"anat_fit_wf '{anat_wf.list_node_names()}'")
+                # logger.warning(f"anat_fit_wf '{anat_wf.list_node_names()}'")
             else:
                 logger.warning(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
         _connect([*hierarchy, anat_wf])

@@ -8,6 +8,7 @@ from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.utils.spaces import Reference, SpatialReferences
+from templateflow.api import get as get_template
 
 from ...resource import get as get_resource
 from ..constants import Constants
@@ -30,6 +31,7 @@ def init_alt_bold_std_trans_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
+                "bold_ref_file",
                 "bold_mask",
                 "itk_bold_to_t1",
                 "out_warp",
@@ -61,15 +63,22 @@ def init_alt_bold_std_trans_wf(
         jacobian=True,  # TODO: True or false? no documentation in FMRIPREP https://github.com/nipreps/fmriprep/blob/master/fmriprep/workflows/bold/apply.py#L19
         mem_gb={"resampled": memcalc.volume_std_gb},  # was memcalc.volume_std_gb
         omp_nthreads=config.nipype.omp_nthreads,
-        name="bold_std_trans_wf",  # ?? bold_volumetric_resample_wf
+        name="bold_volumetric_resample_trans_wf",
     )
 
     bold_std_trans_wf_inputnode = bold_std_trans_wf.get_node("inputnode")
     assert isinstance(bold_std_trans_wf_inputnode, pe.Node)
-    bold_std_trans_wf_inputnode.inputs.templates = ["MNI152NLin6Asym"]
+    bold_std_trans_wf_inputnode.inputs.templates = [
+        "MNI152NLin6Asym"
+    ]  # why is this still working? volumetric_resample does not have that attribute in the inputnode
+
+    # Derive target reference file
+    target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
+    bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
 
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")  # same
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.bold_file")
+    workflow.connect(inputnode, "bold_ref_file", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.motion_xfm")  # was hmc_xforms
     workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.boldref2anat_xfm")  # was itk_bold_to_t1
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.target_mask")  # used differently?

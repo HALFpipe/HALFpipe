@@ -71,11 +71,11 @@ requirements:
     - python
     - fsl-flameo
     - fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
+    - fmripost_aroma
     - afni-3dfwhmx
     - afni-3dtproject
-    - fmripost_aroma
     - afni-3dblurtofwhm
-      # experimental user interface
+    # experimental user interface
     - textual==0.60.0
     - pytest-textual-snapshot
 

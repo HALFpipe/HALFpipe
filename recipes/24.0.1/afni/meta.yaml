@@ -28,7 +28,7 @@ requirements:
     - cmake
     - make
   host:
-    - python
+    - python 3.11
     - zlib
     - f2c
     - expat
