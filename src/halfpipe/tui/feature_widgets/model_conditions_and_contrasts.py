@@ -250,11 +250,9 @@ class ModelConditionsAndContrasts(Widget):
         self.update_all_possible_conditions(all_possible_conditions)
 
     def update_all_possible_conditions(self, all_possible_conditions: list) -> None:
-        # self.row_dict: dict = {}
         self.df = pd.DataFrame()
         self.df["condition"] = all_possible_conditions
         self.df.set_index("condition", inplace=True)
-        self.default_conditions = []
         # if there are dict entries then set defaults
         # if self.feature_contrasts_dict is not None:  # Ensure it is not None
         if self.feature_contrasts_dict != []:
@@ -263,20 +261,51 @@ class ModelConditionsAndContrasts(Widget):
                 #   for row_index in self.df.index:
                 for condition_name in contrast_dict["values"]:
                     self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
-
-            self.default_conditions = self.feature_contrasts_dict[0]["values"].keys()
             self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
     def watch_condition_values(self) -> None:
         self.update_condition_selection()
 
     def compose(self) -> ComposeResult:
+        table = DataTable(zebra_stripes=True, header_height=2, id="contrast_table")
+        # table = self.query_one(DataTable)
+        # to init the table, stupid but nothing else worked
+        table.add_column(label="temp", key="temp")
+        # first case is used upon duplication or load, here we use the feature_conditions_list to add the rows to table
+        if self.feature_conditions_list != []:
+            # hence this list reflects already the selected images
+            [table.add_row(None, label=o, key=o) for o in self.feature_conditions_list]
+        # second case is standard case when a new task based feature is added, now we use all possible conditions
+        else:
+            [table.add_row(None, label=o, key=o) for o in self.all_possible_conditions]
+        table.remove_column("temp")
+
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        # read table defaults if there are some, this put columns into table (on load or on duplication)
+        # if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        # the "or" is a must, one can make a duplicate from a widget where there are some conditions selections but there are
+        # no columns in the table
+        if self.feature_contrasts_dict != [] or self.feature_conditions_list != []:
+            for contrast_dict in self.feature_contrasts_dict:
+                table.add_column(contrast_dict["name"], key=contrast_dict["name"])
+                for row_key in table.rows:
+                    table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+            condition_selection_list = [
+                Selection(condition, condition, initial_state=(condition in self.feature_conditions_list), id=condition)
+                for condition in self.all_possible_conditions
+            ]
+        else:
+            condition_selection_list = [
+                Selection(condition, condition, initial_state=True, id=condition) for condition in self.all_possible_conditions
+            ]
+
         yield SelectionList[str](
-            *[Selection(condition, condition, initial_state=True, id=condition) for condition in self.default_conditions],
+            *condition_selection_list,
             id="model_conditions_selection",
         )
         yield HorizontalScroll(
-            DataTable(zebra_stripes=True, header_height=2, id="contrast_table"),
+            table,
             id="contrast_table_upper",
         )
         yield Horizontal(
@@ -287,23 +316,6 @@ class ModelConditionsAndContrasts(Widget):
         )
 
     def on_mount(self) -> None:
-        self.get_widget_by_id("contrast_table_upper").border_title = "Table of Contrast Values"
-        table = self.query_one(DataTable)
-        # to init the table, stupid but nothing else worked
-        table.add_column(label="temp", key="temp")
-        [table.add_row(None, label=o, key=o) for o in self.default_conditions]
-        table.remove_column("temp")
-
-        table.cursor_type = next(cursors)
-        table.zebra_stripes = True
-        # read table defaults if there are some
-        # if self.feature_contrasts_dict is not None:  # Ensure it is not None
-        if self.feature_contrasts_dict != []:
-            for contrast_dict in self.feature_contrasts_dict:
-                table.add_column(contrast_dict["name"], key=contrast_dict["name"])
-                for row_key in table.rows:
-                    table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
-        self.condition_values = self.all_possible_conditions
         self.set_heights()
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
@@ -331,21 +343,21 @@ class ModelConditionsAndContrasts(Widget):
         self.set_heights()
 
     def set_heights(self):
-        if self.condition_values != [] or self.feature_contrasts_dict != []:
-            # set the height based on the number of rows
-            self.get_widget_by_id("contrast_table_upper").styles.height = (
-                len(self.get_widget_by_id("model_conditions_selection").selected) + 6
-            )
-            self.get_widget_by_id("model_conditions_selection").styles.height = (
-                len(self.get_widget_by_id("model_conditions_selection")._values) + 2
-            )
-            self.styles.height = (
-                len(self.get_widget_by_id("model_conditions_selection").selected)
-                + len(self.get_widget_by_id("model_conditions_selection")._values)
-                + 14
-            )
-        else:
-            self.styles.height = 20
+        # if self.condition_values != [] or self.feature_contrasts_dict != []:
+        # set the height based on the number of rows
+        self.get_widget_by_id("contrast_table_upper").styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection").selected) + 6
+        )
+        self.get_widget_by_id("model_conditions_selection").styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection")._values) + 2
+        )
+        self.styles.height = (
+            len(self.get_widget_by_id("model_conditions_selection").selected)
+            + len(self.get_widget_by_id("model_conditions_selection")._values)
+            + 14
+        )
+        # else:
+        #     self.styles.height = 20
 
     def action_add_column(self):
         """Add column with new contrast values to te table."""

@@ -111,16 +111,8 @@ class FeatureTemplate(Widget):
         if self.featurefield not in self.feature_dict:
             self.feature_dict[self.featurefield] = []
 
-        self.bandpass_filter_low_key = "lp_width"
-        self.bandpass_filter_high_key = "hp_width"
         if "bandpass_filter" not in self.setting_dict:
-            self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": 125, "lp_width": None}
-        else:
-            # if we are working with existing dict (i.e. loading from a spec file), then we must identify whether it is
-            # gaussian or frequency based filter, so that we can set the correct keys
-            if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
-                self.bandpass_filter_low_key = "low"
-                self.bandpass_filter_high_key = "high"
+            self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": "125", "lp_width": None}
 
         if "smoothing" not in self.setting_dict:
             self.setting_dict["smoothing"] = {"fwhm": 0}
@@ -130,18 +122,19 @@ class FeatureTemplate(Widget):
         if "grand_mean_scaling" not in self.setting_dict:
             self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
         self.images_to_use: dict | None
+        # if images exists, i.e., bold files with task tags were correctly given
         if ctx.get_available_images != {}:
-            self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
-        else:
-            self.images_to_use = None
-
-        if self.images_to_use is not None:
-            if self.setting_dict["filters"] != []:
+            # loop around available tasks to create a selection dictionary for the selection widget
+            # if empty setting_dict["filters"] (meaning to loading or duplicating is happening) assign True to all images
+            if self.setting_dict["filters"] == [] or self.setting_dict["filters"][0]["values"] == []:
+                self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
+            else:
+                # set at first all to False and then if there is the image in the .setting_dict["filters"] assign True to it
+                self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
                 for image in self.setting_dict["filters"][0]["values"]:
                     self.images_to_use["task"][image] = True
-            else:
-                for image in self.images_to_use["task"]:
-                    self.images_to_use["task"][image] = True
+        else:
+            self.images_to_use = None
 
         confounds_options = {
             "ICA-AROMA": ["ICA-AROMA", False],
@@ -184,19 +177,21 @@ class FeatureTemplate(Widget):
                 "Temporal filter",
                 options=[("Gaussian-weighted", "gaussian"), ("Frequency-based", "frequency_based")],
                 switch_value=True,
+                default_option=self.setting_dict["bandpass_filter"]["type"],
                 id="bandpass_filter_type",
                 classes="additional_preprocessing_settings",
             ),
+            # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
+            # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_low_key],
-                switch_value=False,
+                value=None,
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_lp_width",
             ),
             SwitchWithInputBox(
                 label="High-pass temporal filter width \n(in seconds)",
-                value=self.setting_dict["bandpass_filter"][self.bandpass_filter_high_key],
+                value=None,
                 classes="switch_with_input_box bandpass_filter_values",
                 id="bandpass_filter_hp_width",
             ),
@@ -267,37 +262,56 @@ class FeatureTemplate(Widget):
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
     def _on_bandpass_filter_type_changed(self, message):
-        if message.value == "frequency_based":
+        bandpass_filter_type = message.value
+        if bandpass_filter_type == "frequency_based":
+            lowest_value = (
+                self.setting_dict["bandpass_filter"]["low"] if "low" in self.setting_dict["bandpass_filter"] else "0.01"
+            )
+            highest_value = (
+                self.setting_dict["bandpass_filter"]["high"] if "high" in self.setting_dict["bandpass_filter"] else "0.1"
+            )
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in Hertz)")
             # set defaults on toggle
-            self.get_widget_by_id("bandpass_filter_lp_width").update_value("0.01")
-            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(True)
-            self.get_widget_by_id("bandpass_filter_hp_width").update_value("0.1")
-            self.setting_dict["bandpass_filter"]["low"] = "0.01"
-            self.setting_dict["bandpass_filter"]["high"] = "0.1"
+            self.get_widget_by_id("bandpass_filter_lp_width").update_value(lowest_value if lowest_value is not None else "")
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(lowest_value is not None)
+            self.get_widget_by_id("bandpass_filter_hp_width").update_value(highest_value if highest_value is not None else "")
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(highest_value is not None)
+            self.setting_dict["bandpass_filter"]["low"] = lowest_value
+            self.setting_dict["bandpass_filter"]["high"] = highest_value
             # self.setting_dict["bandpass_filter"]["low"] = self.setting_dict["bandpass_filter"]["lp_width"]
             # self.setting_dict["bandpass_filter"]["high"] = self.setting_dict["bandpass_filter"]["hp_width"]
-            self.setting_dict["bandpass_filter"].pop("lp_width")
-            self.setting_dict["bandpass_filter"].pop("hp_width")
-        elif message.value == "gaussian":
+            self.setting_dict["bandpass_filter"].pop("lp_width", None)
+            self.setting_dict["bandpass_filter"].pop("hp_width", None)
+        elif bandpass_filter_type == "gaussian":
+            lowest_value = (
+                self.setting_dict["bandpass_filter"]["lp_width"]
+                if "lp_width" in self.setting_dict["bandpass_filter"]
+                else None
+            )
+            highest_value = (
+                self.setting_dict["bandpass_filter"]["hp_width"]
+                if "hp_width" in self.setting_dict["bandpass_filter"]
+                else "125"
+            )
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in seconds)")
             # set defaults on toggle
-            self.get_widget_by_id("bandpass_filter_lp_width").update_value(None)
-            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(False)
-            self.get_widget_by_id("bandpass_filter_hp_width").update_value("125")
+            self.get_widget_by_id("bandpass_filter_lp_width").update_value(lowest_value if lowest_value is not None else "")
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(lowest_value is not None)
+            self.get_widget_by_id("bandpass_filter_hp_width").update_value(highest_value if highest_value is not None else "")
+            self.get_widget_by_id("bandpass_filter_hp_width").update_switch_value(highest_value is not None)
             # on mount the app also runs through this part and since 'frequency_based' was never set, the low and high
             # do not exist
             if "low" in self.setting_dict["bandpass_filter"]:
-                self.setting_dict["bandpass_filter"]["lp_width"] = None
-                self.setting_dict["bandpass_filter"]["hp_width"] = "125"
+                self.setting_dict["bandpass_filter"]["lp_width"] = lowest_value
+                self.setting_dict["bandpass_filter"]["hp_width"] = highest_value
                 # self.setting_dict["bandpass_filter"]["lp_width"] = self.setting_dict["bandpass_filter"]["low"]
                 # self.setting_dict["bandpass_filter"]["hp_width"] = self.setting_dict["bandpass_filter"]["high"]
-                self.setting_dict["bandpass_filter"].pop("low")
-                self.setting_dict["bandpass_filter"].pop("high")
+                self.setting_dict["bandpass_filter"].pop("low", None)
+                self.setting_dict["bandpass_filter"].pop("high", None)
 
-        self.setting_dict["bandpass_filter"]["type"] = message.value
+        self.setting_dict["bandpass_filter"]["type"] = bandpass_filter_type
 
     @on(LabelWithInputBox.Changed, "#minimum_coverage")
     def _on_label_with_input_box_changed(self, message: Message):
@@ -543,8 +557,13 @@ class TaskBased(FeatureTemplate):
             self.feature_dict["conditions"] = []
         if self.images_to_use is not None:
             all_possible_conditions = []
-            for v in self.images_to_use["task"].keys():
-                all_possible_conditions += extract_conditions(entity="task", values=[v])
+            # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
+            # the images to use widget is updated but we accept only images that are True. The all_possible_conditions carries
+            # to information of the possible choices in the condition selection widget based on the currently selected images.
+            # for v in self.images_to_use["task"].keys():
+            for image in self.images_to_use["task"]:
+                if self.images_to_use["task"][image] is True:
+                    all_possible_conditions += extract_conditions(entity="task", values=[image])
 
             if self.feature_dict["contrasts"] is not None:
                 self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(

@@ -87,7 +87,7 @@ class SwitchWithInputBox(Widget):
             Alias for `switch_with_input_box`.
     """
 
-    value: reactive[bool] = reactive(None, init="")
+    value: reactive[str] = reactive(None, init=False)
     switch_value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
@@ -110,12 +110,14 @@ class SwitchWithInputBox(Widget):
             """Alias for self.file_browser."""
             return self.switch_with_input_box
 
-    def __init__(self, label="", value: str | None = None, switch_value: bool = True, **kwargs) -> None:
+    def __init__(
+        self, label="", value: str | None = None, switch_value: bool = True, id: str | None = None, classes: str | None = None
+    ) -> None:
         self.label = label
         self._reactive_switch_value = switch_value
         self._reactive_value = str(value) if value is not None else None
 
-        super().__init__(**kwargs)
+        super().__init__(id=id, classes=classes)
 
     def watch_value(self) -> None:
         self.post_message(self.Changed(self, self.value))
@@ -212,10 +214,21 @@ class SwitchWithSelect(SwitchWithInputBox):
             """Alias for self.file_browser."""
             return self.switch_with_select
 
-    def __init__(self, label="", options: list | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        label="",
+        switch_value: bool = True,
+        options: list | None = None,
+        default_option=None,
+        id: str | None = None,
+        classes: str | None = None,
+    ) -> None:
         self.label = label
-        super().__init__(label=label, **kwargs)
+        super().__init__(label=label, id=id, classes=classes)
         self.options = [] if options is None else options
+        self.default_option = self.options[0][1] if default_option is None else default_option
+        self.switch_value = switch_value
+        self.value = self.default_option
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -223,7 +236,7 @@ class SwitchWithSelect(SwitchWithInputBox):
             TextSwitch(value=self.switch_value),
             Select(
                 [(str(value[0]), value[1]) for value in self.options],
-                value=self.options[0][1],
+                value=self.default_option,
                 allow_blank=False,
                 id="input_switch_input_box",
             ),
@@ -251,7 +264,7 @@ class LabelWithInputBox(Widget):
         Property that provides an alias for accessing the associated LabelWithInputBox instance.
     """
 
-    value: reactive[bool] = reactive(None, init="")
+    value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
     class Changed(Message):
