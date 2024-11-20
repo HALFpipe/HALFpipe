@@ -58,16 +58,17 @@ async def select_images(pilot) -> None:
     await pilot.pause()
 
 
-async def deselect_conditions(pilot) -> None:
+async def deselect_conditions(pilot, offset_y=0) -> None:
     # deselect one of the conditions
-    await pilot.click(offset=(71, 18))
+    await pilot.click(offset=(71, 18 + offset_y))
 
 
-async def add_contrast_value_column(pilot, label=None) -> None:
+async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
     label = "con1" if label is None else label
     # # click on Add contrast values
-    await pilot.click(offset=(108, 38))
-    # #
+    await pilot.click(offset=(108, 38 + offset_y))
+    # click in the prompt, for some reasons sometimes needs to be clicked twice
+    await pilot.click(offset=(99, 16))
     await pilot.click(offset=(99, 16))
     for letter in label:
         await pilot.press(letter)
@@ -137,7 +138,7 @@ async def check_and_run_tab_refresh(pilot) -> None:
     await pilot.press("r")
     # refresh
     await pilot.click(offset=(83, 9))
-    # save
+    # # save
     await pilot.click(offset=(100, 9))
     # press 'Ok' to dismiss the modal
     await pilot.click(offset=(117, 31))
@@ -146,3 +147,66 @@ async def check_and_run_tab_refresh(pilot) -> None:
 async def scroll_screen_down_spec(pilot) -> None:
     # scroll screen (different layout than in features)
     await pilot.click(offset=(200, 49))
+
+
+async def toggle_bids_non_bids(pilot) -> None:
+    # toggle bids to non bids
+    await pilot.click(offset=(113, 14))
+
+
+async def fill_path_pattern_modal(pilot, path_patter):
+    # clear all
+    await pilot.click(offset=(120, 30))
+    # click to prompt
+    await pilot.click(offset=(60, 22))
+    for i in path_patter:
+        await pilot.press(i)
+    # click Ok
+    await pilot.click(offset=(125, 40))
+
+
+async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None) -> None:
+    await pilot.press("i")
+
+    # toggle bids to non bids
+
+    await pilot.click(offset=(113, 14))
+
+    # add T1
+    await pilot.click(offset=(57, 35))
+    # clear all
+    await pilot.click(offset=(120, 30))
+    # click to prompt
+    await pilot.click(offset=(60, 22))
+    # t1_pattern_path = '/tmp/tui_test/ds002785/sub-{subject}/anat/sub-{subject}_T1w.nii.gz'
+    for i in t1_pattern_path:
+        await pilot.press(i)
+    await pilot.click(offset=(125, 40))
+
+    # add bold
+    await pilot.click(offset=(57, 46))
+    # clear all
+    await pilot.click(offset=(120, 30))
+    # click to prompt
+    await pilot.click(offset=(60, 22))
+
+    # bold_pattern_path = '/tmp/tui_test/ds002785/sub-{subject}/func/sub-{subject}_task-{task}_bold.nii.gz'
+    for i in bold_pattern_path:
+        await pilot.press(i)
+    # clear ok
+    await pilot.click(offset=(125, 40))
+    # click Ok on Repetition time values
+    await pilot.click(offset=(100, 31))
+
+    # focus on the scroll bar
+    await pilot.click(offset=(100, 31))
+    for _i in range(15):
+        await pilot.press("down")
+    # click confirm
+    await pilot.click(offset=(100, 47))
+
+
+async def settable_scroll_screen_down(pilot, how_much=20) -> None:
+    # scroll screen (different layout than in features)
+    for _i in range(how_much):
+        await pilot.press("down")

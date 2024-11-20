@@ -46,6 +46,21 @@ def work_dir_path(fixed_tmp_path) -> Path:
     return fixed_tmp_path / "work_dir/"
 
 
+@pytest.fixture(scope="module")
+def t1_path_pattern(downloaded_data_path) -> Path:
+    return downloaded_data_path / "sub-{subject}/anat/sub-{subject}_T1w.nii.gz"
+
+
+@pytest.fixture(scope="module")
+def bold_path_pattern(downloaded_data_path) -> Path:
+    return downloaded_data_path / "sub-{subject}/func/sub-{subject}_task-{task}_bold.nii.gz"
+
+
+@pytest.fixture(scope="module")
+def event_path_pattern(downloaded_data_path) -> Path:
+    return downloaded_data_path / "sub-{subject}/func/sub-{subject}_task-{task}_events.tsv"
+
+
 # should yield a fresh instance each time, but apparently it does not
 @pytest.fixture(scope="function")
 def start_app():
