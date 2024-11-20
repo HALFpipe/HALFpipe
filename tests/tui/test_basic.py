@@ -21,6 +21,9 @@ async def run_before(
 
     if stage == "work_tab":
         await _set_work_dir(pilot, work_dir_path)
+        # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
+        # the tab should prevent this.
+        await pilot.click(offset=(90, 30))
 
     if stage == "bids_data_tab":
         await _load_data(pilot, data_path)
