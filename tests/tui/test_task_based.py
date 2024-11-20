@@ -18,6 +18,7 @@ from .pilot_functions import (
     settable_scroll_screen_down,
 )
 
+
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
