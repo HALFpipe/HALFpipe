@@ -18,26 +18,6 @@ from .pilot_functions import (
     settable_scroll_screen_down,
 )
 
-# this is for later
-# from halfpipe import resource
-# from halfpipe.resource import get as get_resource
-#
-# # set atlases, seed maps and spatial maps
-# test_online_resources = {
-#     "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
-#     "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
-#     "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii":"https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
-#     "R_vmPFC_seed_2009.nii.gz":"https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
-#     "R_vlPFC_pt_seed_2009.nii.gz":"https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
-#     "R_vlPFC_po_seed_2009.nii.gz":"https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link"
-# }
-# resource.online_resources.update(test_online_resources)
-#
-# # download them
-# path = get_resource("FIND_ica_maps_2009.nii.gz")
-# print(path)
-
-
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
