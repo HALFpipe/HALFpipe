@@ -71,8 +71,8 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         nohash=True,
     )
 
-    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-    select_std.inputs.key = f"{Constants.reference_space}"
+    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
+    # select_std.inputs.key = f"{Constants.reference_space}"
     # select_std.inputs.keys = keys
 
     workflow.connect(inputnode, "bold_file", select_std, "bold_file")
