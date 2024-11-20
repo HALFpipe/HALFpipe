@@ -31,7 +31,7 @@ def init_alt_bold_std_trans_wf(
         niu.IdentityInterface(
             fields=[
                 "bold_file",
-                "bold_ref_file",
+                "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
                 "bold_mask",
                 "itk_bold_to_t1",
                 "out_warp",
@@ -74,11 +74,11 @@ def init_alt_bold_std_trans_wf(
 
     # Derive target reference file
     target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
-    bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
 
+    bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")  # same
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.bold_file")
-    workflow.connect(inputnode, "bold_ref_file", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
+    workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.motion_xfm")  # was hmc_xforms
     workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.boldref2anat_xfm")  # was itk_bold_to_t1
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.target_mask")  # used differently?

@@ -38,14 +38,14 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_std",  # now ds_bold_std_wf.outputnode.bold??
-                "bold_std_ref",  # now ds_bold_std_wf.outputnode.bold_ref?
-                "bold_mask_std",  # now?
-                "std_dseg",  # now?
-                # "bold_file",         # was bold_std
-                # "bold_ref_file",      # was bold_std_ref. This one might also be target_ref_file??
-                # "target_ref_file",
-                # "target_mask",
+                # "bold_std",  # now ds_bold_std_wf.outputnode.bold??
+                # "bold_std_ref",  # now ds_bold_std_wf.outputnode.bold_ref?
+                # "bold_mask_std",  # now?
+                # "std_dseg",  # now?
+                "bold_file",  # was bold_std
+                "bold_ref_file",  # was bold_std_ref. This one might also be target_ref_file??
+                "target_ref_file",
+                "target_mask",
                 "std_dseg",
                 "resampling_reference",  # from volumetric resample
                 # "spatial_reference", # this used to exist in fmriprep
@@ -64,29 +64,28 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
 
     select_std = pe.Node(
-        KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
-        # KeySelect(fields=["bold_file", "bold_ref_file", "target_mask", "std_dseg"]),
+        # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+        KeySelect(fields=["bold_file", "bold_ref_file", "target_mask", "std_dseg"]),
         name="select_std",
         run_without_submitting=True,
         nohash=True,
     )
 
-    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-    # select_std.inputs.key = f"{Constants.reference_space}"
-    # keys = [str(space.fullname).replace(":", "_") for space in spaces.get_standard(full_spec=True)]
+    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
+    select_std.inputs.key = f"{Constants.reference_space}"
     # select_std.inputs.keys = keys
 
-    # workflow.connect(inputnode, "bold_file", select_std, "bold_file")
-    # workflow.connect(inputnode, "bold_ref_file", select_std, "bold_ref_file")
-    # workflow.connect(inputnode, "target_mask", select_std, "target_mask")
-    # workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
-    workflow.connect(inputnode, "resampling_reference", select_std, "keys")  # somehow this is wrong
-
-    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
-    workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
-    workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
+    workflow.connect(inputnode, "bold_file", select_std, "bold_file")
+    workflow.connect(inputnode, "bold_ref_file", select_std, "bold_ref_file")
+    workflow.connect(inputnode, "target_mask", select_std, "target_mask")
     workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
-    # workflow.connect(inputnode, "spatial_reference", select_std, "keys")
+
+    # workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    # workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
+    # workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
+    # workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
+
+    workflow.connect(inputnode, "resampling_reference", select_std, "keys")  # somehow this is wrong
 
     # pdb.set_trace()
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
@@ -127,24 +126,24 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         mem_gb=0.1,
     )
 
-    workflow.connect(select_std, "bold_std_ref", epi_norm_rpt, "in_file")
-    workflow.connect(select_std, "bold_mask_std", epi_norm_rpt, "mask_file")
+    # workflow.connect(select_std, "bold_std_ref", epi_norm_rpt, "in_file")
+    # workflow.connect(select_std, "bold_mask_std", epi_norm_rpt, "mask_file")
 
-    # workflow.connect(select_std, "bold_ref_file", epi_norm_rpt, "in_file")
-    # workflow.connect(select_std, "target_mask", epi_norm_rpt, "mask_file")
+    workflow.connect(select_std, "bold_ref_file", epi_norm_rpt, "in_file")
+    workflow.connect(select_std, "target_mask", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    # workflow.connect(select_std, "bold_file", tsnr, "in_file")
-    workflow.connect(select_std, "bold_std", tsnr, "in_file")
+    workflow.connect(select_std, "bold_file", tsnr, "in_file")
+    # workflow.connect(select_std, "bold_std", tsnr, "in_file")
     workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
-    # workflow.connect(select_std, "target_mask", tsnr_rpt, "mask_file")
+    # workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
+    workflow.connect(select_std, "target_mask", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
