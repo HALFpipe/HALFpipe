@@ -38,6 +38,7 @@ async def run_before(
         await pilot.click(offset=(25, 25))
         await pilot.click(offset=(25, 25))
 
+
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(

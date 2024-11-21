@@ -15,6 +15,7 @@ from textual.widget import Widget
 from textual.widgets import Footer, Header, Placeholder, TabbedContent, TabPane
 from textual.widgets._header import HeaderTitle
 
+from ..logging.base import LoggingContext
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
 from .preprocessing.base import Preprocessing
@@ -22,7 +23,6 @@ from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
 from .utils.context import ctx
 from .working_directory.base import WorkDirectory
-from ..logging.base import LoggingContext
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -283,4 +283,4 @@ class MainApp(App):
             ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
 
     def action_ctx(self):
-        print('cccccccccccc', ctx.cache)
+        print("cccccccccccc", ctx.cache)
