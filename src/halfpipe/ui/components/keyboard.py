@@ -51,7 +51,7 @@ class Keyboard:
             self.queue.put_nowait(Key.Right)
         elif c == curses.ascii.TAB or c == curses.ascii.HT:
             self.queue.put_nowait(Key.Tab)
-        elif c == curses.ascii.DEL or c == curses.ascii.BS:
+        elif c in {curses.ascii.DEL, curses.ascii.BS, curses.KEY_BACKSPACE}:
             self.queue.put_nowait(Key.Backspace)
         elif c == curses.KEY_DC:
             self.queue.put_nowait(Key.Delete)
