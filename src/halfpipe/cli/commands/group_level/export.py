@@ -4,11 +4,11 @@
 
 from abc import abstractmethod
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import Enum, auto
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Self, Sequence
+from typing import Any, Self, Sequence
 
 import nibabel as nib
 import numpy as np
@@ -89,7 +89,7 @@ class ImagePaths:
             d = np.zeros_like(effect)
             d[mask] = effect[mask] / np.sqrt(sigmasquareds[mask])
 
-            d_image = new_img_like(effect_image, d, copy_header=True)
+            d_image: Any = new_img_like(effect_image, d, copy_header=True)
             return Statistic.cohens_d, d_image
         elif statistic == Statistic.z:
             if self.z is None:
@@ -118,7 +118,9 @@ class ImagePaths:
             standardized_coefficient_fisherz = np.zeros_like(effect)
             standardized_coefficient_fisherz[mask] = np.arctanh(t[mask] / np.sqrt(np.square(t[mask]) + dof[mask]))
 
-            standardized_coefficient_image = new_img_like(effect_image, standardized_coefficient_fisherz, copy_header=True)
+            standardized_coefficient_image: Any = new_img_like(
+                effect_image, standardized_coefficient_fisherz, copy_header=True
+            )
             return Statistic.standardized_effect, standardized_coefficient_image
         else:
             raise NotImplementedError
@@ -214,8 +216,13 @@ def export(
     num_inputs = len(cope_paths)
     inner = partial(get_signals, atlases)
 
+    valid_fields = {field.name for field in fields(ImagePaths)}
+    for key in list(images.keys()):
+        if key not in valid_fields:
+            logger.warning(f"Ignoring '{key}' in images for export")
+            del images[key]
     image_paths_list = [
-        ImagePaths(**dict(zip(images.keys(), paths, strict=False))) for paths in zip(*images.values(), strict=False)
+        ImagePaths(**dict(zip(images.keys(), paths, strict=True))) for paths in zip(*images.values(), strict=True)
     ]
 
     cm, iterator = make_pool_or_null_context(
