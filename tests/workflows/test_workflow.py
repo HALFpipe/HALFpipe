@@ -55,11 +55,14 @@ def test_feature_extraction(tmp_path, mock_spec):
     Parameters:
     - tmp_path: A fixture used to create a temporary directory.
     - mock_spec: A fixture providing a mock json.spec file.
+
+    #TODO: hardcodd tmp_path still runs all nodes, figure out solution
     """
 
     skip_vols = 3
     mock_spec.global_settings.update(dict(dummy_scans=skip_vols))
 
+    # tmp_path = Path('/tmp/pytest-of-root/pytest-23/test_feature_extraction0')
     save_spec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = cpu_count()

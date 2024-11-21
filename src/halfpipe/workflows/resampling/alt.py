@@ -22,6 +22,8 @@ def init_alt_bold_std_trans_wf(
 ):
     """
     This workflow is needed to run ICA_AROMA.
+    This workflow will be ran by default even when ICA_AROMA is not wanted
+    because users still want the QC report.
     """
     spaces = SpatialReferences(Reference.from_string("MNI152NLin6Asym:res-2"), checkpoint=True) if spaces is None else spaces
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
@@ -74,6 +76,7 @@ def init_alt_bold_std_trans_wf(
 
     # Derive target reference file
     target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
+    #!!!! did i break something here? We used to just pass a string, now we pass an image
 
     bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")  # same

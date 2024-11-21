@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import pdb
 from pathlib import Path
 from unittest.mock import patch
 
@@ -239,9 +240,6 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
-            # insert spatial_reference to the node here?
-            # 'ds_bold_std_wf.resample_mask.bold_' in original space.
-
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
 
         return bold_file_paths
@@ -339,6 +337,7 @@ class FmriprepFactory(Factory):
                 # to skip_vols (bold_confounds_wf)
                 # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/bold/base.py#L679
 
+            pdb.set_trace()
             for name in [
                 # "bold_bold_trans_wf",     # does not exist in 24
                 "bold_fit_wf",
@@ -354,6 +353,7 @@ class FmriprepFactory(Factory):
                 "bold_surf_wf",
                 "bold_confounds_wf",
                 "carpetplot_wf",  # new
+                "func_fit_reports_wf",  # gives std_mask to anat_report ?? or should it come from smriprep?
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:

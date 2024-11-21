@@ -26,6 +26,8 @@ def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
 def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalculator | None = None):
     """
     Also creates initial vals
+
+
     """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
@@ -85,9 +87,8 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     # workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
     # workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
 
-    workflow.connect(inputnode, "resampling_reference", select_std, "keys")  # somehow this is wrong
+    workflow.connect(inputnode, "resampling_reference", select_std, "keys")
 
-    # pdb.set_trace()
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
     #
@@ -117,6 +118,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     for fr, frd in zip(fmriprep_reports, fmriprep_reportdatasinks, strict=False):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
+    # Register EPI to MNI space to use in the QC report
     # EPI -> mni
     spaces = config.workflow.spaces
     assert isinstance(spaces, SpatialReferences)
@@ -156,6 +158,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
     workflow.connect(select_std, "std_dseg", resample, "input_image")
 
+    # Calculate the actual starting time and report into the json outputs
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717
     calc_scan_start = pe.Node(
         niu.Function(

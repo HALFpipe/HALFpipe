@@ -35,8 +35,8 @@ def init_anat_report_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "standardized",
-                "std_mask",
+                "standardized",  # Came from anat_norm, should come now from register_template
+                "std_mask",  # came from anat_norm, smriprep
                 "template",
                 "t1w_preproc",
                 "t1w_mask",
