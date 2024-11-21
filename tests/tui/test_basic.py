@@ -34,7 +34,9 @@ async def run_before(
         if isinstance(bold_path_pattern, Path):
             bold_path_pattern = str(bold_path_pattern)
         await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern)
-
+        # same reason for this as at work_tab case
+        await pilot.click(offset=(25, 25))
+        await pilot.click(offset=(25, 25))
 
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""

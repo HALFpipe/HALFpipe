@@ -22,10 +22,10 @@ from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
 from .utils.context import ctx
 from .working_directory.base import WorkDirectory
+from ..logging.base import LoggingContext
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-from ..logging.base import LoggingContext
 
 
 class HeaderCloseIcon(Widget):
@@ -194,6 +194,7 @@ class MainApp(App):
         ("g", "show_tab('models_tab')", "Group level models"),
         ("r", "show_tab('run_tab')", "Check and run"),
         # ("x", "reload", "reload"),
+        # ("c", "ctx", "ctx"),
     ]
 
     BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
@@ -257,8 +258,8 @@ class MainApp(App):
         """An action to toggle dark mode."""
         self.dark: bool = not self.dark
 
-    # def action_reload(self):
-    #     self.reload_ui()
+    def action_reload(self):
+        self.reload_ui()
 
     def reload_ui(self) -> None:
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
@@ -280,10 +281,6 @@ class MainApp(App):
         # set global settings to defaults use the defaults dictionary at preprocessing_content widget
         for key in self.get_widget_by_id("preprocessing_content").default_settings:
             ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
-        # for w in self.walk_children(FeatureTemplate):
-        #     current_id = w.id
-        #     w.remove()
-        #     name = feature_selection_content.feature_items[current_id].name
-        #     feature_selection_content.get_widget_by_id(current_id).remove()
-        #     feature_selection_content.feature_items.pop(current_id)
-        #     ctx.cache.pop(name)
+
+    def action_ctx(self):
+        print('cccccccccccc', ctx.cache)
