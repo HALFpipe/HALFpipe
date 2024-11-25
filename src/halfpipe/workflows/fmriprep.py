@@ -386,6 +386,8 @@ class FmriprepFactory(Factory):
             "anat_ribbon_wf",
             "refinement_wf",
             "ds_template_wf",
+            #  ds_template_registration_wf,
+            # ds_anat_volumes where is this one?
         ]:
             # ? Ask lea. Why did we only connect "anat_reports_wf", "anat_norm_wf"?
             # ? if we do anat_wf.list_node_names() we see many more.
