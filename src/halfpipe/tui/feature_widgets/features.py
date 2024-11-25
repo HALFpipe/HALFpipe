@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # ok to review
 
+import copy
+
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
@@ -91,6 +93,7 @@ class FeatureTemplate(Widget):
         self.event_file_pattern_counter = 0
         filepaths = ctx.database.get(**self.filters)
         self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
+        self.temp_bandpass_filter_selection: dict
 
         # Keys to check
         # TODO The whole tagvals logic is not good, it needs some improvements.
@@ -254,11 +257,14 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
             self.get_widget_by_id("preprocessing").styles.height = 32
             self.get_widget_by_id("confounds_selection").styles.offset = (0, 1)
+            self.setting_dict["bandpass_filter"] = self.temp_bandpass_filter_selection
         else:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
             self.get_widget_by_id("preprocessing").styles.height = 26
             self.get_widget_by_id("confounds_selection").styles.offset = (0, -5)
+            self.temp_bandpass_filter_selection = copy.deepcopy(self.setting_dict["bandpass_filter"])
+            self.setting_dict.pop("bandpass_filter")
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
     def _on_bandpass_filter_type_changed(self, message):
@@ -335,6 +341,19 @@ class FeatureTemplate(Widget):
             self.setting_dict["smoothing"]["fwhm"] = message.value
         elif "smoothing" in self.feature_dict:
             self.feature_dict["smoothing"]["fwhm"] = message.value
+
+    @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
+    def _on_smoothing_switch_changed(self, message: Message):
+        # in ReHo the smoothing is in features
+        if message.switch_value is True:
+            if type(self).__name__ == "ReHo":  # Compare by class name to avoid forward reference
+                self.feature_dict["smoothing"] = {"fwhm": 0}
+            else:
+                self.setting_dict["smoothing"] = {"fwhm": 0}
+        elif message.switch_value is False:
+            # in ReHo the smoothing is in features, pop in both, if key is not in the dict, nothing will just happen
+            self.setting_dict.pop("smoothing", None)
+            self.feature_dict.pop("smoothing", None)
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
     def _on_selection_list_changed(self):

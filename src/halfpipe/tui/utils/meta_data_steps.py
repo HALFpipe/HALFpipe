@@ -212,7 +212,7 @@ class SetMetadataStep:
 
     async def run(self):
         #  def setup(self, _):
-
+        print("aaaaaaaaaaaaaaaaaam i runnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnning????")
         unit = _get_unit(self.schema, self.key)
         field = self.field
 
@@ -258,7 +258,7 @@ class SetMetadataStep:
 
             #    self.input_view: CallableView = SingleChoiceInputView(display_choices, is_vertical=True)
             self.input_view += display_choices
-            # mount selection choice,             display_choices
+            # mount selection choice, display_choices
 
             choice = await self.app.push_screen_wait(
                 SelectionModal(
@@ -268,7 +268,7 @@ class SetMetadataStep:
                     id="set_value_modal",
                 )
             )
-            self.next(choice)
+            await self.next(choice)
 
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
@@ -295,11 +295,13 @@ class SetMetadataStep:
     # return True
 
     async def next(self, result):
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaand hereeeeeeeeeeeeeeeee????")
         if self.possible_options is not None:
             self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
         else:
             self.callback_message[self.humankey] = [str(result) + "\n"]
 
+        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii am hereeeeeeeeeeeeee!!!", result)
         if result is not None:
             key = self.key
             value = result
@@ -341,6 +343,10 @@ class SetMetadataStep:
 
             for widget_id, the_dict in ctx.cache.items():
                 # should always be there
+                print("-----------------------------------------------")
+                print("widget_id, the_dictwidget_id, the_dictwidget_id, the_dict", widget_id, the_dict)
+                print("vvvvvvvvvvvvvvvvvvvvvvvalue", value)
+                print("keeeeeeeeeeeeeeeeeeeeeeeeey", key)
                 if "files" in the_dict:
                     if isinstance(the_dict["files"], File):
                         is_ok = True

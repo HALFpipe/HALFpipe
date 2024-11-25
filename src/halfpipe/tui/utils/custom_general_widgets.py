@@ -102,7 +102,7 @@ class SwitchWithInputBox(Widget):
 
     @dataclass
     class SwitchChanged(Message):
-        switch_with_select: "SwitchWithInputBox"
+        switch_with_input_box: "SwitchWithInputBox"
         switch_value: bool
 
         @property

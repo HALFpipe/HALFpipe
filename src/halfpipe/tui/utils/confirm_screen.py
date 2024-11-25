@@ -147,7 +147,7 @@ class SimpleMessageModal(Confirm):
 
     def __init__(self, text, title="", id: str | None = None, classes: str | None = None) -> None:
         super().__init__(
-            text,
+            text=text,
             title=title,
             id=id,
             classes=classes,
