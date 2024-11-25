@@ -480,13 +480,39 @@ other words, first-level analyses.
 
             #. ``Specify feature name``
             #. ``Specify images to use``
-            #. TODO
+            #. ``Apply smoothing``
+
+               -  ``Yes``
+
+                  #. ``Specify smoothing FWHM in mm``
+
+               -  ``No`` Continue
+
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Temporal filtering will be applied using a frequency-based filter with a low cutoff of 0.01 Hz and a high cutoff of 0.1 Hz``
+
+            #. ``Remove confounds?``
 
          -  ``fALFF``
 
             #. ``Specify feature name``
             #. ``Specify images to use``
-            #. TODO
+            #. ``Apply smoothing``
+
+               -  ``Yes``
+
+                  #. ``Specify smoothing FWHM in mm``
+
+               -  ``No`` Continue
+
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Temporal filtering will be applied using a frequency-based filter with a low cutoff of 0.01 Hz and a high cutoff of 0.1 Hz``
+
+            #. ``Remove confounds?``
 
    -  ``No`` Skip this step
 
