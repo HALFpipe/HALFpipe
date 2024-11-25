@@ -1,0 +1,80 @@
+{% set name = "fmriprep" %}
+{% set version = "20.2.7+halfpipe.2" %}
+
+# Dependencies derived from:
+# https://github.com/HippocampusGirl/fmriprep/blob/halfpipe/setup.cfg#L25C5-L43C9
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/HippocampusGirl/fmriprep.git
+  git_rev: "{{ version }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+
+requirements:
+  host:
+    - python 3.11.*
+    - pip
+  run:
+    - python 3.11.*
+    - nipype # local
+    - indexed_gzip>=0.8.8
+    - networkx
+    - nibabel>=3.0
+    - nipype # local
+    - nilearn==0.10.2
+    - nitime
+    - nitransforms # local
+    - niworkflows # local
+    - numpy
+    - pandas
+    - psutil>=5.4
+    - pybids>=0.12.1
+    - pyyaml
+    - requests
+    - sdcflows # local
+    - smriprep # local
+    - tedana # local
+    - templateflow # local
+    - toml
+
+test:
+  imports:
+    - fmriprep
+    - fmriprep.__about__
+    - fmriprep.cli.parser
+    - fmriprep.cli.run
+    - fmriprep.cli.version
+    - fmriprep.cli.workflow
+    - fmriprep._warnings
+    - fmriprep.utils.meepi
+    - fmriprep.utils.misc
+    - fmriprep.utils.confounds
+    - fmriprep.utils.bids
+    - fmriprep.interfaces.patches
+    - fmriprep.interfaces.multiecho
+    - fmriprep.interfaces.reports
+    - fmriprep.interfaces.confounds
+    - fmriprep.config
+    - fmriprep.workflows.bold.confounds
+    - fmriprep.workflows.bold.resampling
+    - fmriprep.workflows.bold.base
+    - fmriprep.workflows.bold.t2s
+    - fmriprep.workflows.bold.registration
+    - fmriprep.workflows.bold.hmc
+    - fmriprep.workflows.bold.outputs
+    - fmriprep.workflows.bold.stc
+    - fmriprep.workflows.base
+    - fmriprep.reports.core
+
+about:
+  home: https://www.nipreps.org/fmriprep/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: "fMRIprep - a robust and easy-to-use pipeline for preprocessing of functional magnetic resonance images (fMRI) of the brain."

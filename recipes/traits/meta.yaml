@@ -11,16 +11,16 @@ source:
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install . --no-deps -vv
+  script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv
 
 requirements:
   build:
-    - python                                 # [build_platform != target_platform]
+    - python 3.11.*                          # [build_platform != target_platform]
     - cross-python_{{ target_platform }}     # [build_platform != target_platform]
     - {{ compiler('c') }}
   host:
     - pip
-    - python
+    - python 3.11.*
     - setuptools
   run:
     - python

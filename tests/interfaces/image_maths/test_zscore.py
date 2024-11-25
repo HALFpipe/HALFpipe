@@ -7,9 +7,10 @@ from math import isclose
 
 import nibabel as nib
 import numpy as np
-from halfpipe.interfaces.image_maths.zscore import ZScore
 from nilearn.image import new_img_like
 from templateflow import api
+
+from halfpipe.interfaces.image_maths.zscore import ZScore
 
 abs_tol = 1e-10
 

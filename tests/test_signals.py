@@ -10,11 +10,12 @@ from zipfile import ZipFile
 import nibabel as nib
 import numpy as np
 import pytest
+from nilearn.image import new_img_like
+
 from halfpipe.resource import get as get_resource
 from halfpipe.signals import mean_signals, mode_signals
 from halfpipe.stats.fit import load_data
 from halfpipe.utils.matrix import atleast_4d
-from nilearn.image import new_img_like
 
 from .resource import setup as setup_test_resources
 

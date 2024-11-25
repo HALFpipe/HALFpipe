@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from halfpipe.design import group_design, prepare_data_frame
-from halfpipe.model.variable import VariableSchema
 from nipype.interfaces import ants
 from templateflow.api import get as get_template
+
+from halfpipe.design import group_design, prepare_data_frame
+from halfpipe.model.variable import VariableSchema
 
 from .base import Dataset
 

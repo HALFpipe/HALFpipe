@@ -74,9 +74,6 @@ class BidsDatabase:
             if entity in entities:
                 bids_tags[bids_entity] = format_like_bids(value)
             else:
-                if tags.get("datatype") == "fmap":
-                    if entity == "suffix":
-                        entity = "fmap"
                 bids_tags[entity] = value
 
         bids_path_result = build_path(bids_tags, bids_config.default_path_patterns)

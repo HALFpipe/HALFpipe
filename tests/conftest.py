@@ -6,6 +6,7 @@ import os
 import tarfile
 
 import pytest
+
 from halfpipe.resource import get as get_resource
 
 from .resource import setup as setup_test_resources
@@ -48,4 +49,5 @@ def wakemandg_hensonrn_raw(tmp_path_factory):
         }
     )
 
+    return data
     return data

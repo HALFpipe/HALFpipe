@@ -1,0 +1,38 @@
+package:
+  name: "sdcflows"
+  version: "1.3.5"
+
+source:
+  git_url: https://github.com/nipreps/sdcflows.git
+  git_rev: "1.3.5"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+
+# Dependencies derived from:
+# https://github.com/nipreps/sdcflows/blob/1.3.5/setup.cfg
+requirements:
+  host:
+    - python 3.11.*
+    - pip
+  run:
+    - python 3.11.*
+    - nibabel>=3.0.1
+    - niflow-nipype1-workflows # local
+    - nipype # local
+    - niworkflows # local
+    - numpy
+    - pybids>=0.10.2
+    - templateflow>=0.4 # local
+
+test:
+  imports:
+    - sdcflows
+
+about:
+  home: https://github.com/nipreps/sdcflows
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: "Susceptibility Distortion Correction Flows - a toolbox for preprocessing magnetic resonance images of the brain."

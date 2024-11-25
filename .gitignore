@@ -132,8 +132,11 @@ dmypy.json
 .pyre/
 
 #
-nipype/
+# nipype/
 work/
+vi/
+# mac
+.DS_store
 
 # For vim
 # Swap
