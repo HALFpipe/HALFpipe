@@ -368,20 +368,11 @@ other words, first-level analyses.
             #. ``Specify images to use``
             #. ``Specify the event file type``
 
-            -  ``SPM multiple conditions`` A MATLAB .mat file containing
-               three arrays: ``names`` (condition), ``onsets`` and
-               ``durations``
+               -  ``SPM multiple conditions`` A MATLAB .mat file containing three arrays: ``names`` (condition), ``onsets`` and ``durations``
 
-            -  ``FSL 3-column`` One text file for each condition. Each
-               file has its corresponding condition in the filename. The
-               first column specifies the event onset, the second the
-               duration. The third column of the files is ignored, so
-               parametric modulation is not supported
+               -  ``FSL 3-column`` One text file for each condition. Each file has its corresponding condition in the filename. The first column specifies the event onset, the second the duration. The third column of the files is ignored, so parametric modulation is not supported
 
-            -  ``BIDS TSV`` A tab-separated table with named columns
-               ``trial_type`` (condition), ``onset`` and ``duration``.
-               While BIDS supports defining additional columns,
-               ``HALFpipe`` will currently ignore these
+               -  ``BIDS TSV`` A tab-separated table with named columns ``trial_type`` (condition), ``onset`` and ``duration``. While BIDS supports defining additional columns, ``HALFpipe`` will currently ignore these
 
             #. ``Specify the path of the event files``
 
@@ -471,10 +462,45 @@ other words, first-level analyses.
                   -  ``Specify the atlas name``
 
                #. ``Check space values``
+
                #. ``Specify atlas file(s)``
 
                   -  ``Load another atlas image file``
+
                #. ``Specify minimum atlas region coverage by individual brain mask`` Atlas region signals that do not reach the requirement are set to n/a
+
+            #. ``Specify preprocessing setting`` 
+
+            #. ``No smoothing will be applied``
+
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Apply a temporal filter?``
+
+               -  ``Yes``
+
+                  #. ``Specify the type of temporal filter``
+
+                     -  ``Gaussian-weighted``
+
+                        #. ``Specify the filter width in seconds``
+
+                           #. ``Low-pass width``
+
+                           #. ``High-pass width``
+
+                     -  ``Frequency-based``
+
+                        #. ``Specify the filter cutoff frequencies in Hz``
+
+                           #. ``Low cutoff``
+
+                           #. ``High cutoff``
+
+               -  ``No`` Continue
+
+            #. ``Remove confounds?``
 
          -  ``ReHo``
 
