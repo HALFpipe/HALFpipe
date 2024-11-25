@@ -35,8 +35,10 @@ def init_anat_report_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "standardized",  # Came from anat_norm, should come now from register_template
-                "std_mask",  # came from anat_norm, smriprep
+                # "standardized",  # Came from anat_norm, should come now from register_template
+                "ds_std_t1w",
+                "ds_std_mask",
+                # "std_mask",  # came from anat_norm, smriprep
                 "template",
                 "t1w_preproc",
                 "t1w_mask",
@@ -49,14 +51,15 @@ def init_anat_report_wf(
     )
 
     select_std = pe.Node(
-        KeySelect(fields=["standardized", "std_mask"]),
+        # KeySelect(fields=["standardized", "std_mask"]),
+        KeySelect(fields=["ds_std_t1w", "ds_std_mask"]),
         name="select_std",
         run_without_submitting=True,
         nohash=True,
     )
     select_std.inputs.key = Constants.reference_space
-    workflow.connect(inputnode, "standardized", select_std, "standardized")
-    workflow.connect(inputnode, "std_mask", select_std, "std_mask")
+    workflow.connect(inputnode, "ds_std_t1w", select_std, "ds_std_t1w")
+    workflow.connect(inputnode, "ds_std_mask", select_std, "ds_std_mask")
     workflow.connect(inputnode, "template", select_std, "keys")
 
     #
@@ -88,8 +91,8 @@ def init_anat_report_wf(
         name="t1_norm_rpt",
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(select_std, "standardized", t1_norm_rpt, "in_file")
-    workflow.connect(select_std, "std_mask", t1_norm_rpt, "mask_file")
+    workflow.connect(select_std, "ds_std_t1w", t1_norm_rpt, "in_file")
+    workflow.connect(select_std, "ds_std_mask", t1_norm_rpt, "mask_file")
     workflow.connect(t1_norm_rpt, "out_report", make_resultdicts, "t1_norm_rpt")
 
     return workflow
