@@ -45,6 +45,8 @@ acknowledge these tools when publishing results obtained with HALFpipe.
    <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
    should be able to answer most questions.
 
+   To cite this software in a publication, please see the `references <#references>`__ section of this document. 
+
 *******************
  Table of Contents
 *******************
@@ -90,6 +92,8 @@ acknowledge these tools when publishing results obtained with HALFpipe.
    -  `Data file system root <#data-file-system-root>`__
 
 -  `Contact <#contact>`__
+
+-  `References <#references>`__
 
 .. raw:: html
 
@@ -1003,3 +1007,11 @@ entire base system needed to run
 For questions or support, please submit an `issue
 <https://github.com/HALFpipe/HALFpipe/issues/new/choose>`__ or contact
 us via e-mail at enigma@charite.de.
+
+*********
+ References
+*********
+
+To cite HALFpipe, please refer to the `paper <https://doi.org/hmts>`__ as follows:
+
+    Waller, L., Erk, S., Pozzi, E., Toenders, Y. J., Haswell, C. C., Büttner, M., Thompson, P. M., Schmaal, L., Morey, R. A., Walter, H., & Veer, I. M. (2022). ENIGMA HALFpipe: Interactive, reproducible, and efficient analysis for resting-state and task-based fMRI data. Human brain mapping, 43(9), 2727–2742. https://doi.org/10.1002/hbm.25829
