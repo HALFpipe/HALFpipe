@@ -433,7 +433,10 @@ other words, first-level analyses.
                #. ``Specify the path of the binary seed mask image
                   files``
                #. ``Check space values``
-               #. ``Add binary seed mask image file``
+               #. ``Specify binary seed mask file(s)``
+
+                  -  ``Load another binary seed mask image file``
+               #. ``Specify minimum seed coverage by individual brain mask`` Functional images that do not meet the requirement will be skipped
 
          -  ``Dual regression``
 
