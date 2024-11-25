@@ -458,12 +458,23 @@ other words, first-level analyses.
 
                   -  ``Load another spatial map image file``
 
-
          -  ``Atlas-based connectivity matrix``
 
             #. ``Specify feature name``
+
             #. ``Specify images to use``
-            #. TODO
+
+            #. ``Specify atlas file(s)``
+
+               #. ``Specify the path of the atlas image files``
+
+                  -  ``Specify the atlas name``
+
+               #. ``Check space values``
+               #. ``Specify atlas file(s)``
+
+                  -  ``Load another atlas image file``
+               #. ``Specify minimum atlas region coverage by individual brain mask`` Atlas region signals that do not reach the requirement are set to n/a
 
          -  ``ReHo``
 
