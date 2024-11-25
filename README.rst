@@ -45,7 +45,7 @@ acknowledge these tools when publishing results obtained with HALFpipe.
    <https://docs.google.com/document/d/108-XBIuwtJziRVVdOQv73MRgtK78wfc-NnVu-jSc9oI/edit#heading=h.3y6rt7h7o483>`__
    should be able to answer most questions.
 
-   To cite this software in a publication, please see the `references <#references>`__ section of this document. 
+   To cite this software in a publication, please see the `references <#references>`__ section of this document.
 
 *******************
  Table of Contents
@@ -309,7 +309,7 @@ files are available in BIDS format, then this step can be skipped.
    -  ``Yes``
 
       #. ``Check slice acquisition direction`` / ``Specify slice acquisition direction``
-      #. ``Check slice timing values`` / ``Specify slice timing`` 
+      #. ``Check slice timing values`` / ``Specify slice timing``
 
    -  ``No`` Skip this step
 
@@ -348,7 +348,7 @@ files are available in BIDS format, then this step can be skipped.
 
       #. ``Assign field maps to functional images``
 
-      #. ``Check phase encoding direction values for the functional data`` / ``Specify phase encoding direction for the functional data`` 
+      #. ``Check phase encoding direction values for the functional data`` / ``Specify phase encoding direction for the functional data``
 
       #. ``Check effective echo spacing for the functional data in seconds`` / ``Specify effective echo spacing for the functional data in seconds``
 
@@ -436,7 +436,7 @@ other words, first-level analyses.
                   -  ``Load another binary seed mask image file``
                #. ``Specify minimum seed coverage by individual brain mask`` Functional images that do not meet the requirement will be skipped
 
-            #. ``Specify preprocessing setting`` 
+            #. ``Specify preprocessing setting``
 
             #. ``Apply smoothing``
 
@@ -492,7 +492,7 @@ other words, first-level analyses.
 
                   -  ``Load another spatial map image file``
 
-            #. ``Specify preprocessing setting`` 
+            #. ``Specify preprocessing setting``
 
             #. ``Apply smoothing``
 
@@ -535,7 +535,7 @@ other words, first-level analyses.
 
                #. ``Specify minimum atlas region coverage by individual brain mask`` Atlas region signals that do not reach the requirement are set to n/a
 
-            #. ``Specify preprocessing setting`` 
+            #. ``Specify preprocessing setting``
 
             #. ``No smoothing will be applied``
 
@@ -655,7 +655,7 @@ other words, first-level analyses.
       #. ``Remove confounds?``
 
    -  ``No`` Continue
-   
+
 
 Models
 ======
