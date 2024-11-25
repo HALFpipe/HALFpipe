@@ -432,6 +432,45 @@ other words, first-level analyses.
                   -  ``Load another binary seed mask image file``
                #. ``Specify minimum seed coverage by individual brain mask`` Functional images that do not meet the requirement will be skipped
 
+            #. ``Specify preprocessing setting`` 
+
+            #. ``Apply smoothing``
+
+               -  ``Yes``
+
+                  #. ``Specify smoothing FWHM in mm``
+
+               -  ``No`` Continue
+
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Apply a temporal filter?``
+
+               -  ``Yes``
+
+                  #. ``Specify the type of temporal filter``
+
+                     -  ``Gaussian-weighted``
+
+                        #. ``Specify the filter width in seconds``
+
+                           #. ``Low-pass width``
+
+                           #. ``High-pass width``
+
+                     -  ``Frequency-based``
+
+                        #. ``Specify the filter cutoff frequencies in Hz``
+
+                           #. ``Low cutoff``
+
+                           #. ``High cutoff``
+
+               -  ``No`` Continue
+
+            #. ``Remove confounds?``
+
          -  ``Dual regression``
 
             #. ``Specify feature name``
@@ -448,6 +487,29 @@ other words, first-level analyses.
                #. ``Specify spatial map file(s)``
 
                   -  ``Load another spatial map image file``
+
+            #. ``Specify preprocessing setting`` 
+
+            #. ``Apply smoothing``
+
+               -  ``Yes``
+
+                  #. ``Specify smoothing FWHM in mm``
+
+               -  ``No`` Continue
+
+            #. ``Grand mean scaling will be applied with a mean of
+               10000.000000``
+
+            #. ``Temporal filtering will be applied using a gaussian-weighted filter``
+
+               #. ``Specify the filter width in seconds``
+
+                  #. ``Low-pass width``
+
+                  #. ``High-pass width``
+
+            #. ``Remove confounds?``
 
          -  ``Atlas-based connectivity matrix``
 
@@ -505,7 +567,9 @@ other words, first-level analyses.
          -  ``ReHo``
 
             #. ``Specify feature name``
+
             #. ``Specify images to use``
+
             #. ``Apply smoothing``
 
                -  ``Yes``
@@ -524,7 +588,9 @@ other words, first-level analyses.
          -  ``fALFF``
 
             #. ``Specify feature name``
+
             #. ``Specify images to use``
+
             #. ``Apply smoothing``
 
                -  ``Yes``
@@ -585,6 +651,7 @@ other words, first-level analyses.
       #. ``Remove confounds?``
 
    -  ``No`` Continue
+   
 
 Models
 ======
