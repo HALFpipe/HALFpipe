@@ -432,6 +432,9 @@ other words, first-level analyses.
 
                #. ``Specify the path of the binary seed mask image
                   files``
+
+                  -  ``Specify the seed name``
+
                #. ``Check space values``
                #. ``Specify binary seed mask file(s)``
 
@@ -441,8 +444,20 @@ other words, first-level analyses.
          -  ``Dual regression``
 
             #. ``Specify feature name``
+
             #. ``Specify images to use``
-            #. TODO
+
+            #. ``Specify spatial map file(s)``
+
+               #. ``Specify the path of the spatial map image files``
+
+                  -  ``Specify the map name``
+
+               #. ``Check space values``
+               #. ``Specify spatial map file(s)``
+
+                  -  ``Load another spatial map image file``
+
 
          -  ``Atlas-based connectivity matrix``
 
