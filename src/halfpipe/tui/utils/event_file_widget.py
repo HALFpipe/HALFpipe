@@ -191,6 +191,7 @@ class FilePanelTemplate(Widget):
                             load_object=file_item_widget.get_pattern_match_results,
                             callback_message=file_item_widget.get_callback_message,
                             pattern_class=file_item_widget.get_pattern_class,
+                            execute_pattern_class_on_mount=False,
                         )
                     )
 

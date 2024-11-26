@@ -119,7 +119,7 @@ class RunCLX(Widget):
         ctx.spec.settings.clear()
         ctx.spec.models.clear()
         ctx.spec.files.clear()
-
+        print("ccccccccccccccccccccccccccccc cache", ctx.cache)
         # iterate now over the whole cache and fill the context object
         # the "name" is widget name carying the particular user choices, either a feature or file pattern
         for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
@@ -135,41 +135,39 @@ class RunCLX(Widget):
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
             if ctx.cache[name]["settings"] != {}:
                 ctx.spec.settings.append(SettingSchema().load({}, partial=True))
-                for key in ctx.cache[name]["settings"]:
+                for key, value in ctx.cache[name]["settings"].items():
                     try:
-                        setattr(ctx.spec.settings[-1], key, ctx.cache[name]["settings"][key])
-                        # if there are no filters, than put there just empty list
-                        if key == "filters":
-                            # if ctx.cache[name]["settings"]["filters"] == [] or set(
-                            #     ctx.cache[name]["settings"]["filters"][0]["values"]
-                            # ) == set(ctx.get_available_images["task"]):
-                            #     setattr(ctx.spec.settings[-1], key, [])
-                            #
-                            # if any(isinstance(item, dict) and "values" in item for item in ctx.cache[name]
-                            # ["settings"]["filters"]):
-                            #     if ctx.cache[name]["settings"]["filters"][0]["values"] == []:
-                            #         setattr(ctx.spec.settings[-1], key, [])
+                        # Skip keys based on specific conditions
+                        if (
+                            (key == "bandpass_filter" and value.get("type") is None)
+                            or (key == "smoothing" and value.get("fwhm") is None)
+                            or (key == "grand_mean_scaling" and value.get("mean") is None)
+                        ):
+                            continue
 
-                            # this should replace the many ifs above
-                            filters = ctx.cache[name]["settings"]["filters"]
+                        # Special handling for "filters", if there are no filters, than put there just empty list
+                        if key == "filters":
+                            filters = value
                             task_images = ctx.get_available_images["task"]
 
                             # Check if filters is empty, matches task images, or contains an empty 'values' list in
                             # any dictionary
                             if (
-                                not filters
-                                or set(filters[0].get("values", [])) == set(task_images)
-                                or any(isinstance(item, dict) and "values" in item and not item["values"] for item in filters)
+                                not filters  # Filters is empty
+                                or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
+                                or any(
+                                    isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
+                                    for item in filters
+                                )
                             ):
-                                setattr(ctx.spec.settings[-1], key, [])
+                                value = []  # Overwrite filters value with an empty list
 
-                            # WHY I WAS DOING THIS???
-                            # elif ctx.cache[name]["settings"]["filters"] != []:
-                            #     ctx.cache[name]["settings"]["filters"][0]["values"] = []
-                    except Exception:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        print(f"An exception occurred: {exc_value}")
-                        traceback.print_exception(exc_type, exc_value, exc_traceback)
+                        # Apply the value to the settings object
+                        setattr(ctx.spec.settings[-1], key, value)
+                    except Exception as e:
+                        print(f"An exception occurred: {e}")
+                        traceback.print_exc()
+
                 # this is for the case of falff
                 if "unfiltered_setting" in ctx.cache[name]:
                     unfiltered_setting = deepcopy(ctx.spec.settings[-1])

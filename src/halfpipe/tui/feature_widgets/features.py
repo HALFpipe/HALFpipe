@@ -104,26 +104,60 @@ class FeatureTemplate(Widget):
         if self.tagvals is None:
             self.tagvals = []
 
-        if "contrasts" not in self.feature_dict:
-            self.feature_dict["contrasts"] = []
-        if "type" not in self.feature_dict:
-            self.feature_dict["type"] = self.type
+        # if "contrasts" not in self.feature_dict:
+        #     self.feature_dict["contrasts"] = []
+        # if "type" not in self.feature_dict:
+        #     self.feature_dict["type"] = self.type
+        self.feature_dict.setdefault("contrasts", [])
+        self.feature_dict.setdefault("type", self.type)
+
         # These two are here for the case of atlases
-        if "min_region_coverage" not in self.feature_dict:
-            self.feature_dict["min_region_coverage"] = 0.8
-        if self.featurefield not in self.feature_dict:
-            self.feature_dict[self.featurefield] = []
+        # if "min_region_coverage" not in self.feature_dict:
+        #     self.feature_dict["min_region_coverage"] = 0.8
+        # if self.featurefield not in self.feature_dict:
+        #     self.feature_dict[self.featurefield] = []
+        self.feature_dict.setdefault("min_region_coverage", 0.8)
+        self.feature_dict.setdefault(self.featurefield, [])
 
-        if "bandpass_filter" not in self.setting_dict:
-            self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": "125", "lp_width": None}
+        # self.bandpass_filter_default_switch_value = True
+        # if "bandpass_filter" not in self.setting_dict:
+        #     self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": "125", "lp_width": None}
+        # else:
+        #     if self.setting_dict["bandpass_filter"]['type'] == None:
+        #         self.bandpass_filter_default_switch_value = False
+        self.bandpass_filter_default_switch_value = True
+        self.setting_dict.setdefault("bandpass_filter", {"type": "gaussian", "hp_width": "125", "lp_width": None})
+        if self.setting_dict["bandpass_filter"]["type"] is None:
+            self.bandpass_filter_default_switch_value = False
 
-        if "smoothing" not in self.setting_dict:
-            self.setting_dict["smoothing"] = {"fwhm": 0}
+        # self.smoothing_default_switch_value = True
+        # if "smoothing" not in self.setting_dict:
+        #     self.setting_dict["smoothing"] = {"fwhm": 0}
+        # else:
+        #     if self.setting_dict["smoothing"]["fwhm"] == None:
+        #         self.smoothing_default_switch_value = False
 
-        if "filters" not in self.setting_dict:
-            self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
-        if "grand_mean_scaling" not in self.setting_dict:
-            self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
+        self.smoothing_default_switch_value = True
+        self.setting_dict.setdefault("smoothing", {"fwhm": 0})
+        if self.setting_dict["smoothing"]["fwhm"] is None:
+            self.smoothing_default_switch_value = False
+
+        # if "filters" not in self.setting_dict:
+        #     self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
+        self.setting_dict.setdefault("filters", [{"type": "tag", "action": "include", "entity": "task", "values": []}])
+
+        # self.grand_mean_scaling_default_switch_value = True
+        # if "grand_mean_scaling" not in self.setting_dict:
+        #     self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
+        # else:
+        #     if self.setting_dict["grand_mean_scaling"]["mean"] == None:
+        #         self.grand_mean_scaling_default_switch_value = False
+
+        self.grand_mean_scaling_default_switch_value = True
+        self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000.0})
+        if self.setting_dict["grand_mean_scaling"]["mean"] is None:
+            self.grand_mean_scaling_default_switch_value = False
+
         self.images_to_use: dict | None
         # if images exists, i.e., bold files with task tags were correctly given
         if ctx.get_available_images != {}:
@@ -163,29 +197,32 @@ class FeatureTemplate(Widget):
         #         classes="components",
         #     )
         self.confounds_options = confounds_options
+        # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
+        # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
+
         self.preprocessing_panel = Vertical(
             SwitchWithInputBox(
                 label="Smoothing (FWHM in mm)",
                 value=self.setting_dict["smoothing"]["fwhm"],
+                switch_value=self.smoothing_default_switch_value,
                 classes="switch_with_input_box",
                 id="smoothing",
             ),
             SwitchWithInputBox(
                 label="Grand mean scaling",
                 value=self.setting_dict["grand_mean_scaling"]["mean"],
+                switch_value=self.grand_mean_scaling_default_switch_value,
                 classes="switch_with_input_box additional_preprocessing_settings",
                 id="grand_mean_scaling",
             ),
             SwitchWithSelect(
                 "Temporal filter",
                 options=[("Gaussian-weighted", "gaussian"), ("Frequency-based", "frequency_based")],
-                switch_value=True,
+                switch_value=self.bandpass_filter_default_switch_value,
                 default_option=self.setting_dict["bandpass_filter"]["type"],
                 id="bandpass_filter_type",
                 classes="additional_preprocessing_settings",
             ),
-            # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
-            # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
             SwitchWithInputBox(
                 label="Low-pass temporal filter width \n(in seconds)",
                 value=None,
@@ -245,30 +282,56 @@ class FeatureTemplate(Widget):
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
+            self.get_widget_by_id("bandpass_filter_lp_width").switch_value = False
+            self.get_widget_by_id("bandpass_filter_hp_width").switch_value = False
 
     # @on(SelectionList.SelectedChanged, "#tag_selection")
     # def on_tag_selection_changed(self, selection_list):
     #     self.feature_dict[self.featurefield] = selection_list.control.selected
 
+    # This serves for on/off of the bandpass filter. When Off, we need to hide some widgets, the opposite when On.
+    # There is a special case when filter was Off and the feature was duplicated, then after turning it on we need to pass
+    # some default values to the lp and hp widgets.
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
         if message.switch_value is True:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "visible"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
+            self.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id(
+                "input_switch_input_box"
+            ).styles.visibility = "visible"
+            self.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id(
+                "input_switch_input_box"
+            ).styles.visibility = "visible"
             self.get_widget_by_id("preprocessing").styles.height = 32
             self.get_widget_by_id("confounds_selection").styles.offset = (0, 1)
             self.setting_dict["bandpass_filter"] = self.temp_bandpass_filter_selection
+            # pass some default values to lp and hp widgets using this function
+            self.set_bandpass_filter_values_after_toggle(message.control.value)
         else:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
+            # The visibility of the input box of SwitchWithInputBox widget is on mount set by presence of string,
+            # since a string can be passed as a default value, we need to also override the input_switch_input_box subwidget
+            # of the SwitchWithInputBox widget
+            self.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id(
+                "input_switch_input_box"
+            ).styles.visibility = "hidden"
+            self.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id(
+                "input_switch_input_box"
+            ).styles.visibility = "hidden"
             self.get_widget_by_id("preprocessing").styles.height = 26
             self.get_widget_by_id("confounds_selection").styles.offset = (0, -5)
             self.temp_bandpass_filter_selection = copy.deepcopy(self.setting_dict["bandpass_filter"])
-            self.setting_dict.pop("bandpass_filter")
+            self.setting_dict["bandpass_filter"]["type"] = None
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
     def _on_bandpass_filter_type_changed(self, message):
         bandpass_filter_type = message.value
+        if message.control.switch_value is True:
+            self.set_bandpass_filter_values_after_toggle(bandpass_filter_type)
+
+    def set_bandpass_filter_values_after_toggle(self, bandpass_filter_type):
         if bandpass_filter_type == "frequency_based":
             lowest_value = (
                 self.setting_dict["bandpass_filter"]["low"] if "low" in self.setting_dict["bandpass_filter"] else "0.01"
@@ -325,7 +388,12 @@ class FeatureTemplate(Widget):
 
     @on(SwitchWithInputBox.Changed, "#grand_mean_scaling")
     def _on_grand_mean_scaling_changed(self, message: Message):
-        self.setting_dict["grand_mean_scaling"]["mean"] = message.value
+        self.setting_dict["grand_mean_scaling"]["mean"] = message.value if message.value != "" else None
+
+    @on(SwitchWithInputBox.SwitchChanged, "#grand_mean_scaling")
+    def _on_grand_mean_scaling_switch_changed(self, message: Message):
+        if message.switch_value is False:
+            self.setting_dict["grand_mean_scaling"]["mean"] = None
 
     @on(SwitchWithInputBox.Changed, ".bandpass_filter_values")
     def _on_bandpass_filter_xp_width_changed(self, message: Message):
@@ -333,14 +401,15 @@ class FeatureTemplate(Widget):
         if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
             mapping = {"lp_width": "low", "hp_width": "high"}
             the_id = mapping.get(the_id)
-        self.setting_dict["bandpass_filter"][the_id] = message.value
+        if message.control.switch_value is True:
+            self.setting_dict["bandpass_filter"][the_id] = message.value if message.value != "" else None
 
     @on(SwitchWithInputBox.Changed, "#smoothing")
     def _on_smoothing_changed(self, message: Message):
         if "smoothing" in self.setting_dict:
-            self.setting_dict["smoothing"]["fwhm"] = message.value
+            self.setting_dict["smoothing"]["fwhm"] = message.value if message.value != "" else None
         elif "smoothing" in self.feature_dict:
-            self.feature_dict["smoothing"]["fwhm"] = message.value
+            self.feature_dict["smoothing"]["fwhm"] = message.value if message.value != "" else None
 
     @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
     def _on_smoothing_switch_changed(self, message: Message):
@@ -352,8 +421,12 @@ class FeatureTemplate(Widget):
                 self.setting_dict["smoothing"] = {"fwhm": 0}
         elif message.switch_value is False:
             # in ReHo the smoothing is in features, pop in both, if key is not in the dict, nothing will just happen
-            self.setting_dict.pop("smoothing", None)
-            self.feature_dict.pop("smoothing", None)
+            # self.setting_dict.pop("smoothing", None)
+            # self.feature_dict.pop("smoothing", None)
+            if type(self).__name__ == "ReHo":  # Compare by class name to avoid forward reference
+                self.feature_dict["smoothing"]["fwhm"] = None
+            else:
+                self.setting_dict["smoothing"]["fwhm"] = None
 
     @on(SelectionList.SelectedChanged, "#images_to_use_selection")
     def _on_selection_list_changed(self):
