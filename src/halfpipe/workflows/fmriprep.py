@@ -219,6 +219,15 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
+            ## Pass normalized t1w image and mask ##
+            std_t1w = fmriprep_wf.get_node("sub_1012_wf.anat_fit_wf.anat_reports_wf.t1w_std")
+            std_mask = fmriprep_wf.get_node("sub_1012_wf.anat_fit_wf.anat_reports_wf.mask_std")
+
+            # check attribute availability
+            # what = print(std_mask.outputs.copyable_trait_names())
+            wf.connect(std_t1w, "output_image", inputnode, "std_t1w")
+            wf.connect(std_mask, "output_image", inputnode, "std_mask")
+
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
         for bold_file_path in bold_file_paths:
@@ -344,10 +353,6 @@ class FmriprepFactory(Factory):
                 # "bold_hmc_wf",            # Part of bold_fit now
                 # "final_boldref_wf",       # does not exist in 24
                 "bold_reg_wf",  # Part of bold_fit
-                # "sdc_estimate_wf",        # does not exist in 24
-                # "sdc_bypass_wf",          # does not exist in 24
-                # "sdc_unwarp_report_wf",   # does not exist in 24
-                # "bold_std_trans_wf",      #! seems to be renamed, we inherited input to select_std from here
                 "bold_surf_wf",
                 "bold_confounds_wf",
                 "carpetplot_wf",  # new
@@ -390,14 +395,15 @@ class FmriprepFactory(Factory):
             # ds_anat_volumes where is this one?
         ]:
             # ? Ask lea. Why did we only connect "anat_reports_wf", "anat_norm_wf"?
-            # ? if we do anat_wf.list_node_names() we see many more.
-            # ? e.g. Why not connect brain_extraction_wf
+            # ? does our connection function work when you are connecting nodes of SUB-WORKFLOWS attributes?
             # ! Why is get_node not able to connect some of these and others yes
             wf = anat_wf.get_node(name)
             if wf is not None:
                 _connect([*hierarchy, anat_wf, wf])
                 logger.warning(f"Connected node '{name}' in 'anat_fit_wf'")
-                # logger.warning(f"anat_fit_wf '{anat_wf.list_node_names()}'")
+                # if wf == 'anat_reports_wf':
+                ## FOR EXAMPLE HERE ##
+                # search template_iterator and connect to whole hierarchy?
             else:
                 logger.warning(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
         _connect([*hierarchy, anat_wf])

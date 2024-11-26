@@ -36,11 +36,11 @@ def init_anat_report_wf(
         niu.IdentityInterface(
             fields=[
                 # "standardized",  # Came from anat_norm, should come now from register_template
+                # "std_mask",  # came from anat_norm, smriprep
                 # "ds_std_t1w", # substitutes standardized, comes from datasinked output
                 # "ds_std_mask", # substitutes std_mask
                 "std_t1w",  # try accessing results from template_iterator_wf
                 "std_mask",
-                # "std_mask",  # came from anat_norm, smriprep
                 "template",
                 "t1w_preproc",
                 "t1w_mask",
