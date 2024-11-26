@@ -35,16 +35,28 @@ async def _load_data(pilot, data_path) -> None:
     await pilot.click(offset=(110, 41))
 
 
-async def add_new_feature(pilot) -> None:
+async def add_new_feature(pilot, feature_type=None, label=None) -> None:
+    feature_type = feature_type if feature_type is not None else "task_based"
+    label = label if label is not None else "task_based_1"
+
+    feature_type_yposition = {
+        "task_based": 19,
+        "seed_based": 21,
+        "dual_reg": 23,
+        "atlas": 25,
+        "reho": 27,
+        "falff": 29,
+        "preproc": 31,
+    }
     # select feature tab
     await pilot.press("f")
     # click on New button
     await pilot.click(offset=(10, 8))
     # click on Task based
-    await pilot.click(offset=(100, 19))
+    await pilot.click(offset=(100, feature_type_yposition[feature_type]))
     # click in the prompt
     await pilot.click(offset=(94, 25))
-    for letter in "task_based_1":
+    for letter in label:
         await pilot.press(letter)
     # click on Ok button
     await pilot.click(offset=(100, 30))
