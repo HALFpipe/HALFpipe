@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 from itertools import chain
 from pathlib import Path
+from typing import Any
 from zipfile import ZipFile
 
 import nibabel as nib
@@ -22,7 +23,7 @@ from ....resource import setup as setup_test_resources
 
 
 def test_group_level(tmp_path: Path) -> None:
-    template_query = dict(
+    template_query: dict[str, Any] = dict(
         template=Constants.reference_space,
         resolution=Constants.reference_res,
         desc="brain",
