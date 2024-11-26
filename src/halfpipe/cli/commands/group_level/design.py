@@ -295,11 +295,15 @@ def apply_from_arguments(
     if continuous_variable is not None:
         for name in continuous_variable:
             add_variable("continuous", name)
-
     categorical_variable = arguments.categorical_variable
     if categorical_variable is not None:
         for name, levels in zip(categorical_variable, arguments.levels, strict=False):
             add_variable("categorical", name, levels=levels)
+    for json_data in arguments.contrast or list():
+        contrast = contrast_schema.loads(json_data)
+        if not isinstance(contrast, dict):
+            raise RuntimeError
+        contrasts.append(contrast)
 
     missing_value_strategy = arguments.missing_value_strategy
     if missing_value_strategy == "listwise-deletion":
