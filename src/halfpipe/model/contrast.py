@@ -5,7 +5,7 @@
 """ """
 
 from marshmallow import Schema, fields, validate
-from marshmallow_oneofschema import OneOfSchema
+from marshmallow_oneofschema.one_of_schema import OneOfSchema
 
 
 class TContrastSchema(Schema):
