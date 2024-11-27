@@ -35,7 +35,7 @@ def init_alt_bold_std_trans_wf(
                 "bold_file",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
                 "bold_mask",
-                "itk_bold_to_t1",
+                "boldref2anat_xfm",
                 "out_warp",
                 "anat2std_xfm",
                 "xforms",
@@ -83,9 +83,14 @@ def init_alt_bold_std_trans_wf(
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.bold_file")
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.motion_xfm")  # was hmc_xforms
-    workflow.connect(inputnode, "itk_bold_to_t1", bold_std_trans_wf, "inputnode.boldref2anat_xfm")  # was itk_bold_to_t1
+    workflow.connect(inputnode, "boldref2anat_xfm", bold_std_trans_wf, "inputnode.boldref2anat_xfm")
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.target_mask")  # used differently?
     # workflow.connect(inputnode, "out_warp", bold_std_trans_wf, "inputnode.fieldwarp")
+
+    # (inputnode, boldref2target, [
+    #     ('boldref2anat_xfm', 'in1'),
+    #     ('anat2std_xfm', 'in2'),
+    # ]),
 
     for a in bold_std_trans_wf_outputs:
         workflow.connect(bold_std_trans_wf, f"outputnode.{a}", outputnode, f"alt_{a}")

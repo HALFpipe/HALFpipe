@@ -39,7 +39,7 @@ def init_anat_report_wf(
                 # "std_mask",  # came from anat_norm, smriprep
                 # "ds_std_t1w", # substitutes standardized, comes from datasinked output
                 # "ds_std_mask", # substitutes std_mask
-                "std_t1w",  # try accessing results from template_iterator_wf
+                "std_t1w",
                 "std_mask",
                 "template",
                 "t1w_preproc",

@@ -230,7 +230,7 @@ class FmriprepFactory(Factory):
 
             # Use connect_attr instead of wf.connect to ensure proper hierarchy handling
             self.connect_attr(
-                outputhierarchy=[*out_hierarchy],  # [*out_hierarchy, wf2]
+                outputhierarchy=[*out_hierarchy, wf2],  # [*out_hierarchy, wf2]
                 outputnode=std_t1w,
                 outattr="output_image",  # "output_image" "out_file" if using datasink
                 inputhierarchy=hierarchy,
@@ -239,7 +239,7 @@ class FmriprepFactory(Factory):
             )
 
             self.connect_attr(
-                outputhierarchy=[*out_hierarchy],
+                outputhierarchy=[*out_hierarchy, wf2],
                 outputnode=std_mask,
                 outattr="output_image",
                 inputhierarchy=hierarchy,
