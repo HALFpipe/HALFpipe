@@ -219,14 +219,38 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
-            ## Pass normalized t1w image and mask ##
-            std_t1w = fmriprep_wf.get_node("sub_1012_wf.anat_fit_wf.anat_reports_wf.t1w_std")
-            std_mask = fmriprep_wf.get_node("sub_1012_wf.anat_fit_wf.anat_reports_wf.mask_std")
+            # We create the output hierarchy for the fmriprep anat_reports worfkflow
+            # So we are able to pass normalized t1w image and mask to our own anat_report workflow ##
+            # out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="anat_fit_wf")
+            # wf = out_hierarchy[-1]
+            # wf2 = wf.get_node("anat_reports_wf")
+            # std_t1w = wf2.get_node("t1w_std")
+            # std_mask = wf2.get_node("mask_std")
 
-            # check attribute availability
-            # what = print(std_mask.outputs.copyable_trait_names())
-            wf.connect(std_t1w, "output_image", inputnode, "std_t1w")
-            wf.connect(std_mask, "output_image", inputnode, "std_mask")
+            out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="ds_std_volumes_wf")
+            wf = out_hierarchy[-1]
+            # wf2 = wf.get_node("anat_reports_wf")
+            std_t1w = wf.get_node("ds_std_t1w")
+            std_mask = wf.get_node("ds_std_mask")  # std_mask.outputs.copyable_trait_names()
+
+            # Use connect_attr instead of wf.connect to ensure proper hierarchy handling
+            self.connect_attr(
+                outputhierarchy=[*out_hierarchy],  # [*out_hierarchy, wf2]
+                outputnode=std_t1w,
+                outattr="out_file",  # "output_image"
+                inputhierarchy=hierarchy,
+                inputnode=inputnode,
+                inattr="std_t1w",
+            )
+
+            self.connect_attr(
+                outputhierarchy=[*out_hierarchy],
+                outputnode=std_mask,
+                outattr="out_file",
+                inputhierarchy=hierarchy,
+                inputnode=inputnode,
+                inattr="std_mask",
+            )
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
@@ -294,10 +318,6 @@ class FmriprepFactory(Factory):
                 attrs &= actually_connected_attrs
 
                 for attr in attrs:
-                    logger.warning(
-                        f"Connecting output attribute '{attr}' from node '{outputnode.fullname}' "
-                        f"to input attribute '{attr}' of node '{node.fullname}'"
-                    )
                     self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
                     connected_attrs.add(attr)
 
@@ -306,10 +326,6 @@ class FmriprepFactory(Factory):
                 if childtpl is not None:
                     childhierarchy, childnode = childtpl
                     childhierarchy, childnode, childattr = _find_input(childhierarchy, childnode, "in_file")
-                    logger.warning(
-                        f"Connecting output attribute '{childattr}' from node '{childnode.fullname}' "
-                        f"to input attribute '{attr}' of node '{node.fullname}'"
-                    )
                     self.connect_attr(childhierarchy, childnode, childattr, nodehierarchy, node, attr)
                     dsattrs.remove(attr)
                     connected_attrs.add(attr)

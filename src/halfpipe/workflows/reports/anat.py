@@ -29,7 +29,7 @@ def init_anat_report_wf(
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
-    fmriprepreports = ["t1w_dseg_mask", "std_t1w"]
+    fmriprepreports = ["t1w_dseg_mask"]  # "std_t1w"
     fmriprepreportdatasinks = [f"ds_{fr}_report" for fr in fmriprepreports]
 
     inputnode = pe.Node(
@@ -75,7 +75,7 @@ def init_anat_report_wf(
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    #
+    #! This needs to be commented
     for fr, frd in zip(fmriprepreports, fmriprepreportdatasinks, strict=False):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 

@@ -12,6 +12,7 @@ from nipype.pipeline import engine as pe
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
+from ..logging import logger
 from ..model.spec import Spec
 from ..utils.format import format_like_bids
 
@@ -135,7 +136,9 @@ class Factory(ABC):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 
+        # The first element of both hierarchies needs to be the same
         assert outputhierarchy[0] == inputhierarchy[0]
+
         while outputhierarchy[1] == inputhierarchy[1]:
             inputhierarchy.pop(0)
             outputhierarchy.pop(0)
@@ -149,6 +152,11 @@ class Factory(ABC):
 
         outputendpoint = self._endpoint(outputhierarchy, outputnode, outattr)
         inputendpoint = self._endpoint(inputhierarchy, inputnode, inattr)
+
+        logger.warning(
+            f"Connecting output '{outattr}' from node '{outputnode.fullname}' "
+            f"to input '{inattr}' of node '{inputnode.fullname}'"
+        )
         workflow.connect(*outputendpoint, *inputendpoint)
 
     def connect(self, nodehierarchy, node, *args, **kwargs):
