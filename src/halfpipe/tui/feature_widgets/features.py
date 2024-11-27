@@ -91,18 +91,8 @@ class FeatureTemplate(Widget):
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
-        filepaths = ctx.database.get(**self.filters)
-        self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
-        self.temp_bandpass_filter_selection: dict
 
-        # Keys to check
-        # TODO The whole tagvals logic is not good, it needs some improvements.
-        tag_keys = ["seeds", "atlases", "maps"]
-        existing_tag = next((tag for tag in tag_keys if tag in self.feature_dict), None)
-        if existing_tag is not None:
-            self.tagvals = set(self.feature_dict[existing_tag])
-        if self.tagvals is None:
-            self.tagvals = []
+        self.temp_bandpass_filter_selection: dict
 
         # if "contrasts" not in self.feature_dict:
         #     self.feature_dict["contrasts"] = []
@@ -116,8 +106,6 @@ class FeatureTemplate(Widget):
         #     self.feature_dict["min_region_coverage"] = 0.8
         # if self.featurefield not in self.feature_dict:
         #     self.feature_dict[self.featurefield] = []
-        self.feature_dict.setdefault("min_region_coverage", 0.8)
-        self.feature_dict.setdefault(self.featurefield, [])
 
         # self.bandpass_filter_default_switch_value = True
         # if "bandpass_filter" not in self.setting_dict:
@@ -185,9 +173,11 @@ class FeatureTemplate(Widget):
             "global_signal": ["Global signal", False],
         }
 
-        if "confounds_removal" in self.setting_dict:
-            for confound in self.setting_dict["confounds_removal"]:
-                confounds_options[confound][1] = True
+        # if "confounds_removal" in self.setting_dict:
+        #     for confound in self.setting_dict["confounds_removal"]:
+        #         confounds_options[confound][1] = True
+        for confound in self.setting_dict.get("confounds_removal", []):
+            confounds_options[confound][1] = True
 
         # if self.feature_dict["contrasts"] is not None:
         #     self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
@@ -253,26 +243,19 @@ class FeatureTemplate(Widget):
                 id="images_to_use_selection",
                 classes="components",
             )
-        self.tag_panel = SelectionList[str](
-            *[Selection(tag, tag, True) for tag in self.tagvals], id="tag_selection", classes="components"
-        )
 
-    def compose(self) -> ComposeResult:
-        with ScrollableContainer(id="top_container_task_based"):
-            if self.images_to_use is not None:
-                yield self.images_to_use_selection_panel
-            yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
-            yield LabelWithInputBox(
-                label="Minimum atlas region coverage by individual brain mask",
-                value=self.feature_dict["min_region_coverage"],
-                classes="switch_with_input_box components",
-                id="minimum_coverage",
-            )
-            yield self.preprocessing_panel
-
-    @on(file_panel_class.FileItemIsDeleted, "#top_file_panel")
-    def on_file_panel_file_item_is_deleted(self, message: Message):
-        self.update_tag_selection_by_children_walk(set([]))
+    # def compose(self) -> ComposeResult:
+    #     with ScrollableContainer(id="top_container_task_based"):
+    #         if self.images_to_use is not None:
+    #             yield self.images_to_use_selection_panel
+    #         yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
+    #         # yield LabelWithInputBox(
+    #         #     label="Minimum atlas region coverage by individual brain mask",
+    #         #     value=self.feature_dict["min_region_coverage"],
+    #         #     classes="switch_with_input_box components",
+    #         #     id="minimum_coverage",
+    #         # )
+    #         yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
         if self.images_to_use is not None:
@@ -284,6 +267,10 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_lp_width").switch_value = False
             self.get_widget_by_id("bandpass_filter_hp_width").switch_value = False
+
+    @on(SelectionList.SelectedChanged, "#images_to_use_selection")
+    def _on_selection_list_changed(self):
+        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
 
     # @on(SelectionList.SelectedChanged, "#tag_selection")
     # def on_tag_selection_changed(self, selection_list):
@@ -382,10 +369,6 @@ class FeatureTemplate(Widget):
 
         self.setting_dict["bandpass_filter"]["type"] = bandpass_filter_type
 
-    @on(LabelWithInputBox.Changed, "#minimum_coverage")
-    def _on_label_with_input_box_changed(self, message: Message):
-        self.feature_dict["min_region_coverage"] = message.value
-
     @on(SwitchWithInputBox.Changed, "#grand_mean_scaling")
     def _on_grand_mean_scaling_changed(self, message: Message):
         self.setting_dict["grand_mean_scaling"]["mean"] = message.value if message.value != "" else None
@@ -427,10 +410,6 @@ class FeatureTemplate(Widget):
                 self.feature_dict["smoothing"]["fwhm"] = None
             else:
                 self.setting_dict["smoothing"]["fwhm"] = None
-
-    @on(SelectionList.SelectedChanged, "#images_to_use_selection")
-    def _on_selection_list_changed(self):
-        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
 
     @on(SelectionList.SelectedChanged, "#confounds_selection")
     def feed_feature_dict_confounds(self):
@@ -480,6 +459,28 @@ class AtlasSeedDualRegBased(FeatureTemplate):
     type = "atlas_based_connectivity"
     file_panel_class = AtlasFilePanel
     minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
+    minimum_coverage_tag = "min_region_coverage"
+
+    def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
+
+        self.feature_dict.setdefault(self.minimum_coverage_tag, 0.8)
+        self.feature_dict.setdefault(self.featurefield, [])
+
+        # Keys to check
+        # TODO The whole tagvals logic is not good, it needs some improvements.
+        filepaths = ctx.database.get(**self.filters)
+        self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
+        tag_keys = ["seeds", "atlases", "maps"]
+        existing_tag = next((tag for tag in tag_keys if tag in self.feature_dict), None)
+        if existing_tag is not None:
+            self.tagvals = set(self.feature_dict[existing_tag])
+        if self.tagvals is None:
+            self.tagvals = []
+
+        self.tag_panel = SelectionList[str](
+            *[Selection(tag, tag, True) for tag in self.tagvals], id="tag_selection", classes="components"
+        )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
@@ -489,7 +490,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
             yield self.tag_panel
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,
-                value=self.feature_dict["min_region_coverage"],
+                value=self.feature_dict[self.minimum_coverage_tag],
                 classes="switch_with_input_box components",
                 id="minimum_coverage",
             )
@@ -502,6 +503,14 @@ class AtlasSeedDualRegBased(FeatureTemplate):
             pass
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
+
+    @on(LabelWithInputBox.Changed, "#minimum_coverage")
+    def _on_label_with_input_box_changed(self, message: Message):
+        self.feature_dict[self.minimum_coverage_tag] = message.value
+
+    @on(file_panel_class.FileItemIsDeleted, "#top_file_panel")
+    def on_file_panel_file_item_is_deleted(self, message: Message):
+        self.update_tag_selection_by_children_walk(set([]))
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message: Message):
@@ -526,6 +535,11 @@ class AtlasSeedDualRegBased(FeatureTemplate):
     def update_tag_selection_by_children_walk(self, tagvals: set):
         for tagval in tagvals:
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
+            self.feature_dict[self.featurefield].append(tagval)
+
+    @on(SelectionList.SelectedChanged, "#tag_selection")
+    def on_tag_selection_changed(self, selection_list):
+        self.feature_dict[self.featurefield] = selection_list.control.selected
 
 
 class AtlasBased(AtlasSeedDualRegBased):
@@ -556,6 +570,7 @@ class AtlasBased(AtlasSeedDualRegBased):
     type = "atlas_based_connectivity"
     file_panel_class = AtlasFilePanel
     minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
+    minimum_coverage_tag = "min_region_coverage"
 
 
 class SeedBased(AtlasSeedDualRegBased):
@@ -586,6 +601,7 @@ class SeedBased(AtlasSeedDualRegBased):
     type = "seed_based_connectivity"
     file_panel_class = SeedMapFilePanel
     minimum_coverage_label = "Minimum seed map region coverage by individual brain mask"
+    minimum_coverage_tag = "min_seed_coverage"
 
 
 class DualReg(AtlasSeedDualRegBased):
@@ -643,8 +659,8 @@ class TaskBased(FeatureTemplate):
     type = "task_based"
     file_panel_class = EventFilePanel
 
-    def __init__(self, this_user_selection_dict, **kwargs) -> None:
-        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
+    def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
         if "conditions" not in self.feature_dict:
             self.feature_dict["conditions"] = []
         if self.images_to_use is not None:

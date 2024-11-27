@@ -3,8 +3,6 @@
 
 import copy
 import json
-import sys
-import traceback
 from collections import defaultdict
 from typing import Any
 
@@ -126,47 +124,50 @@ class RunCLX(Widget):
             if ctx.cache[name]["features"] != {}:
                 featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                 ctx.spec.features.append(featureobj)
-                for key in ctx.cache[name]["features"]:
-                    try:
-                        setattr(ctx.spec.features[-1], key, ctx.cache[name]["features"][key])
-                    except Exception:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        print(f"An exception occurred: {exc_value}")
-                        traceback.print_exception(exc_type, exc_value, exc_traceback)
+                for key, value in ctx.cache[name]["features"].items():
+                    # try:
+                    print("keeeeeeeeeeeeeeeeeeeeeeeeeeeeeey features", key, value)
+                    setattr(ctx.spec.features[-1], key, value)
+
+                    # except Exception:
+                    #     exc_type, exc_value, exc_traceback = sys.exc_info()
+                    #     print(f"An exception occurred: {exc_value}")
+                    #     traceback.print_exception(exc_type, exc_value, exc_traceback)
             if ctx.cache[name]["settings"] != {}:
                 ctx.spec.settings.append(SettingSchema().load({}, partial=True))
                 for key, value in ctx.cache[name]["settings"].items():
-                    try:
-                        # Skip keys based on specific conditions
+                    # try:
+                    # Skip keys based on specific conditions
+                    print("keeeeeeeeeeeeeeeeeeeeeeeeeeeeeey", key, value)
+                    if (
+                        (key == "bandpass_filter" and value.get("type") is None)
+                        or (key == "smoothing" and value.get("fwhm") is None)
+                        or (key == "grand_mean_scaling" and value.get("mean") is None)
+                    ):
+                        continue
+
+                    # Special handling for "filters", if there are no filters, than put there just empty list
+                    if key == "filters":
+                        filters = value
+                        task_images = ctx.get_available_images["task"]
+
+                        # Check if filters is empty, matches task images, or contains an empty 'values' list in
+                        # any dictionary
                         if (
-                            (key == "bandpass_filter" and value.get("type") is None)
-                            or (key == "smoothing" and value.get("fwhm") is None)
-                            or (key == "grand_mean_scaling" and value.get("mean") is None)
+                            not filters  # Filters is empty
+                            or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
+                            or any(
+                                isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
+                                for item in filters
+                            )
                         ):
-                            continue
+                            value = []  # Overwrite filters value with an empty list
 
-                        # Special handling for "filters", if there are no filters, than put there just empty list
-                        if key == "filters":
-                            filters = value
-                            task_images = ctx.get_available_images["task"]
-
-                            # Check if filters is empty, matches task images, or contains an empty 'values' list in
-                            # any dictionary
-                            if (
-                                not filters  # Filters is empty
-                                or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
-                                or any(
-                                    isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
-                                    for item in filters
-                                )
-                            ):
-                                value = []  # Overwrite filters value with an empty list
-
-                        # Apply the value to the settings object
-                        setattr(ctx.spec.settings[-1], key, value)
-                    except Exception as e:
-                        print(f"An exception occurred: {e}")
-                        traceback.print_exc()
+                    # Apply the value to the settings object
+                    setattr(ctx.spec.settings[-1], key, value)
+                # except Exception as e:
+                #     print(f"An exception occurred: {e}")
+                #     traceback.print_exc()
 
                 # this is for the case of falff
                 if "unfiltered_setting" in ctx.cache[name]:
