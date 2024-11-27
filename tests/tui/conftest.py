@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from halfpipe import resource
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
 from ..workflows.datasets import Dataset  # Adjust this import path as needed
@@ -43,13 +44,6 @@ def downloaded_data_path(fixed_tmp_path) -> Path:
 
 @pytest.fixture(scope="module")
 def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
-    import sys
-
-    sys.path.append("/home/tomas/github/HALFpipe/src/")
-    from pathlib import Path
-
-    from halfpipe import resource
-
     # set atlases, seed maps and spatial maps
     test_online_resources = {
         "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
@@ -64,9 +58,8 @@ def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
     resource.resource_dir.mkdir(exist_ok=True, parents=True)
     resource.online_resources.update(test_online_resources)
 
-    # path_dict = {}
-    # for item in test_online_resources:
-    #     path_dict[item] = get_resource(item)
+    for item in test_online_resources:
+        resource.get(item)
 
     return resource.resource_dir
 
