@@ -221,23 +221,18 @@ class FmriprepFactory(Factory):
 
             # We create the output hierarchy for the fmriprep anat_reports worfkflow
             # So we are able to pass normalized t1w image and mask to our own anat_report workflow ##
-            # out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="anat_fit_wf")
-            # wf = out_hierarchy[-1]
-            # wf2 = wf.get_node("anat_reports_wf")
-            # std_t1w = wf2.get_node("t1w_std")
-            # std_mask = wf2.get_node("mask_std")
-
-            out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="ds_std_volumes_wf")
+            out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="anat_fit_wf")
             wf = out_hierarchy[-1]
-            # wf2 = wf.get_node("anat_reports_wf")
-            std_t1w = wf.get_node("ds_std_t1w")
-            std_mask = wf.get_node("ds_std_mask")  # std_mask.outputs.copyable_trait_names()
+            wf2 = wf.get_node("anat_reports_wf")
+            std_t1w = wf2.get_node("t1w_std")
+            std_mask = wf2.get_node("mask_std")
+            # std_mask.outputs.copyable_trait_names()
 
             # Use connect_attr instead of wf.connect to ensure proper hierarchy handling
             self.connect_attr(
                 outputhierarchy=[*out_hierarchy],  # [*out_hierarchy, wf2]
                 outputnode=std_t1w,
-                outattr="out_file",  # "output_image"
+                outattr="output_image",  # "output_image" "out_file" if using datasink
                 inputhierarchy=hierarchy,
                 inputnode=inputnode,
                 inattr="std_t1w",
@@ -246,7 +241,7 @@ class FmriprepFactory(Factory):
             self.connect_attr(
                 outputhierarchy=[*out_hierarchy],
                 outputnode=std_mask,
-                outattr="out_file",
+                outattr="output_image",
                 inputhierarchy=hierarchy,
                 inputnode=inputnode,
                 inattr="std_mask",
