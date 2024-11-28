@@ -304,11 +304,30 @@ async def run_before_for_reho_falff_preproc(
         await task()
 
 
-async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern):
+async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=False):
     # click on "Add" (atlas or seed image or map)
     await pilot.click(offset=(76, 17))
+
+    # select event file type if it is an event file pattern
+    if event_file_pattern is True:
+        await select_event_file_type(pilot)
+
     # add atlas file pattern
     await fill_path_pattern_modal(pilot, file_pattern)
+
+    # make choices of the space if it is not an event file pattern
+    if event_file_pattern is False:
+        await confirm_space_meta_data_after_selecting_file_pattern(pilot)
+
+
+async def select_event_file_type(pilot):
+    # Select event file type from the modal (tsv)
+    await pilot.click(offset=(86, 27))
+    # Confirm modal by clicking OK
+    await pilot.click(offset=(96, 31))
+
+
+async def confirm_space_meta_data_after_selecting_file_pattern(pilot):
     # click No: Missing Space values modal (Found some values, proceed with those?: No because we want to test the
     # space selection modal (MNI ICBM 2009c vs. MNI ICB 152)).
     await pilot.click(offset=(116, 31))

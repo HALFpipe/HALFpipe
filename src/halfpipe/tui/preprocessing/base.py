@@ -235,8 +235,8 @@ class Preprocessing(Widget):
         debuggroup_settings_panel.border_title = "Debug settings"
         rungroup_settings_panel.border_title = "Run settings"
 
-        yield functional_settings_panel
         yield anatomical_settings_panel
+        yield functional_settings_panel
         yield workflowgroup_settings_panel
         yield debuggroup_settings_panel
         yield rungroup_settings_panel

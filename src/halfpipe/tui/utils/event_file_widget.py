@@ -259,9 +259,10 @@ class EventFilePanel(FilePanelTemplate):
 
     async def add_file_item_pressed(self):
         async def proceed_with_choice(choice):
-            options_class_map = {"spm": MatEventsStep, "fsl": TxtEventsStep, "bids": TsvEventsStep}
-            self.pattern_class = options_class_map[choice]
-            await self.create_file_item(load_object=None)
+            if choice is not False:
+                options_class_map = {"spm": MatEventsStep, "fsl": TxtEventsStep, "bids": TsvEventsStep}
+                self.pattern_class = options_class_map[choice]
+                await self.create_file_item(load_object=None)
 
         options = {
             "spm": "SPM multiple conditions",
