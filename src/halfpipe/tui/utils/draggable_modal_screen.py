@@ -256,5 +256,9 @@ class DraggableModalScreen(ModalScreen):
         self.can_focus = True
 
     @on(Button.Pressed, ".window_close")
+    def windown_close(self):
+        self.request_close()
+
     def request_close(self):
+        print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee???????????????? here?")
         self.dismiss(False)

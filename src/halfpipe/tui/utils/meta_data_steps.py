@@ -265,6 +265,7 @@ class SetMetadataStep:
                     title="Select value",
                     instructions=header_str,
                     options=self.possible_options,
+                    only_ok_button=True,
                     id="set_value_modal",
                 )
             )

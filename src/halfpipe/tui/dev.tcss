@@ -95,7 +95,7 @@ SelectionModal {
     }
 
     Horizontal {
-        height: auto;
+        height: 4;
         width: 100%;
         align: right bottom;
         offset-x: 0;

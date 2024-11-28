@@ -6,9 +6,9 @@ from pathlib import Path
 from .pilot_functions import (
     _load_data,
     _set_work_dir,
+    add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
-    fill_path_pattern_modal,
     settable_scroll_screen_down,
 )
 
@@ -29,17 +29,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
 
     # Define functions to execute based on stage requirements
     async def add_dual_reg_task():
-        await add_new_feature(pilot, feature_type="dual_reg", label="reho_1")
-        # click on "Add" (map)
-        await pilot.click(offset=(76, 17))
-        # add atlas file pattern
-        await fill_path_pattern_modal(pilot, file_pattern)
-        # click Ok: Missing Space values modal
-        await pilot.click(offset=(116, 31))
-        # select first value in Specify space modal
-        await pilot.click(offset=(65, 26))
-        # click Ok
-        await pilot.click(offset=(115, 30))
+        await add_new_feature(pilot, feature_type="dual_reg", label="dual_reg_!")
+        # Add map file pattern
+        await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)

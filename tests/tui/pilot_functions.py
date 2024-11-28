@@ -302,3 +302,18 @@ async def run_before_for_reho_falff_preproc(
     await _load_data(pilot, data_path)
     for task in tasks_by_stage[stage]:
         await task()
+
+
+async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern):
+    # click on "Add" (atlas or seed image or map)
+    await pilot.click(offset=(76, 17))
+    # add atlas file pattern
+    await fill_path_pattern_modal(pilot, file_pattern)
+    # click No: Missing Space values modal (Found some values, proceed with those?: No because we want to test the
+    # space selection modal (MNI ICBM 2009c vs. MNI ICB 152)).
+    await pilot.click(offset=(116, 31))
+
+    # First item should be automatically selected, so we can click directly on "Ok"
+    # await pilot.click(offset=(65, 26)) # this is first item in the selection, not used because of the reasons above
+    # Click Ok
+    await pilot.click(offset=(131, 30))

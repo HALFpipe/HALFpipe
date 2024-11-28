@@ -59,20 +59,36 @@ class SelectionModal(DraggableModalScreen):
     """
 
     def __init__(
-        self, options=None | dict, title="", instructions="Select", id: str | None = None, classes: str | None = None
+        self,
+        options=None | dict,
+        title="",
+        instructions="Select",
+        only_ok_button: bool = False,
+        id: str | None = None,
+        classes: str | None = None,
     ) -> None:
         super().__init__(id=id, classes=classes)
         self.title_bar.title = title
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
         self.options: dict = {"a": "A", "b": "B"} if options is None else options
+
+        # In some cases the user just must made some choice in the selection. In particular this is the case when one is
+        # some of the Meta classes (CheckMeta...) are in action. Returning from this stage by hitting the cancel button would
+        # not make sense.
+        self.only_ok_button = only_ok_button
+        if only_ok_button is True:
+            button_panel = Horizontal(Button("OK", id="ok"))
+        else:
+            button_panel = Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel"))
+
         self.widgets_to_mount = [
             Static(self.instructions, id="title"),
-            RadioSet(*[RadioButton(self.options[key]) for key in self.options], id="radio_set"),
-            Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
+            RadioSet(*[RadioButton(self.options[key], value=i == 0) for i, key in enumerate(self.options)], id="radio_set"),
+            button_panel,
         ]
 
-        self.choice: str | list = "default_choice??? todo"
+        # self.choice: str | list = self.options.keys()[0]
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
@@ -80,16 +96,24 @@ class SelectionModal(DraggableModalScreen):
 
     @on(Button.Pressed, "#ok")
     def _on_ok_button_pressed(self):
-        self.dismiss(self.choice)
+        choice = list(self.options.keys())[self.get_widget_by_id("radio_set")._selected]
+        self.dismiss(choice)
 
     @on(Button.Pressed, "#cancel")
     def _on_cancel_button_pressed(self):
-        self.dismiss(None)
+        self.dismiss(False)
 
-    # @on(RadioSet.Changed)
-    def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        if event.control.id == "radio_set":
-            self.choice = list(self.options.keys())[event.index]
+    # # @on(RadioSet.Changed)
+    # def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+    #     if event.control.id == "radio_set":
+    #         self.choice = list(self.options.keys())[event.index]
+
+    def request_close(self):
+        if self.only_ok_button is True:
+            choice = list(self.options.keys())[self.get_widget_by_id("radio_set")._selected]
+            self.dismiss(choice)
+        else:
+            self.dismiss(False)
 
 
 class DoubleSelectionModal(SelectionModal):
