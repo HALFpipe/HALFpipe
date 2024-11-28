@@ -24,6 +24,11 @@ def init_anat_report_wf(
     name="anat_report_wf",
     memcalc: MemoryCalculator | None = None,
 ):
+    """
+    We create our own report because instead of a moving display for the
+    visualizations of the anatomical preprocessing, we prefer static ones.
+    """
+
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
@@ -33,10 +38,6 @@ def init_anat_report_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # "standardized",  # Came from anat_norm, should come now from register_template
-                # "std_mask",  # came from anat_norm, smriprep
-                # "ds_std_t1w", # substitutes standardized, comes from datasinked output
-                # "ds_std_mask", # substitutes std_mask
                 "std_t1w",
                 "std_mask",
                 "template",

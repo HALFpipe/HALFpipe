@@ -38,7 +38,7 @@ def init_alt_bold_std_trans_wf(
                 "boldref2anat_xfm",
                 "out_warp",
                 "anat2std_xfm",
-                "xforms",
+                "motion_xfm",
             ]
         ),
         name="inputnode",
@@ -53,8 +53,8 @@ def init_alt_bold_std_trans_wf(
     #
     alt_reference_spaces = spaces.get_spaces(nonstandard=False, dim=(3,))
 
-    #
-    mergexfm = pe.MapNode(niu.Merge(numinputs=2), iterfield="in1", name="mergexfm")
+    # We use ravel_inputs to flatten the list, to have just a list instead of a list of lists
+    mergexfm = pe.MapNode(niu.Merge(numinputs=2, ravel_inputs=True), iterfield="in1", name="mergexfm")
     mergexfm.inputs.in1 = [
         get_resource(f"tpl_{alt}_from_{Constants.reference_space}_mode_image_xfm.h5") for alt in alt_reference_spaces
     ]
@@ -82,15 +82,10 @@ def init_alt_bold_std_trans_wf(
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")  # same
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.bold_file")
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
-    workflow.connect(inputnode, "xforms", bold_std_trans_wf, "inputnode.motion_xfm")  # was hmc_xforms
+    workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")
     workflow.connect(inputnode, "boldref2anat_xfm", bold_std_trans_wf, "inputnode.boldref2anat_xfm")
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.target_mask")  # used differently?
     # workflow.connect(inputnode, "out_warp", bold_std_trans_wf, "inputnode.fieldwarp")
-
-    # (inputnode, boldref2target, [
-    #     ('boldref2anat_xfm', 'in1'),
-    #     ('anat2std_xfm', 'in2'),
-    # ]),
 
     for a in bold_std_trans_wf_outputs:
         workflow.connect(bold_std_trans_wf, f"outputnode.{a}", outputnode, f"alt_{a}")
