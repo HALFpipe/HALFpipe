@@ -33,4 +33,9 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          [numpy, types-chardet, types-requests, types-tabulate, typing_extensions]
+          - numpy
+          - types-chardet
+          - types-requests
+          - types-tabulate
+          - typing_extensions
+        args: ["--verbose"]

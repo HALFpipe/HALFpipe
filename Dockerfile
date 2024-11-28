@@ -2,15 +2,16 @@
 
 ARG fmriprep_version=24.0.1
 
-# Build all custom recipes in one command. We build our own conda packages to simplify
-# the environment creation process, as some of them are not available on conda-forge
-FROM condaforge/miniforge3 AS builder
-
+FROM condaforge/miniforge3 AS conda
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public \
     && conda config --system --set remote_max_retries 10 \
     --set remote_backoff_factor 2 \
     --set remote_connect_timeout_secs 60 \
     --set remote_read_timeout_secs 240
+
+# Build all custom recipes in one command. We build our own conda packages to simplify
+# the environment creation process, as some of them are not available on conda-forge
+FROM conda AS builder
 RUN conda install --yes "conda-build"
 
 RUN cat <<EOF > "/usr/bin/retry"
@@ -187,8 +188,8 @@ RUN --mount=source=recipes/${fmriprep_version}/halfpipe,target=/halfpipe/recipes
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "halfpipe/recipes/${fmriprep_version}/halfpipe"
 
-# We install built recipes and cleans unnecessary files such as static libraries
-FROM condaforge/miniforge3 AS install
+# We install built recipes and clean unnecessary files such as static libraries
+FROM conda AS install
 
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
@@ -238,6 +239,7 @@ RUN git config --global user.name "HALFpipe" \
     && git config --global user.email "halfpipe@fmri.science"
 
 # Copy `conda` from `install` stage
+RUN rm -rf /opt/conda
 COPY --from=install /opt/conda/ /opt/conda/
 
 # The `fmriprep` container comes with conda in `/usr/local/miniconda`.
@@ -265,7 +267,7 @@ ENV LANG="C.UTF-8" \
     FSLREMOTECALL="" \
     FSLGECUDAQ="cuda.q" \
     FSLWISH="/opt/conda/bin/fslwish"
-    # point to FSLwish, but maybe not necessary since we dont want graphics
+# point to FSLwish, but maybe not necessary since we dont want graphics
 
 RUN ln -s /opt/conda/bin/fslversion /opt/conda/etc/fslversion && \
     echo "6.0.4" > /opt/conda/bin/fslversion
