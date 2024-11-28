@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
 
 
 async def _set_work_dir(pilot, work_dir_path) -> None:
@@ -222,3 +223,83 @@ async def settable_scroll_screen_down(pilot, how_much=20) -> None:
     # scroll screen (different layout than in features)
     for _i in range(how_much):
         await pilot.press("down")
+
+
+
+async def run_before_for_reho_falff_preproc(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None, feature_type=None) -> None:
+    # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
+    # -n 2 flag for the pytest, i.e., running each test with a separate worker
+    how_much_down = 35
+
+    pilot.app.reload_ui()
+    if isinstance(data_path, Path):
+        data_path = str(data_path)
+    if isinstance(work_dir_path, Path):
+        work_dir_path = str(work_dir_path)
+    if isinstance(file_pattern, Path):
+        file_pattern = str(file_pattern)
+    print("----------------------------", data_path, work_dir_path)
+
+    # Define functions to execute based on stage requirements
+    async def add_reho_task():
+        await add_new_feature(pilot, feature_type=feature_type, label=feature_type+'_1')
+        # deselect second image
+        await pilot.click(offset=(71, 10))
+
+        # click in the Smoothing input box, delete the '0' and type '666'
+        await pilot.click(offset=(137, 17))
+
+        await pilot.press('backspace')
+        for i in '666':
+            await pilot.press(i)
+
+        # click in the Grand mean scaling input box, delete the '0' and type '666'
+        await pilot.click(offset=(137, 21))
+        for _i in range(7):
+            await pilot.press('backspace')
+        for i in '12345':
+            await pilot.press(i)
+
+        # click on the selection arrow of the temporal filter and select 'frequency_based'
+        await pilot.click(offset=(151, 23))
+        await pilot.click(offset=(151, 27))
+
+        # change low pass filter value to 0.019
+        await pilot.click(offset=(137, 26))
+        await pilot.press('9')
+
+        # change high pass filter value to 0.19
+        await pilot.click(offset=(137, 29))
+        await pilot.press('9')
+
+        # remove confounds (activate all)
+        await pilot.click(offset=(72, 34))
+        await pilot.click(offset=(72, 35))
+        await pilot.click(offset=(72, 36))
+        await pilot.click(offset=(72, 37))
+        await pilot.click(offset=(72, 38))
+        await pilot.click(offset=(72, 39))
+        await pilot.click(offset=(72, 40))
+        await pilot.click(offset=(72, 41))
+        await pilot.click(offset=(72, 42))
+
+
+
+    async def final_stage_tasks():
+        await check_and_run_tab_refresh(pilot)
+        await settable_scroll_screen_down(pilot, how_much_down)
+        # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
+
+    # Map stages to the tasks they should trigger
+    tasks_by_stage = {
+        "at_features_tab": [add_reho_task],
+        "at_spec_preview": [add_reho_task, final_stage_tasks],
+    }
+
+    # Execute tasks based on the specified stage
+    # set work dir
+    await _set_work_dir(pilot, work_dir_path)
+    # set data dir
+    await _load_data(pilot, data_path)
+    for task in tasks_by_stage[stage]:
+        await task()

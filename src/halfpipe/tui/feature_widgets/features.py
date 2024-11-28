@@ -479,7 +479,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
             self.tagvals = []
 
         self.tag_panel = SelectionList[str](
-            *[Selection(tag, tag, True) for tag in self.tagvals], id="tag_selection", classes="components"
+            *[Selection(tag, tag, True) for tag in sorted(self.tagvals)], id="tag_selection", classes="components"
         )
 
     def compose(self) -> ComposeResult:
@@ -533,7 +533,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
         self.update_tag_selection_by_children_walk(tagvals)
 
     def update_tag_selection_by_children_walk(self, tagvals: set):
-        for tagval in tagvals:
+        for tagval in sorted(tagvals):
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
             self.feature_dict[self.featurefield].append(tagval)
 
@@ -720,16 +720,19 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id("images_to_use_selection").select_all()
 
-        # try to update it here? this refresh the whole condition list every time that image is changed
-        all_possible_conditions = []
-        if self.images_to_use is not None:
-            for v in self.images_to_use["task"].keys():
-                all_possible_conditions += extract_conditions(entity="task", values=[v])
-            self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
+        if type(self).__name__ == "TaskBased":  # conditions are only in Task Based not in Preprocessing!
 
-            self.update_conditions_table()
+            # try to update it here? this refresh the whole condition list every time that image is changed
+            all_possible_conditions = []
+            if self.images_to_use is not None:
+                for v in self.images_to_use["task"].keys():
+                    all_possible_conditions += extract_conditions(entity="task", values=[v])
+                self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
+
+                self.update_conditions_table()
 
     def update_conditions_table(self):
+
         condition_list = []
         for value in self.get_widget_by_id("images_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])
