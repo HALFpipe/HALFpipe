@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from functools import partial
 from pathlib import Path
 
@@ -47,10 +46,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
 
         # change minimum coverage from 0.8 to 0.85
         await pilot.click(offset=(131, 35))
-        await pilot.press('5')
+        await pilot.press("5")
         # press tab to unfocus the input box
-        await pilot.press('tab')
-
+        await pilot.press("tab")
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
@@ -104,4 +102,6 @@ def test_seed_based_at_spec_preview(
         stage="at_spec_preview",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
 #

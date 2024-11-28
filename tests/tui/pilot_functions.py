@@ -225,8 +225,9 @@ async def settable_scroll_screen_down(pilot, how_much=20) -> None:
         await pilot.press("down")
 
 
-
-async def run_before_for_reho_falff_preproc(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None, feature_type=None) -> None:
+async def run_before_for_reho_falff_preproc(
+    pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None, feature_type=None
+) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 35
@@ -242,22 +243,22 @@ async def run_before_for_reho_falff_preproc(pilot, data_path=None, work_dir_path
 
     # Define functions to execute based on stage requirements
     async def add_reho_task():
-        await add_new_feature(pilot, feature_type=feature_type, label=feature_type+'_1')
+        await add_new_feature(pilot, feature_type=feature_type, label=feature_type + "_1")
         # deselect second image
         await pilot.click(offset=(71, 10))
 
         # click in the Smoothing input box, delete the '0' and type '666'
         await pilot.click(offset=(137, 17))
 
-        await pilot.press('backspace')
-        for i in '666':
+        await pilot.press("backspace")
+        for i in "666":
             await pilot.press(i)
 
         # click in the Grand mean scaling input box, delete the '0' and type '666'
         await pilot.click(offset=(137, 21))
         for _i in range(7):
-            await pilot.press('backspace')
-        for i in '12345':
+            await pilot.press("backspace")
+        for i in "12345":
             await pilot.press(i)
 
         # click on the selection arrow of the temporal filter and select 'frequency_based'
@@ -266,11 +267,11 @@ async def run_before_for_reho_falff_preproc(pilot, data_path=None, work_dir_path
 
         # change low pass filter value to 0.019
         await pilot.click(offset=(137, 26))
-        await pilot.press('9')
+        await pilot.press("9")
 
         # change high pass filter value to 0.19
         await pilot.click(offset=(137, 29))
-        await pilot.press('9')
+        await pilot.press("9")
 
         # remove confounds (activate all)
         await pilot.click(offset=(72, 34))
@@ -282,8 +283,6 @@ async def run_before_for_reho_falff_preproc(pilot, data_path=None, work_dir_path
         await pilot.click(offset=(72, 40))
         await pilot.click(offset=(72, 41))
         await pilot.click(offset=(72, 42))
-
-
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)

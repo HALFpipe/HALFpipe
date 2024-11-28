@@ -721,18 +721,18 @@ class TaskBased(FeatureTemplate):
             self.get_widget_by_id("images_to_use_selection").select_all()
 
         if type(self).__name__ == "TaskBased":  # conditions are only in Task Based not in Preprocessing!
-
             # try to update it here? this refresh the whole condition list every time that image is changed
             all_possible_conditions = []
             if self.images_to_use is not None:
                 for v in self.images_to_use["task"].keys():
                     all_possible_conditions += extract_conditions(entity="task", values=[v])
-                self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(all_possible_conditions)
+                self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
+                    all_possible_conditions
+                )
 
                 self.update_conditions_table()
 
     def update_conditions_table(self):
-
         condition_list = []
         for value in self.get_widget_by_id("images_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])

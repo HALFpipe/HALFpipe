@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from functools import partial
 from pathlib import Path
 
@@ -94,4 +93,6 @@ def test_dual_reg_at_spec_preview(
         stage="at_spec_preview",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
 #
