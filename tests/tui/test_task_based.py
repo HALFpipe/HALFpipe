@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from functools import partial
 from pathlib import Path
 
@@ -51,7 +50,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
-        os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
+        # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
 
     # Map stages to the tasks they should trigger
     tasks_by_stage = {

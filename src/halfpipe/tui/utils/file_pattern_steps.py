@@ -332,6 +332,8 @@ class AddSpatialMapStep(FilePatternStep):
     ask_if_missing_entities = ["desc"]
     required_in_path_entities = []
 
+    next_step_type = CheckSpaceStep
+
 
 class AddBinarySeedMapStep(FilePatternStep):
     suffix, featurefield, dsp_str = "seed", "seeds", "binary seed mask"
@@ -343,3 +345,5 @@ class AddBinarySeedMapStep(FilePatternStep):
 
     ask_if_missing_entities = ["desc"]
     required_in_path_entities = []
+
+    next_step_type = CheckSpaceStep

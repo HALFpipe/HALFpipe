@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from functools import partial
 from pathlib import Path
 
@@ -31,7 +30,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # Define functions to execute based on stage requirements
     async def add_atlas_task():
         await add_new_feature(pilot, feature_type="atlas", label="atlas_1")
-        # click on add atlas
+        # click on "Add" (atlas)
         await pilot.click(offset=(76, 17))
         # add atlas file pattern
         await fill_path_pattern_modal(pilot, atlas_file_pattern)
@@ -40,6 +39,10 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
 
         await pilot.click(offset=(65, 26))
         await pilot.click(offset=(115, 30))
+
+        # change minimum coverage from 0.8 to 0.85
+        await pilot.click(offset=(131, 35))
+        await pilot.press("5")
 
         # turn off smoothing
         await pilot.click(offset=(118, 41))
@@ -55,7 +58,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
-        os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
+        # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
 
     # Map stages to the tasks they should trigger
     tasks_by_stage = {
