@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
+import logging
 import os
 import shutil
 from multiprocessing import cpu_count
@@ -58,6 +59,14 @@ def test_feature_extraction(tmp_path, mock_spec):
 
     #TODO: hardcodd tmp_path still runs all nodes, figure out solution
     """
+
+    # TODO why does this not print
+    logging.getLogger("nipype.workflow").setLevel(logging.DEBUG)
+
+    # Persist nipype cache across test runs
+    # TODO remove this
+    tmp_path = Path("/tmp/halfpipe")
+    tmp_path.mkdir(exist_ok=True)
 
     skip_vols = 3
     mock_spec.global_settings.update(dict(dummy_scans=skip_vols))
