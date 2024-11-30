@@ -71,7 +71,6 @@ def test_feature_extraction(tmp_path, mock_spec):
     skip_vols = 3
     mock_spec.global_settings.update(dict(dummy_scans=skip_vols))
 
-    # tmp_path = Path('/tmp/pytest-of-root/pytest-23/test_feature_extraction0')
     save_spec(mock_spec, workdir=tmp_path)
 
     config.nipype.omp_nthreads = cpu_count()

@@ -34,6 +34,7 @@ def init_alt_bold_std_trans_wf(
             fields=[
                 "bold_file",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
+                # "bold_ref_file",
                 "bold_mask",
                 "boldref2anat_xfm",
                 "out_warp",
@@ -54,7 +55,7 @@ def init_alt_bold_std_trans_wf(
     alt_reference_spaces = spaces.get_spaces(nonstandard=False, dim=(3,))
 
     # We use ravel_inputs to flatten the list, to have just a list instead of a list of lists
-    mergexfm = pe.MapNode(niu.Merge(numinputs=2, ravel_inputs=True), iterfield="in1", name="mergexfm")
+    mergexfm = pe.MapNode(niu.Merge(numinputs=2, ravel_inputs=True), iterfield="in1", name="mergexfm")  # no_flatten = false?
     mergexfm.inputs.in1 = [
         get_resource(f"tpl_{alt}_from_{Constants.reference_space}_mode_image_xfm.h5") for alt in alt_reference_spaces
     ]
@@ -78,11 +79,15 @@ def init_alt_bold_std_trans_wf(
     target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
     #!!!! did i break something here? We used to just pass a string, now we pass an image
 
+    fmriprep_merge_node = bold_std_trans_wf.get_node("boldref2target")
+    fmriprep_merge_node.inputs.ravel_inputs = True
+    fmriprep_merge_node.inputs.no_flatten = False
+
     bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")  # same
     workflow.connect(inputnode, "bold_file", bold_std_trans_wf, "inputnode.bold_file")
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
-    workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")
+    # workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")  # its a text file instead of h5
     workflow.connect(inputnode, "boldref2anat_xfm", bold_std_trans_wf, "inputnode.boldref2anat_xfm")
     workflow.connect(inputnode, "bold_mask", bold_std_trans_wf, "inputnode.target_mask")  # used differently?
     # workflow.connect(inputnode, "out_warp", bold_std_trans_wf, "inputnode.fieldwarp")
