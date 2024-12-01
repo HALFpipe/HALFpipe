@@ -846,11 +846,11 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
 
     next_step_type = CheckBoldSliceTimingStep
 
-    def _should_skip(self, ctx):
-        if self.key in ctx.already_checked:
-            return True
-        ctx.already_checked.add(self.key)
-        return False
+    # def _should_skip(self, ctx):
+    #     if self.key in ctx.already_checked:
+    #         return True
+    #     ctx.already_checked.add(self.key)
+    #     return False
 
 
 class CheckSpaceStep(CheckMetadataStep):

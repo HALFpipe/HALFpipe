@@ -34,6 +34,8 @@ async def _load_data(pilot, data_path) -> None:
     await pilot.press("esc")
     # click on the Enter button
     await pilot.click(offset=(110, 41))
+    # click Ok on Modal informing us that the data input is success
+    await pilot.click(offset=(121, 31))
 
 
 async def add_new_feature(pilot, feature_type=None, label=None) -> None:
@@ -178,7 +180,7 @@ async def fill_path_pattern_modal(pilot, path_patter):
     await pilot.click(offset=(125, 40))
 
 
-async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None) -> None:
+async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False) -> None:
     await pilot.press("i")
 
     # toggle bids to non bids
@@ -208,8 +210,19 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None)
         await pilot.press(i)
     # clear ok
     await pilot.click(offset=(125, 40))
-    # click Ok on Repetition time values
-    await pilot.click(offset=(100, 31))
+
+    if set_repetition_time is True:
+        # click No on 'Proceed with these values modal' (Repetition time values)
+        await pilot.click(offset=(116, 31))
+        # Specify repetition time in seconds: Click into prompt
+        await pilot.click(offset=(96, 27))
+        # Set time to '9'
+        await pilot.press("9")
+        # Click Ok to dismiss
+        await pilot.click(offset=(96, 31))
+    else:
+        # click Ok
+        await pilot.click(offset=(100, 31))
 
     # focus on the scroll bar
     await pilot.click(offset=(100, 31))
@@ -217,6 +230,8 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None)
         await pilot.press("down")
     # click confirm
     await pilot.click(offset=(100, 47))
+    # click Ok on Modal informing us that the data input is success
+    await pilot.click(offset=(121, 31))
 
 
 async def settable_scroll_screen_down(pilot, how_much=20) -> None:

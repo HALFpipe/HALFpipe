@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ok to review
 
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
@@ -44,11 +44,9 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
 
     def on_mount(self) -> None:
         self.content.mount(
-            Vertical(
-                Static("Set number of how many initial volumes to remove"),
-                Input(""),
-                Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-            )
+            Static("Set number of how many initial volumes to remove"),
+            Input(""),
+            Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         )
 
     @on(Button.Pressed, "#ok")
@@ -61,7 +59,7 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
 
     @on(Button.Pressed, "#cancel")
     def _on_cancel_button_pressed(self):
-        self.dismiss(None)
+        self.dismiss(False)
 
 
 class Preprocessing(Widget):
@@ -261,6 +259,7 @@ class Preprocessing(Widget):
     def on_run_reconall_switch_changed(self, message: Message):
         ctx.spec.global_settings["run_reconall"] = message.value
 
+    @work(exclusive=True, name="time_slicing_worker")
     @on(Switch.Changed, "#time_slicing_switch")
     async def on_time_slicing_switch_changed(self, message: Message):
         if message.value is True:
@@ -268,9 +267,8 @@ class Preprocessing(Widget):
             self.get_widget_by_id("slice_timing").styles.height = "auto"
 
             ctx.spec.global_settings["slice_timing"] = True
-
             meta_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, callback=self.callback_func)
-            meta_step_instance.run()
+            await meta_step_instance.run()
         else:
             ctx.spec.global_settings["slice_timing"] = False
             self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
@@ -327,9 +325,9 @@ class Preprocessing(Widget):
     def _on_edit_button_pressed(self):
         def update_remove_initial_volumes_value(value: None | str):
             remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
-            if value is not None:
+            if value is not False:
                 remove_volumes_value_widget.update(value)
                 remove_volumes_value_widget.styles.border = ("solid", "green")
-                ctx.spec.global_settings["dummy_scans"] = int(value)
+                ctx.spec.global_settings["dummy_scans"] = value
 
         self.app.push_screen(SetInitialVolumesRemovalModal(), update_remove_initial_volumes_value)

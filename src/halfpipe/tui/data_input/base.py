@@ -552,6 +552,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             # refresh available images so that the feature tab can use them
             ctx.refresh_available_images()
             # make hidden tabs visible
+            self.data_input_sucess()
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
             self.app.show_hidden_tabs()
 
@@ -585,12 +586,13 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
 
     @on(FileBrowser.Changed)
-    def _on_file_browser_changed(self, message: Message):
+    async def _on_file_browser_changed(self, message: Message):
         """Trigger the data read by the Context after a file path is selected (in bids case)."""
         ctx.cache["bids"]["files"] = message.selected_path
         self.app.flags_to_show_tabs["from_input_data_tab"] = True
         self.app.show_hidden_tabs()
         self.update_summaries()
+        self.data_input_sucess()
 
     def update_summaries(self):
         """Updates summary information and show hidden tabs (in bids case)."""
@@ -606,3 +608,24 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         # at this point, all went well, change border from red to green
         self.get_widget_by_id("data_input_file_browser").styles.border = ("solid", "green")
+
+    @work(exclusive=True, name="data_input_sucess_modal_worker")
+    async def data_input_sucess(self):
+        """Show modal after bids files are successfully loaded or after hitting the confirm button in the non bids case and
+        all is ok."""
+
+        await self.app.push_screen_wait(
+            Confirm(
+                "Data files successfully loaded! Proceed to the next tabs:\n\n\
+➡️  General preprocessing settings ⬅️\n\
+➡️             Features            ⬅️\n\
+➡️        Group level models       ⬅️\n\
+➡️           Check and run         ⬅️",
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="default",
+                title="Data input success",
+                id="data_input_sucess",
+                classes="confirm_success",
+            )
+        )

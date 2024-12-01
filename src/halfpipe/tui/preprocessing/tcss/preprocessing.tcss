@@ -116,33 +116,39 @@ Preprocessing {
 }
 
 SetInitialVolumesRemovalModal {
+    height: auto;
+    width: auto;
     #draggable_modal_screen_container_wrapper {
-        width: 40;
-        height: 14;
+        width: auto;
+        height: auto;
         background: black;
     }
-    Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
-    }
+
     Static {
-        height: 3;
+        height: auto;
         content-align: center middle;
         text-style: bold;
+        text-align: center;
+        width: auto;
+        margin: 1 1 1 1;
     }
     Input {
         width: 10;
+        offset-x: 20;
         border: tall $accent;
-        offset-x: 15;
     }
     Horizontal {
         height: 4;
+        width: 100%;
+
         align: right bottom;
-        offset-x: 1;
         Button {
             margin: 1;
         }
+    }
+    .window_title {
+        height: auto;
+        text-align: left;
     }
 }
 
