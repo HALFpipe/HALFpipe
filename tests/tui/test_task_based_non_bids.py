@@ -73,7 +73,10 @@ async def run_before(
 def test_task_based_non_bids_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
-    """Unselect a condition, make a column in the table, delete it, make it again"""
+    """Add file pattern of the event file in Task-based connectivity. This does _not_ trigger a modals about the meta
+    information. If all goes Ok then there should be the file pattern of the event file and conditions should be loaded
+    """
+
     file_pattern = "/tmp/tui_test/ds002785/sub-{subject}/func/sub-{subject}_task-{task}_events.tsv"
 
     run_before_with_extra_args = partial(
@@ -91,7 +94,9 @@ def test_task_based_non_bids_at_features_tab(
 def test_task_based_non_bids_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
-    """Unselect a condition, make a column in the table, delete it, make it again"""
+    """Same as test_reho_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
+    file."""
+
     file_pattern = "/tmp/tui_test/ds002785/sub-{subject}/func/sub-{subject}_task-{task}_events.tsv"
 
     run_before_with_extra_args = partial(

@@ -106,7 +106,9 @@ def test_non_bids_data_input_tab(
 def test_preproc_settings_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
-    """Check whether one can set the working directory."""
+    """Starts as test_non_bids_data_input_tab but sets repetition time to some values and further checks general preprocessing
+    settings, such as Run recon all, Turn on slice timing (which triggers a series of modals to check and set meta values
+    and lastly set remove initial volumes to some particular number. At the end, the spec preview is checked."""
     run_before_with_extra_args = partial(
         run_before,
         work_dir_path=work_dir_path,

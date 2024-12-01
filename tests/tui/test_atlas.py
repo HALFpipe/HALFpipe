@@ -78,8 +78,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
 def test_atlas_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
-    """Atlas atlas, this triggers a modals about the meta information, if all goes Ok then there should be the file pattern
-    of the atlas. Moreover, smoothing, grand mean scalling and temporal filters are set to Off."""
+    """Add file pattern of the atlas for the Atlas-based connectivity matrix feature. This triggers a modals about the meta
+    information, if all goes Ok then there should be the file pattern of the atlas. Moreover, smoothing, grand mean scalling
+    and temporal filters are set to Off."""
 
     atlas_file_pattern = atlases_maps_seed_images_path / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
     run_before_with_extra_args = partial(

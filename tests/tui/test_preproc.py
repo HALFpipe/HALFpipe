@@ -7,8 +7,7 @@ from .pilot_functions import run_before_for_reho_falff_preproc
 
 
 def test_preproc_at_features_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
-    """Atlas atlas, this triggers a modals about the meta information, if all goes Ok then there should be the file pattern
-    of the atlas. Moreover, smoothing, grand mean scalling and temporal filters are set to Off."""
+    """Adds preprocessing image. All options are modified plus all 'Remove confounds' options are selected"""
 
     run_before_with_extra_args = partial(
         run_before_for_reho_falff_preproc,
@@ -21,7 +20,7 @@ def test_preproc_at_features_tab(snap_compare, start_app, work_dir_path: Path, d
 
 
 def test_preproc_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
-    """Same as test_atlas_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
+    """Same as test_preproc_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
     file."""
 
     run_before_with_extra_args = partial(

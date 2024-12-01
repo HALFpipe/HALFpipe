@@ -257,7 +257,7 @@ async def run_before_for_reho_falff_preproc(
     print("----------------------------", data_path, work_dir_path)
 
     # Define functions to execute based on stage requirements
-    async def add_reho_task():
+    async def add_feature():
         await add_new_feature(pilot, feature_type=feature_type, label=feature_type + "_1")
         # deselect second image
         await pilot.click(offset=(71, 10))
@@ -306,8 +306,8 @@ async def run_before_for_reho_falff_preproc(
 
     # Map stages to the tasks they should trigger
     tasks_by_stage = {
-        "at_features_tab": [add_reho_task],
-        "at_spec_preview": [add_reho_task, final_stage_tasks],
+        "at_features_tab": [add_feature],
+        "at_spec_preview": [add_feature, final_stage_tasks],
     }
 
     # Execute tasks based on the specified stage

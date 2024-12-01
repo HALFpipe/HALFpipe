@@ -75,7 +75,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
 
 
 def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
-    """Unselect a condition, make a column in the table, delete it, make it again"""
+    """Add Task-based feature, unselect a condition, make a column in the table, delete it, make it again"""
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_tab_p1"
     )
@@ -85,7 +85,7 @@ def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: P
 def test_task_based_at_features_tab_p2(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
-    """Continue from p1, scroll, make choices in the preprocessing part"""
+    """Continue from test_task_based_at_features_tab_p1, scroll, make choices in the preprocessing part"""
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_tab_p2"
     )
@@ -96,7 +96,9 @@ def test_task_based_at_features_tab_p2(
 def test_task_based_features_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
-    """Continue from p1 and p2 to spec preview (last tab), also the spec file is saved for further inspection"""
+    """Continue from test_task_based_at_features_tab_p2 to spec preview (last tab), also the spec file is saved for
+    further inspection."""
+
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_spec_preview"
     )
@@ -107,8 +109,8 @@ def test_task_based_features_at_spec_preview(
 def test_task_based_features_at_features_duplicate(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
-    """Continue from p1 and p2, click on duplicate, scroll to the part where the table and preprocessing
-    options can be seen."""
+    """Continue from test_task_based_at_features_tab_p2, click on duplicate, scroll to the part where the table and
+    preprocessing options can be seen."""
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_duplicate"
     )
@@ -121,6 +123,7 @@ def test_task_based_features_duplicate_at_spec_preview(
 ) -> None:
     """Continue from test_task_based_features_at_features_duplicate to spec preview because we need to be sure that the
     duplicate was propagated also the the cache and further to the spec file."""
+
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="duplicate_at_spec_preview"
     )
