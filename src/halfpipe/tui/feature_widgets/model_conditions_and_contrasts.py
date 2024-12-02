@@ -280,7 +280,7 @@ class ModelConditionsAndContrasts(Widget):
             [table.add_row(None, label=o, key=o) for o in self.all_possible_conditions]
         table.remove_column("temp")
 
-        table.cursor_type = next(cursors)
+        table.cursor_type = 'column'
         table.zebra_stripes = True
         # read table defaults if there are some, this put columns into table (on load or on duplication)
         # if self.feature_contrasts_dict is not None:  # Ensure it is not None
@@ -408,9 +408,9 @@ class ModelConditionsAndContrasts(Widget):
     async def sort_cols(self) -> None:
         self.sort_by_row_label()
 
-    def key_c(self):
-        table = self.get_widget_by_id("contrast_table")
-        table.cursor_type = next(cursors)
+    # def key_c(self):
+    #     table = self.get_widget_by_id("contrast_table")
+    #     table.cursor_type = next(cursors)
 
     def update_condition_selection(self):
         """When some images are selected/deselected, the condition selection needs to be upgraded
