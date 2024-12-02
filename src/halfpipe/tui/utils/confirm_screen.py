@@ -80,8 +80,10 @@ class Confirm(DraggableModalScreen):
         # this here allows to use the modal just with one button, either outputting True or False (left/right)
         # use button_text = False to disable the button
         active_incides = [i for i, val in enumerate([left_button_text, right_button_text]) if val is not False]
+        self.active_index = None
         if len(active_incides) == 1:
             active_index = active_incides[0]
+            self.active_index = active_index
             self.buttons = [
                 Button(
                     [left_button_text, right_button_text][active_index],
@@ -115,16 +117,21 @@ class Confirm(DraggableModalScreen):
 
     @on(Button.Pressed, ".button_grid .cancel")
     def cancel(self):
-        self._cancel_window()
+        self.request_close()
 
     def key_escape(self):
-        self._cancel_window()
+        self.request_close()
 
     def _confirm_window(self):
         self.dismiss(True)
 
-    def _cancel_window(self):
-        self.dismiss(False)
+    def request_close(self):
+        # Clicking on the 'X' in the draggable window bar, escape key and the close button must always yield the same dismiss
+        # value!
+        if self.active_index == 0:  # default button is the 'Ok' button
+            self.dismiss(True)
+        else:  # default button is the 'Cancel' button or we have bot buttons
+            self.dismiss(False)
 
 
 class SimpleMessageModal(Confirm):
