@@ -174,7 +174,7 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy("fmriprep_24_0_wf", source_file=bold_file_path)[-1]
+            func_preproc_wf = self._get_hierarchy("fmriprep_24_1_wf", source_file=bold_file_path)[-1]
 
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
@@ -221,7 +221,7 @@ class FmriprepFactory(Factory):
 
             # We create the output hierarchy for the fmriprep anat_reports worfkflow
             # So we are able to pass normalized t1w image and mask to our own anat_report workflow ##
-            out_hierarchy = self._get_hierarchy("fmriprep_24_0_wf", subject_id=subject_id, childname="anat_fit_wf")
+            out_hierarchy = self._get_hierarchy("fmriprep_24_1_wf", subject_id=subject_id, childname="anat_fit_wf")
             wf = out_hierarchy[-1]
             wf2 = wf.get_node("anat_reports_wf")
             std_t1w = wf2.get_node("t1w_std")
@@ -325,13 +325,11 @@ class FmriprepFactory(Factory):
                     dsattrs.remove(attr)
                     connected_attrs.add(attr)
 
-        hierarchy = self._get_hierarchy("fmriprep_24_0_wf", source_file=source_file, subject_id=subject_id)
+        hierarchy = self._get_hierarchy("fmriprep_24_1_wf", source_file=source_file, subject_id=subject_id)
 
         wf = hierarchy[-1]
         # anat only
-        anat_wf = wf.get_node(
-            "anat_fit_wf"
-        )  # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/base.py#L317?
+        anat_wf = wf.get_node("anat_fit_wf")
 
         if anat_wf is None:
             # func first
