@@ -38,7 +38,7 @@ requirements:
     - APScheduler
     - transforms3d
     - nireports>=23.2.1
-    - nitransforms>=21.0.0
+    - nitransforms>=24.0.2
     - niworkflows>=1.10.1
     - tedana>=23.0.2
     - sdcflows>=2.8.1

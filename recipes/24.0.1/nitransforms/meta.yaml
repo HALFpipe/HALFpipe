@@ -1,5 +1,5 @@
 {% set name = "nitransforms" %}
-{% set version = "23.0.1" %}
+{% set version = "24.0.2" %}
 
 # Dependencies derived from:
 # https://github.com/nipy/nitransforms/blob/23.0.1/setup.cfg
@@ -10,7 +10,7 @@ package:
 
 source:
   url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 2edcb868fcd29704494aa097788548085fa0b9d62ab68d4e4b8715672ac1da76
+  sha256: ec2d07686989865001cc667dd20971f3ae529d5366b76c03966397ddb9e72572
 
 build:
   number: 0
