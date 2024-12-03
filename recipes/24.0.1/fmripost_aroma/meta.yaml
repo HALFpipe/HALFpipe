@@ -1,5 +1,5 @@
 {% set name = "fmripost_aroma" %}
-{% set version = "0.0.5" %}
+{% set version = "0.0.8" %}
 
 # Dependencies derived from:
 # https://github.com/nipreps/fmripost-aroma/blob/d84d680417bed05eda6a4db6374f2825f4893721/pyproject.toml
@@ -25,7 +25,7 @@ requirements:
     - python 3.11.*
     - fmriprep
     - nipype>=1.8.5
-    - nitransforms==23.0.1
+    - nitransforms>=24.0.2
     - nireports
     - niworkflows
     - sdcflows
