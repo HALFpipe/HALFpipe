@@ -358,8 +358,8 @@ class FmriprepFactory(Factory):
 
             for name in [
                 # "bold_bold_trans_wf",     # does not exist in 24
-                "bold_fit_wf",
                 "bold_native_wf",
+                "bold_fit_wf",
                 "bold_anat_wf",  # new
                 # "bold_hmc_wf",            # Part of bold_fit now
                 # "final_boldref_wf",       # does not exist in 24
@@ -405,7 +405,6 @@ class FmriprepFactory(Factory):
             #  ds_template_registration_wf,
             # ds_anat_volumes where is this one?
         ]:
-            # ? Ask lea. Why did we only connect "anat_reports_wf", "anat_norm_wf"?
             # ? does our connection function work when you are connecting nodes of SUB-WORKFLOWS attributes?
             # ! Why is get_node not able to connect some of these and others yes
             wf = anat_wf.get_node(name)
@@ -418,6 +417,11 @@ class FmriprepFactory(Factory):
             else:
                 logger.warning(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
         _connect([*hierarchy, anat_wf])
+
+        # wf = hierarchy[-1]
+        # template_iterator_wf = wf.get_node("template_iterator_wf")
+        # _connect([*hierarchy, template_iterator_wf])
+        # # template_iterator_wf should be fed into alt_bold_trans
 
         # TODO anat_wf.write_graph(graph2use="colored", format="png", simple_form=True, graph2use_hierarchical=True)
 

@@ -1,5 +1,5 @@
 {% set name = "smriprep" %}
-{% set version = "0.15.0" %}
+{% set version = "0.16.0" %} # needs to be updated to 0.16
 
 # Requirements derived from
 # https://github.com/nipreps/smriprep/blob/maint/0.15.x/pyproject.toml
@@ -29,7 +29,7 @@ requirements:
     - matplotlib>=2.2.0
     - nibabel>=4.0.1
     - nipype>=1.7.0
-    - niworkflows>=1.10.1
+    - niworkflows>=1.11.0
     - numpy
     - packaging
     - pybids>=0.11.1
