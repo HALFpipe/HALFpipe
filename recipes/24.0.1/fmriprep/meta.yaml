@@ -1,17 +1,14 @@
-{% set name = "fmriprep" %}
-{% set version = "24.0.1" %}
-
 # Dependencies derived from:
 # https://github.com/nipreps/fmriprep/blob/24.0.1/pyproject.toml
 # https://github.com/nipreps/fmriprep/blob/946b71ee2e4891c7d53cecfa68761bfc31b484fd/env.yml#L31C1-L37C21
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "fmriprep"
+  version: "24.1.x"
 
 source:
   git_url: https://github.com/nipreps/fmriprep.git
-  git_rev: "{{ version }}"
+  git_rev: "18a28efe090caabd0aad947e22f2954ba39d3472"
 
 build:
   number: 0
