@@ -501,6 +501,9 @@ class PostProcessingFactory(Factory):
     def get(self, source_file, setting_name, confounds_action=None):
         if self.ctx.spec.global_settings["run_aroma"] is True:
             # Make sure ica aroma components are calculated when enabled
+            # The component calculation is independent from the noise components regression application
+            # so we generally ran components by default and apply them if the specific settings of spec file
+            # shows "ica_aroma=True"
             self.ica_aroma_components_factory.get(source_file)
         if confounds_action == "select":
             return self.confounds_select_factory.get(source_file, setting_name)

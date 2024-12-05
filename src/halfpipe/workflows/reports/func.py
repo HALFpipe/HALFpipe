@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+
 from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -25,22 +26,31 @@ def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
 def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalculator | None = None):
     """
     Also creates initial vals
+
+
     """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
-    #
-    fmriprep_reports = ["bold_conf", "reg", "bold_rois", "compcor", "conf_corr", "sdc"]
+    #! need more documentation: why these values and not others? "reg" and "sdc" stopped existing, new exist
+    # put all
+    fmriprep_reports = ["bold_conf", "bold_rois", "compcor", "conf_corr", "summary", "validation"]
     fmriprep_reportdatasinks = [f"ds_report_{fr}" for fr in fmriprep_reports]
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_std",
-                "bold_std_ref",
-                "bold_mask_std",
+                # "bold_std",  # now ds_bold_std_wf.outputnode.bold??
+                # "bold_std_ref",  # now ds_bold_std_wf.outputnode.bold_ref?
+                # "bold_mask_std",  # now?
+                # "std_dseg",  # now?
+                "bold_file",  # was bold_std
+                "bold_ref_file",  # was bold_std_ref. This one might also be target_ref_file??
+                "target_ref_file",
+                "target_mask",
                 "std_dseg",
-                "spatial_reference",
+                "resampling_reference",  # from volumetric resample
+                # "spatial_reference", # this used to exist in fmriprep
                 "movpar_file",
                 "confounds_file",
                 "method",
@@ -56,19 +66,29 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
 
     select_std = pe.Node(
-        KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+        # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+        KeySelect(fields=["bold_file", "bold_ref_file", "target_mask", "std_dseg"]),
         name="select_std",
         run_without_submitting=True,
         nohash=True,
     )
-    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
-    workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
-    workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
-    workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
-    workflow.connect(inputnode, "spatial_reference", select_std, "keys")
 
-    #
+    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
+    # select_std.inputs.key = f"{Constants.reference_space}"
+    # select_std.inputs.keys = keys
+
+    workflow.connect(inputnode, "bold_file", select_std, "bold_file")
+    workflow.connect(inputnode, "bold_ref_file", select_std, "bold_ref_file")
+    workflow.connect(inputnode, "target_mask", select_std, "target_mask")
+    workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
+
+    # workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    # workflow.connect(inputnode, "bold_std_ref", select_std, "bold_std_ref")
+    # workflow.connect(inputnode, "bold_mask_std", select_std, "bold_mask_std")
+    # workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
+
+    workflow.connect(inputnode, "resampling_reference", select_std, "keys")
+
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
     #
@@ -98,6 +118,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     for fr, frd in zip(fmriprep_reports, fmriprep_reportdatasinks, strict=False):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
+    # Register EPI to MNI space to use in the QC report
     # EPI -> mni
     spaces = config.workflow.spaces
     assert isinstance(spaces, SpatialReferences)
@@ -106,19 +127,25 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         name="epi_norm_rpt",
         mem_gb=0.1,
     )
-    workflow.connect(select_std, "bold_std_ref", epi_norm_rpt, "in_file")
-    workflow.connect(select_std, "bold_mask_std", epi_norm_rpt, "mask_file")
+
+    # workflow.connect(select_std, "bold_std_ref", epi_norm_rpt, "in_file")
+    # workflow.connect(select_std, "bold_mask_std", epi_norm_rpt, "mask_file")
+
+    workflow.connect(select_std, "bold_ref_file", epi_norm_rpt, "in_file")
+    workflow.connect(select_std, "target_mask", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(select_std, "bold_std", tsnr, "in_file")
+    workflow.connect(select_std, "bold_file", tsnr, "in_file")
+    # workflow.connect(select_std, "bold_std", tsnr, "in_file")
     workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
+    # workflow.connect(select_std, "bold_mask_std", tsnr_rpt, "mask_file")
+    workflow.connect(select_std, "target_mask", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
@@ -131,6 +158,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
     workflow.connect(select_std, "std_dseg", resample, "input_image")
 
+    # Calculate the actual starting time and report into the json outputs
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717
     calc_scan_start = pe.Node(
         niu.Function(
