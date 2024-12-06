@@ -213,7 +213,7 @@ jobs:
             --rm \
             --volume="/var/run/docker.sock:/var/run/docker.sock" \
             --volume="$(pwd)/singularity-2:/output" \
-            quay.io/singularity/docker2singularity:v2.6 \
+            singularityware/docker2singularity:v2.6 \
             --name ${{ steps.metadata.outputs.singularity_name }} \
             ${{ steps.metadata.outputs.build_tag }}
           image_file=$(find singularity-2 -type f | head --lines=1)
