@@ -241,7 +241,7 @@ jobs:
             --rm \
             --volume="/var/run/docker.sock:/var/run/docker.sock" \
             --volume="$(pwd)/singularity:/output" \
-            quay.io/singularity/singularity:v4.0.1 \
+            quay.io/singularity/singularity:v4.1.0 \
             build \
             --disable-cache \
             /output/${{ steps.metadata.outputs.singularity_name }} \
