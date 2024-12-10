@@ -200,6 +200,11 @@ jobs:
           tags: |
             ${{ steps.metadata.outputs.push_tags }}
 
+      - name: Set up Apptainer
+        run: |
+          sudo add-apt-repository --yes "ppa:apptainer/ppa"
+          sudo apt install --yes "apptainer"
+
       - name: Build Singularity 2.x container
         if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
@@ -207,42 +212,41 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
-          mkdir --parents singularity-2
+          mkdir "singularity-2"
           docker run \
             --privileged \
             --rm \
             --volume="/var/run/docker.sock:/var/run/docker.sock" \
-            --volume="$(pwd)/singularity-2:/output" \
-            quay.io/singularity/docker2singularity:v2.6 \
-            --name ${{ steps.metadata.outputs.singularity_name }} \
-            ${{ steps.metadata.outputs.build_tag }}
-          image_file=$(find singularity-2 -type f | head --lines=1)
+            --volume="./singularity-2:/output" \
+            "quay.io/singularity/docker2singularity:v2.6" \
+            --name "${{ steps.metadata.outputs.singularity_name }}" \
+            "${{ steps.metadata.outputs.build_tag }}"
+          image_file=$(find "./singularity-2" -type f | head --lines=1)
+          # Check if the container works
+          apptainer run "${image_file}" --help
+          # Upload the container
           aws s3 mv \
-            --only-show-errors \
             --acl public-read \
-            ${image_file} \
-            s3://download-fmri-science/singularity/
+            "${image_file}" \
+            "s3://download-fmri-science/singularity/"
 
-      - name: Build Singularity container
+      - name: Build Apptainer container
         if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
-          mkdir --parents singularity
-          docker run \
-            --rm \
-            --volume="/var/run/docker.sock:/var/run/docker.sock" \
-            --volume="$(pwd)/singularity:/output" \
-            quay.io/singularity/singularity:v4.1.0 \
-            build \
+          mkdir "singularity"
+          apptainer build \
             --disable-cache \
-            /output/${{ steps.metadata.outputs.singularity_name }} \
-            docker-daemon://${{ steps.metadata.outputs.build_tag }}
-          image_file=$(find singularity -type f | head --lines=1)
+            "./singularity/${{ steps.metadata.outputs.singularity_name }}" \
+            "docker-daemon://${{ steps.metadata.outputs.build_tag }}"
+          image_file=$(find "./singularity" -type f | head --lines=1)
+          # Check if the container works
+          apptainer run "${image_file}" --help
+          # Upload the container
           aws s3 mv \
-            --only-show-errors \
             --acl public-read \
-            ${image_file} \
-            s3://download-fmri-science/singularity/
+            "${image_file}" \
+            "s3://download-fmri-science/singularity/"
