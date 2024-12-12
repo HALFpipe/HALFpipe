@@ -99,7 +99,8 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
+        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}"]
+        # output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
@@ -267,6 +268,20 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
+            resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", subject_id=subject_id, childname="bold_task_rest_wf")
+            wf2 = resample_hierarchy[-1]
+            bold_std = wf2.get_node("bold_std_wf")
+            resample = bold_std.get_node("outputnode")
+
+            self.connect_attr(
+                outputhierarchy=[*resample_hierarchy, bold_std],
+                outputnode=resample,
+                outattr="bold_file",
+                inputhierarchy=hierarchy,
+                inputnode=inputnode,
+                inattr="bold_std",
+            )
+
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
 
         return bold_file_paths
@@ -353,27 +368,33 @@ class FmriprepFactory(Factory):
                 # to skip_vols (bold_confounds_wf)
                 # https://github.com/nipreps/fmriprep/blob/24.0.1/fmriprep/workflows/bold/base.py#L679
 
+            # wf.list_node_names()
+
             for name in [
-                # "bold_bold_trans_wf",     # does not exist in 24
                 "bold_native_wf",
                 "bold_fit_wf",
                 "bold_anat_wf",  # new
-                # "bold_hmc_wf",            # Part of bold_fit now
-                # "final_boldref_wf",       # does not exist in 24
                 "bold_reg_wf",  # Part of bold_fit
                 "bold_surf_wf",
                 "bold_confounds_wf",
                 "carpetplot_wf",  # new
-                "func_fit_reports_wf",  # gives std_mask to anat_report ?? or should it come from smriprep?
+                "func_fit_reports_wf",
             ]:
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
 
+                    # We want to connect outputs of certain subworkflows within
+                    # bold_fit_wf, so we connect them explicitly through the hierarchy
                     if name == "bold_fit_wf":
-                        ds_boldmask_wf = bold_wf.get_node("ds_boldmask_wf")
-                        if ds_boldmask_wf is not None:
-                            _connect([*hierarchy, bold_wf, ds_boldmask_wf])
+                        for sub_name in [
+                            "ds_boldmask_wf",
+                            "ds_hmc_boldref_wf",  # there is also a boldref in "ds_coreg_boldref_wf". which one do we want?
+                            "ds_bold_std_wf",
+                        ]:
+                            bold_sub_wf = bold_wf.get_node(sub_name)
+                            if bold_sub_wf is not None:
+                                _connect([*hierarchy, bold_wf, bold_sub_wf])
 
             if "bold_split" in inputattrs:
                 splitnode = wf.get_node("split_opt_comb")
