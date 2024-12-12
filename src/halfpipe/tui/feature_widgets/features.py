@@ -125,10 +125,16 @@ class FeatureTemplate(Widget):
         #     if self.setting_dict["smoothing"]["fwhm"] == None:
         #         self.smoothing_default_switch_value = False
 
-        self.smoothing_default_switch_value = True
+        smoothing_default_switch_value = True
         self.setting_dict.setdefault("smoothing", {"fwhm": 0})
-        if self.setting_dict["smoothing"]["fwhm"] is None:
-            self.smoothing_default_switch_value = False
+        if self.type == "reho" or self.type == "falff":
+            default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
+            if self.feature_dict["smoothing"]["fwhm"] is None:
+                smoothing_default_switch_value = False
+        else:
+            default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
+            if self.setting_dict["smoothing"]["fwhm"] is None:
+                smoothing_default_switch_value = False
 
         # if "filters" not in self.setting_dict:
         #     self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
@@ -193,14 +199,16 @@ class FeatureTemplate(Widget):
         self.preprocessing_panel = Vertical(
             SwitchWithInputBox(
                 label="Smoothing (FWHM in mm)",
-                value=self.setting_dict["smoothing"]["fwhm"],
-                switch_value=self.smoothing_default_switch_value,
+                value=str(default_smoothing_value) if default_smoothing_value is not None else default_smoothing_value,
+                switch_value=smoothing_default_switch_value,
                 classes="switch_with_input_box",
                 id="smoothing",
             ),
             SwitchWithInputBox(
                 label="Grand mean scaling",
-                value=self.setting_dict["grand_mean_scaling"]["mean"],
+                value=str(self.setting_dict["grand_mean_scaling"]["mean"])
+                if self.setting_dict["grand_mean_scaling"]["mean"] is not None
+                else self.setting_dict["grand_mean_scaling"]["mean"],
                 switch_value=self.grand_mean_scaling_default_switch_value,
                 classes="switch_with_input_box additional_preprocessing_settings",
                 id="grand_mean_scaling",
@@ -244,6 +252,8 @@ class FeatureTemplate(Widget):
                 classes="components",
             )
 
+        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiinit parent", self.type)
+
     # def compose(self) -> ComposeResult:
     #     with ScrollableContainer(id="top_container_task_based"):
     #         if self.images_to_use is not None:
@@ -258,6 +268,7 @@ class FeatureTemplate(Widget):
     #         yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount parent")
         if self.images_to_use is not None:
             self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
@@ -321,11 +332,20 @@ class FeatureTemplate(Widget):
     def set_bandpass_filter_values_after_toggle(self, bandpass_filter_type):
         if bandpass_filter_type == "frequency_based":
             lowest_value = (
-                self.setting_dict["bandpass_filter"]["low"] if "low" in self.setting_dict["bandpass_filter"] else "0.01"
+                self.setting_dict["bandpass_filter"]["low"]
+                if "low" in self.setting_dict["bandpass_filter"] and self.setting_dict["bandpass_filter"]["low"] is None
+                else str(self.setting_dict["bandpass_filter"]["low"])
+                if "low" in self.setting_dict["bandpass_filter"]
+                else "0.01"
             )
             highest_value = (
-                self.setting_dict["bandpass_filter"]["high"] if "high" in self.setting_dict["bandpass_filter"] else "0.1"
+                self.setting_dict["bandpass_filter"]["high"]
+                if "high" in self.setting_dict["bandpass_filter"] and self.setting_dict["bandpass_filter"]["high"] is None
+                else str(self.setting_dict["bandpass_filter"]["high"])
+                if "high" in self.setting_dict["bandpass_filter"]
+                else "0.1"
             )
+
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in Hertz)")
             # set defaults on toggle
@@ -343,13 +363,24 @@ class FeatureTemplate(Widget):
             lowest_value = (
                 self.setting_dict["bandpass_filter"]["lp_width"]
                 if "lp_width" in self.setting_dict["bandpass_filter"]
-                else None
+                and self.setting_dict["bandpass_filter"]["lp_width"] is None
+                else str(self.setting_dict["bandpass_filter"]["lp_width"])
+                if "lp_width" in self.setting_dict["bandpass_filter"]
+                else "0.01"
             )
             highest_value = (
                 self.setting_dict["bandpass_filter"]["hp_width"]
                 if "hp_width" in self.setting_dict["bandpass_filter"]
+                and self.setting_dict["bandpass_filter"]["hp_width"] is None
+                else str(self.setting_dict["bandpass_filter"]["hp_width"])
+                if "hp_width" in self.setting_dict["bandpass_filter"]
                 else "125"
             )
+            # highest_value = (
+            #     str(self.setting_dict["bandpass_filter"]["hp_width"])
+            #     if "hp_width" in self.setting_dict["bandpass_filter"]
+            #     else "125"
+            # )
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in seconds)")
             # set defaults on toggle
@@ -389,27 +420,23 @@ class FeatureTemplate(Widget):
 
     @on(SwitchWithInputBox.Changed, "#smoothing")
     def _on_smoothing_changed(self, message: Message):
-        if "smoothing" in self.setting_dict:
-            self.setting_dict["smoothing"]["fwhm"] = message.value if message.value != "" else None
-        elif "smoothing" in self.feature_dict:
-            self.feature_dict["smoothing"]["fwhm"] = message.value if message.value != "" else None
+        # the function needs to be separated so that we can override it in reho and falff subclasses
+        self.set_smoothing_value(message.value)
+
+    def set_smoothing_value(self, value):
+        self.setting_dict["smoothing"]["fwhm"] = value if value != "" else None
 
     @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
     def _on_smoothing_switch_changed(self, message: Message):
+        # the function needs to be separated so that we can override it in reho and falff subclasses
+        self.set_smoothing_switch_value(message.switch_value)
+
+    def set_smoothing_switch_value(self, switch_value):
         # in ReHo the smoothing is in features
-        if message.switch_value is True:
-            if type(self).__name__ == "ReHo":  # Compare by class name to avoid forward reference
-                self.feature_dict["smoothing"] = {"fwhm": 0}
-            else:
-                self.setting_dict["smoothing"] = {"fwhm": 0}
-        elif message.switch_value is False:
-            # in ReHo the smoothing is in features, pop in both, if key is not in the dict, nothing will just happen
-            # self.setting_dict.pop("smoothing", None)
-            # self.feature_dict.pop("smoothing", None)
-            if type(self).__name__ == "ReHo":  # Compare by class name to avoid forward reference
-                self.feature_dict["smoothing"]["fwhm"] = None
-            else:
-                self.setting_dict["smoothing"]["fwhm"] = None
+        if switch_value is True:
+            self.setting_dict["smoothing"] = {"fwhm": 0}
+        elif switch_value is False:
+            self.setting_dict["smoothing"]["fwhm"] = None
 
     @on(SelectionList.SelectedChanged, "#confounds_selection")
     def feed_feature_dict_confounds(self):
@@ -467,27 +494,15 @@ class AtlasSeedDualRegBased(FeatureTemplate):
         self.feature_dict.setdefault(self.minimum_coverage_tag, 0.8)
         self.feature_dict.setdefault(self.featurefield, [])
 
-        # Keys to check
-        # TODO The whole tagvals logic is not good, it needs some improvements.
-        filepaths = ctx.database.get(**self.filters)
-        self.tagvals = ctx.database.tagvalset(self.entity, filepaths=filepaths)
-        tag_keys = ["seeds", "atlases", "maps"]
-        existing_tag = next((tag for tag in tag_keys if tag in self.feature_dict), None)
-        if existing_tag is not None:
-            self.tagvals = set(self.feature_dict[existing_tag])
-        if self.tagvals is None:
-            self.tagvals = []
-
-        self.tag_panel = SelectionList[str](
-            *[Selection(tag, tag, True) for tag in sorted(self.tagvals)], id="tag_selection", classes="components"
-        )
+        self.tagvals: list = []
+        self.file_tag_init_flag = True
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             if self.images_to_use is not None:
                 yield self.images_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
-            yield self.tag_panel
+            yield SelectionList[str](id="tag_selection", classes="components")
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,
                 value=self.feature_dict[self.minimum_coverage_tag],
@@ -519,22 +534,47 @@ class AtlasSeedDualRegBased(FeatureTemplate):
         if isinstance(template_path, Text):
             template_path = template_path.plain
 
+        # This snippet extracts all file tags from the files based on the file pattern.
         all_tagvals_based_on_the_current_file_patterns = set(
             [
                 extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
                 for file_path in message.value["files"]
             ]
         )
+
+        # Run again if nothing is found. When loading from a spec file there is 'desc' instead of e.g. 'atlases'.
+        # Maybe somehow combine these two to one?
         if all_tagvals_based_on_the_current_file_patterns == {None}:
             all_tagvals_based_on_the_current_file_patterns = set(
                 [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
             )
+
+        # The following line updates the tagvals set with the extracted tags. The '^' between the old and new set is to prevent
+        # from duplicated tags in case somebody adds the same file pattern twice.
         tagvals = tagvals ^ all_tagvals_based_on_the_current_file_patterns
+
         self.update_tag_selection_by_children_walk(tagvals)
 
     def update_tag_selection_by_children_walk(self, tagvals: set):
         for tagval in sorted(tagvals):
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
+        # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition of
+        # the file patterns. If this is the case, we deselect all selections and select only the options selected previous
+        # (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying previous
+        # options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not creating a new
+        # feature by duplication or from a spec file load by standardly by just adding a new feature. In such case we select
+        # all choices
+        if self.file_tag_init_flag:
+            self.get_widget_by_id("tag_selection").deselect_all()
+            if self.feature_dict[self.featurefield] == []:
+                self.get_widget_by_id("tag_selection").select_all()
+            else:
+                for tagval in self.feature_dict[self.featurefield]:
+                    self.get_widget_by_id("tag_selection").select(tagval)
+
+            self.file_tag_init_flag = False
+        else:
+            # This is run always except from the first time on init.
             self.feature_dict[self.featurefield].append(tagval)
 
     @on(SelectionList.SelectedChanged, "#tag_selection")
@@ -811,6 +851,16 @@ class ReHo(FeatureTemplate):
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+
+    def set_smoothing_value(self, value):
+        self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
+
+    def set_smoothing_switch_value(self, switch_value):
+        # in ReHo the smoothing is in features
+        if switch_value is True:
+            self.feature_dict["smoothing"] = {"fwhm": 0}
+        elif switch_value is False:
+            self.feature_dict["smoothing"]["fwhm"] = None
 
 
 class Falff(ReHo):

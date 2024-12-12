@@ -254,21 +254,54 @@ spec.json file it is possible to load the therein configuration.",
         if self.existing_spec is not None:
             for feature in self.existing_spec.features:
                 ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
+                # if feature.type != 'falff':
                 setting_feature_map[feature.__dict__["setting"]] = feature.name
+                # else:
+                #     setting_feature_map[feature.__dict__["unfiltered_setting"]] = feature.name
+
             for setting in self.existing_spec.settings:
                 # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
                 # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
+
                 if setting["output_image"] is not True:
-                    ctx.cache[setting_feature_map[setting["name"]]]["settings"] = copy.deepcopy(setting)
+                    # In case of falff, there is also unfiltered setting which is essentially the same as normal setting
+                    # but without the bandpass filter. So we put only the normal setting into the cache because in the run
+                    # tab the unfiltered setting will be created automatically form the normal setting.
+                    if setting["name"] in setting_feature_map:
+                        ctx.cache[setting_feature_map[setting["name"]]]["settings"] = copy.deepcopy(setting)
+                        print("jjj", ctx.cache[setting_feature_map[setting["name"]]]["settings"])
                 else:
                     ctx.cache[setting["name"]]["features"] = {}
                     ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
+
+                if setting["name"] in setting_feature_map:
+                    # settings = ctx.cache.get(setting_feature_map[setting["name"]], {}).get("settings", {})
+                    # feature = ctx.cache.get(setting_feature_map[setting["name"]], {}).get("features", {})
+                    cache_entry: dict = ctx.cache.get(setting_feature_map[setting["name"]], {})
+                    if isinstance(cache_entry, dict):
+                        settings = cache_entry.get("settings", {})
+                        feature = cache_entry.get("features", {})
+                    else:
+                        settings = {}
+                        feature = {}
+                    # Add default smoothing settings if missing
+                    if feature["type"] == "falff" or feature["type"] == "reho":
+                        feature.setdefault("smoothing", {"fwhm": None})
+                    else:
+                        settings.setdefault("smoothing", {"fwhm": None})
+
+                    settings.setdefault("grand_mean_scaling", {"mean": None})
 
             # Then create the widgets
             for top_name in ctx.cache:
                 if ctx.cache[top_name]["features"] != {}:
                     name = ctx.cache[top_name]["features"]["name"]
                     await feature_widget.add_new_feature([ctx.cache[name]["features"]["type"], name])
+                # ctx.cache[top_name]["features"] is empty {} dir in case of preproc feature, then we look if there is at least
+                # the settings key indicating that this is not a file pattern but a preproc feature
+                elif ctx.cache[top_name]["settings"] != {}:
+                    name = ctx.cache[top_name]["settings"]["name"]
+                    await feature_widget.add_new_feature(["preprocessed_image", name.replace("Setting", "")])
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.state == WorkerState.SUCCESS:

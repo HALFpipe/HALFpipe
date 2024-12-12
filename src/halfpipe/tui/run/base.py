@@ -127,6 +127,9 @@ class RunCLX(Widget):
                 for key, value in ctx.cache[name]["features"].items():
                     # try:
                     print("keeeeeeeeeeeeeeeeeeeeeeeeeeeeeey features", key, value)
+                    # for reho and falff smoothing is in features
+                    if key == "smoothing" and value.get("fwhm") is None:
+                        continue
                     setattr(ctx.spec.features[-1], key, value)
 
                     # except Exception:
