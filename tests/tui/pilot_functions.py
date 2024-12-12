@@ -2,7 +2,7 @@
 from pathlib import Path
 
 
-async def _set_work_dir(pilot, work_dir_path) -> None:
+async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
     await pilot.press("w")
     # click on Browse
     await pilot.click(offset=(60, 15))
@@ -14,10 +14,14 @@ async def _set_work_dir(pilot, work_dir_path) -> None:
     await pilot.press("esc")
     # click on the Enter button
     await pilot.click(offset=(109, 41))
-    # non existing path modal, click on "Ok"
-    await pilot.click(offset=(117, 31))
-    # Create new dir modal, click on "Ok"
-    await pilot.click(offset=(100, 31))
+    if not load_from_spec_file:
+        # non existing path modal, click on "Ok"
+        await pilot.click(offset=(117, 31))
+        # Create new dir modal, click on "Ok"
+        await pilot.click(offset=(100, 31))
+    else:
+        # Spec file found modal, click Load
+        await pilot.click(offset=(100, 31))
 
 
 async def _load_data(pilot, data_path) -> None:
@@ -153,7 +157,7 @@ async def check_and_run_tab_refresh(pilot) -> None:
     await pilot.press("r")
     # refresh
     await pilot.click(offset=(83, 9))
-    # # save
+    # save
     await pilot.click(offset=(100, 9))
     # press 'Ok' to dismiss the modal
     await pilot.click(offset=(117, 31))

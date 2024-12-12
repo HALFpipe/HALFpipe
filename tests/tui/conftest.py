@@ -12,7 +12,7 @@ from ..workflows.datasets import Dataset  # Adjust this import path as needed
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
 # If the path was variable then the snapshot would yield failure.
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def fixed_tmp_path() -> Path:
     path = Path("/tmp/tui_test/")
     path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
@@ -22,7 +22,7 @@ def fixed_tmp_path() -> Path:
 
 
 # Define the fixture with module scope, one subject, three tasks
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def downloaded_data_path(fixed_tmp_path) -> Path:
     dataset = Dataset(
         name="PIOP1",
@@ -42,7 +42,7 @@ def downloaded_data_path(fixed_tmp_path) -> Path:
     return data_path
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
     # set atlases, seed maps and spatial maps
     test_online_resources = {
@@ -64,22 +64,27 @@ def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
     return resource.resource_dir
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def work_dir_path(fixed_tmp_path) -> Path:
     return fixed_tmp_path / "work_dir/"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
+def spec_file_dir_path(fixed_tmp_path) -> Path:
+    return fixed_tmp_path / "spec_file_for_load_test/"
+
+
+@pytest.fixture(scope="module")
 def t1_path_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/anat/sub-{subject}_T1w.nii.gz"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def bold_path_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/func/sub-{subject}_task-{task}_bold.nii.gz"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_path_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/func/sub-{subject}_task-{task}_events.tsv"
 
