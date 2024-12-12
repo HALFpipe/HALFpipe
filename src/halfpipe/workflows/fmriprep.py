@@ -99,7 +99,7 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}"]
+        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
