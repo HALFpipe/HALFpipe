@@ -277,7 +277,6 @@ class FmriprepFactory(Factory):
     def connect(self, nodehierarchy, node, source_file=None, subject_id=None, **_) -> None:
         """
         This method connects equally named attributes of nodes.
-        preferentially use datasinked outputs
         """
 
         connected_attrs: set[str] = set()
@@ -329,9 +328,9 @@ class FmriprepFactory(Factory):
 
         wf = hierarchy[-1]
         # anat only
-        anat_wf = wf.get_node("anat_fit_wf")
+        anat_wf = wf.get_node("anat_fit_wf")  #  this will not exist for a bold workflow
 
-        if anat_wf is None:
+        if anat_wf is None:  # we are in a bold workflow
             # func first
             _connect(hierarchy)
 
@@ -370,6 +369,11 @@ class FmriprepFactory(Factory):
                 bold_wf = wf.get_node(name)
                 if bold_wf is not None:
                     _connect([*hierarchy, bold_wf])
+
+                    if name == "bold_fit_wf":
+                        ds_boldmask_wf = bold_wf.get_node("ds_boldmask_wf")
+                        if ds_boldmask_wf is not None:
+                            _connect([*hierarchy, bold_wf, ds_boldmask_wf])
 
             if "bold_split" in inputattrs:
                 splitnode = wf.get_node("split_opt_comb")
