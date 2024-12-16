@@ -126,12 +126,13 @@ class FeatureTemplate(Widget):
         #         self.smoothing_default_switch_value = False
 
         smoothing_default_switch_value = True
-        self.setting_dict.setdefault("smoothing", {"fwhm": 0})
         if self.type == "reho" or self.type == "falff":
+            self.feature_dict.setdefault("smoothing", {"fwhm": 0})
             default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
             if self.feature_dict["smoothing"]["fwhm"] is None:
                 smoothing_default_switch_value = False
         else:
+            self.setting_dict.setdefault("smoothing", {"fwhm": 0})
             default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
             if self.setting_dict["smoothing"]["fwhm"] is None:
                 smoothing_default_switch_value = False
@@ -730,6 +731,9 @@ class TaskBased(FeatureTemplate):
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
+        await self.mount_tasks()
+
+    async def mount_tasks(self):
         if self.images_to_use is not None:
             self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
         if self.app.is_bids is not True:
@@ -806,8 +810,10 @@ class PreprocessedOutputOptions(TaskBased):
         # no features for preprocessed image output!
         this_user_selection_dict["features"] = {}
 
-    async def on_mount(self) -> None:
+    async def mount_tasks(self):
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
+        if self.images_to_use is not None:
+            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
 
 
 class ReHo(FeatureTemplate):

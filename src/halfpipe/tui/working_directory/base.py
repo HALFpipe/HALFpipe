@@ -14,7 +14,7 @@ from textual.widgets import Static
 from textual.worker import Worker, WorkerState
 
 from ...model.spec import load_spec
-from ..feature_widgets.features import AtlasBased, DualReg, SeedBased, TaskBased
+from ..feature_widgets.features import AtlasBased, DualReg, PreprocessedOutputOptions, SeedBased, TaskBased
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
@@ -269,7 +269,6 @@ spec.json file it is possible to load the therein configuration.",
                     # tab the unfiltered setting will be created automatically form the normal setting.
                     if setting["name"] in setting_feature_map:
                         ctx.cache[setting_feature_map[setting["name"]]]["settings"] = copy.deepcopy(setting)
-                        print("jjj", ctx.cache[setting_feature_map[setting["name"]]]["settings"])
                 else:
                     ctx.cache[setting["name"]]["features"] = {}
                     ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
@@ -291,6 +290,8 @@ spec.json file it is possible to load the therein configuration.",
                         settings.setdefault("smoothing", {"fwhm": None})
 
                     settings.setdefault("grand_mean_scaling", {"mean": None})
+                    print("ssssssssssssssssssssssssssssssssssssssssss settings", settings)
+                    settings.setdefault("bandpass_filter", {"type": None})
 
             # Then create the widgets
             for top_name in ctx.cache:
@@ -314,36 +315,34 @@ spec.json file it is possible to load the therein configuration.",
         feature_widget = self.app.get_widget_by_id("feature_selection_content")
         for file_object in self.event_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
-            widget_name = await (
-                feature_widget.walk_children(TaskBased)[0]
-                .query_one(EventFilePanel)
-                .create_file_item(load_object=file_object, message_dict=message_dict)
-            )
+            for task_based_widget in feature_widget.walk_children(TaskBased):
+                # there is no event file panel in PreprocessedOutputOptions
+                if type(task_based_widget) is not PreprocessedOutputOptions:
+                    widget_name = await task_based_widget.query_one(EventFilePanel).create_file_item(
+                        load_object=file_object, message_dict=message_dict
+                    )
             ctx.cache[widget_name]["files"] = file_object
 
         for file_object in self.atlas_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
-            widget_name = await (
-                feature_widget.walk_children(AtlasBased)[0]
-                .query_one(AtlasFilePanel)
-                .create_file_item(load_object=file_object, message_dict=message_dict)
-            )
+            for atlas_based_widget in feature_widget.walk_children(AtlasBased):
+                widget_name = await atlas_based_widget.query_one(AtlasFilePanel).create_file_item(
+                    load_object=file_object, message_dict=message_dict
+                )
             ctx.cache[widget_name]["files"] = file_object
 
         for file_object in self.seed_map_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
-            widget_name = await (
-                feature_widget.walk_children(SeedBased)[0]
-                .query_one(SeedMapFilePanel)
-                .create_file_item(load_object=file_object, message_dict=message_dict)
-            )
+            for seed_based_widget in feature_widget.walk_children(SeedBased):
+                widget_name = await seed_based_widget.query_one(SeedMapFilePanel).create_file_item(
+                    load_object=file_object, message_dict=message_dict
+                )
             ctx.cache[widget_name]["files"] = file_object
 
         for file_object in self.spatial_map_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
-            widget_name = await (
-                feature_widget.walk_children(DualReg)[0]
-                .query_one(SpatialMapFilePanel)
-                .create_file_item(load_object=file_object, message_dict=message_dict)
-            )
+            for dual_reg_widget in feature_widget.walk_children(DualReg):
+                widget_name = await dual_reg_widget.query_one(SpatialMapFilePanel).create_file_item(
+                    load_object=file_object, message_dict=message_dict
+                )
             ctx.cache[widget_name]["files"] = file_object
