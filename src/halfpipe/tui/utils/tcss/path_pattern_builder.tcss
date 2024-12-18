@@ -74,7 +74,7 @@ InputWithColoredSuggestions > SelectOverlay {
     height: auto;
     max-height: 12;
     overlay: screen;
-    constrain: y;
+    constrain: none inside;
     padding: 0 0 0 0;
     background: $surface-lighten-1;
     /* border: white;*/

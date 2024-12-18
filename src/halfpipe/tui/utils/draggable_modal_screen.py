@@ -117,20 +117,20 @@ class WindowTitleBar(Container):
         self,
         title: str = "",
         allow_maximize: bool = False,
-        allow_minimize: bool = False,
+        # allow_minimize: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize a title bar."""
         super().__init__(**kwargs)
         self.title = title
-        self.allow_maximize = allow_maximize
-        self.allow_minimize = allow_minimize
+        self.ALLOW_MAXIMIZE = allow_maximize
+        # self.allow_minimize = allow_minimize
 
     def compose(self) -> ComposeResult:
         """Add our widgets."""
         yield Static(self.title, classes="window_title")
-        if self.allow_minimize:
-            yield Button(self.MINIMIZE_ICON, classes="window_minimize")
+        # if self.allow_minimize:
+        #     yield Button(self.MINIMIZE_ICON, classes="window_minimize")
         if self.allow_maximize:
             yield Button(self.MAXIMIZE_ICON, classes="window_maximize")
             restore_button = Button(self.RESTORE_ICON, classes="window_restore")

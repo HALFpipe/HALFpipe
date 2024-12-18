@@ -8,7 +8,7 @@ from rich.text import Text
 from textual import events, on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.keys import _get_key_display
+# from textual.keys import _get_key_display
 from textual.message import Message
 from textual.reactive import var
 from textual.widgets import Input, OptionList, Select, Static
@@ -344,7 +344,7 @@ class SelectOrInputPath(Select):
         height: auto;
         max-height: 12;
         overlay: screen;
-        constrain: y;
+        constrain: none inside;
     }
 
     SelectOrInputPath .up-arrow {
@@ -526,7 +526,7 @@ class SelectOrInputPath(Select):
             if event.value.islower() and len(event.value) == 1:
                 myinput.value = myinput_current_value + event.value
             else:
-                myinput.value = myinput_current_value + _get_key_display(event.value)
+                myinput.value = myinput_current_value + self.app.get_key_display(event.value)
 
     @on(MyInput.Toggle)
     def _my_input_toggle(self, event: MyInput.Toggle):

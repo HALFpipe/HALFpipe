@@ -196,7 +196,7 @@ class TextSwitch(Switch):
         return MyScrollBarRender(
             virtual_size=100,
             window_size=50,
-            position=self.slider_pos * 50,
+            position=self._slider_position * 50,
             style=style,
             vertical=False,
         )
@@ -204,9 +204,9 @@ class TextSwitch(Switch):
     def watch_value(self, value: bool) -> None:
         target_slider_pos = 1.0 if value else 0.0
         if self._should_animate:
-            self.animate("slider_pos", target_slider_pos, duration=0.3)
+            self.animate("_slider_position", target_slider_pos, duration=0.3)
         else:
-            self.slider_pos = target_slider_pos
+            self._slider_position = target_slider_pos
         self.post_message(self.Changed(self, self.value))
 
 

@@ -173,11 +173,29 @@ class FeatureSelectionScreen(DraggableModalScreen):
         #    self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
-        self.option_list = OptionList(id="options")
-        for f in FEATURES_MAP:
-            # option_list = self.get_widget_by_id("options")
-            self.option_list.add_option(Option(FEATURES_MAP[f], id=f))
-            self.option_list.add_option(Separator())
+        # Temporary workaround because some bug in Textual between versions 0.70 and 0.75.
+        self.option_list = OptionList(
+            Option(FEATURES_MAP['task_based'], id='task_based'),
+            Separator(),
+            Option(FEATURES_MAP["seed_based_connectivity"], id="seed_based_connectivity"),
+            Separator(),
+            Option(FEATURES_MAP["dual_regression"], id="dual_regression"),
+            Separator(),
+            Option(FEATURES_MAP["atlas_based_connectivity"], id="atlas_based_connectivity"),
+            Separator(),
+            Option(FEATURES_MAP["reho"], id="reho"),
+            Separator(),
+            Option(FEATURES_MAP["falff"], id="falff"),
+            Separator(),
+            Option(FEATURES_MAP["preprocessed_image"], id="preprocessed_image"),
+            Separator(),
+            id="options"
+        )
+        # self.option_list = OptionList(id="options")
+        # for f in FEATURES_MAP:
+        #     # option_list = self.get_widget_by_id("options")
+        #     self.option_list.add_option(Option(FEATURES_MAP[f], id=f))
+        #     self.option_list.add_option(Separator())
 
         self.title_bar.title = "Choose first level feature"
 
