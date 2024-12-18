@@ -175,7 +175,7 @@ class FeatureSelectionScreen(DraggableModalScreen):
         super().__init__()
         # Temporary workaround because some bug in Textual between versions 0.70 and 0.75.
         self.option_list = OptionList(
-            Option(FEATURES_MAP['task_based'], id='task_based'),
+            Option(FEATURES_MAP["task_based"], id="task_based"),
             Separator(),
             Option(FEATURES_MAP["seed_based_connectivity"], id="seed_based_connectivity"),
             Separator(),
@@ -189,7 +189,7 @@ class FeatureSelectionScreen(DraggableModalScreen):
             Separator(),
             Option(FEATURES_MAP["preprocessed_image"], id="preprocessed_image"),
             Separator(),
-            id="options"
+            id="options",
         )
         # self.option_list = OptionList(id="options")
         # for f in FEATURES_MAP:

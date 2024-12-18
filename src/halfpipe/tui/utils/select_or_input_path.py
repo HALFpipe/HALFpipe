@@ -8,6 +8,7 @@ from rich.text import Text
 from textual import events, on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
+
 # from textual.keys import _get_key_display
 from textual.message import Message
 from textual.reactive import var
