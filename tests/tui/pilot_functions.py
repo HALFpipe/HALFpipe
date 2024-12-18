@@ -131,7 +131,15 @@ async def preprocessing_options(pilot) -> None:
 
     # switch to frequency based
     await pilot.click(offset=(150, 28))
-    await pilot.click(offset=(138, 32))
+    # After updating to textual version 0.85.2 a strange thing happens, when clicked on the select menu arrow, the options
+    # are unrolled but the whole page is shifted by the number of options (in this case by two presses of up key)
+    # Now we need to shift the screen back down (press pagedown).
+    # await pilot.click(offset=(138, 32))
+    await pilot.click(offset=(138, 34))
+    await pilot.click(offset=(50, 10))
+    await pilot.press("down")
+    await pilot.press("down")
+    await pilot.press("down")
 
     # low
     await pilot.click(offset=(131, 31))

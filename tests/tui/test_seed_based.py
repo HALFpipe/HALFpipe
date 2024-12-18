@@ -43,6 +43,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await pilot.press("tab")
 
     async def final_stage_tasks():
+        # click somewhere outside of the form area
+        await pilot.click(offset=(50, 10))
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
         # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
