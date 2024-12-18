@@ -28,7 +28,7 @@ def init_fmriprep_adapter_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_file",  # was "bold_std". i think we need to get the one from bold_std
+                "bold_std",  # had to define explicitly the connection
                 "boldmask",  # was "bold_mask_std",
                 # "spatial_reference", # not used anymore
                 "skip_vols",
@@ -45,7 +45,7 @@ def init_fmriprep_adapter_wf(
 
     #
     select_std = pe.Node(
-        KeySelect(fields=["bold_file", "boldmask"]),
+        KeySelect(fields=["bold_std", "boldmask"]),
         name="select_std",
         run_without_submitting=True,
         nohash=True,
@@ -55,7 +55,7 @@ def init_fmriprep_adapter_wf(
     #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
     select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
 
-    workflow.connect(inputnode, "bold_file", select_std, "bold_file")
+    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
     workflow.connect(inputnode, "boldmask", select_std, "boldmask")
     # workflow.connect(inputnode, "spatial_reference", select_std, "keys")
 
@@ -65,7 +65,7 @@ def init_fmriprep_adapter_wf(
         name="apply_mask",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(select_std, "bold_file", apply_mask, "in_file")
+    workflow.connect(select_std, "bold_std", apply_mask, "in_file")
     workflow.connect(select_std, "boldmask", apply_mask, "mask_file")
 
     # Take multiple inputs and put them on a list (through Merge node),

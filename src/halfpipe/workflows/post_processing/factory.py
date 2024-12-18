@@ -202,6 +202,23 @@ class FmriprepAdapterFactory(LookupFactory):
     def _tpl(self, _) -> Hashable:
         return SettingTuple(value=None, suffix=None)
 
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple: LookupTuple):
+        super(FmriprepAdapterFactory, self)._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
+
+        resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", source_file=source_file)
+        wf2 = resample_hierarchy[-1]
+        bold_std = wf2.get_node("bold_std_wf")
+        resample = bold_std.get_node("outputnode")
+
+        self.connect_attr(
+            outputhierarchy=[*resample_hierarchy, bold_std],
+            outputnode=resample,
+            outattr="bold_file",
+            inputhierarchy=hierarchy,
+            inputnode=inputnode,
+            inattr="bold_std",
+        )
+
 
 class SmoothingFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
@@ -499,6 +516,7 @@ class PostProcessingFactory(Factory):
                 )
 
     def get(self, source_file, setting_name, confounds_action=None):
+        # self.fmriprep_adapter_factory.get(source_file)
         if self.ctx.spec.global_settings["run_aroma"] is True:
             # Make sure ica aroma components are calculated when enabled
             # The component calculation is independent from the noise components regression application

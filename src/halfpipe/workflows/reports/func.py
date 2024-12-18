@@ -25,18 +25,23 @@ def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
 
 def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalculator | None = None):
     """
-        Also creates initial vals
+    Also creates initial vals
 
-        We need to access the new values of fmriprep for these. This is what they used to be:
+    #TODO: This workflow needs to be split into one calc_start workflow and one report workflow.
+    In this way we can comfortably skip the functional report when it is not necessary.
 
-            bold_std
-    BOLD series, resampled to template space
-            bold_mask_std
-    BOLD series mask in template space
-            std_dseg: Comes from smriprep
-                 Segmentation, resampled into standard space
-            !!!! spatial_reference :obj:`str`
-                 List of unique identifiers corresponding to the BOLD standard-conversions.
+    We need to access the new values of fmriprep for these. This is what they used to be:
+    Inputs
+    ------
+    bold_std
+        BOLD series, resampled to template space
+    bold_mask_std
+        BOLD series mask in template space
+    std_dseg: Comes from smriprep
+        Segmentation, resampled into standard space
+        #TODO: Seems to do not exist anymore, so we might want to calculate within here.
+    !!!! spatial_reference :obj:`str`
+        List of unique identifiers corresponding to the BOLD standard-conversions.
     """
 
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
@@ -50,11 +55,14 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "boldref",  # there are two boldref: ds_coreg_boldref_wf & ds_hmc_boldref_wf. which one we want? Now we use 2nd
+                "boldref",
+                # there are two boldref: ds_coreg_boldref_wf & ds_hmc_boldref_wf
+                # TODO: Which one we want? Now we use 2nd.
                 "boldmask",
-                "std_dseg",  # now? Search smriprep https://github.com/nipreps/smriprep/blob/87e5e88b06b04dda3a2568aec6246769968d56c6/src/smriprep/workflows/outputs.py#L1022
-                "bold_std",  # bold_std now pass this explicitly in fmriprep factory
+                "t1w_dseg",  # used to be std_dseg
+                "bold_std",  # bold_std is passed explicitly in fmriprep factory
                 # "spatial_reference",   # ! this used to exist in fmriprep!! we dont have a direct substitute
+                "output_spaces",
                 "movpar_file",
                 "confounds_file",
                 "method",
@@ -71,22 +79,22 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
 
     select_std = pe.Node(
         # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
-        KeySelect(fields=["bold_std", "boldref", "boldmask", "std_dseg"]),
+        KeySelect(fields=["bold_std", "boldref", "boldmask", "t1w_dseg"]),
         name="select_std",
         run_without_submitting=True,
         nohash=True,
     )
 
     select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-
     #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
-    # TODO: check this
+    # TODO: Either get rid of all select_std nodes, pass output_spaces, use Select interface, or refactor
+    #
     select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
 
     workflow.connect(inputnode, "bold_std", select_std, "bold_std")
     workflow.connect(inputnode, "boldref", select_std, "boldref")
     workflow.connect(inputnode, "boldmask", select_std, "boldmask")
-    workflow.connect(inputnode, "std_dseg", select_std, "std_dseg")
+    workflow.connect(inputnode, "t1w_dseg", select_std, "t1w_dseg")
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
@@ -148,9 +156,11 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     resample = pe.Node(
         Resample(interpolation="MultiLabel", **reference_dict),
         name="resample",
+        #! here we might want to pass the transform anat2std if passing t1w_dseg does not work from the get go
+        # Resample(interpolation="MultiLabel", transforms="", **reference_dict),
         mem_gb=2 * memcalc.volume_std_gb,
     )
-    workflow.connect(select_std, "std_dseg", resample, "input_image")
+    workflow.connect(select_std, "t1w_dseg", resample, "input_image")
 
     # Calculate the actual starting time and report into the json outputs
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717

@@ -99,8 +99,8 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        # output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}"]
-        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
+        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}"]
+        # output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
@@ -231,9 +231,9 @@ class FmriprepFactory(Factory):
 
             # Use connect_attr instead of wf.connect to ensure proper hierarchy handling
             self.connect_attr(
-                outputhierarchy=[*out_hierarchy, wf2],  # [*out_hierarchy, wf2]
+                outputhierarchy=[*out_hierarchy, wf2],
                 outputnode=std_t1w,
-                outattr="output_image",  # "output_image" "out_file" if using datasink
+                outattr="output_image",  # "out_file" if using datasink
                 inputhierarchy=hierarchy,
                 inputnode=inputnode,
                 inattr="std_t1w",
@@ -434,9 +434,6 @@ class FmriprepFactory(Factory):
             if wf is not None:
                 _connect([*hierarchy, anat_wf, wf])
                 logger.warning(f"Connected node '{name}' in 'anat_fit_wf'")
-                # if wf == 'anat_reports_wf':
-                ## FOR EXAMPLE HERE ##
-                # search template_iterator and connect to whole hierarchy?
             else:
                 logger.warning(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
         _connect([*hierarchy, anat_wf])
