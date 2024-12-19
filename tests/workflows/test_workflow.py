@@ -56,8 +56,6 @@ def test_feature_extraction(tmp_path, mock_spec):
     Parameters:
     - tmp_path: A fixture used to create a temporary directory.
     - mock_spec: A fixture providing a mock json.spec file.
-
-    #TODO: hardcodd tmp_path still runs all nodes, figure out solution
     """
 
     # TODO why does this not print

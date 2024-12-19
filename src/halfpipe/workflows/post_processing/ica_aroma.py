@@ -6,6 +6,7 @@ from math import nan
 from pathlib import Path
 
 from fmripost_aroma import config
+from templateflow.api import get as get_template
 
 try:
     from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
@@ -15,12 +16,14 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
+from ...interfaces.image_maths.resample import Resample
 from ...interfaces.reports.vals import UpdateVals
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.utility.file_type import SplitByFileType
 from ...interfaces.utility.remove_volumes import RemoveVolumes
 from ...interfaces.utility.tsv import MergeColumns
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -74,6 +77,14 @@ def init_ica_aroma_components_wf(
     name: str = "ica_aroma_components_wf",
     memcalc: MemoryCalculator | None = None,
 ):
+    """
+    Search for bold_mask_std. This we should generate during our alt_bold_std_trans_wf,
+    but the function that used to do it does not give out this anymore.
+
+    #TODO: "GenericLabel" is preferred as a transformation method, but our current Resample
+    Does not have it.
+    See https://github.com/nipreps/fmripost-aroma/blob/cf32223721b21c4f8c46cbca413d7c6bbeb6b8bb/src/fmripost_aroma/interfaces/misc.py#L15
+    """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
@@ -82,12 +93,12 @@ def init_ica_aroma_components_wf(
             fields=[
                 # "alt_bold_std",
                 # "alt_bold_mask_std",
-                # "alt_spatial_reference",
+                "confounds",
                 "alt_bold_file",
+                "bold_mask",
                 "alt_resampling_reference",
                 "tags",
                 "skip_vols",
-                "bold_file",  # ? maybe not
                 "repetition_time",
             ]
         ),
@@ -108,6 +119,25 @@ def init_ica_aroma_components_wf(
     #
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
+
+    # Warp the bold mask as well. We used to have this from the get go but now the in the new init_volumetric_resample_wf
+    # fmriprep does not output the mask anymore.
+    # Fmripost_aroma:  https://github.com/nipreps/fmripost-aroma/blob/cf32223721b21c4f8c46cbca413d7c6bbeb6b8bb/src/fmripost_aroma/workflows/base.py#L458C9-L470C10
+    # Fmriprep: https://github.com/nipreps/fmriprep/blob/910c232e20e1214964f3042f1881832e7eec882d/fmriprep/workflows/bold/outputs.py#L855
+
+    target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
+
+    resample_mask = pe.Node(
+        Resample(
+            interpolation="MultiLabel",  # TODO: change for "GenericLabel"
+            reference_image=target_ref_file,
+            reference_space=Constants.reference_space,
+            reference_res=Constants.reference_res,
+        ),
+        mem_gb=2 * memcalc.volume_std_gb,
+        name="resample_mask_to_mni",
+    )
+    workflow.connect(inputnode, "bold_mask", resample_mask, "input_image")
 
     # Set the dimensionality of the MELODIC ICA decomposition.
     # (default: -200, i.e., estimate <=200 components)
@@ -142,13 +172,10 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
     workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
     workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
-    # workflow.connect(inputnode, "bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
-
-    # workflow.connect(inputnode, "alt_bold_std", ica_aroma_wf, "inputnode.bold_std")
-    #  workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
+    workflow.connect(inputnode, "confounds", ica_aroma_wf, "inputnode.confounds")
+    workflow.connect(resample_mask, "output_image", ica_aroma_wf, "inputnode.bold_mask_std")
 
     # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.movpar_file")
-    # workflow.connect(inputnode, "alt_spatial_reference", ica_aroma_wf, "inputnode.spatial_reference")
 
     # Disconnect existing source_file inputs and connect alt_bold_file from inputnode
     ds_nodes = [
@@ -165,6 +192,7 @@ def init_ica_aroma_components_wf(
         if node is not None:
             # Directly connect alt_bold_file, which we generate ourselves in  init_alt_bold_std_trans_wf
             workflow.connect(inputnode, "alt_bold_file", node, "source_file")
+            workflow.connect(resample_mask, "output_image", node, "bold_mask_std")
 
     # remove dummy scans from outputs
     skip_vols = pe.Node(

@@ -219,6 +219,18 @@ class FmriprepAdapterFactory(LookupFactory):
             inattr="bold_std",
         )
 
+        ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
+        bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
+
+        self.connect_attr(
+            outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],
+            outputnode=bold_mask_std,
+            outattr="out_file",
+            inputhierarchy=hierarchy,
+            inputnode=inputnode,
+            inattr="boldmask",
+        )
+
 
 class SmoothingFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:

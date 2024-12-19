@@ -270,16 +270,40 @@ class FmriprepFactory(Factory):
 
             resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", subject_id=subject_id, childname="bold_task_rest_wf")
             wf2 = resample_hierarchy[-1]
-            bold_std = wf2.get_node("bold_std_wf")
-            resample = bold_std.get_node("outputnode")
+            # bold_std = wf2.get_node("bold_std_wf")
+            # resample = bold_std.get_node("outputnode")
+            ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
+            bold_std = ds_bold_std_wf.get_node("ds_bold")
 
             self.connect_attr(
-                outputhierarchy=[*resample_hierarchy, bold_std],
-                outputnode=resample,
-                outattr="bold_file",
+                outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],  # [*resample_hierarchy, bold_std],
+                outputnode=bold_std,
+                outattr="out_file",  # Bold_file
                 inputhierarchy=hierarchy,
                 inputnode=inputnode,
                 inattr="bold_std",
+            )
+
+            # ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
+            bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
+            ds_ref = ds_bold_std_wf.get_node("ds_ref")
+
+            self.connect_attr(
+                outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],
+                outputnode=bold_mask_std,
+                outattr="out_file",
+                inputhierarchy=hierarchy,
+                inputnode=inputnode,
+                inattr="boldmask",
+            )
+
+            self.connect_attr(
+                outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],
+                outputnode=ds_ref,
+                outattr="out_file",
+                inputhierarchy=hierarchy,
+                inputnode=inputnode,
+                inattr="boldref",
             )
 
             self.connect(hierarchy, inputnode, source_file=bold_file_path)
@@ -388,11 +412,12 @@ class FmriprepFactory(Factory):
                     # bold_fit_wf, so we connect them explicitly through the hierarchy
                     if name == "bold_fit_wf":
                         for sub_name in [
-                            "ds_boldmask_wf",
-                            "ds_hmc_boldref_wf",  # there is also a boldref in "ds_coreg_boldref_wf". which one do we want?
+                            # "ds_boldmask_wf",
+                            # "ds_hmc_boldref_wf",  # there is also a boldref in "ds_coreg_boldref_wf". which one do we want?
                             "ds_bold_std_wf",
                         ]:
                             bold_sub_wf = bold_wf.get_node(sub_name)
+
                             if bold_sub_wf is not None:
                                 _connect([*hierarchy, bold_wf, bold_sub_wf])
 

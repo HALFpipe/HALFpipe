@@ -26,6 +26,13 @@ def init_alt_bold_std_trans_wf(
     because users still want the QC report.
 
     We do this because we need an extra transform added, which we do in the mergexfm done.
+    This extra transform also needs to be applied to the mask at ica_components,
+    since the resampled mask used to be outputed by fmriprep but not anymore.
+
+    #todo: we still need to pass the right mask to the volumetric workflow.
+    target_mask
+        This should be the brain mask corresponding to ``target_ref_file``.
+        This is used to define the field of view for the resampled BOLD series.
     """
     spaces = SpatialReferences(Reference.from_string("MNI152NLin6Asym:res-2"), checkpoint=True) if spaces is None else spaces
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
@@ -37,9 +44,8 @@ def init_alt_bold_std_trans_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # "bold_file",
-                "std_t1w",  # this should be the target_ref_file but it does not work
-                "std_mask",
+                "std_t1w",
+                "std_mask",  # todo: we need to pass the right thing here
                 "bold_minimal",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
                 # "bold_ref_file",

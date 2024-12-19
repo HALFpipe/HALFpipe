@@ -85,16 +85,16 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         nohash=True,
     )
 
-    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
+    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
     #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
     # TODO: Either get rid of all select_std nodes, pass output_spaces, use Select interface, or refactor
     #
-    select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
+    # select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
 
-    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
-    workflow.connect(inputnode, "boldref", select_std, "boldref")
-    workflow.connect(inputnode, "boldmask", select_std, "boldmask")
-    workflow.connect(inputnode, "t1w_dseg", select_std, "t1w_dseg")
+    # workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    # workflow.connect(inputnode, "boldref", select_std, "boldref")
+    # workflow.connect(inputnode, "boldmask", select_std, "boldmask")
+    # workflow.connect(inputnode, "t1w_dseg", select_std, "t1w_dseg")
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
@@ -135,19 +135,19 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         mem_gb=0.1,
     )
 
-    workflow.connect(select_std, "boldref", epi_norm_rpt, "in_file")
-    workflow.connect(select_std, "boldmask", epi_norm_rpt, "mask_file")
+    workflow.connect(inputnode, "boldref", epi_norm_rpt, "in_file")
+    workflow.connect(inputnode, "boldmask", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(select_std, "bold_std", tsnr, "in_file")
+    workflow.connect(inputnode, "bold_std", tsnr, "in_file")
     workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(select_std, "boldmask", tsnr_rpt, "mask_file")
+    workflow.connect(inputnode, "boldmask", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
@@ -160,7 +160,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         # Resample(interpolation="MultiLabel", transforms="", **reference_dict),
         mem_gb=2 * memcalc.volume_std_gb,
     )
-    workflow.connect(select_std, "t1w_dseg", resample, "input_image")
+    workflow.connect(inputnode, "t1w_dseg", resample, "input_image")
 
     # Calculate the actual starting time and report into the json outputs
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717

@@ -1,5 +1,5 @@
 {% set name = "smriprep" %}
-{% set version = "0.16.0" %} # needs to be updated to 0.16
+{% set version = "0.16.0" %}
 
 # Requirements derived from
 # https://github.com/nipreps/smriprep/blob/maint/0.15.x/pyproject.toml
