@@ -5,10 +5,8 @@
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
 from nipype.interfaces import fsl
-from niworkflows.interfaces.utility import KeySelect
 
 from ...interfaces.utility.remove_volumes import RemoveVolumes
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -43,20 +41,20 @@ def init_fmriprep_adapter_wf(
         name="outputnode",
     )
 
-    #
-    select_std = pe.Node(
-        KeySelect(fields=["bold_std", "boldmask"]),
-        name="select_std",
-        run_without_submitting=True,
-        nohash=True,
-    )
-    select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
+    #! Skip select_std for now
+    # select_std = pe.Node(
+    #     KeySelect(fields=["bold_std", "boldmask"]),
+    #     name="select_std",
+    #     run_without_submitting=True,
+    #     nohash=True,
+    # )
+    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
 
-    #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
-    select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
+    # #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
+    # select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
 
-    workflow.connect(inputnode, "bold_std", select_std, "bold_std")
-    workflow.connect(inputnode, "boldmask", select_std, "boldmask")
+    # workflow.connect(inputnode, "bold_std", select_std, "bold_std")
+    # workflow.connect(inputnode, "boldmask", select_std, "boldmask")
     # workflow.connect(inputnode, "spatial_reference", select_std, "keys")
 
     # We apply mask to remove voxels that are outside brain
@@ -65,8 +63,8 @@ def init_fmriprep_adapter_wf(
         name="apply_mask",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(select_std, "bold_std", apply_mask, "in_file")
-    workflow.connect(select_std, "boldmask", apply_mask, "mask_file")
+    workflow.connect(inputnode, "bold_std", apply_mask, "in_file")
+    workflow.connect(inputnode, "boldmask", apply_mask, "mask_file")
 
     # Take multiple inputs and put them on a list (through Merge node),
     # so we can apply the skip_vols node to both the bold file and the confounds
@@ -84,11 +82,11 @@ def init_fmriprep_adapter_wf(
     )
     workflow.connect(merge, "out", skip_vols, "in_file")
     workflow.connect(inputnode, "skip_vols", skip_vols, "skip_vols")
-    workflow.connect(select_std, "boldmask", skip_vols, "mask")
+    workflow.connect(inputnode, "boldmask", skip_vols, "mask")
 
     #
     workflow.connect(skip_vols, "out_file", outputnode, "files")
-    workflow.connect(select_std, "boldmask", outputnode, "mask")
+    workflow.connect(inputnode, "boldmask", outputnode, "mask")
     workflow.connect(inputnode, "vals", outputnode, "vals")
 
     return workflow

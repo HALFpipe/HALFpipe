@@ -274,6 +274,8 @@ class FmriprepFactory(Factory):
             # resample = bold_std.get_node("outputnode")
             ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
             bold_std = ds_bold_std_wf.get_node("ds_bold")
+            bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
+            ds_ref = ds_bold_std_wf.get_node("ds_ref")
 
             self.connect_attr(
                 outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],  # [*resample_hierarchy, bold_std],
@@ -283,10 +285,6 @@ class FmriprepFactory(Factory):
                 inputnode=inputnode,
                 inattr="bold_std",
             )
-
-            # ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
-            bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
-            ds_ref = ds_bold_std_wf.get_node("ds_ref")
 
             self.connect_attr(
                 outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],

@@ -207,20 +207,18 @@ class FmriprepAdapterFactory(LookupFactory):
 
         resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", source_file=source_file)
         wf2 = resample_hierarchy[-1]
-        bold_std = wf2.get_node("bold_std_wf")
-        resample = bold_std.get_node("outputnode")
+        ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
+        bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
+        bold_std = ds_bold_std_wf.get_node("ds_bold")
 
         self.connect_attr(
-            outputhierarchy=[*resample_hierarchy, bold_std],
-            outputnode=resample,
-            outattr="bold_file",
+            outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],  # [*resample_hierarchy, bold_std],
+            outputnode=bold_std,
+            outattr="out_file",  # Bold_file
             inputhierarchy=hierarchy,
             inputnode=inputnode,
             inattr="bold_std",
         )
-
-        ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
-        bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
 
         self.connect_attr(
             outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],
