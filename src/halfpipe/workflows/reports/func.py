@@ -6,7 +6,6 @@
 from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.utility import KeySelect
 from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.image_maths.resample import Resample
@@ -39,7 +38,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         BOLD series mask in template space
     std_dseg: Comes from smriprep
         Segmentation, resampled into standard space
-        #TODO: Seems to do not exist anymore, so we might want to calculate within here.
+        #TODO: Seems to not exist anymore, so we might want to calculate within this workflow..
     !!!! spatial_reference :obj:`str`
         List of unique identifiers corresponding to the BOLD standard-conversions.
     """
@@ -77,13 +76,13 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         name="inputnode",
     )
 
-    select_std = pe.Node(
-        # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
-        KeySelect(fields=["bold_std", "boldref", "boldmask", "t1w_dseg"]),
-        name="select_std",
-        run_without_submitting=True,
-        nohash=True,
-    )
+    # select_std = pe.Node(
+    #     # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+    #     KeySelect(fields=["bold_std", "boldref", "boldmask", "t1w_dseg"]),
+    #     name="select_std",
+    #     run_without_submitting=True,
+    #     nohash=True,
+    # )
 
     # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
     #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this

@@ -71,18 +71,14 @@ def _aroma_column_names(mixing: str | None = None, aroma_noise_ics: str | None =
     return column_names, column_indices
 
 
-#! has to change
 def init_ica_aroma_components_wf(
     workdir: str | None = None,
     name: str = "ica_aroma_components_wf",
     memcalc: MemoryCalculator | None = None,
 ):
     """
-    Search for bold_mask_std. This we should generate during our alt_bold_std_trans_wf,
-    but the function that used to do it does not give out this anymore.
-
-    #TODO: "GenericLabel" is preferred as a transformation method, but our current Resample
-    Does not have it.
+    #TODO: "GenericLabel" is preferred as a transformation method for the mask, but our current Resample...
+    ...does not have it.
     See https://github.com/nipreps/fmripost-aroma/blob/cf32223721b21c4f8c46cbca413d7c6bbeb6b8bb/src/fmripost_aroma/interfaces/misc.py#L15
     """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
