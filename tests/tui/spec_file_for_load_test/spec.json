@@ -69,7 +69,7 @@
             }
         },
         {
-            "path": "/home/tomas/github/maps_atlases_seed_images/{desc}_seed_2009.nii.gz",
+            "path": "/tmp/tui_test/atlases_maps_seed_images/{desc}_seed_2009.nii.gz",
             "datatype": "ref",
             "suffix": "seed",
             "extension": ".nii.gz",
@@ -79,7 +79,7 @@
             }
         },
         {
-            "path": "/home/tomas/github/maps_atlases_seed_images/FIND_{desc}_maps_2009.nii.gz",
+            "path": "/tmp/tui_test/atlases_maps_seed_images/FIND_{desc}_maps_2009.nii.gz",
             "datatype": "ref",
             "suffix": "map",
             "extension": ".nii.gz",
