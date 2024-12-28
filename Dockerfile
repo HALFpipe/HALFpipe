@@ -162,11 +162,13 @@ ENV XDG_CACHE_HOME="/var/cache" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
+# Remove `conda` and `ants` installations
+RUN rm -rf /opt/conda /usr/lib/ants
 # We install ants previously using conda (through a dependency in the halfpipe
 # recipe), to get an important bug fix (#691). We delete the ants that came with
 # fmriprep and update the `PATH` to reflect the new ants location
 # RUN rm -rf /usr/lib/ants
-ENV PATH="${PATH//\/usr\/lib\/ants/}"
+# ENV PATH="${PATH//\/usr\/lib\/ants/}"
 
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
