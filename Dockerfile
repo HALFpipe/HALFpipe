@@ -165,7 +165,7 @@ RUN mv /home/fmriprep/.cache/templateflow /var/cache
 # We install ants previously using conda (through a dependency in the halfpipe
 # recipe), to get an important bug fix (#691). We delete the ants that came with
 # fmriprep and update the `PATH` to reflect the new ants location
-RUN rm -rf /usr/lib/ants
+# RUN rm -rf /usr/lib/ants
 ENV PATH="${PATH//\/usr\/lib\/ants/}"
 
 # Add `coinstac` server components
