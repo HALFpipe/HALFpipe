@@ -484,7 +484,7 @@ class FeatureSelection(Widget):
                 current_list_item_ids = [i.id for i in self.get_widget_by_id("list").children]
                 item_names = [getattr(self.feature_items[i], by) for i in current_list_item_ids]
                 correct_order = np.argsort(np.argsort(item_names))
-                which_to_move = list(correct_order).index(i)
+                which_to_move = list(correct_order).index(np.int64(i))
                 self.get_widget_by_id("list").move_child(int(which_to_move), before=int(i))
 
         sort_children(self.current_order[0])

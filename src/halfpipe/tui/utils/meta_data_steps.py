@@ -126,8 +126,9 @@ class SliceTimingFileStep:
             filepath = self.result
             try:
                 spreadsheet = read_spreadsheet(filepath)
-                valuearray = np.ravel(spreadsheet.values).astype(np.float64)
-                valuelist = list(valuearray.tolist())
+                # valuearray = np.ravel(spreadsheet.values).astype(np.float64)
+                valuearray = np.ravel(np.array(spreadsheet.values, dtype=np.float64))
+                valuelist = valuearray.tolist()
                 value = self.field.deserialize(valuelist)
 
                 for filepath in self.filepaths:
