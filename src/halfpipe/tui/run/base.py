@@ -14,6 +14,7 @@ from textual.widgets import Button, Pretty
 
 from ...model.feature import Feature
 from ...model.file.bids import BidsFileSchema
+from ...model.model import Model
 from ...model.setting import SettingSchema
 from ...model.spec import SpecSchema, save_spec
 from ...utils.copy import deepcopy
@@ -178,6 +179,11 @@ class RunCLX(Widget):
                     unfiltered_setting["name"] = ctx.cache[name]["unfiltered_setting"]["name"]
                     unfiltered_setting["bandpass_filter"] = None  # remove bandpass filter, keep everything else
                     ctx.spec.settings.append(unfiltered_setting)
+            if ctx.cache[name]["models"] != {}:
+                modelobj = Model(name=ctx.cache[name]["models"]["name"], type=ctx.cache[name]["type"], across="sub")
+                ctx.spec.models.append(modelobj)
+                for key, value in ctx.cache[name]["models"].items():
+                    setattr(ctx.spec.models[-1], key, value)
 
             if ctx.cache["bids"]["files"] != {} and name == "bids":
                 ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))

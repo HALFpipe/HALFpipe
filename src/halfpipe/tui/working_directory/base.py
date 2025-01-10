@@ -170,6 +170,8 @@ spec.json file it is possible to load the therein configuration.",
     async def cache_file_patterns(self):
         data_input_widget = self.app.get_widget_by_id("input_data_content")
         preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
+        self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        self.model_widget = self.app.get_widget_by_id("models_content")
 
         # The philosophie here is that we copy the data from the existing spec file to the context cache and then create
         # corresponding widgets. Through these widgets then it should be possible to further modify the spec file.
@@ -248,7 +250,8 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="feature_worker")
     async def mount_features(self):
-        feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        feature_widget = self.feature_widget
 
         setting_feature_map = {}
         if self.existing_spec is not None:
@@ -309,10 +312,15 @@ spec.json file it is possible to load the therein configuration.",
             if event.worker.name == "cache_file_worker" and self.data_input_success is True:
                 self.mount_features()
             if event.worker.name == "feature_worker":
-                await self.mount_file_panels()
+                self.mount_file_panels()
+            if event.worker.name == "file_panels_worker":
+                self.mount_models()
 
+    @work(exclusive=True, name="file_panels_worker")
     async def mount_file_panels(self):
-        feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
+        feature_widget = self.feature_widget
+
         for file_object in self.event_file_objects:
             message_dict = {i: [str(file_object.metadata[i])] for i in file_object.metadata}
             for task_based_widget in feature_widget.walk_children(TaskBased):
@@ -346,3 +354,16 @@ spec.json file it is possible to load the therein configuration.",
                     load_object=file_object, message_dict=message_dict
                 )
             ctx.cache[widget_name]["files"] = file_object
+
+    @work(exclusive=True, name="models_worker")
+    async def mount_models(self):
+        model_widget = self.model_widget
+        if self.existing_spec is not None:
+            for model in self.existing_spec.models:
+                ctx.cache[model.name]["models"] = copy.deepcopy(model.__dict__)
+
+            # Then create the widgets
+            for top_name in ctx.cache:
+                if ctx.cache[top_name]["models"] != {}:
+                    name = ctx.cache[top_name]["models"]["name"]
+                    await model_widget.add_new_model([ctx.cache[name]["models"]["type"], name])

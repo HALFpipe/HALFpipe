@@ -234,63 +234,8 @@ class FeatureItem:
         self.name = name
 
 
-class FeatureSelection(Widget):
-    """
-    FeatureSelection(Widget)
-    A widget for feature selection, allowing users to add, rename, duplicate, delete, and sort features.
-
-    Attributes
-    ----------
-    BINDINGS : list
-        A list of binding tuples for feature actions.
-    current_order : list
-        A list defining the default order of features.
-
-    Methods
-    -------
-    __init__(self, disabled=False, **kwargs) -> None
-        Each created widget needs to have a unique id, even after deletion it cannot be recycled.
-        The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
-
-    compose(self) -> ComposeResult
-        Generates the layout of the widget, including the sidebar with buttons and a content switcher.
-
-    on_mount(self) -> None
-        Sets the initial border title of the content switcher to "First-level features".
-
-    on_list_view_selected(self, event: ListView.Selected) -> None
-        Changes border title color according to the feature type.
-
-    add(self) -> None
-        Binds the "Add" button to the add_feature action.
-
-    delete(self) -> None
-        Binds the "Delete" button to the delete_feature action.
-
-    rename(self) -> None
-        Pops up a screen to set the new feature name. Afterwards the dictionary entry is also renamed.
-
-    duplicate(self) -> None
-        Binds the "Duplicate" button to the duplicate_feature action.
-
-    sort(self) -> None
-        Binds the "Sort" button to the sort_features action.
-
-    action_add_feature(self) -> None
-        Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget.
-
-    add_new_feature(self, new_feature_item: tuple | bool) -> None
-        Adds a new feature by mounting a new widget and creating a new entry in the dictionary to keep track of selections.
-
-    action_delete_feature(self) -> None
-        Unmount the feature and delete its entry from dictionaries.
-
-    action_duplicate_feature(self)
-        Duplicates the feature by a deep copy of the dictionary entry and then mounts a new widget while loading defaults from
-        this copy.
-    """
-
-    BINDINGS = [("a", "add_feature", "Add"), ("d", "delete_feature", "Delete")]
+class SelectionTemplate(Widget):
+    BINDINGS = [("a", "add_item", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
 
     def __init__(self, disabled=False, **kwargs) -> None:
@@ -321,8 +266,106 @@ class FeatureSelection(Widget):
         #  yield EventFilePanel()
         yield ContentSwitcher(id="content_switcher")
 
-    def on_mount(self) -> None:
-        self.get_widget_by_id("content_switcher").border_title = "First-level features"
+    @on(Button.Pressed, "#sidebar .add_button")
+    async def add(self) -> None:
+        await self.run_action("add_item")
+
+    @on(Button.Pressed, "#sidebar .delete_button")
+    async def delete(self) -> None:
+        await self.run_action("delete_feature")
+
+    @on(Button.Pressed, "#sidebar .duplicate_button")
+    async def duplicate(self) -> None:
+        await self.run_action("duplicate_feature")
+
+    @on(Button.Pressed, "#sidebar .sort_button")
+    async def sort(self) -> None:
+        await self.run_action("sort_features")
+
+    def action_delete_feature(self) -> None:
+        """Unmount the feature and delete its entry from dictionaries."""
+
+        def confirmation(respond: bool):
+            if respond:
+                current_id = self.get_widget_by_id("content_switcher").current
+                name = self.feature_items[current_id].name
+                self.get_widget_by_id(current_id).remove()
+                self.feature_items.pop(current_id)
+                ctx.cache.pop(name)
+
+        self.app.push_screen(Confirm(), confirmation)
+
+    def action_sort_features(self):
+        """Sorting alphabetically and by feature type."""
+
+        def sort_children(by):
+            for i in range(len(self.feature_items.keys())):
+                current_list_item_ids = [i.id for i in self.get_widget_by_id("list").children]
+                item_names = [getattr(self.feature_items[i], by) for i in current_list_item_ids]
+                correct_order = np.argsort(np.argsort(item_names))
+                which_to_move = list(correct_order).index(np.int64(i))
+                self.get_widget_by_id("list").move_child(int(which_to_move), before=int(i))
+
+        sort_children(self.current_order[0])
+        sort_children(self.current_order[1])
+        self.current_order = [self.current_order[1], self.current_order[0]]
+
+
+class FeatureSelection(SelectionTemplate):
+    """
+    FeatureSelection(Widget)
+    A widget for feature selection, allowing users to add, rename, duplicate, delete, and sort features.
+
+    Attributes
+    ----------
+    BINDINGS : list
+        A list of binding tuples for feature actions.
+    current_order : list
+        A list defining the default order of features.
+
+    Methods
+    -------
+    __init__(self, disabled=False, **kwargs) -> None
+        Each created widget needs to have a unique id, even after deletion it cannot be recycled.
+        The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
+
+    compose(self) -> ComposeResult
+        Generates the layout of the widget, including the sidebar with buttons and a content switcher.
+
+    on_mount(self) -> None
+        Sets the initial border title of the content switcher to "First-level features".
+
+    on_list_view_selected(self, event: ListView.Selected) -> None
+        Changes border title color according to the feature type.
+
+    add(self) -> None
+        Binds the "Add" button to the add_item action.
+
+    delete(self) -> None
+        Binds the "Delete" button to the delete_feature action.
+
+    rename(self) -> None
+        Pops up a screen to set the new feature name. Afterwards the dictionary entry is also renamed.
+
+    duplicate(self) -> None
+        Binds the "Duplicate" button to the duplicate_feature action.
+
+    sort(self) -> None
+        Binds the "Sort" button to the sort_features action.
+
+    action_add_item(self) -> None
+        Pops out the feature type selection windows and then uses add_new_feature function to mount a new feature widget.
+
+    add_new_feature(self, new_feature_item: tuple | bool) -> None
+        Adds a new feature by mounting a new widget and creating a new entry in the dictionary to keep track of selections.
+
+    action_delete_feature(self) -> None
+        Unmount the feature and delete its entry from dictionaries.
+
+    action_duplicate_feature(self)
+        Duplicates the feature by a deep copy of the dictionary entry and then mounts a new widget while loading defaults from
+        this copy.
+    """
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Changes border title color according to the feature type."""
@@ -334,13 +377,8 @@ class FeatureSelection(Widget):
         )
         self.get_widget_by_id("content_switcher").styles.border_title_color = FEATURES_MAP_colors[current_feature.type]
 
-    @on(Button.Pressed, "#sidebar .add_button")
-    async def add(self) -> None:
-        await self.run_action("add_feature")
-
-    @on(Button.Pressed, "#sidebar .delete_button")
-    async def delete(self) -> None:
-        await self.run_action("delete_feature")
+    def on_mount(self) -> None:
+        self.get_widget_by_id("content_switcher").border_title = "First-level features"
 
     @on(Button.Pressed, "#sidebar .rename_button")
     async def rename(self) -> None:
@@ -368,15 +406,7 @@ class FeatureSelection(Widget):
             action_rename_feature,
         )
 
-    @on(Button.Pressed, "#sidebar .duplicate_button")
-    async def duplicate(self) -> None:
-        await self.run_action("duplicate_feature")
-
-    @on(Button.Pressed, "#sidebar .sort_button")
-    async def sort(self) -> None:
-        await self.run_action("sort_features")
-
-    def action_add_feature(self) -> None:
+    def action_add_item(self) -> None:
         # Try here first the event files
         # setting_filter_step_instance = SettingFilterStep()
         # setting_filter_step_instance.run()
@@ -450,19 +480,6 @@ class FeatureSelection(Widget):
             self.get_widget_by_id("content_switcher").styles.border_title_color = FEATURES_MAP_colors[feature_type]
             self._id_counter += 1
 
-    def action_delete_feature(self) -> None:
-        """Unmount the feature and delete its entry from dictionaries."""
-
-        def confirmation(respond: bool):
-            if respond:
-                current_id = self.get_widget_by_id("content_switcher").current
-                name = self.feature_items[current_id].name
-                self.get_widget_by_id(current_id).remove()
-                self.feature_items.pop(current_id)
-                ctx.cache.pop(name)
-
-        self.app.push_screen(Confirm(), confirmation)
-
     async def action_duplicate_feature(self):
         """Duplicating feature by a deep copy of the dictionary entry and then mounting a new widget while
         loading defaults from this copy.
@@ -475,18 +492,3 @@ class FeatureSelection(Widget):
         ctx.cache[feature_name_copy]["features"]["setting"] = feature_name_copy + "Setting"
         ctx.cache[feature_name_copy]["settings"]["name"] = feature_name_copy + "Setting"
         await self.add_new_feature((ctx.cache[feature_name_copy]["features"]["type"], feature_name_copy))
-
-    def action_sort_features(self):
-        """Sorting alphabetically and by feature type."""
-
-        def sort_children(by):
-            for i in range(len(self.feature_items.keys())):
-                current_list_item_ids = [i.id for i in self.get_widget_by_id("list").children]
-                item_names = [getattr(self.feature_items[i], by) for i in current_list_item_ids]
-                correct_order = np.argsort(np.argsort(item_names))
-                which_to_move = list(correct_order).index(np.int64(i))
-                self.get_widget_by_id("list").move_child(int(which_to_move), before=int(i))
-
-        sort_children(self.current_order[0])
-        sort_children(self.current_order[1])
-        self.current_order = [self.current_order[1], self.current_order[0]]

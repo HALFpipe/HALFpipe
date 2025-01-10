@@ -12,12 +12,13 @@ from textual.events import Click
 from textual.reactive import Reactive, reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Footer, Header, Placeholder, TabbedContent, TabPane
+from textual.widgets import Footer, Header, TabbedContent, TabPane
 from textual.widgets._header import HeaderTitle
 
 from ..logging.base import LoggingContext
 from .data_input.base import DataInput
 from .feature_widgets.base import FeatureSelection
+from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
 from .utils.confirm_screen import Confirm
@@ -175,6 +176,8 @@ class MainApp(App):
         os.path.join(BASE_DIR, "feature_widgets/tcss/base.tcss"),
         os.path.join(BASE_DIR, "feature_widgets/tcss/taskbased.tcss"),
         os.path.join(BASE_DIR, "feature_widgets/tcss/model_conditions_and_contrasts.tcss"),
+        os.path.join(BASE_DIR, "group_level_models/tcss/base.tcss"),
+        os.path.join(BASE_DIR, "group_level_models/tcss/models.tcss"),
         os.path.join(BASE_DIR, "utils/tcss/file_browser.tcss"),
         os.path.join(BASE_DIR, "working_directory/tcss/working_directory.tcss"),
         os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
@@ -222,8 +225,8 @@ class MainApp(App):
                 yield VerticalScroll(Preprocessing(id="preprocessing_content"))
             with TabPane("Features", id="feature_selection_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(FeatureSelection(id="feature_selection_content"))
-            with TabPane("Group level models", id="models_tab", classes="tabs"):
-                yield VerticalScroll(Placeholder(), id="models_content")
+            with TabPane("Group level models", id="models_tab", classes="tabs2 -hidden"):
+                yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
                 yield VerticalScroll(RunCLX(), id="run_content")
         yield Footer()
