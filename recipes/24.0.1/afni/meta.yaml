@@ -42,6 +42,7 @@ requirements:
     - xorg-libxpm # not in macos
     - xorg-libxmu
     - xorg-libxft
+    - xorg-xorgproto
     - libxml2
     - icu
   run:
