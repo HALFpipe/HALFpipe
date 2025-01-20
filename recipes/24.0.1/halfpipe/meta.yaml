@@ -36,7 +36,7 @@ requirements:
     - statsmodels>=0.14
     - tabulate>=0.8.9
     - pint>=0.17
-    - datalad #==1.0.2
+    - datalad
     - matplotlib
     - seaborn>=0.11.1
     - svgutils>=0.3.1
@@ -70,12 +70,11 @@ requirements:
     - pytest-xdist
     - python
     - fsl-flameo
-    - fsl-melodic #? fsl_regfilt? https://git.fmrib.ox.ac.uk/fsl/FslBuildManifests/-/merge_requests/15/diffs
     - fmripost_aroma
     - afni-3dfwhmx
     - afni-3dtproject
     - afni-3dblurtofwhm
-    # experimental user interface
+    # New user interface
     - textual==0.60.0
     - pytest-textual-snapshot
 
