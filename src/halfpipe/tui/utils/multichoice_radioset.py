@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+from dataclasses import dataclass
+
 import numpy as np
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, ScrollableContainer
+from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Label, RadioButton
 
 from ._radio_set2 import RadioSet
+from .confirm_screen import Confirm
 from .draggable_modal_screen import DraggableModalScreen
 
 
@@ -64,12 +68,25 @@ class MultipleRadioSet(Widget):
         A dictionary mapping each vertical label to its selected radio button.
     """
 
+    @dataclass
+    class Changed(Message):
+        multiple_radio_set: "MultipleRadioSet"
+        row: int
+        column: int
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.multiple_radio_set
+
     def __init__(
         self,
         id: str | None = None,
         classes: str | None = None,
         horizontal_label_set: None | list = None,
         vertical_label_set: None | list = None,
+        default_value_column: int = 0,
+        unique_first_column=False,
     ):
         super().__init__(id=id, classes=classes)
         self.horizontal_label_set = (
@@ -81,6 +98,9 @@ class MultipleRadioSet(Widget):
         self.vertical_label_set = (
             vertical_label_set if vertical_label_set is not None else ["v_label1", "v_long_label2", "v_label3", "v_label4"]
         )
+        self.default_value_column = default_value_column
+        self.unique_first_column = unique_first_column
+        self.last_unique_selection = "row_radio_sets_0"
 
     def compose(self) -> ComposeResult:
         vmax_length = max([len(i) for i in self.vertical_label_set])
@@ -96,7 +116,7 @@ class MultipleRadioSet(Widget):
 
         # with  ScrollableContainer(id='top_container'):
         with Horizontal(id="h_label_container"):
-            for h_label in [" " * (vmax_length + 2)] + self.horizontal_label_set:
+            for h_label in [" " + " " * (vmax_length + 2)] + self.horizontal_label_set:
                 this_label = Label(h_label, classes="h_labels")
                 # set height of the hlabels to the one with the most lines
                 this_label.styles.height = hmax_vertical_length
@@ -104,13 +124,26 @@ class MultipleRadioSet(Widget):
         for i, v_label in enumerate(self.vertical_label_set):
             with Horizontal(classes="radio_table_rows"):
                 yield Label(v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
-                with RadioSet(classes="row_radio_sets_" + str(i)):
+                with RadioSet(id="row_radio_sets_" + str(i)):
                     for j, _ in enumerate(self.horizontal_label_set):
-                        yield RadioButton(classes="radio_column_" + str(j), value=(j - 1))
+                        # if self.unique_first_column is True and j == 0:
+                        #     yield RadioButton(id="radio_column_" + str(j), value=True)
+                        # else:
+                        #     yield RadioButton(id="radio_column_" + str(j), value=(j + 1 - self.default_value_column))
+                        # yield RadioButton(id="radio_column_" + str(j), classes="radio_column_" + str(j), value=(j + 1 -
+                        # self.default_value_column))
+                        is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
+                        value = 1 if is_first_column else (j + 1 - self.default_value_column)
+                        print("v_labelv_labelv_label", v_label)
+                        print("vvvvvvvvvvvvvvvvvv value", value)
+                        print("jjjjjjjjjjjjjjjjj", j)
+                        print("ooooooooooooooooooo", is_first_column)
+                        print("--------------------------------------")
+                        yield RadioButton(id=f"radio_column_{j}", value=value)
 
     def on_mount(self):
         for i, h_val in enumerate(self.horizontal_label_set):
-            for this_radio_button in self.query(".radio_column_" + str(i)):
+            for this_radio_button in self.query("#radio_column_" + str(i)):
                 # if there is a line break in the label, we count the length of the longest line
                 h_val_length = max([len(h) for h in h_val.split("\n")])
                 this_radio_button.styles.width = h_val_length + 1
@@ -119,9 +152,64 @@ class MultipleRadioSet(Widget):
     def get_selections(self):
         selections = {}
         for i, v_val in enumerate(self.vertical_label_set):
-            for this_radio_set in self.query(".row_radio_sets_" + str(i)):
-                selections[v_val] = this_radio_set._selected
+            # for this_radio_set in self.query("#row_radio_sets_" + str(i)):
+            # selections[v_val] = this_radio_set._selected
+            selections[v_val] = [v.value for v in self.get_widget_by_id("row_radio_sets_" + str(i)).query(RadioButton)]
         return selections
+
+    @on(RadioSet.Changed)
+    def on_radio_set_changed(self, message):
+        # Simplify repeated access to widget properties
+        def update_pressed_button(widget_id, column_id):
+            widget = self.get_widget_by_id(widget_id)
+            widget._pressed_button.value = False
+            widget._pressed_button = widget.get_widget_by_id(column_id)
+
+        def update_radio_columns(widget_id, active_column):
+            widget = self.get_widget_by_id(widget_id)
+            for i, _ in enumerate(self.horizontal_label_set):
+                column_id = f"radio_column_{i}"
+                widget.get_widget_by_id(column_id).value = i == active_column
+
+        print("mnmmmmmmmmmmmmmmmmmmm", message.control.id)
+        print("vvvvvvvvvvvvvvvvvvvvvvvv", message.index)
+        print("seeeee", self.get_selections())
+        should_post_message = True  # Flag to control whether the message should be posted
+
+        if message.index == 0 and message.control.id != self.last_unique_selection and self.unique_first_column is True:
+            if self.last_unique_selection is not None:
+                # Update the pressed button for the message control and last unique selection
+                update_pressed_button(message.control.id, "radio_column_0")
+                update_pressed_button(self.last_unique_selection, "radio_column_1")
+
+                # Update the radio columns for the message control and last unique selection
+                update_radio_columns(message.control.id, active_column=0)
+                update_radio_columns(self.last_unique_selection, active_column=1)
+
+            self.last_unique_selection = message.control.id
+            self.post_message(self.Changed(self, message.control.id, message.index))
+
+        elif message.control.id == self.last_unique_selection and self.unique_first_column is True:
+            self.app.push_screen(
+                Confirm(
+                    "Specify exactly one variables for the first column",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    #  left_button_variant=None,
+                    right_button_variant="default",
+                    title="Missing images",
+                    id="missing_images_modal",
+                    classes="confirm_warning",
+                )
+            )
+            update_pressed_button(message.control.id, "radio_column_0")
+            update_radio_columns(message.control.id, active_column=0)
+            should_post_message = False  # Prevent posting the message in this case
+
+        if should_post_message:
+            self.post_message(self.Changed(self, message.control.id, message.index))
+
+    # def impose_column_uniqueness(self):
 
 
 class MultipleRadioSetModal(DraggableModalScreen):
