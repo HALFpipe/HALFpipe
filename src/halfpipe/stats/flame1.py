@@ -129,9 +129,9 @@ def t_ols_contrast(
 
 
 class FContrastResult(NamedTuple):
-    cope: npt.NDArray[np.float64]
-    var_cope: npt.NDArray[np.float64]
-    t: npt.NDArray[np.float64]
+    cope: npt.NDArray[np.floating]
+    var_cope: npt.NDArray[np.floating]
+    t: npt.NDArray[np.floating]
     f: float
     z: float
 
