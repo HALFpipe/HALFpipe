@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from hashlib import sha1
-from typing import Container, Mapping
+from typing import Iterable, Mapping, Sequence
 
 from ..logging import logger
 from ..utils.path import AnyPath
@@ -51,8 +51,7 @@ class FileIndex:
         matches: set[AnyPath] | None = None
         for key, value in tags.items():
             if key not in self.paths_by_tags:
-                logger.info(f'Unknown key "{key}"')
-                return None
+                raise KeyError(f'Unknown tag "{key}"')
 
             values = self.paths_by_tags[key]
             if value is not None:
@@ -101,17 +100,15 @@ class FileIndex:
 
         return set(k for k, v in self.paths_by_tags[key].items() if not paths.isdisjoint(v))
 
-    def get_tag_groups(self, keys: Container[str], paths: set[AnyPath] | None = None) -> list[Mapping[str, str]]:
-        from pyrsistent import pmap
-
+    def get_tag_groups(self, keys: Iterable[str], paths: set[AnyPath] | None = None) -> Sequence[Mapping[str, str | None]]:
         if paths is None:
             paths = set(self.tags_by_paths.keys())
 
-        groups: set[Mapping[str, str]] = {
-            pmap({k: v for k, v in self.tags_by_paths[path].items() if k in keys}) for path in paths
+        # Find all unique sets of tags for the specified paths
+        groups: set[frozenset[tuple[str, str | None]]] = {
+            frozenset((key, self.get_tag_value(path, key)) for key in keys if key in self.paths_by_tags) for path in paths
         }
-
-        return [dict(group) for group in groups]
+        return list(map(dict, groups))
 
     def recode(self, key: str, value: str, replacement: str):
         """

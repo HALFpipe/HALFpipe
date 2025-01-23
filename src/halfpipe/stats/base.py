@@ -27,10 +27,10 @@ class ModelAlgorithm(ABC):
     ) -> dict | None:
         raise NotImplementedError()
 
-    @staticmethod
+    @classmethod
     @abstractmethod
     def write_outputs(
-        ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict
+        cls, reference_image: nib.analyze.AnalyzeImage, contrast_matrices: dict, voxel_results: dict
     ) -> dict[str, list[Literal[False] | str]]:
         raise NotImplementedError()
 
@@ -57,6 +57,8 @@ class ModelAlgorithm(ABC):
         array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
 
         image = new_img_like(reference_image, array, copy_header=True)
+        if not isinstance(image.header, nib.nifti1.Nifti1Header):
+            raise TypeError("Only nifti1 headers are supported")
         image.header.set_data_dtype(np.float64)
 
         image_path = Path.cwd() / f"{out_name}.nii.gz"

@@ -10,7 +10,6 @@ repos:
       - id: check-symlinks
       - id: mixed-line-ending
       - id: check-case-conflict
-      - id: fix-encoding-pragma
       - id: fix-byte-order-marker
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -33,4 +32,10 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          [numpy, types-chardet, types-requests, types-tabulate, typing_extensions]
+          [
+            numpy,
+            types-chardet,
+            types-requests,
+            types-tabulate,
+            typing_extensions,
+          ]
