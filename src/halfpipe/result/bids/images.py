@@ -68,13 +68,13 @@ def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
         return make_bids_path(inpath, "image", tags, suffix=key)
 
 
-def _load_result(file_index: FileIndex, tags: Mapping[str, str]) -> ResultDict | None:
+def _load_result(file_index: FileIndex, tags: Mapping[str, str | None]) -> ResultDict | None:
     paths = file_index.get(**tags)
     if paths is None or len(paths) == 0:
         return None
 
     result: ResultDict = defaultdict(dict)
-    result["tags"] = dict(tags)
+    result["tags"] = {key: value for key, value in tags.items() if value is not None}
 
     for path in paths:
         if path.suffix == ".json":
@@ -112,6 +112,7 @@ def load_images(file_index: FileIndex, num_threads: int = 1) -> list[ResultDict]
     image_group_entities = set(entities) - {"stat", "algorithm"}
 
     groups = file_index.get_tag_groups(image_group_entities)
+
     cm, iterator = make_pool_or_null_context(
         groups,
         callable=partial(_load_result, file_index),
