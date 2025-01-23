@@ -19,6 +19,7 @@ requirements:
     - wheel
   run:
     - ants
+    - libitk!=5.4.1,!=5.4.2 # prevent segfaults
     - rmath # local
     - python 3.11.*
     - fmriprep # local
