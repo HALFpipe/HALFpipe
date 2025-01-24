@@ -43,6 +43,27 @@ ModelTemplate {
 
         height: auto;
     }
+    #model_variables_instructions {
+        padding: 1;
+        text-style: bold;
+    }
+    #levels_instructions {
+        padding: 1;
+        text-style: bold;
+    }
+    SwitchWithSelect {
+        Grid {
+            align: left middle;
+            grid-size: 3;
+            grid-columns: 20 16 40;
+        }
+        #input_switch_input_box {
+            width: 30;
+            Static {
+                padding: 0 0 0 0;
+            }
+        }
+    }
 }
 
 .me {

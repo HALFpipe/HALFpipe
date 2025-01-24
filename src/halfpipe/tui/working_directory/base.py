@@ -179,6 +179,7 @@ spec.json file it is possible to load the therein configuration.",
         # modals.
         if self.existing_spec is not None:
             self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(False)
+            spreadsheet_counter = 0
             self.event_file_objects = []
             self.atlas_file_objects = []
             self.seed_map_file_objects = []
@@ -199,6 +200,9 @@ spec.json file it is possible to load the therein configuration.",
                     path_test_for_bids(f.path)
                     self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(True)
                 # need to create a FileItem widgets for all non-bids files
+                elif f.datatype == "spreadsheet":
+                    ctx.cache["__spreadsheet_file_" + str(spreadsheet_counter)]["files"] = f
+                    spreadsheet_counter += 1
                 elif f.suffix == "bold":
                     message_dict = {i: [str(f.metadata[i])] for i in f.metadata if i == "repetition_time"}
                     widget_name = await data_input_widget.add_bold_image(
