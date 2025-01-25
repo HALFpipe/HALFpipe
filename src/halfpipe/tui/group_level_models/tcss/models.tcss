@@ -43,13 +43,12 @@ ModelTemplate {
 
         height: auto;
     }
-    #model_variables_instructions {
+    .instructions {
         padding: 1;
         text-style: bold;
     }
-    #levels_instructions {
+    #contrast_switch_label {
         padding: 1;
-        text-style: bold;
     }
     SwitchWithSelect {
         Grid {
@@ -123,6 +122,43 @@ AddSpreadsheetModal {
         }
         #column_assignement_label {
             width: auto;
+        }
+    }
+}
+
+.model_conditions_and_constrasts {
+    width: auto;
+    height: auto;
+}
+AdditionalContrastsCategoricalVariablesTable {
+    #contrast_table {
+        scrollbar-gutter: stable;
+        .datatable--header {
+            color: white;
+            text-style: bold italic;
+            background: black 70%;
+        }
+        .datatable--even-row {
+            background: grey;
+        }
+        .datatable--odd-row {
+            background: grey 70%;
+        }
+    }
+    #contrast_table_upper {
+        /*width: auto;*/
+        width: auto;
+        height: auto;
+        content-align: center middle;
+        /*border: solid;*/
+        padding: 1 1 0 0;
+    }
+    #button_panel {
+        align: right top;
+        height: 5;
+        Button {
+            margin: 0 1;
+            width: 25;
         }
     }
 }

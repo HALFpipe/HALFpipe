@@ -1,27 +1,257 @@
 # -*- coding: utf-8 -*-
 
-
-from itertools import chain, combinations
+from dataclasses import dataclass
+from itertools import chain, combinations, cycle
 from typing import Any, Dict
 
+import pandas as pd
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, Horizontal, ScrollableContainer, Vertical
+from textual.containers import Container, Grid, Horizontal, HorizontalScroll, ScrollableContainer, Vertical
 from textual.css.query import NoMatches  # Import the NoMatches exception
 from textual.message import Message
+from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Button, Input, Select, SelectionList, Static, Switch
+from textual.widgets import Button, DataTable, Input, Select, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
 
 from ...ingest.spreadsheet import read_spreadsheet
 from ...model.file.spreadsheet import SpreadsheetFileSchema
 from ...model.variable import VariableSchema
+from ..feature_widgets.model_conditions_and_contrasts import ContrastTableInputWindow
 from ..utils.context import ctx
 from ..utils.custom_general_widgets import SwitchWithSelect
 from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from ..utils.multichoice_radioset import MultipleRadioSet
+
+
+class AdditionalContrastsCategoricalVariablesTable(Widget):
+    # BORDER_TITLE = "Model conditions & contrast vales"
+
+    @dataclass
+    class Changed(Message):
+        additional_contrasts_categorical_variables_table: "AdditionalContrastsCategoricalVariablesTable"
+        value: str
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.additional_contrasts_categorical_variables_table
+
+    BINDINGS = [
+        ("a", "add_column", "Add column"),
+        ("r", "remove_column", "Add column"),
+        ("s", "submit", "Submit"),
+    ]
+
+    sort_type_cycle = cycle(
+        [
+            "alphabetically",
+            "reverse_alphabetically",
+            "by_group",
+            "reverse_by_group",
+        ]
+    )
+
+    # condition_values: list of the conditions in the selection, this can be changed also externally by other widget
+    # if so, the selection and the table need an update
+    condition_values: reactive[list] = reactive([], init=False)
+
+    def __init__(
+        self,
+        all_possible_conditions: list,
+        feature_contrasts_dict: list,
+        feature_conditions_list: list,
+        id: str | None = None,
+        classes: str | None = None,
+    ) -> None:
+        """The pandas dataframe is to remember all choices even when some images or conditions are turned off.
+        This is because when they are turned on, the condition values will be also back.
+        The feature_contrasts_dict is used when the widget is created either from read-in (from existing json file) or
+        when duplicated.
+        The tricky part in this widget is to keep sync between the selection list and the table and on top of  that
+        with the images selection list from the upper widget. Also one needs to properly store and recover table values
+        on change.
+        The all_possible_conditions is a list of all conditions based on the available images (bold) files.
+        The feature_contrasts_dict is reference to the list in the ctx.cache!
+        """
+        super().__init__(id=id, classes=classes)
+        self.feature_contrasts_dict = feature_contrasts_dict
+        self.feature_conditions_list = feature_conditions_list
+        # This means now all possible levels, because if user change subjects to use, then we should get more rows and there
+        # should be also memory of the previous choice.
+        self.all_possible_conditions = all_possible_conditions
+        self.row_dict: dict = {}
+        self.update_all_possible_conditions(all_possible_conditions)
+
+    def update_all_possible_conditions(self, all_possible_conditions: list) -> None:
+        self.df = pd.DataFrame()
+        # This here assign the row incides, so in our case these are all possible values of categorical variables,
+        # or in other words the 'levels'.
+        self.df["condition"] = all_possible_conditions
+        self.df.set_index("condition", inplace=True)
+        # if there are dict entries then set defaults
+        # if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        if self.feature_contrasts_dict != []:
+            # convert dict to pandas
+            for contrast_dict in self.feature_contrasts_dict:
+                #   for row_index in self.df.index:
+                for condition_name in contrast_dict["values"]:
+                    self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
+            self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
+
+    # def watch_condition_values(self) -> None:
+    #     self.update_condition_selection()
+
+    def compose(self) -> ComposeResult:
+        table = DataTable(zebra_stripes=True, header_height=2, id="contrast_table")
+        # table = self.query_one(DataTable)
+        # to init the table, stupid but nothing else worked
+        table.add_column(label="temp", key="temp")
+        # first case is used upon duplication or load, here we use the feature_conditions_list to add the rows to table
+        if self.feature_conditions_list != []:
+            # hence this list reflects already the selected images
+            [table.add_row(None, label=o, key=o) for o in self.feature_conditions_list]
+        # second case is standard case when a new task based feature is added, now we use all possible conditions
+        else:
+            [table.add_row(None, label=o, key=o) for o in self.all_possible_conditions]
+        table.remove_column("temp")
+
+        table.cursor_type = "column"
+        table.zebra_stripes = True
+
+        ##############
+        if self.feature_contrasts_dict != [] or self.feature_conditions_list != []:
+            for contrast_dict in self.feature_contrasts_dict:
+                table.add_column(contrast_dict["name"], key=contrast_dict["name"])
+                for row_key in table.rows:
+                    table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
+        #############
+        # here this to avoid error
+        self.table_row_index = dict.fromkeys(sorted([r.value for r in table.rows]))
+
+        yield HorizontalScroll(
+            table,
+            id="contrast_table_upper",
+        )
+        yield Horizontal(
+            Button("Add contrast values", classes="add_button"),
+            Button("Remove contrast values", classes="delete_button"),
+            Button("Sort table", classes="sort_button"),
+            id="button_panel",
+        )
+
+    def action_add_column(self):
+        """Add column with new contrast values to te table."""
+
+        def add_column(new_column_name: str):  # , new_column_values=None):
+            # new_column_name is just the column label
+            # is dictionary with the new column values
+            table = self.get_widget_by_id("contrast_table")
+
+            if new_column_name is not False:
+                table.add_column(new_column_name, default=1, key=new_column_name)
+                for row_key in table.rows:
+                    table.update_cell(row_key, new_column_name, self.table_row_index[row_key.value])
+                    self.df.loc[row_key.value, new_column_name] = self.table_row_index[row_key.value]
+            else:
+                pass
+            self.dump_contrast_values()
+
+        # start with opening of the modal screen
+        self.app.push_screen(
+            ContrastTableInputWindow(
+                table_row_index=self.table_row_index,
+                current_col_labels=self.df.columns.values,
+            ),
+            add_column,
+        )
+
+    async def action_remove_column(self):
+        table = self.get_widget_by_id("contrast_table")
+        if len(table.ordered_columns) != 0:
+            row_key, column_key = table.coordinate_to_cell_key(table.cursor_coordinate)
+            table.remove_column(column_key)
+            self.df = self.df.drop(column_key.value, axis=1)
+            self.dump_contrast_values()
+
+    async def action_submit(self):
+        self.dump_contrast_values()
+
+    @on(Button.Pressed, "AdditionalContrastsCategoricalVariablesTable .add_button")
+    async def add_col(self) -> None:
+        await self.run_action("add_column()")
+
+    @on(Button.Pressed, "AdditionalContrastsCategoricalVariablesTable .delete_button")
+    async def remove_col(self) -> None:
+        await self.run_action("remove_column()")
+
+    @on(Button.Pressed, "AdditionalContrastsCategoricalVariablesTable .sort_button")
+    async def sort_cols(self) -> None:
+        self.sort_by_row_label()
+
+    def sort_by_row_label(self, default: str | None = None):
+        """
+        Parameters
+        ----------
+        default : str, optional
+            Custom sort type to override the default cycling sort types.
+        """
+        condition_selection = self.get_widget_by_id("model_conditions_selection")
+        groups = list(condition_selection._option_ids.keys())
+        table = self.get_widget_by_id("contrast_table")
+        # add this  column for sorting purpose, later it is removed
+        table.add_column("condition", key="condition")
+        for row_key in table.rows:
+            table.update_cell(row_key, "condition", row_key.value)
+
+        if default is None:
+            sort_type = next(self.sort_type_cycle)
+        else:
+            sort_type = default
+        if "alphabetically" in sort_type:
+
+            def identity_func(value):
+                return value
+
+            sort_function = identity_func
+        else:
+
+            def find_group_index(element):
+                return next(i for i, key in enumerate(groups) if element == key)
+
+            sort_function = find_group_index
+
+        if "reverse" in sort_type:
+            reverse = True
+        else:
+            reverse = False
+
+        table.sort(
+            "condition",
+            key=sort_function,
+            reverse=reverse,
+        )
+
+        table.remove_column("condition")
+
+    def dump_contrast_values(self) -> None:
+        table = self.get_widget_by_id("contrast_table")
+        df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
+
+        #  if self.feature_contrasts_dict is not None:  # Ensure it is not None
+        self.feature_contrasts_dict.clear()
+        # Iterate over each column in the DataFrame
+        for column in df_filtered.columns:
+            self.feature_contrasts_dict.append(
+                {"type": "t", "name": column, "variable": [self.id[:-15]], "values": df_filtered[column].to_dict()}
+            )
+
+        self.feature_conditions_list.clear()
+        self.feature_conditions_list.extend(df_filtered.index.values)
+        self.post_message(self.Changed(self, self.feature_contrasts_dict))
 
 
 def widget_exists(where, widget):
@@ -240,8 +470,9 @@ class LinearModel(ModelTemplate):
     def __init__(self, this_user_selection_dict=None, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
         print("self.model_dictself.model_dictself.model_dict init", self.model_dict)
-        self.spreadsheet_filepath: dict[str, str] = {}
+        self.spreadsheet_filepaths: dict[str, str] = {}
         self.model_dict.setdefault("contrasts", [])
+
         self.model_dict.setdefault("spreadsheet", None)
         # In case loading or duplicating, the spreadsheet field is not None. So we need to find matching fileobject in the
         # ctx.cache and assign it in this widget.
@@ -308,6 +539,7 @@ class LinearModel(ModelTemplate):
         #
         # async def load_selections_based_on_spreadsheet(self, spreadsheet_cache_id):
         metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
+        self.metadata_variables = metadata_variables
         spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
         self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
 
@@ -374,6 +606,8 @@ class LinearModel(ModelTemplate):
             await self.get_widget_by_id("top_model_variables_panel").remove()
         if widget_exists(self, "top_interaction_panel") is True:
             await self.get_widget_by_id("top_interaction_panel").remove()
+        if widget_exists(self, "top_contrast_panel") is True:
+            await self.get_widget_by_id("top_contrast_panel").remove()
         # what is on goes  to contrast as                 {
         #                     "type": "infer",
         #                     "variable": [
@@ -393,6 +627,7 @@ class LinearModel(ModelTemplate):
                     "Select the subjects to include in this analysis by their categorical variables\n\
 For multiple categorical variables, the intersecion of the groups will be used.",
                     id="levels_instructions",
+                    classes="instructions",
                 ),
                 Horizontal(
                     *sub_panels,
@@ -436,6 +671,7 @@ For multiple categorical variables, the intersecion of the groups will be used."
                 Static(
                     "Specify the variables to add to the model and action for missing values",
                     id="model_variables_instructions",
+                    classes="instructions",
                 ),
                 *[
                     SwitchWithSelect(
@@ -468,6 +704,7 @@ For multiple categorical variables, the intersecion of the groups will be used."
                 Static(
                     "Specify the variables for which to calculate interaction terms",
                     id="interaction_variables_instructions",
+                    classes="instructions",
                 ),
                 SelectionList[str](
                     *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
@@ -477,6 +714,7 @@ For multiple categorical variables, the intersecion of the groups will be used."
                 Static(
                     "Select which interaction terms to add to the model",
                     id="interaction_terms_instructions",
+                    classes="instructions",
                 ),
                 SelectionList[str](
                     *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
@@ -489,12 +727,37 @@ For multiple categorical variables, the intersecion of the groups will be used."
             after=self.get_widget_by_id("top_model_variables_panel"),
         )
 
+        # In the TextSwitch we use hardcoded False but on the other hand, we use the flag self.has_type_t to toggle the switch
+        # if there is some content for the contrast tables (load, duplication case). Doing this in such a two step way will
+        # automatically trigger the function _on_contrast_switch_changed same as when the user toggles the button.
+        await self.mount(
+            Container(
+                Static(
+                    "Contrasts for the mean across all subjects, and for all variables will be generated automatically",
+                    classes="instructions",
+                ),
+                Grid(
+                    Static("Add additional contrasts for categorical variables", id="contrast_switch_label", classes="label"),
+                    TextSwitch(value=False, id="contrast_switch"),
+                    id="contrast_switch_panel",
+                ),
+                id="top_contrast_panel",
+                classes="components",
+            ),
+            after=self.get_widget_by_id("top_interaction_panel"),
+        )
+        # Scan whether there are some values for the contrast tables (in case of load or duplication.
+        self.has_type_t = any(item.get("type") == "t" for item in self.model_dict["contrasts"])
+        if self.has_type_t is True:
+            self.get_widget_by_id("contrast_switch").toggle()
+
         # Here we set the flat to False, because in any case after this point it should always be False.
         self.is_new = False
 
         self.get_widget_by_id("top_levels_panel").border_title = "Subjects to include by their categorical variables"
         self.get_widget_by_id("top_model_variables_panel").border_title = "Model variables"
         self.get_widget_by_id("top_interaction_panel").border_title = "Interaction terms"
+        self.get_widget_by_id("top_contrast_panel").border_title = "Additional contrasts"
 
     @on(SwitchWithSelect.SwitchChanged)
     def _on_switch_with_select_switch_changed(self, message):
@@ -530,6 +793,11 @@ For multiple categorical variables, the intersecion of the groups will be used."
         filter_dict["levels"] = sorted(message.control.selected)
         print("cccccccccccccccc", ctx.cache)
 
+        # When we change selection of the categorical variables, we need to close the contrast tables (if are opened)
+        # This is because the tables need an update because the rows of the tables depends on the choices from the
+        # level_selection widget.
+        self.get_widget_by_id("contrast_switch").value = False
+
     @on(SelectionList.SelectedChanged, "#interaction_variables_selection_panel")
     def _on_interaction_variables_selection_list_changed(self, message):
         print("qqqqqqqqqqq", message.control.id)
@@ -538,6 +806,11 @@ For multiple categorical variables, the intersecion of the groups will be used."
         terms = list(chain.from_iterable(combinations(message.control.selected, i) for i in range(2, nvar + 1)))
         term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
         self.get_widget_by_id("interaction_terms_selection_panel").clear_options()
+        # Also delete every interaction term in the ctx.cache
+        for contrast_item in self.model_dict["contrasts"]:
+            if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
+                self.model_dict["contrasts"].remove(contrast_item)
+
         self.get_widget_by_id("interaction_terms_selection_panel").add_options(
             [Selection(key, term_by_str[key], False) for key in term_by_str.keys()]
         )
@@ -547,6 +820,26 @@ For multiple categorical variables, the intersecion of the groups will be used."
     def _on_interaction_terms_selection_list_changed(self, message):
         print("qqqqqqqqqqq", message.control.id)
         print("qqqqqqqqqqq", message.control.selected)
+        # first remove all interaction terms
+        print("0vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
+
+        # for contrast_item in self.model_dict["contrasts"][:]:
+        #     if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
+        #         self.model_dict["contrasts"].remove(contrast_item)
+        self.model_dict["contrasts"] = list(
+            filter(
+                lambda contrast_item: not (contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1),
+                self.model_dict["contrasts"],
+            )
+        )
+
+        print("1vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
+
+        # Now add every terms that is currently selected in the widget to the cache
+
+        for interaction_term in message.control.selected:
+            self.model_dict["contrasts"].append({"type": "infer", "variable": interaction_term})
+        print("2vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
 
         # filter_item = {
         #     "type": "infer",
@@ -556,6 +849,56 @@ For multiple categorical variables, the intersecion of the groups will be used."
         #     self.model_dict["filters"].append(filter_item)
         # elif filter_item in self.model_dict["filters"]:
         #     self.model_dict["filters"].remove(filter_item)
+
+    @on(TextSwitch.Changed, "#contrast_switch")
+    async def _on_contrast_switch_changed(self, message):
+        # metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
+        # spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
+        # self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
+        # self.is_new
+        # continue from here ...
+
+        only_categorical_metadata = list(filter(lambda item: item["type"] == "categorical", self.metadata_variables))
+        self.categorical_variables_list = [element["name"] for element in only_categorical_metadata]
+
+        if message.value is True:
+            for categorical_metadata_item in only_categorical_metadata:
+                categorical_contrast_items = list(
+                    filter(
+                        lambda contrast_item: contrast_item["type"] == "t"
+                        and contrast_item["variable"] == [categorical_metadata_item["name"]],
+                        self.model_dict["contrasts"],
+                    )
+                )
+                print("categorical_contrast_itemscategorical_contrast_items", categorical_contrast_items)
+                contrast_table_widget = AdditionalContrastsCategoricalVariablesTable(
+                    all_possible_conditions=categorical_metadata_item["levels"],
+                    feature_contrasts_dict=categorical_contrast_items,
+                    feature_conditions_list=self.get_widget_by_id(categorical_metadata_item["name"] + "_panel").selected,
+                    id=categorical_metadata_item["name"] + "_contrast_panel",
+                    classes="components model_conditions_and_constrasts",
+                )
+                contrast_table_widget.border_title = categorical_metadata_item["name"]
+                await self.get_widget_by_id("top_contrast_panel").mount(contrast_table_widget)
+        elif widget_exists(self, "top_contrast_panel") is True:
+            for child in self.get_widget_by_id("top_contrast_panel").walk_children(
+                AdditionalContrastsCategoricalVariablesTable
+            ):
+                child.remove()
+
+    @on(AdditionalContrastsCategoricalVariablesTable.Changed)
+    def _on_additional_contrasts_categorical_variables_table_changed(self, message):
+        print("AdditionalContrastsCategoricalVariablesTable mmmmmmmmmmmmmmmmmmmmmmmmmmm", message.value)
+
+        # this will delete all previous contrasts type 't' of the particular contraste variable. This is done because
+        # in the next line we fill it again based on what is actually in the table.
+        self.model_dict["contrasts"] = [
+            item
+            for item in self.model_dict["contrasts"]
+            if not (item.get("type") == "t" and item.get("variable") == [message.control.id[:-15]])
+        ]
+        for contrast_item in message.value:
+            self.model_dict["contrasts"].append(contrast_item)
 
 
 class AddSpreadsheetModal(DraggableModalScreen):
@@ -692,25 +1035,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
             )
             self.get_widget_by_id("column_assignement_top_container").border_title = "Column data types"
 
-            # await self.mount(
-            #     Horizontal(
-            #         Static('Select the subjects to include in this analysis by their categorical')
-            #         id='levels_panel',
-            #         classes='components'
-            #     ),
-            #     after=self.get_widget_by_id("column_assignement"),
-            # )
-
-            # If there are no options yet, then skip deselect.
-
-            # if self.last_selected is not None:
-            #     self.get_widget_by_id('selection_set').deselect(self.last_selected)
-            #
-            # self.get_widget_by_id('selection_set').add_option((spreadsheet_path, spreadsheet_path, True))
-            # ctx.spec.files.append(SpreadsheetFileSchema().load({"datatype": "spreadsheet", "path": spreadsheet_path}))
-            # # ctx.spreadsheet_paths.append(spreadsheet_path)
-            # self.last_selected = spreadsheet_path
-
     @on(MultipleRadioSet.Changed)
     def on_radio_set_changed(self, message):
         # Extract the row number and column label
@@ -741,57 +1065,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
         self.metadata.append(metadata_entry)
         # ctx.cache[self.cache_name]["files"]["metadata"] = metadata
         # self.filedict["metadata"] = metadata
-
-    #     row_number = int(message.row.replace('row_radio_sets_', ''))
-    #     label = self.spreadsheet_df.columns[row_number]
-    #     levels = list(set(self.spreadsheet_df.iloc[:, row_number]))
-    #     ctx.cache[self.cache_name]['files']['metadata'] = [item for item in self.cache_name]['files']['metadata'] if
-    #     item.get(
-    #         "name") != col_label]
-    #
-    #     if message.column == 1:
-    #         ctx.cache[self.cache_name]['files']['metadata'].append({"name": col_label, "type": 'id')
-    #     if message.column == 2:
-    #         ctx.cache[self.cache_name]['files']['metadata'].append({"name": col_label, "type": 'categorical', 'levels':l
-    #         evels)
-    #     elif message.column == 3:
-    #         ctx.cache[self.cache_name]['files']['metadata'].append({"name": col_label, "type": 'continous')
-
-    #     print('iiiiiiiiiiiiiii', message.control.id)
-    #     print('mnmmmmmmmmmmmmmmmmmmm', message.column)
-    #     print('vvvvvvvvvvvvvvvvvvvvvvvv', message.row)
-    #     row_number = int(message.row.replace('row_radio_sets_', ''))
-    #     label = self.spreadsheet_df.columns[row_number]
-    #
-    #     if message.column == 2:
-    #         print('ccccccccccccccccccccccccccccategorical!!!!!!!1')
-    #         # this is df column number, in the widget the column names are the rows of the table
-    #         print('self.spreadsheet_df.columns[]', self.spreadsheet_df.columns[row_number])
-    #         print('eeeeeeeeeee', list(set(self.spreadsheet_df.iloc[:,row_number])))
-    #         # self.spreadsheet_df.columns[]
-    #         self.get_widget_by_id('levels_panel').mount(
-    #             # SelectionList[int](
-    #             #     ("Falken's Maze", 0, True),
-    #             #     ("Black Jack", 1),
-    #             #     ("Gin Rummy", 2),
-    #             # ),
-    #             Vertical(
-    #                 Static(label, classes='level_labels'),
-    #                 SelectionList[str](
-    #                     *[Selection(str(v), str(v), True) for v in list(set(self.spreadsheet_df.iloc[:,row_number]))],
-    #                     classes='level_selection'),
-    #                 id=label+'_panel',
-    #                 classes='level_sub_panels'
-    #             )
-    #             # after=self.get_widget_by_id("column_assignement"),
-    #         )
-    #     elif message.column != 2:
-    #         print('ssssss')
-    #         # print('qqqqqqqqqqqqqqq', self.query_one('#'+label+'_panel'))
-    #         self.get_widget_by_id(label+'_panel').remove()
-    #
-    #         # self.remove(self.get_widget_by_id(self.query('#'+label+'_panel')))
-    #         # Now me must check whether we must unmount a widget and if yes, then unmount it
 
     @on(Button.Pressed, "#browse")
     async def _on_add_button_pressed(self):
