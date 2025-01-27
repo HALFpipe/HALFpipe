@@ -133,13 +133,13 @@ class SliceTimingFileStep(Step):
                         n_slices = header.get_data_shape()[slice_encoding_axis]
                         if n_slices != len(value):
                             raise ValueError(
-                                f"Slice timing from file has {len(value):d} " f"values, but scans have {n_slices:d} slices"
+                                f"Slice timing from file has {len(value):d} values, but scans have {n_slices:d} slices"
                             )
 
                     for i, time in enumerate(value):
                         if time > repetition_time:
                             raise ValueError(
-                                f"Invalid time for slice {i+1:d}: "
+                                f"Invalid time for slice {i + 1:d}: "
                                 f"{time:f} seconds is greater than "
                                 f"repetition_time of images "
                                 f"({repetition_time:f} seconds)"

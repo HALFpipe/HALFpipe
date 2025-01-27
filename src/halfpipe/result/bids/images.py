@@ -102,7 +102,7 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str | None]) -> Resul
             extensions = {split_ext(image_file)[-1] for image_file in image_files}
             if not extensions.isdisjoint(has_sidecar_extensions):
                 logger.warning(
-                    f"Could not find metadata for files {image_files}. " "Check if the `.json` sidecar files are present."
+                    f"Could not find metadata for files {image_files}. Check if the `.json` sidecar files are present."
                 )
 
     return dict(result)

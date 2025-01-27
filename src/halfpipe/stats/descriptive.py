@@ -63,7 +63,7 @@ class Descriptive(ModelAlgorithm):
             for map_name, series in rdf.iterrows():
                 assert isinstance(map_name, str)
 
-                out_name = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
+                out_name = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
                 fname = cls.write_map(ref_img, out_name, series)
 
                 output_name = map_name

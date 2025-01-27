@@ -83,9 +83,7 @@ class FeatureFactory(Factory):
 
             condition_files = collect_events(database, source_file)
             if condition_files is None or len(condition_files) == 0:  # we did not find any condition files
-                logger.warning(
-                    f'Skipping feature "{feature.name}" for "{source_file}" ' "because no event files could be found"
-                )
+                logger.warning(f'Skipping feature "{feature.name}" for "{source_file}" because no event files could be found')
                 return None
 
             condition_file_paths = []

@@ -18,7 +18,7 @@ def test_afni(tmp_path):
     m = 100
     n = 5
 
-    column_names = [f"column_{i+1}" for i in range(n)]
+    column_names = [f"column_{i + 1}" for i in range(n)]
 
     data_frame = pd.DataFrame(np.random.rand(m, n), columns=column_names)
 

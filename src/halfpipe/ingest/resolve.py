@@ -151,8 +151,7 @@ class ResolvedSpec:
     def _resolve_bids(self, fileobj: File) -> list[File]:
         if not exists(fileobj.path):
             logger.warning(
-                f'Skipping BIDS directory "{fileobj.path}" because it does not exist or '
-                "we do not have sufficient permissions."
+                f'Skipping BIDS directory "{fileobj.path}" because it does not exist or we do not have sufficient permissions.'
             )
             return list()
 

@@ -20,7 +20,7 @@ class Level1DesignInputSpec(fslm.Level1DesignInputSpec):
         traits.Dict(traits.Enum("none"), traits.Dict()),
         traits.Dict(traits.Enum("none"), traits.Enum(None)),
         mandatory=True,
-        desc=("name of basis function and options e.g., " "{'dgamma': {'derivs': True}}"),
+        desc=("name of basis function and options e.g., {'dgamma': {'derivs': True}}"),
     )
 
 

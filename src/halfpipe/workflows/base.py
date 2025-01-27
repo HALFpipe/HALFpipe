@@ -69,9 +69,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     )
 
     if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
-        raise RuntimeError(
-            "Nothing to do. Please specify features to calculate and/or select to output " "a preprocessed image"
-        )
+        raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # create factories
 

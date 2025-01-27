@@ -126,7 +126,7 @@ def datasink_vals(indicts, reports_directory):
                         outdict[key] = continuous.mean
                         continue
 
-                    logger.warning(f'Omitting invalid key-value pair "{key}={value}"' " from reportvals.json")
+                    logger.warning(f'Omitting invalid key-value pair "{key}={value}" from reportvals.json')
 
                 outdict.update(vals)
 
