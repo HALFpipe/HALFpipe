@@ -433,6 +433,12 @@ class ConfoundsRegressionFactory(LookupFactory):
 class PostProcessingFactory(Factory):
     def __init__(self, ctx: FactoryContext, fmriprep_factory: FmriprepFactory) -> None:
         super().__init__(ctx)
+        """
+        Through this init function we decide what information/variables are available in each factory.
+        This generates a sequential dependency between the factories, because the LookUp factory class
+        always checks the previous factory.
+        Practically, this defines order of our own processing steps.
+        """
 
         self.fmriprep_factory = fmriprep_factory
 

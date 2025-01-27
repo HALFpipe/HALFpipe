@@ -30,7 +30,7 @@ def init_fmriprep_adapter_wf(
                 "boldmask",  # was "bold_mask_std",
                 # "spatial_reference", # not used anymore
                 "skip_vols",
-                "confounds",
+                "confounds_file",
                 "vals",
             ]
         ),
@@ -70,7 +70,7 @@ def init_fmriprep_adapter_wf(
     # so we can apply the skip_vols node to both the bold file and the confounds
     merge = pe.Node(niu.Merge(2), name="merge")
     workflow.connect(apply_mask, "out_file", merge, "in1")
-    workflow.connect(inputnode, "confounds", merge, "in2")
+    workflow.connect(inputnode, "confounds_file", merge, "in2")
 
     # Fmriprep does not actually get rid of volumes we want skipped (in "skip_vols")
     # so we do it ourselves
