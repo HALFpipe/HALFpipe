@@ -121,6 +121,15 @@ outputs:
     test:
       commands:
         - 3dTproject -help
+  - name: afni-3dtstat
+    files:
+      - bin/3dTstat
+    requirements:
+      run:
+        - {{ pin_subpackage('afni-libmri', exact=True) }}
+    test:
+      commands:
+        - 3dTstat -help
 
 about:
   home: https://afni.nimh.nih.gov/afni
