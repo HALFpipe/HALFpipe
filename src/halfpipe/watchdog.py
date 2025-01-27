@@ -25,7 +25,7 @@ def init_watchdog(interval=60):
                 rows = summary.summarize(muppy.get_objects())
                 memtrace = "\n".join(summary.format_(rows))
 
-                logger.info("Watchdog traceback:\n" f"{stacktrace}\n" f"{memtrace}")
+                logger.info(f"Watchdog traceback:\n{stacktrace}\n{memtrace}")
             except Exception as e:
                 logger.error("Error in watchdog", exc_info=e)
 

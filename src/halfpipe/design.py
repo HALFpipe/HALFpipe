@@ -35,7 +35,7 @@ def _check_multicollinearity(matrix):
 
     rank = np.linalg.matrix_rank(matrix)
 
-    logger.info(f"max_singular={max_singular} min_singular={min_singular} " f"rank={rank}")
+    logger.info(f"max_singular={max_singular} min_singular={min_singular} rank={rank}")
 
     if min_singular == 0:
         logger.warning(
@@ -125,7 +125,7 @@ def _generate_rhs(contrasts, columns_var_gt_0) -> list[Term]:
     for contrast in contrasts:
         if contrast["type"] == "infer":
             if not columns_var_gt_0[contrast["variable"]].all():
-                logger.warning(f'Not adding term "{contrast["variable"]}" to design matrix ' "because it has zero variance")
+                logger.warning(f'Not adding term "{contrast["variable"]}" to design matrix because it has zero variance')
                 continue
             # For every term in the model a contrast of type infer needs to be specified
             rhs.append(Term([LookupFactor(name) for name in contrast["variable"]]))
@@ -281,7 +281,7 @@ def group_design(
     npts, nevs = dmat.shape
 
     if nevs >= npts:
-        logger.warning("Reverting to simple intercept only design. \n" f"nevs ({nevs}) >= npts ({npts})")
+        logger.warning(f"Reverting to simple intercept only design. \nnevs ({nevs}) >= npts ({npts})")
         return intercept_only_design(len(subjects))
 
     regressor_list: dict[str, list[float]] = OrderedDict(

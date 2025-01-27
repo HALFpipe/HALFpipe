@@ -211,7 +211,7 @@ def run_stage_run(opts: Namespace):
 
     for i, chunk in enumerate(chunks_to_run):
         if len(chunks_to_run) > 1:
-            logger.info(f"Running chunk {i+1} of {len(chunks_to_run)}")
+            logger.info(f"Running chunk {i + 1} of {len(chunks_to_run)}")
 
         try:
             assert isinstance(chunk, nx.DiGraph)
@@ -225,10 +225,10 @@ def run_stage_run(opts: Namespace):
             if opts.debug:
                 raise e
             else:
-                logger.warning(f"Ignoring exception in chunk {i+1}", exc_info=True)
+                logger.warning(f"Ignoring exception in chunk {i + 1}", exc_info=True)
 
         if len(chunks_to_run) > 1:
-            logger.info(f"Completed chunk {i+1} of {len(chunks_to_run)}")
+            logger.info(f"Completed chunk {i + 1} of {len(chunks_to_run)}")
 
 
 def run(opts, should_run):

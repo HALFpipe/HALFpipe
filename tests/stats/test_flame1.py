@@ -170,7 +170,7 @@ def test_flame1(tmp_path, wakemandg_hensonrn: Dataset, use_var_cope):
 
             if diverging_voxels.any():
                 difference_in_diverging_voxels = np.abs(a0 - a1)[diverging_voxels]
-                logger.info(f"Max difference in diverging voxels for {key}: " f"{difference_in_diverging_voxels.max()}")
+                logger.info(f"Max difference in diverging voxels for {key}: {difference_in_diverging_voxels.max()}")
                 assert np.all(difference_in_diverging_voxels < 50), f"Difference in diverging voxels is too big for {key}"
 
             # Mean error needs to be below 0.05

@@ -141,11 +141,11 @@ class PathReferenceTracer:
                 if actual - predicted > 1:  # more than one gigabyte error
                     log_method = logger.warning
 
-                log_method(f'Memory usage for node "{node.fullname}" exceeds prediction ' f"{predicted=} {actual=}")
+                log_method(f'Memory usage for node "{node.fullname}" exceeds prediction {predicted=} {actual=}')
 
             elif predicted - actual > 5:  # more than 5 gigabytes error
                 logger.warning(
-                    f'Memory usage for node "{node.fullname}" is significantly below prediction ' f"{predicted=} {actual=}"
+                    f'Memory usage for node "{node.fullname}" is significantly below prediction {predicted=} {actual=}'
                 )
 
         except Exception:

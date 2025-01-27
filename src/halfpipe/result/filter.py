@@ -141,7 +141,7 @@ def make_cutoff_filter(filter_dict: dict, model_desc: str) -> Callable[[dict], b
 
         vals = d.get("vals")
         if vals is None:
-            logger.warning(f"Excluding ({format_tags(tags)}) {model_desc}" f'because "{filter_field}" is missing. ')
+            logger.warning(f'Excluding ({format_tags(tags)}) {model_desc}because "{filter_field}" is missing. ')
             return False
         val = vals.get(filter_field, np.inf)
 
@@ -156,7 +156,7 @@ def make_cutoff_filter(filter_dict: dict, model_desc: str) -> Callable[[dict], b
 
         res = x <= cutoff
         if res is False:
-            logger.info(f"Excluding ({format_tags(tags)}) {model_desc}" f'because "{filter_field}" is larger than {cutoff:f}')
+            logger.info(f'Excluding ({format_tags(tags)}) {model_desc}because "{filter_field}" is larger than {cutoff:f}')
 
         return res
 

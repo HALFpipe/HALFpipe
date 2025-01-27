@@ -277,7 +277,7 @@ class FLAME1(ModelAlgorithm):
                 results_frame = results_frame.append(empty_zstat)  # type: ignore
 
             for map_name, series in results_frame.iterrows():
-                output_prefix = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
+                output_prefix = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
                 fname = cls.write_map(reference_image, output_prefix, series)
 
                 if map_name in frozenset(["dof"]):

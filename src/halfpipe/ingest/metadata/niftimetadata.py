@@ -66,9 +66,9 @@ class NiftiheaderMetadataLoader(Loader):
                     if slice_encoding_direction not in axis_codes:
                         slice_encoding_direction = canonicalize_direction_code(slice_encoding_direction, fileobj.path)
 
-                    assert (
-                        slice_encoding_direction in axis_codes
-                    ), f'Unknown slice_encoding_direction "{slice_encoding_direction}"'
+                    assert slice_encoding_direction in axis_codes, (
+                        f'Unknown slice_encoding_direction "{slice_encoding_direction}"'
+                    )
 
                     slice_dim = ["i", "j", "k"].index(slice_encoding_direction[0])
                     header.set_dim_info(slice=slice_dim)
@@ -140,7 +140,7 @@ class NiftiheaderMetadataLoader(Loader):
                             )
                     else:
                         logger.info(
-                            f"Missing units for repetition_time. " f'Assuming {repetition_time:f} seconds for "{fileobj.path}"'
+                            f'Missing units for repetition_time. Assuming {repetition_time:f} seconds for "{fileobj.path}"'
                         )
 
                     value = repetition_time
