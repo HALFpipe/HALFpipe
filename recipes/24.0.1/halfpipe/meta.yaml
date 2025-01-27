@@ -70,6 +70,7 @@ requirements:
     - pytest-xdist
     - python
     - fsl-flameo
+    - fsl-feat5
     - fmripost_aroma
     - afni-3dfwhmx
     - afni-3dtproject
