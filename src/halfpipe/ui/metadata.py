@@ -2,7 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import ClassVar, Dict, Iterable, Optional, Type
+from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
 import numpy as np
 from inflection import humanize
@@ -116,9 +116,11 @@ class SliceTimingFileStep(Step):
             filepath = self.result
             try:
                 spreadsheet = read_spreadsheet(filepath)
-                valuearray = np.ravel(spreadsheet.values).astype(np.float64)
-                valuelist = list(valuearray.tolist())
-                value = self.field.deserialize(valuelist)
+                value_array = np.ravel(spreadsheet.values).astype(np.float64)
+                value_list: Any = value_array.tolist()
+                if not isinstance(value_list, list):
+                    raise ValueError(f"Invalid slice timing values: {value_list}")
+                value = self.field.deserialize(value_list)
 
                 for filepath in self.filepaths:
                     slice_encoding_direction = ctx.database.metadata(filepath, "slice_encoding_direction")

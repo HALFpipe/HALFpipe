@@ -146,6 +146,13 @@ def setup_argument_parser(argument_parser: ArgumentParser):
         action="append",
         help="add this variable to the model as a continuous variable",
     )
+    group.add_argument(
+        "--contrast",
+        type=str,
+        metavar="JSON",
+        action="append",
+        help="add a contrast in json format to the model",
+    )
 
     group = argument_parser.add_argument_group(
         title="derived",

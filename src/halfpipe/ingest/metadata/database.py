@@ -55,7 +55,7 @@ class DatabaseMetadataLoader(Loader):
                                 value = abs(e1 - e2)
 
         if key == "echo_time":  # calculate from associated file
-            if fileobj.datatype == "fmap" and fileobj.suffix.startswith("phase"):
+            if fileobj.datatype == "fmap" and fileobj.suffix is not None and fileobj.suffix.startswith("phase"):
                 filepath = fileobj.path
                 suffix = dict(phase1="magnitude1", phase2="magnitude2").get(fileobj.suffix)
                 if suffix is not None:
@@ -71,7 +71,10 @@ class DatabaseMetadataLoader(Loader):
                 try:
                     spreadsheet = read_spreadsheet(slice_timing_file)
                     valuearray = np.ravel(spreadsheet.values).astype(np.float64)
-                    value = list(valuearray.tolist())
+                    valuelist = valuearray.tolist()
+                    if not isinstance(valuelist, list):
+                        raise TypeError
+                    value = valuelist
                 except Exception as e:
                     logger.warning(
                         f'Ignored exception when loading slice_timing_file "{slice_timing_file}":',
