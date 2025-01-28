@@ -69,8 +69,9 @@ requirements:
     - pytest-timeout
     - pytest-xdist
     - python
-    - fsl-flameo
     - fsl-feat5
+    - fsl-film
+    - fsl-flameo
     - fmripost_aroma
     - afni-3dfwhmx
     - afni-3dtproject
