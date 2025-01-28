@@ -76,6 +76,7 @@ requirements:
     - afni-3dtproject
     - afni-3dblurtofwhm
     - afni-3dtstat
+    - afni-3dreho
     # New user interface
     - textual==0.60.0
     - pytest-textual-snapshot
