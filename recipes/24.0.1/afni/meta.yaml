@@ -119,6 +119,15 @@ outputs:
     test:
       commands:
         - 3dBlurToFWHM -help
+  - name: afni-3dcalc
+    files:
+      - bin/3dcalc
+    requirements:
+      run:
+        - {{ pin_subpackage('afni-libmri', exact=True) }}
+    test:
+      commands:
+        - 3dcalc -help
   - name: afni-3dfwhmx
     files:
       - bin/3dFWHMx

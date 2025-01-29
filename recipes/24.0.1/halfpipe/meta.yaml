@@ -76,6 +76,7 @@ requirements:
     - afni-3dfwhmx
     - afni-3dtproject
     - afni-3dblurtofwhm
+    - afni-3dcalc
     - afni-3dtstat
     - afni-3dreho
     # New user interface
