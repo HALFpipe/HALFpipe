@@ -4,7 +4,6 @@
 
 from pathlib import Path
 
-import nibabel as nib
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
 from nipype.interfaces import afni
@@ -22,6 +21,8 @@ def compute_falff(mask_file, filtered_file, unfiltered_file):
     Computes fALFF using Nibabel instead of AFNI's 3dcalc.
     """
     import os
+
+    import nibabel as nib
 
     mask_img = nib.load(mask_file)
     filtered_img = nib.load(filtered_file)
