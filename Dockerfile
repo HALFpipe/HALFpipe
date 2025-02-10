@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.10
 
-ARG fmriprep_version=24.2.0
+ARG fmriprep_version=24.1.0
 
 FROM condaforge/miniforge3 AS conda
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public \
