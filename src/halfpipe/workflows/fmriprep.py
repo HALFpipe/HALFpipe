@@ -470,6 +470,6 @@ class FmriprepFactory(Factory):
 
         if connected_attrs != inputattrs:
             missing_attrs: list[str] = sorted(inputattrs - connected_attrs)
-            logger.info(f"Unable to find fMRIPrep outputs {p.join(missing_attrs)} " f"for workflow {nodehierarchy}")
+            logger.info(f"Unable to find fMRIPrep outputs {p.join(missing_attrs)} for workflow {nodehierarchy}")
 
         return

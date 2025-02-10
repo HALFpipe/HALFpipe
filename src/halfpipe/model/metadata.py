@@ -53,7 +53,7 @@ class PEDirMetadataSchema(BaseMetadataSchema):
     phase_encoding_direction = fields.Str(
         validate=validate.OneOf(direction_codes),
         metadata=dict(
-            description="The letters i, j, k correspond to the first, second and " "third axis of the data in the NIFTI file."
+            description="The letters i, j, k correspond to the first, second and third axis of the data in the NIFTI file."
         ),
     )
 

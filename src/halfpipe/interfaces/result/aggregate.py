@@ -26,7 +26,7 @@ class AggregateResultdicts(IOBase):
         super(AggregateResultdicts, self).__init__(**inputs)
         self._numinputs = numinputs
         if numinputs >= 1:
-            self.input_names = [f"in{i+1}" for i in range(numinputs)]
+            self.input_names = [f"in{i + 1}" for i in range(numinputs)]
             add_traits(self.inputs, self.input_names)
         else:
             self.input_names = []

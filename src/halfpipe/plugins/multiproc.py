@@ -104,7 +104,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         # Instantiate different thread pools for non-daemon processes
         logger.debug(
-            "[MultiProc] Starting (n_procs=%d, " "mem_gb=%0.2f, cwd=%s)",
+            "[MultiProc] Starting (n_procs=%d, mem_gb=%0.2f, cwd=%s)",
             self.processors,
             self.memory_gb,
             self._cwd,
