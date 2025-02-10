@@ -168,7 +168,7 @@ COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
-RUN --mount=source=recipes/24.0.1/fmripost_aroma,target=/fmripost_aroma \
+RUN --mount=source=recipes/${fmriprep_version}/fmripost_aroma,target=/fmripost_aroma \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmripost_aroma"
 
