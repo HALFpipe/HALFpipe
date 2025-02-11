@@ -59,22 +59,22 @@ RUN --mount=source=recipes/niflow-nipype1-workflows,target=/niflow-nipype1-workf
 ## EXCLUSIVE FROM FMRIPREP 24 ##
 
 FROM builder AS afni
-RUN --mount=source=recipes/24.0.1/afni,target=/afni \
+RUN --mount=source=recipes/24.1.0/afni,target=/afni \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "afni"
 
 FROM builder AS acres
-RUN --mount=source=recipes/24.0.1/acres,target=/acres \
+RUN --mount=source=recipes/24.1.0/acres,target=/acres \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "acres"
 
 FROM builder AS mapca
-RUN --mount=source=recipes/24.0.1/mapca,target=/mapca \
+RUN --mount=source=recipes/24.1.0/mapca,target=/mapca \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "mapca"
 
 FROM builder AS migas
-RUN --mount=source=recipes/24.0.1/migas,target=/migas \
+RUN --mount=source=recipes/24.1.0/migas,target=/migas \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "migas"
 
@@ -100,14 +100,14 @@ RUN --mount=source=recipes/20.2.7/templateflow,target=/templateflow \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "templateflow"
 
-#Exclusive from 24.0.1
+#Exclusive from 24.1.0
 FROM builder AS nireports
 ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 # needs templateflow, but we can use conda version. The templateflow we build is only necessary
 # for fmriprep 20
 RUN conda index /opt/conda/conda-bld
-RUN --mount=source=recipes/24.0.1/nireports,target=/nireports \
+RUN --mount=source=recipes/24.1.0/nireports,target=/nireports \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
 
