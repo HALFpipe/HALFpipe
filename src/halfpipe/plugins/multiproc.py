@@ -112,7 +112,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
-            initializer=cast(Callable[[], Any], initializer),  # Tell mypy the types
+            initializer=cast(Callable[..., Any], initializer),  # Tell mypy the types
             initargs=(
                 get_init_args(),
                 plugin_args,

@@ -40,4 +40,4 @@ repos:
           - types-requests
           - types-tabulate
           - typing_extensions
-        args: ["--verbose"]
+        # args: ["--verbose"]

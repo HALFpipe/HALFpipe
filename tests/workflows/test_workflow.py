@@ -103,6 +103,7 @@ def test_feature_extraction(tmp_path, mock_spec):
     confounds_frame = read_spreadsheet(confounds_path)
 
     assert bold_image.shape[3] == confounds_frame.shape[0] + skip_vols
+    # TODO check that we have all the columns we need
 
     template_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w")
     template_image = nib.nifti1.load(template_path)
