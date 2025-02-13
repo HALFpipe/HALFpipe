@@ -6,6 +6,7 @@ import multiprocessing.pool as mp_pool
 import os
 from contextlib import nullcontext
 from enum import Enum, auto
+from functools import partialmethod
 from multiprocessing import active_children, get_context
 from typing import Any, Callable, ContextManager, Iterable, Iterator, Sized, TypeVar
 
@@ -43,12 +44,13 @@ def initializer(
 
     os.chdir(host_cwd)
 
-    # Do not show tqdm progress bars from subprocesses
-    import tqdm
-    import tqdm.auto
+    # Do not show tqdm progress bars from subprocesses as per
+    # https://github.com/nsidc/earthaccess/issues/612#issuecomment-2189744434
+    from tqdm import tqdm
+    from tqdm.auto import tqdm as tqdm_auto
 
-    tqdm.tqdm = mock_tqdm
-    tqdm.auto.tqdm = mock_tqdm
+    tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # type: ignore
+    tqdm_auto.__init__ = partialmethod(tqdm_auto.__init__, disable=True)  # type: ignore
 
     # Make sure we send all logging to the logger process
     from ..logging.base import setup as setup_logging
