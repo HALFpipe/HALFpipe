@@ -43,28 +43,28 @@ class Dataset:
 
 
 datasets: list[Dataset] = [
-    # Dataset(
-    #     name="on_harmony",  # single-band scan
-    #     openneuro_id="ds004712",
-    #     openneuro_url="https://github.com/OpenNeuroDatasets/ds004712/blob/master",
-    #     url="https://github.com/OpenNeuroDatasets/ds004712.git",
-    #     paths=[
-    #         "sub-13192/ses-NOT3GEM001/func/sub-13192_ses-NOT3GEM001_task-rest_acq-resopt2_bold.nii.gz",
-    #         "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.json",
-    #         "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.nii.gz",
-    #     ],
-    # ),
     Dataset(
-        name="emory",  # multiband
-        openneuro_id="ds003540",
-        openneuro_url="https://github.com/OpenNeuroDatasets/ds003540/blob/master",
-        url="https://github.com/OpenNeuroDatasets/ds003540.git",
+        name="on_harmony",  # single-band scan
+        openneuro_id="ds004712",
+        openneuro_url="https://github.com/OpenNeuroDatasets/ds004712/blob/master",
+        url="https://github.com/OpenNeuroDatasets/ds004712.git",
         paths=[
-            "sub-01/anat/sub-01_T1w.nii.gz",
-            "sub-01/func/sub-01_task-rest_acq-MB8_bold.nii.gz",
-            "sub-01/func/sub-01_task-rest_acq-MB8_sbref.nii.gz",
+            "sub-13192/ses-NOT3GEM001/func/sub-13192_ses-NOT3GEM001_task-rest_acq-resopt2_bold.nii.gz",
+            "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.json",
+            "sub-13192/ses-NOT3GEM001/anat/sub-13192_ses-NOT3GEM001_T1w.nii.gz",
         ],
     ),
+    # Dataset(
+    #     name="emory",  # multiband
+    #     openneuro_id="ds003540",
+    #     openneuro_url="https://github.com/OpenNeuroDatasets/ds003540/blob/master",
+    #     url="https://github.com/OpenNeuroDatasets/ds003540.git",
+    #     paths=[
+    #         "sub-01/anat/sub-01_T1w.nii.gz",
+    #         "sub-01/func/sub-01_task-rest_acq-MB8_bold.nii.gz",
+    #         "sub-01/func/sub-01_task-rest_acq-MB8_sbref.nii.gz",
+    #     ],
+    # ),
     # Dataset(
     #     name="panikratova",  # New 1.5 Tesla
     #     openneuro_id="ds002422",
