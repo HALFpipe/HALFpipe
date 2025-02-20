@@ -40,6 +40,13 @@ def _find_child(hierarchy, name):
                 return res
 
 
+def _find_sub_wf(workflow, suffix):
+    for node in workflow._graph.nodes():
+        if isinstance(node, pe.Workflow) and node.name.endswith(suffix):
+            return node
+    return None
+
+
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
@@ -268,10 +275,18 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
-            resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", subject_id=subject_id, childname="bold_task_rest_wf")
+            # We cannot reliable expect that the task rest will always be called "bold_task_rest_wf" anymore
+            # For example for one of the datasets is called "bold_ses_NOT3GEM001_task_rest_wf"
+            # and for other "bold_task_rest_wf".
+            # So we search for this workflow based just in the ending on the name using _find_sub_wf.
+            fmriprep_wf = self._get_hierarchy("fmriprep_24_2_wf", subject_id=subject_id)[-1]
+            task_rest_wf = _find_sub_wf(fmriprep_wf, "task_rest_wf")
+
+            if task_rest_wf is None:
+                raise ValueError(f"No sub-workflow ending with 'task_rest_wf' found in {fmriprep_wf.name}")
+
+            resample_hierarchy = [*self._get_hierarchy("fmriprep_24_2_wf", subject_id=subject_id), task_rest_wf]
             wf2 = resample_hierarchy[-1]
-            # bold_std = wf2.get_node("bold_std_wf")
-            # resample = bold_std.get_node("outputnode")
             ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
             bold_std = ds_bold_std_wf.get_node("ds_bold")
             bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
