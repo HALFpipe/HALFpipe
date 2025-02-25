@@ -109,9 +109,14 @@ class Context:
         filepaths = self.database.get(**bold_filedict)
 
         db_entities, db_tags_set = self.database.multitagvalset(entities, filepaths=filepaths, min_set_size=0)
+        print("--------------------db_entitiesdb_entitiesdb_entitiesdb_entities", db_entities)
+        print("--------------------db_tags_setdb_tags_setdb_tags_setdb_tags_set", db_tags_set)
 
         if db_entities != []:
-            self.available_images[db_entities[0]] = sorted(list({t[0] for t in db_tags_set}))
+            for i, db_entity in enumerate(db_entities):
+                self.available_images[db_entity] = sorted(list({t[i] for t in db_tags_set}))
+
+        print("--------------------self.available_imagesself.available_imagesself.available_images", self.available_images)
 
     @property
     def get_available_images(self):

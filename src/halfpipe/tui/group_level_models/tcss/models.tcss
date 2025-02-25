@@ -126,6 +126,13 @@ AddSpreadsheetModal {
     }
 }
 
+LinearModel {
+    #aggregate_switch_label {
+        padding: 1;
+        text-style: bold;
+    }
+}
+
 .model_conditions_and_constrasts {
     width: auto;
     height: auto;

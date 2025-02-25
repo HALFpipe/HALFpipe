@@ -9,6 +9,7 @@ from textual.widgets import Button, Label, ListItem, ListView, OptionList
 from textual.widgets.option_list import Option, Separator
 
 from ..feature_widgets.base import FeatureNameInput, SelectionTemplate
+from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from .models import InterceptOnlyModel, LinearModel
@@ -192,3 +193,20 @@ class GroupLevelModelSelection(SelectionTemplate):
             MODELS_MAP[current_feature.type], current_feature.name
         )
         self.get_widget_by_id("content_switcher").styles.border_title_color = MODELS_MAP_colors[current_feature.type]
+
+    ###############
+    def action_delete_feature(self) -> None:
+        """Unmount the feature and delete its entry from dictionaries."""
+
+        def confirmation(respond: bool):
+            if respond:
+                current_id = self.get_widget_by_id("content_switcher").current
+                name = self.feature_items[current_id].name
+                self.get_widget_by_id(current_id).remove()
+                self.feature_items.pop(current_id)
+                ctx.cache.pop(name)
+                # If there are also aggregation models created within that particular models, also delete those.
+                if name + "__aggregate_models_list" in ctx.cache:
+                    ctx.cache.pop(name + "__aggregate_models_list")
+
+        self.app.push_screen(Confirm(), confirmation)

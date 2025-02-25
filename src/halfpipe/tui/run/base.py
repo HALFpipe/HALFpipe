@@ -152,20 +152,47 @@ class RunCLX(Widget):
 
                     # Special handling for "filters", if there are no filters, than put there just empty list
                     if key == "filters":
-                        filters = value
-                        task_images = ctx.get_available_images["task"]
-
-                        # Check if filters is empty, matches task images, or contains an empty 'values' list in
-                        # any dictionary
-                        if (
-                            not filters  # Filters is empty
-                            or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
-                            or any(
-                                isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
-                                for item in filters
-                            )
-                        ):
-                            value = []  # Overwrite filters value with an empty list
+                        # filters = value
+                        filter_list_for_spec_file = []
+                        # we need to loop over the filter list
+                        if not value:  # Filters is empty
+                            value = []
+                        else:
+                            for f in value:
+                                images = ctx.get_available_images[f["entity"]]
+                                if (
+                                    # If the filter contains all possible values, then we set it to empty list. This is done
+                                    # by coparing the filter with the all possible images of the data.
+                                    set(f.get("values", [])) == set(images)
+                                    # Or the filter dict has empty "values", then we do not include the filter in the final
+                                    # spec file.
+                                    or isinstance(f, dict)
+                                    and not f.get("values")
+                                ):
+                                    # do not append
+                                    # value = []  # Overwrite filters value with an empty list
+                                    continue
+                                else:
+                                    # append
+                                    filter_list_for_spec_file.append(f)
+                            # Variable 'value' is sent to the spec file, so we override it with the modified filter list based
+                            # on what passed the above 'if' conditions.
+                            value = filter_list_for_spec_file
+                            # old
+                        # filters = value
+                        # task_images = ctx.get_available_images["task"]
+                        #
+                        # # Check if filters is empty, matches task images, or contains an empty 'values' list in
+                        # # any dictionary
+                        # if (
+                        #     not filters  # Filters is empty
+                        #     or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
+                        #     or any(
+                        #         isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
+                        #         for item in filters
+                        #     )
+                        # ):
+                        #     value = []  # Overwrite filters value with an empty list
 
                     # Apply the value to the settings object
                     setattr(ctx.spec.settings[-1], key, value)
@@ -180,10 +207,33 @@ class RunCLX(Widget):
                     unfiltered_setting["bandpass_filter"] = None  # remove bandpass filter, keep everything else
                     ctx.spec.settings.append(unfiltered_setting)
             if ctx.cache[name]["models"] != {}:
-                modelobj = Model(name=ctx.cache[name]["models"]["name"], type=ctx.cache[name]["type"], across="sub")
-                ctx.spec.models.append(modelobj)
-                for key, value in ctx.cache[name]["models"].items():
-                    setattr(ctx.spec.models[-1], key, value)
+                # In case of the aggregate models, we need to loop over a list of models. The standard models such as Linear
+                # or InterceptOnly are linked to a widget, however the aggregate models do not have their own widgets, they
+                # are created within the Linear model and so they belong implicitly to those widgets. This connection is made
+                # by suffix '__aggregate_models_list'. When this suffix is present, we know that we are dealing with a list
+                # of models, hence we need to iterate of it. This solution is done in this way because otherwise keeping track
+                # of which aggregate models belong to which Linear models would be not possible. We need this connection so
+                # that for example when a Linear models is deleted, we need to know which aggregate models we need to also
+                # delete. There are also other instances why we need this, for example loading from a spec file, duplicating.
+
+                if name.endswith("__aggregate_models_list"):
+                    "aggregate_models"
+                    models_list = ctx.cache[name]["models"]["aggregate_models_list"]
+                else:
+                    models_list = [ctx.cache[name]["models"]]  # Ensure it's iterable
+
+                for model in models_list:
+                    print("modelmodelmodelmodelmodelmodel", model)
+                    modelobj = Model(
+                        name=model["name"],
+                        type=model["type"],
+                        across="sub" if not name.endswith("__aggregate_models_list") else model["across"],
+                    )
+
+                    if modelobj not in ctx.spec.models:
+                        ctx.spec.models.append(modelobj)
+                        for key, value in model.items():
+                            setattr(ctx.spec.models[-1], key, value)
 
             if ctx.cache["bids"]["files"] != {} and name == "bids":
                 ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))

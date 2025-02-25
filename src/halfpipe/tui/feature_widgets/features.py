@@ -19,6 +19,8 @@ from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelT
 from ..utils.utils import extract_conditions, extract_name_part
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
+entity_label_dict = {"dir": "Directions", "run": "Runs", "task": "Tasks", "ses": "Sessions"}
+
 
 class FeatureTemplate(Widget):
     """
@@ -139,7 +141,9 @@ class FeatureTemplate(Widget):
 
         # if "filters" not in self.setting_dict:
         #     self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
-        self.setting_dict.setdefault("filters", [{"type": "tag", "action": "include", "entity": "task", "values": []}])
+        self.setting_dict.setdefault(
+            "filters", [{"type": "tag", "action": "include", "entity": entity, "values": []} for entity in entity_label_dict]
+        )
 
         # self.grand_mean_scaling_default_switch_value = True
         # if "grand_mean_scaling" not in self.setting_dict:
@@ -156,13 +160,24 @@ class FeatureTemplate(Widget):
         self.images_to_use: dict | None
         # if images exists, i.e., bold files with task tags were correctly given
         if ctx.get_available_images != {}:
+            # In "Features" we use only "Tasks" !
             # loop around available tasks to create a selection dictionary for the selection widget
             # if empty setting_dict["filters"] (meaning to loading or duplicating is happening) assign True to all images
             if self.setting_dict["filters"] == [] or self.setting_dict["filters"][0]["values"] == []:
-                self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
+                # self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
+                self.images_to_use = {
+                    entity: {tag: True for tag in tags}
+                    for entity, tags in ctx.get_available_images.items()
+                    if entity == "task"
+                }
             else:
                 # set at first all to False and then if there is the image in the .setting_dict["filters"] assign True to it
-                self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
+                # self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
+                self.images_to_use = {
+                    entity: {tag: False for tag in tags}
+                    for entity, tags in ctx.get_available_images.items()
+                    if entity == "task"
+                }
                 for image in self.setting_dict["filters"][0]["values"]:
                     self.images_to_use["task"][image] = True
         else:
@@ -247,8 +262,32 @@ class FeatureTemplate(Widget):
         )
 
         if self.images_to_use is not None:
+            # Commented out the method with entities_to_use_panels list, because we now use only Tasks, so we can directly
+            # create a panel only for them, the 'Tasks to use' panel.
+            # self.entities_to_use_panels = []
+            # for entity in self.images_to_use:
+            # self.entities_to_use_panels.append(
+            # Vertical(
+            # Static(entity_label_dict[entity], classes='images_to_use_selection_subpanel_labels'),
+            # SelectionList[str](
+            #     *[
+            #           Selection(image, image, self.images_to_use[entity][image])
+            #           for image in self.images_to_use[entity]
+            #      ],
+            #      id=entity+'_to_use_selection',
+            #      classes='tags_to_use_selection'
+            # )
+            # classes='images_to_use_selection_subpanels'
+            # )
+            # )
+            # self.images_to_use_selection_panel = Vertical(
+            #                                                 *self.entities_to_use_panels,
+            #                                                 id="images_to_use_selection",
+            #                                                 classes="components"
+            #                                               )
+
             self.images_to_use_selection_panel = SelectionList[str](
-                *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"].keys()],
+                *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
                 id="images_to_use_selection",
                 classes="components",
             )
@@ -271,7 +310,9 @@ class FeatureTemplate(Widget):
     async def on_mount(self) -> None:
         print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount parent")
         if self.images_to_use is not None:
-            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+            # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
+            # 'Images to Use'
+            self.get_widget_by_id("images_to_use_selection").border_title = "Tasks to use"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
@@ -280,9 +321,15 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").switch_value = False
             self.get_widget_by_id("bandpass_filter_hp_width").switch_value = False
 
-    @on(SelectionList.SelectedChanged, "#images_to_use_selection")
-    def _on_selection_list_changed(self):
-        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
+    @on(SelectionList.SelectedChanged, ".tags_to_use_selection")
+    def _on_selection_list_changed(self, message):
+        print("ccccccccccccccccccccccccccccccccc", message.control.id[:-17])
+        for f in self.setting_dict["filters"]:
+            print("ffffffffffffffffffffffffff", f)
+            if f["entity"] == message.control.id[:-17]:
+                print("ssssssssssssssssssssssssssss")
+                f["values"] = self.get_widget_by_id(message.control.id).selected
+        print("ccccccccccccccccccccccccccccccccache", ctx.cache)
 
     # @on(SelectionList.SelectedChanged, "#tag_selection")
     # def on_tag_selection_changed(self, selection_list):
@@ -744,14 +791,14 @@ class TaskBased(FeatureTemplate):
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
     @on(file_panel_class.Changed, "#top_event_file_panel")
-    @on(SelectionList.SelectionToggled, "#images_to_use_selection")
+    @on(SelectionList.SelectionToggled, ".tags_to_use_selection")
     def _on_selection_list_changed_images_to_use_selection(self, message):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
 
         # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
         # more-less the same. If there are no choices user gets an error and all options are selected again.
-        if len(self.get_widget_by_id("images_to_use_selection").selected) == 0:
+        if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
                     "You must selected at least one image!",
@@ -762,9 +809,11 @@ class TaskBased(FeatureTemplate):
                     classes="confirm_error",
                 )
             )
-            self.get_widget_by_id("images_to_use_selection").select_all()
+            self.get_widget_by_id(message.control.id).select_all()
 
-        if type(self).__name__ == "TaskBased":  # conditions are only in Task Based not in Preprocessing!
+        if (
+            type(self).__name__ == "TaskBased" and message.control.id == "tasks_to_use_selection"
+        ):  # conditions are only in Task Based not in Preprocessing!
             # try to update it here? this refresh the whole condition list every time that image is changed
             all_possible_conditions = []
             if self.images_to_use is not None:
@@ -778,10 +827,10 @@ class TaskBased(FeatureTemplate):
 
     def update_conditions_table(self):
         condition_list = []
-        for value in self.get_widget_by_id("images_to_use_selection").selected:
+        for value in self.get_widget_by_id("tasks_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])
 
-        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("images_to_use_selection").selected
+        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("tasks_to_use_selection").selected
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list
 

@@ -13,11 +13,13 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Select, SelectionList, Static, Switch
+from textual.widgets._select import BLANK
 from textual.widgets.selection_list import Selection
 
 from ...ingest.spreadsheet import read_spreadsheet
 from ...model.file.spreadsheet import SpreadsheetFileSchema
 from ...model.variable import VariableSchema
+from ..feature_widgets.features import entity_label_dict
 from ..feature_widgets.model_conditions_and_contrasts import ContrastTableInputWindow
 from ..utils.context import ctx
 from ..utils.custom_general_widgets import SwitchWithSelect
@@ -25,6 +27,8 @@ from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from ..utils.multichoice_radioset import MultipleRadioSet
+
+aggregate_order = ["dir", "run", "ses", "task"]
 
 
 class AdditionalContrastsCategoricalVariablesTable(Widget):
@@ -323,11 +327,11 @@ class ModelTemplate(Widget):
     aggregate_order = ["dir", "run", "ses", "task"]
 
     # Check if any dictionary in the list has the required key-value pairs
-    def extract_from_existing_filters(self, type_identifier, search_field="filters"):
-        for filter_dict in self.model_dict[search_field]:
-            if type_identifier.items() <= filter_dict.items():
-                return filter_dict
-        return None
+    # def extract_from_existing_filters(self, type_identifier, search_field="filters"):
+    #     for filter_dict in self.model_dict[search_field]:
+    #         if type_identifier.items() <= filter_dict.items():
+    #             return filter_dict
+    #     return None
 
     def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
         """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
@@ -344,42 +348,55 @@ class ModelTemplate(Widget):
         print("ffffffffffffffffffffffffresh ", self.model_dict)
         self.model_dict.setdefault("type", self.type)
         self.model_dict.setdefault("filters", [])
+        # self.model_cutoff_filters = [f for f in self.model_dict if f['type'] == 'cutoff']
 
         # In case of loading from a file or duplicating, we check whether there are some cutoffs made, if not then we switch
         # off the cutoff widget switch. It is enough to just check one of the cutoffs in the filter field.
         if (
-            self.model_dict["filters"] != []
-            and self.extract_from_existing_filters({"type": "cutoff", "field": "fd_mean"}) is not None
-        ):
-            cutoff_default_value = False
-        else:
+            self.model_dict["filters"] != [] and [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] != []
+        ) or self.model_dict["filters"] == []:
             cutoff_default_value = True
+        else:
+            cutoff_default_value = False
 
         # We need to field the filter dictionaries either from existing fields or assign default values to them.
-        self.fd_mean_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_mean"}) or {
-            "type": "cutoff",
-            "action": "exclude",
-            "field": "fd_mean",
-            "cutoff": "0.5",
-        }
+        # self.fd_mean_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_mean"}) or {
+        #     "type": "cutoff",
+        #     "action": "exclude",
+        #     "field": "fd_mean",
+        #     "cutoff": "0.5",
+        # }
+        #
+        # self.fd_perc_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_perc"}) or {
+        #     "type": "cutoff",
+        #     "action": "exclude",
+        #     "field": "fd_perc",
+        #     "cutoff": "10.0",
+        # }
 
-        self.fd_perc_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_perc"}) or {
-            "type": "cutoff",
-            "action": "exclude",
-            "field": "fd_perc",
-            "cutoff": "10.0",
-        }
-
-        if self.model_dict["filters"] == []:
-            self.model_dict["filters"].append(self.fd_mean_cutoff_dict)
-            self.model_dict["filters"].append(self.fd_perc_cutoff_dict)
+        if [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] == []:
+            self.default_cutoff_filter_values = [
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_mean",
+                    "cutoff": "0.5",
+                },
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_perc",
+                    "cutoff": "10.0",
+                },
+            ]
+            self.model_dict["filters"].extend(self.default_cutoff_filter_values)
 
         # self.model_dict.setdefault("inputs", [])
         # First find all available tasks, assign True to all of them
         self.tasks_to_use: dict | None = {}
         for w in ctx.cache:
             if "features" in ctx.cache[w] and ctx.cache[w]["features"] != {}:
-                if ctx.cache[w]["features"]["type"] == "task_based":
+                if ctx.cache[w]["features"]["type"] != "atlas_based_connectivity":
                     self.tasks_to_use[ctx.cache[w]["features"]["name"]] = True
 
         # If there are no pre-existing cutoff filters, then we just assign the keys from tasks_to_use dict, otherwise
@@ -403,7 +420,11 @@ class ModelTemplate(Widget):
             ),
             Grid(
                 Static("Specify the maximum allowed mean framewise displacement in mm", classes="description_labels"),
-                Input(value=str(self.fd_mean_cutoff_dict["cutoff"]), placeholder="value", id="cutoff_fd_mean"),
+                Input(
+                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f["field"] == "fd_mean")),
+                    placeholder="value",
+                    id="cutoff_fd_mean",
+                ),
                 id="cutoff_fd_mean_panel",
             ),
             Grid(
@@ -411,7 +432,11 @@ class ModelTemplate(Widget):
                     "Specify the maximum allowed percentage of frames above the framewise displacement threshold of 0.5 mm",
                     classes="description_labels",
                 ),
-                Input(value=str(self.fd_perc_cutoff_dict["cutoff"]), placeholder="value", id="cutoff_fd_perc"),
+                Input(
+                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f["field"] == "fd_perc")),
+                    placeholder="value",
+                    id="cutoff_fd_perc",
+                ),
                 id="cutoff_fd_perc_panel",
             ),
             id="cutoff_panel",
@@ -422,33 +447,72 @@ class ModelTemplate(Widget):
         if self.tasks_to_use is not None:
             self.get_widget_by_id("tasks_to_use_selection").border_title = "Tasks to use"
         self.get_widget_by_id("cutoff_panel").border_title = "Cutoffs"
+        if not self.get_widget_by_id("exclude_subjects").value:
+            self.hide_fd_filters()
 
     @on(Input.Changed, "#cutoff_fd_mean")
     def _on_cutoff_fd_mean_input_changed(self, message: Message):
-        self.fd_mean_cutoff_dict["cutoff"] = message.value
+        print("ddddddddddddddddddddddddddddddd", self.model_dict["filters"])
+        for f in self.model_dict["filters"]:
+            print("fffffffffffffffffffffff", f)
+            if f.get("field") == "fd_mean":
+                f["cutoff"] = message.value
 
     @on(Input.Changed, "#cutoff_fd_perc")
     def _on_cutoff_fd_perc_input_changed(self, message: Message):
-        self.fd_perc_cutoff_dict["cutoff"] = message.value
+        for f in self.model_dict["filters"]:
+            if f.get("field") == "fd_perc":
+                f["cutoff"] = message.value
 
-    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
-    def _on_selection_list_changed(self):
-        self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
+        ##############################################################################################################
+        # This here is old method based on choices made in the Features. Now the Features shows always only "Task" and
+        # so here we do not need to scan the Features for the chosen tags.
+        # tasks_to_aggregate = {}
+        # for task_name in selected_tasks:
+        #     # identify which entities are used
+        #     entities_for_aggrevation = set()
+        #     for f in ctx.cache[task_name]['settings']['filters']:
+        #         # include if it is empty or if there are more than two available values
+        #         print('vvvvvvvvvvvvvvvvvvvvvvvv', f['values'])
+        #         if len(f['values']) > 1 or f['values'] == []:
+        #             entities_for_aggrevation.add(f['entity'])
+        #     print('entities_for_aggrevationentities_for_aggrevationentities_for_aggrevation', entities_for_aggrevation)
+        #     tasks_to_aggregate[ctx.cache[task_name]['features']['name']] = entities_for_aggrevation
+        #     # aggregateSeedCorr1AcrossDirectionsThenRunsThenSessionsThenTasks
+        #     tasks_to_aggregate = ctx.get_available_images.keys()
+        #     aggregate_label_list = []
+        #     for task_name in tasks_to_aggregate:
+        #         aggregate_label = ''
+        #         for aggregate_entity in aggregate_order:
+        #             if aggregate_entity in tasks_to_aggregate[task_name]:
+        #                 if aggregate_label == '':
+        #                     aggregate_label = 'aggregate'+task_name.capitalize()+'Across'+entity_label_dict[aggregate_entity]
+        #                 else:
+        #                     aggregate_label = aggregate_label_list[-1]+'Then'+entity_label_dict[aggregate_entity]
+        #             aggregate_label_list.append(aggregate_label)
+        #
+        #     print('aggregate_label_listaggregate_label_listaggregate_label_list', aggregate_label_list)
+        #             # include
+        # print('tasks_to_aggregatetasks_to_aggregatetasks_to_aggregatetasks_to_aggregate', tasks_to_aggregate)
+        ##############################################################################################################
 
     @on(Switch.Changed, "#exclude_subjects")
     def on_exclude_subjects_switch_changed(self, message: Message):
         if message.value is True:
-            self.model_dict["filters"].append(self.fd_mean_cutoff_dict)
-            self.model_dict["filters"].append(self.fd_perc_cutoff_dict)
-            self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "visible"
+            self.model_dict["filters"].extend(self.default_cutoff_filter_values)
+
+            # self.model_dict["filters"].append(self.fd_perc_cutoff_dict)
+            # self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "visible"
             self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "visible"
-            self.get_widget_by_id("cutoff_fd_perc_panel").styles.height = "auto"
+            self.get_widget_by_id("cutoff_panel").styles.height = "auto"
         else:
-            self.model_dict["filters"].remove(self.fd_mean_cutoff_dict)
-            self.model_dict["filters"].remove(self.fd_perc_cutoff_dict)
-            self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "hidden"
-            self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "hidden"
-            self.get_widget_by_id("cutoff_fd_perc_panel").styles.height = 7
+            self.hide_fd_filters()
+
+    def hide_fd_filters(self):
+        self.model_dict["filters"] = [f for f in self.model_dict["filters"] if f["type"] != "cutoff"]
+        self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "hidden"
+        self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "hidden"
+        self.get_widget_by_id("cutoff_panel").styles.height = 7
 
 
 class InterceptOnlyModel(ModelTemplate):
@@ -463,6 +527,11 @@ class InterceptOnlyModel(ModelTemplate):
                 yield self.tasks_to_use_selection_panel
             yield self.cutoff_panel
 
+    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
+    def _on_selection_list_changed(self):
+        # selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
+        self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
+
 
 class LinearModel(ModelTemplate):
     type = "lme"
@@ -472,6 +541,11 @@ class LinearModel(ModelTemplate):
         print("self.model_dictself.model_dictself.model_dict init", self.model_dict)
         self.spreadsheet_filepaths: dict[str, str] = {}
         self.model_dict.setdefault("contrasts", [])
+        self.model_dict.setdefault("filters", [])
+        # Decouple filters based on their types
+        # self.model_group_filters = [f for f in self.model_dict['filters'] if f['type'] == 'group']
+        # self.model_missing_filters = [f for f in self.model_dict['filters'] if f['type'] == 'missing']
+        # self.model_cutoff_filters = [f for f in self.model_dict if f['type'] == 'cutoff']
 
         self.model_dict.setdefault("spreadsheet", None)
         # In case loading or duplicating, the spreadsheet field is not None. So we need to find matching fileobject in the
@@ -484,9 +558,19 @@ class LinearModel(ModelTemplate):
         # self.options: dict = {f: (f, True if f == filepaths[-1] else False) for f in filepaths} if filepaths else {}
 
         # there has to be button to Add new spreadsheet
+        spreadsheet_selection = Select(
+            [(i[1], i[0]) for i in self.spreadsheet_filepaths.items()],
+            value=next(
+                (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), BLANK
+            )
+            if self.model_dict["spreadsheet"] is not None
+            else BLANK,
+            id="spreadsheet_selection",
+        )
+
         self.spreadsheet_panel = Vertical(
             # Static('No spreadsheet selected!', id='spreadsheet_path_label'),
-            Select([(i[1], i[0]) for i in self.spreadsheet_filepaths.items()], id="spreadsheet_selection"),
+            spreadsheet_selection,
             Horizontal(
                 Button("Add", id="add_spreadsheet"),
                 Button("Delete", id="delete_spreadsheet"),
@@ -504,15 +588,16 @@ class LinearModel(ModelTemplate):
             yield self.cutoff_panel
             yield self.spreadsheet_panel
 
-    async def on_mount(self):
-        if self.model_dict["spreadsheet"] is not None:
-            print("ffffffffffffffffffffffffff")
-            matching_key = next(
-                (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), None
-            )
-            print("matching_keymatching_keymatching_key", matching_key)
-            self.get_widget_by_id("spreadsheet_selection").value = matching_key
-            # await self.load_selections_based_on_spreadsheet(matching_key)
+    #
+    # async def on_mount(self):
+    #     if self.model_dict["spreadsheet"] is not None:
+    #         print("ffffffffffffffffffffffffff")
+    #         matching_key = next(
+    #             (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), None
+    #         )
+    #         print("matching_keymatching_keymatching_key", matching_key)
+    #         self.get_widget_by_id("spreadsheet_selection").value = matching_key
+    #         # await self.load_selections_based_on_spreadsheet(matching_key)
 
     @on(Button.Pressed, "#add_spreadsheet")
     async def _on_button_select_spreadsheet_pressed(self):
@@ -534,72 +619,8 @@ class LinearModel(ModelTemplate):
     async def _on_spreadsheet_selection_changed(self, message):
         print("mmmmmmmmmmmmmmmmm", message.control.id)
         print("vvvvvvvvvvvvvvvvvvvv", message.value)
-        spreadsheet_cache_id = message.value
-        #     await self.load_selections_based_on_spreadsheet(spreadsheet_cache_id)
-        #
-        # async def load_selections_based_on_spreadsheet(self, spreadsheet_cache_id):
-        metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
-        self.metadata_variables = metadata_variables
-        spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
-        self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
 
-        sub_panels = []
-        self.variables = []
-        # self.is_new
-        # continue from here ...
-
-        for metadata_item in metadata_variables:
-            # for f in self.model_dict['filters']
-
-            print("nnnnnnnnnnnnnn", metadata_item)
-            variable_name = metadata_item["name"]
-            if metadata_item["type"] != "id":
-                self.variables.append(variable_name)
-            if metadata_item["type"] == "categorical":
-                # The 'metadata_item["levels"]' is list containing all possible levels, if 'self.model_dict' was empty an init,
-                # i.e., no duplicate or load, then all level values are set to True. In the load/duplicate case, we first find
-                # the particular dictionary in the self.model_dict['filters'] corresponding to the particular variable that
-                # is now in the loop, and for all elements from this list we set the selection value to True, for not present
-                # elements (in compare to list from metadata_item["levels"]) to False.
-                # metadata_item["levels"]
-                # selection_variable_dict = {}
-                # if v in
-                # for v in metadata_item["levels"]:
-                filter_identifier = {"type": "group", "action": "include", "variable": variable_name}
-                filt_dict = self.extract_from_existing_filters(filter_identifier)
-                print("filt_dictfilt_dictfilt_dictfilt_dict", filt_dict)
-                sub_panels.append(
-                    Vertical(
-                        Static(variable_name, classes="level_labels"),
-                        SelectionList[str](
-                            *[
-                                Selection(
-                                    str(v),
-                                    str(v),
-                                    True
-                                    if (filt_dict is None or v in filt_dict["levels"] or (self.is_new is True))
-                                    else False,
-                                )
-                                for v in metadata_item["levels"]
-                            ],
-                            classes="level_selection",
-                            id=variable_name + "_panel",
-                        ),
-                        classes="level_sub_panels",
-                    )
-                )
-                self.model_dict["filters"].append(
-                    {
-                        "type": "group",
-                        "action": "include",
-                        "variable": variable_name,
-                        "levels": [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))],
-                    }
-                )
-                # now set is_new flag to False
-        #
-        # if self.is_mounted('top_levels_panel'):
-        #     await self.remove('top_levels_panel')
+        # First remove and deleting everything to start fresh. If there is not value selected, nothing will load.
         if widget_exists(self, "top_levels_panel") is True:
             await self.get_widget_by_id("top_levels_panel").remove()
         if widget_exists(self, "top_model_variables_panel") is True:
@@ -608,190 +629,307 @@ class LinearModel(ModelTemplate):
             await self.get_widget_by_id("top_interaction_panel").remove()
         if widget_exists(self, "top_contrast_panel") is True:
             await self.get_widget_by_id("top_contrast_panel").remove()
-        # what is on goes  to contrast as                 {
-        #                     "type": "infer",
-        #                     "variable": [
-        #                         "Severity"
-        #                     ]
-        #                 }
-        # what has delete missing bla bla goes as
-        # {
-        #     "type": "missing",
-        #     "action": "exclude",
-        #     "variable": "Severity"
-        # }
-        # to filters
-        await self.mount(
-            Container(
-                Static(
-                    "Select the subjects to include in this analysis by their categorical variables\n\
-For multiple categorical variables, the intersecion of the groups will be used.",
-                    id="levels_instructions",
-                    classes="instructions",
-                ),
-                Horizontal(
-                    *sub_panels,
-                    id="levels_panel",
-                ),
-                id="top_levels_panel",
-                classes="components",
-            ),
-            after=self.get_widget_by_id("spreadsheet_selection_panel"),
-        )
+        if widget_exists(self, "top_aggregate_panel") is True:
+            await self.get_widget_by_id("top_aggregate_panel").remove()
 
-        # {
-        #     "action": "exclude",
-        #     "type": "missing",
-        #     "variable": varname,
-        # }
+        if message.value == BLANK:
+            self.model_dict.pop("spreadsheet", None)
+            self.model_dict["contrasts"] = []
+            self.model_dict["filters"] = [
+                f for f in self.model_dict["filters"] if f["type"] != "group" or f["type"] != "missing"
+            ]
+            # Pretend that it is a new model because this is what happens when we switch off the spreadsheet file.
+            self.is_new = True
 
-        # If a selection for a variable in 'Add variables to the model' is On, then in the contrast field there is a dictionary
-        # with "type": "infer" and "variable": *the variable*. We use this to set up the defaults in the following widget.
-        # When there is no load or duplication of the widget, i.e., we are creating a new widget, then as default we turn all
-        # variables 'On'. For this we fill the mode_dict with the particular items.
-        interaction_variables = set([])
-        if self.is_new is True:
-            for v in self.variables:
-                self.model_dict["contrasts"].append({"type": "infer", "variable": [v]})
-        else:
-            # in case of load, we use this a bit tricky way to get a list of variables used to create the interaction terms.
-            for contrast_item in self.model_dict["contrasts"]:
-                if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
-                    interaction_variables.update(contrast_item["variable"])
-        nvar = len(interaction_variables)
-        terms = list(chain.from_iterable(combinations(interaction_variables, i) for i in range(2, nvar + 1)))
-        term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
+        print("spreadsheet_selection changed lf.model_dictself.model_dictself.model_dictself.model_dict", self.model_dict)
+        if message.value != BLANK:
+            spreadsheet_cache_id = message.value
+            #     await self.load_selections_based_on_spreadsheet(spreadsheet_cache_id)
+            #
+            # async def load_selections_based_on_spreadsheet(self, spreadsheet_cache_id):
+            metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
+            self.metadata_variables = metadata_variables
+            spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
+            self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
+            self.model_dict["spreadsheet"] = spreadsheet_path
 
-        # For the second part, the 'Action for the missing values', we use presence of the dictionary
-        # {"action": "exclude", "type": "missing", "variable": *the variable*} in the model_dict['filters']. If it is there
-        # the default values is set to 'listwise_deletion'. If this is a new widget then there are no such entries in the
-        # 'filters' hence all default values are set to 'mean_substitution'.
-        await self.mount(
-            Container(
-                Static(
-                    "Specify the variables to add to the model and action for missing values",
-                    id="model_variables_instructions",
-                    classes="instructions",
-                ),
-                *[
-                    SwitchWithSelect(
-                        v,
-                        options=[("Listwise deletion", "listwise_deletion"), ("Mean substitution", "mean_substitution")],
-                        switch_value=True
-                        if self.extract_from_existing_filters({"type": "infer", "variable": [v]}, search_field="contrasts")
-                        is not None
-                        else False,
-                        default_option="listwise_deletion"
-                        if self.extract_from_existing_filters({"action": "exclude", "type": "missing", "variable": v})
-                        is not None
-                        else "mean_substitution",
-                        id=v + "_model_vars",
-                        classes="additional_preprocessing_settings",
+            sub_panels = []
+            self.variables = []
+            # self.is_new
+            # continue from here ...
+
+            for metadata_item in metadata_variables:
+                # for f in self.model_dict['filters']
+
+                print("nnnnnnnnnnnnnn", metadata_item)
+                variable_name = metadata_item["name"]
+                if metadata_item["type"] != "id":
+                    self.variables.append(variable_name)
+                if metadata_item["type"] == "categorical":
+                    # The 'metadata_item["levels"]' is list containing all possible levels, if 'self.model_dict' was empty an
+                    # init, i.e., no duplicate or load, then all level values are set to True. In the load/duplicate case, we
+                    # first find the particular dictionary in the self.model_dict['filters'] corresponding to the particular
+                    # variable that is now in the loop, and for all elements from this list we set the selection value to True,
+                    # for not present elements (in compare to list from metadata_item["levels"]) to False.
+                    # metadata_item["levels"]
+                    # selection_variable_dict = {}
+                    # if v in
+                    # for v in metadata_item["levels"]:
+                    # filter_identifier = {"type": "group", "action": "include", "variable": variable_name}
+                    # filt_dict = self.extract_from_existing_filters(filter_identifier)
+                    filt_dict = next(
+                        (
+                            f
+                            for f in self.model_dict["filters"]
+                            if f.get("type") == "group" and f.get("variable") == variable_name
+                        ),
+                        None,
                     )
-                    for v in self.variables
-                ],
-                # SelectionList[str](
-                #     *[Selection(str(v), str(v), True) for v in self.variables], classes="model_variables_selection"
-                # ),
-                id="top_model_variables_panel",
-                classes="components",
-            ),
-            after=self.get_widget_by_id("top_levels_panel"),
-        )
+                    print("filt_dictfilt_dictfilt_dictfilt_dict", filt_dict)
+                    sub_panels.append(
+                        Vertical(
+                            Static(variable_name, classes="level_labels"),
+                            SelectionList[str](
+                                *[
+                                    Selection(
+                                        str(v),
+                                        str(v),
+                                        True
+                                        if (filt_dict is None or v in filt_dict["levels"] or (self.is_new is True))
+                                        else False,
+                                    )
+                                    for v in metadata_item["levels"]
+                                ],
+                                classes="level_selection",
+                                id=variable_name + "_panel",
+                            ),
+                            classes="level_sub_panels",
+                        )
+                    )
+                    # To avoid duplicate entries in the filters, use this if. This can happened when we are loading or
+                    # duplicating the model.
+                    if filt_dict is None:
+                        filt_dict = {
+                            "type": "group",
+                            "action": "include",
+                            "variable": variable_name,
+                            "levels": [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))],
+                        }
+                        self.model_dict["filters"].append(filt_dict)
+                        # self.model_group_filters.append(filt_dict)
+            # update filters if needed
+            print("xxxxxxxxxxxxxxxxxx", self.model_dict["filters"])
 
-        await self.mount(
-            Container(
-                Static(
-                    "Specify the variables for which to calculate interaction terms",
-                    id="interaction_variables_instructions",
-                    classes="instructions",
+            # Aggregation
+            # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
+            test_string = self.model_dict["inputs"][0]
+            print("test_stringtest_stringtest_stringtest_stringtest_stringtest_string", test_string)
+            print("entity_label_dict.items()entity_label_dict.items()", entity_label_dict.items())
+            matches = [key for key, value in entity_label_dict.items() if value in test_string]
+            print("entity_label_dictentity_label_dictentity_label_dictentity_label_dict", entity_label_dict)
+            print("matchesmatchesmatchesmatches", matches)
+            await self.mount(
+                Vertical(
+                    Static("Aggregate scan-level statistics before analysis", id="aggregate_switch_label", classes="label"),
+                    SelectionList[str](
+                        *[
+                            Selection(entity_label_dict[entity], entity, True if entity in matches else False)
+                            for entity in ctx.get_available_images.keys()
+                            if entity != "sub"
+                        ],
+                        # classes="level_selection",
+                        id="aggregate_selection_list",
+                    ),
+                    id="top_aggregate_panel",
+                    classes="components",
                 ),
-                SelectionList[str](
-                    *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
-                    # classes="level_selection",
-                    id="interaction_variables_selection_panel",
-                ),
-                Static(
-                    "Select which interaction terms to add to the model",
-                    id="interaction_terms_instructions",
-                    classes="instructions",
-                ),
-                SelectionList[str](
-                    *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
-                    # classes="level_selection",
-                    id="interaction_terms_selection_panel",
-                ),
-                id="top_interaction_panel",
-                classes="components",
-            ),
-            after=self.get_widget_by_id("top_model_variables_panel"),
-        )
+                after=self.get_widget_by_id("spreadsheet_selection_panel"),
+            )
 
-        # In the TextSwitch we use hardcoded False but on the other hand, we use the flag self.has_type_t to toggle the switch
-        # if there is some content for the contrast tables (load, duplication case). Doing this in such a two step way will
-        # automatically trigger the function _on_contrast_switch_changed same as when the user toggles the button.
-        await self.mount(
-            Container(
-                Static(
-                    "Contrasts for the mean across all subjects, and for all variables will be generated automatically",
-                    classes="instructions",
+            await self.mount(
+                Container(
+                    Static(
+                        "Select the subjects to include in this analysis by their categorical variables\n\
+    For multiple categorical variables, the intersecion of the groups will be used.",
+                        id="levels_instructions",
+                        classes="instructions",
+                    ),
+                    Horizontal(
+                        *sub_panels,
+                        id="levels_panel",
+                    ),
+                    id="top_levels_panel",
+                    classes="components",
                 ),
-                Grid(
-                    Static("Add additional contrasts for categorical variables", id="contrast_switch_label", classes="label"),
-                    TextSwitch(value=False, id="contrast_switch"),
-                    id="contrast_switch_panel",
+                after=self.get_widget_by_id("top_aggregate_panel"),
+            )
+
+            # {
+            #     "action": "exclude",
+            #     "type": "missing",
+            #     "variable": varname,
+            # }
+
+            # If a selection for a variable in 'Add variables to the model' is On, then in the contrast field there is a
+            # dictionary with "type": "infer" and "variable": *the variable*. We use this to set up the defaults in the
+            # following widget. When there is no load or duplication of the widget, i.e., we are creating a new widget,
+            # then as default we turn all variables 'On'. For this we fill the mode_dict with the particular items.
+            interaction_variables = set([])
+            if self.is_new is True:
+                for v in self.variables:
+                    self.model_dict["contrasts"].append({"type": "infer", "variable": [v]})
+            else:
+                # In case of load, we use this a bit tricky way to get a list of variables used to create the interaction terms
+                for contrast_item in self.model_dict["contrasts"]:
+                    if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
+                        interaction_variables.update(contrast_item["variable"])
+            nvar = len(interaction_variables)
+            terms = list(chain.from_iterable(combinations(interaction_variables, i) for i in range(2, nvar + 1)))
+            term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
+
+            # For the second part, the 'Action for the missing values', we use presence of the dictionary
+            # {"action": "exclude", "type": "missing", "variable": *the variable*} in the model_dict['filters']. If it is there
+            # the default values is set to 'listwise_deletion'. If this is a new widget then there are no such entries in the
+            # 'filters' hence all default values are set to 'mean_substitution'.
+            await self.mount(
+                Container(
+                    Static(
+                        "Specify the variables to add to the model and action for missing values",
+                        id="model_variables_instructions",
+                        classes="instructions",
+                    ),
+                    *[
+                        SwitchWithSelect(
+                            v,
+                            options=[("Listwise deletion", "listwise_deletion"), ("Mean substitution", "mean_substitution")],
+                            switch_value=bool(
+                                next((f for f in self.model_dict["contrasts"] if f.get("variable") == [v]), False)
+                            ),
+                            default_option="listwise_deletion"
+                            if next(
+                                (
+                                    f
+                                    for f in self.model_dict["filters"]
+                                    if f.get("variable") == v and f.get("type") == "missing"
+                                ),
+                                False,
+                            )
+                            else "mean_substitution",
+                            id=v + "_model_vars",
+                            classes="additional_preprocessing_settings",
+                        )
+                        for v in self.variables
+                    ],
+                    # SelectionList[str](
+                    #     *[Selection(str(v), str(v), True) for v in self.variables], classes="model_variables_selection"
+                    # ),
+                    id="top_model_variables_panel",
+                    classes="components",
                 ),
-                id="top_contrast_panel",
-                classes="components",
-            ),
-            after=self.get_widget_by_id("top_interaction_panel"),
-        )
-        # Scan whether there are some values for the contrast tables (in case of load or duplication.
-        self.has_type_t = any(item.get("type") == "t" for item in self.model_dict["contrasts"])
-        if self.has_type_t is True:
-            self.get_widget_by_id("contrast_switch").toggle()
+                after=self.get_widget_by_id("top_levels_panel"),
+            )
 
-        # Here we set the flat to False, because in any case after this point it should always be False.
-        self.is_new = False
+            await self.mount(
+                Container(
+                    Static(
+                        "Specify the variables for which to calculate interaction terms",
+                        id="interaction_variables_instructions",
+                        classes="instructions",
+                    ),
+                    SelectionList[str](
+                        *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
+                        # classes="level_selection",
+                        id="interaction_variables_selection_panel",
+                    ),
+                    Static(
+                        "Select which interaction terms to add to the model",
+                        id="interaction_terms_instructions",
+                        classes="instructions",
+                    ),
+                    SelectionList[str](
+                        *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
+                        # classes="level_selection",
+                        id="interaction_terms_selection_panel",
+                    ),
+                    id="top_interaction_panel",
+                    classes="components",
+                ),
+                after=self.get_widget_by_id("top_model_variables_panel"),
+            )
 
-        self.get_widget_by_id("top_levels_panel").border_title = "Subjects to include by their categorical variables"
-        self.get_widget_by_id("top_model_variables_panel").border_title = "Model variables"
-        self.get_widget_by_id("top_interaction_panel").border_title = "Interaction terms"
-        self.get_widget_by_id("top_contrast_panel").border_title = "Additional contrasts"
+            # In the TextSwitch we use hardcoded False but on the other hand, we use the flag self.has_type_t to toggle the
+            # switch if there is some content for the contrast tables (load, duplication case). Doing this in such a two step
+            # way will automatically trigger the function _on_contrast_switch_changed same as when the user toggles the button.
+            await self.mount(
+                Container(
+                    Static(
+                        "Contrasts for the mean across all subjects, and for all variables will be generated automatically",
+                        classes="instructions",
+                    ),
+                    Grid(
+                        Static(
+                            "Add additional contrasts for categorical variables", id="contrast_switch_label", classes="label"
+                        ),
+                        TextSwitch(value=False, id="contrast_switch"),
+                        id="contrast_switch_panel",
+                    ),
+                    id="top_contrast_panel",
+                    classes="components",
+                ),
+                after=self.get_widget_by_id("top_interaction_panel"),
+            )
+            # Scan whether there are some values for the contrast tables (in case of load or duplication.
+            self.has_type_t = any(item.get("type") == "t" for item in self.model_dict["contrasts"])
+            if self.has_type_t is True:
+                self.get_widget_by_id("contrast_switch").toggle()
 
-    @on(SwitchWithSelect.SwitchChanged)
+            # Here we set the flat to False, because in any case after this point it should always be False.
+            self.is_new = False
+
+            self.get_widget_by_id("top_levels_panel").border_title = "Subjects to include by their categorical variables"
+            self.get_widget_by_id("top_aggregate_panel").border_title = "Aggregate"
+            self.get_widget_by_id("top_model_variables_panel").border_title = "Model variables"
+            self.get_widget_by_id("top_interaction_panel").border_title = "Interaction terms"
+            self.get_widget_by_id("top_contrast_panel").border_title = "Additional contrasts"
+
+    @on(SwitchWithSelect.SwitchChanged, ".additional_preprocessing_settings")
     def _on_switch_with_select_switch_changed(self, message):
-        print("qqqqqqqqqqqqqqq", message.control.id, message.switch_value)
+        # print("qqqqqqqqqqqqqqq", message.control.id, message.switch_value)
         contrast_item = {"type": "infer", "variable": [message.control.id[:-11]]}
         if message.switch_value is True:
             self.model_dict["contrasts"].append(contrast_item)
         elif contrast_item in self.model_dict["contrasts"]:
             self.model_dict["contrasts"].remove(contrast_item)
-        print("cccccccccccccccc", ctx.cache)
+        # print("cccccccccccccccc", ctx.cache)
 
-    @on(SwitchWithSelect.Changed)
+    @on(SwitchWithSelect.Changed, ".additional_preprocessing_settings")
     def _on_switch_with_select_changed(self, message):
-        print("qqqqqqqqqqqqqqq", message.control.id, message.value)
+        print("missingmissingmissingmissingmissingqqqqqqqqqqqqqqq", message.control.id, message.value)
+        print("1mmmmmmmmmmmmmmmmmmmmmmmmmmmmm", self.model_dict["filters"])
         filter_item = {"type": "missing", "action": "exclude", "variable": message.control.id[:-11]}
-        if message.value == "listwise_deletion":
+        if message.value == "listwise_deletion" and filter_item not in self.model_dict["filters"]:
             self.model_dict["filters"].append(filter_item)
-        elif filter_item in self.model_dict["filters"]:
+        elif message.value == "mean_substitution" and filter_item in self.model_dict["filters"]:
             self.model_dict["filters"].remove(filter_item)
+        print("2mmmmmmmmmmmmmmmmmmmmmmmmmmmmm", self.model_dict["filters"])
         print("cccccccccccccccc", ctx.cache)
 
     @on(SelectionList.SelectedChanged, ".level_selection")
     def _on_level_sub_panels_selection_list_changed(self, message):
-        print("qqqqqqqqqqq", message.control.id)
-        print("qqqqqqqqqqq", message.control.selected)
+        # print("qqqqqqqqqqq", message.control.id)
+        # print("qqqqqqqqqqq", message.control.selected)
         variable_name = message.control.id[:-6]
-        filter_type_identifier = {
-            "type": "group",
-            "action": "include",
-            "variable": variable_name,
-        }
-        filter_dict = self.extract_from_existing_filters(filter_type_identifier)
-        filter_dict["levels"] = sorted(message.control.selected)
-        print("cccccccccccccccc", ctx.cache)
+        # filter_type_identifier = {
+        #     "type": "group",
+        #     "action": "include",
+        #     "variable": variable_name,
+        # }
+        for f in self.model_dict["filters"]:
+            if f.get("type") == "group" and f.get("variable") == variable_name:
+                f["levels"] = sorted(message.control.selected)
+        # filter_dict = self.extract_from_existing_filters(filter_type_identifier)
+        # filter_dict["levels"] = sorted(message.control.selected)
+        # print("cccccccccccccccc", ctx.cache)
 
         # When we change selection of the categorical variables, we need to close the contrast tables (if are opened)
         # This is because the tables need an update because the rows of the tables depends on the choices from the
@@ -800,8 +938,8 @@ For multiple categorical variables, the intersecion of the groups will be used."
 
     @on(SelectionList.SelectedChanged, "#interaction_variables_selection_panel")
     def _on_interaction_variables_selection_list_changed(self, message):
-        print("qqqqqqqqqqq", message.control.id)
-        print("qqqqqqqqqqq", message.control.selected)
+        # print("qqqqqqqqqqq", message.control.id)
+        # print("qqqqqqqqqqq", message.control.selected)
         nvar = len(message.control.selected)
         terms = list(chain.from_iterable(combinations(message.control.selected, i) for i in range(2, nvar + 1)))
         term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
@@ -849,6 +987,82 @@ For multiple categorical variables, the intersecion of the groups will be used."
         #     self.model_dict["filters"].append(filter_item)
         # elif filter_item in self.model_dict["filters"]:
         #     self.model_dict["filters"].remove(filter_item)
+
+    # @on(TextSwitch.Changed, "#aggregate_switch")
+    # async def _on_aggregate_switch_changed(self, message):
+    #     if message.value is True:
+    #         aggregate_selection = SelectionList[str](
+    #             *[Selection(str(v), str(v), True) for v in ctx.get_available_images.keys()],
+    #             # classes="level_selection",
+    #             id="aggregate_selection_list",
+    #         )
+    #         await self.get_widget_by_id("top_aggregate_panel").mount(aggregate_selection)
+    #     else:
+    #         await self.get_widget_by_id("top_aggregate_panel").remove()
+
+    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
+    @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
+    def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message):
+        # We need to run this function also in case when the Task selection is changed because this influence also the models
+        # that are aggregated and at the end which models are aggregated.
+        selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
+        self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
+
+        tasks_to_aggregate = self.get_widget_by_id("tasks_to_use_selection").selected
+        entities_to_aggregate_over = self.get_widget_by_id("aggregate_selection_list").selected
+
+        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee selected_tasks", selected_tasks)
+        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee tasks_to_aggregate", tasks_to_aggregate)
+        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee entities_to_aggregate_over", entities_to_aggregate_over)
+        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee aggregate_order", aggregate_order)
+
+        # Sort aggregate selection to ensure proper order
+        entities_to_aggregate_over_sorted = sorted(entities_to_aggregate_over, key=lambda x: aggregate_order.index(x))
+
+        if entities_to_aggregate_over != []:
+            # aggregate_label_list = []
+            models: list = []
+            # We empty the input list because now all inputs are the tops of the whole aggregate hierarchy. So we append the
+            # first aggregate labels to the input list of the model.
+            self.model_dict["inputs"] = []
+            for task_name in tasks_to_aggregate:
+                aggregate_label = ""
+                if entities_to_aggregate_over_sorted != []:
+                    for aggregate_entity in entities_to_aggregate_over_sorted:
+                        if aggregate_label == "":
+                            previous_name = task_name
+                            aggregate_label = (
+                                "aggregate" + task_name.capitalize() + "Across" + entity_label_dict[aggregate_entity]
+                            )
+                        else:
+                            aggregate_label = models[-1]["name"] + "Then" + entity_label_dict[aggregate_entity]
+                            previous_name = models[-1]["name"]
+                        models.append(
+                            {
+                                "name": aggregate_label,
+                                "inputs": [previous_name],
+                                "filters": [],
+                                "type": "fe",
+                                "across": aggregate_entity,
+                            }
+                        )
+                        # Use last label for the input field
+                        if aggregate_entity == entities_to_aggregate_over_sorted[-1]:
+                            self.model_dict["inputs"].append(aggregate_label)
+
+                        # aggregate_label_list.append(aggregate_label)
+
+            # print("aggregate_label_listaggregate_label_listaggregate_label_list", aggregate_label_list)
+            # include
+
+        print("modelsmodelsmodelsmodelsmodelsmodels", models)
+        dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
+        ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}
+        print("tasks_to_aggregatetasks_to_aggregatetasks_to_aggregatetasks_to_aggregate", tasks_to_aggregate)
+        # ctx.cache[]
+        print(ctx.cache)
+
+        ##############################################################################################################
 
     @on(TextSwitch.Changed, "#contrast_switch")
     async def _on_contrast_switch_changed(self, message):

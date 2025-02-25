@@ -76,6 +76,14 @@
         height: auto;
         padding: 1 0 1 3;
     }
+    .images_to_use_selection_subpanels {
+        height: auto;
+        border: red;
+    }
+    .images_to_use_selection_subpanel_labels {
+        text-style: bold;
+        color: white;
+    }
     #preprocessing {
         align: center top;
         padding: 1;
