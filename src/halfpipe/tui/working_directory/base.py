@@ -362,12 +362,44 @@ spec.json file it is possible to load the therein configuration.",
     @work(exclusive=True, name="models_worker")
     async def mount_models(self):
         model_widget = self.model_widget
+        aggregate_models = {}
         if self.existing_spec is not None:
             for model in self.existing_spec.models:
-                ctx.cache[model.name]["models"] = copy.deepcopy(model.__dict__)
+                # With aggregate models we deal differently, we do not create a widget for them, but instead create a dummy
+                # entry in cache associated with a particular widget.
+                if model["type"] != "fe":
+                    ctx.cache[model.name]["models"] = copy.deepcopy(model.__dict__)
+                else:
+                    # gather all available aggregate models
+                    aggregate_models[model.__dict__["name"]] = copy.deepcopy(model.__dict__)
 
-            # Then create the widgets
-            for top_name in ctx.cache:
-                if ctx.cache[top_name]["models"] != {}:
-                    name = ctx.cache[top_name]["models"]["name"]
-                    await model_widget.add_new_model([ctx.cache[name]["models"]["type"], name])
+            # Now we will create the aggregate model dummy association mentioned above.
+            aggregate_cache_dummy_entries = {}
+            for _, model_entry in ctx.cache.items():
+                model = model_entry["models"]
+                if model != {}:  # Check if model is not empty
+                    # Aggregate model dummy association
+                    associated_aggregate_models_list = []
+                    dummy_cache_key = model["name"] + "__aggregate_models_list"
+
+                    # Process each input label in the model's inputs
+                    for input_label in model.get("inputs", []):  # Ensure "inputs" exists
+                        while input_label and input_label.startswith("aggregate") and "Across" in input_label:
+                            if input_label in aggregate_models:
+                                # this will select a particular model in the aggregate_models dictionary created before
+                                aggregate_model = aggregate_models[input_label]
+                                associated_aggregate_models_list.append(aggregate_model)
+                                input_label = aggregate_model["inputs"][0] if aggregate_model["inputs"] else None
+                            else:
+                                break  # Stop if input_label is not found in aggregate_models
+
+                    # Put the associated aggregate models to this temporary dictionary to not modify cache while looping.
+                    aggregate_cache_dummy_entries[dummy_cache_key] = associated_aggregate_models_list
+
+                    # Then create the widgets
+                    await model_widget.add_new_model([model["type"], model["name"]])
+
+            # Create the dummy entry in the cache, this needs to be done after the loop to not modify the cache when we are
+            # looping over it
+            for dummy_cache_key, aggregate_model in aggregate_cache_dummy_entries.items():
+                ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": aggregate_model}

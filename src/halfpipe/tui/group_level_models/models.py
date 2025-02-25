@@ -326,13 +326,6 @@ class ModelTemplate(Widget):
     bold_filedict = {"datatype": "func", "suffix": "bold"}
     aggregate_order = ["dir", "run", "ses", "task"]
 
-    # Check if any dictionary in the list has the required key-value pairs
-    # def extract_from_existing_filters(self, type_identifier, search_field="filters"):
-    #     for filter_dict in self.model_dict[search_field]:
-    #         if type_identifier.items() <= filter_dict.items():
-    #             return filter_dict
-    #     return None
-
     def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
         """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
         this_user_selection_dict is empty and the nested keys need some initialization. On the other
@@ -464,38 +457,6 @@ class ModelTemplate(Widget):
             if f.get("field") == "fd_perc":
                 f["cutoff"] = message.value
 
-        ##############################################################################################################
-        # This here is old method based on choices made in the Features. Now the Features shows always only "Task" and
-        # so here we do not need to scan the Features for the chosen tags.
-        # tasks_to_aggregate = {}
-        # for task_name in selected_tasks:
-        #     # identify which entities are used
-        #     entities_for_aggrevation = set()
-        #     for f in ctx.cache[task_name]['settings']['filters']:
-        #         # include if it is empty or if there are more than two available values
-        #         print('vvvvvvvvvvvvvvvvvvvvvvvv', f['values'])
-        #         if len(f['values']) > 1 or f['values'] == []:
-        #             entities_for_aggrevation.add(f['entity'])
-        #     print('entities_for_aggrevationentities_for_aggrevationentities_for_aggrevation', entities_for_aggrevation)
-        #     tasks_to_aggregate[ctx.cache[task_name]['features']['name']] = entities_for_aggrevation
-        #     # aggregateSeedCorr1AcrossDirectionsThenRunsThenSessionsThenTasks
-        #     tasks_to_aggregate = ctx.get_available_images.keys()
-        #     aggregate_label_list = []
-        #     for task_name in tasks_to_aggregate:
-        #         aggregate_label = ''
-        #         for aggregate_entity in aggregate_order:
-        #             if aggregate_entity in tasks_to_aggregate[task_name]:
-        #                 if aggregate_label == '':
-        #                     aggregate_label = 'aggregate'+task_name.capitalize()+'Across'+entity_label_dict[aggregate_entity]
-        #                 else:
-        #                     aggregate_label = aggregate_label_list[-1]+'Then'+entity_label_dict[aggregate_entity]
-        #             aggregate_label_list.append(aggregate_label)
-        #
-        #     print('aggregate_label_listaggregate_label_listaggregate_label_list', aggregate_label_list)
-        #             # include
-        # print('tasks_to_aggregatetasks_to_aggregatetasks_to_aggregatetasks_to_aggregate', tasks_to_aggregate)
-        ##############################################################################################################
-
     @on(Switch.Changed, "#exclude_subjects")
     def on_exclude_subjects_switch_changed(self, message: Message):
         if message.value is True:
@@ -542,11 +503,6 @@ class LinearModel(ModelTemplate):
         self.spreadsheet_filepaths: dict[str, str] = {}
         self.model_dict.setdefault("contrasts", [])
         self.model_dict.setdefault("filters", [])
-        # Decouple filters based on their types
-        # self.model_group_filters = [f for f in self.model_dict['filters'] if f['type'] == 'group']
-        # self.model_missing_filters = [f for f in self.model_dict['filters'] if f['type'] == 'missing']
-        # self.model_cutoff_filters = [f for f in self.model_dict if f['type'] == 'cutoff']
-
         self.model_dict.setdefault("spreadsheet", None)
         # In case loading or duplicating, the spreadsheet field is not None. So we need to find matching fileobject in the
         # ctx.cache and assign it in this widget.
@@ -555,7 +511,6 @@ class LinearModel(ModelTemplate):
                 self.spreadsheet_filepaths[key] = ctx.cache[key]["files"].path  # type: ignore
 
         print("self.spreadsheet_filepathsself.spreadsheet_filepathsself.spreadsheet_filepaths", self.spreadsheet_filepaths)
-        # self.options: dict = {f: (f, True if f == filepaths[-1] else False) for f in filepaths} if filepaths else {}
 
         # there has to be button to Add new spreadsheet
         spreadsheet_selection = Select(
@@ -723,11 +678,7 @@ class LinearModel(ModelTemplate):
             # Aggregation
             # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
             test_string = self.model_dict["inputs"][0]
-            print("test_stringtest_stringtest_stringtest_stringtest_stringtest_string", test_string)
-            print("entity_label_dict.items()entity_label_dict.items()", entity_label_dict.items())
             matches = [key for key, value in entity_label_dict.items() if value in test_string]
-            print("entity_label_dictentity_label_dictentity_label_dictentity_label_dict", entity_label_dict)
-            print("matchesmatchesmatchesmatches", matches)
             await self.mount(
                 Vertical(
                     Static("Aggregate scan-level statistics before analysis", id="aggregate_switch_label", classes="label"),
@@ -763,12 +714,6 @@ class LinearModel(ModelTemplate):
                 ),
                 after=self.get_widget_by_id("top_aggregate_panel"),
             )
-
-            # {
-            #     "action": "exclude",
-            #     "type": "missing",
-            #     "variable": varname,
-            # }
 
             # If a selection for a variable in 'Add variables to the model' is On, then in the contrast field there is a
             # dictionary with "type": "infer" and "variable": *the variable*. We use this to set up the defaults in the
@@ -916,20 +861,10 @@ class LinearModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, ".level_selection")
     def _on_level_sub_panels_selection_list_changed(self, message):
-        # print("qqqqqqqqqqq", message.control.id)
-        # print("qqqqqqqqqqq", message.control.selected)
         variable_name = message.control.id[:-6]
-        # filter_type_identifier = {
-        #     "type": "group",
-        #     "action": "include",
-        #     "variable": variable_name,
-        # }
         for f in self.model_dict["filters"]:
             if f.get("type") == "group" and f.get("variable") == variable_name:
                 f["levels"] = sorted(message.control.selected)
-        # filter_dict = self.extract_from_existing_filters(filter_type_identifier)
-        # filter_dict["levels"] = sorted(message.control.selected)
-        # print("cccccccccccccccc", ctx.cache)
 
         # When we change selection of the categorical variables, we need to close the contrast tables (if are opened)
         # This is because the tables need an update because the rows of the tables depends on the choices from the
@@ -938,8 +873,6 @@ class LinearModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, "#interaction_variables_selection_panel")
     def _on_interaction_variables_selection_list_changed(self, message):
-        # print("qqqqqqqqqqq", message.control.id)
-        # print("qqqqqqqqqqq", message.control.selected)
         nvar = len(message.control.selected)
         terms = list(chain.from_iterable(combinations(message.control.selected, i) for i in range(2, nvar + 1)))
         term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
@@ -961,9 +894,6 @@ class LinearModel(ModelTemplate):
         # first remove all interaction terms
         print("0vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
 
-        # for contrast_item in self.model_dict["contrasts"][:]:
-        #     if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
-        #         self.model_dict["contrasts"].remove(contrast_item)
         self.model_dict["contrasts"] = list(
             filter(
                 lambda contrast_item: not (contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1),
@@ -971,34 +901,9 @@ class LinearModel(ModelTemplate):
             )
         )
 
-        print("1vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
-
         # Now add every terms that is currently selected in the widget to the cache
-
         for interaction_term in message.control.selected:
             self.model_dict["contrasts"].append({"type": "infer", "variable": interaction_term})
-        print("2vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
-
-        # filter_item = {
-        #     "type": "infer",
-        #     "variable": message.control.id[:-11]
-        # # }
-        # if message.value == 'listwise_deletion':
-        #     self.model_dict["filters"].append(filter_item)
-        # elif filter_item in self.model_dict["filters"]:
-        #     self.model_dict["filters"].remove(filter_item)
-
-    # @on(TextSwitch.Changed, "#aggregate_switch")
-    # async def _on_aggregate_switch_changed(self, message):
-    #     if message.value is True:
-    #         aggregate_selection = SelectionList[str](
-    #             *[Selection(str(v), str(v), True) for v in ctx.get_available_images.keys()],
-    #             # classes="level_selection",
-    #             id="aggregate_selection_list",
-    #         )
-    #         await self.get_widget_by_id("top_aggregate_panel").mount(aggregate_selection)
-    #     else:
-    #         await self.get_widget_by_id("top_aggregate_panel").remove()
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
