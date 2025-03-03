@@ -8,7 +8,6 @@ import pandas as pd
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, HorizontalScroll, ScrollableContainer, Vertical
-from textual.css.query import NoMatches  # Import the NoMatches exception
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -27,6 +26,7 @@ from ..utils.custom_switch import TextSwitch
 from ..utils.draggable_modal_screen import DraggableModalScreen
 from ..utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from ..utils.multichoice_radioset import MultipleRadioSet
+from ..utils.utils import widget_exists
 
 aggregate_order = ["dir", "run", "ses", "task"]
 
@@ -256,14 +256,6 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
         self.feature_conditions_list.clear()
         self.feature_conditions_list.extend(df_filtered.index.values)
         self.post_message(self.Changed(self, self.feature_contrasts_dict))
-
-
-def widget_exists(where, widget):
-    try:
-        where.get_widget_by_id(widget)
-        return True
-    except NoMatches:
-        return False
 
 
 class ModelTemplate(Widget):

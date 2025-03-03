@@ -187,3 +187,7 @@ SliceTimingModal {
         }
     }
 }
+
+#advanced_settings_switch_panel {
+    height: 7;
+}

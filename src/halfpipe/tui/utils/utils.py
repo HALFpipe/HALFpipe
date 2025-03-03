@@ -6,6 +6,8 @@ import re
 import shutil
 from datetime import datetime
 
+from textual.css.query import NoMatches  # Import the NoMatches exception
+
 from ...collect.events import collect_events
 from ...ingest.events import ConditionFile
 from ...model.filter import FilterSchema
@@ -158,3 +160,11 @@ def copy_and_rename_file(src_file):
     shutil.copy(src_file, new_file_path)
 
     return new_file_path
+
+
+def widget_exists(where, widget):
+    try:
+        where.get_widget_by_id(widget)
+        return True
+    except NoMatches:
+        return False

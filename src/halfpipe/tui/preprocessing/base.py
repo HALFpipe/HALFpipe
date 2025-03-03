@@ -143,7 +143,15 @@ class Preprocessing(Widget):
             classes="components",
         )
 
-        # Setting widgets for halfpipe settings
+        # Advanced setting widgets for halfpipe settings
+        advanced_settings_switch_panel = Container(
+            Horizontal(
+                Static("Advanced settings", classes="description_labels"),
+                TextSwitch(value=False, id="advanced_settings_switch"),
+            ),
+            id="advanced_settings_switch_panel",
+            classes="components",
+        )
         workflowgroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Number of nipype omp threads",
@@ -229,15 +237,32 @@ class Preprocessing(Widget):
         remove_initial_volumes_panel.border_title = "Initial volumes removal"
         slice_timming_info_panel.styles.visibility = "hidden"
 
+        advanced_settings_switch_panel.border_title = "Advanced settings"
         workflowgroup_settings_panel.border_title = "Workflow settings"
         debuggroup_settings_panel.border_title = "Debug settings"
         rungroup_settings_panel.border_title = "Run settings"
 
+        workflowgroup_settings_panel.styles.visibility = "hidden"
+        debuggroup_settings_panel.styles.visibility = "hidden"
+        rungroup_settings_panel.styles.visibility = "hidden"
+
         yield anatomical_settings_panel
         yield functional_settings_panel
+        yield advanced_settings_switch_panel
         yield workflowgroup_settings_panel
         yield debuggroup_settings_panel
         yield rungroup_settings_panel
+
+    @on(Switch.Changed, "#advanced_settings_switch")
+    def _on_advanced_settings_switch_switch_changed(self, message):
+        if message.value:
+            self.get_widget_by_id("workflowgroup_settings").styles.visibility = "visible"
+            self.get_widget_by_id("debuggroup_settings").styles.visibility = "visible"
+            self.get_widget_by_id("rungroup_settings").styles.visibility = "visible"
+        else:
+            self.get_widget_by_id("workflowgroup_settings").styles.visibility = "hidden"
+            self.get_widget_by_id("debuggroup_settings").styles.visibility = "hidden"
+            self.get_widget_by_id("rungroup_settings").styles.visibility = "hidden"
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):

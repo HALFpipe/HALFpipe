@@ -10,7 +10,7 @@ from textual.containers import Grid
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Button, Input, Select, Static, Switch
+from textual.widgets import Button, Input, Label, Select, Static, Switch
 
 from .confirm_screen import Confirm
 from .custom_switch import TextSwitch
@@ -367,3 +367,51 @@ class LabelledSwitch(Widget):
         def control(self) -> LabelledSwitch:
             """The Select that sent the message."""
             return self.labelled_switch
+
+
+class FocusLabel(Label):
+    DEFAULT_CSS = """
+    FocusLabel {
+        padding: 1 1 1 1;
+        margin: 0 1;
+        width: 100%;
+        background: white;
+    }
+    """
+
+    @dataclass
+    class Selected(Message):
+        focus_label: "FocusLabel"
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.focus_label
+
+    background = reactive("gray")
+    color = reactive("black")
+
+    def __init__(self, text: str, id=None) -> None:
+        super().__init__(text, id=id)
+        self.can_focus = True  # Make the label focusable
+        self.select()
+
+    def watch_background(self, background: str) -> None:
+        self.styles.background = background
+
+    def watch_color(self, color: str) -> None:
+        self.styles.color = color
+
+    def on_focus(self) -> None:
+        self.select()
+        self.post_message(self.Selected(self))
+
+    def select(self) -> None:
+        self.background = "blue"
+        self.color = "white"
+
+    #
+    # def on_blur(self) -> None:
+    def deselect(self) -> None:
+        self.background = "#434C5E"
+        self.color = "white"
