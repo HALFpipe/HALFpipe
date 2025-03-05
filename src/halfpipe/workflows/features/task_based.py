@@ -220,25 +220,17 @@ def init_taskbased_wf(
     )
     workflow.connect(inputnode, "bold", stats, "in_file")
     cutoff = pe.Node(
-        niu.Function(input_names=["obj"], output_names=["min_val"], function=first_float),
+        niu.Function(input_names=["obj"], output_names="min_val", function=first_float),
         name="cutoff",
     )
     workflow.connect(stats, "out_stat", cutoff, "obj")
 
-    # fslversion = fsl.Info.version()
-    # pdb.set_trace()
-
     # actually estimate the first level model
-    # ? tconf_file is not taken anymore by nipype interface?
     modelestimate = pe.Node(
         fsl.FILMGLS(smooth_autocorr=True, mask_size=5),
         name="modelestimate",
         mem_gb=memcalc.series_std_gb * 1.5,
     )
-
-    # FILMGLS is not detecting the right version of FSL
-
-    # FSL DIR needs to be set: fmriprep 20 dockerfile
     workflow.connect(inputnode, "bold", modelestimate, "in_file")
     workflow.connect(cutoff, "min_val", modelestimate, "threshold")
     workflow.connect(modelgen, "design_file", modelestimate, "design_file")
@@ -264,7 +256,7 @@ def init_taskbased_wf(
         add_td_conditions = pe.Node(
             niu.Function(
                 input_names=["hrf", "condition_names"],
-                output_names=["condition_names"],
+                output_names="condition_names",
                 function=_add_td_conditions,
             ),
             name="add_td_conditions",

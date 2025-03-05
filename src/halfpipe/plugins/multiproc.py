@@ -7,7 +7,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 from threading import Thread
-from typing import Any, Callable, cast
+from typing import Any
 
 import nipype.pipeline.engine as pe
 from matplotlib import pyplot as plt
@@ -112,11 +112,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
-            initializer=cast(Callable[..., Any], initializer),  # Tell mypy the types
-            initargs=(
-                get_init_args(),
-                plugin_args,
-            ),
+            initializer=initializer,  # type: ignore
+            initargs=(get_init_args(), plugin_args),  # type: ignore
             mp_context=mp_context,
         )
 

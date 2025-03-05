@@ -6,15 +6,11 @@ from math import nan
 from pathlib import Path
 
 from fmripost_aroma import config
-from templateflow.api import get as get_template
-
-try:
-    from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
-except ImportError:
-    from fmriprep.workflows.bold.confounds import init_ica_aroma_wf
+from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import ImageMaths
 from nipype.pipeline import engine as pe
+from templateflow.api import get as get_template
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
 from ...interfaces.image_maths.resample import Resample

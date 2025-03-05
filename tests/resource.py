@@ -4,8 +4,6 @@
 
 from halfpipe import resource
 
-# Refactor
-
 test_online_resources = {
     "wakemandg_hensonrn_statmaps.tar.gz": "https://figshare.com/ndownloader/files/25621988",
     "ds000108fixed.tar.gz": "https://osf.io/download/qh38c",

@@ -178,8 +178,7 @@ def split_flat_graph(flat_graph: nx.DiGraph, base_dir: str) -> tuple[dict[str, s
         if subject_name is not None:
             subject_nodes[subject_name].add(node)
 
-    all_subject_nodes = set().union(*subject_nodes.values())
-    non_subject_nodes = set(flat_graph.nodes) - all_subject_nodes
+    non_subject_nodes = set(flat_graph.nodes) - set.union(*subject_nodes.values())
 
     resolve_input_boundary(flat_graph, non_subject_nodes)
     input_source_dict = resolve_output_boundary(flat_graph, non_subject_nodes)

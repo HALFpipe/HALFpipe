@@ -54,17 +54,16 @@ class Factory(ABC):
                 bids_subject_id = format_like_bids(subject_id)
 
         if bids_subject_id is not None:
-            return "sub_%s_wf" % bids_subject_id
             # the naming has changed from single_subject_% to sub_% in fmriprep24
+            return f"sub_{bids_subject_id}_wf"
 
         return None
 
-    def _bold_wf_name(self, source_file, prefix="bold"):
-        # New implementation by fmriprep requires passing a prefix
-        # since that is what fmriprep preprends to the bold workflows:
+    def _bold_wf_name(self, source_file: Path | str) -> str:
+        # Implementation by fmriprep requires passing a prefix since that is what fmriprep preprends to the bold workflows:
         # https://github.com/nipreps/fmriprep/blob/73189de5ee576ffc73ab432b7419304d44ce5776/fmriprep/workflows/bold/base.py#L195
-        bidspath = self.ctx.bids_database.to_bids(source_file)
-        return _get_wf_name(bidspath, prefix)
+        bidspath = self.ctx.bids_database.to_bids(str(source_file))
+        return _get_wf_name(bidspath, "bold")
 
     def _get_hierarchy(
         self,
@@ -137,7 +136,8 @@ class Factory(ABC):
         outputhierarchy = [*outputhierarchy]
 
         # The first element of both hierarchies needs to be the same
-        assert outputhierarchy[0] == inputhierarchy[0]
+        if outputhierarchy[0] != inputhierarchy[0]:
+            raise ValueError(f"Cannot connect {outputhierarchy} to {inputhierarchy}")
 
         while outputhierarchy[1] == inputhierarchy[1]:
             inputhierarchy.pop(0)
@@ -153,7 +153,7 @@ class Factory(ABC):
         outputendpoint = self._endpoint(outputhierarchy, outputnode, outattr)
         inputendpoint = self._endpoint(inputhierarchy, inputnode, inattr)
 
-        logger.warning(
+        logger.debug(
             f"Connecting output '{outattr}' from node '{outputnode.fullname}' "
             f"to input '{inattr}' of node '{inputnode.fullname}'"
         )

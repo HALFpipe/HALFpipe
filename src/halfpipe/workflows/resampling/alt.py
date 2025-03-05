@@ -22,7 +22,7 @@ def init_alt_bold_std_trans_wf(
 ):
     """
     This workflow is needed to run ICA_AROMA.
-    This workflow will be ran by default even when ICA_AROMA is not wanted
+    This workflow will be run by default even when ICA_AROMA is not wanted
     because users still want the QC report.
 
     We do this because we need an extra transform added, which we do in the mergexfm done.
@@ -44,13 +44,10 @@ def init_alt_bold_std_trans_wf(
                 "std_mask",
                 "bold_minimal",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
-                # "bold_ref_file",
-                # "bold_mask",
                 "boldref2anat_xfm",
                 "out_warp",
                 "anat2std_xfm",
                 "motion_xfm",
-                # "bold_native_wf.outputnode.motion_xfm", #we want motion_xfm from bold_native_wf, not from bold_fit_wf
             ]
         ),
         name="inputnode",
@@ -74,7 +71,7 @@ def init_alt_bold_std_trans_wf(
 
     bold_std_trans_wf = init_bold_volumetric_resample_wf(
         metadata={},  # We pass empty metadata so we can reuse workflow between subjects
-        jacobian=True,  # TODO: True or false? no documentation in FMRIPREP https://github.com/nipreps/fmriprep/blob/master/fmriprep/workflows/bold/apply.py#L19
+        jacobian=True,  # TODO: Need to decide if we want the field map jacobian as an output
         mem_gb={"resampled": memcalc.volume_std_gb},  # was memcalc.volume_std_gb
         omp_nthreads=config.nipype.omp_nthreads,
         name="bold_volumetric_resample_trans_wf",

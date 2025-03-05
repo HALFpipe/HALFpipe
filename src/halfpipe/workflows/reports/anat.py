@@ -5,12 +5,7 @@
 from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-
-try:
-    from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
-except ImportError:
-    from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
-
+from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
 from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.reports.imageplot import PlotRegistration

@@ -15,9 +15,7 @@ def init_fmriprep_adapter_wf(
     memcalc: MemoryCalculator | None = None,
 ):
     """
-    Fmriprep resamples all data to atlas space, but we need the data in a different format.
-    Specifically, we dont want that data outside of the brain and we dont want the dummy scans.
-    This workflow takes care of that
+    Following minimal preprocessing in fmriprep, remove data outside of the brain and any dummy scans
     """
 
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc

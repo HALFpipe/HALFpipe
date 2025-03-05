@@ -172,7 +172,6 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          # py.test -k 'test_consistency' --continue-on-collection-errors \
           py.test -k 'not test_consistency' --continue-on-collection-errors \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2
