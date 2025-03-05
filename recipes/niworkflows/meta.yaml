@@ -1,5 +1,8 @@
 {% set name = "niworkflows" %}
-{% set version = "1.3.10" %}
+{% set version = "1.11.0" %}
+
+# Dependencies derived from:
+# https://github.com/nipreps/niworkflows/blob/maint/1.11.x/pyproject.toml
 
 package:
   name: "{{ name|lower }}"
@@ -7,39 +10,43 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 390048f48d34d77c6d23eeee5796c238536688e5508765ccf5dc856e0838059e
+  sha256: 932bc150ea29f7d83febda9ecd05023ecd45454b532a0aec2b505ebf0a25cbc7
 
 build:
   number: 0
   script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v
 
-# Dependencies derived from:
-# https://github.com/nipreps/niworkflows/blob/maint/1.3.x/requirements.in
 requirements:
   host:
     - python 3.11.*
     - pip
+    - hatchling
+    - hatch-vcs
   run:
     - python 3.11.*
     - attrs
+    - acres
     - jinja2
-    - matplotlib>=2.2.0
-    - nibabel>=3.0.1
-    - nilearn
-    - nipype # local
-    - nitransforms # local
+    - looseversion
+    - importlib_resources>=5.7
+    - matplotlib>=3.4.2
+    - nibabel>=3.0
+    - nilearn>=0.5.2
+    - nipype>=1.8.5
+    - nitransforms>=21.0.0
     - numpy
     - packaging
     - pandas
-    - pybids>=0.11.1
+    - pybids>=0.15.1
     - PyYAML
     - scikit-image
     - scikit-learn
     - scipy
     - seaborn
-    - svgutils==0.3.1  # https://github.com/nipreps/niworkflows/issues/595
+    - svgutils>=0.3.4  # https://github.com/nipreps/niworkflows/issues/595
     - transforms3d
-    - templateflow>=0.6
+    - templateflow>=0.7.2
+    - traits<6.4
 
 test:
   imports:

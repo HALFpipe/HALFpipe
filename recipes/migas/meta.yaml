@@ -1,8 +1,8 @@
-{% set name = "mapca" %}
-{% set version = "0.0.5" %}
+{% set name = "migas" %}
+{% set version = "0.4.0" %}
 
 # Dependencies derived from:
-# https://github.com/ME-ICA/mapca/blob/main/pyproject.toml
+# https://github.com/nipreps/migas-py/blob/main/pyproject.toml
 
 package:
   name: "{{ name|lower }}"
@@ -10,7 +10,7 @@ package:
 
 source:
   url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 948fd1f7a8ab2a41e4fe67694a36a626b7fc23f549bc0dcc0129bdc4535d2c8e
+  sha256: 069481021e86fb9a84b9977f2f5adb9c77c5220787065859b9510cf80e7095f5
 
 build:
   number: 0
@@ -22,22 +22,17 @@ requirements:
     - python 3.11.*
     - hatchling
     - hatch-vcs
+
   run:
     - python 3.11.*
     - hatchling
-    - nibabel>=2.5.1
-    - nilearn
-    - numpy>=1.16
-    - scikit-learn>=1.2
-    - scipy>=1.3.3
-
+    - hatch-vcs
+    - ci-info
 
 test:
   imports:
-    - mapca
-    - mapca.utils
-    - mapca.mapca
+    - migas
 
 about:
-  home: https://github.com/ME-ICA/mapca
-  summary: 'Moving Average Principal Component Analysis for fMRI data'
+  home: https://github.com/nipreps/migas-py
+  summary: 'A Python package to communicate with a migas server.'

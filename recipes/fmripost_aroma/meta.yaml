@@ -57,11 +57,3 @@ requirements:
 test:
   imports:
     - fmripost_aroma
-
-
-about:
-  home: https://www.nipreps.org/fmriprep/
-  license: Apache-2.0
-  license_family: Apache
-  license_file: LICENSE
-  summary: "fMRIprep - a robust and easy-to-use pipeline for preprocessing of functional magnetic resonance images (fMRI) of the brain."
