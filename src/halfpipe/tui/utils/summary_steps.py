@@ -39,14 +39,16 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
     """
     entity_display_aliases = dict() if entity_display_aliases is None else entity_display_aliases
     message = ""
+    # count_breakdown = {}
+    n_by_tag = {}
     if filepaths is not None:
         message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
         if len(filepaths) > 0:
-            n_by_tag = dict()
             for tagname in tagnames:
                 tagvalset = database.tagvalset(tagname, filepaths=filepaths)
                 if tagvalset is not None:
                     n_by_tag[tagname] = len(tagvalset)
+                    # count_breakdown[entity_display_aliases.get(tagname, tagname)] = len(tagvalset)
             tagmessages = [
                 p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
                 for tagname, n in n_by_tag.items()
@@ -56,7 +58,7 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
             message += "for"
             message += " "
             message += p.join(tagmessages)
-    return message
+    return message, n_by_tag
 
 
 class FilePatternSummaryStep:
@@ -101,7 +103,7 @@ class FilePatternSummaryStep:
 
         # Assuming ctx and database are accessible here
         self.filepaths = ctx.database.get(**self.filedict)
-        self.message = messagefun(
+        self.message, self.n_by_tag = messagefun(
             ctx.database,
             self.filetype_str,
             self.filepaths,
@@ -115,7 +117,7 @@ class FilePatternSummaryStep:
 
     @property
     def get_summary(self):
-        return {"message": self.message, "files": self.filepaths}
+        return {"message": self.message, "files": self.filepaths, "n_by_tag": self.n_by_tag}
 
 
 class AnatSummaryStep(FilePatternSummaryStep):

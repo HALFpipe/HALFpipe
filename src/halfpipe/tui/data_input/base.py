@@ -142,6 +142,31 @@ class DataSummaryLine(Widget):
         Handles the event when the show button is pressed, displaying a list of files in a modal dialog.
     """
 
+    DEFAULT_CSS = """
+    DataSummaryLine {
+        height: auto;
+        border: $warning;
+        width: 100%;
+        height: 5;
+        align: center
+        middle;
+        .feedback_container {
+            layout: horizontal;
+            height: 3;
+            width: 65;
+            align: left
+            middle;
+            Static {
+                width: auto;
+                border: transparent;
+            }
+            Button {
+                dock: right;
+            }
+        }
+    }
+    """
+
     def __init__(self, summary: dict | None = None, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(id=id, classes=classes)
         self.summary = {"message": "Found 0 files.", "files": []} if summary is None else summary

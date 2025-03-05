@@ -3,6 +3,7 @@
 
 import copy
 
+import inflect
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
@@ -12,14 +13,19 @@ from textual.widget import Widget
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
+from ...model.tags import entity_longnames as entity_display_aliases
+from ..data_input.base import DataSummaryLine
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.custom_general_widgets import LabelWithInputBox, SwitchWithInputBox, SwitchWithSelect
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, FilePanelTemplate, SeedMapFilePanel, SpatialMapFilePanel
+from ..utils.summary_steps import BoldSummaryStep
 from ..utils.utils import extract_conditions, extract_name_part
 from .model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 entity_label_dict = {"dir": "Directions", "run": "Runs", "task": "Tasks", "ses": "Sessions"}
+
+p = inflect.engine()
 
 
 class FeatureTemplate(Widget):
@@ -60,7 +66,7 @@ class FeatureTemplate(Widget):
         Available options for confounds removal, with their descriptions and default states.
     preprocessing_panel : Vertical
         A panel containing pre-processing options such as smoothing, mean scaling, and temporal filtering.
-    images_to_use_selection_panel : SelectionList
+    tasks_to_use_selection_panel : SelectionList
         A panel containing the selection list of images to use.
     tag_panel : SelectionList
         A panel containing the selection list of tags.
@@ -95,28 +101,15 @@ class FeatureTemplate(Widget):
         self.event_file_pattern_counter = 0
 
         self.temp_bandpass_filter_selection: dict
-
-        # if "contrasts" not in self.feature_dict:
-        #     self.feature_dict["contrasts"] = []
-        # if "type" not in self.feature_dict:
-        #     self.feature_dict["type"] = self.type
         self.feature_dict.setdefault("contrasts", [])
         self.feature_dict.setdefault("type", self.type)
 
-        # These two are here for the case of atlases
-        # if "min_region_coverage" not in self.feature_dict:
-        #     self.feature_dict["min_region_coverage"] = 0.8
-        # if self.featurefield not in self.feature_dict:
-        #     self.feature_dict[self.featurefield] = []
-
-        # self.bandpass_filter_default_switch_value = True
-        # if "bandpass_filter" not in self.setting_dict:
-        #     self.setting_dict["bandpass_filter"] = {"type": "gaussian", "hp_width": "125", "lp_width": None}
-        # else:
-        #     if self.setting_dict["bandpass_filter"]['type'] == None:
-        #         self.bandpass_filter_default_switch_value = False
         self.bandpass_filter_default_switch_value = True
-        self.setting_dict.setdefault("bandpass_filter", {"type": "gaussian", "hp_width": "125", "lp_width": None})
+        if self.type in ["reho", "falff", "atlas_based_connectivity"]:
+            self.setting_dict.setdefault("bandpass_filter", {"type": "frequency_based", "high": "0.1", "low": "0.01"})
+        else:
+            self.setting_dict.setdefault("bandpass_filter", {"type": "gaussian", "hp_width": "125", "lp_width": None})
+
         if self.setting_dict["bandpass_filter"]["type"] is None:
             self.bandpass_filter_default_switch_value = False
 
@@ -128,22 +121,24 @@ class FeatureTemplate(Widget):
         #         self.smoothing_default_switch_value = False
 
         smoothing_default_switch_value = True
-        if self.type == "reho" or self.type == "falff":
-            self.feature_dict.setdefault("smoothing", {"fwhm": 0})
-            default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
-            if self.feature_dict["smoothing"]["fwhm"] is None:
-                smoothing_default_switch_value = False
-        else:
-            self.setting_dict.setdefault("smoothing", {"fwhm": 0})
-            default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
-            if self.setting_dict["smoothing"]["fwhm"] is None:
-                smoothing_default_switch_value = False
+        self.feature_dict.setdefault("smoothing", {"fwhm": "6"})
+        default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
+        if self.feature_dict["smoothing"]["fwhm"] is None:
+            smoothing_default_switch_value = False
+
+        # if self.type == "reho" or self.type == "falff":
+        #     self.feature_dict.setdefault("smoothing", {"fwhm": '6'})
+        #     default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
+        #     if self.feature_dict["smoothing"]["fwhm"] is None:
+        #         smoothing_default_switch_value = False
+        # else:
+        #     self.setting_dict.setdefault("smoothing", {"fwhm": '6'})
+        #     default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
+        #     if self.setting_dict["smoothing"]["fwhm"] is None:
+        #         smoothing_default_switch_value = False
 
         # if "filters" not in self.setting_dict:
         #     self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
-        self.setting_dict.setdefault(
-            "filters", [{"type": "tag", "action": "include", "entity": entity, "values": []} for entity in entity_label_dict]
-        )
 
         # self.grand_mean_scaling_default_switch_value = True
         # if "grand_mean_scaling" not in self.setting_dict:
@@ -157,29 +152,44 @@ class FeatureTemplate(Widget):
         if self.setting_dict["grand_mean_scaling"]["mean"] is None:
             self.grand_mean_scaling_default_switch_value = False
 
+        self.setting_dict.setdefault(
+            "filters",
+            [
+                {"type": "tag", "action": "include", "entity": entity, "values": []}
+                for entity, tags in ctx.get_available_images.items()
+                if entity == "task"
+            ],
+        )
+
         self.images_to_use: dict | None
         # if images exists, i.e., bold files with task tags were correctly given
         if ctx.get_available_images != {}:
             # In "Features" we use only "Tasks" !
             # loop around available tasks to create a selection dictionary for the selection widget
             # if empty setting_dict["filters"] (meaning to loading or duplicating is happening) assign True to all images
-            if self.setting_dict["filters"] == [] or self.setting_dict["filters"][0]["values"] == []:
+            # Case 1) filters is an empty list. Meaning: we are loading from a file and there are no filters so we assign
+            # all values as True
+            if self.setting_dict["filters"] == []:
                 # self.images_to_use = {"task": {task: True for task in ctx.get_available_images["task"]}}
                 self.images_to_use = {
                     entity: {tag: True for tag in tags}
                     for entity, tags in ctx.get_available_images.items()
                     if entity == "task"
                 }
+            # Case 2) filters is not an empty list but the values are empty. Meaning: there are two possibilities. Either this
+            # is fresh new feature or we are making a duplicate from a feature that we
+            # previously have created. We assign all values to False
             else:
-                # set at first all to False and then if there is the image in the .setting_dict["filters"] assign True to it
-                # self.images_to_use = {"task": {task: False for task in ctx.get_available_images["task"]}}
                 self.images_to_use = {
                     entity: {tag: False for tag in tags}
                     for entity, tags in ctx.get_available_images.items()
                     if entity == "task"
                 }
-                for image in self.setting_dict["filters"][0]["values"]:
-                    self.images_to_use["task"][image] = True
+                # Case 3) We are loading or duplicating and some tasks are on and some are off. This means some filters are on
+                # and some off. Based on what is present in the filters dictionary under values, we assign True.
+                if self.setting_dict["filters"][0]["values"] != []:
+                    for image in self.setting_dict["filters"][0]["values"]:
+                        self.images_to_use["task"][image] = True
         else:
             self.images_to_use = None
 
@@ -268,7 +278,7 @@ class FeatureTemplate(Widget):
             # for entity in self.images_to_use:
             # self.entities_to_use_panels.append(
             # Vertical(
-            # Static(entity_label_dict[entity], classes='images_to_use_selection_subpanel_labels'),
+            # Static(entity_label_dict[entity], classes='tasks_to_use_selection_subpanel_labels'),
             # SelectionList[str](
             #     *[
             #           Selection(image, image, self.images_to_use[entity][image])
@@ -277,18 +287,22 @@ class FeatureTemplate(Widget):
             #      id=entity+'_to_use_selection',
             #      classes='tags_to_use_selection'
             # )
-            # classes='images_to_use_selection_subpanels'
+            # classes='tasks_to_use_selection_subpanels'
             # )
             # )
-            # self.images_to_use_selection_panel = Vertical(
+            # self.tasks_to_use_selection_panel = Vertical(
             #                                                 *self.entities_to_use_panels,
-            #                                                 id="images_to_use_selection",
+            #                                                 id="tasks_to_use_selection",
             #                                                 classes="components"
             #                                               )
 
-            self.images_to_use_selection_panel = SelectionList[str](
-                *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
-                id="images_to_use_selection",
+            self.tasks_to_use_selection_panel = Vertical(
+                SelectionList[str](
+                    *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
+                    id="tasks_to_use_selection",
+                ),
+                DataSummaryLine(id="feedback_task_filtered_bold"),
+                id="tasks_to_use_selection_panel",
                 classes="components",
             )
 
@@ -297,7 +311,7 @@ class FeatureTemplate(Widget):
     # def compose(self) -> ComposeResult:
     #     with ScrollableContainer(id="top_container_task_based"):
     #         if self.images_to_use is not None:
-    #             yield self.images_to_use_selection_panel
+    #             yield self.tasks_to_use_selection_panel
     #         yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
     #         # yield LabelWithInputBox(
     #         #     label="Minimum atlas region coverage by individual brain mask",
@@ -312,7 +326,7 @@ class FeatureTemplate(Widget):
         if self.images_to_use is not None:
             # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
             # 'Images to Use'
-            self.get_widget_by_id("images_to_use_selection").border_title = "Tasks to use"
+            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Tasks to use"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
@@ -321,15 +335,45 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").switch_value = False
             self.get_widget_by_id("bandpass_filter_hp_width").switch_value = False
 
-    @on(SelectionList.SelectedChanged, ".tags_to_use_selection")
+    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     def _on_selection_list_changed(self, message):
-        print("ccccccccccccccccccccccccccccccccc", message.control.id[:-17])
+        # Since now we are using only tasks, the loop might not be neccessery, because there is now only one selection and that
+        # is the 'task'. Before there were also sessions, dirs, runs. The  message.control.id[:-18] extracts the string 'task'
+        # from 'tasks_to_use_selection' to match the particular entry in the filters.
         for f in self.setting_dict["filters"]:
-            print("ffffffffffffffffffffffffff", f)
-            if f["entity"] == message.control.id[:-17]:
-                print("ssssssssssssssssssssssssssss")
+            print("message.control.id[:-17]", message.control.id[:-18])
+            if f["entity"] == message.control.id[:-18]:
                 f["values"] = self.get_widget_by_id(message.control.id).selected
-        print("ccccccccccccccccccccccccccccccccache", ctx.cache)
+        self.update_dataline()
+
+    def update_dataline(self):
+        bold_summary_step = BoldSummaryStep()
+        bold_summary = bold_summary_step.get_summary
+        bold_summary_task_filtered = {}
+        filepaths = ctx.database.applyfilters(set(bold_summary["files"]), self.setting_dict.get("filters"))
+        bold_summary_task_filtered["files"] = filepaths
+        n_by_tag = bold_summary["n_by_tag"]
+        number_of_currently_selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
+
+        for tag in n_by_tag.keys():
+            if tag == "task":
+                n_by_tag[tag] = len(number_of_currently_selected_tasks)
+
+        tagmessages = [
+            p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
+            for tagname, n in n_by_tag.items()
+            if n > 0
+        ]
+        filetype = "BOLD image"
+        message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
+        message += " "
+        message += "for"
+        message += " "
+        message += p.join(tagmessages)
+
+        bold_summary_task_filtered["message"] = message
+
+        self.get_widget_by_id("feedback_task_filtered_bold").update_summary(bold_summary_task_filtered)
 
     # @on(SelectionList.SelectedChanged, "#tag_selection")
     # def on_tag_selection_changed(self, selection_list):
@@ -340,6 +384,7 @@ class FeatureTemplate(Widget):
     # some default values to the lp and hp widgets.
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
+        print("heeeeeeeeeeeeeeeeeere?", message.switch_value)
         if message.switch_value is True:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "visible"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
@@ -373,6 +418,8 @@ class FeatureTemplate(Widget):
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
     def _on_bandpass_filter_type_changed(self, message):
+        print("or heeeeeeeeeeeeeeeeeere?", message.control.switch_value, message.value)
+
         bandpass_filter_type = message.value
         if message.control.switch_value is True:
             self.set_bandpass_filter_values_after_toggle(bandpass_filter_type)
@@ -482,7 +529,7 @@ class FeatureTemplate(Widget):
     def set_smoothing_switch_value(self, switch_value):
         # in ReHo the smoothing is in features
         if switch_value is True:
-            self.setting_dict["smoothing"] = {"fwhm": 0}
+            self.setting_dict["smoothing"] = {"fwhm": "6"}
         elif switch_value is False:
             self.setting_dict["smoothing"]["fwhm"] = None
 
@@ -548,7 +595,7 @@ class AtlasSeedDualRegBased(FeatureTemplate):
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             if self.images_to_use is not None:
-                yield self.images_to_use_selection_panel
+                yield self.tasks_to_use_selection_panel
             yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
             yield SelectionList[str](id="tag_selection", classes="components")
             yield LabelWithInputBox(
@@ -733,7 +780,7 @@ class TaskBased(FeatureTemplate):
     on_mount() -> None
         Actions to perform when the component is mounted, initializing the panel titles and managing event file panels.
 
-    _on_selection_list_changed_images_to_use_selection()
+    _on_selection_list_changed_tasks_to_use_selection()
         Handles updates when the image selection list changes, updating condition lists accordingly.
 
     update_conditions_table()
@@ -773,7 +820,7 @@ class TaskBased(FeatureTemplate):
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             if self.images_to_use is not None:
-                yield self.images_to_use_selection_panel
+                yield self.tasks_to_use_selection_panel
                 yield self.model_conditions_and_contrast_table
             yield self.preprocessing_panel
 
@@ -782,17 +829,17 @@ class TaskBased(FeatureTemplate):
 
     async def mount_tasks(self):
         if self.images_to_use is not None:
-            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Tasks to use"
         if self.app.is_bids is not True:
             await self.mount(
                 EventFilePanel(id="top_event_file_panel", classes="file_panel components"),
-                after=self.get_widget_by_id("images_to_use_selection"),
+                after=self.get_widget_by_id("tasks_to_use_selection_panel"),
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
     @on(file_panel_class.Changed, "#top_event_file_panel")
-    @on(SelectionList.SelectionToggled, ".tags_to_use_selection")
-    def _on_selection_list_changed_images_to_use_selection(self, message):
+    @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
+    def _on_selection_list_changed_tasks_to_use_selection(self, message):
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
 
@@ -809,7 +856,9 @@ class TaskBased(FeatureTemplate):
                     classes="confirm_error",
                 )
             )
-            self.get_widget_by_id(message.control.id).select_all()
+            self.get_widget_by_id(message.control.id).select(message.selection)
+        print("-------------------------------- message.control.id", message.control.id)
+        print("-------------------------------- type(self).__name__ ", type(self).__name__)
 
         if (
             type(self).__name__ == "TaskBased" and message.control.id == "tasks_to_use_selection"
@@ -830,7 +879,7 @@ class TaskBased(FeatureTemplate):
         for value in self.get_widget_by_id("tasks_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])
 
-        self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("tasks_to_use_selection").selected
+        # self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("tasks_to_use_selection").selected
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list
 
@@ -862,7 +911,7 @@ class PreprocessedOutputOptions(TaskBased):
     async def mount_tasks(self):
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
         if self.images_to_use is not None:
-            self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+            self.get_widget_by_id("tasks_to_use_selection").border_title = "Tasks to use"
 
 
 class ReHo(FeatureTemplate):
@@ -895,17 +944,20 @@ class ReHo(FeatureTemplate):
         super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
         # in this case, smoothing is in features!!!
         if "smoothing" not in self.feature_dict:
-            self.feature_dict["smoothing"] = {"fwhm": 0}
+            self.feature_dict["smoothing"] = {"fwhm": "6"}
         if "smoothing" in self.setting_dict:
             del self.setting_dict["smoothing"]
 
+    def on_mount(self):
+        self.get_widget_by_id("bandpass_filter_type").default_option = "frequency_based"
+
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
-            yield self.images_to_use_selection_panel
+            yield self.tasks_to_use_selection_panel
             yield self.preprocessing_panel
 
-    async def on_mount(self) -> None:
-        self.get_widget_by_id("images_to_use_selection").border_title = "Images to use"
+    # async def on_mount(self) -> None:
+    #     self.get_widget_by_id("tasks_to_use_selection").border_title = "Images to use"
 
     def set_smoothing_value(self, value):
         self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
@@ -913,7 +965,7 @@ class ReHo(FeatureTemplate):
     def set_smoothing_switch_value(self, switch_value):
         # in ReHo the smoothing is in features
         if switch_value is True:
-            self.feature_dict["smoothing"] = {"fwhm": 0}
+            self.feature_dict["smoothing"] = {"fwhm": "6"}
         elif switch_value is False:
             self.feature_dict["smoothing"]["fwhm"] = None
 

@@ -430,7 +430,7 @@ class ModelTemplate(Widget):
 
     async def on_mount(self) -> None:
         if self.tasks_to_use is not None:
-            self.get_widget_by_id("tasks_to_use_selection").border_title = "Tasks to use"
+            self.get_widget_by_id("tasks_to_use_selection").border_title = "Features to use"
         self.get_widget_by_id("cutoff_panel").border_title = "Cutoffs"
         if not self.get_widget_by_id("exclude_subjects").value:
             self.hide_fd_filters()
@@ -751,6 +751,7 @@ class LinearModel(ModelTemplate):
                                 ),
                                 False,
                             )
+                            or self.is_new
                             else "mean_substitution",
                             id=v + "_model_vars",
                             classes="additional_preprocessing_settings",

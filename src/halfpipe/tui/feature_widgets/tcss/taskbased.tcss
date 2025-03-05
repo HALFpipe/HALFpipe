@@ -67,7 +67,7 @@
             }
         }
     }
-    #images_to_use {
+    #tasks_to_use {
         align: center top;
         border: green thick;
         height: auto;
@@ -79,6 +79,12 @@
     .images_to_use_selection_subpanels {
         height: auto;
         border: red;
+    }
+
+    #feedback_task_filtered_bold {
+        Button {
+            width: 10;
+        }
     }
     .images_to_use_selection_subpanel_labels {
         text-style: bold;

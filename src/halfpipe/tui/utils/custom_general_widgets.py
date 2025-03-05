@@ -147,14 +147,6 @@ class SwitchWithInputBox(Widget):
         else:
             self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
 
-    # def on_switch_changed(self):
-    # last_switch = self.query("Switch").last()
-    # if last_switch.value:
-    # self.get_widget_by_id("input_switch_input_box").styles.visibility = "visible"
-    # else:
-    # self.get_widget_by_id("input_switch_input_box").styles.visibility = "hidden"
-    # self.value = 0
-
     @on(Switch.Changed)
     def on_switch_changed(self, message):
         self.switch_value = message.value
@@ -166,6 +158,13 @@ class SwitchWithInputBox(Widget):
     @on(Input.Changed, "#input_switch_input_box")
     def update_from_input(self):
         self.value = self.get_widget_by_id("input_switch_input_box").value
+
+    # def notify_style_update(self) -> None:
+    #     # this does not work as expected
+    #     # """Ensure all child widgets follow the visibility of the main widget."""
+    #     visibility = self.styles.visibility
+    #     for widget in self.query("Switch, Input, Static"):
+    #         widget.styles.visibility = visibility
 
 
 class SwitchWithSelect(SwitchWithInputBox):
@@ -229,6 +228,9 @@ class SwitchWithSelect(SwitchWithInputBox):
         self.default_option = self.options[0][1] if default_option is None else default_option
         self.switch_value = switch_value
         self.value = self.default_option
+        print(
+            "deeeeeeeeeeeeeeeeeeeeeeeeeeeeef",
+        )
 
     def compose(self) -> ComposeResult:
         yield Grid(

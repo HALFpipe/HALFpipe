@@ -304,12 +304,12 @@ spec.json file it is possible to load the therein configuration.",
             for top_name in ctx.cache:
                 if ctx.cache[top_name]["features"] != {}:
                     name = ctx.cache[top_name]["features"]["name"]
-                    await feature_widget.add_new_feature([ctx.cache[name]["features"]["type"], name])
+                    await feature_widget.add_new_item([ctx.cache[name]["features"]["type"], name])
                 # ctx.cache[top_name]["features"] is empty {} dir in case of preproc feature, then we look if there is at least
                 # the settings key indicating that this is not a file pattern but a preproc feature
                 elif ctx.cache[top_name]["settings"] != {}:
                     name = ctx.cache[top_name]["settings"]["name"]
-                    await feature_widget.add_new_feature(["preprocessed_image", name.replace("Setting", "")])
+                    await feature_widget.add_new_item(["preprocessed_image", name.replace("Setting", "")])
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.state == WorkerState.SUCCESS:

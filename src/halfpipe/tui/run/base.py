@@ -122,6 +122,26 @@ class RunCLX(Widget):
         # iterate now over the whole cache and fill the context object
         # the "name" is widget name carying the particular user choices, either a feature or file pattern
         for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
+            # skip whole entry if in the feature there were no selected tasks
+            if (
+                ctx.cache[name]["settings"].get("filters", [])
+                and name != "bids"
+                and ctx.cache[name]["settings"]["filters"][0].get("values", []) == []
+            ):
+                self.app.push_screen(
+                    Confirm(
+                        f"Feature {name} is missing a task! Select at least one task!",
+                        left_button_text=False,
+                        right_button_text="OK",
+                        #  left_button_variant=None,
+                        right_button_variant="default",
+                        title="Feature incomplete warning",
+                        # id="association_modal",
+                        classes="confirm_warning",
+                    )
+                )
+                continue
+
             if ctx.cache[name]["features"] != {}:
                 featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                 ctx.spec.features.append(featureobj)

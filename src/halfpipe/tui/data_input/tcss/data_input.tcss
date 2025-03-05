@@ -1,25 +1,3 @@
-DataSummaryLine {
-    height: auto;
-    border: $warning;
-    width: 100%;
-    height: 5;
-    align: center middle;
-    .feedback_container {
-        layout: horizontal;
-        height: 3;
-
-        width: 65;
-        align: left middle;
-        Static {
-            width: auto;
-            border: transparent;
-        }
-        Button {
-            dock: right;
-        }
-    }
-}
-
 DataInput {
     align: center top;
     height: auto;
