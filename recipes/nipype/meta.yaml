@@ -30,7 +30,7 @@ requirements:
     - numpy >=1.17
     - python-dateutil >=2.2
     - scipy >=0.14
-    - traits
+    - traits <=7
     - simplejson >=3.8.0
     - rdflib >=5.0.0
     - prov >=1.5.2

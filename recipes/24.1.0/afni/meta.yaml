@@ -53,13 +53,13 @@ requirements:
     - xorg-xorgproto
     - libxml2
     - icu
-  run:
-    - "openmotif>=2.3.8"
-    - libjpeg-turbo
-    - xorg-libxft
-    - libxml2
-    - icu
-    - xorg-libxpm
+  # run:
+  #   - "openmotif>=2.3.8"
+  #   - libjpeg-turbo
+  #   - xorg-libxft
+  #   - libxml2
+  #   - icu
+  #   - xorg-libxpm
 
 outputs:
   - name: afni-libznz
@@ -71,6 +71,12 @@ outputs:
   - name: afni-lib3dedge
     files:
       - lib/lib3DEdge.so
+  - name: afni-libcoxplot
+    files:
+      - lib/libcoxplot.so
+    requirements:
+      run:
+        - f2c
   - name: afni-libeispack
     files:
       - lib/libeispack.so
@@ -102,6 +108,22 @@ outputs:
         - {{ pin_subpackage('afni-libeispack', exact=True) }}
         - {{ pin_subpackage('afni-libgiftiio', exact=True) }}
         - {{ pin_subpackage('afni-libnifticdf', exact=True) }}
+  - name: afni-libmrix
+    files:
+      - lib/libmrix.so
+      - lib/libXmHTML.so
+    requirements:
+      run:
+        - {{ pin_subpackage('afni-libcoxplot', exact=True) }}
+        - {{ pin_subpackage('afni-libmri', exact=True) }}
+        - {{ pin_subpackage('afni-libznz', exact=True) }}
+        - icu
+        - openmotif
+        - xorg-libxft
+        - xorg-libxmu
+        - xorg-libxpm
+        - xorg-libxt
+        - xorg-xorgproto
   - name: afni-libtracktools
     files:
       - lib/libtrack_tools.so
@@ -110,6 +132,23 @@ outputs:
         - {{ pin_subpackage('afni-libmri', exact=True) }}
         - gsl
         - libopenblas
+  - name: afni-1dplot
+    files:
+      - bin/1dplot
+    requirements:
+        - {{ pin_subpackage('afni-libmrix', exact=True) }}
+    test:
+      commands:
+        - 1dplot -help
+  - name: afni-3dautomask
+    files:
+      - bin/3dAutomask
+    requirements:
+      run:
+        - {{ pin_subpackage('afni-libmri', exact=True) }}
+    test:
+      commands:
+        - 3dAutomask -help
   - name: afni-3dblurtofwhm
     files:
       - bin/3dBlurToFWHM
@@ -133,7 +172,7 @@ outputs:
       - bin/3dFWHMx
     requirements:
       run:
-        - {{ pin_subpackage('afni-libmri', exact=True) }}
+        - {{ pin_subpackage('afni-1dplot', exact=True) }}
     test:
       commands:
         - 3dFWHMx -help

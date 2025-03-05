@@ -73,7 +73,6 @@ requirements:
     - fsl-film
     - fsl-flameo
     - fmripost_aroma
-    - afni-3dfwhmx
     - afni-3dtproject
     - afni-3dblurtofwhm
     - afni-3dcalc
