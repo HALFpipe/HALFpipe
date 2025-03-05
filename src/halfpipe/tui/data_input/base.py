@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# ok to review
 
 from typing import List
 
@@ -405,7 +404,6 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         await self.add_bold_image(load_object=None)
 
     async def add_bold_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True):
-        # pattern_class = BoldStep(app=self.app) if pattern_class is True else None
         await self.get_widget_by_id("bold_image_panel").mount(
             FileItem(
                 id="bold_file_pattern_" + str(self.bold_file_pattern_counter),
@@ -545,8 +543,6 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
             warning_string += "No bold files found! Check or add the bold file pattern!\n"
         # Fields map are not mandatory, so this does not go to the warning string.
-        # if any(value == 0 for value in number_of_field_map_files) or not number_of_field_map_files:
-        #     warning_string += "No field map files found! Check or add the field map file pattern!"
         # If the are field maps and the association was needed but was not done
         if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
             await self.app.push_screen_wait(

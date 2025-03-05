@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -228,9 +227,6 @@ class SwitchWithSelect(SwitchWithInputBox):
         self.default_option = self.options[0][1] if default_option is None else default_option
         self.switch_value = switch_value
         self.value = self.default_option
-        print(
-            "deeeeeeeeeeeeeeeeeeeeeeeeeeeeef",
-        )
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -412,8 +408,6 @@ class FocusLabel(Label):
         self.background = "blue"
         self.color = "white"
 
-    #
-    # def on_blur(self) -> None:
     def deselect(self) -> None:
         self.background = "#434C5E"
         self.color = "white"

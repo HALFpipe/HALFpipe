@@ -10,13 +10,16 @@ FeatureSelection {
             padding: 1;
             align: center top;
             dock: top;
-            grid-size: 2 3;
+            grid-size: 2 2;
             grid-gutter: 1 0;
-            height: 13;
+            height: 9;
             /*border-bottom: thick $accent;*/
             /*border-bottom: thick $accent;*/
             background: $accent;
         }
+    }
+    .list {
+        padding: 0 0 0 0;
     }
     #list {
         align: left top;

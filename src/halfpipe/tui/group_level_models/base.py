@@ -17,11 +17,6 @@ p = inflect.engine()
 
 ITEM_MAP = {"me": "Intercept-only", "lme": "Linear model"}
 
-# MODELS_MAP_colors = {
-#     "me": "crimson",
-#     "lme": "blueviolet",
-# }
-
 
 class GroupLevelModelSelectionScreen(DraggableModalScreen):
     """
@@ -56,7 +51,6 @@ class GroupLevelModelSelectionScreen(DraggableModalScreen):
     CSS_PATH = "tcss/group_level_selection_screen.tcss"
 
     def __init__(self, occupied_names) -> None:
-        #    self.top_parent = top_parent
         self.occupied_names = occupied_names
         super().__init__()
         # Temporary workaround because some bug in Textual between versions 0.70 and 0.75.
@@ -117,12 +111,6 @@ class GroupLevelModelSelection(SelectionTemplate):
         self.get_widget_by_id("content_switcher").border_title = "Group-level models"
 
     def action_add_item(self) -> None:
-        # Try here first the event files
-        # setting_filter_step_instance = SettingFilterStep()
-        # setting_filter_step_instance.run()
-        #  events_type_instance = EventsTypeStep()
-        #  events_type_instance.run()
-
         """Pops out the model type selection windows and then uses add_new_item function to mount a new model
         widget."""
         occupied_item_names = [self.feature_items[item].name for item in self.feature_items]
@@ -138,11 +126,11 @@ class GroupLevelModelSelection(SelectionTemplate):
         if item_name not in ctx.cache:
             ctx.cache[item_name]["models"]["name"] = item_name
 
-        item_type_class: type
-        if item_type == "me":
-            item_type_class = InterceptOnlyModel
-        elif item_type == "lme":
-            item_type_class = LinearModel
+        item_type_class: type = {
+            "me": InterceptOnlyModel,
+            "lme": LinearModel,
+        }.get(item_type)
+
         if item_type_class is not None:
             new_content_item = item_type_class(
                 this_user_selection_dict=ctx.cache[item_name],
@@ -150,64 +138,6 @@ class GroupLevelModelSelection(SelectionTemplate):
                 classes=p.singular_noun(self.ITEM_KEY),
             )
         return new_content_item
-
-    #
-    # async def add_new_item(self, new_item: tuple | bool) -> None:
-    #     """Principle of adding a new model lies in mounting a new widget while creating a new entry in the dictionary
-    #     to keep track of the selections which are later dumped into the Context object.
-    #     If this is a load or a duplication, then new entry is not created but read from the dictionary.
-    #     The dictionary entry was created elsewhere.
-    #     """
-    #     if isinstance(new_item, tuple) or isinstance(new_item, list):
-    #         item_type, item_name = new_item
-    #         content_switcher_item_new_id = self.content_type+"_item_" + str(self._id_counter)
-    #         collapsible_item_new_id = content_switcher_item_new_id+'_flabel'
-    #
-    #         self.feature_items[content_switcher_item_new_id] = ModelItem(item_type, item_name)
-    #
-    #         # the pseudo class here is to set a particular text color in the left panel
-    #         # new_list_item = ListItem(
-    #         #     Label(item_name, id=new_id, classes="labels " + item_type),
-    #         #     id=new_id,
-    #         #     classes="items",
-    #         # )
-    #         # this dictionary will contain all made choices
-    #         new_content_item = self.fill_cache_and_create_new_content_item
-    #
-    #         ################## same
-    #         # Deselect previous FocusLabel if exists
-    #         content_switcher_item_old_id = self.get_widget_by_id("content_switcher").current
-    #         if content_switcher_item_old_id is not None:
-    #             collapsible_item_old_id = content_switcher_item_old_id+'_flabel'
-    #             if widget_exists(self, collapsible_item_old_id):
-    #                 self.get_widget_by_id(collapsible_item_old_id).deselect()
-    #
-    #         item_key = self.feature_items[content_switcher_item_new_id].type
-    #         new_list_item = FocusLabel(item_name, id=collapsible_item_new_id)#classes="labels " + feature_type)
-    #         await self.get_widget_by_id("list_"+item_key).query_one(Collapsible.Contents).mount(new_list_item)
-    #         self.get_widget_by_id("list_" + item_key).collapsed = False
-    #         await self.get_widget_by_id("content_switcher").mount(new_content_item)
-    #         self.get_widget_by_id("content_switcher").current = content_switcher_item_new_id
-    #         self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-    #             self.ITEM_MAP[item_key],
-    #             self.feature_items[content_switcher_item_new_id].name,
-    #         )
-    #         self._id_counter += 1
-
-    # @on(Button.Pressed, "#sidebar .duplicate_button")
-    # async def duplicate(self) -> None:
-    #     await self.run_action("duplicate_item")
-    #
-    # async def action_duplicate_item(self):
-    #     """Duplicating feature by a deep copy of the dictionary entry and then mounting a new widget while
-    #     loading defaults from this copy.
-    #     """
-    #     current_id = self.get_widget_by_id("content_switcher").current
-    #     item_name = self.feature_items[current_id].name
-    #     item_name_copy = item_name + "Copy"
-    #     ctx.cache[item_name_copy] = copy.deepcopy(ctx.cache[item_name])
-    #     ctx.cache[item_name_copy]["models"]["name"] = item_name_copy
-    #     await self.add_new_item((ctx.cache[item_name_copy]["models"]["type"], item_name_copy))
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Changes border title color according to the feature type."""
@@ -217,31 +147,8 @@ class GroupLevelModelSelection(SelectionTemplate):
         self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
             self.ITEM_MAP[current_feature.type], current_feature.name
         )
-        # self.get_widget_by_id("content_switcher").styles.border_title_color = MODELS_MAP_colors[current_feature.type]
         self.get_widget_by_id("content_switcher").styles.border_title_color = "white"
 
     def action_delete_item(self) -> None:
         """Unmount the feature and delete its entry from dictionaries, including aggregate models."""
         self.app.push_screen(Confirm(), lambda respond: self._delete_item(respond, check_aggregate=True))
-
-    ###############
-    # def action_delete_feature(self) -> None:
-    #     """Unmount the feature and delete its entry from dictionaries."""
-    #
-    #     def confirmation(respond: bool):
-    #         if respond:
-    #             if respond:
-    #                 current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
-    #                 current_collabsible_item_id = current_content_switcher_item_id + '_flabel'
-    #                 name = self.feature_items[current_content_switcher_item_id].name
-    #                 self.get_widget_by_id(current_content_switcher_item_id).remove()
-    #                 self.get_widget_by_id(current_collabsible_item_id).remove()
-    #                 self.feature_items.pop(current_content_switcher_item_id)
-    #                 ctx.cache.pop(name)
-    #                 self.get_widget_by_id("content_switcher").current = None
-    #
-    #             # If there are also aggregation models created within that particular models, also delete those.
-    #             if name + "__aggregate_models_list" in ctx.cache:
-    #                 ctx.cache.pop(name + "__aggregate_models_list")
-    #
-    #     self.app.push_screen(Confirm(), confirmation)

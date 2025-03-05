@@ -4,23 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-# class Context:
-# def __init__(self) -> None:
-# spec_schema = SpecSchema()
-# spec = spec_schema.load(spec_schema.dump({}), partial=True)
-# assert isinstance(spec, Spec)
-# self.spec: Spec = spec  # initialize with defaults
-# self.database = Database(self.spec)
-# self.workdir: Path | None = None
-# self.use_existing_spec = False
-# self.debug = False
-# self.already_checked: set[str] = set()
-# def put(self, fileobj):
-# self.database.put(fileobj)
-# return len(self.spec.files) - 1
 from ...ingest.database import Database
-
-# from ..logging import logger
 from ...model.spec import Spec, SpecSchema
 from ...model.tags import entities
 
@@ -109,14 +93,9 @@ class Context:
         filepaths = self.database.get(**bold_filedict)
 
         db_entities, db_tags_set = self.database.multitagvalset(entities, filepaths=filepaths, min_set_size=0)
-        print("--------------------db_entitiesdb_entitiesdb_entitiesdb_entities", db_entities)
-        print("--------------------db_tags_setdb_tags_setdb_tags_setdb_tags_set", db_tags_set)
-
         if db_entities != []:
             for i, db_entity in enumerate(db_entities):
                 self.available_images[db_entity] = sorted(list({t[i] for t in db_tags_set}))
-
-        print("--------------------self.available_imagesself.available_imagesself.available_images", self.available_images)
 
     @property
     def get_available_images(self):

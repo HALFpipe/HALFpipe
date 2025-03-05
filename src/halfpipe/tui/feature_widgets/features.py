@@ -178,23 +178,13 @@ class FeatureTemplate(Widget):
             "global_signal": ["Global signal", False],
         }
 
-        # if "confounds_removal" in self.setting_dict:
-        #     for confound in self.setting_dict["confounds_removal"]:
-        #         confounds_options[confound][1] = True
         for confound in self.setting_dict.get("confounds_removal", []):
             confounds_options[confound][1] = True
 
-        # if self.feature_dict["contrasts"] is not None:
-        #     self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
-        #         all_possible_conditions,
-        #         feature_contrasts_dict=self.feature_dict["contrasts"],
-        #         id="model_conditions_and_constrasts",
-        #         classes="components",
-        #     )
         self.confounds_options = confounds_options
+
         # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
         # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
-
         self.preprocessing_panel = Vertical(
             SwitchWithInputBox(
                 label="Smoothing (FWHM in mm)",
@@ -245,30 +235,6 @@ class FeatureTemplate(Widget):
         )
 
         if self.images_to_use is not None:
-            # Commented out the method with entities_to_use_panels list, because we now use only Tasks, so we can directly
-            # create a panel only for them, the 'Tasks to use' panel.
-            # self.entities_to_use_panels = []
-            # for entity in self.images_to_use:
-            # self.entities_to_use_panels.append(
-            # Vertical(
-            # Static(entity_label_dict[entity], classes='tasks_to_use_selection_subpanel_labels'),
-            # SelectionList[str](
-            #     *[
-            #           Selection(image, image, self.images_to_use[entity][image])
-            #           for image in self.images_to_use[entity]
-            #      ],
-            #      id=entity+'_to_use_selection',
-            #      classes='tags_to_use_selection'
-            # )
-            # classes='tasks_to_use_selection_subpanels'
-            # )
-            # )
-            # self.tasks_to_use_selection_panel = Vertical(
-            #                                                 *self.entities_to_use_panels,
-            #                                                 id="tasks_to_use_selection",
-            #                                                 classes="components"
-            #                                               )
-
             self.tasks_to_use_selection_panel = Vertical(
                 SelectionList[str](
                     *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
@@ -279,23 +245,7 @@ class FeatureTemplate(Widget):
                 classes="components",
             )
 
-        print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiinit parent", self.type)
-
-    # def compose(self) -> ComposeResult:
-    #     with ScrollableContainer(id="top_container_task_based"):
-    #         if self.images_to_use is not None:
-    #             yield self.tasks_to_use_selection_panel
-    #         yield self.file_panel_class(id="top_file_panel", classes="components file_panel")
-    #         # yield LabelWithInputBox(
-    #         #     label="Minimum atlas region coverage by individual brain mask",
-    #         #     value=self.feature_dict["min_region_coverage"],
-    #         #     classes="switch_with_input_box components",
-    #         #     id="minimum_coverage",
-    #         # )
-    #         yield self.preprocessing_panel
-
     async def on_mount(self) -> None:
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmount parent")
         if self.images_to_use is not None:
             # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
             # 'Images to Use'
@@ -348,16 +298,11 @@ class FeatureTemplate(Widget):
 
         self.get_widget_by_id("feedback_task_filtered_bold").update_summary(bold_summary_task_filtered)
 
-    # @on(SelectionList.SelectedChanged, "#tag_selection")
-    # def on_tag_selection_changed(self, selection_list):
-    #     self.feature_dict[self.featurefield] = selection_list.control.selected
-
-    # This serves for on/off of the bandpass filter. When Off, we need to hide some widgets, the opposite when On.
-    # There is a special case when filter was Off and the feature was duplicated, then after turning it on we need to pass
-    # some default values to the lp and hp widgets.
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
-        print("heeeeeeeeeeeeeeeeeere?", message.switch_value)
+        # This serves for on/off of the bandpass filter. When Off, we need to hide some widgets, the opposite when On.
+        # There is a special case when filter was Off and the feature was duplicated, then after turning it on we need to pass
+        # some default values to the lp and hp widgets.
         if message.switch_value is True:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "visible"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "visible"
@@ -391,8 +336,6 @@ class FeatureTemplate(Widget):
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
     def _on_bandpass_filter_type_changed(self, message):
-        print("or heeeeeeeeeeeeeeeeeere?", message.control.switch_value, message.value)
-
         bandpass_filter_type = message.value
         if message.control.switch_value is True:
             self.set_bandpass_filter_values_after_toggle(bandpass_filter_type)
@@ -423,8 +366,6 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(highest_value is not None)
             self.setting_dict["bandpass_filter"]["low"] = lowest_value
             self.setting_dict["bandpass_filter"]["high"] = highest_value
-            # self.setting_dict["bandpass_filter"]["low"] = self.setting_dict["bandpass_filter"]["lp_width"]
-            # self.setting_dict["bandpass_filter"]["high"] = self.setting_dict["bandpass_filter"]["hp_width"]
             self.setting_dict["bandpass_filter"].pop("lp_width", None)
             self.setting_dict["bandpass_filter"].pop("hp_width", None)
         elif bandpass_filter_type == "gaussian":
@@ -444,11 +385,7 @@ class FeatureTemplate(Widget):
                 if "hp_width" in self.setting_dict["bandpass_filter"]
                 else "125"
             )
-            # highest_value = (
-            #     str(self.setting_dict["bandpass_filter"]["hp_width"])
-            #     if "hp_width" in self.setting_dict["bandpass_filter"]
-            #     else "125"
-            # )
+
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")
             self.get_widget_by_id("bandpass_filter_hp_width").update_label("High-pass temporal filter width \n(in seconds)")
             # set defaults on toggle
@@ -830,8 +767,6 @@ class TaskBased(FeatureTemplate):
                 )
             )
             self.get_widget_by_id(message.control.id).select(message.selection)
-        print("-------------------------------- message.control.id", message.control.id)
-        print("-------------------------------- type(self).__name__ ", type(self).__name__)
 
         if (
             type(self).__name__ == "TaskBased" and message.control.id == "tasks_to_use_selection"
@@ -852,7 +787,6 @@ class TaskBased(FeatureTemplate):
         for value in self.get_widget_by_id("tasks_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])
 
-        # self.setting_dict["filters"][0]["values"] = self.get_widget_by_id("tasks_to_use_selection").selected
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list
 
@@ -861,7 +795,7 @@ class PreprocessedOutputOptions(TaskBased):
     """
     PreprocessedOutputOptions(this_user_selection_dict, **kwargs)
 
-    Class for managing preprocessed image output options within a task-based framework.
+    Class for managing preprocessed image output options.
 
     Parameters
     ----------
@@ -928,9 +862,6 @@ class ReHo(FeatureTemplate):
         with ScrollableContainer(id="top_container_task_based"):
             yield self.tasks_to_use_selection_panel
             yield self.preprocessing_panel
-
-    # async def on_mount(self) -> None:
-    #     self.get_widget_by_id("tasks_to_use_selection").border_title = "Images to use"
 
     def set_smoothing_value(self, value):
         self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None

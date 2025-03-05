@@ -32,8 +32,6 @@ aggregate_order = ["dir", "run", "ses", "task"]
 
 
 class AdditionalContrastsCategoricalVariablesTable(Widget):
-    # BORDER_TITLE = "Model conditions & contrast vales"
-
     @dataclass
     class Changed(Message):
         additional_contrasts_categorical_variables_table: "AdditionalContrastsCategoricalVariablesTable"
@@ -59,7 +57,6 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
         ]
     )
 
-    # condition_values: list of the conditions in the selection, this can be changed also externally by other widget
     # if so, the selection and the table need an update
     condition_values: reactive[list] = reactive([], init=False)
 
@@ -106,12 +103,8 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
                     self.df.loc[condition_name, contrast_dict["name"]] = contrast_dict["values"][condition_name]
             self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
-    # def watch_condition_values(self) -> None:
-    #     self.update_condition_selection()
-
     def compose(self) -> ComposeResult:
         table = DataTable(zebra_stripes=True, header_height=2, id="contrast_table")
-        # table = self.query_one(DataTable)
         # to init the table, stupid but nothing else worked
         table.add_column(label="temp", key="temp")
         # first case is used upon duplication or load, here we use the feature_conditions_list to add the rows to table
@@ -126,13 +119,11 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
         table.cursor_type = "column"
         table.zebra_stripes = True
 
-        ##############
         if self.feature_contrasts_dict != [] or self.feature_conditions_list != []:
             for contrast_dict in self.feature_contrasts_dict:
                 table.add_column(contrast_dict["name"], key=contrast_dict["name"])
                 for row_key in table.rows:
                     table.update_cell(row_key, contrast_dict["name"], contrast_dict["values"][row_key.value])
-        #############
         # here this to avoid error
         self.table_row_index = dict.fromkeys(sorted([r.value for r in table.rows]))
 
@@ -313,7 +304,6 @@ class ModelTemplate(Widget):
         Handles the event when the file panel changes, updating the tag selection.
     """
 
-    # filters: dict = {"datatype": "", "suffix": ""}
     type: str = ""
     bold_filedict = {"datatype": "func", "suffix": "bold"}
     aggregate_order = ["dir", "run", "ses", "task"]
@@ -330,10 +320,8 @@ class ModelTemplate(Widget):
         self.model_dict = this_user_selection_dict["models"]
         self.is_new = list(self.model_dict.keys()) == ["name"]
 
-        print("ffffffffffffffffffffffffresh ", self.model_dict)
         self.model_dict.setdefault("type", self.type)
         self.model_dict.setdefault("filters", [])
-        # self.model_cutoff_filters = [f for f in self.model_dict if f['type'] == 'cutoff']
 
         # In case of loading from a file or duplicating, we check whether there are some cutoffs made, if not then we switch
         # off the cutoff widget switch. It is enough to just check one of the cutoffs in the filter field.
@@ -343,21 +331,6 @@ class ModelTemplate(Widget):
             cutoff_default_value = True
         else:
             cutoff_default_value = False
-
-        # We need to field the filter dictionaries either from existing fields or assign default values to them.
-        # self.fd_mean_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_mean"}) or {
-        #     "type": "cutoff",
-        #     "action": "exclude",
-        #     "field": "fd_mean",
-        #     "cutoff": "0.5",
-        # }
-        #
-        # self.fd_perc_cutoff_dict = self.extract_from_existing_filters({"type": "cutoff", "field": "fd_perc"}) or {
-        #     "type": "cutoff",
-        #     "action": "exclude",
-        #     "field": "fd_perc",
-        #     "cutoff": "10.0",
-        # }
 
         if [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] == []:
             self.default_cutoff_filter_values = [
@@ -376,7 +349,6 @@ class ModelTemplate(Widget):
             ]
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
 
-        # self.model_dict.setdefault("inputs", [])
         # First find all available tasks, assign True to all of them
         self.tasks_to_use: dict | None = {}
         for w in ctx.cache:
@@ -387,7 +359,6 @@ class ModelTemplate(Widget):
         # If there are no pre-existing cutoff filters, then we just assign the keys from tasks_to_use dict, otherwise
         # we change values of the keys in tasks_to_use to dict to False if there are not present in the 'inputs' dict.
         if "inputs" not in self.model_dict:
-            # self.model_dict["inputs"] = [task for task in self.tasks_to_use.keys() if self.tasks_to_use[task] is True]
             self.model_dict["inputs"] = list(self.tasks_to_use.keys())
         else:
             self.tasks_to_use = {task_key: task_key in self.model_dict["inputs"] for task_key in self.tasks_to_use.keys()}
@@ -437,9 +408,7 @@ class ModelTemplate(Widget):
 
     @on(Input.Changed, "#cutoff_fd_mean")
     def _on_cutoff_fd_mean_input_changed(self, message: Message):
-        print("ddddddddddddddddddddddddddddddd", self.model_dict["filters"])
         for f in self.model_dict["filters"]:
-            print("fffffffffffffffffffffff", f)
             if f.get("field") == "fd_mean":
                 f["cutoff"] = message.value
 
@@ -453,9 +422,6 @@ class ModelTemplate(Widget):
     def on_exclude_subjects_switch_changed(self, message: Message):
         if message.value is True:
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
-
-            # self.model_dict["filters"].append(self.fd_perc_cutoff_dict)
-            # self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "visible"
             self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "visible"
             self.get_widget_by_id("cutoff_panel").styles.height = "auto"
         else:
@@ -482,7 +448,6 @@ class InterceptOnlyModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     def _on_selection_list_changed(self):
-        # selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
         self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
 
 
@@ -491,7 +456,6 @@ class LinearModel(ModelTemplate):
 
     def __init__(self, this_user_selection_dict=None, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
-        print("self.model_dictself.model_dictself.model_dict init", self.model_dict)
         self.spreadsheet_filepaths: dict[str, str] = {}
         self.model_dict.setdefault("contrasts", [])
         self.model_dict.setdefault("filters", [])
@@ -501,8 +465,6 @@ class LinearModel(ModelTemplate):
         for key in ctx.cache:
             if key.startswith("__spreadsheet_file_"):
                 self.spreadsheet_filepaths[key] = ctx.cache[key]["files"].path  # type: ignore
-
-        print("self.spreadsheet_filepathsself.spreadsheet_filepathsself.spreadsheet_filepaths", self.spreadsheet_filepaths)
 
         # there has to be button to Add new spreadsheet
         spreadsheet_selection = Select(
@@ -535,21 +497,9 @@ class LinearModel(ModelTemplate):
             yield self.cutoff_panel
             yield self.spreadsheet_panel
 
-    #
-    # async def on_mount(self):
-    #     if self.model_dict["spreadsheet"] is not None:
-    #         print("ffffffffffffffffffffffffff")
-    #         matching_key = next(
-    #             (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), None
-    #         )
-    #         print("matching_keymatching_keymatching_key", matching_key)
-    #         self.get_widget_by_id("spreadsheet_selection").value = matching_key
-    #         # await self.load_selections_based_on_spreadsheet(matching_key)
-
     @on(Button.Pressed, "#add_spreadsheet")
     async def _on_button_select_spreadsheet_pressed(self):
         def update_spreadsheet_label(new_spreadsheet_selection):
-            print("ffffffffffffffffff", new_spreadsheet_selection)
             if new_spreadsheet_selection is not False:
                 self.spreadsheet_filepaths[new_spreadsheet_selection[0]] = new_spreadsheet_selection[1]
                 self.get_widget_by_id("spreadsheet_selection").set_options(
@@ -557,16 +507,11 @@ class LinearModel(ModelTemplate):
                 )
                 self.get_widget_by_id("spreadsheet_selection").value = new_spreadsheet_selection[0]
                 self.model_dict["spreadsheet"] = new_spreadsheet_selection[1]
-                # self.get_widget_by_id('spreadsheet_path_label').update(selected_path)
-                # self.get_widget_by_id("spreadsheet_path_label").styles.border = ("solid", "green")
 
         await self.app.push_screen(AddSpreadsheetModal(), update_spreadsheet_label)
 
     @on(Select.Changed, "#spreadsheet_selection")
     async def _on_spreadsheet_selection_changed(self, message):
-        print("mmmmmmmmmmmmmmmmm", message.control.id)
-        print("vvvvvvvvvvvvvvvvvvvv", message.value)
-
         # First remove and deleting everything to start fresh. If there is not value selected, nothing will load.
         if widget_exists(self, "top_levels_panel") is True:
             await self.get_widget_by_id("top_levels_panel").remove()
@@ -588,12 +533,8 @@ class LinearModel(ModelTemplate):
             # Pretend that it is a new model because this is what happens when we switch off the spreadsheet file.
             self.is_new = True
 
-        print("spreadsheet_selection changed lf.model_dictself.model_dictself.model_dictself.model_dict", self.model_dict)
         if message.value != BLANK:
             spreadsheet_cache_id = message.value
-            #     await self.load_selections_based_on_spreadsheet(spreadsheet_cache_id)
-            #
-            # async def load_selections_based_on_spreadsheet(self, spreadsheet_cache_id):
             metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
             self.metadata_variables = metadata_variables
             spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
@@ -606,24 +547,10 @@ class LinearModel(ModelTemplate):
             # continue from here ...
 
             for metadata_item in metadata_variables:
-                # for f in self.model_dict['filters']
-
-                print("nnnnnnnnnnnnnn", metadata_item)
                 variable_name = metadata_item["name"]
                 if metadata_item["type"] != "id":
                     self.variables.append(variable_name)
                 if metadata_item["type"] == "categorical":
-                    # The 'metadata_item["levels"]' is list containing all possible levels, if 'self.model_dict' was empty an
-                    # init, i.e., no duplicate or load, then all level values are set to True. In the load/duplicate case, we
-                    # first find the particular dictionary in the self.model_dict['filters'] corresponding to the particular
-                    # variable that is now in the loop, and for all elements from this list we set the selection value to True,
-                    # for not present elements (in compare to list from metadata_item["levels"]) to False.
-                    # metadata_item["levels"]
-                    # selection_variable_dict = {}
-                    # if v in
-                    # for v in metadata_item["levels"]:
-                    # filter_identifier = {"type": "group", "action": "include", "variable": variable_name}
-                    # filt_dict = self.extract_from_existing_filters(filter_identifier)
                     filt_dict = next(
                         (
                             f
@@ -632,7 +559,6 @@ class LinearModel(ModelTemplate):
                         ),
                         None,
                     )
-                    print("filt_dictfilt_dictfilt_dictfilt_dict", filt_dict)
                     sub_panels.append(
                         Vertical(
                             Static(variable_name, classes="level_labels"),
@@ -663,9 +589,6 @@ class LinearModel(ModelTemplate):
                             "levels": [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))],
                         }
                         self.model_dict["filters"].append(filt_dict)
-                        # self.model_group_filters.append(filt_dict)
-            # update filters if needed
-            print("xxxxxxxxxxxxxxxxxx", self.model_dict["filters"])
 
             # Aggregation
             # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
@@ -680,7 +603,6 @@ class LinearModel(ModelTemplate):
                             for entity in ctx.get_available_images.keys()
                             if entity != "sub"
                         ],
-                        # classes="level_selection",
                         id="aggregate_selection_list",
                     ),
                     id="top_aggregate_panel",
@@ -758,9 +680,6 @@ class LinearModel(ModelTemplate):
                         )
                         for v in self.variables
                     ],
-                    # SelectionList[str](
-                    #     *[Selection(str(v), str(v), True) for v in self.variables], classes="model_variables_selection"
-                    # ),
                     id="top_model_variables_panel",
                     classes="components",
                 ),
@@ -776,7 +695,6 @@ class LinearModel(ModelTemplate):
                     ),
                     SelectionList[str](
                         *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
-                        # classes="level_selection",
                         id="interaction_variables_selection_panel",
                     ),
                     Static(
@@ -786,7 +704,6 @@ class LinearModel(ModelTemplate):
                     ),
                     SelectionList[str](
                         *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
-                        # classes="level_selection",
                         id="interaction_terms_selection_panel",
                     ),
                     id="top_interaction_panel",
@@ -832,25 +749,19 @@ class LinearModel(ModelTemplate):
 
     @on(SwitchWithSelect.SwitchChanged, ".additional_preprocessing_settings")
     def _on_switch_with_select_switch_changed(self, message):
-        # print("qqqqqqqqqqqqqqq", message.control.id, message.switch_value)
         contrast_item = {"type": "infer", "variable": [message.control.id[:-11]]}
         if message.switch_value is True:
             self.model_dict["contrasts"].append(contrast_item)
         elif contrast_item in self.model_dict["contrasts"]:
             self.model_dict["contrasts"].remove(contrast_item)
-        # print("cccccccccccccccc", ctx.cache)
 
     @on(SwitchWithSelect.Changed, ".additional_preprocessing_settings")
     def _on_switch_with_select_changed(self, message):
-        print("missingmissingmissingmissingmissingqqqqqqqqqqqqqqq", message.control.id, message.value)
-        print("1mmmmmmmmmmmmmmmmmmmmmmmmmmmmm", self.model_dict["filters"])
         filter_item = {"type": "missing", "action": "exclude", "variable": message.control.id[:-11]}
         if message.value == "listwise_deletion" and filter_item not in self.model_dict["filters"]:
             self.model_dict["filters"].append(filter_item)
         elif message.value == "mean_substitution" and filter_item in self.model_dict["filters"]:
             self.model_dict["filters"].remove(filter_item)
-        print("2mmmmmmmmmmmmmmmmmmmmmmmmmmmmm", self.model_dict["filters"])
-        print("cccccccccccccccc", ctx.cache)
 
     @on(SelectionList.SelectedChanged, ".level_selection")
     def _on_level_sub_panels_selection_list_changed(self, message):
@@ -878,15 +789,10 @@ class LinearModel(ModelTemplate):
         self.get_widget_by_id("interaction_terms_selection_panel").add_options(
             [Selection(key, term_by_str[key], False) for key in term_by_str.keys()]
         )
-        print("termstermstermstermstermsterms", term_by_str)
 
     @on(SelectionList.SelectedChanged, "#interaction_terms_selection_panel")
     def _on_interaction_terms_selection_list_changed(self, message):
-        print("qqqqqqqqqqq", message.control.id)
-        print("qqqqqqqqqqq", message.control.selected)
         # first remove all interaction terms
-        print("0vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", self.model_dict["contrasts"])
-
         self.model_dict["contrasts"] = list(
             filter(
                 lambda contrast_item: not (contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1),
@@ -903,16 +809,10 @@ class LinearModel(ModelTemplate):
     def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message):
         # We need to run this function also in case when the Task selection is changed because this influence also the models
         # that are aggregated and at the end which models are aggregated.
-        selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
         self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
 
         tasks_to_aggregate = self.get_widget_by_id("tasks_to_use_selection").selected
         entities_to_aggregate_over = self.get_widget_by_id("aggregate_selection_list").selected
-
-        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee selected_tasks", selected_tasks)
-        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee tasks_to_aggregate", tasks_to_aggregate)
-        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee entities_to_aggregate_over", entities_to_aggregate_over)
-        print("heeeeeeeeeeeeeeeeeereeeeeeeeeeee aggregate_order", aggregate_order)
 
         # Sort aggregate selection to ensure proper order
         entities_to_aggregate_over_sorted = sorted(entities_to_aggregate_over, key=lambda x: aggregate_order.index(x))
@@ -948,28 +848,11 @@ class LinearModel(ModelTemplate):
                         if aggregate_entity == entities_to_aggregate_over_sorted[-1]:
                             self.model_dict["inputs"].append(aggregate_label)
 
-                        # aggregate_label_list.append(aggregate_label)
-
-            # print("aggregate_label_listaggregate_label_listaggregate_label_list", aggregate_label_list)
-            # include
-
-        print("modelsmodelsmodelsmodelsmodelsmodels", models)
         dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
         ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}
-        print("tasks_to_aggregatetasks_to_aggregatetasks_to_aggregatetasks_to_aggregate", tasks_to_aggregate)
-        # ctx.cache[]
-        print(ctx.cache)
-
-        ##############################################################################################################
 
     @on(TextSwitch.Changed, "#contrast_switch")
     async def _on_contrast_switch_changed(self, message):
-        # metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
-        # spreadsheet_path = ctx.cache[spreadsheet_cache_id]["files"].path  # type: ignore
-        # self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
-        # self.is_new
-        # continue from here ...
-
         only_categorical_metadata = list(filter(lambda item: item["type"] == "categorical", self.metadata_variables))
         self.categorical_variables_list = [element["name"] for element in only_categorical_metadata]
 
@@ -982,7 +865,6 @@ class LinearModel(ModelTemplate):
                         self.model_dict["contrasts"],
                     )
                 )
-                print("categorical_contrast_itemscategorical_contrast_items", categorical_contrast_items)
                 contrast_table_widget = AdditionalContrastsCategoricalVariablesTable(
                     all_possible_conditions=categorical_metadata_item["levels"],
                     feature_contrasts_dict=categorical_contrast_items,
@@ -1000,8 +882,6 @@ class LinearModel(ModelTemplate):
 
     @on(AdditionalContrastsCategoricalVariablesTable.Changed)
     def _on_additional_contrasts_categorical_variables_table_changed(self, message):
-        print("AdditionalContrastsCategoricalVariablesTable mmmmmmmmmmmmmmmmmmmmmmmmmmm", message.value)
-
         # this will delete all previous contrasts type 't' of the particular contraste variable. This is done because
         # in the next line we fill it again based on what is actually in the table.
         self.model_dict["contrasts"] = [
@@ -1074,14 +954,10 @@ class AddSpreadsheetModal(DraggableModalScreen):
         self.title_bar.title = "Path to the spreadsheet"
         self.instructions = "Select or add path of the covariates/group data spreadsheet file"
         filepaths = ctx.database.get(datatype="spreadsheet")
-        # filepaths = ctx.get_spreadsheet_paths
         self.cache_name = "__spreadsheet_file_" + str(self.instance_count)
         self.instance_count += 1
         self.filedict: dict[str, str | list] = {}
         self.metadata: list[Dict[str, Any]] = []
-
-        print("fffffffffffffffffff", filepaths)
-        # self.options: dict = {f: (f, True if f == filepaths[-1] else False) for f in filepaths} if filepaths else {}
         self.last_selected = list(filepaths)[-1] if filepaths != set() else None
 
         # In some cases the user just must made some choice in the selection. In particular this is the case when one is
@@ -1107,8 +983,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
             )
         ]
 
-        # self.choice: str | list = self.options.keys()[0]
-
     async def on_mount(self) -> None:
         """Called when the window is mounted."""
         await self.content.mount(*self.widgets_to_mount)
@@ -1118,17 +992,11 @@ class AddSpreadsheetModal(DraggableModalScreen):
         if spreadsheet_path != "" and isinstance(spreadsheet_path, str):
             self.get_widget_by_id("spreadsheet_path_label").update(spreadsheet_path)
             self.spreadsheet_df = read_spreadsheet(spreadsheet_path)
-            print("file_name")
             self.filedict = {"datatype": "spreadsheet", "path": spreadsheet_path}
-
-            # ctx.cache[self.cache_name]["files"] = {"datatype": "spreadsheet", "path": spreadsheet_path, "metadata": []}
 
             for i, col_label in enumerate(self.spreadsheet_df.columns):
                 type = "id" if i == 0 else "continuous"
-                # ctx.cache[self.cache_name]["files"]["metadata"].append({"name": col_label, "type": type})
-                # self.filedict["metadata"].append({"name": col_label, "type": type})
                 self.metadata.append({"name": col_label, "type": type})
-            print("ccccccccccccccccccccc", ctx.cache)
 
             await self.mount(
                 Container(
@@ -1159,8 +1027,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
         levels = [str(i) for i in levels]
 
         # Filter out existing metadata for the column
-        # metadata = ctx.cache[self.cache_name]["files"]["metadata"]
-        # metadata = self.metadata
         self.metadata = [item for item in self.metadata if item.get("name") != col_label]
 
         # Determine the metadata type based on the column
@@ -1175,8 +1041,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
 
         # Append the updated metadata entry
         self.metadata.append(metadata_entry)
-        # ctx.cache[self.cache_name]["files"]["metadata"] = metadata
-        # self.filedict["metadata"] = metadata
 
     @on(Button.Pressed, "#browse")
     async def _on_add_button_pressed(self):
@@ -1189,7 +1053,6 @@ class AddSpreadsheetModal(DraggableModalScreen):
     def _on_ok_button_pressed(self):
         # create new file item
         # dismiss some identification of it
-        print("cccccccccccccccc", ctx.cache)
         fileobj = SpreadsheetFileSchema().load(self.filedict)
         if not hasattr(fileobj, "metadata") or fileobj.metadata is None:
             fileobj.metadata = dict()
@@ -1197,19 +1060,11 @@ class AddSpreadsheetModal(DraggableModalScreen):
         if fileobj.metadata.get("variables") is None:
             fileobj.metadata["variables"] = []
 
-        print("sdaaaaaaaself.metadataself.metadataself.metadata", self.metadata)
         for vardict in self.metadata:
             fileobj.metadata["variables"].append(VariableSchema().load(vardict))
 
         ctx.cache[self.cache_name]["files"] = fileobj
-
-        # self.dismiss((self.cache_name, ctx.cache[self.cache_name]["files"]["path"]))
         self.dismiss((self.cache_name, self.filedict["path"]))
-        # selected = self.get_widget_by_id("selection_set").selected
-        # if selected != []:
-        #     self.dismiss(selected[0])
-        # else:
-        #     self.dismiss(False)
 
     @on(Button.Pressed, "#cancel")
     def _on_cancel_button_pressed(self):
@@ -1217,10 +1072,3 @@ class AddSpreadsheetModal(DraggableModalScreen):
 
     def request_close(self):
         self.dismiss(False)
-
-    #
-    # @on(SelectionList.SelectionToggled, "#selection_set")
-    # def _on_selection_set_toggled(self, message):
-    #     selected_value = message.selection
-    #     message.control.deselect(self.last_selected)
-    #     self.last_selected = selected_value

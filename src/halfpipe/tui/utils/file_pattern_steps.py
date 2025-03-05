@@ -152,7 +152,6 @@ class FilePatternStep:
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         if self.next_step_type is not None:
-            print("---------------------------- going to the next_step_type", self.next_step_type)
             self.next_step_instance = self.next_step_type(
                 app=self.app,
                 callback=self.callback,

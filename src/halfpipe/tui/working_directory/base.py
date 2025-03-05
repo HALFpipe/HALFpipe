@@ -254,17 +254,13 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="feature_worker")
     async def mount_features(self):
-        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
         feature_widget = self.feature_widget
 
         setting_feature_map = {}
         if self.existing_spec is not None:
             for feature in self.existing_spec.features:
                 ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
-                # if feature.type != 'falff':
                 setting_feature_map[feature.__dict__["setting"]] = feature.name
-                # else:
-                #     setting_feature_map[feature.__dict__["unfiltered_setting"]] = feature.name
 
             for setting in self.existing_spec.settings:
                 # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
@@ -281,8 +277,6 @@ spec.json file it is possible to load the therein configuration.",
                     ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
 
                 if setting["name"] in setting_feature_map:
-                    # settings = ctx.cache.get(setting_feature_map[setting["name"]], {}).get("settings", {})
-                    # feature = ctx.cache.get(setting_feature_map[setting["name"]], {}).get("features", {})
                     cache_entry: dict = ctx.cache.get(setting_feature_map[setting["name"]], {})
                     if isinstance(cache_entry, dict):
                         settings = cache_entry.get("settings", {})
@@ -297,7 +291,6 @@ spec.json file it is possible to load the therein configuration.",
                         settings.setdefault("smoothing", {"fwhm": None})
 
                     settings.setdefault("grand_mean_scaling", {"mean": None})
-                    print("ssssssssssssssssssssssssssssssssssssssssss settings", settings)
                     settings.setdefault("bandpass_filter", {"type": None})
 
             # Then create the widgets
@@ -322,7 +315,6 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="file_panels_worker")
     async def mount_file_panels(self):
-        # feature_widget = self.app.get_widget_by_id("feature_selection_content")
         feature_widget = self.feature_widget
 
         for file_object in self.event_file_objects:

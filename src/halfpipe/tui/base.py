@@ -284,6 +284,3 @@ class MainApp(App):
         # set global settings to defaults use the defaults dictionary at preprocessing_content widget
         for key in self.get_widget_by_id("preprocessing_content").default_settings:
             ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
-
-    def action_ctx(self):
-        print("cccccccccccc", ctx.cache)

@@ -118,7 +118,6 @@ class RunCLX(Widget):
         ctx.spec.settings.clear()
         ctx.spec.models.clear()
         ctx.spec.files.clear()
-        print("ccccccccccccccccccccccccccccc cache", ctx.cache)
         # iterate now over the whole cache and fill the context object
         # the "name" is widget name carying the particular user choices, either a feature or file pattern
         for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
@@ -146,23 +145,15 @@ class RunCLX(Widget):
                 featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
                 ctx.spec.features.append(featureobj)
                 for key, value in ctx.cache[name]["features"].items():
-                    # try:
-                    print("keeeeeeeeeeeeeeeeeeeeeeeeeeeeeey features", key, value)
                     # for reho and falff smoothing is in features
                     if key == "smoothing" and value.get("fwhm") is None:
                         continue
                     setattr(ctx.spec.features[-1], key, value)
 
-                    # except Exception:
-                    #     exc_type, exc_value, exc_traceback = sys.exc_info()
-                    #     print(f"An exception occurred: {exc_value}")
-                    #     traceback.print_exception(exc_type, exc_value, exc_traceback)
             if ctx.cache[name]["settings"] != {}:
                 ctx.spec.settings.append(SettingSchema().load({}, partial=True))
                 for key, value in ctx.cache[name]["settings"].items():
-                    # try:
                     # Skip keys based on specific conditions
-                    print("keeeeeeeeeeeeeeeeeeeeeeeeeeeeeey", key, value)
                     if (
                         (key == "bandpass_filter" and value.get("type") is None)
                         or (key == "smoothing" and value.get("fwhm") is None)
@@ -198,27 +189,9 @@ class RunCLX(Widget):
                             # Variable 'value' is sent to the spec file, so we override it with the modified filter list based
                             # on what passed the above 'if' conditions.
                             value = filter_list_for_spec_file
-                            # old
-                        # filters = value
-                        # task_images = ctx.get_available_images["task"]
-                        #
-                        # # Check if filters is empty, matches task images, or contains an empty 'values' list in
-                        # # any dictionary
-                        # if (
-                        #     not filters  # Filters is empty
-                        #     or set(filters[0].get("values", [])) == set(task_images)  # Matches task images
-                        #     or any(
-                        #         isinstance(item, dict) and not item.get("values")  # Dict with empty "values"
-                        #         for item in filters
-                        #     )
-                        # ):
-                        #     value = []  # Overwrite filters value with an empty list
 
                     # Apply the value to the settings object
                     setattr(ctx.spec.settings[-1], key, value)
-                # except Exception as e:
-                #     print(f"An exception occurred: {e}")
-                #     traceback.print_exc()
 
                 # this is for the case of falff
                 if "unfiltered_setting" in ctx.cache[name]:
@@ -243,7 +216,6 @@ class RunCLX(Widget):
                     models_list = [ctx.cache[name]["models"]]  # Ensure it's iterable
 
                 for model in models_list:
-                    print("modelmodelmodelmodelmodelmodel", model)
                     modelobj = Model(
                         name=model["name"],
                         type=model["type"],

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# ok to review
 
 import copy
 
@@ -35,16 +34,6 @@ ITEM_MAP = {
     "reho": "ReHo",
     "falff": "fALFF",
     "preprocessed_image": "Output preprocessed image",
-}
-
-FEATURES_MAP_colors = {
-    "task_based": "crimson",
-    "seed_based_connectivity": "silver",
-    "dual_regression": "ansi_bright_cyan",
-    "atlas_based_connectivity": "blueviolet",
-    "reho": "slategray",
-    "falff": "magenta",
-    "preprocessed_image": "white",
 }
 
 
@@ -182,7 +171,6 @@ class FeatureSelectionScreen(DraggableModalScreen):
     CSS_PATH = "tcss/feature_selection_screen.tcss"
 
     def __init__(self, occupied_feature_names) -> None:
-        #    self.top_parent = top_parent
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
         # Temporary workaround because some bug in Textual between versions 0.70 and 0.75.
@@ -203,11 +191,6 @@ class FeatureSelectionScreen(DraggableModalScreen):
             Separator(),
             id="options",
         )
-        # self.option_list = OptionList(id="options")
-        # for f in ITEM_MAP:
-        #     # option_list = self.get_widget_by_id("options")
-        #     self.option_list.add_option(Option(ITEM_MAP[f], id=f))
-        #     self.option_list.add_option(Separator())
 
         self.title_bar.title = "Choose first level feature"
 
@@ -250,7 +233,6 @@ class SelectionTemplate(Widget):
     ITEM_MAP = ITEM_MAP
     BINDINGS = [("a", "add_item", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
-    # content_type = ''
     ITEM_KEY: None | str = None  # To be defined in child classes
     SETTING_KEY: None | str = None  # Optional, only used in some child classes
 
@@ -259,10 +241,7 @@ class SelectionTemplate(Widget):
         The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
         """
         super().__init__(disabled=disabled, **kwargs)
-        # self.top_parent = app
-        #   self.ctx = ctx
-        # self.available_images = available_images
-        #    ctx.cache = user_selections_dict
+
         self._id_counter = 0
         self.feature_items: dict = {}
 
@@ -273,7 +252,7 @@ class SelectionTemplate(Widget):
                 Button("Rename", variant="primary", classes="rename_button"),
                 Button("Duplicate", variant="primary", classes="duplicate_button"),
                 Button("Delete", variant="primary", classes="delete_button"),
-                Button("Sort", variant="primary", classes="sort_button"),
+                # Button("Sort", variant="primary", classes="sort_button"),
                 classes="buttons",
             ),
             *[
@@ -282,7 +261,6 @@ class SelectionTemplate(Widget):
             ],
             id="sidebar",
         )
-        #  yield EventFilePanel()
         yield ContentSwitcher(id="content_switcher")
 
     @on(Button.Pressed, "#sidebar .add_button")
@@ -325,22 +303,6 @@ class SelectionTemplate(Widget):
         """Unmount the feature and delete its entry from dictionaries, including aggregate models."""
         self.app.push_screen(Confirm(), lambda respond: self._delete_item(respond, check_aggregate=False))
 
-    # def action_delete_item(self) -> None:
-    #     """Unmount the feature and delete its entry from dictionaries."""
-    #
-    #     def confirmation(respond: bool):
-    #         if respond:
-    #             current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
-    #             current_collabsible_item_id = current_content_switcher_item_id+'_flabel'
-    #             name = self.feature_items[current_content_switcher_item_id].name
-    #             self.get_widget_by_id(current_content_switcher_item_id).remove()
-    #             self.get_widget_by_id(current_collabsible_item_id).remove()
-    #             self.feature_items.pop(current_content_switcher_item_id)
-    #             ctx.cache.pop(name)
-    #             self.get_widget_by_id("content_switcher").current = None
-    #
-    #     self.app.push_screen(Confirm(), confirmation)
-
     def action_sort_features(self):
         """Sorting alphabetically and by feature type."""
 
@@ -368,13 +330,6 @@ class SelectionTemplate(Widget):
             collapsible_item_new_id = content_switcher_item_new_id + "_flabel"
 
             self.feature_items[content_switcher_item_new_id] = FeatureItem(item_type, item_name)
-
-            # the pseudo class here is to set a particular text color in the left panel
-            # new_list_item = ListItem(
-            #     Label(item_name, id=new_id, classes="labels " + item_type),
-            #     id=new_id,
-            #     classes="items",
-            # )
 
             new_content_item = self.fill_cache_and_create_new_content_item(new_item)
             # Deselect previous FocusLabel if exists
@@ -516,16 +471,13 @@ class FeatureSelection(SelectionTemplate):
         this copy.
     """
 
-    # content_type = 'feature'
     ITEM_KEY = "features"
     SETTING_KEY = "settings"
 
     def on_focus_label_selected(self, message: FocusLabel.Selected) -> None:
-        # def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Changes border title color according to the feature type."""
 
         # Update content switcher with the newly selected id.
-        # current_id = event.item.id
         # list ids have suffix _flabel, so to match the widget in the content switcher we need to remove this suffix
         content_switcher_item_new_id = message.control.id[:-7]
         current_feature = self.feature_items[content_switcher_item_new_id]
@@ -541,50 +493,12 @@ class FeatureSelection(SelectionTemplate):
         self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
             self.ITEM_MAP[current_feature.type], current_feature.name
         )
-        self.get_widget_by_id("content_switcher").styles.border_title_color = FEATURES_MAP_colors[current_feature.type]
+        self.get_widget_by_id("content_switcher").styles.border_title_color = "white"
 
     def on_mount(self) -> None:
         self.get_widget_by_id("content_switcher").border_title = "First-level features"
 
-    # @on(Button.Pressed, "#sidebar .rename_button")
-    # async def action_rename_item(self) -> None:
-    #     """Pops up a screen to set the new feature name. Afterwards the dictionary entry is also renamed."""
-    #
-    #     def rename_item(new_item_name: str) -> None:
-    #         if new_item_name is not None:
-    #             content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
-    #             collapsible_item_current_id = content_switcher_item_current_id + '_flabel'
-    #
-    #             old_feature_name = self.feature_items[content_switcher_item_current_id].name
-    #
-    #             self.feature_items[content_switcher_item_current_id].name = new_item_name
-    #             # self.query_one("#" + currently_selected_id + " .labels").update(new_item_name)
-    #             self.get_widget_by_id(collapsible_item_current_id).update(new_item_name)
-    #             # self.get_widget_by_id(currently_selected_id).select()
-    #
-    #
-    #             self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-    #                 self.ITEM_MAP[self.feature_items[content_switcher_item_current_id].type],
-    #                 new_item_name,
-    #             )
-    #             ctx.cache[new_item_name] = ctx.cache.pop(old_feature_name)
-    #             ctx.cache[new_item_name]["features"]["name"] = new_item_name
-    #             ctx.cache[new_item_name]["features"]["setting"] = new_item_name + "Setting"
-    #             ctx.cache[new_item_name]["settings"]["name"] = new_item_name + "Setting"
-    #
-    #     occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
-    #     await self.app.push_screen(
-    #         FeatureNameInput(occupied_feature_names),
-    #         action_rename_item,
-    #     )
-
     def action_add_item(self) -> None:
-        # Try here first the event files
-        # setting_filter_step_instance = SettingFilterStep()
-        # setting_filter_step_instance.run()
-        #  events_type_instance = EventsTypeStep()
-        #  events_type_instance.run()
-
         """Pops out the feature type selection windows and then uses add_new_item function to mount a new feature
         widget."""
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
@@ -598,28 +512,24 @@ class FeatureSelection(SelectionTemplate):
         content_switcher_item_new_id = p.singular_noun(self.ITEM_KEY) + "_item_" + str(self._id_counter)
 
         if item_name not in ctx.cache:
-            if item_type != "preprocessed_image":
+            if item_type == "preprocessed_image":
+                ctx.cache[item_name]["settings"]["name"] = item_name
+                ctx.cache[item_name]["settings"]["output_image"] = True
+            else:
                 ctx.cache[item_name]["features"]["name"] = item_name
                 ctx.cache[item_name]["features"]["setting"] = item_name + "Setting"
                 ctx.cache[item_name]["settings"]["name"] = item_name + "Setting"
-            else:
-                ctx.cache[item_name]["settings"]["name"] = item_name + "UnfilteredSetting"
-                ctx.cache[item_name]["settings"]["output_image"] = True
-        item_type_class: type
-        if item_type == "task_based":
-            item_type_class = TaskBased
-        elif item_type == "seed_based_connectivity":
-            item_type_class = SeedBased
-        elif item_type == "dual_regression":
-            item_type_class = DualReg
-        elif item_type == "atlas_based_connectivity":
-            item_type_class = AtlasBased
-        elif item_type == "preprocessed_image":
-            item_type_class = PreprocessedOutputOptions
-        elif item_type == "reho":
-            item_type_class = ReHo
-        elif item_type == "falff":
-            item_type_class = Falff
+
+        item_type_class: type = {
+            "task_based": TaskBased,
+            "seed_based_connectivity": SeedBased,
+            "dual_regression": DualReg,
+            "atlas_based_connectivity": AtlasBased,
+            "preprocessed_image": PreprocessedOutputOptions,
+            "reho": ReHo,
+            "falff": Falff,
+        }.get(item_type)
+
         if item_type_class is not None:
             new_content_item = item_type_class(
                 this_user_selection_dict=ctx.cache[item_name],
@@ -629,16 +539,3 @@ class FeatureSelection(SelectionTemplate):
         else:
             new_content_item = Placeholder(str(self._id_counter), id=content_switcher_item_new_id, classes=item_type)
         return new_content_item
-
-    # async def action_duplicate_feature(self):
-    #     """Duplicating feature by a deep copy of the dictionary entry and then mounting a new widget while
-    #     loading defaults from this copy.
-    #     """
-    #     current_id = self.get_widget_by_id("content_switcher").current
-    #     item_name = self.feature_items[current_id].name
-    #     item_name_copy = item_name + "Copy"
-    #     ctx.cache[item_name_copy] = copy.deepcopy(ctx.cache[item_name])
-    #     ctx.cache[item_name_copy]["features"]["name"] = item_name_copy
-    #     ctx.cache[item_name_copy]["features"]["setting"] = item_name_copy + "Setting"
-    #     ctx.cache[item_name_copy]["settings"]["name"] = item_name_copy + "Setting"
-    #     await self.add_new_item((ctx.cache[item_name_copy]["features"]["type"], item_name_copy))

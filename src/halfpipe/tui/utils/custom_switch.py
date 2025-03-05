@@ -6,7 +6,6 @@ from rich.color import Color
 from rich.console import RenderableType
 from rich.segment import Segment, Segments
 from rich.style import Style
-from textual.containers import Vertical
 from textual.scrollbar import ScrollBarRender
 from textual.widget import Widget
 from textual.widgets._switch import Switch  # Make sure this import path is correct based on your project structure
@@ -208,17 +207,3 @@ class TextSwitch(Switch):
         else:
             self._slider_position = target_slider_pos
         self.post_message(self.Changed(self, self.value))
-
-
-# Example usage
-if __name__ == "__main__":
-    from textual.app import App
-
-    class MyApp(App):
-        CSS_PATH = ["tcss/custom_switch.tcss"]
-
-        def compose(self):
-            yield Vertical(TextSwitch(value=False), Switch(value=False))
-
-    app = MyApp()
-    app.run()
