@@ -113,39 +113,11 @@ class FeatureTemplate(Widget):
         if self.setting_dict["bandpass_filter"]["type"] is None:
             self.bandpass_filter_default_switch_value = False
 
-        # self.smoothing_default_switch_value = True
-        # if "smoothing" not in self.setting_dict:
-        #     self.setting_dict["smoothing"] = {"fwhm": 0}
-        # else:
-        #     if self.setting_dict["smoothing"]["fwhm"] == None:
-        #         self.smoothing_default_switch_value = False
-
         smoothing_default_switch_value = True
         self.feature_dict.setdefault("smoothing", {"fwhm": "6"})
         default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
         if self.feature_dict["smoothing"]["fwhm"] is None:
             smoothing_default_switch_value = False
-
-        # if self.type == "reho" or self.type == "falff":
-        #     self.feature_dict.setdefault("smoothing", {"fwhm": '6'})
-        #     default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
-        #     if self.feature_dict["smoothing"]["fwhm"] is None:
-        #         smoothing_default_switch_value = False
-        # else:
-        #     self.setting_dict.setdefault("smoothing", {"fwhm": '6'})
-        #     default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
-        #     if self.setting_dict["smoothing"]["fwhm"] is None:
-        #         smoothing_default_switch_value = False
-
-        # if "filters" not in self.setting_dict:
-        #     self.setting_dict["filters"] = [{"type": "tag", "action": "include", "entity": "task", "values": []}]
-
-        # self.grand_mean_scaling_default_switch_value = True
-        # if "grand_mean_scaling" not in self.setting_dict:
-        #     self.setting_dict["grand_mean_scaling"] = {"mean": 10000.0}
-        # else:
-        #     if self.setting_dict["grand_mean_scaling"]["mean"] == None:
-        #         self.grand_mean_scaling_default_switch_value = False
 
         self.grand_mean_scaling_default_switch_value = True
         self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000.0})
@@ -199,6 +171,7 @@ class FeatureTemplate(Widget):
             "(trans|rot)_[xyz]_derivative1": ["Derivatives of motion parameters", False],
             "(trans|rot)_[xyz]_power2": ["Motion parameters squared", False],
             "(trans|rot)_[xyz]_derivative1_power2": ["Derivatives of motion parameters squared", False],
+            "motion_outlier[0-9]+": ["Motion scrubbing", False],
             "a_comp_cor_0[0-4]": ["aCompCor (top five components)", False],
             "white_matter": ["White matter signal", False],
             "csf": ["CSF signal", False],
