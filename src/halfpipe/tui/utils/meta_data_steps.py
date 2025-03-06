@@ -59,7 +59,6 @@ def _get_unit(schema, key):
         return field.metadata.get("unit")
 
 
-# TODO ASAP
 class SliceTimingFileStep:
     key = "slice_timing"
 
@@ -67,7 +66,6 @@ class SliceTimingFileStep:
         return self.message
 
     def __init__(self, app, filters, schema, suggestion, appendstr=""):
-        #   super(SliceTimingFileStep, self).__init__(app)
         self.app = app
         self.schema = schema
         self.field = _get_field(self.schema, self.key)
@@ -78,11 +76,10 @@ class SliceTimingFileStep:
 
         self.filters = filters
 
-        #  self.next_step_type = next_step_type
         self._append_view = []
         self.input_view: list = []
 
-        # def setup(self, ctx):
+        # SETUP
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -106,15 +103,7 @@ class SliceTimingFileStep:
 
         self._append_view.append(header_str)
 
-        # self.input_view = FileInputView(messagefun=self._messagefun)
-        # self.input_view.append(messagefun=self._messagefun)
-
-        # self._append_view.append(self.input_view)
-        # self._append_view.append(SpacerView(1))
-
-        # def run(self, ctx):
-        # error_color = self.app.layout.color.red
-
+        # RUN
         while True:
             self.result = self.input_view[0]
 
@@ -171,8 +160,6 @@ class SliceTimingFileStep:
                     specfileobj.metadata = dict()
                 specfileobj.metadata["slice_timing_file"] = filepath
 
-    #   return self.next_step_type(self.app)(ctx)
-
 
 class SetMetadataStep:
     def __init__(
@@ -189,8 +176,6 @@ class SetMetadataStep:
         id_key="",
         sub_id_key=None,
     ):
-        # super(SetMetadataStep, self).__init__(app)
-
         self.schema = schema
         self.key = key
         self.field = _get_field(self.schema, self.key)
@@ -212,7 +197,7 @@ class SetMetadataStep:
             self.callback_message.update({self.humankey: []})
 
     async def run(self):
-        #  def setup(self, _):
+        # SETUP
         unit = _get_unit(self.schema, self.key)
         field = self.field
 
@@ -256,9 +241,7 @@ class SetMetadataStep:
             self.aliases = dict(zip(display_choices, choices, strict=False))
             self.possible_options = dict(zip(choices, display_choices, strict=False))
 
-            #    self.input_view: CallableView = SingleChoiceInputView(display_choices, is_vertical=True)
             self.input_view += display_choices
-            # mount selection choice, display_choices
 
             choice = await self.app.push_screen_wait(
                 SelectionModal(
@@ -286,17 +269,7 @@ class SetMetadataStep:
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
-    #        self._append_view = self._append_view + self.input_view
-    # self._append_view(SpacerView(1))
-
-    # def run(self, _):
-    # self.result = self.input_view
-    # if self.result is None:
-    # return False
-    # return True
-
     async def next(self, result):
-        print("rrrrrrrrrrrrrrrrrrrrrrrrrrresult", result)
         if result is not False:
             if self.possible_options is not None:
                 self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
@@ -319,7 +292,6 @@ class SetMetadataStep:
                         self.filters,
                         self.schema,
                         self.suggestion,
-                        #                 self.next_step_type,
                         appendstr=self.appendstr,
                     )
                 else:  # a code was specified
@@ -337,13 +309,9 @@ class SetMetadataStep:
             for specfileobj in specfileobjs:
                 if not hasattr(specfileobj, "metadata"):
                     specfileobj.metadata = dict()
-                #  if "metadata" not in ctx.cache[self.id_key]["files"][self.sub_id_key]:
-                #      ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"] = dict()
                 specfileobj.metadata[key] = value
-                #  ctx.cache[self.id_key]["files"][self.sub_id_key]["metadata"][key] = value
 
             # update all fileobjs in the ctx.cache, we use the filters to filter only those to which this applies
-
             for widget_id, the_dict in ctx.cache.items():
                 # should always be there
                 if "files" in the_dict:
@@ -360,9 +328,6 @@ class SetMetadataStep:
                                 ctx.cache[widget_id]["files"].metadata = dict()
                             ctx.cache[widget_id]["files"].metadata[key] = value
 
-                # ctx.cache[self.id_key]["files"] = specfileobj  # type: ignore[assignment]
-        #     self.callback_message += self._append_view
-
         if self.next_step_type is not None:
             self.next_step_instance = self.next_step_type(
                 app=self.app,
@@ -372,7 +337,6 @@ class SetMetadataStep:
                 sub_id_key=self.sub_id_key,
             )
             await self.next_step_instance.run()
-            # self.next_step_type(app=self.app)
         else:
             if self.callback is not None:
                 return self.callback(self.callback_message)
@@ -396,8 +360,7 @@ class CheckMetadataStep:
         return False
 
     def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
-        # def setup(self, ctx):
-
+        # SETUP
         self.app = app
         self.callback = callback
         self.humankey = display_str(self.key)
@@ -416,8 +379,6 @@ class CheckMetadataStep:
         if self.should_skip:
             self.is_missing = True
             return
-
-    #   self.next_step_type = next_step_type
 
     def evaluate(self):
         if self.filters is None:
@@ -458,7 +419,6 @@ class CheckMetadataStep:
         else:
             self.is_missing = False
             self._append_view.append(f"Check {self.humankey} values{self.appendstr}\n")
-        #  self.evaluated_object = f"{self.humankey} values{self.appendstr}"
 
         assert isinstance(vals, list)
 
@@ -534,10 +494,6 @@ class CheckMetadataStep:
             await self.next(choice)
 
     async def next(self, choice):
-        # if self.is_first_run or not self.is_missing:
-        # self.is_first_run = False
-        # choice = 'No'
-
         if choice is True and self.next_step_type is not None:
             next_step_instance = self.next_step_type(
                 app=self.app,
@@ -547,12 +503,7 @@ class CheckMetadataStep:
                 sub_id_key=self.sub_id_key,
             )
             await next_step_instance.run()
-        # pass
-        # this is not correct, should try to trigger next step maybe...........................................
-        #  if self.next_step_type is not None:
-        #  self.next_step_type(app=self.app)
-        # assert self.next_step_type is not None
-        # return self.next_step_type(self.app)(ctx)
+
         elif choice is True and self.next_step_type is None:
             return self.callback(self.callback_message)
         elif choice is False:
@@ -672,11 +623,6 @@ class AcqToTaskMappingStep:
         )
         self.boldtags = boldtags
 
-        # for f in fmapfilepaths:
-        #     for k, v in ctx.database.tags(f).items():
-        #         #     if k not in ["sub"] and k in entities and v is not None:
-        #         print("kkkkkkkkkkkvvvvvvvvvvvvvvvffffffffffff", k, v, f)
-
         if len(fmaptags) > 0:
 
             def _format_tags(tagset, break_lines=False):
@@ -707,9 +653,6 @@ class AcqToTaskMappingStep:
 
             self.input_view.append(([*self.options], [*self.values], selected_indices))
 
-            # for option, boldtagset in zip(self.options, self.boldtags, strict=False):
-            #     print("option:::", option, "       boldtagset:::", boldtagset)
-
         else:
             self.is_predefined = True
 
@@ -724,29 +667,8 @@ class AcqToTaskMappingStep:
                 MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options), self.next
             )
 
-    #            self.result = self.input_view
-    #  if self.result is None:
-    #      return False
-    #    return True
-
     def next(self, results):
         if results is not None:
-            # fmaptags = [frozenset({('task', 'test1')}), frozenset({('task', 'rest_bold')}), frozenset({('task', 'test2')}),
-            #   frozenset({('task', 'test3-1')}), frozenset({('task', 'test3-2')})]
-            # values= ['Field map task "test1"', 'Field map task "rest_bold"', 'Field map task "test2"',
-            #   'Field map task "test3-1"', 'Field map task "test3-2"']
-            # options = ['Task "rest_bold"', 'Task "blabla_bold"']
-            # {boldtags[1]: fmaptags[values.index('Field map task "test2"')]}
-            # {frozenset({('task', 'blabla_bold')}): frozenset({('task', 'test2')})}
-            # For the option from the options list the result will output some of the value from the values list which will
-            # then give the index in the values list which is then used to select the right object from the fmaptags
-            # self.result[option] is some value from the value list
-
-            # bold_fmap_tag_dict = {
-            # boldtagset: self.fmaptags[self.values.index(result[option])]
-            # for option, boldtagset in zip(self.options, self.boldtags, strict=False)
-            # }
-            #   self.callback_message["AcqToTaskMapping"] = {option: results[option] for i, option in enumerate(self.options)}
             self.callback_message["AcqToTaskMapping"] = [
                 f"{key} >===< {self.values[results[key]]}".replace("\n", "") + "\n" for key in results
             ]
@@ -762,8 +684,6 @@ class AcqToTaskMappingStep:
                     fmap_bold_tag_dict[fmaptagset] = boldtagset
                 else:
                     fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
-
-            #                 ctx.cache[self.id_key]["files"] = specfileobj
 
             for specfileobj in ctx.spec.files:
                 if specfileobj.datatype != "fmap":
@@ -809,16 +729,10 @@ class AcqToTaskMappingStep:
                     if ctx.cache[name]["files"] != {}:
                         if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
                             ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
-
-        # if self.is_first_run or not self.is_predefined:
-        #    self.is_first_run = False
-        # return CheckBoldEffectiveEchoSpacingStep(self.app)
         next_step_instance = CheckBoldEffectiveEchoSpacingStep(
             app=self.app,
             callback=self.callback,
             callback_message=self.callback_message,
-            # id_key=self.id_key,
-            #  sub_id_key=self.sub_id_key,
         )
         next_step_instance.run()
 
@@ -843,12 +757,6 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
     filters = {"datatype": "func", "suffix": "bold"}
 
     next_step_type = CheckBoldSliceTimingStep
-
-    # def _should_skip(self, ctx):
-    #     if self.key in ctx.already_checked:
-    #         return True
-    #     ctx.already_checked.add(self.key)
-    #     return False
 
 
 class CheckSpaceStep(CheckMetadataStep):

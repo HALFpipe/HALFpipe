@@ -1,4 +1,4 @@
-GroupLevelModelSelectionScreen {
+GroupLevelSelectionModal {
     #draggable_modal_screen_container_wrapper {
         width: 50;
         height: 15;

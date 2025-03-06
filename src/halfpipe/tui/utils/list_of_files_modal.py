@@ -37,7 +37,6 @@ class ListOfFiles(DraggableModalScreen):
     def on_mount(self) -> None:
         self.content.mount(
             Static(self.pattern_match_results["message"], id="message"),
-            # ScrollableContainer(Static('\n'.join(self.pattern_match_results["files"])))),
             ScrollableContainer(Static("\n".join(sorted(self.pattern_match_results["files"])), id="file_list")),
             Horizontal(Button("Close", id="close_button"), id="close_button_container"),
         )

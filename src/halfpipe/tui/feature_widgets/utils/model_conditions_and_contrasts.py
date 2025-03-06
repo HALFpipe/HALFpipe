@@ -10,8 +10,8 @@ from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Label, SelectionList
 from textual.widgets.selection_list import Selection
 
-from ..utils.confirm_screen import Confirm
-from ..utils.draggable_modal_screen import DraggableModalScreen
+from ...utils.confirm_screen import Confirm
+from ...utils.draggable_modal_screen import DraggableModalScreen
 
 cursors = cycle(["column", "row", "cell"])
 

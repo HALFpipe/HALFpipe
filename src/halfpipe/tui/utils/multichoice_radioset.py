@@ -114,7 +114,6 @@ class MultipleRadioSet(Widget):
             split_label[index_longest_line] = "  " + split_label[index_longest_line] + "  "
             self.horizontal_label_set[i] = "\n".join(split_label)
 
-        # with  ScrollableContainer(id='top_container'):
         with Horizontal(id="h_label_container"):
             for h_label in [" " + " " * (vmax_length + 2)] + self.horizontal_label_set:
                 this_label = Label(h_label, classes="h_labels")
@@ -126,19 +125,9 @@ class MultipleRadioSet(Widget):
                 yield Label(v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
                 with RadioSet(id="row_radio_sets_" + str(i)):
                     for j, _ in enumerate(self.horizontal_label_set):
-                        # if self.unique_first_column is True and j == 0:
-                        #     yield RadioButton(id="radio_column_" + str(j), value=True)
-                        # else:
-                        #     yield RadioButton(id="radio_column_" + str(j), value=(j + 1 - self.default_value_column))
-                        # yield RadioButton(id="radio_column_" + str(j), classes="radio_column_" + str(j), value=(j + 1 -
-                        # self.default_value_column))
                         is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
                         value = 1 if is_first_column else (j + 1 - self.default_value_column)
-                        print("v_labelv_labelv_label", v_label)
-                        print("vvvvvvvvvvvvvvvvvv value", value)
-                        print("jjjjjjjjjjjjjjjjj", j)
-                        print("ooooooooooooooooooo", is_first_column)
-                        print("--------------------------------------")
+
                         yield RadioButton(id=f"radio_column_{j}", value=value)
 
     def on_mount(self):
@@ -152,8 +141,6 @@ class MultipleRadioSet(Widget):
     def get_selections(self):
         selections = {}
         for i, v_val in enumerate(self.vertical_label_set):
-            # for this_radio_set in self.query("#row_radio_sets_" + str(i)):
-            # selections[v_val] = this_radio_set._selected
             selections[v_val] = [v.value for v in self.get_widget_by_id("row_radio_sets_" + str(i)).query(RadioButton)]
         return selections
 
@@ -171,9 +158,6 @@ class MultipleRadioSet(Widget):
                 column_id = f"radio_column_{i}"
                 widget.get_widget_by_id(column_id).value = i == active_column
 
-        print("mnmmmmmmmmmmmmmmmmmmm", message.control.id)
-        print("vvvvvvvvvvvvvvvvvvvvvvvv", message.index)
-        print("seeeee", self.get_selections())
         should_post_message = True  # Flag to control whether the message should be posted
 
         if message.index == 0 and message.control.id != self.last_unique_selection and self.unique_first_column is True:
@@ -195,7 +179,6 @@ class MultipleRadioSet(Widget):
                     "Specify exactly one variables for the first column",
                     left_button_text=False,
                     right_button_text="OK",
-                    #  left_button_variant=None,
                     right_button_variant="default",
                     title="Missing images",
                     id="missing_images_modal",
@@ -208,8 +191,6 @@ class MultipleRadioSet(Widget):
 
         if should_post_message:
             self.post_message(self.Changed(self, message.control.id, message.index))
-
-    # def impose_column_uniqueness(self):
 
 
 class MultipleRadioSetModal(DraggableModalScreen):

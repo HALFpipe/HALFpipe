@@ -267,14 +267,7 @@ class SegmentHighlighting(Input):
         Binding("shift+right", "cursor_right_highlight", "cursor_highlight", show=False),
     ]
 
-    # def highlighting(self, text, current_highlights):
-    #     """Highlighting function, needs to be defined before init."""
-    #     for s, e, style in sorted(current_highlights, key=lambda x: x[0]):
-    #         text.stylize(style, s, e)
-    #     return text
-
     def __init__(self, path: str, colors_and_labels: dict, id: str | None = None, classes: str | None = None, *args, **kwargs):
-        print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", colors_and_labels)
         super().__init__(*args, value=path, highlighter=highlighting, id=id, classes=classes, **kwargs)
         self.colors_and_labels = colors_and_labels
         self.highlight_start_position: None | int = None
@@ -290,15 +283,12 @@ class SegmentHighlighting(Input):
         self.highlighting_with_mouse = False
         # copy this here, so that once we hit the reset button we get it back
         self.original_value = path
-        print("__init____init____init____init____init__", self.current_highlights)
 
     def update_colors_and_labels(self, new_colors_and_labels):
         self.colors_and_labels = new_colors_and_labels
 
     def on_mount(self):
-        print("vvaaaaaaaaaaaaaaaaaaaaaaaaaaaalue", self.value)
         self.current_highlights = find_tag_positions_by_color(self.value, self.colors_and_labels)
-        print("on_mounton_mounton_mounton_mounton_mount", self.current_highlights)
 
     def on_paste(self, event: events.Paste):
         self.current_highlights = find_tag_positions_by_color(event.text, self.colors_and_labels)
@@ -494,9 +484,6 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
         self.colors_and_labels = colors_and_labels
 
     def compose(self) -> ComposeResult:
-        # self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"]
-        # self.labels = ["subject", "Session", "Run", "Acquisition", "task"]
-        # colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
         # Need to change MyInput for SegmentHighlighting(Input) because both are subclass of Input
         # SegmentHighlighting(Input) and has this _apend_highlight
         yield HorizontalScroll(
@@ -511,9 +498,6 @@ class SelectCurrentWithInputAndSegmentHighlighting(SelectCurrentWithInput):
         )
         yield MyStatic("▼", classes="arrow down-arrow")
         yield MyStatic("▲", classes="arrow up-arrow")
-
-    # def update_colors_and_labels(self, new_colors_and_labels):
-    #     self.get_widget_by_id("input_prompt").update_colors_and_labels(new_colors_and_labels)
 
 
 class InputWithColoredSuggestions(SelectOrInputPath):
@@ -577,8 +561,6 @@ class InputWithColoredSuggestions(SelectOrInputPath):
         if sugestion_strings is not None:
             # We do not want to show the whole path with the suggestions, but only the last part
             # We find the index of the string break using these two lines.
-            # color_start = sugestion_strings["subject"].spans[0].start
-            # last_path_break = [i for i, j in enumerate(sugestion_strings["subject"].plain[:color_start]) if j == "/"][-1] + 1
             # start with the first tag in the list
             first_key = next(iter(sugestion_strings))
             color_start = sugestion_strings[first_key].spans[0].start

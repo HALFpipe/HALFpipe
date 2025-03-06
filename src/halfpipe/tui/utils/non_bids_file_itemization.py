@@ -288,7 +288,6 @@ class FileItem(Widget):
             self.get_widget_by_id("static_file_pattern").update(
                 highlighting(Text(pattern_match_results["file_pattern"]), current_highlights)
             )
-            # self.get_widget_by_id("static_file_pattern").update(pattern_match_results["file_pattern"])
             # Tooltip telling us how many files were  found.
             self.get_widget_by_id("show_button").tooltip = pattern_match_results["message"]
             # If 0 files were found, the border is red, otherwise green.

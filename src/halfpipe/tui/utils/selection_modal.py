@@ -88,8 +88,6 @@ class SelectionModal(DraggableModalScreen):
             button_panel,
         ]
 
-        # self.choice: str | list = self.options.keys()[0]
-
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         self.content.mount(*self.widgets_to_mount)
@@ -102,11 +100,6 @@ class SelectionModal(DraggableModalScreen):
     @on(Button.Pressed, "#cancel")
     def _on_cancel_button_pressed(self):
         self.dismiss(False)
-
-    # # @on(RadioSet.Changed)
-    # def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-    #     if event.control.id == "radio_set":
-    #         self.choice = list(self.options.keys())[event.index]
 
     def request_close(self):
         if self.only_ok_button is True:

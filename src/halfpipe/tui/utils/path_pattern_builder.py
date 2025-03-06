@@ -355,7 +355,7 @@ class PathPatternBuilder(DraggableModalScreen):
 
     @on(Button.Pressed, "#ok_button")
     def _ok(self, event: Button.Pressed):
-        # Here wer try to catch the Marshmallow schema error, if the extension is wrong
+        # Here we try to catch the Marshmallow schema error, if the extension is wrong
         try:
             path = (
                 self.pattern_match_results["file_pattern"].plain

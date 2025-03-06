@@ -39,7 +39,6 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
     """
     entity_display_aliases = dict() if entity_display_aliases is None else entity_display_aliases
     message = ""
-    # count_breakdown = {}
     n_by_tag = {}
     if filepaths is not None:
         message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
@@ -48,7 +47,6 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
                 tagvalset = database.tagvalset(tagname, filepaths=filepaths)
                 if tagvalset is not None:
                     n_by_tag[tagname] = len(tagvalset)
-                    # count_breakdown[entity_display_aliases.get(tagname, tagname)] = len(tagvalset)
             tagmessages = [
                 p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
                 for tagname, n in n_by_tag.items()
