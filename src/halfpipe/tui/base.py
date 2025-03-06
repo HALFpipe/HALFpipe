@@ -17,7 +17,7 @@ from textual.widgets._header import HeaderTitle
 
 from ..logging.base import LoggingContext
 from .data_input.base import DataInput
-from .feature_widgets.base import FeatureSelection
+from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
 from .run.base import RunCLX
@@ -174,9 +174,9 @@ class MainApp(App):
     CSS_PATH = [
         os.path.join(BASE_DIR, "tcss/base.tcss"),
         os.path.join(BASE_DIR, "tcss/general.tcss"),
-        os.path.join(BASE_DIR, "feature_widgets/tcss/base.tcss"),
-        os.path.join(BASE_DIR, "feature_widgets/tcss/taskbased.tcss"),
-        os.path.join(BASE_DIR, "feature_widgets/utils/tcss/model_conditions_and_contrasts.tcss"),
+        os.path.join(BASE_DIR, "features/tcss/base.tcss"),
+        os.path.join(BASE_DIR, "features/tcss/taskbased.tcss"),
+        os.path.join(BASE_DIR, "features/utils/tcss/model_conditions_and_contrasts.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/base.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/models.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/group_level_model_selection_modal.tcss"),

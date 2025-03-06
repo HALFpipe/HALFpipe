@@ -14,7 +14,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, DataTable
 
-from ...feature_widgets.utils.model_conditions_and_contrasts import ContrastTableInputWindow
+from ...features.utils.model_conditions_and_contrasts import ContrastTableInputWindow
 
 
 class AdditionalContrastsCategoricalVariablesTable(Widget):

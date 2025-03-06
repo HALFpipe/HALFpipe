@@ -14,11 +14,11 @@ from textual.widgets import Static
 from textual.worker import Worker, WorkerState
 
 from ...model.spec import load_spec
-from ..feature_widgets.atlas_based import AtlasBased
-from ..feature_widgets.dual_reg import DualReg
-from ..feature_widgets.preproc_output import PreprocessedOutputOptions
-from ..feature_widgets.seed_based import SeedBased
-from ..feature_widgets.task_based import TaskBased
+from ..features.atlas_based import AtlasBased
+from ..features.dual_reg import DualReg
+from ..features.preproc_output import PreprocessedOutputOptions
+from ..features.seed_based import SeedBased
+from ..features.task_based import TaskBased
 from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
