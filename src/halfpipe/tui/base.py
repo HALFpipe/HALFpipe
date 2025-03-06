@@ -20,7 +20,7 @@ from .data_input.base import DataInput
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
-from .run.base import RunCLX
+from .run.base import Run
 from .utils.confirm_screen import Confirm
 from .utils.context import ctx
 from .working_directory.base import WorkDirectory
@@ -229,7 +229,7 @@ class MainApp(App):
             with TabPane("Group level models", id="models_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(RunCLX(), id="run_content")
+                yield VerticalScroll(Run(), id="run_content")
         yield Footer()
 
     def on_mount(self):

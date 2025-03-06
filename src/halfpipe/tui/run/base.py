@@ -22,9 +22,9 @@ from ..utils.confirm_screen import Confirm
 from ..utils.context import ctx
 
 
-class RunCLX(Widget):
+class Run(Widget):
     """
-    RunCLX Class
+    Run Class
 
     This class is responsible for managing the user interface that handles refreshing the data and updating the context
     based on user interactions.
@@ -37,7 +37,7 @@ class RunCLX(Widget):
     Methods
     -------
     __init__(**kwargs)
-        Initializes the RunCLX class with only textual widget attributes.
+        Initializes the Run class with only textual widget attributes.
 
     compose() -> ComposeResult
         Composes the UI by adding a ScrollableContainer with an output area and a refresh button.
