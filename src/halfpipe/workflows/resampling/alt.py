@@ -40,12 +40,11 @@ def init_alt_bold_std_trans_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "std_t1w",
-                "std_mask",
+                "t1w_std",
+                "mask_std",
                 "bold_minimal",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
                 "boldref2anat_xfm",
-                "out_warp",
                 "anat2std_xfm",
                 "motion_xfm",
             ]
@@ -89,12 +88,12 @@ def init_alt_bold_std_trans_wf(
     fmriprep_merge_node.inputs.no_flatten = False
 
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")
-    # workflow.connect(inputnode, "std_t1w", bold_std_trans_wf, "inputnode.target_ref_file")    # same
+    # workflow.connect(inputnode, "t1w_std", bold_std_trans_wf, "inputnode.target_ref_file")    # same
     workflow.connect(inputnode, "bold_minimal", bold_std_trans_wf, "inputnode.bold_file")
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")  # its a text file instead of h5
     workflow.connect(inputnode, "boldref2anat_xfm", bold_std_trans_wf, "inputnode.boldref2anat_xfm")
-    workflow.connect(inputnode, "std_mask", bold_std_trans_wf, "inputnode.target_mask")
+    workflow.connect(inputnode, "mask_std", bold_std_trans_wf, "inputnode.target_mask")
 
     for a in bold_std_trans_wf_outputs:
         workflow.connect(bold_std_trans_wf, f"outputnode.{a}", outputnode, f"alt_{a}")

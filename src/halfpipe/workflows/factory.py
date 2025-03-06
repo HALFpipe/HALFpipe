@@ -117,7 +117,7 @@ class Factory(ABC):
     def get(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode):
+    def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode) -> set[str]:
         if isinstance(outputnode, str):
             outputnode = outputhierarchy[-1].get_node(outputnode)
         if isinstance(inputnode, str):
@@ -159,6 +159,6 @@ class Factory(ABC):
         )
         workflow.connect(*outputendpoint, *inputendpoint)
 
-    def connect(self, nodehierarchy, node, *args, **kwargs):
+    def connect(self, nodehierarchy, node, *args, **kwargs) -> set[str]:
         outputhierarchy, outputnode = self.get(*args, **kwargs)
-        self.connect_common_attrs(outputhierarchy, outputnode, nodehierarchy, node)
+        return self.connect_common_attrs(outputhierarchy, outputnode, nodehierarchy, node)

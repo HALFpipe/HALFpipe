@@ -68,9 +68,6 @@ class ICAAROMAComponentsFactory(Factory):
             memcalc = MemoryCalculator.from_bold_file(source_file)
             vwf = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir), memcalc=memcalc)
 
-            for node in vwf._get_all_nodes():
-                memcalc.patch_mem_gb(node)
-
             wf.add_nodes([vwf])
 
         assert isinstance(vwf, pe.Workflow)
@@ -143,7 +140,7 @@ class LookupFactory(Factory):
     def _should_skip(self, obj):
         return obj is None
 
-    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, _):
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
@@ -199,35 +196,8 @@ class FmriprepAdapterFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
         return init_fmriprep_adapter_wf(memcalc=lookup_tuple.memcalc)
 
-    def _tpl(self, _) -> Hashable:
+    def _tpl(self, setting) -> Hashable:
         return SettingTuple(value=None, suffix=None)
-
-    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple: LookupTuple):
-        super(FmriprepAdapterFactory, self)._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
-
-        resample_hierarchy = self._get_hierarchy("fmriprep_24_2_wf", source_file=source_file)
-        wf2 = resample_hierarchy[-1]
-        ds_bold_std_wf = wf2.get_node("ds_bold_std_wf")
-        bold_mask_std = ds_bold_std_wf.get_node("ds_mask")
-        bold_std = ds_bold_std_wf.get_node("ds_bold")
-
-        self.connect_attr(
-            outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],  # [*resample_hierarchy, bold_std],
-            outputnode=bold_std,
-            outattr="out_file",  # Bold_file
-            inputhierarchy=hierarchy,
-            inputnode=inputnode,
-            inattr="bold_std",
-        )
-
-        self.connect_attr(
-            outputhierarchy=[*resample_hierarchy, ds_bold_std_wf],
-            outputnode=bold_mask_std,
-            outattr="out_file",
-            inputhierarchy=hierarchy,
-            inputnode=inputnode,
-            inattr="boldmask",
-        )
 
 
 class SmoothingFactory(LookupFactory):
@@ -374,7 +344,7 @@ class SettingAdapterFactory(LookupFactory):
 
         return init_setting_adapter_wf(suffix=suffix)
 
-    def _tpl(self, _) -> Hashable:
+    def _tpl(self, setting) -> Hashable:
         return None
 
 

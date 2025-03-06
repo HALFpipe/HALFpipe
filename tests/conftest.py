@@ -7,11 +7,21 @@ import tarfile
 
 import pytest
 
+from halfpipe.logging import logger
 from halfpipe.resource import get as get_resource
 
 from .resource import setup as setup_test_resources
 
 os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def logging(request: pytest.FixtureRequest) -> None:
+    logging_plugin = request.config.pluginmanager.get_plugin("logging-plugin")
+    if logging_plugin is None:
+        raise ValueError("Logging plugin not found")
+    logger.setLevel("DEBUG")
+    logger.addHandler(logging_plugin.log_cli_handler)
 
 
 @pytest.fixture(scope="session")

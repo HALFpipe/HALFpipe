@@ -74,10 +74,7 @@ def init_ica_aroma_components_wf(
     memcalc: MemoryCalculator | None = None,
 ):
     """
-    In this workflow we resample the mask following the same logic as in alt_bold.
-    #TODO: "GenericLabel" is preferred as a transformation method for the mask, but our current Resample...
-    ...does not have it.
-    See https://github.com/nipreps/fmripost-aroma/blob/cf32223721b21c4f8c46cbca413d7c6bbeb6b8bb/src/fmripost_aroma/interfaces/misc.py#L15
+    Get a workflow to calculate ICA-AROMA components
     """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
@@ -85,15 +82,12 @@ def init_ica_aroma_components_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # "alt_bold_std",
-                # "alt_bold_mask_std",
-                # "movpar_file",
                 "confounds_file",
                 "alt_bold_file",
                 "bold_mask",
                 "alt_resampling_reference",
                 "tags",
-                "skip_vols",
+                "dummy_scans",
                 "repetition_time",
             ]
         ),
@@ -121,7 +115,7 @@ def init_ica_aroma_components_wf(
     target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
     resample_mask = pe.Node(
         Resample(
-            interpolation="MultiLabel",  # TODO: change for "GenericLabel"
+            interpolation="GenericLabel",
             reference_image=target_ref_file,
             reference_space=Constants.reference_space,
             reference_res=Constants.reference_res,
@@ -170,7 +164,7 @@ def init_ica_aroma_components_wf(
     # connect inputs to ICA-AROMA
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
-    workflow.connect(inputnode, "skip_vols", ica_aroma_wf, "inputnode.skip_vols")
+    workflow.connect(inputnode, "dummy_scans", ica_aroma_wf, "inputnode.skip_vols")
     workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
     workflow.connect(squeeze_mask, "out_file", ica_aroma_wf, "inputnode.bold_mask_std")
 
@@ -197,16 +191,16 @@ def init_ica_aroma_components_wf(
             workflow.connect(squeeze_mask, "out_file", node, "bold_mask_std")
 
     # remove dummy scans from outputs
-    skip_vols = pe.Node(
+    remove_dummy_scans = pe.Node(
         RemoveVolumes(write_header=False),  # melodic_mix files don't have column names
-        name="skip_vols",
+        name="remove_dummy_scans",
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(ica_aroma_wf, "outputnode.mixing", skip_vols, "in_file")
-    workflow.connect(inputnode, "skip_vols", skip_vols, "skip_vols")
+    workflow.connect(ica_aroma_wf, "outputnode.mixing", remove_dummy_scans, "in_file")
+    workflow.connect(inputnode, "dummy_scans", remove_dummy_scans, "count")
 
     # pass outputs to outputnode
-    workflow.connect(skip_vols, "out_file", outputnode, "mixing")
+    workflow.connect(remove_dummy_scans, "out_file", outputnode, "mixing")
     workflow.connect(ica_aroma_wf, "outputnode.aroma_features", outputnode, "aroma_features")
     workflow.connect(ica_aroma_wf, "outputnode.features_metadata", outputnode, "features_metadata")
     workflow.connect(ica_aroma_wf, "ica_aroma.aroma_noise_ics", outputnode, "aroma_noise_ics")

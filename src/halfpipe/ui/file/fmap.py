@@ -198,10 +198,16 @@ class FieldMapStep(FilePatternStep):
     next_step_type = HasMoreFmapStep
 
 
-class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
+class CheckPhaseDiffEchoTime2Step(CheckMetadataStep):
     schema = PhaseDiffFmapFileSchema
-    key = "echo_time_difference"
+    key = "echo_time2"
     next_step_type = HasMoreFmapStep
+
+
+class CheckPhaseDiffEchoTime1Step(CheckMetadataStep):
+    schema = PhaseDiffFmapFileSchema
+    key = "echo_time1"
+    next_step_type = CheckPhaseDiffEchoTime2Step
 
 
 class PhaseDiffStep(FilePatternStep):
@@ -211,7 +217,7 @@ class PhaseDiffStep(FilePatternStep):
 
     required_in_path_entities = ["subject"]
 
-    next_step_type = CheckPhaseDiffEchoTimeDiffStep
+    next_step_type = CheckPhaseDiffEchoTime1Step
 
 
 class CheckPhase2EchoTimeStep(CheckMetadataStep):

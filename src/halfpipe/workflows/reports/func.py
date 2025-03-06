@@ -18,8 +18,8 @@ from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
-def _calc_scan_start(skip_vols: int, repetition_time: float) -> float:
-    return skip_vols * repetition_time
+def _calc_scan_start(dummy_scans: int, repetition_time: float) -> float:
+    return dummy_scans * repetition_time
 
 
 def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalculator | None = None):
@@ -32,7 +32,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     We need to access the new values of fmriprep for these. This is what they used to be:
     Inputs
     ------
-    bold_std
+    ds_bold
         BOLD series, resampled to template space
     bold_mask_std
         BOLD series mask in template space
@@ -54,13 +54,12 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "boldref",
-                # there are two boldref: ds_coreg_boldref_wf & ds_hmc_boldref_wf
-                # TODO: Which one we want? Now we use 2nd.
-                "boldmask",
-                "t1w_dseg",  # used to be std_dseg
-                "bold_std",  # bold_std is passed explicitly in fmriprep factory
-                # "spatial_reference",   # ! this used to exist in fmriprep!! we dont have a direct substitute
+                "ds_ref",
+                "ds_mask",
+                "t1w_dseg",
+                "anat2std_xfm",
+                "ds_bold",
+                # "spatial_reference",   # TODO: do we need this?
                 "output_spaces",
                 "movpar_file",
                 "confounds_file",
@@ -69,7 +68,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
                 *fmriprep_reportdatasinks,
                 "fd_thres",
                 "repetition_time",
-                "skip_vols",
+                "dummy_scans",
                 "tags",
             ]
         ),
@@ -77,22 +76,19 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
 
     # select_std = pe.Node(
-    #     # KeySelect(fields=["bold_std", "bold_std_ref", "bold_mask_std", "std_dseg"]),
-    #     KeySelect(fields=["bold_std", "boldref", "boldmask", "t1w_dseg"]),
+    #     # KeySelect(fields=["ds_bold", "bold_std_ref", "bold_mask_std", "std_dseg"]),
+    #     KeySelect(fields=["ds_bold", "ds_ref", "ds_mask", "t1w_dseg"]),
     #     name="select_std",
     #     run_without_submitting=True,
     #     nohash=True,
     # )
 
     # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-    #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
-    # TODO: Either get rid of all select_std nodes, pass output_spaces, use Select interface, or refactor
-    #
     # select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
 
-    # workflow.connect(inputnode, "bold_std", select_std, "bold_std")
-    # workflow.connect(inputnode, "boldref", select_std, "boldref")
-    # workflow.connect(inputnode, "boldmask", select_std, "boldmask")
+    # workflow.connect(inputnode, "ds_bold", select_std, "ds_bold")
+    # workflow.connect(inputnode, "ds_ref", select_std, "ds_ref")
+    # workflow.connect(inputnode, "ds_mask", select_std, "ds_mask")
     # workflow.connect(inputnode, "t1w_dseg", select_std, "t1w_dseg")
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
@@ -111,7 +107,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         ),
         name="make_resultdicts",
     )
-    workflow.connect(inputnode, "skip_vols", make_resultdicts, "dummy_scans")
+    workflow.connect(inputnode, "dummy_scans", make_resultdicts, "dummy_scans")
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
     workflow.connect(inputnode, "fallback", make_resultdicts, "fallback_registration")
@@ -125,7 +121,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
     # Register EPI to MNI space to use in the QC report
-    # EPI -> mni
+    # EPI -> MNI
     spaces = config.workflow.spaces
     assert isinstance(spaces, SpatialReferences)
     epi_norm_rpt = pe.Node(
@@ -134,44 +130,41 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         mem_gb=0.1,
     )
 
-    workflow.connect(inputnode, "boldref", epi_norm_rpt, "in_file")
-    workflow.connect(inputnode, "boldmask", epi_norm_rpt, "mask_file")
+    workflow.connect(inputnode, "ds_ref", epi_norm_rpt, "in_file")
+    workflow.connect(inputnode, "ds_mask", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(inputnode, "bold_std", tsnr, "in_file")
-    workflow.connect(inputnode, "skip_vols", tsnr, "skip_vols")
+    workflow.connect(inputnode, "ds_bold", tsnr, "in_file")
+    workflow.connect(inputnode, "dummy_scans", tsnr, "dummy_scans")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(inputnode, "boldmask", tsnr_rpt, "mask_file")
+    workflow.connect(inputnode, "ds_mask", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
-    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
-    reference_dict["input_space"] = reference_dict["reference_space"]
-    resample = pe.Node(
-        Resample(interpolation="MultiLabel", **reference_dict),
-        name="resample",
-        #! here we might want to pass the transform anat2std if passing t1w_dseg does not work from the get go
-        # Resample(interpolation="MultiLabel", transforms="", **reference_dict),
+    std_dseg = pe.Node(
+        Resample(interpolation="MultiLabel", reference_space=Constants.reference_space, reference_res=Constants.reference_res),
+        name="std_dseg",
         mem_gb=2 * memcalc.volume_std_gb,
     )
-    workflow.connect(inputnode, "t1w_dseg", resample, "input_image")
+    workflow.connect(inputnode, "t1w_dseg", std_dseg, "input_image")
+    workflow.connect(inputnode, "anat2std_xfm", std_dseg, "transforms")
 
     # Calculate the actual starting time and report into the json outputs
     # based on https://github.com/bids-standard/bids-specification/issues/836#issue-954042717
     calc_scan_start = pe.Node(
         niu.Function(
-            input_names=["skip_vols", "repetition_time"],
+            input_names=["dummy_scans", "repetition_time"],
             output_names="scan_start",
             function=_calc_scan_start,
         ),
         name="calc_scan_start",
     )
-    workflow.connect(inputnode, "skip_vols", calc_scan_start, "skip_vols")
+    workflow.connect(inputnode, "dummy_scans", calc_scan_start, "dummy_scans")
     workflow.connect(inputnode, "repetition_time", calc_scan_start, "repetition_time")
 
     workflow.connect(calc_scan_start, "scan_start", make_resultdicts, "scan_start")
@@ -188,7 +181,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
     workflow.connect(confvals, "vals", calcmean, "vals")  # base dict to update
     workflow.connect(tsnr, "out_file", calcmean, "in_file")
-    workflow.connect(resample, "output_image", calcmean, "dseg")
+    workflow.connect(std_dseg, "output_image", calcmean, "dseg")
 
     workflow.connect(calcmean, "vals", make_resultdicts, "vals")
     workflow.connect(make_resultdicts, "vals", outputnode, "vals")

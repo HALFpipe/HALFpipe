@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import NamedTuple, Tuple, Union
 
 import pint
-from fmriprep import config
-from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
@@ -87,65 +85,3 @@ class MemoryCalculator(NamedTuple):
         series_gb = max(min_gb, series_gb)
 
         return round(volume_gb, 3), round(series_gb, 3)
-
-    def patch_mem_gb(self, node: pe.Node):
-        name = node.fullname
-        assert isinstance(name, str)
-
-        omp_nthreads = config.nipype.omp_nthreads
-        assert isinstance(omp_nthreads, int)
-
-        if name.endswith("bold_std_trans_wf.bold_to_std_transform"):
-            node._mem_gb = 2 * self.volume_std_gb * omp_nthreads
-
-        if name.endswith("bold_t1_trans_wf.bold_to_t1w_transform"):
-            node._mem_gb = self.volume_std_gb * omp_nthreads
-
-        if name.endswith("bold_bold_trans_wf.bold_transform"):
-            node._mem_gb = 2 * self.volume_gb * omp_nthreads
-
-        if name.endswith("bold_std_trans_wf.merge"):
-            node._mem_gb = 0.75 * self.series_std_gb
-
-        if name.endswith("bold_confounds_wf.fdisp"):
-            node._mem_gb = self.min_gb
-
-        if name.endswith("ica_aroma_wf.smooth"):
-            node._mem_gb = 1.5 * self.series_std_gb
-
-        if name.endswith("ica_aroma_wf.ica_aroma"):
-            node._mem_gb = 0.5 * self.series_std_gb
-
-        if any(
-            name.endswith(s)
-            for s in [
-                "bold_stc_wf.slice_timing_correction",
-                "bold_hmc_wf.mcflirt",
-                "bold_bold_trans_wf.merge",
-            ]
-        ):
-            node._mem_gb = self.series_gb
-
-        if any(
-            name.endswith(s)
-            for s in [
-                "ica_aroma_wf.melodic",
-            ]
-        ):
-            node._mem_gb = self.series_std_gb
-
-        if any(
-            name.endswith(s)
-            for s in [
-                "carpetplot_wf.conf_plot",
-                "bold_confounds_wf.rois_plot",
-                "bold_confounds_wf.signals",
-                "bold_confounds_wf.tcompcor",
-                "ica_aroma_wf.calc_bold_mean",
-                "ica_aroma_wf.calc_median_val",
-            ]
-        ):
-            node._mem_gb = 2 * self.series_std_gb
-
-        if node._mem_gb < self.min_gb:
-            node._mem_gb = self.min_gb

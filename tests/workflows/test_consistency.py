@@ -218,29 +218,17 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             name = test_setting.name
 
             for title, kwargs in [
-                ("Timeseries", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", task="rest", extension=".tsv")),
-                ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="matrix", desc="correlation")),
-                ("Dualreg", dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="z", component="8")),
-                (
-                    "Dualreg sidecar",
-                    dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="effect", component="8", extension=".json"),
-                ),  # noqa: E501
-                ("Falff", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")),
-                ("Falff sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".json")),
-                ("Alff", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")),
-                ("Alff sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".json")),
-                ("ReHo", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")),
-                ("ReHo sidecar", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".json")),
-                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")),
-                (
-                    "Seed connectivity sidecar",
-                    dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="effect", extension=".json"),
-                ),
+                ("Timeseries", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", extension=".tsv")),
+                ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix")),
+                ("Dual regression", dict(sub=sub, feature=f"{name}DualReg", component="8")),
+                ("fALFF", dict(sub=sub, feature=f"{name}FALFF", extension=".nii.gz")),
+                ("ReHo", dict(sub=sub, feature=f"{name}ReHo", extension=".nii.gz")),
+                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr")),
+                ("Sidecars", dict(sub=sub, extension=".json")),
             ]:
                 feature_path = index.get(**kwargs)
-                assert feature_path is not None and len(feature_path) == 1, (
-                    f"Incorrect path for {name} {title}: {feature_path}"
-                )
+                if feature_path is None or len(feature_path) != 1:
+                    raise ValueError(f"Incorrect path for {name} {title}: {feature_path}")
                 paths_to_zip.extend(list(feature_path))
 
         # Search for files we want to save at the subject level and save to list

@@ -66,8 +66,8 @@ def test_feature_extraction(tmp_path, mock_spec):
     tmp_path = Path("/tmp/halfpipe")
     tmp_path.mkdir(exist_ok=True)
 
-    skip_vols = 3
-    mock_spec.global_settings.update(dict(dummy_scans=skip_vols))
+    dummy_scans = 3
+    mock_spec.global_settings.update(dict(dummy_scans=dummy_scans))
 
     save_spec(mock_spec, workdir=tmp_path)
 
@@ -97,13 +97,13 @@ def test_feature_extraction(tmp_path, mock_spec):
     (preproc_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_bold.nii.gz")
     preproc_image = nib.nifti1.load(preproc_path)
 
-    assert bold_image.shape[3] == preproc_image.shape[3] + skip_vols
+    assert bold_image.shape[3] == preproc_image.shape[3] + dummy_scans
 
     (confounds_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_desc-confounds_regressors.tsv")
     confounds_frame = read_spreadsheet(confounds_path)
 
-    assert bold_image.shape[3] == confounds_frame.shape[0] + skip_vols
-    # TODO check that we have all the columns we need
+    assert bold_image.shape[3] == confounds_frame.shape[0] + dummy_scans
+    # TODO: check that we have all the columns we need
 
     template_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w")
     template_image = nib.nifti1.load(template_path)
@@ -113,8 +113,7 @@ def test_feature_extraction(tmp_path, mock_spec):
 
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
-    # TODO: Create an assertion that checks for workfloes that are specific
-    # to processing with field maps
+    # TODO: Create an assertion that checks that field maps are used
 
     bids_path = tmp_path / "bids"
     shutil.copytree(bids_data, bids_path)
@@ -156,4 +155,4 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
     graphs = init_execgraph(workdir, workflow)
     graph = next(iter(graphs.values()))
 
-    assert any("anat_fit_wf" in u.fullname for u in graph.nodes), "Anat workflow missing."
+    assert any("fmap_select" in u.fullname for u in graph.nodes), "Field map workflow missing"

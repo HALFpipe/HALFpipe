@@ -36,9 +36,6 @@ class AltBOLDFactory(Factory):
             memcalc = MemoryCalculator.from_bold_file(source_file)
             vwf = init_alt_bold_std_trans_wf(memcalc=memcalc)
 
-            for node in vwf._get_all_nodes():
-                memcalc.patch_mem_gb(node)
-
             wf.add_nodes([vwf])
 
         assert isinstance(vwf, pe.Workflow)
