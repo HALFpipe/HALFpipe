@@ -229,20 +229,6 @@ COPY --from=install /opt/conda/ /opt/conda/
 # Therefore, we update the `PATH` to reflect new conda location
 ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}"
 
-# We set up our own FSLDIR variable. We used to inherit it from fmriprep in version 20,
-# but in 24.0.1 they placed it at /opt/conda/envs/fmriprep and we want to get rid
-# of that location to prevent conflicts between our environment and fmriprep's one
-ENV LANG="C.UTF-8" \
-    LC_ALL="C.UTF-8" \
-    PYTHONNOUSERSITE=1 \
-    FSLDIR="/opt/conda/" \
-    FSLOUTPUTTYPE="NIFTI_GZ" \
-    FSLMULTIFILEQUIT="TRUE" \
-    FSLLOCKDIR="" \
-    FSLMACHINELIST="" \
-    FSLREMOTECALL="" \
-    FSLGECUDAQ="cuda.q"
-
 RUN ln -s /opt/conda/bin/fslversion /opt/conda/etc/fslversion && \
     echo "6.0.4" >/opt/conda/bin/fslversion
 

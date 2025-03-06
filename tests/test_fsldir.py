@@ -4,6 +4,7 @@
 
 import os
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -22,8 +23,8 @@ def test_fsldir():
     assert fsldir is not None, "FSLDIR environment variable is not set"
 
     # Check 2) FSL version file exists
-    version_script = "/opt/conda/etc/fslconf/fsl.sh"
-    assert os.path.exists(version_script), f"fsl.sh not found at {version_script}"
+    version_script = Path(fsldir) / "etc" / "fslconf" / "fsl.sh"
+    assert version_script.is_file(), f"fsl.sh not found at {version_script}"
 
     # Check 3) Source fsl.sh and get FSL version using 'flirt --version'
     try:
