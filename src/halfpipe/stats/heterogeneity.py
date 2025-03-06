@@ -120,10 +120,10 @@ def reml_hessian(
 
 def ml_neg_log_lik(
     ϑ: float,
-    y: npt.NDArray[np.floating],
-    x: npt.NDArray[np.floating] | None,
-    s: npt.NDArray[np.floating],
-    γ: npt.NDArray[np.floating],
+    y: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64] | None,
+    s: npt.NDArray[np.float64],
+    γ: npt.NDArray[np.float64],
 ):
     if ϑ < 0:
         return np.inf
@@ -287,7 +287,7 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(cls, ref_img: nib.analyze.AnalyzeImage, cmatdict: dict, voxel_results: dict) -> dict:
+    def write_outputs(cls, reference_image: nib.analyze.AnalyzeImage, contrast_matrices: dict, voxel_results: dict) -> dict:
         output_files = dict()
 
         rdf = pd.DataFrame.from_records(voxel_results)
@@ -295,7 +295,7 @@ class Heterogeneity(ModelAlgorithm):
         for map_name, series in rdf.iterrows():
             assert isinstance(map_name, str)
 
-            fname = cls.write_map(ref_img, map_name, series)
+            fname = cls.write_map(reference_image, map_name, series)
             output_files[map_name] = str(fname)
 
         return output_files

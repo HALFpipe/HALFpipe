@@ -88,7 +88,7 @@ def collect_bold_files(
         (selected_bold_file_path,) = selected
 
         # Log what happened
-        message_strs = [f"Found {len(bold_file_pathset)-1:d} file with " f'identical tags to {selected_bold_file_path}":']
+        message_strs = [f'Found {len(bold_file_pathset) - 1:d} file with identical tags to {selected_bold_file_path}":']
 
         bold_file_path = next(iter(bold_file_pathset))
         for bold_file_path in bold_file_pathset:

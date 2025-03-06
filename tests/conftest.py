@@ -26,7 +26,7 @@ def wakemandg_hensonrn_raw(tmp_path_factory):
     with tarfile.open(inputtarpath) as fp:
         fp.extractall(tmp_path)
 
-    subjects = [f"{i+1:02d}" for i in range(16)]
+    subjects = [f"{i + 1:02d}" for i in range(16)]
     suffixes = ["stat-effect_statmap", "stat-variance_statmap", "mask"]
 
     data = {

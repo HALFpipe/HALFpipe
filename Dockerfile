@@ -16,14 +16,12 @@ RUN conda install --yes "setuptools"
 RUN cat <<EOF > "/usr/bin/retry"
 #!/bin/bash
 set -euo pipefail
-timeout="1"
 attempt="1"
 until "\$@"; do
     if [ "\${attempt}" -ge "5" ]; then
         exit "$?"
     fi
-    sleep "\${timeout}"
-    timeout=\$((timeout * 10))
+    sleep 10
     attempt=\$((attempt + 1))
 done
 EOF

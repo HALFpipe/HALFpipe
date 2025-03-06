@@ -117,21 +117,21 @@ def t_ols_contrast(
     degrees_of_freedom: int,
     t_contrast: npt.NDArray[np.float64],
 ) -> TContrastResult:
-    cope = (t_contrast @ regression_weights).ravel().item()
+    cope: float = (t_contrast @ regression_weights).ravel().item()
 
     a = np.linalg.lstsq(gram_matrix, t_contrast.T, rcond=None)[0]
-    var_cope = (t_contrast @ a).ravel().item()
+    var_cope: Any = (t_contrast @ a).ravel().item()
 
-    t = cope / np.sqrt(var_cope)
-    z = t2z_convert(t, degrees_of_freedom)
+    t: float = cope / np.sqrt(var_cope)
+    z: float = t2z_convert(t, degrees_of_freedom)
 
     return TContrastResult(float(cope), float(var_cope), t, z)
 
 
 class FContrastResult(NamedTuple):
-    cope: npt.NDArray[np.float64]
-    var_cope: npt.NDArray[np.float64]
-    t: npt.NDArray[np.float64]
+    cope: npt.NDArray[np.floating]
+    var_cope: npt.NDArray[np.floating]
+    t: npt.NDArray[np.floating]
     f: float
     z: float
 
@@ -277,7 +277,7 @@ class FLAME1(ModelAlgorithm):
                 results_frame = results_frame.append(empty_zstat)  # type: ignore
 
             for map_name, series in results_frame.iterrows():
-                output_prefix = f"{map_name}_{i+1}_{format_workflow(contrast_name)}"
+                output_prefix = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
                 fname = cls.write_map(reference_image, output_prefix, series)
 
                 if map_name in frozenset(["dof"]):

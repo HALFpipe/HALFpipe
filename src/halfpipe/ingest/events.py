@@ -118,9 +118,17 @@ class ConditionFile:
             coerce[:, 0] = onset
             coerce[:, 1] = duration
 
+            onsets_list: Any = coerce[:, 0].tolist()
+            durations_list: Any = coerce[:, 1].tolist()
+
+            if not isinstance(onsets_list, list):
+                raise ValueError(f"Invalid onsets for condition {condition}: {onsets_list}")
+            if not isinstance(durations_list, list):
+                raise ValueError(f"Invalid durations for condition {condition}: {durations_list}")
+
             self.conditions.append(condition)
-            self.onsets.append(list(coerce[:, 0]))
-            self.durations.append(list(coerce[:, 1]))
+            self.onsets.append(onsets_list)
+            self.durations.append(durations_list)
 
     def parse_txt(self, condition: str, path: Path | str) -> None:
         self.conditions.append(condition)

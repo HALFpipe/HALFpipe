@@ -194,9 +194,9 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
                 ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")),
             ]:
                 feature_path = index.get(**kwargs)
-                assert (
-                    feature_path is not None and len(feature_path) == 1
-                ), f"Incorrect path for {name} {title}: {feature_path}"
+                assert feature_path is not None and len(feature_path) == 1, (
+                    f"Incorrect path for {name} {title}: {feature_path}"
+                )
                 paths_to_zip.extend(list(feature_path))
 
         # Search for files we want to save at the subject level and save to list

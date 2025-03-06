@@ -67,7 +67,7 @@ class StatsFactory(Factory):
                 "resultdicts",
                 hierarchy,
                 "inputnode",
-                f"in{i+1:d}",
+                f"in{i + 1:d}",
             )
 
         return vwf

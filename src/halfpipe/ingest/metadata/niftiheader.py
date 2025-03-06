@@ -3,10 +3,9 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import nibabel as nib
-import numpy as np
 import pint
 
 from ...logging import logger
@@ -20,13 +19,8 @@ descrip_pattern = re.compile(r"(?P<var_name>\w+)=(?P<value>(\d+(\.\d*)?|\.\d+)([
 def parse_descrip(header: nib.nifti1.Nifti1Header) -> dict[str, float]:
     descrip_dict = dict()
 
-    descrip_array = header.get("descrip")
-    assert isinstance(descrip_array, np.ndarray)
-    descrip = descrip_array.tolist()
-
-    # mypy complain, thus:
-    if isinstance(descrip, bytes):
-        descrip = descrip.decode()
+    descrip_array: Any = header.get("descrip")
+    descrip = descrip_array.tolist().decode()  # type: ignore
 
     for m in descrip_pattern.finditer(descrip):
         var_name = m.group("var_name")
