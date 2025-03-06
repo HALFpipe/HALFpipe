@@ -11,8 +11,8 @@ from ....model.file.spreadsheet import SpreadsheetFileSchema
 from ....model.variable import VariableSchema
 from ...data_analyzers.context import ctx
 from ...general_widgets.draggable_modal_screen import DraggableModalScreen
-from ...specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from ...general_widgets.multichoice_radioset import MultipleRadioSet
+from ...specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 
 aggregate_order = ["dir", "run", "ses", "task"]
 

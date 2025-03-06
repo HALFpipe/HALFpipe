@@ -10,12 +10,12 @@ from textual.widgets._select import BLANK
 from textual.widgets.selection_list import Selection
 
 from ...ingest.spreadsheet import read_spreadsheet
-from ..templates.feature_template import entity_label_dict
-from ..templates.model_template import ModelTemplate
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_general_widgets import SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import widget_exists
+from ..templates.feature_template import entity_label_dict
+from ..templates.model_template import ModelTemplate
 from .utils.add_spreadsheet_modal import AddSpreadsheetModal
 from .utils.additional_contrasts_table import AdditionalContrastsCategoricalVariablesTable
 

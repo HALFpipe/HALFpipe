@@ -15,10 +15,10 @@ from textual.widgets import (
     ContentSwitcher,
 )
 
-from ..specialized_widgets.confirm_screen import Confirm
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_general_widgets import FocusLabel
 from ..help_functions import widget_exists
+from ..specialized_widgets.confirm_screen import Confirm
 from .utils.name_input import NameInput
 
 p = inflect.engine()

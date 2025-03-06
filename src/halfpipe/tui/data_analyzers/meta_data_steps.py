@@ -24,13 +24,13 @@ from ...model.file.func import (
 from ...model.file.ref import RefFileSchema
 from ...model.metadata import slice_order_strs, space_codes
 from ...model.tags import entities, entity_longnames
+from ..data_analyzers.context import ctx
+from ..general_widgets.multichoice_radioset import MultipleRadioSetModal
+from ..general_widgets.selection_modal import SelectionModal
+from ..general_widgets.set_value_modal import SetValueModal
 
 # from ..logging import logger
 from ..specialized_widgets.confirm_screen import Confirm
-from ..data_analyzers.context import ctx
-from ..general_widgets.selection_modal import SelectionModal
-from ..general_widgets.set_value_modal import SetValueModal
-from ..general_widgets.multichoice_radioset import MultipleRadioSetModal
 
 
 def display_str(x):

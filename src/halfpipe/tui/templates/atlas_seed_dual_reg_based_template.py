@@ -8,10 +8,10 @@ from textual.message import Message
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
-from ..templates.feature_template import FeatureTemplate
 from ..general_widgets.custom_general_widgets import LabelWithInputBox
-from ..specialized_widgets.event_file_widget import AtlasFilePanel
 from ..help_functions import extract_name_part
+from ..specialized_widgets.event_file_widget import AtlasFilePanel
+from ..templates.feature_template import FeatureTemplate
 
 
 class AtlasSeedDualRegBasedTemplate(FeatureTemplate):

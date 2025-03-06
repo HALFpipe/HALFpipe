@@ -10,9 +10,7 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
 
-from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..data_analyzers.context import ctx
-from ..general_widgets.custom_switch import TextSwitch
 from ..data_analyzers.file_pattern_steps import (
     AnatStep,
     BoldStep,
@@ -25,12 +23,14 @@ from ..data_analyzers.file_pattern_steps import (
     Phase2Step,
     PhaseDiffStep,
 )
-from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
-from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
-from ..specialized_widgets.non_bids_file_itemization import FileItem
-from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
 from ..data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
+from ..general_widgets.custom_switch import TextSwitch
+from ..general_widgets.list_of_files_modal import ListOfFiles
+from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
+from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
+from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
+from ..specialized_widgets.non_bids_file_itemization import FileItem
 
 
 class FieldMapFilesPanel(Widget):

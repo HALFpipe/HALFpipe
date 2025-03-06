@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
 from ..specialized_widgets.event_file_widget import SpatialMapFilePanel
+from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
 
 
 class DualReg(AtlasSeedDualRegBasedTemplate):

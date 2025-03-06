@@ -11,11 +11,11 @@ from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
 from ...model.tags import entity_longnames as entity_display_aliases
-from ..data_input.base import DataSummaryLine
 from ..data_analyzers.context import ctx
+from ..data_analyzers.summary_steps import BoldSummaryStep
+from ..data_input.base import DataSummaryLine
 from ..general_widgets.custom_general_widgets import SwitchWithInputBox, SwitchWithSelect
 from ..specialized_widgets.event_file_widget import FilePanelTemplate
-from ..data_analyzers.summary_steps import BoldSummaryStep
 
 entity_label_dict = {"dir": "Directions", "run": "Runs", "task": "Tasks", "ses": "Sessions"}
 

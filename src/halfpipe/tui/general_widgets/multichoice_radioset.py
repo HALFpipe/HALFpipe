@@ -9,8 +9,8 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Label, RadioButton
 
-from ._radio_set2 import RadioSet
 from ..specialized_widgets.confirm_screen import Confirm
+from ._radio_set2 import RadioSet
 from .draggable_modal_screen import DraggableModalScreen
 
 

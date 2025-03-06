@@ -6,11 +6,11 @@ from textual.widgets import (
     Placeholder,
 )
 
+from ..data_analyzers.context import ctx
+from ..general_widgets.custom_general_widgets import FocusLabel
 from ..templates.item_selection_modal import ItemSelectionModal
 from ..templates.model_template import ModelTemplate
 from ..templates.selection_template import SelectionTemplate
-from ..data_analyzers.context import ctx
-from ..general_widgets.custom_general_widgets import FocusLabel
 from .atlas_based import AtlasBased
 from .dual_reg import DualReg
 from .falff import Falff

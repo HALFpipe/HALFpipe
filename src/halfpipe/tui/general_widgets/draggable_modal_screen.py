@@ -202,7 +202,7 @@ class DraggableModalScreen(ModalScreen):
             border-right: thick $accent;
             border-bottom: thick $accent;
         }
-        
+
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:

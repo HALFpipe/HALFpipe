@@ -9,7 +9,7 @@ from textual.containers import Grid
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Button, Input, Label, Select, Static, Switch
+from textual.widgets import Input, Label, Select, Static, Switch
 
 # from .confirm_screen import Confirm
 from .custom_switch import TextSwitch

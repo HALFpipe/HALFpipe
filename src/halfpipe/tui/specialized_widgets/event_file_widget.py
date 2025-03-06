@@ -19,8 +19,8 @@ from ..data_analyzers.file_pattern_steps import (
     TsvEventsStep,
     TxtEventsStep,
 )
-from .non_bids_file_itemization import FileItem
 from ..general_widgets.selection_modal import SelectionModal
+from .non_bids_file_itemization import FileItem
 
 
 class FilePanelTemplate(Widget):

@@ -16,13 +16,13 @@ from textual.widgets import Footer, Header, TabbedContent, TabPane
 from textual.widgets._header import HeaderTitle
 
 from ..logging.base import LoggingContext
+from .data_analyzers.context import ctx
 from .data_input.base import DataInput
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
 from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
-from .data_analyzers.context import ctx
 from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.

@@ -10,9 +10,9 @@ from textual import on
 from textual.containers import Horizontal
 from textual.widgets import Button, DirectoryTree, Input
 
-from .confirm_screen import Confirm
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
+from .confirm_screen import Confirm
 
 
 def path_test(path, isfile=False):
