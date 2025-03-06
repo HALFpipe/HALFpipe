@@ -14,7 +14,7 @@ from ...model.file.schema import FileSchema
 from ...model.tags import entity_longnames as entity_display_aliases
 from ...model.utils import get_schema_entities
 from ...utils.format import inflect_engine as p
-from ..utils.context import ctx
+from ..data_analyzers.context import ctx
 
 
 def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: dict | None = None):

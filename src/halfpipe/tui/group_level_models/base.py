@@ -7,8 +7,8 @@ from textual.widgets import ListView
 from ..templates.item_selection_modal import ItemSelectionModal
 from ..templates.model_template import ModelTemplate
 from ..templates.selection_template import SelectionTemplate
-from ..utils.confirm_screen import Confirm
-from ..utils.context import ctx
+from ..specialized_widgets.confirm_screen import Confirm
+from ..data_analyzers.context import ctx
 from .intercept_only_model import InterceptOnlyModel
 from .linear_model import LinearModel
 

@@ -11,7 +11,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button
 
-from .file_pattern_steps import (
+from ..data_analyzers.file_pattern_steps import (
     AddAtlasImageStep,
     AddBinarySeedMapStep,
     AddSpatialMapStep,
@@ -20,7 +20,7 @@ from .file_pattern_steps import (
     TxtEventsStep,
 )
 from .non_bids_file_itemization import FileItem
-from .selection_modal import SelectionModal
+from ..general_widgets.selection_modal import SelectionModal
 
 
 class FilePanelTemplate(Widget):

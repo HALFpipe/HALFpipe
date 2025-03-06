@@ -11,8 +11,8 @@ from textual.containers import Horizontal
 from textual.widgets import Button, DirectoryTree, Input
 
 from .confirm_screen import Confirm
-from .draggable_modal_screen import DraggableModalScreen
-from .select_or_input_path import SelectOrInputPath, create_path_option_list
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
 
 
 def path_test(path, isfile=False):

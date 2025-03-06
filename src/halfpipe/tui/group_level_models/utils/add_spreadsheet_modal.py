@@ -9,10 +9,10 @@ from textual.widgets import Button, Static
 from ....ingest.spreadsheet import read_spreadsheet
 from ....model.file.spreadsheet import SpreadsheetFileSchema
 from ....model.variable import VariableSchema
-from ...utils.context import ctx
-from ...utils.draggable_modal_screen import DraggableModalScreen
-from ...utils.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
-from ...utils.multichoice_radioset import MultipleRadioSet
+from ...data_analyzers.context import ctx
+from ...general_widgets.draggable_modal_screen import DraggableModalScreen
+from ...specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
+from ...general_widgets.multichoice_radioset import MultipleRadioSet
 
 aggregate_order = ["dir", "run", "ses", "task"]
 
@@ -84,7 +84,7 @@ class AddSpreadsheetModal(DraggableModalScreen):
         self.metadata: list[Dict[str, Any]] = []
         self.last_selected = list(filepaths)[-1] if filepaths != set() else None
 
-        # In some cases the user just must made some choice in the selection. In particular this is the case when one is
+        # In some cases the user just must make some choice in the selection. In particular this is the case when one is
         # some of the Meta classes (CheckMeta...) are in action. Returning from this stage by hitting the cancel button would
         # not make sense.
         button_panel = Horizontal(

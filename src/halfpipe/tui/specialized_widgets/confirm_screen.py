@@ -3,7 +3,7 @@ from textual import on
 from textual.containers import Horizontal
 from textual.widgets import Button, Static
 
-from .draggable_modal_screen import DraggableModalScreen
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 
 
 class Confirm(DraggableModalScreen):

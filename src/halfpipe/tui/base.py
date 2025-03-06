@@ -21,8 +21,8 @@ from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
 from .run.base import Run
-from .utils.confirm_screen import Confirm
-from .utils.context import ctx
+from .specialized_widgets.confirm_screen import Confirm
+from .data_analyzers.context import ctx
 from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
@@ -184,9 +184,9 @@ class MainApp(App):
         os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
         os.path.join(BASE_DIR, "preprocessing/tcss/preprocessing.tcss"),
         os.path.join(BASE_DIR, "run/tcss/run.tcss"),
-        os.path.join(BASE_DIR, "utils/tcss/file_browser.tcss"),
-        os.path.join(BASE_DIR, "utils/tcss/path_pattern_builder.tcss"),
-        os.path.join(BASE_DIR, "utils/tcss/radio_set_changed.tcss"),
+        os.path.join(BASE_DIR, "specialized_widgets/tcss/file_browser.tcss"),
+        os.path.join(BASE_DIR, "specialized_widgets/tcss/path_pattern_builder.tcss"),
+        os.path.join(BASE_DIR, "general_widgets/tcss/radio_set_changed.tcss"),
     ]
 
     # TODO: The non active tabs should not show the bindings.

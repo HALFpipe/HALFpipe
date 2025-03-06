@@ -8,10 +8,10 @@ from datetime import datetime
 
 from textual.css.query import NoMatches  # Import the NoMatches exception
 
-from ...collect.events import collect_events
-from ...ingest.events import ConditionFile
-from ...model.filter import FilterSchema
-from .context import ctx
+from ..collect.events import collect_events
+from ..ingest.events import ConditionFile
+from ..model.filter import FilterSchema
+from .data_analyzers.context import ctx
 
 
 def extract_name_part(template_path, file_path, suffix="atlas"):

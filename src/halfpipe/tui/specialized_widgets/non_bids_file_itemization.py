@@ -13,10 +13,10 @@ from textual.widget import Widget
 from textual.widgets import Button, Static
 from textual.worker import Worker, WorkerState
 
-from ..utils.confirm_screen import SimpleMessageModal
-from ..utils.context import ctx
-from ..utils.list_of_files_modal import ListOfFiles
-from ..utils.path_pattern_builder import PathPatternBuilder, evaluate_files
+from ..specialized_widgets.confirm_screen import SimpleMessageModal
+from ..data_analyzers.context import ctx
+from ..general_widgets.list_of_files_modal import ListOfFiles
+from ..specialized_widgets.path_pattern_builder import PathPatternBuilder, evaluate_files
 from .pattern_suggestor import find_tag_positions_by_color, highlighting
 
 

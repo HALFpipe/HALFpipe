@@ -69,7 +69,7 @@ class WindowTitleBar(Container):
     DEFAULT_CSS = """
         WindowTitleBar {
             layout: horizontal;
-            width: auto;
+            width: 100%;
             height: 3;
             background: $accent;
             color: auto;
@@ -202,6 +202,7 @@ class DraggableModalScreen(ModalScreen):
             border-right: thick $accent;
             border-bottom: thick $accent;
         }
+        
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:

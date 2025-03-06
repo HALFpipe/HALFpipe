@@ -8,8 +8,8 @@ from textual.widget import Widget
 from textual.widgets import Input, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
 
-from ..utils.context import ctx
-from ..utils.custom_switch import TextSwitch
+from ..data_analyzers.context import ctx
+from ..general_widgets.custom_switch import TextSwitch
 
 
 class ModelTemplate(Widget):

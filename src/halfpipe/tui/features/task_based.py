@@ -7,9 +7,9 @@ from textual.containers import ScrollableContainer
 from textual.widgets import SelectionList
 
 from ..templates.feature_template import FeatureTemplate
-from ..utils.confirm_screen import Confirm
-from ..utils.event_file_widget import EventFilePanel
-from ..utils.utils import extract_conditions
+from ..specialized_widgets.confirm_screen import Confirm
+from ..specialized_widgets.event_file_widget import EventFilePanel
+from ..help_functions import extract_conditions
 from .utils.model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 

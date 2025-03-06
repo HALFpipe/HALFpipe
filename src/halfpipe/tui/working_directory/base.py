@@ -19,12 +19,12 @@ from ..features.dual_reg import DualReg
 from ..features.preproc_output import PreprocessedOutputOptions
 from ..features.seed_based import SeedBased
 from ..features.task_based import TaskBased
-from ..utils.confirm_screen import Confirm
-from ..utils.context import ctx
-from ..utils.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
-from ..utils.filebrowser import FileBrowser, path_test_for_bids
-from ..utils.non_bids_file_itemization import FileItem
-from ..utils.utils import copy_and_rename_file
+from ..specialized_widgets.confirm_screen import Confirm
+from ..data_analyzers.context import ctx
+from ..specialized_widgets.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
+from ..specialized_widgets.filebrowser import FileBrowser, path_test_for_bids
+from ..specialized_widgets.non_bids_file_itemization import FileItem
+from ..help_functions import copy_and_rename_file
 
 
 class WorkDirectory(Widget):

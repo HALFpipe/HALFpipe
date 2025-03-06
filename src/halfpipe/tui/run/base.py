@@ -18,8 +18,8 @@ from ...model.model import Model
 from ...model.setting import SettingSchema
 from ...model.spec import SpecSchema, save_spec
 from ...utils.copy import deepcopy
-from ..utils.confirm_screen import Confirm
-from ..utils.context import ctx
+from ..specialized_widgets.confirm_screen import Confirm
+from ..data_analyzers.context import ctx
 
 
 class Run(Widget):

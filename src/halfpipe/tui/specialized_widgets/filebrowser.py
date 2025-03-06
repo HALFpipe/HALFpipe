@@ -11,7 +11,7 @@ from textual.widget import Widget
 from textual.widgets import Button, Input, Label
 
 from ...model.file.bids import BidsFileSchema
-from .context import ctx
+from ..data_analyzers.context import ctx
 from .file_browser_modal import FileBrowserModal
 
 

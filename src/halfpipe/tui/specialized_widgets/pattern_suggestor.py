@@ -14,7 +14,7 @@ from textual.geometry import Offset
 from textual.message import Message
 from textual.widgets import Input
 
-from .select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
+from ..general_widgets.select_or_input_path import MyStatic, SelectCurrentWithInput, SelectOrInputPath, SelectOverlay
 
 
 def highlighting(text, current_highlights):

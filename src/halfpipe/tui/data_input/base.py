@@ -10,10 +10,10 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
 
-from ..utils.confirm_screen import Confirm, SimpleMessageModal
-from ..utils.context import ctx
-from ..utils.custom_switch import TextSwitch
-from ..utils.file_pattern_steps import (
+from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
+from ..data_analyzers.context import ctx
+from ..general_widgets.custom_switch import TextSwitch
+from ..data_analyzers.file_pattern_steps import (
     AnatStep,
     BoldStep,
     EPIStep,
@@ -25,12 +25,12 @@ from ..utils.file_pattern_steps import (
     Phase2Step,
     PhaseDiffStep,
 )
-from ..utils.filebrowser import FileBrowser, FileBrowserForBIDS
-from ..utils.list_of_files_modal import ListOfFiles
-from ..utils.meta_data_steps import AcqToTaskMappingStep
-from ..utils.non_bids_file_itemization import FileItem
-from ..utils.selection_modal import DoubleSelectionModal, SelectionModal
-from ..utils.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
+from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
+from ..general_widgets.list_of_files_modal import ListOfFiles
+from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
+from ..specialized_widgets.non_bids_file_itemization import FileItem
+from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
+from ..data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
 
 
 class FieldMapFilesPanel(Widget):

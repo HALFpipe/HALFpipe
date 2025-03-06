@@ -11,7 +11,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Select, Static, Switch
 
-from .confirm_screen import Confirm
+# from .confirm_screen import Confirm
 from .custom_switch import TextSwitch
 
 
@@ -336,19 +336,19 @@ class LabelledSwitch(Widget):
     def update_value(self, value):
         self.query_one(Switch).value = value
 
-    @on(Button.Pressed, "#help_button")
-    def _on_help_button_pressed(self):
-        self.app.push_screen(
-            Confirm(
-                self.help_message,
-                left_button_text=False,
-                right_button_text="OK",
-                right_button_variant="default",
-                title="Help",
-                id="help_modal",
-                # classes="confirm_warning",
-            )
-        )
+    # @on(Button.Pressed, "#help_button")
+    # def _on_help_button_pressed(self):
+    #     self.app.push_screen(
+    #         Confirm(
+    #             self.help_message,
+    #             left_button_text=False,
+    #             right_button_text="OK",
+    #             right_button_variant="default",
+    #             title="Help",
+    #             id="help_modal",
+    #             # classes="confirm_warning",
+    #         )
+    #     )
 
     @on(Switch.Changed)
     def _on_select(self, event):

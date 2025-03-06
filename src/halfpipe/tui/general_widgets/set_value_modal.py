@@ -5,7 +5,7 @@ from textual import on
 from textual.containers import Horizontal
 from textual.widgets import Button, Input, Static
 
-from ..utils.draggable_modal_screen import DraggableModalScreen
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 
 
 class SetValueModal(DraggableModalScreen):

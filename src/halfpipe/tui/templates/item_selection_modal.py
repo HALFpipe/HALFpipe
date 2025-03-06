@@ -10,7 +10,7 @@ from textual.widgets import (
 )
 from textual.widgets.option_list import Option, Separator
 
-from ..utils.draggable_modal_screen import DraggableModalScreen
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from .utils.name_input import NameInput
 
 p = inflect.engine()

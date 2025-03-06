@@ -9,12 +9,12 @@ from textual.widget import Widget
 from textual.widgets import Button, Input, Static, Switch
 
 from ...model.file.base import File
-from ..utils.context import ctx
-from ..utils.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
-from ..utils.custom_switch import TextSwitch
-from ..utils.draggable_modal_screen import DraggableModalScreen
-from ..utils.filebrowser import FileBrowser
-from ..utils.meta_data_steps import CheckBoldSliceEncodingDirectionStep
+from ..data_analyzers.context import ctx
+from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
+from ..general_widgets.custom_switch import TextSwitch
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from ..specialized_widgets.filebrowser import FileBrowser
+from ..data_analyzers.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 
 
 class SetInitialVolumesRemovalModal(DraggableModalScreen):

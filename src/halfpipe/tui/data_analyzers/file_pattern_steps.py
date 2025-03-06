@@ -26,7 +26,7 @@ from ...model.tags import entities
 from ...model.tags import entity_longnames as entity_display_aliases
 from ...model.utils import get_schema_entities
 from ...utils.path import split_ext
-from ..utils.context import ctx
+from ..data_analyzers.context import ctx
 from .meta_data_steps import (
     CheckMetadataStep,
     CheckPhase1EchoTimeStep,

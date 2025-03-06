@@ -2,7 +2,7 @@
 
 
 from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
-from ..utils.event_file_widget import SpatialMapFilePanel
+from ..specialized_widgets.event_file_widget import SpatialMapFilePanel
 
 
 class DualReg(AtlasSeedDualRegBasedTemplate):

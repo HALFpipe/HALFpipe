@@ -10,7 +10,7 @@ from textual.widget import Widget
 from textual.widgets import Button, Label, RadioButton
 
 from ._radio_set2 import RadioSet
-from .confirm_screen import Confirm
+from ..specialized_widgets.confirm_screen import Confirm
 from .draggable_modal_screen import DraggableModalScreen
 
 

@@ -9,9 +9,9 @@ from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
 from ..templates.feature_template import FeatureTemplate
-from ..utils.custom_general_widgets import LabelWithInputBox
-from ..utils.event_file_widget import AtlasFilePanel
-from ..utils.utils import extract_name_part
+from ..general_widgets.custom_general_widgets import LabelWithInputBox
+from ..specialized_widgets.event_file_widget import AtlasFilePanel
+from ..help_functions import extract_name_part
 
 
 class AtlasSeedDualRegBasedTemplate(FeatureTemplate):

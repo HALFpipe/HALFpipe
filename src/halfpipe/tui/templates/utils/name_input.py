@@ -10,8 +10,8 @@ from textual.widgets import (
     Input,
 )
 
-from ...utils.confirm_screen import Confirm
-from ...utils.draggable_modal_screen import DraggableModalScreen
+from ...specialized_widgets.confirm_screen import Confirm
+from ...general_widgets.draggable_modal_screen import DraggableModalScreen
 
 
 class NameInput(DraggableModalScreen):

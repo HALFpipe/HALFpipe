@@ -2,7 +2,7 @@
 
 
 from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
-from ..utils.event_file_widget import SeedMapFilePanel
+from ..specialized_widgets.event_file_widget import SeedMapFilePanel
 
 
 class SeedBased(AtlasSeedDualRegBasedTemplate):
