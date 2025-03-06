@@ -190,6 +190,15 @@ class TextSwitch(Switch):
         Updates the slider position based on the switch value with optional animation.
     """
 
+    DEFAULT_CSS = """
+        TextSwitch {
+            border: tall transparent;
+            height: 3;
+            width: 16;
+            padding: 0 2;
+        }
+    """
+
     def render(self) -> RenderableType:
         style = self.get_component_rich_style("switch--slider")
         return MyScrollBarRender(

@@ -173,19 +173,19 @@ class Welcome(ModalScreen):
 class MainApp(App):
     CSS_PATH = [
         os.path.join(BASE_DIR, "tcss/base.tcss"),
+        os.path.join(BASE_DIR, "tcss/general.tcss"),
         os.path.join(BASE_DIR, "feature_widgets/tcss/base.tcss"),
         os.path.join(BASE_DIR, "feature_widgets/tcss/taskbased.tcss"),
         os.path.join(BASE_DIR, "feature_widgets/utils/tcss/model_conditions_and_contrasts.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/base.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/models.tcss"),
         os.path.join(BASE_DIR, "group_level_models/tcss/group_level_model_selection_modal.tcss"),
-        os.path.join(BASE_DIR, "utils/tcss/file_browser.tcss"),
         os.path.join(BASE_DIR, "working_directory/tcss/working_directory.tcss"),
         os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
         os.path.join(BASE_DIR, "preprocessing/tcss/preprocessing.tcss"),
         os.path.join(BASE_DIR, "run/tcss/run.tcss"),
+        os.path.join(BASE_DIR, "utils/tcss/file_browser.tcss"),
         os.path.join(BASE_DIR, "utils/tcss/path_pattern_builder.tcss"),
-        os.path.join(BASE_DIR, "dev.tcss"),
         os.path.join(BASE_DIR, "utils/tcss/radio_set_changed.tcss"),
     ]
 

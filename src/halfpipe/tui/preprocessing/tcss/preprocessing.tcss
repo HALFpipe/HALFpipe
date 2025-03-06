@@ -80,7 +80,7 @@ Preprocessing {
         Grid {
             align: left middle;
             grid-size: 3;
-            grid-columns: 50 16 15;
+            grid-columns: 53 16 15;
         }
     }
     LabelledSwitch {
@@ -89,7 +89,7 @@ Preprocessing {
         Grid {
             align: left middle;
             grid-size: 3;
-            grid-columns: 53 16 15;
+            grid-columns: 56 16 15;
         }
         Static {
             offset-x: 1;
@@ -108,7 +108,7 @@ Preprocessing {
             offset-x: 5;
         }
         #the_static {
-            width: 45;
+            width: 48;
             offset-x: 2;
             offset-y: 2;
         }

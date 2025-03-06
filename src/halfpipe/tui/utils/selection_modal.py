@@ -58,6 +58,36 @@ class SelectionModal(DraggableModalScreen):
         Updates the choice attribute with the selected option key.
     """
 
+    DEFAULT_CSS = """
+        SelectionModal {
+            #draggable_modal_screen_container_wrapper {
+                width: 81;
+                background: black;
+            }
+            RadioSet {
+                height: auto;
+                width: auto;
+            }
+            Horizontal {
+                height: 4;
+                width: 100%;
+                align: right bottom;
+                offset-x: 0;
+                Button {
+                    margin: 0 1;
+                }
+            }
+            #title {
+                content-align: center middle;
+                text-style: bold;
+                content-align: center middle;
+                text-align: center;
+                width: auto;
+                margin: 1 1 0 1;
+            }
+        }
+    """
+
     def __init__(
         self,
         options=None | dict,
@@ -134,6 +164,23 @@ class DoubleSelectionModal(SelectionModal):
     _on_radio_set_changed(self, event: RadioSet.Changed) -> None
         Updates the internal choice state when a radio button selection is changed.
     """
+
+    DEFAULT_CSS = """
+        DoubleSelectionModal {
+            Static {
+                padding: 0 1;
+            }
+            #draggable_modal_screen_container_wrapper {
+                width: 50;
+                height: 18;
+                background: black;
+            }
+            RadioSet {
+                height: 4;
+                width: 48;
+            }
+        }
+        """
 
     def __init__(self, options=None, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
         super().__init__(title=title, id=id, classes=classes)
