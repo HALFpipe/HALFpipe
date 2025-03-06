@@ -29,7 +29,7 @@ requirements:
     - importlib_resources>=5.12
     - nibabel>=3.0.1
     - nilearn>=0.5.2
-    - nipype # local
+    - nipype
     - numpy
     - pandas
     - pybids

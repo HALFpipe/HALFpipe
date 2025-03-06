@@ -43,17 +43,6 @@ RUN --mount=source=recipes/pytest-textual-snapshot,target=/pytest-textual-snapsh
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "pytest-textual-snapshot"
 
-FROM builder AS nipype
-RUN --mount=source=recipes/traits,target=/traits \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "traits"
-RUN --mount=source=recipes/nipype,target=/nipype \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "nipype"
-RUN --mount=source=recipes/niflow-nipype1-workflows,target=/niflow-nipype1-workflows \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "niflow-nipype1-workflows"
-
 FROM builder AS afni
 RUN --mount=source=recipes/afni,target=/afni \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -74,10 +63,20 @@ RUN --mount=source=recipes/migas,target=/migas \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "migas"
 
+FROM builder AS nireports
+RUN --mount=source=recipes/nireports,target=/nireports \
+    --mount=type=cache,target=/opt/conda/pkgs \
+    retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
+
 FROM builder AS nitransforms
 RUN --mount=source=recipes/nitransforms,target=/nitransforms \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
+
+FROM builder AS traits
+RUN --mount=source=recipes/traits,target=/traits \
+    --mount=type=cache,target=/opt/conda/pkgs \
+    retry conda build --no-anaconda-upload --numpy "1.24" "traits"
 
 FROM builder AS tedana
 COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
@@ -86,24 +85,16 @@ RUN --mount=source=recipes/tedana,target=/tedana \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
-FROM builder AS nireports
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
-RUN conda index /opt/conda/conda-bld
-RUN --mount=source=recipes/nireports,target=/nireports \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
-
 FROM builder AS niworkflows
-COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=traits /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
 
 FROM builder AS sdcflows
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
@@ -112,7 +103,6 @@ RUN --mount=source=recipes/sdcflows,target=/sdcflows \
     retry conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
 
 FROM builder AS smriprep
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
@@ -121,20 +111,17 @@ RUN --mount=source=recipes/smriprep,target=/smriprep \
     retry conda build --no-anaconda-upload --numpy "1.24" "smriprep"
 
 FROM builder AS fmriprep
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
-
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS fmripost_aroma
-COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
@@ -181,6 +168,8 @@ RUN conda run --name="fmriprep" python -c "from matplotlib import font_manager" 
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
         $(conda run --name="fmriprep" python -c "import matplotlib; print(matplotlib.matplotlib_fname())")
 
+RUN echo "6.0.0" > /opt/conda/envs/fmriprep/etc/fslversion
+
 # Create the final image based on existing fmriprep image
 FROM nipreps/fmriprep:${fmriprep_version}
 
@@ -194,7 +183,8 @@ RUN mkdir /ext /host && \
 # singularity. These have been reported by users running on specific HPC systems
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
-    TEMPLATEFLOW_HOME="/var/cache/templateflow"
+    TEMPLATEFLOW_HOME="/var/cache/templateflow" \
+    PATH="/opt/conda/bin:$PATH"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
 # Add `coinstac` server components
@@ -212,4 +202,4 @@ COPY --from=install /opt/conda/ /opt/conda/
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
     conda run --name="fmriprep" python /resource.py
 
-ENTRYPOINT ["/opt/conda/bin/halfpipe"]
+ENTRYPOINT ["/opt/conda/envs/fmriprep/bin/halfpipe"]
