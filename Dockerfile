@@ -75,13 +75,11 @@ RUN --mount=source=recipes/migas,target=/migas \
     retry conda build --no-anaconda-upload --numpy "1.24" "migas"
 
 FROM builder AS nitransforms
-ARG fmriprep_version
 RUN --mount=source=recipes/nitransforms,target=/nitransforms \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 
 FROM builder AS tedana
-ARG fmriprep_version
 COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/tedana,target=/tedana \
@@ -89,7 +87,6 @@ RUN --mount=source=recipes/tedana,target=/tedana \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS nireports
-ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/nireports,target=/nireports \
@@ -97,7 +94,6 @@ RUN --mount=source=recipes/nireports,target=/nireports \
     retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
 
 FROM builder AS niworkflows
-ARG fmriprep_version
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
@@ -107,7 +103,6 @@ RUN --mount=source=recipes/niworkflows,target=/niworkflows \
     retry conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
 
 FROM builder AS sdcflows
-ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
@@ -117,7 +112,6 @@ RUN --mount=source=recipes/sdcflows,target=/sdcflows \
     retry conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
 
 FROM builder AS smriprep
-ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
@@ -133,14 +127,13 @@ COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
-ARG fmriprep_version
+
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS fmripost_aroma
-ARG fmriprep_version
 COPY --from=nipype /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
@@ -154,7 +147,6 @@ RUN --mount=source=recipes/fmripost_aroma,target=/fmripost_aroma \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmripost_aroma"
 
 FROM builder AS halfpipe
-ARG fmriprep_version
 COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=rmath /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=pytest-textual-snapshot /opt/conda/conda-bld /opt/conda/conda-bld
@@ -171,7 +163,6 @@ RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
 
 # We install built recipes and clean unnecessary files such as static libraries
 FROM conda AS install
-
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN --mount=type=cache,target=/opt/conda/pkgs \
@@ -206,12 +197,6 @@ ENV XDG_CACHE_HOME="/var/cache" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
-# We install ants previously using conda (through a dependency in the halfpipe
-# recipe), to get an important bug fix (#691). We delete the ants that came with
-# fmriprep and update the `PATH` to reflect the new ants location
-RUN rm -rf /usr/lib/ants
-ENV PATH="${PATH//\/usr\/lib\/ants/}"
-
 # Add `coinstac` server components
 COPY --from=coinstacteam/coinstac-base:latest /server/ /server/
 
@@ -222,18 +207,6 @@ RUN git config --global user.name "HALFpipe" && \
 # Copy `conda` from `install` stage
 RUN rm -rf /opt/conda
 COPY --from=install /opt/conda/ /opt/conda/
-
-# The `fmriprep` container comes with conda in `/usr/local/miniconda`.
-# Instead, halfpipe uses conda from the corresponding docker image,
-# where it is installed in `/opt/conda`.
-# Therefore, we update the `PATH` to reflect new conda location
-ENV PATH="${PATH/\/usr\/local\/miniconda\/bin//opt/conda/bin}"
-
-RUN ln -s /opt/conda/bin/fslversion /opt/conda/etc/fslversion && \
-    echo "6.0.4" >/opt/conda/bin/fslversion
-
-ENV PATH="$FSLDIR/bin:$PATH"
-RUN /bin/bash -c "source /opt/conda/bin/activate base && conda list"
 
 # Download all resources
 RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
