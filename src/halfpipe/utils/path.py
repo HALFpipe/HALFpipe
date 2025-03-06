@@ -26,7 +26,7 @@ def resolve(path: Path | str, fs_root: Path | str) -> Path:
     return Path(abspath)
 
 
-def find_paths(obj: Any) -> list[Path | str]:
+def find_paths(obj: Any) -> list[Path]:
     from pathlib import Path
 
     from nipype.interfaces.base.specs import BaseTraitedSpec
@@ -65,7 +65,7 @@ def find_paths(obj: Any) -> list[Path | str]:
                 stack.extend(obj)
             except TypeError:
                 pass
-    return paths
+    return list(map(Path, paths))
 
 
 def split_ext(path: str | AnyPath):
