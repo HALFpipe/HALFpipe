@@ -347,6 +347,8 @@ class ModelConditionsAndContrasts(Widget):
             + len(self.get_widget_by_id("model_conditions_selection")._values)
             + 14
         )
+        if len(self.feature_conditions_list) == 0:
+            self.styles.height = 1
 
     def action_add_column(self):
         """Add column with new contrast values to te table."""
