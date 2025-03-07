@@ -22,6 +22,7 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
     """
 
     from functools import reduce
+    from pathlib import Path
 
     import nibabel as nib
     import numpy as np
@@ -41,14 +42,14 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
     )
 
     mask_image = new_img_like(mask_image, mask, copy_header=True)
-    mask_file = "mask.nii.gz"
+    mask_file = str(Path("mask.nii.gz").resolve())
     nib.loadsave.save(mask_image, mask_file)
 
     falff = np.zeros_like(filtered)
     falff[mask] = filtered[mask] / unfiltered[mask]
 
     falff_image = nib.nifti1.Nifti1Image(falff, affine=filtered_image.affine, header=filtered_image.header)
-    falff_file = "falff.nii.gz"
+    falff_file = str(Path("falff.nii.gz").resolve())
     nib.loadsave.save(falff_image, falff_file)
 
     return mask_file, falff_file
