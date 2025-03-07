@@ -131,12 +131,12 @@ def init_taskbased_wf(
     for contrast in feature.contrasts:
         contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
         contrasts.append(
-            [
+            (
                 contrast["name"],
                 contrast["type"].upper(),
                 condition_names,
                 contrast_values,
-            ]
+            )
         )
 
     # parse condition files into three (ordered) lists
