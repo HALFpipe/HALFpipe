@@ -95,14 +95,8 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
 
-    @on(file_panel_class.Changed, "#top_event_file_panel")
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
-    def _on_selection_list_changed_tasks_to_use_selection(self, message):
-        # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
-        # subclass
-
-        # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
-        # more-less the same. If there are no choices user gets an error and all options are selected again.
+    def _on_tasks_to_use_selection_changed(self, message):
         if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
@@ -116,8 +110,19 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id(message.control.id).select(message.selection)
 
+
+    @on(file_panel_class.Changed, "#top_event_file_panel")
+    @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
+    def _on_selection_list_changed_tasks_to_use_selection(self, message):
+        # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
+        # subclass
+
+        # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
+        # more-less the same. If there are no choices user gets an error and all options are selected again.
+
+
         if (
-            type(self).__name__ == "TaskBased" and message.control.id == "tasks_to_use_selection"
+            type(self).__name__ == "TaskBased"# and message.control.id == "tasks_to_use_selection"
         ):  # conditions are only in Task Based not in Preprocessing!
             # try to update it here? this refresh the whole condition list every time that image is changed
             all_possible_conditions = []

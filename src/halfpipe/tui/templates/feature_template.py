@@ -251,6 +251,7 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_lp_width").switch_value = False
             self.get_widget_by_id("bandpass_filter_hp_width").switch_value = False
+        self.update_dataline()
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     def _on_selection_list_changed(self, message):
