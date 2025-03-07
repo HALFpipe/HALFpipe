@@ -68,9 +68,6 @@ class ICAAROMAComponentsFactory(Factory):
             memcalc = MemoryCalculator.from_bold_file(source_file)
             vwf = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir), memcalc=memcalc)
 
-            for node in vwf._get_all_nodes():
-                memcalc.patch_mem_gb(node)
-
             wf.add_nodes([vwf])
 
         assert isinstance(vwf, pe.Workflow)
@@ -143,7 +140,7 @@ class LookupFactory(Factory):
     def _should_skip(self, obj):
         return obj is None
 
-    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, _):
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
@@ -199,7 +196,7 @@ class FmriprepAdapterFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
         return init_fmriprep_adapter_wf(memcalc=lookup_tuple.memcalc)
 
-    def _tpl(self, _) -> Hashable:
+    def _tpl(self, setting) -> Hashable:
         return SettingTuple(value=None, suffix=None)
 
 
@@ -347,7 +344,7 @@ class SettingAdapterFactory(LookupFactory):
 
         return init_setting_adapter_wf(suffix=suffix)
 
-    def _tpl(self, _) -> Hashable:
+    def _tpl(self, setting) -> Hashable:
         return None
 
 
@@ -406,6 +403,12 @@ class ConfoundsRegressionFactory(LookupFactory):
 class PostProcessingFactory(Factory):
     def __init__(self, ctx: FactoryContext, fmriprep_factory: FmriprepFactory) -> None:
         super().__init__(ctx)
+        """
+        Through this init function we decide what information/variables are available in each factory.
+        This generates a sequential dependency between the factories, because the LookUp factory class
+        always checks the previous factory.
+        Practically, this defines order of our own processing steps.
+        """
 
         self.fmriprep_factory = fmriprep_factory
 
@@ -499,8 +502,12 @@ class PostProcessingFactory(Factory):
                 )
 
     def get(self, source_file, setting_name, confounds_action=None):
+        # self.fmriprep_adapter_factory.get(source_file)
         if self.ctx.spec.global_settings["run_aroma"] is True:
             # Make sure ica aroma components are calculated when enabled
+            # The component calculation is independent from the noise components regression application
+            # so we generally ran components by default and apply them if the specific settings of spec file
+            # shows "ica_aroma=True"
             self.ica_aroma_components_factory.get(source_file)
         if confounds_action == "select":
             return self.confounds_select_factory.get(source_file, setting_name)

@@ -43,14 +43,18 @@ def _get_unit(schema, key):
         return field.metadata.get("unit")
 
 
-def display_str(x):
-    if x == "MNI152NLin6Asym":
-        return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
-    elif x == "MNI152NLin2009cAsym":
-        return "MNI ICBM 2009c Nonlinear Asymmetric"
-    elif x == "slice_encoding_direction":
-        return "slice acquisition direction"
-    return humanize(x)
+def display_str(value: str) -> str:
+    rules = {
+        "MNI152NLin6Asym": "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)",
+        "MNI152NLin2009cAsym": "MNI ICBM 2009c Nonlinear Asymmetric",
+        "slice_encoding_direction": "slice acquisition direction",
+        "echo_time1": "time of the first (shorter) echo",
+        "echo_time2": "time of the second (longer) echo",
+    }
+    if value in rules:
+        return rules[value]
+    else:
+        return humanize(value)
 
 
 class SliceTimingFileStep(Step):
@@ -179,7 +183,7 @@ class SetMetadataStep(Step):
 
         self.next_step_type = next_step_type
 
-    def setup(self, _):
+    def setup(self, ctx):
         humankey = display_str(self.key).lower()
 
         unit = _get_unit(self.schema, self.key)
@@ -290,7 +294,7 @@ class CheckMetadataStep(Step):
 
     show_summary: ClassVar[bool] = True
 
-    def _should_skip(self, _):
+    def _should_skip(self, ctx):
         return False
 
     def setup(self, ctx):
@@ -305,7 +309,10 @@ class CheckMetadataStep(Step):
         humankey = display_str(self.key).lower()
 
         if self.filters is None:
-            filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
+            fileobjs = ctx.database.fromspecfileobj(ctx.spec.files[-1])
+            if fileobjs is None:
+                raise ValueError("No files found for filters")
+            filepaths = [fileobj.path for fileobj in fileobjs]
         else:
             filepaths = [*ctx.database.get(**self.filters)]
 

@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import colormaps
 from nilearn.plotting import plot_anat, plot_epi
 from nipype.interfaces.base import File, isdefined, traits
-from niworkflows.interfaces.report_base import (
+from nireports.interfaces.reporting.base import (
     ReportingInterface,
     _SVGReportCapableInputSpec,
 )

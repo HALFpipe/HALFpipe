@@ -5,14 +5,12 @@
 from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.interfaces.masks import SimpleShowMaskRPT  # ROIsPlot
-from niworkflows.interfaces.utility import KeySelect
+from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
 from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.reports.imageplot import PlotRegistration
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -21,17 +19,22 @@ def init_anat_report_wf(
     name="anat_report_wf",
     memcalc: MemoryCalculator | None = None,
 ):
+    """
+    We create our own report because instead of a moving display for the
+    visualizations of the anatomical preprocessing, we prefer static ones.
+    """
+
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     workflow = pe.Workflow(name=name)
 
-    fmriprepreports = ["t1w_dseg_mask", "std_t1w"]
+    fmriprepreports = ["t1w_dseg_mask"]
     fmriprepreportdatasinks = [f"ds_{fr}_report" for fr in fmriprepreports]
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "standardized",
-                "std_mask",
+                "t1w_std",
+                "mask_std",
                 "template",
                 "t1w_preproc",
                 "t1w_mask",
@@ -43,16 +46,17 @@ def init_anat_report_wf(
         name="inputnode",
     )
 
-    select_std = pe.Node(
-        KeySelect(fields=["standardized", "std_mask"]),
-        name="select_std",
-        run_without_submitting=True,
-        nohash=True,
-    )
-    select_std.inputs.key = Constants.reference_space
-    workflow.connect(inputnode, "standardized", select_std, "standardized")
-    workflow.connect(inputnode, "std_mask", select_std, "std_mask")
-    workflow.connect(inputnode, "template", select_std, "keys")
+    # select_std = pe.Node(
+    #     # KeySelect(fields=["standardized", "mask_std"]),
+    #     KeySelect(fields=["t1w_std", "mask_std"]),
+    #     name="select_std",
+    #     run_without_submitting=True,
+    #     nohash=True,
+    # )
+    # select_std.inputs.key = Constants.reference_space
+    # workflow.connect(inputnode, "t1w_std", select_std, "t1w_std")
+    # workflow.connect(inputnode, "mask_std", select_std, "mask_std")
+    # workflow.connect(inputnode, "template", select_std, "keys")
 
     #
     make_resultdicts = pe.Node(
@@ -60,12 +64,10 @@ def init_anat_report_wf(
         name="make_resultdicts",
     )
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
-
-    #
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    #
+    # Include fmriprep reports in the result dicts
     for fr, frd in zip(fmriprepreports, fmriprepreportdatasinks, strict=False):
         workflow.connect(inputnode, frd, make_resultdicts, fr)
 
@@ -83,8 +85,8 @@ def init_anat_report_wf(
         name="t1_norm_rpt",
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(select_std, "standardized", t1_norm_rpt, "in_file")
-    workflow.connect(select_std, "std_mask", t1_norm_rpt, "mask_file")
+    workflow.connect(inputnode, "t1w_std", t1_norm_rpt, "in_file")
+    workflow.connect(inputnode, "mask_std", t1_norm_rpt, "mask_file")
     workflow.connect(t1_norm_rpt, "out_report", make_resultdicts, "t1_norm_rpt")
 
     return workflow

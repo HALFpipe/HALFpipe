@@ -4,21 +4,22 @@
 
 import numpy as np
 from nipype.interfaces.base import isdefined, traits
+from numpy import typing as npt
 
 from ..transformer import Transformer, TransformerInputSpec
 
 
 class TSNRInputSpec(TransformerInputSpec):
-    skip_vols = traits.Int(default=0, usedefault=True)
+    dummy_scans = traits.Int(default=0, usedefault=True)
 
 
 class TSNR(Transformer):
     input_spec = TSNRInputSpec
     suffix = "tsnr"
 
-    def _transform(self, array):
-        if isdefined(self.inputs.skip_vols):
-            array = array[self.inputs.skip_vols :, ...]
+    def _transform(self, array: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        if isdefined(self.inputs.dummy_scans):
+            array = array[self.inputs.dummy_scans :, ...]
 
         array = np.nan_to_num(array)
 
@@ -32,6 +33,6 @@ class TSNR(Transformer):
         tsnr[nonzero] = mean[nonzero] / std[nonzero]
 
         # ensure we have a two-dimensional array
-        tsnr = tsnr[np.newaxis, :]
+        tsnr = tsnr[np.newaxis, :]  # type: ignore[assignment]
 
         return tsnr

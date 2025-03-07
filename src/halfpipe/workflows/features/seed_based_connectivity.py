@@ -127,7 +127,7 @@ def init_seed_based_connectivity_wf(
     #
     reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="MultiLabel", **reference_dict),
+        Resample(interpolation="GenericLabel", **reference_dict),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
@@ -171,7 +171,7 @@ def init_seed_based_connectivity_wf(
     contrasts = pe.MapNode(
         niu.Function(
             input_names=["design_file"],
-            output_names=["out_with_header", "out_no_header"],
+            output_names=["out_with_header", "out_no_header"],  # type: ignore
             function=_contrasts,
         ),
         iterfield="design_file",

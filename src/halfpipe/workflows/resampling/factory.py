@@ -10,6 +10,10 @@ from .alt import init_alt_bold_std_trans_wf
 
 
 class AltBOLDFactory(Factory):
+    """
+    Factory for the alt_bold_std_trans_wf
+    """
+
     def __init__(self, ctx, fmriprep_factory):
         super(AltBOLDFactory, self).__init__(ctx)
 
@@ -31,9 +35,6 @@ class AltBOLDFactory(Factory):
 
             memcalc = MemoryCalculator.from_bold_file(source_file)
             vwf = init_alt_bold_std_trans_wf(memcalc=memcalc)
-
-            for node in vwf._get_all_nodes():
-                memcalc.patch_mem_gb(node)
 
             wf.add_nodes([vwf])
 

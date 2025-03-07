@@ -20,6 +20,9 @@ halfpipe = "halfpipe.cli.run:main"
 # Remember to keep in sync with requirements.in!
 requires = ["setuptools>=62", "setuptools_scm[toml]>=6.2", "wheel"]
 
+[tool.pyright]
+typeCheckingMode = "off"
+
 [tool.ruff]
 line-length = 127
 

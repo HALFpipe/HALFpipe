@@ -5,38 +5,40 @@
 import os
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 from nipype.interfaces.base.support import Bunch
 
 from halfpipe.utils.path import find_paths, recursive_list_directory, split_ext
 
-A = "/tmp/a.txt"  # TODO make this more elegant with a tmp_dir
-B = "/tmp/b.txt"
+a = "a.txt"
+b = "b.txt"
 
 
 @pytest.mark.timeout(60)
 @pytest.mark.parametrize(
     "obj",
     [
-        [A, B],
-        (A, B),
-        {A, B},
-        {"a": A, "b": B},
-        {"x": {"y": [A, B]}},
-        Bunch(a=A, b=B),
-        Bunch(x=[A, B]),
+        [a, b],
+        (a, b),
+        {a, b},
+        {"a": a, "b": b},
+        {"x": {"y": [a, b]}},
+        Bunch(a=a, b=b),
+        Bunch(x=[a, b]),
+        [Path(a), b],
     ],
 )
-def test_find_paths(tmp_path, obj):
+def test_find_paths(tmp_path: Path, obj: Any) -> None:
     os.chdir(str(tmp_path))
 
-    for fname in [A, B]:
+    for fname in [a, b]:
         Path(fname).touch()
 
-    assert set(find_paths(obj)) == set([A, B])
+    assert set(find_paths(obj)) == set([Path(a), Path(b)])
 
-    for fname in [A, B]:
+    for fname in [a, b]:
         Path(fname).unlink()
 
 

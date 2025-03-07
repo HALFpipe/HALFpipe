@@ -112,11 +112,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
 
         self.pool = ProcessPoolExecutor(
             max_workers=self.processors,
-            initializer=initializer,
-            initargs=(
-                get_init_args(),
-                plugin_args,
-            ),
+            initializer=initializer,  # type: ignore
+            initargs=(get_init_args(), plugin_args),  # type: ignore
             mp_context=mp_context,
         )
 
