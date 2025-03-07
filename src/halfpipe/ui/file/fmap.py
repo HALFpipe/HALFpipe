@@ -308,8 +308,8 @@ class FmapTypeStep(BranchStep):
     header_str = "Specify the type of the field maps"
     options = {
         "EPI (blip-up blip-down)": EPIStep,
-        "Phase difference and magnitude (used by Siemens scanners)": get_magnitude_steps(PhaseTypeStep),
-        "Scanner-computed field map and magnitude (used by GE / Philips scanners)": get_magnitude_steps(FieldMapStep),
+        "Phase difference and magnitude": get_magnitude_steps(PhaseTypeStep),
+        "Scanner-computed field map and magnitude": get_magnitude_steps(FieldMapStep),
     }
 
 
