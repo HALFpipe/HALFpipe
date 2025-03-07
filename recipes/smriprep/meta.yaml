@@ -1,15 +1,15 @@
 {% set name = "smriprep" %}
-{% set version = "0.16.0" %}
+{% set version = "0.17.0" %}
 
 # Requirements derived from
-# https://github.com/nipreps/smriprep/blob/maint/0.15.x/pyproject.toml
+# https://github.com/nipreps/smriprep/blob/maint/0.17.x/pyproject.toml
 
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  git_url: https://github.com/nipreps/smriprep.git # TODO check here
+  git_url: https://github.com/nipreps/smriprep.git
   git_rev: "{{ version }}"
 
 build:
@@ -24,17 +24,18 @@ requirements:
     - hatch-vcs
   run:
     - python 3.11.*
-    - indexed_gzip>=0.8.8
-    - lockfile
-    - matplotlib>=2.2.0
+    - acres>=0.2
+    - indexed_gzip>=1.7
+    - lockfile>=0.12.2
+    - matplotlib>=3.5
     - nibabel>=4.0.1
-    - nipype>=1.7.0
-    - niworkflows>=1.11.0
-    - numpy
-    - packaging
-    - pybids>=0.11.1
-    - pyyaml
-    - templateflow>=24.1
+    - nipype>=1.8.5
+    - niworkflows>=1.12.1
+    - numpy>=1.24
+    - packaging>=24
+    - pybids>=0.16
+    - pyyaml>=6.0
+    - templateflow>=24.2
 test:
   imports:
     - smriprep

@@ -1,6 +1,5 @@
 # Dependencies derived from:
-# https://github.com/nipreps/fmriprep/blob/24.0.1/pyproject.toml
-# https://github.com/nipreps/fmriprep/blob/946b71ee2e4891c7d53cecfa68761bfc31b484fd/env.yml#L31C1-L37C21
+# https://github.com/nipreps/fmriprep/blob/master/pyproject.toml
 
 package:
   name: "fmriprep"
@@ -8,7 +7,7 @@ package:
 
 source:
   git_url: https://github.com/nipreps/fmriprep.git
-  git_rev: "18a28efe090caabd0aad947e22f2954ba39d3472"
+  git_rev: "f81a3040e9c351946459703e4683cc74c8fe9f54"
 
 build:
   number: 0
@@ -23,27 +22,28 @@ requirements:
     - nipreps-versions
   run:
     - python 3.11.*
-    - looseversion
+    - acres>=0.2
+    - looseversion>=1.3
     - nipype>=1.8.5
     - nibabel>=4.0.1
-    - nitime
-    - numpy>=1.22
-    - packaging
-    - pandas
+    - nireports>=24.1.0
+    - nitime>=0.9
+    - nitransforms>=24.1.1
+    - niworkflows>=1.12.2
+    - numpy>=1.24
+    - packaging>=24
+    - pandas>=1.2
     - psutil>=5.4
-    - pybids>=0.15.2
-    - requests
-    - toml
-    - codecarbon
-    - APScheduler
-    - transforms3d
-    - nireports>=23.2.1
-    - nitransforms>=24.0.2
-    - niworkflows>=1.10.1
+    - pybids>=0.16
+    - requests>=2.27
+    - sdcflows>=2.11.0
+    - smriprep>=0.17.0
     - tedana>=23.0.2
-    - sdcflows>=2.8.1
-    - smriprep>=0.15.0
-    - templateflow>=24.1.0
+    - templateflow>=24.2.2
+    - transforms3d>=0.4
+    - toml>=0.10
+    - codecarbon>=2
+    - APScheduler>=3.10
     - fsl-bet2=2111.4
     - fsl-flirt=2111.2
     - fsl-fast4=2111.3

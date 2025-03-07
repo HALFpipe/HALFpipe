@@ -1,5 +1,5 @@
 {% set name = "niworkflows" %}
-{% set version = "1.11.0" %}
+{% set version = "1.12.2" %}
 
 # Dependencies derived from:
 # https://github.com/nipreps/niworkflows/blob/maint/1.11.x/pyproject.toml
@@ -10,7 +10,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 932bc150ea29f7d83febda9ecd05023ecd45454b532a0aec2b505ebf0a25cbc7
+  sha256: 18c9c020c7def4317e6f45dd788a342913492c953d0107f111a349e96050303d
 
 build:
   number: 0
@@ -26,27 +26,25 @@ requirements:
     - python 3.11.*
     - attrs
     - acres
-    - jinja2
+    - jinja2>=3
     - looseversion
     - importlib_resources>=5.7
-    - matplotlib>=3.4.2
+    - matplotlib>=3.5
     - nibabel>=3.0
-    - nilearn>=0.5.2
+    - nilearn>=0.8
     - nipype>=1.8.5
-    - nitransforms>=21.0.0
-    - numpy
+    - nitransforms>=22.0.0
+    - numpy>=1.20
     - packaging
-    - pandas
+    - pandas>=1.2
     - pybids>=0.15.1
-    - PyYAML
-    - scikit-image
-    - scikit-learn
-    - scipy
-    - seaborn
+    - PyYAML>=5.4
+    - scikit-image>=0.18
+    - scipy>=1.8
+    - seaborn>=0.11
     - svgutils>=0.3.4  # https://github.com/nipreps/niworkflows/issues/595
-    - transforms3d
-    - templateflow>=0.7.2
-    - traits<6.4
+    - templateflow>=23.1
+    - transforms3d>=0.4
 
 test:
   imports:

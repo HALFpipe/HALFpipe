@@ -73,11 +73,6 @@ RUN --mount=source=recipes/nitransforms,target=/nitransforms \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 
-FROM builder AS traits
-RUN --mount=source=recipes/traits,target=/traits \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "traits"
-
 FROM builder AS tedana
 COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
@@ -88,7 +83,6 @@ RUN --mount=source=recipes/tedana,target=/tedana \
 FROM builder AS niworkflows
 COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=traits /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \

@@ -1,5 +1,5 @@
 {% set name = "acres" %}
-{% set version = "0.1.0" %}
+{% set version = "0.3.0" %}
 
 # Dependencies derived from:
 # https://github.com/nipreps/acres/blob/main/pyproject.toml
@@ -10,7 +10,7 @@ package:
 
 source:
   url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 4765479683389849368947da9e5319e677e7323ed858d642f9736ad1c070f45b
+  sha256: b8aa5d46bd4716f914355c633a5181f63c00cbb42bca90826a77b8acf5a07862
 
 build:
   number: 0
@@ -18,13 +18,12 @@ build:
 
 requirements:
   host:
-    - pip
     - python 3.11.*
+    - pip
     - pdm-backend
-    - flit-core
   run:
     - python 3.11.*
-    - pdm-backend
+    - importlib_resources>=5.7
 
 test:
   imports:
