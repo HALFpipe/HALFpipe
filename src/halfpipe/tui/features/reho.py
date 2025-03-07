@@ -36,10 +36,8 @@ class ReHo(FeatureTemplate):
     def __init__(self, this_user_selection_dict, **kwargs) -> None:
         super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
         # in this case, smoothing is in features!!!
-        if "smoothing" not in self.feature_dict:
-            self.feature_dict["smoothing"] = {"fwhm": "6"}
-        if "smoothing" in self.setting_dict:
-            del self.setting_dict["smoothing"]
+        self.feature_dict.setdefault("smoothing", {"fwhm": "6"})
+        self.setting_dict.pop("smoothing", None)
 
     def on_mount(self):
         self.get_widget_by_id("bandpass_filter_type").default_option = "frequency_based"

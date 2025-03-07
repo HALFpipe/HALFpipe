@@ -108,9 +108,9 @@ class FeatureTemplate(Widget):
             self.bandpass_filter_default_switch_value = False
 
         smoothing_default_switch_value = True
-        self.feature_dict.setdefault("smoothing", {"fwhm": "6"})
-        default_smoothing_value = self.feature_dict["smoothing"]["fwhm"]
-        if self.feature_dict["smoothing"]["fwhm"] is None:
+        self.setting_dict.setdefault("smoothing", {"fwhm": "6"})
+        default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
+        if self.setting_dict["smoothing"]["fwhm"] is None:
             smoothing_default_switch_value = False
 
         self.grand_mean_scaling_default_switch_value = True
