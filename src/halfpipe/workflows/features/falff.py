@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from functools import reduce
 from pathlib import Path
 
 import nipype.interfaces.utility as niu
@@ -21,6 +20,8 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
     """
     Computes fALFF using Nibabel instead of AFNI's 3dcalc.
     """
+
+    from functools import reduce
 
     import nibabel as nib
     import numpy as np
