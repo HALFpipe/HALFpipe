@@ -9,6 +9,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_images,
     settable_scroll_screen_down,
 )
 
@@ -30,20 +31,23 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # Define functions to execute based on stage requirements
     async def add_atlas_task():
         await add_new_feature(pilot, feature_type="atlas", label="atlas_1")
+        await select_images(pilot)
 
         # Add atlas file pattern
         await add_atlas_or_seed_or_map_file_pattern(pilot, atlas_file_pattern)
 
         # change minimum coverage from 0.8 to 0.85
-        await pilot.click(offset=(131, 35))
+        await pilot.click(offset=(131, 38))
         await pilot.press("5")
 
+        await settable_scroll_screen_down(pilot, 2)
+
         # turn off smoothing
-        await pilot.click(offset=(118, 41))
-        # turn off grand mean scalling
         await pilot.click(offset=(118, 44))
-        # turn off the temporal filter
+        # turn off grand mean scalling
         await pilot.click(offset=(118, 47))
+        # turn off the temporal filter
+        await pilot.click(offset=(118, 50))
 
     async def duplicate():
         await pilot.click(offset=(10, 12))

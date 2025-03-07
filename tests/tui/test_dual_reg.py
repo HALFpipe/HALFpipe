@@ -9,6 +9,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_images,
     settable_scroll_screen_down,
 )
 
@@ -30,6 +31,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     # Define functions to execute based on stage requirements
     async def add_dual_reg_task():
         await add_new_feature(pilot, feature_type="dual_reg", label="dual_reg_!")
+        # select all images
+        await select_images(pilot)
         # Add map file pattern
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
 

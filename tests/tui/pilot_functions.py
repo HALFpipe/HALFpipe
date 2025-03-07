@@ -71,7 +71,7 @@ async def add_new_feature(pilot, feature_type=None, label=None) -> None:
 
 async def select_images(pilot) -> None:
     # select all images
-    await pilot.click(offset=(72, 9))
+    await pilot.click(offset=(71, 9))
     await pilot.click(offset=(71, 10))
     await pilot.click(offset=(71, 11))
     await pilot.pause()
@@ -79,13 +79,13 @@ async def select_images(pilot) -> None:
 
 async def deselect_conditions(pilot, offset_y=0) -> None:
     # deselect one of the conditions
-    await pilot.click(offset=(71, 18 + offset_y))
+    await pilot.click(offset=(71, 23 + offset_y))
 
 
 async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
     label = "con1" if label is None else label
     # # click on Add contrast values
-    await pilot.click(offset=(108, 38 + offset_y))
+    await pilot.click(offset=(108, 43 + offset_y))
     # click in the prompt, for some reasons sometimes needs to be clicked twice
     await pilot.click(offset=(99, 16))
     await pilot.click(offset=(99, 16))
@@ -108,7 +108,7 @@ async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
 
 
 async def delete_column(pilot) -> None:
-    await pilot.click(offset=(136, 38))
+    await pilot.click(offset=(136, 43))
 
 
 async def scroll_screen_down(pilot) -> None:
@@ -158,7 +158,7 @@ async def remove_confounds(pilot) -> None:
     # make few 'Remove confounds" options
     await pilot.click(offset=(71, 39))
     await pilot.click(offset=(71, 42))
-    await pilot.click(offset=(71, 46))
+    await pilot.click(offset=(71, 47))
 
 
 async def check_and_run_tab_refresh(pilot) -> None:
@@ -246,7 +246,7 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None,
     await pilot.click(offset=(121, 31))
 
 
-async def settable_scroll_screen_down(pilot, how_much=20) -> None:
+async def settable_scroll_screen_down(pilot, how_much=19) -> None:
     # scroll screen (different layout than in features)
     for _i in range(how_much):
         await pilot.press("down")
@@ -271,45 +271,48 @@ async def run_before_for_reho_falff_preproc(
     # Define functions to execute based on stage requirements
     async def add_feature():
         await add_new_feature(pilot, feature_type=feature_type, label=feature_type + "_1")
+        # select all images
+        await select_images(pilot)
         # deselect second image
         await pilot.click(offset=(71, 10))
 
         # click in the Smoothing input box, delete the '0' and type '666'
-        await pilot.click(offset=(137, 17))
+        await pilot.click(offset=(137, 22))
 
         await pilot.press("backspace")
         for i in "666":
             await pilot.press(i)
 
         # click in the Grand mean scaling input box, delete the '0' and type '666'
-        await pilot.click(offset=(137, 21))
+        await pilot.click(offset=(137, 26))
         for _i in range(7):
             await pilot.press("backspace")
         for i in "12345":
             await pilot.press(i)
 
         # click on the selection arrow of the temporal filter and select 'frequency_based'
-        await pilot.click(offset=(151, 23))
-        await pilot.click(offset=(151, 27))
+        await pilot.click(offset=(151, 28))
+        await pilot.click(offset=(151, 32))
 
         # change low pass filter value to 0.019
-        await pilot.click(offset=(137, 26))
+        await pilot.click(offset=(137, 31))
         await pilot.press("9")
 
         # change high pass filter value to 0.19
-        await pilot.click(offset=(137, 29))
+        await pilot.click(offset=(137, 34))
         await pilot.press("9")
 
         # remove confounds (activate all)
-        await pilot.click(offset=(72, 34))
-        await pilot.click(offset=(72, 35))
-        await pilot.click(offset=(72, 36))
-        await pilot.click(offset=(72, 37))
-        await pilot.click(offset=(72, 38))
         await pilot.click(offset=(72, 39))
         await pilot.click(offset=(72, 40))
         await pilot.click(offset=(72, 41))
         await pilot.click(offset=(72, 42))
+        await pilot.click(offset=(72, 43))
+        await pilot.click(offset=(72, 44))
+        await pilot.click(offset=(72, 45))
+        await pilot.click(offset=(72, 46))
+        await pilot.click(offset=(72, 47))
+        await pilot.click(offset=(72, 48))
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
@@ -333,7 +336,7 @@ async def run_before_for_reho_falff_preproc(
 
 async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=False):
     # click on "Add" (atlas or seed image or map)
-    await pilot.click(offset=(76, 17))
+    await pilot.click(offset=(76, 22))
 
     # select event file type if it is an event file pattern
     if event_file_pattern is True:

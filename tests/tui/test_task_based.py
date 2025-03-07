@@ -14,6 +14,7 @@ from .pilot_functions import (
     preprocessing_options,
     remove_confounds,
     scroll_screen_down,
+    select_images,
     settable_scroll_screen_down,
 )
 
@@ -33,6 +34,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     # Define functions to execute based on stage requirements
     async def add_feature_related_tasks():
         await add_new_feature(pilot)
+        await select_images(pilot)
         await deselect_conditions(pilot)
         await add_contrast_value_column(pilot, label="col1")
         await delete_column(pilot)

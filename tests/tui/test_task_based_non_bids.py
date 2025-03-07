@@ -8,6 +8,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_images,
     set_non_bids_data,
     settable_scroll_screen_down,
 )
@@ -35,6 +36,8 @@ async def run_before(
 
     async def add_feature_related_tasks():
         await add_new_feature(pilot)
+        await select_images(pilot)
+
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=True)
 
     async def duplicate():

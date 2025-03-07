@@ -9,6 +9,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_images,
     settable_scroll_screen_down,
 )
 
@@ -30,14 +31,16 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     # Define functions to execute based on stage requirements
     async def add_seed_based_task():
         await add_new_feature(pilot, feature_type="seed_based", label="seed_based_1")
+        # select all images
+        await select_images(pilot)
         # click on "Add" (seed images)
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
-
+        #
         # deselect second seed file
-        await pilot.click(offset=(71, 28))
-
-        # change minimum coverage from 0.8 to 0.85
-        await pilot.click(offset=(131, 35))
+        await pilot.click(offset=(71, 33))
+        #
+        # # change minimum coverage from 0.8 to 0.85
+        await pilot.click(offset=(131, 40))
         await pilot.press("5")
         # press tab to unfocus the input box
         await pilot.press("tab")
