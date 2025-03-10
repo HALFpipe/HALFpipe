@@ -1,0 +1,48 @@
+{% set name = "smriprep" %}
+{% set version = "0.17.0" %}
+
+# Requirements derived from
+# https://github.com/nipreps/smriprep/blob/maint/0.17.x/pyproject.toml
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/nipreps/smriprep.git
+  git_rev: "{{ version }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+
+requirements:
+  host:
+    - python 3.11.*
+    - pip
+    - hatchling
+    - hatch-vcs
+  run:
+    - python 3.11.*
+    - acres>=0.2
+    - indexed_gzip>=1.7
+    - lockfile>=0.12.2
+    - matplotlib>=3.5
+    - nibabel>=4.0.1
+    - nipype>=1.8.5
+    - niworkflows>=1.12.1
+    - numpy>=1.24
+    - packaging>=24
+    - pybids>=0.16
+    - pyyaml>=6.0
+    - templateflow>=24.2
+test:
+  imports:
+    - smriprep
+
+about:
+  home: https://www.nipreps.org/smriprep/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: "sMRIprep - a robust and easy-to-use pipeline for preprocessing of structural magnetic resonance images (MRI) of the brain."

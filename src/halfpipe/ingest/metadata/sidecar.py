@@ -5,7 +5,6 @@
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict
 
 import marshmallow.exceptions
 from inflection import underscore
@@ -20,7 +19,7 @@ from .base import Loader
 class SidecarMetadataLoader(Loader):
     @staticmethod
     @lru_cache(maxsize=None)
-    def load_json(file_path) -> Dict:
+    def load_json(file_path) -> dict:
         stem, _ = split_ext(file_path)
         sidecar_file_path = Path(file_path).parent / f"{stem}.json"
 
@@ -34,25 +33,9 @@ class SidecarMetadataLoader(Loader):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def load(cls, file_path) -> Dict:
+    def load(cls, file_path) -> dict:
         try:
             in_data = cls.load_json(file_path)
-
-            # data transformations
-
-            try:
-                from sdcflows.interfaces.fmap import get_ees
-
-                # get effective echo spacing even if not explicitly specified
-                in_data["EffectiveEchoSpacing"] = get_ees(in_data, in_file=file_path)
-            except Exception:
-                pass
-
-            if "EchoTime1" in in_data and "EchoTime2" in in_data:
-                if "EchoTimeDifference" not in in_data:
-                    in_data["EchoTimeDifference"] = abs(float(in_data["EchoTime1"]) - float(in_data["EchoTime2"]))
-
-            # parse
 
             in_data = {underscore(k): v for k, v in in_data.items()}
             sidecar = MetadataSchema().load(in_data, unknown=EXCLUDE)

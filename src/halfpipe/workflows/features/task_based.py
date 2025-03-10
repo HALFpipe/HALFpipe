@@ -131,12 +131,12 @@ def init_taskbased_wf(
     for contrast in feature.contrasts:
         contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
         contrasts.append(
-            [
+            (
                 contrast["name"],
                 contrast["type"].upper(),
                 condition_names,
                 contrast_values,
-            ]
+            )
         )
 
     # parse condition files into three (ordered) lists
@@ -220,7 +220,7 @@ def init_taskbased_wf(
     )
     workflow.connect(inputnode, "bold", stats, "in_file")
     cutoff = pe.Node(
-        niu.Function(input_names=["obj"], output_names=["min_val"], function=first_float),
+        niu.Function(input_names=["obj"], output_names="min_val", function=first_float),
         name="cutoff",
     )
     workflow.connect(stats, "out_stat", cutoff, "obj")
@@ -256,7 +256,7 @@ def init_taskbased_wf(
         add_td_conditions = pe.Node(
             niu.Function(
                 input_names=["hrf", "condition_names"],
-                output_names=["condition_names"],
+                output_names="condition_names",
                 function=_add_td_conditions,
             ),
             name="add_td_conditions",

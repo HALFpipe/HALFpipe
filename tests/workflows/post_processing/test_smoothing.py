@@ -3,8 +3,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import re
 from math import isclose
 from pathlib import Path
+from shutil import which
+from statistics import mean
+from subprocess import check_output
 
 import nipype.pipeline.engine as pe
 import pytest
@@ -17,19 +21,17 @@ from halfpipe.workflows.post_processing.smoothing import init_smoothing_wf
 from ...resource import setup as setup_test_resources
 
 
-def volume_smoothness(image_file, mask_file):
-    fwhmx = afni.FWHMx(
-        in_file=image_file,
-        mask=mask_file,
-        detrend=0,  # cannot use demed due to xor
-        combine=True,
+def volume_smoothness(image_file: Path | str, mask_file: Path | str) -> float:
+    wb_command = which("wb_command")
+    if wb_command is None:
+        raise RuntimeError("wb_command not found")
+    output = check_output(
+        [wb_command, "-volume-estimate-fwhm", "-roi", str(mask_file), "-whole-file", "-demean", str(image_file)], text=True
     )
-    result = fwhmx.run()
-    outputs = result.outputs
-    assert outputs is not None
-
-    _, _, _, fwhm = outputs.fwhm
-    return fwhm
+    m = re.fullmatch("FWHM: (?P<x>.+), (?P<y>.+), (?P<z>.+)", output.strip())
+    if m is None:
+        raise RuntimeError(f'Failed to parse wb_command output: "{output}"')
+    return mean(map(float, m.groups()))
 
 
 @pytest.mark.parametrize("target_fwhm", [0, 6])

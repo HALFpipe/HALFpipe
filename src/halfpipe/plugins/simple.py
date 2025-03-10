@@ -6,6 +6,8 @@ import networkx as nx
 from nipype.pipeline import plugins as nip
 from nipype.pipeline.engine.utils import topological_sort
 
+from ..logging import logger
+
 
 class SimplePlugin(nip.LinearPlugin):
     """Execute workflow in series"""
@@ -24,4 +26,5 @@ class SimplePlugin(nip.LinearPlugin):
         nodes, _ = topological_sort(graph)
 
         for node in nodes:
+            logger.debug(f"Running node: {node}")
             node.run(updatehash=updatehash)

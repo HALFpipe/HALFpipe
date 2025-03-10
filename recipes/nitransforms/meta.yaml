@@ -1,5 +1,8 @@
 {% set name = "nitransforms" %}
-{% set version = "20.0.0rc5" %}
+{% set version = "24.1.1" %}
+
+# Dependencies derived from:
+# https://github.com/nipy/nitransforms/blob/24.1.1/pyproject.toml
 
 package:
   name: {{ name }}
@@ -7,28 +10,22 @@ package:
 
 source:
   url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 650eb12155f01fae099298445cc33721b9935d9c880f54ec486ec4adf3bffe6e
+  sha256: 536956c580ee03e3e93043208da9eafc920b5934c7e7e0c4c7d759fca0963633
 
 build:
   number: 0
   script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv
 
-# Dependencies derived from:
-# https://github.com/nipy/nitransforms/blob/20.0.0rc5/setup.cfg
 requirements:
   host:
     - pip
     - python 3.11.*
-    - numpy
-    - scipy=1.11.3
-    - nibabel
-    - h5py
   run:
     - python 3.11.*
-    - numpy
-    - scipy=1.11.3
-    - h5py
-    - nibabel
+    - numpy>=1.21
+    - scipy>=1.8
+    - h5py>=3.9
+    - nibabel>=4.0
 
 test:
   imports:
