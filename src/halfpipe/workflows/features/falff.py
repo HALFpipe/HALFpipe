@@ -35,10 +35,14 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
     filtered = filtered_image.get_fdata()
     unfiltered = unfiltered_image.get_fdata()
 
-    mask = np.asanyarray(mask_image.dataobj, dtype=np.bool_)
     mask = reduce(
         np.logical_and,
-        [mask, np.logical_not(np.isfinite(filtered)), np.logical_not(np.isfinite(unfiltered)), np.isclose(unfiltered, 0.0)],
+        [
+            np.asanyarray(mask_image.dataobj, dtype=np.bool_),
+            np.isfinite(filtered),
+            np.isfinite(unfiltered),
+            np.logical_not(np.isclose(unfiltered, 0.0)),
+        ],
     )
 
     mask_image = new_img_like(mask_image, mask, copy_header=True)
