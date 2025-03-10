@@ -14,12 +14,9 @@ from ..data_analyzers.context import ctx
 from ..general_widgets.custom_general_widgets import SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import widget_exists
-from ..templates.feature_template import entity_label_dict
 from ..templates.model_template import ModelTemplate
 from .utils.add_spreadsheet_modal import AddSpreadsheetModal
 from .utils.additional_contrasts_table import AdditionalContrastsCategoricalVariablesTable
-
-aggregate_order = ["dir", "run", "ses", "task"]
 
 
 class LinearModel(ModelTemplate):
@@ -65,6 +62,7 @@ class LinearModel(ModelTemplate):
         with ScrollableContainer(id="top_container_models"):
             if self.tasks_to_use is not None:
                 yield self.tasks_to_use_selection_panel
+                yield self.aggregate_panel
             yield self.cutoff_panel
             yield self.spreadsheet_panel
 
@@ -92,8 +90,6 @@ class LinearModel(ModelTemplate):
             await self.get_widget_by_id("top_interaction_panel").remove()
         if widget_exists(self, "top_contrast_panel") is True:
             await self.get_widget_by_id("top_contrast_panel").remove()
-        if widget_exists(self, "top_aggregate_panel") is True:
-            await self.get_widget_by_id("top_aggregate_panel").remove()
 
         if message.value == BLANK:
             self.model_dict.pop("spreadsheet", None)
@@ -161,27 +157,6 @@ class LinearModel(ModelTemplate):
                         }
                         self.model_dict["filters"].append(filt_dict)
 
-            # Aggregation
-            # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
-            test_string = self.model_dict["inputs"][0]
-            matches = [key for key, value in entity_label_dict.items() if value in test_string]
-            await self.mount(
-                Vertical(
-                    Static("Aggregate scan-level statistics before analysis", id="aggregate_switch_label", classes="label"),
-                    SelectionList[str](
-                        *[
-                            Selection(entity_label_dict[entity], entity, True if entity in matches else False)
-                            for entity in ctx.get_available_images.keys()
-                            if entity != "sub"
-                        ],
-                        id="aggregate_selection_list",
-                    ),
-                    id="top_aggregate_panel",
-                    classes="components",
-                ),
-                after=self.get_widget_by_id("spreadsheet_selection_panel"),
-            )
-
             await self.mount(
                 Container(
                     Static(
@@ -197,7 +172,7 @@ class LinearModel(ModelTemplate):
                     id="top_levels_panel",
                     classes="components",
                 ),
-                after=self.get_widget_by_id("top_aggregate_panel"),
+                after=self.get_widget_by_id("spreadsheet_selection_panel"),
             )
 
             # If a selection for a variable in 'Add variables to the model' is On, then in the contrast field there is a
@@ -313,7 +288,6 @@ class LinearModel(ModelTemplate):
             self.is_new = False
 
             self.get_widget_by_id("top_levels_panel").border_title = "Subjects to include by their categorical variables"
-            self.get_widget_by_id("top_aggregate_panel").border_title = "Aggregate"
             self.get_widget_by_id("top_model_variables_panel").border_title = "Model variables"
             self.get_widget_by_id("top_interaction_panel").border_title = "Interaction terms"
             self.get_widget_by_id("top_contrast_panel").border_title = "Additional contrasts"
@@ -374,53 +348,6 @@ class LinearModel(ModelTemplate):
         # Now add every terms that is currently selected in the widget to the cache
         for interaction_term in message.control.selected:
             self.model_dict["contrasts"].append({"type": "infer", "variable": interaction_term})
-
-    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
-    @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
-    def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message):
-        # We need to run this function also in case when the Task selection is changed because this influence also the models
-        # that are aggregated and at the end which models are aggregated.
-        self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
-
-        tasks_to_aggregate = self.get_widget_by_id("tasks_to_use_selection").selected
-        entities_to_aggregate_over = self.get_widget_by_id("aggregate_selection_list").selected
-
-        # Sort aggregate selection to ensure proper order
-        entities_to_aggregate_over_sorted = sorted(entities_to_aggregate_over, key=lambda x: aggregate_order.index(x))
-
-        if entities_to_aggregate_over != []:
-            # aggregate_label_list = []
-            models: list = []
-            # We empty the input list because now all inputs are the tops of the whole aggregate hierarchy. So we append the
-            # first aggregate labels to the input list of the model.
-            self.model_dict["inputs"] = []
-            for task_name in tasks_to_aggregate:
-                aggregate_label = ""
-                if entities_to_aggregate_over_sorted != []:
-                    for aggregate_entity in entities_to_aggregate_over_sorted:
-                        if aggregate_label == "":
-                            previous_name = task_name
-                            aggregate_label = (
-                                "aggregate" + task_name.capitalize() + "Across" + entity_label_dict[aggregate_entity]
-                            )
-                        else:
-                            aggregate_label = models[-1]["name"] + "Then" + entity_label_dict[aggregate_entity]
-                            previous_name = models[-1]["name"]
-                        models.append(
-                            {
-                                "name": aggregate_label,
-                                "inputs": [previous_name],
-                                "filters": [],
-                                "type": "fe",
-                                "across": aggregate_entity,
-                            }
-                        )
-                        # Use last label for the input field
-                        if aggregate_entity == entities_to_aggregate_over_sorted[-1]:
-                            self.model_dict["inputs"].append(aggregate_label)
-
-        dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
-        ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}
 
     @on(TextSwitch.Changed, "#contrast_switch")
     async def _on_contrast_switch_changed(self, message):

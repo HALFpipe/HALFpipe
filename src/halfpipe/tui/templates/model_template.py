@@ -10,6 +10,9 @@ from textual.widgets.selection_list import Selection
 
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_switch import TextSwitch
+from ..templates.feature_template import entity_label_dict
+
+aggregate_order = ["dir", "run", "ses", "task"]
 
 
 class ModelTemplate(Widget):
@@ -162,9 +165,29 @@ class ModelTemplate(Widget):
             classes="components",
         )
 
+        # Aggregation
+        # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
+        test_string = self.model_dict["inputs"][0]
+        matches = [key for key, value in entity_label_dict.items() if value in test_string]
+        self.aggregate_panel = Vertical(
+            Static("Aggregate scan-level statistics before analysis", id="aggregate_switch_label", classes="label"),
+            SelectionList[str](
+                *[
+                    Selection(entity_label_dict[entity], entity, True if entity in matches else False)
+                    for entity in ctx.get_available_images.keys()
+                    if entity != "sub"
+                ],
+                id="aggregate_selection_list",
+            ),
+            id="top_aggregate_panel",
+            classes="components",
+        )
+
     async def on_mount(self) -> None:
         if self.tasks_to_use is not None:
             self.get_widget_by_id("tasks_to_use_selection").border_title = "Features to use"
+            self.get_widget_by_id("top_aggregate_panel").border_title = "Aggregate"
+
         self.get_widget_by_id("cutoff_panel").border_title = "Cutoffs"
         if not self.get_widget_by_id("exclude_subjects").value:
             self.hide_fd_filters()
@@ -195,3 +218,50 @@ class ModelTemplate(Widget):
         self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_panel").styles.height = 7
+
+    @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
+    @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
+    def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message):
+        # We need to run this function also in case when the Task selection is changed because this influence also the models
+        # that are aggregated and at the end which models are aggregated.
+        self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected
+
+        tasks_to_aggregate = self.get_widget_by_id("tasks_to_use_selection").selected
+        entities_to_aggregate_over = self.get_widget_by_id("aggregate_selection_list").selected
+
+        # Sort aggregate selection to ensure proper order
+        entities_to_aggregate_over_sorted = sorted(entities_to_aggregate_over, key=lambda x: aggregate_order.index(x))
+
+        if entities_to_aggregate_over != []:
+            # aggregate_label_list = []
+            models: list = []
+            # We empty the input list because now all inputs are the tops of the whole aggregate hierarchy. So we append the
+            # first aggregate labels to the input list of the model.
+            self.model_dict["inputs"] = []
+            for task_name in tasks_to_aggregate:
+                aggregate_label = ""
+                if entities_to_aggregate_over_sorted != []:
+                    for aggregate_entity in entities_to_aggregate_over_sorted:
+                        if aggregate_label == "":
+                            previous_name = task_name
+                            aggregate_label = (
+                                "aggregate" + task_name.capitalize() + "Across" + entity_label_dict[aggregate_entity]
+                            )
+                        else:
+                            aggregate_label = models[-1]["name"] + "Then" + entity_label_dict[aggregate_entity]
+                            previous_name = models[-1]["name"]
+                        models.append(
+                            {
+                                "name": aggregate_label,
+                                "inputs": [previous_name],
+                                "filters": [],
+                                "type": "fe",
+                                "across": aggregate_entity,
+                            }
+                        )
+                        # Use last label for the input field
+                        if aggregate_entity == entities_to_aggregate_over_sorted[-1]:
+                            self.model_dict["inputs"].append(aggregate_label)
+
+        dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
+        ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}
