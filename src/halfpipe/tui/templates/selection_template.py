@@ -168,8 +168,13 @@ class SelectionTemplate(Widget):
         if self.ITEM_KEY is None:
             raise NotImplementedError("Child class must define ITEM_KEY.")
 
-        current_id = self.get_widget_by_id("content_switcher").current
-        item_name = self.feature_items[current_id].name
+        current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
+        # deselect current item highlight, because the new copy will be highlighted automatically, avoiding double item
+        # highlighting
+        current_collabsible_item_id = current_content_switcher_item_id + "_flabel"
+        self.get_widget_by_id(current_collabsible_item_id).deselect()
+
+        item_name = self.feature_items[current_content_switcher_item_id].name
         item_name_copy = item_name + "Copy"
 
         # Deep copy existing data

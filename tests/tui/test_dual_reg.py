@@ -30,7 +30,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
 
     # Define functions to execute based on stage requirements
     async def add_dual_reg_task():
-        await add_new_feature(pilot, feature_type="dual_reg", label="dual_reg_!")
+        await add_new_feature(pilot, feature_type="dual_reg", label="dual_reg_1")
         # select all images
         await select_images(pilot)
         # Add map file pattern

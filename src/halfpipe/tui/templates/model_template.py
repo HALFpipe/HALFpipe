@@ -10,6 +10,7 @@ from textual.widgets.selection_list import Selection
 
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_switch import TextSwitch
+from ..specialized_widgets.confirm_screen import Confirm
 from ..templates.feature_template import entity_label_dict
 
 aggregate_order = ["dir", "run", "ses", "task"]
@@ -93,7 +94,7 @@ class ModelTemplate(Widget):
         # off the cutoff widget switch. It is enough to just check one of the cutoffs in the filter field.
         if (
             self.model_dict["filters"] != [] and [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] != []
-        ) or self.model_dict["filters"] == []:
+        ) or self.is_new:
             cutoff_default_value = True
         else:
             cutoff_default_value = False
@@ -127,7 +128,13 @@ class ModelTemplate(Widget):
         if "inputs" not in self.model_dict:
             self.model_dict["inputs"] = list(self.tasks_to_use.keys())
         else:
-            self.tasks_to_use = {task_key: task_key in self.model_dict["inputs"] for task_key in self.tasks_to_use.keys()}
+            for task_key in self.tasks_to_use.keys():
+                for input in self.model_dict["inputs"]:
+                    if task_key.capitalize() in input:
+                        self.tasks_to_use[task_key] = True
+                        break
+                    else:
+                        self.tasks_to_use[task_key] = False
 
         self.tasks_to_use_selection_panel = SelectionList[str](
             *[Selection(task, task, self.tasks_to_use[task]) for task in self.tasks_to_use.keys()],
@@ -208,6 +215,7 @@ class ModelTemplate(Widget):
     def on_exclude_subjects_switch_changed(self, message: Message):
         if message.value is True:
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
+            self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "visible"
             self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "visible"
             self.get_widget_by_id("cutoff_panel").styles.height = "auto"
         else:
@@ -218,6 +226,21 @@ class ModelTemplate(Widget):
         self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_panel").styles.height = 7
+
+    @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
+    def _on_tasks_to_use_selection_changed(self, message):
+        if len(self.get_widget_by_id(message.control.id).selected) == 0:
+            self.app.push_screen(
+                Confirm(
+                    "You must selected at least one image!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No images!",
+                    classes="confirm_error",
+                )
+            )
+            self.get_widget_by_id(message.control.id).select(message.selection)
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
@@ -263,5 +286,5 @@ class ModelTemplate(Widget):
                         if aggregate_entity == entities_to_aggregate_over_sorted[-1]:
                             self.model_dict["inputs"].append(aggregate_label)
 
-        dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
-        ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}
+            dummy_cache_key = self.model_dict["name"] + "__aggregate_models_list"
+            ctx.cache[dummy_cache_key]["models"] = {"aggregate_models_list": models}

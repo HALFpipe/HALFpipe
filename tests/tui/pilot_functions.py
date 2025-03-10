@@ -2,18 +2,20 @@
 from pathlib import Path
 
 
+async def _load_data(pilot, data_path) -> None:
+    # switch to input data tab
+    await pilot.press("i")
+    await pilot.click(offset=(60, 20))
+    await enter_browse_path(pilot, data_path)
+    # click Ok on Modal informing us that the data input is success
+    await pilot.click(offset=(121, 31))
+
+
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
     await pilot.press("w")
-    # click on Browse
+    # click on Browse button
     await pilot.click(offset=(60, 15))
-    # click to the prompt
-    await pilot.click(offset=(74, 38))
-    for letter in work_dir_path:
-        await pilot.press(letter)
-    # close the suggestion box (to see the Enter button
-    await pilot.press("esc")
-    # click on the Enter button
-    await pilot.click(offset=(109, 41))
+    await enter_browse_path(pilot, work_dir_path)
     if not load_from_spec_file:
         # non existing path modal, click on "Ok"
         await pilot.click(offset=(117, 31))
@@ -24,25 +26,57 @@ async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None
         await pilot.click(offset=(100, 31))
 
 
-async def _load_data(pilot, data_path) -> None:
-    # switch to input data tab
-    await pilot.press("i")
-    # click on Browse button
-    await pilot.click(offset=(60, 20))
+async def enter_browse_path(pilot, path):
     # click to the prompt
     await pilot.click(offset=(80, 38))
     # type in the path
-    for letter in data_path:
+    for letter in path:
         await pilot.press(letter)
     # close the suggestion box (to see the Enter button
     await pilot.press("esc")
     # click on the Enter button
     await pilot.click(offset=(110, 41))
-    # click Ok on Modal informing us that the data input is success
-    await pilot.click(offset=(121, 31))
 
 
-async def add_new_feature(pilot, feature_type=None, label=None) -> None:
+async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
+    # click 'Add'
+    await pilot.click(offset=(78, 40))
+    # click Browse
+    await pilot.click(offset=(55, 26))
+    # enter the path
+    await enter_browse_path(pilot, spreadsheet_path)
+    # set sex as categorical
+    await pilot.click(offset=(119, 32))
+    # set site as categorical
+    await pilot.click(offset=(119, 34))
+    # click Ok
+    await pilot.click(offset=(129, 43))
+
+
+async def _select_group_level_models_cutoffs_values(pilot):
+    # toggle on/off switch
+    await pilot.click(offset=(138, 21))
+    ### set mean value
+    # click in the prompt
+    await pilot.click(offset=(136, 24))
+    # delete prompt
+    for _i in range(4):
+        await pilot.press("backspace")
+    # type new value
+    for i in "0.25":
+        await pilot.press(i)
+    ### set percentage value
+    # click in the prompt
+    await pilot.click(offset=(136, 27))
+    # delete prompt
+    for _i in range(4):
+        await pilot.press("backspace")
+    # type new value
+    for i in "15":
+        await pilot.press(i)
+
+
+async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") -> None:
     feature_type = feature_type if feature_type is not None else "task_based"
     label = label if label is not None else "task_based_1"
 
@@ -54,9 +88,11 @@ async def add_new_feature(pilot, feature_type=None, label=None) -> None:
         "reho": 27,
         "falff": 29,
         "preproc": 31,
+        "intercept_only": 24,
+        "linear_model": 26,
     }
     # select feature tab
-    await pilot.press("f")
+    await pilot.press(tab_type)
     # click on New button
     await pilot.click(offset=(10, 8))
     # click on Task based

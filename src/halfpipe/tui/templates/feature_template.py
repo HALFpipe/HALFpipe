@@ -107,11 +107,7 @@ class FeatureTemplate(Widget):
         if self.setting_dict["bandpass_filter"]["type"] is None:
             self.bandpass_filter_default_switch_value = False
 
-        smoothing_default_switch_value = True
         self.setting_dict.setdefault("smoothing", {"fwhm": "6"})
-        default_smoothing_value = self.setting_dict["smoothing"]["fwhm"]
-        if self.setting_dict["smoothing"]["fwhm"] is None:
-            smoothing_default_switch_value = False
 
         self.grand_mean_scaling_default_switch_value = True
         self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000.0})
@@ -176,7 +172,28 @@ class FeatureTemplate(Widget):
             confounds_options[confound][1] = True
 
         self.confounds_options = confounds_options
+        self.create_preprocessing_panel(self.setting_dict["smoothing"]["fwhm"])
 
+        if self.images_to_use is not None:
+            self.tasks_to_use_selection_panel = Vertical(
+                SelectionList[str](
+                    *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
+                    id="tasks_to_use_selection",
+                ),
+                DataSummaryLine(id="feedback_task_filtered_bold"),
+                id="tasks_to_use_selection_panel",
+                classes="components",
+            )
+
+    def create_preprocessing_panel(self, default_smoothing_value):
+        # We need to create preprocessing panel via a separate function because from reho and falff the smoothing is in
+        # features not in settings. Hence to override the default value when we for example load from a spec file, we need
+        # to refresh the preprocessing panel after we switch from smoothing in settings to smoothing in features. For more
+        # look for example at init at the reho.py
+        if default_smoothing_value is None:
+            smoothing_default_switch_value = False
+        else:
+            smoothing_default_switch_value = True
         # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
         # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
         self.preprocessing_panel = Vertical(
@@ -228,17 +245,6 @@ class FeatureTemplate(Widget):
             classes="components",
         )
 
-        if self.images_to_use is not None:
-            self.tasks_to_use_selection_panel = Vertical(
-                SelectionList[str](
-                    *[Selection(image, image, self.images_to_use["task"][image]) for image in self.images_to_use["task"]],
-                    id="tasks_to_use_selection",
-                ),
-                DataSummaryLine(id="feedback_task_filtered_bold"),
-                id="tasks_to_use_selection_panel",
-                classes="components",
-            )
-
     async def on_mount(self) -> None:
         if self.images_to_use is not None:
             # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
@@ -259,7 +265,6 @@ class FeatureTemplate(Widget):
         # is the 'task'. Before there were also sessions, dirs, runs. The  message.control.id[:-18] extracts the string 'task'
         # from 'tasks_to_use_selection' to match the particular entry in the filters.
         for f in self.setting_dict["filters"]:
-            print("message.control.id[:-17]", message.control.id[:-18])
             if f["entity"] == message.control.id[:-18]:
                 f["values"] = self.get_widget_by_id(message.control.id).selected
         self.update_dataline()

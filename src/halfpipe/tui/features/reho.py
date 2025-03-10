@@ -38,6 +38,8 @@ class ReHo(FeatureTemplate):
         # in this case, smoothing is in features!!!
         self.feature_dict.setdefault("smoothing", {"fwhm": "6"})
         self.setting_dict.pop("smoothing", None)
+        # recreate preprocessing panel to reflect smoothing migration from setting to features (in the spec file).
+        self.create_preprocessing_panel(self.feature_dict["smoothing"]["fwhm"])
 
     def on_mount(self):
         self.get_widget_by_id("bandpass_filter_type").default_option = "frequency_based"

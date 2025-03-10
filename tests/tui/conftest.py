@@ -82,6 +82,16 @@ def spec_file_dir_path(fixed_tmp_path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def covariant_spreadsheet_path(fixed_tmp_path) -> Path:
+    source_file = "./Covariates.xlsx"
+    destination_file = fixed_tmp_path / "Covariates.xlsx/"
+    if os.path.exists(destination_file):
+        os.remove(destination_file)
+    shutil.copy(source_file, destination_file)
+    return destination_file
+
+
+@pytest.fixture(scope="session")
 def t1_path_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/anat/sub-{subject}_T1w.nii.gz"
 
