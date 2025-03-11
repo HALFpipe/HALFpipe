@@ -18,7 +18,7 @@ from .pilot_functions import (
 async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spreadsheet_path=None, stage=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
-    how_much_down = 0
+    # how_much_down = 0
 
     pilot.app.reload_ui()
     if isinstance(data_path, Path):
@@ -101,10 +101,10 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
             final_stage_tasks,
         ],
     }
-    if stage == "at_spec_preview":
-        how_much_down = 60
-    elif stage == "duplicate_at_spec_preview":
-        how_much_down = 36
+    # if stage == "at_spec_preview":
+    #     how_much_down = 60
+    # elif stage == "duplicate_at_spec_preview":
+    #     how_much_down = 36
 
     # Execute tasks based on the specified stage
     # set work dir

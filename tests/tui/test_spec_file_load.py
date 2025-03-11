@@ -133,4 +133,4 @@ def test_load_from_spec_file_resave_spec_file(snap_compare, start_app, spec_file
     file2 = spec_file_dir_path / "spec_reference.json"
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-    assert compare_files(file1, file2) == True
+    assert compare_files(file1, file2)
