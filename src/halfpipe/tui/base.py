@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
+
+from pathlib import Path
 
 from rich.console import RenderResult
 
@@ -24,10 +25,10 @@ from .preprocessing.base import Preprocessing
 from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
 from .working_directory.base import WorkDirectory
-from pathlib import Path
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = Path(__file__).resolve().parent
+
 
 class HeaderCloseIcon(Widget):
     """Display an 'icon' on the left of the header."""
