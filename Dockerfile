@@ -13,7 +13,6 @@ RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownlo
 # the environment creation process, as some of them are not available on conda-forge
 FROM conda AS builder
 RUN conda install --yes "conda-build"
-RUN conda install --yes "setuptools"
 
 RUN cat <<EOF >"/usr/bin/retry"
 #!/bin/bash

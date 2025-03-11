@@ -24,10 +24,10 @@ from .preprocessing.base import Preprocessing
 from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
 from .working_directory.base import WorkDirectory
+from pathlib import Path
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+BASE_DIR = Path(__file__).resolve().parent
 
 class HeaderCloseIcon(Widget):
     """Display an 'icon' on the left of the header."""
@@ -172,21 +172,21 @@ class Welcome(ModalScreen):
 
 class MainApp(App):
     CSS_PATH = [
-        os.path.join(BASE_DIR, "tcss/base.tcss"),
-        os.path.join(BASE_DIR, "tcss/general.tcss"),
-        os.path.join(BASE_DIR, "features/tcss/base.tcss"),
-        os.path.join(BASE_DIR, "features/tcss/taskbased.tcss"),
-        os.path.join(BASE_DIR, "features/utils/tcss/model_conditions_and_contrasts.tcss"),
-        os.path.join(BASE_DIR, "group_level_models/tcss/base.tcss"),
-        os.path.join(BASE_DIR, "group_level_models/tcss/models.tcss"),
-        os.path.join(BASE_DIR, "group_level_models/tcss/group_level_model_selection_modal.tcss"),
-        os.path.join(BASE_DIR, "working_directory/tcss/working_directory.tcss"),
-        os.path.join(BASE_DIR, "data_input/tcss/data_input.tcss"),
-        os.path.join(BASE_DIR, "preprocessing/tcss/preprocessing.tcss"),
-        os.path.join(BASE_DIR, "run/tcss/run.tcss"),
-        os.path.join(BASE_DIR, "specialized_widgets/tcss/file_browser.tcss"),
-        os.path.join(BASE_DIR, "specialized_widgets/tcss/path_pattern_builder.tcss"),
-        os.path.join(BASE_DIR, "general_widgets/tcss/radio_set_changed.tcss"),
+        BASE_DIR / "tcss/base.tcss",
+        BASE_DIR / "tcss/general.tcss",
+        BASE_DIR / "features/tcss/base.tcss",
+        BASE_DIR / "features/tcss/taskbased.tcss",
+        BASE_DIR / "features/utils/tcss/model_conditions_and_contrasts.tcss",
+        BASE_DIR / "group_level_models/tcss/base.tcss",
+        BASE_DIR / "group_level_models/tcss/models.tcss",
+        BASE_DIR / "group_level_models/tcss/group_level_model_selection_modal.tcss",
+        BASE_DIR / "working_directory/tcss/working_directory.tcss",
+        BASE_DIR / "data_input/tcss/data_input.tcss",
+        BASE_DIR / "preprocessing/tcss/preprocessing.tcss",
+        BASE_DIR / "run/tcss/run.tcss",
+        BASE_DIR / "specialized_widgets/tcss/file_browser.tcss",
+        BASE_DIR / "specialized_widgets/tcss/path_pattern_builder.tcss",
+        BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
     ]
 
     # TODO: The non active tabs should not show the bindings.
