@@ -1,6 +1,60 @@
 Changelog
 =========
 
+1.2.3 (March 7th 2025)
+-----------------------
+
+New features and enhancements
+-----------------------------
+- Add motion scrubbing (#769)
+- Add `group-level` command (#413, #416, #468, #477, #484, #496, #523, #543, #555, #556, #557, #558, #562, #566, #569, #574, #587, #589, #602, #604, #605, #612, #619, #621, #625, #635)
+- Also remove empty directories when `--keep none` is enabled to reduce inode usage (#283)
+- Add additional related images for the quality check (#295)
+- Add import option to quality check (#328)
+- Update documentation (#680, #748)
+- Compatibility with COINSTAC (#322, #467)
+- Additional unit tests (#338, #340, #384, #403, #421)
+- Improve performance (#366, #646, #650, #651)
+- Add `sigmasquareds` output for task-based features to allow Cohen's d calculation on the first level (#378)
+- Better error messages for invalid metadata (#527)
+- Add more comments to code (#665)
+
+Bug fixes
+---------
+- Fix handling of not a number values in stats (#319)
+- Fix handling of additional errors in stats (#345)
+- Fix handling of data with unknown BIDS tags (#244, #226, #337)
+- Fix loading conditions from MAT files (#345)
+- Fix reset of the `global_settings` in the `spec.json` file when adding a new feature (#345)
+- Fix detecting unrealistic slice timing values (#342, #347)
+- Fix handling of pre-computed fieldmaps (#348)
+- Fix filtering out incomplete PEPOLAR field map sets (#370)
+- Fix loading numerical condition names for TSV files (#370)
+- Fix user interface crash when there are too many distinct tag values to fit on screen (#400, #493)
+- Fix selecting `Skip` in the band pass filter setting (#498, #500)
+- Fix handling of underscores in subject IDs (#499)
+- Fix quality check inclusion decisions when aggregating multiple scans before group statistics (#490, #501)
+- Fix handling of dummy scans to actually remove volumes from outputs (#506)
+- Fix loading condition files in FSL 3-column format that do not have the extension `.txt` (#543)
+- Fix handling of empty tag values (#549, #557)
+- Fix accidental modification of database when searching dor condition files (#571)
+- Fix detecting the orientation for unusual input files (#694, #706)
+- Fix backspace key in user interface (#722)
+- Fix spacing in user interface (#777)
+
+Maintenance
+-----------
+- De-deduplicate code (#392, #411, #417)
+- Fix code style (#451)
+- Upgrade to Python 3.11 (#486)
+- Use self-hosted runner for continuous integration (#554, #622)
+- Add more type annotations (#599, #666)
+- Use `conda` to install all dependencies (#701, #702, #741)
+- Update `ants` version (#691)
+- Update build script for creating `singularity` containers (#766)
+
+With many thanks to @lalalavi, @F-Tomas, @dominikgoeller and @jstaph for contributions
+
 1.2.2 (March 15th 2022)
 -----------------------
 

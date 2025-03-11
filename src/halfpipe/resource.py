@@ -24,6 +24,8 @@ online_resources: dict[str, str | tuple[str, str]] = {
     "tpl-MNI152NLin2009cAsym_RegistrationCheckOverlay.nii.gz": "https://figshare.com/ndownloader/files/22447958",
 }
 
+# TODO: refactor to use checksums, maybe via datalad
+
 
 @dataclass
 class Session(AbstractContextManager):

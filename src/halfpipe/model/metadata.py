@@ -118,9 +118,16 @@ class BIDSFmapMetadataSchema(BaseMetadataSchema):
 
 
 class PhaseDiffMetadataSchema(BaseMetadataSchema):
-    echo_time_difference = fields.Float(
+    echo_time1 = fields.Float(
         metadata=dict(
-            description="The echo time difference between the acquisitions, specified in seconds.",
+            description="The time (in seconds) when the first (shorter) echo occurs.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
+    )
+    echo_time2 = fields.Float(
+        metadata=dict(
+            description="The time (in seconds) when the second (longer) echo occurs.",
             unit="seconds",
         ),
         validate=validate.Range(min=0.0),

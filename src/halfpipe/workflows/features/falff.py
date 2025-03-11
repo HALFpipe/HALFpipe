@@ -16,6 +16,49 @@ from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 
 
+def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> tuple[str, str]:
+    """
+    Computes fALFF using Nibabel instead of AFNI's 3dcalc.
+    """
+
+    from functools import reduce
+    from pathlib import Path
+
+    import nibabel as nib
+    import numpy as np
+    from nilearn.image import new_img_like
+
+    mask_image = nib.nifti1.load(mask_file)
+    filtered_image = nib.nifti1.load(filtered_file)
+    unfiltered_image = nib.nifti1.load(unfiltered_file)
+
+    filtered = filtered_image.get_fdata()
+    unfiltered = unfiltered_image.get_fdata()
+
+    mask = reduce(
+        np.logical_and,
+        [
+            np.asanyarray(mask_image.dataobj, dtype=np.bool_),
+            np.isfinite(filtered),
+            np.isfinite(unfiltered),
+            np.logical_not(np.isclose(unfiltered, 0.0)),
+        ],
+    )
+
+    mask_image = new_img_like(mask_image, mask, copy_header=True)
+    mask_file = str(Path("mask.nii.gz").resolve())
+    nib.loadsave.save(mask_image, mask_file)
+
+    falff = np.zeros_like(filtered)
+    falff[mask] = filtered[mask] / unfiltered[mask]
+
+    falff_image = nib.nifti1.Nifti1Image(falff, affine=filtered_image.affine, header=filtered_image.header)
+    falff_file = str(Path("falff.nii.gz").resolve())
+    nib.loadsave.save(falff_image, falff_file)
+
+    return mask_file, falff_file
+
+
 def init_falff_wf(
     workdir: str | Path,
     feature=None,
@@ -47,7 +90,7 @@ def init_falff_wf(
     name = f"{name}_wf"
     workflow = pe.Workflow(name=name)
 
-    # input
+    # input and output nodes
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]),
         name="inputnode",
@@ -63,7 +106,7 @@ def init_falff_wf(
     elif feature is not None and hasattr(feature, "smoothing"):
         inputnode.inputs.fwhm = feature.smoothing.get("fwhm")
 
-    #
+    # setup results
     make_resultdicts = pe.Node(
         MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]),
         name="make_resultdicts",
@@ -77,16 +120,27 @@ def init_falff_wf(
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
-    #
+    # setup datasink
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    # standard deviation of the filtered image
+    # standard deviation of the filtered image is the alff
     stddev_filtered = pe.Node(afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb)
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
     workflow.connect(inputnode, "bold", stddev_filtered, "in_file")
     workflow.connect(inputnode, "mask", stddev_filtered, "mask")
+
+    # smooth and scale alff
+    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_alff")
+    workflow.connect(stddev_filtered, "out_file", smooth, "in_file")
+    workflow.connect(inputnode, "mask", smooth, "mask")
+    workflow.connect(inputnode, "fwhm", smooth, "fwhm")
+
+    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_alff", mem_gb=memcalc.volume_std_gb)
+    workflow.connect(smooth, "out_file", zscore, "in_file")
+    workflow.connect(inputnode, "mask", zscore, "mask")
+    workflow.connect(zscore, "out_file", make_resultdicts, "alff")
 
     # standard deviation of the unfiltered image
     stddev_unfiltered = pe.Node(afni.TStat(), name="stddev_unfiltered", mem_gb=memcalc.series_std_gb)
@@ -95,32 +149,29 @@ def init_falff_wf(
     workflow.connect(unfiltered_inputnode, "bold", stddev_unfiltered, "in_file")
     workflow.connect(unfiltered_inputnode, "mask", stddev_unfiltered, "mask")
 
-    falff = pe.Node(afni.Calc(), name="falff", mem_gb=memcalc.volume_std_gb)
-    falff.inputs.args = "-float"
-    falff.inputs.expr = "(1.0*bool(a))*((1.0*b)/(1.0*c))"
-    falff.inputs.outputtype = "NIFTI_GZ"
-    workflow.connect(inputnode, "mask", falff, "in_file_a")
-    workflow.connect(stddev_filtered, "out_file", falff, "in_file_b")
-    workflow.connect(stddev_unfiltered, "out_file", falff, "in_file_c")
+    # calculate falff
+    falff = pe.Node(
+        niu.Function(
+            input_names=["mask_file", "filtered_file", "unfiltered_file"],
+            output_names=["mask_file", "falff_file"],  # type: ignore
+            function=compute_falff,
+        ),
+        name="falff",
+    )
 
-    #
-    merge = pe.Node(niu.Merge(2), name="merge")
-    workflow.connect(stddev_filtered, "out_file", merge, "in1")
-    workflow.connect(falff, "out_file", merge, "in2")
+    workflow.connect(inputnode, "mask", falff, "mask_file")
+    workflow.connect(stddev_filtered, "out_file", falff, "filtered_file")
+    workflow.connect(stddev_unfiltered, "out_file", falff, "unfiltered_file")
 
-    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth")
-    workflow.connect(merge, "out", smooth, "in_file")
+    # smooth and scale falff
+    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_falff")
+    workflow.connect(falff, "falff_file", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
-    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore", mem_gb=memcalc.volume_std_gb)
+    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_falff", mem_gb=memcalc.volume_std_gb)
     workflow.connect(smooth, "out_file", zscore, "in_file")
     workflow.connect(inputnode, "mask", zscore, "mask")
-
-    split = pe.Node(niu.Split(splits=[1, 1]), name="split")
-    workflow.connect(zscore, "out_file", split, "inlist")
-
-    workflow.connect(split, "out1", make_resultdicts, "alff")
-    workflow.connect(split, "out2", make_resultdicts, "falff")
+    workflow.connect(zscore, "out_file", make_resultdicts, "falff")
 
     return workflow
