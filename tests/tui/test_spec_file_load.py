@@ -19,6 +19,8 @@ async def run_before(
     feature_number = feature_number if feature_number is not None else None
 
     pilot.app.reload_ui()
+    if isinstance(data_path, Path):
+        data_path = str(data_path)
     if isinstance(spec_file_dir_path, Path):
         work_dir_path = str(spec_file_dir_path)
         # work_dir_path = "/makethisfail/"
@@ -44,72 +46,121 @@ async def run_before(
         await settable_scroll_screen_down(pilot, 15)
 
 
-def test_load_from_spec_file_f0(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 20) -> None:
-    """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number)
-
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-def test_load_from_spec_file_f1(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 24) -> None:
-    """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number)
-
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-def test_load_from_spec_file_f2(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 32) -> None:
-    """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number)
-
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-def test_load_from_spec_file_f3(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 40) -> None:
-    """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number)
-
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-def test_load_from_spec_file_f4(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 48) -> None:
-    """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number)
-
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-def test_load_from_spec_file_f5(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 28) -> None:
+def test_load_from_spec_file_f0(
+    snap_compare,
+    start_app,
+    spec_file_dir_path: Path,
+    downloaded_data_path: Path,
+    atlases_maps_seed_images_path: Path,
+    feature_number: int = 20,
+) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
-        run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number, scroll_to_remaining_part=True
+        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number
     )
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-def test_load_from_spec_file_f6(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 36) -> None:
+def test_load_from_spec_file_f1(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 24
+) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
-        run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number, scroll_to_remaining_part=True
+        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number
     )
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-def test_load_from_spec_file_f7(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 40) -> None:
+def test_load_from_spec_file_f2(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 32
+) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
-        run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number, scroll_to_remaining_part=True
+        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number
     )
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-def test_load_from_spec_file_f8(snap_compare, start_app, spec_file_dir_path: Path, feature_number: int = 48) -> None:
+def test_load_from_spec_file_f3(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 40
+) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
-        run_before, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number, scroll_to_remaining_part=True
+        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_load_from_spec_file_f4(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 48
+) -> None:
+    """Check whether one can set the working directory."""
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_number=feature_number
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_load_from_spec_file_f5(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 28
+) -> None:
+    """Check whether one can set the working directory."""
+    run_before_with_extra_args = partial(
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        feature_number=feature_number,
+        scroll_to_remaining_part=True,
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_load_from_spec_file_f6(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 36
+) -> None:
+    """Check whether one can set the working directory."""
+    run_before_with_extra_args = partial(
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        feature_number=feature_number,
+        scroll_to_remaining_part=True,
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_load_from_spec_file_f7(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 40
+) -> None:
+    """Check whether one can set the working directory."""
+    run_before_with_extra_args = partial(
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        feature_number=feature_number,
+        scroll_to_remaining_part=True,
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_load_from_spec_file_f8(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_number: int = 48
+) -> None:
+    """Check whether one can set the working directory."""
+    run_before_with_extra_args = partial(
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        feature_number=feature_number,
+        scroll_to_remaining_part=True,
     )
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
@@ -125,9 +176,11 @@ def compare_files(file1, file2):
         return f1_lines == f2_lines
 
 
-def test_load_from_spec_file_resave_spec_file(snap_compare, start_app, spec_file_dir_path: Path) -> None:
+def test_load_from_spec_file_resave_spec_file(
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path
+) -> None:
     """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, spec_file_dir_path=spec_file_dir_path)
+    run_before_with_extra_args = partial(run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path)
 
     file1 = spec_file_dir_path / "spec.json"
     file2 = spec_file_dir_path / "spec_reference.json"

@@ -9,7 +9,7 @@ import pytest
 from halfpipe import resource
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
-from ..workflows.datasets import Dataset  # Adjust this import path as needed
+from .create_mock_bids_dataset import create_bids_data
 
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
@@ -26,21 +26,28 @@ def fixed_tmp_path() -> Path:
 # Define the fixture with module scope, one subject, three tasks
 @pytest.fixture(scope="session")
 def downloaded_data_path(fixed_tmp_path) -> Path:
-    dataset = Dataset(
-        name="PIOP1",
-        openneuro_id="ds002785",
-        openneuro_url="https://openneuro.org/datasets/ds002785/versions/2.0.0",
-        url="https://github.com/OpenNeuroDatasets/ds002785.git",
-        paths=[
-            "sub-0001/anat",
-            "sub-0001/func/sub-0001_task-anticipation_acq*",
-            "sub-0001/func/sub-0001_task-workingmemory_acq*",
-            "sub-0001/func/sub-0001_task-restingstate_acq*",
-        ],
-    )
-
-    data_path = fixed_tmp_path / "ds002785/"
-    dataset.download(data_path)
+    # dataset = Dataset(
+    #     name="PIOP1",
+    #     openneuro_id="ds002785",
+    #     openneuro_url="https://openneuro.org/datasets/ds002785/versions/2.0.0",
+    #     url="https://github.com/OpenNeuroDatasets/ds002785.git",
+    #     paths=[
+    #         "sub-0001/anat",
+    #         "sub-0001/func/sub-0001_task-anticipation_acq*",
+    #         "sub-0001/func/sub-0001_task-workingmemory_acq*",
+    #         "sub-0001/func/sub-0001_task-restingstate_acq*",
+    #     ],
+    # )
+    #
+    # data_path = fixed_tmp_path / "ds002785/"
+    # dataset.download(data_path)
+    tasks_conditions_dict = {
+        "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
+        "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
+        "restingstate_acq-mb3": [],
+    }
+    data_path = fixed_tmp_path / "ds002785"
+    create_bids_data(data_path, number_of_subjects=1, tasks_conditions_dict=tasks_conditions_dict)
     return data_path
 
 
