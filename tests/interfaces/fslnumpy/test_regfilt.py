@@ -11,6 +11,7 @@ import pytest
 from nipype.interfaces import fsl
 
 from halfpipe.interfaces.fslnumpy.regfilt import FilterRegressor
+from halfpipe.logging import logger
 
 
 @pytest.mark.slow
@@ -56,9 +57,11 @@ def test_filter_regressor(tmp_path):
 
     r1 = nib.nifti1.load(result.outputs.out_file).get_fdata()
 
-    # delta = r0 - r1
-    # print(r0[np.where(delta == delta.max())[:3]])
-    # print(r1[np.where(delta == delta.max())[:3]])
-    # print(np.mean(np.abs(r0 - r1)))
+    delta = np.abs(r0 - r1)
+    # mean_delta = np.mean(delta, axis=-1)
+    maximum_index = np.unravel_index(np.argsort(delta.ravel())[::-1][:3][::-1], delta.shape)
+    top_differences = np.column_stack((r0[maximum_index], r1[maximum_index]))
+    logger.info(f"Top three differences:\n{top_differences}")
+    logger.info(f"Mean absolute difference: {np.mean(delta)}")
 
-    assert np.allclose(r0, r1)
+    np.testing.assert_allclose(r0, r1, atol=1e-4)
