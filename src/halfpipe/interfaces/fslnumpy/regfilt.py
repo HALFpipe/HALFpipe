@@ -2,12 +2,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
-
 import numpy as np
+import scipy.stats
 from nipype.interfaces.base import File, isdefined, traits
 from numpy import typing as npt
 
+from ...logging import logger
 from ..transformer import Transformer, TransformerInputSpec
 
 
@@ -29,8 +29,8 @@ def binarize(array, lowerth, upperth, threstype="inclusive", invert: bool = Fals
 
 
 def regfilt(
-    array: npt.NDArray,
-    design: npt.NDArray,
+    array: npt.NDArray[np.float64],
+    design: npt.NDArray[np.float64],
     comps: list[int],
     calculate_mask: bool = True,
     aggressive: bool = False,
@@ -41,8 +41,8 @@ def regfilt(
     zero_based_comps = [c - 1 for c in comps]
 
     # setup
-
     data = array.copy()
+
     mask_vec: npt.NDArray | None = None
     if calculate_mask is True:
         mean = data.mean(axis=0)
@@ -53,30 +53,27 @@ def regfilt(
         data = data[:, mask_vec]
 
     m, n = data.shape
+    logger.info(f"Data matrix size : {m} x {n}")
 
     mean_r = data.mean(axis=0)
     data -= mean_r[None, :]
-    mean_c = design.mean(axis=0)
-    design -= mean_c[None, :]
-
-    logging.getLogger("halfpipe").info(f"Data matrix size : {m} x {n}")
+    # standardize design for numerical stability
+    design = scipy.stats.zscore(design, axis=0)
 
     # dofilter
-
-    logging.getLogger("halfpipe").info("Calculating maps")
-
-    unmix_matrix = np.linalg.pinv(design)
-    maps = unmix_matrix @ data
-
     noisedes = design[:, zero_based_comps]
-    noisemaps = maps[zero_based_comps, :].T
-
-    logging.getLogger("halfpipe").info("Calculating filtered data")
 
     if aggressive:
-        new_data = data - noisedes @ (np.linalg.pinv(noisedes) @ data)
+        logger.info("Calculating maps")
+        maps, _, _, _ = np.linalg.lstsq(noisedes, data, rcond=None)
+        logger.info("Calculating filtered data")
+        new_data = data - noisedes @ maps
     else:
-        new_data = data - noisedes @ noisemaps.T
+        logger.info("Calculating maps")
+        maps, _, _, _ = np.linalg.lstsq(design, data, rcond=None)
+        noisemaps = maps[zero_based_comps, :]
+        logger.info("Calculating filtered data")
+        new_data = data - noisedes @ noisemaps
 
     new_data += mean_r[None, :]
 
@@ -107,15 +104,14 @@ class FilterRegressor(Transformer):
 
     suffix = "regfilt"
 
-    def _transform(self, array):
+    def _transform(self, array: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         design = np.loadtxt(self.inputs.design_file, dtype=np.float64, ndmin=2)
 
         filter_all = self.inputs.filter_all
-        if filter_all is not True:
-            filter_columns = self.inputs.filter_columns
-
-        else:
+        if filter_all is True:
             filter_columns = list(range(1, design.shape[1] + 1))
+        else:
+            filter_columns = self.inputs.filter_columns
 
         calculate_mask = isdefined(self.inputs.mask) and self.inputs.mask is True
 
