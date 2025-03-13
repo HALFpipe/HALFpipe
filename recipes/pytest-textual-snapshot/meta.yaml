@@ -6,8 +6,8 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/pytest_textual_snapshot-{{ version }}.tar.gz
-  sha256: 065217055ed833b8a16f2320a0613f39a0154e8d9fee63535f29f32c6414b9d7
+  git_url: git@github.com:zed/pytest-textual-snapshot.git
+  git_rev: fix/convert-into-python-package  # Use the specific branch
 
 build:
   noarch: python
@@ -40,3 +40,4 @@ about:
   summary: Snapshot testing for Textual apps
   license: MIT
   license_file: LICENSE
+
