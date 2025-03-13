@@ -257,8 +257,8 @@ def init_ica_aroma_regression_wf(
     #
     aroma_column_names = pe.Node(
         interface=niu.Function(
-            input_names=["mixing", "aroma_noise_ics"],
-            output_names=["column_names", "column_indices"],
+            input_names=["melodic_mix", "aroma_noise_ics"],
+            output_names=["column_names", "column_indices"],  # type: ignore[assignment]
             function=_aroma_column_names,
         ),
         name="aroma_column_names",

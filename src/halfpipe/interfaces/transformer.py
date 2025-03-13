@@ -38,7 +38,7 @@ class Transformer(SimpleInterface):
     suffix = "transformed"
 
     def _transform(self, array: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _load(self, in_file, mask_file=None):
         stem, ext = split_ext(in_file)
@@ -52,9 +52,6 @@ class Transformer(SimpleInterface):
         if ext in [".nii", ".nii.gz"]:
             in_img = nib.nifti1.load(in_file)
             self.in_img = in_img
-
-            if in_img.affine is None:
-                raise ValueError(f"Image {in_file} has no affine")
 
             ndim = np.asanyarray(in_img.dataobj).ndim
             if ndim == 3:
@@ -71,9 +68,10 @@ class Transformer(SimpleInterface):
                 mask_img = nib.funcs.squeeze_image(nib.nifti1.load(mask_file))
 
                 if nvol(mask_img) != 1:
-                    raise ValueError(f"Mask image {mask_file} has more than one volume")
-                if not np.allclose(mask_img.affine, in_img.affine):
-                    raise ValueError(f"Mask image {mask_file} has different affine than {in_file}")
+                    raise ValueError(f'Expecting a single volume for mask file "{mask_file}"')
+                if in_img.affine is not None:
+                    if not np.allclose(mask_img.affine, in_img.affine):
+                        raise ValueError(f'Affine mismatch between "{in_file}" and "{mask_file}"')
 
                 mask_fdata = mask_img.get_fdata(dtype=np.float64)
                 mask_bin = np.logical_not(np.logical_or(mask_fdata <= 0, np.isclose(mask_fdata, 0, atol=1e-2)))
