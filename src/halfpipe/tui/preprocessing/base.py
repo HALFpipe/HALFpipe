@@ -45,7 +45,7 @@ class SetInitialVolumesRemovalModal(DraggableModalScreen):
     def on_mount(self) -> None:
         self.content.mount(
             Static("Set number of how many initial volumes to remove"),
-            Input(""),
+            Input("", id="input_prompt"),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         )
 
@@ -130,7 +130,7 @@ class Preprocessing(Widget):
                     classes="description_labels",
                 ),
                 Static(str(self.default_settings["dummy_scans"]), id="remove_volumes_value"),
-                Button("🖌", id="edit_button", classes="icon_buttons"),
+                Button("🖌", id="edit_vols_to_remove_button", classes="icon_buttons"),
                 id="manualy_set_volumes_to_remove",
             ),
             id="remove_initial_volumes",
@@ -270,15 +270,15 @@ class Preprocessing(Widget):
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update(
                 "Turn of 'Detect non-steady-state via algorithm' to set manually number of initial volumes to remove"
             )
-            self.get_widget_by_id("edit_button").styles.visibility = "hidden"
+            self.get_widget_by_id("edit_vols_to_remove_button").styles.visibility = "hidden"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "hidden"
             ctx.spec.global_settings["dummy_scans"] = None
         else:
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update("Remove initial volumes from scans")
-            self.get_widget_by_id("edit_button").styles.visibility = "visible"
+            self.get_widget_by_id("edit_vols_to_remove_button").styles.visibility = "visible"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "visible"
             # rais imidietely the modal
-            self._on_edit_button_pressed()
+            self._on_edit_vols_to_remove_button_pressed()
 
     @on(Switch.Changed, "#run_reconall")
     def on_run_reconall_switch_changed(self, message: Message):
@@ -346,8 +346,8 @@ class Preprocessing(Widget):
             select_widget.value = select_widget.BLANK
             select_widget.styles.background = "40% red"
 
-    @on(Button.Pressed, "#edit_button")
-    def _on_edit_button_pressed(self):
+    @on(Button.Pressed, "#edit_vols_to_remove_button")
+    def _on_edit_vols_to_remove_button_pressed(self):
         def update_remove_initial_volumes_value(value: None | str):
             remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
             if value is not False:

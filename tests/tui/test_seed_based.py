@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -26,6 +28,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         work_dir_path = str(work_dir_path)
     if isinstance(file_pattern, Path):
         file_pattern = str(file_pattern)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
     print("----------------------------", data_path, work_dir_path)
 
     # Define functions to execute based on stage requirements
@@ -37,10 +42,15 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
         #
         # deselect second seed file
-        await pilot.click(offset=(71, 33))
+        # await pilot.click(offset=(71, 33))
+        await pilot.click("#tag_selection")
+        await pilot.press("down")
+        await pilot.press("down")
+        await pilot.press("enter")
         #
         # # change minimum coverage from 0.8 to 0.85
-        await pilot.click(offset=(131, 40))
+        # await pilot.click(offset=(131, 40))
+        await pilot.click(pilot.app.get_widget_by_id("minimum_coverage").get_widget_by_id("input_label_input_box"))
         await pilot.press("5")
         # press tab to unfocus the input box
         await pilot.press("tab")

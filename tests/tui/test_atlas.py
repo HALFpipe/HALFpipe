@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -26,6 +28,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
         work_dir_path = str(work_dir_path)
     if isinstance(atlas_file_pattern, Path):
         atlas_file_pattern = str(atlas_file_pattern)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
     print("----------------------------", data_path, work_dir_path)
 
     # Define functions to execute based on stage requirements

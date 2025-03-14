@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -29,6 +31,10 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
         work_dir_path = str(work_dir_path)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
+
     print("----------------------------", data_path, work_dir_path)
 
     # Define functions to execute based on stage requirements
@@ -41,12 +47,18 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
         await add_contrast_value_column(pilot, label="col2")
 
     async def feature_p2_and_final_tasks():
-        await scroll_screen_down(pilot)
+        # random click before scroll
+        await pilot.click(offset=(80, 20))
+        await settable_scroll_screen_down(pilot, 60)
         await preprocessing_options(pilot)
         await remove_confounds(pilot)
+        # random click before scroll
+        await pilot.click(offset=(80, 20))
+        await settable_scroll_screen_down(pilot, 5)
 
     async def duplicate():
-        await pilot.click(offset=(10, 12))
+        # await pilot.click(offset=(10, 12))
+        await pilot.click("#duplicate_item_button")
         await scroll_screen_down(pilot)
 
     async def final_stage_tasks():

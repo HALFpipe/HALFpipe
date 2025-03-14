@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -18,6 +20,9 @@ async def run_before(
     if isinstance(work_dir_path, Path):
         work_dir_path = str(work_dir_path)
         # work_dir_path = "/makethisfail/"
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
 
     if stage == "work_tab":
         await _set_work_dir(pilot, work_dir_path)
@@ -41,35 +46,46 @@ async def run_before(
             # Select preprocessing settings tab
             await pilot.press("p")
             # Toggle run recon all
-            await pilot.click(offset=(109, 11))
+            # await pilot.click(offset=(109, 11))
+            await pilot.click("#run_reconall")
             # Turn on slice timing
-            await pilot.click(offset=(113, 19))
+            # await pilot.click(offset=(113, 19))
+            await pilot.click("#time_slicing_switch")
 
             # Check meta data modal. Click No to 'Proceed with these values?'
-            await pilot.click(offset=(116, 31))
+            # await pilot.click(offset=(116, 31))
+            await pilot.click("#only_one_button")
             # Specify slice acquisition direction, choose second choice
             await pilot.click(offset=(65, 26))
             # Click ok
-            await pilot.click(offset=(132, 30))
+            # await pilot.click(offset=(132, 30))
+            await pilot.click("#ok")
+
             # Click ok on the warning modal: Missing images
-            await pilot.click(offset=(116, 31))
+            # await pilot.click(offset=(116, 31))
+            await pilot.click("#only_one_button")
             # Specify Slice timing modal: Choose third options
             await pilot.click(offset=(65, 25))
             # Click ok on the 'Specify Slice timing modal'
-            await pilot.click(offset=(132, 34))
+            # await pilot.click(offset=(132, 34))
+            await pilot.click("#ok")
 
-            # click on 'pen' button to edit number of initial volumes to remove
-            await pilot.click(offset=(121, 31))
-            # click in the input box
-            await pilot.click(offset=(101, 26))
+            # # click on 'pen' button to edit number of initial volumes to remove
+            # await pilot.click(offset=(121, 31))
+            await pilot.click("#edit_vols_to_remove_button")
+            # # click in the input box
+            # await pilot.click(offset=(101, 26))
+            await pilot.click("#input_prompt")
             # Type '9'
             await pilot.press("9")
             # Click on Ok to confirm
-            await pilot.click(offset=(101, 30))
+            # await pilot.click(offset=(101, 30))
+            await pilot.click("#ok")
             # Select Check and Run tab
             await pilot.press("r")
             # Click 'Refresh'
-            await pilot.click(offset=(85, 9))
+            # await pilot.click(offset=(85, 9))
+            await pilot.click("#refresh_button")
             await settable_scroll_screen_down(pilot, 10)
 
 

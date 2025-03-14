@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -27,6 +29,9 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
         work_dir_path = str(work_dir_path)
     if isinstance(covariant_spreadsheet_path, Path):
         covariant_spreadsheet_path = str(covariant_spreadsheet_path)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
     print("----------------------------", data_path, work_dir_path, covariant_spreadsheet_path)
 
     # Define functions to execute based on stage requirements

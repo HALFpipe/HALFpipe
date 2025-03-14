@@ -139,8 +139,8 @@ class FileBrowserModal(DraggableModalScreen):
                 id="path_input_box2",
             ),
             Horizontal(
-                Button("Ok", classes="button ok"),
-                Button("Cancel", classes="button cancel"),
+                Button("Ok", id="ok_button", classes="button ok"),
+                Button("Cancel", id="cancel_button", classes="button cancel"),
             ),
         )
 

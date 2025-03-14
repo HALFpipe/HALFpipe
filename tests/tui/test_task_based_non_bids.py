@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -33,6 +35,9 @@ async def run_before(
         t1_path_pattern = str(t1_path_pattern)
     if isinstance(bold_path_pattern, Path):
         bold_path_pattern = str(bold_path_pattern)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
 
     async def add_feature_related_tasks():
         await add_new_feature(pilot)

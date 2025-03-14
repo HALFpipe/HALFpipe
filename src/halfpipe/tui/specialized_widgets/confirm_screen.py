@@ -89,12 +89,13 @@ class Confirm(DraggableModalScreen):
                     [left_button_text, right_button_text][active_index],
                     variant=[left_button_variant, right_button_variant][active_index],
                     classes=["button ok", "button cancel"][active_index],
+                    id="only_one_button",
                 )
             ]
         else:
             self.buttons = [
-                Button(left_button_text, variant=left_button_variant, classes="button ok"),
-                Button(right_button_text, variant=right_button_variant, classes="button cancel"),
+                Button(left_button_text, variant=left_button_variant, classes="button ok", id="ok_left_button"),
+                Button(right_button_text, variant=right_button_variant, classes="button cancel", id="cancel_right_button"),
             ]
 
     def on_resize(self):

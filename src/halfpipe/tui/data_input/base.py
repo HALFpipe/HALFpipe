@@ -277,7 +277,7 @@ for T1-weighted image, BOLD image and event files.",
             ),
             Horizontal(
                 Static("Data in BIDS format", id="bids_format_switch", classes="label"),
-                TextSwitch(value=True),
+                TextSwitch(id="bids_non_bids_switch", value=True),
                 #        classes="components",
             ),
             id="instructions",
@@ -352,7 +352,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             #     visible.
             # """
             VerticalScroll(
-                Button("Confirm", id="confirm_field_map_button", variant="error"),
+                Button("Confirm", id="confirm_non_bids_button", variant="error"),
                 id="confirm_button_container",
                 classes="non_bids_panels",
             ),
@@ -519,8 +519,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.refresh()
 
     @work
-    @on(Button.Pressed, "#confirm_field_map_button")
-    async def _confirm_field_map_button(self):
+    @on(Button.Pressed, "#confirm_non_bids_button")
+    async def _confirm_non_bids_button(self):
         """This function makes checks on the user input non-bids files. If the mandatory T1 and bold files are present,
         then the hidden tabs with features and etc. are made visible. This is done by looping over the panels and walking
         their children, in particular, the FileItem widgets which contains the needed information about the number of found

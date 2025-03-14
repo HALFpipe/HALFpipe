@@ -1,41 +1,53 @@
 # -*- coding: utf-8 -*-
+import os
+import shutil
 from pathlib import Path
 
 
 async def _load_data(pilot, data_path) -> None:
     # switch to input data tab
     await pilot.press("i")
-    await pilot.click(offset=(60, 20))
+    # await pilot.click(offset=(60, 20))
+    # here we need to change scope since the browse button is nested under the data_input_file_browser
+    await pilot.click(pilot.app.get_widget_by_id("data_input_file_browser").get_widget_by_id("file_browser_edit_button"))
     await enter_browse_path(pilot, data_path)
     # click Ok on Modal informing us that the data input is success
-    await pilot.click(offset=(121, 31))
+    # await pilot.click(offset=(121, 31))
+    await pilot.click("#only_one_button")
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
     await pilot.press("w")
     # click on Browse button
-    await pilot.click(offset=(60, 15))
+    # await pilot.click(offset=(60, 15))
+    # here we need to change scope since the browse button is nested under the data_input_file_browser
+    await pilot.click(pilot.app.get_widget_by_id("work_dir_file_browser").get_widget_by_id("file_browser_edit_button"))
     await enter_browse_path(pilot, work_dir_path)
     if not load_from_spec_file:
         # non existing path modal, click on "Ok"
-        await pilot.click(offset=(117, 31))
+        # await pilot.click(offset=(117, 31))
+        await pilot.click("#only_one_button")
         # Create new dir modal, click on "Ok"
-        await pilot.click(offset=(100, 31))
+        # await pilot.click(offset=(100, 31))
+        await pilot.click("#ok_left_button")
     else:
         # Spec file found modal, click Load
-        await pilot.click(offset=(100, 31))
+        # await pilot.click(offset=(100, 31))
+        await pilot.click("#ok_left_button")
 
 
 async def enter_browse_path(pilot, path):
     # click to the prompt
-    await pilot.click(offset=(80, 38))
+    # await pilot.click(offset=(80, 38))
+    await pilot.click("#input_prompt")
     # type in the path
     for letter in path:
         await pilot.press(letter)
     # close the suggestion box (to see the Enter button
     await pilot.press("esc")
     # click on the Enter button
-    await pilot.click(offset=(110, 41))
+    # await pilot.click(offset=(110, 41))
+    await pilot.click("#ok_button")
 
 
 async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
@@ -81,35 +93,49 @@ async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") ->
     label = label if label is not None else "task_based_1"
 
     feature_type_yposition = {
-        "task_based": 19,
-        "seed_based": 21,
-        "dual_reg": 23,
-        "atlas": 25,
-        "reho": 27,
-        "falff": 29,
-        "preproc": 31,
-        "intercept_only": 24,
-        "linear_model": 26,
+        "task_based": 0,
+        "seed_based": 1,
+        "dual_reg": 2,
+        "atlas": 3,
+        "reho": 4,
+        "falff": 5,
+        "preproc": 6,
+        "intercept_only": 0,
+        "linear_model": 1,
     }
     # select feature tab
     await pilot.press(tab_type)
     # click on New button
-    await pilot.click(offset=(10, 8))
+    # await pilot.click(offset=(10, 8))
+    await pilot.click("#new_item_button")
     # click on Task based
-    await pilot.click(offset=(100, feature_type_yposition[feature_type]))
+    # await pilot.click(offset=(100, feature_type_yposition[feature_type]))
+    await pilot.click("#options")
+    for _i in range(feature_type_yposition[feature_type]):
+        await pilot.press("down")
+    await pilot.press("enter")
+
     # click in the prompt
-    await pilot.click(offset=(94, 25))
+    # await pilot.click(offset=(94, 25))
+    await pilot.click("#feature_name")
     for letter in label:
         await pilot.press(letter)
     # click on Ok button
-    await pilot.click(offset=(100, 30))
+    # await pilot.click(offset=(100, 30))
+    await pilot.click("#ok")
 
 
 async def select_images(pilot) -> None:
+    await pilot.click("#tasks_to_use_selection")
     # select all images
-    await pilot.click(offset=(71, 9))
-    await pilot.click(offset=(71, 10))
-    await pilot.click(offset=(71, 11))
+    # await pilot.click(offset=(71, 9))
+    # await pilot.click(offset=(71, 10))
+    # await pilot.click(offset=(71, 11))
+    await pilot.press("enter")
+    await pilot.press("down")
+    await pilot.press("enter")
+    await pilot.press("down")
+    await pilot.press("enter")
     await pilot.pause()
 
 
@@ -121,10 +147,12 @@ async def deselect_conditions(pilot, offset_y=0) -> None:
 async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
     label = "con1" if label is None else label
     # # click on Add contrast values
-    await pilot.click(offset=(108, 43 + offset_y))
+    # await pilot.click(offset=(108, 43 + offset_y))
+    await pilot.click("#add_contrast_values_button")
     # click in the prompt, for some reasons sometimes needs to be clicked twice
-    await pilot.click(offset=(99, 16))
-    await pilot.click(offset=(99, 16))
+    # await pilot.click(offset=(99, 16))
+    # await pilot.click(offset=(99, 16))
+    await pilot.click("#contrast_name")
     for letter in label:
         await pilot.press(letter)
     await pilot.press("tab")
@@ -144,7 +172,8 @@ async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
 
 
 async def delete_column(pilot) -> None:
-    await pilot.click(offset=(136, 43))
+    # await pilot.click(offset=(136, 43))
+    await pilot.click("#delete_contrast_values_button")
 
 
 async def scroll_screen_down(pilot) -> None:
@@ -152,59 +181,89 @@ async def scroll_screen_down(pilot) -> None:
     await pilot.click(offset=(202, 50))
 
 
-async def preprocessing_options(pilot) -> None:
-    # set smoothing
-    await pilot.click(offset=(130, 22))
+async def set_grand_mean_scaling(pilot, value="12345"):
+    await pilot.click(pilot.app.get_widget_by_id("grand_mean_scaling").get_widget_by_id("input_switch_input_box"))
+    for _i in range(7):
+        await pilot.press("backspace")
+    for i in value:
+        await pilot.press(i)
+
+
+async def set_bandpass_filter_type_to_frequency_based(pilot):
+    await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_type").get_widget_by_id("input_switch_input_box"))
+    await pilot.press("down")
+    await pilot.press("enter")
+
+
+async def set_bandpass_filter_lp_width(pilot, value="8"):
+    await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id("input_switch_input_box"))
+    for _i in range(5):
+        await pilot.press("backspace")
+    await pilot.press(value)
+
+
+async def set_bandpass_filter_hp_width(pilot, value="9"):
+    await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id("input_switch_input_box"))
+    for _i in range(5):
+        await pilot.press("backspace")
+    await pilot.press("9")
+
+
+async def set_smoothing(pilot, value="9"):
+    await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("input_switch_input_box"))
     await pilot.press("backspace")
     await pilot.press("9")
 
-    # grand mean scaling
-    await pilot.click(offset=(134, 25))
-    for _i in range(7):
-        await pilot.press("backspace")
-    for i in "12345":
-        await pilot.press(i)
 
-    # switch to frequency based
-    await pilot.click(offset=(150, 28))
-    # After updating to textual version 0.85.2 a strange thing happens, when clicked on the select menu arrow, the options
-    # are unrolled but the whole page is shifted by the number of options (in this case by two presses of up key)
-    # Now we need to shift the screen back down (press pagedown).
-    # await pilot.click(offset=(138, 32))
-    await pilot.click(offset=(138, 34))
-    await pilot.click(offset=(50, 10))
-    await pilot.press("down")
-    await pilot.press("down")
-    await pilot.press("down")
+async def preprocessing_options(pilot) -> None:
+    # set smoothing
+    # await pilot.click(offset=(130, 22))
+    await set_smoothing(pilot)
+
+    # grand mean scaling
+    # await pilot.click(offset=(134, 25))
+    await set_grand_mean_scaling(pilot)
+
+    # # switch to frequency based
+    # # await pilot.click(offset=(150, 28))
+    await set_bandpass_filter_type_to_frequency_based(pilot)
 
     # low
-    await pilot.click(offset=(131, 31))
-    for _i in range(5):
-        await pilot.press("backspace")
-    await pilot.press("8")
+    # await pilot.click(offset=(131, 31))
+    await set_bandpass_filter_lp_width(pilot)
+
     # high
-    await pilot.press("tab")
-    await pilot.press("tab")
-    for _i in range(5):
-        await pilot.press("backspace")
-    await pilot.press("9")
+    await set_bandpass_filter_hp_width(pilot)
 
 
 async def remove_confounds(pilot) -> None:
     # make few 'Remove confounds" options
-    await pilot.click(offset=(71, 39))
-    await pilot.click(offset=(71, 42))
-    await pilot.click(offset=(71, 47))
+    await pilot.click("#confounds_selection")
+    await pilot.press("enter")
+    for _i in range(3):
+        await pilot.press("down")
+    await pilot.press("enter")
+    for _i in range(5):
+        await pilot.press("down")
+    await pilot.press("enter")
+    for _i in range(3):
+        await pilot.press("down")
+    # await pilot.click(offset=(71, 39))
+    # await pilot.click(offset=(71, 42))
+    # await pilot.click(offset=(71, 47))
 
 
 async def check_and_run_tab_refresh(pilot) -> None:
     await pilot.press("r")
     # refresh
-    await pilot.click(offset=(83, 9))
+    # await pilot.click(offset=(83, 9))
+    await pilot.click("#refresh_button")
     # save
-    await pilot.click(offset=(100, 9))
+    # await pilot.click(offset=(100, 9))
+    await pilot.click("#save_button")
     # press 'Ok' to dismiss the modal
-    await pilot.click(offset=(117, 31))
+    # await pilot.click(offset=(117, 31))
+    await pilot.click("#only_one_button")
 
 
 async def scroll_screen_down_spec(pilot) -> None:
@@ -214,54 +273,46 @@ async def scroll_screen_down_spec(pilot) -> None:
 
 async def toggle_bids_non_bids(pilot) -> None:
     # toggle bids to non bids
-    await pilot.click(offset=(113, 14))
+    # await pilot.click(offset=(113, 14))
+    await pilot.click("#bids_non_bids_switch")
 
 
-async def fill_path_pattern_modal(pilot, path_patter):
-    # clear all
-    await pilot.click(offset=(120, 30))
-    # click to prompt
-    await pilot.click(offset=(60, 22))
-    for i in path_patter:
-        await pilot.press(i)
-    # click Ok
-    await pilot.click(offset=(125, 40))
+# async def fill_path_pattern_modal(pilot, path_patter):
+#     # clear all
+#     await pilot.click(offset=(120, 30))
+#     # click to prompt
+#     await pilot.click(offset=(60, 22))
+#     for i in path_patter:
+#         await pilot.press(i)
+#     # click Ok
+#     await pilot.click(offset=(125, 40))
 
 
 async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False) -> None:
     await pilot.press("i")
 
-    # toggle bids to non bids
+    ### toggle bids to non bids
+    # await pilot.click(offset=(113, 14))
+    # await pilot.click('#bids_non_bids_switch')
+    await toggle_bids_non_bids(pilot)
 
-    await pilot.click(offset=(113, 14))
+    ### add T1
+    # await pilot.click(offset=(57, 35))
+    await pilot.click("#add_t1_image_button")
+    # set the path pattern
+    await set_path_in_path_pattern_builder(pilot, t1_pattern_path)
 
-    # add T1
-    await pilot.click(offset=(57, 35))
-    # clear all
-    await pilot.click(offset=(120, 30))
-    # click to prompt
-    await pilot.click(offset=(60, 22))
-    # t1_pattern_path = '/tmp/tui_test/ds002785/sub-{subject}/anat/sub-{subject}_T1w.nii.gz'
-    for i in t1_pattern_path:
-        await pilot.press(i)
-    await pilot.click(offset=(125, 40))
-
-    # add bold
-    await pilot.click(offset=(57, 46))
-    # clear all
-    await pilot.click(offset=(120, 30))
-    # click to prompt
-    await pilot.click(offset=(60, 22))
-
-    # bold_pattern_path = '/tmp/tui_test/ds002785/sub-{subject}/func/sub-{subject}_task-{task}_bold.nii.gz'
-    for i in bold_pattern_path:
-        await pilot.press(i)
-    # clear ok
-    await pilot.click(offset=(125, 40))
+    ### add bold
+    # await pilot.click(offset=(57, 46))
+    await pilot.click("#add_bold_image_button")
+    # set the path pattern
+    await set_path_in_path_pattern_builder(pilot, bold_pattern_path)
 
     if set_repetition_time is True:
         # click No on 'Proceed with these values modal' (Repetition time values)
-        await pilot.click(offset=(116, 31))
+        # await pilot.click(offset=(116, 31))
+        await pilot.click("#cancel_right_button")
+
         # Specify repetition time in seconds: Click into prompt
         await pilot.click(offset=(96, 27))
         # Set time to '9'
@@ -270,16 +321,31 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None,
         await pilot.click(offset=(96, 31))
     else:
         # click Ok
-        await pilot.click(offset=(100, 31))
+        # await pilot.click(offset=(100, 31))
+        await pilot.click("#ok_left_button")
 
-    # focus on the scroll bar
-    await pilot.click(offset=(100, 31))
     for _i in range(15):
         await pilot.press("down")
     # click confirm
-    await pilot.click(offset=(100, 47))
+    # await pilot.click(offset=(100, 47))
+    await pilot.click("#confirm_non_bids_button")
     # click Ok on Modal informing us that the data input is success
-    await pilot.click(offset=(121, 31))
+    # await pilot.click(offset=(121, 31))
+    await pilot.click("#only_one_button")
+
+
+async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
+    # clear all
+    # await pilot.click(offset=(120, 30))
+    await pilot.click("#clear_all")
+    # click to prompt
+    # await pilot.click(offset=(60, 22))
+    await pilot.click("#input_prompt")
+    for i in path_pattern:
+        await pilot.press(i)
+    # press ok button
+    # await pilot.click(offset=(125, 40))
+    await pilot.click("#ok_button")
 
 
 async def settable_scroll_screen_down(pilot, how_much=19) -> None:
@@ -302,6 +368,9 @@ async def run_before_for_reho_falff_preproc(
         work_dir_path = str(work_dir_path)
     if isinstance(file_pattern, Path):
         file_pattern = str(file_pattern)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
     print("----------------------------", data_path, work_dir_path)
 
     # Define functions to execute based on stage requirements
@@ -310,45 +379,52 @@ async def run_before_for_reho_falff_preproc(
         # select all images
         await select_images(pilot)
         # deselect second image
-        await pilot.click(offset=(71, 10))
+        # await pilot.click(offset=(71, 10))
+        await pilot.press("down")
+        await pilot.press("enter")
 
         # click in the Smoothing input box, delete the '0' and type '666'
-        await pilot.click(offset=(137, 22))
-
-        await pilot.press("backspace")
-        for i in "666":
-            await pilot.press(i)
+        # await pilot.click(offset=(137, 22))
+        # await pilot.press("backspace")
+        # for i in "666":
+        #     await pilot.press(i)
+        await set_smoothing(pilot, value="666")
 
         # click in the Grand mean scaling input box, delete the '0' and type '666'
-        await pilot.click(offset=(137, 26))
-        for _i in range(7):
-            await pilot.press("backspace")
-        for i in "12345":
-            await pilot.press(i)
+        # await pilot.click(offset=(137, 26))
+        # for _i in range(7):
+        #     await pilot.press("backspace")
+        # for i in "12345":
+        #     await pilot.press(i)
+        await set_grand_mean_scaling(pilot)
 
         # click on the selection arrow of the temporal filter and select 'frequency_based'
-        await pilot.click(offset=(151, 28))
-        await pilot.click(offset=(151, 32))
+        # await pilot.click(offset=(151, 28))
+        # await pilot.click(offset=(151, 32))
+        await set_bandpass_filter_type_to_frequency_based(pilot)
 
         # change low pass filter value to 0.019
-        await pilot.click(offset=(137, 31))
-        await pilot.press("9")
+        # await pilot.click(offset=(137, 31))
+        # await pilot.press("9")
+        set_bandpass_filter_lp_width(pilot, value="0.019")
 
         # change high pass filter value to 0.19
-        await pilot.click(offset=(137, 34))
-        await pilot.press("9")
+        # await pilot.click(offset=(137, 34))
+        # await pilot.press("9")
+        await set_bandpass_filter_hp_width(pilot, value="0.19")
 
         # remove confounds (activate all)
-        await pilot.click(offset=(72, 39))
-        await pilot.click(offset=(72, 40))
-        await pilot.click(offset=(72, 41))
-        await pilot.click(offset=(72, 42))
-        await pilot.click(offset=(72, 43))
-        await pilot.click(offset=(72, 44))
-        await pilot.click(offset=(72, 45))
-        await pilot.click(offset=(72, 46))
-        await pilot.click(offset=(72, 47))
-        await pilot.click(offset=(72, 48))
+        await remove_confounds_select_all(pilot)
+        # await pilot.click(offset=(72, 39))
+        # await pilot.click(offset=(72, 40))
+        # await pilot.click(offset=(72, 41))
+        # await pilot.click(offset=(72, 42))
+        # await pilot.click(offset=(72, 43))
+        # await pilot.click(offset=(72, 44))
+        # await pilot.click(offset=(72, 45))
+        # await pilot.click(offset=(72, 46))
+        # await pilot.click(offset=(72, 47))
+        # await pilot.click(offset=(72, 48))
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)
@@ -370,16 +446,26 @@ async def run_before_for_reho_falff_preproc(
         await task()
 
 
+async def remove_confounds_select_all(pilot) -> None:
+    # make few 'Remove confounds" options
+    await pilot.click("#confounds_selection")
+    for _i in range(7):
+        await pilot.press("enter")
+        await pilot.press("down")
+
+
 async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=False):
     # click on "Add" (atlas or seed image or map)
-    await pilot.click(offset=(76, 22))
+    # await pilot.click(offset=(76, 22))
+    await pilot.click("#add_file_button")
 
     # select event file type if it is an event file pattern
     if event_file_pattern is True:
         await select_event_file_type(pilot)
 
     # add atlas file pattern
-    await fill_path_pattern_modal(pilot, file_pattern)
+    # await fill_path_pattern_modal(pilot, file_pattern)
+    await set_path_in_path_pattern_builder(pilot, file_pattern)
 
     # make choices of the space if it is not an event file pattern
     if event_file_pattern is False:
@@ -387,18 +473,22 @@ async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_
 
 
 async def select_event_file_type(pilot):
+    pass
+    # top_file_panel
     # Select event file type from the modal (tsv)
-    await pilot.click(offset=(86, 27))
-    # Confirm modal by clicking OK
-    await pilot.click(offset=(96, 31))
+    # await pilot.click(offset=(86, 27))
+    # # Confirm modal by clicking OK
+    # await pilot.click(offset=(96, 31))
 
 
 async def confirm_space_meta_data_after_selecting_file_pattern(pilot):
     # click No: Missing Space values modal (Found some values, proceed with those?: No because we want to test the
     # space selection modal (MNI ICBM 2009c vs. MNI ICB 152)).
-    await pilot.click(offset=(116, 31))
+    # await pilot.click(offset=(116, 31))
+    await pilot.click("#only_one_button")
 
     # First item should be automatically selected, so we can click directly on "Ok"
     # await pilot.click(offset=(65, 26)) # this is first item in the selection, not used because of the reasons above
     # Click Ok
-    await pilot.click(offset=(131, 30))
+    # await pilot.click(offset=(131, 30))
+    await pilot.click("#ok")

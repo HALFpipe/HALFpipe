@@ -60,10 +60,10 @@ class SelectionTemplate(Widget):
     def compose(self) -> ComposeResult:
         yield VerticalScroll(
             Grid(
-                Button("New", variant="primary", classes="add_button"),
-                Button("Rename", variant="primary", classes="rename_button"),
-                Button("Duplicate", variant="primary", classes="duplicate_button"),
-                Button("Delete", variant="primary", classes="delete_button"),
+                Button("New", variant="primary", classes="add_button", id="new_item_button"),
+                Button("Rename", variant="primary", classes="rename_button", id="rename_item_button"),
+                Button("Duplicate", variant="primary", classes="duplicate_button", id="duplicate_item_button"),
+                Button("Delete", variant="primary", classes="delete_button", id="delete_item_button"),
                 # Button("Sort", variant="primary", classes="sort_button"),
                 classes="buttons",
             ),
