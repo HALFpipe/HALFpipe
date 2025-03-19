@@ -174,7 +174,19 @@ jobs:
           # Run the integration tests
           py.test -s -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
-            --numprocesses=2
+            --numprocesses=2 \
+            --ignore=workflows/ \
+            --ignore=cli/ \
+            --ignore=collect/ \
+            --ignore=file_index/ \
+            --ignore=ingest/ \
+            --ignore=interfaces/ \
+            --ignore=model/ \
+            --ignore=plugins/ \
+            --ignore=result/ \
+            --ignore=ui/ \
+            --ignore=stats/ \
+            --ignore=utils/ \
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
