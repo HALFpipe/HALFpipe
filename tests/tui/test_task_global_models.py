@@ -46,7 +46,16 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
         await add_new_feature(pilot, tab_type="g", feature_type="linear_model", label="linear_model_1")
 
     async def select_aggregate():
-        await pilot.click(offset=(72, 15))
+        # await pilot.click(offset=(72, 15))
+        await pilot.click("#aggregate_selection_list")
+        await pilot.press("down")
+        await pilot.press("enter")
+
+    async def toggle_cutoff_panel():
+        # toggle on/off switch
+        # await pilot.click(offset=(138, 21))
+        await pilot.click(pilot.app.get_widget_by_id("cutoff_panel").get_widget_by_id("exclude_subjects"))
+        # await pilot.click('#cutoff_panel_switch')
 
     async def select_group_level_models_cutoffs_values():
         await _select_group_level_models_cutoffs_values(pilot)
@@ -57,15 +66,18 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
         # await settable_scroll_screen_down(pilot, 29)
 
     async def duplicate():
-        await pilot.click(offset=(10, 12))
+        # await pilot.click(offset=(10, 12))
         # click on the form area
-        await pilot.click(offset=(55, 10))
+        # await pilot.click(offset=(55, 10))
+        # await pilot.click("#duplicate_item_button")
+        await pilot.click(pilot.app.get_widget_by_id("models_content").get_widget_by_id("duplicate_item_button"))
+
         # scroll to see more
         await settable_scroll_screen_down(pilot, 29)
 
     async def final_stage_tasks():
         # press check and run also manually
-        await pilot.click(offset=(108, 4))
+        # await pilot.click(offset=(108, 4))
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, 60)
         # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
@@ -76,20 +88,20 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
             add_feature_related_tasks,
             add_intercept_only_model,
             select_aggregate,
-            select_group_level_models_cutoffs_values,
+            toggle_cutoff_panel,
         ],
         "intercept_only_at_spec_preview": [
             add_feature_related_tasks,
             add_intercept_only_model,
             select_aggregate,
-            select_group_level_models_cutoffs_values,
+            toggle_cutoff_panel,
             final_stage_tasks,
         ],
         "intercept_only_at_group_level_models_tab_duplicate": [
             add_feature_related_tasks,
             add_intercept_only_model,
             select_aggregate,
-            select_group_level_models_cutoffs_values,
+            toggle_cutoff_panel,
             duplicate,
         ],
         "linear_model_at_group_level_models_tab": [add_feature_related_tasks, add_linear_model, select_covariates_spreadsheet],

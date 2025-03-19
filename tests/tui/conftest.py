@@ -117,3 +117,15 @@ def event_path_pattern(downloaded_data_path) -> Path:
 @pytest.fixture(scope="function")
 def start_app():
     return MainApp()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def copy_file():
+    """Copy a file before tests start. This is just a hot fix because somehow the resources directory
+    is delete during the docker build."""
+
+    source_file = Path("./snapshot_report_template.jinja2")
+    destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
+
+    destination.mkdir(parents=True, exist_ok=True)
+    shutil.copy(source_file, destination / source_file.name)

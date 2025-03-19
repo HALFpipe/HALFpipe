@@ -12,7 +12,11 @@ from .pilot_functions import (
     add_new_feature,
     check_and_run_tab_refresh,
     select_images,
+    set_minimum_coverage,
     settable_scroll_screen_down,
+    toggle_bandpass_filter,
+    toggle_grand_mean_scaling,
+    toggle_smoothing,
 )
 
 
@@ -42,25 +46,30 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
         await add_atlas_or_seed_or_map_file_pattern(pilot, atlas_file_pattern)
 
         # change minimum coverage from 0.8 to 0.85
-        await pilot.click(offset=(131, 38))
-        await pilot.press("5")
+        # await pilot.click(offset=(131, 38))
+        await set_minimum_coverage(pilot, value="0.85")
 
         await settable_scroll_screen_down(pilot, 2)
+        # turn off
+        # await pilot.click(offset=(118, 44))
+        await toggle_smoothing(pilot)
 
-        # turn off smoothing
-        await pilot.click(offset=(118, 44))
         # turn off grand mean scalling
-        await pilot.click(offset=(118, 47))
+        # await pilot.click(offset=(118, 47))
+        await toggle_grand_mean_scaling(pilot)
+
         # turn off the temporal filter
-        await pilot.click(offset=(118, 50))
+        # await pilot.click(offset=(118, 50))
+        await toggle_bandpass_filter(pilot)
 
     async def duplicate():
-        await pilot.click(offset=(10, 12))
-        # await scroll_screen_down(pilot)
+        # await pilot.click(offset=(10, 12))
+        await pilot.click("#duplicate_item_button")
+        await settable_scroll_screen_down(pilot, 50)
 
     async def final_stage_tasks():
         # click somewhere outside of the form area
-        await pilot.click(offset=(50, 10))
+        # await pilot.click(offset=(50, 10))
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
         # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")

@@ -15,7 +15,7 @@ from .pilot_functions import (
     deselect_conditions,
     preprocessing_options,
     remove_confounds,
-    scroll_screen_down,
+    # scroll_screen_down,
     select_images,
     settable_scroll_screen_down,
 )
@@ -59,7 +59,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     async def duplicate():
         # await pilot.click(offset=(10, 12))
         await pilot.click("#duplicate_item_button")
-        await scroll_screen_down(pilot)
+        # await scroll_screen_down(pilot)
+        await settable_scroll_screen_down(pilot, 50)
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)

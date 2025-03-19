@@ -46,11 +46,12 @@ async def run_before(
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=True)
 
     async def duplicate():
-        await pilot.click(offset=(10, 12))
+        # await pilot.click(offset=(10, 12))
+        await pilot.click("#duplicate_item_button")
 
     async def final_stage_tasks():
         # click somewhere outside of the form area
-        await pilot.click(offset=(50, 10))
+        # await pilot.click(offset=(50, 10))
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
         # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")

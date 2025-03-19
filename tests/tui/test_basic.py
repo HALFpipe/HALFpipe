@@ -56,16 +56,24 @@ async def run_before(
             # await pilot.click(offset=(116, 31))
             await pilot.click("#only_one_button")
             # Specify slice acquisition direction, choose second choice
-            await pilot.click(offset=(65, 26))
+            # await pilot.click(offset=(65, 26))
+            await pilot.click("#set_value_modal")
+            await pilot.press("down")
+            await pilot.press("enter")
             # Click ok
             # await pilot.click(offset=(132, 30))
-            await pilot.click("#ok")
-
             # Click ok on the warning modal: Missing images
+            await pilot.click(pilot.app.get_widget_by_id("only_one_button"))
+
             # await pilot.click(offset=(116, 31))
-            await pilot.click("#only_one_button")
+            # await pilot.click("#only_one_button")
             # Specify Slice timing modal: Choose third options
-            await pilot.click(offset=(65, 25))
+            # await pilot.click(offset=(65, 25))
+            await pilot.click("#radio_set")
+            for _i in range(2):
+                await pilot.press("down")
+            await pilot.press("enter")
+
             # Click ok on the 'Specify Slice timing modal'
             # await pilot.click(offset=(132, 34))
             await pilot.click("#ok")

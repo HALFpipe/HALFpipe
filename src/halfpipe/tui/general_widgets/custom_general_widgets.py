@@ -231,7 +231,7 @@ class SwitchWithSelect(SwitchWithInputBox):
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),
-            TextSwitch(value=self.switch_value),
+            TextSwitch(value=self.switch_value, id="the_switch"),
             Select(
                 [(str(value[0]), value[1]) for value in self.options],
                 value=self.default_option,

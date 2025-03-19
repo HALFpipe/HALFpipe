@@ -67,10 +67,10 @@ class SetValueModal(DraggableModalScreen):
     def on_mount(self) -> None:
         self.content.mount(
             Static(self.instructions),
-            Input(""),
+            Input("", id="input_prompt"),
             Horizontal(
-                Button(self.left_button_text, variant=self.left_button_variant, classes="button ok"),
-                Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel"),
+                Button(self.left_button_text, variant=self.left_button_variant, classes="button ok", id="ok_button"),
+                Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel", id="cancel_button"),
                 classes="button_grid",
             ),
         )

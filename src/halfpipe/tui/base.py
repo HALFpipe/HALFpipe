@@ -24,6 +24,7 @@ from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
 from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
+from .specialized_widgets.event_file_widget import FilePanelTemplate
 from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
@@ -268,6 +269,7 @@ class MainApp(App):
 
     def reload_ui(self) -> None:
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
+        self.get_widget_by_id("models_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("work_dir_content").refresh(recompose=True, layout=True)
@@ -276,6 +278,9 @@ class MainApp(App):
             "feature_selection_content"
         )
         feature_selection_content.feature_items.clear()
+        model_selection_content = self.app.get_widget_by_id("models_tab").get_widget_by_id("models_content")
+        model_selection_content.feature_items.clear()
+
         ctx.database.filepaths_by_tags.clear()
         ctx.database.tags_by_filepaths.clear()
         ctx.spec.features.clear()
@@ -283,6 +288,8 @@ class MainApp(App):
         ctx.spec.models.clear()
         ctx.spec.files.clear()
         ctx.cache.clear()
+        FilePanelTemplate.reset_all_counters()
+
         # set global settings to defaults use the defaults dictionary at preprocessing_content widget
         for key in self.get_widget_by_id("preprocessing_content").default_settings:
             ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]

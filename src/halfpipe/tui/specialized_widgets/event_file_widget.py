@@ -70,12 +70,12 @@ class FilePanelTemplate(Widget):
         Updates instances when a file item is finished or its path pattern changes.
     """
 
-    file_pattern_counter = 0
-    class_name = "AtlasFilePanel"
-    id_string = "atlas_file_panel"
-    file_item_id_base = "atlas_file_pattern_"
+    _counter = 0
+    class_name: None | str = None
+    id_string: str = ""
+    file_item_id_base: str = ""
     the_class = None
-    pattern_class: type | None = AddAtlasImageStep
+    pattern_class: type | None = None
     current_file_pattern_id = None
     value: reactive[bool] = reactive(None, init=False)
 
@@ -103,6 +103,11 @@ class FilePanelTemplate(Widget):
         super().__init__(id=id, classes=classes)
         type(self).the_class = self.__class__  # Sets the_class at the class level
         self.the_app = self.app
+
+        cls = type(self)  # Get the actual class of the instance
+        if not hasattr(cls, "_counter"):  # Ensure each child class has its own counter
+            cls._counter = 0
+        self.file_pattern_counter = cls._counter
 
     def callback_func(self, message_dict):
         info_string = Text("")
@@ -136,15 +141,15 @@ class FilePanelTemplate(Widget):
         async def mount_file_item_widget():
             if self.the_class is not None and self.pattern_class is not None:
                 the_file_item = FileItem(
-                    id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                    id=self.file_item_id_base + str(self.file_pattern_counter),
                     classes="file_patterns",
                     pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
                 )
                 # regular FileItem mount when user clicks "Add" and creates the file pattern
                 await self.get_widget_by_id(self.id_string).mount(the_file_item)
-                self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
+                self.current_file_pattern_id = self.file_item_id_base + str(self.file_pattern_counter)
 
-                self.the_class.file_pattern_counter += 1
+                self.file_pattern_counter += 1
                 self.refresh()
 
         if load_object is None:
@@ -162,7 +167,7 @@ class FilePanelTemplate(Widget):
                 if self.pattern_class is not None:
                     await self.get_widget_by_id(self.id_string).mount(
                         FileItem(
-                            id=self.file_item_id_base + str(self.the_class.file_pattern_counter),
+                            id=self.file_item_id_base + str(self.file_pattern_counter),
                             classes="file_patterns",
                             load_object=load_object,
                             message_dict=message_dict,
@@ -171,8 +176,8 @@ class FilePanelTemplate(Widget):
                         )
                     )
 
-                self.current_file_pattern_id = self.file_item_id_base + str(self.the_class.file_pattern_counter)
-                self.the_class.file_pattern_counter += 1
+                self.current_file_pattern_id = self.file_item_id_base + str(self.file_pattern_counter)
+                self.file_pattern_counter += 1
         return self.current_file_pattern_id
 
     def on_mount(self):
@@ -204,6 +209,14 @@ class FilePanelTemplate(Widget):
     @on(FileItem.PathPatternChanged)
     async def _on_update_all_instances(self, event):
         self.value = event.value
+
+    @classmethod
+    def reset_all_counters(cls):
+        """Recursively reset counters for all subclasses."""
+        for subclass in cls.__subclasses__():
+            subclass._counter = 0
+            subclass.reset_all_counters()  # Reset for deeper subclasses if any
+        cls._counter = 0  # Reset the parent class counter
 
 
 class EventFilePanel(FilePanelTemplate):

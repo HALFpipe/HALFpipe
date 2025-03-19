@@ -52,25 +52,29 @@ async def enter_browse_path(pilot, path):
 
 async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
     # click 'Add'
-    await pilot.click(offset=(78, 40))
+    # await pilot.click(offset=(78, 40))
+    await pilot.click("#add_spreadsheet")
     # click Browse
-    await pilot.click(offset=(55, 26))
+    # await pilot.click(offset=(55, 26))
+    await pilot.click("#browse")
     # enter the path
     await enter_browse_path(pilot, spreadsheet_path)
     # set sex as categorical
-    await pilot.click(offset=(119, 32))
+    # await pilot.click(offset=(119, 32))
+    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_3").get_widget_by_id("radio_column_2"))
     # set site as categorical
-    await pilot.click(offset=(119, 34))
+    # await pilot.click(offset=(119, 34))
+    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_4").get_widget_by_id("radio_column_2"))
     # click Ok
-    await pilot.click(offset=(129, 43))
+    # await pilot.click(offset=(129, 43))
+    await pilot.click("#ok")
 
 
 async def _select_group_level_models_cutoffs_values(pilot):
-    # toggle on/off switch
-    await pilot.click(offset=(138, 21))
     ### set mean value
     # click in the prompt
-    await pilot.click(offset=(136, 24))
+    # await pilot.click(offset=(136, 24))
+    await pilot.click(pilot.app.get_widget_by_id("cutoff_panel").get_widget_by_id("cutoff_fd_mean"))
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
@@ -79,7 +83,8 @@ async def _select_group_level_models_cutoffs_values(pilot):
         await pilot.press(i)
     ### set percentage value
     # click in the prompt
-    await pilot.click(offset=(136, 27))
+    # await pilot.click(offset=(136, 27))
+    await pilot.click(pilot.app.get_widget_by_id("cutoff_panel").get_widget_by_id("cutoff_fd_perc"))
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
@@ -107,7 +112,12 @@ async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") ->
     await pilot.press(tab_type)
     # click on New button
     # await pilot.click(offset=(10, 8))
-    await pilot.click("#new_item_button")
+    # await pilot.click("#new_item_button")
+    if tab_type == "f":
+        await pilot.click(pilot.app.get_widget_by_id("feature_selection_content").get_widget_by_id("new_item_button"))
+    elif tab_type == "g":
+        await pilot.click(pilot.app.get_widget_by_id("models_content").get_widget_by_id("new_item_button"))
+
     # click on Task based
     # await pilot.click(offset=(100, feature_type_yposition[feature_type]))
     await pilot.click("#options")
@@ -139,9 +149,20 @@ async def select_images(pilot) -> None:
     await pilot.pause()
 
 
-async def deselect_conditions(pilot, offset_y=0) -> None:
+async def deselect_image(pilot, which_one=2) -> None:
+    await pilot.click("#tasks_to_use_selection")
+    for _i in range(which_one):
+        await pilot.press("down")
+    await pilot.press("enter")
+
+
+async def deselect_conditions(pilot, offset_y=2) -> None:
     # deselect one of the conditions
-    await pilot.click(offset=(71, 23 + offset_y))
+    # await pilot.click(offset=(71, 23 + offset_y))
+    await pilot.click("#model_conditions_selection")
+    for _i in range(offset_y):
+        await pilot.press("down")
+    await pilot.press("enter")
 
 
 async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
@@ -173,12 +194,14 @@ async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
 
 async def delete_column(pilot) -> None:
     # await pilot.click(offset=(136, 43))
-    await pilot.click("#delete_contrast_values_button")
+    await pilot.click(
+        pilot.app.get_widget_by_id("model_conditions_and_constrasts").get_widget_by_id("delete_contrast_values_button")
+    )
 
 
-async def scroll_screen_down(pilot) -> None:
-    # scroll screen
-    await pilot.click(offset=(202, 50))
+# async def scroll_screen_down(pilot) -> None:
+#     # scroll screen
+#     await pilot.click(offset=(202, 50))
 
 
 async def set_grand_mean_scaling(pilot, value="12345"):
@@ -189,30 +212,45 @@ async def set_grand_mean_scaling(pilot, value="12345"):
         await pilot.press(i)
 
 
+async def toggle_grand_mean_scaling(pilot):
+    await pilot.click(pilot.app.get_widget_by_id("grand_mean_scaling").get_widget_by_id("the_switch"))
+
+
 async def set_bandpass_filter_type_to_frequency_based(pilot):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_type").get_widget_by_id("input_switch_input_box"))
     await pilot.press("down")
     await pilot.press("enter")
 
 
+async def toggle_bandpass_filter(pilot):
+    await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_type").get_widget_by_id("the_switch"))
+
+
 async def set_bandpass_filter_lp_width(pilot, value="8"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id("input_switch_input_box"))
     for _i in range(5):
         await pilot.press("backspace")
-    await pilot.press(value)
+    for v in value:
+        await pilot.press(v)
 
 
 async def set_bandpass_filter_hp_width(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id("input_switch_input_box"))
     for _i in range(5):
         await pilot.press("backspace")
-    await pilot.press("9")
+    for v in value:
+        await pilot.press(v)
 
 
 async def set_smoothing(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("input_switch_input_box"))
     await pilot.press("backspace")
-    await pilot.press("9")
+    for v in value:
+        await pilot.press(v)
+
+
+async def toggle_smoothing(pilot):
+    await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("the_switch"))
 
 
 async def preprocessing_options(pilot) -> None:
@@ -254,6 +292,8 @@ async def remove_confounds(pilot) -> None:
 
 
 async def check_and_run_tab_refresh(pilot) -> None:
+    # random click before scroll
+    await pilot.click(offset=(50, 10))
     await pilot.press("r")
     # refresh
     # await pilot.click(offset=(83, 9))
@@ -266,9 +306,9 @@ async def check_and_run_tab_refresh(pilot) -> None:
     await pilot.click("#only_one_button")
 
 
-async def scroll_screen_down_spec(pilot) -> None:
-    # scroll screen (different layout than in features)
-    await pilot.click(offset=(200, 49))
+# async def scroll_screen_down_spec(pilot) -> None:
+#     # scroll screen (different layout than in features)
+#     await pilot.click(offset=(200, 49))
 
 
 async def toggle_bids_non_bids(pilot) -> None:
@@ -314,11 +354,13 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None,
         await pilot.click("#cancel_right_button")
 
         # Specify repetition time in seconds: Click into prompt
-        await pilot.click(offset=(96, 27))
+        # await pilot.click(offset=(96, 27))
+        await pilot.click("#input_prompt")
         # Set time to '9'
         await pilot.press("9")
         # Click Ok to dismiss
-        await pilot.click(offset=(96, 31))
+        # await pilot.click(offset=(96, 31))
+        await pilot.click("#ok_button")
     else:
         # click Ok
         # await pilot.click(offset=(100, 31))
@@ -349,6 +391,8 @@ async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
 
 
 async def settable_scroll_screen_down(pilot, how_much=19) -> None:
+    # random click to focus the form
+    await pilot.click(offset=(50, 10))
     # scroll screen (different layout than in features)
     for _i in range(how_much):
         await pilot.press("down")
@@ -380,8 +424,9 @@ async def run_before_for_reho_falff_preproc(
         await select_images(pilot)
         # deselect second image
         # await pilot.click(offset=(71, 10))
-        await pilot.press("down")
-        await pilot.press("enter")
+        await deselect_image(pilot)
+        # await pilot.press("down")
+        # await pilot.press("enter")
 
         # click in the Smoothing input box, delete the '0' and type '666'
         # await pilot.click(offset=(137, 22))
@@ -401,12 +446,13 @@ async def run_before_for_reho_falff_preproc(
         # click on the selection arrow of the temporal filter and select 'frequency_based'
         # await pilot.click(offset=(151, 28))
         # await pilot.click(offset=(151, 32))
-        await set_bandpass_filter_type_to_frequency_based(pilot)
+        if feature_type not in ["falff", "reho"]:
+            await set_bandpass_filter_type_to_frequency_based(pilot)
 
         # change low pass filter value to 0.019
         # await pilot.click(offset=(137, 31))
         # await pilot.press("9")
-        set_bandpass_filter_lp_width(pilot, value="0.019")
+        await set_bandpass_filter_lp_width(pilot, value="0.019")
 
         # change high pass filter value to 0.19
         # await pilot.click(offset=(137, 34))
@@ -449,7 +495,7 @@ async def run_before_for_reho_falff_preproc(
 async def remove_confounds_select_all(pilot) -> None:
     # make few 'Remove confounds" options
     await pilot.click("#confounds_selection")
-    for _i in range(7):
+    for _i in range(10):
         await pilot.press("enter")
         await pilot.press("down")
 
@@ -473,12 +519,16 @@ async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_
 
 
 async def select_event_file_type(pilot):
-    pass
     # top_file_panel
     # Select event file type from the modal (tsv)
     # await pilot.click(offset=(86, 27))
+    await pilot.click("#radio_set")
+    await pilot.press("down")
+    await pilot.press("down")
+    await pilot.press("enter")
     # # Confirm modal by clicking OK
     # await pilot.click(offset=(96, 31))
+    await pilot.click("#ok")
 
 
 async def confirm_space_meta_data_after_selecting_file_pattern(pilot):
@@ -492,3 +542,11 @@ async def confirm_space_meta_data_after_selecting_file_pattern(pilot):
     # Click Ok
     # await pilot.click(offset=(131, 30))
     await pilot.click("#ok")
+
+
+async def set_minimum_coverage(pilot, value="0.85"):
+    await pilot.click(pilot.app.get_widget_by_id("minimum_coverage").get_widget_by_id("input_label_input_box"))
+    for _i in range(5):
+        await pilot.press("backspace")
+    for v in value:
+        await pilot.press(v)
