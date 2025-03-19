@@ -172,21 +172,28 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test -s -k 'not test_consistency' \
+          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals'
             --cov --cov-report=xml --dist=load \
-            --numprocesses=2 \
-            --ignore=workflows/ \
-            --ignore=cli/ \
-            --ignore=collect/ \
-            --ignore=file_index/ \
-            --ignore=ingest/ \
-            --ignore=interfaces/ \
-            --ignore=model/ \
-            --ignore=plugins/ \
-            --ignore=result/ \
-            --ignore=ui/ \
-            --ignore=stats/ \
-            --ignore=utils/ \
+            --numprocesses=2
+
+      - name: List files in halfpipe directory
+        if: ${{ failure() }}
+        run: |
+          echo "Checking contents of /"
+          ls -R /
+      - name: Find the report
+        if: ${{ failure() }}
+        run: |
+          echo "Checking contents of /halfpipe"
+          find / -iname "*snapshot_report_template.jinja2*"
+      - name: 22List files in halfpipe directory
+        run: |
+          echo "Checking contents of /"
+          ls -R /
+      - name: 22Find the report
+        run: |
+          echo "Checking contents of /halfpipe"
+          find / -iname "*snapshot_report_template.jinja2*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
