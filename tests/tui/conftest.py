@@ -11,18 +11,20 @@ from halfpipe.tui.base import MainApp  # Ensure path aligns with your project st
 
 from .create_mock_bids_dataset import create_bids_data
 
+
 @pytest.fixture(scope="session", autouse=True)
 def copy_jinja2_file():
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
-    print('pppppppppppppppppppppppppppath:', Path.cwd())
+    print("pppppppppppppppppppppppppppath:", Path.cwd())
     files = [f.name for f in Path(".").iterdir() if f.is_file()]
-    print('ffffffffffffffiles:', files)
+    print("ffffffffffffffiles:", files)
     # source_file = "./snapshot_report_template.txt"
     # destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
     #
     # destination.mkdir(parents=True, exist_ok=True)
     # shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
+
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
 # If the path was variable then the snapshot would yield failure.
@@ -129,5 +131,3 @@ def event_path_pattern(downloaded_data_path) -> Path:
 @pytest.fixture(scope="function")
 def start_app():
     return MainApp()
-
-
