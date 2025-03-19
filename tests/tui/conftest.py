@@ -91,7 +91,7 @@ def spec_file_dir_path(fixed_tmp_path) -> Path:
 @pytest.fixture(scope="session")
 def covariant_spreadsheet_path(fixed_tmp_path) -> Path:
     source_file = "./Covariates.xlsx"
-    destination_file = fixed_tmp_path / "Covariates.xlsx/"
+    destination_file = fixed_tmp_path / "Covariates.xlsx"
     if os.path.exists(destination_file):
         os.remove(destination_file)
     shutil.copy(source_file, destination_file)
@@ -124,8 +124,8 @@ def copy_file():
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
 
-    source_file = Path("./snapshot_report_template.jinja2")
+    source_file = "./snapshot_report_template.jinja2"
     destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
 
     destination.mkdir(parents=True, exist_ok=True)
-    shutil.copy(source_file, destination / source_file.name)
+    shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
