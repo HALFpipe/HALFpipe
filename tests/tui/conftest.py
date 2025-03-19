@@ -11,7 +11,8 @@ from halfpipe.tui.base import MainApp  # Ensure path aligns with your project st
 
 from .create_mock_bids_dataset import create_bids_data
 
-CURRENT_DIR = Path('/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/')
+CURRENT_DIR = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
+
 
 @pytest.fixture(scope="session", autouse=True)
 def copy_jinja2_file():
@@ -22,6 +23,7 @@ def copy_jinja2_file():
 
     destination.mkdir(parents=True, exist_ok=True)
     shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
+
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
 # If the path was variable then the snapshot would yield failure.
@@ -128,5 +130,3 @@ def event_path_pattern(downloaded_data_path) -> Path:
 @pytest.fixture(scope="function")
 def start_app():
     return MainApp()
-
-
