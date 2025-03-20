@@ -11,57 +11,57 @@ from ...model.tags import entities
 # This is a singleton!
 class Context:
     """
-     Context class for managing global application state and data.
+    Context class for managing global application state and data.
 
-     This class is implemented as a singleton to ensure that there is only one
-     instance of the context throughout the application. It provides access to
-     the spec file, the database, the working directory, and a cache
-     for storing various user choices. The cache is a nested dictionary with the
-     following structure: Widget ID -> type of data, e.g., features, settings,
-     models and then withing these subdictionaries we have the particular user
-     choices.
+    This class is implemented as a singleton to ensure that there is only one
+    instance of the context throughout the application. It provides access to
+    the spec file, the database, the working directory, and a cache
+    for storing various user choices. The cache is a nested dictionary with the
+    following structure: Widget ID -> type of data, e.g., features, settings,
+    models and then withing these subdictionaries we have the particular user
+    choices.
 
-     Attributes
-     ----------
-     spec : Spec
-         The specification object containing the configuration for the application.
-     database : Database
-         The database object for managing data storage and retrieval.
-     workdir : Path | None
-         The working directory for the application, where output files are stored.
-     use_existing_spec : bool
-         Flag indicating whether to use an existing specification file.
-     debug : bool
-         Flag indicating whether the application is in debug mode.
-     already_checked : set[str]
-         Set of strings representing items that have already been checked. For more
-         see meta_data_steps.py.
-     cache : defaultdict[str, defaultdict[str, dict[str, Any]]]
-         A nested defaultdict used as a cache for storing various data.
-         The structure is: cache[top_level_key][second_level_key] = {data_key: data_value}
-     available_images : dict
-         A dictionary storing available images, keyed by entity type (e.g., 'task').
-         The values are lists of available tags for each entity.
+    Attributes
+    ----------
+    spec : Spec
+        The specification object containing the configuration for the application.
+    database : Database
+        The database object for managing data storage and retrieval.
+    workdir : Path | None
+        The working directory for the application, where output files are stored.
+    use_existing_spec : bool
+        Flag indicating whether to use an existing specification file.
+    debug : bool
+        Flag indicating whether the application is in debug mode.
+    already_checked : set[str]
+        Set of strings representing items that have already been checked. For more
+        see meta_data_steps.py.
+    cache : defaultdict[str, defaultdict[str, dict[str, Any]]]
+        A nested defaultdict used as a cache for storing various data.
+        The structure is: cache[top_level_key][second_level_key] = {data_key: data_value}
+    available_images : dict
+        A dictionary storing available images, keyed by entity type (e.g., 'task').
+        The values are lists of available tags for each entity.
 
-     """
+    """
 
     _instance = None
     _initialized: bool
 
     def __new__(cls, *args, **kwargs):
         """
-         Ensures that only one instance of the Context class is created.
+        Ensures that only one instance of the Context class is created.
 
-         This method implements the singleton pattern by checking if an instance
-         already exists. If it does, it returns the existing instance; otherwise,
-         it creates a new one.
+        This method implements the singleton pattern by checking if an instance
+        already exists. If it does, it returns the existing instance; otherwise,
+        it creates a new one.
 
-         Returns
-         -------
-         Context
-             The singleton instance of the Context class.
+        Returns
+        -------
+        Context
+            The singleton instance of the Context class.
 
-         """
+        """
         if cls._instance is None:
             cls._instance = super(Context, cls).__new__(cls)
             cls._instance._initialized = False

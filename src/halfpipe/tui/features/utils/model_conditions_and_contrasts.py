@@ -18,36 +18,36 @@ cursors = cycle(["column", "row", "cell"])
 
 class ContrastTableInputWindow(DraggableModalScreen):
     """
-     A modal window for setting contrast values through a user interface.
+    A modal window for setting contrast values through a user interface.
 
-     This class provides a modal window that allows users to input contrast
-     name and values for the contrast table.
+    This class provides a modal window that allows users to input contrast
+    name and values for the contrast table.
 
-     Attributes
-     ----------
-     CSS_PATH : list[str]
-         List containing paths to the CSS files for styling the window.
-     table_row_index : dict[str, str]
-         A dictionary representing the row index of the contrast table,
-         where keys are condition names and values are their initial values.
-     current_col_labels : list[str]
-         A list of current column labels in the contrast table.
+    Attributes
+    ----------
+    CSS_PATH : list[str]
+        List containing paths to the CSS files for styling the window.
+    table_row_index : dict[str, str]
+        A dictionary representing the row index of the contrast table,
+        where keys are condition names and values are their initial values.
+    current_col_labels : list[str]
+        A list of current column labels in the contrast table.
 
-     Methods
-     -------
-     on_mount :
-         Mounts the input widgets onto the window when the window is displayed.
-     ok :
-         Confirms the input values and performs validation checks.
-     cancel_window :
-         Cancels the window and dismisses it without saving user input.
-     key_escape :
-         Cancels the window and dismisses it when the escape key is pressed.
-     _confirm_window :
-         Validates the user inputs and updates the table row index if inputs are valid.
-     _cancel_window :
-         Dismisses the window without saving any user inputs.
-     """
+    Methods
+    -------
+    on_mount :
+        Mounts the input widgets onto the window when the window is displayed.
+    ok :
+        Confirms the input values and performs validation checks.
+    cancel_window :
+        Cancels the window and dismisses it without saving user input.
+    key_escape :
+        Cancels the window and dismisses it when the escape key is pressed.
+    _confirm_window :
+        Validates the user inputs and updates the table row index if inputs are valid.
+    _cancel_window :
+        Dismisses the window without saving any user inputs.
+    """
 
     CSS_PATH = ["tcss/contrast_table_input_window.tcss"]
 
@@ -272,7 +272,6 @@ class ModelConditionsAndContrasts(Widget):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
-
         """
         Initializes the ModelConditionsAndContrasts widget.
 
@@ -466,6 +465,7 @@ class ModelConditionsAndContrasts(Widget):
         contrast name and values. It then adds a new column to the data
         table with the provided contrast values.
         """
+
         def add_column(new_column_name: str):  # , new_column_values=None):
             # new_column_name is just the column label
             # is dictionary with the new column values

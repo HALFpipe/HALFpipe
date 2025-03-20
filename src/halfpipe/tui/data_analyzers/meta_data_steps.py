@@ -111,6 +111,7 @@ class SliceTimingFileStep:
     key : str
         The key for slice timing.
     """
+
     key = "slice_timing"
 
     def _messagefun(self):
@@ -542,6 +543,7 @@ class CheckMetadataStep:
     suggestion : Any
         A suggestion for the user.
     """
+
     schema: ClassVar[Type[Schema]]
 
     key: ClassVar[str]
@@ -813,6 +815,7 @@ class CheckPhase2EchoTimeStep(CheckMetadataStep):
     key : ClassVar[str]
         The metadata key for echo time.
     """
+
     schema = PhaseFmapFileSchema
     key = "echo_time"
     # next_step_type = HasMoreFmapStep
@@ -836,6 +839,7 @@ class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
     filters : ClassVar[Dict[str, str]]
         Filters for selecting BOLD files.
     """
+
     schema = BoldFileSchema
 
     key = "phase_encoding_direction"
@@ -903,6 +907,7 @@ class CheckRepetitionTimeStep(CheckMetadataStep):
     schema : Type[BoldFileSchema]
         The schema for BOLD files.
     """
+
     key = "repetition_time"
 
     filetype_str = "BOLD image"
@@ -913,48 +918,49 @@ class CheckRepetitionTimeStep(CheckMetadataStep):
 # TODO ASAP
 class AcqToTaskMappingStep:
     """
-     Maps acquisition entities to task entities for field map files.
+    Maps acquisition entities to task entities for field map files.
 
-     This class handles the mapping of acquisition entities (e.g., 'acq')
-     in field map files to task entities in BOLD files. It presents a
-     user interface to define these mappings and updates the specification
-     accordingly.
+    This class handles the mapping of acquisition entities (e.g., 'acq')
+    in field map files to task entities in BOLD files. It presents a
+    user interface to define these mappings and updates the specification
+    accordingly.
 
-     Attributes
-     ----------
-     filedict : Dict[str, str]
-         The file dictionary for field map files.
-     bold_filedict : Dict[str, str]
-         The file dictionary for BOLD files.
-     app : Any, optional
-         The application object, by default None.
-     callback : Callable, optional
-         A callback function, by default None.
-     callback_message : dict, optional
-         A dictionary for callback messages, by default None.
-     id_key : str, optional
-         The ID key, by default "".
-     sub_id_key : str, optional
-         The sub-ID key, by default None.
-     is_first_run : bool
-         Flag indicating if it's the first run.
-     result : Any
-         The user's choice.
-     fmaptags : list[frozenset]
-         List of tag sets for field map files.
-     boldtags : list[frozenset]
-         List of tag sets for BOLD files.
-     is_predefined : bool
-         Flag indicating if the mapping is predefined.
-     _append_view : list[str]
-         List of strings to append to the view.
-     input_view : list[str]
-         List of strings for user input.
-     options : list[str]
-         List of options for BOLD files.
-     values : list[str]
-         List of values for field map files.
-     """
+    Attributes
+    ----------
+    filedict : Dict[str, str]
+        The file dictionary for field map files.
+    bold_filedict : Dict[str, str]
+        The file dictionary for BOLD files.
+    app : Any, optional
+        The application object, by default None.
+    callback : Callable, optional
+        A callback function, by default None.
+    callback_message : dict, optional
+        A dictionary for callback messages, by default None.
+    id_key : str, optional
+        The ID key, by default "".
+    sub_id_key : str, optional
+        The sub-ID key, by default None.
+    is_first_run : bool
+        Flag indicating if it's the first run.
+    result : Any
+        The user's choice.
+    fmaptags : list[frozenset]
+        List of tag sets for field map files.
+    boldtags : list[frozenset]
+        List of tag sets for BOLD files.
+    is_predefined : bool
+        Flag indicating if the mapping is predefined.
+    _append_view : list[str]
+        List of strings to append to the view.
+    input_view : list[str]
+        List of strings for user input.
+    options : list[str]
+        List of options for BOLD files.
+    values : list[str]
+        List of values for field map files.
+    """
+
     filedict = {"datatype": "fmap"}
     bold_filedict = {"datatype": "func", "suffix": "bold"}
 
@@ -1170,6 +1176,7 @@ class CheckBoldSliceTimingStep(CheckMetadataStep):
     filters : Dict[str, str]
         Filters for selecting BOLD files.
     """
+
     schema = BoldFileSchema
     filetype_str = "BOLD image"
     key = "slice_timing"
@@ -1202,6 +1209,7 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
     next_step_type : Type[CheckBoldSliceTimingStep]
         The type of the next step.
     """
+
     schema = BoldFileSchema
     filetype_str = "BOLD image"
     key = "slice_encoding_direction"

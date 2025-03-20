@@ -36,7 +36,6 @@ class AtlasBased(AtlasSeedDualRegBasedTemplate):
         A tag used to identify the minimum coverage setting, which is "min_region_coverage".
     """
 
-
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}
     featurefield = "atlases"

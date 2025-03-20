@@ -3,8 +3,6 @@
 
 from typing import Dict, List, Type, Union
 
-from inflection import humanize
-
 from ...ingest.glob import tag_parse
 from ...model.file.anat import T1wFileSchema
 from ...model.file.base import BaseFileSchema, File
@@ -81,6 +79,7 @@ class FilePatternStep:
         List of entities extracted from the schema.
 
     """
+
     entity_display_aliases = entity_display_aliases
     header_str = ""
     ask_if_missing_entities: List[str] = list()
@@ -460,6 +459,7 @@ class Magnitude1Step(FmapFilePatternStep):
     required_in_path_entities : list[str]
         List of entities required in the path, including 'subject'.
     """
+
     header_str = "Path pattern of first set of magnitude image"
     required_in_path_entities = ["subject"]
 
@@ -699,6 +699,7 @@ class AddBinarySeedMapStep(FilePatternStep):
     next_step_type : Type[CheckSpaceStep]
         The type of the next step in the pipeline.
     """
+
     suffix, featurefield, dsp_str = "seed", "seeds", "binary seed mask"
     filetype_str = f"{dsp_str} image"
     filedict = {"datatype": "ref", "suffix": suffix}

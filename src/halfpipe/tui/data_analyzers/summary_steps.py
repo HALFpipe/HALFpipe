@@ -108,7 +108,6 @@ class FilePatternSummaryStep:
         the file paths, and the tag distribution.
     """
 
-
     entity_display_aliases: ClassVar[Dict] = entity_display_aliases
 
     filetype_str: ClassVar[str] = "file"
@@ -158,6 +157,7 @@ class FilePatternSummaryStep:
             and the tag distribution.
         """
         return {"message": self.message, "files": self.filepaths, "n_by_tag": self.n_by_tag}
+
 
 class AnatSummaryStep(FilePatternSummaryStep):
     """

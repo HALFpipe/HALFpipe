@@ -1,38 +1,13 @@
-
-
-from typing import List
-
-from rich.text import Text
-from textual import on, work
+from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Static, Switch
+from textual.widgets import Button, Static
 
 from ...data_analyzers.context import ctx
-from ...data_analyzers.file_pattern_steps import (
-    AnatStep,
-    BoldStep,
-    EPIStep,
-    FieldMapStep,
-    FilePatternStep,
-    Magnitude1Step,
-    Magnitude2Step,
-    Phase1Step,
-    Phase2Step,
-    PhaseDiffStep,
-)
-from ...data_analyzers.meta_data_steps import AcqToTaskMappingStep
-from ...data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
-from ...general_widgets.custom_switch import TextSwitch
 from ...general_widgets.list_of_files_modal import ListOfFiles
-from ...general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
-from ...specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
-from ...specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ...specialized_widgets.non_bids_file_itemization import FileItem
-
-
 
 
 class FieldMapFilesPanel(Widget):
@@ -133,7 +108,6 @@ class DataSummaryLine(Widget):
     summary : dict[str, list[str] | str | dict[str, int]]
         A dictionary containing the summary message, file paths, and tag distribution.
     """
-
 
     DEFAULT_CSS = """
     DataSummaryLine {
