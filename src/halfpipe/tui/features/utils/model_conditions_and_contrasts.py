@@ -18,38 +18,51 @@ cursors = cycle(["column", "row", "cell"])
 
 class ContrastTableInputWindow(DraggableModalScreen):
     """
-    ContrastTableInputWindow
+     A modal window for setting contrast values through a user interface.
 
-    A modal window class for setting contrast values through a user interface.
-    Inherits from `DraggableModalScreen` and provides functionality to capture and
-    validate user inputs for contrast names and values.
+     This class provides a modal window that allows users to input contrast
+     name and values for the contrast table.
 
-    Attributes
-    ----------
-    CSS_PATH : list
-        List containing paths to the CSS files for styling the window.
+     Attributes
+     ----------
+     CSS_PATH : list[str]
+         List containing paths to the CSS files for styling the window.
+     table_row_index : dict[str, str]
+         A dictionary representing the row index of the contrast table,
+         where keys are condition names and values are their initial values.
+     current_col_labels : list[str]
+         A list of current column labels in the contrast table.
 
-    Methods
-    -------
-    __init__(table_row_index, current_col_labels)
-        Initializes the ContrastTableInputWindow instance with given row index and column labels.
-    on_mount()
-        Mounts the input widgets onto the window when the window is displayed.
-    ok()
-        Confirms the input values and performs validation checks.
-    cancel_window()
-        Cancels the window and dismisses it without saving user input.
-    key_escape()
-        Cancels the window and dismisses it when the escape key is pressed.
-    _confirm_window()
-        Validates the user inputs and updates the table row index if inputs are valid.
-    _cancel_window()
-        Dismisses the window without saving any user inputs.
-    """
+     Methods
+     -------
+     on_mount :
+         Mounts the input widgets onto the window when the window is displayed.
+     ok :
+         Confirms the input values and performs validation checks.
+     cancel_window :
+         Cancels the window and dismisses it without saving user input.
+     key_escape :
+         Cancels the window and dismisses it when the escape key is pressed.
+     _confirm_window :
+         Validates the user inputs and updates the table row index if inputs are valid.
+     _cancel_window :
+         Dismisses the window without saving any user inputs.
+     """
 
     CSS_PATH = ["tcss/contrast_table_input_window.tcss"]
 
     def __init__(self, table_row_index, current_col_labels) -> None:
+        """
+        Initializes the ContrastTableInputWindow instance.
+
+        Parameters
+        ----------
+        table_row_index : dict[str, str]
+            A dictionary representing the row index of the contrast table,
+            where keys are condition names and values are their initial values.
+        current_col_labels : list[str]
+            A list of current column labels in the contrast table.
+        """
         self.table_row_index = table_row_index
         self.current_col_labels = current_col_labels
         super().__init__()
@@ -81,16 +94,42 @@ class ContrastTableInputWindow(DraggableModalScreen):
 
     @on(Button.Pressed, "ContrastTableInputWindow .ok_button")
     def ok(self):
+        """
+        Confirms the input values and checks for column name conflicts.
+
+        This method is called when the "Ok" button is pressed. It triggers
+        the `_confirm_window`.
+        """
         self._confirm_window()
 
     @on(Button.Pressed, "ContrastTableInputWindow .cancel_button")
     def cancel_window(self):
+        """
+        Cancels the window and dismisses it without saving user input.
+
+        This method is called when the "Cancel" button is pressed. It
+        triggers the `_cancel_window` method to dismiss the modal.
+        """
         self._cancel_window()
 
     def key_escape(self):
+        """
+        Cancels the window and dismisses it when the escape key is pressed.
+
+        This method is called when the escape key is pressed. It triggers
+        the `_cancel_window` method to dismiss the modal.
+        """
         self._cancel_window()
 
     def _confirm_window(self):
+        """
+        Validates the user inputs and updates the table row index if inputs are valid.
+
+        This method checks if the contrast name is unique and if all input
+        values are filled. If the inputs are valid, it updates the
+        `table_row_index` and dismisses the modal. Otherwise, it displays
+        an error message.
+        """
         if self.get_widget_by_id("contrast_name").value in self.current_col_labels:
             self.app.push_screen(
                 Confirm(
@@ -130,72 +169,78 @@ class ContrastTableInputWindow(DraggableModalScreen):
             self.dismiss(self.get_widget_by_id("contrast_name").value)
 
     def _cancel_window(self):
+        """
+        Dismisses the window without saving any user inputs.
+
+        This method dismisses the modal window without making any changes.
+        """
         self.dismiss(False)
 
 
 class ModelConditionsAndContrasts(Widget):
     """
-    ModelConditionsAndContrasts class manages the condition values and contrast values for a given dataset, enabling users to
-     add, remove, and update these values dynamically. It synchronizes selections between the condition list and the associated
-     data table, ensuring consistency with any external modifications. The class uses pandas DataFrames to store and retrieve
-     condition values, allowing seamless recovery and updating of data when required.
+    Manages condition and contrast values for a dataset.
+
+    This class provides a widget for managing condition values and contrast
+    values for a given dataset. It allows users to add, remove, and update
+    these values dynamically. It synchronizes selections between the
+    condition list and the associated data table, ensuring consistency.
 
     Attributes
     ----------
     BORDER_TITLE : str
         Title of the border for the contrast values table.
-    BINDINGS : list
+    BINDINGS : list[tuple[str, str, str]]
         Key bindings for the add, remove, and submit actions.
-    sort_type_cycle : cycle
-        An iterator that cycles through sorting types: alphabetically, reverse_alphabetically, by_group, and reverse_by_group.
-    condition_values : reactive[list]
-        List of conditions in the selection, which can be modified externally and requires updates to the selection and table.
+    sort_type_cycle : cycle[str]
+        An iterator that cycles through sorting types: alphabetically,
+        reverse_alphabetically, by_group, and reverse_by_group.
+    condition_values : reactive[list[str]]
+        List of conditions in the selection, which can be modified externally
+        and requires updates to the selection and table.
+    df : pd.DataFrame
+        A pandas DataFrame to store and manage condition and contrast values.
+    feature_contrasts_dict : list[dict]
+        A list of dictionaries, where each dictionary represents a contrast
+        and contains its name and values.
+    feature_conditions_list : list[str]
+        A list of conditions that are currently selected.
+    all_possible_conditions : list[str]
+        A list of all possible conditions based on the available images.
+    table_row_index : dict[str, str]
+        A dictionary representing the row index of the contrast table,
+        where keys are condition names and values are their initial values.
 
     Methods
     -------
-    __init__(all_possible_conditions, feature_contrasts_dict=None, id=None, classes=None)
-        Initializes the widget with available conditions, and an optional feature contrasts dictionary for pre-existing values.
-
-    update_all_possible_conditions(all_possible_conditions)
-        Updates the possible conditions in the data table and sets default conditions if a feature contrasts dictionary is
-        provided.
-
-    watch_condition_values()
+    update_all_possible_conditions :
+        Updates the possible conditions in the data table.
+    watch_condition_values :
         Watches the condition values and triggers an update when they change.
-
-    compose()
-        Composes the widget elements, including the selection list, data table, and control buttons.
-
-    on_mount()
-        Sets up the table and other widget components on mounting, including reading any defaults from the feature contrasts
-        dictionary.
-
-    update_table()
+    compose :
+        Composes the widget elements.
+    on_mount :
+        Sets up the table and other widget components on mounting.
+    update_table :
         Updates the data table based on changes in the selection list.
-
-    set_heights()
-        Adjusts the height of the widget and its components based on the number of rows in the selection list and data table.
-
-    action_add_column()
+    set_heights :
+        Adjusts the height of the widget and its components.
+    action_add_column :
         Adds a new column with contrast values to the data table.
-
-    action_remove_column()
+    action_remove_column :
         Removes the currently selected column from the data table.
-
-    action_submit()
-        Submits the current contrast values, saving them for later use.
-
-    add_col()
+    add_col :
         Button event that triggers the action_add_column method.
-
-    remove_col()
+    remove_col :
         Button event that triggers the action_remove_column method.
-
-    sort_cols()
+    sort_cols :
         Button event that triggers sorting of the table by row labels.
-
-    key_c()
-        Handles key press events for the data table.
+    update_condition_selection :
+        Updates the condition selection based on selected images.
+    sort_by_row_label :
+        Sorts the table by row labels.
+    dump_contrast_values :
+        Dumps the contrast values to the `feature_contrasts_dict`.
     """
 
     BORDER_TITLE = "Model conditions & contrast vales"
@@ -227,7 +272,27 @@ class ModelConditionsAndContrasts(Widget):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
-        """The pandas dataframe is to remember all choices even when some images or conditions are turned off.
+
+        """
+        Initializes the ModelConditionsAndContrasts widget.
+
+        Parameters
+        ----------
+        all_possible_conditions : list[str]
+            A list of all possible conditions based on the available images.
+        feature_contrasts_dict : list[dict]
+            A list of dictionaries, where each dictionary represents a contrast
+            and contains its name and values.
+        feature_conditions_list : list[str]
+            A list of conditions that are currently selected.
+        id : str, optional
+            The ID of the widget, by default None.
+        classes : str, optional
+            CSS classes for the widget, by default None.
+
+        Notes
+        -----
+        The pandas dataframe is to remember all choices even when some images or conditions are turned off.
         This is because when they are turned on, the condition values will be also back.
         The feature_contrasts_dict is used when the widget is created either from read-in (from existing json file) or
         when duplicated.
@@ -245,6 +310,18 @@ class ModelConditionsAndContrasts(Widget):
         self.update_all_possible_conditions(all_possible_conditions)
 
     def update_all_possible_conditions(self, all_possible_conditions: list) -> None:
+        """
+        Updates the possible conditions in the data table.
+
+        This method updates the class attribute DataFrame 'df' with the new possible
+        conditions and sets default conditions if a feature contrasts
+        dictionary is provided.
+
+        Parameters
+        ----------
+        all_possible_conditions : list[str]
+            A list of all possible conditions.
+        """
         self.df = pd.DataFrame()
         self.df["condition"] = all_possible_conditions
         self.df.set_index("condition", inplace=True)
@@ -257,9 +334,22 @@ class ModelConditionsAndContrasts(Widget):
             self.table_row_index = dict.fromkeys(list(self.feature_contrasts_dict[0]["values"].keys()))
 
     def watch_condition_values(self) -> None:
+        """
+        Watches the condition values and triggers an update when they change.
+
+        This method is called when the `condition_values` reactive attribute
+        changes. It calls `update_condition_selection` to update the
+        selection list and the table.
+        """
         self.update_condition_selection()
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the widget elements.
+
+        This method defines the layout and components of the widget,
+        including the selection list, data table, and control buttons.
+        """
         table = DataTable(zebra_stripes=True, header_height=2, id="contrast_table")
         # to init the table, stupid but nothing else worked
         table.add_column(label="temp", key="temp")
@@ -308,11 +398,23 @@ class ModelConditionsAndContrasts(Widget):
         )
 
     def on_mount(self) -> None:
+        """
+        This method is called when the widget is mounted. It sets the
+        initia; heights of the widget and its components.
+        """
         self.set_heights()
 
     @on(SelectionList.SelectedChanged, "#model_conditions_selection")
     def update_table(self) -> None:
-        """When the selection is changed, the table needs to be updated."""
+        """
+        Updates the data table based on changes in the selection list.
+
+        This method is called when the selection in the selection list
+        changes. It updates the rows in the data table to match the
+        selected conditions.
+
+        When the selection is changed, the table needs to be updated.
+        """
         table = self.get_widget_by_id("contrast_table")
 
         row_dict = {}
@@ -335,7 +437,13 @@ class ModelConditionsAndContrasts(Widget):
         self.set_heights()
 
     def set_heights(self):
-        # set the height based on the number of rows
+        """
+        Adjusts the height of the widget and its components.
+
+        This method dynamically adjusts the heights of the contrast table,
+        the condition selection list, and the overall widget based on the
+        number of selected conditions (number of table rows).
+        """
         self.get_widget_by_id("contrast_table_upper").styles.height = (
             len(self.get_widget_by_id("model_conditions_selection").selected) + 6
         )
@@ -351,8 +459,13 @@ class ModelConditionsAndContrasts(Widget):
             self.styles.height = 1
 
     def action_add_column(self):
-        """Add column with new contrast values to te table."""
+        """
+        Adds a new column with contrast values to the data table.
 
+        This method presents a modal dialog to the user for specifying the
+        contrast name and values. It then adds a new column to the data
+        table with the provided contrast values.
+        """
         def add_column(new_column_name: str):  # , new_column_values=None):
             # new_column_name is just the column label
             # is dictionary with the new column values
@@ -377,6 +490,12 @@ class ModelConditionsAndContrasts(Widget):
         )
 
     async def action_remove_column(self):
+        """
+        Removes the currently selected column from the data table.
+
+        This method removes the column that is currently selected by the
+        cursor in the data table.
+        """
         table = self.get_widget_by_id("contrast_table")
         if len(table.ordered_columns) != 0:
             row_key, column_key = table.coordinate_to_cell_key(table.cursor_coordinate)
@@ -384,24 +503,42 @@ class ModelConditionsAndContrasts(Widget):
             self.df = self.df.drop(column_key.value, axis=1)
             self.dump_contrast_values()
 
-    async def action_submit(self):
-        self.dump_contrast_values()
-
     @on(Button.Pressed, "ModelConditionsAndContrasts .add_button")
     async def add_col(self) -> None:
+        """
+        Handles the event when the "Add contrast values" button is pressed.
+
+        This method triggers the `action_add_column` method to add a new
+        column to the data table.
+        """
         await self.run_action("add_column()")
 
     @on(Button.Pressed, "ModelConditionsAndContrasts .delete_button")
     async def remove_col(self) -> None:
+        """
+        Handles the event when the "Remove contrast values" button is pressed.
+
+        This method triggers the `action_remove_column` method to remove the
+        currently selected column from the data table.
+        """
         await self.run_action("remove_column()")
 
     @on(Button.Pressed, "ModelConditionsAndContrasts .sort_button")
     async def sort_cols(self) -> None:
+        """
+        Handles the event when the "Sort table" button is pressed.
+
+        This method triggers the `sort_by_row_label` method to sort the
+        data table by row labels.
+        """
         self.sort_by_row_label()
 
     def update_condition_selection(self):
-        """When some images are selected/deselected, the condition selection needs to be upgraded
-        and accordingly therefore the table.
+        """
+        Updates the condition selection based on selected images.
+
+        When some images are selected/deselected, the condition selection
+        needs to be upgraded and accordingly therefore the table.
         """
         conditions = self.condition_values
 
@@ -430,6 +567,12 @@ class ModelConditionsAndContrasts(Widget):
 
     def sort_by_row_label(self, default: str | None = None):
         """
+        Sorts the table by row labels.
+
+        This method sorts the rows in the data table based on their labels,
+        using either alphabetical order, reverse alphabetical order, or
+        group-based order.
+
         Parameters
         ----------
         default : str, optional
@@ -474,6 +617,14 @@ class ModelConditionsAndContrasts(Widget):
         table.remove_column("condition")
 
     def dump_contrast_values(self) -> None:
+        """
+        Dumps the contrast values to the `feature_contrasts_dict` which is eesentialy
+        the context cache..
+
+        This method extracts the current contrast values from the data table
+        and stores them in the `feature_contrasts_dict`. It also updates
+        the `feature_conditions_list` with the current conditions.
+        """
         table = self.get_widget_by_id("contrast_table")
         df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
 

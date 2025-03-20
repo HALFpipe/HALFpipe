@@ -36,6 +36,7 @@ from .meta_data_steps import (
     CheckSpaceStep,
 )
 
+# colors of the entity highlight in the path pattern builder
 entity_colors = {
     "sub": "red",
     "ses": "green",
@@ -49,17 +50,37 @@ entity_colors = {
 }
 
 
-def display_str(x):
-    if x == "MNI152NLin6Asym":
-        return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
-    elif x == "MNI152NLin2009cAsym":
-        return "MNI ICBM 2009c Nonlinear Asymmetric"
-    elif x == "slice_encoding_direction":
-        return "slice acquisition direction"
-    return humanize(x)
-
-
 class FilePatternStep:
+    """
+    Base class for defining file pattern steps in a data processing pipeline.
+
+    This class provides a framework for handling different types of files,
+    checking their extensions, parsing their paths, and pushing them to a
+    context object. It also manages the required and optional entities in
+    the file paths and defines the next steps in the pipeline.
+
+    Attributes
+    ----------
+    entity_display_aliases : dict
+        A dictionary mapping entity names to their display aliases.
+    header_str : str
+        A string describing the file pattern step.
+    ask_if_missing_entities : list[str]
+        A list of entities that should be asked for if missing in the path.
+    required_in_path_entities : list[str]
+        A list of entities that are required to be present in the path.
+    filetype_str : str
+        A string describing the type of file being handled.
+    filedict : dict[str, str]
+        A dictionary containing file type information.
+    schema : Union[Type[BaseFileSchema], Type[FileSchema]]
+        The schema used to validate the file.
+    next_step_type : None | type[CheckMetadataStep]
+        The type of the next step in the pipeline.
+    schema_entities : list[str]
+        List of entities extracted from the schema.
+
+    """
     entity_display_aliases = entity_display_aliases
     header_str = ""
     ask_if_missing_entities: List[str] = list()
@@ -71,6 +92,24 @@ class FilePatternStep:
     next_step_type: None | type[CheckMetadataStep] = None
 
     def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
+        """
+        Initializes the FilePatternStep.
+
+        Parameters
+        ----------
+        path : str, optional
+            The path to the file, by default ""
+        app : Any, optional
+            The application object, by default None. This we need in order to push
+            the modal to the correct screen.
+        callback : Callable, optional
+            A callback function, by default None. This in principle  would not be needed
+            if we use workers for every step type class. Something to think about.
+        callback_message : Any, optional
+            A message for the callback, by default None
+        id_key : str, optional
+            The id key for the context, by default ""
+        """
         self.entities = get_schema_entities(self.schema)  # Assumes a function to extract schema entities
         self.path = path
         self.app = app
@@ -79,8 +118,6 @@ class FilePatternStep:
 
         self.callback = callback
         self.callback_message = callback_message  # if callback_message is not None else {self.filetype_str: []}
-        # if callback_message is not None:
-        #     self.callback_message.update({self.filetype_str: []})
 
         schema_entities = get_schema_entities(self.schema)
         schema_entities = [entity for entity in reversed(entities) if entity in schema_entities]  # keep order
@@ -100,27 +137,84 @@ class FilePatternStep:
         ]
 
     def _transform_extension(self, ext):
+        """
+        Transforms the file extension.
+
+        Parameters
+        ----------
+        ext : str
+            The file extension.
+
+        Returns
+        -------
+        str
+            The transformed file extension.
+        """
         return ext
 
     @property
     def get_entities(self):
+        """
+        Gets the schema entities.
+
+        Returns
+        -------
+        list[str]
+            The list of schema entities.
+        """
         return self.schema_entities
 
     @property
     def get_entity_colors_list(self):
+        """
+        Gets the entity colors list.
+
+        Returns
+        -------
+        list[str]
+            The list of entity colors.
+        """
         return self.entity_colors_list
 
     @property
     def get_required_entities(self):
+        """
+        Gets the required entities.
+
+        Returns
+        -------
+        list[str]
+            The list of required entities.
+        """
         return self.required_entities
 
     def check_extension(self, path):
+        """
+        Checks the file extension against the schema.
+
+        Parameters
+        ----------
+        path : str
+            The path to the file.
+        """
         filedict = {**self.filedict, "path": path, "tags": {}}
         _, ext = split_ext(path)
         filedict["extension"] = self._transform_extension(ext)
         self.schema().load(filedict)
 
     async def push_path_to_context_obj(self, path):
+        """
+        Pushes the file path to the context object.
+
+        This method parses the file path, creates a file object, adds it to
+        the context's specification and database, and then proceeds to the
+        next step in the pipeline if defined.
+
+        Parameters
+        ----------
+        path : str
+            The path to the file.
+        """
         # run
         inv = {alias: entity for entity, alias in self.entity_display_aliases.items()}
 
@@ -148,7 +242,6 @@ class FilePatternStep:
         # next
         ctx.spec.files.append(self.fileobj)
         ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
-        # ctx.cache[self.id_key]["files"][self.filetype_str] = self.fileobj
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         if self.next_step_type is not None:
@@ -165,6 +258,21 @@ class FilePatternStep:
 
 
 class AnatStep(FilePatternStep):
+    """
+    File pattern step for handling anatomical (T1-weighted) images.
+
+    This class extends FilePatternStep to specifically handle T1-weighted
+    anatomical images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for T1-weighted images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[T1wFileSchema]
+        The schema for T1-weighted images.
+    """
+
     required_in_path_entities = ["subject"]
     header_str = "T1-weighted image file pattern"
     filetype_str = "T1-weighted image"
@@ -172,11 +280,23 @@ class AnatStep(FilePatternStep):
 
     schema = T1wFileSchema
 
-    # def __init__(self, path=""):
-    #     super().__init__(path=path)
-
 
 class EventsStep(FilePatternStep):
+    """
+    Base file pattern step for handling event files.
+
+    This class extends FilePatternStep to handle event files. It defines
+    the header string, required entities, file dictionary, and file type
+    string for event files.
+
+    Attributes
+    ----------
+    header_str : str
+        The header string for event files.
+    filedict : dict[str, str]
+        The file dictionary for event files.
+    """
+
     header_str = "Event file pattern"
     required_in_path_entities: List[str] = list()
 
@@ -189,6 +309,20 @@ class EventsStep(FilePatternStep):
 
 
 class MatEventsStep(EventsStep):
+    """
+    File pattern step for handling MATLAB (.mat) event files.
+
+    This class extends EventsStep to specifically handle MATLAB event files.
+    It defines the schema for MATLAB event files and overrides the
+    `_transform_extension` method to ensure the correct file extension.
+
+    Attributes
+    ----------
+    schema : Type[MatEventsFileSchema]
+        The schema for MATLAB event files.
+
+    """
+
     schema = MatEventsFileSchema
 
     def _transform_extension(self, ext):
@@ -200,6 +334,21 @@ class MatEventsStep(EventsStep):
 
 
 class TxtEventsStep(EventsStep):
+    """
+    File pattern step for handling text (.txt) event files.
+
+    This class extends EventsStep to specifically handle text event files.
+    It defines the schema for text event files, requires the 'condition'
+    entity in the path, and overrides the `_transform_extension` method.
+
+    Attributes
+    ----------
+    schema : Type[TxtEventsFileSchema]
+        The schema for text event files.
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'condition'.
+    """
+
     schema = TxtEventsFileSchema
     required_in_path_entities = ["condition"]
 
@@ -208,6 +357,19 @@ class TxtEventsStep(EventsStep):
 
 
 class TsvEventsStep(EventsStep):
+    """
+    File pattern step for handling TSV (.tsv) event files.
+
+    This class extends EventsStep to specifically handle TSV event files.
+    It defines the schema for TSV event files and overrides the
+    `_transform_extension` method.
+
+    Attributes
+    ----------
+    schema : Type[TsvEventsFileSchema]
+        The schema for TSV event files.
+    """
+
     schema = TsvEventsFileSchema
 
     def _transform_extension(self, _):
@@ -215,6 +377,19 @@ class TsvEventsStep(EventsStep):
 
 
 class FmapFilePatternStep(FilePatternStep):
+    """
+    File pattern step for handling TSV (.tsv) event files.
+
+    This class extends EventsStep to specifically handle TSV event files.
+    It defines the schema for TSV event files and overrides the
+    `_transform_extension` method.
+
+    Attributes
+    ----------
+    schema : Type[TsvEventsFileSchema]
+        The schema for TSV event files.
+    """
+
     bold_filedict = {"datatype": "func", "suffix": "bold"}
     filetype_str = "field map image"
     filetype_str = filetype_str
@@ -222,6 +397,21 @@ class FmapFilePatternStep(FilePatternStep):
 
 
 class FieldMapStep(FmapFilePatternStep):
+    """
+    File pattern step for handling general field map files.
+
+    This class extends FmapFilePatternStep to specifically handle general
+    field map files. It defines the required entities, header string,
+    file type string, file dictionary, and schema for general field map files.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[BaseFmapFileSchema]
+        The schema for general field map files.
+    """
+
     required_in_path_entities = ["subject"]
     header_str = "Path pattern of the field map image"
     filetype_str = "field map image"
@@ -233,6 +423,21 @@ class FieldMapStep(FmapFilePatternStep):
 
 
 class EPIStep(FmapFilePatternStep):
+    """
+    File pattern step for handling EPI field map files.
+
+    This class extends FmapFilePatternStep to specifically handle EPI
+    field map files. It defines the required entities, header string,
+    file type string, file dictionary, and schema for EPI field map files.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[EPIFmapFileSchema]
+        The schema for EPI field map files.
+    """
+
     header_str = "Path pattern of the blip-up blip-down EPI image files"
     required_in_path_entities = ["subject"]
 
@@ -242,6 +447,19 @@ class EPIStep(FmapFilePatternStep):
 
 
 class Magnitude1Step(FmapFilePatternStep):
+    """
+    File pattern step for handling the first set of magnitude images.
+
+    This class extends FmapFilePatternStep to specifically handle the first
+    set of magnitude images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for the first set of
+    magnitude images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    """
     header_str = "Path pattern of first set of magnitude image"
     required_in_path_entities = ["subject"]
 
@@ -251,6 +469,20 @@ class Magnitude1Step(FmapFilePatternStep):
 
 
 class Magnitude2Step(FmapFilePatternStep):
+    """
+    File pattern step for handling the second set of magnitude images.
+
+    This class extends FmapFilePatternStep to specifically handle the second
+    set of magnitude images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for the second set of
+    magnitude images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    """
+
     header_str = "Path pattern of second set of magnitude image"
     required_in_path_entities = ["subject"]
 
@@ -262,6 +494,24 @@ class Magnitude2Step(FmapFilePatternStep):
 
 
 class Phase1Step(FmapFilePatternStep):
+    """
+    File pattern step for handling the first set of phase images.
+
+    This class extends FmapFilePatternStep to specifically handle the first
+    set of phase images. It defines the required entities, header string,
+    file type string, file dictionary, schema, and the next step for the
+    first set of phase images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[PhaseFmapFileSchema]
+        The schema for the first set of phase images.
+    next_step_type : Type[CheckPhase1EchoTimeStep]
+        The type of the next step in the pipeline.
+    """
+
     header_str = "Path pattern of the first set of phase image"
     required_in_path_entities = ["subject"]
 
@@ -273,6 +523,24 @@ class Phase1Step(FmapFilePatternStep):
 
 
 class Phase2Step(FmapFilePatternStep):
+    """
+    File pattern step for handling the second set of phase images.
+
+    This class extends FmapFilePatternStep to specifically handle the second
+    set of phase images. It defines the required entities, header string,
+    file type string, file dictionary, schema, and the next step for the
+    second set of phase images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[PhaseFmapFileSchema]
+        The schema for the second set of phase images.
+    next_step_type : Type[CheckPhase2EchoTimeStep]
+        The type of the next step in the pipeline.
+    """
+
     header_str = "Path pattern of the second set of phase image"
     required_in_path_entities = ["subject"]
 
@@ -284,6 +552,24 @@ class Phase2Step(FmapFilePatternStep):
 
 
 class PhaseDiffStep(FmapFilePatternStep):
+    """
+    File pattern step for handling phase difference images.
+
+    This class extends FmapFilePatternStep to specifically handle phase
+    difference images. It defines the required entities, header string,
+    file type string, file dictionary, schema, and the next step for phase
+    difference images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[PhaseDiffFmapFileSchema]
+        The schema for phase difference images.
+    next_step_type : Type[CheckPhaseDiffEchoTimeDiffStep]
+        The type of the next step in the pipeline.
+    """
+
     header_str = "Path pattern of the phase difference image"
     required_in_path_entities = ["subject"]
 
@@ -295,6 +581,25 @@ class PhaseDiffStep(FmapFilePatternStep):
 
 
 class BoldStep(FilePatternStep):
+    """
+    File pattern step for handling BOLD images.
+
+    This class extends FilePatternStep to specifically handle BOLD images.
+    It defines the required and optional entities, header string, file type
+    string, file dictionary, schema, and the next step for BOLD images.
+
+    Attributes
+    ----------
+    ask_if_missing_entities : list[str]
+        List of entities to ask for if missing, including 'task'.
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[BoldFileSchema]
+        The schema for BOLD images.
+    next_step_type : Type[CheckRepetitionTimeStep]
+        The type of the next step in the pipeline.
+    """
+
     ask_if_missing_entities = ["task"]
     required_in_path_entities = ["subject"]
     header_str = "BOLD image file pattern"
@@ -307,6 +612,26 @@ class BoldStep(FilePatternStep):
 
 
 class AddAtlasImageStep(FilePatternStep):
+    """
+    File pattern step for adding atlas images.
+
+    This class extends FilePatternStep to specifically handle atlas images.
+    It defines the suffix, feature field, display string, file type string,
+    file dictionary, entity display aliases, schema, required and optional
+    entities, and the next step for atlas images.
+
+    Attributes
+    ----------
+    ask_if_missing_entities : list[str]
+        List of entities to ask for if missing, including 'desc'.
+    required_in_path_entities : list[str]
+        List of entities required in the path, empty in this case.
+    schema : Type[RefFileSchema]
+        The schema for atlas images.
+    next_step_type : Type[CheckSpaceStep]
+        The type of the next step in the pipeline.
+    """
+
     suffix, featurefield, dsp_str = "atlas", "atlases", "atlas"
     filetype_str = f"{dsp_str} image"
     filedict = {"datatype": "ref", "suffix": suffix}
@@ -321,6 +646,26 @@ class AddAtlasImageStep(FilePatternStep):
 
 
 class AddSpatialMapStep(FilePatternStep):
+    """
+    File pattern step for adding spatial map images.
+
+    This class extends FilePatternStep to specifically handle spatial map
+    images. It defines the suffix, feature field, display string, file type
+    string, file dictionary, entity display aliases, schema, required and
+    optional entities, and the next step for spatial map images.
+
+    Attributes
+    ----------
+    ask_if_missing_entities : list[str]
+        List of entities to ask for if missing, including 'desc'.
+    required_in_path_entities : list[str]
+        List of entities required in the path, empty in this case.
+    schema : Type[RefFileSchema]
+        The schema for spatial map images.
+    next_step_type : Type[CheckSpaceStep]
+        The type of the next step in the pipeline.
+    """
+
     suffix, featurefield, dsp_str = "map", "maps", "spatial map"
     filetype_str = f"{dsp_str} image"
     filedict = {"datatype": "ref", "suffix": suffix}
@@ -335,6 +680,25 @@ class AddSpatialMapStep(FilePatternStep):
 
 
 class AddBinarySeedMapStep(FilePatternStep):
+    """
+    File pattern step for adding binary seed mask images.
+
+    This class extends FilePatternStep to specifically handle binary seed mask
+    images. It defines the suffix, feature field, display string, file type
+    string, file dictionary, entity display aliases, schema, required and
+    optional entities, and the next step for binary seed mask images.
+
+    Attributes
+    ----------
+    ask_if_missing_entities : list[str]
+        List of entities to ask for if missing, including 'desc'.
+    required_in_path_entities : list[str]
+        List of entities required in the path, empty in this case.
+    schema : Type[RefFileSchema]
+        The schema for binary seed mask images.
+    next_step_type : Type[CheckSpaceStep]
+        The type of the next step in the pipeline.
+    """
     suffix, featurefield, dsp_str = "seed", "seeds", "binary seed mask"
     filetype_str = f"{dsp_str} image"
     filedict = {"datatype": "ref", "suffix": suffix}

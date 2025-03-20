@@ -34,6 +34,19 @@ from ..specialized_widgets.confirm_screen import Confirm
 
 
 def display_str(x):
+    """
+    Formats a string for display, handling specific cases.
+
+    Parameters
+    ----------
+    x : str
+        The input string to format.
+
+    Returns
+    -------
+    str
+        The formatted string.
+    """
     if x == "MNI152NLin6Asym":
         return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
     elif x == "MNI152NLin2009cAsym":
@@ -44,6 +57,21 @@ def display_str(x):
 
 
 def _get_field(schema, key):
+    """
+    Retrieves a field from a schema by key.
+
+    Parameters
+    ----------
+    schema : Schema or type
+        The schema or schema type to search within.
+    key : str
+        The key of the field to retrieve.
+
+    Returns
+    -------
+    Field or None
+        The field object if found, otherwise None.
+    """
     if isinstance(schema, type):
         instance = schema()
     else:
@@ -54,18 +82,57 @@ def _get_field(schema, key):
 
 
 def _get_unit(schema, key):
+    """
+    Retrieves the unit of a field from a schema.
+
+    Parameters
+    ----------
+    schema : Schema or type
+        The schema or schema type to search within.
+    key : str
+        The key of the field to retrieve the unit for.
+
+    Returns
+    -------
+    str or None
+        The unit of the field if found, otherwise None.
+    """
     field = _get_field(schema, key)
     if field is not None:
         return field.metadata.get("unit")
 
 
 class SliceTimingFileStep:
+    """
+    Handles the step of importing slice timing values from a file.
+
+    Attributes
+    ----------
+    key : str
+        The key for slice timing.
+    """
     key = "slice_timing"
 
     def _messagefun(self):
         return self.message
 
     def __init__(self, app, filters, schema, suggestion, appendstr=""):
+        """
+        Initializes the SliceTimingFileStep.
+
+        Parameters
+        ----------
+        app : Any
+            The application object.
+        filters : dict
+            Filters for selecting files.
+        schema : Schema or type
+            The schema or schema type.
+        suggestion : Any
+            A suggestion for the user.
+        appendstr : str, optional
+            A string to append to the header, by default "".
+        """
         self.app = app
         self.schema = schema
         self.field = _get_field(self.schema, self.key)
@@ -162,6 +229,48 @@ class SliceTimingFileStep:
 
 
 class SetMetadataStep:
+    """
+    Handles the step of setting metadata values. Offers either a selection list (slice
+    timing order, encoding direction) or a input prompt for a custom user's value.
+
+    Attributes
+    ----------
+    schema : Schema or type
+        The schema or schema type.
+    key : str
+        The key for the metadata.
+    field : Field
+        The field object.
+    appendstr : str
+        A string to append to the header.
+    suggestion : Any
+        A suggestion for the user.
+    filters : dict
+        Filters for selecting files.
+    _append_view : list[str]
+        List of strings to append to the view.
+    input_view : list[str]
+        List of strings for user input.
+    app : Any
+        The application object.
+    next_step_type : Type[CheckMetadataStep] or None
+        The type of the next step.
+    callback : Callable or None
+        A callback function.
+    humankey : str
+        The human-readable key.
+    id_key : str
+        The ID key.
+    sub_id_key : str or None
+        The sub-ID key.
+    callback_message : dict
+        A dictionary for callback messages.
+    aliases : dict
+        A dictionary of aliases.
+    possible_options : dict or None
+        A dictionary of possible options.
+    """
+
     def __init__(
         self,
         filters,
@@ -176,6 +285,34 @@ class SetMetadataStep:
         id_key="",
         sub_id_key=None,
     ):
+        """
+        Initializes the SetMetadataStep.
+
+        Parameters
+        ----------
+        filters : dict
+            Filters for selecting files.
+        schema : Schema or type
+            The schema or schema type.
+        key : str
+            The key for the metadata.
+        suggestion : Any
+            A suggestion for the user.
+        appendstr : str, optional
+            A string to append to the header, by default "".
+        app : Any, optional
+            The application object, by default None.
+        next_step_type : Type[CheckMetadataStep] or None, optional
+            The type of the next step, by default None.
+        callback : Callable or None, optional
+            A callback function, by default None.
+        callback_message : dict or None, optional
+            A dictionary for callback messages, by default None.
+        id_key : str, optional
+            The ID key, by default "".
+        sub_id_key : str or None, optional
+            The sub-ID key, by default None.
+        """
         self.schema = schema
         self.key = key
         self.field = _get_field(self.schema, self.key)
@@ -197,6 +334,9 @@ class SetMetadataStep:
             self.callback_message.update({self.humankey: []})
 
     async def run(self):
+        """
+        Runs the metadata setting process.
+        """
         # SETUP
         unit = _get_unit(self.schema, self.key)
         field = self.field
@@ -270,6 +410,14 @@ class SetMetadataStep:
             raise ValueError(f'Unsupported metadata field "{field}"')
 
     async def next(self, result):
+        """
+        Handles the next step after setting metadata.
+
+        Parameters
+        ----------
+        result : Any
+            The result of the metadata setting process.
+        """
         if result is not False:
             if self.possible_options is not None:
                 self.callback_message[self.humankey] = [str(self.possible_options[result]) + "\n"]
@@ -345,6 +493,55 @@ class SetMetadataStep:
 
 
 class CheckMetadataStep:
+    """
+    Base class for checking metadata values.
+
+    This class provides a framework for checking metadata values associated
+    with files in the database. It evaluates whether metadata is missing,
+    displays a summary of the metadata values, and prompts the user to
+    confirm or modify the values.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[Schema]]
+        The schema used to validate the metadata.
+    key : ClassVar[str]
+        The key for the metadata to check.
+    appendstr : ClassVar[str], optional
+        A string to append to the header, by default "".
+    filters : ClassVar[Optional[Dict[str, str]]], optional
+        Filters for selecting files, by default None.
+    next_step_type : Type[CheckMetadataStep] | None, optional
+        The type of the next step, by default None.
+    show_summary : ClassVar[bool], optional
+        Whether to show a summary of the metadata values, by default True.
+    app : Any, optional
+        The application object, by default None.
+    callback : Callable, optional
+        A callback function, by default None.
+    callback_message : dict, optional
+        A dictionary for callback messages, by default None.
+    id_key : str, optional
+        The ID key, by default "".
+    sub_id_key : str, optional
+        The sub-ID key, by default None.
+    humankey : str
+        The human-readable key.
+    is_first_run : bool
+        Flag indicating if it's the first run.
+    should_skip : bool
+        Flag indicating if the step should be skipped.
+    choice : Any
+        The user's choice.
+    _append_view : list[str]
+        List of strings to append to the view.
+    input_view : list[str]
+        List of strings for user input.
+    is_missing : bool
+        Flag indicating if metadata is missing.
+    suggestion : Any
+        A suggestion for the user.
+    """
     schema: ClassVar[Type[Schema]]
 
     key: ClassVar[str]
@@ -360,6 +557,22 @@ class CheckMetadataStep:
         return False
 
     def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
+        """
+        Initializes the CheckMetadataStep.
+
+        Parameters
+        ----------
+        app : Any, optional
+            The application object, by default None.
+        callback : Callable, optional
+            A callback function, by default None.
+        callback_message : dict, optional
+            A dictionary for callback messages, by default None.
+        id_key : str, optional
+            The ID key, by default "".
+        sub_id_key : str, optional
+            The sub-ID key, by default None.
+        """
         # SETUP
         self.app = app
         self.callback = callback
@@ -381,6 +594,12 @@ class CheckMetadataStep:
             return
 
     def evaluate(self):
+        """
+        Evaluates the metadata values.
+
+        This method retrieves metadata values from the database, checks if
+        any values are missing, and prepares a summary of the values.
+        """
         if self.filters is None:
             filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
         else:
@@ -460,6 +679,13 @@ class CheckMetadataStep:
             pass
 
     async def run(self):
+        """
+        Runs the metadata checking process.
+
+        This method evaluates the metadata, displays a summary or a warning
+        if metadata is missing, and prompts the user to proceed or modify
+        the values.
+        """
         self.evaluate()
 
         # def run(self, _):
@@ -494,6 +720,14 @@ class CheckMetadataStep:
             await self.next(choice)
 
     async def next(self, choice):
+        """
+        Handles the next step after checking metadata.
+
+        Parameters
+        ----------
+        choice : bool
+            The user's choice (True for proceed, False for modify).
+        """
         if choice is True and self.next_step_type is not None:
             next_step_instance = self.next_step_type(
                 app=self.app,
@@ -526,24 +760,82 @@ class CheckMetadataStep:
 
 
 class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
+    """
+    Checks the echo time difference for phase difference field map files.
+
+    This class extends CheckMetadataStep to specifically handle the echo
+    time difference metadata for phase difference field map files.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[PhaseDiffFmapFileSchema]]
+        The schema for phase difference field map files.
+    key : ClassVar[str]
+        The metadata key for echo time difference.
+    """
+
     schema = PhaseDiffFmapFileSchema
     key = "echo_time_difference"
     # next_step_type = HasMoreFmapStep
 
 
 class CheckPhase1EchoTimeStep(CheckMetadataStep):
+    """
+    Checks the echo time for the first set of phase images.
+
+    This class extends CheckMetadataStep to specifically handle the echo
+    time metadata for the first set of phase images.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[PhaseFmapFileSchema]]
+        The schema for phase field map files.
+    key : ClassVar[str]
+        The metadata key for echo time.
+    """
+
     schema = PhaseFmapFileSchema
     key = "echo_time"
     # next_step_type = Phase2Step
 
 
 class CheckPhase2EchoTimeStep(CheckMetadataStep):
+    """
+    Checks the echo time for the second set of phase images.
+
+    This class extends CheckMetadataStep to specifically handle the echo
+    time metadata for the second set of phase images.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[PhaseFmapFileSchema]]
+        The schema for phase field map files.
+    key : ClassVar[str]
+        The metadata key for echo time.
+    """
     schema = PhaseFmapFileSchema
     key = "echo_time"
     # next_step_type = HasMoreFmapStep
 
 
 class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
+    """
+    Checks the phase encoding direction for BOLD files.
+
+    This class extends CheckMetadataStep to specifically handle the phase
+    encoding direction metadata for BOLD files.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[BoldFileSchema]]
+        The schema for BOLD files.
+    key : ClassVar[str]
+        The metadata key for phase encoding direction.
+    appendstr : ClassVar[str]
+        A string to append to the header.
+    filters : ClassVar[Dict[str, str]]
+        Filters for selecting BOLD files.
+    """
     schema = BoldFileSchema
 
     key = "phase_encoding_direction"
@@ -555,6 +847,28 @@ class CheckBoldPhaseEncodingDirectionStep(CheckMetadataStep):
 
 
 class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
+    """
+    Checks the effective echo spacing for BOLD files.
+
+    This class extends CheckMetadataStep to specifically handle the effective
+    echo spacing metadata for BOLD files.
+
+    Attributes
+    ----------
+    schema : ClassVar[Type[BoldFileSchema]]
+        The schema for BOLD files.
+    key : ClassVar[str]
+        The metadata key for effective echo spacing.
+    appendstr : ClassVar[str]
+        A string to append to the header.
+    filters : ClassVar[Dict[str, str]]
+        Filters for selecting BOLD files.
+    next_step_type : Type[CheckBoldPhaseEncodingDirectionStep]
+        The type of the next step.
+    filedict : Dict[str, str]
+        The file dictionary for field map files.
+    """
+
     schema = BoldFileSchema
 
     key = "effective_echo_spacing"
@@ -572,6 +886,23 @@ class CheckBoldEffectiveEchoSpacingStep(CheckMetadataStep):
 
 
 class CheckRepetitionTimeStep(CheckMetadataStep):
+    """
+    Checks the repetition time for BOLD files.
+
+    This class extends CheckMetadataStep to specifically handle the
+    repetition time metadata for BOLD files.
+
+    Attributes
+    ----------
+    key : ClassVar[str]
+        The metadata key for repetition time.
+    filetype_str : str
+        The file type string for BOLD images.
+    filters : Dict[str, str]
+        Filters for selecting BOLD files.
+    schema : Type[BoldFileSchema]
+        The schema for BOLD files.
+    """
     key = "repetition_time"
 
     filetype_str = "BOLD image"
@@ -581,10 +912,69 @@ class CheckRepetitionTimeStep(CheckMetadataStep):
 
 # TODO ASAP
 class AcqToTaskMappingStep:
+    """
+     Maps acquisition entities to task entities for field map files.
+
+     This class handles the mapping of acquisition entities (e.g., 'acq')
+     in field map files to task entities in BOLD files. It presents a
+     user interface to define these mappings and updates the specification
+     accordingly.
+
+     Attributes
+     ----------
+     filedict : Dict[str, str]
+         The file dictionary for field map files.
+     bold_filedict : Dict[str, str]
+         The file dictionary for BOLD files.
+     app : Any, optional
+         The application object, by default None.
+     callback : Callable, optional
+         A callback function, by default None.
+     callback_message : dict, optional
+         A dictionary for callback messages, by default None.
+     id_key : str, optional
+         The ID key, by default "".
+     sub_id_key : str, optional
+         The sub-ID key, by default None.
+     is_first_run : bool
+         Flag indicating if it's the first run.
+     result : Any
+         The user's choice.
+     fmaptags : list[frozenset]
+         List of tag sets for field map files.
+     boldtags : list[frozenset]
+         List of tag sets for BOLD files.
+     is_predefined : bool
+         Flag indicating if the mapping is predefined.
+     _append_view : list[str]
+         List of strings to append to the view.
+     input_view : list[str]
+         List of strings for user input.
+     options : list[str]
+         List of options for BOLD files.
+     values : list[str]
+         List of values for field map files.
+     """
     filedict = {"datatype": "fmap"}
     bold_filedict = {"datatype": "func", "suffix": "bold"}
 
     def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
+        """
+        Initializes the AcqToTaskMappingStep.
+
+        Parameters
+        ----------
+        app : Any, optional
+            The application object, by default None.
+        callback : Callable, optional
+            A callback function, by default None.
+        callback_message : dict, optional
+            A dictionary for callback messages, by default None.
+        id_key : str, optional
+            The ID key, by default "".
+        sub_id_key : str, optional
+            The sub-ID key, by default None.
+        """
         # def setup(self, ctx):
         self.is_first_run = True
 
@@ -598,6 +988,13 @@ class AcqToTaskMappingStep:
             self.callback_message.update({"AcqToTaskMapping": []})
 
     def evaluate(self):
+        """
+        Evaluates the mapping between field map and BOLD files.
+
+        This method retrieves the tags for field map and BOLD files,
+        formats them for display, and prepares the options and values
+        for the user interface.
+        """
         fmapfilepaths = ctx.database.get(**self.filedict)
         fmaptags = sorted(
             set(
@@ -657,6 +1054,12 @@ class AcqToTaskMappingStep:
             self.is_predefined = True
 
     def run(self):
+        """
+        Runs the acquisition-to-task mapping process.
+
+        This method evaluates the mapping and, if necessary, presents a
+        user interface to define the mappings.
+        """
         self.evaluate()
 
         if self.is_predefined:
@@ -668,6 +1071,18 @@ class AcqToTaskMappingStep:
             )
 
     def next(self, results):
+        """
+        Handles the next step after mapping acquisition to tasks.
+
+        This method processes the user's mapping choices, updates the
+        specification with the 'intended_for' field, and proceeds to the
+        next step in the pipeline.
+
+        Parameters
+        ----------
+        results : dict or None
+            The user's mapping choices, or None if the mapping is predefined.
+        """
         if results is not None:
             self.callback_message["AcqToTaskMapping"] = [
                 f"{key} >===< {self.values[results[key]]}".replace("\n", "") + "\n" for key in results
@@ -738,6 +1153,23 @@ class AcqToTaskMappingStep:
 
 
 class CheckBoldSliceTimingStep(CheckMetadataStep):
+    """
+    Checks the slice timing for BOLD files.
+
+    This class extends CheckMetadataStep to specifically handle the slice
+    timing metadata for BOLD files.
+
+    Attributes
+    ----------
+    schema : Type[BoldFileSchema]
+        The schema for BOLD files.
+    filetype_str : str
+        The file type string for BOLD images.
+    key : str
+        The metadata key for slice timing.
+    filters : Dict[str, str]
+        Filters for selecting BOLD files.
+    """
     schema = BoldFileSchema
     filetype_str = "BOLD image"
     key = "slice_timing"
@@ -751,6 +1183,25 @@ class CheckBoldSliceTimingStep(CheckMetadataStep):
 
 
 class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
+    """
+    Checks the slice encoding direction for BOLD files.
+
+    This class extends CheckMetadataStep to specifically handle the slice
+    encoding direction metadata for BOLD files.
+
+    Attributes
+    ----------
+    schema : Type[BoldFileSchema]
+        The schema for BOLD files.
+    filetype_str : str
+        The file type string for BOLD images.
+    key : str
+        The metadata key for slice encoding direction.
+    filters : Dict[str, str]
+        Filters for selecting BOLD files.
+    next_step_type : Type[CheckBoldSliceTimingStep]
+        The type of the next step.
+    """
     schema = BoldFileSchema
     filetype_str = "BOLD image"
     key = "slice_encoding_direction"
@@ -760,5 +1211,19 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
 
 
 class CheckSpaceStep(CheckMetadataStep):
+    """
+    Checks the space for reference files.
+
+    This class extends CheckMetadataStep to specifically handle the space
+    metadata for reference files (e.g., atlases, spatial maps, seed maps).
+
+    Attributes
+    ----------
+    schema : Type[RefFileSchema]
+        The schema for reference files.
+    key : str
+        The metadata key for space.
+    """
+
     schema = RefFileSchema
     key = "space"

@@ -7,25 +7,35 @@ from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBased
 
 class AtlasBased(AtlasSeedDualRegBasedTemplate):
     """
-    A class used to represent Atlas-based connectivity analysis
+    Represents Atlas-based connectivity.
+
+    This class defines the parameters and behavior for atlas-based
+    connectivity feature, extending the `AtlasSeedDualRegBasedTemplate`.
+    It specifies the entity, filters, feature field, type, file panel class,
+    and minimum coverage settings relevant to atlas-based. It needs at atlas.
 
     Attributes
     ----------
     entity : str
-        A description of the entity, which in this context is "desc"
-    filters : dict
-        A dictionary containing filters for datatype and suffix
-            - datatype: "ref"
-            - suffix: "atlas"
+        The entity used for describing the atlas, which is "desc" in this context.
+    filters : dict[str, str]
+        Filters used to identify atlas files.
+        - datatype : str
+            The datatype of the atlas files, which is "ref".
+        - suffix : str
+            The suffix of the atlas files, which is "atlas".
     featurefield : str
-        A field representing the atlas feature set, in this case "atlases"
+        The field representing the atlas feature set, which is "atlases".
     type : str
-        The type of connectivity analysis, denoted as "atlas_based_connectivity"
-    file_panel_class : class
-        A reference to the class used for file panel, here it is AtlasFilePanel
+        The type of connectivity analysis, which is "atlas_based_connectivity".
+    file_panel_class : Type[AtlasFilePanel]
+        The class used for the file panel, which is `AtlasFilePanel`.
     minimum_coverage_label : str
-        A label describing the minimum coverage of atlas regions by individual brain mask
+        A label describing the minimum coverage of atlas regions by individual brain masks.
+    minimum_coverage_tag : str
+        A tag used to identify the minimum coverage setting, which is "min_region_coverage".
     """
+
 
     entity = "desc"
     filters = {"datatype": "ref", "suffix": "atlas"}

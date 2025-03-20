@@ -6,23 +6,24 @@ from .reho import ReHo
 
 class Falff(ReHo):
     """
-    Falff(this_user_selection_dict, **kwargs)
+    Represents the fALFF (fractional Amplitude of Low-Frequency Fluctuations) feature.
 
-    A class that represents the falff feature inheriting from ReHo and initializes
-    specific unfiltered settings based on the user's selection dictionary.
-
-    Parameters
-    ----------
-    this_user_selection_dict : dict
-        Dictionary containing the user's selection.
-    **kwargs : dict
-        Additional keyword arguments passed to the ReHo initializer.
+    This class extends the `ReHo` class to implement the fALFF feature. It
+    inherits the basic structure and functionality from `ReHo` and adds
+    specific settings for unfiltered data, i.e., the field unfilteredSettings.
 
     Attributes
     ----------
+    type : str
+        The type of the feature, which is "falff".
     unfiltered_settings_dict : dict
-        Dictionary containing settings specific to the unfiltered data derived
-        from the user's selection dictionary.
+        A dictionary containing settings specific to the unfiltered data,
+        derived from the user's selection dictionary.
+
+    Methods
+    -------
+    __init__(this_user_selection_dict, **kwargs)
+        Initializes the Falff instance.
     """
 
     type = "falff"

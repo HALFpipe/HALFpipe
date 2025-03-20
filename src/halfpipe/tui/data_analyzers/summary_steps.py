@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import ClassVar, Dict, Type, Union
+from typing import ClassVar, Dict, List, Type, Union
 
 from ...model.file.anat import T1wFileSchema
 from ...model.file.base import BaseFileSchema
@@ -17,26 +17,38 @@ from ...utils.format import inflect_engine as p
 from ..data_analyzers.context import ctx
 
 
-def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: dict | None = None):
+def messagefun(
+    database, filetype, filepaths, tagnames, entity_display_aliases: dict | None = None
+) -> tuple[str, dict[str, int]]:
     """
+    Generates a summary message about files and their tag distributions.
+
+    This function creates a human-readable message summarizing the number of
+    files found and the distribution of tag values across those files.
+
     Parameters
     ----------
-    database : DatabaseConnection
+    database : Database
         An instance of the database connection used to retrieve tag values.
     filetype : str
-        The type of files that are being queried.
-    filepaths : list
+        The type of files that are being queried (e.g., "T1-weighted image").
+    filepaths : list[str]
         A list of file paths that are being processed.
-    tagnames : list
-        A list of tags to be checked in the filepaths.
-    entity_display_aliases : dict, optional
+    tagnames : list[str]
+        A list of tags to be checked in the filepaths (e.g., ["task", "acq"]).
+    entity_display_aliases : dict[str, str], optional
         An optional dictionary for aliasing tag names for display.
+        For example, {"acq": "acquisition"}, by default None.
 
     Returns
     -------
-    str
-        A message indicating the number of files found and the distribution of tag values.
+    tuple[str, dict[str, int]]
+        A tuple containing:
+        - A message string summarizing the files and their tag distributions.
+        - A dictionary where keys are tag names and values are the number of
+          unique values for that tag across the files.
     """
+
     entity_display_aliases = dict() if entity_display_aliases is None else entity_display_aliases
     message = ""
     n_by_tag = {}
@@ -61,14 +73,15 @@ def messagefun(database, filetype, filepaths, tagnames, entity_display_aliases: 
 
 class FilePatternSummaryStep:
     """
-    Class FilePatternSummaryStep:
-        This class is used to generate a summary for a specific file pattern.
-        It includes retrieving file paths from a database, generating a message regarding those files, and
-        summarizing the information.
+    Base class for generating summaries of file patterns.
+
+    This class provides a framework for generating summaries for specific
+    file patterns. It retrieves file paths from a database, generates a
+    message regarding those files, and summarizes the information.
 
     Attributes
     ----------
-    entity_display_aliases : ClassVar[Dict]
+    entity_display_aliases : ClassVar[Dict[str, str]]
         A dictionary containing aliases for displaying various entities.
     filetype_str : ClassVar[str]
         A string representing the type of file.
@@ -76,19 +89,25 @@ class FilePatternSummaryStep:
         A dictionary that is used to retrieve file paths from the database.
     schema : Union[Type[BaseFileSchema], Type[FileSchema]]
         A schema to extract schema entities.
+    entities : list[str]
+        List of entities extracted from the schema.
+    filepaths : list[str]
+        List of filepaths retrieved from the database.
+    message : str
+        The generated summary message.
+    n_by_tag : dict[str, int]
+        A dictionary where keys are tag names and values are the number of
+        unique values for that tag across the files.
 
     Methods
     -------
-    __init__():
-        Initializes the FilePatternSummaryStep object by extracting schema entities, retrieving file paths from
-        the database, and generating a message.
-
-    get_message() -> str:
+    get_message : property
         Returns the generated message.
-
-    get_summary() -> Dict[str, Union[str, List[str]]]:
-        Returns a summary dictionary containing the generated message and the file paths.
+    get_summary : property
+        Returns a summary dictionary containing the generated message,
+        the file paths, and the tag distribution.
     """
+
 
     entity_display_aliases: ClassVar[Dict] = entity_display_aliases
 
@@ -97,6 +116,12 @@ class FilePatternSummaryStep:
     schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
 
     def __init__(self):
+        """
+        Initializes the FilePatternSummaryStep.
+
+        This method extracts schema entities, retrieves file paths from the
+        database, and generates a summary message.
+        """
         self.entities = get_schema_entities(self.schema)  # Assumes a function to extract schema entities
 
         # Assuming ctx and database are accessible here
@@ -110,28 +135,48 @@ class FilePatternSummaryStep:
         )
 
     @property
-    def get_message(self):
+    def get_message(self) -> str:
+        """
+        Returns the generated summary message.
+
+        Returns
+        -------
+        str
+            The summary message.
+        """
         return self.message
 
     @property
-    def get_summary(self):
-        return {"message": self.message, "files": self.filepaths, "n_by_tag": self.n_by_tag}
+    def get_summary(self) -> Dict[str, Union[str, List[str], Dict[str, int]]]:
+        """
+        Returns a summary dictionary.
 
+        Returns
+        -------
+        Dict[str, Union[str, List[str], Dict[str, int]]]
+            A dictionary containing the summary message, the file paths,
+            and the tag distribution.
+        """
+        return {"message": self.message, "files": self.filepaths, "n_by_tag": self.n_by_tag}
 
 class AnatSummaryStep(FilePatternSummaryStep):
     """
-    AnatSummaryStep
-        Class representing a summary step for anatomical (T1-weighted) imaging files.
+    Summary step for anatomical (T1-weighted) imaging files.
+
+    This class extends FilePatternSummaryStep to provide a summary
+    specifically for T1-weighted anatomical images.
 
     Attributes
     ----------
     filetype_str : str
-        Descriptive string for the type of file, indicating it is a "T1-weighted image".
-    filedict : dict
-        Dictionary defining the file pattern components, here specifying that the `datatype` is "anat" and the `suffix`
-        is "T1w".
-    schema : T1wFileSchema
-        Schema class used for validating and processing T1-weighted image files.
+        Descriptive string for the type of file, indicating it is a
+        "T1-weighted image".
+    filedict : dict[str, str]
+        Dictionary defining the file pattern components, here specifying
+        that the `datatype` is "anat" and the `suffix` is "T1w".
+    schema : Type[T1wFileSchema]
+        Schema class used for validating and processing T1-weighted
+        image files.
     """
 
     filetype_str = "T1-weighted image"
@@ -141,17 +186,20 @@ class AnatSummaryStep(FilePatternSummaryStep):
 
 class BoldSummaryStep(FilePatternSummaryStep):
     """
-    Class BoldSummaryStep
-        Class representing a summary step for functional BOLD files.
+    Summary step for functional BOLD files.
+
+    This class extends FilePatternSummaryStep to provide a summary
+    specifically for BOLD images.
 
     Attributes
     ----------
     filetype_str : str
-        Descriptive string for the type of file, indicating it is a BOLD image.
-    filedict : dict
-        Dictionary defining the file pattern components, here specifying that the `datatype` is "func"
-        and the `suffix` is "bold".
-    schema : BoldFileSchema
+        Descriptive string for the type of file, indicating it is a
+        BOLD image.
+    filedict : dict[str, str]
+        Dictionary defining the file pattern components, here specifying
+        that the `datatype` is "func" and the `suffix` is "bold".
+    schema : Type[BoldFileSchema]
         Schema class used for validating and processing BOLD image files.
     """
 
@@ -162,16 +210,22 @@ class BoldSummaryStep(FilePatternSummaryStep):
 
 class FmapSummaryStep(FilePatternSummaryStep):
     """
-    A class representing a summary step for field map images.
+    Summary step for field map images.
+
+    This class extends FilePatternSummaryStep to provide a summary
+    specifically for field map images.
 
     Attributes
     ----------
     filetype_str : str
-        Descriptive string for the type of file, indicating it is a field map image.
-    filedict : dict
-        Dictionary defining the file pattern components, here specifying that the `datatype` is "fmap" .
-    schema : BaseFmapFileSchema
-        A schema class that defines the structure and constraints of the field map files.
+        Descriptive string for the type of file, indicating it is a
+        field map image.
+    filedict : dict[str, str]
+        Dictionary defining the file pattern components, here specifying
+        that the `datatype` is "fmap".
+    schema : Type[BaseFmapFileSchema]
+        A schema class that defines the structure and constraints of
+        the field map files.
     """
 
     filetype_str = "field map image"
