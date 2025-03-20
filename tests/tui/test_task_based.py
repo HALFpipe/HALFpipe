@@ -73,7 +73,11 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
         "at_features_tab_p2": [add_feature_related_tasks, feature_p2_and_final_tasks],
         "at_spec_preview": [add_feature_related_tasks, feature_p2_and_final_tasks, final_stage_tasks],
         "at_features_duplicate": [add_feature_related_tasks, feature_p2_and_final_tasks, duplicate],
-        "duplicate_at_spec_preview": [add_feature_related_tasks, feature_p2_and_final_tasks, duplicate]#, final_stage_tasks],
+        "duplicate_at_spec_preview": [
+            add_feature_related_tasks,
+            feature_p2_and_final_tasks,
+            duplicate,
+        ],  # , final_stage_tasks],
     }
     if stage == "at_spec_preview":
         how_much_down = 60
