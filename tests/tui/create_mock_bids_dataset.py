@@ -196,6 +196,15 @@ def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None
                 file_name=base_path / subject_tag / "func" / event_file_name, trial_types=conditions, dry_run=dry_run
             )
 
+    # create database description file
+    fake_database_desc = {
+        "Name": "AOMIC-PIOP1",
+        "BIDSVersion": "1.2.0",
+    }
+    path_for_fake_database_desc = base_path / "dataset_description.json"
+    with open(path_for_fake_database_desc, "w") as json_file:
+        json.dump(fake_database_desc, json_file, indent=4)
+
 
 # # Example usage
 # base_path = "ds002785"  # Root directory

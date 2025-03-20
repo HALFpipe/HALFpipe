@@ -246,7 +246,7 @@ class MainApp(App):
 
     def show_hidden_tabs(self):
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
-        if sum(self.flags_to_show_tabs.values()) >= 1:
+        if sum(self.flags_to_show_tabs.values()) == 2:
             self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
@@ -267,12 +267,13 @@ class MainApp(App):
     def action_reload(self):
         self.reload_ui()
 
-    def reload_ui(self) -> None:
+    def reload_ui(self, complete_reset=True) -> None:
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("models_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
-        self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
-        self.get_widget_by_id("work_dir_content").refresh(recompose=True, layout=True)
+        if complete_reset is True:
+            self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
+            self.get_widget_by_id("work_dir_content").refresh(recompose=True, layout=True)
 
         feature_selection_content = self.app.get_widget_by_id("feature_selection_tab").get_widget_by_id(
             "feature_selection_content"

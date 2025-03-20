@@ -12,8 +12,7 @@ FileBrowser {
 
 #invalid_path_warning_modal {
     #draggable_modal_screen_container_wrapper {
-        width: 40;
-        height: 15;
+
         background: black;
     }
 }

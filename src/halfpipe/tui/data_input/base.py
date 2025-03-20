@@ -10,6 +10,7 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
 
+from ...model.file.bids import BidsFileSchema
 from ..data_analyzers.context import ctx
 from ..data_analyzers.file_pattern_steps import (
     AnatStep,
@@ -26,217 +27,47 @@ from ..data_analyzers.file_pattern_steps import (
 from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
 from ..data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
 from ..general_widgets.custom_switch import TextSwitch
-from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
-
-
-class FieldMapFilesPanel(Widget):
-    """
-    Widget that manages field map files input, including different types of field maps
-    (e.g., EPI, Siemens, Philips). Handles composition and user interactions with the UI elements.
-    For EPI this mounts only one FileItem widget, for Siemens and Philips the number of FileItem widgets varies
-    since user can set different types of magnitude and phase files.
-
-    Attributes
-    ----------
-    field_map_type : str
-        The type of field map being utilized, default is "siemens".
-    field_map_types_dict : dict
-        A dictionary mapping field map type keys to their corresponding descriptions.
-    echo_time : int
-        An attribute initialized to 0, likely used for managing timing properties.
-    step_classes : list
-        A list of step classes that determine the pattern classes for the file items.
-
-    Methods
-    -------
-    __init__(self, step_classes, field_map_type='siemens', id=None, classes=None):
-        Initializes the FieldMapFilesPanel widget with given step classes, field map type, id, and CSS classes.
-
-    compose(self):
-        Composes the widget's visual layout, yielding a Vertical layout containing file items and a delete button.
-
-    on_mount(self):
-        Sets the title for the panel based on the selected field map type after the widget is mounted.
-
-    _on_delete_button_pressed(self):
-        Removes the file pattern item and updates the context cache when the delete button is pressed.
-
-    _on_file_item_success_changed(self, message):
-        Changes widget border from green to red based on whether the files were successfully found.
-    """
-
-    def __init__(
-        self, step_classes: list, field_map_type: str = "siemens", id: str | None = None, classes: str | None = None
-    ) -> None:
-        super().__init__(id=id, classes=classes)
-        self.field_map_type = field_map_type
-        self.field_map_types_dict = {
-            "epi": "EPI (blip-up blip-down)",
-            "siemens": "Phase difference and magnitude (used by Siemens scanners)",
-            "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
-        }
-        self.echo_time = 0
-        self.step_classes = step_classes
-
-    def compose(self):
-        yield Vertical(
-            Button("❌", id="delete_button", classes="icon_buttons"),
-            *[
-                FileItem(id=self.id + "_" + str(i), classes="file_patterns", delete_button=False, pattern_class=step_class)
-                for i, step_class in enumerate(self.step_classes)
-            ],
-            classes=self.field_map_type + "_panel",
-        )
-
-    def on_mount(self):
-        """Sets the title for the panel based on the selected field map type after the widget is mounted."""
-        self.query(".{}_panel".format(self.field_map_type)).last(Vertical).border_title = self.field_map_types_dict[
-            self.field_map_type
-        ]
-
-    @on(Button.Pressed, "#delete_button")
-    def _on_delete_button_pressed(self):
-        """
-        Removes the file pattern item and updates the context cache.
-        """
-        self.remove()
-        for i in range(len(self.step_classes)):
-            if self.id + "_" + str(i) in ctx.cache:
-                ctx.cache.pop(self.id + "_" + str(i))
-
-    @on(FileItem.SuccessChanged)
-    def _on_file_item_success_changed(self, message: Message):
-        """Change widget border from green if files were successfully found, to red if no."""
-        success_list = []
-        for i in range(len(self.step_classes)):
-            success_list.append(self.get_widget_by_id(self.id + "_" + str(i)).success_value)
-        if all(success_list) is True:
-            self.query(".{}_panel".format(self.field_map_type)).last(Vertical).styles.border = ("thick", "green")
-        else:
-            self.query(".{}_panel".format(self.field_map_type)).last(Vertical).styles.border = ("thick", "red")
-
-
-class DataSummaryLine(Widget):
-    """
-    DataSummaryLine class
-
-    This class represents a widget for displaying a summary of data processing, including a message and a list of files.
-
-    Methods
-    -------
-    __init__(summary: dict | None = None, id: str | None = None, classes: str | None = None)
-        Initializes the DataSummaryLine with an optional summary, id, and classes.
-
-    compose() -> ComposeResult
-        Composes the widget structure.
-
-    update_summary(summary)
-        Updates the summary data and the display message, and changes the border color if files are present.
-
-    _on_show_button_pressed()
-        Handles the event when the show button is pressed, displaying a list of files in a modal dialog.
-    """
-
-    DEFAULT_CSS = """
-    DataSummaryLine {
-        height: auto;
-        border: $warning;
-        width: 100%;
-        height: 5;
-        align: center
-        middle;
-        .feedback_container {
-            layout: horizontal;
-            height: 3;
-            width: 65;
-            align: left
-            middle;
-            Static {
-                width: auto;
-                border: transparent;
-            }
-            Button {
-                dock: right;
-            }
-        }
-    }
-    """
-
-    def __init__(self, summary: dict | None = None, id: str | None = None, classes: str | None = None) -> None:
-        super().__init__(id=id, classes=classes)
-        self.summary = {"message": "Found 0 files.", "files": []} if summary is None else summary
-
-    def compose(self) -> ComposeResult:
-        yield Horizontal(
-            Static(self.summary["message"], id="feedback"),
-            Button("👁", id="show_button", classes="icon_buttons"),
-            classes="feedback_container",
-        )
-
-    def update_summary(self, summary):
-        self.summary = summary
-        self.get_widget_by_id("feedback").update(self.summary["message"])
-        # if there were some found files, then change border to green
-        if len(self.summary["files"]) > 0:
-            self.styles.border = ("solid", "green")
-
-    @on(Button.Pressed, "#show_button")
-    def _on_show_button_pressed(self):
-        """Displays a list of files in a modal dialog."""
-        self.app.push_screen(ListOfFiles(self.summary))
+from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
 class DataInput(Widget):
     """
-    DataInput(id: str | None = None, classes: str | None = None)
+    A widget for handling data input, supporting both BIDS and non-BIDS data formats.
 
-    A class representing a data input widget that can switch between handling BIDS and non-BIDS data formats.
+    This widget provides a user interface for specifying the location of
+    neuroimaging data, either in BIDS format or using custom file patterns.
+    It handles the selection of anatomical (T1-weighted), functional (BOLD),
+    and field map files, and provides feedback on the files found.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     callback_message : str
         A variable to catch outputs of the meta and summary steps.
     t1_file_pattern_counter : int
-        Used to create a unique widget ids for T1 file patterns.
+        Used to create unique widget IDs for T1 file patterns.
     bold_file_pattern_counter : int
-        Used to create a unique widget ids for BOLD file patterns.
+        Used to create unique widget IDs for BOLD file patterns.
     field_map_file_pattern_counter : int
-        Used to create a unique widget ids for field map file patterns.
+        Used to create unique widget IDs for field map file patterns.
     association_done : bool
         Flag indicating whether the association of the field maps was done or not.
-
-    Methods:
-    --------
-    callback_func(message_dict)
-        Processes a dictionary of messages and updates the callback_message with formatted text.
-
-    compose() -> ComposeResult
-        Composes the structure of the widget, switching between BIDS and non-BIDS formats.
-
-    on_mount() -> None
-        Sets up the initial state and titles for various panels after the widget is mounted.
-
-    _on_button_add_t1_image_button_pressed()
-        Handles the event when the "Add T1 Image" button is pressed.
-
-    add_t1_image(pattern_class=True, load_object=None, message_dict=None)
-        Adds a T1 image file item to the T1 image panel.
-
-    _on_button_add_bold_image_button_pressed()
-        Handles the event when the "Add BOLD Image" button is pressed.
-
-    add_bold_image(pattern_class=True, load_object=None, message_dict=None)
-        Adds a BOLD image file item to the BOLD image panel.
-
-    _add_field_map_file()
-        Executes the process to add a field map file.
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the DataInput widget.
+
+        Parameters
+        ----------
+        id : str, optional
+            The ID of the widget, by default None.
+        classes : str, optional
+            CSS classes for the widget, by default None.
+        """
         super().__init__(id=id, classes=classes)
         # Use the following variable to catch outputs of the meta and summary steps.
         self.callback_message = ""
@@ -249,8 +80,23 @@ class DataInput(Widget):
         self.field_map_file_pattern_counter = 0
         # Flag whether the association of the field maps was done or no.
         self.association_done = False
+        # We need this flag to check before loading whether there was no previous data load already.
+        # If so, the we need to reload some widget and refresh context cache and database.
+        self.data_load_sucess = False
 
-    def callback_func(self, message_dict):
+    def callback_func(self, message_dict: dict[str, list[str]]) -> None:
+        """
+        Processes a dictionary of messages and updates the callback_message with formatted text.
+
+        This method takes a dictionary of messages, formats them into a
+        human-readable string, and stores the result in the `callback_message`
+        attribute.
+
+        Parameters
+        ----------
+        message_dict : dict[str, list[str]]
+            A dictionary where keys are message categories and values are lists of messages.
+        """
         info_string = Text("")
         for key in message_dict:
             # if there is only one item, we do not separate items on new lines
@@ -267,6 +113,18 @@ class DataInput(Widget):
         self.callback_message = info_string
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the structure of the widget, switching between BIDS and non-BIDS formats.
+
+        This method defines the layout and components of the DataInput widget,
+        including the switch between BIDS and non-BIDS formats, file browsers,
+        summary panels, and buttons for adding file patterns.
+
+        Yields
+        ------
+        ComposeResult
+            The composed widgets for data input.
+        """
         # First we define widgets (panels) in order to be able later put titles on them
         """Switch in between the BIDS and non BIDS widgets."""
         instructions_panel = Container(
@@ -381,11 +239,35 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         yield non_bids_panel
 
     @on(Button.Pressed, "#add_t1_image_button")
-    async def _on_button_add_t1_image_button_pressed(self):
-        await self.add_t1_image(load_object=None)
+    async def _on_button_add_t1_image_button_pressed(self) -> None:
+        """
+        Handles the event when the "Add" button for T1 images is pressed.
 
-    async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True):
-        # pattern_class = AnatStep(app=self.app) if pattern_class is True else None
+        This method adds a new FileItem widget for specifying a T1 image file pattern.
+        """
+        if self.data_load_sucess is False:
+            await self.add_t1_image(load_object=None)
+        else:
+            self.forbid_data_change()
+
+    async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> tuple[str, ...]:
+        """
+        Adds a FileItem widget for specifying a T1 image file pattern.
+
+        Parameters
+        ----------
+        load_object : Any, optional
+            An object to load into the FileItem, by default None.
+        message_dict : dict[str, list[str]], optional
+            A dictionary of messages for the FileItem, by default None.
+        execute_pattern_class_on_mount : bool, optional
+            Whether to execute the pattern class on mount, by default True.
+
+        Returns
+        -------
+        tuple[str, ...]
+            A tuple containing the ID of the newly added FileItem widget.
+        """
         await self.get_widget_by_id("t1_image_panel").mount(
             FileItem(
                 id="t1_file_pattern_" + str(self.t1_file_pattern_counter),
@@ -400,10 +282,35 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         return ("t1_file_pattern_" + str(self.t1_file_pattern_counter),)
 
     @on(Button.Pressed, "#add_bold_image_button")
-    async def _on_button_add_bold_image_button(self):
-        await self.add_bold_image(load_object=None)
+    async def _on_button_add_bold_image_button(self) -> None:
+        """
+        Handles the event when the "Add" button for BOLD images is pressed.
 
-    async def add_bold_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True):
+        This method adds a new FileItem widget for specifying a BOLD image file pattern.
+        """
+        if self.data_load_sucess is False:
+            await self.add_bold_image(load_object=None)
+        else:
+            self.forbid_data_change()
+
+    async def add_bold_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
+        """
+        Adds a FileItem widget for specifying a BOLD image file pattern.
+
+        Parameters
+        ----------
+        load_object : Any, optional
+            An object to load into the FileItem, by default None.
+        message_dict : dict[str, list[str]], optional
+            A dictionary of messages for the FileItem, by default None.
+        execute_pattern_class_on_mount : bool, optional
+            Whether to execute the pattern class on mount, by default True.
+
+        Returns
+        -------
+        str
+            The ID of the newly added FileItem widget.
+        """
         await self.get_widget_by_id("bold_image_panel").mount(
             FileItem(
                 id="bold_file_pattern_" + str(self.bold_file_pattern_counter),
@@ -419,7 +326,31 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @on(Button.Pressed, "#add_field_map_button")
     def _add_field_map_file(self):
+        """
+         Handles the event when the "Add" button for field map files is pressed.
+
+        This method presents a modal to select the type of field map and then
+         mounts the appropriate FieldMapFilesPanel. It supports three types of
+         field maps: EPI, Siemens, and Philips. Depending on the selected type,
+         it may present additional modals to specify the number and type of
+         magnitude and phase images.
+        """
+
         def branch_field_maps(fmap_type):
+            """
+            Branches the field map setup based on the selected field map type.
+
+            This function determines the appropriate steps to take based on the
+            selected field map type. For Siemens and Philips field maps, it
+            presents additional modals to specify the type of magnitude and
+            phase images. For EPI field maps, it directly mounts the
+            FieldMapFilesPanel.
+
+            Parameters
+            ----------
+            fmap_type : str
+                The type of field map selected by the user.
+            """
             if fmap_type == "siemens":
                 self.show_additional_buttons_in_field_map_panel()
                 self.app.push_screen(
@@ -482,11 +413,30 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         )
 
     def show_additional_buttons_in_field_map_panel(self):
+        """
+        Shows additional buttons in the field map panel.
+
+        This method makes the "Associate" and "Info" buttons visible in the
+        field map panel after a field map type has been selected.
+        """
         # show new buttons after adding the field map
         self.get_widget_by_id("associate_button").styles.visibility = "visible"
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
 
     def _mount_field_item_group(self, field_map_user_choices: list | str):
+        """
+        Mounts a group of FileItem widgets for field map files based on user choices.
+
+        This method mounts the appropriate FieldMapFilesPanel with the correct
+        FileItem widgets based on the user's selection of magnitude and phase
+        image types.
+
+        Parameters
+        ----------
+        field_map_user_choices : list | str
+            The user's choices for magnitude and phase image types.
+            It can be a list of strings (for Siemens) or a single string (for Philips).
+        """
         # wrap to list, because from the single selection, the choices is just a string and not a list
         field_map_user_choices = (
             field_map_user_choices if isinstance(field_map_user_choices, list) else [field_map_user_choices]
@@ -521,10 +471,15 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     @work
     @on(Button.Pressed, "#confirm_non_bids_button")
     async def _confirm_non_bids_button(self):
-        """This function makes checks on the user input non-bids files. If the mandatory T1 and bold files are present,
-        then the hidden tabs with features and etc. are made visible. This is done by looping over the panels and walking
-        their children, in particular, the FileItem widgets which contains the needed information about the number of found
-        files.
+        """
+        Validates non-BIDS file patterns and prepares for the next steps.
+
+        This function checks if the mandatory T1 and BOLD files are present
+        based on the user-defined file patterns. If the required files are
+        found, it makes the hidden tabs (features, etc.) visible. It also
+        checks if field maps are present and if their association with BOLD
+        files has been performed. If there are issues, it displays warning
+        messages to the user.
         """
         number_of_t1_files = []
         number_of_bold_files = []
@@ -579,22 +534,60 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @on(Button.Pressed, "#associate_button")
     def _on_associate_button_pressed(self):
+        """
+        Handles the event when the "Associate" button is pressed.
+
+        This method initiates the association of field map files to BOLD
+        files by creating and running an instance of the
+        `AcqToTaskMappingStep`. It also sets the `association_done` flag to
+        True to indicate that the association process has been started.
+        """
         acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
         acq_to_task_mapping_step_instance.run()
         self.association_done = True
 
     @on(Button.Pressed, "#info_field_maps_button")
     def _on_info_button_pressed(self):
-        """Shows a modal with the list of files found using the given pattern."""
+        """
+        Handles the event when the "Info" button is pressed.
+
+        This method displays a modal dialog containing meta information about
+        the field map files. The information is retrieved from the
+        `callback_message` attribute.
+        """
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
 
     @on(Switch.Changed)
     def on_switch_changed(self, message: Message):
-        """Bids/Non-bids switch"""
-        self.toggle_bids_non_bids_format(message.value)
+        """
+        Handles the event when the BIDS/non-BIDS switch is toggled.
+
+        This method is triggered when the state of the BIDS/non-BIDS switch
+        changes. It calls the `toggle_bids_non_bids_format` method to update
+        the UI based on the new switch value.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the switch change.
+        """
+        if self.data_load_sucess is False:
+            self.toggle_bids_non_bids_format(message.value)
+        else:
+            self.forbid_data_change()
 
     def toggle_bids_non_bids_format(self, value: bool):
-        """Bids/Non-bids switch function"""
+        """
+        Toggles the visibility of BIDS and non-BIDS UI elements.
+
+        This method updates the visibility of the UI elements based on
+        whether BIDS or non-BIDS format is selected.
+
+        Parameters
+        ----------
+        value : bool
+            True if BIDS format is selected, False if non-BIDS is selected.
+        """
         if value:
             self.app.is_bids = True
             self.get_widget_by_id("bids_panel").styles.visibility = "visible"
@@ -608,16 +601,44 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
-        """Trigger the data read by the Context after a file path is selected (in bids case)."""
-        ctx.cache["bids"]["files"] = message.selected_path
-        self.app.flags_to_show_tabs["from_input_data_tab"] = True
-        self.app.show_hidden_tabs()
-        self.update_summaries()
-        self.data_input_sucess()
+        """
+        Handles the event when the file browser selection changes (BIDS case).
+
+        This method is triggered when the user selects a new path in the file
+        browser. It updates the context cache with the selected path, sets
+        flags to show the hidden tabs, and updates the data summaries.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the file browser change.
+        """
+        if self.data_load_sucess is False:
+            ctx.cache["bids"]["files"] = message.selected_path
+            ctx.put(BidsFileSchema().load({"datatype": "bids", "path": message.selected_path}))
+            ctx.refresh_available_images()
+
+            self.app.flags_to_show_tabs["from_input_data_tab"] = True
+            self.app.show_hidden_tabs()
+            self.update_summaries()
+            self.data_input_sucess()
+        else:
+            # we need to update this back
+            self.get_widget_by_id("data_input_file_browser").get_widget_by_id("path_input_box").update(
+                ctx.cache["bids"]["files"]
+            )
+            self.forbid_data_change()
 
     def update_summaries(self):
-        """Updates summary information and show hidden tabs (in bids case)."""
-        # tab_manager_widget = self.app.get_widget_by_id("tabs_manager")
+        """
+        Updates the summary information for anatomical, BOLD, and field map files.
+
+        This method creates instances of `AnatSummaryStep`, `BoldSummaryStep`,
+        and `FmapSummaryStep` to generate summary information about the
+        selected files. It then updates the corresponding `DataSummaryLine`
+        widgets with the new summary data. Finally, it changes the border
+        color of the file browser to green to indicate success.
+        """
 
         anat_summary_step = AnatSummaryStep()
         bold_summary_step = BoldSummaryStep()
@@ -632,9 +653,16 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @work(exclusive=True, name="data_input_sucess_modal_worker")
     async def data_input_sucess(self):
-        """Show modal after bids files are successfully loaded or after hitting the confirm button in the non bids case and
-        all is ok."""
+        """
+        Displays a success message after data input is validated.
 
+        This method shows a modal dialog to inform the user that the data
+        files have been successfully loaded, either in BIDS or non-BIDS
+        format. It also provides instructions on how to proceed to the
+        next steps in the pipeline.
+        """
+
+        self.data_load_sucess = True
         await self.app.push_screen_wait(
             Confirm(
                 "Data files successfully loaded! Proceed to the next tabs:\n\n\
@@ -648,5 +676,31 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 title="Data input success",
                 id="data_input_sucess",
                 classes="confirm_success",
+            )
+        )
+
+        if ctx.workdir is None:
+            await self.app.push_screen_wait(
+                Confirm(
+                    "Go back to Work dir tab and set the working directory!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Missing work directory",
+                    id="missing_workdir",
+                    classes="confirm_warning",
+                )
+            )
+
+    def forbid_data_change(self):
+        self.app.push_screen(
+            Confirm(
+                r"The input data were already setup!\To change restart the UI.",
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="default",
+                title="Reload",
+                id="reload",
+                classes="confirm_warning",
             )
         )

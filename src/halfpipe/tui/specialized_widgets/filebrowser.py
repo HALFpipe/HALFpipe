@@ -2,6 +2,7 @@
 import os
 from dataclasses import dataclass
 
+from bids import BIDSLayout
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -10,8 +11,6 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label
 
-from ...model.file.bids import BidsFileSchema
-from ..data_analyzers.context import ctx
 from .file_browser_modal import FileBrowserModal
 
 
@@ -124,13 +123,15 @@ def path_test_for_bids(path, isfile=False):
     else:
         result_info = "File not found."
     if result_info == "OK":
-        bold_filedict = {"datatype": "func", "suffix": "bold"}
-        ctx.put(BidsFileSchema().load({"datatype": "bids", "path": path}))
-        ctx.refresh_available_images()
+        """
+        Checks if a given directory is a valid BIDS dataset.
+        """
 
-        if len(list(ctx.database.get(**bold_filedict))) == 0:
-            result_info = "The selected data directory seems not be a BIDS directory! No BOLD files found!"
-            ctx.spec.files.pop()
+        try:
+            BIDSLayout(path, validate=True)  # Enforce validation
+        except Exception as e:
+            print(f"Invalid BIDS dataset: {e}")
+            result_info = f"The selected data directory seems not be a BIDS directory!\nException: {e}"
     return result_info
 
 

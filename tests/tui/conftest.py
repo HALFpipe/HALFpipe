@@ -11,18 +11,31 @@ from halfpipe.tui.base import MainApp  # Ensure path aligns with your project st
 
 from .create_mock_bids_dataset import create_bids_data
 
-CURRENT_DIR = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
+
+@pytest.fixture(scope="session", autouse=True)
+def resolved_test_dir_path():
+    """Fixture to resolve paths and handle fallback to './' if necessary."""
+
+    print("Resolving paths...")
+    source_file = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
+    if not source_file.exists():  # Fallback to './' if not found in CURRENT_DIR
+        source_file = Path("./")
+
+    return source_file
 
 
 @pytest.fixture(scope="session", autouse=True)
-def copy_jinja2_file():
+def copy_jinja2_file(resolved_test_dir_path):
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
-    source_file = CURRENT_DIR / "snapshot_report_template.jinja2"
+    source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
     destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
 
-    destination.mkdir(parents=True, exist_ok=True)
-    shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
+    try:
+        destination.mkdir(parents=True, exist_ok=True)
+        shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
+    except Exception as e:
+        print(f"[WARN] snapshot_report_template.jinja2 cannot be coppie. Exception: {e}")
 
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
@@ -92,8 +105,8 @@ def work_dir_path(fixed_tmp_path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def spec_file_dir_path(fixed_tmp_path) -> Path:
-    source_dir = CURRENT_DIR / "spec_file_for_load_test"
+def spec_file_dir_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
+    source_dir = resolved_test_dir_path / "spec_file_for_load_test"
     destination_dir = fixed_tmp_path / "spec_file_for_load_test/"
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
@@ -102,8 +115,8 @@ def spec_file_dir_path(fixed_tmp_path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def covariant_spreadsheet_path(fixed_tmp_path) -> Path:
-    source_file = CURRENT_DIR / "Covariates.xlsx"
+def covariant_spreadsheet_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
+    source_file = resolved_test_dir_path / "Covariates.xlsx"
     destination_file = fixed_tmp_path / "Covariates.xlsx"
     if os.path.exists(destination_file):
         os.remove(destination_file)
