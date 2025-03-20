@@ -185,7 +185,7 @@ jobs:
         if: ${{ failure() }}
         run: |
           echo "Checking contents of /halfpipe"
-          find / -iname "*snapshot_report_template.jinja2*"
+          find / -iname "*snapshot_report.html*"
       - name: 22List files in halfpipe directory
         run: |
           echo "Checking contents of /"
@@ -193,7 +193,7 @@ jobs:
       - name: 22Find the report
         run: |
           echo "Checking contents of /halfpipe"
-          find / -iname "*snapshot_report_template.jinja2*"
+          find / -iname "*snapshot_report.html*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
