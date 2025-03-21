@@ -173,7 +173,7 @@ jobs:
           EOF
           # Run the integration tests
           py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals'
+          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore=/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
