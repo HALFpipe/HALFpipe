@@ -172,11 +172,11 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
-          py.test tui
+          py.test HALFpipe/HALFpipe/tests/tui
           py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals'
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
-            --ignore=tui
+            --ignore=HALFpipe/HALFpipe/tests/tui
       - name: List files in halfpipe directory
         if: ${{ failure() }}
         run: |
