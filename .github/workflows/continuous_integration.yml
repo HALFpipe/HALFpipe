@@ -173,28 +173,10 @@ jobs:
           EOF
           # Run the integration tests
           py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-          py.test -k 'not test_consistency and not test_smoothing_volume and not test_workflow and not test_mode_signals' \
+          py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore=/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-      - name: List files in halfpipe directory
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /"
-          ls -R /
-      - name: Find the report
-        if: ${{ failure() }}
-        run: |
-          echo "Checking contents of /halfpipe"
-          find / -iname "*snapshot_report.html*"
-      - name: 22List files in halfpipe directory
-        run: |
-          echo "Checking contents of /"
-          ls -R /
-      - name: 22Find the report
-        run: |
-          echo "Checking contents of /halfpipe"
-          find / -iname "*snapshot_report.html*"
       - name: Upload Snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
