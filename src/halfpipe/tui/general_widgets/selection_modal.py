@@ -10,25 +10,31 @@ from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 
 class SelectionModal(DraggableModalScreen):
     """
-    SelectionModal(options=None, title="", instructions="Select", id=None, classes=None)
+    A modal dialog for making a single selection from a set of options.
+
+    This class provides a modal dialog that presents the user with a set of
+    radio buttons to choose from. It can be configured with custom options,
+    a title, and instructions. It supports both an "OK" and a "Cancel" button,
+    or just an "OK" button for mandatory selections.
 
     Parameters
     ----------
-    options : dict, optional
-        A dictionary containing the options for the radio buttons,
-        where keys are the option identifiers and values are the
-        display text for each option. If not provided, defaults to
-        {"a": "A", "b": "B"}.
+    options : dict[str, str], optional
+        A dictionary where keys are option identifiers and values are the
+        display text for each option. Defaults to {"a": "A", "b": "B"}.
     title : str, optional
-        The title of the modal window, by default an empty string.
+        The title of the modal window, by default "".
     instructions : str, optional
-        Instructions or description to be displayed at the top of
-        the modal window, by default "Select".
+        Instructions or description to be displayed at the top of the
+        modal window, by default "Select".
+    only_ok_button : bool, optional
+        If True, only an "OK" button is displayed, making a selection
+        mandatory, by default False.
     id : str, optional
         An optional identifier for the modal window, by default None.
     classes : str, optional
-        An optional string of classes for applying styles to the
-        modal window, by default None.
+        An optional string of classes for applying styles to the modal
+        window, by default None.
 
     Attributes
     ----------
@@ -36,12 +42,11 @@ class SelectionModal(DraggableModalScreen):
         Sets the title of the modal window.
     instructions : str
         Holds the instruction text for the modal window.
-    widgets_to_mount : list
+    widgets_to_mount : list[Widget]
         A list of widgets to be mounted on the modal window, including
         title, radio buttons, and OK/Cancel buttons.
-    choice : str or list
-        The selected choice from the radio buttons, defaults to a
-        placeholder "default_choice???todo".
+    choice : str | bool
+        The selected choice from the radio buttons, or False if canceled.
 
     Methods
     -------
@@ -52,10 +57,12 @@ class SelectionModal(DraggableModalScreen):
         with the current choice.
     _on_cancel_button_pressed()
         Handles the Cancel button press event, dismissing the modal
-        window with None value.
+        window with False value.
     _on_radio_set_changed(event)
         Handles the event when the radio button selection changes.
         Updates the choice attribute with the selected option key.
+    request_close()
+        Handles the event when the close button is pressed.
     """
 
     DEFAULT_CSS = """
@@ -97,6 +104,28 @@ class SelectionModal(DraggableModalScreen):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
+        """
+        Initializes the SelectionModal.
+
+        Parameters
+        ----------
+        options : dict[str, str], optional
+            A dictionary where keys are option identifiers and values are the
+            display text for each option. Defaults to {"a": "A", "b": "B"}.
+        title : str, optional
+            The title of the modal window, by default "".
+        instructions : str, optional
+            Instructions or description to be displayed at the top of the
+            modal window, by default "Select".
+        only_ok_button : bool, optional
+            If True, only an "OK" button is displayed, making a selection
+            mandatory, by default False.
+        id : str, optional
+            An optional identifier for the modal window, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the modal
+            window, by default None.
+        """
         super().__init__(id=id, classes=classes)
         self.title_bar.title = title
         self.instructions = instructions
@@ -141,28 +170,40 @@ class SelectionModal(DraggableModalScreen):
 
 class DoubleSelectionModal(SelectionModal):
     """
-    class DoubleSelectionModal(SelectionModal):
+    A modal dialog for making two selections from two sets of radio buttons.
 
-    A modal dialog that allows users to make a choice from two sets of radio buttons.
+    This class extends `SelectionModal` to provide a modal dialog that
+    presents the user with two sets of radio buttons to choose from. It
+    can be configured with custom options, a title, and instructions for
+    each set of radio buttons.
 
     Parameters
     ----------
-    options : list of dict, optional
-        A list containing two dictionaries where the keys are the unique identifiers and the values
-        are the corresponding option labels to display in the radio buttons.
+    options : list[dict[str, str]], optional
+        A list containing two dictionaries where the keys are the unique
+        identifiers and the values are the corresponding option labels to
+        display in the radio buttons.
     title : str, optional
-        The title of the modal dialog (default is an empty string).
-    instructions : list of str, optional
-        A list containing two instructions, to be displayed above each set of radio buttons.
+        The title of the modal dialog, by default "".
+    instructions : list[str], optional
+        A list containing two instructions, to be displayed above each set
+        of radio buttons.
     id : str, optional
-        The unique identifier for the modal (default is None).
+        The unique identifier for the modal, by default None.
     classes : str, optional
-        The CSS classes to apply to the modal (default is None).
+        The CSS classes to apply to the modal, by default None.
+
+    Attributes
+    ----------
+    choice : list[str | bool]
+        A list containing the selected options from each radio set, or
+        False if canceled.
 
     Methods
     -------
-    _on_radio_set_changed(self, event: RadioSet.Changed) -> None
-        Updates the internal choice state when a radio button selection is changed.
+    _on_radio_set_changed(event)
+        Updates the internal choice state when a radio button selection is
+        changed.
     """
 
     DEFAULT_CSS = """

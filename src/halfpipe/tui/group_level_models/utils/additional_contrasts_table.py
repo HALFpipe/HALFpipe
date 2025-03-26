@@ -18,6 +18,11 @@ from ...features.utils.model_conditions_and_contrasts import ContrastTableInputW
 
 
 class AdditionalContrastsCategoricalVariablesTable(Widget):
+    """With some exceptions, this is very similar to ModelConditionsAndContrasts class.
+    As a future TODO, one can make a abstract class for this and the above mentioned class.
+    For now, for more information just look at the ModelConditionsAndContrasts class.
+    """
+
     @dataclass
     class Changed(Message):
         additional_contrasts_categorical_variables_table: "AdditionalContrastsCategoricalVariablesTable"

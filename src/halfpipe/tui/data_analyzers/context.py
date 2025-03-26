@@ -18,7 +18,7 @@ class Context:
     the spec file, the database, the working directory, and a cache
     for storing various user choices. The cache is a nested dictionary with the
     following structure: Widget ID -> type of data, e.g., features, settings,
-    models and then withing these subdictionaries we have the particular user
+    models and then within these subdictionaries we have the particular user
     choices.
 
     Attributes

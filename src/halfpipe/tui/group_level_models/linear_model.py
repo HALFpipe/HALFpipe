@@ -20,10 +20,88 @@ from .utils.additional_contrasts_table import AdditionalContrastsCategoricalVari
 
 
 class LinearModel(ModelTemplate):
+    """
+    A model representing a linear group-level model.
+
+    This class extends `ModelTemplate` to provide a specific type of
+    group-level model that includes an intercept term and allows for
+    the inclusion of additional variables and interaction terms. It
+    allows users to select tasks to use, set aggregation levels, define
+    cutoff values, and specify a spreadsheet file for covariates and
+    group data.
+
+    Attributes
+    ----------
+    type : str
+        The type of the model, set to "lme" for linear model.
+    spreadsheet_filepaths : dict[str, str]
+        A dictionary mapping spreadsheet cache IDs to their file paths.
+    model_dict : dict[str, Any]
+        A dictionary containing the model's configuration, including
+        contrasts, filters, and the selected spreadsheet.
+    spreadsheet_panel : Vertical
+        A panel containing widgets for selecting and managing the
+        spreadsheet file.
+    metadata_variables : list[dict[str, Any]]
+        A list of metadata dictionaries for the variables in the
+        selected spreadsheet.
+    spreadsheet_df : pd.DataFrame
+        A pandas DataFrame containing the data from the selected
+        spreadsheet.
+    variables : list[str]
+        A list of variable names from the selected spreadsheet.
+    is_new : bool
+        A flag indicating whether the model is newly created or loaded
+        from existing data.
+    has_type_t : bool
+        A flag indicating whether the model has type 't' contrasts.
+
+    Methods
+    -------
+    __init__(this_user_selection_dict, id, classes)
+        Initializes the model with optional user selections, ID, and classes.
+    compose() -> ComposeResult
+        Composes the widget's components.
+    _on_button_select_spreadsheet_pressed()
+        Handles the event when the "Add" button for the spreadsheet is pressed.
+    _on_spreadsheet_selection_changed(message)
+        Handles changes in the selected spreadsheet.
+    _on_switch_with_select_switch_changed(message)
+        Handles changes in the switch state of a SwitchWithSelect widget.
+    _on_switch_with_select_changed(message)
+        Handles changes in the selected option of a SwitchWithSelect widget.
+    _on_level_sub_panels_selection_list_changed(message)
+        Handles changes in the selection of levels for a categorical variable.
+    _on_interaction_variables_selection_list_changed(message)
+        Handles changes in the selected interaction variables.
+    _on_interaction_terms_selection_list_changed(message)
+        Handles changes in the selected interaction terms.
+    _on_contrast_switch_changed(message)
+        Handles changes in the state of the contrast switch.
+    _on_additional_contrasts_categorical_variables_table_changed(message)
+        Handles changes in the additional contrasts table.
+    """
+
+    # Type of the model, set to "lme" for linear model.
     type = "lme"
 
     def __init__(self, this_user_selection_dict=None, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the model with optional user selections, ID, and classes.
+
+        Parameters
+        ----------
+        this_user_selection_dict : dict | None, optional
+            A dictionary containing user-specified selections for the model,
+            by default None.
+        id : str | None, optional
+            An optional identifier for the model, by default None.
+        classes : str | None, optional
+            An optional string of classes for applying styles to the model,
+            by default None.
+        """
         super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
+        # A dictionary mapping spreadsheet cache IDs to their file paths.
         self.spreadsheet_filepaths: dict[str, str] = {}
         self.model_dict.setdefault("contrasts", [])
         self.model_dict.setdefault("filters", [])
@@ -68,6 +146,14 @@ class LinearModel(ModelTemplate):
 
     @on(Button.Pressed, "#add_spreadsheet")
     async def _on_button_select_spreadsheet_pressed(self):
+        """
+        Handles the event when the "Add" button for the spreadsheet is pressed.
+
+        This method pushes the `AddSpreadsheetModal` onto the screen to
+        allow the user to select a spreadsheet file. It then updates the
+        spreadsheet selection widget with the newly selected file.
+        """
+
         def update_spreadsheet_label(new_spreadsheet_selection):
             if new_spreadsheet_selection is not False:
                 self.spreadsheet_filepaths[new_spreadsheet_selection[0]] = new_spreadsheet_selection[1]
@@ -81,6 +167,21 @@ class LinearModel(ModelTemplate):
 
     @on(Select.Changed, "#spreadsheet_selection")
     async def _on_spreadsheet_selection_changed(self, message):
+        """
+        Handles changes in the selected spreadsheet.
+
+        This method is called when the user selects a different
+        spreadsheet from the `Select` widget. It updates the model's
+        configuration based on the selected spreadsheet, including
+        loading metadata, setting up filters, and creating widgets for
+        variable selection and interaction terms.
+
+        Parameters
+        ----------
+        message : Select.Changed
+            The message object containing information about the selection
+            change.
+        """
         # First remove and deleting everything to start fresh. If there is not value selected, nothing will load.
         if widget_exists(self, "top_levels_panel") is True:
             await self.get_widget_by_id("top_levels_panel").remove()
@@ -294,6 +395,19 @@ class LinearModel(ModelTemplate):
 
     @on(SwitchWithSelect.SwitchChanged, ".additional_preprocessing_settings")
     def _on_switch_with_select_switch_changed(self, message):
+        """
+        Handles changes in the switch state of a SwitchWithSelect widget.
+
+        This method is called when the switch state changes in a
+        `SwitchWithSelect` (Additional preprocessing settings) widget.
+        It adds or removes variables from the model based on the switch state.
+
+        Parameters
+        ----------
+        message : SwitchWithSelect.SwitchChanged
+            The message object containing information about the switch
+            state change.
+        """
         contrast_item = {"type": "infer", "variable": [message.control.id[:-11]]}
         if message.switch_value is True:
             self.model_dict["contrasts"].append(contrast_item)
@@ -302,6 +416,20 @@ class LinearModel(ModelTemplate):
 
     @on(SwitchWithSelect.Changed, ".additional_preprocessing_settings")
     def _on_switch_with_select_changed(self, message):
+        """
+        Handles changes in the selected option of a SwitchWithSelect
+        (Additional preprocessing settings) widget.
+
+        This method is called when the selected option changes in a
+        `SwitchWithSelect` widget. It selects am action for missing values
+        based on the selected option.
+
+        Parameters
+        ----------
+        message : SwitchWithSelect.Changed
+            The message object containing information about the option
+            change.
+        """
         filter_item = {"type": "missing", "action": "exclude", "variable": message.control.id[:-11]}
         if message.value == "listwise_deletion" and filter_item not in self.model_dict["filters"]:
             self.model_dict["filters"].append(filter_item)
@@ -310,6 +438,20 @@ class LinearModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, ".level_selection")
     def _on_level_sub_panels_selection_list_changed(self, message):
+        """
+        Handles changes in the selection of subjects (types) levels for a categorical variable.
+
+        This method is called when the selection changes in a
+        `SelectionList` widget representing the levels of a categorical
+        variable. It updates the model's filters to reflect the selected
+        levels.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectedChanged
+            The message object containing information about the selection
+            change.
+        """
         variable_name = message.control.id[:-6]
         for f in self.model_dict["filters"]:
             if f.get("type") == "group" and f.get("variable") == variable_name:
@@ -322,6 +464,19 @@ class LinearModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, "#interaction_variables_selection_panel")
     def _on_interaction_variables_selection_list_changed(self, message):
+        """
+        Handles changes in the selected interaction variables.
+
+        This method is called when the selection changes in the
+        `SelectionList` widget for interaction variables. It updates the
+        available interaction terms based on the selected variables.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectedChanged
+            The message object containing information about the selection
+            change.
+        """
         nvar = len(message.control.selected)
         terms = list(chain.from_iterable(combinations(message.control.selected, i) for i in range(2, nvar + 1)))
         term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
@@ -337,6 +492,19 @@ class LinearModel(ModelTemplate):
 
     @on(SelectionList.SelectedChanged, "#interaction_terms_selection_panel")
     def _on_interaction_terms_selection_list_changed(self, message):
+        """
+        Handles changes in the selected interaction terms.
+
+        This method is called when the selection changes in the
+        `SelectionList` widget for interaction terms. It updates the
+        model's contrasts to reflect the selected interaction terms.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectedChanged
+            The message object containing information about the selection
+            change.
+        """
         # first remove all interaction terms
         self.model_dict["contrasts"] = list(
             filter(
@@ -351,6 +519,19 @@ class LinearModel(ModelTemplate):
 
     @on(TextSwitch.Changed, "#contrast_switch")
     async def _on_contrast_switch_changed(self, message):
+        """
+        Handles changes in the state of the contrast switch.
+
+        This method is called when the state of the contrast switch
+        changes. It dynamically adds or removes `AdditionalContrastsCategoricalVariablesTable`
+        widgets for each categorical variable based on the switch state.
+
+        Parameters
+        ----------
+        message : TextSwitch.Changed
+            The message object containing information about the switch
+            state change.
+        """
         only_categorical_metadata = list(filter(lambda item: item["type"] == "categorical", self.metadata_variables))
         self.categorical_variables_list = [element["name"] for element in only_categorical_metadata]
 
@@ -380,6 +561,19 @@ class LinearModel(ModelTemplate):
 
     @on(AdditionalContrastsCategoricalVariablesTable.Changed)
     def _on_additional_contrasts_categorical_variables_table_changed(self, message):
+        """
+        Handles changes in the additional contrasts table.
+
+        This method is called when the `AdditionalContrastsCategoricalVariablesTable`
+        widget changes. It updates the model's contrasts to reflect the
+        changes made in the table.
+
+        Parameters
+        ----------
+        message : AdditionalContrastsCategoricalVariablesTable.Changed
+            The message object containing information about the table
+            change.
+        """
         # this will delete all previous contrasts type 't' of the particular contraste variable. This is done because
         # in the next line we fill it again based on what is actually in the table.
         self.model_dict["contrasts"] = [

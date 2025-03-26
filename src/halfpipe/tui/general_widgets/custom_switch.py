@@ -13,38 +13,7 @@ from textual.widgets._switch import Switch  # Make sure this import path is corr
 
 class MyScrollBarRender(ScrollBarRender):
     """
-    class MyScrollBarRender(ScrollBarRender):
-
-    Render a scrollbar with ON/OFF text.
-
-    Parameters
-    ----------
-    size : int, optional
-        The length of the scrollbar (default is 25).
-    virtual_size : float, optional
-        The total virtual size of the content being scrolled (default is 100).
-    window_size : float, optional
-        The size of the visible window onto the virtual content (default is 20).
-    position : float, optional
-        The current scroll position (default is 0).
-    thickness : int, optional
-        The thickness of the scrollbar in characters (default is 1).
-    vertical : bool, optional
-        Whether the scrollbar should be rendered vertically or horizontally (default is True).
-    back_color : Color, optional
-        The background color of the scrollbar (default is a dark grey color).
-    bar_color : Color, optional
-        The color of the scrollbar thumb (default is a bright magenta color).
-
-    Returns
-    -------
-    Segments
-        A Segments object containing segments representing the rendered scrollbar.
-
-    Notes
-    -----
-    The method calculates the size and position of the scrollbar thumb based on the provided parameters.
-    It generates different segment characters to provide a smooth scrolling effect and includes mouse interaction metadata.
+    Renders the scrollbar with ON/OFF text. For more see ScrollBarRender.
     """
 
     @classmethod
@@ -163,13 +132,7 @@ class MyScrollBarRender(ScrollBarRender):
 
 class MyScrollBar(Widget):
     """
-    MyScrollBar
-     A custom scrollbar widget implementation that renders using the specified ScrollBarRender class.
-
-    Attributes
-    ----------
-    renderer : Type[ScrollBarRender]
-        Class variable defining the renderer class for the scrollbar, set to MyScrollBarRender.
+    This is just needed so that we can provide the modified rendered. `MyScrollBarRender`
     """
 
     renderer: ClassVar[Type[ScrollBarRender]] = MyScrollBarRender
@@ -179,7 +142,11 @@ class TextSwitch(Switch):
     """
     TextSwitch(Switch)
 
-    A custom switch component that renders a scrollbar-like slider with ON/OFF text.
+    A custom switch that renders ON/OFF labels over the colored bars. Essenstially
+    is the same as parent `Switch` the renderer needed small modifications. Hence
+    the function `render` is here overriding the oroginal function only to reroute
+    the renderer to the custom one. The `watch_value` needed different duration
+    times as original, hence it is also here.
 
     Methods
     -------

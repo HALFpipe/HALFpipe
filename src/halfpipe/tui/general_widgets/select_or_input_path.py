@@ -25,6 +25,8 @@ SelectOption: TypeAlias = "tuple[str, SelectType]"
 
 def find_common_start(strings):
     """
+    Finds the longest common starting substring among a list of strings.
+
     Parameters
     ----------
     strings : list of str
@@ -51,12 +53,20 @@ def find_common_start(strings):
 
 def create_path_option_list(base="/home/tomas/github/", include_base=False):
     """
+    Creates a list of file paths within a specified base directory.
+
     Parameters
     ----------
     base : str, optional
         The base directory path, default is "/home/tomas/github/".
     include_base : bool, optional
-        Determines whether to include the base directory in the returned list, default is False.
+        Determines whether to include the base directory in the returned list,
+        default is False.
+
+    Returns
+    -------
+    list[str]
+        A sorted list of file paths found within the base directory.
     """
     filepaths = [base] if include_base else []
     if os.access(base, os.W_OK):
@@ -71,30 +81,30 @@ def create_path_option_list(base="/home/tomas/github/", include_base=False):
 
 class SelectOverlay(OptionList):
     """
-    class SelectOverlay(OptionList):
-        A class representing an overlay for selecting options, extending OptionList.
+    An overlay for selecting options, extending OptionList.
+
+    This class provides an overlay that displays a list of options,
+    allowing the user to select one. It supports dismissing the overlay
+    and updating the selection.
 
     Attributes
     ----------
-    BINDINGS : list
-        Key bindings specific for the overlay, such as the escape key to dismiss.
+    BINDINGS : list[tuple[str, str]]
+        Key bindings specific for the overlay, such as the escape key to
+        dismiss.
 
     Methods
     -------
-    select(index: int | None)
-        Move selection.
-
+    select(index)
+        Highlights the option at the given index.
     action_dismiss()
-        Dismiss the overlay.
-
-    _on_blur(self, _event: events.Blur)
-        Dismiss the overlay when it loses focus.
-
-    on_option_list_option_selected(self, event: OptionList.OptionSelected)
-        Inform parent when an option is selected.
-
-    async on_key(self, event: events.Key)
-        Handle key events within the overlay.
+        Dismisses the overlay.
+    _on_blur(_event)
+        Dismisses the overlay when it loses focus.
+    on_option_list_option_selected(event)
+        Informs the parent when an option is selected.
+    on_key(event)
+        Handles key events within the overlay.
     """
 
     BINDINGS = [("escape", "dismiss")]
@@ -180,9 +190,9 @@ class SelectOverlay(OptionList):
 
 class MyInput(Input):
     """
-    MyInput(shrink=True, id=None, classes=None)
-
     A custom input class that allows additional functionality such as shrink.
+
+    This class extends `Input` to provide a customizable input field.
 
     Parameters
     ----------
@@ -192,6 +202,11 @@ class MyInput(Input):
         An optional identifier for the input instance, by default None.
     classes : str or None, optional
         Additional CSS classes to apply to the input instance, by default None.
+
+    Methods
+    -------
+    _on_click(event)
+        Informs the parent that a click event occurred.
     """
 
     def __init__(self, shrink: bool = True, id: str | None = None, classes: str | None = None, **kwargs) -> None:
@@ -208,7 +223,14 @@ class MyInput(Input):
 
 class MyStatic(Static):
     """
-    class Toggle(Message):
+    A custom static class that allows additional functionality such as toggle.
+
+    This class extends `Static` to provide a customizable static field.
+
+    Methods
+    -------
+    _on_click(event)
+        Informs the parent that a click event occurred.
     """
 
     class Toggle(Message):
@@ -221,15 +243,33 @@ class MyStatic(Static):
 
 class SelectCurrentWithInput(Horizontal):
     """
-    A custom widget that combines a selectable input field with additional
-    UI elements, such as toggling arrows, and handles various user interactions.
+    A custom widget that combines Input field and toggle arrows.
+
+    This widget combines an input field (`MyInput`) with static elements
+    (`MyStatic`) to create a custom selection interface. It handles
+    various user interactions and provides messages for communication.
 
     Attributes
     ----------
     DEFAULT_CSS : str
         Default CSS styling for the widget.
     has_value : var[bool]
-        A flag indicating whether the input field
+        A flag indicating whether the input field has a value.
+
+    Methods
+    -------
+    __init__(placeholder, id, classes)
+        Initializes the widget with a placeholder, ID, and classes.
+    compose() -> ComposeResult
+        Composes the widget's components.
+    update(new_placeholder)
+        Updates the content in the widget.
+    on_input_changed(message)
+        Handles changes in the input field.
+    on_key(event)
+        Handles key events.
+    _watch_has_value(has_value)
+        Toggles the class based on the `has_value` attribute.
     """
 
     DEFAULT_CSS = """
@@ -286,6 +326,18 @@ class SelectCurrentWithInput(Horizontal):
         """Request toggle overlay."""
 
     def __init__(self, placeholder: str, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the widget with a placeholder, ID, and classes.
+
+        Parameters
+        ----------
+        placeholder : str
+            The placeholder text for the input field.
+        id : str | None, optional
+            The ID of the widget, by default None.
+        classes : str | None, optional
+            CSS classes for the widget, by default None.
+        """
         super().__init__(id=id, classes=classes)
         self.placeholder = placeholder
 
@@ -295,10 +347,13 @@ class SelectCurrentWithInput(Horizontal):
         yield MyStatic("▲", classes="arrow up-arrow")
 
     def update(self, new_placeholder: RenderableType | NoSelection) -> None:
-        """Update the content in the widget.
+        """
+        Updates the content in the widget.
 
-        Args:
-            label: A renderable to display, or `None` for the placeholder.
+        Parameters
+        ----------
+        new_placeholder : RenderableType | NoSelection
+            A renderable to display, or `NoSelection` for the placeholder.
         """
         self.new_placeholder = new_placeholder
         # This will change the MyInput widget value also and triggers "on_input_changed"
@@ -307,8 +362,14 @@ class SelectCurrentWithInput(Horizontal):
         )
 
     def on_input_changed(self, message):
-        """When user types to prompt this method is triggered.
+        """
+        Handles changes in the input field. When user types to prompt this method is triggered.
         when user selects option this method is triggered.
+
+        Parameters
+        ----------
+        message : Input.Changed
+            The message object containing information about the input change.
         """
         path = self.get_widget_by_id("input_prompt").value
         self.post_message(self.PromptChanged(path))
@@ -325,13 +386,65 @@ class SelectCurrentWithInput(Horizontal):
 
 class SelectOrInputPath(Select):
     """
-    SelectOrInputPath: A customizable selection widget that allows users to either select from a list or input a path.
+    A customizable selection widget that allows users to either select from a list or input a path.
+
+    This class extends `Select` to provide a selection widget that
+    combines a list of options with an input field for custom paths.
 
     Attributes
     ----------
     DEFAULT_CSS : str
         The default CSS styling for the widget.
     expanded : var[bool]
+        True to show the overlay, otherwise False.
+    prompt : var[str]
+        The prompt to show when no value is selected.
+    value : var[SelectType | NoSelection]
+        The value of the selection.
+    input_class : type[SelectCurrentWithInput]
+        The class used for the input field.
+
+    Methods
+    -------
+    __init__(options, prompt_default, top_parent, id, classes)
+        Initializes the widget with options, a default prompt, and other
+        parameters.
+    prepare_compose()
+        Prepares the components to be composed.
+    compose() -> ComposeResult
+        Composes the widget's components.
+    _setup_variables_for_options(options)
+        Sets up the variables for the options.
+    _setup_options_renderables()
+        Sets up the Option renderables.
+    _init_selected_option(hint)
+        Initializes the selected option.
+    on_key(event)
+        Handles key events.
+    _select_current_with_input_prompt_close_overlay(event)
+        Handles the event when the overlay is closed.
+    _select_current_with_input_prompt_changed(event)
+        Handles changes in the input prompt.
+    _update_selection(event)
+        Updates the current selection.
+    _select_overlay_typing(event)
+        Passes the typing activity on overlay to the main widget.
+    _my_input_toggle(event)
+        Handles the toggle event from MyInput.
+    _my_static_toggle(event)
+        Handles the toggle event from MyStatic.
+    _watch_value(value)
+        Updates the current value when it changes.
+    _watch_expanded(expanded)
+        Displays or hides the overlay.
+    _watch_prompt(prompt)
+        Handles changes in the prompt.
+    action_show_overlay()
+        Shows the overlay.
+    _validate_value(value)
+        Validates the value.
+    change_prompt_from_parrent(new_value)
+        Changes the prompt.
     """
 
     DEFAULT_CSS = """
@@ -385,6 +498,24 @@ class SelectOrInputPath(Select):
         value: str
 
     def __init__(self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None):
+        """
+        Initializes the SelectOrInputPath widget.
+
+        Parameters
+        ----------
+        options : Iterable[tuple[RenderableType, SelectType]]
+            An iterable of tuples, where each tuple contains a renderable
+            prompt and a value.
+        prompt_default : str, optional
+            The default prompt to display when no value is selected,
+            by default "".
+        top_parent : Widget | None, optional
+            The parent widget, by default None.
+        id : str | None, optional
+            The ID of the widget, by default None.
+        classes : str | None, optional
+            CSS classes for the widget, by default None.
+        """
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
         super().__init__(options, prompt=prompt_default, id=id, classes=classes)
         self.top_parent = top_parent
@@ -405,9 +536,20 @@ class SelectOrInputPath(Select):
         self,
         options: Iterable[tuple[RenderableType, SelectType]],
     ) -> None:
-        """Setup function for the auxiliary variables related to options.
+        """
+        Sets up the variables for the options.
 
-        This method sets up `self._options` and `self._legal_values`.
+        This method initializes the `_options` and `_legal_values` attributes based on the provided options.
+
+        Parameters
+        ----------
+        options : Iterable[tuple[RenderableType, SelectType]]
+            An iterable of tuples, where each tuple contains a renderable prompt and a value.
+
+        Raises
+        ------
+        EmptySelectError
+            If the options list is empty and blank selection is not allowed.
         """
         self._options: list[tuple[RenderableType, SelectType | NoSelection]] = []
         self._options.extend(options)
@@ -418,7 +560,10 @@ class SelectOrInputPath(Select):
         self._legal_values: set[SelectType | NoSelection] = {value for _, value in self._options}
 
     def _setup_options_renderables(self) -> None:
-        """Sets up the `Option` renderables associated with the `Select` options."""
+        """Sets up the `Option` renderables associated with the `Select` options.
+
+        This method creates `Option` instances for each option and adds them to the `SelectOverlay`.
+        """
         # if _allow_blank is true, then the self.BLANK is appended and here we use it to put the default into the options
         self._select_options: list[Option] = [
             (Option(Text(self.prompt_default, style="dim")) if value == self.prompt_default else Option(prompt))
@@ -431,14 +576,29 @@ class SelectOrInputPath(Select):
             option_list.add_option(option)
 
     def _init_selected_option(self, hint) -> None:
-        """Initialises the selected option for the `Select`."""
+        """Initialises the selected option for the `Select`.
+
+        Parameters
+        ----------
+        hint : SelectType
+            The value to select.
+        """
         # If allow_blank then no default is available and use first option in the list
         if hint == "" and self._allow_blank:
             hint = self._options[0][1]
         self.value = hint
 
     async def on_key(self, event: events.Key) -> None:
-        """Called when the user presses a key."""
+        """
+        Handles key events within the widget.
+
+        This method handles key presses for path suggestions, closing the overlay, and opening the overlay.
+
+        Parameters
+        ----------
+        event : events.Key
+            The key event.
+        """
         # Path suggestions
         if event.key == "shift+right":
             select_current = self.query_one(self.input_class)
@@ -463,14 +623,33 @@ class SelectOrInputPath(Select):
 
     @on(input_class.PromptCloseOverlay)
     def _select_current_with_input_prompt_close_overlay(self, event: SelectCurrentWithInput.PromptCloseOverlay):
-        """When the Overlay is closed while the focus is on the input widget, keep the overlay closed."""
+        """
+        Handles the event when the overlay is closed.
+
+        This method is called when the `PromptCloseOverlay` message is received from the `SelectCurrentWithInput` widget.
+        It ensures that the overlay remains closed.
+
+        Parameters
+        ----------
+        event : SelectCurrentWithInput.PromptCloseOverlay
+            The message object.
+        """
         if self.input_class == SelectCurrentWithInput:
             self.expanded = False
 
     @on(input_class.PromptChanged)
     def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
-        """Runs when input prompt is changed."""
+        """
+        Handles changes in the input prompt.
 
+        This method is called when the `PromptChanged` message is received from the `SelectCurrentWithInput` widget.
+        It updates the widget's value and provides path suggestions based on the user's input.
+
+        Parameters
+        ----------
+        event : SelectCurrentWithInput.PromptChanged
+            The message object.
+        """
         if self.input_class == SelectCurrentWithInput:
             path = event.value
             self.value = path
@@ -504,7 +683,17 @@ class SelectOrInputPath(Select):
 
     @on(SelectOverlay.UpdateSelection)
     def _update_selection(self, event: SelectOverlay.UpdateSelection) -> None:
-        """Update the current selection."""
+        """
+        Updates the current selection.
+
+        This method is called when the `UpdateSelection` message is received from the `SelectOverlay` widget.
+        It updates the widget's value based on the selected option.
+
+        Parameters
+        ----------
+        event : SelectOverlay.UpdateSelection
+            The message object.
+        """
         event.stop()
         value = self._options[event.option_index][1]
         if value != self.value:
@@ -513,7 +702,17 @@ class SelectOrInputPath(Select):
 
     @on(SelectOverlay.Typing)
     async def _select_overlay_typing(self, event: SelectOverlay.Typing):
-        """Passes the typing activity on overlay to the main widget and update the path."""
+        """
+        Passes the typing activity on overlay to the main widget and update the path.
+
+        This method is called when the `Typing` message is received from the `SelectOverlay` widget.
+        It updates the input field with the typed characters.
+
+        Parameters
+        ----------
+        event : SelectOverlay.Typing
+            The message object.
+        """
         select_current = self.query_one(self.input_class)
         #  myinput = select_current.query_one(MyInput)
         myinput = select_current.get_widget_by_id("input_prompt")
@@ -531,17 +730,50 @@ class SelectOrInputPath(Select):
 
     @on(MyInput.Toggle)
     def _my_input_toggle(self, event: MyInput.Toggle):
+        """
+        Handles the toggle event from MyInput.
+
+        This method is called when the `Toggle` message is received from the `MyInput` widget.
+        It toggles the expanded state of the widget.
+
+        Parameters
+        ----------
+        event : MyInput.Toggle
+            The message object.
+        """
         event.stop()
         self.expanded = not self.expanded
 
     @on(MyStatic.Toggle)
     def _my_static_toggle(self, event: MyStatic.Toggle):
+        """
+        Handles the toggle event from MyStatic.
+
+        This method is called when the `Toggle` message is received from the `MyStatic` widget.
+        It toggles the expanded state of the widget.
+
+        Parameters
+        ----------
+        event : MyStatic.Toggle
+            The message object.
+        """
         event.stop()
         self.expanded = not self.expanded
 
     # this is when a selection is made to update the input (prompt)
     def _watch_value(self, value: SelectType | NoSelection) -> None:
-        """Update the current value when it changes."""
+        """
+        Updates the current value when it changes.
+
+        This method is called when the `value` reactive attribute changes.
+        It updates the input field with the new value and highlights the
+        corresponding option in the overlay.
+
+        Parameters
+        ----------
+        value : SelectType | NoSelection
+            The new value.
+        """
         # When user selects option this is triggered
         self._value = str(value)
         select_current = self.query_one(self.input_class)
@@ -554,7 +786,17 @@ class SelectOrInputPath(Select):
         self.post_message(self.PromptChanged(self.value))
 
     def _watch_expanded(self, expanded: bool) -> None:
-        """Display or hide overlay."""
+        """
+        Displays or hides the overlay.
+
+        This method is called when the `expanded` reactive attribute changes.
+        It shows or hides the overlay based on the new value.
+
+        Parameters
+        ----------
+        expanded : bool
+            True to show the overlay, False to hide it.
+        """
         # unchanged from the super, except SelectCurrent > self.input_class and no BLANK
         overlay = self.query_one(SelectOverlay)
         self.set_class(expanded, "-expanded")
@@ -570,7 +812,19 @@ class SelectOrInputPath(Select):
             select_current.has_value = True
 
     def _watch_prompt(self, prompt: str) -> None:
-        """Prompt variable is not used in this subclass"""
+        """
+        Handles changes in the prompt.
+
+        This method is called when the `prompt` reactive attribute changes.
+        Prompt variable is not used in this child subclass, so we override it to
+        do nothing.
+
+        Parameters
+        ----------
+        prompt : str
+            The new prompt value.
+        """
+        pass
 
     def action_show_overlay(self) -> None:
         """Show the overlay."""
@@ -578,9 +832,36 @@ class SelectOrInputPath(Select):
         self.expanded = True
 
     def _validate_value(self, value: SelectType | NoSelection) -> SelectType | NoSelection:
+        """
+        Validates the value.
+
+        This method is called to validate the value before it is set.
+        In this implementation, it simply returns the value unchanged.
+
+        Parameters
+        ----------
+        value : SelectType | NoSelection
+            The value to validate.
+
+        Returns
+        -------
+        SelectType | NoSelection
+            The validated value.
+        """
         return value
 
     def change_prompt_from_parrent(self, new_value):
+        """
+        Changes the prompt from the parent.
+
+        This method is called to change the prompt value from a parent widget.
+        It updates the input field with the new value.
+
+        Parameters
+        ----------
+        new_value : str
+            The new prompt value.
+        """
         if new_value != "/":
             if os.path.isdir(new_value):
                 new_value += "/"

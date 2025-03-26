@@ -3,7 +3,6 @@
 
 from textual import on
 from textual.containers import Grid, Vertical
-from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Input, SelectionList, Static, Switch
 from textual.widgets.selection_list import Selection
@@ -18,57 +17,36 @@ aggregate_order = ["dir", "run", "ses", "task"]
 
 class ModelTemplate(Widget):
     """
-    FeatureTemplate
+    Base class for creating and managing group-level model settings and selections.
 
-    A widget for creating and managing feature-based settings and selections within a user interface. This widget
-    handles both the initialization of a new widget and the loading of settings from a specification file, adapting
-    its behavior accordingly.
+    This widget provides a foundation for building user interface components that
+    allow users to configure and select various settings related to a specific
+    group-level model. It handles the initialization of new widgets, loading settings from
+    specification files, and managing model options.
 
     Attributes
     ----------
-    entity : str
-        An identifier for the type of entity the widget interacts with.
-    filters : dict
-        A dictionary specifying the datatype and suffix to filter the database queries.
-    featurefield : str
-        The specific feature field in the settings.
     type : str
-        The type of the feature.
-    file_panel_class : type
-        The class used for the file panel within this widget.
-    feature_dict : dict
-        A dictionary containing feature-specific settings and values.
-    setting_dict : dict
-        A dictionary containing general settings and configuration values.
-    event_file_pattern_counter : int
-        A counter for file patterns.
-    tagvals : list
-        A list of available tags for selection.
-    bandpass_filter_low_key : str
-        The key for the low-pass filter setting.
-    bandpass_filter_high_key : str
-        The key for the high-pass filter setting.
-    images_to_use : dict
-        A dictionary specifying which images to use, keyed by task.
-    confounds_options : dict
-        Available options for confounds removal, with their descriptions and default states.
-    preprocessing_panel : Vertical
-        A panel containing pre-processing options such as smoothing, mean scaling, and temporal filtering.
-    images_to_use_selection_panel : SelectionList
-        A panel containing the selection list of images to use.
-    tag_panel : SelectionList
-        A panel containing the selection list of tags.
-
-    Methods
-    -------
-    __init__(this_user_selection_dict, id=None, classes=None)
-        Initializes the widget with user selections and settings.
-    compose()
-        Composes the user interface elements within the widget.
-    on_file_panel_file_item_is_deleted(message)
-        Handles the event when a file item is deleted from the file panel.
-    on_file_panel_changed(message)
-        Handles the event when the file panel changes, updating the tag selection.
+        The type of the model (e.g., "group_level").
+    bold_filedict : dict
+        A dictionary specifying the datatype and suffix for bold files.
+    aggregate_order : list[str]
+        A list defining the order of aggregation entities.
+    model_dict : dict
+        A dictionary containing model-specific settings and values.
+    is_new : bool
+        A flag indicating whether a new model is being created.
+    tasks_to_use : dict | None
+        A dictionary specifying which tasks to use, keyed by task name.
+        Values are boolean (True if selected).
+    tasks_to_use_selection_panel : SelectionList
+        A panel containing the selection list of tasks to use.
+    cutoff_panel : Vertical
+        A panel containing cutoff options for excluding subjects.
+    aggregate_panel : Vertical
+        A panel containing options for aggregating data.
+    default_cutoff_filter_values : list[dict]
+        Default values for cutoff filters.
     """
 
     type: str = ""
@@ -76,10 +54,24 @@ class ModelTemplate(Widget):
     aggregate_order = ["dir", "run", "ses", "task"]
 
     def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
-        """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
-        this_user_selection_dict is empty and the nested keys need some initialization. On the other
-        hand, if a new widget is created automatically on spec file load then this dictionary is not empty and these
-        values are then used for the various widgets within this widget.
+        """
+        Initializes the ModelTemplate widget.
+
+        This constructor sets up the widget's internal state, including model
+        settings, task selection, cutoff options, and aggregation settings. It
+        handles both the creation of new models and the loading of settings
+        from a specification file.
+
+        Parameters
+        ----------
+        this_user_selection_dict : dict
+            A dictionary containing user selections and settings. It should have
+            a key "models".
+        id : str, optional
+            An optional identifier for the widget, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the widget, by
+            default None.
         """
         super().__init__(id=id, classes=classes)
         # The variable "is_new" is a flag that signals whether we are loading (or copying) or just creating a completely
@@ -191,6 +183,13 @@ class ModelTemplate(Widget):
         )
 
     async def on_mount(self) -> None:
+        """
+        Handles actions to be taken when the component is mounted in the GUI.
+
+        This method is called when the widget is mounted to the
+        application. It sets the border titles for the selection lists and panels.
+        It also hides the fd cutoff filter widgets if the cutoff switch is off.
+        """
         if self.tasks_to_use is not None:
             self.get_widget_by_id("tasks_to_use_selection").border_title = "Features to use"
             self.get_widget_by_id("top_aggregate_panel").border_title = "Aggregate"
@@ -199,20 +198,56 @@ class ModelTemplate(Widget):
         if not self.get_widget_by_id("exclude_subjects").value:
             self.hide_fd_filters()
 
-    @on(Input.Changed, "#cutoff_fd_mean")
-    def _on_cutoff_fd_mean_input_changed(self, message: Message):
+    def _on_cutoff_fd_mean_input_changed(self, message: Input.Changed) -> None:
+        """
+        Handles changes in the fd mean cutoff input.
+
+        This method is called when the value of the `Input` widget with the ID
+        "cutoff_fd_mean" changes. It updates the `model_dict` with the new
+        cutoff value for the fd mean.
+
+        Parameters
+        ----------
+        message : Input.Changed
+            The message object containing information about the change.
+        """
         for f in self.model_dict["filters"]:
             if f.get("field") == "fd_mean":
                 f["cutoff"] = message.value
 
     @on(Input.Changed, "#cutoff_fd_perc")
-    def _on_cutoff_fd_perc_input_changed(self, message: Message):
+    def _on_cutoff_fd_perc_input_changed(self, message: Input.Changed) -> None:
+        """
+        Handles changes in the fd percentage cutoff input.
+
+        This method is called when the value of the `Input` widget with the ID
+        "cutoff_fd_perc" changes. It updates the `model_dict` with the new
+        cutoff value for the fd percentage.
+
+        Parameters
+        ----------
+        message : Input.Changed
+            The message object containing information about the change.
+        """
         for f in self.model_dict["filters"]:
             if f.get("field") == "fd_perc":
                 f["cutoff"] = message.value
 
     @on(Switch.Changed, "#exclude_subjects")
-    def on_exclude_subjects_switch_changed(self, message: Message):
+    def on_exclude_subjects_switch_changed(self, message: Switch.Changed) -> None:
+        """
+        Handles changes in the exclude subjects switch.
+
+        This method is called when the state of the `Switch` widget with the
+        ID "exclude_subjects" changes. It toggles the visibility of the
+        fd cutoff filter widgets and updates the `model_dict`
+        accordingly.
+
+        Parameters
+        ----------
+        message : Switch.Changed
+            The message object containing information about the change.
+        """
         if message.value is True:
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
             self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "visible"
@@ -222,13 +257,32 @@ class ModelTemplate(Widget):
             self.hide_fd_filters()
 
     def hide_fd_filters(self):
+        """
+        Hides the fd cutoff filter widgets.
+
+        This method hides the fd mean and percentage cutoff filter widgets and
+        removes the corresponding filters from the `model_dict`.
+        """
         self.model_dict["filters"] = [f for f in self.model_dict["filters"] if f["type"] != "cutoff"]
         self.get_widget_by_id("cutoff_fd_mean_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_fd_perc_panel").styles.visibility = "hidden"
         self.get_widget_by_id("cutoff_panel").styles.height = 7
 
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
-    def _on_tasks_to_use_selection_changed(self, message):
+    def _on_tasks_to_use_selection_changed(self, message) -> None:
+        """
+        Handles changes in the tasks to use selection list.
+
+        This method is called when the selection in the `SelectionList`
+        widget with the ID "tasks_to_use_selection" changes. It ensures
+        that at least one task is selected. If no task is selected, it
+        displays an error message and reselects the previously selected task.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectionToggled
+            The message object containing information about the change.
+        """
         if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
@@ -244,7 +298,22 @@ class ModelTemplate(Widget):
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
     @on(SelectionList.SelectedChanged, "#aggregate_selection_list")
-    def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message):
+    def _on_aggregate__selection_or_tasks_to_use_selection_list_changed(self, message) -> None:
+        """
+        Handles changes in the tasks to use or aggregate selection lists.
+
+        This method is called when the selection in either the
+        `SelectionList` widget with the ID "tasks_to_use_selection" or
+        "aggregate_selection_list" changes. It updates the `model_dict`
+        with the selected tasks and aggregation entities. It also
+        dynamically creates aggregation models and stores them in the
+        context cache.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectedChanged
+            The message object containing information about the change.
+        """
         # We need to run this function also in case when the Task selection is changed because this influence also the models
         # that are aggregated and at the end which models are aggregated.
         self.model_dict["inputs"] = self.get_widget_by_id("tasks_to_use_selection").selected

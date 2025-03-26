@@ -26,14 +26,17 @@ p = inflect.engine()
 
 class TypeNameItem:
     """
-    TypeNameItem class to represent a feature with a type and name.
+    Represents an item with a type and a name.
+
+    This class is a simple data structure used to store the type and name
+    of an item, such as a feature or a model.
 
     Attributes
     ----------
     type : str
-        The type of the feature.
+        The type of the item.
     name : str
-        The name of the feature.
+        The name of the item.
     """
 
     def __init__(self, _type, name):
@@ -42,6 +45,36 @@ class TypeNameItem:
 
 
 class SelectionTemplate(Widget):
+    """
+    Base class for managing a selection of items (e.g., features, models).
+
+    This widget provides a foundation for building user interface components
+    that allow users to manage a list of items, including adding, deleting,
+    renaming, and duplicating them. It uses a sidebar with collapsible
+    sections to organize items by type and a content switcher to display
+    the details of the selected item.
+
+    Attributes
+    ----------
+    ITEM_MAP : dict[str, str]
+        A dictionary mapping item types (keys) to their display names (values).
+        This should be defined in subclasses.
+    BINDINGS : list[tuple[str, str, str]]
+        A list of key bindings for the widget.
+    current_order : list[str]
+        The current order of sorting for the items.
+    ITEM_KEY : str | None
+        The key used to access item-specific data in the cache.
+        This should be defined in subclasses.
+    SETTING_KEY : str | None
+        An optional key used to access settings-specific data in the cache.
+        This is only used in some subclasses.
+    _id_counter : int
+        A counter used to generate unique IDs for new items.
+    feature_items : dict[str, TypeNameItem]
+        A dictionary mapping item IDs to `TypeNameItem` objects.
+    """
+
     ITEM_MAP: dict[str, str] = {}
     BINDINGS = [("a", "add_item", "Add"), ("d", "delete_feature", "Delete")]
     current_order = ["name", "type"]
@@ -49,15 +82,44 @@ class SelectionTemplate(Widget):
     SETTING_KEY: None | str = None  # Optional, only used in some child classes
 
     def __init__(self, disabled=False, **kwargs) -> None:
-        """Each created widget needs to have a unique id, even after deletion it cannot be recycled.
-        The id_counter takes care of this and feature_items dictionary keeps track of the id number and feature name.
         """
+        Initializes the SelectionTemplate widget.
+
+        This constructor sets up the widget's internal state, including the
+        ID counter and the dictionary for tracking items.
+
+        Note
+        ----
+        Each created widget needs to have a unique id, even after deletion it cannot be recycled.
+        The id_counter takes care of this and feature_items dictionary keeps track of the id
+        and number and feature name.
+
+        Parameters
+        ----------
+        disabled : bool, optional
+            Whether the widget is initially disabled, by default False.
+        **kwargs
+            Additional keyword arguments passed to the base class constructor.
+        """
+
         super().__init__(disabled=disabled, **kwargs)
 
         self._id_counter = 0
         self.feature_items: dict = {}
 
     def compose(self) -> ComposeResult:
+        """
+        Creates the child widgets of the SelectionTemplate.
+
+        This method constructs the layout of the widget, including the
+        sidebar with buttons and collapsible sections, and the content
+        switcher.
+
+        Returns
+        -------
+        ComposeResult
+            The result of composing the child widgets.
+        """
         yield VerticalScroll(
             Grid(
                 Button("New", variant="primary", classes="add_button", id="new_item_button"),
@@ -77,22 +139,60 @@ class SelectionTemplate(Widget):
 
     @on(Button.Pressed, "#sidebar .add_button")
     async def add(self) -> None:
+        """
+        Handles the "Add" button press event.
+
+        This method is called when the user presses the "Add" button. It
+        runs the `add_item` action.
+        """
         await self.run_action("add_item")
 
     @on(Button.Pressed, "#sidebar .delete_button")
     async def delete(self) -> None:
+        """
+        Handles the "Delete" button press event.
+
+        This method is called when the user presses the "Delete" button.
+        It runs the `delete_item` action.
+        """
         await self.run_action("delete_item")
 
     @on(Button.Pressed, "#sidebar .duplicate_button")
     async def duplicate(self) -> None:
+        """
+        Handles the "Duplicate" button press event.
+
+        This method is called when the user presses the "Duplicate"
+        button. It runs the `duplicate_item` action.
+        """
         await self.run_action("duplicate_item")
 
     @on(Button.Pressed, "#sidebar .sort_button")
     async def sort(self) -> None:
+        """
+        Handles the "Sort" button press event.
+
+        This method is called when the user presses the "Sort" button. It
+        runs the `sort_features` action.
+        """
         await self.run_action("sort_features")
 
     def _delete_item(self, respond: bool, check_aggregate: bool = False) -> None:
-        """Common logic for deleting a feature or item."""
+        """
+        Deletes an item and its associated data.
+
+        This method is called to delete an item from the widget and remove
+        its data from the cache. It is called after the user confirms the
+        deletion in the `Confirm` modal.
+
+        Parameters
+        ----------
+        respond : bool
+            Whether the user confirmed the deletion.
+        check_aggregate : bool, optional
+            Whether to check for and delete associated aggregate models,
+            by default False.
+        """
         if respond:
             current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
             current_collabsible_item_id = current_content_switcher_item_id + "_flabel"
@@ -112,11 +212,23 @@ class SelectionTemplate(Widget):
                 ctx.cache.pop(name + "__aggregate_models_list")
 
     def action_delete_item(self) -> None:
-        """Unmount the feature and delete its entry from dictionaries, including aggregate models."""
+        """
+        Deletes the currently selected item.
+
+        This method is called to delete the currently selected item. It
+        pushes a `Confirm` modal to the screen to ask the user for
+        confirmation before deleting the item. It unmount the item widget and
+        delete its entry from dictionaries.
+        """
         self.app.push_screen(Confirm(), lambda respond: self._delete_item(respond, check_aggregate=False))
 
     def action_sort_features(self):
-        """Sorting alphabetically and by feature type."""
+        """
+        Sorts the items in the sidebar.
+
+        This method sorts the items in the sidebar alphabetically and by
+        item type.
+        """
 
         def sort_children(by):
             for i in range(len(self.feature_items.keys())):
@@ -131,10 +243,26 @@ class SelectionTemplate(Widget):
         self.current_order = [self.current_order[1], self.current_order[0]]
 
     async def add_new_item(self, new_item: tuple | bool) -> None:
-        """Principle of adding a new feature lies in mounting a new widget while creating a new entry in the dictionary
-        to keep track of the selections which are later dumped into the Context object.
-        If this is a load or a duplication, then new entry is not created but read from the dictionary.
-        The dictionary entry was created elsewhere.
+        """
+        Adds a new item to the widget.
+
+        This method adds a new item to the widget, either by creating a
+        new entry or by loading an existing one from the cache. It
+        mounts a new widget for the item and updates the sidebar and
+        content switcher.
+
+        Note
+        ----
+        Principle of adding a new feature lies in mounting a new widget while creating a
+        new entry in the dictionary to keep track of the selections which are later dumped
+        into the Context object. If this is a load or a duplication, then new entry is
+        not created but read from the dictionary. The dictionary entry was created elsewhere.
+
+        Parameters
+        ----------
+        new_item : tuple[str, str] | list[str, str] | bool
+            A tuple or list containing the item type and name, or False if
+            the item creation was canceled.
         """
         if isinstance(new_item, tuple) or isinstance(new_item, list):
             item_type, item_name = new_item
@@ -164,7 +292,12 @@ class SelectionTemplate(Widget):
             self._id_counter += 1
 
     async def action_duplicate_item(self):
-        """Duplicate an item based on child class configuration."""
+        """
+        Duplicates the currently selected item.
+
+        This method duplicates the currently selected item, including its
+        data in the cache. It then adds the duplicated item to the widget.
+        """
         if self.ITEM_KEY is None:
             raise NotImplementedError("Child class must define ITEM_KEY.")
 
@@ -193,7 +326,13 @@ class SelectionTemplate(Widget):
 
     @on(Button.Pressed, "#sidebar .rename_button")
     async def action_rename_item(self) -> None:
-        """Pops up a screen to set the new feature name and renames the dictionary entry."""
+        """
+        Renames the currently selected item.
+
+        This method renames the currently selected item, including its
+        data in the cache. It pushes a `NameInput` modal to the screen to
+        get the new name from the user.
+        """
 
         def rename_item(new_item_name: str) -> None:
             if new_item_name is not None:
@@ -230,3 +369,21 @@ class SelectionTemplate(Widget):
             NameInput(occupied_feature_names),
             rename_item,
         )
+
+    def fill_cache_and_create_new_content_item(self, new_item: tuple[str, str] | list[tuple[str, str]]) -> Widget:
+        """
+        Fills the cache and creates a new content item.
+
+        This method is a placeholder for subclasses to implement. It
+        should fill the cache with the data for the new item and create
+        the corresponding widget to display the item's content.
+
+        Parameters
+        ----------
+        new_item : tuple[str, str] | list[str, str]
+            A tuple or list containing the item type and name.
+
+        Returns
+        -------
+        Widget
+        """

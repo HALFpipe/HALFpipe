@@ -24,57 +24,44 @@ p = inflect.engine()
 
 class FeatureTemplate(Widget):
     """
-    FeatureTemplate
+    Base class for creating and managing feature-based settings and selections.
 
-    A widget for creating and managing feature-based settings and selections within a user interface. This widget
-    handles both the initialization of a new widget and the loading of settings from a specification file, adapting
-    its behavior accordingly.
+    This widget provides a foundation for building user interface components that
+    allow users to configure and select various settings related to a specific
+    feature. It handles the initialization of new widgets, loading settings from
+    specification files, and managing preprocessing options.
 
     Attributes
     ----------
     entity : str
-        An identifier for the type of entity the widget interacts with.
+        An identifier for the type of entity the widget interacts with (e.g., "task", "run").
     filters : dict
-        A dictionary specifying the datatype and suffix to filter the database queries.
+        A dictionary specifying the datatype and suffix to filter database queries.
+        Example: `{"datatype": "func", "suffix": "bold"}`.
     featurefield : str
-        The specific feature field in the settings.
+        The specific feature field in the settings (e.g., "atlases", "seeds").
     type : str
-        The type of the feature.
+        The type of the feature (e.g., "atlas_based_connectivity", "reho").
     file_panel_class : type
-        The class used for the file panel within this widget.
+        The class used for the file panel within this widget. Defaults to `FilePanelTemplate`.
     feature_dict : dict
         A dictionary containing feature-specific settings and values.
     setting_dict : dict
         A dictionary containing general settings and configuration values.
     event_file_pattern_counter : int
-        A counter for file patterns.
+        A counter for file patterns, used when creating new file patterns.
     tagvals : list
         A list of available tags for selection.
-    bandpass_filter_low_key : str
-        The key for the low-pass filter setting.
-    bandpass_filter_high_key : str
-        The key for the high-pass filter setting.
-    images_to_use : dict
-        A dictionary specifying which images to use, keyed by task.
+    images_to_use : dict | None
+        A dictionary specifying which images to use, keyed by entity (e.g., "task").
+        Values are dictionaries mapping tag names to boolean values (True if selected).
     confounds_options : dict
         Available options for confounds removal, with their descriptions and default states.
+        Keys are confound names, values are lists: `[description, default_state]`.
     preprocessing_panel : Vertical
         A panel containing pre-processing options such as smoothing, mean scaling, and temporal filtering.
-    tasks_to_use_selection_panel : SelectionList
+    tasks_to_use_selection_panel : Vertical | None
         A panel containing the selection list of images to use.
-    tag_panel : SelectionList
-        A panel containing the selection list of tags.
-
-    Methods
-    -------
-    __init__(this_user_selection_dict, id=None, classes=None)
-        Initializes the widget with user selections and settings.
-    compose()
-        Composes the user interface elements within the widget.
-    on_file_panel_file_item_is_deleted(message)
-        Handles the event when a file item is deleted from the file panel.
-    on_file_panel_changed(message)
-        Handles the event when the file panel changes, updating the tag selection.
     """
 
     entity: str = ""
@@ -84,10 +71,31 @@ class FeatureTemplate(Widget):
     file_panel_class = FilePanelTemplate
 
     def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
-        """At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
+        """
+        Initializes the FeatureTemplate widget.
+
+        This constructor sets up the widget's internal state, including feature
+        and general settings, preprocessing options, and image selection. It
+        handles both the creation of new widgets and the loading of settings
+        from a specification file.
+
+        Note
+        ----
+        At the beginning there is a bunch of 'if not in'. If a new widget is created the pass
         this_user_selection_dict is empty and the nested keys need some initialization. On the other
         hand, if a new widget is created automatically on spec file load then this dictionary is not empty and these
         values are then used for the various widgets within this widget.
+
+        Parameters
+        ----------
+        this_user_selection_dict : dict
+            A dictionary containing user selections and settings. It should have
+            keys "features" and "settings".
+        id : str, optional
+            An optional identifier for the widget, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the widget, by
+            default None.
         """
         super().__init__(id=id, classes=classes)
         self.feature_dict = this_user_selection_dict["features"]
@@ -186,6 +194,19 @@ class FeatureTemplate(Widget):
             )
 
     def create_preprocessing_panel(self, default_smoothing_value):
+        """
+        Creates the preprocessing panel with the given default smoothing value.
+
+        This method constructs the preprocessing panel, which includes options
+        for smoothing, grand mean scaling, and temporal filtering. The panel is
+        created dynamically to accommodate different smoothing settings (e.g.,
+        smoothing in settings vs. smoothing in features).
+
+        Parameters
+        ----------
+        default_smoothing_value : Any
+            The default smoothing value (FWHM in mm).
+        """
         # We need to create preprocessing panel via a separate function because from reho and falff the smoothing is in
         # features not in settings. Hence to override the default value when we for example load from a spec file, we need
         # to refresh the preprocessing panel after we switch from smoothing in settings to smoothing in features. For more
@@ -246,6 +267,13 @@ class FeatureTemplate(Widget):
         )
 
     async def on_mount(self) -> None:
+        """
+        Handles actions to be taken when the component is mounted in the UI.
+
+        This method is called when the widget is mounted to the
+        application. It sets the border titles for the input box, tag
+        selection list, and file panel.
+        """
         if self.images_to_use is not None:
             # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
             # 'Images to Use'
@@ -260,7 +288,19 @@ class FeatureTemplate(Widget):
         self.update_dataline()
 
     @on(SelectionList.SelectedChanged, "#tasks_to_use_selection")
-    def _on_selection_list_changed(self, message):
+    def _on_selection_list_changed(self, message) -> None:
+        """
+        Handles changes in the selection list of tasks to use.
+
+        This method is called when the selection in the `SelectionList`
+        widget with the ID "tasks_to_use_selection" changes. It updates
+        the filters in `setting_dict` based on the selected tasks.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectedChanged
+            The message object containing information about the change.
+        """
         # Since now we are using only tasks, the loop might not be neccessery, because there is now only one selection and that
         # is the 'task'. Before there were also sessions, dirs, runs. The  message.control.id[:-18] extracts the string 'task'
         # from 'tasks_to_use_selection' to match the particular entry in the filters.
@@ -269,7 +309,13 @@ class FeatureTemplate(Widget):
                 f["values"] = self.get_widget_by_id(message.control.id).selected
         self.update_dataline()
 
-    def update_dataline(self):
+    def update_dataline(self) -> None:
+        """
+        Updates the data line with the current selection.
+
+        This method updates the data line with the current selection of
+        tasks and other settings.
+        """
         bold_summary_step = BoldSummaryStep()
         bold_summary = bold_summary_step.get_summary
         bold_summary_task_filtered = {}
@@ -278,28 +324,44 @@ class FeatureTemplate(Widget):
         n_by_tag = bold_summary["n_by_tag"]
         number_of_currently_selected_tasks = self.get_widget_by_id("tasks_to_use_selection").selected
 
-        for tag in n_by_tag.keys():
-            if tag == "task":
-                n_by_tag[tag] = len(number_of_currently_selected_tasks)
+        if isinstance(n_by_tag, dict):  # Ensure n_by_tag is a dictionary
+            for tag in n_by_tag.keys():
+                if tag == "task":
+                    n_by_tag[tag] = len(number_of_currently_selected_tasks)
 
-        tagmessages = [
-            p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
-            for tagname, n in n_by_tag.items()
-            if n > 0
-        ]
-        filetype = "BOLD image"
-        message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
-        message += " "
-        message += "for"
-        message += " "
-        message += p.join(tagmessages)
+            tagmessages = [
+                p.inflect(f"{n} plural('{entity_display_aliases.get(tagname, tagname)}', {n})")
+                for tagname, n in n_by_tag.items()
+                if n > 0
+            ]
+            filetype = "BOLD image"
+            message = p.inflect(f"Found {len(filepaths)} {filetype} plural('file', {len(filepaths)})")
+            message += " "
+            message += "for"
+            message += " "
+            message += p.join(tagmessages)
 
-        bold_summary_task_filtered["message"] = message
+            bold_summary_task_filtered["message"] = message
 
-        self.get_widget_by_id("feedback_task_filtered_bold").update_summary(bold_summary_task_filtered)
+            self.get_widget_by_id("feedback_task_filtered_bold").update_summary(bold_summary_task_filtered)
+        else:
+            raise Exception("Something went wrong, n_by_tag is not a dictionary!")
 
     @on(SwitchWithSelect.SwitchChanged, "#bandpass_filter_type")
     def _on_bandpass_filter_type_switch_changed(self, message):
+        """
+        Handles changes in the bandpass filter type switch.
+
+        This method is called when the switch state of the
+        `SwitchWithSelect` widget with the ID "bandpass_filter_type"
+        changes. It toggles the visibility of the low-pass and high-pass
+        filter widgets and updates the `setting_dict` accordingly.
+
+        Parameters
+        ----------
+        message : SwitchWithSelect.SwitchChanged
+            The message object containing information about the change.
+        """
         # This serves for on/off of the bandpass filter. When Off, we need to hide some widgets, the opposite when On.
         # There is a special case when filter was Off and the feature was duplicated, then after turning it on we need to pass
         # some default values to the lp and hp widgets.
@@ -335,12 +397,39 @@ class FeatureTemplate(Widget):
             self.setting_dict["bandpass_filter"]["type"] = None
 
     @on(SwitchWithSelect.Changed, "#bandpass_filter_type")
-    def _on_bandpass_filter_type_changed(self, message):
+    def _on_bandpass_filter_type_changed(self, message) -> None:
+        """
+        Handles changes in the bandpass filter type.
+
+        This method is called when the value of the `SwitchWithSelect`
+        widget with the ID "bandpass_filter_type" changes. It updates the
+        bandpass filter settings in `setting_dict` based on the selected
+        filter type (Gaussian or frequency-based).
+
+        Parameters
+        ----------
+        message : SwitchWithSelect.Changed
+            The message object containing information about the change.
+        """
         bandpass_filter_type = message.value
         if message.control.switch_value is True:
             self.set_bandpass_filter_values_after_toggle(bandpass_filter_type)
 
-    def set_bandpass_filter_values_after_toggle(self, bandpass_filter_type):
+    def set_bandpass_filter_values_after_toggle(self, bandpass_filter_type) -> None:
+        """
+        Sets the bandpass filter values after toggling the filter type.
+
+        This method is called after the bandpass filter type is toggled.
+        It updates the labels and values of the low-pass and high-pass
+        filter widgets based on the selected filter type. It also updates
+        the `setting_dict` with the new filter values.
+
+        Parameters
+        ----------
+        bandpass_filter_type : str
+            The selected bandpass filter type ("gaussian" or
+            "frequency_based").
+        """
         if bandpass_filter_type == "frequency_based":
             lowest_value = (
                 self.setting_dict["bandpass_filter"]["low"]
@@ -406,16 +495,54 @@ class FeatureTemplate(Widget):
         self.setting_dict["bandpass_filter"]["type"] = bandpass_filter_type
 
     @on(SwitchWithInputBox.Changed, "#grand_mean_scaling")
-    def _on_grand_mean_scaling_changed(self, message: Message):
+    def _on_grand_mean_scaling_changed(self, message: Message) -> None:
+        """
+        Handles changes in the grand mean scaling value.
+
+        This method is called when the value of the `SwitchWithInputBox`
+        widget with the ID "grand_mean_scaling" changes. It updates the
+        `setting_dict` with the new grand mean scaling value.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.Changed
+            The message object containing information about the change.
+        """
         self.setting_dict["grand_mean_scaling"]["mean"] = message.value if message.value != "" else None
 
     @on(SwitchWithInputBox.SwitchChanged, "#grand_mean_scaling")
-    def _on_grand_mean_scaling_switch_changed(self, message: Message):
+    def _on_grand_mean_scaling_switch_changed(self, message: Message) -> None:
+        """
+        Handles changes in the grand mean scaling switch.
+
+        This method is called when the switch state of the
+        `SwitchWithInputBox` widget with the ID "grand_mean_scaling"
+        changes. If the switch is turned off, it sets the grand mean
+        scaling value in `setting_dict` to None.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.SwitchChanged
+            The message object containing information about the change.
+        """
         if message.switch_value is False:
             self.setting_dict["grand_mean_scaling"]["mean"] = None
 
     @on(SwitchWithInputBox.Changed, ".bandpass_filter_values")
-    def _on_bandpass_filter_xp_width_changed(self, message: Message):
+    def _on_bandpass_filter_xp_width_changed(self, message: Message) -> None:
+        """
+        Handles changes in the bandpass filter width.
+
+        This method is called when the value of a `SwitchWithInputBox`
+        widget with the class "bandpass_filter_values" changes. It
+        updates the corresponding bandpass filter setting in
+        `setting_dict` based on the widget's ID.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.Changed
+            The message object containing information about the change.
+        """
         the_id = message.control.id.replace("bandpass_filter_", "")
         if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
             mapping = {"lp_width": "low", "hp_width": "high"}
@@ -424,19 +551,64 @@ class FeatureTemplate(Widget):
             self.setting_dict["bandpass_filter"][the_id] = message.value if message.value != "" else None
 
     @on(SwitchWithInputBox.Changed, "#smoothing")
-    def _on_smoothing_changed(self, message: Message):
+    def _on_smoothing_changed(self, message: Message) -> None:
+        """
+        Handles changes in the smoothing value.
+
+        This method is called when the value of the `SwitchWithInputBox`
+        widget with the ID "smoothing" changes. It updates the smoothing
+        value in `setting_dict`.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.Changed
+            The message object containing information about the change.
+        """
         # the function needs to be separated so that we can override it in reho and falff subclasses
         self.set_smoothing_value(message.value)
 
     def set_smoothing_value(self, value):
+        """
+        Sets the smoothing value.
+
+        This method sets the smoothing value in the `setting_dict`.
+
+        Parameters
+        ----------
+        value : str | None
+            The new smoothing value.
+        """
         self.setting_dict["smoothing"]["fwhm"] = value if value != "" else None
 
     @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
-    def _on_smoothing_switch_changed(self, message: Message):
+    def _on_smoothing_switch_changed(self, message: Message) -> None:
+        """
+        Handles changes in the smoothing switch.
+
+        This method is called when the switch state of the
+        `SwitchWithInputBox` widget with the ID "smoothing" changes. It
+        updates the smoothing settings in `setting_dict` based on the
+        switch state.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.SwitchChanged
+            The message object containing information about the change.
+        """
         # the function needs to be separated so that we can override it in reho and falff subclasses
         self.set_smoothing_switch_value(message.switch_value)
 
-    def set_smoothing_switch_value(self, switch_value):
+    def set_smoothing_switch_value(self, switch_value) -> None:
+        """
+        Sets the smoothing switch value.
+
+        This method sets the smoothing switch value in the `setting_dict`.
+
+        Parameters
+        ----------
+        switch_value : bool
+            The new smoothing switch value.
+        """
         # in ReHo the smoothing is in features
         if switch_value is True:
             self.setting_dict["smoothing"] = {"fwhm": "6"}
@@ -444,7 +616,14 @@ class FeatureTemplate(Widget):
             self.setting_dict["smoothing"]["fwhm"] = None
 
     @on(SelectionList.SelectedChanged, "#confounds_selection")
-    def feed_feature_dict_confounds(self):
+    def feed_feature_dict_confounds(self) -> None:
+        """
+        Feeds the feature dictionary with confounds.
+
+        This method is called when the selection in the `SelectionList`
+        widget with the ID "confounds_selection" changes. It updates the
+        `setting_dict` with the selected confounds.
+        """
         confounds = self.get_widget_by_id("confounds_selection").selected.copy()
         # "ICA-AROMA" is in a separate field, so here this is taken care of
         if "ICA-AROMA" in self.get_widget_by_id("confounds_selection").selected:

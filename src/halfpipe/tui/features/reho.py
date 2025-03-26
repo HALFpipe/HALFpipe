@@ -9,26 +9,19 @@ from ..templates.feature_template import FeatureTemplate
 
 class ReHo(FeatureTemplate):
     """
-    ReHo
+    Initializes the ReHo instance.
 
-    A class that represents the Regional Homogeneity (ReHo) feature, which is a Measure of the similarity or coherence of the
-    time series of a given voxel with its nearest neighbors.
+    This method initializes the ReHo object by calling the constructor
+    of the parent class (`FeatureTemplate`) and setting up the
+    smoothing in features dictionary and popping it out from the settings dictionary.
+    Furthermore, the default bandpass filter changes to frequency based.
 
-    Attributes
+    Parameters
     ----------
-    type : str
-        A string representing the type of the feature.
-
-    Methods
-    -------
-    __init__(self, this_user_selection_dict, **kwargs)
-        Initializes the ReHo feature with given user selection dictionary and keyword arguments.
-
-    compose(self) -> ComposeResult
-        Composes the user interface elements required for the ReHo feature.
-
-    on_mount(self)
-        Async method that is called when the ReHo feature is mounted in the application.
+    this_user_selection_dict : dict
+        A dictionary containing the user's selection for this feature.
+    **kwargs : dict
+        Additional keyword arguments passed to the FeatureTemplate initializer.
     """
 
     type = "reho"
@@ -42,6 +35,10 @@ class ReHo(FeatureTemplate):
         self.create_preprocessing_panel(self.feature_dict["smoothing"]["fwhm"])
 
     def on_mount(self):
+        """
+        On the widget mount the default option for the bandpass filter type is set
+        to "frequency_based".
+        """
         self.get_widget_by_id("bandpass_filter_type").default_option = "frequency_based"
 
     def compose(self) -> ComposeResult:
@@ -53,6 +50,19 @@ class ReHo(FeatureTemplate):
         self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
 
     def set_smoothing_switch_value(self, switch_value):
+        """
+        Sets the smoothing value in the feature dictionary overriding the template class
+        function where it goes to the settings dictionary.
+
+        This method updates the "fwhm" value in the "smoothing" dictionary
+        within the `feature_dict`. If the provided value is empty, it sets
+        the smoothing value to None.
+
+        Parameters
+        ----------
+        value : str
+            The new smoothing value (Full Width at Half Maximum - FWHM).
+        """
         # in ReHo the smoothing is in features
         if switch_value is True:
             self.feature_dict["smoothing"] = {"fwhm": "6"}

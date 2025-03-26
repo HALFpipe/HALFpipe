@@ -24,35 +24,38 @@ from ..specialized_widgets.confirm_screen import Confirm
 
 class Run(Widget):
     """
-    Run Class
+    A widget for managing the dumping the cached data to create the spec.json file,
+    saving it and finally run the pipeline.
 
-    This class is responsible for managing the user interface that handles refreshing the data and updating the context
-    based on user interactions.
+    This class provides a user interface for refreshing the spec data, saving the
+    configuration to a spec file, and running the pipeline. It also
+    manages the conversion of cached data to the context format and gives a preview
+    of the generated spec.json file.
 
     Attributes
     ----------
-    old_cache : defaultdict or None
-        A cache of old data, structured as a defaultdict of defaultdicts containing dictionaries.
+    old_cache : defaultdict[str, defaultdict[str, dict[str, Any]]] | None
+        A cache of old data, structured as a defaultdict of defaultdicts
+        containing dictionaries.
+    json_data : str | None
+        A JSON string representation of the current configuration.
 
     Methods
     -------
-    __init__(**kwargs)
-        Initializes the Run class with only textual widget attributes.
-
+    __init__(id, classes)
+        Initializes the Run widget.
     compose() -> ComposeResult
-        Composes the UI by adding a ScrollableContainer with an output area and a refresh button.
-
-    on_button_pressed()
-        Handles the event when the refresh button is pressed. Dumps the current cache to the context
-        and updates the output widget with the refreshed data.
-
+        Composes the widget's components.
+    on_run_button_pressed()
+        Handles the event when the "Run" button is pressed.
+    on_save_button_pressed()
+        Handles the event when the "Save" button is pressed.
+    on_refresh_button_pressed()
+        Handles the event when the "Refresh" button is pressed.
+    refresh_context()
+        Refreshes the context by dumping the cached data and updating the UI.
     dump_dict_to_contex()
-        Converts the cached data to the context format:
-            1. Clears the existing data in the context.
-            2. Iterates over the cache and fills the context with features, settings, and files.
-            3. Handles specific cases for BIDS and non-BIDS files.
-            4. Deep copies the current cache to old_cache.
-            5. Refreshes available images in the context.
+        Converts the cached data to the context format.
     """
 
     def __init__(
@@ -60,11 +63,34 @@ class Run(Widget):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
+        """
+        Initializes the Run widget.
+
+        Parameters
+        ----------
+        id : str, optional
+            An optional identifier for the widget, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the
+            widget, by default None.
+        """
         super().__init__(id=id, classes=classes)
         self.old_cache: defaultdict[str, defaultdict[str, dict[str, Any]]] | None = None
         self.json_data = None
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the widget's components.
+
+        This method defines the layout and components of the widget,
+        including the "Refresh", "Save", and "Run" buttons, and the output
+        area.
+
+        Yields
+        ------
+        ComposeResult
+            The composed widgets.
+        """
         with ScrollableContainer():
             yield Horizontal(
                 Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run", id="run_button")
@@ -73,11 +99,37 @@ class Run(Widget):
 
     @on(Button.Pressed, "#run_button")
     def on_run_button_pressed(self):
+        """
+        Handles the event when the "Run" button is pressed.
+
+        This method is called when the user presses the "Run" button. It
+        exits the application and returns the working directory.
+        """
         self.app.exit(result=ctx.workdir)
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
+        """
+        Handles the event when the "Save" button is pressed.
+
+        This method is called when the user presses the "Save" button. It
+        refreshes the context, saves the spec file to the working
+        directory, and success modal is raised.
+        """
+
         def save(value):
+            """
+            Saves the spec file to the working directory.
+
+            This method is called after the user confirms the save
+            operation. It saves the current pipeline configuration to a
+            spec file in the working directory.
+
+            Parameters
+            ----------
+            value : bool
+                The value returned by the confirmation dialog (not used).
+            """
             save_spec(ctx.spec, workdir=ctx.workdir)
 
         self.refresh_context()
@@ -95,15 +147,39 @@ class Run(Widget):
 
     @on(Button.Pressed, "#refresh_button")
     def on_refresh_button_pressed(self):
+        """
+        Handles the event when the "Refresh" button is pressed.
+
+        This method is called when the user presses the "Refresh" button.
+        It refreshes the context and updates the UI spec preview with the new data.
+        """
         self.refresh_context()
 
     def refresh_context(self):
+        """
+        Refreshes the context by dumping the cached data and updating the spec preview.
+
+        This method dumps the cached data to the context, converts it to a
+        JSON string, and updates the output widget with the JSON data.
+        """
         self.dump_dict_to_contex()
         self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
         if self.json_data is not None:
             self.get_widget_by_id("this_output").update(json.loads(self.json_data))
 
     def dump_dict_to_contex(self, save=False):
+        """
+        Converts the cached data to the spec json format.
+
+        This method converts the cached data to the context format, which
+        includes features, settings, models, and files. It handles
+        specific cases for BIDS and non-BIDS files.
+
+        Parameters
+        ----------
+        save : bool, optional
+            A flag indicating whether to save the data, by default False.
+        """
         # the cache key logic goes like this: first it is the particular name of the main item, for example a feature called
         # 'foo' will produce a key "foo" this is the "name". Second, it is the main group type of the item, if it is the
         # feature then the group type is feature, if it is for example bold file pattern then it is the bold file pattern,

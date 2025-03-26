@@ -29,49 +29,57 @@ from ..specialized_widgets.non_bids_file_itemization import FileItem
 
 class WorkDirectory(Widget):
     """
-    Class for managing the working directory selection and initialization, specifically for output storage
-    and loading configurations from existing 'spec.json' files.
+    Manages the working directory selection and initialization for the application.
 
-    Parameters
+    This widget provides the user interface for selecting a working directory,
+    which serves as the root for storing all output files and loading
+    configurations from existing 'spec.json' files. It handles the
+    interaction with the file browser, validation of the selected directory,
+    and the loading or overriding of existing configurations.
+
+    Attributes
     ----------
-    id : str | None, optional
-        Identifier for the widget, by default None.
-    classes : str | None, optional
-        Classes for CSS styling, by default None.
-
+    existing_spec : Spec | None
+        The loaded specification object from 'spec.json', or None if no
+        specification file is found.
+    data_input_success : bool
+        A flag indicating whether the data input process was successful.
+    event_file_objects : list[File]
+        A list of event file objects loaded from the specification.
+    atlas_file_objects : list[File]
+        A list of atlas file objects loaded from the specification.
+    seed_map_file_objects : list[File]
+        A list of seed map file objects loaded from the specification.
+    spatial_map_file_objects : list[File]
+        A list of spatial map file objects loaded from the specification.
+    feature_widget : Widget
+        The feature selection widget.
+    model_widget : Widget
+        The model selection widget.
 
     Methods
     -------
     compose()
         Composes the widgets for the working directory interface.
-
-    on_mount()
-        Sets up the widget after it has been added to the DOM.
-
     _on_file_browser_changed(message)
         Handles file browser's changed event, including verifying selected directory and loading configuration
         from 'spec.json'.
-
     working_directory_override(override)
         Manages overriding an existing spec file, if one is found in the selected directory.
-
     existing_spec_file_decision(load)
         Manages user decision whether to load an existing spec file or override it.
-
     load_from_spec()
         Loads settings from 'spec.json' and updates the context cache.
-
     cache_file_patterns()
         Caches data from 'spec.json' into context and creates corresponding widgets.
-
     mount_features()
         Mounts feature selection widgets based on the spec file.
-
     on_worker_state_changed(event)
         Handles state change events for workers, progressing through stages of loading.
-
     mount_file_panels()
         Initializes file panels for various file types (events, atlas, seed, spatial maps).
+    mount_models()
+        Initializes the model selection widgets based on the spec file.
     """
 
     def __init__(
@@ -79,9 +87,30 @@ class WorkDirectory(Widget):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
+        """
+        Initializes the WorkDirectory widget.
+
+        Parameters
+        ----------
+        id : str | None, optional
+            Identifier for the widget, by default None.
+        classes : str | None, optional
+            Classes for CSS styling, by default None.
+        """
         super().__init__(id=id, classes=classes)
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the widgets for the working directory interface.
+
+        This method creates the layout for the working directory selection,
+        including a descriptive static text and a file browser.
+
+        Returns
+        -------
+        ComposeResult
+            The result of composing the child widgets.
+        """
         work_directory = Vertical(
             Static(
                 "Set path to the working directory. Here all output will be stored. By selecting a directory with existing \
@@ -97,9 +126,25 @@ spec.json file it is possible to load the therein configuration.",
         yield work_directory
 
     @on(FileBrowser.Changed)
-    async def _on_file_browser_changed(self, message: Message):
-        """The FileBrowser itself makes checks over the selected working directory validity. If it passes then we get here
-        and no more checks are needed.
+    async def _on_file_browser_changed(self, message: Message) -> None:
+        """
+        Handles the FileBrowser's Changed event.
+
+        This method is called when the user selects a directory in the
+        FileBrowser. It validates the selected directory, updates the UI,
+        and checks for an existing 'spec.json' file. If a 'spec.json' file
+        is found, it prompts the user to decide whether to load or override
+        the existing configuration.
+
+        Note
+        ----
+        The FileBrowser itself makes checks over the selected working directory
+        validity. If it passes then we get here and no more checks are needed.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the change.
         """
         # Change border to green
         self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
@@ -107,8 +152,20 @@ spec.json file it is possible to load the therein configuration.",
         self.app.flags_to_show_tabs["from_working_dir_tab"] = True
         self.app.show_hidden_tabs()
 
-        async def working_directory_override(override):
-            """Function about overriding the found existing spec files"""
+        async def working_directory_override(override) -> None:
+            """
+            Handles the user's decision to override an existing spec file.
+
+            This nested function is called after the user has been prompted
+            about overriding an existing 'spec.json' file. If the user
+            chooses to override, it backs up the original 'spec.json' file.
+
+            Parameters
+            ----------
+            override : bool
+                True if the user chose to override the existing file,
+                False otherwise.
+            """
             if override:
                 # make a backup copy from the original spec file
                 if ctx.workdir is not None:
@@ -118,8 +175,18 @@ spec.json file it is possible to load the therein configuration.",
                 ctx.workdir = None
 
         async def existing_spec_file_decision(load):
-            """Function making user aware that there is an existing spec file in the selected working directory
-            and whether he/she wants to load it.
+            """
+            Handles the user's decision to load or override an existing spec file.
+
+            This nested function is called when an existing 'spec.json' file
+            is found in the selected working directory. It prompts the user
+            to decide whether to load the existing settings or override them.
+
+            Parameters
+            ----------
+            load : bool
+                True if the user chose to load the existing file,
+                False otherwise.
             """
             if load:
                 await self.load_from_spec()
@@ -152,7 +219,14 @@ spec.json file it is possible to load the therein configuration.",
             )
 
     async def load_from_spec(self):
-        """Feed the user_selections_dict with settings from the json file via the context object."""
+        """
+        Loads settings from the 'spec.json' file into the context cache.
+
+        This method reads the settings from the 'spec.json' file (if it
+        exists) and populates the context cache with the loaded data.
+        This includes global settings, file patterns, feature settings,
+        and model settings.
+        """
         # First feed the cache
         if self.existing_spec is not None:  # Add this check
             global_settings = self.existing_spec.global_settings
@@ -172,6 +246,14 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="cache_file_worker")
     async def cache_file_patterns(self):
+        """
+        Caches file patterns and settings from the spec file.
+
+        This method is a worker that processes the loaded specification
+        and caches the file patterns and settings in the context. It also
+        creates the corresponding widgets for data input, preprocessing,
+        feature selection, and model selection.
+        """
         data_input_widget = self.app.get_widget_by_id("input_data_content")
         preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
         self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
@@ -258,6 +340,14 @@ spec.json file it is possible to load the therein configuration.",
 
     @work(exclusive=True, name="feature_worker")
     async def mount_features(self):
+        """
+        Mounts the feature selection widgets based on the loaded spec file.
+
+        This method is a worker that creates and mounts the feature
+        selection widgets based on the features defined in the loaded
+        specification. It populates the context cache with feature and
+        setting data and then adds the corresponding widgets to the UI.
+        """
         feature_widget = self.feature_widget
 
         setting_feature_map = {}
@@ -309,6 +399,20 @@ spec.json file it is possible to load the therein configuration.",
                     await feature_widget.add_new_item(["preprocessed_image", name.replace("Setting", "")])
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        """
+        Handles state change events for workers.
+
+        This method is called when the state of a worker changes. If the worker
+        ended with SUCCESS, it manages the progression through different stages
+        of loading, such as caching file patterns, mounting features, mounting
+        file panels,and mounting models.
+
+        Parameters
+        ----------
+        event : Worker.StateChanged
+            The event object containing information about the worker's
+            state change.
+        """
         if event.state == WorkerState.SUCCESS:
             if event.worker.name == "cache_file_worker" and self.data_input_success is True:
                 self.mount_features()
@@ -318,7 +422,16 @@ spec.json file it is possible to load the therein configuration.",
                 self.mount_models()
 
     @work(exclusive=True, name="file_panels_worker")
-    async def mount_file_panels(self):
+    async def mount_file_panels(self) -> None:
+        """
+        Initializes file panels for various file types.
+
+        This method is a worker that creates and mounts file panels for
+        different file types (events, atlas, seed, spatial maps) based on
+        the loaded specification. It iterates through the file objects and
+        creates corresponding file panel widgets, adding them to the
+        appropriate feature widgets.
+        """
         feature_widget = self.feature_widget
 
         for file_object in self.event_file_objects:
@@ -356,7 +469,15 @@ spec.json file it is possible to load the therein configuration.",
             ctx.cache[widget_name]["files"] = file_object
 
     @work(exclusive=True, name="models_worker")
-    async def mount_models(self):
+    async def mount_models(self) -> None:
+        """
+        Initializes the model selection widgets based on the loaded spec file.
+
+        This method is a worker that creates and mounts the model selection
+        widgets based on the models defined in the loaded specification. It
+        populates the context cache with model data and also creates aggregate
+        model entries.
+        """
         model_widget = self.model_widget
         aggregate_models = {}
         if self.existing_spec is not None:

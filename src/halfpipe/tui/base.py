@@ -32,7 +32,18 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 class HeaderCloseIcon(Widget):
-    """Display an 'icon' on the left of the header."""
+    """
+    A widget to display a close icon in the header.
+
+    This widget provides a clickable close icon (❌) in the header of the
+    application. Clicking this icon prompts the user to confirm whether
+    they want to quit the application.
+
+    Attributes
+    ----------
+    icon : Reactive[str]
+        The character to use as the icon within the header.
+    """
 
     DEFAULT_CSS = """
     HeaderCloseIcon {
@@ -51,10 +62,32 @@ class HeaderCloseIcon(Widget):
     """The character to use as the icon within the header."""
 
     async def on_click(self, event: Click) -> None:
-        """Launch the command palette when icon is clicked."""
+        """
+        Handles the click event on the close icon.
+
+        This method is called when the user clicks the close icon. It
+        displays a confirmation modal asking the user if they really want
+        to quit the application.
+
+        Parameters
+        ----------
+        event : Click
+            The click event object.
+        """
         event.stop()
 
         def quit(modal_value):
+            """
+            Callback function to handle the user's quit decision.
+
+            This function is called when the confirmation modal is
+            dismissed. If the user confirms, the application exits.
+
+            Parameters
+            ----------
+            modal_value : bool
+                True if the user confirmed, False otherwise.
+            """
             if modal_value:
                 exit()
             else:
@@ -75,16 +108,31 @@ class HeaderCloseIcon(Widget):
         )
 
     def render(self) -> RenderResult:
-        """Render the header icon.
+        """
+        Renders the close icon.
 
-        Returns:
+        Returns
+        -------
+        RenderResult
             The rendered icon.
         """
         return self.icon
 
 
 class HeaderHelpIcon(Widget):
-    """Display an 'icon' on the left of the header."""
+    """
+    A widget to display a help icon in the header.
+
+    This widget provides a clickable help icon (❓) in the header of the
+    application. Clicking this icon displays a help message to the user.
+
+    Attributes
+    ----------
+    icon : Reactive[str]
+        The character to use as the icon within the header.
+    help_string : str
+        The help message to display when the icon is clicked.
+    """
 
     DEFAULT_CSS = """
     HeaderHelpIcon {
@@ -99,12 +147,23 @@ class HeaderHelpIcon(Widget):
         background: $foreground 10%;
     }
     """
-    """The character to use as the icon within the header."""
+
+    # The character to use as the icon within the header.
     icon = Reactive("❓")
     help_string = "Here should be some general help :) Or maybe link to manual?"
 
     async def on_click(self, event: Click) -> None:
-        """Launch the command palette when icon is clicked."""
+        """
+        Handles the click event on the help icon.
+
+        This method is called when the user clicks the help icon. It
+        displays a help message in a confirmation modal.
+
+        Parameters
+        ----------
+        event : Click
+            The click event object.
+        """
         event.stop()
         await self.app.push_screen(
             Confirm(
@@ -128,6 +187,12 @@ class HeaderHelpIcon(Widget):
 
 
 class MyHeader(Header):
+    """
+    A custom header widget for the application.
+
+    This header includes a title, a help icon, and a close icon.
+    """
+
     def compose(self):
         yield HeaderTitle()
         yield HeaderHelpIcon()
@@ -135,7 +200,12 @@ class MyHeader(Header):
 
 
 class RichImage:
-    """Convert the image to a Rich image."""
+    """
+    Convert the image to a Rich image.
+
+    This class is currently not used, but it was intended to display an
+    image using the Rich library.
+    """
 
     # def __rich_console__(self, console: Console, options) -> RenderResult:
     #     with Image.open(os.path.join(BASE_DIR, "images/halfpipe_logo_v2.png")) as image:
@@ -144,7 +214,12 @@ class RichImage:
 
 
 class ImageContainer(Container):
-    """Create a container for the image."""
+    """
+    A container for displaying an image.
+
+    This container is currently not used, but it was intended to hold the
+    image displayed in the `Welcome` modal.
+    """
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -157,22 +232,73 @@ class ImageContainer(Container):
 
 
 class Welcome(ModalScreen):
-    """Intro screen with an intro image."""
+    """
+    An introductory modal screen with an image.
+
+    This modal screen displays an image to welcome the user. It is
+    currently not used.
+    """
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the modal with its child widgets.
+
+        Returns
+        -------
+        ComposeResult
+            The result of composing the modal.
+        """
         yield ImageContainer(id="welcome_image")
 
     def key_escape(self):
+        """
+        Handles the Escape key press event.
+
+        This method is called when the user presses the Escape key. It
+        dismisses the modal.
+        """
         self.dismiss(True)
 
     def on_click(self, event: events.Click) -> None:
+        """
+        Handles the click event.
+
+        This method is called when the user clicks anywhere on the modal.
+        It dismisses the modal.
+
+        Parameters
+        ----------
+        event : events.Click
+            The click event object.
+        """
         self.dismiss(True)
 
 
 class MainApp(App):
+    """
+    The main application class for the HALFpipe TUI.
+
+    This class sets up the main application window, including the header,
+    footer, tabbed content, and various widgets for different parts of the
+    application.
+
+    Attributes
+    ----------
+    CSS_PATH : list[Path]
+        A list of paths to the CSS files used by the application.
+    BINDINGS : list[tuple[str, str, str]]
+        A list of key bindings for the application.
+    available_images : dict
+        A dictionary to store available images (tasks).
+    flags_to_show_tabs : reactive[dict]
+        A reactive dictionary to control the visibility of tabs.
+    is_bids : bool
+        A flag indicating whether BIDS format is used.
+    """
+
     CSS_PATH = [
         BASE_DIR / "tcss/base.tcss",
         BASE_DIR / "tcss/general.tcss",
@@ -213,11 +339,32 @@ class MainApp(App):
     is_bids = True
 
     def __init__(self, **kwargs) -> None:
+        """
+        Initializes the MainApp.
+
+        This constructor disables print logging and calls the base class
+        constructor.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments passed to the base class constructor.
+        """
         LoggingContext.disable_print()
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
-        """Compose app with tabbed content."""
+        """
+        Composes the main application layout.
+
+        This method sets up the main layout of the application, including
+        the header, tabbed content, and footer.
+
+        Returns
+        -------
+        ComposeResult
+            The result of composing the application layout.
+        """
         yield MyHeader(id="header")
         with TabbedContent(id="tabs_manager"):
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
@@ -234,7 +381,13 @@ class MainApp(App):
                 yield VerticalScroll(Run(), id="run_content")
         yield Footer()
 
-    def on_mount(self):
+    def on_mount(self) -> None:
+        """
+        Handles actions to be taken when the application is mounted.
+
+        This method is called when the application is mounted. It hides
+        some tabs initially and sets the application title and subtitle.
+        """
         # hide these tabs until we have data input and the working folder
         self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
         self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
@@ -244,30 +397,68 @@ class MainApp(App):
         self.sub_title = "development version"
         # self.push_screen(Welcome(id="welcome_screen"))
 
-    def show_hidden_tabs(self):
+    def show_hidden_tabs(self) -> None:
+        """
+        Shows hidden tabs based on flags.
+
+        This method shows the hidden tabs ("preprocessing_tab",
+        "feature_selection_tab", "models_tab") when both flags in
+        `flags_to_show_tabs` are True.
+        """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         if sum(self.flags_to_show_tabs.values()) == 2:
             self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
 
-    def hide_tabs(self):
+    def hide_tabs(self) -> None:
+        """
+        Hides the preprocessing, feature selection, and models tabs.
+        """
         self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
         self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
         self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
 
     def action_show_tab(self, tab: str) -> None:
-        """Switch to a new tab."""
+        """
+        Switches to a new tab.
+
+        Parameters
+        ----------
+        tab : str
+            The ID of the tab to switch to.
+        """
         self.get_child_by_type(TabbedContent).active = tab
 
     def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
+        """
+        Toggles dark mode.
+        """
         self.dark: bool = not self.dark
 
     def action_reload(self):
+        """
+        Reloads the UI.
+
+        This method calls `reload_ui` to refresh the UI.
+        """
         self.reload_ui()
 
     def reload_ui(self, complete_reset=True) -> None:
+        """
+        Reloads the UI, optionally resetting the context.
+
+        This method refreshes the UI by recomposing and laying out the
+        feature selection, models, and preprocessing widgets. If
+        `complete_reset` is True, it also resets the input data and
+        working directory widgets, and clears the context cache.
+
+        Parameters
+        ----------
+        complete_reset : bool, optional
+            Whether to perform a complete reset of the context, by
+            default True.
+        """
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("models_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)

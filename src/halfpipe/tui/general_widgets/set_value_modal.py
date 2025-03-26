@@ -10,36 +10,58 @@ from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 
 class SetValueModal(DraggableModalScreen):
     """
-    SetValueModal class representing a modal screen for setting a value.
+    A modal dialog for setting a value via user input.
+
+    This class provides a modal screen that allows the user to input a
+    value. It includes instructions, an input field, and action buttons
+    (typically "Ok" and "Cancel").
 
     Parameters
     ----------
     instructions : str, optional
-        Instructions to be displayed at the top of the modal (default is "Set value").
+        Instructions to be displayed at the top of the modal,
+        by default "Set value".
     left_button_text : str, optional
-        Text for the left button (default is "Ok").
+        Text for the left button (typically "Ok"), by default "Ok".
     right_button_text : str, optional
-        Text for the right button (default is "Cancel").
+        Text for the right button (typically "Cancel"), by default "Cancel".
     left_button_variant : str, optional
-        Variant type for the left button (default is "success").
+        Variant type for the left button (e.g., "success"),
+        by default "success".
     right_button_variant : str, optional
-        Variant type for the right button (default is "error").
+        Variant type for the right button (e.g., "error"),
+        by default "error".
     title : str, optional
-        Title for the modal (default is an empty string).
-    id : str or None, optional
-        An optional ID for the modal (default is None).
-    classes : str or None, optional
-        An optional string of classes for the modal (default is None).
+        Title for the modal, by default "".
+    id : str | None, optional
+        An optional ID for the modal, by default None.
+    classes : str | None, optional
+        An optional string of classes for the modal, by default None.
+
+    Attributes
+    ----------
+    CSS_PATH : list[str]
+        List of CSS files to be used for styling.
+    instructions : str
+        The instruction text displayed in the modal.
+    left_button_text : str
+        The text displayed on the left button.
+    right_button_text : str
+        The text displayed on the right button.
+    left_button_variant : str
+        The variant type of the left button.
+    right_button_variant : str
+        The variant type of the right button.
 
     Methods
     -------
     on_mount()
-        Method to mount the content of the modal which includes instructions, an input field, and two action buttons.
+        Mounts the content of the modal, including instructions, input
+        field, and action buttons.
     _on_ok_button_pressed()
-        Method to handle the event of the OK button being pressed. Dismisses the modal with the input value if not empty,
-        otherwise dismisses with "0".
+        Handles the event when the OK button is pressed.
     _on_cancel_button_pressed()
-        Method to handle the event of the Cancel button being pressed. Dismisses the modal with value None.
+        Handles the event when the Cancel button is pressed.
     """
 
     CSS_PATH = ["tcss/set_value_modal.tcss"]
@@ -55,12 +77,43 @@ class SetValueModal(DraggableModalScreen):
         id: str | None = None,
         classes: str | None = None,
     ) -> None:
+        """
+        Initializes the SetValueModal.
+
+        Parameters
+        ----------
+        instructions : str, optional
+            Instructions to be displayed at the top of the modal,
+            by default "Set value".
+        left_button_text : str, optional
+            Text for the left button (typically "Ok"), by default "Ok".
+        right_button_text : str, optional
+            Text for the right button (typically "Cancel"),
+            by default "Cancel".
+        left_button_variant : str, optional
+            Variant type for the left button (e.g., "success"),
+            by default "success".
+        right_button_variant : str, optional
+            Variant type for the right button (e.g., "error"),
+            by default "error".
+        title : str, optional
+            Title for the modal, by default "".
+        id : str | None, optional
+            An optional ID for the modal, by default None.
+        classes : str | None, optional
+            An optional string of classes for the modal, by default None.
+        """
         super().__init__(id=id, classes=classes)
-        self.instructions = instructions
-        self.left_button_text = left_button_text
-        self.right_button_text = right_button_text
-        self.left_button_variant = left_button_variant
-        self.right_button_variant = right_button_variant
+        # The instruction text displayed in the modal.
+        self.instructions: str = instructions
+        # The text displayed on the left button.
+        self.left_button_text: str = left_button_text
+        # The text displayed on the right button.
+        self.right_button_text: str = right_button_text
+        # The variant type of the left button.
+        self.left_button_variant: str = left_button_variant
+        # The variant type of the right button.
+        self.right_button_variant: str = right_button_variant
 
         self.title_bar.title = title
 

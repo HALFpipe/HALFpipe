@@ -15,35 +15,51 @@ from .utils.model_conditions_and_contrasts import ModelConditionsAndContrasts
 
 class TaskBased(FeatureTemplate):
     """
-    TaskBased class extends FeatureTemplate to encapsulate and manage the task-based feature operations.
+    Manages task-based features.
+
+    This class extends `FeatureTemplate` to encapsulate and manage user selections
+    related to task-based features,
+    selecting relevant tasks, defining model conditions, and specifying
+    contrasts (with integrated `ModelConditionsAndContrasts` class). In case of
+    non-bids data, it uses `EventFilePanel` to handle event file selection.
 
     Attributes
     ----------
     entity : str
-        The entity description for the task-based feature.
-    filters : dict
-        Additional filters applied to the feature.
+        The entity used to describe task-based features, set to "desc".
+    filters : dict[str, str]
+        Filters used to identify event files.
+        - datatype : str
+            The data type of the event files, set to "func".
+        - suffix : str
+            The suffix of the event files, set to "event".
     featurefield : str
-        Field that encapsulates the feature data.
+        The name of the field in the features dictionary that holds the event
+        file information, set to "events".
     type : str
-        Type identifier for task-based feature.
-    file_panel_class : class
-        GUI panel class for handling event files.
+        A string indicating the type of the feature, which is "task_based".
+    file_panel_class : type[EventFilePanel]
+        The class used to manage the file selection panel for event files,
+        set to `EventFilePanel`.
+    model_conditions_and_contrast_table : ModelConditionsAndContrasts
+        The widget for managing model conditions and contrast.
 
     Methods
     -------
+    __init__(this_user_selection_dict, id, classes)
+        Initializes the TaskBased instance.
     compose() -> ComposeResult
-        Constructs and lays out the GUI components required for task-based features.
-
+        Composes the UI elements for the task-based feature.
     on_mount() -> None
-        Actions to perform when the component is mounted, initializing the panel titles and managing event file panels.
-
-    _on_selection_list_changed_tasks_to_use_selection()
-        Handles updates when the image selection list changes, updating condition lists accordingly.
-
+        Performs actions when the TaskBased feature is mounted.
+    mount_tasks()
+        Mounts task selection and event file panels.
+    _on_tasks_to_use_selection_changed(message)
+        Handles changes in the task selection.
+    _on_selection_list_changed_tasks_to_use_selection(message)
+        Updates conditions when task selection changes.
     update_conditions_table()
-        Updates the conditions table based on the current selections, ensuring the feature and settings dictionaries are
-        accurate.
+        Updates the conditions table based on selected images.
     """
 
     entity = "desc"
@@ -53,6 +69,22 @@ class TaskBased(FeatureTemplate):
     file_panel_class = EventFilePanel
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the TaskBased instance.
+
+        This method initializes the TaskBased object by calling the constructor
+        of the parent class (`FeatureTemplate`). Moreover, it sets up the conditions
+        list, and creating the `ModelConditionsAndContrasts` widget.
+
+        Parameters
+        ----------
+        this_user_selection_dict : dict
+            A dictionary containing the user's selection for this feature.
+        id : str, optional
+            The ID of the widget, by default None.
+        classes : str, optional
+            CSS classes for the widget, by default None.
+        """
         super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
         if "conditions" not in self.feature_dict:
             self.feature_dict["conditions"] = []
@@ -97,6 +129,18 @@ class TaskBased(FeatureTemplate):
 
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
     def _on_tasks_to_use_selection_changed(self, message):
+        """
+        Handles changes in the task selection.
+
+        This method displays an error message if no tasks are selected
+        and reselects the last selected task to ensure that at least one
+        task is always selected.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectionToggled
+            The message object containing information about the task selection change.
+        """
         if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
@@ -113,6 +157,22 @@ class TaskBased(FeatureTemplate):
     @on(file_panel_class.Changed, "#top_event_file_panel")
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
     def _on_selection_list_changed_tasks_to_use_selection(self, message):
+        """
+        Updates conditions when task selection changes.
+
+        This method updates the list of possible conditions based on the
+        currently selected images (`update_conditions_table`). Also, it
+        provides list of all available conditions to the
+        ModelConditionsAndContrasts table (`update_all_possible_conditions`).
+        This is can change for examople when user load an event file. We need to know all possible conditions
+        even though we are not showing them all to the user. For more see class
+        `ModelConditionsAndContrasts`.
+
+        Parameters
+        ----------
+        message : SelectionList.SelectionToggled | EventFilePanel.Changed
+            The message object containing information about the selection change.
+        """
         # this has to be split because when making a subclass, the decorator causes to ignored redefined function in the
         # subclass
 
@@ -134,6 +194,13 @@ class TaskBased(FeatureTemplate):
                 self.update_conditions_table()
 
     def update_conditions_table(self):
+        """
+        Updates the conditions table based on selected images.
+
+        This method updates the condition values in the
+        `ModelConditionsAndContrasts` widget to reflect the conditions
+        associated with the currently selected images.
+        """
         condition_list = []
         for value in self.get_widget_by_id("tasks_to_use_selection").selected:
             condition_list += extract_conditions(entity="task", values=[value])

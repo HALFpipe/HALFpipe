@@ -124,7 +124,7 @@ class FilePatternSummaryStep:
         self.entities = get_schema_entities(self.schema)  # Assumes a function to extract schema entities
 
         # Assuming ctx and database are accessible here
-        self.filepaths = ctx.database.get(**self.filedict)
+        self.filepaths = list(ctx.database.get(**self.filedict))
         self.message, self.n_by_tag = messagefun(
             ctx.database,
             self.filetype_str,

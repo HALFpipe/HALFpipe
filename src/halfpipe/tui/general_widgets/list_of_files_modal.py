@@ -9,27 +9,51 @@ from .draggable_modal_screen import DraggableModalScreen
 
 class ListOfFiles(DraggableModalScreen):
     """
-    ListOfFiles
+    Displays a modal screen with a list of files matching a certain pattern.
 
-    A class that represents a modal screen displaying a list of files that match a certain pattern.
+    This class extends `DraggableModalScreen` to create a modal window
+    that displays a list of files that match a specified pattern. It
+    includes a message describing the pattern match results and a
+    scrollable list of the matching files.
 
-    Parameters
+    Attributes
     ----------
-    pattern_match_results : dict
-        A dictionary containing the pattern match results with keys 'message' and 'files'.
-    **kwargs : dict
-        Additional keyword arguments passed to the parent class.
+    pattern_match_results : dict[str, str | list[str]]
+        A dictionary containing the pattern match results.
+        It should have the following keys:
+        - "message": A string describing the pattern match results.
+        - "files": A list of strings, where each string is a file path
+          that matches the pattern.
 
     Methods
     -------
+    __init__(pattern_match_results, id, classes)
+        Initializes the `ListOfFiles` modal screen.
     on_mount()
-        Invoked when the screen is mounted. It mounts a message, a scrollable list of files, and a close button.
-
+        Mounts the content of the modal screen, including the message,
+        the scrollable list of files, and the close button.
     _on_close_button_pressed()
-        Handles the event when the close button is pressed. It removes the modal screen from the view.
+        Handles the event when the close button is pressed, dismissing
+        the modal screen.
     """
 
     def __init__(self, pattern_match_results, **kwargs) -> None:
+        """
+        Initializes the ListOfFiles modal screen.
+
+        Parameters
+        ----------
+        pattern_match_results : dict[str, str | list[str]]
+            A dictionary containing the pattern match results.
+            It should have the following keys:
+            - "message": A string describing the pattern match results.
+            - "files": A list of strings, where each string is a file path
+              that matches the pattern.
+        id : str | None, optional
+            The ID of the widget, by default None.
+        classes : str | None, optional
+            CSS classes for the widget, by default None.
+        """
         super().__init__(**kwargs)
         self.pattern_match_results = pattern_match_results
         self.title_bar.title = "List of matching files"

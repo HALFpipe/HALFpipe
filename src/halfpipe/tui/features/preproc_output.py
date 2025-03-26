@@ -6,21 +6,25 @@ from .task_based import TaskBased
 
 class PreprocessedOutputOptions(TaskBased):
     """
-    PreprocessedOutputOptions(this_user_selection_dict, **kwargs)
+    Manages options for outputting preprocessed images.
 
-    Class for managing preprocessed image output options.
+    This class extends the `TaskBased` class to handle options related to
+    outputting preprocessed images. It inherits the basic structure and
+    functionality from `TaskBased` but removes the model conditions and
+    contrasts widget, as it is not relevant for preprocessed image output.
 
-    Parameters
+    Attributes
     ----------
-    this_user_selection_dict : dict
-        Dictionary containing user selections.
-    **kwargs
-        Additional keyword arguments passed to the superclass.
+    type : str
+        The type of the feature, which is "preprocessed_image".
 
     Methods
     -------
-    on_mount()
-        Async method to handle actions when the widget is mounted.
+    __init__(this_user_selection_dict, **kwargs)
+        Initializes the PreprocessedOutputOptions instance.
+    mount_tasks()
+        Removes the model conditions and contrasts widget and sets the
+        border title for the tasks to use selection.
     """
 
     def __init__(self, this_user_selection_dict, **kwargs) -> None:

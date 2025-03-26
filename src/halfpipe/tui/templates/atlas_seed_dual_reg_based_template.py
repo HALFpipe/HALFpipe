@@ -33,14 +33,27 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         Class used for the file panel in the GUI.
     minimum_coverage_label : str
         Label text for minimum atlas region coverage by individual brain mask.
+    minimum_coverage_tag : str
+        Tag for minimum atlas region coverage by individual brain mask.
 
     Methods
     -------
+    __init__(this_user_selection_dict, id=None, classes=None)
+        Initializes the AtlasSeedDualRegBasedTemplate.
     compose()
         Constructs the GUI layout for atlas-based connectivity.
-
     on_mount()
         Handles actions to be taken when the component is mounted in the GUI.
+    _on_label_with_input_box_changed(message)
+        Handles changes in the LabelWithInputBox widget.
+    on_file_panel_file_item_is_deleted(message)
+        Handles the deletion of a file item in the file panel.
+    on_file_panel_changed(message)
+        Handles changes in the file panel.
+    update_tag_selection_by_children_walk(tagvals)
+        Updates the tag selection list based on the provided tag values.
+    on_tag_selection_changed(selection_list)
+        Handles changes in the tag selection list.
     """
 
     entity = "desc"
@@ -52,6 +65,19 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
     minimum_coverage_tag = "min_region_coverage"
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the AtlasSeedDualRegBasedTemplate.
+
+        Parameters
+        ----------
+        this_user_selection_dict : dict
+            A dictionary containing user selections.
+        id : str, optional
+            An optional identifier for the widget, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the
+            widget, by default None.
+        """
         super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
 
         self.feature_dict.setdefault(self.minimum_coverage_tag, 0.8)
@@ -83,15 +109,52 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
 
     @on(LabelWithInputBox.Changed, "#minimum_coverage")
-    def _on_label_with_input_box_changed(self, message: Message):
+    def _on_label_with_input_box_changed(self, message: Message) -> None:
+        """
+        Handles changes in the LabelWithInputBox widget.
+
+        This method is called when the value of the `LabelWithInputBox`
+        widget changes. It updates the corresponding value in the
+        `feature_dict`.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the change.
+        """
         self.feature_dict[self.minimum_coverage_tag] = message.value
 
     @on(file_panel_class.FileItemIsDeleted, "#top_file_panel")
-    def on_file_panel_file_item_is_deleted(self, message: Message):
+    def on_file_panel_file_item_is_deleted(self, message: Message) -> None:
+        """
+        Handles the deletion of a file item in the file panel.
+
+        This method is called when a file item is deleted in the file
+        panel. It updates the tag selection list to remove any tags
+        associated with the deleted file item.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the deleted
+            file item.
+        """
         self.update_tag_selection_by_children_walk(set([]))
 
     @on(file_panel_class.Changed, "#top_file_panel")
-    def on_file_panel_changed(self, message: Message):
+    def on_file_panel_changed(self, message: Message) -> None:
+        """
+        Handles changes in the file panel.
+
+        This method is called when the file panel changes. It extracts
+        tags from the file paths based on the file pattern and updates
+        the tag selection list.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the change.
+        """
         tagvals = set(self.tagvals)
         template_path = message.value["file_pattern"]
         if isinstance(template_path, Text):
@@ -118,7 +181,19 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
 
         self.update_tag_selection_by_children_walk(tagvals)
 
-    def update_tag_selection_by_children_walk(self, tagvals: set):
+    def update_tag_selection_by_children_walk(self, tagvals: set) -> None:
+        """
+        Updates the tag selection list based on the provided tag values.
+
+        This method updates the tag selection list with the provided tag
+        values. It handles the initial selection of tags and subsequent
+        updates.
+
+        Parameters
+        ----------
+        tagvals : set
+            A set of tag values to update the selection list with.
+        """
         for tagval in sorted(tagvals):
             self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
         # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition of
@@ -141,5 +216,17 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             self.feature_dict[self.featurefield].append(tagval)
 
     @on(SelectionList.SelectedChanged, "#tag_selection")
-    def on_tag_selection_changed(self, selection_list):
+    def on_tag_selection_changed(self, selection_list) -> None:
+        """
+        Handles changes in the tag selection list.
+
+        This method is called when the selection in the `SelectionList`
+        widget changes. It updates the corresponding value in the
+        `feature_dict`.
+
+        Parameters
+        ----------
+        selection_list : SelectionList
+            The selection list widget.
+        """
         self.feature_dict[self.featurefield] = selection_list.control.selected

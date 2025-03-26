@@ -6,99 +6,83 @@ from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Input, Static, Switch
+from textual.widgets import Button, Static, Switch
+from utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
 
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
 from ..data_analyzers.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
-from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..specialized_widgets.filebrowser import FileBrowser
-
-
-class SetInitialVolumesRemovalModal(DraggableModalScreen):
-    """
-    SetInitialVolumesRemovalModal class
-
-    A draggable modal screen that allows users to set the number of initial volumes to remove.
-
-    Methods
-    -------
-    __init__(**kwargs)
-        Initializes the modal with a title.
-
-    on_mount()
-        Sets up the modal content including a prompt, input field, and OK/Cancel buttons.
-
-    _on_ok_button_pressed()
-        Handles the OK button press event, retrieves the input value, and dismisses the modal with the given input.
-
-    _on_cancel_button_pressed()
-        Handles the Cancel button press event and dismisses the modal with None.
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.title_bar.title = "Remove initial volumes"
-
-    def on_mount(self) -> None:
-        self.content.mount(
-            Static("Set number of how many initial volumes to remove"),
-            Input("", id="input_prompt"),
-            Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
-        )
-
-    @on(Button.Pressed, "#ok")
-    def _on_ok_button_pressed(self):
-        input_widget = self.query_one(Input)
-        if input_widget.value == "":
-            self.dismiss("0")
-        else:
-            self.dismiss(input_widget.value)
-
-    @on(Button.Pressed, "#cancel")
-    def _on_cancel_button_pressed(self):
-        self.dismiss(False)
 
 
 class Preprocessing(Widget):
     """
-    Preprocessing is a widget that handles the configuration of various preprocessing settings for neuroimaging data.
+    A widget for configuring preprocessing settings.
+
+    This widget provides a user interface for configuring various
+    preprocessing steps, including anatomical and functional settings. Moreover,
+    an advanced settings are available if needed.
 
     Attributes
     ----------
-    default_settings : dict
-        Default settings for preprocessing operations specified in the widget.
+    default_settings : dict[str, Any]
+        Default settings for preprocessing operations.
 
     Methods
     -------
-    __init__(id: str | None = None, classes: str | None = None) -> None
-        Initializes the Preprocessing widget with optional id and class attributes.
-
+    __init__(id, classes)
+        Initializes the Preprocessing widget.
     compose() -> ComposeResult
-        Constructs and arranges the different interactive components within the widget.
-
-    _on_via_algorithm_switch_changed(self, message)
-        Event handler for changes in the "via_algorithm_switch".
-
-    on_run_reconall_switch_changed(self, message: Message)
-        Event handler for changes in the "run_reconall" switch.
-
-    on_time_slicing_switch_changed(self, message: Message)
-        Asynchronous event handler for changes in the "time_slicing_switch".
-
-    callback_func(self, message_dict: dict)
-        Callback function to handle messages from the FilePattern or CheckMetaData classes.
+        Composes the widget's components.
+    _on_advanced_settings_switch_switch_changed(message)
+        Handles changes in the advanced settings switch.
+    _on_via_algorithm_switch_changed(message)
+        Handles changes in the "Detect non-steady-state via algorithm" switch.
+    on_run_reconall_switch_changed(message)
+        Handles changes in the "Run recon all" switch.
+    on_time_slicing_switch_changed(message)
+        Handles changes in the "Turn on slice timing" switch.
+    callback_func(message_dict)
+        Callback function to handle messages from the FilePattern or
+        CheckMetaData classes.
+    _add_slice_timing_from_file(path)
+        Adds slice timing information from a file (currently a TODO).
+    _on_edit_vols_to_remove_button_pressed()
+        Handles the "Edit" button press for setting initial volumes to remove.
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes the Preprocessing widget.
+
+        Parameters
+        ----------
+        id : str, optional
+            An optional identifier for the widget, by default None.
+        classes : str, optional
+            An optional string of classes for applying styles to the
+            widget, by default None.
+        """
         super().__init__(id=id, classes=classes)
         # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs
         # firstly to be redefined and then the widget recomposed as is done in the working_directory widget.
         self.default_settings = {"run_reconall": False, "slice_timing": False, "via_algorithm_switch": False, "dummy_scans": 0}
 
     def compose(self) -> ComposeResult:
+        """
+        Composes the widget's components.
+
+        This method defines the layout and components of the widget,
+        including anatomical settings, functional settings, advanced
+        settings, and debug settings.
+
+        Yields
+        ------
+        ComposeResult
+            The composed widgets.
+        """
         # Widgets for settings that go to the json files
         anatomical_settings_panel = Container(
             Horizontal(
@@ -255,6 +239,19 @@ class Preprocessing(Widget):
 
     @on(Switch.Changed, "#advanced_settings_switch")
     def _on_advanced_settings_switch_switch_changed(self, message):
+        """
+        Handles changes in the advanced settings switch.
+
+        This method is called when the state of the advanced settings
+        switch changes. It shows or hides the advanced settings panels
+        based on the switch state.
+
+        Parameters
+        ----------
+        message : Switch.Changed
+            The message object containing information about the switch
+            state change.
+        """
         if message.value:
             self.get_widget_by_id("workflowgroup_settings").styles.visibility = "visible"
             self.get_widget_by_id("debuggroup_settings").styles.visibility = "visible"
@@ -266,6 +263,20 @@ class Preprocessing(Widget):
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
+        """
+        Handles changes in the "Detect non-steady-state via algorithm" switch.
+
+        This method is called when the state of the "Detect non-steady-state
+        via algorithm" switch changes. It updates the UI and the
+        application's context based on the switch state. For manual option,
+        an input modal is raised.
+
+        Parameters
+        ----------
+        message : Switch.Changed
+            The message object containing information about the switch
+            state change.
+        """
         if message.value:
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update(
                 "Turn of 'Detect non-steady-state via algorithm' to set manually number of initial volumes to remove"
@@ -277,11 +288,26 @@ class Preprocessing(Widget):
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update("Remove initial volumes from scans")
             self.get_widget_by_id("edit_vols_to_remove_button").styles.visibility = "visible"
             self.get_widget_by_id("remove_volumes_value").styles.visibility = "visible"
-            # rais imidietely the modal
+            # raise imedietely the modal
             self._on_edit_vols_to_remove_button_pressed()
 
     @on(Switch.Changed, "#run_reconall")
     def on_run_reconall_switch_changed(self, message: Message):
+        """
+        Handles changes in the "Turn on slice timing" switch.
+
+        This method is called when the state of the "Turn on slice timing"
+        switch changes. It updates the UI and the application's context
+        based on the switch state. It also runs the
+        `CheckBoldSliceEncodingDirectionStep` to gather metadata.
+
+        Parameters
+        ----------
+
+        message : Switch.Changed
+            The message object containing information about the switch
+            state change.
+        """
         ctx.spec.global_settings["run_reconall"] = message.value
 
     @work(exclusive=True, name="time_slicing_worker")
@@ -334,7 +360,17 @@ class Preprocessing(Widget):
         self.get_widget_by_id("slice_timming_info").update(info_string)
 
     def _add_slice_timing_from_file(self, path: str):
-        # I think that this is a TODO
+        """
+        Adds slice timing information from a file (currently a TODO).
+
+        This method is intended to allow users to specify slice timing
+        information from a file, but it is currently not implemented.
+
+        Parameters
+        ----------
+        path : str
+            The path to the file containing slice timing information.
+        """
         select_widget = self.get_widget_by_id("select_slice_timing")
         if path is not None:
             self.time_slicing_options.insert(-1, path)
@@ -348,7 +384,29 @@ class Preprocessing(Widget):
 
     @on(Button.Pressed, "#edit_vols_to_remove_button")
     def _on_edit_vols_to_remove_button_pressed(self):
-        def update_remove_initial_volumes_value(value: None | str):
+        """
+        Handles the "Edit" button press for setting initial volumes to remove.
+
+        This method is called when the user presses the "Edit" button next
+        to the "Remove initial volumes from scans" label. It pushes the
+        `SetInitialVolumesRemovalModal` onto the screen to allow the user
+        to specify the number of initial volumes to remove.
+        """
+
+        def update_remove_initial_volumes_value(value: None | str) -> None:
+            """
+            Updates the UI and the application's context with the new value.
+
+            This method is called when the `SetInitialVolumesRemovalModal`
+            is dismissed. It updates the "remove_volumes_value" widget with
+            the new value and stores the value in the application's context.
+
+            Parameters
+            ----------
+            value : str | bool
+                The new value for the number of initial volumes to remove,
+                or False if the modal was canceled.
+            """
             remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
             if value is not False:
                 remove_volumes_value_widget.update(value)

@@ -14,17 +14,60 @@ from .linear_model import LinearModel
 
 p = inflect.engine()
 
+# A mapping of model type keys to their display names.
 ITEM_MAP = {"me": "Intercept-only", "lme": "Linear model"}
+# The key used to identify models in the application's data structures.
 ITEM_KEY = "models"
 
 
 class GroupLevelModelSelectionModal(ItemSelectionModal):
+    """
+    A modal for selecting a group-level model type.
+
+    This class extends `ItemSelectionModal` to provide a modal dialog
+    specifically for selecting the type of group-level model to add.
+
+    Attributes
+    ----------
+    ITEM_MAP : dict[str, str]
+        A mapping of model type keys to their display names.
+    ITEM_KEY : str
+        The key used to identify models in the application's data structures.
+    """
+
     ITEM_MAP = ITEM_MAP
     ITEM_KEY = ITEM_KEY
 
 
 class GroupLevelModelSelection(SelectionTemplate):
-    """This is for group level models"""
+    """
+    A widget for managing the selection and configuration of group-level models.
+
+    This class extends `SelectionTemplate` to provide a widget that allows
+    users to add, delete, and configure group-level models. It manages a
+    list of models, each of which can be an intercept-only model or a
+    linear model.
+
+    Attributes
+    ----------
+    ITEM_MAP : dict[str, str]
+        A mapping of model type keys to their display names.
+    ITEM_KEY : str
+        The key used to identify models in the application's data structures.
+
+    Methods
+    -------
+    on_mount()
+        Sets the border title for the content switcher.
+    action_add_item()
+        Pops up a modal to select a model type and then adds a new model widget.
+    fill_cache_and_create_new_content_item(new_item)
+        Creates a new model widget and fills the cache with its data.
+    on_list_view_selected(event)
+        Updates the border title and color of the content switcher when a model is selected.
+    action_delete_item()
+        Pops up a confirmation dialog and then deletes the selected model.
+    """
 
     ITEM_MAP = ITEM_MAP
     ITEM_KEY = ITEM_KEY

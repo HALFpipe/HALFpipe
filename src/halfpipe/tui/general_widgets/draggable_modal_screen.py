@@ -12,58 +12,36 @@ from textual.widgets import Button, Static
 
 class WindowTitleBar(Container):
     """
-    class WindowTitleBar(Container):
-        A class representing a window title bar with customizable options including title, maximize, minimize,
-        and close buttons.
+    Represents a draggable window title bar.
 
+    This class creates a title bar for a draggable window, including
+    options for displaying a title, and close buttons. Minimize, maximize and restore
+    are not available currently.
+
+    Attributes
+    ----------
     DEFAULT_CSS : str
-        The default CSS styling for the WindowTitleBar and its child elements.
-
+        The default CSS styling for the `WindowTitleBar` and its child
+        elements.
     MINIMIZE_ICON : str
         The Unicode icon representing the minimize button.
-
     MAXIMIZE_ICON : str
         The Unicode icon representing the maximize button.
-
     RESTORE_ICON : str
         The Unicode icon representing the restore button.
-
     CLOSE_ICON : str
         The Unicode icon representing the close button.
-
-    title : str
+    title : var[str]
         The title text displayed on the title bar.
+    ALLOW_MAXIMIZE : bool
+        Flag to indicate whether a maximize button should be added.
 
-    __init__(self, title: str = "", allow_maximize: bool = False, allow_minimize: bool = False, **kwargs: Any) -> None
-        Initialize the WindowTitleBar instance with given title, maximize, and minimize options.
-
-        Parameters
-        ----------
-        title : str, optional
-            The title text to be displayed on the title bar. Default is an empty string.
-        allow_maximize : bool, optional
-            Flag to indicate whether a maximize button should be added. Default is False.
-        allow_minimize : bool, optional
-            Flag to indicate whether a minimize button should be added. Default is False.
-        **kwargs : Any
-            Additional keyword arguments.
-
-    compose(self) -> ComposeResult
-        Compose the widgets to be added to the title bar, including the title text and optional minimize, maximize, restore,
-        and close buttons.
-
-        Yields
-        ------
-        Static :
-            A static widget containing the title text.
-        Button :
-            The minimize button if allowed.
-        Button :
-            The maximize button if allowed.
-        Button :
-            A hidden restore button if maximize is allowed.
-        Button :
-            The close button.
+    Methods
+    -------
+    __init__(title, allow_maximize, id, classes)
+        Initializes the `WindowTitleBar` instance.
+    compose() -> ComposeResult
+        Composes the widgets to be added to the title bar.
     """
 
     DEFAULT_CSS = """
@@ -120,7 +98,23 @@ class WindowTitleBar(Container):
         # allow_minimize: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Initialize a title bar."""
+        """
+        Initializes the WindowTitleBar instance.
+
+        Parameters
+        ----------
+        title : str, optional
+            The title text to be displayed on the title bar, by default "".
+        allow_maximize : bool, optional
+            Flag to indicate whether a maximize button should be added,
+            by default False.
+        id : str | None, optional
+            The ID of the widget, by default None.
+        classes : str | None, optional
+            CSS classes for the widget, by default None.
+        **kwargs : Any
+            Additional keyword arguments.
+        """
         super().__init__(**kwargs)
         self.title = title
         self.ALLOW_MAXIMIZE = allow_maximize
@@ -141,51 +135,43 @@ class WindowTitleBar(Container):
 
 class DraggableModalScreen(ModalScreen):
     """
-    DraggableModalScreen is a type of ModalScreen that can be dragged around by the user using the mouse.
+    Represents a draggable modal screen.
 
-    DEFAULT_CSS: str
-        Default CSS styling for the draggable modal screen and its container.
+    This class creates a modal screen that can be dragged around the
+    application window by the user. It includes a title bar and content
+    area.
 
-    __init__(id: str | None = None, classes: str | None = None) -> None
-        Initializes a new DraggableModalScreen instance.
+    Attributes
+    ----------
+    DEFAULT_CSS : str
+        Default CSS styling for the draggable modal screen and its
+        container.
+    title_bar : WindowTitleBar
+        The title bar widget for the modal screen.
+    content : Container
+        The container for the content of the modal screen.
+    mouse_at_drag_start : Offset | None
+        The mouse position at the start of a drag operation.
+    offset_at_drag_start : Offset | None
+        The modal's offset at the start of a drag operation.
 
-        Parameters
-        ----------
-        id: str | None
-            The unique identifier for the modal screen.
-        classes: str | None
-            One or more CSS classes to apply to the modal screen.
-
+    Methods
+    -------
+    __init__(id, classes)
+        Initializes a new `DraggableModalScreen` instance.
     on_resize()
-        Adjusts the width of the window title bar to match the width of the container wrapper when the screen is resized.
-
+        Adjusts the width of the window title bar when the screen is
+        resized.
     compose() -> ComposeResult
         Composes the components of the modal screen.
-
-    on_mouse_move(event: events.MouseMove) -> None
+    on_mouse_move(event)
         Called when the user moves the mouse.
-
-        Parameters
-        ----------
-        event: events.MouseMove
-            The event object containing details about the mouse movement.
-
-    on_mouse_down(event: events.MouseDown) -> None
+    on_mouse_down(event)
         Called when the user presses the mouse button.
-
-        Parameters
-        ----------
-        event: events.MouseDown
-            The event object containing details about the mouse down action.
-
-    on_mouse_up(event: events.MouseUp) -> None
+    on_mouse_up(event)
         Called when the user releases the mouse button.
-
-        Parameters
-        ----------
-        event: events.MouseUp
-            The event object containing details about the mouse up action.
-
+    windown_close()
+        Handles the event when the close button is pressed.
     request_close()
         Requests the modal screen to close.
     """
@@ -206,6 +192,17 @@ class DraggableModalScreen(ModalScreen):
     """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+        """
+        Initializes a new DraggableModalScreen instance.
+
+        Parameters
+        ----------
+        id : str | None, optional
+            The unique identifier for the modal screen, by default None.
+        classes : str | None, optional
+            One or more CSS classes to apply to the modal screen,
+            by default None.
+        """
         super().__init__(id=id, classes=classes)
         self.title_bar = WindowTitleBar(id="window_title_bar")
         self.content = Container(self.title_bar, id="draggable_modal_screen_container_wrapper", classes="window_content")
@@ -214,6 +211,12 @@ class DraggableModalScreen(ModalScreen):
         self.mouse_at_drag_start: Offset | None = None
 
     def on_resize(self):
+        """
+        Adjusts the width of the window title bar when the screen is resized.
+
+        This method is called when the screen is resized. It updates the
+        width of the title bar to match the width of the content container.
+        """
         self.get_widget_by_id("window_title_bar").styles.width = self.get_widget_by_id(
             "draggable_modal_screen_container_wrapper"
         ).container_size.width
@@ -222,7 +225,18 @@ class DraggableModalScreen(ModalScreen):
         yield self.content
 
     def on_mouse_move(self, event: events.MouseMove) -> None:
-        """Called when the user moves the mouse."""
+        """
+        Called when the user moves the mouse.
+
+        This method handles the mouse move event to enable dragging of the
+        modal screen. It calculates the window offset based on the current
+        mouse coursor position.
+
+        Parameters
+        ----------
+        event : events.MouseMove
+            The event object containing details about the mouse movement.
+        """
         window = self.get_widget_by_id("draggable_modal_screen_container_wrapper")
         if self.mouse_at_drag_start is not None:
             # position of the modal at the drag start + current mouse position - mouse position at drag start
@@ -232,7 +246,17 @@ class DraggableModalScreen(ModalScreen):
             )
 
     def on_mouse_down(self, event: events.MouseDown) -> None:
-        """Called when the user presses the mouse button."""
+        """
+        Called when the user presses (and holds) the mouse button.
+
+        This method handles the mouse down event to initiate dragging of
+        the modal screen.
+
+        Parameters
+        ----------
+        event : events.MouseDown
+            The event object containing details about the mouse down action.
+        """
         window = self.get_widget_by_id("draggable_modal_screen_container_wrapper")
         window.focus()
 
@@ -251,14 +275,35 @@ class DraggableModalScreen(ModalScreen):
         self.can_focus = False
 
     def on_mouse_up(self, event: events.MouseUp) -> None:
-        """Called when the user releases the mouse button."""
+        """
+        Called when the user releases the mouse button.
+
+        This method handles the mouse up event to stop dragging of the
+        modal screen.
+
+        Parameters
+        ----------
+        event : events.MouseUp
+            The event object containing details about the mouse up action.
+        """
         self.mouse_at_drag_start = None
         self.release_mouse()
         self.can_focus = True
 
     @on(Button.Pressed, ".window_close")
     def windown_close(self):
+        """
+        Handles the event when the close button is pressed.
+
+        This method is called when the close button in the title bar is
+        pressed. It requests the modal screen to close.
+        """
         self.request_close()
 
     def request_close(self):
+        """
+        Requests the modal screen to close.
+
+        This method dismisses the modal screen.
+        """
         self.dismiss(False)
