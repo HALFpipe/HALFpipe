@@ -11,6 +11,7 @@ from ..data_analyzers.context import ctx
 from ..general_widgets.custom_switch import TextSwitch
 from ..specialized_widgets.confirm_screen import Confirm
 from ..templates.feature_template import entity_label_dict
+from ..help_functions import capitalize_first_letter
 
 aggregate_order = ["dir", "run", "ses", "task"]
 
@@ -117,14 +118,19 @@ class ModelTemplate(Widget):
 
         # If there are no pre-existing cutoff filters, then we just assign the keys from tasks_to_use dict, otherwise
         # we change values of the keys in tasks_to_use to dict to False if there are not present in the 'inputs' dict.
+        print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm', self.model_dict)
         if "inputs" not in self.model_dict:
             self.model_dict["inputs"] = list(self.tasks_to_use.keys())
         else:
             for task_key in self.tasks_to_use.keys():
                 for input in self.model_dict["inputs"]:
-                    if task_key.capitalize() in input:
-                        self.tasks_to_use[task_key] = True
-                        break
+                    # There are several cases, old UI was stripping the underscore from the task name when creating aggregate
+                    # model. Also, when it is just a default task name, then it will maybe not be capitalized. So, anyway,
+                    # just to be sure that we loadin in all cases we try all cases.
+                    for input in self.model_dict["inputs"]:
+                        if task_key.replace("_", "").lower() in input.replace("_", "").lower():
+                            self.tasks_to_use[task_key] = True
+                            break
                     else:
                         self.tasks_to_use[task_key] = False
 

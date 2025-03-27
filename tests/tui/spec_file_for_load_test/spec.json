@@ -1,7 +1,7 @@
 {
     "halfpipe_version": "unknown",
     "schema_version": "3.0",
-    "timestamp": "2024-12-10_16-24",
+    "timestamp": "2025-03-27_10-14",
     "global_settings": {
         "dummy_scans": 9,
         "slice_timing": true,
@@ -85,6 +85,47 @@
             "extension": ".nii.gz",
             "tags": {},
             "metadata": {}
+        },
+        {
+            "path": "/tmp/tui_test/Covariates.xlsx",
+            "datatype": "spreadsheet",
+            "metadata": {
+                "variables": [
+                    {
+                        "name": "IDs",
+                        "type": "id"
+                    },
+                    {
+                        "name": "Case",
+                        "type": "continuous"
+                    },
+                    {
+                        "name": "Age",
+                        "type": "continuous"
+                    },
+                    {
+                        "name": "Sex",
+                        "type": "categorical",
+                        "levels": [
+                            "0",
+                            "1"
+                        ]
+                    },
+                    {
+                        "name": "Site",
+                        "type": "categorical",
+                        "levels": [
+                            "1",
+                            "2",
+                            "3"
+                        ]
+                    },
+                    {
+                        "name": "Severity",
+                        "type": "continuous"
+                    }
+                ]
+            }
         }
     ],
     "settings": [
@@ -401,6 +442,7 @@
                     }
                 }
             ],
+            "high_pass_filter_cutoff": 125.0,
             "hrf": "dgamma"
         },
         {
@@ -410,5 +452,206 @@
             "unfiltered_setting": "fALFF2UnfilteredSetting"
         }
     ],
-    "models": []
+    "models": [
+        {
+            "name": "aggregateDualReg1AcrossTasks",
+            "inputs": [
+                "dualReg_1"
+            ],
+            "filters": [],
+            "type": "fe",
+            "across": "task"
+        },
+        {
+            "name": "aggregateFAlff1AcrossTasks",
+            "inputs": [
+                "fALFF_1"
+            ],
+            "filters": [],
+            "type": "fe",
+            "across": "task"
+        },
+        {
+            "name": "aggregateReHo1AcrossTasks",
+            "inputs": [
+                "reHo_1"
+            ],
+            "filters": [],
+            "type": "fe",
+            "across": "task"
+        },
+        {
+            "name": "aggregateSeedCorr1AcrossTasks",
+            "inputs": [
+                "seedCorr_1"
+            ],
+            "filters": [],
+            "type": "fe",
+            "across": "task"
+        },
+        {
+            "name": "inter_only_1",
+            "inputs": [
+                "aggregateDualReg1AcrossTasks",
+                "aggregateFAlff1AcrossTasks",
+                "aggregateReHo1AcrossTasks",
+                "aggregateSeedCorr1AcrossTasks",
+                "taskBased_1"
+            ],
+            "filters": [
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_mean",
+                    "cutoff": 0.9
+                },
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_perc",
+                    "cutoff": 20.0
+                }
+            ],
+            "type": "me",
+            "across": "sub",
+            "algorithms": [
+                "flame1",
+                "mcartest",
+                "heterogeneity"
+            ]
+        },
+        {
+            "name": "lin_model_1",
+            "inputs": [
+                "dualReg_1",
+                "fALFF_1",
+                "fALFF_2",
+                "reHo_1",
+                "seedCorr_1",
+                "taskBased_1",
+                "taskBased_2"
+            ],
+            "filters": [
+                {
+                    "type": "group",
+                    "action": "include",
+                    "variable": "Sex",
+                    "levels": [
+                        "0"
+                    ]
+                },
+                {
+                    "type": "group",
+                    "action": "include",
+                    "variable": "Site",
+                    "levels": [
+                        "1",
+                        "3"
+                    ]
+                },
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_mean",
+                    "cutoff": 0.5
+                },
+                {
+                    "type": "cutoff",
+                    "action": "exclude",
+                    "field": "fd_perc",
+                    "cutoff": 10.0
+                },
+                {
+                    "type": "missing",
+                    "action": "exclude",
+                    "variable": "Age"
+                },
+                {
+                    "type": "missing",
+                    "action": "exclude",
+                    "variable": "Site"
+                }
+            ],
+            "type": "lme",
+            "across": "sub",
+            "algorithms": [
+                "flame1",
+                "mcartest",
+                "heterogeneity"
+            ],
+            "spreadsheet": "/tmp/tui_test/Covariates.xlsx",
+            "contrasts": [
+                {
+                    "type": "infer",
+                    "variable": [
+                        "Case"
+                    ]
+                },
+                {
+                    "type": "infer",
+                    "variable": [
+                        "Age"
+                    ]
+                },
+                {
+                    "type": "infer",
+                    "variable": [
+                        "Site"
+                    ]
+                },
+                {
+                    "type": "t",
+                    "name": "contrast1",
+                    "variable": [
+                        "Site"
+                    ],
+                    "values": {
+                        "1": 0.0,
+                        "3": 0.0
+                    }
+                },
+                {
+                    "type": "t",
+                    "name": "contrast2",
+                    "variable": [
+                        "Site"
+                    ],
+                    "values": {
+                        "1": 10.0,
+                        "3": 10.0
+                    }
+                },
+                {
+                    "type": "infer",
+                    "variable": [
+                        "Case",
+                        "Age"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "lin_model_2",
+            "inputs": [
+                "aggregateDualReg1AcrossTasks"
+            ],
+            "filters": [],
+            "type": "lme",
+            "across": "sub",
+            "algorithms": [
+                "flame1",
+                "mcartest",
+                "heterogeneity"
+            ],
+            "spreadsheet": "/tmp/tui_test/Covariates.xlsx",
+            "contrasts": [
+                {
+                    "type": "infer",
+                    "variable": [
+                        "Case"
+                    ]
+                }
+            ]
+        }
+    ]
 }
