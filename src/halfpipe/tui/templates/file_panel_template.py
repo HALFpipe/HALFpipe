@@ -8,12 +8,12 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button
 
-from ...specialized_widgets.non_bids_file_itemization import FileItem
 from ..data_analyzers.file_pattern_steps import (
     MatEventsStep,
     TsvEventsStep,
     TxtEventsStep,
 )
+from ..specialized_widgets.non_bids_file_itemization import FileItem
 
 
 class FilePanelTemplate(Widget):

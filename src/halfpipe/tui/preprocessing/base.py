@@ -7,7 +7,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
-from utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
+from .utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
 
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
