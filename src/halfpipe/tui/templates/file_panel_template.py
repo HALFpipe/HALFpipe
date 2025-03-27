@@ -13,7 +13,7 @@ from ..data_analyzers.file_pattern_steps import (
     TsvEventsStep,
     TxtEventsStep,
 )
-from .non_bids_file_itemization import FileItem
+from ...specialized_widgets.non_bids_file_itemization import FileItem
 
 
 class FilePanelTemplate(Widget):

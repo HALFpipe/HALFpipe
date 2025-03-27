@@ -329,8 +329,6 @@ class MainApp(App):
         # ("c", "ctx", "ctx"),
     ]
 
-    BINDINGS = BINDINGS + [("d", "toggle_dark", "Toggle dark mode")]
-
     # maybe rename to available_tasks? this is a top level class variable that contains available tasks.
     available_images: dict = {}
     # if both flags are True, then we show the hidden tabs.
