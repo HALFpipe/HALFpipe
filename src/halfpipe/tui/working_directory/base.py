@@ -336,6 +336,8 @@ spec.json file it is possible to load the therein configuration.",
                 self.get_widget_by_id("work_dir_file_browser").update_input("")
                 ctx.workdir = None
             else:
+                self.app.flags_to_show_tabs["from_input_data_tab"] = True
+                self.app.show_hidden_tabs()
                 self.data_input_success = True
 
     @work(exclusive=True, name="feature_worker")
@@ -484,7 +486,7 @@ spec.json file it is possible to load the therein configuration.",
             for model in self.existing_spec.models:
                 # With aggregate models we deal differently, we do not create a widget for them, but instead create a dummy
                 # entry in cache associated with a particular widget.
-                if model["type"] != "fe":
+                if model.__dict__["type"] != "fe":
                     ctx.cache[model.name]["models"] = copy.deepcopy(model.__dict__)
                 else:
                     # gather all available aggregate models
@@ -514,7 +516,7 @@ spec.json file it is possible to load the therein configuration.",
                     aggregate_cache_dummy_entries[dummy_cache_key] = associated_aggregate_models_list
 
                     # Then create the widgets
-                    await model_widget.add_new_model([model["type"], model["name"]])
+                    await model_widget.add_new_item([model["type"], model["name"]])
 
             # Create the dummy entry in the cache, this needs to be done after the loop to not modify the cache when we are
             # looping over it

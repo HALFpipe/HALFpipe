@@ -142,7 +142,7 @@ class ModelTemplate(Widget):
             Grid(
                 Static("Specify the maximum allowed mean framewise displacement in mm", classes="description_labels"),
                 Input(
-                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f["field"] == "fd_mean")),
+                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f.get("field") == "fd_mean")),
                     placeholder="value",
                     id="cutoff_fd_mean",
                 ),
@@ -154,7 +154,7 @@ class ModelTemplate(Widget):
                     classes="description_labels",
                 ),
                 Input(
-                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f["field"] == "fd_perc")),
+                    value=str(next(f["cutoff"] for f in self.model_dict["filters"] if f.get("field") == "fd_perc")),
                     placeholder="value",
                     id="cutoff_fd_perc",
                 ),

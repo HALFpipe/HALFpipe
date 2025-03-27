@@ -250,7 +250,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         else:
             self.forbid_data_change()
 
-    async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> tuple[str, ...]:
+    async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
         Adds a FileItem widget for specifying a T1 image file pattern.
 
@@ -265,7 +265,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         Returns
         -------
-        tuple[str, ...]
+        str
             A tuple containing the ID of the newly added FileItem widget.
         """
         await self.get_widget_by_id("t1_image_panel").mount(
@@ -279,7 +279,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             )
         )
         self.t1_file_pattern_counter += 1
-        return ("t1_file_pattern_" + str(self.t1_file_pattern_counter),)
+        return "t1_file_pattern_" + str(self.t1_file_pattern_counter)
 
     @on(Button.Pressed, "#add_bold_image_button")
     async def _on_button_add_bold_image_button(self) -> None:

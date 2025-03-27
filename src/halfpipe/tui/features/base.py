@@ -7,7 +7,6 @@ from textual.widgets import (
 )
 
 from ..data_analyzers.context import ctx
-from ..general_widgets.custom_general_widgets import FocusLabel
 from ..templates.item_selection_modal import ItemSelectionModal
 from ..templates.model_template import ModelTemplate
 from ..templates.selection_template import SelectionTemplate
@@ -97,27 +96,6 @@ class FeatureSelection(SelectionTemplate):
     ITEM_MAP = ITEM_MAP
     ITEM_KEY = ITEM_KEY
     SETTING_KEY = SETTING_KEY
-
-    def on_focus_label_selected(self, message: FocusLabel.Selected) -> None:
-        """Changes border title color according to the feature type."""
-
-        # Update content switcher with the newly selected id.
-        # list ids have suffix _flabel, so to match the widget in the content switcher we need to remove this suffix
-        content_switcher_item_new_id = message.control.id[:-7]
-        current_feature = self.feature_items[content_switcher_item_new_id]
-
-        # Use currently selected switcher id to grab the focus label so that we can deselect it.
-        content_switcher_item_old_id = self.get_widget_by_id("content_switcher").current
-        # when we delete item, it can be also a None
-        if content_switcher_item_old_id is not None and content_switcher_item_old_id != content_switcher_item_new_id:
-            collapsible_item_old_id = content_switcher_item_old_id + "_flabel"
-            self.get_widget_by_id(collapsible_item_old_id).deselect()
-
-        self.get_widget_by_id("content_switcher").current = content_switcher_item_new_id
-        self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-            self.ITEM_MAP[current_feature.type], current_feature.name
-        )
-        self.get_widget_by_id("content_switcher").styles.border_title_color = "white"
 
     def on_mount(self) -> None:
         self.get_widget_by_id("content_switcher").border_title = "First-level features"
