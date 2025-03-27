@@ -102,7 +102,7 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
 
     async def on_mount(self) -> None:
         try:
-            self.get_widget_by_id("minimum_coverage").border_title = "Minimum coverage"
+            self.get_widget_by_id("minimum_coverage").border_title = "Minimum brain coverage"
         except Exception:
             pass
         self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"

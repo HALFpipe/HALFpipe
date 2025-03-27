@@ -119,7 +119,7 @@ class TaskBased(FeatureTemplate):
 
     async def mount_tasks(self):
         if self.images_to_use is not None:
-            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Tasks to use"
+            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Select tasks"
         if self.app.is_bids is not True:
             await self.mount(
                 EventFilePanel(id="top_event_file_panel", classes="file_panel components"),
@@ -144,7 +144,7 @@ class TaskBased(FeatureTemplate):
         if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
-                    "You must selected at least one image!",
+                    "You must selected at least one task!",
                     left_button_text=False,
                     right_button_text="OK",
                     right_button_variant="default",

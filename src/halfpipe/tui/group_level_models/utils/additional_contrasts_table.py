@@ -123,8 +123,8 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
             id="contrast_table_upper",
         )
         yield Horizontal(
-            Button("Add contrast values", classes="add_button"),
-            Button("Remove contrast values", classes="delete_button"),
+            Button("Add contrast", classes="add_button"),
+            Button("Remove contrast", classes="delete_button"),
             Button("Sort table", classes="sort_button"),
             id="button_panel",
         )

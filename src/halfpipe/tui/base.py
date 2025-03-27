@@ -31,6 +31,41 @@ from .working_directory.base import WorkDirectory
 BASE_DIR = Path(__file__).resolve().parent
 
 
+async def quit_modal(self):
+    def quit(modal_value):
+        """
+        Callback function to handle the user's quit decision.
+
+        This function is called when the confirmation modal is
+        dismissed. If the user confirms, the application exits.
+
+        Parameters
+        ----------
+        modal_value : bool
+            True if the user confirmed, False otherwise.
+        """
+        if modal_value:
+            exit()
+        else:
+            pass
+
+    # raise the modal only once not matter what
+    if "quit_modal" not in [w.id for w in self.app.walk_children()]:
+        await self.app.push_screen(
+            Confirm(
+                "Do you really want to quit?",
+                left_button_text="YES",
+                right_button_text="NO",
+                left_button_variant="error",
+                right_button_variant="success",
+                title="Quit?",
+                id="quit_modal",
+                classes="confirm_warning",
+            ),
+            quit,
+        )
+
+
 class HeaderCloseIcon(Widget):
     """
     A widget to display a close icon in the header.
@@ -75,37 +110,7 @@ class HeaderCloseIcon(Widget):
             The click event object.
         """
         event.stop()
-
-        def quit(modal_value):
-            """
-            Callback function to handle the user's quit decision.
-
-            This function is called when the confirmation modal is
-            dismissed. If the user confirms, the application exits.
-
-            Parameters
-            ----------
-            modal_value : bool
-                True if the user confirmed, False otherwise.
-            """
-            if modal_value:
-                exit()
-            else:
-                pass
-
-        await self.app.push_screen(
-            Confirm(
-                "Do you really want to quit?",
-                left_button_text="YES",
-                right_button_text="NO",
-                left_button_variant="error",
-                right_button_variant="success",
-                title="Quit?",
-                id="quit_modal",
-                classes="confirm_warning",
-            ),
-            quit,
-        )
+        await quit_modal(self)
 
     def render(self) -> RenderResult:
         """
@@ -325,6 +330,7 @@ class MainApp(App):
         ("p", "show_tab('preprocessing_tab')", "General preprocessing settings"),
         ("g", "show_tab('models_tab')", "Group level models"),
         ("r", "show_tab('run_tab')", "Check and run"),
+        ("ctrl+c", "action_quit", "Quit"),
         # ("x", "reload", "reload"),
         # ("c", "ctx", "ctx"),
     ]
@@ -483,3 +489,7 @@ class MainApp(App):
         # set global settings to defaults use the defaults dictionary at preprocessing_content widget
         for key in self.get_widget_by_id("preprocessing_content").default_settings:
             ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
+
+    async def on_key(self, event: events.Key) -> None:
+        if event.key == "ctrl+c":
+            await quit_modal(self)

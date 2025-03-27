@@ -220,7 +220,12 @@ class SelectionTemplate(Widget):
         confirmation before deleting the item. It unmount the item widget and
         delete its entry from dictionaries.
         """
-        self.app.push_screen(Confirm(), lambda respond: self._delete_item(respond, check_aggregate=False))
+        current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
+        name = self.feature_items[current_content_switcher_item_id].name
+        self.app.push_screen(
+            Confirm(f"Are you sure you want to delete {name}?", title="Delete item", classes="confirm_warning"),
+            lambda respond: self._delete_item(respond, check_aggregate=False),
+        )
 
     def action_sort_features(self):
         """

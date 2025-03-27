@@ -35,4 +35,4 @@ class PreprocessedOutputOptions(TaskBased):
     async def mount_tasks(self):
         self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
         if self.images_to_use is not None:
-            self.get_widget_by_id("tasks_to_use_selection").border_title = "Tasks to use"
+            self.get_widget_by_id("tasks_to_use_selection").border_title = "Select tasks"

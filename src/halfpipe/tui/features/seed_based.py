@@ -49,5 +49,5 @@ class SeedBased(AtlasSeedDualRegBasedTemplate):
     featurefield: str = "seeds"
     type: str = "seed_based_connectivity"
     file_panel_class = SeedMapFilePanel
-    minimum_coverage_label: str = "Minimum seed map region coverage by individual brain mask"
+    minimum_coverage_label: str = "Minimum fMRI brain coverage by seed"
     minimum_coverage_tag: str = "min_seed_coverage"

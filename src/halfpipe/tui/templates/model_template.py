@@ -124,7 +124,7 @@ class ModelTemplate(Widget):
                 for input in self.model_dict["inputs"]:
                     # There are several cases, old UI was stripping the underscore from the task name when creating aggregate
                     # model. Also, when it is just a default task name, then it will maybe not be capitalized. So, anyway,
-                    # just to be sure that we loadin in all cases we try all cases.
+                    # just to be sure that we loading in all cases we try all cases.
                     for input in self.model_dict["inputs"]:
                         if task_key.replace("_", "").lower() in input.replace("_", "").lower():
                             self.tasks_to_use[task_key] = True
@@ -173,7 +173,7 @@ class ModelTemplate(Widget):
         test_string = self.model_dict["inputs"][0]
         matches = [key for key, value in entity_label_dict.items() if value in test_string]
         self.aggregate_panel = Vertical(
-            Static("Aggregate scan-level statistics before analysis", id="aggregate_switch_label", classes="label"),
+            Static("Aggregate individual feature statistics across:", id="aggregate_switch_label", classes="label"),
             SelectionList[str](
                 *[
                     Selection(entity_label_dict[entity], entity, True if entity in matches else False)
@@ -290,7 +290,7 @@ class ModelTemplate(Widget):
         if len(self.get_widget_by_id(message.control.id).selected) == 0:
             self.app.push_screen(
                 Confirm(
-                    "You must selected at least one image!",
+                    "You must selected at least one task!",
                     left_button_text=False,
                     right_button_text="OK",
                     right_button_variant="default",

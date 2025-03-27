@@ -253,7 +253,7 @@ class FileItem(Widget):
 
         # An object containing data to load into the file item.
         self.load_object = load_object
-        self.border_title = "id: " + str(id)
+        # self.border_title = "id: " + str(id)
         # Indicates if the widget is opened from edit.
         self.from_edit = False
         # A message to display in the file item.

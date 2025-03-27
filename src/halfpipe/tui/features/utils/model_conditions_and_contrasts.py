@@ -243,7 +243,7 @@ class ModelConditionsAndContrasts(Widget):
         Dumps the contrast values to the `feature_contrasts_dict`.
     """
 
-    BORDER_TITLE = "Model conditions & contrast vales"
+    BORDER_TITLE = "Select model predictors & set up contrasts"
 
     BINDINGS = [
         ("a", "add_column", "Add column"),
@@ -390,9 +390,9 @@ class ModelConditionsAndContrasts(Widget):
             id="contrast_table_upper",
         )
         yield Horizontal(
-            Button("Add contrast values", classes="add_button", id="add_contrast_values_button"),
-            Button("Remove contrast values", classes="delete_button", id="delete_contrast_values_button"),
-            Button("Sort table", classes="sort_button"),
+            Button("Add contrast", classes="add_button", id="add_contrast_values_button"),
+            Button("Remove contrast", classes="delete_button", id="delete_contrast_values_button"),
+            # Button("Sort table", classes="sort_button"),
             id="button_panel",
         )
 

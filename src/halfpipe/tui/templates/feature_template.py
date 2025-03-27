@@ -277,7 +277,7 @@ class FeatureTemplate(Widget):
         if self.images_to_use is not None:
             # Since there are now always only 'Tasks' in Features, we can name the panel 'Tasks to use', instead of
             # 'Images to Use'
-            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Tasks to use"
+            self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Select tasks"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
         self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
