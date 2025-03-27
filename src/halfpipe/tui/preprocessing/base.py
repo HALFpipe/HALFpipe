@@ -7,7 +7,6 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Static, Switch
-from .utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
 
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
@@ -15,6 +14,7 @@ from ..data_analyzers.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
 from ..specialized_widgets.filebrowser import FileBrowser
+from .utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
 
 
 class Preprocessing(Widget):
