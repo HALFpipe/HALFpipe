@@ -136,6 +136,7 @@ class FmriprepFactory(Factory):
                 "fmap_bspline": global_settings["fmap_bspline"],
                 "force_syn": global_settings["force_syn"],
                 #
+                "force": list(),
                 "ignore": ignore,  # used to disable slice timing
                 # ica_aroma_wf settings
                 "use_aroma": False,  # we do this in halfpipe
