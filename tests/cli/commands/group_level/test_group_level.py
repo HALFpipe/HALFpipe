@@ -91,7 +91,7 @@ def test_group_level(tmp_path: Path) -> None:
         for statistic, value in statistics.items():
             array = np.full(template_mask.shape, np.nan)
             array[template_mask] = value
-            image = new_img_like(template_image, array)
+            image = new_img_like(template_image, array, copy_header=True)
             nib.loadsave.save(image, f"{prefix}_stat-{statistic}_statmap.nii.gz")
         nib.loadsave.save(template_mask_image, f"{prefix}_mask.nii.gz")
 
