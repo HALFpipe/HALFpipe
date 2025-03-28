@@ -1,8 +1,8 @@
 {% set name = "fmripost_aroma" %}
-{% set version = "0.0.8" %}
+{% set version = "0.0.10" %}
 
 # Dependencies derived from:
-# https://github.com/nipreps/fmripost-aroma/blob/d84d680417bed05eda6a4db6374f2825f4893721/pyproject.toml
+# https://github.com/nipreps/fmripost-aroma/blob/0.0.10/pyproject.toml
 
 package:
   name: "{{ name|lower }}"

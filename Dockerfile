@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.10
 
-ARG fmriprep_version=24.1.0
+ARG fmriprep_version=25.0.0
 
 FROM condaforge/miniforge3 AS conda
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public && \
@@ -19,8 +19,9 @@ RUN cat <<EOF >"/usr/bin/retry"
 set -euo pipefail
 attempt="1"
 until "\$@"; do
+    exit_code="\$?"
     if [ "\${attempt}" -ge "5" ]; then
-        exit "$?"
+        exit "\${exit_code}"
     fi
     sleep 10
     attempt=\$((attempt + 1))

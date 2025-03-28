@@ -97,8 +97,8 @@ def load_data(
     var_cope_data[~mask_data] = np.nan
 
     # Create image objects.
-    copes_img = new_img_like(cope_imgs[0], cope_data)
-    var_copes_img = new_img_like(cope_imgs[0], var_cope_data)
+    copes_img = new_img_like(cope_imgs[0], cope_data, copy_header=True)
+    var_copes_img = new_img_like(cope_imgs[0], var_cope_data, copy_header=True)
 
     return copes_img, var_copes_img
 

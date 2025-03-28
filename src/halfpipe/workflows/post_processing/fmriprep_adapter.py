@@ -24,7 +24,7 @@ def init_fmriprep_adapter_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "ds_bold",
+                "bold_file",
                 "ds_mask",
                 # "spatial_reference", # not used anymore
                 "dummy_scans",
@@ -39,29 +39,13 @@ def init_fmriprep_adapter_wf(
         name="outputnode",
     )
 
-    #! Skip select_std for now
-    # select_std = pe.Node(
-    #     KeySelect(fields=["ds_bold", "ds_mask"]),
-    #     name="select_std",
-    #     run_without_submitting=True,
-    #     nohash=True,
-    # )
-    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-
-    # #! next line is a substitute for what used to be "spatial_reference", but we need to re-think this
-    # select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
-
-    # workflow.connect(inputnode, "ds_bold", select_std, "ds_bold")
-    # workflow.connect(inputnode, "ds_mask", select_std, "ds_mask")
-    # workflow.connect(inputnode, "spatial_reference", select_std, "keys")
-
     # We apply mask to remove voxels that are outside brain
     apply_mask = pe.Node(
         interface=fsl.ApplyMask(),
         name="apply_mask",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(inputnode, "ds_bold", apply_mask, "in_file")
+    workflow.connect(inputnode, "bold_file", apply_mask, "in_file")
     workflow.connect(inputnode, "ds_mask", apply_mask, "mask_file")
 
     # Take multiple inputs and put them on a list (through Merge node),
@@ -82,12 +66,9 @@ def init_fmriprep_adapter_wf(
     workflow.connect(inputnode, "dummy_scans", remove_dummy_scans, "count")
     workflow.connect(inputnode, "ds_mask", remove_dummy_scans, "mask")
 
-    #
     workflow.connect(remove_dummy_scans, "out_file", outputnode, "files")
     workflow.connect(inputnode, "ds_mask", outputnode, "mask")
+    # vals are QC metrics, metadata, scanner metadata
     workflow.connect(inputnode, "vals", outputnode, "vals")
 
     return workflow
-
-
-# vals: QC metrics, metadata, scanner metadata

@@ -31,7 +31,7 @@ def test_grand_mean_scaling_volume(tmp_path: Path) -> None:
     image = nib.nifti1.load(image_file)
     image_data = image.get_fdata()
     mask_data = image_data.std(axis=3) > 0
-    mask_image = new_img_like(image, data=mask_data)
+    mask_image = new_img_like(image, data=mask_data, copy_header=True)
 
     # Save mask to file
     mask_file = tmp_path / "mask.nii.gz"

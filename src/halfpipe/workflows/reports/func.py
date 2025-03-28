@@ -32,9 +32,9 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     We need to access the new values of fmriprep for these. This is what they used to be:
     Inputs
     ------
-    ds_bold
+    bold_file
         BOLD series, resampled to template space
-    bold_mask_std
+    ds_mask
         BOLD series mask in template space
     std_dseg: Comes from smriprep
         Segmentation, resampled into standard space
@@ -58,7 +58,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
                 "ds_mask",
                 "t1w_dseg",
                 "anat2std_xfm",
-                "ds_bold",
+                "bold_file",
                 # "spatial_reference",   # TODO: do we need this?
                 "output_spaces",
                 "movpar_file",
@@ -74,22 +74,6 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         ),
         name="inputnode",
     )
-
-    # select_std = pe.Node(
-    #     # KeySelect(fields=["ds_bold", "bold_std_ref", "bold_mask_std", "std_dseg"]),
-    #     KeySelect(fields=["ds_bold", "ds_ref", "ds_mask", "t1w_dseg"]),
-    #     name="select_std",
-    #     run_without_submitting=True,
-    #     nohash=True,
-    # )
-
-    # select_std.inputs.key = f"{Constants.reference_space}_res-{Constants.reference_res}"
-    # select_std.inputs.keys = [f"{Constants.reference_space}_res-{Constants.reference_res}"]
-
-    # workflow.connect(inputnode, "ds_bold", select_std, "ds_bold")
-    # workflow.connect(inputnode, "ds_ref", select_std, "ds_ref")
-    # workflow.connect(inputnode, "ds_mask", select_std, "ds_mask")
-    # workflow.connect(inputnode, "t1w_dseg", select_std, "t1w_dseg")
 
     outputnode = pe.Node(niu.IdentityInterface(fields=["vals"]), name="outputnode")
 
@@ -136,7 +120,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(inputnode, "ds_bold", tsnr, "in_file")
+    workflow.connect(inputnode, "bold_file", tsnr, "in_file")
     workflow.connect(inputnode, "dummy_scans", tsnr, "dummy_scans")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 

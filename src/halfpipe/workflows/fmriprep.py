@@ -136,6 +136,7 @@ class FmriprepFactory(Factory):
                 "fmap_bspline": global_settings["fmap_bspline"],
                 "force_syn": global_settings["force_syn"],
                 #
+                "force": list(),
                 "ignore": ignore,  # used to disable slice timing
                 # ica_aroma_wf settings
                 "use_aroma": False,  # we do this in halfpipe
@@ -192,15 +193,14 @@ class FmriprepFactory(Factory):
                 if func_preproc_wf.get_node("bold_stc_wf") is None:
                     logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
 
-            # disable preproc output to save disk space
-            # func_derivatives_wf = func_preproc_wf.get_node("func_derivatives_wf")
-
+            # Disable preproc output to save disk space
+            ds_bold_std_wf = func_preproc_wf.get_node("ds_bold_std_wf")
             # ! func_derivatives_wf does not exist anymore, but ds_bold_std is part of bold workflows
-            # assert isinstance(func_derivatives_wf, pe.Workflow)
-            # for name in ["ds_bold_surfs", "ds_bold_std"]:
-            #     node = func_derivatives_wf.get_node(name)
-            #     if isinstance(node, pe.Node):
-            #         func_derivatives_wf.remove_nodes([node])
+            if not isinstance(ds_bold_std_wf, pe.Workflow):
+                raise RuntimeError(f'Missing "ds_volumes_wf" in "{func_preproc_wf.name}"')
+            ds_bold = ds_bold_std_wf.get_node("ds_bold")
+            if isinstance(ds_bold, pe.Node):
+                ds_bold_std_wf.remove_nodes([ds_bold])
 
         bold_file_paths -= skipped
 
@@ -243,7 +243,7 @@ class FmriprepFactory(Factory):
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)  # type: ignore
 
-    def connect(self, nodehierarchy, node, source_file=None, subject_id=None, **_) -> set[str]:
+    def connect(self, nodehierarchy, node: pe.Node, source_file=None, subject_id=None, **_) -> set[str]:
         """
         This method connects equally named attributes of nodes
         """
@@ -319,8 +319,9 @@ class FmriprepFactory(Factory):
             _connect(hierarchy)
 
             for name in [
-                "bold_native_wf",
+                "bold_std_wf",
                 "bold_fit_wf",
+                "bold_native_wf",
                 "bold_anat_wf",
                 "bold_surf_wf",
                 "bold_confounds_wf",

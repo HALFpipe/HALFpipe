@@ -47,7 +47,7 @@ def test_bandpass_filter_volume(tmp_path: Path, bandpass_filter: tuple[str, floa
     image_data = image.get_fdata()
     mask_data = image_data.std(axis=3) > 0
 
-    mask_image = new_img_like(image, data=mask_data)
+    mask_image = new_img_like(image, data=mask_data, copy_header=True)
     nib.loadsave.save(mask_image, mask_file)
 
     _, before = welch(image_data[mask_data, :].ravel(), sampling_frequency)
