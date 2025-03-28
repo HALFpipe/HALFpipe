@@ -22,7 +22,7 @@ def init_confounds_select_wf(
     """
     if name is None:
         if confound_names is not None:
-            name = f"confounds_select_{b32_digest(confound_names)[:4]}_wf"
+            name = f"confounds_select_{b32_digest(confound_names)}_wf"
         else:
             name = "confounds_select_wf"
     if suffix is not None:
