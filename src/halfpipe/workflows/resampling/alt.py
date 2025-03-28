@@ -2,13 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import Any
 
 from fmriprep import config
 from fmriprep.workflows.bold.apply import init_bold_volumetric_resample_wf
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.utils.spaces import Reference, SpatialReferences
-from templateflow.api import get as get_template
+from smriprep.interfaces.templateflow import fetch_template_files
 
 from ...resource import get as get_resource
 from ..constants import Constants
@@ -17,7 +17,8 @@ from ..memory import MemoryCalculator
 
 def init_alt_bold_std_trans_wf(
     name="alt_bold_std_trans_wf",
-    spaces: SpatialReferences | None = None,
+    alt_reference_space: str = "MNI152NLin6Asym",
+    alt_reference_specs: dict[str, Any] | None = None,
     memcalc: MemoryCalculator | None = None,
 ):
     """
@@ -30,8 +31,12 @@ def init_alt_bold_std_trans_wf(
     since the resampled mask used to be outputted by fmriprep but not anymore.
 
     """
-    spaces = SpatialReferences(Reference.from_string("MNI152NLin6Asym:res-2"), checkpoint=True) if spaces is None else spaces
+
+    # Handle mutable default arguments
+    if alt_reference_specs is None:
+        alt_reference_specs = dict(res=2)
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
+
     workflow = pe.Workflow(name=name)
 
     # see this
@@ -40,7 +45,6 @@ def init_alt_bold_std_trans_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "t1w_std",
                 "mask_std",
                 "bold_minimal",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
@@ -58,21 +62,19 @@ def init_alt_bold_std_trans_wf(
         name="outputnode",
     )
 
-    #
-    alt_reference_spaces = spaces.get_spaces(nonstandard=False, dim=(3,))
-
     # We use ravel_inputs to flatten the list, to have just a list instead of a list of lists
-    mergexfm = pe.MapNode(niu.Merge(numinputs=2, ravel_inputs=True), iterfield="in1", name="mergexfm")  # no_flatten = false?
-    mergexfm.inputs.in1 = [
-        get_resource(f"tpl_{alt}_from_{Constants.reference_space}_mode_image_xfm.h5") for alt in alt_reference_spaces
-    ]
+    mergexfm = pe.Node(niu.Merge(numinputs=2, ravel_inputs=True), name="mergexfm")
+    mergexfm.inputs.in1 = get_resource(f"tpl_{alt_reference_space}_from_{Constants.reference_space}_mode_image_xfm.h5")
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in2")  # in the fmriprep resample one this one is not there
 
+    omp_nthreads = config.nipype.omp_nthreads
+    if omp_nthreads is None:
+        raise RuntimeError('"omp_nthreads" is not set in the fMRIPrep config file')
     bold_std_trans_wf = init_bold_volumetric_resample_wf(
         metadata={},  # We pass empty metadata so we can reuse workflow between subjects
         jacobian=True,  # TODO: Need to decide if we want the field map jacobian as an output
         mem_gb={"resampled": memcalc.volume_std_gb},  # was memcalc.volume_std_gb
-        omp_nthreads=config.nipype.omp_nthreads,
+        omp_nthreads=omp_nthreads,
         name="bold_volumetric_resample_trans_wf",
     )
 
@@ -80,15 +82,17 @@ def init_alt_bold_std_trans_wf(
     assert isinstance(bold_std_trans_wf_inputnode, pe.Node)
 
     # Derive target reference file
-    target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
-    bold_std_trans_wf_inputnode.inputs.target_ref_file = target_ref_file  # fixed_image
+    template_files = fetch_template_files(alt_reference_space, specs=alt_reference_specs)
+    bold_std_trans_wf_inputnode.inputs.target_ref_file = template_files["t1w"]
+    bold_std_trans_wf_inputnode.inputs.target_mask = template_files["mask"]
 
     fmriprep_merge_node = bold_std_trans_wf.get_node("boldref2target")
+    if fmriprep_merge_node is None:
+        raise RuntimeError('Could not find node "boldref2target"')
     fmriprep_merge_node.inputs.ravel_inputs = True
     fmriprep_merge_node.inputs.no_flatten = False
 
     workflow.connect(mergexfm, "out", bold_std_trans_wf, "inputnode.anat2std_xfm")
-    # workflow.connect(inputnode, "t1w_std", bold_std_trans_wf, "inputnode.target_ref_file")    # same
     workflow.connect(inputnode, "bold_minimal", bold_std_trans_wf, "inputnode.bold_file")
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")  # its a text file instead of h5

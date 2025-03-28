@@ -108,10 +108,7 @@ class LookupFactory(Factory):
         if isinstance(self.previous_factory, LookupFactory):
             if len(self.previous_factory.tpl_by_setting_name) > 0:
                 previous_tpls.extend(set(self.previous_factory.tpl_by_setting_name.values()))
-
-                # 2**16 values for suffix should be sufficient to avoid collisions
-                newsuffixes = [b32_digest(tpl)[:4] for tpl in previous_tpls]
-
+                newsuffixes = [b32_digest(tpl) for tpl in previous_tpls]
                 newsuffix_by_prevtpl = dict(zip(previous_tpls, newsuffixes, strict=False))
 
         suffixes = []

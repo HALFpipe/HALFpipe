@@ -10,7 +10,6 @@ from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import ImageMaths
 from nipype.pipeline import engine as pe
-from templateflow.api import get as get_template
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
 from ...interfaces.image_maths.resample import Resample
@@ -112,13 +111,12 @@ def init_ica_aroma_components_wf(
     # We resample the bold mask as well.
     # We used to have this from the get go but now the in the new init_volumetric_resample_wf
     # fmriprep does not output the mask anymore.
-    target_ref_file = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="T1w")
     resample_mask = pe.Node(
         Resample(
             interpolation="GenericLabel",
-            reference_image=target_ref_file,
-            reference_space=Constants.reference_space,
-            reference_res=Constants.reference_res,
+            input_space=Constants.reference_space,
+            reference_space="MNI152NLin6Asym",
+            reference_res=2,
         ),
         mem_gb=2 * memcalc.volume_std_gb,
         name="resample_mask_to_mni",
@@ -142,9 +140,9 @@ def init_ica_aroma_components_wf(
     # config needs to come from fmripost_aroma, not fmriprep
     if workdir is None:
         raise ValueError("`workdir` must be provided and cannot be None.")
-    config.workflow.melodic_dim = aroma_melodic_dim
+    config.workflow.melodic_dim = aroma_melodic_dim  # type: ignore[assignment]
     config.workflow.denoise_method = None  # disable denoising data
-    config.execution.output_dir = Path(workdir) / "derivatives"
+    config.execution.output_dir = Path(workdir) / "derivatives"  # type: ignore[assignment]
 
     # create ICA-AROMA workflow
     ica_aroma_wf = init_ica_aroma_wf(
@@ -258,7 +256,7 @@ def init_ica_aroma_regression_wf(
     aroma_column_names = pe.Node(
         interface=niu.Function(
             input_names=["mixing", "aroma_noise_ics"],
-            output_names=["column_names", "column_indices"],
+            output_names=["column_names", "column_indices"],  # type: ignore[assignment]
             function=_aroma_column_names,
         ),
         name="aroma_column_names",

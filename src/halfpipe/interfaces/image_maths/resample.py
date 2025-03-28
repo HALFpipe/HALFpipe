@@ -62,12 +62,13 @@ class Resample(ApplyTransforms):
             input_image = nib.nifti1.load(self.inputs.input_image)
             reference_image = nib.nifti1.load(self.inputs.reference_image)
             input_matches_reference = input_image.shape[:3] == reference_image.shape[:3]
-            input_matches_reference = input_matches_reference and np.allclose(
-                input_image.affine,
-                reference_image.affine,
-                atol=1e-2,
-                rtol=1e-2,  # Use a tolerance of 0.01 mm
-            )
+            if input_image.affine is not None and reference_image.affine is not None:
+                input_matches_reference = input_matches_reference and np.allclose(
+                    input_image.affine,
+                    reference_image.affine,
+                    atol=1e-2,
+                    rtol=1e-2,  # Use a tolerance of 0.01 mm
+                )
             input_image_nvol = nvol(input_image)
             if input_image_nvol > 0:
                 self.inputs.input_image_type = 3  # Set to time series
