@@ -19,8 +19,9 @@ RUN cat <<EOF >"/usr/bin/retry"
 set -euo pipefail
 attempt="1"
 until "\$@"; do
+    exit_code="\$?"
     if [ "\${attempt}" -ge "5" ]; then
-        exit "$?"
+        exit "\${exit_code}"
     fi
     sleep 10
     attempt=\$((attempt + 1))
