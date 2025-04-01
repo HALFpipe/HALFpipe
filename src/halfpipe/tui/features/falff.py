@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+from ..standards import falff_defaults
 from .reho import ReHo
 
 
@@ -27,9 +28,11 @@ class Falff(ReHo):
     """
 
     type = "falff"
+    defaults = falff_defaults
 
-    def __init__(self, this_user_selection_dict, **kwargs) -> None:
-        super().__init__(this_user_selection_dict=this_user_selection_dict, **kwargs)
+    def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
+
         self.feature_dict["unfiltered_setting"] = self.feature_dict["name"] + "UnfilteredSetting"
         this_user_selection_dict["unfiltered_setting"]["name"] = self.feature_dict["name"] + "UnfilteredSetting"
         self.unfiltered_settings_dict = this_user_selection_dict["unfiltered_setting"]

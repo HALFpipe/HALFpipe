@@ -31,6 +31,7 @@ from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionMod
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
+from ..standards import field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
@@ -397,11 +398,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 self.refresh()
 
         # actual start of the function, push modal to select the field map type and the mount appropriate FieldMapFilesPanel
-        options = {
-            "epi": "EPI (blip-up blip-down)",
-            "siemens": "Phase difference and magnitude (used by Siemens scanners)",
-            "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
-        }
+        options = field_map_labels
         self.app.push_screen(
             SelectionModal(
                 title="Field map type specification",

@@ -31,29 +31,7 @@ from ..general_widgets.set_value_modal import SetValueModal
 
 # from ..logging import logger
 from ..specialized_widgets.confirm_screen import Confirm
-
-
-def display_str(x):
-    """
-    Formats a string for display, handling specific cases.
-
-    Parameters
-    ----------
-    x : str
-        The input string to format.
-
-    Returns
-    -------
-    str
-        The formatted string.
-    """
-    if x == "MNI152NLin6Asym":
-        return "MNI ICBM 152 non-linear 6th Generation Asymmetric (FSL)"
-    elif x == "MNI152NLin2009cAsym":
-        return "MNI ICBM 2009c Nonlinear Asymmetric"
-    elif x == "slice_encoding_direction":
-        return "slice acquisition direction"
-    return humanize(x)
+from ..standards import display_str
 
 
 def _get_field(schema, key):

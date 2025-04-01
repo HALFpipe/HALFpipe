@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
+from copy import deepcopy
+
 from textual import on
 from textual.containers import Grid, Vertical
 from textual.widget import Widget
@@ -10,9 +12,8 @@ from textual.widgets.selection_list import Selection
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_switch import TextSwitch
 from ..specialized_widgets.confirm_screen import Confirm
+from ..standards import aggregate_order, group_level_modesl_defaults
 from ..templates.feature_template import entity_label_dict
-
-aggregate_order = ["dir", "run", "ses", "task"]
 
 
 class ModelTemplate(Widget):
@@ -47,11 +48,13 @@ class ModelTemplate(Widget):
         A panel containing options for aggregating data.
     default_cutoff_filter_values : list[dict]
         Default values for cutoff filters.
+    defaults : dict
+        A dictionary containing default settings for group-level models.
     """
 
     type: str = ""
     bold_filedict = {"datatype": "func", "suffix": "bold"}
-    aggregate_order = ["dir", "run", "ses", "task"]
+    defaults = group_level_modesl_defaults
 
     def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
         """
@@ -76,6 +79,7 @@ class ModelTemplate(Widget):
         super().__init__(id=id, classes=classes)
         # The variable "is_new" is a flag that signals whether we are loading (or copying) or just creating a completely
         # new model. If it is new, then in the model_dict is exactly one key, i.e., 'name'.
+        defaults = deepcopy(self.defaults)
         self.model_dict = this_user_selection_dict["models"]
         self.is_new = list(self.model_dict.keys()) == ["name"]
 
@@ -92,20 +96,8 @@ class ModelTemplate(Widget):
             cutoff_default_value = False
 
         if [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] == []:
-            self.default_cutoff_filter_values = [
-                {
-                    "type": "cutoff",
-                    "action": "exclude",
-                    "field": "fd_mean",
-                    "cutoff": "0.5",
-                },
-                {
-                    "type": "cutoff",
-                    "action": "exclude",
-                    "field": "fd_perc",
-                    "cutoff": "10.0",
-                },
-            ]
+            self.default_cutoff_filter_values = defaults["cutoffs"].copy()
+
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
 
         # First find all available tasks, assign True to all of them

@@ -2,6 +2,7 @@
 
 
 from ..specialized_widgets.event_file_widget import SpatialMapFilePanel
+from ..standards import dual_reg_defaults
 from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
 
 
@@ -46,9 +47,7 @@ class DualReg(AtlasSeedDualRegBasedTemplate):
     featurefield = "maps"
     type = "dual_regression"
     file_panel_class = SpatialMapFilePanel
-    minimum_coverage_label = "Minimum spatial map region coverage by individual brain mask"
-    widget_header: str = "Network template images"
-    file_selection_widget_header: str = "Select network templates"
+    defaults = dual_reg_defaults
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("minimum_coverage").remove()

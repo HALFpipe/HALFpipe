@@ -25,6 +25,7 @@ from ...model.tags import entity_longnames as entity_display_aliases
 from ...model.utils import get_schema_entities
 from ...utils.path import split_ext
 from ..data_analyzers.context import ctx
+from ..standards import entity_colors
 from .meta_data_steps import (
     CheckMetadataStep,
     CheckPhase1EchoTimeStep,
@@ -33,19 +34,6 @@ from .meta_data_steps import (
     CheckRepetitionTimeStep,
     CheckSpaceStep,
 )
-
-# colors of the entity highlight in the path pattern builder
-entity_colors = {
-    "sub": "red",
-    "ses": "green",
-    "run": "magenta",
-    "task": "cyan",
-    "dir": "yellow",
-    "condition": "orange",
-    "acq": "purple",  # Changed to purple for uniqueness
-    "echo": "brown",  # Changed to brown for uniqueness
-    "desc": "red",  # there is only one entity when desc is used
-}
 
 
 class FilePatternStep:

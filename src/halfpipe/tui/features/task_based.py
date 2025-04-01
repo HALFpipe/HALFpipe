@@ -9,6 +9,7 @@ from textual.widgets import SelectionList
 from ..help_functions import extract_conditions
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.event_file_widget import EventFilePanel
+from ..standards import task_based_defaults
 from ..templates.feature_template import FeatureTemplate
 from .utils.model_conditions_and_contrasts import ModelConditionsAndContrasts
 
@@ -67,6 +68,7 @@ class TaskBased(FeatureTemplate):
     featurefield = "events"
     type = "task_based"
     file_panel_class = EventFilePanel
+    defaults = task_based_defaults
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
         """
@@ -85,7 +87,7 @@ class TaskBased(FeatureTemplate):
         classes : str, optional
             CSS classes for the widget, by default None.
         """
-        super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
+        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
         if "conditions" not in self.feature_dict:
             self.feature_dict["conditions"] = []
         if self.images_to_use is not None:

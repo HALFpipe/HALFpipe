@@ -2,6 +2,7 @@
 
 
 from ..specialized_widgets.event_file_widget import AtlasFilePanel
+from ..standards import atlas_based_connectivity_defaults
 from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
 
 
@@ -41,7 +42,5 @@ class AtlasBased(AtlasSeedDualRegBasedTemplate):
     featurefield = "atlases"
     type = "atlas_based_connectivity"
     file_panel_class = AtlasFilePanel
-    minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
     minimum_coverage_tag = "min_region_coverage"
-    widget_header: str = "Atlas images"
-    file_selection_widget_header: str = "Select atlases"
+    defaults = atlas_based_connectivity_defaults

@@ -52,7 +52,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
         await settable_scroll_screen_down(pilot, 2)
         # turn off
         # await pilot.click(offset=(118, 44))
-        await toggle_smoothing(pilot)
+        # await toggle_smoothing(pilot)
 
         # turn off grand mean scalling
         # await pilot.click(offset=(118, 47))

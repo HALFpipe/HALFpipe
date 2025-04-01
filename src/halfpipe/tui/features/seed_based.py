@@ -2,6 +2,7 @@
 
 
 from ..specialized_widgets.event_file_widget import SeedMapFilePanel
+from ..standards import seed_based_defaults
 from ..templates.atlas_seed_dual_reg_based_template import AtlasSeedDualRegBasedTemplate
 
 
@@ -49,7 +50,5 @@ class SeedBased(AtlasSeedDualRegBasedTemplate):
     featurefield: str = "seeds"
     type: str = "seed_based_connectivity"
     file_panel_class = SeedMapFilePanel
-    minimum_coverage_label: str = "Minimum fMRI brain coverage by seed"
     minimum_coverage_tag: str = "min_seed_coverage"
-    widget_header: str = "Seed images"
-    file_selection_widget_header: str = "Select seeds"
+    defaults = seed_based_defaults

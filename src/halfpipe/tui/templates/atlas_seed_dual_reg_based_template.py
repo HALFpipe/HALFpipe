@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from copy import deepcopy
+
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
@@ -56,15 +58,13 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         Handles changes in the tag selection list.
     """
 
-    entity = "desc"
-    filters = {"datatype": "ref", "suffix": "atlas"}
-    featurefield = "atlases"
-    type = "atlas_based_connectivity"
+    entity: str = ""
+    filters: dict = {}
+    featurefield = ""
+    type: str = ""
     file_panel_class = AtlasFilePanel
-    minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
-    minimum_coverage_tag = "min_region_coverage"
-    widget_header = ""
-    file_selection_widget_header = ""
+    minimum_coverage_tag: str = ""
+    defaults: dict = {}
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
         """
@@ -80,9 +80,15 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             An optional string of classes for applying styles to the
             widget, by default None.
         """
-        super().__init__(this_user_selection_dict=this_user_selection_dict, id=id, classes=classes)
 
-        self.feature_dict.setdefault(self.minimum_coverage_tag, 0.8)
+        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
+
+        defaults = deepcopy(self.defaults)
+        self.minimum_coverage_label = defaults["minimum_coverage_label"]
+        self.widget_header = defaults["widget_header"]
+        self.file_selection_widget_header = defaults["file_selection_widget_header"]
+
+        self.feature_dict.setdefault(self.minimum_coverage_tag, defaults["minimum_brain_coverage"])
         self.feature_dict.setdefault(self.featurefield, [])
 
         self.tagvals: list = []

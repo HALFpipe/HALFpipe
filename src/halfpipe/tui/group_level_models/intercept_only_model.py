@@ -8,8 +8,6 @@ from textual.widgets import SelectionList
 
 from ..templates.model_template import ModelTemplate
 
-aggregate_order = ["dir", "run", "ses", "task"]
-
 
 class InterceptOnlyModel(ModelTemplate):
     """

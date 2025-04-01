@@ -6,6 +6,7 @@ from textual.widgets import ListView
 
 from ..data_analyzers.context import ctx
 from ..specialized_widgets.confirm_screen import Confirm
+from ..standards import group_level_model_label_map
 from ..templates.item_selection_modal import ItemSelectionModal
 from ..templates.model_template import ModelTemplate
 from ..templates.selection_template import SelectionTemplate
@@ -15,7 +16,7 @@ from .linear_model import LinearModel
 p = inflect.engine()
 
 # A mapping of model type keys to their display names.
-ITEM_MAP = {"me": "Intercept-only", "lme": "Linear model"}
+ITEM_MAP = group_level_model_label_map
 # The key used to identify models in the application's data structures.
 ITEM_KEY = "models"
 

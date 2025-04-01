@@ -14,8 +14,6 @@ from ...general_widgets.draggable_modal_screen import DraggableModalScreen
 from ...general_widgets.multichoice_radioset import MultipleRadioSet
 from ...specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 
-aggregate_order = ["dir", "run", "ses", "task"]
-
 
 class AddSpreadsheetModal(DraggableModalScreen):
     """

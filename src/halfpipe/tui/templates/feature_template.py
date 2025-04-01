@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+from copy import deepcopy
 
 import inflect
 from textual import on
@@ -70,7 +71,9 @@ class FeatureTemplate(Widget):
     type: str = ""
     file_panel_class = FilePanelTemplate
 
-    def __init__(self, this_user_selection_dict: dict, id: str | None = None, classes: str | None = None) -> None:
+    def __init__(
+        self, this_user_selection_dict: dict, defaults: dict, id: str | None = None, classes: str | None = None
+    ) -> None:
         """
         Initializes the FeatureTemplate widget.
 
@@ -91,6 +94,8 @@ class FeatureTemplate(Widget):
         this_user_selection_dict : dict
             A dictionary containing user selections and settings. It should have
             keys "features" and "settings".
+        defaults : dict
+            A dictionary containing default settings for features.
         id : str, optional
             An optional identifier for the widget, by default None.
         classes : str, optional
@@ -98,6 +103,7 @@ class FeatureTemplate(Widget):
             default None.
         """
         super().__init__(id=id, classes=classes)
+        defaults = deepcopy(defaults)
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
@@ -107,18 +113,20 @@ class FeatureTemplate(Widget):
         self.feature_dict.setdefault("type", self.type)
 
         self.bandpass_filter_default_switch_value = True
-        if self.type in ["reho", "falff", "atlas_based_connectivity"]:
-            self.setting_dict.setdefault("bandpass_filter", {"type": "frequency_based", "high": "0.1", "low": "0.01"})
-        else:
-            self.setting_dict.setdefault("bandpass_filter", {"type": "gaussian", "hp_width": "125", "lp_width": None})
+        self.setting_dict.setdefault("bandpass_filter", defaults["bandpass_filter"])
+
+        # if self.type in ["reho", "falff", "atlas_based_connectivity"]:
+        #     self.setting_dict.setdefault("bandpass_filter", {"type": "frequency_based", "high": "0.1", "low": "0.01"})
+        # else:
+        #     self.setting_dict.setdefault("bandpass_filter", {"type": "gaussian", "hp_width": "125", "lp_width": None})
 
         if self.setting_dict["bandpass_filter"]["type"] is None:
             self.bandpass_filter_default_switch_value = False
 
-        self.setting_dict.setdefault("smoothing", {"fwhm": "6"})
+        self.setting_dict.setdefault("smoothing", defaults["smoothing"])
 
         self.grand_mean_scaling_default_switch_value = True
-        self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000})
+        self.setting_dict.setdefault("grand_mean_scaling", defaults["grand_mean_scaling"])
         if self.setting_dict["grand_mean_scaling"]["mean"] is None:
             self.grand_mean_scaling_default_switch_value = False
 
@@ -163,19 +171,19 @@ class FeatureTemplate(Widget):
         else:
             self.images_to_use = None
 
-        confounds_options = {
-            "ICA-AROMA": ["ICA-AROMA", False],
-            "(trans|rot)_[xyz]": ["Motion parameters", False],
-            "(trans|rot)_[xyz]_derivative1": ["Derivatives of motion parameters", False],
-            "(trans|rot)_[xyz]_power2": ["Motion parameters squared", False],
-            "(trans|rot)_[xyz]_derivative1_power2": ["Derivatives of motion parameters squared", False],
-            "motion_outlier[0-9]+": ["Motion scrubbing", False],
-            "a_comp_cor_0[0-4]": ["aCompCor (top five components)", False],
-            "white_matter": ["White matter signal", False],
-            "csf": ["CSF signal", False],
-            "global_signal": ["Global signal", False],
-        }
-
+        # confounds_options = {
+        #     "ICA-AROMA": ["ICA-AROMA", False],
+        #     "(trans|rot)_[xyz]": ["Motion parameters", False],
+        #     "(trans|rot)_[xyz]_derivative1": ["Derivatives of motion parameters", False],
+        #     "(trans|rot)_[xyz]_power2": ["Motion parameters squared", False],
+        #     "(trans|rot)_[xyz]_derivative1_power2": ["Derivatives of motion parameters squared", False],
+        #     "motion_outlier[0-9]+": ["Motion scrubbing", False],
+        #     "a_comp_cor_0[0-4]": ["aCompCor (top five components)", False],
+        #     "white_matter": ["White matter signal", False],
+        #     "csf": ["CSF signal", False],
+        #     "global_signal": ["Global signal", False],
+        # }
+        confounds_options = defaults["confounds_options"]
         for confound in self.setting_dict.get("confounds_removal", []):
             confounds_options[confound][1] = True
 

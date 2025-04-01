@@ -7,6 +7,7 @@ from textual.widgets import (
 )
 
 from ..data_analyzers.context import ctx
+from ..standards import feature_label_map
 from ..templates.item_selection_modal import ItemSelectionModal
 from ..templates.model_template import ModelTemplate
 from ..templates.selection_template import SelectionTemplate
@@ -19,15 +20,7 @@ from .seed_based import SeedBased
 from .task_based import TaskBased
 
 p = inflect.engine()
-ITEM_MAP = {
-    "task_based": "Task-based",
-    "seed_based_connectivity": "Seed-based connectivity",
-    "dual_regression": "Network Template Regression",
-    "atlas_based_connectivity": "Atlas-based Connectivity",
-    "reho": "ReHo",
-    "falff": "fALFF",
-    "preprocessed_image": "Output preprocessed image",
-}
+ITEM_MAP = feature_label_map
 ITEM_KEY = "features"
 SETTING_KEY = "settings"
 
