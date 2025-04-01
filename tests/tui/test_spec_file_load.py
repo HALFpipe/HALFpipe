@@ -25,7 +25,12 @@ widget_label_map = {
 
 
 async def run_before(
-    pilot, data_path=None, spec_file_dir_path=None, covariant_spreadsheet_path=None, feature_label=None, scroll_to_remaining_part=False
+    pilot,
+    data_path=None,
+    spec_file_dir_path=None,
+    covariant_spreadsheet_path=None,
+    feature_label=None,
+    scroll_to_remaining_part=False,
 ) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
@@ -200,13 +205,16 @@ def test_load_from_spec_file_f8(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-
-
 def test_load_from_spec_file_resave_spec_file(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
     """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, covariant_spreadsheet_path=covariant_spreadsheet_path)
+    run_before_with_extra_args = partial(
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        covariant_spreadsheet_path=covariant_spreadsheet_path,
+    )
 
     file1 = spec_file_dir_path / "spec.json"
     file2 = spec_file_dir_path / "spec_reference.json"

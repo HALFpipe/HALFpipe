@@ -49,7 +49,7 @@ async def run_before(
         # await pilot.click(offset=(10, 12))
         await pilot.click("#duplicate_item_button")
         # confirm new name
-        await pilot.click('#ok')
+        await pilot.click("#ok")
 
     async def final_stage_tasks():
         # click somewhere outside of the form area

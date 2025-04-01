@@ -72,7 +72,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
         # await pilot.click("#duplicate_item_button")
         await pilot.click(pilot.app.get_widget_by_id("models_content").get_widget_by_id("duplicate_item_button"))
         # confirm new name
-        await pilot.click('#ok')
+        await pilot.click("#ok")
 
         # scroll to see more
         await settable_scroll_screen_down(pilot, 29)

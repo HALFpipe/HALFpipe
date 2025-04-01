@@ -7,10 +7,11 @@ from pathlib import Path
 import pytest
 
 from halfpipe import resource
+from halfpipe.logging import logger
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
 from .create_mock_bids_dataset import create_bids_data
-from halfpipe.logging import logger
+
 
 @pytest.fixture(scope="session", autouse=True)
 def resolved_test_dir_path():
@@ -48,7 +49,6 @@ def fixed_tmp_path() -> Path:
 # Define the fixture with module scope, one subject, three tasks
 @pytest.fixture(scope="session")
 def downloaded_data_path(fixed_tmp_path) -> Path:
-
     tasks_conditions_dict = {
         "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
         "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
