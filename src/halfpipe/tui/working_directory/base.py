@@ -208,7 +208,8 @@ spec.json file it is possible to load the therein configuration.",
         if self.existing_spec is not None:
             self.app.push_screen(
                 Confirm(
-                    "Existing spec file was found! Do you want to load the settings or override the working directory?",
+                    "Existing spec file was found! Do you want to load the settings or \
+overwrite the working directory and start a new analysis?",
                     title="Spec file found",
                     left_button_text="Load",
                     right_button_text="Override",

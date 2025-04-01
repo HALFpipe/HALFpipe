@@ -47,6 +47,8 @@ class DualReg(AtlasSeedDualRegBasedTemplate):
     type = "dual_regression"
     file_panel_class = SpatialMapFilePanel
     minimum_coverage_label = "Minimum spatial map region coverage by individual brain mask"
+    widget_header: str = "Network template images"
+    file_selection_widget_header: str = "Select network templates"
 
     async def on_mount(self) -> None:
         self.get_widget_by_id("minimum_coverage").remove()

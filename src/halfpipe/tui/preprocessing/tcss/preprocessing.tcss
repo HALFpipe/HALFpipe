@@ -54,8 +54,6 @@ Preprocessing {
             width: 5;
         }
     }
-    #manualy_set_volumes_to_remove {
-    }
     Select {
         background: 40% red;
         Horizontal {
@@ -112,6 +110,16 @@ Preprocessing {
             offset-x: 2;
             offset-y: 2;
         }
+    }
+    #manualy_set_volumes_to_remove {
+            height: auto;
+            align: center middle;
+            grid-size: 2;
+            grid-columns: 36 20;
+            offset-x: -3;
+            #number_of_remove_initial_volumes {
+                width: auto;
+            }
     }
 }
 

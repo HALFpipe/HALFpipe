@@ -296,7 +296,7 @@ class EventsStep(FilePatternStep):
         The file dictionary for event files.
     """
 
-    header_str = "Event file pattern"
+    header_str = " Input stimulus onset files"  # Event file pattern
     required_in_path_entities: List[str] = list()
 
     ask_if_missing_entities: List[str] = list()

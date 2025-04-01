@@ -118,7 +118,7 @@ class FeatureTemplate(Widget):
         self.setting_dict.setdefault("smoothing", {"fwhm": "6"})
 
         self.grand_mean_scaling_default_switch_value = True
-        self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000.0})
+        self.setting_dict.setdefault("grand_mean_scaling", {"mean": 10000})
         if self.setting_dict["grand_mean_scaling"]["mean"] is None:
             self.grand_mean_scaling_default_switch_value = False
 
@@ -279,7 +279,7 @@ class FeatureTemplate(Widget):
             # 'Images to Use'
             self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Select tasks"
         self.get_widget_by_id("confounds_selection").border_title = "Remove confounds"
-        self.get_widget_by_id("preprocessing").border_title = "Preprocessing setting"
+        self.get_widget_by_id("preprocessing").border_title = "Preprocessing settings"
         if self.get_widget_by_id("bandpass_filter_type").switch_value is False:
             self.get_widget_by_id("bandpass_filter_lp_width").styles.visibility = "hidden"
             self.get_widget_by_id("bandpass_filter_hp_width").styles.visibility = "hidden"

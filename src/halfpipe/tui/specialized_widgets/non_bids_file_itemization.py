@@ -351,7 +351,7 @@ class FileItem(Widget):
             if self.pattern_class is not None:
                 self.app.push_screen(
                     PathPatternBuilder(
-                        path="/home/tomas/github/ds005115/sub-01/ses-01/func/sub-01_ses-01_task-rest_bold.nii.gz",
+                        path="/",
                         title=self.title,
                         highlight_colors=self.pattern_class.get_entity_colors_list,
                         labels=self.pattern_class.get_entities,

@@ -63,6 +63,8 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
     file_panel_class = AtlasFilePanel
     minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
     minimum_coverage_tag = "min_region_coverage"
+    widget_header = ""
+    file_selection_widget_header = ""
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
         """
@@ -105,8 +107,8 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             self.get_widget_by_id("minimum_coverage").border_title = "Minimum brain coverage"
         except Exception:
             pass
-        self.get_widget_by_id("tag_selection").border_title = self.filters["suffix"].capitalize() + " files"
-        self.get_widget_by_id("top_file_panel").border_title = self.filters["suffix"].capitalize() + " seed images"
+        self.get_widget_by_id("tag_selection").border_title = self.file_selection_widget_header
+        self.get_widget_by_id("top_file_panel").border_title = self.widget_header
 
     @on(LabelWithInputBox.Changed, "#minimum_coverage")
     def _on_label_with_input_box_changed(self, message: Message) -> None:

@@ -302,9 +302,30 @@ class SelectionTemplate(Widget):
 
         This method duplicates the currently selected item, including its
         data in the cache. It then adds the duplicated item to the widget.
+        It prompts the user for a new name for the duplicated item using a
+        `NameInput` modal.
         """
+
+        async def duplicate_item(item_name_copy):
+            if item_name_copy is not None and self.ITEM_KEY is not None:
+                # Deep copy existing data
+                ctx.cache[item_name_copy] = copy.deepcopy(ctx.cache[item_name])
+
+                # Update copied dictionary with new name
+                ctx.cache[item_name_copy][self.ITEM_KEY]["name"] = item_name_copy
+
+                # Optional setting key update (only applies if SETTING_KEY is set)
+                if self.SETTING_KEY:
+                    ctx.cache[item_name_copy][self.ITEM_KEY]["setting"] = item_name_copy + "Setting"
+                    ctx.cache[item_name_copy][self.SETTING_KEY]["name"] = item_name_copy + "Setting"
+
+                # Add new item
+                await self.add_new_item((ctx.cache[item_name_copy][self.ITEM_KEY]["type"], item_name_copy))
+
         if self.ITEM_KEY is None:
             raise NotImplementedError("Child class must define ITEM_KEY.")
+
+        occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
 
         current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
         # deselect current item highlight, because the new copy will be highlighted automatically, avoiding double item
@@ -315,19 +336,10 @@ class SelectionTemplate(Widget):
         item_name = self.feature_items[current_content_switcher_item_id].name
         item_name_copy = item_name + "Copy"
 
-        # Deep copy existing data
-        ctx.cache[item_name_copy] = copy.deepcopy(ctx.cache[item_name])
-
-        # Update copied dictionary with new name
-        ctx.cache[item_name_copy][self.ITEM_KEY]["name"] = item_name_copy
-
-        # Optional setting key update (only applies if SETTING_KEY is set)
-        if self.SETTING_KEY:
-            ctx.cache[item_name_copy][self.ITEM_KEY]["setting"] = item_name_copy + "Setting"
-            ctx.cache[item_name_copy][self.SETTING_KEY]["name"] = item_name_copy + "Setting"
-
-        # Add new item
-        await self.add_new_item((ctx.cache[item_name_copy][self.ITEM_KEY]["type"], item_name_copy))
+        await self.app.push_screen(
+            NameInput(occupied_feature_names, default_value=item_name_copy),
+            duplicate_item,
+        )
 
     @on(Button.Pressed, "#sidebar .rename_button")
     async def action_rename_item(self) -> None:
@@ -370,8 +382,11 @@ class SelectionTemplate(Widget):
             raise NotImplementedError("Child class must define ITEM_KEY.")
 
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
+        content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
+        current_name = self.feature_items[content_switcher_item_current_id].name
+
         await self.app.push_screen(
-            NameInput(occupied_feature_names),
+            NameInput(occupied_feature_names, default_value=current_name),
             rename_item,
         )
 

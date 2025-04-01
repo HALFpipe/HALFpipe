@@ -126,7 +126,7 @@ def evaluate_files(newpathname: str) -> tuple[str, list[str]]:
         return op.normpath(abspath)
 
     # all possible entities
-    schema_entities = ["subject", "session", "run", "acquisition", "task", "atlas", "seed", "map", "desc"]
+    schema_entities = ["subject", "task", "session", "run", "acquisition", "atlas", "seed", "map", "desc"]
     dironly = False
 
     # empty string gives strange behaviour!

@@ -249,14 +249,14 @@ class LinearModel(ModelTemplate):
                     )
                     # To avoid duplicate entries in the filters, use this if. This can happened when we are loading or
                     # duplicating the model.
-                    if filt_dict is None:
-                        filt_dict = {
-                            "type": "group",
-                            "action": "include",
-                            "variable": variable_name,
-                            "levels": [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))],
-                        }
-                        self.model_dict["filters"].append(filt_dict)
+                    # if filt_dict is None:
+                    #     filt_dict = {
+                    #         "type": "group",
+                    #         "action": "include",
+                    #         "variable": variable_name,
+                    #         "levels": [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))],
+                    #     }
+                    #     self.model_dict["filters"].append(filt_dict)
 
             await self.mount(
                 Container(
@@ -453,9 +453,27 @@ class LinearModel(ModelTemplate):
             change.
         """
         variable_name = message.control.id[:-6]
+        all_possible_levels = [str(i) for i in list(set(self.spreadsheet_df.loc[:, variable_name]))]
+        was_updated = False
         for f in self.model_dict["filters"]:
             if f.get("type") == "group" and f.get("variable") == variable_name:
-                f["levels"] = sorted(message.control.selected)
+                if sorted(message.control.selected) != sorted(all_possible_levels):
+                    f["levels"] = sorted(message.control.selected)
+                else:
+                    # if there all options are selected then no levels are input to the 'levels' field in the spec file
+                    self.model_dict["filters"].remove(f)
+                was_updated = True
+
+        # The filter was deleted before but now use requested some selections (and not selecting all of them), so we
+        # must add the filter again.
+        if sorted(message.control.selected) != sorted(all_possible_levels) and was_updated is False:
+            filt_dict = {
+                "type": "group",
+                "action": "include",
+                "variable": variable_name,
+                "levels": sorted(message.control.selected),
+            }
+            self.model_dict["filters"].append(filt_dict)
 
         # When we change selection of the categorical variables, we need to close the contrast tables (if are opened)
         # This is because the tables need an update because the rows of the tables depends on the choices from the

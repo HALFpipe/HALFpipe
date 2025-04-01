@@ -97,7 +97,7 @@ class SelectionModal(DraggableModalScreen):
 
     def __init__(
         self,
-        options=None | dict,
+        options: dict[str, str],
         title="",
         instructions="Select",
         only_ok_button: bool = False,
@@ -109,7 +109,7 @@ class SelectionModal(DraggableModalScreen):
 
         Parameters
         ----------
-        options : dict[str, str], optional
+        options : dict[str, str]
             A dictionary where keys are option identifiers and values are the
             display text for each option. Defaults to {"a": "A", "b": "B"}.
         title : str, optional
@@ -130,7 +130,7 @@ class SelectionModal(DraggableModalScreen):
         self.title_bar.title = title
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
-        self.options: dict = {"a": "A", "b": "B"} if options is None else options
+        self.options: dict = options
 
         # In some cases the user just must made some choice in the selection. In particular this is the case when one is
         # some of the Meta classes (CheckMeta...) are in action. Returning from this stage by hitting the cancel button would
@@ -223,8 +223,8 @@ class DoubleSelectionModal(SelectionModal):
         }
         """
 
-    def __init__(self, options=None, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
-        super().__init__(title=title, id=id, classes=classes)
+    def __init__(self, options, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
+        super().__init__(options, title=title, id=id, classes=classes)
         self.instructions = instructions
         self.options: dict = options
         self.choice: List[str] = ["default_choice??? todo", "1"]

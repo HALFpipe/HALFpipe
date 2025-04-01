@@ -297,8 +297,7 @@ class Run(Widget):
                         type=model["type"],
                         across="sub" if not name.endswith("__aggregate_models_list") else model["across"],
                     )
-
-                    if modelobj not in ctx.spec.models:
+                    if modelobj.name not in [m.__dict__["name"] for m in ctx.spec.models]:
                         ctx.spec.models.append(modelobj)
                         for key, value in model.items():
                             setattr(ctx.spec.models[-1], key, value)

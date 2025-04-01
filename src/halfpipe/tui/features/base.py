@@ -22,8 +22,8 @@ p = inflect.engine()
 ITEM_MAP = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
-    "dual_regression": "Dual regression",
-    "atlas_based_connectivity": "Atlas-based connectivity matrix",
+    "dual_regression": "Network Template Regression",
+    "atlas_based_connectivity": "Atlas-based Connectivity",
     "reho": "ReHo",
     "falff": "fALFF",
     "preprocessed_image": "Output preprocessed image",

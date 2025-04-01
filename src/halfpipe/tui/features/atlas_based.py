@@ -43,3 +43,5 @@ class AtlasBased(AtlasSeedDualRegBasedTemplate):
     file_panel_class = AtlasFilePanel
     minimum_coverage_label = "Minimum atlas region coverage by individual brain mask"
     minimum_coverage_tag = "min_region_coverage"
+    widget_header: str = "Atlas images"
+    file_selection_widget_header: str = "Select atlases"

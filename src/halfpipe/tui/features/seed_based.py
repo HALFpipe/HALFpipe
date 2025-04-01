@@ -51,3 +51,5 @@ class SeedBased(AtlasSeedDualRegBasedTemplate):
     file_panel_class = SeedMapFilePanel
     minimum_coverage_label: str = "Minimum fMRI brain coverage by seed"
     minimum_coverage_tag: str = "min_seed_coverage"
+    widget_header: str = "Seed images"
+    file_selection_widget_header: str = "Select seeds"

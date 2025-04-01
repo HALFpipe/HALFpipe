@@ -51,14 +51,14 @@ def find_common_start(strings):
     return common_start
 
 
-def create_path_option_list(base="/home/tomas/github/", include_base=False):
+def create_path_option_list(base="/", include_base=False):
     """
     Creates a list of file paths within a specified base directory.
 
     Parameters
     ----------
     base : str, optional
-        The base directory path, default is "/home/tomas/github/".
+        The base directory path, default is "/".
     include_base : bool, optional
         Determines whether to include the base directory in the returned list,
         default is False.

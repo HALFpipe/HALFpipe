@@ -45,13 +45,14 @@ def path_test(path: str, isfile: bool = False) -> str:
         - "File not found." if the path does not exist.
     """
     if os.path.exists(path):
-        if os.access(path, os.W_OK):
-            if isfile:
-                result_info = "OK" if os.path.isfile(path) else "A directory was selected instead of a file!"
-            else:
-                result_info = "OK" if os.path.isdir(path) else "A file was selected instead of a directory!"
+        # if os.access(path, os.W_OK):
+        # read-in should be allowed always
+        if isfile:
+            result_info = "OK" if os.path.isfile(path) else "A directory was selected instead of a file!"
         else:
-            result_info = "Permission denied."
+            result_info = "OK" if os.path.isdir(path) else "A file was selected instead of a directory!"
+        # else:
+        #     result_info = "Permission denied."
     else:
         result_info = "File not found."
     return result_info

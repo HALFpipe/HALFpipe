@@ -72,7 +72,7 @@ class ContrastTableInputWindow(DraggableModalScreen):
         for key, value in self.table_row_index.items():
             input_box = Input(
                 placeholder="Value",
-                value=value,
+                value="0",
                 name=key,
                 classes="input_values",
             )

@@ -486,9 +486,12 @@ class MainApp(App):
         ctx.cache.clear()
         FilePanelTemplate.reset_all_counters()
 
-        # set global settings to defaults use the defaults dictionary at preprocessing_content widget
-        for key in self.get_widget_by_id("preprocessing_content").default_settings:
-            ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
+        # # set global settings to defaults use the defaults dictionary at preprocessing_content widget
+        # for key in self.get_widget_by_id("preprocessing_content").default_settings:
+        #     ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
+        ctx.spec.global_settings["dummy_scans"] = "0"
+        ctx.spec.global_settings["run_reconall"] = False
+        ctx.spec.global_settings["slice_timing"] = False
 
     async def on_key(self, event: events.Key) -> None:
         if event.key == "ctrl+c":

@@ -24,6 +24,8 @@ class NameInput(DraggableModalScreen):
     ----------
     occupied_feature_names : list[str]
         A list of names that are already in use.
+    default_value : str | None
+        An optional default value to pre-fill the input field.
 
     Methods
     -------
@@ -65,7 +67,7 @@ class NameInput(DraggableModalScreen):
     }
     """
 
-    def __init__(self, occupied_feature_names) -> None:
+    def __init__(self, occupied_feature_names, default_value=None) -> None:
         """
         Initializes the NameInput modal.
 
@@ -73,10 +75,13 @@ class NameInput(DraggableModalScreen):
         ----------
         occupied_feature_names : list[str]
             A list of names that are already in use.
+        default_value : str | None, optional
+            An optional default value to pre-fill the input field, by default None.
         """
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
         self.title_bar.title = "Feature name"
+        self.default_value = default_value if default_value is not None else None
 
     def on_mount(self) -> None:
         """
@@ -88,6 +93,7 @@ class NameInput(DraggableModalScreen):
         """
         self.content.mount(
             Input(
+                value=self.default_value,
                 placeholder="Enter feature name",
                 id="feature_name",
                 classes="feature_name",

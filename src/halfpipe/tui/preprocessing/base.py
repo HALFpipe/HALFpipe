@@ -3,18 +3,18 @@
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Static, Switch
+from textual.widgets import Input, Static, Switch
 
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
 from ..data_analyzers.meta_data_steps import CheckBoldSliceEncodingDirectionStep
 from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
+from ..help_functions import widget_exists
 from ..specialized_widgets.filebrowser import FileBrowser
-from .utils.initial_volumes_removal_modal import SetInitialVolumesRemovalModal
 
 
 class Preprocessing(Widget):
@@ -68,7 +68,12 @@ class Preprocessing(Widget):
         super().__init__(id=id, classes=classes)
         # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs
         # firstly to be redefined and then the widget recomposed as is done in the working_directory widget.
-        self.default_settings = {"run_reconall": False, "slice_timing": False, "via_algorithm_switch": False, "dummy_scans": 0}
+        ctx.spec.global_settings.setdefault("dummy_scans", "0")
+        ctx.spec.global_settings.setdefault("run_reconall", False)
+        ctx.spec.global_settings.setdefault("slice_timing", False)
+
+        # self.default_settings = {"run_reconall": False, "slice_timing": False,
+        # "via_algorithm_switch": False, "dummy_scans": 0}
 
     def compose(self) -> ComposeResult:
         """
@@ -86,8 +91,8 @@ class Preprocessing(Widget):
         # Widgets for settings that go to the json files
         anatomical_settings_panel = Container(
             Horizontal(
-                Static("Run recon all", classes="description_labels"),
-                TextSwitch(value=self.default_settings["run_reconall"], id="run_reconall"),
+                Static("Run FreeSurfer Recon-all", classes="description_labels"),
+                TextSwitch(value=ctx.spec.global_settings["run_reconall"], id="run_reconall"),
             ),
             id="anatomical_settings",
             classes="components",
@@ -96,7 +101,7 @@ class Preprocessing(Widget):
         slice_timing_panel = Container(
             Horizontal(
                 Static("Turn on slice timing", classes="description_labels"),
-                TextSwitch(value=self.default_settings["slice_timing"], id="time_slicing_switch"),
+                TextSwitch(value=ctx.spec.global_settings["slice_timing"], id="time_slicing_switch"),
             ),
             slice_timming_info_panel,
             id="slice_timing",
@@ -105,16 +110,21 @@ class Preprocessing(Widget):
         remove_initial_volumes_panel = Vertical(
             Horizontal(
                 Static("Detect non-steady-state via algorithm", classes="description_labels"),
-                TextSwitch(False if self.default_settings["dummy_scans"] is not None else True, id="via_algorithm_switch"),
+                TextSwitch(False if ctx.spec.global_settings["dummy_scans"] is not None else True, id="via_algorithm_switch"),
             ),
-            Horizontal(
+            Grid(
                 Static(
                     "Remove initial volumes from scans",
                     id="manualy_set_volumes_to_remove_label",
                     classes="description_labels",
                 ),
-                Static(str(self.default_settings["dummy_scans"]), id="remove_volumes_value"),
-                Button("🖌", id="edit_vols_to_remove_button", classes="icon_buttons"),
+                Input(
+                    value=str(ctx.spec.global_settings["dummy_scans"]),
+                    placeholder="value",
+                    id="number_of_remove_initial_volumes",
+                ),
+                # Static(str(self.default_settings["dummy_scans"]), id="remove_volumes_value"),
+                # Button("🖌", id="edit_vols_to_remove_button", classes="icon_buttons"),
                 id="manualy_set_volumes_to_remove",
             ),
             id="remove_initial_volumes",
@@ -126,8 +136,7 @@ class Preprocessing(Widget):
             id="functional_settings",
             classes="components",
         )
-
-        # Advanced setting widgets for halfpipe settings
+        # Advanced setting widgets switch
         advanced_settings_switch_panel = Container(
             Horizontal(
                 Static("Advanced settings", classes="description_labels"),
@@ -136,7 +145,34 @@ class Preprocessing(Widget):
             id="advanced_settings_switch_panel",
             classes="components",
         )
-        workflowgroup_settings_panel = Container(
+
+        # The titles and the other styling settings need to be set in the compose because on load from a spec file
+        # the settings from the spec file are passed as the default_settings variable and the whole widget needs to be
+        # recomposed. When recomposing, the titles and etc. are deleted and can be newly added when they are defined
+        # only in the compose function.
+        functional_settings_panel.border_title = "Functional settings"
+        anatomical_settings_panel.border_title = "Anatomical settings"
+        slice_timing_panel.border_title = "Slice timing"
+        slice_timing_panel.styles.height = "5"
+        remove_initial_volumes_panel.border_title = "Initial volumes removal"
+        slice_timming_info_panel.styles.visibility = "hidden"
+
+        advanced_settings_switch_panel.border_title = "Advanced settings"
+
+        # workflowgroup_settings_panel.styles.visibility = "hidden"
+        # debuggroup_settings_panel.styles.visibility = "hidden"
+        # rungroup_settings_panel.styles.visibility = "hidden"
+
+        yield anatomical_settings_panel
+        yield functional_settings_panel
+        yield advanced_settings_switch_panel
+        # yield workflowgroup_settings_panel
+        # yield debuggroup_settings_panel
+        # yield rungroup_settings_panel
+
+    def build_advanced_settings_widgets(self):
+        # Advanced setting widgets for halfpipe settings
+        self.workflowgroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Number of nipype omp threads",
                 value="1",
@@ -151,14 +187,14 @@ class Preprocessing(Widget):
             classes="components",
         )
 
-        debuggroup_settings_panel = Container(
+        self.debuggroup_settings_panel = Container(
             LabelledSwitch("Debug", False),
             LabelledSwitch("Profile", False),
             LabelledSwitch("Watchdog", False),
             id="debuggroup_settings",
             classes="components",
         )
-        rungroup_settings_panel = Container(
+        self.rungroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Merge subject workflows to n chunks",
                 value="",
@@ -210,35 +246,12 @@ class Preprocessing(Widget):
             id="rungroup_settings",
             classes="components",
         )
-        # The titles and the other styling settings need to be set in the compose because on load from a spec file
-        # the settings from the spec file are passed as the default_settings variable and the whole widget needs to be
-        # recomposed. When recomposing, the titles and etc. are deleted and can be newly added when they are defined
-        # only in the compose function.
-        functional_settings_panel.border_title = "Functional settings"
-        anatomical_settings_panel.border_title = "Anatomical settings"
-        slice_timing_panel.border_title = "Slice timing"
-        slice_timing_panel.styles.height = "5"
-        remove_initial_volumes_panel.border_title = "Initial volumes removal"
-        slice_timming_info_panel.styles.visibility = "hidden"
-
-        advanced_settings_switch_panel.border_title = "Advanced settings"
-        workflowgroup_settings_panel.border_title = "Workflow settings"
-        debuggroup_settings_panel.border_title = "Debug settings"
-        rungroup_settings_panel.border_title = "Run settings"
-
-        workflowgroup_settings_panel.styles.visibility = "hidden"
-        debuggroup_settings_panel.styles.visibility = "hidden"
-        rungroup_settings_panel.styles.visibility = "hidden"
-
-        yield anatomical_settings_panel
-        yield functional_settings_panel
-        yield advanced_settings_switch_panel
-        yield workflowgroup_settings_panel
-        yield debuggroup_settings_panel
-        yield rungroup_settings_panel
+        self.workflowgroup_settings_panel.border_title = "Workflow settings"
+        self.debuggroup_settings_panel.border_title = "Debug settings"
+        self.rungroup_settings_panel.border_title = "Run settings"
 
     @on(Switch.Changed, "#advanced_settings_switch")
-    def _on_advanced_settings_switch_switch_changed(self, message):
+    async def _on_advanced_settings_switch_switch_changed(self, message):
         """
         Handles changes in the advanced settings switch.
 
@@ -252,14 +265,25 @@ class Preprocessing(Widget):
             The message object containing information about the switch
             state change.
         """
+
         if message.value:
-            self.get_widget_by_id("workflowgroup_settings").styles.visibility = "visible"
-            self.get_widget_by_id("debuggroup_settings").styles.visibility = "visible"
-            self.get_widget_by_id("rungroup_settings").styles.visibility = "visible"
+            # self.get_widget_by_id("workflowgroup_settings").styles.visibility = "visible"
+            # self.get_widget_by_id("debuggroup_settings").styles.visibility = "visible"
+            # self.get_widget_by_id("rungroup_settings").styles.visibility = "visible"
+            self.build_advanced_settings_widgets()
+            await self.mount(self.workflowgroup_settings_panel)
+            await self.mount(self.debuggroup_settings_panel)
+            await self.mount(self.rungroup_settings_panel)
         else:
-            self.get_widget_by_id("workflowgroup_settings").styles.visibility = "hidden"
-            self.get_widget_by_id("debuggroup_settings").styles.visibility = "hidden"
-            self.get_widget_by_id("rungroup_settings").styles.visibility = "hidden"
+            if widget_exists(self, "workflowgroup_settings") is True:
+                await self.get_widget_by_id("workflowgroup_settings").remove()
+            if widget_exists(self, "debuggroup_settings") is True:
+                await self.get_widget_by_id("debuggroup_settings").remove()
+            if widget_exists(self, "rungroup_settings") is True:
+                await self.get_widget_by_id("rungroup_settings").remove()
+            # self.get_widget_by_id("workflowgroup_settings").styles.visibility = "hidden"
+            # self.get_widget_by_id("debuggroup_settings").styles.visibility = "hidden"
+            # self.get_widget_by_id("rungroup_settings").styles.visibility = "hidden"
 
     @on(Switch.Changed, "#via_algorithm_switch")
     def _on_via_algorithm_switch_changed(self, message):
@@ -281,15 +305,13 @@ class Preprocessing(Widget):
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update(
                 "Turn of 'Detect non-steady-state via algorithm' to set manually number of initial volumes to remove"
             )
-            self.get_widget_by_id("edit_vols_to_remove_button").styles.visibility = "hidden"
-            self.get_widget_by_id("remove_volumes_value").styles.visibility = "hidden"
+            self.get_widget_by_id("number_of_remove_initial_volumes").styles.visibility = "hidden"
             ctx.spec.global_settings["dummy_scans"] = None
         else:
             self.get_widget_by_id("manualy_set_volumes_to_remove_label").update("Remove initial volumes from scans")
-            self.get_widget_by_id("edit_vols_to_remove_button").styles.visibility = "visible"
-            self.get_widget_by_id("remove_volumes_value").styles.visibility = "visible"
+            self.get_widget_by_id("number_of_remove_initial_volumes").styles.visibility = "visible"
             # raise imedietely the modal
-            self._on_edit_vols_to_remove_button_pressed()
+            # self._on_edit_vols_to_remove_button_pressed()
 
     @on(Switch.Changed, "#run_reconall")
     def on_run_reconall_switch_changed(self, message: Message):
@@ -382,35 +404,39 @@ class Preprocessing(Widget):
             select_widget.value = select_widget.BLANK
             select_widget.styles.background = "40% red"
 
-    @on(Button.Pressed, "#edit_vols_to_remove_button")
-    def _on_edit_vols_to_remove_button_pressed(self):
-        """
-        Handles the "Edit" button press for setting initial volumes to remove.
+    @on(Input.Changed, "#number_of_remove_initial_volumes")
+    def _on_number_of_remove_initial_volumes_changed(self, message: Message) -> None:
+        ctx.spec.global_settings["dummy_scans"] = message.value
 
-        This method is called when the user presses the "Edit" button next
-        to the "Remove initial volumes from scans" label. It pushes the
-        `SetInitialVolumesRemovalModal` onto the screen to allow the user
-        to specify the number of initial volumes to remove.
-        """
-
-        def update_remove_initial_volumes_value(value: None | str) -> None:
-            """
-            Updates the UI and the application's context with the new value.
-
-            This method is called when the `SetInitialVolumesRemovalModal`
-            is dismissed. It updates the "remove_volumes_value" widget with
-            the new value and stores the value in the application's context.
-
-            Parameters
-            ----------
-            value : str | bool
-                The new value for the number of initial volumes to remove,
-                or False if the modal was canceled.
-            """
-            remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
-            if value is not False:
-                remove_volumes_value_widget.update(value)
-                remove_volumes_value_widget.styles.border = ("solid", "green")
-                ctx.spec.global_settings["dummy_scans"] = value
-
-        self.app.push_screen(SetInitialVolumesRemovalModal(), update_remove_initial_volumes_value)
+    # @on(Button.Pressed, "#edit_vols_to_remove_button")
+    # def _on_edit_vols_to_remove_button_pressed(self):
+    #     """
+    #     Handles the "Edit" button press for setting initial volumes to remove.
+    #
+    #     This method is called when the user presses the "Edit" button next
+    #     to the "Remove initial volumes from scans" label. It pushes the
+    #     `SetInitialVolumesRemovalModal` onto the screen to allow the user
+    #     to specify the number of initial volumes to remove.
+    #     """
+    #
+    #     def update_remove_initial_volumes_value(value: None | str) -> None:
+    #         """
+    #         Updates the UI and the application's context with the new value.
+    #
+    #         This method is called when the `SetInitialVolumesRemovalModal`
+    #         is dismissed. It updates the "remove_volumes_value" widget with
+    #         the new value and stores the value in the application's context.
+    #
+    #         Parameters
+    #         ----------
+    #         value : str | bool
+    #             The new value for the number of initial volumes to remove,
+    #             or False if the modal was canceled.
+    #         """
+    #         remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
+    #         if value is not False:
+    #             remove_volumes_value_widget.update(value)
+    #             remove_volumes_value_widget.styles.border = ("solid", "green")
+    #             ctx.spec.global_settings["dummy_scans"] = value
+    #
+    #     self.app.push_screen(SetInitialVolumesRemovalModal(), update_remove_initial_volumes_value)
