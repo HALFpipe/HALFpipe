@@ -80,7 +80,7 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             An optional string of classes for applying styles to the
             widget, by default None.
         """
-        _defaults=deepcopy(self.defaults)
+        _defaults = deepcopy(self.defaults)
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=_defaults, id=id, classes=classes)
 
         self.minimum_coverage_label = _defaults["minimum_coverage_label"]

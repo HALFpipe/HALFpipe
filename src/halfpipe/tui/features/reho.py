@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
+from copy import deepcopy
+
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 
 from ..standards import reho_defaults
 from ..templates.feature_template import FeatureTemplate
-from copy import deepcopy
+
 
 class ReHo(FeatureTemplate):
     """
