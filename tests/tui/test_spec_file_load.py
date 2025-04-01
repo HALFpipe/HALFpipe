@@ -91,11 +91,16 @@ def test_load_from_spec_file_f0(
     spec_file_dir_path: Path,
     downloaded_data_path: Path,
     atlases_maps_seed_images_path: Path,
+    covariant_spreadsheet_path: Path,
     feature_label: str = "taskBased_1",
 ) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
-        run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_label=feature_label
+        run_before,
+        data_path=downloaded_data_path,
+        spec_file_dir_path=spec_file_dir_path,
+        covariant_spreadsheet_path=covariant_spreadsheet_path,
+        feature_label=feature_label,
     )
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
