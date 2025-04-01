@@ -18,7 +18,7 @@ schemas = [
     ResultdictTagsSchema,
 ]
 
-entities_list = ["run", "task", "ses", "sub"]
+entities_list = ["run", "ses", "task", "sub"]
 for schema in schemas:  # automatically add other entities
     instance = schema()
     for key in instance.fields.keys():
