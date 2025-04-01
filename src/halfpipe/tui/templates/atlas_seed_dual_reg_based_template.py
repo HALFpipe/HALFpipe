@@ -80,15 +80,14 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             An optional string of classes for applying styles to the
             widget, by default None.
         """
+        _defaults=deepcopy(self.defaults)
+        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=_defaults, id=id, classes=classes)
 
-        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
+        self.minimum_coverage_label = _defaults["minimum_coverage_label"]
+        self.widget_header = _defaults["widget_header"]
+        self.file_selection_widget_header = _defaults["file_selection_widget_header"]
 
-        defaults = deepcopy(self.defaults)
-        self.minimum_coverage_label = defaults["minimum_coverage_label"]
-        self.widget_header = defaults["widget_header"]
-        self.file_selection_widget_header = defaults["file_selection_widget_header"]
-
-        self.feature_dict.setdefault(self.minimum_coverage_tag, defaults["minimum_brain_coverage"])
+        self.feature_dict.setdefault(self.minimum_coverage_tag, _defaults["minimum_brain_coverage"])
         self.feature_dict.setdefault(self.featurefield, [])
 
         self.tagvals: list = []

@@ -6,7 +6,7 @@ from textual.containers import ScrollableContainer
 
 from ..standards import reho_defaults
 from ..templates.feature_template import FeatureTemplate
-
+from copy import deepcopy
 
 class ReHo(FeatureTemplate):
     """
@@ -29,9 +29,10 @@ class ReHo(FeatureTemplate):
     defaults = reho_defaults
 
     def __init__(self, this_user_selection_dict, id: str | None = None, classes: str | None = None) -> None:
-        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
+        _defaults = deepcopy(self.defaults)
+        super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=_defaults, id=id, classes=classes)
         # in this case, smoothing is in features!!!
-        self.feature_dict.setdefault("smoothing", self.defaults["smoothing"])
+        self.feature_dict.setdefault("smoothing", _defaults["smoothing"])
         self.setting_dict.pop("smoothing", None)
         # recreate preprocessing panel to reflect smoothing migration from setting to features (in the spec file).
         self.create_preprocessing_panel(self.feature_dict["smoothing"]["fwhm"])

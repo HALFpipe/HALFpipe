@@ -26,11 +26,13 @@ seed_based_defaults = deepcopy(task_based_defaults)
 seed_based_defaults["minimum_coverage_label"] = "Minimum fMRI brain coverage by seed"
 seed_based_defaults["widget_header"] = "Seed images"
 seed_based_defaults["file_selection_widget_header"] = "Select seeds"
+seed_based_defaults["minimum_brain_coverage"] = 0.8
 
 dual_reg_defaults = deepcopy(task_based_defaults)
 dual_reg_defaults["minimum_coverage_label"] = "Minimum spatial map region coverage by individual brain mask"
 dual_reg_defaults["widget_header"] = "Network template images"
 dual_reg_defaults["file_selection_widget_header"] = "Select network templates"
+dual_reg_defaults["minimum_brain_coverage"] = 0.8
 
 preproc_output_defaults = deepcopy(task_based_defaults)
 preproc_output_defaults["minimum_coverage_label"] = "None"

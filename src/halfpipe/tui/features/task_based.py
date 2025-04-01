@@ -87,6 +87,7 @@ class TaskBased(FeatureTemplate):
         classes : str, optional
             CSS classes for the widget, by default None.
         """
+
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
         if "conditions" not in self.feature_dict:
             self.feature_dict["conditions"] = []

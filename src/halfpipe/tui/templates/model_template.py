@@ -79,7 +79,7 @@ class ModelTemplate(Widget):
         super().__init__(id=id, classes=classes)
         # The variable "is_new" is a flag that signals whether we are loading (or copying) or just creating a completely
         # new model. If it is new, then in the model_dict is exactly one key, i.e., 'name'.
-        defaults = deepcopy(self.defaults)
+        _defaults = deepcopy(self.defaults)
         self.model_dict = this_user_selection_dict["models"]
         self.is_new = list(self.model_dict.keys()) == ["name"]
 
@@ -96,7 +96,7 @@ class ModelTemplate(Widget):
             cutoff_default_value = False
 
         if [f for f in self.model_dict["filters"] if f["type"] == "cutoff"] == []:
-            self.default_cutoff_filter_values = defaults["cutoffs"].copy()
+            self.default_cutoff_filter_values = _defaults["cutoffs"].copy()
 
             self.model_dict["filters"].extend(self.default_cutoff_filter_values)
 

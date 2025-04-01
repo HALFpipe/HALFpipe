@@ -103,7 +103,7 @@ class FeatureTemplate(Widget):
             default None.
         """
         super().__init__(id=id, classes=classes)
-        defaults = deepcopy(defaults)
+        _defaults = deepcopy(defaults)
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
@@ -113,7 +113,7 @@ class FeatureTemplate(Widget):
         self.feature_dict.setdefault("type", self.type)
 
         self.bandpass_filter_default_switch_value = True
-        self.setting_dict.setdefault("bandpass_filter", defaults["bandpass_filter"])
+        self.setting_dict.setdefault("bandpass_filter", _defaults["bandpass_filter"])
 
         # if self.type in ["reho", "falff", "atlas_based_connectivity"]:
         #     self.setting_dict.setdefault("bandpass_filter", {"type": "frequency_based", "high": "0.1", "low": "0.01"})
@@ -123,10 +123,10 @@ class FeatureTemplate(Widget):
         if self.setting_dict["bandpass_filter"]["type"] is None:
             self.bandpass_filter_default_switch_value = False
 
-        self.setting_dict.setdefault("smoothing", defaults["smoothing"])
+        self.setting_dict.setdefault("smoothing", _defaults["smoothing"])
 
         self.grand_mean_scaling_default_switch_value = True
-        self.setting_dict.setdefault("grand_mean_scaling", defaults["grand_mean_scaling"])
+        self.setting_dict.setdefault("grand_mean_scaling", _defaults["grand_mean_scaling"])
         if self.setting_dict["grand_mean_scaling"]["mean"] is None:
             self.grand_mean_scaling_default_switch_value = False
 
@@ -183,7 +183,7 @@ class FeatureTemplate(Widget):
         #     "csf": ["CSF signal", False],
         #     "global_signal": ["Global signal", False],
         # }
-        confounds_options = defaults["confounds_options"]
+        confounds_options = _defaults["confounds_options"]
         for confound in self.setting_dict.get("confounds_removal", []):
             confounds_options[confound][1] = True
 
