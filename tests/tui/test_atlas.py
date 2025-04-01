@@ -16,7 +16,6 @@ from .pilot_functions import (
     settable_scroll_screen_down,
     toggle_bandpass_filter,
     toggle_grand_mean_scaling,
-    toggle_smoothing,
 )
 
 
