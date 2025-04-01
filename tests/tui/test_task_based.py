@@ -59,6 +59,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     async def duplicate():
         # await pilot.click(offset=(10, 12))
         await pilot.click("#duplicate_item_button")
+        # confirm new name
+        await pilot.click('#ok')
         # await scroll_screen_down(pilot)
         await settable_scroll_screen_down(pilot, 50)
 

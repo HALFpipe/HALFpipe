@@ -9,6 +9,7 @@ from .pilot_functions import (
     check_and_run_tab_refresh,
     settable_scroll_screen_down,
 )
+from .utils.compare_jsons import compare_json_files
 
 widget_label_map = {
     "dualReg_1": "#feature_item_4_flabel",
@@ -24,7 +25,7 @@ widget_label_map = {
 
 
 async def run_before(
-    pilot, data_path=None, spec_file_dir_path=None, feature_label=None, scroll_to_remaining_part=False
+    pilot, data_path=None, spec_file_dir_path=None, covariant_spreadsheet_path=None, feature_label=None, scroll_to_remaining_part=False
 ) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
@@ -36,6 +37,8 @@ async def run_before(
     if isinstance(spec_file_dir_path, Path):
         work_dir_path = str(spec_file_dir_path)
         # work_dir_path = "/makethisfail/"
+    if isinstance(covariant_spreadsheet_path, Path):
+        covariant_spreadsheet_path = str(covariant_spreadsheet_path)
 
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
@@ -197,24 +200,16 @@ def test_load_from_spec_file_f8(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# Function to compare files since the 10th line
-def compare_files(file1, file2):
-    with open(file1, "r") as f1, open(file2, "r") as f2:
-        # Skip the first 4 lines in both files
-        f1_lines = f1.readlines()[4:-2]
-        f2_lines = f2.readlines()[4:-2]
-        # Return True if the remaining lines are the same, else False
-        return f1_lines == f2_lines
 
 
 def test_load_from_spec_file_resave_spec_file(
-    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path
+    snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
     """Check whether one can set the working directory."""
-    run_before_with_extra_args = partial(run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path)
+    run_before_with_extra_args = partial(run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, covariant_spreadsheet_path=covariant_spreadsheet_path)
 
     file1 = spec_file_dir_path / "spec.json"
     file2 = spec_file_dir_path / "spec_reference.json"
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-    assert compare_files(file1, file2)
+    assert compare_json_files(file1, file2)

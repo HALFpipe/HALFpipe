@@ -207,7 +207,7 @@
             "confounds_removal": [
                 "(trans|rot)_[xyz]"
             ],
-            "name": "fALFF1UnfilteredSetting",
+            "name": "fALFF_1UnfilteredSetting",
             "filters": [],
             "output_image": false
         },
@@ -347,7 +347,7 @@
             "confounds_removal": [
                 "(trans|rot)_[xyz]"
             ],
-            "name": "fALFF2UnfilteredSetting",
+            "name": "fALFF_2UnfilteredSetting",
             "filters": [
                 {
                     "type": "tag",
@@ -399,7 +399,7 @@
             "smoothing": {
                 "fwhm": 96.0
             },
-            "unfiltered_setting": "fALFF1UnfilteredSetting"
+            "unfiltered_setting": "fALFF_1UnfilteredSetting"
         },
         {
             "name": "seedCorr_1",
@@ -449,7 +449,7 @@
             "name": "fALFF_2",
             "setting": "fAlff2Setting",
             "type": "falff",
-            "unfiltered_setting": "fALFF2UnfilteredSetting"
+            "unfiltered_setting": "fALFF_2UnfilteredSetting"
         }
     ],
     "models": [

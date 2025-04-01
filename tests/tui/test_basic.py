@@ -34,6 +34,8 @@ async def run_before(
         await _load_data(pilot, data_path)
 
     if stage == "non_bids_data_tab" or stage == "preproc_settings":
+        await _set_work_dir(pilot, work_dir_path)
+
         if isinstance(t1_path_pattern, Path):
             t1_path_pattern = str(t1_path_pattern)
         if isinstance(bold_path_pattern, Path):
@@ -78,17 +80,14 @@ async def run_before(
             # await pilot.click(offset=(132, 34))
             await pilot.click("#ok")
 
-            # # click on 'pen' button to edit number of initial volumes to remove
+            # click in the input box to set initial volumes to remove
             # await pilot.click(offset=(121, 31))
-            await pilot.click("#edit_vols_to_remove_button")
-            # # click in the input box
-            # await pilot.click(offset=(101, 26))
-            await pilot.click("#input_prompt")
+            await pilot.click("#number_of_remove_initial_volumes")
             # Type '9'
             await pilot.press("9")
-            # Click on Ok to confirm
-            # await pilot.click(offset=(101, 30))
-            await pilot.click("#ok")
+            # random click to unfocus the input
+            await pilot.click(offset=(50, 10))
+
             # Select Check and Run tab
             await pilot.press("r")
             # Click 'Refresh'

@@ -10,17 +10,15 @@ from halfpipe import resource
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
 from .create_mock_bids_dataset import create_bids_data
-
+from halfpipe.logging import logger
 
 @pytest.fixture(scope="session", autouse=True)
 def resolved_test_dir_path():
     """Fixture to resolve paths and handle fallback to './' if necessary."""
-
-    print("Resolving paths...")
     source_file = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
     if not source_file.exists():  # Fallback to './' if not found in CURRENT_DIR
         source_file = Path("./")
-
+    logger.info(f"TUI test durectpry path is {Path.cwd()}")
     return source_file
 
 
@@ -35,7 +33,7 @@ def copy_jinja2_file(resolved_test_dir_path):
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
     except Exception as e:
-        print(f"[WARN] snapshot_report_template.jinja2 cannot be coppie. Exception: {e}")
+        logger.info(f"[WARN] snapshot_report_template.jinja2 cannot be coppie. Exception: {e}")
 
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
@@ -45,28 +43,12 @@ def fixed_tmp_path() -> Path:
     path = Path("/tmp/tui_test/")
     path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
     return path
-    # Clean up after the test, is this needed?
-    # shutil.rmtree(path)
 
 
 # Define the fixture with module scope, one subject, three tasks
 @pytest.fixture(scope="session")
 def downloaded_data_path(fixed_tmp_path) -> Path:
-    # dataset = Dataset(
-    #     name="PIOP1",
-    #     openneuro_id="ds002785",
-    #     openneuro_url="https://openneuro.org/datasets/ds002785/versions/2.0.0",
-    #     url="https://github.com/OpenNeuroDatasets/ds002785.git",
-    #     paths=[
-    #         "sub-0001/anat",
-    #         "sub-0001/func/sub-0001_task-anticipation_acq*",
-    #         "sub-0001/func/sub-0001_task-workingmemory_acq*",
-    #         "sub-0001/func/sub-0001_task-restingstate_acq*",
-    #     ],
-    # )
-    #
-    # data_path = fixed_tmp_path / "ds002785/"
-    # dataset.download(data_path)
+
     tasks_conditions_dict = {
         "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
         "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
