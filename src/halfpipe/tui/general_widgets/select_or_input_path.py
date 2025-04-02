@@ -718,15 +718,18 @@ class SelectOrInputPath(Select):
         myinput = select_current.get_widget_by_id("input_prompt")
         #
         myinput_current_value = myinput.value
+        # when we have the selection unrolled and it is focussed, we have 3 different scenarions
+        # 1) User presses backspace to delete last latter, here we update the input value accordingly
         if event.value == "backspace":
             myinput.value = myinput_current_value[:-1]
+        # 2) User presses escape to close the selection, here we set expanded to False to close it.
         elif event.value == "escape":
             self.expanded = False
-        else:
-            if event.value.islower() and len(event.value) == 1:
-                myinput.value = myinput_current_value + event.value
-            else:
-                myinput.value = myinput_current_value + self.app.get_key_display(event.value)
+        # 3) If a key with letter or number is stroked we expand the input value by it. We identify such keys with their length
+        # equal to "1" because other keys such as ctrl, alt and etc return strings made of more letters.
+        elif len(event.value) == 1:
+            myinput.value = myinput_current_value + event.value
+
 
     @on(MyInput.Toggle)
     def _my_input_toggle(self, event: MyInput.Toggle):
