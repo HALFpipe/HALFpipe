@@ -1,4 +1,5 @@
 from copy import deepcopy
+
 from inflection import humanize
 
 # specify first task based defaults, for other features we will just copy it and modify what is different
@@ -41,7 +42,9 @@ atlas_based_connectivity_defaults = deepcopy(task_based_defaults)
 atlas_based_connectivity_defaults["bandpass_filter"] = {"type": "frequency_based", "high": "0.1", "low": "0.01"}
 atlas_based_connectivity_defaults["smoothing"] = {"fwhm": None}
 atlas_based_connectivity_defaults["minimum_brain_coverage"] = 0.8
-atlas_based_connectivity_defaults["minimum_coverage_label"] = "Minimum atlas region coverage by individual brain mask (in fraction)"
+atlas_based_connectivity_defaults["minimum_coverage_label"] = (
+    "Minimum atlas region coverage by individual brain mask (in fraction)"
+)
 atlas_based_connectivity_defaults["widget_header"] = "Atlas images"
 atlas_based_connectivity_defaults["file_selection_widget_header"] = "Select atlases"
 

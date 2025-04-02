@@ -730,7 +730,6 @@ class SelectOrInputPath(Select):
         elif len(event.value) == 1:
             myinput.value = myinput_current_value + event.value
 
-
     @on(MyInput.Toggle)
     def _my_input_toggle(self, event: MyInput.Toggle):
         """
