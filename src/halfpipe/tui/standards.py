@@ -1,9 +1,7 @@
 from copy import deepcopy
-
 from inflection import humanize
 
-# specify first task based defaults, for other features we will just copy it
-# and modify what is different
+# specify first task based defaults, for other features we will just copy it and modify what is different
 task_based_defaults = {
     "bandpass_filter": {"type": "gaussian", "hp_width": "125", "lp_width": None},
     "smoothing": {"fwhm": "6"},
@@ -23,13 +21,13 @@ task_based_defaults = {
 }
 
 seed_based_defaults = deepcopy(task_based_defaults)
-seed_based_defaults["minimum_coverage_label"] = "Minimum fMRI brain coverage by seed"
+seed_based_defaults["minimum_coverage_label"] = "Minimum fMRI brain coverage by seed (in fraction)"
 seed_based_defaults["widget_header"] = "Seed images"
 seed_based_defaults["file_selection_widget_header"] = "Select seeds"
 seed_based_defaults["minimum_brain_coverage"] = 0.8
 
 dual_reg_defaults = deepcopy(task_based_defaults)
-dual_reg_defaults["minimum_coverage_label"] = "Minimum spatial map region coverage by individual brain mask"
+dual_reg_defaults["minimum_coverage_label"] = "Minimum network template coverage by individual brain mask (in fraction)"
 dual_reg_defaults["widget_header"] = "Network template images"
 dual_reg_defaults["file_selection_widget_header"] = "Select network templates"
 dual_reg_defaults["minimum_brain_coverage"] = 0.8
@@ -43,7 +41,7 @@ atlas_based_connectivity_defaults = deepcopy(task_based_defaults)
 atlas_based_connectivity_defaults["bandpass_filter"] = {"type": "frequency_based", "high": "0.1", "low": "0.01"}
 atlas_based_connectivity_defaults["smoothing"] = {"fwhm": None}
 atlas_based_connectivity_defaults["minimum_brain_coverage"] = 0.8
-atlas_based_connectivity_defaults["minimum_coverage_label"] = "Minimum atlas region coverage by individual brain mask"
+atlas_based_connectivity_defaults["minimum_coverage_label"] = "Minimum atlas region coverage by individual brain mask (in fraction)"
 atlas_based_connectivity_defaults["widget_header"] = "Atlas images"
 atlas_based_connectivity_defaults["file_selection_widget_header"] = "Select atlases"
 
@@ -53,7 +51,7 @@ reho_defaults = deepcopy(atlas_based_connectivity_defaults)
 reho_defaults.pop("minimum_coverage_label")
 reho_defaults.pop("widget_header")
 reho_defaults.pop("file_selection_widget_header")
-# bring back smoothing because it was Nont at Atlas
+# bring back smoothing because it was None at Atlas
 reho_defaults["smoothing"] = {"fwhm": "6"}
 falff_defaults = deepcopy(reho_defaults)
 
