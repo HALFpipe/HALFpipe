@@ -10,8 +10,11 @@ from textual.widget import Widget
 from textual.widgets import Button, Label, RadioButton
 
 from ..specialized_widgets.confirm_screen import Confirm
-from ._radio_set2 import RadioSet
 from .draggable_modal_screen import DraggableModalScreen
+
+# !!!This must be before importing the RadioSet to override the RadioButton imported by the RadioSet!!!
+RadioButton.BUTTON_INNER = "X"
+from textual.widgets import RadioSet  # noqa: E402
 
 
 class MultipleRadioSet(Widget):
@@ -145,7 +148,7 @@ class MultipleRadioSet(Widget):
                 yield this_label
         for i, v_label in enumerate(self.vertical_label_set):
             with Horizontal(classes="radio_table_rows"):
-                yield Label(v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
+                yield Label(" " + v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
                 with RadioSet(id="row_radio_sets_" + str(i)):
                     for j, _ in enumerate(self.horizontal_label_set):
                         is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
@@ -335,7 +338,9 @@ class MultipleRadioSetModal(DraggableModalScreen):
         self.dismiss(selections)
 
 
-"""Example for testing"""
+# """Example for testing"""
+# from textual.app import App, ComposeResult
+#
 # class Main(App):
 #     """
 #     Class for testing.

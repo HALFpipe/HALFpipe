@@ -21,9 +21,6 @@ MultipleRadioSet {
         border-right: solid white;
         background: $accent-lighten-3;
     }
-    RadioSet {
-        border: none;
-    }
     .radio_table_rows {
         height: auto;
         width: auto;
@@ -31,7 +28,24 @@ MultipleRadioSet {
     #label_container {
         height: auto;
     }
+    RadioSet {
+        border: none;
+        background: $boost;
+        padding: 0 1 0 0;
+        height: auto;
+        width: auto;
+        layout: horizontal;
+    }
+    RadioSet:focus {
+        border: none;
+    }
+    RadioSet > * {
+        background: transparent;
+        border: none;
+        padding: 0 1;
+    }
 }
+
 
 MultipleRadioSetModal {
     border: solid red;
