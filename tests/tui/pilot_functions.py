@@ -3,6 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
+from halfpipe.logging import logger
+
 
 async def _load_data(pilot, data_path) -> None:
     # switch to input data tab
@@ -415,7 +417,7 @@ async def run_before_for_reho_falff_preproc(
     # Delete work_dir if exists
     if os.path.exists(work_dir_path):
         shutil.rmtree(work_dir_path)
-    print("----------------------------", data_path, work_dir_path)
+    logger.info(f"Setting data path: {data_path}, work dir path: {work_dir_path}, file pattern path: {file_pattern}")
 
     # Define functions to execute based on stage requirements
     async def add_feature():

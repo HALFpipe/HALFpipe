@@ -4,6 +4,8 @@ from asyncio import sleep
 from functools import partial
 from pathlib import Path
 
+from halfpipe.logging import logger
+
 from .pilot_functions import (
     _set_work_dir,
     check_and_run_tab_refresh,
@@ -44,6 +46,11 @@ async def run_before(
         # work_dir_path = "/makethisfail/"
     if isinstance(covariant_spreadsheet_path, Path):
         covariant_spreadsheet_path = str(covariant_spreadsheet_path)
+
+    logger.info(
+        f"Setting data path: {data_path}, work dir path: {work_dir_path}, \
+    covariant spreadsheet path: {covariant_spreadsheet_path}"
+    )
 
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,

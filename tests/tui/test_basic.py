@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+from halfpipe.logging import logger
+
 from .pilot_functions import _load_data, _set_work_dir, set_non_bids_data, settable_scroll_screen_down
 
 
@@ -23,6 +25,8 @@ async def run_before(
     # Delete work_dir if exists
     if os.path.exists(work_dir_path):
         shutil.rmtree(work_dir_path)
+
+    logger.info(f"Setting data path: {data_path}, work dir path: {work_dir_path}")
 
     if stage == "work_tab":
         await _set_work_dir(pilot, work_dir_path)

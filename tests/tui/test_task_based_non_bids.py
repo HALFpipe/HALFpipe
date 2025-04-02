@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+from halfpipe.logging import logger
+
 from .pilot_functions import (
     _set_work_dir,
     add_atlas_or_seed_or_map_file_pattern,
@@ -38,6 +40,11 @@ async def run_before(
     # Delete work_dir if exists
     if os.path.exists(work_dir_path):
         shutil.rmtree(work_dir_path)
+
+    logger.info(
+        f"Setting data path: {data_path}, work dir path: {work_dir_path}, file pattern path: {file_pattern}, \
+    t1 path pattern: {t1_path_pattern}, bold path pattern: {bold_path_pattern}"
+    )
 
     async def add_feature_related_tasks():
         await add_new_feature(pilot)

@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+from halfpipe.logging import logger
+
 from .pilot_functions import (
     _load_data,
     _set_work_dir,
@@ -34,7 +36,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # Delete work_dir if exists
     if os.path.exists(work_dir_path):
         shutil.rmtree(work_dir_path)
-    print("----------------------------", data_path, work_dir_path)
+    logger.info(f"Setting data path: {data_path}, work dir path: {work_dir_path}")
 
     # Define functions to execute based on stage requirements
     async def add_atlas_task():
