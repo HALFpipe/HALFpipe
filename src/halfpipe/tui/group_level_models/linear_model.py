@@ -499,7 +499,7 @@ class LinearModel(ModelTemplate):
         terms = list(chain.from_iterable(combinations(message.control.selected, i) for i in range(2, nvar + 1)))
         term_by_str = {" * ".join(termtpl): termtpl for termtpl in terms}
         self.get_widget_by_id("interaction_terms_selection_panel").clear_options()
-        # Also delete every interaction term in the ctx.cache
+        # Also delete every interaction term in the ctx.cache.
         for contrast_item in self.model_dict["contrasts"]:
             if contrast_item["type"] == "infer" and len(contrast_item["variable"]) > 1:
                 self.model_dict["contrasts"].remove(contrast_item)
