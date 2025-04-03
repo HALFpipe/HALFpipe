@@ -174,11 +174,7 @@ jobs:
           # Run the integration tests
           echo "***Running TUI tests***"
           py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-          # Check what tests will be collected
-          echo "Checking test discovery..."
-          py.test --collect-only \
-            --ignore=/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-          echo "Running backend tests"
+          echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
