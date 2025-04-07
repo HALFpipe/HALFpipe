@@ -47,11 +47,6 @@ RUN --mount=source=recipes/afni,target=/afni \
     --mount=type=cache,target=/opt/conda/pkgs \
     retry conda build --no-anaconda-upload --numpy "1.24" "afni"
 
-FROM builder AS acres
-RUN --mount=source=recipes/acres,target=/acres \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "acres"
-
 FROM builder AS mapca
 RUN --mount=source=recipes/mapca,target=/mapca \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -80,7 +75,6 @@ RUN --mount=source=recipes/tedana,target=/tedana \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS niworkflows
-COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/niworkflows,target=/niworkflows \
