@@ -51,13 +51,6 @@ requirements:
     - xorg-xorgproto
     - libxml2
     - icu
-  # run:
-  #   - "openmotif>=2.3.8"
-  #   - libjpeg-turbo
-  #   - xorg-libxft
-  #   - libxml2
-  #   - icu
-  #   - xorg-libxpm
 
 outputs:
   - name: afni-libznz
