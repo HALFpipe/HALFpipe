@@ -12,6 +12,7 @@ from typing import Generator, Self
 import pandas as pd
 
 from ....design import prepare_data_frame
+from ....exclude import QCDecisionMaker
 from ....logging import logger
 from ....model.spec import Spec, load_spec
 from ....result.base import ResultDict
@@ -33,6 +34,12 @@ class DesignBase:
     aggregate: list[str] | None
 
     variable_sets: dict[str, set[str]] = field(default_factory=lambda: defaultdict(set))
+    qc_decision_maker: QCDecisionMaker | None = None
+
+    def __post_init__(self) -> None:
+        if self.qc_exclude_files:
+            logger.debug(f"Creating quality control decision maker for files {self.qc_exclude_files}")
+            self.qc_decision_maker = QCDecisionMaker(self.qc_exclude_files)
 
     def filter_results(self) -> None:
         self.results = filter_results(
@@ -40,7 +47,7 @@ class DesignBase:
             filter_dicts=self.filters,
             # Require images we can do statistics on
             require_one_of_images=["effect", "reho", "falff", "alff"],
-            exclude_files=self.qc_exclude_files,
+            qc_decision_maker=self.qc_decision_maker,
             spreadsheet=self.data_frame,
             variable_dicts=self.variables,
         )
