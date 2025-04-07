@@ -52,7 +52,8 @@ def test_group_level(tmp_path: Path) -> None:
     effect_values = [0.5, 1, 2]
     dof = 99
 
-    simulation_path = tmp_path / "derivatives"
+    (tmp_path / "spec.json").touch()
+    simulation_path = tmp_path / "derivatives" / "halfpipe"
     simulation_path.mkdir(parents=True)
     for i, beta in enumerate(effect_values, start=1):
         regressor = scipy.stats.zscore(random_number_generator.standard_normal(dof + 1))
