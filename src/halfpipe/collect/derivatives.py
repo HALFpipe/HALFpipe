@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import zipfile
 from pathlib import Path
 from typing import Generator, Iterable
 
@@ -22,6 +23,8 @@ def find_derivatives_directories(name: str, path: str | AnyPath, max_depth: int 
             path = path.parent
         if path.parts[-2] == "derivatives":
             path = path.parent.parent
+        if path.is_file() and path.suffix == ".zip":
+            path = zipfile.Path(path)
     working_directories: set[Path] = set()
     for file_path in recursive_list_directory(path, max_depth=max_depth):
         if file_path.name == "spec.json":
@@ -45,5 +48,4 @@ def collect_halfpipe_derivatives(paths: Iterable[str | AnyPath], max_depth: int 
             index.put(derivatives_directory)
 
     results = load_images(index, num_threads=num_threads)
-
     return results
