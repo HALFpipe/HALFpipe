@@ -4,7 +4,7 @@
 
 from math import isclose
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -196,7 +196,7 @@ def filter_results(
     variable_dicts: list[dict] | None = None,
     model_name: str | None = None,
     require_one_of_images: list[str] | None = None,
-    exclude_files: Sequence[str | Path] | None = None,
+    qc_decision_maker: QCDecisionMaker | None = None,
 ) -> list[ResultDict]:
     results = results.copy()
     filter_dicts = list() if filter_dicts is None else filter_dicts
@@ -230,9 +230,7 @@ def filter_results(
         if filter_fun is not None:
             results = list(filter(filter_fun, results))
 
-    if exclude_files is not None:
-        exclude_paths = list(map(Path, exclude_files))
-        decision_maker = QCDecisionMaker(exclude_paths)
-        results = [result for result in results if decision_maker.get(result["tags"]) is Decision.INCLUDE]
+    if qc_decision_maker is not None:
+        results = [result for result in results if qc_decision_maker.get(result["tags"]) is Decision.INCLUDE]
 
     return results

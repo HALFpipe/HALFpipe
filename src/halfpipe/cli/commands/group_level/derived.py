@@ -18,6 +18,7 @@ import pint
 from tqdm import tqdm
 
 from ....collect.derivatives import find_derivatives_directories
+from ....exclude import Decision
 from ....file_index.bids import BIDSIndex
 from ....logging import logger
 from ....model.tags.resultdict import resultdict_entities
@@ -92,6 +93,12 @@ class ImagingVariables:
     arguments: Namespace
     design_base: DesignBase
 
+    def get_quality_check_decision(self, subject: str) -> bool:
+        if self.design_base.qc_decision_maker is not None:
+            if self.design_base.qc_decision_maker.get(dict(sub=subject)) == Decision.EXCLUDE:
+                return False
+        return True
+
     @property
     def num_threads(self) -> int:
         return self.arguments.nipype_n_procs
@@ -131,8 +138,10 @@ class ImagingVariables:
             subject = index.get_tag_value(transform_path, "sub")
             if subject is None:
                 continue
-            elif subject in tasks:
+            if subject in tasks:
                 logger.warning(f"Subject {subject} has multiple transforms in the index")
+                continue
+            if not self.get_quality_check_decision(subject):
                 continue
             tasks[subject] = transform_path
 
@@ -218,6 +227,8 @@ class ImagingVariables:
         ):
             subject = index.get_tag_value(brain_mask_path, "sub")
             if subject is None:
+                continue
+            if not self.get_quality_check_decision(subject):
                 continue
 
             if not isinstance(brain_mask_path, (Path, str)):
