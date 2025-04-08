@@ -19,8 +19,8 @@ FileBrowser {
 
 FileBrowserModal {
     #draggable_modal_screen_container_wrapper {
-        width: 68;
-        height: 35;
+        width: 100;
+        height: 45;
         background: black;
 
         .window_title {
@@ -38,7 +38,8 @@ FileBrowserModal {
             }
         }
         .browse_tree {
-            height: 25;
+            height: 80%;
+            width: 100%;
             padding: 0 1 0 1;
             border-bottom: tall $accent;
         }
@@ -52,11 +53,19 @@ FileBrowserModal {
             margin: 0 0 0 0;
             padding: 0 0 0 0;
             border: none;
-            outline: tall $accent;
+         /*   outline: tall $accent;*/
             content-align: center bottom;
             background: transparent;
             MyInput {
                 border: tall white;
+                width: 97%;
+            }
+            MyStatic {
+                border-top: tall white;
+                border-bottom: tall white;
+                border-right: tall white;
+                offset-x: -1;
+                offset-y: -1;
             }
         }
         SelectCurrentWithInput MyInput#label {

@@ -45,7 +45,7 @@ async def quit_modal(self):
             True if the user confirmed, False otherwise.
         """
         if modal_value:
-            exit()
+            self.app.exit(result=False)
         else:
             pass
 

@@ -40,7 +40,7 @@ class FilePanelTemplate(Widget):
     pattern_class : ClassVar[Type[Any] | None]
         The class used for creating file pattern steps.
     current_file_pattern_id : str | None
-        The ID of the currently active file pattern.
+        The ID of the currently FilePanelTemplateactive file pattern.
     value : reactive[bool]
         A reactive attribute that indicates whether the panel's state has changed.
 

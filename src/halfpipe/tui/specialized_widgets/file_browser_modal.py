@@ -8,7 +8,10 @@ from typing import Iterable
 
 from textual import on
 from textual.containers import Horizontal
+from textual.message import Message
 from textual.widgets import Button, DirectoryTree, Input
+from textual.widgets._directory_tree import DirEntry
+from textual.widgets._tree import Tree, TreeNode
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
@@ -77,6 +80,31 @@ class FilteredDirectoryTree(DirectoryTree):
         indicating hidden files or directories.
     """
 
+    class NodeChanged(Message):
+        """Posted when a directory is selected.
+
+        Can be handled using `on_directory_tree_directory_selected` in a
+        subclass of `DirectoryTree` or in a parent widget in the DOM.
+        """
+
+        def __init__(self, node: TreeNode[DirEntry], path: Path) -> None:
+            """Initialise the DirectorySelected object.
+
+            Args:
+                node: The tree node for the directory that was selected.
+                path: The path of the directory that was selected.
+            """
+            super().__init__()
+            self.node: TreeNode[DirEntry] = node
+            """The tree node of the directory that was selected."""
+            self.path: Path = path
+            """The path of the directory that was selected."""
+
+        @property
+        def control(self) -> Tree[DirEntry]:
+            """The `Tree` that had a directory selected."""
+            return self.node.tree
+
     def filter_paths(self, paths: Iterable[Path]) -> Iterable[Path]:
         """
         Filters out paths that have names starting with a period.
@@ -96,6 +124,13 @@ class FilteredDirectoryTree(DirectoryTree):
             period.
         """
         return [path for path in paths if not path.name.startswith(".")]
+
+    @on(Tree.NodeCollapsed)
+    @on(Tree.NodeExpanded)
+    def _on_tree_node_changed(self, event: Tree.NodeExpanded[DirEntry]) -> None:
+        dir_entry = event.node.data
+        self.post_message(self.NodeChanged(event.node, dir_entry.path))
+        event.stop()
 
 
 class FileBrowserModal(DraggableModalScreen):
@@ -234,7 +269,8 @@ class FileBrowserModal(DraggableModalScreen):
 
     @on(FilteredDirectoryTree.DirectorySelected, ".browse_tree")
     @on(FilteredDirectoryTree.FileSelected, ".browse_tree")
-    async def on_filtered_directory_tree_directory_or_file_selected(self, message):
+    # @on(FilteredDirectoryTree.NodeChanged, ".browse_tree")
+    def on_filtered_directory_tree_directory_or_file_selected(self, message):
         """
         Event handler for directory or file selection changes.
 
@@ -250,6 +286,8 @@ class FileBrowserModal(DraggableModalScreen):
         self.selected_directory = message.path
         label = self.get_widget_by_id("path_input_box2")
         label.change_prompt_from_parrent(str(self.selected_directory))
+        if self.query_one(SelectOrInputPath).expanded is True:
+            self.query_one(SelectOrInputPath).expanded = False
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
@@ -292,7 +330,10 @@ class FileBrowserModal(DraggableModalScreen):
         calls `_cancel_window` to dismiss the modal without selecting any
         path.
         """
-        self._cancel_window()
+        if self.query_one(SelectOrInputPath).expanded is True:
+            self.query_one(SelectOrInputPath).expanded = False
+        else:
+            self._cancel_window()
 
     def _confirm_window(self):
         """

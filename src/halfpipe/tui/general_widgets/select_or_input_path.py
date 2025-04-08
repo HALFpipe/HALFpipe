@@ -143,7 +143,7 @@ class SelectOverlay(OptionList):
         """Dismiss the overlay."""
         self.post_message(self.Dismiss())
 
-    def _on_blur(self, _event: events.Blur) -> None:
+    def on_blur(self, _event: events.Blur) -> None:
         """On blur we want to dismiss the overlay."""
         self.post_message(self.Dismiss(lost_focus=True))
 
@@ -156,7 +156,7 @@ class SelectOverlay(OptionList):
         """This allows to typing in the prompt when the focus is on the overlay."""
         if any(mod in event.key for mod in ["ctrl", "alt", "shift"]):
             return
-
+        print("//////////////////////////////////////////", event.key)
         # List of specific disallowed keys
         disallowed_keys = [
             "up",
@@ -270,44 +270,6 @@ class SelectCurrentWithInput(Horizontal):
         Handles key events.
     _watch_has_value(has_value)
         Toggles the class based on the `has_value` attribute.
-    """
-
-    DEFAULT_CSS = """
-    SelectCurrentWithInput {
-        height: 3;
-        width: 100%;
-        margin: 0 0 0 0;
-        padding: 0 0 0 2;
-        border: none;
-        outline: tall $accent;
-        content-align: center bottom;
-                background: transparent;
-    }
-    SelectCurrentWithInput MyInput#label {
-        width: 1fr;
-        height: 3;
-        color: $text-disabled;
-        background: transparent;
-        outline-top: $accent tall;
-        outline-bottom: $accent tall;
-        padding: 1;
-        border: none;
-
-    }
-    SelectCurrentWithInput.-has-value MyInput#label {
-        color: $text;
-    }
-    SelectCurrentWithInput .arrow {
-        box-sizing: content-box;
-        width: 1;
-        height: 2;
-        padding: -1 1 0 0;
-        margin: 1 1 1 -1;
-        color: red;
-        background: transparent;
-        content-align: center bottom;
-
-    }
     """
 
     @dataclass
@@ -447,41 +409,6 @@ class SelectOrInputPath(Select):
         Changes the prompt.
     """
 
-    DEFAULT_CSS = """
-    SelectOrInputPath:focus > SelectCurrent {
-        border: tall $accent;
-    }
-
-    SelectOrInputPath > SelectOverlay {
-        width: 100%;
-        display: none;
-        height: auto;
-        max-height: 12;
-        overlay: screen;
-        constrain: none inside;
-    }
-
-    SelectOrInputPath .up-arrow {
-        display:none;
-    }
-
-    Select.-expanded .down-arrow {
-        display:none;
-    }
-
-    SelectOrInputPath.-expanded .up-arrow {
-        display: block;
-    }
-
-    SelectOrInputPath.-expanded > SelectOverlay {
-        display: block;
-    }
-
-    SelectOrInputPath.-expanded > SelectCurrent {
-        border: tall $accent;
-    }
-    """
-
     expanded: var[bool] = var(False, init=False)
     """True to show the overlay, otherwise False."""
     prompt: var[str] = var[str]("Select")
@@ -526,6 +453,11 @@ class SelectOrInputPath(Select):
     def prepare_compose(self):
         yield self.input_class(self._value)
         yield SelectOverlay()
+
+    @on(SelectOverlay.Dismiss)
+    def on_select_overlay_dismiss(self, event: SelectOverlay.Dismiss):
+        event.stop()
+        self.expanded = not self.expanded
 
     def compose(self) -> ComposeResult:
         # Collect results from prepare_compose
@@ -614,7 +546,7 @@ class SelectOrInputPath(Select):
             myinput.cursor_position = len(myinput.value)
         # Close the overlay.
         select_overlay = self.query_one(SelectOverlay)
-        if event.key == "esc":
+        if event.key == "esc" and self.expanded is True:
             self.expanded = False
         # Opens the overlay.
         if event.key == "down":
@@ -718,7 +650,7 @@ class SelectOrInputPath(Select):
         myinput = select_current.get_widget_by_id("input_prompt")
         #
         myinput_current_value = myinput.value
-        # when we have the selection unrolled and it is focussed, we have 3 different scenarions
+        # when we have the selection unrolled and it is focussed, we have 3 different scenarios
         # 1) User presses backspace to delete last latter, here we update the input value accordingly
         if event.value == "backspace":
             myinput.value = myinput_current_value[:-1]
@@ -729,6 +661,9 @@ class SelectOrInputPath(Select):
         # equal to "1" because other keys such as ctrl, alt and etc return strings made of more letters.
         elif len(event.value) == 1:
             myinput.value = myinput_current_value + event.value
+        # '/' is identify as 'slash' so we need to translate it back
+        elif event.value == "slash":
+            myinput.value = myinput_current_value + "/"
 
     @on(MyInput.Toggle)
     def _my_input_toggle(self, event: MyInput.Toggle):
