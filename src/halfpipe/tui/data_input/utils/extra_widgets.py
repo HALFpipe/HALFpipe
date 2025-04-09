@@ -8,6 +8,7 @@ from textual.widgets import Button, Static
 from ...data_analyzers.context import ctx
 from ...general_widgets.list_of_files_modal import ListOfFiles
 from ...specialized_widgets.non_bids_file_itemization import FileItem
+from ...standards import field_map_labels
 
 
 class FieldMapFilesPanel(Widget):
@@ -48,11 +49,7 @@ class FieldMapFilesPanel(Widget):
         """
         super().__init__(id=id, classes=classes)
         self.field_map_type = field_map_type
-        self.field_map_types_dict = {
-            "epi": "EPI (blip-up blip-down)",
-            "siemens": "Phase difference and magnitude (used by Siemens scanners)",
-            "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
-        }
+        self.field_map_types_dict = field_map_labels
         self.echo_time = 0
         self.step_classes = step_classes
 

@@ -1,9 +1,25 @@
 from copy import deepcopy
+from typing import Dict, List, Union
 
 from inflection import humanize
 
+global_settings_defaults: dict[str, str] = {"dummy_scans": "0", "run_reconall": "False", "slice_timing": "False"}
+
+bandpass_filter_defaults: dict[str, dict] = {
+    "gaussian": {"type": "gaussian", "hp_width": "125", "lp_width": None},
+    "frequency_based": {"type": "frequency_based", "high": "0.1", "low": "0.01"},
+}
+
 # specify first task based defaults, for other features we will just copy it and modify what is different
-task_based_defaults = {
+task_based_defaults: Dict[
+    str,
+    Union[
+        Dict[str, Union[str, int, float, None, List[Union[str, bool]]]],
+        List[Dict[str, Union[str, float]]],
+        str,
+        float,
+    ],
+] = {
     "bandpass_filter": {"type": "gaussian", "hp_width": "125", "lp_width": None},
     "smoothing": {"fwhm": "6"},
     "grand_mean_scaling": {"mean": 10000},
@@ -58,7 +74,7 @@ reho_defaults.pop("file_selection_widget_header")
 reho_defaults["smoothing"] = {"fwhm": "6"}
 falff_defaults = deepcopy(reho_defaults)
 
-group_level_modesl_defaults = {
+group_level_modesl_defaults: dict[str, list[dict[str, str]]] = {
     "cutoffs": [
         {
             "type": "cutoff",
@@ -76,7 +92,7 @@ group_level_modesl_defaults = {
 }
 
 # this maps how feature labels are viewed in the UI by the use, change value to change the label
-feature_label_map = {
+feature_label_map: dict[str, str] = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
     "dual_regression": "Network Template Regression",
@@ -87,10 +103,10 @@ feature_label_map = {
 }
 
 # same as above, but for group level models
-group_level_model_label_map = {"me": "Intercept-only", "lme": "Linear model"}
+group_level_model_label_map: dict[str, str] = {"me": "Intercept-only", "lme": "Linear model"}
 
 # colors of the entity highlight in the path pattern builder
-entity_colors = {
+entity_colors: dict[str, str] = {
     "sub": "red",
     "ses": "green",
     "run": "magenta",
@@ -103,7 +119,7 @@ entity_colors = {
 }
 
 # same as above but for field maps
-field_map_labels = {
+field_map_labels: dict[str, str] = {
     "epi": "EPI (blip-up blip-down)",
     "siemens": "Phase difference and magnitude (used by Siemens scanners)",
     "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",

@@ -37,10 +37,10 @@ def init_workdir(workdir: str | Path, fs_root: str | Path | None = None) -> Path
         test_file_path_a.unlink()
     except (PermissionError, OSError) as e:
         raise RuntimeError(
-            f'Cannot use "{workdir}" as working directory for HALFpipe. '
-            "Please check that you have sufficient permissions. "
-            "Please also check that you are using a file system that supports symbolic links. "
-            "For example, FAT32 and exFAT are incompatible."
+            f'Cannot use "{workdir}" as working directory for HALFpipe. \n'
+            "Please check that you have sufficient permissions. \n"
+            "Please also check that you are using a file system that supports symbolic links. \n"
+            "For example, FAT32 and exFAT are incompatible.\n"
         ) from e
 
     LoggingContext.set_workdir(workdir_path)

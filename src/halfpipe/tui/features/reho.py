@@ -70,6 +70,6 @@ class ReHo(FeatureTemplate):
         """
         # in ReHo the smoothing is in features
         if switch_value is True:
-            self.feature_dict["smoothing"] = {"fwhm": "6"}
+            self.feature_dict["smoothing"] = reho_defaults["smoothing"]
         elif switch_value is False:
             self.feature_dict["smoothing"]["fwhm"] = None

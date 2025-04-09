@@ -7,7 +7,6 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.message import Message
-from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label
 
@@ -58,7 +57,7 @@ class FileBrowser(Widget):
     """
 
     # A reactive attribute that stores the currently selected path.
-    selected_path: reactive[str] = reactive("", init=False)
+    # selected_path: reactive[str] = reactive("", init=False)
 
     @dataclass
     class Changed(Message):
@@ -69,8 +68,8 @@ class FileBrowser(Widget):
         def control(self):
             return self.file_browser
 
-    def watch_selected_path(self) -> None:
-        self.post_message(self.Changed(self, self.selected_path))
+    # def watch_selected_path(self) -> None:
+    #     self.post_message(self.Changed(self, self.selected_path))
 
     def __init__(self, path_to="", modal_title="Browse", id: str | None = None, classes: str | None = None, **kwargs) -> None:
         """
@@ -142,8 +141,9 @@ class FileBrowser(Widget):
         path.
         """
         self.update_input(self.get_widget_by_id("path_input_box").value)
+        self.post_message(self.Changed(self, self.selected_path))
 
-    def update_input(self, selected_path: str) -> None:
+    def update_input(self, selected_path: str, send_message: bool = True) -> None:
         """
         Updates the UI with the selected path.
 
@@ -161,6 +161,8 @@ class FileBrowser(Widget):
             label.update(self.path_to + ": " + str(selected_path))
             label.value = self.path_to + ": " + str(selected_path)
             self.selected_path = str(selected_path)
+            if send_message:
+                self.post_message(self.Changed(self, self.selected_path))
 
 
 def path_test_for_bids(path: str, isfile: bool = False) -> str:

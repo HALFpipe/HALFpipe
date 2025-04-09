@@ -192,9 +192,6 @@ class ModelConditionsAndContrasts(Widget):
         Title of the border for the contrast values table.
     BINDINGS : list[tuple[str, str, str]]
         Key bindings for the add, remove, and submit actions.
-    sort_type_cycle : cycle[str]
-        An iterator that cycles through sorting types: alphabetically,
-        reverse_alphabetically, by_group, and reverse_by_group.
     condition_values : reactive[list[str]]
         List of conditions in the selection, which can be modified externally
         and requires updates to the selection and table.
@@ -233,12 +230,8 @@ class ModelConditionsAndContrasts(Widget):
         Button event that triggers the action_add_column method.
     remove_col :
         Button event that triggers the action_remove_column method.
-    sort_cols :
-        Button event that triggers sorting of the table by row labels.
     update_condition_selection :
         Updates the condition selection based on selected images.
-    sort_by_row_label :
-        Sorts the table by row labels.
     dump_contrast_values :
         Dumps the contrast values to the `feature_contrasts_dict`.
     """
@@ -250,15 +243,6 @@ class ModelConditionsAndContrasts(Widget):
         ("r", "remove_column", "Add column"),
         ("s", "submit", "Submit"),
     ]
-
-    sort_type_cycle = cycle(
-        [
-            "alphabetically",
-            "reverse_alphabetically",
-            "by_group",
-            "reverse_by_group",
-        ]
-    )
 
     # condition_values: list of the conditions in the selection, this can be changed also externally by other widget
     # if so, the selection and the table need an update
@@ -392,7 +376,6 @@ class ModelConditionsAndContrasts(Widget):
         yield Horizontal(
             Button("Add contrast", classes="add_button", id="add_contrast_values_button"),
             Button("Remove contrast", classes="delete_button", id="delete_contrast_values_button"),
-            # Button("Sort table", classes="sort_button"),
             id="button_panel",
         )
 
@@ -430,10 +413,29 @@ class ModelConditionsAndContrasts(Widget):
             [table.add_row(*self.df.loc[o].values, label=o, key=o) for o in out]
 
         self.table_row_index = dict.fromkeys(sorted([r.value for r in table.rows]))
-        self.sort_by_row_label(default="by_group")
+        self.sort_by_group()
         self.dump_contrast_values()
 
         self.set_heights()
+
+    def sort_by_group(self):
+        condition_selection = self.get_widget_by_id("model_conditions_selection")
+        groups = list(condition_selection._option_ids.keys())
+        table = self.get_widget_by_id("contrast_table")
+        # add this  column for sorting purpose, later it is removed
+        table.add_column("condition", key="condition")
+        for row_key in table.rows:
+            table.update_cell(row_key, "condition", row_key.value)
+
+        def find_group_index(element):
+            return next(i for i, key in enumerate(groups) if element == key)
+
+        table.sort(
+            "condition",
+            key=find_group_index,
+        )
+
+        table.remove_column("condition")
 
     def set_heights(self):
         """
@@ -523,16 +525,6 @@ class ModelConditionsAndContrasts(Widget):
         """
         await self.run_action("remove_column()")
 
-    @on(Button.Pressed, "ModelConditionsAndContrasts .sort_button")
-    async def sort_cols(self) -> None:
-        """
-        Handles the event when the "Sort table" button is pressed.
-
-        This method triggers the `sort_by_row_label` method to sort the
-        data table by row labels.
-        """
-        self.sort_by_row_label()
-
     def update_condition_selection(self):
         """
         Updates the condition selection based on selected images.
@@ -564,57 +556,6 @@ class ModelConditionsAndContrasts(Widget):
         # now upgrade the table
         self.update_table()
         self.dump_contrast_values()
-
-    def sort_by_row_label(self, default: str | None = None):
-        """
-        Sorts the table by row labels.
-
-        This method sorts the rows in the data table based on their labels,
-        using either alphabetical order, reverse alphabetical order, or
-        group-based order.
-
-        Parameters
-        ----------
-        default : str, optional
-            Custom sort type to override the default cycling sort types.
-        """
-        condition_selection = self.get_widget_by_id("model_conditions_selection")
-        groups = list(condition_selection._option_ids.keys())
-        table = self.get_widget_by_id("contrast_table")
-        # add this  column for sorting purpose, later it is removed
-        table.add_column("condition", key="condition")
-        for row_key in table.rows:
-            table.update_cell(row_key, "condition", row_key.value)
-
-        if default is None:
-            sort_type = next(self.sort_type_cycle)
-        else:
-            sort_type = default
-        if "alphabetically" in sort_type:
-
-            def identity_func(value):
-                return value
-
-            sort_function = identity_func
-        else:
-
-            def find_group_index(element):
-                return next(i for i, key in enumerate(groups) if element == key)
-
-            sort_function = find_group_index
-
-        if "reverse" in sort_type:
-            reverse = True
-        else:
-            reverse = False
-
-        table.sort(
-            "condition",
-            key=sort_function,
-            reverse=reverse,
-        )
-
-        table.remove_column("condition")
 
     def dump_contrast_values(self) -> None:
         """

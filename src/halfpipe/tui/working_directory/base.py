@@ -4,6 +4,7 @@
 import copy
 import os
 from collections import defaultdict
+from pathlib import Path
 
 from textual import on, work
 from textual.app import ComposeResult
@@ -14,6 +15,7 @@ from textual.widgets import Static
 from textual.worker import Worker, WorkerState
 
 from ...model.spec import load_spec
+from ...workdir import init_workdir
 from ..data_analyzers.context import ctx
 from ..features.atlas_based import AtlasBased
 from ..features.dual_reg import DualReg
@@ -127,6 +129,24 @@ spec.json file it is possible to load the therein configuration.",
 
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message) -> None:
+        try:
+            init_workdir(message.selected_path)
+            await self._working_dir_path_passed(message.selected_path)
+        except RuntimeError as e:
+            self.app.push_screen(
+                Confirm(
+                    f"{e}",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="Path Error",
+                    classes="confirm_error",
+                )
+            )
+            self.get_widget_by_id("work_dir_file_browser").update_input(None, send_message=False)
+            self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
+            ctx.workdir = None
+
+    async def _working_dir_path_passed(self, selected_path: str | Path):
         """
         Handles the FileBrowser's Changed event.
 
@@ -202,7 +222,7 @@ spec.json file it is possible to load the therein configuration.",
                 )
 
         # add path to context object
-        ctx.workdir = message.selected_path
+        ctx.workdir = Path(selected_path)
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
@@ -275,10 +295,13 @@ overwrite the working directory and start a new analysis?",
             preprocessing_widget.default_settings = self.existing_spec.global_settings
             preprocessing_widget = preprocessing_widget.refresh(recompose=True)
 
+            entity_longnames = {"subject": "sub", "atlas": "desc", "seed": "desc", "map": "desc"}
+
             for f in self.existing_spec.files:
                 # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
                 # here we replace it back for the consistency.
-                f.__dict__["path"] = f.__dict__["path"].replace("{sub}", "{subject}")
+                f.path = f.path.replace(f"{{{entity_longnames['subject']}}}", "{subject}")
+
                 if f.datatype == "bids":
                     ctx.cache["bids"]["files"] = f.path
                     data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
@@ -304,13 +327,13 @@ overwrite the working directory and start a new analysis?",
                 elif f.suffix == "events":
                     self.event_file_objects.append(f)
                 elif f.suffix == "atlas":
-                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{atlas}")
+                    f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                     self.atlas_file_objects.append(f)
                 elif f.suffix == "seed":
-                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{seed}")
+                    f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                     self.seed_map_file_objects.append(f)
                 elif f.suffix == "map":
-                    f.__dict__["path"] = f.__dict__["path"].replace("{desc}", "{map}")
+                    f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                     self.spatial_map_file_objects.append(f)
 
             ctx.refresh_available_images()
@@ -423,6 +446,11 @@ overwrite the working directory and start a new analysis?",
                 self.mount_file_panels()
             if event.worker.name == "file_panels_worker":
                 self.mount_models()
+            # if event.worker.name == "test_dir_worker":
+            #     print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', event.worker.result )
+            #     if event.worker.result is not None:
+            #         print('paaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaases?', event.worker.result,  type(event.worker.result))
+            #         await self._working_dir_path_passed(event.worker.result)
 
     @work(exclusive=True, name="file_panels_worker")
     async def mount_file_panels(self) -> None:

@@ -17,6 +17,7 @@ from ..data_analyzers.summary_steps import BoldSummaryStep
 from ..data_input.base import DataSummaryLine
 from ..general_widgets.custom_general_widgets import SwitchWithInputBox, SwitchWithSelect
 from ..specialized_widgets.event_file_widget import FilePanelTemplate
+from ..standards import bandpass_filter_defaults
 
 entity_label_dict = {"dir": "Directions", "run": "Runs", "task": "Tasks", "ses": "Sessions"}
 
@@ -104,6 +105,8 @@ class FeatureTemplate(Widget):
         """
         super().__init__(id=id, classes=classes)
         _defaults = deepcopy(defaults)
+        self._bandpass_filter_defaults = deepcopy(bandpass_filter_defaults)
+
         self.feature_dict = this_user_selection_dict["features"]
         self.setting_dict = this_user_selection_dict["settings"]
         self.event_file_pattern_counter = 0
@@ -444,14 +447,14 @@ class FeatureTemplate(Widget):
                 if "low" in self.setting_dict["bandpass_filter"] and self.setting_dict["bandpass_filter"]["low"] is None
                 else str(self.setting_dict["bandpass_filter"]["low"])
                 if "low" in self.setting_dict["bandpass_filter"]
-                else "0.01"
+                else self._bandpass_filter_defaults["frequency_based"]["low"]
             )
             highest_value = (
                 self.setting_dict["bandpass_filter"]["high"]
                 if "high" in self.setting_dict["bandpass_filter"] and self.setting_dict["bandpass_filter"]["high"] is None
                 else str(self.setting_dict["bandpass_filter"]["high"])
                 if "high" in self.setting_dict["bandpass_filter"]
-                else "0.1"
+                else self._bandpass_filter_defaults["frequency_based"]["high"]
             )
 
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in Hertz)")
@@ -472,7 +475,7 @@ class FeatureTemplate(Widget):
                 and self.setting_dict["bandpass_filter"]["lp_width"] is None
                 else str(self.setting_dict["bandpass_filter"]["lp_width"])
                 if "lp_width" in self.setting_dict["bandpass_filter"]
-                else "0.01"
+                else self._bandpass_filter_defaults["gaussian"]["lp_width"]
             )
             highest_value = (
                 self.setting_dict["bandpass_filter"]["hp_width"]
@@ -480,7 +483,7 @@ class FeatureTemplate(Widget):
                 and self.setting_dict["bandpass_filter"]["hp_width"] is None
                 else str(self.setting_dict["bandpass_filter"]["hp_width"])
                 if "hp_width" in self.setting_dict["bandpass_filter"]
-                else "125"
+                else self._bandpass_filter_defaults["gaussian"]["hp_width"]
             )
 
             self.get_widget_by_id("bandpass_filter_lp_width").update_label("Low-pass temporal filter width \n(in seconds)")

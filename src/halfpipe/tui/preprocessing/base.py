@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # ok to review
 
+from copy import deepcopy
+
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical
@@ -15,6 +17,7 @@ from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithI
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import widget_exists
 from ..specialized_widgets.filebrowser import FileBrowser
+from ..standards import global_settings_defaults
 
 
 class Preprocessing(Widget):
@@ -68,9 +71,11 @@ class Preprocessing(Widget):
         super().__init__(id=id, classes=classes)
         # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs
         # firstly to be redefined and then the widget recomposed as is done in the working_directory widget.
-        ctx.spec.global_settings.setdefault("dummy_scans", "0")
-        ctx.spec.global_settings.setdefault("run_reconall", False)
-        ctx.spec.global_settings.setdefault("slice_timing", False)
+        _global_settings_defaults = deepcopy(global_settings_defaults)
+
+        ctx.spec.global_settings.setdefault(_global_settings_defaults["dummy_scans"])
+        ctx.spec.global_settings.setdefault(_global_settings_defaults["run_reconall"])
+        ctx.spec.global_settings.setdefault(_global_settings_defaults["slice_timing"])
 
         # self.default_settings = {"run_reconall": False, "slice_timing": False,
         # "via_algorithm_switch": False, "dummy_scans": 0}
@@ -407,36 +412,3 @@ class Preprocessing(Widget):
     @on(Input.Changed, "#number_of_remove_initial_volumes")
     def _on_number_of_remove_initial_volumes_changed(self, message: Message) -> None:
         ctx.spec.global_settings["dummy_scans"] = message.value
-
-    # @on(Button.Pressed, "#edit_vols_to_remove_button")
-    # def _on_edit_vols_to_remove_button_pressed(self):
-    #     """
-    #     Handles the "Edit" button press for setting initial volumes to remove.
-    #
-    #     This method is called when the user presses the "Edit" button next
-    #     to the "Remove initial volumes from scans" label. It pushes the
-    #     `SetInitialVolumesRemovalModal` onto the screen to allow the user
-    #     to specify the number of initial volumes to remove.
-    #     """
-    #
-    #     def update_remove_initial_volumes_value(value: None | str) -> None:
-    #         """
-    #         Updates the UI and the application's context with the new value.
-    #
-    #         This method is called when the `SetInitialVolumesRemovalModal`
-    #         is dismissed. It updates the "remove_volumes_value" widget with
-    #         the new value and stores the value in the application's context.
-    #
-    #         Parameters
-    #         ----------
-    #         value : str | bool
-    #             The new value for the number of initial volumes to remove,
-    #             or False if the modal was canceled.
-    #         """
-    #         remove_volumes_value_widget = self.get_widget_by_id("remove_volumes_value")
-    #         if value is not False:
-    #             remove_volumes_value_widget.update(value)
-    #             remove_volumes_value_widget.styles.border = ("solid", "green")
-    #             ctx.spec.global_settings["dummy_scans"] = value
-    #
-    #     self.app.push_screen(SetInitialVolumesRemovalModal(), update_remove_initial_volumes_value)
