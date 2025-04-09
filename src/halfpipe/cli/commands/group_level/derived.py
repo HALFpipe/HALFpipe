@@ -253,7 +253,9 @@ class ImagingVariables:
     def apply_from_vals(self, name: str):
         data: dict[str | None, dict[str, float]] = defaultdict(dict)
         for result in self.design_base.results:
-            vals = result["vals"]
+            vals = dict()
+            if "vals" in result:
+                vals = result["vals"]
 
             tags = {key: value for key, value in result["tags"].items() if key not in resultdict_entities}
             subject = tags.pop("sub")
