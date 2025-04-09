@@ -5,7 +5,7 @@
 import os
 from os import path as op
 
-from .config import Config
+# from .config import Config
 
 
 def get_dir(text):
@@ -16,14 +16,3 @@ def get_dir(text):
     if len(dir) == 0:
         dir = os.curdir
     return dir
-
-
-def resolve(path) -> str:
-    abspath = op.abspath(path)
-
-    fs_root = Config.fs_root
-
-    if not abspath.startswith(fs_root):
-        abspath = fs_root + abspath
-
-    return op.normpath(abspath)

@@ -8,6 +8,7 @@ from textual import events, on
 from textual.containers import Container, Grid, HorizontalScroll
 from textual.widgets import Button, Static
 
+from ...ingest.glob import resolve_path_wildcards
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
@@ -79,107 +80,6 @@ def check_wrapped_tags(path: str, tags: list[str]) -> bool:
 
     # Return True if a match is found, otherwise False
     return bool(match)
-
-
-def evaluate_files(newpathname: str) -> tuple[str, list[str]]:
-    """
-    Evaluates how many and what files were found based on the provided file pattern.
-
-    This function takes a file pattern as input and uses globbing to find
-    matching files. It returns a message indicating the number of files
-    found and a list of the file paths. Possible TODO to make it simpler.
-
-    Parameters
-    ----------
-    newpathname : str
-        The file pattern to evaluate.
-
-    Returns
-    -------
-    tuple[str, list[str]]
-        A tuple containing:
-        - A message indicating the number of files found and any
-          associated tags.
-        - A list of file paths that match the pattern.
-    """
-    from os import path as op
-    from threading import Event
-
-    import inflect
-
-    from ...ingest.glob import (
-        suggestion_match,
-        tag_glob,
-    )
-
-    class Config:
-        fs_root: str = "/"
-
-    def resolve(path) -> str:
-        abspath = op.abspath(path)
-
-        fs_root = Config.fs_root
-
-        if not abspath.startswith(fs_root):
-            abspath = fs_root + abspath
-
-        return op.normpath(abspath)
-
-    # all possible entities
-    schema_entities = ["subject", "task", "session", "run", "acquisition", "atlas", "seed", "map", "desc"]
-    dironly = False
-
-    # empty string gives strange behaviour!
-    newpathname = newpathname if newpathname != "" else "/"
-    tag_glob_generator = tag_glob(newpathname, schema_entities + ["suggestion"], dironly)
-
-    new_suggestions = set()
-    suggestiontempl = op.basename(newpathname)
-    filepaths = []
-    tagdictlist = []
-    _scan_requested_event = Event()
-
-    def _is_candidate(filepath):
-        if dironly is True:
-            return op.isdir(filepath)
-        else:
-            return op.isfile(filepath)
-
-    try:
-        for filepath, tagdict in tag_glob_generator:
-            if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-                suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
-                if op.isdir(filepath):
-                    suggestionstr = op.join(suggestionstr, "")  # add trailing slash
-                new_suggestions.add(suggestionstr)
-
-            elif _is_candidate(filepath):
-                filepaths.append(filepath)
-                tagdictlist.append(tagdict)
-
-            if _scan_requested_event.is_set():
-                break
-
-    except ValueError as e:
-        print("Error scanning files: %s", e)
-
-    tagsetdict = {}
-    if len(tagdictlist) > 0:
-        tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
-
-    nfile = len(filepaths)
-
-    p = inflect.engine()
-    value = p.inflect(f"Found {nfile} plural('file', {nfile})")
-
-    if len(tagsetdict) > 0:
-        value += " "
-        value += "for"
-        value += " "
-        tagmessages = [p.inflect(f"{len(v)} plural('{k}', {len(v)})") for k, v in tagsetdict.items()]
-        value += p.join(tagmessages)
-
-    return value, filepaths
 
 
 class ColorButton(Button):
@@ -483,10 +383,10 @@ class PathPatternBuilder(DraggableModalScreen):
         """
         if isinstance(event.value, Text):
             event_value = event.value.plain
-            match_feedback_message, filepaths = evaluate_files(event_value)
+            match_feedback_message, filepaths = resolve_path_wildcards(event_value)
             self.path = event_value
         else:
-            match_feedback_message, filepaths = evaluate_files(event.value)
+            match_feedback_message, filepaths = resolve_path_wildcards(event.value)
             self.path = event.value
 
         highlights = self.get_widget_by_id("input_prompt").current_highlights

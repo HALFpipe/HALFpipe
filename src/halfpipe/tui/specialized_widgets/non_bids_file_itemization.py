@@ -14,10 +14,11 @@ from textual.widget import Widget
 from textual.widgets import Button, Static
 from textual.worker import Worker, WorkerState
 
+from ...ingest.glob import resolve_path_wildcards
 from ..data_analyzers.context import ctx
 from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.confirm_screen import SimpleMessageModal
-from ..specialized_widgets.path_pattern_builder import PathPatternBuilder, evaluate_files
+from ..specialized_widgets.path_pattern_builder import PathPatternBuilder  # , resolve_path_wildcards
 from .pattern_suggestor import find_tag_positions_by_color, highlighting
 
 
@@ -365,7 +366,7 @@ class FileItem(Widget):
             else:
                 pattern_load = {}
                 pattern_load["file_pattern"] = self.load_object.path
-                message, filepaths = evaluate_files(self.load_object.path)
+                message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
                 self._update_file_pattern(pattern_load)
