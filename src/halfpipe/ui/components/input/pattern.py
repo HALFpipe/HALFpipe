@@ -272,43 +272,6 @@ class FilePatternInputView(CallableView):
             if scan_result is not None:
                 new_suggestions, filepaths, tagsetdict = scan_result
 
-            #
-            # tag_glob_generator = tag_glob(newpathname, self.entities + ["suggestion"], self.dironly)
-            #
-            # new_suggestions = set()
-            # suggestiontempl = op.basename(newpathname)
-            # filepaths = []
-            # tagdictlist = []
-            #
-            # try:
-            #     for filepath, tagdict in tag_glob_generator:
-            #         if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-            #             suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
-            #             if op.isdir(filepath):
-            #                 suggestionstr = op.join(suggestionstr, "")  # add trailing slash
-            #             new_suggestions.add(suggestionstr)
-            #
-            #         elif _is_candidate(filepath):
-            #             filepaths.append(filepath)
-            #             tagdictlist.append(tagdict)
-            #
-            #         if self._scan_requested_event.is_set():
-            #             break
-            #
-            # except ValueError as e:
-            #     logger.debug("Error scanning files: %s", e, exc_info=True)
-            #     pass
-            # except AssertionError as e:
-            #     logger.debug("Error scanning files: %s", e, exc_info=True)
-            #     return
-            #
-            # if self._scan_requested_event.is_set():
-            #     continue
-            #
-            # tagsetdict = {}
-            # if len(tagdictlist) > 0:
-            #     tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
-
             nfile = len(filepaths)
 
             has_all_required_entities = all(entity in tagsetdict for entity in self.required_entities)
