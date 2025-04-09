@@ -173,6 +173,12 @@ def is_recursive(pattern: str) -> bool:
     return pattern == "**"
 
 
+# the Config, resolve and get_dir are from ui.components, I would take them out and put here
+# and then reroute all references to them to here
+class Config:
+    fs_root: str = "/"
+
+
 def get_dir(text):
     if text is None:
         dir = os.curdir
@@ -181,10 +187,6 @@ def get_dir(text):
     if len(dir) == 0:
         dir = os.curdir
     return dir
-
-
-class Config:
-    fs_root: str = "/"
 
 
 def resolve(path) -> str:

@@ -36,6 +36,9 @@ async def run_before(
 
     if stage == "bids_data_tab":
         await _load_data(pilot, data_path)
+        # here we click on the tab informing us that workdir is missing
+        # await pilot.click("#only_one_button")
+        # await pilot.press('w')
 
     if stage == "non_bids_data_tab" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)

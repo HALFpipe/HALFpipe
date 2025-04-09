@@ -466,6 +466,12 @@ class MainApp(App):
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("models_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
+        self.flags_to_show_tabs["from_working_dir_tab"] = False
+        self.flags_to_show_tabs["from_input_data_tab"] = False
+        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
+        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
+
         if complete_reset is True:
             self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
             self.get_widget_by_id("work_dir_content").refresh(recompose=True, layout=True)
