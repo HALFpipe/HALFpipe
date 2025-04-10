@@ -156,7 +156,6 @@ class SelectOverlay(OptionList):
         """This allows to typing in the prompt when the focus is on the overlay."""
         if any(mod in event.key for mod in ["ctrl", "alt", "shift"]):
             return
-        print("//////////////////////////////////////////", event.key)
         # List of specific disallowed keys
         disallowed_keys = [
             "up",

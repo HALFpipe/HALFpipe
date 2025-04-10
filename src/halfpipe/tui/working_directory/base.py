@@ -446,11 +446,6 @@ overwrite the working directory and start a new analysis?",
                 self.mount_file_panels()
             if event.worker.name == "file_panels_worker":
                 self.mount_models()
-            # if event.worker.name == "test_dir_worker":
-            #     print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', event.worker.result )
-            #     if event.worker.result is not None:
-            #         print('paaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaases?', event.worker.result,  type(event.worker.result))
-            #         await self._working_dir_path_passed(event.worker.result)
 
     @work(exclusive=True, name="file_panels_worker")
     async def mount_file_panels(self) -> None:

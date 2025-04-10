@@ -207,7 +207,6 @@ def path_test_for_bids(path: str, isfile: bool = False) -> str:
         try:
             BIDSLayout(path, validate=True)  # Enforce validation
         except Exception as e:
-            print(f"Invalid BIDS dataset: {e}")
             result_info = f"The selected data directory seems not be a BIDS directory!\nException: {e}"
     return result_info
 
