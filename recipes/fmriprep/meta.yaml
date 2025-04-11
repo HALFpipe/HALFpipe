@@ -52,6 +52,7 @@ requirements:
     - convert3d=1.4
     # Workflow dependencies: Connectome Workbench
     - connectome-workbench-cli=2.0
+    - mesalib>=20
     # Workflow dependencies: FSL (versions pinned in 6.0.7.13)
     - fsl-bet2=2111.4
     - fsl-flirt=2111.2
