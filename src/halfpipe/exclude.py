@@ -31,7 +31,9 @@ class Decision(Enum):
 
 
 class QCDecisionMaker:
-    def __init__(self, file_paths: Sequence[AnyPath]):
+    def __init__(self, file_paths: Sequence[AnyPath], strict: bool = False):
+        self.strict = strict
+
         self.index: dict[PMap[str, str], set[Rating]] = defaultdict(set)
         self.types: set[str] = set()
         self.relevant_tag_names: set[str] = set()
@@ -113,13 +115,12 @@ class QCDecisionMaker:
         elif rating == Rating.GOOD:
             return Decision.INCLUDE
         elif rating == Rating.NONE or rating == Rating.UNCERTAIN:
+            if self.strict:
+                return Decision.EXCLUDE
             if relevant_tags not in self.shown_warning_tags:
                 logger.warning(
                     f"Will include observation ({format_tags(relevant_tags)}) for analysis "
                     f'even though quality rating is "{rating.name}"'
                 )
                 self.shown_warning_tags.add(relevant_tags)
-
             return Decision.INCLUDE
-        else:
-            raise ValueError()
