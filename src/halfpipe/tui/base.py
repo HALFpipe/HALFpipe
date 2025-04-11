@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+from copy import deepcopy
 from pathlib import Path
 
 from rich.console import RenderResult
@@ -25,9 +26,8 @@ from .preprocessing.base import Preprocessing
 from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import FilePanelTemplate
+from .standards import global_settings_defaults
 from .working_directory.base import WorkDirectory
-from. standards import global_settings_defaults
-from copy import deepcopy
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = Path(__file__).resolve().parent
@@ -498,9 +498,9 @@ class MainApp(App):
         # # set global settings to defaults use the defaults dictionary at preprocessing_content widget
         # for key in self.get_widget_by_id("preprocessing_content").default_settings:
         #     ctx.spec.global_settings[key] = self.get_widget_by_id("preprocessing_content").default_settings[key]
-        ctx.spec.global_settings["dummy_scans"] = self._global_settings_defaults['dummy_scans']
-        ctx.spec.global_settings["run_reconall"] = self._global_settings_defaults['run_reconall']
-        ctx.spec.global_settings["slice_timing"] = self._global_settings_defaults['slice_timing']
+        ctx.spec.global_settings["dummy_scans"] = self._global_settings_defaults["dummy_scans"]
+        ctx.spec.global_settings["run_reconall"] = self._global_settings_defaults["run_reconall"]
+        ctx.spec.global_settings["slice_timing"] = self._global_settings_defaults["slice_timing"]
 
     async def on_key(self, event: events.Key) -> None:
         if event.key == "ctrl+c":
