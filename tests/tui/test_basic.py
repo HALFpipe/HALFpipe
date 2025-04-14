@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from asyncio import sleep
 from functools import partial
 from pathlib import Path
 
@@ -56,35 +57,34 @@ async def run_before(
             await pilot.press("p")
             # Toggle run recon all
             # await pilot.click(offset=(109, 11))
-            await pilot.click("#run_reconall")
+            pilot.app.get_widget_by_id("run_reconall").value = True
             # Turn on slice timing
             # await pilot.click(offset=(113, 19))
-            await pilot.click("#time_slicing_switch")
+
+            pilot.app.get_widget_by_id("time_slicing_switch").value = True
+            await sleep(10)
 
             # Check meta data modal. Click No to 'Proceed with these values?'
-            # await pilot.click(offset=(116, 31))
             await pilot.click("#only_one_button")
+
             # Specify slice acquisition direction, choose second choice
             # await pilot.click(offset=(65, 26))
             await pilot.click("#set_value_modal")
             await pilot.press("down")
             await pilot.press("enter")
-            # Click ok
-            # await pilot.click(offset=(132, 30))
-            # Click ok on the warning modal: Missing images
-            await pilot.click(pilot.app.get_widget_by_id("only_one_button"))
 
-            # await pilot.click(offset=(116, 31))
-            # await pilot.click("#only_one_button")
-            # Specify Slice timing modal: Choose third options
-            # await pilot.click(offset=(65, 25))
+            # Click ok on the warning modal: Missing images
+            # # await pilot.click(offset=(132, 30))
+            await pilot.click("#only_one_button")
+
+            # # Specify Slice timing modal: Choose third options
+            # await pilot.click("#set_value_modal")
+
+            # # await pilot.click(offset=(65, 25))
             await pilot.click("#radio_set")
             for _i in range(2):
                 await pilot.press("down")
             await pilot.press("enter")
-
-            # Click ok on the 'Specify Slice timing modal'
-            # await pilot.click(offset=(132, 34))
             await pilot.click("#ok")
 
             # click in the input box to set initial volumes to remove
@@ -94,7 +94,7 @@ async def run_before(
             await pilot.press("9")
             # random click to unfocus the input
             await pilot.click(offset=(50, 10))
-
+            #
             # Select Check and Run tab
             await pilot.press("r")
             # Click 'Refresh'

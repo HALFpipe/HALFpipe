@@ -98,6 +98,7 @@ class Preprocessing(Widget):
             Horizontal(
                 Static("Run FreeSurfer Recon-all", classes="description_labels"),
                 TextSwitch(value=ctx.spec.global_settings["run_reconall"], id="run_reconall"),
+                id="run_reconall_panel",
             ),
             id="anatomical_settings",
             classes="components",

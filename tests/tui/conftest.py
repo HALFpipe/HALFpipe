@@ -19,7 +19,7 @@ def resolved_test_dir_path():
     source_file = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
     if not source_file.exists():  # Fallback to './' if not found in CURRENT_DIR
         source_file = Path("./")
-    logger.info(f"TUI test durectpry path is {Path.cwd()}")
+    logger.info(f"TUI test directory path is {Path.cwd()}")
     return source_file
 
 
