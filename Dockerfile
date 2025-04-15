@@ -150,7 +150,7 @@ RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
 
 # We install built recipes and clean unnecessary files such as static libraries
 FROM conda AS install
-RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
+RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/
 COPY --from=halfpipe /opt/conda/conda-bld/ /opt/conda/conda-bld/
 RUN --mount=type=cache,target=/opt/conda/pkgs \
     conda create --name "fmriprep" --yes --use-local \
