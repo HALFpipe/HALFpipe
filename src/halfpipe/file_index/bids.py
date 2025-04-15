@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Self
 
 from tqdm.auto import tqdm
 
@@ -73,7 +74,7 @@ def parse(path: AnyPath) -> dict[str, str] | None:
 
 
 class BIDSIndex(FileIndex):
-    def put(self, root: AnyPath):
+    def put(self, root: AnyPath) -> Self:
         it = recursive_list_directory(root)
         for path in tqdm(it, desc=f'indexing files from "{root}"', unit="files"):
             tags = parse(path)
@@ -85,3 +86,5 @@ class BIDSIndex(FileIndex):
                 self.paths_by_tags[key][value].add(path)
 
             self.tags_by_paths[path] = tags
+
+        return self

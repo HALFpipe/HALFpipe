@@ -5,6 +5,7 @@
 from nipype.pipeline import engine as pe
 
 from ..factory import Factory
+from ..fmriprep import FmriprepFactory
 from ..memory import MemoryCalculator
 from .alt import init_alt_bold_std_trans_wf
 
@@ -14,12 +15,12 @@ class AltBOLDFactory(Factory):
     Factory for the alt_bold_std_trans_wf
     """
 
-    def __init__(self, ctx, fmriprep_factory):
+    def __init__(self, ctx, fmriprep_factory: FmriprepFactory) -> None:
         super(AltBOLDFactory, self).__init__(ctx)
 
         self.previous_factory = fmriprep_factory
 
-    def setup(self):
+    def setup(self) -> None:
         prototype = init_alt_bold_std_trans_wf()
         self.wf_name = prototype.name
 

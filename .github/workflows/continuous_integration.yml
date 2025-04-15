@@ -141,14 +141,14 @@ jobs:
         uses: actions/cache@v4
         with:
           key: resource-cache
-          path: /resource-cache
+          path: /home/runner/resource-cache
       - name: Setup integration test container
         run: |
           docker run \
             --detach \
             --rm \
             --name="test" \
-            --volume="/resource-cache:/var/cache/halfpipe" \
+            --volume="/home/runner/resource-cache:/var/cache/halfpipe" \
             --volume="/home/runner:/home/runner" \
             --volume="$(pwd):/halfpipe" \
             --workdir="/halfpipe" \

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.10
 
-ARG fmriprep_version=24.1.0
+ARG fmriprep_version=25.0.0
 
 FROM condaforge/miniforge3 AS conda
 RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public && \
@@ -19,8 +19,9 @@ RUN cat <<EOF >"/usr/bin/retry"
 set -euo pipefail
 attempt="1"
 until "\$@"; do
+    exit_code="\$?"
     if [ "\${attempt}" -ge "5" ]; then
-        exit "$?"
+        exit "\${exit_code}"
     fi
     sleep 10
     attempt=\$((attempt + 1))
@@ -34,41 +35,43 @@ RUN chmod "+x" "/usr/bin/retry"
 FROM builder AS rmath
 RUN --mount=source=recipes/rmath,target=/rmath \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "rmath"
 
 FROM builder AS pytest-textual-snapshot
 RUN --mount=source=recipes/pytest-textual-snapshot,target=/pytest-textual-snapshot \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "pytest-textual-snapshot"
 
 FROM builder AS afni
 RUN --mount=source=recipes/afni,target=/afni \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "afni"
-
-FROM builder AS acres
-RUN --mount=source=recipes/acres,target=/acres \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    retry conda build --no-anaconda-upload --numpy "1.24" "acres"
 
 FROM builder AS mapca
 RUN --mount=source=recipes/mapca,target=/mapca \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "mapca"
 
 FROM builder AS migas
 RUN --mount=source=recipes/migas,target=/migas \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "migas"
 
 FROM builder AS nireports
 RUN --mount=source=recipes/nireports,target=/nireports \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
 
 FROM builder AS nitransforms
 RUN --mount=source=recipes/nitransforms,target=/nitransforms \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 
 FROM builder AS tedana
@@ -76,14 +79,15 @@ COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/tedana,target=/tedana \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS niworkflows
-COPY --from=acres /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "niworkflows"
 
 FROM builder AS sdcflows
@@ -92,6 +96,7 @@ COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/sdcflows,target=/sdcflows \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "sdcflows"
 
 FROM builder AS smriprep
@@ -100,6 +105,7 @@ COPY --from=migas /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/smriprep,target=/smriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "smriprep"
 
 FROM builder AS fmriprep
@@ -111,6 +117,7 @@ COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/fmriprep,target=/fmriprep \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS fmripost_aroma
@@ -123,6 +130,7 @@ COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/fmripost_aroma,target=/fmripost_aroma \
     --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmripost_aroma"
 
 FROM builder AS halfpipe

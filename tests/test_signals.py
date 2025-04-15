@@ -55,7 +55,9 @@ def test_mean_signals(tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any
     schaefer[schaefer > 0] += brainnetome_count
 
     combined = np.concatenate((brainnetome, schaefer), axis=3)
-    combined_image = new_img_like(brainnetome_image, combined)
+    combined_image = new_img_like(brainnetome_image, combined, copy_header=True)
+    if not isinstance(combined_image, nib.analyze.AnalyzeImage):
+        raise TypeError(f"Expected AnalyzeImage, got {type(combined_image)}")
 
     combined_signals, coverages = mean_signals(cope_image, combined_image, mask_image=mask_image, output_coverage=True)
     assert np.all(np.isfinite(combined_signals))

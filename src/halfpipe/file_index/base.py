@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from __future__ import annotations
-
 from collections import defaultdict
 from hashlib import sha1
 from typing import Iterable, Mapping, Sequence
@@ -123,5 +121,15 @@ class FileIndex:
                 if tags[key] == value:
                     tags[key] = replacement
 
-    def update(self, other: FileIndex):
-        raise NotImplementedError  # TODO
+    def update(self, other: "FileIndex") -> None:
+        # Prevent conflicting tags for repeated paths by only using the first occurrence
+        seen = set(self.tags_by_paths.keys())
+        for key, values in other.paths_by_tags.items():
+            for value, paths in values.items():
+                paths -= seen
+                self.paths_by_tags[key][value].update(paths)
+
+        for path, tags in other.tags_by_paths.items():
+            if path in self.tags_by_paths:
+                continue
+            self.tags_by_paths[path] = tags

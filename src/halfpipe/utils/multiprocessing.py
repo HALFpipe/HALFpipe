@@ -4,10 +4,12 @@
 
 import multiprocessing.pool as mp_pool
 import os
+import zipfile
 from contextlib import nullcontext
 from enum import Enum, auto
 from functools import partialmethod
 from multiprocessing import active_children, get_context
+from multiprocessing import reduction as mp_reduction
 from typing import Any, Callable, ContextManager, Iterable, Iterator, Sized, TypeVar
 
 mp_context = get_context("spawn")
@@ -126,3 +128,18 @@ def make_pool_or_null_context(
     output_iterator: Iterator = map_function(callable, iterable, chunksize)
     cm: ContextManager = pool
     return cm, output_iterator
+
+
+def reduce_zipfile_path(path: zipfile.Path) -> tuple[Callable, tuple[str, str]]:
+    # Extract the necessary components to reconstruct the Path
+    if path.root.filename is None:
+        raise ValueError("Cannot reduce a zipfile.Path without a filename")
+    return rebuild_zipfile_path, (path.root.filename, path.at)
+
+
+def rebuild_zipfile_path(root: str, at: str) -> zipfile.Path:
+    # Reconstruct a zipfile.Path object
+    return zipfile.Path(root, at=at)
+
+
+mp_reduction.register(zipfile.Path, reduce_zipfile_path)

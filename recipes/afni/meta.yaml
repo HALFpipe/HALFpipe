@@ -1,10 +1,8 @@
 {% set name = "afni" %}
 {% set version = "24.2.05" %}
-{% set sha = "31323b171ece3d6fcb5cc8915cf87006c6050e92" %}
 
-# Recipe taken from
+# Adapted from
 # https://github.com/unlhcc/hcc-conda-recipes/blob/master/recipes/afni/23.1.10/meta.yaml
-# Sha is from https://github.com/afni/afni/releases/tag/AFNI_24.2.05
 
 package:
   name: "{{ name|lower }}"
@@ -12,7 +10,7 @@ package:
 
 source:
   url: "https://github.com/afni/afni/archive/refs/tags/{{ name|upper }}_{{ version }}.tar.gz"
-  sha: "{{ sha }}"
+  sha256: "ed19e9fb0e243319de9ff6a502c9da33442e862f0e6a3979c1cf9dc04bb6d8e4"
   patches:
     - 001-pip-install.patch
     - 002-git-describe.patch
@@ -53,13 +51,6 @@ requirements:
     - xorg-xorgproto
     - libxml2
     - icu
-  # run:
-  #   - "openmotif>=2.3.8"
-  #   - libjpeg-turbo
-  #   - xorg-libxft
-  #   - libxml2
-  #   - icu
-  #   - xorg-libxpm
 
 outputs:
   - name: afni-libznz

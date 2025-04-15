@@ -13,6 +13,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.base.support import Bunch
 
+from ...exclude import QCDecisionMaker
 from ...result.base import ResultDict
 from ...result.filter import filter_results
 from .base import ResultdictsOutputSpec
@@ -56,9 +57,11 @@ class FilterResultdicts(SimpleInterface):
         if isdefined(self.inputs.require_one_of_images):
             require_one_of_images = self.inputs.require_one_of_images
 
-        exclude_files: list[str] | None = None
+        qc_decision_maker: QCDecisionMaker | None = None
         if isdefined(self.inputs.exclude_files):
             exclude_files = self.inputs.exclude_files
+            exclude_paths = list(map(Path, exclude_files))
+            qc_decision_maker = QCDecisionMaker(exclude_paths)
 
         out_dicts = filter_results(
             out_dicts,
@@ -67,7 +70,7 @@ class FilterResultdicts(SimpleInterface):
             variable_dicts,
             model_name,
             require_one_of_images,
-            exclude_files,
+            qc_decision_maker,
         )
 
         self._results["resultdicts"] = out_dicts
