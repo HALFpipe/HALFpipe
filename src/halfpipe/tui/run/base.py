@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # ok (more-less) to review
 
-import copy
 import json
 from collections import defaultdict
 from typing import Any
@@ -12,15 +11,10 @@ from textual.containers import Horizontal, ScrollableContainer
 from textual.widget import Widget
 from textual.widgets import Button, Pretty
 
-from ...model.feature import Feature
-from ...model.file.bids import BidsFileSchema
-from ...model.model import Model
-from ...model.setting import SettingSchema
 from ...model.spec import SpecSchema, save_spec
-from ...utils.copy import deepcopy
 from ..data_analyzers.context import ctx
 from ..specialized_widgets.confirm_screen import Confirm
-from ..save_spec import dump_dict_to_contex
+from ..save import dump_dict_to_contex
 
 class Run(Widget):
     """
