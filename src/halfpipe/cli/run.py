@@ -10,12 +10,25 @@ from typing import Any, Mapping
 logger = logging.getLogger("halfpipe")
 
 
-def run_stage_ui(opts: Namespace) -> None:
+def run_stage_ui(opts: Namespace):
     from ..ui import init_spec_ui
     from ..ui.components.config import Config as UIConfig
 
     UIConfig.fs_root = str(opts.fs_root)
-    opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
+    # logger.info("tui flag:", opts.tui)
+
+    if opts.tui:
+        from ..tui.base import MainApp
+
+        app = MainApp()
+        opts.workdir = app.run()
+        if opts.workdir is False:
+            import os
+
+            os._exit(0)
+    else:
+        opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
+        logger.info("workdir from tui:", opts.workdir)
 
 
 def run_stage_workflow(opts):

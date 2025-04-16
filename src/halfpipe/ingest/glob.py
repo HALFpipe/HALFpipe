@@ -3,10 +3,14 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import fnmatch
+import os
 import re
 from os import path as op
 from pathlib import Path
+from threading import Event
 from typing import Callable, Container, Generator, Iterable
+
+import inflect
 
 from ..utils.path import iterdir, rlistdir
 
@@ -167,3 +171,148 @@ def has_magic(s) -> bool:
 
 def is_recursive(pattern: str) -> bool:
     return pattern == "**"
+
+
+# the Config, resolve and get_dir are from ui.components, I would take them out and put here
+# and then reroute all references to them to here
+class Config:
+    fs_root: str = "/"
+
+
+def get_dir(text):
+    if text is None:
+        dir = os.curdir
+    else:
+        dir = op.dirname(text)
+    if len(dir) == 0:
+        dir = os.curdir
+    return dir
+
+
+def resolve(path) -> str:
+    abspath = op.abspath(path)
+
+    fs_root = Config.fs_root
+
+    if not abspath.startswith(fs_root):
+        abspath = fs_root + abspath
+
+    return op.normpath(abspath)
+
+
+def _is_candidate(filepath, dironly):
+    if dironly is True:
+        return op.isdir(filepath)
+    else:
+        return op.isfile(filepath)
+
+
+def _scan_files_and_collect_tags(
+    newpathname: str, schema_entities: list[str], dironly: bool, _scan_requested_event: Event, logger=None
+) -> tuple[set[str], list[str], dict] | None:
+    """
+    Scans files using tag_glob and collects suggestions, valid file paths, and tag dictionaries.
+
+    Parameters
+    ----------
+    newpathname : str
+        The path pattern to search.
+    schema_entities : list[str]
+        The list of schema-related tag entities.
+    dironly : bool
+        Whether to only consider directories.
+    _scan_requested_event : Event
+        An event used to signal that the scan should stop early.
+
+    Returns
+    -------
+    tuple[set[str], list[str], list[dict]]
+        A set of suggestion strings, a list of valid file paths, and a list of corresponding tag dictionaries.
+    """
+
+    tag_glob_generator = tag_glob(newpathname, schema_entities + ["suggestion"], dironly)
+
+    new_suggestions = set()
+    suggestiontempl = op.basename(newpathname)
+    filepaths = []
+    tagdictlist = []
+
+    try:
+        for filepath, tagdict in tag_glob_generator:
+            if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
+                suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
+                if op.isdir(filepath):
+                    suggestionstr = op.join(suggestionstr, "")  # add trailing slash
+                new_suggestions.add(suggestionstr)
+
+            elif _is_candidate(filepath, dironly):
+                filepaths.append(filepath)
+                tagdictlist.append(tagdict)
+
+            if _scan_requested_event.is_set():
+                break
+
+    except ValueError as e:
+        if logger is not None:
+            logger.debug("Error scanning files: %s", e, exc_info=True)
+        pass
+    except AssertionError as e:
+        if logger is not None:
+            logger.debug("Error scanning files: %s", e, exc_info=True)
+        return None
+
+    tagsetdict = {}
+    if len(tagdictlist) > 0:
+        tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
+
+    return (new_suggestions, filepaths, tagsetdict)
+
+
+def resolve_path_wildcards(newpathname: str) -> tuple[str, list[str]]:
+    """
+    Evaluates how many and what files were found based on the provided file pattern.
+
+    This function takes a file pattern as input and uses globbing to find
+    matching files. It returns a message indicating the number of files
+    found and a list of the file paths. Possible TODO to make it simpler.
+
+    Parameters
+    ----------
+    newpathname : str
+        The file pattern to evaluate.
+
+    Returns
+    -------
+    tuple[str, list[str]]
+        A tuple containing:
+        - A message indicating the number of files found and any
+          associated tags.
+        - A list of file paths that match the pattern.
+    """
+
+    from threading import Event
+
+    # all possible entities
+    schema_entities = ["subject", "task", "session", "run", "acquisition", "atlas", "seed", "map", "desc"]
+    dironly = False
+
+    # empty string gives strange behaviour!
+    newpathname = newpathname if newpathname != "" else "/"
+    scan_result = _scan_files_and_collect_tags(newpathname, schema_entities, dironly, Event())
+
+    if scan_result is not None:
+        new_suggestions, filepaths, tagsetdict = scan_result
+
+    nfile = len(filepaths)
+
+    p = inflect.engine()
+    value = p.inflect(f"Found {nfile} plural('file', {nfile})")
+
+    if len(tagsetdict) > 0:
+        value += " "
+        value += "for"
+        value += " "
+        tagmessages = [p.inflect(f"{len(v)} plural('{k}', {len(v)})") for k, v in tagsetdict.items()]
+        value += p.join(tagmessages)
+
+    return value, filepaths
