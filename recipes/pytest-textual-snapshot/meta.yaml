@@ -6,7 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  git_url: git@github.com:Textualize/pytest-textual-snapshot.git
+  git_url: https://github.com/Textualize/pytest-textual-snapshot.git
   git_rev: fix/convert-into-python-package  # Use the specific branch
 
 build:
