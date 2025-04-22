@@ -1,24 +1,12 @@
-
 import copy
-import json
-from collections import defaultdict
-from typing import Any
-
-from textual import on
-from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
-from textual.widget import Widget
-from textual.widgets import Button, Pretty
 
 from ..model.feature import Feature
 from ..model.file.bids import BidsFileSchema
 from ..model.model import Model
 from ..model.setting import SettingSchema
-from ..model.spec import SpecSchema, save_spec
 from ..utils.copy import deepcopy
 from .data_analyzers.context import ctx
 from .specialized_widgets.confirm_screen import Confirm
-
 
 
 def dump_dict_to_contex(self, save=False):
@@ -53,9 +41,9 @@ def dump_dict_to_contex(self, save=False):
     for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
         # skip whole entry if in the feature there were no selected tasks
         if (
-                ctx.cache[name]["settings"].get("filters", [])
-                and name != "bids"
-                and ctx.cache[name]["settings"]["filters"][0].get("values", []) == []
+            ctx.cache[name]["settings"].get("filters", [])
+            and name != "bids"
+            and ctx.cache[name]["settings"]["filters"][0].get("values", []) == []
         ):
             self.app.push_screen(
                 Confirm(
@@ -85,9 +73,9 @@ def dump_dict_to_contex(self, save=False):
             for key, value in ctx.cache[name]["settings"].items():
                 # Skip keys based on specific conditions
                 if (
-                        (key == "bandpass_filter" and value.get("type") is None)
-                        or (key == "smoothing" and value.get("fwhm") is None)
-                        or (key == "grand_mean_scaling" and value.get("mean") is None)
+                    (key == "bandpass_filter" and value.get("type") is None)
+                    or (key == "smoothing" and value.get("fwhm") is None)
+                    or (key == "grand_mean_scaling" and value.get("mean") is None)
                 ):
                     continue
 
@@ -102,13 +90,13 @@ def dump_dict_to_contex(self, save=False):
                         for f in value:
                             images = ctx.get_available_images[f["entity"]]
                             if (
-                                    # If the filter contains all possible values, then we set it to empty list. This is done
-                                    # by coparing the filter with the all possible images of the data.
-                                    set(f.get("values", [])) == set(images)
-                                    # Or the filter dict has empty "values", then we do not include the filter in the final
-                                    # spec file.
-                                    or isinstance(f, dict)
-                                    and not f.get("values")
+                                # If the filter contains all possible values, then we set it to empty list. This is done
+                                # by coparing the filter with the all possible images of the data.
+                                set(f.get("values", [])) == set(images)
+                                # Or the filter dict has empty "values", then we do not include the filter in the final
+                                # spec file.
+                                or isinstance(f, dict)
+                                and not f.get("values")
                             ):
                                 # do not append
                                 # value = []  # Overwrite filters value with an empty list

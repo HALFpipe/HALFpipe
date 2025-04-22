@@ -13,8 +13,9 @@ from textual.widgets import Button, Pretty
 
 from ...model.spec import SpecSchema, save_spec
 from ..data_analyzers.context import ctx
-from ..specialized_widgets.confirm_screen import Confirm
 from ..save import dump_dict_to_contex
+from ..specialized_widgets.confirm_screen import Confirm
+
 
 class Run(Widget):
     """
