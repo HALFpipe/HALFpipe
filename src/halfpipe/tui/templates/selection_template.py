@@ -4,7 +4,6 @@
 import copy
 
 import inflect
-import numpy as np
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Grid, VerticalScroll
@@ -126,13 +125,12 @@ class SelectionTemplate(Widget):
                 Button("Rename", variant="primary", classes="rename_button", id="rename_item_button"),
                 Button("Duplicate", variant="primary", classes="duplicate_button", id="duplicate_item_button"),
                 Button("Delete", variant="primary", classes="delete_button", id="delete_item_button"),
-                # Button("Sort", variant="primary", classes="sort_button"),
                 classes="buttons",
             ),
-            *[
-                Collapsible(title=self.ITEM_MAP[f], id="list_" + f, classes="list", collapsed=False)
-                for f in self.ITEM_MAP.keys()
-            ],
+            # *[
+            #     Collapsible(title=self.ITEM_MAP[f], id="list_" + f, classes="list", collapsed=False)
+            #     for f in self.ITEM_MAP.keys()
+            # ],
             id="sidebar",
         )
         yield ContentSwitcher(id="content_switcher")
@@ -227,26 +225,6 @@ class SelectionTemplate(Widget):
             lambda respond: self._delete_item(respond, check_aggregate=False),
         )
 
-    def action_sort_features(self):
-        """
-        Sorts the items in the sidebar.
-
-        This method sorts the items in the sidebar alphabetically and by
-        item type.
-        """
-
-        def sort_children(by):
-            for i in range(len(self.feature_items.keys())):
-                current_list_item_ids = [i.id for i in self.get_widget_by_id("list").children]
-                item_names = [getattr(self.feature_items[i], by) for i in current_list_item_ids]
-                correct_order = np.argsort(np.argsort(item_names))
-                which_to_move = list(correct_order).index(np.int64(i))
-                self.get_widget_by_id("list").move_child(int(which_to_move), before=int(i))
-
-        sort_children(self.current_order[0])
-        sort_children(self.current_order[1])
-        self.current_order = [self.current_order[1], self.current_order[0]]
-
     async def add_new_item(self, new_item: tuple | bool) -> None:
         """
         Adds a new item to the widget.
@@ -275,6 +253,7 @@ class SelectionTemplate(Widget):
             collapsible_item_new_id = content_switcher_item_new_id + "_flabel"
 
             self.feature_items[content_switcher_item_new_id] = TypeNameItem(item_type, item_name)
+            item_key = self.feature_items[content_switcher_item_new_id].type
 
             new_content_item = self.fill_cache_and_create_new_content_item(new_item)
             # Deselect previous FocusLabel if exists
@@ -284,10 +263,15 @@ class SelectionTemplate(Widget):
                 if widget_exists(self, collapsible_item_old_id):
                     self.get_widget_by_id(collapsible_item_old_id).deselect()
 
-            item_key = self.feature_items[content_switcher_item_new_id].type
             new_list_item = FocusLabel(item_name, id=collapsible_item_new_id)  # classes="labels " + item_type)
+            if not widget_exists(self, "list_" + item_key):
+                await self.get_widget_by_id("sidebar").mount(
+                    Collapsible(title=self.ITEM_MAP[item_key], id="list_" + item_key, classes="list", collapsed=False)
+                )
+                await self.reorder_collapsibles()
             await self.get_widget_by_id("list_" + item_key).query_one(Collapsible.Contents).mount(new_list_item)
             self.get_widget_by_id("list_" + item_key).collapsed = False
+            self.get_widget_by_id("list_" + item_key).styles.visibility = "visible"
             await self.get_widget_by_id("content_switcher").mount(new_content_item)
             self.get_widget_by_id("content_switcher").current = content_switcher_item_new_id
             self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
@@ -295,6 +279,21 @@ class SelectionTemplate(Widget):
                 self.feature_items[content_switcher_item_new_id].name,
             )
             self._id_counter += 1
+
+    async def reorder_collapsibles(self):
+        container = self.get_widget_by_id("sidebar")
+        # Get all Collapsible children
+        collapsibles: list[Collapsible] = container.walk_children(Collapsible)
+
+        def sort_key(widget):
+            collapsible_widgets_order = ["list_" + f for f in self.ITEM_MAP]
+            return collapsible_widgets_order.index(widget.id)
+
+        sorted_collapsibles = sorted(collapsibles, key=sort_key)
+
+        # Move widgets to their correct place
+        for i, w in enumerate(sorted_collapsibles[:-1]):
+            container.move_child(w, before=sorted_collapsibles[i + 1])
 
     async def action_duplicate_item(self):
         """
