@@ -132,7 +132,6 @@ class FilteredDirectoryTree(DirectoryTree):
         self.post_message(self.NodeChanged(event.node, dir_entry.path))
         event.stop()
 
-
     def scroll_to_line(self, line: int, animate: bool = True) -> None:
         """Scroll to the given line.
 
@@ -151,6 +150,7 @@ class FilteredDirectoryTree(DirectoryTree):
                 x_axis=False,  # Scrolling the X axis is quite jarring, and rarely necessary
                 top=True,
             )
+
 
 class FileBrowserModal(DraggableModalScreen):
     """
