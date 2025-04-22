@@ -12,14 +12,13 @@ from typing import Any
 import inflect
 
 from ....ingest.glob import (
+    _scan_files_and_collect_tags,
     remove_tag_remainder_match,
+    resolve,
     show_tag_suggestion_check,
-    suggestion_match,
-    tag_glob,
     tag_parse,
     tokenize,
 )
-from ..file import resolve
 from ..keyboard import Key
 from ..text import Text, TextElement, TextElementCollection
 from ..view import CallableView
@@ -257,49 +256,21 @@ class FilePatternInputView(CallableView):
                 if not op.isabs(pathname):
                     pathname = op.join(os.curdir, pathname)
 
-            newpathname = pathname + "{suggestion:.*}"
-            newpathname = resolve(newpathname)
-            tag_glob_generator = tag_glob(newpathname, self.entities + ["suggestion"], self.dironly)
-
-            new_suggestions = set()
-            suggestiontempl = op.basename(newpathname)
-            filepaths = []
-            tagdictlist = []
-
             def _is_candidate(filepath):
                 if self.dironly is True:
                     return op.isdir(filepath)
                 else:
                     return op.isfile(filepath)
 
-            try:
-                for filepath, tagdict in tag_glob_generator:
-                    if "suggestion" in tagdict and len(tagdict["suggestion"]) > 0:
-                        suggestionstr = suggestion_match.sub(tagdict["suggestion"], suggestiontempl)
-                        if op.isdir(filepath):
-                            suggestionstr = op.join(suggestionstr, "")  # add trailing slash
-                        new_suggestions.add(suggestionstr)
+            newpathname = pathname + "{suggestion:.*}"
+            newpathname = resolve(newpathname)
 
-                    elif _is_candidate(filepath):
-                        filepaths.append(filepath)
-                        tagdictlist.append(tagdict)
+            scan_result = _scan_files_and_collect_tags(
+                newpathname, self.entities, self.dironly, self._scan_requested_event, logger=logger
+            )
 
-                    if self._scan_requested_event.is_set():
-                        break
-
-            except ValueError as e:
-                logger.debug("Error scanning files: %s", e, exc_info=True)
-                pass
-            except AssertionError as e:
-                logger.debug("Error scanning files: %s", e, exc_info=True)
-                return
-
-            if self._scan_requested_event.is_set():
-                continue
-
-            tagsetdict = {}
-            if len(tagdictlist) > 0:
-                tagsetdict = {k: set(dic[k] for dic in tagdictlist) for k in tagdictlist[0] if k != "suggestion"}
+            if scan_result is not None:
+                new_suggestions, filepaths, tagsetdict = scan_result
 
             nfile = len(filepaths)
 

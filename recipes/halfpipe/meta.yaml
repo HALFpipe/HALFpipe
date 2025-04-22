@@ -79,7 +79,7 @@ requirements:
     - afni-3dtstat
     - afni-3dreho
     # New user interface
-    - textual==0.60.0
+    - textual==0.85.2
     - pytest-textual-snapshot
 
 test:

@@ -1,0 +1,171 @@
+ModelTemplate {
+    #top_container_models {
+        align: center top;
+    }
+
+    #tasks_to_use_selection {
+        height: auto;
+        padding: 1 0 1 3;
+    }
+
+    Input {
+        width: 20;
+    }
+    Grid {
+        height: auto;
+        align: left middle;
+        grid-size: 2;
+        grid-columns: 57 16;
+    }
+    #cutoff_panel {
+        padding: 1 0 1 3;
+    }
+    #spreadsheet_path_label {
+        border: red;
+        width: 90;
+        padding: 0 1;
+        margin: 1 0 0 0;
+    }
+    #spreadsheet_selection_panel {
+        height: 10;
+        #spreadsheet_selection {
+            margin: 1 0 0 0;
+        }
+        Button {
+            margin: 1;
+        }
+    }
+    #levels_panel {
+        height: auto;
+    }
+    .level_sub_panels {
+        border: green;
+
+        height: auto;
+    }
+    .instructions {
+        padding: 1;
+        text-style: bold;
+    }
+    #contrast_switch_label {
+        padding: 1;
+    }
+    SwitchWithSelect {
+        Grid {
+            align: left middle;
+            grid-size: 3;
+            grid-columns: 20 16 40;
+        }
+        #input_switch_input_box {
+            width: 30;
+            Static {
+                padding: 0 0 0 0;
+            }
+        }
+    }
+}
+
+.me {
+    color: crimson;
+}
+.lme {
+    color: blueviolet;
+}
+
+AddSpreadsheetModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 112;
+        height: auto;
+        padding: 0 0 -1 0;
+    }
+    .window_title {
+        width: 102;
+    }
+    Static {
+        margin: 1 1 1 1;
+    }
+    #title {
+        width: 100%;
+        text-style: bold;
+    }
+
+    #button_panel {
+        width: 110;
+        align: right middle;
+        height: auto;
+
+        Button {
+            margin: 1 1 0 0;
+        }
+    }
+    #spreadsheet_path_panel {
+        height: 8;
+        #spreadsheet_path_label {
+            width: 85%;
+            content-align: left middle;
+            border: green;
+            margin: 0 0 0 1;
+        }
+    }
+    #top_container {
+        height: auto;
+        width: auto;
+    }
+    #column_assignement_top_container {
+        align: center middle;
+        padding: 1;
+        #column_assignement {
+            border: green;
+            Horizontal {
+                height: 2;
+            }
+        }
+        #column_assignement_label {
+            width: auto;
+        }
+    }
+}
+
+LinearModel {
+    #aggregate_switch_label {
+        padding: 1;
+        text-style: bold;
+    }
+}
+
+.model_conditions_and_constrasts {
+    width: auto;
+    height: auto;
+}
+AdditionalContrastsCategoricalVariablesTable {
+    #contrast_table {
+        scrollbar-gutter: stable;
+        .datatable--header {
+            color: white;
+            text-style: bold italic;
+            background: black 70%;
+        }
+        .datatable--even-row {
+            background: grey;
+        }
+        .datatable--odd-row {
+            background: grey 70%;
+        }
+    }
+    #contrast_table_upper {
+        /*width: auto;*/
+        width: auto;
+        height: auto;
+        content-align: center middle;
+        /*border: solid;*/
+        padding: 1 1 0 0;
+    }
+    #button_panel {
+        align: right top;
+        height: 5;
+        Button {
+            margin: 0 1;
+            width: 25;
+        }
+    }
+}

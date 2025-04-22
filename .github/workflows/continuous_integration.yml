@@ -172,9 +172,20 @@ jobs:
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
           # Run the integration tests
+          echo "***Running TUI tests***"
+          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+          echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
-            --numprocesses=2
+            --numprocesses=2 \
+            --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
+            --ignore=tests/tui
+      - name: Upload Snapshot Report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-report
+          path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:

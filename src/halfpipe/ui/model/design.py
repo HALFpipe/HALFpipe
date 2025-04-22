@@ -283,7 +283,7 @@ class HaveContrastsStep(YesNoStep):
         return True
 
     def setup(self, ctx):
-        instruction_str0 = "Contrasts for the mean across all subjects, and for all variables "
+        instruction_str0 = "Contrasts for the mean across all subjects, and for the mean of each variable"
         self._append_view(TextView(instruction_str0))
         self._append_view(TextView("will be generated automatically"))
         self._append_view(SpacerView(1))

@@ -1,0 +1,116 @@
+MainApp {
+    Screen {
+        align: center middle;
+    }
+    #welcome_image {
+        width: 108;
+        height: 46;
+        background: white;
+    }
+    #file_browser_tab {
+        align: center top;
+    }
+    HeaderTitle {
+        text-style: bold;
+    }
+    Header {
+        height: 3;
+        background: $accent;
+    }
+    Tab {
+        width: auto;
+        height: 2;
+        padding: 1 1 0 2;
+        text-align: center;
+        /*  color: 60% red;*/
+    }
+    Tab.-active {
+        text-style: bold;
+        color: $text;
+        background: $accent;
+    }
+    .tabs {
+        border: thick $accent;
+    }
+    .tabs2 {
+        padding: 0 0 0 0;
+    }
+    Tab.-hidden {
+        display: none;
+        background: red;
+    }
+}
+
+#confirm_unlocking {
+    #draggable_modal_screen_container_wrapper {
+        width: 45;
+        height: 15;
+        background: black;
+    }
+    Static {
+        height: 5;
+    }
+    .window_title {
+        color: black;
+        height: auto;
+    }
+}
+
+.error_modal {
+    Vertical {
+        border-left: thick $error;
+        border-right: thick $error;
+        border-bottom: thick $error;
+    }
+    WindowTitleBar {
+        background: $error;
+    }
+    WindowTitleBar Button {
+        background: $error;
+    }
+}
+
+QuitModal {
+    #draggable_modal_screen_container_wrapper {
+        width: 47;
+        height: 11;
+        background: black;
+    }
+    Vertical {
+        border-left: thick $accent;
+        border-right: thick $accent;
+        border-bottom: thick $accent;
+        align: center middle;
+    }
+    Static {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+    }
+    Horizontal {
+        height: 4;
+        dock: bottom;
+        offset-x: 10;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+HeaderCloseIcon {
+    dock: right;
+    padding: 0 1;
+    width: 6;
+    offset-x: 0;
+    content-align: right middle;
+    border: solid black;
+}
+
+HeaderHelpIcon {
+    dock: right;
+    padding: 0 1;
+    width: 6;
+    offset-x: -5;
+    content-align: right middle;
+    border: solid black;
+}
