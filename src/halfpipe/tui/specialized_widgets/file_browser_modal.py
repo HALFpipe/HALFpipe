@@ -133,6 +133,26 @@ class FilteredDirectoryTree(DirectoryTree):
         event.stop()
 
 
+    def scroll_to_line(self, line: int, animate: bool = True) -> None:
+        """Scroll to the given line.
+
+        Args:
+            line: A line number.
+            animate: Enable animation.
+        """
+        region = self._get_label_region(line)
+        if region is not None:
+            self.scroll_to_region(
+                region,
+                animate=animate,
+                force=True,
+                center=self.center_scroll,
+                origin_visible=False,
+                x_axis=False,  # Scrolling the X axis is quite jarring, and rarely necessary
+                top=True,
+            )
+
+
 class FileBrowserModal(DraggableModalScreen):
     """
     A modal dialog for browsing directories and selecting paths.
@@ -288,6 +308,7 @@ class FileBrowserModal(DraggableModalScreen):
         label.change_prompt_from_parrent(str(self.selected_directory))
         if self.query_one(SelectOrInputPath).expanded is True:
             self.query_one(SelectOrInputPath).expanded = False
+
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
