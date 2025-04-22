@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # ok (more-less) to review
 
+import copy
 import json
 from collections import defaultdict
 from typing import Any
@@ -11,10 +12,16 @@ from textual.containers import Horizontal, ScrollableContainer
 from textual.widget import Widget
 from textual.widgets import Button, Pretty
 
+from ..save import dump_dict_to_contex
+from ...model.feature import Feature
+from ...model.file.bids import BidsFileSchema
+from ...model.model import Model
+from ...model.setting import SettingSchema
 from ...model.spec import SpecSchema, save_spec
+from ...utils.copy import deepcopy
 from ..data_analyzers.context import ctx
 from ..specialized_widgets.confirm_screen import Confirm
-from ..save import dump_dict_to_contex
+
 
 class Run(Widget):
     """
@@ -158,3 +165,4 @@ class Run(Widget):
         self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
         if self.json_data is not None:
             self.get_widget_by_id("this_output").update(json.loads(self.json_data))
+
