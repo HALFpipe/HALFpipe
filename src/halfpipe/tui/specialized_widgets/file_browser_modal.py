@@ -152,7 +152,6 @@ class FilteredDirectoryTree(DirectoryTree):
                 top=True,
             )
 
-
 class FileBrowserModal(DraggableModalScreen):
     """
     A modal dialog for browsing directories and selecting paths.
@@ -308,7 +307,6 @@ class FileBrowserModal(DraggableModalScreen):
         label.change_prompt_from_parrent(str(self.selected_directory))
         if self.query_one(SelectOrInputPath).expanded is True:
             self.query_one(SelectOrInputPath).expanded = False
-
 
     @on(Input.Submitted, "#path_input_box2")
     def update_from_input(self):
