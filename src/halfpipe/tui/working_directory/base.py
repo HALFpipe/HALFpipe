@@ -1,54 +1,79 @@
 # -*- coding: utf-8 -*-
-# ok (more-less) to review
+# ok to review
 
-import json
-from collections import defaultdict
-from typing import Any
+import os
+from pathlib import Path
 
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
+from textual.containers import Vertical
+from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Pretty
+from textual.widgets import Static
+from textual.worker import Worker, WorkerState
 
-from ...model.spec import SpecSchema, save_spec
+from ...model.spec import load_spec
+from ...workdir import init_workdir
 from ..data_analyzers.context import ctx
-from ..save import dump_dict_to_contex
+from ..help_functions import copy_and_rename_file
+from ..load import cache_file_patterns, fill_ctx_spec, mount_features, mount_file_panels, mount_models
 from ..specialized_widgets.confirm_screen import Confirm
+from ..specialized_widgets.filebrowser import FileBrowser
 
 
-class Run(Widget):
+class WorkDirectory(Widget):
     """
-    A widget for managing the dumping the cached data to create the spec.json file,
-    saving it and finally run the pipeline.
+    Manages the working directory selection and initialization for the application.
 
-    This class provides a user interface for refreshing the spec data, saving the
-    configuration to a spec file, and running the pipeline. It also
-    manages the conversion of cached data to the context format and gives a preview
-    of the generated spec.json file.
+    This widget provides the user interface for selecting a working directory,
+    which serves as the root for storing all output files and loading
+    configurations from existing 'spec.json' files. It handles the
+    interaction with the file browser, validation of the selected directory,
+    and the loading or overriding of existing configurations.
 
     Attributes
     ----------
-    old_cache : defaultdict[str, defaultdict[str, dict[str, Any]]] | None
-        A cache of old data, structured as a defaultdict of defaultdicts
-        containing dictionaries.
-    json_data : str | None
-        A JSON string representation of the current configuration.
+    existing_spec : Spec | None
+        The loaded specification object from 'spec.json', or None if no
+        specification file is found.
+    data_input_success : bool
+        A flag indicating whether the data input process was successful.
+    event_file_objects : list[File]
+        A list of event file objects loaded from the specification.
+    atlas_file_objects : list[File]
+        A list of atlas file objects loaded from the specification.
+    seed_map_file_objects : list[File]
+        A list of seed map file objects loaded from the specification.
+    spatial_map_file_objects : list[File]
+        A list of spatial map file objects loaded from the specification.
+    feature_widget : Widget
+        The feature selection widget.
+    model_widget : Widget
+        The model selection widget.
 
     Methods
     -------
-    __init__(id, classes)
-        Initializes the Run widget.
-    compose() -> ComposeResult
-        Composes the widget's components.
-    on_run_button_pressed()
-        Handles the event when the "Run" button is pressed.
-    on_save_button_pressed()
-        Handles the event when the "Save" button is pressed.
-    on_refresh_button_pressed()
-        Handles the event when the "Refresh" button is pressed.
-    refresh_context()
-        Refreshes the context by dumping the cached data and updating the UI.
+    compose()
+        Composes the widgets for the working directory interface.
+    _on_file_browser_changed(message)
+        Handles file browser's changed event, including verifying selected directory and loading configuration
+        from 'spec.json'.
+    working_directory_override(override)
+        Manages overriding an existing spec file, if one is found in the selected directory.
+    existing_spec_file_decision(load)
+        Manages user decision whether to load an existing spec file or override it.
+    load_from_spec()
+        Loads settings from 'spec.json' and updates the context cache.
+    cache_file_patterns()
+        Caches data from 'spec.json' into context and creates corresponding widgets.
+    mount_features()
+        Mounts feature selection widgets based on the spec file.
+    on_worker_state_changed(event)
+        Handles state change events for workers, progressing through stages of loading.
+    mount_file_panels()
+        Initializes file panels for various file types (events, atlas, seed, spatial maps).
+    mount_models()
+        Initializes the model selection widgets based on the spec file.
     """
 
     def __init__(
@@ -57,105 +82,205 @@ class Run(Widget):
         classes: str | None = None,
     ) -> None:
         """
-        Initializes the Run widget.
+        Initializes the WorkDirectory widget.
 
         Parameters
         ----------
-        id : str, optional
-            An optional identifier for the widget, by default None.
-        classes : str, optional
-            An optional string of classes for applying styles to the
-            widget, by default None.
+        id : str | None, optional
+            Identifier for the widget, by default None.
+        classes : str | None, optional
+            Classes for CSS styling, by default None.
         """
         super().__init__(id=id, classes=classes)
-        self.old_cache: defaultdict[str, defaultdict[str, dict[str, Any]]] | None = None
-        self.json_data = None
 
     def compose(self) -> ComposeResult:
         """
-        Composes the widget's components.
+        Composes the widgets for the working directory interface.
 
-        This method defines the layout and components of the widget,
-        including the "Refresh", "Save", and "Run" buttons, and the output
-        area.
+        This method creates the layout for the working directory selection,
+        including a descriptive static text and a file browser.
 
-        Yields
-        ------
+        Returns
+        -------
         ComposeResult
-            The composed widgets.
+            The result of composing the child widgets.
         """
-        with ScrollableContainer():
-            yield Horizontal(
-                Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run", id="run_button")
+        work_directory = Vertical(
+            Static(
+                "Set path to the working directory. Here all output will be stored. By selecting a directory with existing \
+spec.json file it is possible to load the therein configuration.",
+                id="description",
+            ),
+            FileBrowser(path_to="WORKING DIRECTORY", id="work_dir_file_browser"),
+            id="work_directory",
+            classes="components",
+        )
+        work_directory.border_title = "Select working directory"
+
+        yield work_directory
+
+    @on(FileBrowser.Changed)
+    async def _on_file_browser_changed(self, message: Message) -> None:
+        try:
+            init_workdir(message.selected_path)
+            await self._working_dir_path_passed(message.selected_path)
+        except RuntimeError as e:
+            self.app.push_screen(
+                Confirm(
+                    f"{e}",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="Path Error",
+                    classes="confirm_error",
+                )
             )
-            yield Pretty("", id="this_output")
+            self.get_widget_by_id("work_dir_file_browser").update_input(None, send_message=False)
+            self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
+            ctx.workdir = None
 
-    @on(Button.Pressed, "#run_button")
-    def on_run_button_pressed(self):
+    async def _working_dir_path_passed(self, selected_path: str | Path):
         """
-        Handles the event when the "Run" button is pressed.
+        Handles the FileBrowser's Changed event.
 
-        This method is called when the user presses the "Run" button. It
-        exits the application and returns the working directory.
+        This method is called when the user selects a directory in the
+        FileBrowser. It validates the selected directory, updates the UI,
+        and checks for an existing 'spec.json' file. If a 'spec.json' file
+        is found, it prompts the user to decide whether to load or override
+        the existing configuration.
+
+        Note
+        ----
+        The FileBrowser itself makes checks over the selected working directory
+        validity. If it passes then we get here and no more checks are needed.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the change.
         """
-        self.app.exit(result=ctx.workdir)
+        # Change border to green
+        self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
+        # add flag signaling that the working directory was set
+        self.app.flags_to_show_tabs["from_working_dir_tab"] = True
+        self.app.show_hidden_tabs()
 
-    @on(Button.Pressed, "#save_button")
-    def on_save_button_pressed(self):
-        """
-        Handles the event when the "Save" button is pressed.
-
-        This method is called when the user presses the "Save" button. It
-        refreshes the context, saves the spec file to the working
-        directory, and success modal is raised.
-        """
-
-        def save(value):
+        async def working_directory_override(override) -> None:
             """
-            Saves the spec file to the working directory.
+            Handles the user's decision to override an existing spec file.
 
-            This method is called after the user confirms the save
-            operation. It saves the current pipeline configuration to a
-            spec file in the working directory.
+            This nested function is called after the user has been prompted
+            about overriding an existing 'spec.json' file. If the user
+            chooses to override, it backs up the original 'spec.json' file.
 
             Parameters
             ----------
-            value : bool
-                The value returned by the confirmation dialog (not used).
+            override : bool
+                True if the user chose to override the existing file,
+                False otherwise.
             """
-            save_spec(ctx.spec, workdir=ctx.workdir)
+            if override:
+                # make a backup copy from the original spec file
+                if ctx.workdir is not None:
+                    copy_and_rename_file(os.path.join(ctx.workdir, "spec.json"))
+            else:
+                self.get_widget_by_id("work_dir_file_browser").update_input(None)
+                ctx.workdir = None
 
-        self.refresh_context()
-        self.app.push_screen(
-            Confirm(
-                "The spec file was saved to working directory!",
-                left_button_text=False,
-                right_button_text="OK",
-                right_button_variant="success",
-                title="Spec file saved",
-                classes="confirm_success",
-            ),
-            save,
-        )
+        async def existing_spec_file_decision(load):
+            """
+            Handles the user's decision to load or override an existing spec file.
 
-    @on(Button.Pressed, "#refresh_button")
-    def on_refresh_button_pressed(self):
+            This nested function is called when an existing 'spec.json' file
+            is found in the selected working directory. It prompts the user
+            to decide whether to load the existing settings or override them.
+
+            Parameters
+            ----------
+            load : bool
+                True if the user chose to load the existing file,
+                False otherwise.
+            """
+            if load:
+                await self._load_from_spec()
+            else:
+                self.app.push_screen(
+                    Confirm(
+                        "This action will override the existing spec in the selected working directory. Are you sure?",
+                        title="Override existing working directory",
+                        id="confirm_override_spec_file_modal",
+                        classes="confirm_warning",
+                    ),
+                    working_directory_override,
+                )
+
+        # add path to context object
+        ctx.workdir = Path(selected_path)
+        # Load the spec and by this we see whether there is existing spec file or not
+        self.existing_spec = load_spec(workdir=ctx.workdir)
+        if self.existing_spec is not None:
+            self.app.push_screen(
+                Confirm(
+                    "Existing spec file was found! Do you want to load the settings or \
+overwrite the working directory and start a new analysis?",
+                    title="Spec file found",
+                    left_button_text="Load",
+                    right_button_text="Override",
+                    id="confirm_spec_load_modal",
+                    classes="confirm_warning",
+                ),
+                existing_spec_file_decision,
+            )
+
+    async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
-        Handles the event when the "Refresh" button is pressed.
+        Handles state change events for workers.
 
-        This method is called when the user presses the "Refresh" button.
-        It refreshes the context and updates the UI spec preview with the new data.
-        """
-        self.refresh_context()
+        This method is called when the state of a worker changes. If the worker
+        ended with SUCCESS, it manages the progression through different stages
+        of loading, such as filling the spec context object, caching file patterns,
+        mounting features, mounting file panels,and mounting models.
 
-    def refresh_context(self):
+        Parameters
+        ----------
+        event : Worker.StateChanged
+            The event object containing information about the worker's
+            state change.
         """
-        Refreshes the context by dumping the cached data and updating the spec preview.
+        if event.state == WorkerState.SUCCESS:
+            if event.worker.name == "fill_ctx_spec":
+                self._cache_file_patterns()
+            if event.worker.name == "cache_file_worker" and self.data_input_success is True:
+                self._mount_features()
+            if event.worker.name == "feature_worker":
+                self._mount_file_panels()
+            if event.worker.name == "file_panels_worker":
+                self._mount_models()
 
-        This method dumps the cached data to the context, converts it to a
-        JSON string, and updates the output widget with the JSON data.
-        """
-        dump_dict_to_contex(self)
-        self.json_data = SpecSchema().dumps(ctx.spec, many=False, indent=4, sort_keys=False)
-        if self.json_data is not None:
-            self.get_widget_by_id("this_output").update(json.loads(self.json_data))
+    async def _load_from_spec(self):
+        # Go to Stage 1 of the loading process
+        self._fill_ctx_spec()
+
+    @work(exclusive=True, name="fill_ctx_spec")
+    async def _fill_ctx_spec(self):
+        # Stage 1 of the loading process
+        await fill_ctx_spec(self)
+
+    @work(exclusive=True, name="cache_file_worker")
+    async def _cache_file_patterns(self):
+        # Stage 2 of the loading process
+        await cache_file_patterns(self)
+
+    @work(exclusive=True, name="feature_worker")
+    async def _mount_features(self):
+        # Stage 3 of the loading process
+        await mount_features(self)
+
+    @work(exclusive=True, name="file_panels_worker")
+    async def _mount_file_panels(self) -> None:
+        # Stage 4 of the loading process
+        await mount_file_panels(self)
+
+    @work(exclusive=True, name="models_worker")
+    async def _mount_models(self) -> None:
+        # Stage 5 of the loading process
+        await mount_models(self)
