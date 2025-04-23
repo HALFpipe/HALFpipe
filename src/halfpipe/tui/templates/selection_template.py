@@ -285,15 +285,20 @@ class SelectionTemplate(Widget):
         # Get all Collapsible children
         collapsibles: list[Collapsible] = container.walk_children(Collapsible)
 
-        def sort_key(widget):
-            collapsible_widgets_order = ["list_" + f for f in self.ITEM_MAP]
-            return collapsible_widgets_order.index(widget.id)
+        unsorted_id_list = [w.id for w in collapsibles]
+        sorted_ids_template = ["list_" + f for f in self.ITEM_MAP]
 
-        sorted_collapsibles = sorted(collapsibles, key=sort_key)
+        index = {val: i for i, val in enumerate(sorted_ids_template)}
 
-        # Move widgets to their correct place
-        for i, w in enumerate(sorted_collapsibles[:-1]):
-            container.move_child(w, before=sorted_collapsibles[i + 1])
+        def position(val):
+            return index[val]
+
+        for i in range(1, len(unsorted_id_list)):
+            for j in range(i):
+                # If the current element is "earlier" in sorted_ids_template than the one before it in unsorted_id_list
+                if position(unsorted_id_list[i]) < position(unsorted_id_list[j]):
+                    container.move_child(collapsibles[i], before=collapsibles[j])
+                    break
 
     async def action_duplicate_item(self):
         """
