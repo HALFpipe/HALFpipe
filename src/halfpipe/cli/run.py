@@ -15,7 +15,6 @@ def run_stage_ui(opts: Namespace):
     from ..ui.components.config import Config as UIConfig
 
     UIConfig.fs_root = str(opts.fs_root)
-    # logger.info("tui flag:", opts.tui)
 
     if opts.tui:
         from ..tui.base import MainApp
@@ -28,7 +27,6 @@ def run_stage_ui(opts: Namespace):
             os._exit(0)
     else:
         opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
-        logger.info("workdir from tui:", opts.workdir)
 
 
 def run_stage_workflow(opts):
