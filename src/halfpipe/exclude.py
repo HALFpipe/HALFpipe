@@ -36,9 +36,9 @@ class QCDecisionMaker:
 
         self.index: dict[PMap[str, str], set[Rating]] = defaultdict(set)
         self.types: set[str] = set()
-        self.relevant_tag_names: set[str] = set()
+        self.keys: set[str] = set()
 
-        self.shown_warning_tags: set[Mapping[str, str]] = set()
+        self.already_warned: set[Mapping[str, str]] = set()
 
         for file_path in file_paths:
             self.add_file(file_path)
@@ -84,7 +84,7 @@ class QCDecisionMaker:
         if "type" in tags:
             self.types.add(tags["type"])
 
-        self.relevant_tag_names.update(tags.keys())
+        self.keys.update(tags.keys())
 
     def iterate_ratings(self, tags: Mapping[str, str]) -> Iterator[Rating]:
         yield Rating.NONE  # Default value
@@ -101,26 +101,35 @@ class QCDecisionMaker:
                 yield from self.index[index]
 
     def get(self, tags: Mapping[str, Any]) -> Decision:
-        if len(self.relevant_tag_names) == 0:
-            relevant_tags = pmap(tags)
+        if self.keys:
+            tags = pmap({tag: self._normalize_value(tag, value) for tag, value in tags.items() if tag in self.keys})
         else:
-            relevant_tags = pmap(
-                {tag: self._normalize_value(tag, value) for tag, value in tags.items() if tag in self.relevant_tag_names}
+            tags = pmap(tags)
+
+        rating: Rating = max(self.iterate_ratings(tags))
+
+        match rating:
+            case Rating.BAD:
+                decision = Decision.EXCLUDE
+                warn = False
+            case Rating.GOOD:
+                decision = Decision.INCLUDE
+                warn = False
+            case Rating.UNCERTAIN:
+                decision = Decision.INCLUDE
+                warn = True
+            case Rating.NONE:
+                if self.strict:
+                    decision = Decision.EXCLUDE
+                    warn = False
+                else:
+                    decision = Decision.INCLUDE
+                    warn = True
+
+        if warn and tags not in self.already_warned:
+            logger.warning(
+                f'Will include observation ({format_tags(tags)}) for analysis even though quality rating is "{rating.name}"'
             )
+            self.already_warned.add(tags)
 
-        rating: Rating = max(self.iterate_ratings(relevant_tags))
-
-        if rating == Rating.BAD:
-            return Decision.EXCLUDE
-        elif rating == Rating.GOOD:
-            return Decision.INCLUDE
-        elif rating == Rating.NONE or rating == Rating.UNCERTAIN:
-            if self.strict:
-                return Decision.EXCLUDE
-            if relevant_tags not in self.shown_warning_tags:
-                logger.warning(
-                    f"Will include observation ({format_tags(relevant_tags)}) for analysis "
-                    f'even though quality rating is "{rating.name}"'
-                )
-                self.shown_warning_tags.add(relevant_tags)
-            return Decision.INCLUDE
+        return decision

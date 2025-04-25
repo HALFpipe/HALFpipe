@@ -51,8 +51,6 @@ class DesignBase:
             spreadsheet=self.data_frame,
             variable_dicts=self.variables,
         )
-        if len(self.results) == 0:
-            raise ValueError("No images remain after filtering")
 
     @classmethod
     def from_spreadsheet(
