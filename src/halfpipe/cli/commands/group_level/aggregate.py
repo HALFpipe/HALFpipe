@@ -27,10 +27,10 @@ def apply_aggregate(
         return
 
     results = design.results
-    for key in design.aggregate:
-        results, other_results = aggregate_results(results, key)
+    for aggregate_key in design.aggregate:
+        results, other_results = aggregate_results(results, aggregate_key)
 
-        logger.info(f'Will run {len(results):d} models at level "{key}"')
+        logger.info(f'Will run {len(results):d} models at level "{aggregate_key}"')
         cm, iterator = make_pool_or_null_context(
             results,
             callable=map_fixed_effects_aggregate,
@@ -41,14 +41,18 @@ def apply_aggregate(
                 tqdm(
                     iterator,
                     total=len(results),
-                    desc=f'aggregate "{key}"',
+                    desc=f'aggregate "{aggregate_key}"',
                 )
             )
 
         results.extend(other_results)
         for result in results:
-            # Remove list fields
-            result["tags"] = {key: value for key, value in result["tags"].items() if isinstance(value, str)}
+            result["tags"] = {
+                key: value
+                for key, value in result["tags"].items()
+                if isinstance(value, str)  # Remove list fields
+                and key != aggregate_key  # Remove what we just aggregated over
+            }
 
         results = [summarize_metadata(result) for result in results]
 
