@@ -50,6 +50,9 @@ def run(arguments: Namespace):
 
     for design_base in design_bases:
         design_base.filter_results()
+        if len(design_base.results) == 0:
+            logger.warning("No images remain after filtering")
+            continue
         apply_design(arguments, design_base, output_directory)
 
 
