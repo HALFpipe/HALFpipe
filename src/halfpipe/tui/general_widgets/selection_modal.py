@@ -243,9 +243,13 @@ class DoubleSelectionModal(SelectionModal):
         self.choice: List[str] = [list(self.options[0].keys())[0], list(self.options[1].keys())[0]]
         self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
-            RadioSet(*[RadioButton(self.options[0][key]) for key in self.options[0]], id="radio_set_0"),
+            RadioSet(
+                *[RadioButton(self.options[0][key], value=i == 0) for i, key in enumerate(self.options[0])], id="radio_set_0"
+            ),
             Static(self.instructions[1], id="title_1"),
-            RadioSet(*[RadioButton(self.options[1][key]) for key in self.options[1]], id="radio_set_1"),
+            RadioSet(
+                *[RadioButton(self.options[1][key], value=i == 0) for i, key in enumerate(self.options[1])], id="radio_set_1"
+            ),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         ]
 

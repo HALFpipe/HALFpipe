@@ -183,7 +183,7 @@ class MultipleRadioSet(Widget):
         """
         selections = {}
         for i, v_val in enumerate(self.vertical_label_set):
-            selections[v_val] = [v.value for v in self.get_widget_by_id("row_radio_sets_" + str(i)).query(RadioButton)]
+            selections[v_val] = [bool(v.value) for v in self.get_widget_by_id("row_radio_sets_" + str(i)).query(RadioButton)]
         return selections
 
     @on(RadioSet.Changed)
@@ -278,8 +278,6 @@ class MultipleRadioSetModal(DraggableModalScreen):
         Event handler for the 'OK' button which captures the selections made
         by the user and then dismisses the modal.
     """
-
-    CSS_PATH = ["tcss/confirm.tcss"]
 
     def __init__(
         self,

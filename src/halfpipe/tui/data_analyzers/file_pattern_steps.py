@@ -30,7 +30,7 @@ from .meta_data_steps import (
     CheckMetadataStep,
     CheckPhase1EchoTimeStep,
     CheckPhase2EchoTimeStep,
-    CheckPhaseDiffEchoTimeDiffStep,
+    CheckPhaseDiffEchoTime1Step,
     CheckRepetitionTimeStep,
     CheckSpaceStep,
 )
@@ -565,7 +565,7 @@ class PhaseDiffStep(FmapFilePatternStep):
     filedict = {**FmapFilePatternStep.filedict, "suffix": "phasediff"}
     schema = PhaseDiffFmapFileSchema
 
-    next_step_type = CheckPhaseDiffEchoTimeDiffStep
+    next_step_type = CheckPhaseDiffEchoTime1Step
 
 
 class BoldStep(FilePatternStep):
