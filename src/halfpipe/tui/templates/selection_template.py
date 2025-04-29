@@ -127,10 +127,6 @@ class SelectionTemplate(Widget):
                 Button("Delete", variant="primary", classes="delete_button", id="delete_item_button"),
                 classes="buttons",
             ),
-            # *[
-            #     Collapsible(title=self.ITEM_MAP[f], id="list_" + f, classes="list", collapsed=False)
-            #     for f in self.ITEM_MAP.keys()
-            # ],
             id="sidebar",
         )
         yield ContentSwitcher(id="content_switcher")
