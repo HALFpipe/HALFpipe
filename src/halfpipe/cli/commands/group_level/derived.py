@@ -42,6 +42,7 @@ def apply_derived(
         arguments,
         design_base,
     ).apply()
+    design_base.filter_results()
     apply_derived_variables(
         arguments.derived_variable,
         design_base,
@@ -93,9 +94,9 @@ class ImagingVariables:
     arguments: Namespace
     design_base: DesignBase
 
-    def get_quality_check_decision(self, subject: str) -> bool:
+    def get_quality_check_decision(self, tags: Mapping[str, str | None]) -> bool:
         if self.design_base.qc_decision_maker is not None:
-            if self.design_base.qc_decision_maker.get(dict(sub=subject)) == Decision.EXCLUDE:
+            if self.design_base.qc_decision_maker.get(tags) == Decision.EXCLUDE:
                 return False
         return True
 
@@ -141,7 +142,7 @@ class ImagingVariables:
             if subject in tasks:
                 logger.warning(f"Subject {subject} has multiple transforms in the index")
                 continue
-            if not self.get_quality_check_decision(subject):
+            if not self.get_quality_check_decision(index.get_tags(transform_path)):
                 continue
             tasks[subject] = transform_path
 
@@ -228,7 +229,7 @@ class ImagingVariables:
             subject = index.get_tag_value(brain_mask_path, "sub")
             if subject is None:
                 continue
-            if not self.get_quality_check_decision(subject):
+            if not self.get_quality_check_decision(index.get_tags(brain_mask_path)):
                 continue
 
             if not isinstance(brain_mask_path, (Path, str)):
@@ -320,7 +321,6 @@ class ImagingVariables:
         if arguments.derived_image is not None:
             for image in arguments.derived_image:
                 image_handlers[image]()
-        self.design_base.filter_results()
 
 
 def apply_derived_variables(
