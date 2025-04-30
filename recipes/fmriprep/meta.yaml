@@ -8,7 +8,7 @@ package:
 
 source:
   git_url: https://github.com/nipreps/fmriprep.git
-  git_rev: "25.0.0"
+  git_rev: "9e59fe2f67088bee1a2358a0cbd6dc6f9d95f81b"
 
 build:
   number: 0
