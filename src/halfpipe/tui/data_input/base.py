@@ -547,9 +547,21 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         `AcqToTaskMappingStep`. It also sets the `association_done` flag to
         True to indicate that the association process has been started.
         """
-        acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
-        acq_to_task_mapping_step_instance.run()
-        self.association_done = True
+        if len(self.get_widget_by_id("bold_image_panel").walk_children(FileItem)) != 0:
+            acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
+            acq_to_task_mapping_step_instance.run()
+            self.association_done = True
+        else:
+            self.app.push_screen(
+                Confirm(
+                    "Add first some bold files and then associate!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No BOLD files",
+                    classes="confirm_error",
+                )
+            )
 
     @on(Button.Pressed, "#info_field_maps_button")
     def _on_info_button_pressed(self):
@@ -557,7 +569,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         Handles the event when the "Info" button is pressed.
 
         This method displays a modal dialog containing meta information about
-        the field map files. The information is retrieved from the
+        the field map files. The information is retrieved from theAcqToTaskMappingStep
         `callback_message` attribute.
         """
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
