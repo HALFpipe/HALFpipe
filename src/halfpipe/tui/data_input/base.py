@@ -31,7 +31,7 @@ from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionMod
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
-from ..standards import field_map_labels
+from ..standards import field_map_group_labels, field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
@@ -325,8 +325,30 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.bold_file_pattern_counter += 1
         return "bold_file_pattern_" + str(self.bold_file_pattern_counter)
 
+    async def add_field_map(
+        self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True, pattern_class=None, border_title=None
+    ) -> str:
+        border_title = field_map_labels[pattern_class.filedict["suffix"]] if border_title is None else border_title
+        pattern_class = None if pattern_class is None else pattern_class(app=self.app)
+        await self.get_widget_by_id("field_map_panel").mount(
+            FileItem(
+                border_title=border_title,
+                id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=pattern_class,
+                load_object=load_object,
+                message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
+            )
+        )
+        self.field_map_file_pattern_counter += 1
+        return "field_map_file_pattern_" + str(self.field_map_file_pattern_counter)
+
     @on(Button.Pressed, "#add_field_map_button")
-    def _add_field_map_file(self):
+    async def on_add_field_map_button_pressed(self) -> None:
+        await self._select_and_add_field_maps()
+
+    async def _select_and_add_field_maps(self):
         """
          Handles the event when the "Add" button for field map files is pressed.
 
@@ -337,7 +359,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
          magnitude and phase images.
         """
 
-        def branch_field_maps(fmap_type):
+        async def branch_field_maps(fmap_type):
             """
             Branches the field map setup based on the selected field map type.
 
@@ -354,7 +376,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             """
             if fmap_type == "siemens":
                 self.show_additional_buttons_in_field_map_panel()
-                self.app.push_screen(
+                await self.app.push_screen(
                     DoubleSelectionModal(
                         title="Magnitude & phase images",
                         instructions=["Specify the type of the magnitude images", "Specify the type of the phase images"],
@@ -368,13 +390,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                                 "siemens_two_phase_image_file": "Two phase images",
                             },
                         ],
-                        #  id='magnitude_images_modal'
                     ),
                     self._mount_field_item_group,
                 )
             elif fmap_type == "philips":
                 self.show_additional_buttons_in_field_map_panel()
-                self.app.push_screen(
+                await self.app.push_screen(
                     SelectionModal(
                         title="Magnitude & phase images",
                         instructions="Specify the type of the magnitude images",
@@ -382,24 +403,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                             "philips_one_phase_image_file": "One phase difference image",
                             "philips_two_phase_image_file": "Two phase images",
                         },
-                        # id='magnitude_images_modal'
                     ),
                     self._mount_field_item_group,
                 )
             elif fmap_type == "epi":
-                self.get_widget_by_id("field_map_panel").mount(
-                    FieldMapFilesPanel(
-                        field_map_type=fmap_type,
-                        step_classes=[EPIStep()],
-                        id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
-                    )
-                )
+                await self.add_field_map(pattern_class=EPIStep)
                 self.field_map_file_pattern_counter += 1
                 self.refresh()
 
         # actual start of the function, push modal to select the field map type and the mount appropriate FieldMapFilesPanel
-        options = field_map_labels
-        self.app.push_screen(
+        options = field_map_group_labels
+        await self.app.push_screen(
             SelectionModal(
                 title="Field map type specification",
                 instructions="Specify type of the field maps",
@@ -420,7 +434,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("associate_button").styles.visibility = "visible"
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
 
-    def _mount_field_item_group(self, field_map_user_choices: list | str):
+    async def _mount_field_item_group(self, field_map_user_choices: list | str):
         """
         Mounts a group of FileItem widgets for field map files based on user choices.
 
@@ -441,29 +455,23 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         # get string whether siemens or philips
         field_map_type = field_map_user_choices[0].split("_")[0]
         # find which classes are needed
-        step_classes: List[FilePatternStep] = []
+        step_classes: List[type[FilePatternStep]] = []
 
         if any("one_mag_image_file" in s for s in field_map_user_choices):
-            step_classes += [Magnitude1Step()]
+            step_classes += [Magnitude1Step]
         elif any("two_mag_image_file" in s for s in field_map_user_choices):
-            step_classes += [Magnitude1Step(), Magnitude2Step()]
+            step_classes += [Magnitude1Step, Magnitude2Step]
         if any("one_phase_image_file" in s for s in field_map_user_choices):
-            step_classes += [PhaseDiffStep(app=self.app)]
+            step_classes += [PhaseDiffStep]
         elif any("two_phase_image_file" in s for s in field_map_user_choices):
-            step_classes += [Phase1Step(), Phase2Step()]
+            step_classes += [Phase1Step, Phase2Step]
         if field_map_type == "philips":
-            step_classes += [FieldMapStep()]
+            step_classes += [FieldMapStep]
             step_classes = step_classes[::-1]
         if field_map_type is not None:
-            self.get_widget_by_id("field_map_panel").mount(
-                FieldMapFilesPanel(
-                    field_map_type=field_map_type,
-                    step_classes=step_classes,
-                    id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
-                )
-            )
-            self.field_map_file_pattern_counter += 1
-            self.refresh()
+            for step_class in step_classes:
+                await self.add_field_map(pattern_class=step_class)
+                self.refresh()
 
     @work
     @on(Button.Pressed, "#confirm_non_bids_button")

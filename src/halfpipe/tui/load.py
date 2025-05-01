@@ -2,6 +2,14 @@ import copy
 from collections import defaultdict
 
 from .data_analyzers.context import ctx
+from .data_analyzers.file_pattern_steps import (
+    FieldMapStep,
+    Magnitude1Step,
+    Magnitude2Step,
+    Phase1Step,
+    Phase2Step,
+    PhaseDiffStep,
+)
 from .features.atlas_based import AtlasBased
 from .features.dual_reg import DualReg
 from .features.preproc_output import PreprocessedOutputOptions
@@ -11,6 +19,23 @@ from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
 from .specialized_widgets.filebrowser import path_test_for_bids
 from .specialized_widgets.non_bids_file_itemization import FileItem
+
+# define this map for the load purposes
+field_map_to_pattern_map = {
+    "magnitude1": Magnitude1Step,
+    "magnitude2": Magnitude2Step,
+    "phase1": Phase1Step,
+    "phase2": Phase2Step,
+    "phasediff": PhaseDiffStep,
+    "fieldmap": FieldMapStep,
+}
+
+
+def replace_with_longnames(input_string):
+    entity_longnames = {"subject": "sub", "atlas": "desc", "seed": "desc", "map": "desc", "session": "ses"}
+    for long, short in entity_longnames.items():
+        input_string = input_string.replace(f"{{{short}}}", f"{{{long}}}")
+    return input_string
 
 
 async def fill_ctx_spec(self):
@@ -69,12 +94,10 @@ async def cache_file_patterns(self):
         preprocessing_widget.default_settings = self.existing_spec.global_settings
         preprocessing_widget = preprocessing_widget.refresh(recompose=True)
 
-        entity_longnames = {"subject": "sub", "atlas": "desc", "seed": "desc", "map": "desc"}
-
         for f in self.existing_spec.files:
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
             # here we replace it back for the consistency.
-            f.path = f.path.replace(f"{{{entity_longnames['subject']}}}", "{subject}")
+            f.path = replace_with_longnames(f.path)
 
             if f.datatype == "bids":
                 ctx.cache["bids"]["files"] = f.path
@@ -98,16 +121,23 @@ async def cache_file_patterns(self):
                     load_object=f, message_dict=None, execute_pattern_class_on_mount=False
                 )
                 ctx.cache[widget_name]["files"] = f
+            elif f.datatype == "fmap":
+                # f.path = replace_with_longnames(f.path)
+                fmap_file_pattern = field_map_to_pattern_map[f.suffix]
+                widget_name = await data_input_widget.add_field_map(
+                    pattern_class=fmap_file_pattern, load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                )
+                ctx.cache[widget_name]["files"] = f
             elif f.suffix == "events":
                 self.event_file_objects.append(f)
             elif f.suffix == "atlas":
-                f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
+                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.atlas_file_objects.append(f)
             elif f.suffix == "seed":
-                f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
+                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.seed_map_file_objects.append(f)
             elif f.suffix == "map":
-                f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
+                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.spatial_map_file_objects.append(f)
 
         ctx.refresh_available_images()
