@@ -537,8 +537,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
             self.app.show_hidden_tabs()
 
+    @work(exclusive=True, name="acq_worker")
     @on(Button.Pressed, "#associate_button")
-    def _on_associate_button_pressed(self):
+    async def _on_associate_button_pressed(self):
         """
         Handles the event when the "Associate" button is pressed.
 
@@ -549,10 +550,10 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
         if len(self.get_widget_by_id("bold_image_panel").walk_children(FileItem)) != 0:
             acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
-            acq_to_task_mapping_step_instance.run()
+            await acq_to_task_mapping_step_instance.run()
             self.association_done = True
         else:
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     "Add first some bold files and then associate!",
                     left_button_text=False,

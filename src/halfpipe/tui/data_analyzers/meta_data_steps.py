@@ -1031,7 +1031,7 @@ class AcqToTaskMappingStep:
         else:
             self.is_predefined = True
 
-    def run(self):
+    async def run(self):
         """
         Runs the acquisition-to-task mapping process.
 
@@ -1044,11 +1044,12 @@ class AcqToTaskMappingStep:
             self.next(None)
         else:
             # rise modal here
-            self.app.push_screen(
-                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options), self.next
+            choice = await self.app.push_screen_wait(
+                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options)
             )
+            await self.next(choice)
 
-    def next(self, results):
+    async def next(self, results):
         """
         Handles the next step after mapping acquisition to tasks.
 
@@ -1127,7 +1128,7 @@ class AcqToTaskMappingStep:
             callback=self.callback,
             callback_message=self.callback_message,
         )
-        next_step_instance.run()
+        await next_step_instance.run()
 
 
 class CheckBoldSliceTimingStep(CheckMetadataStep):
