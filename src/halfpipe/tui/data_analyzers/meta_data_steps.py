@@ -54,6 +54,8 @@ def _get_field(schema, key):
         instance = schema()
     else:
         instance = schema
+    print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", instance, schema, key)
+    print("ffffffffffffffffffffffffffffffffffffffff", instance.fields)
     if "metadata" in instance.fields:
         return _get_field(instance.fields["metadata"].nested, key)
     return instance.fields.get(key)
@@ -739,24 +741,16 @@ class CheckMetadataStep:
             pass
 
 
-class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
-    """
-    Checks the echo time difference for phase difference field map files.
-
-    This class extends CheckMetadataStep to specifically handle the echo
-    time difference metadata for phase difference field map files.
-
-    Attributes
-    ----------
-    schema : ClassVar[Type[PhaseDiffFmapFileSchema]]
-        The schema for phase difference field map files.
-    key : ClassVar[str]
-        The metadata key for echo time difference.
-    """
-
+class CheckPhaseDiffEchoTime2Step(CheckMetadataStep):
     schema = PhaseDiffFmapFileSchema
-    key = "echo_time_difference"
+    key = "echo_time2"
     # next_step_type = HasMoreFmapStep
+
+
+class CheckPhaseDiffEchoTime1Step(CheckMetadataStep):
+    schema = PhaseDiffFmapFileSchema
+    key = "echo_time1"
+    next_step_type = CheckPhaseDiffEchoTime2Step
 
 
 class CheckPhase1EchoTimeStep(CheckMetadataStep):
@@ -1037,7 +1031,7 @@ class AcqToTaskMappingStep:
         else:
             self.is_predefined = True
 
-    def run(self):
+    async def run(self):
         """
         Runs the acquisition-to-task mapping process.
 
@@ -1050,11 +1044,12 @@ class AcqToTaskMappingStep:
             self.next(None)
         else:
             # rise modal here
-            self.app.push_screen(
-                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options), self.next
+            choice = await self.app.push_screen_wait(
+                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options)
             )
+            await self.next(choice)
 
-    def next(self, results):
+    async def next(self, results):
         """
         Handles the next step after mapping acquisition to tasks.
 
@@ -1069,11 +1064,11 @@ class AcqToTaskMappingStep:
         """
         if results is not None:
             self.callback_message["AcqToTaskMapping"] = [
-                f"{key} >===< {self.values[results[key]]}".replace("\n", "") + "\n" for key in results
+                f"{key} >===< {self.values[results[key].index(True)]}".replace("\n", "") + "\n" for key in results
             ]
 
             bold_fmap_tag_dict = {
-                boldtagset: self.fmaptags[results[option]]
+                boldtagset: self.fmaptags[results[option].index(True)]
                 for option, boldtagset in zip(self.options, self.boldtags, strict=False)
             }
 
@@ -1133,7 +1128,7 @@ class AcqToTaskMappingStep:
             callback=self.callback,
             callback_message=self.callback_message,
         )
-        next_step_instance.run()
+        await next_step_instance.run()
 
 
 class CheckBoldSliceTimingStep(CheckMetadataStep):

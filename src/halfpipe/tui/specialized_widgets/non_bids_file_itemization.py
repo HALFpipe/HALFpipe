@@ -199,7 +199,8 @@ class FileItem(Widget):
         id: str | None = None,
         classes: str | None = None,
         delete_button=True,
-        title="",
+        title=None,
+        border_title=None,
         pattern_class=None,
         id_key="",
         load_object=None,
@@ -245,8 +246,8 @@ class FileItem(Widget):
         # The class used for creating file pattern steps.
         self.pattern_class = None if pattern_class is None else pattern_class
         # The title of the file item.
-        self.title = "Not implemented yet"
-        if self.pattern_class is not None:
+        self.title = "" if title is None else title
+        if self.pattern_class is not None and self.title == "":
             self.title = self.pattern_class.header_str
             if self.pattern_class.next_step_type is not None:
                 self.pattern_class.callback = self.callback_func
@@ -254,7 +255,7 @@ class FileItem(Widget):
 
         # An object containing data to load into the file item.
         self.load_object = load_object
-        # self.border_title = "id: " + str(id)
+        self.border_title = None if border_title is None else border_title
         # Indicates if the widget is opened from edit.
         self.from_edit = False
         # A message to display in the file item.
