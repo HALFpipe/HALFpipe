@@ -151,7 +151,7 @@ class SelectionModal(DraggableModalScreen):
                 button_panel,
             ]
             # defaults
-            self.choice = list(self.options.keys())
+            self.choice = list(self.options.keys())[0]
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
