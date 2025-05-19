@@ -129,7 +129,10 @@ async def cache_file_patterns(self):
                 message_dict = {i: [str(f.metadata[i])] for i in f.metadata} if f.metadata is not None else None
                 fmap_file_pattern = field_map_to_pattern_map[f.suffix]
                 widget_name = await data_input_widget.add_field_map(
-                    pattern_class=fmap_file_pattern, load_object=f, message_dict=message_dict, execute_pattern_class_on_mount=False
+                    pattern_class=fmap_file_pattern,
+                    load_object=f,
+                    message_dict=message_dict,
+                    execute_pattern_class_on_mount=False,
                 )
                 ctx.cache[widget_name]["files"] = f
             elif f.suffix == "events":
