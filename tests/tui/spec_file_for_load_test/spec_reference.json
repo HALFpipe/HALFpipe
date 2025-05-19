@@ -54,7 +54,7 @@
             }
         },
         {
-            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_phasediff.nii.gz",
+            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_magnitude1.nii.gz",
             "datatype": "fmap",
             "suffix": "magnitude1",
             "extension": ".nii.gz",
@@ -68,7 +68,7 @@
             }
         },
         {
-            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_magnitude1.nii.gz",
+            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_phasediff.nii.gz",
             "datatype": "fmap",
             "suffix": "phasediff",
             "extension": ".nii.gz",

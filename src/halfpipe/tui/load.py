@@ -31,11 +31,15 @@ field_map_to_pattern_map = {
 }
 
 
-def replace_with_longnames(input_string):
-    entity_longnames = {"subject": "sub", "atlas": "desc", "seed": "desc", "map": "desc", "session": "ses"}
+def replace_with_longnames(f):
+    entity_longnames = {"subject": "sub", "session": "ses"}
+    if f.suffix in ["atlas", "seed", "map"]:
+        entity_longnames[f.suffix] = "desc"
+    input_string = f.path
     for long, short in entity_longnames.items():
         input_string = input_string.replace(f"{{{short}}}", f"{{{long}}}")
-    return input_string
+    f.path = input_string
+    return f
 
 
 async def fill_ctx_spec(self):
@@ -97,7 +101,7 @@ async def cache_file_patterns(self):
         for f in self.existing_spec.files:
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
             # here we replace it back for the consistency.
-            f.path = replace_with_longnames(f.path)
+            f = replace_with_longnames(f)
 
             if f.datatype == "bids":
                 ctx.cache["bids"]["files"] = f.path
@@ -122,7 +126,6 @@ async def cache_file_patterns(self):
                 )
                 ctx.cache[widget_name]["files"] = f
             elif f.datatype == "fmap":
-                # f.path = replace_with_longnames(f.path)
                 fmap_file_pattern = field_map_to_pattern_map[f.suffix]
                 widget_name = await data_input_widget.add_field_map(
                     pattern_class=fmap_file_pattern, load_object=f, message_dict=None, execute_pattern_class_on_mount=False
@@ -131,13 +134,10 @@ async def cache_file_patterns(self):
             elif f.suffix == "events":
                 self.event_file_objects.append(f)
             elif f.suffix == "atlas":
-                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.atlas_file_objects.append(f)
             elif f.suffix == "seed":
-                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.seed_map_file_objects.append(f)
             elif f.suffix == "map":
-                # f.path = f.path.replace(f"{{{entity_longnames[f.suffix]}}}", f"{{{f.suffix}}}")
                 self.spatial_map_file_objects.append(f)
 
         ctx.refresh_available_images()
