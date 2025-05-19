@@ -47,7 +47,42 @@
             "tags": {},
             "metadata": {
                 "repetition_time": 9.0,
-                "slice_timing_code": "sequential increasing"
+                "slice_timing_code": "sequential increasing",
+                "phase_encoding_direction": "lr",
+                "effective_echo_spacing": 66.0,
+                "slice_encoding_direction": "is"
+            }
+        },
+        {
+            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_phasediff.nii.gz",
+            "datatype": "fmap",
+            "suffix": "phasediff",
+            "extension": ".nii.gz",
+            "tags": {},
+            "intended_for": {
+                "acq.null": [
+                    "task.anticipation_acq-seq",
+                    "task.workingmemory_acq-seq",
+                    "task.restingstate_acq-mb3"
+                ]
+            },
+            "metadata": {
+                "echo_time1": 1.0,
+                "echo_time2": 2.0
+            }
+        },
+        {
+            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_magnitude1.nii.gz",
+            "datatype": "fmap",
+            "suffix": "magnitude1",
+            "extension": ".nii.gz",
+            "tags": {},
+            "intended_for": {
+                "acq.null": [
+                    "task.anticipation_acq-seq",
+                    "task.workingmemory_acq-seq",
+                    "task.restingstate_acq-mb3"
+                ]
             }
         },
         {

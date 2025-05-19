@@ -54,8 +54,6 @@ def _get_field(schema, key):
         instance = schema()
     else:
         instance = schema
-    print("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", instance, schema, key)
-    print("ffffffffffffffffffffffffffffffffffffffff", instance.fields)
     if "metadata" in instance.fields:
         return _get_field(instance.fields["metadata"].nested, key)
     return instance.fields.get(key)
@@ -382,6 +380,9 @@ class SetMetadataStep:
                 SetValueModal(
                     title="Set value",
                     instructions=header_str,
+                    left_button_text="OK",
+                    right_button_text=False,
+                    left_button_variant="default",
                     id="select_value_modal",
                 )
             )
@@ -677,7 +678,6 @@ class CheckMetadataStep:
                     " ".join(self._append_view),
                     left_button_text=False,
                     right_button_text="OK",
-                    #  left_button_variant=None,
                     right_button_variant="default",
                     title="Missing images",
                     id="missing_images_modal",
@@ -973,6 +973,19 @@ class AcqToTaskMappingStep:
         formats them for display, and prepares the options and values
         for the user interface.
         """
+
+        def _format_tags(tagset, break_lines=False):
+            tagdict = dict(tagset)
+            if break_lines is True:
+                break_char = "\n"
+            else:
+                break_char = ""
+            return ", ".join(
+                (f'{break_char}{e}:"{tagdict[e]}"' if e not in entity_longnames else f'{entity_longnames[e]} "{tagdict[e]}"')
+                for e in entities
+                if e in tagdict and tagdict[e] is not None
+            )
+
         fmapfilepaths = ctx.database.get(**self.filedict)
         fmaptags = sorted(
             set(
@@ -997,32 +1010,15 @@ class AcqToTaskMappingStep:
             )
         )
         self.boldtags = boldtags
+        self.options = [_format_tags(t).capitalize() for t in boldtags]
 
         if len(fmaptags) > 0:
-
-            def _format_tags(tagset, break_lines=False):
-                tagdict = dict(tagset)
-                if break_lines is True:
-                    break_char = "\n"
-                else:
-                    break_char = ""
-                return ", ".join(
-                    (
-                        f'{break_char}{e}:"{tagdict[e]}"'
-                        if e not in entity_longnames
-                        else f'{entity_longnames[e]} "{tagdict[e]}"'
-                    )
-                    for e in entities
-                    if e in tagdict and tagdict[e] is not None
-                )
-
             self.is_predefined = False
 
             self._append_view = []
             self.input_view = []
             self._append_view.append("Assign field maps to functional images")
 
-            self.options = [_format_tags(t).capitalize() for t in boldtags]
             self.values = [f"Field map {_format_tags(t, break_lines=True)}".strip() for t in fmaptags]
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
@@ -1041,7 +1037,7 @@ class AcqToTaskMappingStep:
         self.evaluate()
 
         if self.is_predefined:
-            self.next(None)
+            await self.next(None)
         else:
             # rise modal here
             choice = await self.app.push_screen_wait(
@@ -1066,63 +1062,75 @@ class AcqToTaskMappingStep:
             self.callback_message["AcqToTaskMapping"] = [
                 f"{key} >===< {self.values[results[key].index(True)]}".replace("\n", "") + "\n" for key in results
             ]
-
             bold_fmap_tag_dict = {
-                boldtagset: self.fmaptags[results[option].index(True)]
+                boldtagset: self.fmaptags[results.get(option).index(True)]
                 for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+                if results.get(option) is not None
             }
+        else:
+            # When there is nothing to map, e.g., there was not modal to match the fields with tasks,
+            # the field in "acq.null" is still filled out. To not rise unnecessary modal, we create here the
+            # bold_fmap_tag_dict so that later this field is filled.
+            self.callback_message["AcqToTaskMapping"] = ["No acquisition to task mapping was needed.\n"]
+            bold_fmap_tag_dict = {
+                boldtagset: frozenset() for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+            }
+            self.fmaptags = [frozenset()]
 
-            fmap_bold_tag_dict = dict()
-            for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
-                if fmaptagset not in fmap_bold_tag_dict:
-                    fmap_bold_tag_dict[fmaptagset] = boldtagset
+        fmap_bold_tag_dict = dict()
+        for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
+            if fmaptagset not in fmap_bold_tag_dict:
+                fmap_bold_tag_dict[fmaptagset] = boldtagset
+            else:
+                fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
+
+        for specfileobj in ctx.spec.files:
+            if specfileobj.datatype != "fmap":
+                continue
+
+            fmaplist = ctx.database.fromspecfileobj(specfileobj)
+            fmaptags = set(
+                frozenset(
+                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                )
+                for f in map(attrgetter("path"), fmaplist)
+            )
+
+            def _expand_fmaptags(tagset):
+                if any(a == "acq" for a, _ in tagset):
+                    return tagset
                 else:
-                    fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
+                    return tagset | frozenset([("acq", "null")])
 
-            for specfileobj in ctx.spec.files:
-                if specfileobj.datatype != "fmap":
-                    continue
-
-                fmaplist = ctx.database.fromspecfileobj(specfileobj)
-                fmaptags = set(
-                    frozenset(
-                        (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
-                    )
-                    for f in map(attrgetter("path"), fmaplist)
+            mappings = set(
+                (a, b)
+                for fmap in fmaptags
+                for a, b in product(
+                    fmap_bold_tag_dict.get(fmap, list()),
+                    _expand_fmaptags(fmap),
                 )
+                if a[0] != b[0] and "sub" not in (a[0], b[0])
+            )
+            print(f"bold_fmap_tag_dict {bold_fmap_tag_dict}")
+            print(f"fmap_bold_tag_dict {fmap_bold_tag_dict}")
+            print(f"fmaptags {fmaptags}")
+            print(f"Mappings {mappings}")
+            intended_for: dict[str, list[str]] = dict()
+            for functag, fmaptag in mappings:
+                entity, val = functag
+                funcstr = f"{entity}.{val}"
+                entity, val = fmaptag
+                fmapstr = f"{entity}.{val}"
+                if fmapstr not in intended_for:
+                    intended_for[fmapstr] = list()
+                intended_for[fmapstr].append(funcstr)
 
-                def _expand_fmaptags(tagset):
-                    if any(a == "acq" for a, _ in tagset):
-                        return tagset
-                    else:
-                        return tagset | frozenset([("acq", "null")])
+            specfileobj.intended_for = intended_for
 
-                mappings = set(
-                    (a, b)
-                    for fmap in fmaptags
-                    for a, b in product(
-                        fmap_bold_tag_dict.get(fmap, list()),
-                        _expand_fmaptags(fmap),
-                    )
-                    if a[0] != b[0] and "sub" not in (a[0], b[0])
-                )
-
-                intended_for: dict[str, list[str]] = dict()
-                for functag, fmaptag in mappings:
-                    entity, val = functag
-                    funcstr = f"{entity}.{val}"
-                    entity, val = fmaptag
-                    fmapstr = f"{entity}.{val}"
-                    if fmapstr not in intended_for:
-                        intended_for[fmapstr] = list()
-                    intended_for[fmapstr].append(funcstr)
-
-                specfileobj.intended_for = intended_for
-
-                for name in ctx.cache:
-                    if ctx.cache[name]["files"] != {}:
-                        if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
-                            ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
+            for name in ctx.cache:
+                if ctx.cache[name]["files"] != {}:
+                    if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
+                        ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
         next_step_instance = CheckBoldEffectiveEchoSpacingStep(
             app=self.app,
             callback=self.callback,
