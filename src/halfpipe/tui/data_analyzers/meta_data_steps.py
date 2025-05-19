@@ -1111,10 +1111,7 @@ class AcqToTaskMappingStep:
                 )
                 if a[0] != b[0] and "sub" not in (a[0], b[0])
             )
-            print(f"bold_fmap_tag_dict {bold_fmap_tag_dict}")
-            print(f"fmap_bold_tag_dict {fmap_bold_tag_dict}")
-            print(f"fmaptags {fmaptags}")
-            print(f"Mappings {mappings}")
+
             intended_for: dict[str, list[str]] = dict()
             for functag, fmaptag in mappings:
                 entity, val = functag

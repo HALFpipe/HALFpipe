@@ -239,7 +239,6 @@ class DoubleSelectionModal(SelectionModal):
         self.instructions = instructions
         self.options: dict = options
         # defaults
-        print("oooooooooooooooooooooooo", list(self.options[0].keys()))
         self.choice: List[str] = [list(self.options[0].keys())[0], list(self.options[1].keys())[0]]
         self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
