@@ -299,7 +299,7 @@ class FileItem(Widget):
                 message_value += message + " " if message.endswith("\n") else message + "\n"
             info_string += Text(humanize(key) + ": " + sep_char, style="bold green") + Text(
                 message_value + separ_line, style="white"
-            )
+            )+'\n'
         return info_string
 
     def callback_func(self, message_dict):
