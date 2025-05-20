@@ -284,3 +284,17 @@ overwrite the working directory and start a new analysis?",
     async def _mount_models(self) -> None:
         # Stage 5 of the loading process
         await mount_models(self)
+
+    def on_click(self):
+        if sum(self.app.flags_to_show_tabs.values()) == 2:
+            self.app.push_screen(
+                Confirm(
+                    "Input entries cannot be changes now! Restart UI to change them.",
+                    title="Read-only",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    id="read_only_modal",
+                    classes="confirm_error",
+                )
+            )

@@ -683,11 +683,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.data_load_sucess = True
         await self.app.push_screen_wait(
             Confirm(
-                "Data files successfully loaded! Proceed to the next tabs:\n\n\
-➡️  General preprocessing settings ⬅️\n\
-➡️             Features            ⬅️\n\
-➡️        Group level models       ⬅️\n\
-➡️           Check and run         ⬅️",
+                "Data files successfully loaded!",
                 left_button_text=False,
                 right_button_text="OK",
                 right_button_variant="default",
@@ -722,3 +718,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 classes="confirm_warning",
             )
         )
+
+    def on_click(self):
+        if sum(self.app.flags_to_show_tabs.values()) == 2:
+            self.app.push_screen(
+                Confirm(
+                    "Input entries cannot be changes now! Restart UI to change them.",
+                    title="Read-only",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    id="read_only_modal",
+                    classes="confirm_error",
+                )
+            )

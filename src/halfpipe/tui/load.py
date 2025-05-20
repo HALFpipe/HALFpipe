@@ -78,6 +78,16 @@ async def cache_file_patterns(self):
     creates the corresponding widgets for data input, preprocessing,
     feature selection, and model selection.
     """
+
+    def format_fmap_associations(data):
+        output = []
+        for session, tasks in data.items():
+            if session == "acq.null":
+                continue
+            task_list = ", ".join(tasks)
+            output.append(f"{session}: {task_list}")
+        return "\n".join(output)
+
     data_input_widget = self.app.get_widget_by_id("input_data_content")
     preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
     self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
@@ -90,6 +100,8 @@ async def cache_file_patterns(self):
     if self.existing_spec is not None:
         self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(False)
         spreadsheet_counter = 0
+        fmaps = False
+        intended_for = ""
         self.event_file_objects = []
         self.atlas_file_objects = []
         self.seed_map_file_objects = []
@@ -115,7 +127,7 @@ async def cache_file_patterns(self):
                 ctx.cache["__spreadsheet_file_" + str(spreadsheet_counter)]["files"] = f
                 spreadsheet_counter += 1
             elif f.suffix == "bold":
-                message_dict = {i: [str(f.metadata[i])] for i in f.metadata}
+                message_dict = {i: [str(f.metadata[i])] for i in f.metadata} if f.metadata is not None else None
                 widget_name = await data_input_widget.add_bold_image(
                     load_object=f, message_dict=message_dict, execute_pattern_class_on_mount=False
                 )
@@ -129,9 +141,17 @@ async def cache_file_patterns(self):
                 message_dict = {i: [str(f.metadata[i])] for i in f.metadata} if f.metadata is not None else None
                 fmap_file_pattern = field_map_to_pattern_map[f.suffix]
                 widget_name = await data_input_widget.add_field_map(
-                    pattern_class=fmap_file_pattern, load_object=f, message_dict=message_dict, execute_pattern_class_on_mount=False
+                    pattern_class=fmap_file_pattern,
+                    load_object=f,
+                    message_dict=message_dict,
+                    execute_pattern_class_on_mount=False,
                 )
                 ctx.cache[widget_name]["files"] = f
+                fmaps = True
+                # Gather bold files - fmaps association only from magnitude files, to avoid duplication
+                if f.suffix == "magnitude1":
+                    intended_for += format_fmap_associations(f.intended_for)
+
             elif f.suffix == "events":
                 self.event_file_objects.append(f)
             elif f.suffix == "atlas":
@@ -168,6 +188,11 @@ async def cache_file_patterns(self):
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
             self.app.show_hidden_tabs()
             self.data_input_success = True
+
+        if fmaps:
+            data_input_widget.get_widget_by_id("associate_button").styles.visibility = "visible"
+            data_input_widget.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
+            data_input_widget.callback_message = intended_for
 
 
 async def mount_features(self):

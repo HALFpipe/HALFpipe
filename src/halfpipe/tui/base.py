@@ -417,6 +417,23 @@ class MainApp(App):
             self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
             self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
             self.get_widget_by_id("tabs_manager").show_tab("models_tab")
+            self.get_widget_by_id("tabs_manager").get_widget_by_id("work_dir_tab").styles.opacity = 0.7
+            self.get_widget_by_id("tabs_manager").get_widget_by_id("input_data_tab").styles.opacity = 0.7
+            self.app.push_screen(
+                Confirm(
+                    "All set successfully! Proceed to the next tabs:\n\n\
+➡️  General preprocessing settings ⬅️\n\
+➡️             Features            ⬅️\n\
+➡️        Group level models       ⬅️\n\
+➡️           Check and run         ⬅️\n\
+The working tab and data tab are now read only! Do not change entries here!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Input successful",
+                    classes="confirm_success",
+                )
+            )
 
     def hide_tabs(self) -> None:
         """
