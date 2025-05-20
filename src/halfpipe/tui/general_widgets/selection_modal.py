@@ -150,12 +150,14 @@ class SelectionModal(DraggableModalScreen):
                 ),
                 button_panel,
             ]
-            # defaults
-            self.choice = list(self.options.keys())[0]
+
+    def _set_default_choice(self):
+        self.choice = list(self.options.keys())[0]
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         self.content.mount(*self.widgets_to_mount)
+        self._set_default_choice()
 
     def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         self._set_choices(event)
@@ -238,8 +240,6 @@ class DoubleSelectionModal(SelectionModal):
         super().__init__(title=title, id=id, classes=classes)
         self.instructions = instructions
         self.options: dict = options
-        # defaults
-        self.choice: List[str] = [list(self.options[0].keys())[0], list(self.options[1].keys())[0]]
         self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
             RadioSet(
@@ -251,6 +251,9 @@ class DoubleSelectionModal(SelectionModal):
             ),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         ]
+
+    def _set_default_choice(self):
+        self.choice: List[str] = [list(self.options[0].keys())[0], list(self.options[1].keys())[0]]
 
     def _set_choices(self, event) -> None:
         if event.control.id == "radio_set_0":
