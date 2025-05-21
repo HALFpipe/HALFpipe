@@ -9,7 +9,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Static
+from textual.widgets import Button, Static
 from textual.worker import Worker, WorkerState
 
 from ...model.spec import load_spec
@@ -285,7 +285,8 @@ overwrite the working directory and start a new analysis?",
         # Stage 5 of the loading process
         await mount_models(self)
 
-    def on_click(self):
+    @on(Button.Pressed, ".-read-only")
+    def on_ee_click(self):
         if sum(self.app.flags_to_show_tabs.values()) == 2:
             self.app.push_screen(
                 Confirm(

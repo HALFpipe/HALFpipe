@@ -80,6 +80,7 @@ class MultipleRadioSet(Widget):
         vertical_label_set: None | list = None,
         default_value_column: int = 0,
         unique_first_column=False,
+        default_values: list[int] | None = None,
     ):
         """
         Initializes the MultipleRadioSet widget.
@@ -116,6 +117,7 @@ class MultipleRadioSet(Widget):
         self.default_value_column = default_value_column
         self.unique_first_column = unique_first_column
         self.last_unique_selection = "row_radio_sets_0"
+        self.default_values = default_values
 
     def compose(self) -> ComposeResult:
         """
@@ -153,7 +155,8 @@ class MultipleRadioSet(Widget):
                     for j, _ in enumerate(self.horizontal_label_set):
                         is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
                         value = 1 if is_first_column else (j + 1 - self.default_value_column)
-
+                        if self.default_values is not None:
+                            value = j == self.default_values[i]
                         yield RadioButton(id=f"radio_column_{j}", value=value)
 
     def on_mount(self):
@@ -365,7 +368,7 @@ class MultipleRadioSetModal(DraggableModalScreen):
 #     def compose(self):
 #         yield Button("OK", id="ok")
 #         yield Button("Mount modal", id="show_modal")
-#         yield MultipleRadioSet()
+#         yield MultipleRadioSet(default_values=[0,1,2,3])
 #
 #     @on(Button.Pressed, "#show_modal")
 #     def on_button_show_modal_pressed(self):
@@ -391,3 +394,7 @@ class MultipleRadioSetModal(DraggableModalScreen):
 #     def on_button_pressed(self):
 #         selections = self.query_one(MultipleRadioSet).get_selections()
 #         print(selections)
+#
+# if __name__ == "__main__":
+#     app = Main()
+#     app.run()

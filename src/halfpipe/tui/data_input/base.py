@@ -240,16 +240,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         yield non_bids_panel
 
     @on(Button.Pressed, "#add_t1_image_button")
-    async def _on_button_add_t1_image_button_pressed(self) -> None:
+    async def _on_button_add_t1_image_button_pressed(self, event) -> None:
         """
         Handles the event when the "Add" button for T1 images is pressed.
 
         This method adds a new FileItem widget for specifying a T1 image file pattern.
         """
-        if self.data_load_sucess is False:
+        # if self.data_load_sucess is False:
+        if "-read-only" not in event.control.classes:
             await self.add_t1_image(load_object=None)
-        else:
-            self.forbid_data_change()
+        # else:
+        #     self.forbid_data_change()
 
     async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -283,16 +284,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         return "t1_file_pattern_" + str(self.t1_file_pattern_counter)
 
     @on(Button.Pressed, "#add_bold_image_button")
-    async def _on_button_add_bold_image_button(self) -> None:
+    async def _on_button_add_bold_image_button(self, event) -> None:
         """
         Handles the event when the "Add" button for BOLD images is pressed.
 
         This method adds a new FileItem widget for specifying a BOLD image file pattern.
         """
-        if self.data_load_sucess is False:
+        # if self.data_load_sucess is False:
+        if "-read-only" not in event.control.classes:
             await self.add_bold_image(load_object=None)
-        else:
-            self.forbid_data_change()
+        # else:
+        #     self.forbid_data_change()
 
     async def add_bold_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -345,8 +347,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         return "field_map_file_pattern_" + str(self.field_map_file_pattern_counter)
 
     @on(Button.Pressed, "#add_field_map_button")
-    async def on_add_field_map_button_pressed(self) -> None:
-        await self._select_and_add_field_maps()
+    async def on_add_field_map_button_pressed(self, event) -> None:
+        if "-read-only" not in event.control.classes:
+            await self._select_and_add_field_maps()
 
     async def _select_and_add_field_maps(self):
         """
@@ -475,7 +478,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @work
     @on(Button.Pressed, "#confirm_non_bids_button")
-    async def _confirm_non_bids_button(self):
+    async def _confirm_non_bids_button(self, event):
         """
         Validates non-BIDS file patterns and prepares for the next steps.
 
@@ -486,56 +489,57 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         files has been performed. If there are issues, it displays warning
         messages to the user.
         """
-        number_of_t1_files = []
-        number_of_bold_files = []
-        number_of_field_map_files = []
-        for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
-            number_of_t1_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
-            number_of_bold_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
-            for sub_widget in widget.walk_children(FileItem):
-                number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
+        if "-read-only" not in event.control.classes:
+            number_of_t1_files = []
+            number_of_bold_files = []
+            number_of_field_map_files = []
+            for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
+                number_of_t1_files.append(len(widget.pattern_match_results["files"]))
+            for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
+                number_of_bold_files.append(len(widget.pattern_match_results["files"]))
+            for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
+                for sub_widget in widget.walk_children(FileItem):
+                    number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
 
-        warning_string = ""
-        if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
-            warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
-        if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
-            warning_string += "No bold files found! Check or add the bold file pattern!\n"
-        # Fields map are not mandatory, so this does not go to the warning string.
-        # If the are field maps and the association was needed but was not done
-        if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
-            await self.app.push_screen_wait(
-                Confirm(
-                    "Check for field map association! Button 'Associate'",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    #  left_button_variant=None,
-                    right_button_variant="default",
-                    title="Check association",
-                    id="association_modal",
-                    classes="confirm_warning",
+            warning_string = ""
+            if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
+                warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
+            if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
+                warning_string += "No bold files found! Check or add the bold file pattern!\n"
+            # Fields map are not mandatory, so this does not go to the warning string.
+            # If the are field maps and the association was needed but was not done
+            if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
+                await self.app.push_screen_wait(
+                    Confirm(
+                        "Check for field map association! Button 'Associate'",
+                        left_button_text=False,
+                        right_button_text="OK",
+                        #  left_button_variant=None,
+                        right_button_variant="default",
+                        title="Check association",
+                        id="association_modal",
+                        classes="confirm_warning",
+                    )
                 )
-            )
-        if warning_string != "":
-            await self.app.push_screen_wait(
-                Confirm(
-                    warning_string,
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    title="Missing files",
-                    id="missing_files_modal",
-                    classes="confirm_warning",
+            if warning_string != "":
+                await self.app.push_screen_wait(
+                    Confirm(
+                        warning_string,
+                        left_button_text=False,
+                        right_button_text="OK",
+                        right_button_variant="default",
+                        title="Missing files",
+                        id="missing_files_modal",
+                        classes="confirm_warning",
+                    )
                 )
-            )
-        else:
-            # refresh available images so that the feature tab can use them
-            ctx.refresh_available_images()
-            # make hidden tabs visible
-            self.data_input_sucess()
-            self.app.flags_to_show_tabs["from_input_data_tab"] = True
-            self.app.show_hidden_tabs()
+            else:
+                # refresh available images so that the feature tab can use them
+                ctx.refresh_available_images()
+                # make hidden tabs visible
+                self.data_input_sucess()
+                self.app.flags_to_show_tabs["from_input_data_tab"] = True
+                self.app.show_hidden_tabs()
 
     @work(exclusive=True, name="acq_worker")
     @on(Button.Pressed, "#associate_button")
@@ -589,10 +593,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         message : Message
             The message object containing information about the switch change.
         """
-        if self.data_load_sucess is False:
+        print("cccccccccccccccccccccccccccccccccccccccc", message.control.classes)
+        if "-read-only" not in message.control.classes:
             self.toggle_bids_non_bids_format(message.value)
-        else:
-            self.forbid_data_change()
+        # if self.data_load_sucess is False:
+        # else:
+        #     self.forbid_data_change()
 
     def toggle_bids_non_bids_format(self, value: bool):
         """
@@ -645,7 +651,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.get_widget_by_id("data_input_file_browser").get_widget_by_id("path_input_box").update(
                 ctx.cache["bids"]["files"]
             )
-            self.forbid_data_change()
+            # self.forbid_data_change()
 
     def update_summaries(self):
         """
@@ -706,20 +712,22 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 )
             )
 
-    def forbid_data_change(self):
-        self.app.push_screen(
-            Confirm(
-                r"The input data were already setup!\To change restart the UI.",
-                left_button_text=False,
-                right_button_text="OK",
-                right_button_variant="default",
-                title="Reload",
-                id="reload",
-                classes="confirm_warning",
-            )
-        )
+    # def forbid_data_change(self):
+    #     self.app.push_screen(
+    #         Confirm(
+    #             r"The input data were already setup!\To change restart the UI.",
+    #             left_button_text=False,
+    #             right_button_text="OK",
+    #             right_button_variant="default",
+    #             title="Reload",
+    #             id="reload",
+    #             classes="confirm_warning",
+    #         )
+    #     )
 
-    def on_click(self):
+    @on(Switch.Changed, ".-read-only")
+    @on(Button.Pressed, ".-read-only")
+    def _read_mode_lock(self):
         if sum(self.app.flags_to_show_tabs.values()) == 2:
             self.app.push_screen(
                 Confirm(
@@ -732,3 +740,19 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                     classes="confirm_error",
                 )
             )
+
+    def read_only_mode(self, value):
+        if value:
+            self.get_widget_by_id("bids_non_bids_switch").add_class("-read-only")
+            for button in [
+                "add_t1_image_button",
+                "add_bold_image_button",
+                "associate_button",
+                "add_field_map_button",
+                "confirm_non_bids_button",
+            ]:
+                self.get_widget_by_id(button).add_class("-read-only")
+            for widget in self.walk_children(FileItem):
+                widget.get_widget_by_id("edit_button").add_class("-read-only")
+                widget.get_widget_by_id("delete_button").add_class("-read-only")
+            self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
