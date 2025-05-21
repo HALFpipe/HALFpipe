@@ -1,2 +1,3 @@
 * @HippocampusGirl
-src/halfpipe/tui @F-Tomas
+src/halfpipe/tui/ @F-Tomas
+tests/tui/ @F-Tomas
