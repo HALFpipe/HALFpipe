@@ -362,7 +362,7 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None,
         await pilot.press("9")
         # Click Ok to dismiss
         # await pilot.click(offset=(96, 31))
-        await pilot.click("#ok_button")
+        await pilot.click("#only_one_button")
     else:
         # click Ok
         # await pilot.click(offset=(100, 31))

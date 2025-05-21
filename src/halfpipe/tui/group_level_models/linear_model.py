@@ -10,10 +10,12 @@ from textual.widgets._select import BLANK
 from textual.widgets.selection_list import Selection
 
 from ...ingest.spreadsheet import read_spreadsheet
+from ...model.file.base import File
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_general_widgets import SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import widget_exists
+from ..specialized_widgets.confirm_screen import SimpleMessageModal
 from ..templates.model_template import ModelTemplate
 from .utils.add_spreadsheet_modal import AddSpreadsheetModal
 from .utils.additional_contrasts_table import AdditionalContrastsCategoricalVariablesTable
@@ -164,6 +166,29 @@ class LinearModel(ModelTemplate):
                 self.model_dict["spreadsheet"] = new_spreadsheet_selection[1]
 
         await self.app.push_screen(AddSpreadsheetModal(), update_spreadsheet_label)
+
+    @on(Button.Pressed, "#details_spreadsheet")
+    async def _on_button_details_spreadsheet_pressed(self):
+        def format_variables(variables):
+            lines = []
+            for var in variables:
+                line = f"Name: {var['name']}, Type: {var['type']}"
+                if var["type"] == "categorical" and "levels" in var:
+                    levels = ", ".join(var["levels"])
+                    line += f", Levels: [{levels}]"
+                lines.append(line)
+            return "\n".join(lines)
+
+        # We need to find the file object with that particular path in the ctx.cache
+        variable_list = ""
+
+        for key in ctx.cache:
+            files = ctx.cache[key]["files"]
+            if isinstance(files, File):
+                if key.startswith("__spreadsheet_file_") and self.model_dict["spreadsheet"] == files.path:
+                    variable_list = files.metadata["variables"]
+
+        self.app.push_screen(SimpleMessageModal(format_variables(variable_list), title="Meta information"))
 
     @on(Select.Changed, "#spreadsheet_selection")
     async def _on_spreadsheet_selection_changed(self, message):

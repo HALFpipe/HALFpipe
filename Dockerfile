@@ -3,7 +3,7 @@
 ARG fmriprep_version=25.0.0
 
 FROM condaforge/miniforge3 AS conda
-RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public && \
+RUN conda config --system --append channels https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ && \
     conda config --system --set remote_max_retries 10 \
         --set remote_backoff_factor 2 \
         --set remote_connect_timeout_secs 60 \
