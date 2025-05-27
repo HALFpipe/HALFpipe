@@ -12,6 +12,7 @@ from typing import Any
 import nipype.pipeline.engine as pe
 from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
+from nipype.utils.gpu_count import gpu_count
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
 
@@ -102,10 +103,15 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         )
         self.raise_insufficient = self.plugin_args.get("raise_insufficient", True)
 
+        # GPU handling for compatibility with Nipype ≥1.10
+        self.n_gpus_visible = gpu_count()  # default is the available GPUs
+        self.n_gpu_procs = plugin_args.get("n_gpu_procs", self.n_gpus_visible)  # allow to override by user
+
         # Instantiate different thread pools for non-daemon processes
         logger.debug(
-            "[MultiProc] Starting (n_procs=%d, mem_gb=%0.2f, cwd=%s)",
+            "[MultiProc] Starting (n_procs=%d, n_gpu_procs=%d, mem_gb=%0.2f, cwd=%s)",
             self.processors,
+            self.n_gpu_procs,
             self.memory_gb,
             self._cwd,
         )
