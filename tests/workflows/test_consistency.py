@@ -39,9 +39,17 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaACompCor",  # was TrueComb1
+        name="icaAromaACompCorCSF",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="icaAromaACompCorCSFWM",
+        base_setting=dict(
+            confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=True,
         ),
@@ -95,9 +103,17 @@ settings_list: list[TestSetting] = [
     # so we get the CSF only instead of the
     # combined CSF + White matter.
     TestSetting(
-        name="aCompCor",  # was FalseComb1
+        name="aCompCorCSF",  # was FalseComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="aCompCorCSFWM",
+        base_setting=dict(
+            confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=False,
         ),
@@ -147,7 +163,6 @@ settings_list: list[TestSetting] = [
             ica_aroma=False,
         ),
     ),
-    #!added new simpleScrubbing & simpleScrubbingGSR
     TestSetting(
         name="simpleScrubbing",
         base_setting=dict(
@@ -219,12 +234,17 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
             for title, kwargs in [
                 ("Timeseries", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", extension=".tsv")),
-                ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix")),
-                ("Dual regression", dict(sub=sub, feature=f"{name}DualReg", component="8")),
-                ("fALFF", dict(sub=sub, feature=f"{name}FALFF", extension=".nii.gz")),
-                ("ReHo", dict(sub=sub, feature=f"{name}ReHo", extension=".nii.gz")),
-                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr")),
-                ("Sidecars", dict(sub=sub, extension=".json")),
+                ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="matrix", desc="correlation")),
+                ("Dual regression", dict(sub=sub, feature=f"{name}DualReg", component="8", stat="z")),
+                ("Dualreg sidecar", dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="effect", component="8", extension=".json")),
+                ("fALFF", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")),
+                ("fALFF sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".json")),
+                ("Alff", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")),
+                ("Alff sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".json")),
+                ("ReHo", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")),
+                ("ReHo sidecar", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".json")),
+                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr",  suffix="statmap", stat="z")),
+                ("Seed connectivity sidecar", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="effect", extension=".json")),
             ]:
                 feature_path = index.get(**kwargs)
                 if feature_path is None or len(feature_path) != 1:
@@ -233,6 +253,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
         # Search for files we want to save at the subject level and save to list
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
+        json_sidecar_fmriprep = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", task="rest", extension=".json")
         paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
 
         # Create the zip file in the specified output directory
