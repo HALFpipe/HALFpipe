@@ -236,15 +236,21 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
                 ("Timeseries", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="timeseries", extension=".tsv")),
                 ("Correlation matrix", dict(sub=sub, feature=f"{name}CorrMatrix", suffix="matrix", desc="correlation")),
                 ("Dual regression", dict(sub=sub, feature=f"{name}DualReg", component="8", stat="z")),
-                ("Dualreg sidecar", dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="effect", component="8", extension=".json")),
+                (
+                    "Dualreg sidecar",
+                    dict(sub=sub, feature=f"{name}DualReg", suffix="statmap", stat="effect", component="8", extension=".json"),
+                ),
                 ("fALFF", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".nii.gz")),
                 ("fALFF sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="falff", extension=".json")),
                 ("Alff", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".nii.gz")),
                 ("Alff sidecar", dict(sub=sub, feature=f"{name}FALFF", suffix="alff", extension=".json")),
                 ("ReHo", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".nii.gz")),
                 ("ReHo sidecar", dict(sub=sub, feature=f"{name}ReHo", suffix="reho", extension=".json")),
-                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr",  suffix="statmap", stat="z")),
-                ("Seed connectivity sidecar", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="effect", extension=".json")),
+                ("Seed connectivity", dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="z")),
+                (
+                    "Seed connectivity sidecar",
+                    dict(sub=sub, feature=f"{name}SeedCorr", suffix="statmap", stat="effect", extension=".json"),
+                ),
             ]:
                 feature_path = index.get(**kwargs)
                 if feature_path is None or len(feature_path) != 1:
@@ -253,7 +259,9 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
         # Search for files we want to save at the subject level and save to list
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
-        json_sidecar_fmriprep = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", task="rest", extension=".json")
+        json_sidecar_fmriprep = index.get(
+            sub=sub, suffix="timeseries", datatype="func", desc="confounds", task="rest", extension=".json"
+        )
         paths_to_zip.extend([list(tsnr_fmriprep or [])[0], spec_file])
 
         # Create the zip file in the specified output directory
