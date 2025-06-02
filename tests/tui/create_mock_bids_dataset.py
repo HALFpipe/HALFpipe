@@ -161,7 +161,27 @@ def generate_file_names(subject_id=1, tasks=None, type=None):
     return updated_file_names
 
 
-def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None, dry_run=False):
+def create_mock_fmaps(save_dir, subject_id, dry_run=False):
+    # Create an empty 3D data array (minimal dimensions, just to satisfy NIfTI structure)
+    empty_data = np.zeros((1, 1, 1))
+
+    # Create a NIfTI image with the empty data
+    nii_img = nib.Nifti1Image(empty_data, affine=np.eye(4))
+
+    for file_name in [
+        f"sub-{subject_id}_magnitude1.nii.gz",
+        f"sub-{subject_id}_magnitude2.nii.gz",
+        f"sub-{subject_id}_phasediff.nii.gz",
+    ]:
+        output_path = save_dir / file_name
+        print(f"Mock field map saved to: {output_path}")
+
+        # Save the mock bold file
+        if not dry_run:
+            nib.save(nii_img, output_path)
+
+
+def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None, dry_run=False, field_maps=False):
     tasks_conditions_dict = {} if tasks_conditions_dict is None else tasks_conditions_dict
 
     # Convert the base_path to a Path object
@@ -180,6 +200,13 @@ def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None
 
         print(f"Created: {anat_path}")
         print(f"Created: {func_path}")
+
+        if field_maps is True:
+            # Define path for field maps
+            fmap_path = base_path / subject_tag / "fmap"
+            os.makedirs(fmap_path, exist_ok=True)
+            print(f"Created: {fmap_path}")
+            create_mock_fmaps(fmap_path, subject_id, dry_run=dry_run)
 
         # Create directories (will not crash if they already exist)
         if not dry_run:
@@ -217,4 +244,6 @@ def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None
 #     # 'emomatching-seq':['control', 'emotion'],
 #     # 'faces-mb3':['anger', 'contempt', 'joy', 'neutral', 'pride']
 # }
-# create_bids_data(base_path, number_of_subjects=number_of_subjects, tasks_conditions_dict=tasks_conditions_dict)
+# create_bids_data(
+#     base_path, number_of_subjects=number_of_subjects, tasks_conditions_dict=tasks_conditions_dict, field_maps=True
+# )

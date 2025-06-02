@@ -113,14 +113,15 @@ class FileBrowser(Widget):
             yield Label(self.path_to + ":", id="path_input_box")
 
     @on(Button.Pressed, "#file_browser_edit_button")
-    def on_button_pressed(self) -> None:
+    def on_button_pressed(self, event) -> None:
         """
         Handles the event when the browse button is pressed.
 
         This method is called when the user presses the "Browse" button.
         It calls `open_browse_window` to open the file browser modal.
         """
-        self.open_browse_window()
+        if "-read-only" not in event.control.classes:
+            self.open_browse_window()
 
     def open_browse_window(self) -> None:
         """
@@ -163,6 +164,10 @@ class FileBrowser(Widget):
             self.selected_path = str(selected_path)
             if send_message:
                 self.post_message(self.Changed(self, self.selected_path))
+
+    def read_only_mode(self, value: bool):
+        if value:
+            self.get_widget_by_id("file_browser_edit_button").add_class("-read-only")
 
 
 def path_test_for_bids(path: str, isfile: bool = False) -> str:
