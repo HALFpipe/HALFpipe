@@ -330,7 +330,7 @@ async def toggle_bids_non_bids(pilot) -> None:
 #     await pilot.click(offset=(125, 40))
 
 
-async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False) -> None:
+async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False) -> None:
     await pilot.press("i")
 
     ### toggle bids to non bids
@@ -370,12 +370,14 @@ async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None,
 
     for _i in range(15):
         await pilot.press("down")
-    # click confirm
-    # await pilot.click(offset=(100, 47))
-    await pilot.click("#confirm_non_bids_button")
-    # click Ok on Modal informing us that the data input is success
-    # await pilot.click(offset=(121, 31))
-    await pilot.click("#only_one_button")
+    if not noconfirm:
+        # click confirm
+        # await pilot.click(offset=(100, 47))
+        await pilot.click("#confirm_non_bids_button")
+        # click Ok on Modal informing us that the data input is success
+        await pilot.click("#only_one_button")
+        # Click Ok on Modal saying that data and workdir is set and user can proceed further
+        await pilot.click("#only_one_button")
 
 
 async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
@@ -490,6 +492,9 @@ async def run_before_for_reho_falff_preproc(
     await _set_work_dir(pilot, work_dir_path)
     # set data dir
     await _load_data(pilot, data_path)
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await pilot.click("#only_one_button")
+
     for task in tasks_by_stage[stage]:
         await task()
 

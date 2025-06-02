@@ -62,11 +62,15 @@ async def run_before(
             t1_path_pattern = str(t1_path_pattern)
         if isinstance(bold_path_pattern, Path):
             bold_path_pattern = str(bold_path_pattern)
-        await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern, set_repetition_time=stage == "preproc_settings")
+        await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern, set_repetition_time=stage == "preproc_settings", noconfirm=stage == "non_bids_data_tab_with_fmaps")
+        # Press ok on 'All is ok, proceed further modal"
+        #
+
         # same reason for this as at work_tab case
         await pilot.click(offset=(25, 25))
         await pilot.click(offset=(25, 25))
         if stage == "non_bids_data_tab_with_fmaps":
+
             await pilot.click("#add_field_map_button")
             # select 'Siemens' by focusing and going one down and confirming with enter
             await pilot.press("tab")
@@ -114,6 +118,9 @@ async def run_before(
             await pilot.click("#confirm_non_bids_button")
             # click Ok on Modal informing us that the data input is success
             await pilot.click("#only_one_button")
+            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            await pilot.click("#only_one_button")
+
             # Select Check and Run tab
             await pilot.press("r")
             await check_and_run_tab_refresh(pilot)
@@ -161,7 +168,7 @@ async def run_before(
             await pilot.press("9")
             # random click to unfocus the input
             await pilot.click(offset=(50, 10))
-            #
+
             # Select Check and Run tab
             await pilot.press("r")
             # Click 'Refresh'
