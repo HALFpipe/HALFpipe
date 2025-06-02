@@ -330,7 +330,9 @@ async def toggle_bids_non_bids(pilot) -> None:
 #     await pilot.click(offset=(125, 40))
 
 
-async def set_non_bids_data(pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False) -> None:
+async def set_non_bids_data(
+    pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False
+) -> None:
     await pilot.press("i")
 
     ### toggle bids to non bids
