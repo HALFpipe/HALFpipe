@@ -62,7 +62,13 @@ async def run_before(
             t1_path_pattern = str(t1_path_pattern)
         if isinstance(bold_path_pattern, Path):
             bold_path_pattern = str(bold_path_pattern)
-        await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern, set_repetition_time=stage == "preproc_settings", noconfirm=stage == "non_bids_data_tab_with_fmaps")
+        await set_non_bids_data(
+            pilot,
+            t1_path_pattern,
+            bold_path_pattern,
+            set_repetition_time=stage == "preproc_settings",
+            noconfirm=stage == "non_bids_data_tab_with_fmaps",
+        )
         # Press ok on 'All is ok, proceed further modal"
         #
 
@@ -70,7 +76,6 @@ async def run_before(
         await pilot.click(offset=(25, 25))
         await pilot.click(offset=(25, 25))
         if stage == "non_bids_data_tab_with_fmaps":
-
             await pilot.click("#add_field_map_button")
             # select 'Siemens' by focusing and going one down and confirming with enter
             await pilot.press("tab")
