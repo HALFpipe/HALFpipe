@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
+import re
 from os.path import relpath
 from pathlib import Path
 from shutil import rmtree
@@ -29,26 +30,26 @@ def get_bids_metadata(database: Database, file_path: str | Path) -> dict[str, An
 
     return {camelize(key): value for key, value in metadata.items()}
 
-import re
 
 def replace_t1w_with_mask(filename: str) -> str:
     """
     Replaces the '_T1w.nii.gz' suffix with '_mask.nii.gz' in the given filename.
-    
+
     Parameters:
         filename (str): Input filename expected to end with '_T1w.nii.gz'.
-    
+
     Returns:
         str: Modified filename with '_mask.nii.gz' suffix.
-    
+
     Raises:
         ValueError: If the input string does not end with '_T1w.nii.gz'.
     """
-    if not filename.endswith('_T1w.nii.gz'):
+    if not filename.endswith("_T1w.nii.gz"):
         raise ValueError("Input must end with '_T1w.nii.gz'")
-    
-    return re.sub(r'_T1w\.nii\.gz$', '_mask.nii.gz', filename)
-    
+
+    return re.sub(r"_T1w\.nii\.gz$", "_mask.nii.gz", filename)
+
+
 class BidsDatabase:
     def __init__(self, database: Database) -> None:
         self.database = database
@@ -94,30 +95,30 @@ class BidsDatabase:
                 bids_tags[bids_entity] = format_like_bids(value)
             else:
                 bids_tags[entity] = value
-                
-        # In case of lesion mask presence, we temporary change the suffix to standard anat T1w and let the 
+
+        # In case of lesion mask presence, we temporary change the suffix to standard anat T1w and let the
         # halfpipe create symbolic path for the files as it was a normal anat T1w file. But afterwards,
         # by checking the suffix (if roi or mask), we change the suffix of the symbolic path (bids_path_result) using the
-        # function replace_t1w_with_mask. At the end, we get the mask (roi) file to the same anat folder as it is 
+        # function replace_t1w_with_mask. At the end, we get the mask (roi) file to the same anat folder as it is
         # required by current version of fmriprep. In future, when fmriprep is updated, the masks will follow
         # bids standard and will be relocated to derivates directory.
-        suffix = bids_tags.get('suffix')
+        suffix = bids_tags.get("suffix")
 
         # Temporarily override suffix if needed
-        build_tags = {**bids_tags, 'suffix': 'T1w'} if suffix in {'mask', 'roi'} else bids_tags
+        build_tags = {**bids_tags, "suffix": "T1w"} if suffix in {"mask", "roi"} else bids_tags
 
         # Single build_path call
         bids_path_result = build_path(build_tags, bids_config.default_path_patterns)
 
-        # Post-process in case of masks (rois) 
-        if suffix in {'mask', 'roi'}:
+        # Post-process in case of masks (rois)
+        if suffix in {"mask", "roi"}:
             bids_path_result = replace_t1w_with_mask(bids_path_result)
 
         if bids_path_result is None:
             raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}" with tags "{bids_tags}"')
 
         bids_path = str(bids_path_result)
-      
+
         if bids_path in self.file_paths:
             if self.file_paths[bids_path] != str(file_path):
                 raise ValueError("Cannot assign different files to the same BIDS path")

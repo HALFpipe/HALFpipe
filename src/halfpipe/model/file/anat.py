@@ -16,27 +16,23 @@ class T1wFileSchema(BaseFileSchema):
 
     tags = fields.Nested(AnatTagsSchema(), dump_default=dict())
 
+
 class T1wMaskFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="anat", validate=validate.Equal("anat"))
     suffix = fields.Str(
         dump_default="mask",  # default to "mask", still allows "roi"
-        validate=validate.OneOf(["mask", "roi"])
+        validate=validate.OneOf(["mask", "roi"]),
     )
     extension = fields.Str(validate=validate.OneOf([".nii", ".nii.gz"]))
     tags = fields.Nested(AnatTagsSchema(), dump_default=dict())
-    
+
+
 class AnatFileSchema(OneOfSchema):
     type_field = "suffix"
     type_field_remove = False
-    type_schemas = {
-        "T1w": T1wFileSchema,
-        "mask": T1wMaskFileSchema,
-        "roi": T1wMaskFileSchema
-    }
+    type_schemas = {"T1w": T1wFileSchema, "mask": T1wMaskFileSchema, "roi": T1wMaskFileSchema}
 
     def get_obj_type(self, obj):
         if isinstance(obj, File):
             return obj.suffix
         raise Exception("Cannot determine obj type for AnatFileSchema")
-
-
