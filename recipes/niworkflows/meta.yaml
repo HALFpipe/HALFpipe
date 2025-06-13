@@ -2,7 +2,7 @@
 {% set version = "1.13.4" %}
 
 # Dependencies derived from:
-# https://github.com/nipreps/niworkflows/blob/maint/1.11.x/pyproject.toml
+# https://github.com/nipreps/niworkflows/blob/maint/1.13.4/pyproject.toml
 
 package:
   name: "{{ name|lower }}"
@@ -10,7 +10,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 18c9c020c7def4317e6f45dd788a342913492c953d0107f111a349e96050303d
+  sha256: 2bec7ab4e68a4761e4abb83cccb578388cfc253be55976832e4e7b299e485dfd
 
 build:
   number: 0
