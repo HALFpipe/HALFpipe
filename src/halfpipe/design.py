@@ -334,7 +334,7 @@ def parse_design(
 
     contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
 
-    def make_contrast_matrix(conditions, weights) -> npt.NDArray:
+    def make_contrast_matrix(conditions: list[str], weights: list[float]) -> npt.NDArray:
         contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[design_matrix.columns]
         assert isinstance(contrast_matrix, pd.Series)
         return contrast_matrix.to_numpy(dtype=np.float64)[np.newaxis, :]
@@ -359,7 +359,7 @@ def parse_design(
         elif statistic == "T":
             conditions = contrast[2]
             weights = contrast[3]  # type: ignore
-            contrast_matrix = make_contrast_matrix(conditions, weights)
+            contrast_matrix = make_contrast_matrix(conditions, weights)  # type: ignore[arg-type]
 
         if contrast_matrix is not None:
             contrast_matrices[name] = contrast_matrix
