@@ -1,5 +1,5 @@
 {% set name = "niworkflows" %}
-{% set version = "1.12.2" %}
+{% set version = "1.13.4" %}
 
 # Dependencies derived from:
 # https://github.com/nipreps/niworkflows/blob/maint/1.11.x/pyproject.toml
@@ -24,11 +24,10 @@ requirements:
     - hatch-vcs
   run:
     - python 3.11.*
-    - attrs
     - acres
+    - attrs>=20.1
     - jinja2>=3
     - looseversion
-    - importlib_resources>=5.7
     - matplotlib>=3.5
     - nibabel>=3.0
     - nilearn>=0.8

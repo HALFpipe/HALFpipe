@@ -1,14 +1,14 @@
 # Dependencies derived from:
-# https://github.com/nipreps/fmriprep/blob/25.0.0/pyproject.toml
-# https://github.com/nipreps/fmriprep/blob/25.0.0/env.yml
+# https://github.com/nipreps/fmriprep/blob/25.1.1/pyproject.toml
+# https://github.com/nipreps/fmriprep/blob/25.1.1/env.yml
 
 package:
   name: "fmriprep"
-  version: "25.0.0"
+  version: "25.1.1"
 
 source:
   git_url: https://github.com/nipreps/fmriprep.git
-  git_rev: "9e59fe2f67088bee1a2358a0cbd6dc6f9d95f81b"
+  git_rev: "25.1.1"
 
 build:
   number: 0
@@ -31,21 +31,20 @@ requirements:
     - nitime>=0.9
     - nitransforms>=24.1.1
     - niworkflows>=1.12.2
+    - numpy>=1.24
     - packaging>=24
+    - pandas>=1.2
     - psutil>=5.4
     - pybids>=0.16
     - requests>=2.27
-    - sdcflows>=2.11.0
-    - smriprep>=0.17.0
-    - tedana>=23.0.2
+    - sdcflows>=2.13.0
+    - smriprep>=0.18.0
+    - tedana>=25.0.0
     - templateflow>=24.2.2
     - transforms3d>=0.4
     - toml>=0.10
     - codecarbon>=2
     - APScheduler>=3.10
-    # Base scientific python stack; required by FSL, so pinned here
-    - numpy>=1.24
-    - pandas>=1.2
     # Workflow dependencies: ANTs
     - ants
     # Workflow dependencies: Convert3d
