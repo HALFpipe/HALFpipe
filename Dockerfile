@@ -50,12 +50,6 @@ RUN --mount=source=recipes/afni,target=/afni \
     --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "afni"
 
-FROM builder AS mapca
-RUN --mount=source=recipes/mapca,target=/mapca \
-    --mount=type=cache,target=/opt/conda/pkgs \
-    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
-    retry conda build --no-anaconda-upload --numpy "1.24" "mapca"
-
 FROM builder AS migas
 RUN --mount=source=recipes/migas,target=/migas \
     --mount=type=cache,target=/opt/conda/pkgs \
@@ -68,23 +62,29 @@ RUN --mount=source=recipes/nireports,target=/nireports \
     --mount=type=cache,target=/opt/conda/conda-bld/git_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "nireports"
 
-FROM builder AS nitransforms
-RUN --mount=source=recipes/nitransforms,target=/nitransforms \
+FROM builder AS tedana
+RUN --mount=source=recipes/mapca,target=/mapca \
     --mount=type=cache,target=/opt/conda/pkgs \
     --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
-    retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
-
-FROM builder AS tedana
-COPY --from=mapca /opt/conda/conda-bld /opt/conda/conda-bld
-RUN conda index /opt/conda/conda-bld
+    retry conda build --no-anaconda-upload --numpy "1.24" "mapca"
+RUN --mount=source=recipes/pybtex-apa-style,target=/pybtex-apa-style \
+    --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
+    retry conda build --no-anaconda-upload --numpy "1.24" "pybtex-apa-style"
+RUN --mount=source=recipes/robustica,target=/robustica \
+    --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
+    retry conda build --no-anaconda-upload --numpy "1.24" "robustica"
 RUN --mount=source=recipes/tedana,target=/tedana \
     --mount=type=cache,target=/opt/conda/pkgs \
     --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
     retry conda build --no-anaconda-upload --numpy "1.24" "tedana"
 
 FROM builder AS niworkflows
-COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
-RUN conda index /opt/conda/conda-bld
+RUN --mount=source=recipes/nitransforms,target=/nitransforms \
+    --mount=type=cache,target=/opt/conda/pkgs \
+    --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
+    retry conda build --no-anaconda-upload --numpy "1.24" "nitransforms"
 RUN --mount=source=recipes/niworkflows,target=/niworkflows \
     --mount=type=cache,target=/opt/conda/pkgs \
     --mount=type=cache,target=/opt/conda/conda-bld/src_cache \
@@ -109,7 +109,6 @@ RUN --mount=source=recipes/smriprep,target=/smriprep \
     retry conda build --no-anaconda-upload --numpy "1.24" "smriprep"
 
 FROM builder AS fmriprep
-COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=tedana /opt/conda/conda-bld /opt/conda/conda-bld
@@ -121,11 +120,6 @@ RUN --mount=source=recipes/fmriprep,target=/fmriprep \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmriprep"
 
 FROM builder AS fmripost_aroma
-COPY --from=niworkflows /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=nitransforms /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=sdcflows /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=smriprep /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=nireports /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 RUN --mount=source=recipes/fmripost_aroma,target=/fmripost_aroma \
@@ -134,11 +128,10 @@ RUN --mount=source=recipes/fmripost_aroma,target=/fmripost_aroma \
     retry conda build --no-anaconda-upload --numpy "1.24" "fmripost_aroma"
 
 FROM builder AS halfpipe
-COPY --from=fmriprep /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=rmath /opt/conda/conda-bld /opt/conda/conda-bld
-COPY --from=pytest-textual-snapshot /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=afni /opt/conda/conda-bld /opt/conda/conda-bld
 COPY --from=fmripost_aroma /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=pytest-textual-snapshot /opt/conda/conda-bld /opt/conda/conda-bld
+COPY --from=rmath /opt/conda/conda-bld /opt/conda/conda-bld
 RUN conda index /opt/conda/conda-bld
 # Mount .git folder too for setuptools_scm
 RUN --mount=source=recipes/halfpipe,target=/halfpipe/recipes/halfpipe \
@@ -168,7 +161,7 @@ RUN conda run --name="fmriprep" python -c "from matplotlib import font_manager" 
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
         $(conda run --name="fmriprep" python -c "import matplotlib; print(matplotlib.matplotlib_fname())")
 
-RUN echo "6.0.0" > /opt/conda/envs/fmriprep/etc/fslversion
+RUN echo "6.0.0" >/opt/conda/envs/fmriprep/etc/fslversion
 
 # Create the final image based on existing fmriprep image
 FROM nipreps/fmriprep:${fmriprep_version}
