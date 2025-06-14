@@ -1,8 +1,8 @@
 {% set name = "sdcflows" %}
-{% set version = "2.11.0" %}
+{% set version = "2.13.0" %}
 
 # Dependencies derived from:
-# https://github.com/nipreps/sdcflows/blob/2.11.0/pyproject.toml
+# https://github.com/nipreps/sdcflows/blob/2.13.0/pyproject.toml
 
 package:
   name: "{{ name|lower }}"
@@ -11,8 +11,6 @@ package:
 source:
   git_url: https://github.com/nipreps/sdcflows.git
   git_rev: "{{ version }}"
-  patches:
-    - 001-nipype-xor-list.patch
 
 build:
   number: 1
@@ -34,7 +32,7 @@ requirements:
     - migas>=0.4.0
     - niworkflows>=1.7.0
     - nitransforms>=24.1.0
-    - numpy>=1.22
+    - numpy>=1.23
     - pybids>=0.16.4
     - scikit-image>=0.18
     - scipy>=1.8.1

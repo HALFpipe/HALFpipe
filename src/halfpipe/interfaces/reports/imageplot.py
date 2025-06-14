@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from os import path as op
+from typing import Any
 from uuid import uuid4
 
 import nibabel as nib
@@ -124,7 +125,7 @@ class PlotRegistration(ReportingInterface):
 
         outfiles = []
         for dimension in ["z", "y", "x"]:
-            display = plot_anat(
+            display: Any = plot_anat(
                 anat_img,
                 draw_cross=False,
                 display_mode=dimension,
