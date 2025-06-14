@@ -41,4 +41,3 @@ def test_fsldir():
     # Assert that the version output is not empty
     assert fsl_version, "FSL version output is empty"
     print(f"FSL version: {fsl_version}")
-    return fsl_version
