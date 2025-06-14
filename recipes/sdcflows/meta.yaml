@@ -11,8 +11,6 @@ package:
 source:
   git_url: https://github.com/nipreps/sdcflows.git
   git_rev: "{{ version }}"
-  patches:
-    - 001-nipype-xor-list.patch
 
 build:
   number: 1
