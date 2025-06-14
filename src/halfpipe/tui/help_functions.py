@@ -252,3 +252,11 @@ def widget_exists(where: Any, widget: str) -> bool:
         return True
     except NoMatches:
         return False
+
+
+def is_number_string(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

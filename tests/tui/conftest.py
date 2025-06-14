@@ -55,7 +55,7 @@ def downloaded_data_path(fixed_tmp_path) -> Path:
         "restingstate_acq-mb3": [],
     }
     data_path = fixed_tmp_path / "ds002785"
-    create_bids_data(data_path, number_of_subjects=1, tasks_conditions_dict=tasks_conditions_dict)
+    create_bids_data(data_path, number_of_subjects=1, tasks_conditions_dict=tasks_conditions_dict, field_maps=True)
     return data_path
 
 
@@ -119,6 +119,16 @@ def bold_path_pattern(downloaded_data_path) -> Path:
 @pytest.fixture(scope="session")
 def event_path_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/func/sub-{subject}_task-{task}_events.tsv"
+
+
+@pytest.fixture(scope="session")
+def magnitude_fmap_pattern(downloaded_data_path) -> Path:
+    return downloaded_data_path / "sub-{subject}/fmap/sub-{subject}_magnitude1.nii.gz"
+
+
+@pytest.fixture(scope="session")
+def phase_diff_fmap_pattern(downloaded_data_path) -> Path:
+    return downloaded_data_path / "sub-{subject}/fmap/sub-{subject}_phasediff.nii.gz"
 
 
 # should yield a fresh instance each time, but apparently it does not
