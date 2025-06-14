@@ -1,5 +1,5 @@
 {% set name = "nireports" %}
-{% set version = "24.1.0" %}
+{% set version = "25.2.0" %}
 
 # Dependencies derived from:
 # https://github.com/nipreps/nireports/blob/main/pyproject.toml
@@ -26,7 +26,6 @@ requirements:
   run:
     - python 3.11.*
     - acres>=0.2
-    - importlib_resources>=5.12
     - matplotlib>=3.5
     - nibabel>=3.0.1
     - nilearn>=0.8
@@ -37,7 +36,7 @@ requirements:
     - pyyaml>=5.4
     - seaborn>=0.13
     - templateflow>=23.1
-    - lxml>=4.6
+    - lxml>=4.6 # required by vendored svgutils
 
 test:
   imports:
