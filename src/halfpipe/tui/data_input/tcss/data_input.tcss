@@ -1,6 +1,23 @@
 DataInput {
     align: center top;
     height: auto;
+    .non_bids_panels {
+        border: solid green;
+        border-title-background: green;
+        border-title-color: white;
+        border-title-style: bold;
+        height: auto;
+        offset-y: 1;
+    }
+    .file_patterns {
+        width: auto;
+        height: 5;
+        border: solid red;
+    }
+    #non_bids_panel {
+        height: auto;
+   /*     offset-y: -24;*/
+    }
     #bids_summary_panel {
         align: center middle;
     }
@@ -16,6 +33,12 @@ DataInput {
         grid-size: 1;
     }
     #non_bids_panel {
+        Button {
+            margin: 1 0 0 1;
+        }
+    }
+    #lesion_mask_pattern_panel {
+        margin: 0 0 1 0;
         Button {
             margin: 1 0 0 1;
         }
