@@ -1,5 +1,5 @@
 {% set name = "smriprep" %}
-{% set version = "0.17.0" %}
+{% set version = "0.18.0" %}
 
 # Requirements derived from
 # https://github.com/nipreps/smriprep/blob/maint/0.17.x/pyproject.toml
@@ -27,10 +27,11 @@ requirements:
     - acres>=0.2
     - indexed_gzip>=1.7
     - lockfile>=0.12.2
+    - looseversion>=1.3.0
     - matplotlib>=3.5
     - nibabel>=4.0.1
     - nipype>=1.8.5
-    - niworkflows>=1.12.1
+    - niworkflows>=1.13.1
     - numpy>=1.24
     - packaging>=24
     - pybids>=0.16

@@ -30,11 +30,11 @@ def slice_timing_str(slice_times) -> str:
 
     values, inverse, counts = np.unique(slice_times, return_inverse=True, return_counts=True)
 
-    counts = set(counts)
-    if len(counts) != 1:
+    counts_set = set(counts)
+    if len(counts_set) != 1:
         return "unknown multi-band"
 
-    (multiband_factor,) = counts
+    (multiband_factor,) = counts_set
 
     order = inverse[: len(values)]
 

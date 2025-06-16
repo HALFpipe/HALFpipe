@@ -11,7 +11,7 @@ from nipype.interfaces.io import IOBase, add_traits
 
 from ...model.resultdict import ResultdictSchema
 from ...model.utils import get_schema_entities
-from ...result.base import ResultDict
+from ...result.base import ResultDict, ResultKey
 from ...utils.copy import deepcopy
 from ...utils.ops import ravel
 from .base import ResultdictsOutputSpec
@@ -69,11 +69,10 @@ class MakeResultdicts(IOBase):
             [*tagkeys, *valkeys, *imagekeys, *reportkeys, *metadatakeys, *dictkeys],
         )
         self._dictkeys = dictkeys
-        self._keys = {
+        self._keys: dict[ResultKey, list[str]] = {
             "tags": tagkeys,
             "vals": valkeys,
             "images": imagekeys,
-            "reports": reportkeys,
             "metadata": metadatakeys,
         }
         self._nobroadcastkeys = nobroadcastkeys
@@ -163,7 +162,7 @@ class MakeResultdicts(IOBase):
             values[i] = ravel(values[i])
 
         # make resultdicts
-        resultdicts = []
+        resultdicts: list[ResultDict] = []
         for valuetupl in zip(*values, strict=False):
             resultdict: ResultDict = defaultdict(dict)
             for f, k, v in zip(fieldnames, keys, valuetupl, strict=False):
