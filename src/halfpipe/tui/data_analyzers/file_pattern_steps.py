@@ -287,7 +287,7 @@ class AnatMaskStep(FilePatternStep):
     required_in_path_entities = ["subject"]
     header_str = "Lesion mask file pattern"
     filetype_str = "Lesion mask"
-    filedict = {"datatype": "anat", "suffix": "mask"}
+    filedict = {"datatype": "anat", "suffix": "roi"}
 
     schema = T1wMaskFileSchema
 

@@ -47,7 +47,7 @@ def replace_t1w_with_mask(filename: str) -> str:
     if not filename.endswith("_T1w.nii.gz"):
         raise ValueError("Input must end with '_T1w.nii.gz'")
 
-    return re.sub(r"_T1w\.nii\.gz$", "_mask.nii.gz", filename)
+    return re.sub(r"_T1w\.nii\.gz$", "_roi.nii.gz", filename)
 
 
 class BidsDatabase:
