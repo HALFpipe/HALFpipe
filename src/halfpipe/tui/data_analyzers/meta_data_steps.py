@@ -1122,6 +1122,10 @@ class AcqToTaskMappingStep:
                     intended_for[fmapstr] = list()
                 intended_for[fmapstr].append(funcstr)
 
+            # sort, this is to avoid false CI tests
+            for fmapstr in intended_for:
+                intended_for[fmapstr].sort()
+
             specfileobj.intended_for = intended_for
 
             for name in ctx.cache:
