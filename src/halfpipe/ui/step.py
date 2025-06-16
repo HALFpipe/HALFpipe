@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import ClassVar, Dict, Optional, Type
+from typing import Any, ClassVar
 
 from ..ingest.database import Database
 from ..logging import logger
@@ -17,7 +17,8 @@ from .components import SingleChoiceInputView, SpacerView, TextElement, TextView
 class Context:
     def __init__(self) -> None:
         spec_schema = SpecSchema()
-        spec = spec_schema.load(spec_schema.dump({}), partial=True)
+        defaults: Any = spec_schema.dump({})
+        spec = spec_schema.load(defaults, partial=True)
         assert isinstance(spec, Spec)
         self.spec: Spec = spec  # initialize with defaults
         self.database = Database(self.spec)
@@ -74,7 +75,7 @@ class Step:
             self.app.layout.remove(view)
 
     @abstractmethod
-    def run(self, ctx):
+    def run(self, ctx) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -88,11 +89,13 @@ class Step:
 
 
 class BranchStep(Step):
-    header_str: Optional[str] = None
+    header_str: str | None = None
 
     is_vertical: ClassVar[bool] = False
 
-    options: Dict[str, Optional[Type[Step]]] = defaultdict(lambda: None)
+    @property
+    def options(self) -> dict[str, type[Step] | None]:
+        return defaultdict(lambda: None)
 
     def _should_run(self, _):
         return True
@@ -112,7 +115,7 @@ class BranchStep(Step):
             self._append_view(self.input_view)
             self._append_view(SpacerView(1))
 
-    def run(self, _):
+    def run(self, ctx) -> bool:
         if not self.should_run:
             return self.is_first_run
         else:
@@ -136,12 +139,12 @@ class BranchStep(Step):
 
 
 class YesNoStep(BranchStep):
-    yes_step_type: Optional[Type[Step]] = None
-    no_step_type: Optional[Type[Step]] = None
+    yes_step_type: type[Step] | None = None
+    no_step_type: type[Step] | None = None
 
-    def __init__(self, app, **kwargs):
+    def __init__(self, app, **kwargs) -> None:
         super(YesNoStep, self).__init__(app, **kwargs)
 
     @property
-    def options(self):
+    def options(self) -> dict[str, type[Step] | None]:
         return {"Yes": self.yes_step_type, "No": self.no_step_type}
