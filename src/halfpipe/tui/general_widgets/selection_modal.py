@@ -97,7 +97,7 @@ class SelectionModal(DraggableModalScreen):
 
     def __init__(
         self,
-        options: dict[str, str],
+        options: dict[str, str] | None = None,
         title="",
         instructions="Select",
         only_ok_button: bool = False,
@@ -130,31 +130,45 @@ class SelectionModal(DraggableModalScreen):
         self.title_bar.title = title
         self.instructions = instructions
         RadioButton.BUTTON_INNER = "X"
-        self.options: dict = options
+        self.widgets_to_mount = []
+        if options is not None:
+            self.options: dict = options
 
-        # In some cases the user just must made some choice in the selection. In particular this is the case when one is
-        # some of the Meta classes (CheckMeta...) are in action. Returning from this stage by hitting the cancel button would
-        # not make sense.
-        self.only_ok_button = only_ok_button
-        if only_ok_button is True:
-            button_panel = Horizontal(Button("OK", id="ok"))
-        else:
-            button_panel = Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel"))
+            # In some cases the user just must made some choice in the selection. In particular this is the case when
+            # one is some of the Meta classes (CheckMeta...) are in action. Returning from this stage by hitting the
+            # cancel button would not make sense.
+            self.only_ok_button = only_ok_button
+            if only_ok_button is True:
+                button_panel = Horizontal(Button("OK", id="ok"))
+            else:
+                button_panel = Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel"))
 
-        self.widgets_to_mount = [
-            Static(self.instructions, id="title"),
-            RadioSet(*[RadioButton(self.options[key], value=i == 0) for i, key in enumerate(self.options)], id="radio_set"),
-            button_panel,
-        ]
+            self.widgets_to_mount = [
+                Static(self.instructions, id="title"),
+                RadioSet(
+                    *[RadioButton(self.options[key], value=i == 0) for i, key in enumerate(self.options)], id="radio_set"
+                ),
+                button_panel,
+            ]
+
+    def _set_default_choice(self):
+        self.choice = list(self.options.keys())[0]
 
     def on_mount(self) -> None:
         """Called when the window is mounted."""
         self.content.mount(*self.widgets_to_mount)
+        self._set_default_choice()
+
+    def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        self._set_choices(event)
+
+    def _set_choices(self, event) -> None:
+        self.choice = event.control
+        self.choice = list(self.options.keys())[event.control._selected]
 
     @on(Button.Pressed, "#ok")
     def _on_ok_button_pressed(self):
-        choice = list(self.options.keys())[self.get_widget_by_id("radio_set")._selected]
-        self.dismiss(choice)
+        self.dismiss(self.choice)
 
     @on(Button.Pressed, "#cancel")
     def _on_cancel_button_pressed(self):
@@ -162,8 +176,7 @@ class SelectionModal(DraggableModalScreen):
 
     def request_close(self):
         if self.only_ok_button is True:
-            choice = list(self.options.keys())[self.get_widget_by_id("radio_set")._selected]
-            self.dismiss(choice)
+            self.dismiss(self.choice)
         else:
             self.dismiss(False)
 
@@ -181,7 +194,7 @@ class DoubleSelectionModal(SelectionModal):
     ----------
     options : list[dict[str, str]], optional
         A list containing two dictionaries where the keys are the unique
-        identifiers and the values are the corresponding option labels to
+        identifiers and the values are the corresponding option labels t9o
         display in the radio buttons.
     title : str, optional
         The title of the modal dialog, by default "".
@@ -224,19 +237,25 @@ class DoubleSelectionModal(SelectionModal):
         """
 
     def __init__(self, options, title="", instructions=None, id: str | None = None, classes: str | None = None) -> None:
-        super().__init__(options, title=title, id=id, classes=classes)
+        super().__init__(title=title, id=id, classes=classes)
         self.instructions = instructions
         self.options: dict = options
-        self.choice: List[str] = ["default_choice??? todo", "1"]
         self.widgets_to_mount = [
             Static(self.instructions[0], id="title_0"),
-            RadioSet(*[RadioButton(self.options[0][key]) for key in self.options[0]], id="radio_set_0"),
+            RadioSet(
+                *[RadioButton(self.options[0][key], value=i == 0) for i, key in enumerate(self.options[0])], id="radio_set_0"
+            ),
             Static(self.instructions[1], id="title_1"),
-            RadioSet(*[RadioButton(self.options[1][key]) for key in self.options[1]], id="radio_set_1"),
+            RadioSet(
+                *[RadioButton(self.options[1][key], value=i == 0) for i, key in enumerate(self.options[1])], id="radio_set_1"
+            ),
             Horizontal(Button("OK", id="ok"), Button("Cancel", id="cancel")),
         ]
 
-    def _on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+    def _set_default_choice(self):
+        self.choice: List[str] = [list(self.options[0].keys())[0], list(self.options[1].keys())[0]]
+
+    def _set_choices(self, event) -> None:
         if event.control.id == "radio_set_0":
             self.choice[0] = list(self.options[0].keys())[event.index]
         if event.control.id == "radio_set_1":

@@ -6,6 +6,8 @@ from textual.containers import Horizontal
 from textual.widgets import Button, Input, Static
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from ..help_functions import is_number_string
+from ..specialized_widgets.confirm_screen import Confirm
 
 
 class SetValueModal(DraggableModalScreen):
@@ -107,32 +109,54 @@ class SetValueModal(DraggableModalScreen):
         # The instruction text displayed in the modal.
         self.instructions: str = instructions
         # The text displayed on the left button.
-        self.left_button_text: str = left_button_text
+        self.left_button_text: str | bool = left_button_text
         # The text displayed on the right button.
-        self.right_button_text: str = right_button_text
+        self.right_button_text: str | bool = right_button_text
         # The variant type of the left button.
         self.left_button_variant: str = left_button_variant
         # The variant type of the right button.
         self.right_button_variant: str = right_button_variant
-
         self.title_bar.title = title
+
+        active_incides = [i for i, val in enumerate([left_button_text, right_button_text]) if val is not False]
+        # The index of the active button when only one button is displayed.
+        self.active_index = None
+        if len(active_incides) == 1:
+            active_index = active_incides[0]
+            self.active_index = active_index
+            self.buttons = [
+                Button(
+                    [left_button_text, right_button_text][active_index],
+                    variant=[left_button_variant, right_button_variant][active_index],
+                    classes=["button ok", "button cancel"][active_index],
+                    id="only_one_button",
+                )
+            ]
+        else:
+            self.buttons = [
+                Button(left_button_text, variant=left_button_variant, classes="button ok", id="ok_left_button"),
+                Button(right_button_text, variant=right_button_variant, classes="button cancel", id="cancel_right_button"),
+            ]
 
     def on_mount(self) -> None:
         self.content.mount(
-            Static(self.instructions),
-            Input("", id="input_prompt"),
-            Horizontal(
-                Button(self.left_button_text, variant=self.left_button_variant, classes="button ok", id="ok_button"),
-                Button(self.right_button_text, variant=self.right_button_variant, classes="button cancel", id="cancel_button"),
-                classes="button_grid",
-            ),
+            Static(self.instructions), Input("0", id="input_prompt"), Horizontal(*self.buttons, classes="button_grid")
         )
 
     @on(Button.Pressed, ".ok")
     def _on_ok_button_pressed(self):
         input_widget = self.query_one(Input)
-        if input_widget.value == "":
-            self.dismiss("0")
+        if input_widget.value == "" or not is_number_string(input_widget.value):
+            self.app.push_screen(
+                Confirm(
+                    "Enter a numerical value!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Value error",
+                    classes="confirm_error",
+                )
+            )
         else:
             self.dismiss(input_widget.value)
 

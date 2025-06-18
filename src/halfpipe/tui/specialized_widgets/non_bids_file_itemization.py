@@ -199,7 +199,8 @@ class FileItem(Widget):
         id: str | None = None,
         classes: str | None = None,
         delete_button=True,
-        title="",
+        title=None,
+        border_title=None,
         pattern_class=None,
         id_key="",
         load_object=None,
@@ -245,8 +246,8 @@ class FileItem(Widget):
         # The class used for creating file pattern steps.
         self.pattern_class = None if pattern_class is None else pattern_class
         # The title of the file item.
-        self.title = "Not implemented yet"
-        if self.pattern_class is not None:
+        self.title = "" if title is None else title
+        if self.pattern_class is not None and self.title == "":
             self.title = self.pattern_class.header_str
             if self.pattern_class.next_step_type is not None:
                 self.pattern_class.callback = self.callback_func
@@ -254,7 +255,7 @@ class FileItem(Widget):
 
         # An object containing data to load into the file item.
         self.load_object = load_object
-        # self.border_title = "id: " + str(id)
+        self.border_title = None if border_title is None else border_title
         # Indicates if the widget is opened from edit.
         self.from_edit = False
         # A message to display in the file item.
@@ -296,8 +297,10 @@ class FileItem(Widget):
             message_value = ""
             for message in message_dict[key]:
                 message_value += message + " " if message.endswith("\n") else message + "\n"
-            info_string += Text(humanize(key) + ": " + sep_char, style="bold green") + Text(
-                message_value + separ_line, style="white"
+            info_string += (
+                Text(humanize(key) + ": " + sep_char, style="bold green")
+                + Text(message_value + separ_line, style="white")
+                + "\n"
             )
         return info_string
 
@@ -376,7 +379,7 @@ class FileItem(Widget):
             self.get_widget_by_id("info_button").remove()
 
     @on(Button.Pressed, "#edit_button")
-    def _on_edit_button_pressed(self):
+    def _on_edit_button_pressed(self, event):
         """
         Opens a modal for selecting the search file pattern.
 
@@ -384,18 +387,19 @@ class FileItem(Widget):
         opens the `PathPatternBuilder` modal to allow the user to edit
         the file pattern.
         """
-        self.from_edit = True
-        if self.pattern_class is not None:
-            self.app.push_screen(
-                PathPatternBuilder(
-                    path=self.pattern_match_results["file_pattern"],
-                    title=self.title,
-                    highlight_colors=self.pattern_class.get_entity_colors_list,
-                    labels=self.pattern_class.get_entities,
-                    pattern_class=self.pattern_class,
-                ),
-                self._update_file_pattern,
-            )
+        if "-read-only" not in event.control.classes:
+            self.from_edit = True
+            if self.pattern_class is not None:
+                self.app.push_screen(
+                    PathPatternBuilder(
+                        path=self.pattern_match_results["file_pattern"],
+                        title=self.title,
+                        highlight_colors=self.pattern_class.get_entity_colors_list,
+                        labels=self.pattern_class.get_entities,
+                        pattern_class=self.pattern_class,
+                    ),
+                    self._update_file_pattern,
+                )
 
     @property
     def get_pattern_match_results(self) -> dict[str, Any]:
@@ -521,7 +525,7 @@ class FileItem(Widget):
                 self.post_message(self.PathPatternChanged(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#delete_button")
-    def _on_delete_button_pressed(self) -> None:
+    def _on_delete_button_pressed(self, event) -> None:
         """
         Removes the file pattern item.
 
@@ -531,10 +535,11 @@ class FileItem(Widget):
         """
         # Creation of the FileItem does not automatically imply creation in the cache.
         # For this a pattern needs to be created. By cancelling the modal, the widget is created but the filepattern is not.
-        if self.id in ctx.cache:
-            ctx.cache.pop(self.id)
-        self.remove_all_duplicates()
-        self.post_message(self.IsDeleted(self, "yes"))
+        if "-read-only" not in event.control.classes:
+            if self.id in ctx.cache:
+                ctx.cache.pop(self.id)
+            self.remove_all_duplicates()
+            self.post_message(self.IsDeleted(self, "yes"))
 
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self) -> None:

@@ -32,7 +32,7 @@ from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionMod
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
-from ..standards import field_map_labels
+from ..standards import field_map_group_labels, field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
@@ -263,16 +263,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         await self.mount(self.non_bids_panel)
 
     @on(Button.Pressed, "#add_t1_image_button")
-    async def _on_button_add_t1_image_button_pressed(self) -> None:
+    async def _on_button_add_t1_image_button_pressed(self, event) -> None:
         """
         Handles the event when the "Add" button for T1 images is pressed.
 
         This method adds a new FileItem widget for specifying a T1 image file pattern.
         """
-        if self.data_load_sucess is False:
+        # if self.data_load_sucess is False:
+        if "-read-only" not in event.control.classes:
             await self.add_t1_image(load_object=None)
-        else:
-            self.forbid_data_change()
+        # else:
+        #     self.forbid_data_change()
 
     async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -306,16 +307,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         return "t1_file_pattern_" + str(self.t1_file_pattern_counter)
 
     @on(Button.Pressed, "#add_bold_image_button")
-    async def _on_button_add_bold_image_button(self) -> None:
+    async def _on_button_add_bold_image_button(self, event) -> None:
         """
         Handles the event when the "Add" button for BOLD images is pressed.
 
         This method adds a new FileItem widget for specifying a BOLD image file pattern.
         """
-        if self.data_load_sucess is False:
+        # if self.data_load_sucess is False:
+        if "-read-only" not in event.control.classes:
             await self.add_bold_image(load_object=None)
-        else:
-            self.forbid_data_change()
+        # else:
+        #     self.forbid_data_change()
 
     async def add_bold_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -348,8 +350,31 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.bold_file_pattern_counter += 1
         return "bold_file_pattern_" + str(self.bold_file_pattern_counter)
 
+    async def add_field_map(
+        self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True, pattern_class=None, border_title=None
+    ) -> str:
+        border_title = field_map_labels[pattern_class.filedict["suffix"]] if border_title is None else border_title
+        pattern_class = None if pattern_class is None else pattern_class(app=self.app)
+        await self.get_widget_by_id("field_map_panel").mount(
+            FileItem(
+                border_title=border_title,
+                id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=pattern_class,
+                load_object=load_object,
+                message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
+            )
+        )
+        self.field_map_file_pattern_counter += 1
+        return "field_map_file_pattern_" + str(self.field_map_file_pattern_counter)
+
     @on(Button.Pressed, "#add_field_map_button")
-    def _add_field_map_file(self):
+    async def on_add_field_map_button_pressed(self, event) -> None:
+        if "-read-only" not in event.control.classes:
+            await self._select_and_add_field_maps()
+
+    async def _select_and_add_field_maps(self):
         """
          Handles the event when the "Add" button for field map files is pressed.
 
@@ -360,7 +385,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
          magnitude and phase images.
         """
 
-        def branch_field_maps(fmap_type):
+        async def branch_field_maps(fmap_type):
             """
             Branches the field map setup based on the selected field map type.
 
@@ -377,7 +402,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             """
             if fmap_type == "siemens":
                 self.show_additional_buttons_in_field_map_panel()
-                self.app.push_screen(
+                await self.app.push_screen(
                     DoubleSelectionModal(
                         title="Magnitude & phase images",
                         instructions=["Specify the type of the magnitude images", "Specify the type of the phase images"],
@@ -391,13 +416,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                                 "siemens_two_phase_image_file": "Two phase images",
                             },
                         ],
-                        #  id='magnitude_images_modal'
                     ),
                     self._mount_field_item_group,
                 )
             elif fmap_type == "philips":
                 self.show_additional_buttons_in_field_map_panel()
-                self.app.push_screen(
+                await self.app.push_screen(
                     SelectionModal(
                         title="Magnitude & phase images",
                         instructions="Specify the type of the magnitude images",
@@ -405,24 +429,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                             "philips_one_phase_image_file": "One phase difference image",
                             "philips_two_phase_image_file": "Two phase images",
                         },
-                        # id='magnitude_images_modal'
                     ),
                     self._mount_field_item_group,
                 )
             elif fmap_type == "epi":
-                self.get_widget_by_id("field_map_panel").mount(
-                    FieldMapFilesPanel(
-                        field_map_type=fmap_type,
-                        step_classes=[EPIStep()],
-                        id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
-                    )
-                )
+                await self.add_field_map(pattern_class=EPIStep)
                 self.field_map_file_pattern_counter += 1
                 self.refresh()
 
         # actual start of the function, push modal to select the field map type and the mount appropriate FieldMapFilesPanel
-        options = field_map_labels
-        self.app.push_screen(
+        options = field_map_group_labels
+        await self.app.push_screen(
             SelectionModal(
                 title="Field map type specification",
                 instructions="Specify type of the field maps",
@@ -443,7 +460,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.get_widget_by_id("associate_button").styles.visibility = "visible"
         self.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
 
-    def _mount_field_item_group(self, field_map_user_choices: list | str):
+    async def _mount_field_item_group(self, field_map_user_choices: list | str):
         """
         Mounts a group of FileItem widgets for field map files based on user choices.
 
@@ -464,33 +481,27 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         # get string whether siemens or philips
         field_map_type = field_map_user_choices[0].split("_")[0]
         # find which classes are needed
-        step_classes: List[FilePatternStep] = []
+        step_classes: List[type[FilePatternStep]] = []
 
         if any("one_mag_image_file" in s for s in field_map_user_choices):
-            step_classes += [Magnitude1Step()]
+            step_classes += [Magnitude1Step]
         elif any("two_mag_image_file" in s for s in field_map_user_choices):
-            step_classes += [Magnitude1Step(), Magnitude2Step()]
+            step_classes += [Magnitude1Step, Magnitude2Step]
         if any("one_phase_image_file" in s for s in field_map_user_choices):
-            step_classes += [PhaseDiffStep(app=self.app)]
+            step_classes += [PhaseDiffStep]
         elif any("two_phase_image_file" in s for s in field_map_user_choices):
-            step_classes += [Phase1Step(), Phase2Step()]
+            step_classes += [Phase1Step, Phase2Step]
         if field_map_type == "philips":
-            step_classes += [FieldMapStep()]
+            step_classes += [FieldMapStep]
             step_classes = step_classes[::-1]
         if field_map_type is not None:
-            self.get_widget_by_id("field_map_panel").mount(
-                FieldMapFilesPanel(
-                    field_map_type=field_map_type,
-                    step_classes=step_classes,
-                    id="field_map_file_pattern_" + str(self.field_map_file_pattern_counter),
-                )
-            )
-            self.field_map_file_pattern_counter += 1
-            self.refresh()
+            for step_class in step_classes:
+                await self.add_field_map(pattern_class=step_class)
+                self.refresh()
 
     @work
     @on(Button.Pressed, "#confirm_non_bids_button")
-    async def _confirm_non_bids_button(self):
+    async def _confirm_non_bids_button(self, event):
         """
         Validates non-BIDS file patterns and prepares for the next steps.
 
@@ -501,59 +512,61 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         files has been performed. If there are issues, it displays warning
         messages to the user.
         """
-        number_of_t1_files = []
-        number_of_bold_files = []
-        number_of_field_map_files = []
-        for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
-            number_of_t1_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
-            number_of_bold_files.append(len(widget.pattern_match_results["files"]))
-        for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
-            for sub_widget in widget.walk_children(FileItem):
-                number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
+        if "-read-only" not in event.control.classes:
+            number_of_t1_files = []
+            number_of_bold_files = []
+            number_of_field_map_files = []
+            for widget in self.get_widget_by_id("t1_image_panel").walk_children(FileItem):
+                number_of_t1_files.append(len(widget.pattern_match_results["files"]))
+            for widget in self.get_widget_by_id("bold_image_panel").walk_children(FileItem):
+                number_of_bold_files.append(len(widget.pattern_match_results["files"]))
+            for widget in self.get_widget_by_id("field_map_panel").walk_children(FieldMapFilesPanel):
+                for sub_widget in widget.walk_children(FileItem):
+                    number_of_field_map_files.append(len(sub_widget.pattern_match_results["files"]))
 
-        warning_string = ""
-        if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
-            warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
-        if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
-            warning_string += "No bold files found! Check or add the bold file pattern!\n"
-        # Fields map are not mandatory, so this does not go to the warning string.
-        # If the are field maps and the association was needed but was not done
-        if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
-            await self.app.push_screen_wait(
-                Confirm(
-                    "Check for field map association! Button 'Associate'",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    #  left_button_variant=None,
-                    right_button_variant="default",
-                    title="Check association",
-                    id="association_modal",
-                    classes="confirm_warning",
+            warning_string = ""
+            if any(value == 0 for value in number_of_t1_files) or not number_of_t1_files:
+                warning_string += "No t1 files found! Check or add the t1 file pattern!\n"
+            if any(value == 0 for value in number_of_bold_files) or not number_of_bold_files:
+                warning_string += "No bold files found! Check or add the bold file pattern!\n"
+            # Fields map are not mandatory, so this does not go to the warning string.
+            # If the are field maps and the association was needed but was not done
+            if self.association_done is False and any(value != 0 for value in number_of_field_map_files):
+                await self.app.push_screen_wait(
+                    Confirm(
+                        "Check for field map association! Button 'Associate'",
+                        left_button_text=False,
+                        right_button_text="OK",
+                        #  left_button_variant=None,
+                        right_button_variant="default",
+                        title="Check association",
+                        id="association_modal",
+                        classes="confirm_warning",
+                    )
                 )
-            )
-        if warning_string != "":
-            await self.app.push_screen_wait(
-                Confirm(
-                    warning_string,
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    title="Missing files",
-                    id="missing_files_modal",
-                    classes="confirm_warning",
+            if warning_string != "":
+                await self.app.push_screen_wait(
+                    Confirm(
+                        warning_string,
+                        left_button_text=False,
+                        right_button_text="OK",
+                        right_button_variant="default",
+                        title="Missing files",
+                        id="missing_files_modal",
+                        classes="confirm_warning",
+                    )
                 )
-            )
-        else:
-            # refresh available images so that the feature tab can use them
-            ctx.refresh_available_images()
-            # make hidden tabs visible
-            self.data_input_sucess()
-            self.app.flags_to_show_tabs["from_input_data_tab"] = True
-            self.app.show_hidden_tabs()
+            else:
+                # refresh available images so that the feature tab can use them
+                ctx.refresh_available_images()
+                # make hidden tabs visible
+                self.data_input_sucess()
+                self.app.flags_to_show_tabs["from_input_data_tab"] = True
+                self.app.show_hidden_tabs()
 
+    @work(exclusive=True, name="acq_worker")
     @on(Button.Pressed, "#associate_button")
-    def _on_associate_button_pressed(self):
+    async def _on_associate_button_pressed(self):
         """
         Handles the event when the "Associate" button is pressed.
 
@@ -562,9 +575,21 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         `AcqToTaskMappingStep`. It also sets the `association_done` flag to
         True to indicate that the association process has been started.
         """
-        acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
-        acq_to_task_mapping_step_instance.run()
-        self.association_done = True
+        if len(self.get_widget_by_id("bold_image_panel").walk_children(FileItem)) != 0:
+            acq_to_task_mapping_step_instance = AcqToTaskMappingStep(app=self.app, callback=self.callback_func)
+            await acq_to_task_mapping_step_instance.run()
+            self.association_done = True
+        else:
+            await self.app.push_screen_wait(
+                Confirm(
+                    "Add first some bold files and then associate!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No BOLD files",
+                    classes="confirm_error",
+                )
+            )
 
     @on(Button.Pressed, "#info_field_maps_button")
     def _on_info_button_pressed(self):
@@ -572,7 +597,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         Handles the event when the "Info" button is pressed.
 
         This method displays a modal dialog containing meta information about
-        the field map files. The information is retrieved from the
+        the field map files. The information is retrieved from theAcqToTaskMappingStep
         `callback_message` attribute.
         """
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
@@ -715,7 +740,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             self.get_widget_by_id("data_input_file_browser").get_widget_by_id("path_input_box").update(
                 ctx.cache["bids"]["files"]
             )
-            self.forbid_data_change()
+            # self.forbid_data_change()
 
     def update_summaries(self):
         """
@@ -753,11 +778,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.data_load_sucess = True
         await self.app.push_screen_wait(
             Confirm(
-                "Data files successfully loaded! Proceed to the next tabs:\n\n\
-➡️  General preprocessing settings ⬅️\n\
-➡️             Features            ⬅️\n\
-➡️        Group level models       ⬅️\n\
-➡️           Check and run         ⬅️",
+                "Data files successfully loaded!",
                 left_button_text=False,
                 right_button_text="OK",
                 right_button_variant="default",
@@ -780,15 +801,47 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 )
             )
 
-    def forbid_data_change(self):
-        self.app.push_screen(
-            Confirm(
-                r"The input data were already setup!\To change restart the UI.",
-                left_button_text=False,
-                right_button_text="OK",
-                right_button_variant="default",
-                title="Reload",
-                id="reload",
-                classes="confirm_warning",
+    # def forbid_data_change(self):
+    #     self.app.push_screen(
+    #         Confirm(
+    #             r"The input data were already setup!\To change restart the UI.",
+    #             left_button_text=False,
+    #             right_button_text="OK",
+    #             right_button_variant="default",
+    #             title="Reload",
+    #             id="reload",
+    #             classes="confirm_warning",
+    #         )
+    #     )
+
+    @on(Switch.Changed, ".-read-only")
+    @on(Button.Pressed, ".-read-only")
+    def _read_mode_lock(self):
+        if sum(self.app.flags_to_show_tabs.values()) == 2:
+            self.app.push_screen(
+                Confirm(
+                    "Input entries cannot be changes now! Restart UI to change them.",
+                    title="Read-only",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    id="read_only_modal",
+                    classes="confirm_error",
+                )
             )
-        )
+
+    def read_only_mode(self, value):
+        if value:
+            self.get_widget_by_id("bids_non_bids_switch").add_class("-read-only")
+            for button in [
+                "add_t1_image_button",
+                "add_bold_image_button",
+                "associate_button",
+                "add_field_map_button",
+                "confirm_non_bids_button",
+            ]:
+                self.get_widget_by_id(button).add_class("-read-only")
+            for widget in self.walk_children(FileItem):
+                widget.get_widget_by_id("edit_button").add_class("-read-only")
+                widget.get_widget_by_id("delete_button").add_class("-read-only")
+            self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
