@@ -262,7 +262,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         json_sidecar_fmriprep = index.get(
             sub=sub, suffix="timeseries", datatype="func", desc="confounds", task="rest", extension=".json"
         )
-        task_based = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", task="rest", extension=".tsv")
+        confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
         paths_to_zip.extend(
             [list(tsnr_fmriprep or [])[0], spec_file, list(json_sidecar_fmriprep or [])[0], list(task_based or [])[0]]
         )
