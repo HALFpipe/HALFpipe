@@ -261,7 +261,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
         confounds_sidecar = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".json")
         confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
-        paths_to_zip.extend(*tsnr_fmriprep, spec_file, *confounds, *confounds_sidecar)
+        paths_to_zip.extend(list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []))
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
