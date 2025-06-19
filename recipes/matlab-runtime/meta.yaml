@@ -1,0 +1,122 @@
+package:
+  name: matlab-runtime
+  version: 2022b
+
+source:
+  url: https://ssd.mathworks.com/supportfiles/downloads/R2022b/Release/10/deployment_files/installer/complete/glnxa64/MATLAB_Runtime_R2022b_Update_10_glnxa64.zip
+  sha256: 5bcee3f2be7a4ccb6ed0b7d8938eca7b33e4a0d81ec5351d6eb06150a89245eb
+
+build:
+  number: 19
+  rpaths:
+    - lib/mcr/bin/glnxa64/
+    - lib/mcr/cefclient/sys/os/glnxa64/
+    - lib/mcr/runtime/glnxa64/
+    - lib/mcr/sys/java/jre/glnxa64/jre/lib/amd64/
+    - lib/mcr/sys/java/jre/glnxa64/jre/lib/amd64/server/
+    - lib/mcr/sys/opengl/lib/glnxa64/
+    - lib/mcr/sys/os/glnxa64/
+    - lib/
+    - lib/jvm/lib/
+
+requirements:
+  build:
+    - "{{ cdt('glib2') }}"
+    - "{{ cdt('mesa-libgbm') }}"
+    - "{{ compiler('c') }}"
+    - "{{ compiler('cxx') }}"
+    - "{{ compiler('fortran') }}"
+    - sysroot_linux-64
+  host:
+    - alsa-lib
+    - antlr
+    - at-spi2-atk
+    - at-spi2-core
+    - atk-1.0
+    - cairo
+    - fontconfig
+    - freetype
+    - gdk-pixbuf
+    - gst-plugins-base
+    - gstreamer
+    - gtk3
+    - hdf4
+    - libcups
+    - libdrm
+    - libgcc
+    - libgl
+    - libglib
+    - libglu
+    - libnsl
+    - libsndfile
+    - libtiff
+    - libunwind
+    - libuuid
+    - libvulkan-loader
+    - libxcb
+    - libxkbcommon
+    - libxml2
+    - libxslt
+    - mpfr
+    - nspr
+    - nss
+    - openmpi
+    - pango
+    - sqlite
+    - xalan-c
+    - xcb-util-keysyms
+    - xcb-util-renderutil
+    - xcb-util-wm
+    - xorg-libice
+    - xorg-libsm
+    - xorg-libx11
+    - xorg-libxau
+    - xorg-libxcomposite
+    - xorg-libxcursor
+    - xorg-libxdamage
+    - xorg-libxdmcp
+    - xorg-libxext
+    - xorg-libxfixes
+    - xorg-libxft
+    - xorg-libxi
+    - xorg-libxinerama
+    - xorg-libxrandr
+    - xorg-libxrender
+    - xorg-libxt
+    - xorg-libxtst
+    - xorg-libxxf86vm
+    - zlib
+  run:
+    - fontconfig
+    - gst-plugins-base
+    - libexpat
+    - libgl
+    - libpng
+    - libpq
+    - libssh2
+    - libuuid
+    - libxcb
+    - libxkbcommon
+    - libxml2
+    - xcb-util-image
+    - xcb-util-keysyms
+    - xcb-util-renderutil
+    - xcb-util-wm
+    - xorg-libice
+    - xorg-libsm
+    - xorg-libx11
+    - xorg-libxau
+    - xorg-libxcomposite
+    - xorg-libxcursor
+    - xorg-libxdamage
+    - xorg-libxdmcp
+    - xorg-libxext
+    - xorg-libxfixes
+    - xorg-libxft
+    - xorg-libxi
+    - xorg-libxinerama
+    - xorg-libxrandr
+    - xorg-libxrender
+    - xorg-libxt
+    - xorg-libxtst
+    - xorg-libxxf86vm
