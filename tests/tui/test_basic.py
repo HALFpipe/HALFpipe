@@ -8,11 +8,25 @@ from pathlib import Path
 
 from halfpipe.logging import logger
 
-from .pilot_functions import _load_data, _set_work_dir, set_non_bids_data, settable_scroll_screen_down
+from .pilot_functions import (
+    _load_data,
+    _set_work_dir,
+    check_and_run_tab_refresh,
+    set_non_bids_data,
+    set_path_in_path_pattern_builder,
+    settable_scroll_screen_down,
+)
 
 
 async def run_before(
-    pilot, data_path=None, work_dir_path=None, t1_path_pattern=None, bold_path_pattern=None, stage=None
+    pilot,
+    data_path=None,
+    work_dir_path=None,
+    t1_path_pattern=None,
+    bold_path_pattern=None,
+    magnitude_fmap_pattern=None,
+    phase_diff_fmap_pattern=None,
+    stage=None,
 ) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
@@ -41,17 +55,82 @@ async def run_before(
         # await pilot.click("#only_one_button")
         # await pilot.press('w')
 
-    if stage == "non_bids_data_tab" or stage == "preproc_settings":
+    if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
 
         if isinstance(t1_path_pattern, Path):
             t1_path_pattern = str(t1_path_pattern)
         if isinstance(bold_path_pattern, Path):
             bold_path_pattern = str(bold_path_pattern)
-        await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern, set_repetition_time=stage == "preproc_settings")
+        await set_non_bids_data(
+            pilot,
+            t1_path_pattern,
+            bold_path_pattern,
+            set_repetition_time=stage == "preproc_settings",
+            noconfirm=stage == "non_bids_data_tab_with_fmaps",
+        )
+        # Press ok on 'All is ok, proceed further modal"
+        #
+
         # same reason for this as at work_tab case
         await pilot.click(offset=(25, 25))
         await pilot.click(offset=(25, 25))
+        if stage == "non_bids_data_tab_with_fmaps":
+            await pilot.click("#add_field_map_button")
+            # select 'Siemens' by focusing and going one down and confirming with enter
+            await pilot.press("tab")
+            await pilot.press("down")
+            await pilot.press("enter")
+            # confirm choice of the whole window
+            await pilot.click("#ok")
+            # confirm that we want one magnitude file and one phase difference file
+            await pilot.click("#ok")
+            # enter path pattern for phase difference files
+            await set_path_in_path_pattern_builder(pilot, str(phase_diff_fmap_pattern))
+            await sleep(5)
+
+            # now there is a modal with prompt for entering the echo time value, we enter there some value
+            for i in range(1, 3):
+                # now there should be a modal informing that first echo times are missing, we dismiss it
+                await pilot.click("#only_one_button")
+                await pilot.click("#input_prompt")
+                # Set echo time to '1'
+                await pilot.press(str(i))
+                # Click Ok to dismiss
+                await pilot.click("#only_one_button")
+
+            await set_path_in_path_pattern_builder(pilot, str(magnitude_fmap_pattern))
+            await settable_scroll_screen_down(pilot, 10)
+            # await sleep(5)
+            #
+            await pilot.click("#associate_button")
+            # since it our case there is nothing to associate we will get only the echo spacing missing modal,
+            # dismiss it
+            await pilot.click("#only_one_button")
+            # enter some value
+            await pilot.click("#input_prompt")
+            await pilot.press(str(9))
+            await pilot.click("#only_one_button")
+            # missing phase encoding direction modal
+            # dismiss it
+            await pilot.click("#only_one_button")
+            # select some direction
+            await pilot.press("tab")
+            await pilot.press("down")
+            await pilot.press("enter")
+            await pilot.click("#ok")
+            # click confirm
+            await pilot.click("#confirm_non_bids_button")
+            # click Ok on Modal informing us that the data input is success
+            await pilot.click("#only_one_button")
+            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            await pilot.click("#only_one_button")
+
+            # Select Check and Run tab
+            await pilot.press("r")
+            await check_and_run_tab_refresh(pilot)
+            await settable_scroll_screen_down(pilot, 20)
+
         if stage == "preproc_settings":
             # Select preprocessing settings tab
             await pilot.press("p")
@@ -94,7 +173,7 @@ async def run_before(
             await pilot.press("9")
             # random click to unfocus the input
             await pilot.click(offset=(50, 10))
-            #
+
             # Select Check and Run tab
             await pilot.press("r")
             # Click 'Refresh'
@@ -129,6 +208,28 @@ def test_non_bids_data_input_tab(
         t1_path_pattern=t1_path_pattern,
         bold_path_pattern=bold_path_pattern,
         stage="non_bids_data_tab",
+    )
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+def test_non_bids_data_input_tab_with_fmaps(
+    snap_compare,
+    start_app,
+    work_dir_path: Path,
+    t1_path_pattern: Path,
+    bold_path_pattern: Path,
+    magnitude_fmap_pattern: Path,
+    phase_diff_fmap_pattern: Path,
+) -> None:
+    """Check the non bids data input. In particular whether T1 and bold files can be loaded."""
+    run_before_with_extra_args = partial(
+        run_before,
+        work_dir_path=work_dir_path,
+        t1_path_pattern=t1_path_pattern,
+        bold_path_pattern=bold_path_pattern,
+        magnitude_fmap_pattern=magnitude_fmap_pattern,
+        phase_diff_fmap_pattern=phase_diff_fmap_pattern,
+        stage="non_bids_data_tab_with_fmaps",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 

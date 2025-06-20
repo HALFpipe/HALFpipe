@@ -79,11 +79,29 @@ class GroupLevelModelSelection(SelectionTemplate):
     def action_add_item(self) -> None:
         """Pops out the model type selection windows and then uses add_new_item function to mount a new model
         widget."""
-        occupied_item_names = [self.feature_items[item].name for item in self.feature_items]
-        self.app.push_screen(
-            GroupLevelModelSelectionModal(occupied_item_names),
-            self.add_new_item,
-        )
+        # First check whether there are actually some features, if not pop a warning modal.
+        self.tasks_to_use: dict = {}
+        for w in ctx.cache:
+            if "features" in ctx.cache[w] and ctx.cache[w]["features"] != {}:
+                if ctx.cache[w]["features"]["type"] != "atlas_based_connectivity":
+                    self.tasks_to_use[ctx.cache[w]["features"]["name"]] = True
+        if self.tasks_to_use == {}:
+            self.app.push_screen(
+                Confirm(
+                    "There are not features! Please select at least one feature and then try again.",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No features",
+                    classes="confirm_error",
+                )
+            )
+        else:
+            occupied_item_names = [self.feature_items[item].name for item in self.feature_items]
+            self.app.push_screen(
+                GroupLevelModelSelectionModal(occupied_item_names),
+                self.add_new_item,
+            )
 
     def fill_cache_and_create_new_content_item(self, new_item):
         item_type, item_name = new_item

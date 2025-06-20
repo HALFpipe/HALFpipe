@@ -119,10 +119,19 @@ entity_colors: dict[str, str] = {
 }
 
 # same as above but for field maps
-field_map_labels: dict[str, str] = {
+field_map_group_labels: dict[str, str] = {
     "epi": "EPI (blip-up blip-down)",
     "siemens": "Phase difference and magnitude (used by Siemens scanners)",
     "philips": "Scanner-computed field map and magnitude (used by GE / Philips scanners)",
+}
+
+field_map_labels: dict[str, str] = {
+    "magnitude1": "first set of magnitude image",
+    "magnitude2": "second set of magnitude image",
+    "phase1": "first set of phase image",
+    "phase2": "second set of phase image",
+    "phasediff": "phase difference image",
+    "fieldmap": "field map image",
 }
 
 

@@ -380,6 +380,9 @@ class SetMetadataStep:
                 SetValueModal(
                     title="Set value",
                     instructions=header_str,
+                    left_button_text="OK",
+                    right_button_text=False,
+                    left_button_variant="default",
                     id="select_value_modal",
                 )
             )
@@ -675,7 +678,6 @@ class CheckMetadataStep:
                     " ".join(self._append_view),
                     left_button_text=False,
                     right_button_text="OK",
-                    #  left_button_variant=None,
                     right_button_variant="default",
                     title="Missing images",
                     id="missing_images_modal",
@@ -739,24 +741,16 @@ class CheckMetadataStep:
             pass
 
 
-class CheckPhaseDiffEchoTimeDiffStep(CheckMetadataStep):
-    """
-    Checks the echo time difference for phase difference field map files.
-
-    This class extends CheckMetadataStep to specifically handle the echo
-    time difference metadata for phase difference field map files.
-
-    Attributes
-    ----------
-    schema : ClassVar[Type[PhaseDiffFmapFileSchema]]
-        The schema for phase difference field map files.
-    key : ClassVar[str]
-        The metadata key for echo time difference.
-    """
-
+class CheckPhaseDiffEchoTime2Step(CheckMetadataStep):
     schema = PhaseDiffFmapFileSchema
-    key = "echo_time_difference"
+    key = "echo_time2"
     # next_step_type = HasMoreFmapStep
+
+
+class CheckPhaseDiffEchoTime1Step(CheckMetadataStep):
+    schema = PhaseDiffFmapFileSchema
+    key = "echo_time1"
+    next_step_type = CheckPhaseDiffEchoTime2Step
 
 
 class CheckPhase1EchoTimeStep(CheckMetadataStep):
@@ -979,6 +973,19 @@ class AcqToTaskMappingStep:
         formats them for display, and prepares the options and values
         for the user interface.
         """
+
+        def _format_tags(tagset, break_lines=False):
+            tagdict = dict(tagset)
+            if break_lines is True:
+                break_char = "\n"
+            else:
+                break_char = ""
+            return ", ".join(
+                (f'{break_char}{e}:"{tagdict[e]}"' if e not in entity_longnames else f'{entity_longnames[e]} "{tagdict[e]}"')
+                for e in entities
+                if e in tagdict and tagdict[e] is not None
+            )
+
         fmapfilepaths = ctx.database.get(**self.filedict)
         fmaptags = sorted(
             set(
@@ -1003,32 +1010,15 @@ class AcqToTaskMappingStep:
             )
         )
         self.boldtags = boldtags
+        self.options = [_format_tags(t).capitalize() for t in boldtags]
 
         if len(fmaptags) > 0:
-
-            def _format_tags(tagset, break_lines=False):
-                tagdict = dict(tagset)
-                if break_lines is True:
-                    break_char = "\n"
-                else:
-                    break_char = ""
-                return ", ".join(
-                    (
-                        f'{break_char}{e}:"{tagdict[e]}"'
-                        if e not in entity_longnames
-                        else f'{entity_longnames[e]} "{tagdict[e]}"'
-                    )
-                    for e in entities
-                    if e in tagdict and tagdict[e] is not None
-                )
-
             self.is_predefined = False
 
             self._append_view = []
             self.input_view = []
             self._append_view.append("Assign field maps to functional images")
 
-            self.options = [_format_tags(t).capitalize() for t in boldtags]
             self.values = [f"Field map {_format_tags(t, break_lines=True)}".strip() for t in fmaptags]
             selected_indices = [self.fmaptags.index(o) if o in fmaptags else 0 for o in boldtags]
 
@@ -1037,7 +1027,7 @@ class AcqToTaskMappingStep:
         else:
             self.is_predefined = True
 
-    def run(self):
+    async def run(self):
         """
         Runs the acquisition-to-task mapping process.
 
@@ -1047,14 +1037,15 @@ class AcqToTaskMappingStep:
         self.evaluate()
 
         if self.is_predefined:
-            self.next(None)
+            await self.next(None)
         else:
             # rise modal here
-            self.app.push_screen(
-                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options), self.next
+            choice = await self.app.push_screen_wait(
+                MultipleRadioSetModal(horizontal_label_set=self.values, vertical_label_set=self.options)
             )
+            await self.next(choice)
 
-    def next(self, results):
+    async def next(self, results):
         """
         Handles the next step after mapping acquisition to tasks.
 
@@ -1069,71 +1060,84 @@ class AcqToTaskMappingStep:
         """
         if results is not None:
             self.callback_message["AcqToTaskMapping"] = [
-                f"{key} >===< {self.values[results[key]]}".replace("\n", "") + "\n" for key in results
+                f"{key} >===< {self.values[results[key].index(True)]}".replace("\n", "") + "\n" for key in results
             ]
-
             bold_fmap_tag_dict = {
-                boldtagset: self.fmaptags[results[option]]
+                boldtagset: self.fmaptags[results.get(option).index(True)]
                 for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+                if results.get(option) is not None
             }
+        else:
+            # When there is nothing to map, e.g., there was not modal to match the fields with tasks,
+            # the field in "acq.null" is still filled out. To not rise unnecessary modal, we create here the
+            # bold_fmap_tag_dict so that later this field is filled.
+            self.callback_message["AcqToTaskMapping"] = ["No acquisition to task mapping was needed.\n"]
+            bold_fmap_tag_dict = {
+                boldtagset: frozenset() for option, boldtagset in zip(self.options, self.boldtags, strict=False)
+            }
+            self.fmaptags = [frozenset()]
 
-            fmap_bold_tag_dict = dict()
-            for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
-                if fmaptagset not in fmap_bold_tag_dict:
-                    fmap_bold_tag_dict[fmaptagset] = boldtagset
+        fmap_bold_tag_dict = dict()
+        for boldtagset, fmaptagset in bold_fmap_tag_dict.items():
+            if fmaptagset not in fmap_bold_tag_dict:
+                fmap_bold_tag_dict[fmaptagset] = boldtagset
+            else:
+                fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
+
+        for specfileobj in ctx.spec.files:
+            if specfileobj.datatype != "fmap":
+                continue
+
+            fmaplist = ctx.database.fromspecfileobj(specfileobj)
+            fmaptags = set(
+                frozenset(
+                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                )
+                for f in map(attrgetter("path"), fmaplist)
+            )
+
+            def _expand_fmaptags(tagset):
+                if any(a == "acq" for a, _ in tagset):
+                    return tagset
                 else:
-                    fmap_bold_tag_dict[fmaptagset] = fmap_bold_tag_dict[fmaptagset] | boldtagset
+                    return tagset | frozenset([("acq", "null")])
 
-            for specfileobj in ctx.spec.files:
-                if specfileobj.datatype != "fmap":
-                    continue
-
-                fmaplist = ctx.database.fromspecfileobj(specfileobj)
-                fmaptags = set(
-                    frozenset(
-                        (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
-                    )
-                    for f in map(attrgetter("path"), fmaplist)
+            mappings = set(
+                (a, b)
+                for fmap in fmaptags
+                for a, b in product(
+                    fmap_bold_tag_dict.get(fmap, list()),
+                    _expand_fmaptags(fmap),
                 )
+                if a[0] != b[0] and "sub" not in (a[0], b[0])
+            )
 
-                def _expand_fmaptags(tagset):
-                    if any(a == "acq" for a, _ in tagset):
-                        return tagset
-                    else:
-                        return tagset | frozenset([("acq", "null")])
+            intended_for: dict[str, list[str]] = dict()
+            for functag, fmaptag in mappings:
+                entity, val = functag
+                funcstr = f"{entity}.{val}"
+                entity, val = fmaptag
+                fmapstr = f"{entity}.{val}"
+                if fmapstr not in intended_for:
+                    intended_for[fmapstr] = list()
+                intended_for[fmapstr].append(funcstr)
 
-                mappings = set(
-                    (a, b)
-                    for fmap in fmaptags
-                    for a, b in product(
-                        fmap_bold_tag_dict.get(fmap, list()),
-                        _expand_fmaptags(fmap),
-                    )
-                    if a[0] != b[0] and "sub" not in (a[0], b[0])
-                )
+            # sort, this is to avoid false CI tests
+            for fmapstr in intended_for:
+                intended_for[fmapstr].sort()
 
-                intended_for: dict[str, list[str]] = dict()
-                for functag, fmaptag in mappings:
-                    entity, val = functag
-                    funcstr = f"{entity}.{val}"
-                    entity, val = fmaptag
-                    fmapstr = f"{entity}.{val}"
-                    if fmapstr not in intended_for:
-                        intended_for[fmapstr] = list()
-                    intended_for[fmapstr].append(funcstr)
+            specfileobj.intended_for = intended_for
 
-                specfileobj.intended_for = intended_for
-
-                for name in ctx.cache:
-                    if ctx.cache[name]["files"] != {}:
-                        if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
-                            ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
+            for name in ctx.cache:
+                if ctx.cache[name]["files"] != {}:
+                    if ctx.cache[name]["files"].path == specfileobj.path:  # type: ignore[attr-defined]
+                        ctx.cache[name]["files"].intended_for = intended_for  # type: ignore[attr-defined]
         next_step_instance = CheckBoldEffectiveEchoSpacingStep(
             app=self.app,
             callback=self.callback,
             callback_message=self.callback_message,
         )
-        next_step_instance.run()
+        await next_step_instance.run()
 
 
 class CheckBoldSliceTimingStep(CheckMetadataStep):
