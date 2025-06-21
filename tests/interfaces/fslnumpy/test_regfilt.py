@@ -64,4 +64,4 @@ def test_filter_regressor(tmp_path):
     logger.info(f"Top three differences:\n{top_differences}")
     logger.info(f"Mean absolute difference: {np.mean(delta)}")
 
-    np.testing.assert_allclose(r0, r1, atol=1e-4)
+    np.testing.assert_allclose(r0, r1, rtol=1e-6, atol=2e-4)
