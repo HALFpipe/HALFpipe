@@ -1,3 +1,7 @@
+# personal - maintain an in-project directory for individual contributor notes, snippets, etc.
+personal
+.devcontainer
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
