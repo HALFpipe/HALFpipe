@@ -618,8 +618,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
         if self.data_load_sucess is False:
             await self.toggle_bids_non_bids_format(message.value)
-        else:
-            self.forbid_data_change()
+        # else:
+        #     self.forbid_data_change()
 
     @on(Switch.Changed, "#lesion_mask_switch")
     async def on_lesion_maps_switch_changed(self, message: Message):
@@ -833,15 +833,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def read_only_mode(self, value):
         if value:
             self.get_widget_by_id("bids_non_bids_switch").add_class("-read-only")
-            for button in [
-                "add_t1_image_button",
-                "add_bold_image_button",
-                "associate_button",
-                "add_field_map_button",
-                "confirm_non_bids_button",
-            ]:
-                self.get_widget_by_id(button).add_class("-read-only")
-            for widget in self.walk_children(FileItem):
-                widget.get_widget_by_id("edit_button").add_class("-read-only")
-                widget.get_widget_by_id("delete_button").add_class("-read-only")
-            self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
+            if not self.app.is_bids:
+                for button in [
+                    "add_t1_image_button",
+                    "add_bold_image_button",
+                    "associate_button",
+                    "add_field_map_button",
+                    "confirm_non_bids_button",
+                ]:
+                    self.get_widget_by_id(button).add_class("-read-only")
+                for widget in self.walk_children(FileItem):
+                    widget.get_widget_by_id("edit_button").add_class("-read-only")
+                    widget.get_widget_by_id("delete_button").add_class("-read-only")
+            else:
+                self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
