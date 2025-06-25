@@ -32,7 +32,7 @@ from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionMod
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
-from ..standards import field_map_group_labels, field_map_labels
+from ..standards import field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
@@ -616,10 +616,9 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         message : Message
             The message object containing information about the switch change.
         """
-        if self.data_load_sucess is False:
-            await self.toggle_bids_non_bids_format(message.value)
-        # else:
-        #     self.forbid_data_change()
+        if "-read-only" not in message.control.classes:
+            self.toggle_bids_non_bids_format(message.value)
+
 
     @on(Switch.Changed, "#lesion_mask_switch")
     async def on_lesion_maps_switch_changed(self, message: Message):
