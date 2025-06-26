@@ -32,7 +32,7 @@ from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionMod
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
-from ..standards import field_map_labels
+from ..standards import field_map_group_labels, field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
 
 
@@ -86,6 +86,20 @@ class DataInput(Widget):
         # We need this flag to check before loading whether there was no previous data load already.
         # If so, the we need to reload some widget and refresh context cache and database.
         self.data_load_sucess = False
+        # Prevent switches from mounting/unmounting when we load from a file and just need to flip the switch without
+        # actually doing something more. This is because mounting and unmounting is performed directly by calling
+        # method toggle_something_something. The suppressing is automatically lifted after one call when this suppress
+        # variable is active.
+        self._suppress_bids_non_bids_switch_event = False
+        self._suppress_lesion_mask_switch_event = False
+
+    def supress_switch_events(self):
+        self._suppress_bids_non_bids_switch_event = True
+        self._suppress_lesion_mask_switch_event = True
+
+    def enable_switch_events(self):
+        self._suppress_bids_non_bids_switch_event = False
+        self._suppress_lesion_mask_switch_event = False
 
     def callback_func(self, message_dict: dict[str, list[str]]) -> None:
         """
@@ -616,9 +630,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         message : Message
             The message object containing information about the switch change.
         """
-        if "-read-only" not in message.control.classes:
-            self.toggle_bids_non_bids_format(message.value)
-
+        if "-read-only" not in message.control.classes and not self._suppress_bids_non_bids_switch_event:
+            await self.toggle_bids_non_bids_format(message.value)
 
     @on(Switch.Changed, "#lesion_mask_switch")
     async def on_lesion_maps_switch_changed(self, message: Message):
@@ -634,8 +647,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         message : Message
             The message object containing information about the switch change.
         """
+        if not self._suppress_lesion_mask_switch_event:
+            await self.toggle_lesion_mask_panel(message.value)
+
+    async def toggle_lesion_mask_panel(self, value):
         lesion_mask_panel = self.get_widget_by_id("lesion_mask_panel")
-        if message.value:
+        if value:
             lesion_mask_pattern_panel = VerticalScroll(
                 Button("Add", id="add_lesion_mask_button"), id="lesion_mask_pattern_panel", classes="non_bids_panels"
             )

@@ -360,6 +360,7 @@ class MainApp(App):
         LoggingContext.disable_print()
         super().__init__(**kwargs)
         self._global_settings_defaults = deepcopy(global_settings_defaults)
+        self.tab_manager = TabbedContent(id="tabs_manager")
 
     def compose(self) -> ComposeResult:
         """
@@ -374,7 +375,7 @@ class MainApp(App):
             The result of composing the application layout.
         """
         yield MyHeader(id="header")
-        with TabbedContent(id="tabs_manager"):
+        with self.tab_manager:
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
                 yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
@@ -414,14 +415,15 @@ class MainApp(App):
         `flags_to_show_tabs` are True.
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
+        tab_manager = self.tab_manager
         if sum(self.flags_to_show_tabs.values()) == 2:
-            self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("models_tab")
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("work_dir_tab").styles.opacity = 0.7
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("input_data_tab").styles.opacity = 0.7
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("input_data_content").read_only_mode(True)
+            tab_manager.show_tab("preprocessing_tab")
+            tab_manager.show_tab("feature_selection_tab")
+            tab_manager.show_tab("models_tab")
+            tab_manager.get_widget_by_id("work_dir_tab").styles.opacity = 0.7
+            tab_manager.get_widget_by_id("input_data_tab").styles.opacity = 0.7
+            tab_manager.get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
+            # tab_manager.get_widget_by_id("input_data_content").read_only_mode(True)
 
             self.app.push_screen(
                 Confirm(

@@ -15,6 +15,7 @@ from .features.dual_reg import DualReg
 from .features.preproc_output import PreprocessedOutputOptions
 from .features.seed_based import SeedBased
 from .features.task_based import TaskBased
+from .help_functions import widget_exists
 from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
 from .specialized_widgets.filebrowser import path_test_for_bids
@@ -89,6 +90,9 @@ async def cache_file_patterns(self):
         return "\n".join(output)
 
     data_input_widget = self.app.get_widget_by_id("input_data_content")
+    # Suppress actions done when switch is toggled. We do the mounting directly by calling the method.
+    data_input_widget.supress_switch_events()
+
     preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
     self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
     self.model_widget = self.app.get_widget_by_id("models_content")
@@ -98,7 +102,6 @@ async def cache_file_patterns(self):
     # The created widgets should avoid using step and meta classes upon creation as these triggers various user choice
     # modals.
     if self.existing_spec is not None:
-        self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(False)
         spreadsheet_counter = 0
         fmaps = False
         intended_for = ""
@@ -108,7 +111,15 @@ async def cache_file_patterns(self):
         self.spatial_map_file_objects = []
 
         preprocessing_widget.default_settings = self.existing_spec.global_settings
-        preprocessing_widget = preprocessing_widget.refresh(recompose=True)
+        preprocessing_widget.refresh(recompose=True)
+
+        # We want to start with non-bids and switch to bids, because if it is bids data then basically, except for the
+        # possible lesion maps, there will be only one file object and that would be the file to the bids data.
+        # To make sure that the format is set to non-bids we check by this 'if' if the user did not already switch it.
+        if self.app.is_bids:
+            await data_input_widget.toggle_bids_non_bids_format(False)
+            data_input_widget.get_widget_by_id("bids_non_bids_switch").value = False
+            # data_input_widget._suppress_bids_non_bids_switch_event = True
 
         for f in self.existing_spec.files:
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
@@ -116,12 +127,16 @@ async def cache_file_patterns(self):
             f = replace_with_longnames(f)
 
             if f.datatype == "bids":
+                await data_input_widget._build_and_mount_bids_panels()
+                await data_input_widget.get_widget_by_id("non_bids_panel").remove()
+                self.app_is_bids = True
+                # Flip the switch
+                data_input_widget.get_widget_by_id("bids_non_bids_switch").value = True
                 ctx.cache["bids"]["files"] = f.path
                 data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
                 # this is the function used when we are loading bids data files, in also checks if the data
                 # folder contains bids files, and if yes, then it also extracts the tasks (images)
                 path_test_for_bids(f.path)
-                self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(True)
             # need to create a FileItem widgets for all non-bids files
             elif f.datatype == "spreadsheet":
                 ctx.cache["__spreadsheet_file_" + str(spreadsheet_counter)]["files"] = f
@@ -138,6 +153,10 @@ async def cache_file_patterns(self):
                 )
                 ctx.cache[widget_name]["files"] = f
             elif f.suffix == "roi" or f.suffix == "mask":
+                if not widget_exists(data_input_widget, "lesion_mask_pattern_panel"):
+                    await data_input_widget.toggle_lesion_mask_panel(True)
+                    data_input_widget.get_widget_by_id("lesion_mask_switch").value = True
+
                 widget_name = await data_input_widget.add_lesion_mask(
                     load_object=f, message_dict=None, execute_pattern_class_on_mount=False
                 )
@@ -167,7 +186,8 @@ async def cache_file_patterns(self):
                 self.spatial_map_file_objects.append(f)
 
         ctx.refresh_available_images()
-        data_input_widget.update_summaries()
+        if self.app.is_bids:
+            data_input_widget.update_summaries()
         if ctx.get_available_images == {}:
             self.data_input_success = await self.app.push_screen_wait(
                 Confirm(
@@ -199,6 +219,8 @@ async def cache_file_patterns(self):
             data_input_widget.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
             data_input_widget.callback_message = intended_for
 
+        data_input_widget.enable_switch_events()
+
 
 async def mount_features(self):
     """
@@ -210,12 +232,13 @@ async def mount_features(self):
     setting data and then adds the corresponding widgets to the UI.
     """
     feature_widget = self.feature_widget
-
+    print("ssssssssssssssssssssssssssssssssssssssssssssssstart")
     setting_feature_map = {}
     if self.existing_spec is not None:
         for feature in self.existing_spec.features:
             ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
             setting_feature_map[feature.__dict__["setting"]] = feature.name
+            print(".iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", setting_feature_map)
 
         for setting in self.existing_spec.settings:
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
@@ -258,6 +281,8 @@ async def mount_features(self):
             elif ctx.cache[top_name]["settings"] != {}:
                 name = ctx.cache[top_name]["settings"]["name"]
                 await feature_widget.add_new_item(["preprocessed_image", name.replace("Setting", "")])
+
+    print("cccccccccccccccccccccccccccccccccccccc", ctx.cache)
 
 
 async def mount_file_panels(self) -> None:
