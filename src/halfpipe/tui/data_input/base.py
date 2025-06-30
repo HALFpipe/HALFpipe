@@ -15,6 +15,7 @@ from ..data_analyzers.context import ctx
 from ..data_analyzers.file_pattern_steps import (
     AnatMaskStep,
     AnatStep,
+    AnatT2wStep,
     BoldStep,
     EPIStep,
     FieldMapStep,
@@ -26,7 +27,7 @@ from ..data_analyzers.file_pattern_steps import (
     PhaseDiffStep,
 )
 from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
-from ..data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
+from ..data_analyzers.summary_steps import AnatSummaryStep, AnatT2wSummaryStep, BoldSummaryStep, FmapSummaryStep
 from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
@@ -78,6 +79,7 @@ class DataInput(Widget):
         are cached in the ctx.cache.
         """
         self.t1_file_pattern_counter = 0
+        self.t2_file_pattern_counter = 0
         self.bold_file_pattern_counter = 0
         self.field_map_file_pattern_counter = 0
         self.lesion_mask_file_pattern_counter = 0
@@ -208,6 +210,7 @@ BIDS standard location in derivatives, you must specify the lesion masks also in
             DataSummaryLine(id="feedback_anat"),
             DataSummaryLine(id="feedback_bold"),
             DataSummaryLine(id="feedback_fmap"),
+            DataSummaryLine(id="feedback_anatT2w"),
             id="bids_summary_panel",
             classes="components",
         )
@@ -236,6 +239,9 @@ BIDS standard location in derivatives, you must specify the lesion masks also in
             ),
             id="field_map_panel",
             classes="non_bids_panels",
+        )
+        self.t2_image_panel = VerticalScroll(
+            Button("Add", id="add_t2_image_button"), id="t2_image_panel", classes="non_bids_panels"
         )
         self.non_bids_panel = VerticalScroll(
             # """ Some instructions at the beginning. """
@@ -269,6 +275,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             #     After this is done, any editing should be prohibited and the features and other remaining tabs should become
             #     visible.
             # """
+            self.t2_image_panel,
             VerticalScroll(
                 Button("Confirm", id="confirm_non_bids_button", variant="error"),
                 id="confirm_button_container",
@@ -279,6 +286,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         )
         self.non_bids_panel.border_title = "Path pattern setup"
         self.t1_image_panel.border_title = "T1-weighted image file pattern"
+        self.t2_image_panel.border_title = "T2-weighted image file pattern"
         self.bold_image_panel.border_title = "BOLD image files patterns"
         self.field_map_panel.border_title = "Field maps"
         await self.mount(self.non_bids_panel)
@@ -290,11 +298,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         This method adds a new FileItem widget for specifying a T1 image file pattern.
         """
-        # if self.data_load_sucess is False:
         if "-read-only" not in event.control.classes:
             await self.add_t1_image(load_object=None)
-        # else:
-        #     self.forbid_data_change()
 
     async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -326,6 +331,47 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         )
         self.t1_file_pattern_counter += 1
         return "t1_file_pattern_" + str(self.t1_file_pattern_counter)
+
+    @on(Button.Pressed, "#add_t2_image_button")
+    async def _on_button_add_t2_image_button_pressed(self, event) -> None:
+        """
+        Handles the event when the "Add" button for T2 images is pressed.
+
+        This method adds a new FileItem widget for specifying a T2 image file pattern.
+        """
+        if "-read-only" not in event.control.classes:
+            await self.add_t2_image(load_object=None)
+
+    async def add_t2_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
+        """
+        Adds a FileItem widget for specifying a T1 image file pattern.
+
+        Parameters
+        ----------
+        load_object : Any, optional
+            An object to load into the FileItem, by default None.
+        message_dict : dict[str, list[str]], optional
+            A dictionary of messages for the FileItem, by default None.
+        execute_pattern_class_on_mount : bool, optional
+            Whether to execute the pattern class on mount, by default True.
+
+        Returns
+        -------
+        str
+            A tuple containing the ID of the newly added FileItem widget.
+        """
+        await self.get_widget_by_id("t2_image_panel").mount(
+            FileItem(
+                id="t2_file_pattern_" + str(self.t1_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=AnatT2wStep(app=self.app),
+                load_object=load_object,
+                message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
+            )
+        )
+        self.t2_file_pattern_counter += 1
+        return "t2_file_pattern_" + str(self.t2_file_pattern_counter)
 
     @on(Button.Pressed, "#add_bold_image_button")
     async def _on_button_add_bold_image_button(self, event) -> None:
@@ -777,10 +823,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
 
         anat_summary_step = AnatSummaryStep()
+        anat_t2w_summary_step = AnatT2wSummaryStep()
         bold_summary_step = BoldSummaryStep()
         fmap_summary_step = FmapSummaryStep()
 
         self.get_widget_by_id("feedback_anat").update_summary(anat_summary_step.get_summary)
+        self.get_widget_by_id("feedback_anatT2w").update_summary(anat_t2w_summary_step.get_summary)
         self.get_widget_by_id("feedback_bold").update_summary(bold_summary_step.get_summary)
         self.get_widget_by_id("feedback_fmap").update_summary(fmap_summary_step.get_summary)
 

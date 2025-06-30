@@ -2,7 +2,7 @@
 
 from typing import ClassVar, Dict, List, Type, Union
 
-from ...model.file.anat import T1wFileSchema
+from ...model.file.anat import T1wFileSchema, T2wFileSchema
 from ...model.file.base import BaseFileSchema
 from ...model.file.fmap import (
     BaseFmapFileSchema,
@@ -182,6 +182,31 @@ class AnatSummaryStep(FilePatternSummaryStep):
     filetype_str = "T1-weighted image"
     filedict = {"datatype": "anat", "suffix": "T1w"}
     schema = T1wFileSchema
+
+
+class AnatT2wSummaryStep(FilePatternSummaryStep):
+    """
+    Summary step for anatomical (T1-weighted) imaging files.
+
+    This class extends FilePatternSummaryStep to provide a summary
+    specifically for T1-weighted anatomical images.
+
+    Attributes
+    ----------
+    filetype_str : str
+        Descriptive string for the type of file, indicating it is a
+        "T1-weighted image".
+    filedict : dict[str, str]
+        Dictionary defining the file pattern components, here specifying
+        that the `datatype` is "anat" and the `suffix` is "T1w".
+    schema : Type[T1wFileSchema]
+        Schema class used for validating and processing T1-weighted
+        image files.
+    """
+
+    filetype_str = "T2-weighted image"
+    filedict = {"datatype": "anat", "suffix": "T2w"}
+    schema = T2wFileSchema
 
 
 class BoldSummaryStep(FilePatternSummaryStep):

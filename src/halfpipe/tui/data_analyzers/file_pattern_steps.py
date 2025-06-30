@@ -4,7 +4,7 @@
 from typing import Dict, List, Type, Union
 
 from ...ingest.glob import tag_parse
-from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema
+from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema, T2wFileSchema
 from ...model.file.base import BaseFileSchema, File
 from ...model.file.fmap import (
     BaseFmapFileSchema,
@@ -290,6 +290,30 @@ class AnatMaskStep(FilePatternStep):
     filedict = {"datatype": "anat", "suffix": "roi"}
 
     schema = T1wMaskFileSchema
+
+
+class AnatT2wStep(FilePatternStep):
+    """
+    File pattern step for handling anatomical (T2-weighted) images.
+
+    This class extends FilePatternStep to specifically handle T2-weighted
+    anatomical images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for T2-weighted images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[T1wFileSchema]
+        The schema for T2-weighted images.
+    """
+
+    required_in_path_entities = ["subject"]
+    header_str = "T2-weighted image file pattern"
+    filetype_str = "T2-weighted image"
+    filedict = {"datatype": "anat", "suffix": "T2w"}
+
+    schema = T2wFileSchema
 
 
 class EventsStep(FilePatternStep):
