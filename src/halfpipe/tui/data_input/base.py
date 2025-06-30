@@ -144,6 +144,8 @@ class DataInput(Widget):
         """
         # First we define widgets (panels) in order to be able later put titles on them
         """Switch in between the BIDS and non BIDS widgets."""
+        self.build_bids_panels()
+
         instructions_panel = Container(
             Static(
                 "If 'on' then just select the BIDS top directory. Otherwise you must select file patterns\
@@ -181,13 +183,20 @@ BIDS standard location in derivatives, you must specify the lesion masks also in
 
         # populate the generator
         yield instructions_panel
+        yield self.bids_panel
+        yield self.bids_summary_panel
         yield lesion_mask_panel
 
-    async def on_mount(self) -> None:
-        await self._build_and_mount_bids_panels()
+    # async def on_mount(self) -> None:
+    #     await self._build_and_mount_bids_panels()
 
     async def _build_and_mount_bids_panels(self):
         """If BIDS is ON:"""
+        self.build_bids_panels()
+        await self.mount(self.bids_panel, after="#instructions")
+        await self.mount(self.bids_summary_panel, after="#bids_panel")
+
+    def build_bids_panels(self):
         self.bids_panel = Grid(
             FileBrowserForBIDS(path_to="INPUT DATA DIRECTORY", id="data_input_file_browser"),
             id="bids_panel",
@@ -204,8 +213,6 @@ BIDS standard location in derivatives, you must specify the lesion masks also in
         )
         self.bids_panel.border_title = "Path to BIDS directory"
         self.bids_summary_panel.border_title = "Data input file summary"
-        await self.mount(self.bids_panel, after="#instructions")
-        await self.mount(self.bids_summary_panel, after="#bids_panel")
 
     async def _build_and_mount_non_bids_panel(self):
         """If non-BIDS is ON:"""

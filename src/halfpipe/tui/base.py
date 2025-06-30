@@ -362,6 +362,8 @@ class MainApp(App):
         self._global_settings_defaults = deepcopy(global_settings_defaults)
         self.tab_manager = TabbedContent(id="tabs_manager")
 
+        self.tabs_are_visible = False
+
     def compose(self) -> ComposeResult:
         """
         Composes the main application layout.
@@ -416,7 +418,7 @@ class MainApp(App):
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         tab_manager = self.tab_manager
-        if sum(self.flags_to_show_tabs.values()) == 2:
+        if sum(self.flags_to_show_tabs.values()) == 2 and not self.tabs_are_visible:
             tab_manager.show_tab("preprocessing_tab")
             tab_manager.show_tab("feature_selection_tab")
             tab_manager.show_tab("models_tab")
@@ -440,6 +442,7 @@ The working tab and data tab are now read only! Do not change entries here!",
                     classes="confirm_success",
                 )
             )
+            self.tabs_are_visible = True
 
     def hide_tabs(self) -> None:
         """

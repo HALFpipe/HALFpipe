@@ -119,7 +119,6 @@ async def cache_file_patterns(self):
         if self.app.is_bids:
             await data_input_widget.toggle_bids_non_bids_format(False)
             data_input_widget.get_widget_by_id("bids_non_bids_switch").value = False
-            # data_input_widget._suppress_bids_non_bids_switch_event = True
 
         for f in self.existing_spec.files:
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
@@ -132,6 +131,7 @@ async def cache_file_patterns(self):
                 self.app_is_bids = True
                 # Flip the switch
                 data_input_widget.get_widget_by_id("bids_non_bids_switch").value = True
+
                 ctx.cache["bids"]["files"] = f.path
                 data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
                 # this is the function used when we are loading bids data files, in also checks if the data
@@ -232,19 +232,17 @@ async def mount_features(self):
     setting data and then adds the corresponding widgets to the UI.
     """
     feature_widget = self.feature_widget
-    print("ssssssssssssssssssssssssssssssssssssssssssssssstart")
     setting_feature_map = {}
     if self.existing_spec is not None:
         for feature in self.existing_spec.features:
             ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
             setting_feature_map[feature.__dict__["setting"]] = feature.name
-            print(".iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii", setting_feature_map)
 
         for setting in self.existing_spec.settings:
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
             # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
 
-            if setting["output_image"] is not True:
+            if not setting["output_image"]:
                 # In case of falff, there is also unfiltered setting which is essentially the same as normal setting
                 # but without the bandpass filter. So we put only the normal setting into the cache because in the run
                 # tab the unfiltered setting will be created automatically form the normal setting.
@@ -253,9 +251,14 @@ async def mount_features(self):
             else:
                 ctx.cache[setting["name"]]["features"] = {}
                 ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
+                ctx.cache[setting["name"]]["settings"].setdefault("smoothing", {"fwhm": None})
+
+                ctx.cache[setting["name"]]["settings"].setdefault("grand_mean_scaling", {"mean": None})
+                ctx.cache[setting["name"]]["settings"].setdefault("bandpass_filter", {"type": None})
 
             if setting["name"] in setting_feature_map:
                 cache_entry: dict = ctx.cache.get(setting_feature_map[setting["name"]], {})
+
                 if isinstance(cache_entry, dict):
                     settings = cache_entry.get("settings", {})
                     feature = cache_entry.get("features", {})
@@ -281,8 +284,6 @@ async def mount_features(self):
             elif ctx.cache[top_name]["settings"] != {}:
                 name = ctx.cache[top_name]["settings"]["name"]
                 await feature_widget.add_new_item(["preprocessed_image", name.replace("Setting", "")])
-
-    print("cccccccccccccccccccccccccccccccccccccc", ctx.cache)
 
 
 async def mount_file_panels(self) -> None:

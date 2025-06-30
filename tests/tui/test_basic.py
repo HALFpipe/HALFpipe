@@ -32,6 +32,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
 
     pilot.app.reload_ui()
+
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -73,8 +74,9 @@ async def run_before(
         #
 
         # same reason for this as at work_tab case
-        await pilot.click(offset=(25, 25))
-        await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+
         if stage == "non_bids_data_tab_with_fmaps":
             await pilot.click("#add_field_map_button")
             # select 'Siemens' by focusing and going one down and confirming with enter
