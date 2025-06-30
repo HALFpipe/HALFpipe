@@ -36,6 +36,8 @@ async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None
         # Spec file found modal, click Load
         # await pilot.click(offset=(100, 31))
         await pilot.click("#ok_left_button")
+        # click ok on modal informing us that all went ok
+        await pilot.click("#only_one_button")
 
 
 async def enter_browse_path(pilot, path):
@@ -316,7 +318,8 @@ async def check_and_run_tab_refresh(pilot) -> None:
 async def toggle_bids_non_bids(pilot) -> None:
     # toggle bids to non bids
     # await pilot.click(offset=(113, 14))
-    await pilot.click("#bids_non_bids_switch")
+    # await pilot.click("#bids_non_bids_switch")
+    await pilot.click(pilot.app.get_widget_by_id("input_data_content").get_widget_by_id("bids_non_bids_switch"))
 
 
 # async def fill_path_pattern_modal(pilot, path_patter):
@@ -339,7 +342,7 @@ async def set_non_bids_data(
     # await pilot.click(offset=(113, 14))
     # await pilot.click('#bids_non_bids_switch')
     await toggle_bids_non_bids(pilot)
-
+    await settable_scroll_screen_down(pilot, 30)
     ### add T1
     # await pilot.click(offset=(57, 35))
     await pilot.click("#add_t1_image_button")
