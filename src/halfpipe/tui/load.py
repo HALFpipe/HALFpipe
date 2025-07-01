@@ -92,6 +92,7 @@ async def cache_file_patterns(self):
     data_input_widget = self.app.get_widget_by_id("input_data_content")
     # Suppress actions done when switch is toggled. We do the mounting directly by calling the method.
     data_input_widget.supress_switch_events()
+    self.data_input_widget = data_input_widget
 
     preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
     self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
@@ -149,6 +150,11 @@ async def cache_file_patterns(self):
                 ctx.cache[widget_name]["files"] = f
             elif f.suffix == "T1w":
                 widget_name = await data_input_widget.add_t1_image(
+                    load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                )
+                ctx.cache[widget_name]["files"] = f
+            elif f.suffix == "T2w":
+                widget_name = await data_input_widget.add_t2_image(
                     load_object=f, message_dict=None, execute_pattern_class_on_mount=False
                 )
                 ctx.cache[widget_name]["files"] = f
@@ -218,8 +224,6 @@ async def cache_file_patterns(self):
             data_input_widget.get_widget_by_id("associate_button").styles.visibility = "visible"
             data_input_widget.get_widget_by_id("info_field_maps_button").styles.visibility = "visible"
             data_input_widget.callback_message = intended_for
-
-        data_input_widget.enable_switch_events()
 
 
 async def mount_features(self):
@@ -342,6 +346,9 @@ async def mount_models(self) -> None:
     populates the context cache with model data and also creates aggregate
     model entries.
     """
+    # this is better to put here so that within the async it is not triggered earlier
+    self.data_input_widget.enable_switch_events()
+
     model_widget = self.model_widget
     aggregate_models = {}
     if self.existing_spec is not None:
