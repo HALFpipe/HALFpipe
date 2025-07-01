@@ -71,11 +71,12 @@ class Preprocessing(Widget):
         super().__init__(id=id, classes=classes)
         # To overriding the default settings is done only when loading from a spec file. To do this, this attribute needs
         # firstly to be redefined and then the widget recomposed as is done in the working_directory widget.
-        _global_settings_defaults = deepcopy(global_settings_defaults)
+        self._global_settings_defaults = deepcopy(global_settings_defaults)
 
-        ctx.spec.global_settings.setdefault(_global_settings_defaults["dummy_scans"])
-        ctx.spec.global_settings.setdefault(_global_settings_defaults["run_reconall"])
-        ctx.spec.global_settings.setdefault(_global_settings_defaults["slice_timing"])
+        ctx.spec.global_settings.setdefault(self._global_settings_defaults["dummy_scans"])
+        ctx.spec.global_settings.setdefault(self._global_settings_defaults["run_reconall"])
+        ctx.spec.global_settings.setdefault(self._global_settings_defaults["slice_timing"])
+        ctx.spec.global_settings.setdefault(self._global_settings_defaults["skull_strip_algorithm"])
 
         # self.default_settings = {"run_reconall": False, "slice_timing": False,
         # "via_algorithm_switch": False, "dummy_scans": 0}
@@ -99,6 +100,11 @@ class Preprocessing(Widget):
                 Static("Run FreeSurfer Recon-all", classes="description_labels"),
                 TextSwitch(value=ctx.spec.global_settings["run_reconall"], id="run_reconall"),
                 id="run_reconall_panel",
+            ),
+            Horizontal(
+                Static("Use skull strip", classes="description_labels"),
+                TextSwitch(value=ctx.spec.global_settings["skull_strip_algorithm"], id="skull_strip_algorithm"),
+                id="skull_strip_algorithm_panel",
             ),
             id="anatomical_settings",
             classes="components",
@@ -326,9 +332,7 @@ class Preprocessing(Widget):
 
         This method is called when the state of the "Turn on slice timing"
         switch changes. It updates the UI and the application's context
-        based on the switch state. It also runs the
-        `CheckBoldSliceEncodingDirectionStep` to gather metadata.
-
+        based on the switch state.
         Parameters
         ----------
 
@@ -337,6 +341,27 @@ class Preprocessing(Widget):
             state change.
         """
         ctx.spec.global_settings["run_reconall"] = message.value
+
+    @on(Switch.Changed, "#skull_strip_algorithm")
+    def on_skull_strip_algorithm_switch_changed(self, message: Message):
+        """
+        Handles changes in the "Skull strip algorithm" switch.
+
+        This method is called when the state of the "Skull strip algorithm"
+        switch changes. It updates the UI and the application's context
+        based on the switch state.
+
+        Parameters
+        ----------
+
+        message : Switch.Changed
+            The message object containing information about the switch
+            state change.
+        """
+        if message.value:
+            ctx.spec.global_settings["skull_strip_algorithm"] = self._global_settings_defaults["skull_strip_algorithm"]
+        else:
+            ctx.spec.global_settings["skull_strip_algorithm"] = "none"
 
     @work(exclusive=True, name="time_slicing_worker")
     @on(Switch.Changed, "#time_slicing_switch")
