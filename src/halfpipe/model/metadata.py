@@ -57,6 +57,13 @@ class PEDirMetadataSchema(BaseMetadataSchema):
         ),
     )
 
+    total_readout_time = fields.Float(
+        metadata=dict(
+            description="Total readout time (in seconds), required for EPI fieldmaps.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
+    )
 
 class TEMetadataSchema(BaseMetadataSchema):
     echo_time = fields.Float(
@@ -159,13 +166,12 @@ class SpreadsheetMetadataSchema(Schema):
         if len(names) > len(set(names)):
             raise ValidationError("Duplicate variable name")
 
-
 metadata_schemas: list[Type[Schema]] = [
     PhaseDiffMetadataSchema,
     EventsMetadataSchema,
     RefMetadataSchema,
     BoldMetadataSchema,
-    BIDSFmapMetadataSchema,
+    BIDSFmapMetadataSchema
 ]
 
 MetadataSchema = Schema.from_dict({k: v for schema in metadata_schemas for k, v in schema().fields.items()})
