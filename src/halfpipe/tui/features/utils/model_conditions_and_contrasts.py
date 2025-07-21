@@ -10,6 +10,7 @@ from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Label, SelectionList
 from textual.widgets.selection_list import Selection
 
+from ....logging import logger
 from ...general_widgets.draggable_modal_screen import DraggableModalScreen
 from ...specialized_widgets.confirm_screen import Confirm
 
@@ -291,6 +292,10 @@ class ModelConditionsAndContrasts(Widget):
         self.all_possible_conditions = all_possible_conditions
         self.row_dict: dict = {}
         self.update_all_possible_conditions(all_possible_conditions)
+        logger.debug(
+            f"UI->ContrastTableInputWindow.init-> feature_contrasts_dict:{feature_contrasts_dict}, \
+feature_conditions_list:{feature_conditions_list}, all_possible_conditions:{all_possible_conditions}"
+        )
 
     def update_all_possible_conditions(self, all_possible_conditions: list) -> None:
         """
@@ -537,6 +542,11 @@ class ModelConditionsAndContrasts(Widget):
         condition_selection = self.get_widget_by_id("model_conditions_selection")
         available_conditions = list(condition_selection._option_ids.keys())
 
+        logger.debug(
+            f"UI->ContrastTableInputWindow.update_condition_selection-> conditions:{conditions} \
+available_conditions:{available_conditions}"
+        )
+
         if conditions != []:
             # this is to preserve the wanted order of the conditions
             if len(available_conditions) == 0:
@@ -568,6 +578,8 @@ class ModelConditionsAndContrasts(Widget):
         """
         table = self.get_widget_by_id("contrast_table")
         df_filtered = self.df.loc[sorted([i.value for i in table.rows])]
+
+        logger.debug(f"UI->ContrastTableInputWindow.dump_contrast_values-> df:{self.df} df_filtered:{df_filtered}")
 
         self.feature_contrasts_dict.clear()
         # Iterate over each column in the DataFrame
