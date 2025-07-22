@@ -480,7 +480,7 @@ class PathPatternBuilder(DraggableModalScreen):
         logger.debug(f"UI->PathPatternBuilder._ok_part_two-> found tasks:{task_set}")
 
         compatible_task_tags = True
-        if ctx.available_images and set(ctx.available_images) != task_set and '{task}' in self.mandatory_tags:
+        if ctx.available_images and set(ctx.available_images) != task_set and "{task}" in self.mandatory_tags:
             compatible_task_tags = await self.app.push_screen_wait(
                 Confirm(
                     f"The task tags are not the same as extracted from the bold files!\n\
