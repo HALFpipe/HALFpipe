@@ -668,7 +668,7 @@ class AddAtlasImageStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
@@ -702,7 +702,7 @@ class AddSpatialMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
@@ -736,7 +736,7 @@ class AddBinarySeedMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
