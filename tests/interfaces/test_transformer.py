@@ -22,7 +22,7 @@ def test_transformer_nii(tmp_path: Path) -> None:
     ref_mask_img = nib.nifti1.load(ref_mask_file)
 
     ref_mask = ref_mask_img.get_fdata() > 0
-    n_voxels = np.count_nonzero(ref_mask).item()
+    n_voxels: int = np.count_nonzero(ref_mask)  # type: ignore[assignment]
     n_volumes = 10
 
     test_array = np.random.rand(n_voxels, n_volumes)
