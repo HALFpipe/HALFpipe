@@ -23,7 +23,7 @@ def test_zscore(tmp_path):
     ref_mask_img = nib.nifti1.load(ref_mask_file)
 
     ref_mask = ref_mask_img.get_fdata() > 0
-    n_voxels = np.count_nonzero(ref_mask)
+    n_voxels = np.count_nonzero(ref_mask).item()
 
     test_data = np.random.rand(n_voxels)
     assert not isclose(np.mean(test_data), 0, abs_tol=abs_tol)
