@@ -487,6 +487,7 @@ The working tab and data tab are now read only! Do not change entries here!",
             Whether to perform a complete reset of the context, by
             default True.
         """
+        self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("feature_selection_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("models_content").refresh(recompose=True, layout=True)
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
@@ -514,6 +515,7 @@ The working tab and data tab are now read only! Do not change entries here!",
         ctx.spec.models.clear()
         ctx.spec.files.clear()
         ctx.cache.clear()
+        ctx.available_images = {}
         FilePanelTemplate.reset_all_counters()
 
         # # set global settings to defaults use the defaults dictionary at preprocessing_content widget
