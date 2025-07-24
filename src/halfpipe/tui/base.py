@@ -374,7 +374,8 @@ class MainApp(App):
             The result of composing the application layout.
         """
         yield MyHeader(id="header")
-        with TabbedContent(id="tabs_manager"):
+        self.tabs_manager = TabbedContent(id="tabs_manager")
+        with self.tabs_manager:
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
                 yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
@@ -397,9 +398,9 @@ class MainApp(App):
         some tabs initially and sets the application title and subtitle.
         """
         # hide these tabs until we have data input and the working folder
-        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
+        self.tabs_manager.hide_tab("preprocessing_tab")
+        self.tabs_manager.hide_tab("feature_selection_tab")
+        self.tabs_manager.hide_tab("models_tab")
 
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
@@ -415,13 +416,13 @@ class MainApp(App):
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         if sum(self.flags_to_show_tabs.values()) == 2:
-            self.get_widget_by_id("tabs_manager").show_tab("preprocessing_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("feature_selection_tab")
-            self.get_widget_by_id("tabs_manager").show_tab("models_tab")
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("work_dir_tab").styles.opacity = 0.7
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("input_data_tab").styles.opacity = 0.7
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
-            self.get_widget_by_id("tabs_manager").get_widget_by_id("input_data_content").read_only_mode(True)
+            self.tabs_manager.show_tab("preprocessing_tab")
+            self.tabs_manager.show_tab("feature_selection_tab")
+            self.tabs_manager.show_tab("models_tab")
+            self.tabs_manager.get_widget_by_id("work_dir_tab").styles.opacity = 0.7
+            self.tabs_manager.get_widget_by_id("input_data_tab").styles.opacity = 0.7
+            self.tabs_manager.get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
+            self.tabs_manager.get_widget_by_id("input_data_content").read_only_mode(True)
 
             self.app.push_screen(
                 Confirm(
@@ -443,9 +444,9 @@ The working tab and data tab are now read only! Do not change entries here!",
         """
         Hides the preprocessing, feature selection, and models tabs.
         """
-        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
+        self.tabs_manager.hide_tab("preprocessing_tab")
+        self.tabs_manager.hide_tab("feature_selection_tab")
+        self.tabs_manager.hide_tab("models_tab")
 
     def action_show_tab(self, tab: str) -> None:
         """
@@ -493,9 +494,9 @@ The working tab and data tab are now read only! Do not change entries here!",
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
         self.flags_to_show_tabs["from_working_dir_tab"] = False
         self.flags_to_show_tabs["from_input_data_tab"] = False
-        self.get_widget_by_id("tabs_manager").hide_tab("preprocessing_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("feature_selection_tab")
-        self.get_widget_by_id("tabs_manager").hide_tab("models_tab")
+        self.tabs_manager.hide_tab("preprocessing_tab")
+        self.tabs_manager.hide_tab("feature_selection_tab")
+        self.tabs_manager.hide_tab("models_tab")
 
         if complete_reset is True:
             self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)
