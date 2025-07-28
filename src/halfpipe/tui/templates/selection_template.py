@@ -14,6 +14,7 @@ from textual.widgets import (
     ContentSwitcher,
 )
 
+from ...logging import logger
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_general_widgets import FocusLabel
 from ..help_functions import widget_exists
@@ -247,6 +248,10 @@ class SelectionTemplate(Widget):
             item_type, item_name = new_item
             content_switcher_item_new_id = p.singular_noun(self.ITEM_KEY) + "_item_" + str(self._id_counter)
             collapsible_item_new_id = content_switcher_item_new_id + "_flabel"
+            logger.debug(
+                f"UI->SelectionTemplate.add_new_item: item_type:{item_type}, item_name:{item_name}, \
+content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_new_id:{collapsible_item_new_id}"
+            )
 
             self.feature_items[content_switcher_item_new_id] = TypeNameItem(item_type, item_name)
             item_key = self.feature_items[content_switcher_item_new_id].type
@@ -335,6 +340,7 @@ class SelectionTemplate(Widget):
 
         item_name = self.feature_items[current_content_switcher_item_id].name
         item_name_copy = item_name + "Copy"
+        logger.debug(f"UI->SelectionTemplate.action_duplicate_item: item_name:{item_name}, item_name_copy:{item_name_copy}")
 
         await self.app.push_screen(
             NameInput(occupied_feature_names, default_value=item_name_copy),
@@ -356,7 +362,11 @@ class SelectionTemplate(Widget):
                 content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
                 collapsible_item_current_id = content_switcher_item_current_id + "_flabel"
 
-                old_feature_name = self.feature_items[content_switcher_item_current_id].name
+                old_item_name = self.feature_items[content_switcher_item_current_id].name
+                logger.debug(
+                    f"UI->SelectionTemplate.action_duplicate_item: \
+old_item_name:{old_item_name}, new_item_name:{new_item_name}"
+                )
 
                 # Update feature name
                 self.feature_items[content_switcher_item_current_id].name = new_item_name
@@ -369,7 +379,7 @@ class SelectionTemplate(Widget):
                 )
 
                 # Move cache data
-                ctx.cache[new_item_name] = ctx.cache.pop(old_feature_name)
+                ctx.cache[new_item_name] = ctx.cache.pop(old_item_name)
 
                 # Update the model and setting keys in the cache
                 if self.ITEM_KEY is not None:

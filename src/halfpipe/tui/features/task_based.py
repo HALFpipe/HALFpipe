@@ -6,6 +6,7 @@ from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.widgets import SelectionList
 
+from ...logging import logger
 from ..help_functions import extract_conditions
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.event_file_widget import EventFilePanel
@@ -193,7 +194,10 @@ class TaskBased(FeatureTemplate):
                 self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
                     all_possible_conditions
                 )
-
+                logger.debug(
+                    f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
+all_possible_conditions: {all_possible_conditions}"
+                )
                 self.update_conditions_table()
 
     def update_conditions_table(self):
@@ -206,7 +210,9 @@ class TaskBased(FeatureTemplate):
         """
         condition_list = []
         for value in self.get_widget_by_id("tasks_to_use_selection").selected:
+            logger.debug(f"UI->TaskBased.update_conditions_table Extracting conditions for task: {value}")
             condition_list += extract_conditions(entity="task", values=[value])
 
+        logger.debug(f"UI->TaskBased.update_conditions_table-> New condition list: {condition_list}")
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list

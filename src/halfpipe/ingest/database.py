@@ -45,6 +45,7 @@ class Database:
         resolved_files = self.resolved_spec.put(spec_fileobj)
         for resolved_fileobj in resolved_files:
             self.index(resolved_fileobj)
+            logger.debug(f"Database.put->resolved_fileobj.tags:{resolved_fileobj.tags}")
 
     def index(self, fileobj):
         def add_tag_to_index(filepath, entity, tagval):
@@ -126,6 +127,7 @@ class Database:
 
     def get(self, **filters: str) -> set[str]:
         res = None
+        logger.debug(f"Database.get-> filters:{filters}")
         for tagname, tagval in filters.items():
             if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:
                 cur_set = self.filepaths_by_tags[tagname][tagval]
@@ -136,6 +138,7 @@ class Database:
             else:
                 res = None
                 break
+        logger.debug(f"Database.get-> result:{res}")
         if res is None:
             return set()
         return res
@@ -188,7 +191,9 @@ class Database:
 
     def associations(self, filepath: str, **filters: str) -> tuple[str, ...] | None:
         matching_files = self.get(**filters)
+        logger.debug(f"Database.associations-> filepath:{filepath}, \n\n matching_files:{matching_files}")
         for entity in reversed(entities):  # from high to low priority
+            logger.debug(f"Database.associations-> entity:{entity}")
             if entity not in self.filepaths_by_tags:
                 continue
             cur_set = set()
@@ -196,6 +201,7 @@ class Database:
                 if filepath in filepaths:
                     cur_set |= set(filepaths)
             cur_set &= matching_files
+            logger.debug(f"Database.associations-> cur_set:{cur_set}, matching_files:{matching_files}")
             if len(cur_set) > 0:
                 matching_files = cur_set
             if len(cur_set) == 1:

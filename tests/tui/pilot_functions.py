@@ -16,6 +16,7 @@ async def _load_data(pilot, data_path) -> None:
     # click Ok on Modal informing us that the data input is success
     # await pilot.click(offset=(121, 31))
     await pilot.click("#only_one_button")
+    logger.debug("Bids data directory is set.")
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
@@ -36,6 +37,7 @@ async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None
         # Spec file found modal, click Load
         # await pilot.click(offset=(100, 31))
         await pilot.click("#ok_left_button")
+    logger.debug(f"UI tests -> work directory is set to {work_dir_path}")
 
 
 async def enter_browse_path(pilot, path):
@@ -50,6 +52,7 @@ async def enter_browse_path(pilot, path):
     # click on the Enter button
     # await pilot.click(offset=(110, 41))
     await pilot.click("#ok_button")
+    logger.debug("UI tests -> The browse path is set.")
 
 
 async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
@@ -333,6 +336,7 @@ async def toggle_bids_non_bids(pilot) -> None:
 async def set_non_bids_data(
     pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False
 ) -> None:
+    logger.debug("UI tests -> Running function: set_non_bids_data")
     await pilot.press("i")
 
     ### toggle bids to non bids
@@ -368,10 +372,10 @@ async def set_non_bids_data(
     else:
         # click Ok
         # await pilot.click(offset=(100, 31))
-        await pilot.click("#ok_left_button")
+        await pilot.click(pilot.app.get_widget_by_id("ok_left_button"))
 
-    for _i in range(15):
-        await pilot.press("down")
+    await settable_scroll_screen_down(pilot, 15)
+    #
     if not noconfirm:
         # click confirm
         # await pilot.click(offset=(100, 47))
@@ -380,11 +384,13 @@ async def set_non_bids_data(
         await pilot.click("#only_one_button")
         # Click Ok on Modal saying that data and workdir is set and user can proceed further
         await pilot.click("#only_one_button")
+    logger.debug("UI tests -> set_non_bids_data successful!")
 
 
 async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
     # clear all
     # await pilot.click(offset=(120, 30))
+    logger.debug(f"UI tests -> Typing {path_pattern} in the path pattern builder")
     await pilot.click("#clear_all")
     # click to prompt
     # await pilot.click(offset=(60, 22))
@@ -394,6 +400,7 @@ async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
     # press ok button
     # await pilot.click(offset=(125, 40))
     await pilot.click("#ok_button")
+    logger.debug(f"UI tests -> Success! The path {path_pattern} was set in the path pattern builder.")
 
 
 async def settable_scroll_screen_down(pilot, how_much=19) -> None:
