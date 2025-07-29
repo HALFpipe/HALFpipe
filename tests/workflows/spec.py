@@ -103,16 +103,21 @@ def make_spec(
 def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, event_file: File | None) -> None:
     setting_schema = SettingSchema()
     name = test_setting.name
+
     base_setting = test_setting.base_setting
-    glm_setting = setting_schema.load(
-        dict(
-            name=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
-            output_image=True,  # TODO parametrize this
-            bandpass_filter=dict(type="gaussian", hp_width=125.0),
-            smoothing=dict(fwhm=6.0),
-            **base_setting,
-        )
+    glm_setting = dict(
+        output_image=True,  # TODO parametrize this
+        bandpass_filter=dict(type="gaussian", hp_width=125.0),
+        smoothing=dict(fwhm=6.0),
+        **base_setting,
     )
+
+    standard_setting = setting_schema.load(dict(name=f"{name}StandardSetting", space="standard", **glm_setting))
+    spec.settings.append(standard_setting)
+
+    native_setting = setting_schema.load(dict(name=f"{name}NativeSetting", space="native", **glm_setting))
+    spec.settings.append(native_setting)
+
     falff_reho_corr_matrix_setting = setting_schema.load(
         dict(
             name=f"{name}FALFFAndReHoAndCorrMatrixSetting",
@@ -121,6 +126,8 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
             **base_setting,
         )
     )
+    spec.settings.append(falff_reho_corr_matrix_setting)
+
     falff_unfiltered_setting = setting_schema.load(
         dict(
             name=f"{name}FALFFUnfilteredSetting",
@@ -128,37 +135,36 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
             **base_setting,
         )
     )
-    spec.settings.append(glm_setting)
-    spec.settings.append(falff_reho_corr_matrix_setting)
     spec.settings.append(falff_unfiltered_setting)
 
     # Set up features
     feature_schema = FeatureSchema()
     if event_file is not None:
-        conditions = ConditionFile(event_file).conditions
-        contrast_values = {
-            conditions[0]: 1.0,
-            conditions[1]: -1.0,
-        }
-        task_based_feature = feature_schema.load(
-            dict(
-                name=f"{name}TaskBased",
-                type="task_based",
-                high_pass_filter_cutoff=125.0,
-                conditions=conditions,
-                contrasts=[
-                    dict(name="contrast", type="t", values=contrast_values),
-                ],
-                setting=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
+        for suffix, setting in (("Standard", standard_setting), ("Native", native_setting)):
+            conditions = ConditionFile(event_file).conditions
+            contrast_values = {
+                conditions[0]: 1.0,
+                conditions[1]: -1.0,
+            }
+            task_based_feature = feature_schema.load(
+                dict(
+                    name=f"{name}TaskBased{suffix}",
+                    type="task_based",
+                    high_pass_filter_cutoff=125.0,
+                    conditions=conditions,
+                    contrasts=[
+                        dict(name="contrast", type="t", values=contrast_values),
+                    ],
+                    setting=setting["name"],
+                )
             )
-        )
-        spec.features.append(task_based_feature)
+            spec.features.append(task_based_feature)
     pcc_feature = feature_schema.load(
         dict(
             name=f"{name}SeedCorr",
             type="seed_based_connectivity",
             seeds=["pcc"],
-            setting=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
+            setting=standard_setting["name"],
         ),
     )
     dual_feature = feature_schema.load(
@@ -166,7 +172,7 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
             name=f"{name}DualReg",
             type="dual_regression",
             maps=["smith09"],
-            setting=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
+            setting=standard_setting["name"],
         ),
     )
     fc_connectivity_feature = feature_schema.load(

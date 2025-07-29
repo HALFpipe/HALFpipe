@@ -83,7 +83,7 @@ def init_ica_aroma_components_wf(
             fields=[
                 "confounds_file",
                 "alt_bold_file",
-                "bold_mask",
+                "bold_mask_native",
                 "alt_resampling_reference",
                 "tags",
                 "dummy_scans",
@@ -121,7 +121,7 @@ def init_ica_aroma_components_wf(
         mem_gb=2 * memcalc.volume_std_gb,
         name="resample_mask_to_mni",
     )
-    workflow.connect(inputnode, "bold_mask", resample_mask, "input_image")
+    workflow.connect(inputnode, "bold_mask_native", resample_mask, "input_image")
 
     # Squeeze out singleton dimension from mask
     squeeze_mask = pe.Node(
@@ -166,7 +166,6 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
     workflow.connect(squeeze_mask, "out_file", ica_aroma_wf, "inputnode.bold_mask_std")
 
-    # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.confounds")
     workflow.connect(inputnode, "confounds_file", ica_aroma_wf, "inputnode.confounds")
 
     # ? The mopvar file needs to be added a row that specifies the names of the columns.

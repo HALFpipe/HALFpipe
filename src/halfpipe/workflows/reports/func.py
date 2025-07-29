@@ -55,15 +55,12 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         niu.IdentityInterface(
             fields=[
                 "ds_ref",
-                "ds_mask",
                 "t1w_dseg",
                 "anat2std_xfm",
-                "bold_file",
-                # "spatial_reference",   # TODO: do we need this?
-                "output_spaces",
-                "movpar_file",
+                "bold_file_std",
+                "bold_mask_std",
                 "confounds_file",
-                "method",
+                "sdc_method",
                 "fallback",
                 *fmriprep_reportdatasinks,
                 "fd_thres",
@@ -93,7 +90,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
     workflow.connect(inputnode, "dummy_scans", make_resultdicts, "dummy_scans")
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
-    workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
+    workflow.connect(inputnode, "sdc_method", make_resultdicts, "sdc_method")
     workflow.connect(inputnode, "fallback", make_resultdicts, "fallback_registration")
 
     #
@@ -115,18 +112,18 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     )
 
     workflow.connect(inputnode, "ds_ref", epi_norm_rpt, "in_file")
-    workflow.connect(inputnode, "ds_mask", epi_norm_rpt, "mask_file")
+    workflow.connect(inputnode, "bold_mask_std", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(inputnode, "bold_file", tsnr, "in_file")
+    workflow.connect(inputnode, "bold_file_std", tsnr, "in_file")
     workflow.connect(inputnode, "dummy_scans", tsnr, "dummy_scans")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(inputnode, "ds_mask", tsnr_rpt, "mask_file")
+    workflow.connect(inputnode, "bold_mask_std", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #

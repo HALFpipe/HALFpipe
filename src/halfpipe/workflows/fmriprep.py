@@ -2,7 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 from unittest.mock import patch
 
 from fmriprep import config
@@ -26,15 +28,183 @@ def get_fmriprep_wf_name() -> str:
     return f"fmriprep_{ver.major}_{ver.minor}_wf"
 
 
-def _find_child(hierarchy, name):
-    wf = hierarchy[-1]
-    for node in wf._graph.nodes():
-        if node.name == name:
-            return hierarchy, node
-        elif isinstance(node, pe.Workflow):
-            res = _find_child([*hierarchy, node], name)
-            if res is not None:
-                return res
+# def _find_child(hierarchy, name):
+#     wf = hierarchy[-1]
+#     for node in wf._graph.nodes():
+#         if node.name == name:
+#             return hierarchy, node
+#         elif isinstance(node, pe.Workflow):
+#             res = _find_child([*hierarchy, node], name)
+#             if res is not None:
+#                 return res
+
+
+@dataclass(frozen=True, kw_only=True)
+class Connection:
+    source: Literal["anat_fit_wf", "bold_wf", "reports_wf"]
+    path: tuple[str, ...]
+    attr: str
+
+
+connections = {
+    "anat2std_xfm": Connection(
+        source="anat_fit_wf",
+        path=("register_template_wf", "outputnode"),
+        attr="anat2std_xfm",
+    ),
+    "ds_t1w_dseg_mask_report": Connection(
+        source="anat_fit_wf",
+        path=("anat_reports_wf", "ds_t1w_dseg_mask_report"),
+        attr="out_file",
+    ),
+    "mask_std": Connection(
+        source="anat_fit_wf",
+        path=("anat_reports_wf", "mask_std"),
+        attr="output_image",
+    ),
+    "t1w_dseg": Connection(
+        source="anat_fit_wf",
+        path=("outputnode",),
+        attr="t1w_dseg",
+    ),
+    "t1w_mask": Connection(
+        source="anat_fit_wf",
+        path=("outputnode",),
+        attr="t1w_mask",
+    ),
+    "t1w_preproc": Connection(
+        source="anat_fit_wf",
+        path=("outputnode",),
+        attr="t1w_preproc",
+    ),
+    "t1w_std": Connection(
+        source="anat_fit_wf",
+        path=("anat_reports_wf", "t1w_std"),
+        attr="output_image",
+    ),
+    "template": Connection(
+        source="anat_fit_wf",
+        path=("register_template_wf", "outputnode"),
+        attr="template",
+    ),
+    "bold_file_std": Connection(
+        source="bold_wf",
+        path=("bold_std_wf", "outputnode"),
+        attr="bold_file",
+    ),
+    "bold_mask_std": Connection(
+        source="bold_wf",
+        path=("ds_bold_std_wf", "ds_mask"),
+        attr="out_file",
+    ),
+    "bold_file_anat": Connection(
+        source="bold_wf",
+        path=("bold_anat_wf", "outputnode"),
+        attr="bold_file",
+    ),
+    "bold_mask_anat": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="bold_mask",
+    ),
+    "bold_file_native": Connection(
+        # BOLD series resampled into BOLD reference space. Slice-timing,
+        # head motion and susceptibility distortion correction (STC, HMC, SDC)
+        # will all be applied to each file. For multi-echo data, the echos
+        # are combined to form an `optimal combination`_.
+        source="bold_wf",
+        path=("bold_native_wf", "outputnode"),
+        attr="bold_native",
+    ),
+    "bold_mask_native": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="bold_mask",
+    ),
+    "bold_minimal": Connection(
+        # BOLD series ready for further resampling. For single-echo data, only
+        # slice-timing correction (STC) may have been applied. For multi-echo
+        # data, this is identical to bold_native.
+        source="bold_wf",
+        path=("bold_native_wf", "outputnode"),
+        attr="bold_minimal",
+    ),
+    "boldref2anat_xfm": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="boldref2anat_xfm",
+    ),
+    "confounds_file": Connection(
+        source="bold_wf",
+        path=("bold_confounds_wf", "outputnode"),
+        attr="confounds_file",
+    ),
+    "coreg_boldref": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="coreg_boldref",
+    ),
+    "ds_ref": Connection(
+        source="bold_wf",
+        path=("ds_bold_std_wf", "ds_ref"),
+        attr="out_file",
+    ),
+    "ds_report_bold_conf": Connection(
+        source="bold_wf",
+        path=("carpetplot_wf", "ds_report_bold_conf"),
+        attr="out_file",
+    ),
+    "ds_report_bold_rois": Connection(
+        source="bold_wf",
+        path=("bold_confounds_wf", "ds_report_bold_rois"),
+        attr="out_file",
+    ),
+    "ds_report_compcor": Connection(
+        source="bold_wf",
+        path=("bold_confounds_wf", "ds_report_compcor"),
+        attr="out_file",
+    ),
+    "ds_report_conf_corr": Connection(
+        source="bold_wf",
+        path=("bold_confounds_wf", "ds_report_conf_corr"),
+        attr="out_file",
+    ),
+    "ds_report_summary": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "func_fit_reports_wf", "ds_report_summary"),
+        attr="out_file",
+    ),
+    "ds_report_validation": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "func_fit_reports_wf", "ds_report_validation"),
+        attr="out_file",
+    ),
+    "dummy_scans": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="dummy_scans",
+    ),
+    "fallback": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "bold_reg_wf", "outputnode"),
+        attr="fallback",
+    ),
+    "motion_xfm": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "outputnode"),
+        attr="motion_xfm",
+    ),
+    "sdc_method": Connection(
+        source="bold_wf",
+        path=("bold_fit_wf", "fmap_select"),
+        attr="sdc_method",
+    ),
+    "vals": Connection(
+        source="reports_wf",
+        path=("func_report_wf", "outputnode"),
+        attr="vals",
+    ),
+}
 
 
 class FmriprepFactory(Factory):
@@ -51,18 +221,8 @@ class FmriprepFactory(Factory):
         bids_database = self.ctx.bids_database
         workflow = self.ctx.workflow
 
-        uuidstr = str(workflow.uuid)[:8]
-        bids_dir = Path(workdir) / "rawdata"
-
-        # init fmriprep config
-        output_dir = Path(workdir) / "derivatives"
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        fmriprep_dir = output_dir / "fmriprep"
-        fmriprep_dir.mkdir(parents=True, exist_ok=True)
-
         subjects = set()
-        bids_subjects = set()
+        bids_subjects: set[str] = set()
         for bold_file_path in bold_file_paths:
             subject = database.tagval(bold_file_path, "sub")
 
@@ -79,7 +239,107 @@ class FmriprepFactory(Factory):
             subjects.add(subject)
             bids_subjects.add(bids_subject)
 
+        spec = self.ctx.spec
         global_settings = spec.global_settings
+
+        config_file = self.get_config(workdir, bids_subjects)
+
+        retval: dict[str, pe.Workflow] = dict()
+        # We call build_workflow to set up all nodes
+        with patch("niworkflows.utils.misc.check_valid_fs_license") as mock:
+            mock.return_value = True
+            build_workflow(config_file, retval)
+
+        fmriprep_wf = retval["workflow"]
+        assert isinstance(fmriprep_wf, pe.Workflow)
+        workflow.add_nodes([fmriprep_wf])
+
+        # check and patch workflow
+        skipped = set()
+        for bold_file_path in bold_file_paths:
+            func_preproc_wf = self._get_hierarchy(get_fmriprep_wf_name(), source_file=bold_file_path)[-1]
+
+            if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
+                logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
+                skipped.add(bold_file_path)
+                continue
+
+            bold_fit_wf = func_preproc_wf.get_node("bold_fit_wf")
+            if bold_fit_wf is None:
+                raise RuntimeError(f'Missing bold_fit_wf in "{func_preproc_wf.name}"')
+
+            has_fieldmaps = len(collect_fieldmaps(database, bold_file_path, silent=True)) > 0
+            if has_fieldmaps:
+                if bold_fit_wf.get_node("fmap_select") is None:
+                    logger.warning(f'fMRIPrep did not detect field maps for file "{bold_file_path}"')
+
+            if global_settings["slice_timing"] is True:
+                if func_preproc_wf.get_node("bold_stc_wf") is None:
+                    logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
+
+            # Disable preproc output to save disk space
+            for name in {"ds_bold_t1_wf", "ds_bold_std_wf"}:
+                ds_volumes_wf = func_preproc_wf.get_node(name)
+                # ! func_derivatives_wf does not exist anymore, but ds_bold_std is part of bold workflows
+                if not isinstance(ds_volumes_wf, pe.Workflow):
+                    raise ValueError(f'Missing "{name}" in "{func_preproc_wf.name}"')
+                ds_bold = ds_volumes_wf.get_node("ds_bold")
+                if not isinstance(ds_bold, pe.Node):
+                    raise ValueError(f'Missing "ds_bold" in "{name}"')
+                ds_volumes_wf.remove_nodes([ds_bold])
+
+        bold_file_paths -= skipped
+
+        # halfpipe-specific report workflows
+        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
+        for subject_id in subjects:
+            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
+
+            wf = anat_report_wf_factory()
+            hierarchy[-1].add_nodes([wf])
+            hierarchy.append(wf)
+
+            inputnode = wf.get_node("inputnode")
+            inputnode.inputs.tags = {"sub": subject_id}
+
+            self.connect(hierarchy, inputnode, subject_id=subject_id)
+
+        for bold_file_path in bold_file_paths:
+            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
+
+            wf = init_func_report_wf(
+                workdir=str(workdir),
+                memcalc=MemoryCalculator.from_bold_file(bold_file_path),
+            )
+            assert wf.name == "func_report_wf"  # check name for line 206
+            hierarchy[-1].add_nodes([wf])
+            hierarchy.append(wf)
+
+            inputnode = wf.get_node("inputnode")
+            assert isinstance(inputnode, pe.Node)
+            inputnode.inputs.tags = database.tags(bold_file_path)
+            inputnode.inputs.fd_thres = global_settings["fd_thres"]
+
+            inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
+
+            self.connect(hierarchy, inputnode, source_file=bold_file_path)
+
+        return bold_file_paths
+
+    def get_config(self, workdir: Path, bids_subjects: set[str]) -> Path:
+        spec = self.ctx.spec
+        global_settings = spec.global_settings
+        workflow = self.ctx.workflow
+
+        # init fmriprep config
+        output_dir = Path(workdir) / "derivatives"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        fmriprep_dir = output_dir / "fmriprep"
+        fmriprep_dir.mkdir(parents=True, exist_ok=True)
+
+        uuidstr = str(workflow.uuid)[:8]
+        bids_dir = Path(workdir) / "rawdata"
 
         ignore = []
         if global_settings["slice_timing"] is not True:
@@ -96,8 +356,7 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}"]
-        # output_spaces = [f"{Constants.reference_space}:res-{Constants.reference_res}", "MNI152NLin6Asym:res-2"]
+        output_spaces = ["anat", f"{Constants.reference_space}:res-{Constants.reference_res}"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
@@ -158,92 +417,19 @@ class FmriprepFactory(Factory):
         nipype_dir.mkdir(parents=True, exist_ok=True)
         config_file = nipype_dir / f"fmriprep.config.{uuidstr}.toml"
         config.to_filename(config_file)
-
-        retval: dict[str, pe.Workflow] = dict()
-
-        # We call build_workflow to set up all nodes
-        with patch("niworkflows.utils.misc.check_valid_fs_license") as mock:
-            mock.return_value = True
-            build_workflow(config_file, retval)  #
-
-        fmriprep_wf = retval["workflow"]
-        assert isinstance(fmriprep_wf, pe.Workflow)
-        workflow.add_nodes([fmriprep_wf])
-
-        # check and patch workflow
-        skipped = set()
-        for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy(get_fmriprep_wf_name(), source_file=bold_file_path)[-1]
-
-            if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
-                logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
-                skipped.add(bold_file_path)
-                continue
-
-            bold_fit_wf = func_preproc_wf.get_node("bold_fit_wf")
-            if bold_fit_wf is None:
-                raise RuntimeError(f'Missing bold_fit_wf in "{func_preproc_wf.name}"')
-
-            has_fieldmaps = len(collect_fieldmaps(database, bold_file_path, silent=True)) > 0
-            if has_fieldmaps:
-                if bold_fit_wf.get_node("fmap_select") is None:
-                    logger.warning(f'fMRIPrep did not detect field maps for file "{bold_file_path}"')
-
-            if global_settings["slice_timing"] is True:
-                if func_preproc_wf.get_node("bold_stc_wf") is None:
-                    logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
-
-            # Disable preproc output to save disk space
-            ds_bold_std_wf = func_preproc_wf.get_node("ds_bold_std_wf")
-            # ! func_derivatives_wf does not exist anymore, but ds_bold_std is part of bold workflows
-            if not isinstance(ds_bold_std_wf, pe.Workflow):
-                raise RuntimeError(f'Missing "ds_volumes_wf" in "{func_preproc_wf.name}"')
-            ds_bold = ds_bold_std_wf.get_node("ds_bold")
-            if isinstance(ds_bold, pe.Node):
-                ds_bold_std_wf.remove_nodes([ds_bold])
-
-        bold_file_paths -= skipped
-
-        # halfpipe-specific report workflows
-        anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
-        for subject_id in subjects:
-            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
-
-            wf = anat_report_wf_factory()
-            hierarchy[-1].add_nodes([wf])
-            hierarchy.append(wf)
-
-            inputnode = wf.get_node("inputnode")
-            inputnode.inputs.tags = {"sub": subject_id}
-
-            self.connect(hierarchy, inputnode, subject_id=subject_id)
-
-        for bold_file_path in bold_file_paths:
-            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
-
-            wf = init_func_report_wf(
-                workdir=str(workdir),
-                memcalc=MemoryCalculator.from_bold_file(bold_file_path),
-            )
-            assert wf.name == "func_report_wf"  # check name for line 206
-            hierarchy[-1].add_nodes([wf])
-            hierarchy.append(wf)
-
-            inputnode = wf.get_node("inputnode")
-            assert isinstance(inputnode, pe.Node)
-            inputnode.inputs.tags = database.tags(bold_file_path)
-            inputnode.inputs.fd_thres = global_settings["fd_thres"]
-
-            inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
-
-            self.connect(hierarchy, inputnode, source_file=bold_file_path)
-
-        return bold_file_paths
+        return config_file
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)  # type: ignore
 
-    def connect(self, nodehierarchy, node: pe.Node, source_file=None, subject_id=None, **_) -> set[str]:
+    def connect(
+        self,
+        nodehierarchy: list[pe.Workflow],
+        node: pe.Node,
+        source_file: Path | str | None = None,
+        subject_id: str | None = None,
+        **_,
+    ) -> set[str]:
         """
         This method connects equally named attributes of nodes
         """
@@ -251,130 +437,43 @@ class FmriprepFactory(Factory):
         fullname = ".".join([n.name for n in nodehierarchy] + [node.name])
         logger.debug(f"Connecting node '{fullname}'")
 
+        hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
+
+        bold_wf_hierarchy = self._get_hierarchy(get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id)
+        hierarchies["bold_wf"] = bold_wf_hierarchy
+
+        anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
+        while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
+            anat_fit_wf_hierarchy.pop(-1)
+        anat_fit_wf_hierarchy.append(anat_fit_wf)
+        hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
+
+        report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
+        hierarchies["reports_wf"] = report_wf_hierarchy
+
         connected_attrs: set[str] = set()
-
-        inputattrs = set(node.inputs.copyable_trait_names())
-        dsattrs = set(attr for attr in inputattrs if attr.startswith("ds_"))
-
+        missing_attrs: set[str] = set()
         for key, value in node.inputs.get().items():
             if isdefined(value):
-                inputattrs.remove(key)
+                continue
+            if key in {"alt_bold_file", "alt_resampling_reference"}:
+                continue
+            connection = connections.get(key)
+            if not connection:
+                missing_attrs.add(key)
+                continue
+            hierarchy = hierarchies[connection.source].copy()
+            for name in connection.path:
+                child = hierarchy[-1].get_node(name)
+                if not child:
+                    raise ValueError(f'Missing node "{name}" in workflow {hierarchy[-1].name}')
+                hierarchy.append(child)
+            child = hierarchy.pop(-1)
+            self.connect_attr(hierarchy, child, connection.attr, nodehierarchy, node, key)
+            connected_attrs.add(key)
 
-        ignore = frozenset(["alt_bold_mask_std", "alt_bold_std", "alt_spatial_reference"])
-        inputattrs -= ignore
-
-        def _connect(hierarchy) -> None:
-            wf = hierarchy[-1]
-
-            outputnode: pe.Node | None = wf.get_node("outputnode")
-
-            if outputnode is not None:
-                outputattrs = set(outputnode.outputs.copyable_trait_names())
-                attrs = (inputattrs & outputattrs) - connected_attrs  # Find common attr names
-
-                actually_connected_attrs: set[str] = set()
-                for _, _, datadict in wf._graph.in_edges(outputnode, data=True):
-                    _, infields = zip(*datadict.get("connect", []), strict=False)
-                    actually_connected_attrs.update(infields)
-
-                for key, value in outputnode.inputs.get().items():
-                    if isdefined(value):
-                        actually_connected_attrs.add(key)
-
-                attrs &= actually_connected_attrs
-
-                for attr in attrs:
-                    self.connect_attr(hierarchy, outputnode, attr, nodehierarchy, node, attr)
-                    connected_attrs.add(attr)
-            else:
-                for attr in inputattrs:
-                    child = wf.get_node(attr)
-                    if child is None:
-                        continue
-                    names = child.outputs.copyable_trait_names()
-                    if len(names) != 1:
-                        continue
-                    (name,) = names
-                    logger.debug(f"Connecting node attr '{child}.{name}' to '{node}.{attr}'")
-                    self.connect_attr(hierarchy, child, name, nodehierarchy, node, attr)
-                    connected_attrs.add(attr)
-
-            for attr in list(dsattrs):  # Same logic for datasinked attributes? Why separate
-                childtpl = _find_child(hierarchy, attr)
-                if childtpl is not None:
-                    logger.debug(f"Connecting dsattr '{attr}'")
-                    childhierarchy, childnode = childtpl
-                    self.connect_attr(childhierarchy, childnode, "out_file", nodehierarchy, node, attr)
-                    dsattrs.remove(attr)
-                    connected_attrs.add(attr)
-
-        hierarchy = self._get_hierarchy(get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id)
-
-        wf = hierarchy[-1]
-        # anat only
-        anat_wf = wf.get_node("anat_fit_wf")  #  This will not exist for a bold workflow
-
-        if anat_wf is None:
-            # we are in a bold workflow
-            _connect(hierarchy)
-
-            for name in [
-                "bold_std_wf",
-                "bold_fit_wf",
-                "bold_native_wf",
-                "bold_anat_wf",
-                "bold_surf_wf",
-                "bold_confounds_wf",
-                "carpetplot_wf",
-                "func_fit_reports_wf",
-                "ds_bold_std_wf",
-            ]:
-                bold_wf = wf.get_node(name)
-                if bold_wf is None:
-                    continue
-                _connect([*hierarchy, bold_wf])
-                bold_reg_wf = bold_wf.get_node("bold_reg_wf")
-                if bold_reg_wf is None:
-                    continue
-                _connect([*hierarchy, bold_wf, bold_reg_wf])
-
-            if "bold_split" in inputattrs:
-                splitnode = wf.get_node("split_opt_comb")
-                if splitnode is None:
-                    splitnode = wf.get_node("bold_split")
-                self.connect_attr(hierarchy, splitnode, "out_files", nodehierarchy, node, "bold_split")
-                connected_attrs.add("bold_split")
-
-            report_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
-            func_report_wf = report_hierarchy[-1].get_node("func_report_wf")
-            if func_report_wf is not None:
-                _connect([*report_hierarchy, func_report_wf])
-
-            while wf.get_node("anat_fit_wf") is None:
-                hierarchy.pop()
-                wf = hierarchy[-1]
-
-            anat_wf = wf.get_node("anat_fit_wf")
-
-        assert isinstance(anat_wf, pe.Workflow)
-        for name in [
-            "register_template_wf",
-            "anat_reports_wf",
-            "brain_extraction_wf",
-            "anat_ribbon_wf",
-            "refinement_wf",
-            "ds_template_wf",
-        ]:
-            wf = anat_wf.get_node(name)
-            if wf is not None:
-                _connect([*hierarchy, anat_wf, wf])
-                logger.debug(f"Connected node '{name}' in 'anat_fit_wf'")
-            else:
-                logger.debug(f"Node '{name}' NOT FOUND in 'anat_fit_wf'")
-        _connect([*hierarchy, anat_wf])
-
-        if connected_attrs != inputattrs:
-            missing_attrs: list[str] = sorted(inputattrs - connected_attrs)
-            logger.debug(f"Unable to find fMRIPrep outputs {p.join(missing_attrs)} for workflow {nodehierarchy}")  # type: ignore
+        if missing_attrs:
+            missing_attrs_str = p.join(sorted(missing_attrs))  # type: ignore[arg-type]
+            logger.debug(f"Unable to find fMRIPrep outputs {missing_attrs_str} for workflow {nodehierarchy}")
 
         return connected_attrs
