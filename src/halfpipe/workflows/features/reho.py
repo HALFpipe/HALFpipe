@@ -21,7 +21,7 @@ from ..memory import MemoryCalculator
 def init_reho_wf(
     workdir: str | Path,
     feature: Feature | None = None,
-    fwhm: float | None=None,
+    fwhm: float | None = None,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:

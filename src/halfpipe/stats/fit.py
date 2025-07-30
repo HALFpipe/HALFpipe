@@ -8,7 +8,6 @@ from typing import Iterator, Literal, NamedTuple, Sequence, Type
 
 import nibabel as nib
 import numpy as np
-from nilearn.image import new_img_like
 from numpy import typing as npt
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
@@ -163,7 +162,8 @@ def fit(
     )
 
     voxel_data, cmatdict = make_voxelwise_generator(
-        cope_data, var_cope_data,
+        cope_data,
+        var_cope_data,
         regressors,
         contrasts,
         algorithms_to_run,

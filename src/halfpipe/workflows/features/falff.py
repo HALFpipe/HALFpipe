@@ -64,7 +64,7 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
 def init_falff_wf(
     workdir: str | Path,
     feature: Feature | None = None,
-    fwhm: float | None=None,
+    fwhm: float | None = None,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
