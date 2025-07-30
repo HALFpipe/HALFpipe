@@ -2,15 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
-from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.reports.imageplot import PlotRegistration
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
+from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -46,19 +45,7 @@ def init_anat_report_wf(
         name="inputnode",
     )
 
-    # select_std = pe.Node(
-    #     # KeySelect(fields=["standardized", "mask_std"]),
-    #     KeySelect(fields=["t1w_std", "mask_std"]),
-    #     name="select_std",
-    #     run_without_submitting=True,
-    #     nohash=True,
-    # )
-    # select_std.inputs.key = Constants.reference_space
-    # workflow.connect(inputnode, "t1w_std", select_std, "t1w_std")
-    # workflow.connect(inputnode, "mask_std", select_std, "mask_std")
-    # workflow.connect(inputnode, "template", select_std, "keys")
-
-    #
+    # Map outputs into result data structure
     make_resultdicts = pe.Node(
         MakeResultdicts(reportkeys=["skull_strip_report", "t1_norm_rpt", *fmriprepreports]),
         name="make_resultdicts",
@@ -78,10 +65,8 @@ def init_anat_report_wf(
     workflow.connect(skull_strip_report, "out_report", make_resultdicts, "skull_strip_report")
 
     # T1 -> mni
-    spaces = config.workflow.spaces
-    assert isinstance(spaces, SpatialReferences)
     t1_norm_rpt = pe.Node(
-        PlotRegistration(template=spaces.get_spaces()[0]),
+        PlotRegistration(template=Constants.reference_space),
         name="t1_norm_rpt",
         mem_gb=memcalc.min_gb,
     )

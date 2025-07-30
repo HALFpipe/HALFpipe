@@ -35,7 +35,7 @@ class ModelAlgorithm(ABC):
         raise NotImplementedError()
 
     @classmethod
-    def write_map(cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series) -> Path:
+    def write_map(cls, reference_image: nib.analyze.AnalyzeImage | None, out_name: str, series: pd.Series) -> Path:
         coordinates = series.index.tolist()
         values = series.values.tolist()
 
@@ -56,6 +56,7 @@ class ModelAlgorithm(ABC):
 
         array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
 
+        # np.savetxt(array)
         image = new_img_like(reference_image, array, copy_header=True)
         if not isinstance(image.header, nib.nifti1.Nifti1Header):
             raise TypeError("Only nifti1 headers are supported")

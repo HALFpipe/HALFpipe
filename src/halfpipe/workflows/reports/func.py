@@ -2,11 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-
-from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.image_maths.resample import Resample
 from ...interfaces.reports.imageplot import PlotEpi, PlotRegistration
@@ -103,10 +100,8 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
 
     # Register EPI to MNI space to use in the QC report
     # EPI -> MNI
-    spaces = config.workflow.spaces
-    assert isinstance(spaces, SpatialReferences)
     epi_norm_rpt = pe.Node(
-        PlotRegistration(template=spaces.get_spaces()[0]),
+        PlotRegistration(template=Constants.reference_space),
         name="epi_norm_rpt",
         mem_gb=0.1,
     )

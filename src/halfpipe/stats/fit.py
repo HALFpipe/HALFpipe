@@ -47,7 +47,7 @@ def load_data(
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
     quiet: bool | None = None,
-) -> tuple[nib.analyze.AnalyzeImage, nib.analyze.AnalyzeImage]:
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     if len(cope_files) != len(mask_files):
         raise ValueError(f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})")
 
@@ -96,11 +96,7 @@ def load_data(
     cope_data[~mask_data] = np.nan
     var_cope_data[~mask_data] = np.nan
 
-    # Create image objects.
-    copes_img = new_img_like(cope_imgs[0], cope_data, copy_header=True)
-    var_copes_img = new_img_like(cope_imgs[0], var_cope_data, copy_header=True)
-
-    return copes_img, var_copes_img
+    return cope_data, var_cope_data
 
 
 def ensure_row_vector(x):
@@ -108,16 +104,13 @@ def ensure_row_vector(x):
 
 
 def make_voxelwise_generator(
-    copes_img: nib.analyze.AnalyzeImage,
-    var_copes_img: nib.analyze.AnalyzeImage,
+    copes: npt.NDArray[np.float64],
+    var_copes: npt.NDArray[np.float64],
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
 ) -> tuple[Iterator[VoxelData], dict]:
-    shape = copes_img.shape[:3]
-
-    copes = copes_img.get_fdata()
-    var_copes = var_copes_img.get_fdata()
+    shape = copes.shape[:3]
 
     dmat, contrast_matrices = parse_design(regressors, contrasts)
     regressor_count = dmat.columns.size
@@ -163,15 +156,14 @@ def fit(
     algorithms_to_run: list[str],
     num_threads: int,
 ) -> dict[str, Sequence[Literal[False] | str]]:
-    copes_img, var_copes_img = load_data(
+    cope_data, var_cope_data = load_data(
         cope_files,
         var_cope_files,
         mask_files,
     )
 
     voxel_data, cmatdict = make_voxelwise_generator(
-        copes_img,
-        var_copes_img,
+        cope_data, var_cope_data,
         regressors,
         contrasts,
         algorithms_to_run,

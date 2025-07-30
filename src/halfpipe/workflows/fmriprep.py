@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from unittest.mock import patch
 
 from fmriprep import config
@@ -28,17 +28,6 @@ def get_fmriprep_wf_name() -> str:
     return f"fmriprep_{ver.major}_{ver.minor}_wf"
 
 
-# def _find_child(hierarchy, name):
-#     wf = hierarchy[-1]
-#     for node in wf._graph.nodes():
-#         if node.name == name:
-#             return hierarchy, node
-#         elif isinstance(node, pe.Workflow):
-#             res = _find_child([*hierarchy, node], name)
-#             if res is not None:
-#                 return res
-
-
 @dataclass(frozen=True, kw_only=True)
 class Connection:
     source: Literal["anat_fit_wf", "bold_wf", "reports_wf"]
@@ -51,6 +40,11 @@ connections = {
         source="anat_fit_wf",
         path=("register_template_wf", "outputnode"),
         attr="anat2std_xfm",
+    ),
+    "std2anat_xfm": Connection(
+        source="anat_fit_wf",
+        path=("register_template_wf", "outputnode"),
+        attr="std2anat_xfm",
     ),
     "ds_t1w_dseg_mask_report": Connection(
         source="anat_fit_wf",
@@ -104,8 +98,13 @@ connections = {
     ),
     "bold_mask_anat": Connection(
         source="bold_wf",
-        path=("bold_fit_wf", "outputnode"),
-        attr="bold_mask",
+        path=("ds_bold_t1_wf", "ds_mask"),
+        attr="out_file",
+    ),
+    "bold_ref_anat": Connection(
+        source="bold_wf",
+        path=("ds_bold_t1_wf", "ds_ref"),
+        attr="out_file",
     ),
     "bold_file_native": Connection(
         # BOLD series resampled into BOLD reference space. Slice-timing,
@@ -428,7 +427,8 @@ class FmriprepFactory(Factory):
         node: pe.Node,
         source_file: Path | str | None = None,
         subject_id: str | None = None,
-        **_,
+        ignore_attrs: frozenset[str] = frozenset({"alt_bold_file", "alt_resampling_reference"}),
+        **_: Any,
     ) -> set[str]:
         """
         This method connects equally named attributes of nodes
@@ -456,7 +456,7 @@ class FmriprepFactory(Factory):
         for key, value in node.inputs.get().items():
             if isdefined(value):
                 continue
-            if key in {"alt_bold_file", "alt_resampling_reference"}:
+            if key in ignore_attrs:
                 continue
             connection = connections.get(key)
             if not connection:

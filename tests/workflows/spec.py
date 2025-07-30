@@ -26,21 +26,9 @@ class TestSetting:
 def make_spec(
     dataset_files: list[File],
     pcc_mask: Path,
+    test_settings: list[TestSetting],
     event_file: File | None = None,
-    test_settings: list[TestSetting] | None = None,
 ) -> Spec:
-    if test_settings is None:
-        test_settings = [
-            TestSetting(
-                name="default",
-                base_setting=dict(
-                    confounds_removal=["(trans|rot)_[xyz]"],
-                    grand_mean_scaling=dict(mean=10000.0),
-                    ica_aroma=True,
-                ),
-            )
-        ]
-
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
     assert isinstance(spec, Spec)
@@ -100,29 +88,32 @@ def make_spec(
     return spec
 
 
-def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, event_file: File | None) -> None:
+def add_settings_and_features_to_spec(
+    spec: Spec,
+    test_setting: TestSetting,
+    event_file: File | None,
+) -> None:
     setting_schema = SettingSchema()
     name = test_setting.name
 
     base_setting = test_setting.base_setting
-    glm_setting = dict(
-        output_image=True,  # TODO parametrize this
-        bandpass_filter=dict(type="gaussian", hp_width=125.0),
-        smoothing=dict(fwhm=6.0),
-        **base_setting,
+
+    glm_setting = setting_schema.load(
+        dict(
+            name=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
+            output_image=True,
+            bandpass_filter=dict(type="gaussian", hp_width=125.0),
+            smoothing=dict(fwhm=6.0),
+            **base_setting,
+        )
     )
-
-    standard_setting = setting_schema.load(dict(name=f"{name}StandardSetting", space="standard", **glm_setting))
-    spec.settings.append(standard_setting)
-
-    native_setting = setting_schema.load(dict(name=f"{name}NativeSetting", space="native", **glm_setting))
-    spec.settings.append(native_setting)
+    spec.settings.append(glm_setting)
 
     falff_reho_corr_matrix_setting = setting_schema.load(
         dict(
             name=f"{name}FALFFAndReHoAndCorrMatrixSetting",
-            output_image=False,
             bandpass_filter=dict(type="frequency_based", low=0.01, high=0.1),
+            output_image=False,
             **base_setting,
         )
     )
@@ -140,31 +131,30 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
     # Set up features
     feature_schema = FeatureSchema()
     if event_file is not None:
-        for suffix, setting in (("Standard", standard_setting), ("Native", native_setting)):
-            conditions = ConditionFile(event_file).conditions
-            contrast_values = {
-                conditions[0]: 1.0,
-                conditions[1]: -1.0,
-            }
-            task_based_feature = feature_schema.load(
-                dict(
-                    name=f"{name}TaskBased{suffix}",
-                    type="task_based",
-                    high_pass_filter_cutoff=125.0,
-                    conditions=conditions,
-                    contrasts=[
-                        dict(name="contrast", type="t", values=contrast_values),
-                    ],
-                    setting=setting["name"],
-                )
+        conditions = ConditionFile(event_file).conditions
+        contrast_values = {
+            conditions[0]: 1.0,
+            conditions[1]: -1.0,
+        }
+        task_based_feature = feature_schema.load(
+            dict(
+                name=f"{name}TaskBased",
+                type="task_based",
+                high_pass_filter_cutoff=125.0,
+                conditions=conditions,
+                contrasts=[
+                    dict(name="contrast", type="t", values=contrast_values),
+                ],
+                setting=glm_setting["name"],
             )
-            spec.features.append(task_based_feature)
+        )
+        spec.features.append(task_based_feature)
     pcc_feature = feature_schema.load(
         dict(
             name=f"{name}SeedCorr",
             type="seed_based_connectivity",
             seeds=["pcc"],
-            setting=standard_setting["name"],
+            setting=glm_setting["name"],
         ),
     )
     dual_feature = feature_schema.load(
@@ -172,7 +162,7 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
             name=f"{name}DualReg",
             type="dual_regression",
             maps=["smith09"],
-            setting=standard_setting["name"],
+            setting=glm_setting["name"],
         ),
     )
     fc_connectivity_feature = feature_schema.load(
@@ -180,14 +170,14 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
             name=f"{name}CorrMatrix",
             type="atlas_based_connectivity",
             atlases=["schaefer2018"],
-            setting=f"{name}FALFFAndReHoAndCorrMatrixSetting",
+            setting=falff_reho_corr_matrix_setting["name"],
         ),
     )
     reho_feature = feature_schema.load(
         dict(
             name=f"{name}ReHo",
             type="reho",
-            setting=f"{name}FALFFAndReHoAndCorrMatrixSetting",
+            setting=falff_reho_corr_matrix_setting["name"],
             smoothing=dict(fwhm=6.0),
         ),
     )
@@ -195,8 +185,8 @@ def add_settings_and_features_to_spec(spec: Spec, test_setting: TestSetting, eve
         dict(
             name=f"{name}FALFF",
             type="falff",
-            setting=f"{name}FALFFAndReHoAndCorrMatrixSetting",
-            unfiltered_setting=f"{name}FALFFUnfilteredSetting",
+            setting=falff_reho_corr_matrix_setting["name"],
+            unfiltered_setting=falff_unfiltered_setting["name"],
             smoothing=dict(fwhm=6.0),
         ),
     )

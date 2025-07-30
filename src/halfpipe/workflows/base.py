@@ -76,7 +76,7 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
-    feature_factory = FeatureFactory(ctx, post_processing_factory)
+    feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
     stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
