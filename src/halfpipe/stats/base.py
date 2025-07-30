@@ -35,7 +35,7 @@ class ModelAlgorithm(ABC):
         raise NotImplementedError()
 
     @classmethod
-    def write_map(cls, reference_image: nib.analyze.AnalyzeImage | None, out_name: str, series: pd.Series) -> Path:
+    def write_map(cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series) -> Path:
         coordinates = series.index.tolist()
         values = series.values.tolist()
 

@@ -104,7 +104,7 @@ class FeatureFactory(Factory):
 
             raw_sources = [*raw_sources, *condition_file_paths]
 
-            condition_units = None
+            condition_units: str | None = None
             condition_units_set: set[str | None] = {
                 database.metadata(condition_file_path, "units") for condition_file_path in condition_file_paths
             }
@@ -118,7 +118,7 @@ class FeatureFactory(Factory):
 
             workflow = init_taskbased_wf(
                 condition_files=condition_files,
-                condition_units=condition_units,
+                condition_units=condition_units,  # type: ignore[arg-type]
                 **kwargs,
             )
         elif feature.type == "seed_based_connectivity":

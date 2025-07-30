@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal
 
 import nibabel as nib
 import numpy as np
@@ -16,7 +17,7 @@ from ..fixes.applytransforms import ApplyTransforms, ApplyTransformsInputSpec
 
 class ResampleInputSpec(ApplyTransformsInputSpec):
     input_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False)
-    reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=True)
+    reference_space = traits.Either("MNI152NLin6Asym", "MNI152NLin2009cAsym", mandatory=False)
     reference_res = traits.Int(mandatory=False)
     lazy = traits.Bool(default=True, usedefault=True, desc="only resample if necessary")
 
@@ -42,22 +43,25 @@ class Resample(ApplyTransforms):
     def _run_interface(self, runtime, correct_return_codes=(0,)):
         self.resample = False
 
-        reference_space = self.inputs.reference_space
-        reference_res = self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
+        reference_space: Literal["MNI152NLin6Asym", "MNI152NLin2009cAsym"] | None = (
+            self.inputs.reference_space if isdefined(self.inputs.reference_space) else None
+        )
+        reference_res: int | None = self.inputs.reference_res if isdefined(self.inputs.reference_res) else None
 
         if not isdefined(self.inputs.reference_image):
-            if reference_res is not None:
-                self.inputs.reference_image = get_template(
-                    reference_space,
-                    resolution=reference_res,
-                    desc="brain",
-                    suffix="mask",
-                )
+            if reference_space is None or reference_res is None:
+                raise ValueError("Reference image must be defined if reference space and resolution are not provided")
+            self.inputs.reference_image = get_template(
+                reference_space,
+                resolution=reference_res,
+                desc="brain",
+                suffix="mask",
+            )
 
         if not isdefined(self.inputs.dimension):
             self.inputs.dimension = 3
 
-        input_matches_reference = False
+        input_matches_reference: bool = False
         if isdefined(self.inputs.input_image):
             input_image = nib.nifti1.load(self.inputs.input_image)
             reference_image = nib.nifti1.load(self.inputs.reference_image)
@@ -74,6 +78,8 @@ class Resample(ApplyTransforms):
                 self.inputs.input_image_type = 3  # Set to time series
 
         if not isdefined(self.inputs.transforms):
+            if reference_space is None:
+                raise ValueError("Reference space must be defined if transforms are not provided")
             transforms = ["identity"]
 
             input_space = self.inputs.input_space
