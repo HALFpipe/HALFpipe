@@ -21,6 +21,7 @@ from halfpipe.resource import get as get_resource
 class TestSetting:
     name: str
     base_setting: dict[str, Any]
+    image_output: bool = True
 
 
 def make_spec(
@@ -101,7 +102,7 @@ def add_settings_and_features_to_spec(
     glm_setting = setting_schema.load(
         dict(
             name=f"{name}DualRegAndSeedCorrAndTaskBasedSetting",
-            output_image=True,
+            output_image=test_setting.image_output,
             bandpass_filter=dict(type="gaussian", hp_width=125.0),
             smoothing=dict(fwhm=6.0),
             **base_setting,
