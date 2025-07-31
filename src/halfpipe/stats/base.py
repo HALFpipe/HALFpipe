@@ -56,7 +56,6 @@ class ModelAlgorithm(ABC):
 
         array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
 
-        # np.savetxt(array)
         image = new_img_like(reference_image, array, copy_header=True)
         if not isinstance(image.header, nib.nifti1.Nifti1Header):
             raise TypeError("Only nifti1 headers are supported")

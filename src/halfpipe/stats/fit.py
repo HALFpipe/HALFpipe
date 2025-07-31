@@ -8,6 +8,7 @@ from typing import Iterator, Literal, NamedTuple, Sequence, Type
 
 import nibabel as nib
 import numpy as np
+from nilearn.image import new_img_like
 from numpy import typing as npt
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
@@ -46,7 +47,7 @@ def load_data(
     var_cope_files: list[Path] | None,
     mask_files: list[Path],
     quiet: bool | None = None,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+) -> tuple[nib.analyze.AnalyzeImage, nib.analyze.AnalyzeImage]:
     if len(cope_files) != len(mask_files):
         raise ValueError(f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})")
 
@@ -95,7 +96,11 @@ def load_data(
     cope_data[~mask_data] = np.nan
     var_cope_data[~mask_data] = np.nan
 
-    return cope_data, var_cope_data
+    # Create image objects.
+    copes_img = new_img_like(cope_imgs[0], cope_data, copy_header=True)
+    var_copes_img = new_img_like(cope_imgs[0], var_cope_data, copy_header=True)
+
+    return copes_img, var_copes_img
 
 
 def ensure_row_vector(x):
@@ -103,13 +108,16 @@ def ensure_row_vector(x):
 
 
 def make_voxelwise_generator(
-    copes: npt.NDArray[np.float64],
-    var_copes: npt.NDArray[np.float64],
+    copes_img: nib.analyze.AnalyzeImage,
+    var_copes_img: nib.analyze.AnalyzeImage,
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
 ) -> tuple[Iterator[VoxelData], dict]:
-    shape = copes.shape[:3]
+    shape = copes_img.shape[:3]
+
+    copes = copes_img.get_fdata()
+    var_copes = var_copes_img.get_fdata()
 
     dmat, contrast_matrices = parse_design(regressors, contrasts)
     regressor_count = dmat.columns.size
@@ -155,15 +163,15 @@ def fit(
     algorithms_to_run: list[str],
     num_threads: int,
 ) -> dict[str, Sequence[Literal[False] | str]]:
-    cope_data, var_cope_data = load_data(
+    copes_img, var_copes_img = load_data(
         cope_files,
         var_cope_files,
         mask_files,
     )
 
     voxel_data, cmatdict = make_voxelwise_generator(
-        cope_data,
-        var_cope_data,
+        copes_img,
+        var_copes_img,
         regressors,
         contrasts,
         algorithms_to_run,
