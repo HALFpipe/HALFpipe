@@ -20,6 +20,7 @@ key_to_bids_map: Mapping[str, str] = dict(
     lp_width="LowPassWidth",
     fd_perc="FDPerc",
     fd_mean="FDMean",
+    fd_max="FDMax",
     mean_gm_tsnr="MeanGMTSNR",
     mean_seed_tsnr="MeanSeedTSNR",
     mean_component_tsnr="MeanComponentTSNR",

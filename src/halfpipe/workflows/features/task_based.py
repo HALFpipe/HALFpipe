@@ -5,6 +5,7 @@
 import os
 from math import isfinite
 from pathlib import Path
+from typing import Literal
 
 import nipype.algorithms.modelgen as model
 import numpy as np
@@ -19,6 +20,7 @@ from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
 from ...interfaces.utility.vest import Unvest
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ...utils.ops import first_float, first_str, ravel
 from ..memory import MemoryCalculator
@@ -48,9 +50,10 @@ def _get_scan_start(vals) -> float:
 
 def init_taskbased_wf(
     workdir: Path | str,
-    feature,
+    feature: Feature,
     condition_files: tuple[str | tuple[str, str], ...],
-    condition_units,
+    condition_units: Literal["secs", "scans"],
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ):
     """
@@ -126,7 +129,9 @@ def init_taskbased_wf(
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     # transform contrasts dictionary to nipype list data structure
-    contrasts = []
+    contrasts = list()
+    if feature.contrasts is None:
+        raise ValueError("Feature must have contrasts defined")
     condition_names = feature.conditions
     for contrast in feature.contrasts:
         contrast_values = [contrast["values"].get(c, 0.0) for c in condition_names]
@@ -194,7 +199,7 @@ def init_taskbased_wf(
             )
         )
     else:
-        raise ValueError(f'HRF "{feature.hrf}" is not yet implemented')
+        raise ValueError(f'HRF "{feature.hrf}" is not available')
 
     level1design = pe.Node(
         Level1Design(

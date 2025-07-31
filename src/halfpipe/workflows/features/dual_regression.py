@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Any, Literal, Sequence
 
 from fmriprep import config
 from nipype.algorithms import confounds as nac
@@ -17,12 +18,13 @@ from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
-def _contrasts(map_timeseries_file=None, confounds_file=None):
+def _contrasts(map_timeseries_file: str | None = None, confounds_file: str | None = None) -> tuple[str, str, list[str]]:
     import csv
     from pathlib import Path
 
@@ -30,6 +32,9 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
     import pandas as pd
 
     from halfpipe.ingest.spreadsheet import read_spreadsheet
+
+    if map_timeseries_file is None:
+        raise ValueError("map_timeseries_file must be provided")
 
     map_timeseries_df = read_spreadsheet(map_timeseries_file)
     _, m = map_timeseries_df.shape
@@ -52,11 +57,7 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
         contrast_columns = [*map_component_names]
     contrast_df = pd.DataFrame(contrast_mat, index=map_component_names, columns=contrast_columns)
 
-    kwargs = {
-        "sep": "\t",
-        "na_rep": "n/a",
-        "quoting": csv.QUOTE_NONNUMERIC,
-    }
+    kwargs: dict[str, Any] = dict(sep="\t", na_rep="n/a", quoting=csv.QUOTE_NONNUMERIC)
     out_with_header = Path.cwd() / "merge_with_header.tsv"
     contrast_df.to_csv(out_with_header, index=True, header=True, **kwargs)
     out_no_header = Path.cwd() / "merge_no_header.tsv"
@@ -66,11 +67,12 @@ def _contrasts(map_timeseries_file=None, confounds_file=None):
 
 def init_dualregression_wf(
     workdir: str | Path,
-    feature=None,
-    map_files=None,
-    map_spaces=None,
+    feature: Feature | None = None,
+    map_files: Sequence[Path | str] | None = None,
+    map_spaces: Sequence[str] | None = None,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
-):
+) -> pe.Workflow:
     """
     create a workflow to calculate dual regression for ICA seeds
     """
@@ -94,6 +96,9 @@ def init_dualregression_wf(
                 "map_names",
                 "map_files",
                 "map_spaces",
+                # resampling to native space
+                "std2anat_xfm",
+                "bold_ref_anat",
             ]
         ),
         name="inputnode",
@@ -147,14 +152,19 @@ def init_dualregression_wf(
     workflow.connect(merge_resultdicts, "out", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="LanczosWindowedSinc", **reference_dict),
+        Resample(interpolation="LanczosWindowedSinc"),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
         mem_gb=memcalc.series_std_gb,
     )
+    if space == "standard":
+        resample.inputs.reference_space = Constants.reference_space
+        resample.inputs.reference_res = Constants.reference_res
+    elif space == "native":
+        workflow.connect(inputnode, "std2anat_xfm", resample, "transforms")
+        workflow.connect(inputnode, "bold_ref_anat", resample, "reference_image")
     workflow.connect(inputnode, "map_files", resample, "input_image")
     workflow.connect(inputnode, "map_spaces", resample, "input_space")
 

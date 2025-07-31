@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal
 
 import nipype.pipeline.engine as pe
 from nipype.interfaces import utility as niu
@@ -12,16 +13,18 @@ from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
 from ...interfaces.image_maths.zscore import ZScore
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 
 
 def init_reho_wf(
     workdir: str | Path,
-    feature=None,
-    fwhm=None,
+    feature: Feature | None = None,
+    fwhm: float | None = None,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
-):
+) -> pe.Workflow:
     """
     create a workflow to do ReHo
 

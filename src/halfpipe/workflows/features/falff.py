@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal
 
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
@@ -12,6 +13,7 @@ from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
 from ...interfaces.image_maths.zscore import ZScore
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 
@@ -61,8 +63,9 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
 
 def init_falff_wf(
     workdir: str | Path,
-    feature=None,
-    fwhm=None,
+    feature: Feature | None = None,
+    fwhm: float | None = None,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """

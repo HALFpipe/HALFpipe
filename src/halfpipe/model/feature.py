@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import TYPE_CHECKING, Any
+
 from marshmallow import Schema, fields, post_dump, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
@@ -19,6 +21,10 @@ class Feature:
 
     def __hash__(self):
         return hash(self.name)  # name is unique
+
+    if TYPE_CHECKING:
+
+        def __getattr__(self, attribute: str) -> Any: ...
 
 
 class BaseFeatureSchema(Schema):
