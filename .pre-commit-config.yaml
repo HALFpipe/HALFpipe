@@ -40,3 +40,4 @@ repos:
           - types-requests
           - types-tabulate
           - typing_extensions
+          - types-PyYAML
