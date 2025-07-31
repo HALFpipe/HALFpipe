@@ -136,6 +136,11 @@ jobs:
           push: false
           tags: |
             ${{ steps.metadata.outputs.build_tag }}
+          secrets: |
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_ENDPOINT_URL=${{ secrets.AWS_ENDPOINT_URL }}
+            CONDA_BUCKET=${{ secrets.CONDA_BUCKET }}
 
       - name: Cache data
         uses: actions/cache@v4
@@ -207,11 +212,6 @@ jobs:
           labels: |
             ${{ steps.metadata.outputs.labels }}
           platforms: linux/amd64
-          secrets: |
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_ENDPOINT_URL=${{ secrets.AWS_ENDPOINT_URL }}
-            CONDA_BUCKET=${{ secrets.CONDA_BUCKET }}
           push: true
           tags: |
             ${{ steps.metadata.outputs.push_tags }}
