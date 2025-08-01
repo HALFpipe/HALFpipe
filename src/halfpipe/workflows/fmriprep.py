@@ -456,21 +456,29 @@ class FmriprepFactory(Factory):
         for key, value in node.inputs.get().items():
             if isdefined(value):
                 continue
+
             if key in ignore_attrs:
                 continue
+
             connection = connections.get(key)
             if not connection:
                 missing_attrs.add(key)
                 continue
+
             hierarchy = hierarchies[connection.source].copy()
             for name in connection.path:
                 child = hierarchy[-1].get_node(name)
                 if not child:
-                    raise ValueError(f'Missing node "{name}" in workflow {hierarchy[-1].name}')
+                    logger.debug(f'Missing node "{name}" in workflow {hierarchy[-1].name}')
+                    break
                 hierarchy.append(child)
-            child = hierarchy.pop(-1)
-            self.connect_attr(hierarchy, child, connection.attr, nodehierarchy, node, key)
-            connected_attrs.add(key)
+            else:  # This else is run if there was no break in the for loop
+                child = hierarchy.pop(-1)
+                self.connect_attr(hierarchy, child, connection.attr, nodehierarchy, node, key)
+                connected_attrs.add(key)
+                continue
+
+            missing_attrs.add(key)
 
         if missing_attrs:
             missing_attrs_str = p.join(sorted(missing_attrs))  # type: ignore[arg-type]
