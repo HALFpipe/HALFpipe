@@ -67,7 +67,8 @@ class SingleTrialFeatureSchema(BaseFeatureSchema):
         dump_default="cond",
         load_default="cond",
         validate=validate.OneOf(["nuis", "cond"]),
-    )    
+    )
+
 
 class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
@@ -139,7 +140,7 @@ class FeatureSchema(OneOfSchema):
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
         "reho": ReHoFeatureSchema,
         "falff": FALFFFeatureSchema,
-        "single_trials": SingleTrialFeatureSchema
+        "single_trials": SingleTrialFeatureSchema,
     }
 
     def get_obj_type(self, obj):

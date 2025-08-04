@@ -22,8 +22,8 @@ from .falff import init_falff_wf
 from .gig_ica import init_gig_ica_wf
 from .reho import init_reho_wf
 from .seed_based_connectivity import init_seed_based_connectivity_wf
-from .task_based import init_taskbased_wf
 from .single_trials import init_singletrials_wf
+from .task_based import init_taskbased_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -118,10 +118,7 @@ class FeatureFactory(Factory):
             if condition_units == "seconds":
                 condition_units = "secs"
 
-            func = {
-                "task_based": init_taskbased_wf,
-                "single_trials": init_singletrials_wf
-            }[feature.type]
+            func = {"task_based": init_taskbased_wf, "single_trials": init_singletrials_wf}[feature.type]
 
             workflow = func(
                 condition_files=condition_files,
