@@ -1,29 +1,26 @@
-{% set name = "niworkflows" %}
-{% set version = "1.13.4" %}
-
 # Dependencies derived from:
 # https://github.com/nipreps/niworkflows/blob/maint/1.13.4/pyproject.toml
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "niworkflows"
+  version: "1.13.4"
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  url: https://pypi.io/packages/source/n/niworkflows/niworkflows-1.13.4.tar.gz
   sha256: 2bec7ab4e68a4761e4abb83cccb578388cfc253be55976832e4e7b299e485dfd
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - pip
     - hatchling
     - hatch-vcs
   run:
-    - python 3.11.*
+    - python
     - acres
     - attrs>=20.1
     - jinja2>=3
@@ -41,7 +38,7 @@ requirements:
     - scikit-image>=0.18
     - scipy>=1.8
     - seaborn>=0.11
-    - svgutils>=0.3.4  # https://github.com/nipreps/niworkflows/issues/595
+    - svgutils>=0.3.4 # https://github.com/nipreps/niworkflows/issues/595
     - templateflow>=23.1
     - transforms3d>=0.4
 

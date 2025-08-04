@@ -16,13 +16,13 @@ build:
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - pip
     - hatchling
     - hatch-vcs
     - nipreps-versions
   run:
-    - python 3.11.*
+    - python
     - acres>=0.2
     - looseversion>=1.3
     - nibabel>=4.0.1
@@ -45,6 +45,9 @@ requirements:
     - toml>=0.10
     - codecarbon>=2
     - APScheduler>=3.10
+    # Workflow dependencies: AFNI
+    - afni-3dtshift
+    - afni-3dunifize
     # Workflow dependencies: ANTs
     - ants
     # Workflow dependencies: Convert3d

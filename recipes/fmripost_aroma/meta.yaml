@@ -1,16 +1,13 @@
-{% set name = "fmripost_aroma" %}
-{% set version = "0.0.10" %}
-
 # Dependencies derived from:
 # https://github.com/nipreps/fmripost-aroma/blob/0.0.10/pyproject.toml
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "fmripost_aroma"
+  version: "0.0.10"
 
 source:
   git_url: https://github.com/nipreps/fmripost-aroma.git
-  git_rev: "{{ version }}"
+  git_rev: "0.0.10"
 
 build:
   number: 0
@@ -18,11 +15,11 @@ build:
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - hatchling
     - hatch-vcs
   run:
-    - python 3.11.*
+    - python
     - fmriprep
     - nipype>=1.8.5
     - nireports
