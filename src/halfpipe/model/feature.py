@@ -63,6 +63,12 @@ class SingleTrialFeatureSchema(BaseFeatureSchema):
         validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]),
     )
 
+    mode = fields.Str(
+        dump_default="cond",
+        load_default="cond",
+        validate=validate.OneOf(["nuis", "cond"]),
+    )    
+
 class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
 
