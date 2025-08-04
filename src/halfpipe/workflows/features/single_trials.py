@@ -86,13 +86,6 @@ def cond_bunch_to_lss(subject_info, mode='cond'):
                     onsets.append([flat[i]['onset'] for i in mask])
                     durations.append([flat[i]['duration'] for i in mask])
                     amplitudes.append([flat[i]['amp'] for i in mask])
-        elif mode == 'all':
-            for i in others:
-                nm = f"{flat[i]['cname']}__{flat[i]['trial_id']:03d}"
-                conditions.append(nm)
-                onsets.append([flat[i]['onset']])
-                durations.append([flat[i]['duration']])
-                amplitudes.append([flat[i]['amp']])
         else:
             raise ValueError(mode)
         out.append(
@@ -108,6 +101,7 @@ def cond_bunch_to_lss(subject_info, mode='cond'):
             )
         )
     return out
+
 
 def plot_fsl_design(design_file, png_name=None):
     import numpy as np, matplotlib.pyplot as plt, os, pathlib
@@ -132,17 +126,14 @@ def pick_roi_betas(param_lists, idx=0):
     # param_lists: list of lists
     return [plist[idx] for plist in param_lists]
 
-def pack_fsl_outputs(lsa_file, lss_file):
-    return {
-        'lsa': lsa_file,
-        'lss': lss_file
-    }
 
 def _get_scan_start(vals) -> float:
     return float(vals["scan_start"])
 
+
 def extract_conditions(subject_info):
     return {"trial_list": subject_info[0].conditions}
+
 
 def init_singletrials_wf(
     workdir: Path | str,
@@ -328,10 +319,10 @@ def init_singletrials_wf(
         niu.Function(
             input_names=['subject_info','mode'],
             output_names=['lss_subject_infos'],
-            function=cond_bunch_to_lss),
+            function=cond_bunch_to_lss
+        ),
         name='cond2lss'
     )
-    cond2lss.inputs.mode = 'nuis'    
 
     spec_lss = pe.MapNode(
         model.SpecifyModel(),
@@ -430,6 +421,7 @@ def init_singletrials_wf(
 
     # maybe just once in merge_resultdicts?
     if feature is not None:
+        cond2lss.inputs.mode = feature.mode
         make_resultdicts_lss.inputs.feature = feature.name
         make_resultdicts_lsa.inputs.feature = feature.name
 

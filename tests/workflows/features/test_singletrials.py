@@ -7,7 +7,7 @@ from scipy.stats import gamma
 from scipy.signal import fftconvolve
 from pathlib import Path
 from halfpipe.workflows.features.single_trials import init_singletrials_wf
-from types import SimpleNamespace
+from halfpipe.model.feature import FeatureSchema
 
 def build_events_df(onsets, conditions, duration):
     """
@@ -259,7 +259,8 @@ def test_singletrials(
         "hrf": "dgamma"
     }
 
-    feature = SimpleNamespace(**ddict)
+    feature_schema = FeatureSchema()
+    feature = feature_schema.load(ddict)
     
     single_trials_wf = init_singletrials_wf(
         condition_files=condition_file,
