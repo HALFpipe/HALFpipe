@@ -165,6 +165,17 @@ def add_settings_and_features_to_spec(
         )
         spec.features.append(task_based_feature)
 
+        single_trials_feature = feature_schema.load(
+            dict(
+                name=f"{name}SingleTrials",
+                type="single_trials",
+                high_pass_filter_cutoff=125.0,
+                conditions=conditions,
+                setting=glm_setting["name"],
+            )
+        )
+        spec.features.append(single_trials_feature)
+
     pcc_feature = feature_schema.load(
         dict(
             name=f"{name}SeedCorr",
