@@ -44,6 +44,25 @@ class BaseFeatureSchema(Schema):
         return {key: value for key, value in data.items() if value is not None}
 
 
+class SingleTrialFeatureSchema(BaseFeatureSchema):
+    type = fields.Str(dump_default="single_trials", validate=validate.Equal("single_trials"))
+
+    conditions = fields.List(fields.Str())
+
+    high_pass_filter_cutoff = fields.Float(
+        dump_default=125.0,
+        load_default=125.0,
+        allow_nan=True,
+        allow_none=True,
+        validate=validate.Range(min=0.0),
+    )
+
+    hrf = fields.Str(
+        dump_default="dgamma",
+        load_default="dgamma",
+        validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]),
+    )
+
 class TaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
 
@@ -114,6 +133,7 @@ class FeatureSchema(OneOfSchema):
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
         "reho": ReHoFeatureSchema,
         "falff": FALFFFeatureSchema,
+        "single_trials": SingleTrialFeatureSchema
     }
 
     def get_obj_type(self, obj):
