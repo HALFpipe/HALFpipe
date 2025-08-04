@@ -1,13 +1,14 @@
-import os
+from pathlib import Path
+
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
-from nipype import config
-from scipy.stats import gamma
 from scipy.signal import fftconvolve
-from pathlib import Path
-from halfpipe.workflows.features.single_trials import init_singletrials_wf
+from scipy.stats import gamma
+
 from halfpipe.model.feature import FeatureSchema
+from halfpipe.workflows.features.single_trials import init_singletrials_wf
+
 
 def build_events_df(onsets, conditions, duration):
     """
@@ -15,13 +16,10 @@ def build_events_df(onsets, conditions, duration):
     returns a pandas DataFrame with onset, duration, trial_type.
     """
     events = []
-    for onset, cond in zip(onsets, conditions):
-        events.append({
-            'onset': float(onset),
-            'duration': float(duration),
-            'trial_type': cond
-        })
+    for onset, cond in zip(onsets, conditions, strict=False):
+        events.append({"onset": float(onset), "duration": float(duration), "trial_type": cond})
     return pd.DataFrame(events)
+
 
 def spm_hrf(tr, oversampling=16, time_length=32.0, onset=0.0):
     """
@@ -31,11 +29,12 @@ def spm_hrf(tr, oversampling=16, time_length=32.0, onset=0.0):
     dt = tr / float(oversampling)
     time_vec = np.arange(0, time_length, dt)
     # parameters for the two gamma functions
-    peak1 = gamma.pdf(time_vec, 6)      # peak at 6s
+    peak1 = gamma.pdf(time_vec, 6)  # peak at 6s
     peak2 = gamma.pdf(time_vec, 16) * 0.35  # undershoot
     hrf = peak1 - peak2
     hrf = hrf / np.sum(hrf)  # normalize area=1
     return hrf, oversampling
+
 
 def convolve_hrf_from_onsets(onsets, hrf, tr, total_time, time_step=0.1):
     """
@@ -65,25 +64,27 @@ def convolve_hrf_from_onsets(onsets, hrf, tr, total_time, time_step=0.1):
     full = fftconvolve(highres_vector, hrf)[:n_hr]
 
     # Downsample to TR resolution
-    downsampled = full[::int(tr / time_step)]
+    downsampled = full[:: int(tr / time_step)]
     return downsampled[:n_tr]  # clip to match timepoints
+
 
 def make_half_masks(shape):
     """
     Returns two masks (house_mask, face_mask) splitting along x-axis.
     """
     house = np.zeros(shape, dtype=float)
-    house[:shape[0]//2, :, :] = 1.0
+    house[: shape[0] // 2, :, :] = 1.0
     face = np.zeros(shape, dtype=float)
-    face[shape[0]//2:, :, :] = 1.0
+    face[shape[0] // 2 :, :, :] = 1.0
     return house, face
+
 
 def generate_4d_data(shape, n_timepoints, events_df, house_mask, face_mask, amp, tr):
     """
     Create 4D data: Gaussian noise + HRF-convolved activations from events_df.
     Returns a 4D numpy array.
     """
-    
+
     # high-resolution HRF
     hrf, _ = spm_hrf(tr=0.1, oversampling=1)
     hrf /= hrf.max()
@@ -96,15 +97,16 @@ def generate_4d_data(shape, n_timepoints, events_df, house_mask, face_mask, amp,
         "house": events_df.query("trial_type == 'house'")["onset"].tolist(),
     }
 
-    conv_face  = convolve_hrf_from_onsets(onsets_by_type["face"], hrf, tr, total_time, time_step=0.1) * amp
+    conv_face = convolve_hrf_from_onsets(onsets_by_type["face"], hrf, tr, total_time, time_step=0.1) * amp
     conv_house = convolve_hrf_from_onsets(onsets_by_type["house"], hrf, tr, total_time, time_step=0.1) * amp
 
     # assemble 4D data
     data = np.random.normal(0, 0, size=shape + (n_timepoints,))
     for t in range(n_timepoints):
         data[..., t] += house_mask * conv_house[t]
-        data[..., t] += face_mask  * conv_face[t]
+        data[..., t] += face_mask * conv_face[t]
     return data
+
 
 def save_4d_nifti(data_4d, out_path, voxel_size, tr):
     """
@@ -112,20 +114,19 @@ def save_4d_nifti(data_4d, out_path, voxel_size, tr):
     """
     affine = np.diag([voxel_size, voxel_size, voxel_size, 1.0])
     hdr = nib.Nifti1Header()
-    hdr.set_xyzt_units(xyz='mm', t='sec')
-    hdr['pixdim'][1:4] = voxel_size
-    hdr['pixdim'][4] = tr
+    hdr.set_xyzt_units(xyz="mm", t="sec")
+    hdr["pixdim"][1:4] = voxel_size
+    hdr["pixdim"][4] = tr
     img = nib.Nifti1Image(data_4d, affine, header=hdr)
     nib.save(img, out_path)
 
 
 def plot_example(data_4d, out_path):
-
     import matplotlib.pyplot as plt
 
     # Pick example voxels
-    face_voxel  = (8, 5, 5)   # in the "face" half (x >= 5)
-    house_voxel = (2, 5, 5)   # in the "house" half (x < 5)
+    face_voxel = (8, 5, 5)  # in the "face" half (x >= 5)
+    house_voxel = (2, 5, 5)  # in the "house" half (x < 5)
 
     # Extract timecourses
     tc_face = data_4d[face_voxel]
@@ -143,15 +144,8 @@ def plot_example(data_4d, out_path):
     fig.savefig(out_path)
     plt.close(fig)
 
-def test_singletrials(
-    tmp_path: Path,
-    shape=(10,10,10),
-    n_timepoints=100,
-    duration=0,
-    amp=5.0,
-    tr=2.0
-    ):
 
+def test_singletrials(tmp_path: Path, shape=(10, 10, 10), n_timepoints=100, duration=0, amp=5.0, tr=2.0):
     workdir = tmp_path / "workdir"
     workdir.mkdir(exist_ok=True)
 
@@ -170,104 +164,64 @@ def test_singletrials(
         131.24871513882664,
         146.2612368172774,
         156.64656043381945,
-        168.05379551502983
+        168.05379551502983,
     ]
 
     # set order
     conditions = [
-        'house',
-        'house',
-        'face',
-        'face',
-        'house',
-        'face',
-        'face',
-        'house',
-        'face',
-        'face',
-        'house',
-        'house',
-        'face',
-        'house'
+        "house",
+        "house",
+        "face",
+        "face",
+        "house",
+        "face",
+        "face",
+        "house",
+        "face",
+        "face",
+        "house",
+        "house",
+        "face",
+        "house",
     ]
 
     # 1) Build and save events.tsv
-    events_df = build_events_df(
-        onsets,
-        conditions,
-        duration
-    )
+    events_df = build_events_df(onsets, conditions, duration)
 
     condition_file = tmp_path / "sub-01_task-HousesFaces_run-1_events.tsv"
-    events_df.to_csv(
-        condition_file,
-        sep='\t',
-        index=False
-    )
+    events_df.to_csv(condition_file, sep="\t", index=False)
 
     # create masks
     house_mask, face_mask = make_half_masks(shape)
 
     # generate 4D data with HRF convolution
-    data_4d = generate_4d_data(
-        shape,
-        n_timepoints,
-        events_df,
-        house_mask,
-        face_mask,
-        amp, 
-        tr=tr
-    )
+    data_4d = generate_4d_data(shape, n_timepoints, events_df, house_mask, face_mask, amp, tr=tr)
 
-    plot_example(
-        data_4d,
-        tmp_path / "example_timecourses.png"
-    )
+    plot_example(data_4d, tmp_path / "example_timecourses.png")
 
     # 4) Save volumes
     bold_file = tmp_path / "sub-01_ses-1_task-HousesFaces_run-1_bold.nii.gz"
-    save_4d_nifti(
-        data_4d,
-        bold_file,
-        voxel_size=2.0,
-        tr=tr
-    )
+    save_4d_nifti(data_4d, bold_file, voxel_size=2.0, tr=tr)
 
-    save_4d_nifti(
-        house_mask,
-        tmp_path / "house.nii.gz",
-        voxel_size=2.0,
-        tr=1
-    )    
+    save_4d_nifti(house_mask, tmp_path / "house.nii.gz", voxel_size=2.0, tr=1)
 
-    save_4d_nifti(
-        face_mask,
-        tmp_path / "face.nii.gz",
-        voxel_size=2.0,
-        tr=1
-    )
+    save_4d_nifti(face_mask, tmp_path / "face.nii.gz", voxel_size=2.0, tr=1)
 
     # init workflow
     ddict = {
         "name": "SingleTrials",
         "setting": "SingleTrialsSetting",
         "type": "single_trials",
-        "conditions": [
-            "house",
-            "face"
-        ],
-        "hrf": "dgamma"
+        "conditions": ["house", "face"],
+        "hrf": "dgamma",
     }
 
     feature_schema = FeatureSchema()
     feature = feature_schema.load(ddict)
-    
+
     single_trials_wf = init_singletrials_wf(
-        condition_files=condition_file,
-        condition_units="secs",
-        feature=feature,
-        workdir=workdir
-    )    
+        condition_files=condition_file, condition_units="secs", feature=feature, workdir=workdir
+    )
 
     # single_trials_wf.base_dir = workdir  # ensure outputs stay in main workdir
     source_file = bold_file
@@ -276,7 +230,7 @@ def test_singletrials(
     inputnode.mask = tmp_path / "face.nii.gz"
     inputnode.repetition_time = tr
     inputnode.tags = {
-        "sub": "01",          # Or whatever subject ID you want
+        "sub": "01",  # Or whatever subject ID you want
         "ses": "1",
     }
 
@@ -292,36 +246,34 @@ def test_singletrials(
     # LSA
     betas_lsa = nib.load(merge_resultdicts.result.outputs.out[0]["images"]["effect"]).get_fdata()
     n_trials = len(conditions) // 2  # should be 7 if 14 trials
-    face_betas_lsa = betas_lsa[face_mask>0, n_trials:]
-    house_betas_lsa = betas_lsa[face_mask>0, :n_trials]
+    face_betas_lsa = betas_lsa[face_mask > 0, n_trials:]
+    house_betas_lsa = betas_lsa[face_mask > 0, :n_trials]
 
     face_sum_lsa = face_betas_lsa.sum()
     house_sum_lsa = house_betas_lsa.sum()
-    
-    print(f"[LSA]: mask='face'")
+
+    print("[LSA]: mask='face'")
     print(f"\ttrial='face'\tbeta={round(face_sum_lsa, 2)}")
     print(f"\ttrial='house'\tbeta={round(house_sum_lsa, 2)}")
     print("")
 
     assert face_sum_lsa > house_sum_lsa, (
-        f"[LSA] Face voxels did not produce higher betas for face trials: "
-        f"{face_sum_lsa:.4f} vs {house_sum_lsa:.4f}"
+        f"[LSA] Face voxels did not produce higher betas for face trials: {face_sum_lsa:.4f} vs {house_sum_lsa:.4f}"
     )
 
     # LSS
     betas_lss = nib.load(merge_resultdicts.result.outputs.out[1]["images"]["effect"]).get_fdata()
-    face_betas_lss = betas_lss[face_mask>0, n_trials:]
-    house_betas_lss = betas_lss[face_mask>0, :n_trials]
+    face_betas_lss = betas_lss[face_mask > 0, n_trials:]
+    house_betas_lss = betas_lss[face_mask > 0, :n_trials]
 
     face_sum_lss = face_betas_lss.sum()
     house_sum_lss = house_betas_lss.sum()
 
-    print(f"[LSS]: mask='face'")
+    print("[LSS]: mask='face'")
     print(f"\ttrial='face'\tbeta={round(face_sum_lss, 2)}")
     print(f"\ttrial='house'\tbeta={round(house_sum_lss, 2)}")
     print("")
 
     assert face_sum_lss > house_sum_lss, (
-        f"[LSS] Face voxels did not produce higher betas for face trials: "
-        f"{face_sum_lss:.4f} vs {house_sum_lss:.4f}"
+        f"[LSS] Face voxels did not produce higher betas for face trials: {face_sum_lss:.4f} vs {house_sum_lss:.4f}"
     )
