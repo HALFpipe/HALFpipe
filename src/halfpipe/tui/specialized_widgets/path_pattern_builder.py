@@ -484,7 +484,8 @@ class PathPatternBuilder(DraggableModalScreen):
             compatible_task_tags = await self.app.push_screen_wait(
                 Confirm(
                     f"The task tags are not the same as extracted from the bold files!\n\
-The task tags from bold files are:\n{sorted(set(ctx.available_images['task']))}\nYour event file task tags are: \n{sorted(task_set)}.\
+The task tags from bold files are:\n{sorted(set(ctx.available_images['task']))}\n\
+Your event file task tags are: \n{sorted(task_set)}.\
 \nOnly the same tags will be associated together.\nProceed?",
                     left_button_text="YES",
                     right_button_text="NO",
