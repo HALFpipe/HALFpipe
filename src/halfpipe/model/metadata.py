@@ -57,6 +57,14 @@ class PEDirMetadataSchema(BaseMetadataSchema):
         ),
     )
 
+    total_readout_time = fields.Float(
+        metadata=dict(
+            description="Total readout time (in seconds), required for EPI fieldmaps.",
+            unit="seconds",
+        ),
+        validate=validate.Range(min=0.0),
+    )
+
 
 class TEMetadataSchema(BaseMetadataSchema):
     echo_time = fields.Float(

@@ -5,7 +5,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from math import isclose
-from typing import Callable, Generic, Hashable, TypeVar
+from typing import Any, Callable, Generic, Hashable, TypeVar
 
 from nipype.pipeline import engine as pe
 
@@ -88,7 +88,7 @@ class ICAAROMAComponentsFactory(Factory):
 
 
 class LookupFactory(Factory):
-    def __init__(self, ctx, previous_factory: Factory):
+    def __init__(self, ctx: FactoryContext, previous_factory: Factory) -> None:
         super(LookupFactory, self).__init__(ctx)
 
         self.wf_names: dict[SettingTuple, str] = dict()
@@ -127,14 +127,14 @@ class LookupFactory(Factory):
         }
 
     @abstractmethod
-    def _prototype(self, lookup_tuple) -> pe.Workflow:
+    def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
         raise NotImplementedError()
 
     @abstractmethod
-    def _tpl(self, setting) -> Hashable:
+    def _tpl(self, setting: dict[str, Any]) -> Hashable:
         raise NotImplementedError()
 
-    def _should_skip(self, obj):
+    def _should_skip(self, obj: Any) -> bool:
         return obj is None
 
     def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
@@ -191,10 +191,12 @@ class LookupFactory(Factory):
 
 class FmriprepAdapterFactory(LookupFactory):
     def _prototype(self, lookup_tuple: LookupTuple) -> pe.Workflow:
-        return init_fmriprep_adapter_wf(memcalc=lookup_tuple.memcalc)
+        setting_tuple = lookup_tuple.setting_tuple
+        space = setting_tuple.value
+        return init_fmriprep_adapter_wf(space=space, memcalc=lookup_tuple.memcalc)
 
-    def _tpl(self, setting) -> Hashable:
-        return SettingTuple(value=None, suffix=None)
+    def _tpl(self, setting: dict[str, Any]) -> Hashable:
+        return setting.get("space")
 
 
 class SmoothingFactory(LookupFactory):
@@ -499,7 +501,6 @@ class PostProcessingFactory(Factory):
                 )
 
     def get(self, source_file, setting_name, confounds_action=None):
-        # self.fmriprep_adapter_factory.get(source_file)
         if self.ctx.spec.global_settings["run_aroma"] is True:
             # Make sure ica aroma components are calculated when enabled
             # The component calculation is independent from the noise components regression application

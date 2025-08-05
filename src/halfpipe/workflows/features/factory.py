@@ -3,7 +3,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
-from typing import Any, Dict
+from collections import defaultdict
+from typing import Any
 
 from nipype.pipeline import engine as pe
 
@@ -11,8 +12,10 @@ from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
 from ...logging import logger
 from ...model.feature import FeatureSchema
-from ..factory import Factory
+from ...model.spec import Spec
+from ..factory import Factory, FactoryContext
 from ..memory import MemoryCalculator
+from ..post_processing.factory import PostProcessingFactory
 from .atlas_based_connectivity import init_atlas_based_connectivity_wf
 from .dual_regression import init_dualregression_wf
 from .falff import init_falff_wf
@@ -23,15 +26,16 @@ from .task_based import init_taskbased_wf
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
-def _find_setting(setting_name, spec):
+def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
     (setting,) = [setting for setting in spec.settings if setting["name"] == setting_name]
     return setting
 
 
 class FeatureFactory(Factory):
-    def __init__(self, ctx, post_processing_factory):
+    def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
         super().__init__(ctx)
 
+        self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
 
         instance = FeatureSchema()
@@ -44,6 +48,8 @@ class FeatureFactory(Factory):
                     settingnames.add(v)
         self.source_files = self.post_processing_factory.get_source_files(settingnames)
 
+        self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
+
     def has(self, name):
         for feature in self.ctx.spec.features:
             if feature.name == name:
@@ -52,7 +58,6 @@ class FeatureFactory(Factory):
 
     def setup(self, raw_sources_dict: dict | None = None):
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
-        self.wfs: dict[str, Any] = dict()
 
         for feature in self.ctx.spec.features:
             source_files = set(raw_sources_dict.keys())
@@ -70,14 +75,18 @@ class FeatureFactory(Factory):
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
         raw_sources = [] if raw_sources is None else raw_sources
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
-        wf = hierarchy[-1]
+        parent_workflow = hierarchy[-1]
 
         database = self.ctx.database
 
-        vwf = None
+        workflow: pe.Workflow | None = None
 
         memcalc = MemoryCalculator.from_bold_file(source_file)
-        kwargs: Dict[str, Any] = dict(feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc)
+        kwargs: dict[str, Any] = dict(feature=feature, workdir=str(self.ctx.workdir), memcalc=memcalc)
+
+        setting = _find_setting(feature.setting, self.ctx.spec)
+        kwargs["space"] = setting["space"]
+
         if feature.type == "task_based":
             confounds_action = "select"
 
@@ -95,7 +104,7 @@ class FeatureFactory(Factory):
 
             raw_sources = [*raw_sources, *condition_file_paths]
 
-            condition_units = None
+            condition_units: str | None = None
             condition_units_set: set[str | None] = {
                 database.metadata(condition_file_path, "units") for condition_file_path in condition_file_paths
             }
@@ -107,55 +116,53 @@ class FeatureFactory(Factory):
             if condition_units == "seconds":
                 condition_units = "secs"
 
-            vwf = init_taskbased_wf(
+            workflow = init_taskbased_wf(
                 condition_files=condition_files,
-                condition_units=condition_units,
+                condition_units=condition_units,  # type: ignore[arg-type]
                 **kwargs,
             )
         elif feature.type == "seed_based_connectivity":
             confounds_action = "select"
-            kwargs["seed_files"] = []
+            kwargs["seed_files"] = list()
             for seed in feature.seeds:
                 (seed_file,) = database.get(datatype="ref", suffix="seed", desc=seed)
                 kwargs["seed_files"].append(seed_file)
             database.fillmetadata("space", kwargs["seed_files"])
             kwargs["seed_spaces"] = [database.metadata(seed_file, "space") for seed_file in kwargs["seed_files"]]
-            vwf = init_seed_based_connectivity_wf(**kwargs)
+            workflow = init_seed_based_connectivity_wf(**kwargs)
         elif feature.type == "dual_regression":
             confounds_action = "select"
-            kwargs["map_files"] = []
+            kwargs["map_files"] = list()
             for map in feature.maps:
                 (map_file,) = database.get(datatype="ref", suffix="map", desc=map)
                 kwargs["map_files"].append(map_file)
             database.fillmetadata("space", kwargs["map_files"])
             kwargs["map_spaces"] = [database.metadata(map_file, "space") for map_file in kwargs["map_files"]]
-            vwf = init_dualregression_wf(**kwargs)
+            workflow = init_dualregression_wf(**kwargs)
         elif feature.type == "atlas_based_connectivity":
             confounds_action = "regression"
-            kwargs["atlas_files"] = []
+            kwargs["atlas_files"] = list()
             for atlas in feature.atlases:
                 (atlas_file,) = database.get(datatype="ref", suffix="atlas", desc=atlas)
                 kwargs["atlas_files"].append(atlas_file)
             database.fillmetadata("space", kwargs["atlas_files"])
             kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
-            vwf = init_atlas_based_connectivity_wf(**kwargs)
+            workflow = init_atlas_based_connectivity_wf(**kwargs)
         elif feature.type == "reho":
             confounds_action = "regression"
-            vwf = init_reho_wf(**kwargs)
+            workflow = init_reho_wf(**kwargs)
         elif feature.type == "falff":
             confounds_action = "regression"
-            vwf = init_falff_wf(**kwargs)
+            workflow = init_falff_wf(**kwargs)
         else:
             raise ValueError(f'Unknown feature type "{feature.type}"')
 
-        wf.add_nodes([vwf])
-        hierarchy.append(vwf)
+        parent_workflow.add_nodes([workflow])
+        hierarchy.append(workflow)
 
-        if feature.name not in self.wfs:
-            self.wfs[feature.name] = []
-        self.wfs[feature.name].append(hierarchy)
+        self.workflows[feature.name].append(hierarchy)
 
-        for node in vwf._graph.nodes:
+        for node in workflow._graph.nodes:
             m = inputnode_name.fullmatch(node.name)
             if m is not None:
                 if hasattr(node.inputs, "repetition_time"):
@@ -184,11 +191,17 @@ class FeatureFactory(Factory):
                     setting_name,
                     confounds_action=confounds_action,
                 )
+                self.fmriprep_factory.connect(
+                    hierarchy,
+                    node,
+                    source_file=source_file,
+                    ignore_attrs=frozenset({"vals"}),
+                )
 
-        return vwf
+        return workflow
 
-    def get(self, feature_name, *_):
-        return self.wfs[feature_name]
+    def get(self, feature_name: str, *_: Any) -> list[list[pe.Workflow]]:
+        return self.workflows[feature_name]
 
     def connect(self, *args, **kwargs):
         raise NotImplementedError()

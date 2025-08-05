@@ -529,3 +529,5 @@ The working tab and data tab are now read only! Do not change entries here!",
     async def on_key(self, event: events.Key) -> None:
         if event.key == "ctrl+c":
             await quit_modal(self)
+        elif event.key == "ctrl+s":
+            self.app.save_screenshot()
