@@ -7,7 +7,7 @@ from typing import Any
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
+from textual.containers import Horizontal, Vertical, ScrollableContainer
 from textual.widget import Widget
 from textual.widgets import Button, Pretty
 
@@ -15,7 +15,133 @@ from ...model.spec import SpecSchema, save_spec
 from ..data_analyzers.context import ctx
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
+from ...cli.run import run_stage_workflow
+from ..specialized_widgets.quit_modal import quit_modal
+from dataclasses import dataclass
+from pathlib import Path
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from textual import on, work
+from textual.worker import Worker, WorkerState
 
+
+from textual.widgets import Input, Label
+
+
+
+@dataclass
+class BatchOptions:
+    workdir: Path
+    use_cluster: bool = True
+    nipype_omp_nthreads: int = 1
+    nipype_n_procs: int = 1
+
+
+class BatchOptionModal(DraggableModalScreen):
+
+    CSS_PATH = ["./batch_option_modal.tcss"]
+
+    def __init__(self) -> None:
+        """
+        Initializes the ContrastTableInputWindow instance.
+
+        Parameters
+        ----------
+        table_row_index : dict[str, str]
+            A dictionary representing the row index of the contrast table,
+            where keys are condition names and values are their initial values.
+        current_col_labels : list[str]
+            A list of current column labels in the contrast table.
+        """
+        super().__init__()
+        self.title_bar.title = "Batch script values"
+        humanize_option_labels = {'nipype_omp_nthreads': 'nipype number of threads', 'nipype_n_procs': 'nipype number of processes'}
+        self.batch_options: dict[str:str] = {'nipype_omp_nthreads': '1', 'nipype_n_procs': '1'}
+
+        input_elements = []
+        for key, value in self.batch_options.items():
+            input_box = Input(
+                placeholder="Value",
+                value=value,
+                name=key,
+                classes="input_values",
+            )
+            label = Label(humanize_option_labels[key])
+            label.tooltip = value
+            input_elements.append(Horizontal(label, input_box, classes="row_element"))
+        self.widgets_to_mount = [
+            Label("Specify values for the batch script", id="instruction_label"),
+            Vertical(*input_elements),
+            Horizontal(
+                Button("Ok", classes="ok_button"),
+                Button("Cancel", classes="cancel_button"),
+                id="button_panel",
+            ),
+        ]
+
+    def on_mount(self):
+        self.content.mount(*self.widgets_to_mount)
+
+    @on(Button.Pressed, ".ok_button")
+    def ok(self):
+        """
+        Confirms the input values and checks for column name conflicts.
+
+        This method is called when the "Ok" button is pressed. It triggers
+        the `_confirm_window`.
+        """
+        self._confirm_window()
+
+    @on(Button.Pressed, ".cancel_button")
+    def cancel_window(self):
+        """
+        Cancels the window and dismisses it without saving user input.
+
+        This method is called when the "Cancel" button is pressed. It
+        triggers the `_cancel_window` method to dismiss the modal.
+        """
+        self._cancel_window()
+
+    def key_escape(self):
+        """
+        Cancels the window and dismisses it when the escape key is pressed.
+
+        This method is called when the escape key is pressed. It triggers
+        the `_cancel_window` method to dismiss the modal.
+        """
+        self._cancel_window()
+
+    def _confirm_window(self):
+        """
+        Validates the user inputs and updates the table row index if inputs are valid.
+
+        This method checks if the contrast name is unique and if all input
+        values are filled. If the inputs are valid, it updates the
+        `table_row_index` and dismisses the modal. Otherwise, it displays
+        an error message.
+        """
+        if any(i.value == "" for i in self.query(".input_values")):
+            self.app.push_screen(
+                Confirm(
+                    "Fill all values!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Missing values",
+                    classes="confirm_error",
+                )
+            )
+        else:
+            for i in self.query(".input_values"):
+                self.batch_options[i.name] = i.value
+            self.dismiss(self.batch_options)
+
+    def _cancel_window(self):
+        """
+        Dismisses the window without saving any user inputs.
+
+        This method dismisses the modal window without making any changes.
+        """
+        self.dismiss(False)
 
 class Run(Widget):
     """
@@ -86,7 +212,11 @@ class Run(Widget):
         """
         with ScrollableContainer():
             yield Horizontal(
-                Button("Refresh", id="refresh_button"), Button("Save", id="save_button"), Button("Run", id="run_button")
+                Button("Refresh spec file", id="refresh_button"),
+                        Button("Save spec file", id="save_button"),
+                        Button("Generate batch script", id="generate_batch_script_button"),
+                        Button("Exit UI and Run", id="run_button"),
+                        Button("Exit UI", id="exit_button")
             )
             yield Pretty("", id="this_output")
 
@@ -137,6 +267,69 @@ class Run(Widget):
             ),
             save,
         )
+
+
+
+
+    @on(Button.Pressed, "#generate_batch_script_button")
+    def on_generate_batch_script_button_pressed(self):
+        """
+        Handles the event when the "Refresh" button is pressed.
+
+        This method is called when the user presses the "Refresh" button.
+        It refreshes the context and updates the UI spec preview with the new data.
+        """
+        def generate_batch_script(batch_option_values):
+            batch_options = BatchOptions(batch_option_values)
+            batch_options.workdir = ctx.workdir
+            self._run_stage_workflow(batch_options)
+
+
+
+        self.app.push_screen(BatchOptionModal(), generate_batch_script)
+
+    @work(exclusive=True, name="run_stage_workflow_worker")
+    async def _run_stage_workflow(self, batch_options):
+        run_stage_workflow(batch_options)
+
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        """
+        Handles state changes in the pattern matching worker.
+
+        This method is called when the state of the `update_worker`
+        changes. If the worker is successful, it updates the
+        `pattern_match_results` with the callback message and posts a
+        `PathPatternChanged` message.
+
+        Parameters
+        ----------
+        event : Worker.StateChanged
+            The event object containing information about the worker state
+            change.
+        """
+        if event.worker.name == "run_stage_workflow_worker":
+            if event.state == WorkerState.SUCCESS:
+                self.app.push_screen(
+                    Confirm(
+                        "The batch script was saved to working directory!",
+                        left_button_text=False,
+                        right_button_text="OK",
+                        right_button_variant="success",
+                        title="Spec file saved",
+                        classes="confirm_success",
+                    )
+                )
+
+    @on(Button.Pressed, "#exit_button")
+    async def on_refresh_button_pressed(self):
+        """
+        Handles the event when the "Refresh" button is pressed.
+
+        This method is called when the user presses the "Refresh" button.
+        It refreshes the context and updates the UI spec preview with the new data.
+        """
+        await quit_modal(self)
 
     @on(Button.Pressed, "#refresh_button")
     def on_refresh_button_pressed(self):

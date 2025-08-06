@@ -1,0 +1,50 @@
+BatchOptionModal {
+    align: center middle;
+    #draggable_modal_screen_container_wrapper {
+        width: 50;
+        height: auto;
+        background: black;
+    }
+    #instruction_label {
+     border: transparent;
+             text-style: bold;
+             color: white;
+    }
+    #model_conditions_selection {
+        width: 50;
+        text-style: bold;
+        color: white;
+        margin: 1 0 0 0;
+        border: thick green;
+    }
+    .row_element {
+
+    height: auto;
+    width:100%;
+        align: center middle;
+    Label {
+
+                align: left bottom;
+        border: transparent;
+        width: 30;
+    }
+    Input {
+        border: white;
+        width: 7;
+    }
+    }
+    Vertical {
+    padding: 0 1 0 0;
+            align: right bottom;
+    height: auto;
+    
+    }
+    #button_panel {
+        align: right bottom;
+        height: 5;
+        Button {
+            margin: 0 1;
+            width: 15;
+        }
+    }
+}

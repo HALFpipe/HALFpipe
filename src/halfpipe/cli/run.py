@@ -18,6 +18,9 @@ def run_stage_ui(opts: Namespace):
 
     if opts.tui:
         from ..tui.base import MainApp
+        import os
+        if opts.tui_dev:
+            os.environ["TEXTUAL"] = "devtools,debug"
 
         app = MainApp()
         opts.workdir = app.run()
