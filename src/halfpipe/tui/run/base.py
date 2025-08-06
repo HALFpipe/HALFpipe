@@ -3,7 +3,7 @@
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +29,20 @@ class BatchOptions:
     use_cluster: bool = True
     nipype_omp_nthreads: int = 1
     nipype_n_procs: int = 1
+    keep: list[str] = field(default_factory=lambda: ["some"])
+    subject_exclude: list[str] = field(default_factory=list)
+    subject_include: list[str] = field(default_factory=list)
+    subject_list: str | None = None
+    fs_license_file: Path | None = None
+    nipype_resource_monitor: bool = False
+    watchdog: bool = False
+    verbose: bool = False
+
+    def validate(self):
+        valid_keep = ["all", "some", "none"]
+        for val in self.keep:
+            if val not in valid_keep:
+                raise ValueError(f"Invalid value for keep: {val}")
 
 
 class BatchOptionModal(DraggableModalScreen):
