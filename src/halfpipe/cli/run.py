@@ -17,8 +17,10 @@ def run_stage_ui(opts: Namespace):
     UIConfig.fs_root = str(opts.fs_root)
 
     if opts.tui:
-        from ..tui.base import MainApp
         import os
+
+        from ..tui.base import MainApp
+
         if opts.tui_dev:
             os.environ["TEXTUAL"] = "devtools,debug"
 

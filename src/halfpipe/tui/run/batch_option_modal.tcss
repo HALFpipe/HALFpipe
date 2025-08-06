@@ -37,7 +37,7 @@ BatchOptionModal {
     padding: 0 1 0 0;
             align: right bottom;
     height: auto;
-    
+
     }
     #button_panel {
         align: right bottom;

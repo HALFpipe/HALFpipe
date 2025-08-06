@@ -3,41 +3,35 @@
 
 import json
 from collections import defaultdict
-from typing import Any
-
-from textual import on
-from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical, ScrollableContainer
-from textual.widget import Widget
-from textual.widgets import Button, Pretty
-
-from ...model.spec import SpecSchema, save_spec
-from ..data_analyzers.context import ctx
-from ..save import dump_dict_to_contex
-from ..specialized_widgets.confirm_screen import Confirm
-from ...cli.run import run_stage_workflow
-from ..specialized_widgets.quit_modal import quit_modal
 from dataclasses import dataclass
 from pathlib import Path
-from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from typing import Any
+
 from textual import on, work
+from textual.app import ComposeResult
+from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.widget import Widget
+from textual.widgets import Button, Input, Label, Pretty
 from textual.worker import Worker, WorkerState
 
-
-from textual.widgets import Input, Label
-
+from ...cli.run import run_stage_workflow
+from ...model.spec import SpecSchema, save_spec
+from ..data_analyzers.context import ctx
+from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from ..save import dump_dict_to_contex
+from ..specialized_widgets.confirm_screen import Confirm
+from ..specialized_widgets.quit_modal import quit_modal
 
 
 @dataclass
 class BatchOptions:
-    workdir: Path
+    workdir: Path | None | str = None
     use_cluster: bool = True
     nipype_omp_nthreads: int = 1
     nipype_n_procs: int = 1
 
 
 class BatchOptionModal(DraggableModalScreen):
-
     CSS_PATH = ["./batch_option_modal.tcss"]
 
     def __init__(self) -> None:
@@ -54,8 +48,11 @@ class BatchOptionModal(DraggableModalScreen):
         """
         super().__init__()
         self.title_bar.title = "Batch script values"
-        humanize_option_labels = {'nipype_omp_nthreads': 'nipype number of threads', 'nipype_n_procs': 'nipype number of processes'}
-        self.batch_options: dict[str:str] = {'nipype_omp_nthreads': '1', 'nipype_n_procs': '1'}
+        humanize_option_labels = {
+            "nipype_omp_nthreads": "nipype number of threads",
+            "nipype_n_procs": "nipype number of processes",
+        }
+        self.batch_options: dict[str, str] = {"nipype_omp_nthreads": "1", "nipype_n_procs": "1"}
 
         input_elements = []
         for key, value in self.batch_options.items():
@@ -143,6 +140,7 @@ class BatchOptionModal(DraggableModalScreen):
         """
         self.dismiss(False)
 
+
 class Run(Widget):
     """
     A widget for managing the dumping the cached data to create the spec.json file,
@@ -213,10 +211,10 @@ class Run(Widget):
         with ScrollableContainer():
             yield Horizontal(
                 Button("Refresh spec file", id="refresh_button"),
-                        Button("Save spec file", id="save_button"),
-                        Button("Generate batch script", id="generate_batch_script_button"),
-                        Button("Exit UI and Run", id="run_button"),
-                        Button("Exit UI", id="exit_button")
+                Button("Save spec file", id="save_button"),
+                Button("Generate batch script", id="generate_batch_script_button"),
+                Button("Exit UI and Run", id="run_button"),
+                Button("Exit UI", id="exit_button"),
             )
             yield Pretty("", id="this_output")
 
@@ -268,9 +266,6 @@ class Run(Widget):
             save,
         )
 
-
-
-
     @on(Button.Pressed, "#generate_batch_script_button")
     def on_generate_batch_script_button_pressed(self):
         """
@@ -279,19 +274,17 @@ class Run(Widget):
         This method is called when the user presses the "Refresh" button.
         It refreshes the context and updates the UI spec preview with the new data.
         """
+
         def generate_batch_script(batch_option_values):
             batch_options = BatchOptions(batch_option_values)
             batch_options.workdir = ctx.workdir
             self._run_stage_workflow(batch_options)
-
-
 
         self.app.push_screen(BatchOptionModal(), generate_batch_script)
 
     @work(exclusive=True, name="run_stage_workflow_worker")
     async def _run_stage_workflow(self, batch_options):
         run_stage_workflow(batch_options)
-
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
@@ -322,7 +315,7 @@ class Run(Widget):
                 )
 
     @on(Button.Pressed, "#exit_button")
-    async def on_refresh_button_pressed(self):
+    async def on_exit_button_pressed(self):
         """
         Handles the event when the "Refresh" button is pressed.
 

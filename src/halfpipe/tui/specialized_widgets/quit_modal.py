@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..specialized_widgets.confirm_screen import Confirm
 
+
 async def quit_modal(self):
     def quit(modal_value):
         """

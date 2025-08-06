@@ -27,9 +27,9 @@ from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import FilePanelTemplate
 from .specialized_widgets.filebrowser import FileBrowser
+from .specialized_widgets.quit_modal import quit_modal
 from .standards import global_settings_defaults
 from .working_directory.base import WorkDirectory
-from .specialized_widgets.quit_modal import quit_modal
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = Path(__file__).resolve().parent
