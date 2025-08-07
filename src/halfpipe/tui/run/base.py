@@ -141,7 +141,7 @@ class Run(Widget):
     @on(Button.Pressed, "#refresh_button")
     def on_refresh_button_pressed(self):
         """
-        Handles the event when the "Refresh" button is pressed.
+        Handles the event when the "Refresh" button is pressed..
 
         This method is called when the user presses the "Refresh" button.
         It refreshes the context and updates the UI spec preview with the new data.
