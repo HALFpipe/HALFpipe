@@ -1,5 +1,6 @@
 import copy
 
+from ..logging import logger
 from ..model.feature import Feature
 from ..model.file.bids import BidsFileSchema
 from ..model.model import Model
@@ -28,6 +29,7 @@ def dump_dict_to_contex(self, save=False):
     # and third are the various own items of the group type, thus these vary from group to group
     # The reason why this goes name-group type-items is that it is easier to delete the particular main item if its name
     # is at the first level
+    logger.debug(f"IU->save->dump_dict_to_contex->ctx.cache: {ctx.cache}")
 
     # clear the whole database and all other entries in the context object
     ctx.database.filepaths_by_tags = dict()
@@ -63,6 +65,8 @@ def dump_dict_to_contex(self, save=False):
             featureobj = Feature(name=name, type=ctx.cache[name]["features"]["type"])
             ctx.spec.features.append(featureobj)
             for key, value in ctx.cache[name]["features"].items():
+                logger.debug(f"IU->save->dump_dict_to_contex->features-> name: {name}, value: {value}, key: {key}")
+
                 # for reho and falff smoothing is in features
                 if key == "smoothing" and value.get("fwhm") is None:
                     continue
@@ -71,6 +75,8 @@ def dump_dict_to_contex(self, save=False):
         if ctx.cache[name]["settings"] != {}:
             ctx.spec.settings.append(SettingSchema().load({}, partial=True))
             for key, value in ctx.cache[name]["settings"].items():
+                logger.debug(f"IU->save->dump_dict_to_contex->settings-> name: {name}, value: {value}, key: {key}")
+
                 # Skip keys based on specific conditions
                 if (
                     (key == "bandpass_filter" and value.get("type") is None)
@@ -142,12 +148,18 @@ def dump_dict_to_contex(self, save=False):
                 if modelobj.name not in [m.__dict__["name"] for m in ctx.spec.models]:
                     ctx.spec.models.append(modelobj)
                     for key, value in model.items():
+                        logger.debug(
+                            f"IU->save->dump_dict_to_contex->models-> name: {model['name']}, value: {value}, key: {key}"
+                        )
+
                         setattr(ctx.spec.models[-1], key, value)
 
         if ctx.cache["bids"]["files"] != {} and name == "bids":
+            logger.debug(f"IU->save->dump_dict_to_contex->bids-> file is bids: {ctx.cache['bids']['files']}")
             ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))
 
         if ctx.cache[name]["files"] != {} and name != "bids":
+            logger.debug(f"IU->save->dump_dict_to_contex->files-> file is not bids: {ctx.cache[name]['files']}")
             ctx.spec.files.append(ctx.cache[name]["files"])
             ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
     self.old_cache = copy.deepcopy(ctx.cache)
