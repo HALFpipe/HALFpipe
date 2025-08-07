@@ -115,10 +115,10 @@ def get_name_to_recipe_path_map(recipe_paths: list[Path]) -> dict[str, Path]:
     return name_to_recipe_path_map
 
 
-def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> TopologicalSorter:
+def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> TopologicalSorter[Path]:
     recipe_paths = set(name_to_recipe_path_map.values())
 
-    topological_sorter = TopologicalSorter()
+    topological_sorter: TopologicalSorter[Path] = TopologicalSorter()
     for recipe_path in tqdm(recipe_paths, leave=False, desc="Listing dependencies"):
         metadata_tuples = render(recipe_path=recipe_path)
 
@@ -136,7 +136,7 @@ def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> Topologi
 
 async def main() -> None:
     logger.info(f'Gathering all recipes in "{base_path}"')
-    recipe_paths = [recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml")]
+    recipe_paths = tuple(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml"))
     logger.debug(f"Found {len(recipe_paths)} total recipes")
 
     name_to_recipe_path_map = get_name_to_recipe_path_map(recipe_paths)
