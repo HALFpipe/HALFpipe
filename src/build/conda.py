@@ -62,10 +62,6 @@ def build(metadata: MetaData) -> None:
 
     package_metadata = metadata.meta["package"]
     name = package_metadata["name"]
-    if package_metadata["version"] in {"unknown"}:
-        version = get_version()
-        logger.info(f'Updating version for "{name}" to "{version}"')
-        package_metadata["version"] = version
     try:
         logger.info(f"Starting build for {name}")
         conda_build(metadata, config=config)
@@ -152,6 +148,12 @@ async def main() -> None:
         for recipe_path in tqdm(recipe_paths, leave=False, desc="Building recipes"):
             metadata_tuples = render(recipe_path=recipe_path, permit_unsatisfiable_variants=False)
             for metadata, _, _ in metadata_tuples:
+                package_metadata = metadata.meta["package"]
+                name = package_metadata["name"]
+                if package_metadata["version"] in {"unknown"}:
+                    version = get_version()
+                    logger.info(f'Updating version for "{name}" to "{version}"')
+                    package_metadata["version"] = version
                 if not download(metadata):
                     build(metadata)
                 upload(metadata)
