@@ -24,12 +24,13 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Micromamba
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v2.0.5
         with:
           condarc: |
             channels:
               - conda-forge
               - https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
+          environment-name: test
           create-args: >-
             awscli
             boto3
