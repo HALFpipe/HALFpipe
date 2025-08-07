@@ -3,7 +3,7 @@ import os
 from functools import cache
 from graphlib import TopologicalSorter
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Sequence
 
 import boto3
 import yaml
@@ -106,7 +106,7 @@ def render(recipe_path: Path, permit_unsatisfiable_variants: bool = True) -> lis
     )
 
 
-def get_name_to_recipe_path_map(recipe_paths: list[Path]) -> dict[str, Path]:
+def get_name_to_recipe_path_map(recipe_paths: Sequence[Path]) -> dict[str, Path]:
     name_to_recipe_path_map: dict[str, Path] = dict()
     for recipe_path in tqdm(recipe_paths, leave=False, desc="Finding package names"):
         metadata_tuples = render(recipe_path=recipe_path)
