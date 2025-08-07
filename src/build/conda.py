@@ -14,9 +14,8 @@ from conda_build.config import Config
 from conda_build.metadata import MetaData, MetaDataTuple
 from loguru import logger
 from rattler.index import index_fs, index_s3
+from setuptools_scm import get_version
 from tqdm.auto import tqdm
-
-from .. import __version__
 
 base_path = Path("recipes").absolute()
 build_path = Path("conda-bld").absolute()
@@ -64,8 +63,9 @@ def build(metadata: MetaData) -> None:
     package_metadata = metadata.meta["package"]
     name = package_metadata["name"]
     if package_metadata["version"] in {"unknown"}:
-        logger.info(f'Updating version for "{name}" to "{__version__}"')
-        package_metadata["version"] = __version__
+        version = get_version()
+        logger.info(f'Updating version for "{name}" to "{version}"')
+        package_metadata["version"] = version
     try:
         logger.info(f"Starting build for {name}")
         conda_build(metadata, config=config)
@@ -85,6 +85,8 @@ def exists(s3_key: str) -> bool:
 
 
 def upload(metadata: MetaData) -> None:
+    if os.environ.get("PUSH", "false") != "true":
+        return
     for output_path, s3_key in get_keys(metadata):
         try:
             if exists(s3_key):

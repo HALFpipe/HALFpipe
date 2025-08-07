@@ -2,8 +2,7 @@ import json
 import os
 
 from github import Github
-
-from .. import __version__
+from setuptools_scm import get_version
 
 github_context = json.loads(os.environ["GITHUB_CONTEXT"])
 
@@ -44,7 +43,7 @@ output = dict(
         f'org.opencontainers.image.url="{url}"',
         f'org.opencontainers.image.documentation="{url}"',
         f'org.opencontainers.image.source="{url}"',
-        f'org.opencontainers.image.version="{__version__}"',
+        f'org.opencontainers.image.version="{get_version()}"',
         f'org.opencontainers.image.revision="{sha}"',
         f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
         f'org.opencontainers.image.title="{repository_name}"',
