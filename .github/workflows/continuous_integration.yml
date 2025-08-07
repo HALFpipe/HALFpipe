@@ -66,8 +66,8 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-          PYTHONPATH: "src"
           PUSH: ${{ steps.metadata.outputs.push }}
+          PYTHONPATH: "src"
         run: |
           python -m build.conda
 
@@ -103,11 +103,6 @@ jobs:
           push: false
           tags: |
             ${{ steps.metadata.outputs.build_tag }}
-          secrets: |
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_ENDPOINT_URL=${{ secrets.AWS_ENDPOINT_URL }}
-            CONDA_BUCKET=${{ secrets.CONDA_BUCKET }}
 
       - name: Cache data
         uses: actions/cache@v4
