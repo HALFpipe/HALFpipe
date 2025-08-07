@@ -37,6 +37,7 @@ class BatchOptions:
     nipype_resource_monitor: bool = False
     watchdog: bool = False
     verbose: bool = False
+    fs_root: str | None = None
 
     def validate(self):
         valid_keep = ["all", "some", "none"]
