@@ -17,28 +17,27 @@ host_id=$(sed --quiet --regexp-extended "s/.*HOSTID=MATLAB_HOSTID=(.{12}):.*/\1/
 # shellcheck disable=SC2001
 mac_address=$(echo "${host_id}" | sed "s/..\B/&:/g")
 
-docker run \
+container=$(docker run \
     --detach \
     --rm \
-    --name="build" \
     --workdir="/src" \
     --mac-address="${mac_address}" \
     --entrypoint="tail" \
-    matlab-compiler \
-    --follow /dev/null
+    fmri.science/matlab-compiler \
+    --follow /dev/null)
 
-docker cp "compile.m" "build:/src"
-docker cp "GroupICAT" "build:/src"
-docker cp "${HOME}/license.lic" "build:/opt/matlab/license.lic"
+docker cp "compile.m" "${container}:/src"
+docker cp "GroupICAT" "${container}:/src"
+docker cp "${HOME}/license.lic" "${container}:/opt/matlab/license.lic"
 
-docker exec --user="root"  "build" chown --recursive matlab "/src" "/opt/matlab"
+docker exec --user="root" "${container}" chown --recursive matlab "/src" "/opt/matlab"
 
 docker exec \
     --interactive \
     --env="MLM_LICENSE_FILE=/opt/matlab/license.lic" \
-    "build" \
+    "${container}" \
     matlab -batch "compile"
 
-docker cp "build:/src/gica_cmdstandaloneApplication/gica_cmd" "${PREFIX}/bin/gica_cmd"
+docker cp "${container}:/src/gica_cmdstandaloneApplication/gica_cmd" "${PREFIX}/bin/gica_cmd"
 
-docker kill "build"
+docker kill "${container}"
