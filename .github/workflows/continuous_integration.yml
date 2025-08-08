@@ -69,6 +69,7 @@ jobs:
           PUSH: ${{ steps.metadata.outputs.push }}
           PYTHONPATH: "src"
         run: |
+          printf '%s' '${{ secrets.MATLAB_LICENSE }}' > ${HOME}/license.lic
           python -m build.conda
 
       - name: Login to DockerHub
