@@ -12,6 +12,7 @@ from conda_build.api import get_output_file_paths
 from conda_build.build import clean_build
 from conda_build.config import Config
 from conda_build.metadata import MetaData, MetaDataTuple
+from conda_build.render import finalize_metadata, render_recipe
 from loguru import logger
 from rattler.index import index_fs, index_s3
 from setuptools_scm import get_version
@@ -34,11 +35,13 @@ s3_client = boto3.client(
 
 
 def get_keys(metadata: MetaData) -> Iterator[tuple[Path, str]]:
-    for output in get_output_file_paths(metadata):
-        output_path = Path(output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        s3_key = str(output_path.relative_to(build_path))
-        yield output_path, s3_key
+    for _, output_metadata in metadata.get_output_metadata_set():
+        output_metadata = finalize_metadata(output_metadata)
+        for output in get_output_file_paths(output_metadata):
+            output_path = Path(output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            s3_key = str(output_path.relative_to(build_path))
+            yield output_path, s3_key
 
 
 def download(metadata: MetaData) -> bool:
@@ -50,21 +53,25 @@ def download(metadata: MetaData) -> bool:
             continue
         except (ClientError, NoCredentialsError) as error:
             if hasattr(error, "response") and error.response["Error"]["Code"] == "404":
-                logger.info("Not found in registry:")
+                logger.info("Not found in registry")
             else:
                 logger.opt(exception=error).error("Cannot access registry:")
         return False
     return True
 
 
-def build(metadata: MetaData) -> None:
+def build(metadata: MetaData, recipe_path: Path | None) -> None:
     from conda_build.api import build as conda_build
 
     package_metadata = metadata.meta["package"]
     name = package_metadata["name"]
+
     try:
         logger.info(f"Starting build for {name}")
-        conda_build(metadata, config=config)
+        if recipe_path is not None:
+            conda_build(str(recipe_path), config=config)
+        else:
+            conda_build(metadata, config=config)
         logger.info(f"Build successful for {name}")
     except Exception as exception:
         logger.opt(exception=exception).error(f'Build failed for "{name}"')
@@ -91,7 +98,7 @@ def upload(metadata: MetaData) -> None:
             s3_client.upload_file(output_path, s3_bucket, s3_key)
             logger.info(f'Upload complete for "{s3_key}"')
         except Exception as exception:
-            logger.opt(exception=exception).error(f'Upload failed for "{s3_key}"')
+            logger.opt(exception=exception).error(f'Upload failed for "{s3_key}":')
 
 
 @cache
@@ -136,29 +143,34 @@ def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> Topologi
 
 async def main() -> None:
     logger.info(f'Gathering all recipes in "{base_path}"')
-    recipe_paths = tuple(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml"))
+    recipe_paths = tuple(sorted(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml")))
     logger.debug(f"Found {len(recipe_paths)} total recipes")
 
     name_to_recipe_path_map = get_name_to_recipe_path_map(recipe_paths)
     topological_sorter = get_topological_sorter(name_to_recipe_path_map)
     logger.info("Build order found")
 
-    topological_sorter.prepare()
-    while recipe_paths := topological_sorter.get_ready():
-        for recipe_path in tqdm(recipe_paths, leave=False, desc="Building recipes"):
-            metadata_tuples = render(recipe_path=recipe_path, permit_unsatisfiable_variants=False)
-            for metadata, _, _ in metadata_tuples:
-                package_metadata = metadata.meta["package"]
-                name = package_metadata["name"]
-                if package_metadata["version"] in {"unknown"}:
-                    version = get_version()
-                    logger.info(f'Updating version for "{name}" to "{version}"')
-                    package_metadata["version"] = version
-                if not download(metadata):
-                    build(metadata)
-                upload(metadata)
-                clean_build(config)
-            topological_sorter.done(recipe_path)
+    for recipe_path in tqdm(list(topological_sorter.static_order()), leave=False, desc="Building recipes"):
+        metadata_tuples = render_recipe(
+            recipe_dir=recipe_path, config=config, permit_unsatisfiable_variants=False, bypass_env_check=True
+        )
+        ((metadata, _, _),) = metadata_tuples
+
+        package_metadata = metadata.meta["package"]
+        name = package_metadata["name"]
+
+        if package_metadata["version"] in {"unknown"}:
+            version = get_version()
+            logger.info(f'Updating version for "{name}" to "{version}"')
+            package_metadata["version"] = version
+            recipe_path = None
+
+        if not download(metadata):
+            build(metadata, recipe_path)
+
+        upload(metadata)
+        clean_build(config)
+
         await index_fs(channel_directory=build_path, write_zst=False, write_shards=False)
 
     await index_s3(channel_url=f"s3://{s3_bucket}", region="auto", endpoint_url=endpoint_url)
