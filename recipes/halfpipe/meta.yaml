@@ -78,6 +78,7 @@ requirements:
     - afni-3dcalc
     - afni-3dtstat
     - afni-3dreho
+    - gica_cmd
     # New user interface
     - textual==0.85.2
     - pytest-textual-snapshot
