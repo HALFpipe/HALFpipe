@@ -1,12 +1,12 @@
 import asyncio
 import os
+import re
 from functools import cache
 from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import Iterator, Sequence
 
 import boto3
-import yaml
 from botocore.exceptions import ClientError, NoCredentialsError
 from conda_build.api import get_output_file_paths
 from conda_build.build import clean_build
@@ -21,8 +21,7 @@ from tqdm.auto import tqdm
 base_path = Path("recipes").absolute()
 build_path = Path("conda-bld").absolute()
 
-with (base_path / "conda_build_config.yaml").open() as file_handle:
-    config = Config(**yaml.safe_load(file_handle), croot=build_path)
+config = Config(exclusive_config_files=[base_path / "conda_build_config.yaml"], croot=build_path, numpy="1.26")
 
 s3_bucket = "conda-packages"
 endpoint_url = os.environ.get("AWS_ENDPOINT_URL", None)
@@ -66,15 +65,12 @@ def build(metadata: MetaData, recipe_path: Path | None) -> None:
     package_metadata = metadata.meta["package"]
     name = package_metadata["name"]
 
-    try:
-        logger.info(f"Starting build for {name}")
-        if recipe_path is not None:
-            conda_build(str(recipe_path), config=config)
-        else:
-            conda_build(metadata, config=config)
-        logger.info(f"Build successful for {name}")
-    except Exception as exception:
-        logger.opt(exception=exception).error(f'Build failed for "{name}"')
+    logger.info(f"Starting build for {name}")
+    if recipe_path is not None:
+        conda_build(str(recipe_path), config=config)
+    else:
+        conda_build(metadata, config=config)
+    logger.info(f"Build successful for {name}")
 
 
 def exists(s3_key: str) -> bool:
@@ -109,7 +105,7 @@ def render(recipe_path: Path, permit_unsatisfiable_variants: bool = True) -> lis
         recipe_path=recipe_path,
         config=config,
         permit_unsatisfiable_variants=permit_unsatisfiable_variants,
-        finalize=True,
+        finalize=False,
     )
 
 
@@ -133,6 +129,7 @@ def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> Topologi
         for metadata, _, _ in metadata_tuples:
             for requirement_type in {"build", "host", "run"}:
                 for requirement in metadata.get_value(f"requirements/{requirement_type}") or list():
+                    requirement = re.split(r"[ =<>!~]", requirement, maxsplit=1)[0]
                     if requirement in name_to_recipe_path_map:
                         parent_recipe_paths.add(name_to_recipe_path_map[requirement])
 
@@ -143,14 +140,15 @@ def get_topological_sorter(name_to_recipe_path_map: dict[str, Path]) -> Topologi
 
 async def main() -> None:
     logger.info(f'Gathering all recipes in "{base_path}"')
-    recipe_paths = tuple(sorted(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml")))
+    recipe_paths = sorted(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml"))
     logger.debug(f"Found {len(recipe_paths)} total recipes")
 
     name_to_recipe_path_map = get_name_to_recipe_path_map(recipe_paths)
     topological_sorter = get_topological_sorter(name_to_recipe_path_map)
-    logger.info("Build order found")
 
-    for recipe_path in tqdm(list(topological_sorter.static_order()), leave=False, desc="Building recipes"):
+    recipe_paths = list(topological_sorter.static_order())
+    logger.info(f"Build order found: {[recipe_path.name for recipe_path in recipe_paths]}")
+    for recipe_path in tqdm(recipe_paths, leave=False, desc="Building recipes"):
         metadata_tuples = render_recipe(
             recipe_dir=recipe_path, config=config, permit_unsatisfiable_variants=False, bypass_env_check=True
         )

@@ -7,8 +7,8 @@ package:
   version: "25.1.1"
 
 source:
-  git_url: https://github.com/nipreps/fmriprep.git
-  git_rev: "25.1.1"
+  url: https://pypi.io/packages/source/f/fmriprep/fmriprep-25.1.1.tar.gz
+  sha256: e6f9831a65e7d2f464b1b7c680e0cceaed782988b002bd9e69a519400d093a43
 
 build:
   number: 0

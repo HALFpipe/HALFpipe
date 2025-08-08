@@ -7,7 +7,7 @@ source:
   git_rev: "v4.0.6.0"
 
 build:
-  number: 5
+  number: 6
   rpaths:
     - lib/mcr/bin/glnxa64/
     - lib/mcr/cefclient/sys/os/glnxa64/
