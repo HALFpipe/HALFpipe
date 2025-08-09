@@ -1,27 +1,24 @@
-{% set name = "nitransforms" %}
-{% set version = "24.1.1" %}
-
 # Dependencies derived from:
 # https://github.com/nipy/nitransforms/blob/24.1.1/pyproject.toml
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: nitransforms
+  version: "24.1.1"
 
 source:
-  url: https://files.pythonhosted.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  url: https://files.pythonhosted.org/packages/source/n/nitransforms/nitransforms-24.1.1.tar.gz
   sha256: 536956c580ee03e3e93043208da9eafc920b5934c7e7e0c4c7d759fca0963633
 
 build:
   number: 0
-  script: {{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv"
 
 requirements:
   host:
     - pip
-    - python 3.11.*
+    - python
   run:
-    - python 3.11.*
+    - python
     - numpy>=1.21
     - scipy>=1.8
     - h5py>=3.9

@@ -1,16 +1,14 @@
-{% set name = "pytest-textual-snapshot" %}
-{% set version = "1.1.0" %}
-
 package:
-  name: {{ name|lower }}
-  version: {{ version }}
+  name: "pytest-textual-snapshot"
+  version: "1.1.0"
 
 source:
   git_url: https://github.com/Textualize/pytest-textual-snapshot.git
+  git_rev: "v1.1.0"
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  script: "{{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation"
   number: 0
 
 requirements:

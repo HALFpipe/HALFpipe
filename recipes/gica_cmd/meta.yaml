@@ -1,0 +1,28 @@
+package:
+  name: gica_cmd
+  version: "4.0.6.0"
+
+source:
+  git_url: https://github.com/trendscenter/gift.git
+  git_rev: "v4.0.6.0"
+
+build:
+  number: 6
+  rpaths:
+    - lib/mcr/bin/glnxa64/
+    - lib/mcr/cefclient/sys/os/glnxa64/
+    - lib/mcr/runtime/glnxa64/
+    - lib/mcr/sys/java/jre/glnxa64/jre/lib/amd64/
+    - lib/mcr/sys/java/jre/glnxa64/jre/lib/amd64/server/
+    - lib/mcr/sys/opengl/lib/glnxa64/
+    - lib/mcr/sys/os/glnxa64/
+    - lib/
+    - lib/jvm/lib/
+
+requirements:
+  build:
+    - docker-cli
+  host:
+    - matlab-runtime
+  run:
+    - matlab-runtime
