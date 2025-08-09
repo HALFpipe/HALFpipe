@@ -1,6 +1,6 @@
 package:
   name: "halfpipe"
-  version: "unknown"
+  version: '{{ environ["halfpipe_version"] }}'
 
 source:
   git_url: ../..
