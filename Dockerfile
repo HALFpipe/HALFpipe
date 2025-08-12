@@ -36,7 +36,9 @@ RUN mkdir /ext /host && \
 ENV XDG_CACHE_HOME="/var/cache" \
     HALFPIPE_RESOURCE_DIR="/var/cache/halfpipe" \
     TEMPLATEFLOW_HOME="/var/cache/templateflow" \
-    PATH="/opt/conda/bin:$PATH"
+    PATH="/opt/conda/bin:$PATH" \
+    MATLABROOT="/opt/conda/envs/fmriprep/lib/mcr"
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MATLABROOT/bin/glnxa64:$MATLABROOT/runtime/glnxa64:$MATLABROOT/sys/os/glnxa64:$MATLABROOT/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$MATLABROOT/sys/java/jre/glnxa64/jre/lib/amd64/server:$MATLABROOT/sys/java/jre/glnxa64/jre/lib/amd64"
 RUN mv /home/fmriprep/.cache/templateflow /var/cache
 
 # Add `coinstac` server components
