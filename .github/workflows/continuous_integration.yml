@@ -148,7 +148,7 @@ jobs:
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
             --ignore=tests/tui
-      - name: Upload Snapshot Report
+      - name: Upload snapshot Report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
