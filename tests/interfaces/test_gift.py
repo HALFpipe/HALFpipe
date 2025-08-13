@@ -42,3 +42,5 @@ def test_gica_cmd(tmp_path: Path) -> None:
     outputs = result.outputs
     assert Path(outputs.components).is_file()
     assert Path(outputs.timecourses).is_file()
+    assert Path(outputs.mask).is_file()
+    assert Path(outputs.fnc_corrs).is_file()

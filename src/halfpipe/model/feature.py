@@ -79,6 +79,11 @@ class DualRegressionFeatureSchema(BaseFeatureSchema):
     maps = fields.List(fields.Str())
 
 
+class GroupInformationGuidedICAFeatureSchema(BaseFeatureSchema):
+    type = fields.Str(dump_default="gig_ica", validate=validate.Equal("gig_ica"))
+    maps = fields.List(fields.Str())
+
+
 class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
     type = fields.Str(
         dump_default="atlas_based_connectivity",
@@ -105,6 +110,7 @@ class FeatureSchema(OneOfSchema):
         "task_based": TaskBasedFeatureSchema,
         "seed_based_connectivity": SeedBasedConnectivityFeatureSchema,
         "dual_regression": DualRegressionFeatureSchema,
+        "gig_ica": GroupInformationGuidedICAFeatureSchema,
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
         "reho": ReHoFeatureSchema,
         "falff": FALFFFeatureSchema,
