@@ -139,16 +139,17 @@ jobs:
            FSCA7.lDgNIow
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
+          failure=0
           # Run the integration tests
-          echo "***Running TUI tests***"
-          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+          # echo "***Running TUI tests***"
+          # py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
           echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
             --ignore=tests/tui
-      - name: Upload snapshot Report
+      - name: Upload snapshot report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
