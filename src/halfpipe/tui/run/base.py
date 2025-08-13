@@ -9,18 +9,22 @@ from typing import Any
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.containers import Horizontal, ScrollableContainer
 from textual.widget import Widget
-from textual.widgets import Button, Input, Label, Pretty
+from textual.widgets import Button, Input, Label, Pretty, RadioButton, TextArea
 from textual.worker import Worker, WorkerState
 
 from ...cli.run import run_stage_workflow
 from ...model.spec import SpecSchema, save_spec
 from ..data_analyzers.context import ctx
+from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.quit_modal import quit_modal
+
+# !!!This must be before importing the RadioSet to override the RadioButton imported by the RadioSet!!!
+RadioButton.BUTTON_INNER = "X"
 
 
 @dataclass
@@ -29,9 +33,13 @@ class BatchOptions:
     use_cluster: bool = True
     nipype_omp_nthreads: int = 1
     nipype_n_procs: int = 1
+    # choose which intermediate files to keep
     keep: list[str] = field(default_factory=lambda: ["some"])
+    # exclude subjects that match
     subject_exclude: list[str] = field(default_factory=list)
+    # include only subjects that match
     subject_include: list[str] = field(default_factory=list)
+    # select subjects that match
     subject_list: str | None = None
     fs_license_file: Path | None = None
     nipype_resource_monitor: bool = False
@@ -40,10 +48,36 @@ class BatchOptions:
     fs_root: str | None = None
 
     def validate(self):
-        valid_keep = ["all", "some", "none"]
+        valid_keep = ["all", "some"]
         for val in self.keep:
             if val not in valid_keep:
                 raise ValueError(f"Invalid value for keep: {val}")
+
+
+class IntOnlyInput(Input):
+    def validate(self) -> bool | str:
+        return True if self.value.strip().isdigit() else "Must be an integer."
+
+
+class CSVTextArea(TextArea):
+    def validate(self) -> bool | str:
+        raw = self.text.strip()
+
+        if not raw:
+            return "Must not be empty."
+
+        # Split by comma and strip spaces
+        items = [item.strip() for item in raw.split(",")]
+
+        # Allow trailing comma → last item may be empty
+        if items[-1] == "":
+            items = items[:-1]  # drop empty last item
+
+        # Ensure at least one non-empty string
+        if not items or any(i == "" for i in items):
+            return "Must be a single string or comma-separated strings."
+
+        return True
 
 
 class BatchOptionModal(DraggableModalScreen):
@@ -64,44 +98,120 @@ class BatchOptionModal(DraggableModalScreen):
         super().__init__()
         self.title_bar.title = "Batch script values"
         humanize_option_labels = {
-            "nipype_omp_nthreads": "nipype number of threads",
+            #   "nipype_omp_nthreads": "nipype number of threads",
             "nipype_n_procs": "nipype number of processes",
+            "nipype_resource_monitor": "Use nipype resource monitor",
+            # "watchdog": "watchdog",
+            # "verbose": "verbose",
+            #  "keep":"choose which intermediate files to keep",
+            "subject_list": "subject list (leave empty if all, separate subjects by comma)",
+            # "subject_exclude": "exclude subjects that match",
+            # "subject_include": "include only subjects that match",
+            # "fs_license_file": 'dddd/ddd/'
         }
-        self.batch_options: dict[str, str] = {"nipype_omp_nthreads": "1", "nipype_n_procs": "1"}
+        self.batch_options_values: dict[str, str] = {"nipype_n_procs": "1"}
+        self.batch_options_bools: dict[str, bool] = {"nipype_resource_monitor": False}
+        self.batch_options_lists: dict[str, str | None] = {"subject_list": None}
+        # self.batch_options_choices = {'keep': ['some']}
 
-        input_elements = []
-        for key, value in self.batch_options.items():
-            input_box = Input(
+        widgets_option_values = []
+        for key, int_val in self.batch_options_values.items():
+            input_box = IntOnlyInput(
                 placeholder="Value",
-                value=value,
+                value=int_val,
                 name=key,
-                classes="input_values",
+                validate_on="none",  # only validate when we call it manually
+                id=key,
+                classes="input_number_values",
             )
-            label = Label(humanize_option_labels[key])
-            label.tooltip = value
-            input_elements.append(Horizontal(label, input_box, classes="row_element"))
-        self.widgets_to_mount = [
-            Label("Specify values for the batch script", id="instruction_label"),
-            Vertical(*input_elements),
+            label = Label(humanize_option_labels[key], classes="labels")
+            label.tooltip = int_val
+            widgets_option_values.append(Horizontal(label, input_box, classes="option_values options"))
+
+        widgets_option_bools = []
+        for key, bool_val in self.batch_options_bools.items():
+            label = Label(humanize_option_labels[key], classes="labels")
+            label.tooltip = bool_val
+            text_switch = TextSwitch(value=True)
+            widgets_option_bools.append(Horizontal(label, text_switch, id=key, classes="option_bools options"))
+
+        widgets_option_lists = []
+        for key, list_val in self.batch_options_lists.items():
+            input_box = CSVTextArea(
+                name=key,
+                soft_wrap=True,
+                id=key,
+                classes="input_list_values",
+            )
+            label = Label(humanize_option_labels[key], classes="labels")
+            label.tooltip = list_val
+            widgets_option_lists.append(Horizontal(label, input_box, classes="option_lists options"))
+
+        # widgets_option_choices = []
+        # for key, value in self.batch_options_choices.items():
+        #     label = Label(humanize_option_labels[key])
+        #     default = value
+        #     radio_set = RadioSet(RadioButton("all", value=default=='all'),
+        #                                  RadioButton("some", value=default=='some'),
+        #                                  RadioButton("none", value=default=='none'),
+        #                          id="focus_me"
+        #                         )
+        #     widgets_option_choices.append(Horizontal(label, radio_set, classes="option_choices"))
+
+        self.widgets_to_mount = [*widgets_option_values, *widgets_option_bools, *widgets_option_lists]
+
+    def on_mount(self):
+        self.content.mount(
+            *self.widgets_to_mount,
             Horizontal(
                 Button("Ok", classes="ok_button"),
                 Button("Cancel", classes="cancel_button"),
                 id="button_panel",
             ),
-        ]
-
-    def on_mount(self):
-        self.content.mount(*self.widgets_to_mount)
+        )
 
     @on(Button.Pressed, ".ok_button")
     def ok(self):
-        """
-        Confirms the input values and checks for column name conflicts.
+        all_valid = True
+        errors = []
 
-        This method is called when the "Ok" button is pressed. It triggers
-        the `_confirm_window`.
-        """
-        self._confirm_window()
+        # Validate IntOnlyInput and CSVTextArea
+        for widget in self.query(".input_number_values, .input_list_values"):
+            result = widget.validate()
+            if result is not True:
+                all_valid = False
+                if isinstance(result, str):
+                    errors.append(f"{widget.id}: {result}")
+
+        if not all_valid:
+            self.app.push_screen(
+                Confirm(
+                    "\n".join(errors) or "Please correct the highlighted fields.",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Invalid values",
+                    classes="confirm_error",
+                )
+            )
+            return
+
+        # Build dictionary from all widgets
+        result_data = {}
+
+        # Get numeric + CSV fields
+        for widget in self.query(IntOnlyInput):
+            result_data[widget.id] = widget.value.strip()
+
+        for widget in self.query(CSVTextArea):
+            result_data[widget.id] = widget.text.strip()
+
+        # Get switches
+        for widget in self.query("TextSwitch"):
+            result_data[widget.id] = bool(widget.value)
+
+        # Dismiss with the result dictionary
+        self.dismiss(result_data)
 
     @on(Button.Pressed, ".cancel_button")
     def cancel_window(self):

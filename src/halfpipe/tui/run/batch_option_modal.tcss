@@ -1,44 +1,44 @@
 BatchOptionModal {
     align: center middle;
     #draggable_modal_screen_container_wrapper {
-        width: 50;
+        width: 72;
         height: auto;
         background: black;
     }
-    #instruction_label {
-     border: transparent;
-             text-style: bold;
-             color: white;
-    }
-    #model_conditions_selection {
-        width: 50;
-        text-style: bold;
-        color: white;
-        margin: 1 0 0 0;
-        border: thick green;
-    }
-    .row_element {
 
-    height: auto;
-    width:100%;
-        align: center middle;
-    Label {
+        .labels {
 
                 align: left bottom;
         border: transparent;
-        width: 30;
+        width: 38;
     }
-    Input {
+    .input_number_values {
         border: white;
+        width: auto;
+    }
+        .input_list_values {
+        border: white;
+        width: 32;
+        height: auto;
+    }
+    .option_bools {
+
         width: 7;
+        TextSwitch {
+            border: white;
+            width: 17;
+        }
     }
-    }
-    Vertical {
-    padding: 0 1 0 0;
-            align: right bottom;
+    .options {
+
     height: auto;
+    width:100%;
+
+
 
     }
+
+
     #button_panel {
         align: right bottom;
         height: 5;
