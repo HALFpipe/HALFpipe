@@ -48,8 +48,22 @@ def make_spec(
             tags=dict(desc="smith09"),
             path=str(get_resource("PNAS_Smith09_rsn10.nii.gz")),
             metadata=dict(space="MNI152NLin6Asym"),
-        )
+        ),
     )
+    spec.files.append(map_file)
+
+    neuromark_file = file_schema.load(
+        dict(
+            datatype="ref",
+            suffix="map",
+            extension=".nii.gz",
+            tags=dict(desc="neuromark"),
+            path=str(get_resource("Neuromark_fMRI_1.0.nii")),
+            metadata=dict(space="MNI152NLin6Asym"),
+        ),
+    )
+    spec.files.append(neuromark_file)
+
     seed_file = file_schema.load(
         dict(
             datatype="ref",
@@ -60,6 +74,8 @@ def make_spec(
             metadata=dict(space="MNI152NLin6Asym"),
         )
     )
+    spec.files.append(seed_file)
+
     atlas_file = file_schema.load(
         dict(
             datatype="ref",
@@ -78,8 +94,6 @@ def make_spec(
             metadata=dict(space="MNI152NLin2009cAsym"),
         )
     )
-    spec.files.append(map_file)
-    spec.files.append(seed_file)
     spec.files.append(atlas_file)
 
     # Set up settings and features
@@ -150,6 +164,7 @@ def add_settings_and_features_to_spec(
             )
         )
         spec.features.append(task_based_feature)
+
     pcc_feature = feature_schema.load(
         dict(
             name=f"{name}SeedCorr",
@@ -158,6 +173,8 @@ def add_settings_and_features_to_spec(
             setting=glm_setting["name"],
         ),
     )
+    spec.features.append(pcc_feature)
+
     dual_feature = feature_schema.load(
         dict(
             name=f"{name}DualReg",
@@ -166,6 +183,18 @@ def add_settings_and_features_to_spec(
             setting=glm_setting["name"],
         ),
     )
+    spec.features.append(dual_feature)
+
+    gig_ica_feature = feature_schema.load(
+        dict(
+            name=f"{name}GIGICA",
+            type="gig_ica",
+            maps=["neuromark"],
+            setting=falff_reho_corr_matrix_setting["name"],
+        ),
+    )
+    spec.features.append(gig_ica_feature)
+
     fc_connectivity_feature = feature_schema.load(
         dict(
             name=f"{name}CorrMatrix",
@@ -174,6 +203,8 @@ def add_settings_and_features_to_spec(
             setting=falff_reho_corr_matrix_setting["name"],
         ),
     )
+    spec.features.append(fc_connectivity_feature)
+
     reho_feature = feature_schema.load(
         dict(
             name=f"{name}ReHo",
@@ -182,6 +213,8 @@ def add_settings_and_features_to_spec(
             smoothing=dict(fwhm=6.0),
         ),
     )
+    spec.features.append(reho_feature)
+
     falff_feature = feature_schema.load(
         dict(
             name=f"{name}FALFF",
@@ -191,8 +224,4 @@ def add_settings_and_features_to_spec(
             smoothing=dict(fwhm=6.0),
         ),
     )
-    spec.features.append(dual_feature)
-    spec.features.append(pcc_feature)
-    spec.features.append(fc_connectivity_feature)
-    spec.features.append(reho_feature)
     spec.features.append(falff_feature)
