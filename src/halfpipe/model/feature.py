@@ -44,38 +44,9 @@ class BaseFeatureSchema(Schema):
         return {key: value for key, value in data.items() if value is not None}
 
 
-class SingleTrialFeatureSchema(BaseFeatureSchema):
-    type = fields.Str(dump_default="single_trials", validate=validate.Equal("single_trials"))
-
-    conditions = fields.List(fields.Str())
-
-    high_pass_filter_cutoff = fields.Float(
-        dump_default=125.0,
-        load_default=125.0,
-        allow_nan=True,
-        allow_none=True,
-        validate=validate.Range(min=0.0),
-    )
-
-    hrf = fields.Str(
-        dump_default="dgamma",
-        load_default="dgamma",
-        validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]),
-    )
-
-    mode = fields.Str(
-        dump_default="cond",
-        load_default="cond",
-        validate=validate.OneOf(["nuis", "cond"]),
-    )
-
-
-class TaskBasedFeatureSchema(BaseFeatureSchema):
+class BaseTaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
 
-    conditions = fields.List(fields.Str())
-    contrasts = fields.List(fields.Nested(TContrastSchema))
-
     high_pass_filter_cutoff = fields.Float(
         dump_default=125.0,
         load_default=125.0,
@@ -83,12 +54,44 @@ class TaskBasedFeatureSchema(BaseFeatureSchema):
         allow_none=True,
         validate=validate.Range(min=0.0),
     )
+    model_serial_correlations = fields.Bool(dump_default=True, load_default=True)
 
     hrf = fields.Str(
         dump_default="dgamma",
         load_default="dgamma",
         validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]),
     )
+    conditions = fields.List(fields.Str())
+
+
+class MultipleTrialTaskBasedFeatureSchema(BaseTaskBasedFeatureSchema):
+    estimation = fields.Str(
+        dump_default="multiple_trial",
+        validate=validate.Equal("multiple_trial"),
+    )
+    contrasts = fields.List(fields.Nested(TContrastSchema))
+
+
+class SingleTrialTaskBasedFeatureSchema(BaseTaskBasedFeatureSchema):
+    estimation = fields.Str(
+        dump_default="single_trial_least_squares_single",
+        validate=validate.OneOf(["single_trial_least_squares_single", "single_trial_least_squares_all"]),
+    )
+
+
+class TaskBasedFeatureSchema(OneOfSchema):
+    type_field = "estimation"
+    type_field_remove = False
+    type_schemas = {
+        "multiple_trial": MultipleTrialTaskBasedFeatureSchema,
+        "single_trial_least_squares_single": SingleTrialTaskBasedFeatureSchema,
+        "single_trial_least_squares_all": SingleTrialTaskBasedFeatureSchema,
+    }
+
+    def get_obj_type(self, obj):
+        if isinstance(obj, Feature):
+            return obj.estimation
+        raise Exception(f"Cannot get estimation for {obj}")
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
@@ -140,10 +143,9 @@ class FeatureSchema(OneOfSchema):
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
         "reho": ReHoFeatureSchema,
         "falff": FALFFFeatureSchema,
-        "single_trials": SingleTrialFeatureSchema,
     }
 
     def get_obj_type(self, obj):
         if isinstance(obj, Feature):
             return obj.type
-        raise Exception("Cannot get obj type for FeatureType")
+        raise Exception(f"Cannot get type for {obj}")

@@ -22,8 +22,7 @@ from .falff import init_falff_wf
 from .gig_ica import init_gig_ica_wf
 from .reho import init_reho_wf
 from .seed_based_connectivity import init_seed_based_connectivity_wf
-from .single_trials import init_singletrials_wf
-from .task_based import init_taskbased_wf
+from .task_based import init_task_based_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -89,7 +88,7 @@ class FeatureFactory(Factory):
         setting = _find_setting(feature.setting, self.ctx.spec)
         kwargs["space"] = setting["space"]
 
-        if feature.type in ["task_based", "single_trials"]:
+        if feature.type == "task_based":
             confounds_action = "select"
 
             condition_files = collect_events(database, source_file)
@@ -118,9 +117,7 @@ class FeatureFactory(Factory):
             if condition_units == "seconds":
                 condition_units = "secs"
 
-            func = {"task_based": init_taskbased_wf, "single_trials": init_singletrials_wf}[feature.type]
-
-            workflow = func(
+            workflow = init_task_based_wf(
                 condition_files=condition_files,
                 condition_units=condition_units,  # type: ignore[arg-type]
                 **kwargs,
