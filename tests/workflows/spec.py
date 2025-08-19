@@ -151,10 +151,11 @@ def add_settings_and_features_to_spec(
             conditions[0]: 1.0,
             conditions[1]: -1.0,
         }
-        task_based_feature = feature_schema.load(
+        multiple_trial_task_based_feature = feature_schema.load(
             dict(
                 name=f"{name}TaskBased",
                 type="task_based",
+                estimation="multiple_trial",
                 high_pass_filter_cutoff=125.0,
                 conditions=conditions,
                 contrasts=[
@@ -163,7 +164,19 @@ def add_settings_and_features_to_spec(
                 setting=glm_setting["name"],
             )
         )
-        spec.features.append(task_based_feature)
+        spec.features.append(multiple_trial_task_based_feature)
+
+        single_trial_task_based_feature = feature_schema.load(
+            dict(
+                name=f"{name}SingleTrialTaskBased",
+                type="task_based",
+                estimation="single_trial_least_squares_all",
+                high_pass_filter_cutoff=125.0,
+                conditions=conditions,
+                setting=glm_setting["name"],
+            )
+        )
+        spec.features.append(single_trial_task_based_feature)
 
     pcc_feature = feature_schema.load(
         dict(

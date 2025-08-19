@@ -203,8 +203,10 @@ class MakeResultdicts(IOBase):
                             del resultdicts[i][f][k]
 
         # validate
-        for i in range(len(resultdicts)):
-            assert len(resultdict_schema.validate(resultdicts[i])) == 0  # type: ignore
+        for resultdict in resultdicts:
+            validation_errors = resultdict_schema.validate(resultdict)  # type: ignore[arg-type]
+            if validation_errors:
+                raise ValueError(f"Resultdict {resultdict} does not conform to schema: {validation_errors}")
 
         outputs["resultdicts"] = resultdicts
         outputs["vals"] = resultdicts[0]["vals"]
