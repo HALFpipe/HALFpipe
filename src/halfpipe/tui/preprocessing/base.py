@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# ok to review
 
 from copy import deepcopy
 
@@ -13,10 +12,9 @@ from textual.widgets import Input, Static, Switch
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
 from ..data_analyzers.meta_data_steps import CheckBoldSliceEncodingDirectionStep
-from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox, SwitchWithSelect
+from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithInputBox
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import widget_exists
-from ..specialized_widgets.filebrowser import FileBrowser
 from ..standards import global_settings_defaults
 
 
@@ -178,28 +176,7 @@ class Preprocessing(Widget):
 
     def build_advanced_settings_widgets(self):
         # Advanced setting widgets for halfpipe settings
-        self.workflowgroup_settings_panel = Container(
-            SwitchWithInputBox(
-                label="Number of nipype omp threads",
-                value="1",
-                classes="switch_with_input_box",
-                id="nipype-omp-nthreads",
-            ),
-            Horizontal(
-                Static("Path to the freesurfer license", id="the_static"), FileBrowser(path_to="Path"), id="fs-license-file"
-            ),
-            LabelledSwitch("Generate workflow suitable for running on a cluster", False),
-            id="workflowgroup_settings",
-            classes="components",
-        )
 
-        self.debuggroup_settings_panel = Container(
-            LabelledSwitch("Debug", False),
-            LabelledSwitch("Profile", False),
-            LabelledSwitch("Watchdog", False),
-            id="debuggroup_settings",
-            classes="components",
-        )
         self.rungroup_settings_panel = Container(
             SwitchWithInputBox(
                 label="Merge subject workflows to n chunks",
@@ -222,7 +199,6 @@ class Preprocessing(Widget):
                 classes="switch_with_input_box",
                 id="only-chunk-index",
             ),
-            LabelledSwitch("Watchdog", False, id="nipype-resource-monitor"),
             SwitchWithInputBox(
                 label="Nipype memory in GB",
                 value="64",
@@ -242,18 +218,9 @@ class Preprocessing(Widget):
                 classes="switch_with_input_box",
                 id="nipype-run-plugin",
             ),
-            LabelledSwitch("Nipype resource monitor", False),
-            SwitchWithSelect(
-                "Choose which intermediate files to keep",
-                options=[("all", "all"), ("some", "some"), ("none", "none")],
-                switch_value=True,
-                id="keep",
-            ),
             id="rungroup_settings",
             classes="components",
         )
-        self.workflowgroup_settings_panel.border_title = "Workflow settings"
-        self.debuggroup_settings_panel.border_title = "Debug settings"
         self.rungroup_settings_panel.border_title = "Run settings"
 
     @on(Switch.Changed, "#advanced_settings_switch")
@@ -277,8 +244,6 @@ class Preprocessing(Widget):
             # self.get_widget_by_id("debuggroup_settings").styles.visibility = "visible"
             # self.get_widget_by_id("rungroup_settings").styles.visibility = "visible"
             self.build_advanced_settings_widgets()
-            await self.mount(self.workflowgroup_settings_panel)
-            await self.mount(self.debuggroup_settings_panel)
             await self.mount(self.rungroup_settings_panel)
         else:
             if widget_exists(self, "workflowgroup_settings") is True:

@@ -71,7 +71,9 @@ class FileBrowser(Widget):
     # def watch_selected_path(self) -> None:
     #     self.post_message(self.Changed(self, self.selected_path))
 
-    def __init__(self, path_to="", modal_title="Browse", id: str | None = None, classes: str | None = None, **kwargs) -> None:
+    def __init__(
+        self, path_to="", modal_title="Browse", id: str | None = None, classes: str | None = None, path_test_function=None
+    ) -> None:
         """
         Initializes the FileBrowser widget.
 
@@ -94,6 +96,8 @@ class FileBrowser(Widget):
         self.path_to = path_to
         # The title of the file browser modal.
         self.modal_title = modal_title
+        # what function will use the file browser modal for file check, None triggers directory check (default)
+        self.path_test_function = None if path_test_function is None else path_test_function
 
     def compose(self) -> ComposeResult:
         """
@@ -130,7 +134,9 @@ class FileBrowser(Widget):
         This method pushes the `FileBrowserModal` onto the screen to allow
         the user to browse and select a file or directory.
         """
-        self.app.push_screen(FileBrowserModal(title=self.modal_title), self.update_input)
+        self.app.push_screen(
+            FileBrowserModal(title=self.modal_title, path_test_function=self.path_test_function), self.update_input
+        )
 
     @on(Input.Submitted, "#path_input_box")
     def update_from_input(self) -> None:

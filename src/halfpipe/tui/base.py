@@ -20,6 +20,7 @@ from textual.widgets._header import HeaderTitle
 from ..logging.base import LoggingContext
 from .data_analyzers.context import ctx
 from .data_input.base import DataInput
+from .diagnostics.base import Diagnostics
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
@@ -289,6 +290,7 @@ class MainApp(App):
         BASE_DIR / "specialized_widgets/tcss/file_browser.tcss",
         BASE_DIR / "specialized_widgets/tcss/path_pattern_builder.tcss",
         BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
+        BASE_DIR / "diagnostics/tcss/diagnostics.tcss",
     ]
 
     # TODO: The non active tabs should not show the bindings.
@@ -354,6 +356,8 @@ class MainApp(App):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
                 yield VerticalScroll(Run(), id="run_content")
+            with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
+                yield VerticalScroll(Diagnostics(), id="diag_content")
         yield Footer()
 
     def on_mount(self) -> None:

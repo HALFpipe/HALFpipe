@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 
+from niworkflows.utils.misc import check_valid_fs_license
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -18,6 +19,7 @@ from ..data_analyzers.context import ctx
 from ..help_functions import copy_and_rename_file
 from ..load import cache_file_patterns, fill_ctx_spec, mount_features, mount_file_panels, mount_models
 from ..specialized_widgets.confirm_screen import Confirm
+from ..specialized_widgets.file_browser_modal import path_test_with_isfile_true
 from ..specialized_widgets.filebrowser import FileBrowser
 
 
@@ -115,17 +117,31 @@ spec.json file it is possible to load the therein configuration.",
             id="work_directory",
             classes="components",
         )
+        freesurfer_directory = Vertical(
+            Static(
+                "Path to the freesurfer license. By default the path will be set to the working directory.", id="description"
+            ),
+            FileBrowser(
+                path_to="FREESURFER LICENSE", path_test_function=path_test_with_isfile_true, id="fs_license_file_browser"
+            ),
+            id="fs_license_file_panel",
+            classes="components",
+        )
         work_directory.border_title = "Select working directory"
+        freesurfer_directory.border_title = "Select freesurfer license directory"
 
         yield work_directory
+        yield freesurfer_directory
 
-    @on(FileBrowser.Changed)
-    async def _on_file_browser_changed(self, message: Message) -> None:
+    @on(FileBrowser.Changed, "#work_dir_file_browser")
+    async def _on_work_dir_file_browser_changed(self, message: Message) -> None:
         try:
             init_workdir(message.selected_path)
             await self._working_dir_path_passed(message.selected_path)
+            self.get_widget_by_id("fs_license_file_browser").update_input(message.selected_path, send_message=False)
+            ctx.fs_license_file = message.selected_path
         except RuntimeError as e:
-            self.app.push_screen(
+            await self.app.push_screen(
                 Confirm(
                     f"{e}",
                     left_button_text=False,
@@ -137,6 +153,28 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("work_dir_file_browser").update_input(None, send_message=False)
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
             ctx.workdir = None
+
+    @on(FileBrowser.Changed, "#fs_license_file_browser")
+    async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
+        if not check_valid_fs_license():
+            await self.app.push_screen(
+                Confirm(
+                    "No freesurfer license found!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="Path Error",
+                    classes="confirm_error",
+                )
+            )
+        else:
+            await self.app.push_screen(
+                Confirm(
+                    "Valid freesurfer license found!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="License found",
+                )
+            )
 
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """

@@ -84,6 +84,7 @@ class Context:
         self.spec: Spec = spec  # initialize with defaults
         self.database = Database(self.spec)
         self.workdir: Path | None = None
+        self.fs_license_file: Path | None = None
         self.use_existing_spec = False
         self.debug = False
         self.already_checked: set[str] = set()

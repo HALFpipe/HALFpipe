@@ -13,6 +13,19 @@ WorkDirectory {
             border: solid red;
         }
     }
+    #freesurfer_directory {
+        align: left top;
+        height: auto;
+        grid-size: 1;
+        #description {
+            height: 4;
+            padding: 1;
+            text-align: justify;
+        }
+	#freesurfer_dir_file_browser {
+            border: solid red;
+        }
+    }
     #top_event_file_panel {
         height: auto;
         align: center top;

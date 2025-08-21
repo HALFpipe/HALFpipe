@@ -351,7 +351,7 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
-        self.app.exit(result=ctx.workdir)
+        self.app.exit(result=(ctx.workdir, ctx.fs_license_file))
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
