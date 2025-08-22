@@ -156,6 +156,7 @@ spec.json file it is possible to load the therein configuration.",
 
     @on(FileBrowser.Changed, "#fs_license_file_browser")
     async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
+        os.environ["FS_LICENSE"] = message.selected_path
         if not check_valid_fs_license():
             await self.app.push_screen(
                 Confirm(
