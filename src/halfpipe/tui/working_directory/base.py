@@ -138,8 +138,7 @@ spec.json file it is possible to load the therein configuration.",
         try:
             init_workdir(message.selected_path)
             await self._working_dir_path_passed(message.selected_path)
-            self.get_widget_by_id("fs_license_file_browser").update_input(message.selected_path, send_message=False)
-            ctx.fs_license_file = message.selected_path
+            self.get_widget_by_id("fs_license_file_browser").update_input(message.selected_path)
         except RuntimeError as e:
             await self.app.push_screen(
                 Confirm(
@@ -160,13 +159,14 @@ spec.json file it is possible to load the therein configuration.",
         if not check_valid_fs_license():
             await self.app.push_screen(
                 Confirm(
-                    "No freesurfer license found!",
+                    "No freesurfer license found!\nSet path to a valid Freesurfer license file.",
                     left_button_text=False,
                     right_button_text="OK",
                     title="Path Error",
                     classes="confirm_error",
                 )
             )
+            self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "red")
         else:
             await self.app.push_screen(
                 Confirm(
@@ -176,6 +176,8 @@ spec.json file it is possible to load the therein configuration.",
                     title="License found",
                 )
             )
+            ctx.fs_license_file = message.selected_path
+            self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
 
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """

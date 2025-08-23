@@ -13,16 +13,16 @@ WorkDirectory {
             border: solid red;
         }
     }
-    #freesurfer_directory {
+    #fs_license_file_panel {
         align: left top;
         height: auto;
         grid-size: 1;
         #description {
-            height: 4;
+            height: 3;
             padding: 1;
             text-align: justify;
         }
-	#freesurfer_dir_file_browser {
+	#fs_license_file_browser {
             border: solid red;
         }
     }
