@@ -94,6 +94,7 @@ class WorkDirectory(Widget):
             Classes for CSS styling, by default None.
         """
         super().__init__(id=id, classes=classes)
+        self.fs_license_file_found = False
 
     def compose(self) -> ComposeResult:
         """
@@ -138,7 +139,9 @@ spec.json file it is possible to load the therein configuration.",
         try:
             init_workdir(message.selected_path)
             await self._working_dir_path_passed(message.selected_path)
-            self.get_widget_by_id("fs_license_file_browser").update_input(message.selected_path)
+            full_fs_license_path = os.path.join(message.selected_path, "license.txt")
+            if not self.fs_license_file_found:
+                self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path)
         except RuntimeError as e:
             await self.app.push_screen(
                 Confirm(
@@ -167,6 +170,7 @@ spec.json file it is possible to load the therein configuration.",
                 )
             )
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "red")
+            self.fs_license_file_found = False
         else:
             await self.app.push_screen(
                 Confirm(
@@ -178,6 +182,7 @@ spec.json file it is possible to load the therein configuration.",
             )
             ctx.fs_license_file = message.selected_path
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
+            self.fs_license_file_found = True
 
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """
