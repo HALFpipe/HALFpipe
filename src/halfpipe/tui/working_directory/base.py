@@ -185,7 +185,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
             self.fs_license_file_found = True
 
-    @work(exclusive=True, name="work_dir_path_passed_worker")
+    @work(exclusive=False, name="work_dir_path_passed_worker")
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """
         Handles the FileBrowser's Changed event.
