@@ -139,11 +139,6 @@ spec.json file it is possible to load the therein configuration.",
         try:
             init_workdir(message.selected_path)
             self._working_dir_path_passed(message.selected_path)
-            full_fs_license_path = os.path.join(message.selected_path, "license.txt")
-            if not self.fs_license_file_found:
-                self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
-                self.evaluate_fs_license(message.selected_path)
-
         except RuntimeError as e:
             await self.app.push_screen(
                 Confirm(
@@ -211,12 +206,6 @@ spec.json file it is possible to load the therein configuration.",
         message : Message
             The message object containing information about the change.
         """
-        # Change border to green
-        self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
-        # add flag signaling that the working directory was set
-        self.app.flags_to_show_tabs["from_working_dir_tab"] = True
-        self.app.show_hidden_tabs()
-
         async def working_directory_override(override) -> None:
             """
             Handles the user's decision to override an existing spec file.
@@ -265,6 +254,20 @@ spec.json file it is possible to load the therein configuration.",
                     )
                 )
                 await working_directory_override(result)
+
+        # Change border to green
+        self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
+        # add flag signaling that the working directory was set
+        self.app.flags_to_show_tabs["from_working_dir_tab"] = True
+        self.app.show_hidden_tabs()
+
+        # freesurfer license block
+        full_fs_license_path = os.path.join(selected_path, "license.txt")
+        if not self.fs_license_file_found:
+            self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
+            self.evaluate_fs_license(selected_path)
+
+
         # add path to context object
         ctx.workdir = Path(selected_path)
         # Load the spec and by this we see whether there is existing spec file or not
