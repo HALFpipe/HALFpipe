@@ -141,7 +141,9 @@ spec.json file it is possible to load the therein configuration.",
             self._working_dir_path_passed(message.selected_path)
             full_fs_license_path = os.path.join(message.selected_path, "license.txt")
             if not self.fs_license_file_found:
-                self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path)
+                self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
+                self.evaluate_fs_license(message.selected_path)
+
         except RuntimeError as e:
             await self.app.push_screen(
                 Confirm(
@@ -157,10 +159,14 @@ spec.json file it is possible to load the therein configuration.",
             ctx.workdir = None
 
     @on(FileBrowser.Changed, "#fs_license_file_browser")
-    def _on_fs_license_file_browser_changed(self, message: Message) -> None:
-        os.environ["FS_LICENSE"] = message.selected_path
+    async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
+        self.evaluate_fs_license(message.selected_path)
+
+    @work(exclusive=True, name="evaluate_fs_license_worker")
+    async def evaluate_fs_license(self, fs_file_path) -> None:
+        os.environ["FS_LICENSE"] = fs_file_path
         if not check_valid_fs_license():
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     "No freesurfer license found!\nSet path to a valid Freesurfer license file.",
                     left_button_text=False,
@@ -172,7 +178,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "red")
             self.fs_license_file_found = False
         else:
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     "Valid freesurfer license found!",
                     left_button_text=False,
@@ -180,7 +186,7 @@ spec.json file it is possible to load the therein configuration.",
                     title="License found",
                 )
             )
-            ctx.fs_license_file = message.selected_path
+            ctx.fs_license_file = fs_file_path
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
             self.fs_license_file_found = True
 
