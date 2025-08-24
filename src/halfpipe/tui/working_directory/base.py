@@ -158,6 +158,7 @@ spec.json file it is possible to load the therein configuration.",
         self.evaluate_fs_license(message.selected_path)
 
     def evaluate_fs_license(self, fs_file_path) -> None:
+
         os.environ["FS_LICENSE"] = fs_file_path
         if not check_valid_fs_license():
             self.app.push_screen(
@@ -278,11 +279,7 @@ overwrite the working directory and start a new analysis?",
             )
             await existing_spec_file_decision(result)
 
-        # freesurfer license block
-        full_fs_license_path = os.path.join(selected_path, "license.txt")
-        if not self.fs_license_file_found:
-            self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
-            self.evaluate_fs_license(full_fs_license_path)
+
 
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
@@ -309,6 +306,14 @@ overwrite the working directory and start a new analysis?",
                 self._mount_file_panels()
             if event.worker.name == "file_panels_worker":
                 self._mount_models()
+            if event.worker.name == "work_dir_path_passed_worker":
+                # freesurfer license block
+                selected_path = self.get_widget_by_id("work_dir_file_browser").selected_path
+                full_fs_license_path = os.path.join(selected_path, "license.txt")
+                if not self.fs_license_file_found:
+                    self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
+                    self.evaluate_fs_license(full_fs_license_path)
+
 
     async def _load_from_spec(self):
         # Go to Stage 1 of the loading process

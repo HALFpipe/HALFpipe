@@ -98,6 +98,7 @@ class FileBrowser(Widget):
         self.modal_title = modal_title
         # what function will use the file browser modal for file check, None triggers directory check (default)
         self.path_test_function = None if path_test_function is None else path_test_function
+        self.selected_path = ''
 
     def compose(self) -> ComposeResult:
         """
