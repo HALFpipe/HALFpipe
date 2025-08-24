@@ -138,7 +138,7 @@ spec.json file it is possible to load the therein configuration.",
     async def _on_work_dir_file_browser_changed(self, message: Message) -> None:
         try:
             init_workdir(message.selected_path)
-            await self._working_dir_path_passed(message.selected_path)
+            self._working_dir_path_passed(message.selected_path)
             full_fs_license_path = os.path.join(message.selected_path, "license.txt")
             if not self.fs_license_file_found:
                 self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path)
@@ -157,10 +157,10 @@ spec.json file it is possible to load the therein configuration.",
             ctx.workdir = None
 
     @on(FileBrowser.Changed, "#fs_license_file_browser")
-    async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
+    def _on_fs_license_file_browser_changed(self, message: Message) -> None:
         os.environ["FS_LICENSE"] = message.selected_path
         if not check_valid_fs_license():
-            await self.app.push_screen(
+            self.app.push_screen(
                 Confirm(
                     "No freesurfer license found!\nSet path to a valid Freesurfer license file.",
                     left_button_text=False,
@@ -172,7 +172,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "red")
             self.fs_license_file_found = False
         else:
-            await self.app.push_screen(
+            self.app.push_screen(
                 Confirm(
                     "Valid freesurfer license found!",
                     left_button_text=False,
@@ -184,6 +184,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
             self.fs_license_file_found = True
 
+    @work(exclusive=True, name="work_dir_path_passed_worker")
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """
         Handles the FileBrowser's Changed event.
@@ -249,7 +250,7 @@ spec.json file it is possible to load the therein configuration.",
             if load:
                 await self._load_from_spec()
             else:
-                self.app.push_screen(
+                await self.app.push_screen_wait(
                     Confirm(
                         "This action will override the existing spec in the selected working directory. Are you sure?",
                         title="Override existing working directory",
@@ -264,7 +265,7 @@ spec.json file it is possible to load the therein configuration.",
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     "Existing spec file was found! Do you want to load the settings or \
 overwrite the working directory and start a new analysis?",
