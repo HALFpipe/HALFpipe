@@ -186,6 +186,8 @@ spec.json file it is possible to load the therein configuration.",
             ctx.fs_license_file = fs_file_path
             self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
             self.fs_license_file_found = True
+            self.app.flags_to_show_tabs["fs_license_file_found"] = True
+            self.app.show_hidden_tabs()
 
     @work(exclusive=False, name="work_dir_path_passed_worker")
     async def _working_dir_path_passed(self, selected_path: str | Path):
@@ -317,7 +319,7 @@ overwrite the working directory and start a new analysis?",
     @work(exclusive=True, name="license_worker")
     async def _evaluate_license_worker(self, selected_path: str):
         full_fs_license_path = os.path.join(selected_path, "license.txt")
-        if not self.fs_license_file_found:
+        if not self.app.flags_to_show_tabs["fs_license_file_found"]:
             self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
             await self.evaluate_fs_license(full_fs_license_path)
 
@@ -351,8 +353,8 @@ overwrite the working directory and start a new analysis?",
         await mount_models(self)
 
     @on(Button.Pressed, ".-read-only")
-    def on_ee_click(self):
-        if sum(self.app.flags_to_show_tabs.values()) == 2:
+    def on_anything_click(self):
+        if sum(self.app.flags_to_show_tabs.values()) == 3:
             self.app.push_screen(
                 Confirm(
                     "Input entries cannot be changes now! Restart UI to change them.",

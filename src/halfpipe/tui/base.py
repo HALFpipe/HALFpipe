@@ -309,7 +309,7 @@ class MainApp(App):
     # maybe rename to available_tasks? this is a top level class variable that contains available tasks.
     available_images: dict = {}
     # if both flags are True, then we show the hidden tabs.
-    flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
+    flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False, "fs_license_file_found":False})
     # flag for bids/non bids data input
     is_bids = True
 
@@ -385,7 +385,7 @@ class MainApp(App):
         `flags_to_show_tabs` are True.
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
-        if sum(self.flags_to_show_tabs.values()) == 2:
+        if sum(self.flags_to_show_tabs.values()) == 3:
             self.tabs_manager.show_tab("preprocessing_tab")
             self.tabs_manager.show_tab("feature_selection_tab")
             self.tabs_manager.show_tab("models_tab")
@@ -464,6 +464,8 @@ The working tab and data tab are now read only! Do not change entries here!",
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
         self.flags_to_show_tabs["from_working_dir_tab"] = False
         self.flags_to_show_tabs["from_input_data_tab"] = False
+        self.flags_to_show_tabs["fs_license_file_found"] = False
+
         self.tabs_manager.hide_tab("preprocessing_tab")
         self.tabs_manager.hide_tab("feature_selection_tab")
         self.tabs_manager.hide_tab("models_tab")
