@@ -266,7 +266,7 @@ spec.json file it is possible to load the therein configuration.",
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
-            self.app.push_screen(
+            result = await self.app.push_screen_wait(
                 Confirm(
                     "Existing spec file was found! Do you want to load the settings or \
 overwrite the working directory and start a new analysis?",
@@ -275,9 +275,10 @@ overwrite the working directory and start a new analysis?",
                     right_button_text="Override",
                     id="confirm_spec_load_modal",
                     classes="confirm_warning",
-                ),
-                existing_spec_file_decision
+                )
             )
+            await existing_spec_file_decision(result)
+
 
 
 
