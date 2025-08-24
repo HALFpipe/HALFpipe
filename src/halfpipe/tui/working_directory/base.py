@@ -155,9 +155,8 @@ spec.json file it is possible to load the therein configuration.",
 
     @on(FileBrowser.Changed, "#fs_license_file_browser")
     async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
-        self.evaluate_fs_license(message.selected_path)
+        await self.evaluate_fs_license(message.selected_path)
 
-    @work(exclusive=True, name="evaluate_fs_license_worker")
     async def evaluate_fs_license(self, fs_file_path) -> None:
         os.environ["FS_LICENSE"] = fs_file_path
         if not check_valid_fs_license():
@@ -283,7 +282,7 @@ overwrite the working directory and start a new analysis?",
         full_fs_license_path = os.path.join(selected_path, "license.txt")
         if not self.fs_license_file_found:
             self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
-            self.evaluate_fs_license(full_fs_license_path)
+            await self.evaluate_fs_license(full_fs_license_path)
 
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
