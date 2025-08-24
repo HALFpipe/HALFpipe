@@ -250,22 +250,21 @@ spec.json file it is possible to load the therein configuration.",
             if load:
                 await self._load_from_spec()
             else:
-                await self.app.push_screen_wait(
+                result = await self.app.push_screen_wait(
                     Confirm(
                         "This action will override the existing spec in the selected working directory. Are you sure?",
                         title="Override existing working directory",
                         id="confirm_override_spec_file_modal",
                         classes="confirm_warning",
-                    ),
-                    working_directory_override,
+                    )
                 )
-
+                await working_directory_override(result)
         # add path to context object
         ctx.workdir = Path(selected_path)
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
-            await self.app.push_screen_wait(
+            result = await self.app.push_screen_wait(
                 Confirm(
                     "Existing spec file was found! Do you want to load the settings or \
 overwrite the working directory and start a new analysis?",
@@ -274,9 +273,9 @@ overwrite the working directory and start a new analysis?",
                     right_button_text="Override",
                     id="confirm_spec_load_modal",
                     classes="confirm_warning",
-                ),
-                existing_spec_file_decision,
+                )
             )
+            await existing_spec_file_decision(result)
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
