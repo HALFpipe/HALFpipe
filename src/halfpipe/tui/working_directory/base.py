@@ -280,10 +280,8 @@ overwrite the working directory and start a new analysis?",
                 )
             )
             await existing_spec_file_decision(result)
-
-
-        # ALWAYS trigger license check at the end
-        self._evaluate_license_worker(str(selected_path))
+        else:
+            self._evaluate_license_worker(str(selected_path))
 
 
 
@@ -312,6 +310,9 @@ overwrite the working directory and start a new analysis?",
                 self._mount_file_panels()
             if event.worker.name == "file_panels_worker":
                 self._mount_models()
+            if event.worker.name == "models_worker":
+                selected_path = self.get_widget_by_id("work_dir_file_browser").selected_path
+                self._evaluate_license_worker(str(selected_path))
 
     @work(exclusive=True, name="license_worker")
     async def _evaluate_license_worker(self, selected_path: str):
