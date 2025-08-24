@@ -261,13 +261,6 @@ spec.json file it is possible to load the therein configuration.",
         self.app.flags_to_show_tabs["from_working_dir_tab"] = True
         self.app.show_hidden_tabs()
 
-        # freesurfer license block
-        full_fs_license_path = os.path.join(selected_path, "license.txt")
-        if not self.fs_license_file_found:
-            self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
-            self.evaluate_fs_license(selected_path)
-
-
         # add path to context object
         ctx.workdir = Path(selected_path)
         # Load the spec and by this we see whether there is existing spec file or not
@@ -285,6 +278,13 @@ overwrite the working directory and start a new analysis?",
                 )
             )
             await existing_spec_file_decision(result)
+
+        # freesurfer license block
+        full_fs_license_path = os.path.join(selected_path, "license.txt")
+        if not self.fs_license_file_found:
+            self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
+            self.evaluate_fs_license(full_fs_license_path)
+
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
