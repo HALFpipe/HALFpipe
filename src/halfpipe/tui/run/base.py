@@ -22,6 +22,7 @@ from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.quit_modal import quit_modal
+from ..standards import opts
 
 # !!!This must be before importing the RadioSet to override the RadioButton imported by the RadioSet!!!
 RadioButton.BUTTON_INNER = "X"
@@ -351,7 +352,32 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
-        self.app.exit(result=ctx.workdir)
+        debug = opts["debug"]
+        from ...logging.base import LoggingContext
+
+        if debug:
+            import logging
+
+            from ...logging.base import setup as setup_logging
+
+            setup_logging(LoggingContext.queue(), levelno=logging.DEBUG)
+
+        if opts["watchdog"] is True:
+            from ...watchdog import init_watchdog
+
+            init_watchdog()
+
+        if debug:
+            from fmriprep import config
+
+            config.execution.debug = ["all"]  # type: ignore
+
+        verbose = opts["verbose"]
+        if verbose:
+            LoggingContext.enable_verbose()
+
+        opts["workdir"] = ctx.workdir
+        self.app.exit(result=opts)
 
     @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):

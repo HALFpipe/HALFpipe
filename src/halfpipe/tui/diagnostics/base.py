@@ -1,11 +1,14 @@
 from copy import deepcopy
 
+from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
+from textual.message import Message
 from textual.widget import Widget
+from textual.widgets import Select, Static
 
-from ..general_widgets.custom_general_widgets import LabelledSwitch, SwitchWithSelect
-from ..standards import global_settings_defaults
+from ..general_widgets.custom_general_widgets import LabelledSwitch
+from ..standards import global_settings_defaults, opts
 
 
 class Diagnostics(Widget):
@@ -31,17 +34,47 @@ class Diagnostics(Widget):
 
     def compose(self) -> ComposeResult:
         debuggroup_settings_panel = Container(
-            LabelledSwitch("Debug", False),
-            LabelledSwitch("Profile", False),
-            LabelledSwitch("Watchdog", False),
-            SwitchWithSelect(
-                "Choose which intermediate files to keep",
-                options=[("all", "all"), ("some", "some"), ("none", "none")],
-                switch_value=True,
-                id="keep",
+            LabelledSwitch("Debug", False, id="debug_switch"),
+            LabelledSwitch("Verbose", False, id="verbose_switch"),
+            LabelledSwitch("Watchdog", False, id="watchdog_switch"),
+            Horizontal(
+                Static("Choose which intermediate files to keep", id="keep_label"),
+                Select(
+                    [("all", "all"), ("some", "some"), ("none", "none")],
+                    value="all",
+                    allow_blank=False,
+                    id="keep_selection",
+                ),
+                id="keep_selection_panel",
             ),
             id="debuggroup_settings",
             classes="components",
         )
+        debuggroup_settings_panel.border_title = "Diagnostic options"
 
         yield debuggroup_settings_panel
+
+    @on(Select.Changed, "#keep_selection")
+    def on_keep_selection_changed(self, message: Message):
+        opts["keep"] = message.value
+
+    @on(LabelledSwitch.Changed, "#debug_switch")
+    def on_debug_switch_changed(self, message: Message):
+        if message.value:
+            opts["debug"] = True
+        else:
+            opts["debug"] = False
+
+    @on(LabelledSwitch.Changed, "#watchdog_switch")
+    def on_watchdog_switch_changed(self, message: Message):
+        if message.value:
+            opts["watchdog"] = True
+        else:
+            opts["watchdog"] = False
+
+    @on(LabelledSwitch.Changed, "#verbose_switch")
+    def on_verbose_switch_changed(self, message: Message):
+        if message.value:
+            opts["verbose"] = True
+        else:
+            opts["verbose"] = False

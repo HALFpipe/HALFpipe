@@ -1,9 +1,18 @@
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, List, Union
 
 from inflection import humanize
 
 global_settings_defaults: dict[str, str] = {"dummy_scans": "0", "run_reconall": "False", "slice_timing": "False"}
+opts: dict[str, str | bool | Path | None] = {
+    "debug": False,
+    "verbose": False,
+    "watchdog": False,
+    "keep": "some",
+    "workdir": None,
+}
+
 
 bandpass_filter_defaults: dict[str, dict] = {
     "gaussian": {"type": "gaussian", "hp_width": "125", "lp_width": None},

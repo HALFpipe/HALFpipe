@@ -1,94 +1,38 @@
-Preprocessing:disabled {
-    opacity: 50%;
-}
-
-#missing_time_slice_vals_warn_modal {
-    #draggable_modal_screen_container_wrapper {
-        height: 12;
-    }
-}
-
-Diagnostics 
+Diagnostics
 {
-    align: center middle;
+    align: center top;
     height: auto;
-    #anatomical_settings {
-        height: 7;
-    }
-    #functional_settings {
-        height: auto;
-    }
-    #slice_timing {
-        offset-y: 1;
-        width: auto;
-    }
-    .timing_setting_panels {
-        align: center middle;
-        margin: 1;
-    }
-    #select_slice_timing_panel {
-        offset-x: 2;
-    }
-    Switch {
-    }
-    .label {
-        border: transparent;
-        width: auto;
-    }
+#debuggroup_settings {
+    content-align: center middle;
 
-    Container {
-    }
-    .description_labels {
-        border: transparent;
-        width: auto;
-        height: 7;
-    }
+}
+#keep_selection_panel {
+width: auto;
+height: auto;
+padding: 0 0 0 1;
+#keep_label {
+border: transparent;
+width: 52;
+}
 
-    #remove_initial_volumes {
-        height: auto;
-        width: auto;
-        Static {
-        }
-        #remove_volumes_value {
-            border: green;
-            content-align: center middle;
-            width: 5;
-        }
-    }
+
     Select {
-        background: 40% red;
-        Horizontal {
-            align: left middle;
-        }
+
+        width: 16;
     }
-    Horizontal {
-        align: center middle;
-        height: 3;
-    }
-    Select {
-        border: none;
-        width: 61;
-    }
-    .icon_buttons {
-        width: 3;
-        margin: 0 1 0 0;
-        min-width: 6;
-        offset-x: 1;
-    }
-    SwitchWithInputBox {
-        Grid {
-            align: left middle;
-            grid-size: 3;
-            grid-columns: 53 16 15;
-        }
-    }
+}
+
+
+
+
     LabelledSwitch {
-        width: auto;
+        width: 70;
         height: 3;
+
         Grid {
             align: left middle;
-            grid-size: 3;
-            grid-columns: 56 16 15;
+            grid-size: 2;
+            grid-columns: 56 26 0;
         }
         Static {
             offset-x: 1;
@@ -98,105 +42,6 @@ Diagnostics
             offset-x: -3;
         }
     }
-    #fs-license-file {
-        height: 5;
-        FileBrowser {
-            width: 60;
-            height: 5;
 
-            offset-x: 5;
-        }
-        #the_static {
-            width: 48;
-            offset-x: 2;
-            offset-y: 2;
-        }
-    }
-    #manualy_set_volumes_to_remove {
-            height: auto;
-            align: center middle;
-            grid-size: 2;
-            grid-columns: 36 20;
-            offset-x: -3;
-            #number_of_remove_initial_volumes {
-                width: auto;
-            }
-    }
-}
 
-SetInitialVolumesRemovalModal {
-    height: auto;
-    width: auto;
-    #draggable_modal_screen_container_wrapper {
-        width: auto;
-        height: auto;
-        background: black;
-    }
-
-    Static {
-        height: auto;
-        content-align: center middle;
-        text-style: bold;
-        text-align: center;
-        width: auto;
-        margin: 1 1 1 1;
-    }
-    Input {
-        width: 10;
-        offset-x: 20;
-        border: tall $accent;
-    }
-    Horizontal {
-        height: 4;
-        width: 100%;
-
-        align: right bottom;
-        Button {
-            margin: 1;
-        }
-    }
-    .window_title {
-        height: auto;
-        text-align: left;
-    }
-}
-
-SliceTimingModal {
-    #draggable_modal_screen_container_wrapper {
-        width: 47;
-        height: 14;
-        background: black;
-    }
-    Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
-        align: center middle;
-    }
-    Static {
-        height: 1;
-        content-align: center middle;
-        text-style: bold;
-    }
-    #found_values {
-        height: 3;
-        border: $warning;
-    }
-    Input {
-        width: 10;
-        border: tall $accent;
-        offset-x: 15;
-    }
-    Horizontal {
-        height: 4;
-        dock: bottom;
-        offset-x: 10;
-        Button {
-            margin: 1;
-        }
-    }
-}
-
-#advanced_settings_switch_panel {
-    height: 7;
 }
