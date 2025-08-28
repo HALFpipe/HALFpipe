@@ -40,8 +40,8 @@ class Diagnostics(Widget):
             Horizontal(
                 Static("Choose which intermediate files to keep", id="keep_label"),
                 Select(
-                    [("all", "all"), ("some", "some"), ("none", "none")],
-                    value="all",
+                    [("some", "some"), ("all", "all"), ("none", "none")],
+                    value="some",
                     allow_blank=False,
                     id="keep_selection",
                 ),
