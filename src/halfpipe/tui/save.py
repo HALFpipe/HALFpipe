@@ -10,6 +10,22 @@ from .data_analyzers.context import ctx
 from .specialized_widgets.confirm_screen import Confirm
 
 
+# fill metadata
+def fill_metadata(key, filters):
+    if filters is None:
+        fileobjs = ctx.database.fromspecfileobj(ctx.spec.files[-1])
+        if fileobjs is None:
+            raise ValueError("No files found for filters")
+        filepaths = [fileobj.path for fileobj in fileobjs]
+    else:
+        filepaths = [*ctx.database.get(**filters)]
+
+    logger.debug(f"UI->save->key:{key} filepaths:{filepaths}, filter:{filters}")
+    ctx.database.fillmetadata(key, filepaths)
+    vals = [ctx.database.metadata(filepath, key) for filepath in filepaths]
+    logger.debug(f"UI->save->vals:{vals}")
+
+
 def dump_dict_to_contex(self, save=False):
     """
     Converts the cached data to the spec json format.
@@ -38,6 +54,7 @@ def dump_dict_to_contex(self, save=False):
     ctx.spec.settings.clear()
     ctx.spec.models.clear()
     ctx.spec.files.clear()
+    bids = False
     # iterate now over the whole cache and fill the context object
     # the "name" is widget name carying the particular user choices, either a feature or file pattern
     for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
@@ -155,13 +172,32 @@ def dump_dict_to_contex(self, save=False):
                         setattr(ctx.spec.models[-1], key, value)
 
         if ctx.cache["bids"]["files"] != {} and name == "bids":
+            bids = True
             logger.debug(f"IU->save->dump_dict_to_contex->bids-> file is bids: {ctx.cache['bids']['files']}")
             ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))
 
         if ctx.cache[name]["files"] != {} and name != "bids":
-            logger.debug(f"IU->save->dump_dict_to_contex->files-> file is not bids: {ctx.cache[name]['files']}")
+            suffix = ctx.cache[name]["files"].suffix
+            logger.debug(
+                f"IU->save->dump_dict_to_contex->files-> file is not bids: {ctx.cache[name]['files'].path}, suffix: {suffix}"
+            )
+
             ctx.spec.files.append(ctx.cache[name]["files"])
             ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
+            if suffix == "phasediff":
+                fill_metadata("echo_time1", None)
+                fill_metadata("echo_time2", None)
+            if suffix == "phase1" or suffix == "phase2":
+                fill_metadata("echo_time", None)
+
     self.old_cache = copy.deepcopy(ctx.cache)
     # refresh at the end available images
     ctx.refresh_available_images()
+
+    if ctx.spec.global_settings["slice_timing"]:
+        for key in ["slice_encoding_direction", "slice_timing"]:
+            filters = {"datatype": "func", "suffix": "bold"}
+            fill_metadata(key, filters)
+
+    if not bids:
+        fill_metadata("repetition_time", {"datatype": "func", "suffix": "bold"})
