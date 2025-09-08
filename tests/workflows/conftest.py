@@ -22,7 +22,7 @@ from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 
 from ..resource import setup as setup_test_resources
-from .spec import make_spec
+from .spec import TestSetting, make_spec
 
 
 @pytest.fixture(scope="session")
@@ -162,4 +162,21 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     bids_file = FileSchema().load(
         dict(datatype="bids", path=str(bids_data)),
     )
-    return make_spec(dataset_files=[bids_file], pcc_mask=pcc_mask, event_file=mock_task_events)
+
+    base_setting = dict(
+        confounds_removal=["(trans|rot)_[xyz]"],
+        grand_mean_scaling=dict(mean=10000.0),
+        ica_aroma=True,
+    )
+    test_settings = [
+        TestSetting(
+            name="standard",
+            base_setting=dict(space="standard", **base_setting),
+        ),
+        TestSetting(
+            name="native",
+            base_setting=dict(space="native", **base_setting),
+        ),
+    ]
+
+    return make_spec(dataset_files=[bids_file], pcc_mask=pcc_mask, test_settings=test_settings, event_file=mock_task_events)

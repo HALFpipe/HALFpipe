@@ -18,6 +18,8 @@ from nipype.interfaces.base import (
 from nipype.interfaces.base.support import Bunch
 from nipype.interfaces.io import IOBase, add_traits
 
+from ... import __version__ as halfpipe_version
+from ...ingest.spreadsheet import read_spreadsheet
 from ..connectivity import mean_signals
 
 
@@ -78,7 +80,8 @@ class CalcMean(SimpleInterface):
 class UpdateValsInputSpec(DynamicTraitedSpec):
     vals = traits.Dict(traits.Str(), traits.Any())
     confounds_file = File(exists=True)
-    aroma_metadata = traits.Dict(traits.Str(), traits.Any(), exists=True)
+    confounds_selected = File(exists=True)
+    aroma_column_names = traits.List(traits.Str(), exists=True)
     fd_thres = traits.Float()
 
 
@@ -101,7 +104,7 @@ class UpdateVals(IOBase):
         assert outputs is not None
         outputs = outputs.get()
 
-        vals = dict()
+        vals: dict[str, Any] = dict(confound_regressors=list(), halfpipe_version=halfpipe_version)
 
         if isdefined(self.inputs.vals):
             vals.update(self.inputs.vals)
@@ -118,19 +121,27 @@ class UpdateVals(IOBase):
             )
             assert isinstance(data_frame, pd.DataFrame)
 
-            fd = data_frame["framewise_displacement"]
-            fd.fillna(value=0.0, inplace=True)
+            framewise_displacement = data_frame["framewise_displacement"].dropna()
 
-            vals["fd_mean"] = float(fd.mean())
+            vals["fd_mean"] = float(framewise_displacement.mean())
+            vals["fd_max"] = float(framewise_displacement.max())
 
             if isdefined(self.inputs.fd_thres):
-                fd_prop = float((fd > self.inputs.fd_thres).mean())
+                fd_prop = float((framewise_displacement > self.inputs.fd_thres).mean())
                 vals["fd_perc"] = fd_prop * 100  # rescale to percent
 
-        if isdefined(self.inputs.aroma_metadata):
-            aroma_metadata = self.inputs.aroma_metadata
-            is_noise_component = [c["MotionNoise"] is True for c in aroma_metadata.values()]
+        confounds_selected = self.inputs.confounds_selected
+        if isdefined(confounds_selected):
+            data_frame = read_spreadsheet(confounds_selected)
+            vals["confound_regressors"].extend(data_frame.columns)
+
+        if isdefined(self.inputs.aroma_column_names):
+            aroma_column_names = self.inputs.aroma_column_names
+            is_noise_component = [aroma_column_name.startswith("aroma_noise") for aroma_column_name in aroma_column_names]
             vals["aroma_noise_frac"] = float(np.array(is_noise_component).astype(float).mean())
+            vals["confound_regressors"].extend(
+                aroma_column_name for aroma_column_name in aroma_column_names if aroma_column_name.startswith("aroma_noise")
+            )
 
         for field in self.fields:
             value = getattr(self.inputs, field, None)

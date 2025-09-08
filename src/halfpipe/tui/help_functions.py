@@ -11,6 +11,7 @@ from textual.css.query import NoMatches  # Import the NoMatches exception
 
 from ..collect.events import collect_events
 from ..ingest.events import ConditionFile
+from ..logging import logger
 from ..model.filter import FilterSchema
 from .data_analyzers.context import ctx
 
@@ -117,6 +118,7 @@ def get_conditions(_filter: Any) -> List[str]:
     seen = set()
     for bold_file_path in bold_file_paths:
         event_file_paths = collect_events(ctx.database, bold_file_path)
+        logger.debug(f"IU->get_conditions-> event_file_paths:{event_file_paths}, bold_file_path:{bold_file_path}")
         if event_file_paths is None:
             continue
 
@@ -127,6 +129,7 @@ def get_conditions(_filter: Any) -> List[str]:
         for condition in cf.conditions:  # maintain order
             if condition not in conditions:
                 conditions.append(condition)
+        logger.debug(f"IU->get_conditions-> conditions:{conditions}")
 
         seen.add(event_file_paths)
     return conditions

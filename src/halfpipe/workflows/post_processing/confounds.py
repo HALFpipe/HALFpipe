@@ -6,6 +6,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
+from ...interfaces.reports.vals import UpdateVals
 from ...interfaces.utility.tsv import FillNA, SelectColumns
 from ...utils.hash import b32_digest
 from ..memory import MemoryCalculator
@@ -74,7 +75,6 @@ def init_confounds_regression_wf(
         name="outputnode",
     )
     workflow.connect(inputnode, "mask", outputnode, "mask")
-    workflow.connect(inputnode, "vals", outputnode, "vals")
 
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
@@ -99,5 +99,11 @@ def init_confounds_regression_wf(
     workflow.connect(fillna, "out_no_header", filter_regressor_c, "design_file")
 
     workflow.connect(filter_regressor_c, "out_file", outputnode, "confounds")
+
+    update_vals = pe.Node(interface=UpdateVals(), name="update_vals", mem_gb=memcalc.volume_std_gb)
+    workflow.connect(inputnode, "vals", update_vals, "vals")
+    workflow.connect(inputnode, "confounds_selected", update_vals, "confounds_selected")
+
+    workflow.connect(update_vals, "vals", outputnode, "vals")
 
     return workflow

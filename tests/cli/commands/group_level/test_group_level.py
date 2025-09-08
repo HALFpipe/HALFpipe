@@ -40,7 +40,7 @@ def test_group_level(tmp_path: Path) -> None:
         zip_file.extractall(tmp_path)
 
     brainnetome_image_path = tmp_path / "atlas-Brainnetome_dseg.nii.gz"
-    brainnetome_labels_path = tmp_path / "atlas-Brainnetome_dseg.txt"
+    brainnetome_labels_path = tmp_path / "atlas-Brainnetome_dseg.tsv"
 
     random_number_generator = np.random.default_rng()
 

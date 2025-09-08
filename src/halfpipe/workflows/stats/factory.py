@@ -12,12 +12,12 @@ inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 class StatsFactory(Factory):
-    def __init__(self, ctx, feature_factory: FeatureFactory):
+    def __init__(self, ctx, feature_factory: FeatureFactory) -> None:
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
 
-    def has(self, name):
+    def has(self, name: str) -> bool:
         for model in self.ctx.spec.models:
             if model.name == name:
                 return True

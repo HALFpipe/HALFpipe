@@ -18,6 +18,8 @@ from nipype.interfaces.base.support import Bunch
 
 from ..signals import mean_signals
 
+savetxt_argdict = dict(fmt="%.10f", delimiter="\t")
+
 
 class ConnectivityMeasureInputSpec(BaseInterfaceInputSpec):
     in_file = File(desc="Image file(s) from where to extract the data", exists=True, mandatory=True)
@@ -72,16 +74,14 @@ class ConnectivityMeasure(BaseInterface):
     def _list_outputs(self):
         outputs = self.output_spec().get()
 
-        argdict = dict(fmt="%.10f", delimiter="\t")
-
         time_series_file = op.abspath("timeseries.tsv")
-        np.savetxt(time_series_file, self._time_series, **argdict)
+        np.savetxt(time_series_file, self._time_series, **savetxt_argdict)
 
         covariance_file = op.abspath("covariance.tsv")
-        np.savetxt(covariance_file, self._cov_mat, **argdict)
+        np.savetxt(covariance_file, self._cov_mat, **savetxt_argdict)
 
         correlation_file = op.abspath("correlation.tsv")
-        np.savetxt(correlation_file, self._corr_mat, **argdict)
+        np.savetxt(correlation_file, self._corr_mat, **savetxt_argdict)
 
         outputs["time_series"] = time_series_file
         outputs["covariance"] = covariance_file
