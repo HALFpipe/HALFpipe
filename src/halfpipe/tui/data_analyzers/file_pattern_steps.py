@@ -2,6 +2,7 @@
 
 
 from typing import Dict, List, Type, Union
+
 from ...ingest.glob import get_entities_in_path, tag_glob, tag_parse
 from ...logging import logger
 from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema
