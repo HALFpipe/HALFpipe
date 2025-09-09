@@ -127,6 +127,8 @@ class ReHoFeatureSchema(BaseFeatureSchema):
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped
 
+    zscore = fields.Bool(dump_default=True, load_default=True)
+
 
 class FALFFFeatureSchema(ReHoFeatureSchema):
     unfiltered_setting = fields.Str()
