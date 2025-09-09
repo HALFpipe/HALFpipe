@@ -11,6 +11,7 @@ import scipy.spatial
 import scipy.stats
 from numpy import typing as npt
 
+from halfpipe.model.feature import Feature
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.features.falff import compute_falff, init_falff_wf
 
@@ -61,7 +62,7 @@ def test_falff_wf(tmp_path: Path):
     workdir = tmp_path / "workdir"
     workdir.mkdir(exist_ok=True)
 
-    wf = init_falff_wf(workdir=workdir, fwhm=0.0)
+    wf = init_falff_wf(workdir=workdir, feature=Feature("falff", "falff", smoothing=None, zscore=True))
     wf.base_dir = workdir
     inputnode = wf.get_node("inputnode")
     assert inputnode is not None
