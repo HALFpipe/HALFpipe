@@ -369,6 +369,11 @@ class FileItem(Widget):
             else:
                 pattern_load = {}
                 pattern_load["file_pattern"] = self.load_object.path
+                if self.load_object.tags == {}:
+                    pattern_load["file_tag"] = None
+                else:
+                    pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get("atlas"))
+
                 message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
@@ -498,10 +503,14 @@ class FileItem(Widget):
         """
         if self.pattern_class is not None:
             # fix this because sometimes this can be just ordinary string
-            if isinstance(self.pattern_match_results["file_pattern"], str):
-                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"])
-            elif isinstance(self.pattern_match_results["file_pattern"], Text):
-                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"].plain)
+            file_pattern = self.pattern_match_results["file_pattern"]
+            if isinstance(file_pattern, Text):
+                file_pattern = file_pattern.plain
+
+            await self.pattern_class.push_path_to_context_obj(
+                path=file_pattern,
+                tags=self.pattern_match_results["file_tag"],
+            )
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """

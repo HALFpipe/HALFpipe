@@ -3,13 +3,14 @@
 from copy import deepcopy
 
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.message import Message
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
+from ...logging import logger
 from ..general_widgets.custom_general_widgets import LabelWithInputBox
 from ..help_functions import extract_name_part
 from ..specialized_widgets.event_file_widget import AtlasFilePanel
@@ -146,7 +147,27 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             The message object containing information about the deleted
             file item.
         """
-        self.update_tag_selection_by_children_walk(set([]))
+
+        template_path = message.value["file_pattern"]
+        if isinstance(template_path, Text):
+            template_path = template_path.plain
+
+        if message.value["file_tag"] is None:
+            all_tagvals_based_on_the_current_file_patterns = set(
+                [
+                    extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
+                    for file_path in message.value["files"]
+                ]
+            )
+        else:
+            all_tagvals_based_on_the_current_file_patterns = set([message.value["file_tag"]])
+
+        logger.debug(
+            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed->all_tagvals_based_on_the_current_file_patterns\
+             to remove: {all_tagvals_based_on_the_current_file_patterns}"
+        )
+
+        self.update_tag_selection_by_children_walk(all_tagvals_based_on_the_current_file_patterns, remove=True)
 
     @on(file_panel_class.Changed, "#top_file_panel")
     def on_file_panel_changed(self, message: Message) -> None:
@@ -167,28 +188,41 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         if isinstance(template_path, Text):
             template_path = template_path.plain
 
-        # This snippet extracts all file tags from the files based on the file pattern.
-        all_tagvals_based_on_the_current_file_patterns = set(
-            [
-                extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
-                for file_path in message.value["files"]
-            ]
+        logger.debug(
+            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed: file_pattern:{message.value['file_pattern']}, \
+            files: {message.value['files']}"
         )
 
-        # Run again if nothing is found. When loading from a spec file there is 'desc' instead of e.g. 'atlases'.
-        # Maybe somehow combine these two to one?
-        if all_tagvals_based_on_the_current_file_patterns == {None}:
+        if message.value["file_tag"] is None:
+            # This snippet extracts all file tags from the files based on the file pattern.
             all_tagvals_based_on_the_current_file_patterns = set(
-                [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
+                [
+                    extract_name_part(template_path, file_path, suffix=self.filters["suffix"])
+                    for file_path in message.value["files"]
+                ]
             )
+
+            # Run again if nothing is found. When loading from a spec file there is 'desc' instead of e.g. 'atlases'.
+            # Maybe somehow combine these two to one?
+            if all_tagvals_based_on_the_current_file_patterns == {None}:
+                all_tagvals_based_on_the_current_file_patterns = set(
+                    [extract_name_part(template_path, file_path, suffix="desc") for file_path in message.value["files"]]
+                )
+        else:
+            all_tagvals_based_on_the_current_file_patterns = set([message.value["file_tag"]])
 
         # The following line updates the tagvals set with the extracted tags. The '^' between the old and new set is to prevent
         # from duplicated tags in case somebody adds the same file pattern twice.
         tagvals = tagvals ^ all_tagvals_based_on_the_current_file_patterns
 
+        logger.debug(
+            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed->all_tagvals_based_on_the_current_file_patterns:\
+{all_tagvals_based_on_the_current_file_patterns}"
+        )
         self.update_tag_selection_by_children_walk(tagvals)
 
-    def update_tag_selection_by_children_walk(self, tagvals: set) -> None:
+    @work(exclusive=False, name="update_tag_selection")
+    async def update_tag_selection_by_children_walk(self, tagvals: set, remove=False) -> None:
         """
         Updates the tag selection list based on the provided tag values.
 
@@ -201,26 +235,43 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         tagvals : set
             A set of tag values to update the selection list with.
         """
-        for tagval in sorted(tagvals):
-            self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
-        # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition of
-        # the file patterns. If this is the case, we deselect all selections and select only the options selected previous
-        # (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying previous
-        # options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not creating a new
-        # feature by duplication or from a spec file load by standardly by just adding a new feature. In such case we select
-        # all choices
-        if self.file_tag_init_flag:
-            self.get_widget_by_id("tag_selection").deselect_all()
-            if self.feature_dict[self.featurefield] == []:
-                self.get_widget_by_id("tag_selection").select_all()
-            else:
-                for tagval in self.feature_dict[self.featurefield]:
-                    self.get_widget_by_id("tag_selection").select(tagval)
+        if not remove:
+            current_options = list(self.get_widget_by_id("tag_selection")._values)
+            for tagval in sorted(tagvals):
+                if tagval not in current_options:
+                    self.get_widget_by_id("tag_selection").add_option(Selection(tagval, tagval, initial_state=True))
+            logger.debug(
+                f"UI->AtlasSeedDualRegBasedTemplate->update_tag_selection_by_children_walk->tag_selection._values->\
+{self.get_widget_by_id('tag_selection')._values}"
+            )
 
-            self.file_tag_init_flag = False
+            # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition
+            # of the file patterns. If this is the case, we deselect all selections and select only the options selected
+            # previous (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying
+            # previous options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not
+            # creating a new feature by duplication or from a spec file load by standardly by just adding a new feature. In
+            # such case we select all choices
+            if self.file_tag_init_flag:
+                self.get_widget_by_id("tag_selection").deselect_all()
+                if self.feature_dict[self.featurefield] == []:
+                    self.get_widget_by_id("tag_selection").select_all()
+                else:
+                    for tagval in self.feature_dict[self.featurefield]:
+                        self.get_widget_by_id("tag_selection").select(tagval)
+
+                self.file_tag_init_flag = False
+            else:
+                # This is run always except from the first time on init.
+                self.feature_dict[self.featurefield].append(tagval)
         else:
-            # This is run always except from the first time on init.
-            self.feature_dict[self.featurefield].append(tagval)
+            selection_widget = self.get_widget_by_id("tag_selection")
+            for tagval in sorted(tagvals):
+                current_options = list(selection_widget._values)
+
+                logger.debug(f"UI->update_tag_selection_by_children_walk-> current_options:{current_options}")
+
+                if tagval in current_options:
+                    self.get_widget_by_id("tag_selection")._remove_option(current_options.index(tagval))
 
     @on(SelectionList.SelectedChanged, "#tag_selection")
     def on_tag_selection_changed(self, selection_list) -> None:
