@@ -16,7 +16,7 @@ from ..components import (
 from ..metadata import CheckMetadataStep
 from ..pattern import FilePatternStep
 from ..setting import get_setting_init_steps, get_setting_vals_steps
-from ..step import Context, Step
+from ..step import Context, Step, YesNoStep
 from .loop import AddAnotherFeatureStep, SettingValsStep
 
 next_step_type: Type[Step] = SettingValsStep
@@ -236,11 +236,28 @@ def on_falff_setting(ctx):
     ctx.spec.features[-1].unfiltered_setting = name
 
 
+def get_zscore_step(next_step_type):
+    class DoZscoreScaling(YesNoStep):
+        header_str = "Apply within-subject Z-score scaling?"
+        yes_step_type = next_step_type
+        no_step_type = next_step_type
+
+        def next(self, ctx):
+            if self.choice is None:
+                raise ValueError("Choice cannot be None")
+            ctx.spec.features[-1].zscore = {"Yes": True, "No": False}[self.choice]
+            return super().next(ctx)
+
+    return DoZscoreScaling
+
+
 ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
-ReHoSettingInitStep = get_setting_init_steps(ReHoSettingValsStep, settingdict=settingdict)
+ReHoZScoreStep = get_zscore_step(ReHoSettingValsStep)
+ReHoSettingInitStep = get_setting_init_steps(ReHoZScoreStep, settingdict=settingdict)
 
 FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
-FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)
+FALFFZScoreStep = get_zscore_step(FALFFSettingValsStep)
+FALFFSettingInitStep = get_setting_init_steps(FALFFZScoreStep, settingdict=settingdict)
 
 SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep
