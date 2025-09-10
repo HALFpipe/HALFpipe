@@ -226,8 +226,8 @@ class FilePatternStep:
         path = _path
 
         # create file obj
-        tags = {} if tags is None else tags
-        filedict = {**self.filedict, "path": path, "tags": {"desc": tags}}
+        tags = {} if tags is None else {"desc": tags}
+        filedict = {**self.filedict, "path": path, "tags": tags}
         _, ext = split_ext(path)
         filedict["extension"] = self._transform_extension(ext)
 
@@ -712,6 +712,7 @@ class AddSpatialMapStep(FilePatternStep):
     next_step_type = CheckSpaceStep
     allow_file_tagging = True
     tag_entity = "map"
+
 
 class AddBinarySeedMapStep(FilePatternStep):
     """

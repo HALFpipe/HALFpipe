@@ -486,7 +486,8 @@ class FileItem(Widget):
                     await self.execute_class()
 
             if self.from_edit:
-                await self.update_all_duplicates()
+                # await self.update_all_duplicates()
+                pass
 
         else:
             # delete it self if cancelled and was not existing before
@@ -547,7 +548,7 @@ class FileItem(Widget):
         if "-read-only" not in event.control.classes:
             if self.id in ctx.cache:
                 ctx.cache.pop(self.id)
-            self.remove_all_duplicates()
+                self.remove_all_duplicates()
             self.post_message(self.IsDeleted(self, "yes"))
 
     @on(Button.Pressed, "#show_button")

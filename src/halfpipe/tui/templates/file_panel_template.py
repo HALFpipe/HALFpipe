@@ -297,6 +297,7 @@ class FilePanelTemplate(Widget):
                             execute_pattern_class_on_mount=False,
                         )
                     )
+                    self.file_pattern_counter += 1
 
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
