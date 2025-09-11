@@ -147,7 +147,10 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                 valset = list(unique_everseen(valset))
 
                 if len(valset) > 0:
-                    suggestion[i] = valset[-1]
+                    if not valset[-1] or valset[-1] <= 0.0:
+                        suggestion[i] = "Skip"
+                    else:
+                        suggestion[i] = valset[-1]
 
             self.input_view = MultiCombinedNumberAndSingleChoiceInputView(
                 self.display_strs, ["Skip"], initial_values=suggestion
