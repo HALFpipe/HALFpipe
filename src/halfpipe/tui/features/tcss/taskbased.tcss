@@ -1,4 +1,12 @@
 .feature {
+     #estimation_types_selection {
+         offset-y: 0;
+         width: 100%;
+    }
+    #estimation_types_selection_panel {
+        height: 7;
+        align: center middle;
+    }
     #top_container_task_based {
         align: center top;
     }

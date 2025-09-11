@@ -3,16 +3,18 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
-from textual.widgets import SelectionList
+from textual.containers import ScrollableContainer, Vertical
+from textual.widgets import RadioButton, RadioSet, SelectionList
 
 from ...logging import logger
-from ..help_functions import extract_conditions
+from ..help_functions import extract_conditions, widget_exists
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.event_file_widget import EventFilePanel
 from ..standards import task_based_defaults
 from ..templates.feature_template import FeatureTemplate
 from .utils.model_conditions_and_contrasts import ModelConditionsAndContrasts
+
+RadioButton.BUTTON_INNER = "X"
 
 
 class TaskBased(FeatureTemplate):
@@ -111,8 +113,47 @@ class TaskBased(FeatureTemplate):
                     classes="components",
                 )
 
+        self.estimation_types = {
+            "single trial least squares single": "single_trial_least_squares_single",
+            "single trial least squares all": "single_trial_least_squares_all",
+            "multiple trial": "multiple_trial",
+        }
+        # Reverse mapping
+        self.estimation_labels = {v: k for k, v in self.estimation_types.items()}
+        self.feature_dict.setdefault("estimation", "multiple_trial")
+
+        self.estimation_type_panel = Vertical(
+            RadioSet(
+                *[
+                    RadioButton(i, value=i == self.estimation_labels[self.feature_dict["estimation"]])
+                    for i in self.estimation_types.keys()
+                ],
+                id="estimation_types_selection",
+            ),
+            id="estimation_types_selection_panel",
+            classes="components",
+        )
+        self.estimation_type_panel.border_title = "Estimation Type"
+
+    @on(RadioSet.Changed, "#estimation_types_selection")
+    async def on_radio_set_changed(self, message):
+        print("ssssssssssssssssssssssssssssssss", self.estimation_types[str(message.pressed.label)])
+        estimation_type = self.estimation_types[str(message.pressed.label)]
+        self.feature_dict["estimation"] = estimation_type
+        if estimation_type != "multiple_trial":
+            if widget_exists(self, "model_conditions_and_constrasts"):
+                await self.get_widget_by_id("model_conditions_and_constrasts").remove()
+        else:
+            if not widget_exists(self, "model_conditions_and_constrasts"):
+                # self.get_widget_by_id('tasks_to_use_selection').deselect_all()
+                await self.mount(
+                    self.model_conditions_and_contrast_table, after=self.get_widget_by_id("tasks_to_use_selection_panel")
+                )
+                self.get_widget_by_id("model_conditions_and_constrasts").update_condition_selection()
+
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
+            yield self.estimation_type_panel
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
                 yield self.model_conditions_and_contrast_table
@@ -182,23 +223,23 @@ class TaskBased(FeatureTemplate):
 
         # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
         # more-less the same. If there are no choices user gets an error and all options are selected again.
-
-        if (
-            type(self).__name__ == "TaskBased"  # and message.control.id == "tasks_to_use_selection"
-        ):  # conditions are only in Task Based not in Preprocessing!
-            # try to update it here? this refresh the whole condition list every time that image is changed
-            all_possible_conditions = []
-            if self.images_to_use is not None:
-                for v in self.images_to_use["task"].keys():
-                    all_possible_conditions += extract_conditions(entity="task", values=[v])
-                self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
-                    all_possible_conditions
-                )
-                logger.debug(
-                    f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
-all_possible_conditions: {all_possible_conditions}"
-                )
-                self.update_conditions_table()
+        if widget_exists(self, "model_conditions_and_constrasts"):
+            if (
+                type(self).__name__ == "TaskBased"  # and message.control.id == "tasks_to_use_selection"
+            ):  # conditions are only in Task Based not in Preprocessing!
+                # try to update it here? this refresh the whole condition list every time that image is changed
+                all_possible_conditions = []
+                if self.images_to_use is not None:
+                    for v in self.images_to_use["task"].keys():
+                        all_possible_conditions += extract_conditions(entity="task", values=[v])
+                    self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
+                        all_possible_conditions
+                    )
+                    logger.debug(
+                        f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
+    all_possible_conditions: {all_possible_conditions}"
+                    )
+                    self.update_conditions_table()
 
     def update_conditions_table(self):
         """

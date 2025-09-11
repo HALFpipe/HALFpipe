@@ -60,7 +60,7 @@ class ItemSelectionModal(DraggableModalScreen):
         ItemSelectionModal {
             #draggable_modal_screen_container_wrapper {
                 width: 50;
-                height: 23;
+                height: auto;
                 min-width: 50;
                 min-height: 15;
 
@@ -71,7 +71,7 @@ class ItemSelectionModal(DraggableModalScreen):
             OptionList {
                 offset-y: 0;
                 width: 100%;
-                height: 16;
+                height: auto;
                 text-style: bold;
             }
             Button {

@@ -49,6 +49,10 @@ dual_reg_defaults["widget_header"] = "Network template images"
 dual_reg_defaults["file_selection_widget_header"] = "Select network templates"
 dual_reg_defaults["minimum_brain_coverage"] = 0.8
 
+gig_ica_defaults = deepcopy(dual_reg_defaults)
+gig_ica_defaults["widget_header"] = "Group-level independent components"
+gig_ica_defaults["file_selection_widget_header"] = "Select group-level independent components"
+
 preproc_output_defaults = deepcopy(task_based_defaults)
 preproc_output_defaults["minimum_coverage_label"] = "None"
 preproc_output_defaults["widget_header"] = "None"
@@ -96,6 +100,7 @@ feature_label_map: dict[str, str] = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
     "dual_regression": "Network Template Regression",
+    "gig_ica": "Group information-guided ICA ",
     "atlas_based_connectivity": "Atlas-based Connectivity",
     "reho": "ReHo",
     "falff": "fALFF",
