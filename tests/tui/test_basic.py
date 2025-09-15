@@ -32,6 +32,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
 
     pilot.app.reload_ui()
+
     logger.info("UI tests-> UI reloaded")
     if isinstance(data_path, Path):
         data_path = str(data_path)
@@ -81,8 +82,9 @@ async def run_before(
         #
 
         # same reason for this as at work_tab case
-        await pilot.click(offset=(25, 25))
-        await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+
         if stage == "non_bids_data_tab_with_fmaps":
             filename = f"{stage}_before_add_field_map_button.svg"
             pilot.app.save_screenshot(filename=filename)

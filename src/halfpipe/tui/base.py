@@ -360,6 +360,9 @@ class MainApp(App):
         LoggingContext.disable_print()
         super().__init__(**kwargs)
         self._global_settings_defaults = deepcopy(global_settings_defaults)
+        self.tab_manager = TabbedContent(id="tabs_manager")
+
+        self.tabs_are_visible = False
 
     def compose(self) -> ComposeResult:
         """
@@ -439,6 +442,7 @@ The working tab and data tab are now read only! Do not change entries here!",
                     classes="confirm_success",
                 )
             )
+            self.tabs_are_visible = True
 
     def hide_tabs(self) -> None:
         """
