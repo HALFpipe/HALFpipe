@@ -3,9 +3,9 @@
 
 from typing import Dict, List, Type, Union
 
-from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema, T2wFileSchema
 from ...ingest.glob import get_entities_in_path, tag_glob, tag_parse
 from ...logging import logger
+from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema, T2wFileSchema
 from ...model.file.base import BaseFileSchema, File
 from ...model.file.fmap import (
     BaseFmapFileSchema,
