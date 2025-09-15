@@ -92,26 +92,7 @@ class TaskBased(FeatureTemplate):
         """
 
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
-        if "conditions" not in self.feature_dict:
-            self.feature_dict["conditions"] = []
-        if self.images_to_use is not None:
-            all_possible_conditions = []
-            # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
-            # the images to use widget is updated but we accept only images that are True. The all_possible_conditions carries
-            # to information of the possible choices in the condition selection widget based on the currently selected images.
-            # for v in self.images_to_use["task"].keys():
-            for image in self.images_to_use["task"]:
-                if self.images_to_use["task"][image] is True:
-                    all_possible_conditions += extract_conditions(entity="task", values=[image])
-
-            if self.feature_dict["contrasts"] is not None:
-                self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
-                    all_possible_conditions,
-                    feature_contrasts_dict=self.feature_dict["contrasts"],
-                    feature_conditions_list=self.feature_dict["conditions"],
-                    id="model_conditions_and_constrasts",
-                    classes="components",
-                )
+        self.feature_dict.setdefault("conditions", [])
 
         self.estimation_types = {
             "single trial least squares single": "single_trial_least_squares_single",
@@ -135,28 +116,63 @@ class TaskBased(FeatureTemplate):
         )
         self.estimation_type_panel.border_title = "Estimation Type"
 
+    def create_model_conditions_and_contrast_table(self):
+        # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
+        # the images to use widget is updated but we accept only images that are True. The all_possible_conditions carries
+        # to information of the possible choices in the condition selection widget based on the currently selected images.
+        # for v in self.images_to_use["task"].keys():
+        # The function itself returns a contrast table widget. We do this to get a fresh default widget each time we call
+        # this function.
+        if not self.images_to_use or self.feature_dict["contrasts"] is None:
+            return None  # Single exit for all invalid cases
+
+        all_possible_conditions = []
+        for image, use in self.images_to_use["task"].items():
+            if use:
+                all_possible_conditions += extract_conditions(entity="task", values=[image])
+
+        return ModelConditionsAndContrasts(
+            all_possible_conditions,
+            feature_contrasts_dict=self.feature_dict["contrasts"],
+            feature_conditions_list=self.feature_dict["conditions"],
+            id="model_conditions_and_constrasts",
+            classes="components",
+        )
+
     @on(RadioSet.Changed, "#estimation_types_selection")
     async def on_radio_set_changed(self, message):
-        print("ssssssssssssssssssssssssssssssss", self.estimation_types[str(message.pressed.label)])
+        # When selection in the estimation_types_selection widget are toggled, all selected tasks in selection
+        # tasks_to_use_selection are deselected. This is to not make a mess when somebody would select first multiple_trial
+        # and select some conditions and then select a different estimation and then select different tasks and then go
+        # back to multiple_trial. The contrast table would then be confused, and it is safer to in such cases to start fresh.
+        # Also, the contrast table is valid only for multiple_trial, so for the other ones we need to remove the contrast table
+        # and also conditions key in the ctx.cache.
         estimation_type = self.estimation_types[str(message.pressed.label)]
+        # feed the dictionary (ctx.cache)
         self.feature_dict["estimation"] = estimation_type
+        self.get_widget_by_id("tasks_to_use_selection").deselect_all()
         if estimation_type != "multiple_trial":
+            self.feature_dict.pop("conditions", None)
             if widget_exists(self, "model_conditions_and_constrasts"):
                 await self.get_widget_by_id("model_conditions_and_constrasts").remove()
         else:
+            self.feature_dict.setdefault("conditions", [])
+
             if not widget_exists(self, "model_conditions_and_constrasts"):
-                # self.get_widget_by_id('tasks_to_use_selection').deselect_all()
                 await self.mount(
-                    self.model_conditions_and_contrast_table, after=self.get_widget_by_id("tasks_to_use_selection_panel")
+                    self.create_model_conditions_and_contrast_table(),
+                    after=self.get_widget_by_id("tasks_to_use_selection_panel"),
                 )
-                self.get_widget_by_id("model_conditions_and_constrasts").update_condition_selection()
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             yield self.estimation_type_panel
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
-                yield self.model_conditions_and_contrast_table
+                # mount contrast table only if estimation is set to multiple_trial, the condition with image_to_use
+                # is a safety
+                if self.images_to_use is not None and self.feature_dict["estimation"] == "multiple_trial":
+                    yield self.create_model_conditions_and_contrast_table()
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
@@ -224,22 +240,25 @@ class TaskBased(FeatureTemplate):
         # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
         # more-less the same. If there are no choices user gets an error and all options are selected again.
         if widget_exists(self, "model_conditions_and_constrasts"):
-            if (
-                type(self).__name__ == "TaskBased"  # and message.control.id == "tasks_to_use_selection"
-            ):  # conditions are only in Task Based not in Preprocessing!
-                # try to update it here? this refresh the whole condition list every time that image is changed
-                all_possible_conditions = []
-                if self.images_to_use is not None:
-                    for v in self.images_to_use["task"].keys():
-                        all_possible_conditions += extract_conditions(entity="task", values=[v])
-                    self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
-                        all_possible_conditions
-                    )
-                    logger.debug(
-                        f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
+            self.update_contrast_table()
+
+    def update_contrast_table(self) -> None:
+        if (
+            type(self).__name__ == "TaskBased"  # and message.control.id == "tasks_to_use_selection"
+        ):  # conditions are only in Task Based not in Preprocessing!
+            # try to update it here? this refresh the whole condition list every time that image is changed
+            all_possible_conditions = []
+            if self.images_to_use is not None:
+                for v in self.images_to_use["task"].keys():
+                    all_possible_conditions += extract_conditions(entity="task", values=[v])
+                self.get_widget_by_id("model_conditions_and_constrasts").update_all_possible_conditions(
+                    all_possible_conditions
+                )
+                logger.debug(
+                    f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
     all_possible_conditions: {all_possible_conditions}"
-                    )
-                    self.update_conditions_table()
+                )
+                self.update_conditions_table()
 
     def update_conditions_table(self):
         """
