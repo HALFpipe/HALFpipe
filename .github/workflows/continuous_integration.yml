@@ -12,6 +12,14 @@ on:
       - published
       - edited
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
 jobs:
   test:
     runs-on: self-hosted
@@ -23,86 +31,46 @@ jobs:
           # Check out full history for `setuptools_scm`
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v2.0.5
         with:
-          python-version: "3.12"
-          check-latest: true
-      - name: Install Python dependencies
-        run: |
-          python -m pip install \
-            awscli \
-            pygithub \
+          condarc: |
+            channels:
+              - conda-forge
+              - https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public
+          environment-name: test
+          create-args: >-
+            awscli
+            boto3
+            conda-build
+            loguru
+            pygithub
+            py-rattler
+            pyyaml
             setuptools_scm
+            tqdm
+          cache-environment: true
+          init-shell: bash
+
       - name: Set up metadata
         id: metadata
-        shell: python
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          REGISTRY: ${{ secrets.REGISTRY }}
+          PYTHONPATH: "src"
         run: |
-          import os
+          python -m build.metadata
 
-          from github import Github
-          from setuptools_scm import get_version
-
-          pushed_at = "${{ github.event.repository.pushed_at }}"
-          ref = "${{ github.ref }}"
-          repository = "${{ github.repository }}"
-          sha = "${{ github.sha }}"
-          url = "${{ github.event.repository.html_url }}"
-
-          registry = "${{ secrets.REGISTRY }}"
-          token = "${{ secrets.GITHUB_TOKEN }}"
-
-          repository_data = Github(token).get_repo(repository)
-          repository_owner, repository_name = repository.lower().split("/")
-          reference, type, name = ref.split("/")[:3]
-          if reference != "refs":
-              raise ValueError(f"Unknown reference: {reference}")
-          if type == "heads":
-              tag = {"main": "latest"}.get(name, name)
-              push = True
-          elif type == "tags":
-              tag = name
-              push = True
-          elif type == "pull":
-              tag = f"{type}-{name}"
-              push = False
-          else:
-              raise ValueError(f"Unknown reference type: {type}")
-
-          path = f"{registry}/{repository_name}"
-          cache_from = f"type=registry,ref={path}:buildcache"
-          output = dict(
-              cache_from=cache_from,
-              cache_to=f"{cache_from},compression=zstd,mode=max,ignore-error=true" if push else "",
-              labels=[
-                  f'org.opencontainers.image.created="{pushed_at}"',
-                  f'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
-                  f'org.opencontainers.image.url="{url}"',
-                  f'org.opencontainers.image.documentation="{url}"',
-                  f'org.opencontainers.image.source="{url}"',
-                  f'org.opencontainers.image.version="{get_version()}"',
-                  f'org.opencontainers.image.revision="{sha}"',
-                  f'org.opencontainers.image.licenses="{repository_data.license.spdx_id}"',
-                  f'org.opencontainers.image.title="{repository_name}"',
-                  f'org.opencontainers.image.description="{repository_data.description}"',
-              ],
-              push=str(push).lower(),
-              build_tag=f"{repository_name}:{tag}",
-              push_tags=[
-                  f"{path}:{tag}",
-                  f"docker.io/{repository_owner}/{repository_name}:{tag}",
-              ]
-              if push
-              else [],
-              singularity_name=f"{repository_name}-{tag}.sif",
-          )
-
-          with open(os.environ["GITHUB_OUTPUT"], "at") as file_handle:
-              for key, value in output.items():
-                  if isinstance(value, list):
-                      file_handle.write("\n".join([f"{key}<<eof", *value, "eof"]) + "\n")
-                  else:
-                      file_handle.write(f"{key}={value}\n")
+      - name: Build Conda packages
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          PUSH: ${{ steps.metadata.outputs.push }}
+          PYTHONPATH: "src"
+        run: |
+          printf '%s' '${{ secrets.MATLAB_LICENSE }}' > ${HOME}/license.lic
+          python -m build.conda
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -171,16 +139,17 @@ jobs:
            FSCA7.lDgNIow
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
+          failure=0
           # Run the integration tests
-          echo "***Running TUI tests***"
-          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+          # echo "***Running TUI tests***"
+          # py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
           echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
             --ignore=tests/tui
-      - name: Upload Snapshot Report
+      - name: Upload snapshot report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:

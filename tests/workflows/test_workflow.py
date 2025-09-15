@@ -10,6 +10,7 @@ from multiprocessing import cpu_count
 from pathlib import Path
 
 import nibabel as nib
+import numpy as np
 import pytest
 from fmriprep import config
 from templateflow.api import get as get_template
@@ -79,8 +80,8 @@ def test_feature_extraction(tmp_path, mock_spec):
     graph = next(iter(graphs.values()))
 
     # Ensure key workflows exist
-    assert any("anat_fit_wf" in u.fullname for u in graph.nodes), "Anat workflow missing."
-    assert any("bold_fit_wf" in u.fullname for u in graph.nodes), "Bold workflow missing."
+    assert any("anat_fit_wf" in u.fullname for u in graph.nodes), "Anat workflow missing"
+    assert any("bold_fit_wf" in u.fullname for u in graph.nodes), "Bold workflow missing"
 
     parser = build_parser()
     opts = parser.parse_args(args=list())
@@ -94,22 +95,42 @@ def test_feature_extraction(tmp_path, mock_spec):
 
     run_stage_run(opts)
 
-    (preproc_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_bold.nii.gz")
-    preproc_image = nib.nifti1.load(preproc_path)
-
-    assert bold_image.shape[3] == preproc_image.shape[3] + dummy_scans
-
-    (confounds_path,) = tmp_path.glob("derivatives/halfpipe/sub-*/func/*_desc-confounds_regressors.tsv")
-    confounds_frame = read_spreadsheet(confounds_path)
-
-    assert bold_image.shape[3] == confounds_frame.shape[0] + dummy_scans
-    # TODO: check that we have all the columns we need
-
     template_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w")
     template_image = nib.nifti1.load(template_path)
+    assert bold_image.shape[:3] != template_image.shape  # This should always pass
 
-    assert bold_image.shape[:3] != template_image.shape  # sanity check
-    assert preproc_image.shape[:3] == template_image.shape
+    (native_reference_path,) = tmp_path.glob("derivatives/fmriprep/sub-*/func/*_space-T1w_boldref.nii.gz")
+    native_reference_image = nib.nifti1.load(native_reference_path)
+
+    reference_images = dict(standard=template_image, native=native_reference_image)
+
+    for space in {"standard", "native"}:
+        (preproc_path,) = tmp_path.glob(f"derivatives/halfpipe/sub-*/func/*setting-{space}*_bold.nii.gz")
+        preproc_image = nib.nifti1.load(preproc_path)
+        assert bold_image.shape[3] == preproc_image.shape[3] + dummy_scans
+
+        assert preproc_image.shape[:3] == reference_images[space].shape
+        np.testing.assert_allclose(preproc_image.affine, reference_images[space].affine)
+
+        if space == "native":
+            target_zooms = bold_image.header.get_zooms()
+        elif space == "standard":
+            target_zooms = (
+                *reference_images[space].header.get_zooms()[:3],
+                bold_image.header.get_zooms()[3],
+            )
+        else:
+            raise ValueError(f"Unknown space: {space}")
+        np.testing.assert_allclose(preproc_image.header.get_zooms(), target_zooms)
+
+        (confounds_path,) = tmp_path.glob(f"derivatives/halfpipe/sub-*/func/*setting-{space}*_desc-confounds_regressors.tsv")
+        confounds_frame = read_spreadsheet(confounds_path)
+        assert bold_image.shape[3] == confounds_frame.shape[0] + dummy_scans
+
+        for path in tmp_path.glob(f"derivatives/halfpipe/sub-*/func/task-*/*feature-{space}*.nii.gz"):
+            image = nib.nifti1.load(path)
+            assert image.shape[:3] == reference_images[space].shape
+            np.testing.assert_allclose(image.affine, reference_images[space].affine)
 
 
 def test_with_fieldmaps(tmp_path, bids_data, mock_spec):

@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal
 
 import nipype.interfaces.utility as niu
 import nipype.pipeline.engine as pe
@@ -12,6 +13,7 @@ from ...interfaces.image_maths.lazy_blur import LazyBlurToFWHM
 from ...interfaces.image_maths.zscore import ZScore
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..memory import MemoryCalculator
 
@@ -61,8 +63,8 @@ def compute_falff(mask_file: str, filtered_file: str, unfiltered_file: str) -> t
 
 def init_falff_wf(
     workdir: str | Path,
-    feature=None,
-    fwhm=None,
+    feature: Feature,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
@@ -85,12 +87,18 @@ def init_falff_wf(
         name = f"{format_workflow(feature.name)}"
     else:
         name = "falff"
+
+    fwhm: float | None = None
+    if feature.smoothing is not None:
+        smoothing = feature.smoothing
+        fwhm = smoothing.get("fwhm")
     if fwhm is not None:
         name = f"{name}_{int(float(fwhm) * 1e3):d}"
+
     name = f"{name}_wf"
     workflow = pe.Workflow(name=name)
 
-    # input and output nodes
+    # Input and output nodes
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]),
         name="inputnode",
@@ -103,10 +111,8 @@ def init_falff_wf(
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
-    elif feature is not None and hasattr(feature, "smoothing"):
-        inputnode.inputs.fwhm = feature.smoothing.get("fwhm")
 
-    # setup results
+    # Setup results
     make_resultdicts = pe.Node(
         MakeResultdicts(tagkeys=["feature"], imagekeys=["alff", "falff", "mask"]),
         name="make_resultdicts",
@@ -120,36 +126,39 @@ def init_falff_wf(
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
-    # setup datasink
+    # Setup datasink
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    # standard deviation of the filtered image is the alff
+    # Standard deviation of the filtered image is the alff
     stddev_filtered = pe.Node(afni.TStat(), name="stddev_filtered", mem_gb=memcalc.series_std_gb)
     stddev_filtered.inputs.outputtype = "NIFTI_GZ"
     stddev_filtered.inputs.options = "-stdev"
     workflow.connect(inputnode, "bold", stddev_filtered, "in_file")
     workflow.connect(inputnode, "mask", stddev_filtered, "mask")
 
-    # smooth and scale alff
-    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_alff")
-    workflow.connect(stddev_filtered, "out_file", smooth, "in_file")
-    workflow.connect(inputnode, "mask", smooth, "mask")
-    workflow.connect(inputnode, "fwhm", smooth, "fwhm")
+    # Smooth and scale alff
+    smooth_alff = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_alff")
+    workflow.connect(stddev_filtered, "out_file", smooth_alff, "in_file")
+    workflow.connect(inputnode, "mask", smooth_alff, "mask")
+    workflow.connect(inputnode, "fwhm", smooth_alff, "fwhm")
 
-    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_alff", mem_gb=memcalc.volume_std_gb)
-    workflow.connect(smooth, "out_file", zscore, "in_file")
-    workflow.connect(inputnode, "mask", zscore, "mask")
-    workflow.connect(zscore, "out_file", make_resultdicts, "alff")
+    if feature.zscore:
+        zscore_alff = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_alff", mem_gb=memcalc.volume_std_gb)
+        workflow.connect(smooth_alff, "out_file", zscore_alff, "in_file")
+        workflow.connect(inputnode, "mask", zscore_alff, "mask")
+        workflow.connect(zscore_alff, "out_file", make_resultdicts, "alff")
+    else:
+        workflow.connect(smooth_alff, "out_file", make_resultdicts, "alff")
 
-    # standard deviation of the unfiltered image
+    # Standard deviation of the unfiltered image
     stddev_unfiltered = pe.Node(afni.TStat(), name="stddev_unfiltered", mem_gb=memcalc.series_std_gb)
     stddev_unfiltered.inputs.outputtype = "NIFTI_GZ"
     stddev_unfiltered.inputs.options = "-stdev"
     workflow.connect(unfiltered_inputnode, "bold", stddev_unfiltered, "in_file")
     workflow.connect(unfiltered_inputnode, "mask", stddev_unfiltered, "mask")
 
-    # calculate falff
+    # Calculate falff
     falff = pe.Node(
         niu.Function(
             input_names=["mask_file", "filtered_file", "unfiltered_file"],
@@ -163,15 +172,18 @@ def init_falff_wf(
     workflow.connect(stddev_filtered, "out_file", falff, "filtered_file")
     workflow.connect(stddev_unfiltered, "out_file", falff, "unfiltered_file")
 
-    # smooth and scale falff
-    smooth = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_falff")
-    workflow.connect(falff, "falff_file", smooth, "in_file")
-    workflow.connect(inputnode, "mask", smooth, "mask")
-    workflow.connect(inputnode, "fwhm", smooth, "fwhm")
+    # Smooth and scale falff
+    smooth_falff = pe.MapNode(LazyBlurToFWHM(outputtype="NIFTI_GZ"), iterfield="in_file", name="smooth_falff")
+    workflow.connect(falff, "falff_file", smooth_falff, "in_file")
+    workflow.connect(inputnode, "mask", smooth_falff, "mask")
+    workflow.connect(inputnode, "fwhm", smooth_falff, "fwhm")
 
-    zscore = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_falff", mem_gb=memcalc.volume_std_gb)
-    workflow.connect(smooth, "out_file", zscore, "in_file")
-    workflow.connect(inputnode, "mask", zscore, "mask")
-    workflow.connect(zscore, "out_file", make_resultdicts, "falff")
+    if feature.zscore:
+        zscore_falff = pe.MapNode(ZScore(), iterfield="in_file", name="zscore_falff", mem_gb=memcalc.volume_std_gb)
+        workflow.connect(smooth_falff, "out_file", zscore_falff, "in_file")
+        workflow.connect(inputnode, "mask", zscore_falff, "mask")
+        workflow.connect(zscore_falff, "out_file", make_resultdicts, "falff")
+    else:
+        workflow.connect(smooth_falff, "out_file", make_resultdicts, "falff")
 
     return workflow

@@ -1,6 +1,7 @@
 import copy
 from collections import defaultdict
 
+from ..logging import logger
 from .data_analyzers.context import ctx
 from .data_analyzers.file_pattern_steps import (
     FieldMapStep,
@@ -122,6 +123,8 @@ async def cache_file_patterns(self):
             data_input_widget.get_widget_by_id("bids_non_bids_switch").value = False
 
         for f in self.existing_spec.files:
+            logger.debug(f"UI->load->cache_file_patterns-> Processing file object {f.__dict__}")
+
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
             # here we replace it back for the consistency.
             f = replace_with_longnames(f)
@@ -239,10 +242,14 @@ async def mount_features(self):
     setting_feature_map = {}
     if self.existing_spec is not None:
         for feature in self.existing_spec.features:
+            logger.debug(f"UI->load->mount_features-> Processing feature {feature.__dict__}")
+
             ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
             setting_feature_map[feature.__dict__["setting"]] = feature.name
 
         for setting in self.existing_spec.settings:
+            logger.debug(f"UI->load->mount_features-> Processing setting {setting.__dict__}")
+
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
             # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
 
@@ -353,6 +360,8 @@ async def mount_models(self) -> None:
     aggregate_models = {}
     if self.existing_spec is not None:
         for model in self.existing_spec.models:
+            logger.debug(f"UI->load->mount_models-> Processing model {model.__dict__}")
+
             # With aggregate models we deal differently, we do not create a widget for them, but instead create a dummy
             # entry in cache associated with a particular widget.
             if model.__dict__["type"] != "fe":

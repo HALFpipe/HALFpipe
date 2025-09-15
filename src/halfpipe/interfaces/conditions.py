@@ -101,7 +101,7 @@ class ParseConditionFile(SimpleInterface):
         # remove empty or invalid conditions
         filtered_conditions = [
             (condition, onset, duration)
-            for condition, onset, duration in zip(conditions, onsets, durations, strict=False)
+            for condition, onset, duration in zip(conditions, onsets, durations, strict=True)
             if len(onset) == len(duration) and len(onset) > 0
         ]
         assert len(filtered_conditions) > 0, "No events found"

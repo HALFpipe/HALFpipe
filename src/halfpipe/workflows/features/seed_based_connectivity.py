@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal, Sequence
 
 from fmriprep import config
 from nipype.algorithms import confounds as nac
@@ -17,6 +18,7 @@ from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.stats.dof import MakeDofVolume
 from ...interfaces.utility.tsv import FillNA, MergeColumns
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..constants import Constants
 from ..memory import MemoryCalculator
@@ -55,11 +57,12 @@ def _contrasts(design_file=None):
 
 def init_seed_based_connectivity_wf(
     workdir: str | Path,
-    feature=None,
-    seed_files=None,
-    seed_spaces=None,
+    feature: Feature | None = None,
+    seed_files: Sequence[Path | str] | None = None,
+    seed_spaces: Sequence[str] | None = None,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
-):
+) -> pe.Workflow:
     """
     create workflow to calculate seed connectivity maps
     """
@@ -83,6 +86,9 @@ def init_seed_based_connectivity_wf(
                 "seed_names",
                 "seed_files",
                 "seed_spaces",
+                # resampling to native space
+                "std2anat_xfm",
+                "bold_ref_anat",
             ]
         ),
         name="inputnode",
@@ -124,15 +130,19 @@ def init_seed_based_connectivity_wf(
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    #
-    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="GenericLabel", **reference_dict),
+        Resample(interpolation="GenericLabel"),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
         mem_gb=memcalc.series_std_gb,
     )
+    if space == "standard":
+        resample.inputs.reference_space = Constants.reference_space
+        resample.inputs.reference_res = Constants.reference_res
+    elif space == "native":
+        workflow.connect(inputnode, "std2anat_xfm", resample, "transforms")
+        workflow.connect(inputnode, "bold_ref_anat", resample, "reference_image")
     workflow.connect(inputnode, "seed_files", resample, "input_image")
     workflow.connect(inputnode, "seed_spaces", resample, "input_space")
 

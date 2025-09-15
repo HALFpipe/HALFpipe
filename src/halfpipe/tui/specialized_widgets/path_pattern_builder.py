@@ -4,11 +4,13 @@ import re
 from typing import Any
 
 from rich.text import Text
-from textual import events, on
+from textual import events, on, work
 from textual.containers import Container, Grid, HorizontalScroll
 from textual.widgets import Button, Static
 
-from ...ingest.glob import resolve_path_wildcards
+from ...ingest.glob import resolve_path_wildcards, tag_glob
+from ...logging import logger
+from ..data_analyzers.context import ctx
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
@@ -253,10 +255,10 @@ class PathPatternBuilder(DraggableModalScreen):
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
         self.pattern_match_results: dict = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
         self.original_value = path
-        self.mandatory_tag = f"{{{self.labels[0]}}}"
         # TODO: since now we are always passing the particular pattern_class to the path_pattern_builder, we do not need
         # to pass colors and labels separately, thus this needs to be cleaned through the whole code
         self.pattern_class = pattern_class
+        self.mandatory_tags = [f"{{{label}}}" for label in pattern_class.required_entities]  # f"{{{self.labels[0]}}}"
 
     def on_mount(self) -> None:
         """
@@ -421,7 +423,7 @@ class PathPatternBuilder(DraggableModalScreen):
         self.activate_pressed_button(event.button.id)
 
     @on(Button.Pressed, "#ok_button")
-    def _ok(self, event: Button.Pressed) -> None:
+    async def _ok(self, event: Button.Pressed) -> None:
         """
         Confirms the selected pattern and dismisses the modal if valid.
 
@@ -445,7 +447,7 @@ class PathPatternBuilder(DraggableModalScreen):
             self.pattern_class.check_extension(path)
             self._ok_part_two()
         except Exception as e:
-            self.app.push_screen(
+            await self.app.push_screen(
                 Confirm(
                     convert_validation_error_to_string(e),
                     left_button_text=False,
@@ -456,7 +458,8 @@ class PathPatternBuilder(DraggableModalScreen):
                 )
             )
 
-    def _ok_part_two(self) -> None:
+    @work(exclusive=True, name="fill_ctx_spec")
+    async def _ok_part_two(self) -> None:
         """
         Confirms the selected pattern and dismisses the modal if valid.
 
@@ -466,10 +469,38 @@ class PathPatternBuilder(DraggableModalScreen):
         tag is missing, it displays an error message.
         """
         # if all is good from '_ok', continue here
-        if self.mandatory_tag not in self.pattern_match_results["file_pattern"]:
+        logger.debug(f"UI->PathPatternBuilder._ok_part_two: mandatory_tags:{self.mandatory_tags}")
+        tagglobres = list(tag_glob(self.pattern_match_results["file_pattern"].plain))
+        task_set = set()
+        for _filepath, tagdict in tagglobres:
+            task = tagdict.get("task", None)
+            if task is not None:
+                task_set.add(task)
+        logger.debug(f"UI->PathPatternBuilder._ok_part_two-> ctx.available_images:{ctx.available_images}")
+        logger.debug(f"UI->PathPatternBuilder._ok_part_two-> found tasks:{task_set}")
+
+        compatible_task_tags = True
+        if ctx.available_images and not task_set < set(ctx.available_images["task"]) and "{task}" in self.mandatory_tags:
+            compatible_task_tags = await self.app.push_screen_wait(
+                Confirm(
+                    f"The task tags are not the same as extracted from the bold files!\n\
+The task tags from bold files are:\n{sorted(set(ctx.available_images['task']))}\n\
+Your event file task tags are: \n{sorted(task_set)}.\
+\nOnly the same tags will be associated together.\nProceed?",
+                    left_button_text="YES",
+                    right_button_text="NO",
+                    left_button_variant="error",
+                    right_button_variant="success",
+                    title="Task tag mismatch",
+                    classes="confirm_warning",
+                )
+            )
+
+        if not all(tag in self.pattern_match_results["file_pattern"] for tag in self.mandatory_tags):
+            # if self.mandatory_tags not in self.pattern_match_results["file_pattern"]:
             self.app.push_screen(
                 Confirm(
-                    f"Mandatory tag missing!\n Set {self.mandatory_tag}!",
+                    f"Mandatory tag missing! Use all mandatory tags!\n Mandatory tags are: {self.mandatory_tags}!",
                     left_button_text=False,
                     right_button_text="OK",
                     right_button_variant="default",
@@ -477,7 +508,7 @@ class PathPatternBuilder(DraggableModalScreen):
                     classes="confirm_error",
                 )
             )
-        else:
+        elif compatible_task_tags:
             self.dismiss(self.pattern_match_results)
 
     @on(Button.Pressed, "#cancel_button")

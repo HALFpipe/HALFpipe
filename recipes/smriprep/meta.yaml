@@ -1,16 +1,13 @@
-{% set name = "smriprep" %}
-{% set version = "0.18.0" %}
-
 # Requirements derived from
 # https://github.com/nipreps/smriprep/blob/maint/0.17.x/pyproject.toml
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "smriprep"
+  version: "0.18.0"
 
 source:
   git_url: https://github.com/nipreps/smriprep.git
-  git_rev: "{{ version }}"
+  git_rev: "0.18.0"
 
 build:
   number: 0
@@ -18,12 +15,12 @@ build:
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - pip
     - hatchling
     - hatch-vcs
   run:
-    - python 3.11.*
+    - python
     - acres>=0.2
     - indexed_gzip>=1.7
     - lockfile>=0.12.2

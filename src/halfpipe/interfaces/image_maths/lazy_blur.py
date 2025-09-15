@@ -5,6 +5,7 @@
 from math import isclose
 
 from nipype.interfaces import afni
+from nipype.interfaces.base import isdefined
 
 from ...logging import logger
 
@@ -13,6 +14,8 @@ class LazyBlurToFWHM(afni.BlurToFWHM):
     @property
     def should_run(self) -> bool:
         fwhm: float = self.inputs.fwhm
+        if not isdefined(fwhm) or not fwhm:
+            return False
         logger.info(f"LazyBlurToFWHM with {fwhm}")
         return not isclose(fwhm, 0, abs_tol=1e-2) and fwhm > 0
 

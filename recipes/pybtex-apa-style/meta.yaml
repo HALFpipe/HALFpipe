@@ -1,17 +1,14 @@
-{% set name = "pybtex-apa-style" %}
-{% set version = "1.3" %}
-
 package:
-  name: {{ name|lower }}
-  version: {{ version }}
+  name: pybtex-apa-style
+  version: "1.3"
 
 source:
-  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/pybtex-apa-style-{{ version }}.tar.gz
+  url: https://pypi.org/packages/source/p/pybtex-apa-style/pybtex-apa-style-1.3.tar.gz
   sha256: 38a6d11e8f40f259b1d0a6974b6dbae93edbe009c247d83de14c26bdd965afb2
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  script: "{{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation"
   number: 0
 
 requirements:

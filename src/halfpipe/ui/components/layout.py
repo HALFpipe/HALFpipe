@@ -35,7 +35,7 @@ class Layout:
 
         self.viewport_min = 0
 
-        self.window: "curses._CursesWindow" = curses.newpad(16384, base_pad_width)
+        self.window: curses.window = curses.newpad(16384, base_pad_width)
         self.window.leaveok(False)
 
         self.status_bar = curses.newpad(1, base_pad_width)

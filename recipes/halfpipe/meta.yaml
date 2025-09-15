@@ -1,6 +1,6 @@
 package:
   name: "halfpipe"
-  version: "unknown"
+  version: '{{ environ["halfpipe_version"] }}'
 
 source:
   git_url: ../..
@@ -11,14 +11,14 @@ build:
 
 requirements:
   host:
-    - python 3.11.*
+    - python
     - pip
     - setuptools_scm>=6.2
     - wheel
   run:
+    - python
     - ants
     - rmath
-    - python 3.11.*
     - nipype>=1.8.1
     - fmriprep
     - smriprep
@@ -78,6 +78,7 @@ requirements:
     - afni-3dcalc
     - afni-3dtstat
     - afni-3dreho
+    - gica_cmd
     # New user interface
     - textual==0.85.2
     - pytest-textual-snapshot

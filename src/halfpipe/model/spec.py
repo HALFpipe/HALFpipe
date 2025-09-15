@@ -41,7 +41,6 @@ compatible_schema_versions = ["3.0"]
 class SpecSchema(Schema):
     class Meta:
         unknown = RAISE
-        ordered = True
 
     halfpipe_version = fields.Str(dump_default=halfpipe_version)
     schema_version = fields.Str(
@@ -113,7 +112,7 @@ class Spec:
     def __init__(self, timestamp: datetime, files, **kwargs) -> None:
         self.timestamp = timestamp
         self.files = files
-        self.settings: list = list()
+        self.settings: list[dict[str, Any]] = list()
         self.features: list = list()
         self.models: list = list()
         self.global_settings: dict[str, Any] = dict()

@@ -5,7 +5,7 @@
 from typing import Any, Literal
 
 result_keys = frozenset({"tags", "images", "vals", "metadata"})
-ResultKey = Literal["tags", "images", "vals", "metadata"]
+ResultKey = Literal["tags", "images", "vals", "reports", "metadata"]
 
 ResultDict = dict[ResultKey, dict[str, Any]]
 

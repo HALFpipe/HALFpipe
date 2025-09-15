@@ -236,7 +236,11 @@ def get_matching_features(ctx):
     current_conditions = frozenset(ctx.spec.features[-1].conditions)
 
     for feature in ctx.spec.features[:-1]:
-        conditions = frozenset(feature.conditions)
+        if getattr(feature, "type", None) != "task_based":
+            continue
+        if getattr(feature, "estimation", None) != "multiple_trial":
+            continue
+        conditions = frozenset(getattr(feature, "conditions", {}))
 
         if conditions.issuperset(current_conditions):
             yield feature
@@ -304,6 +308,43 @@ class CopyContrastsStep(Step):
             return AddAnotherContrastStep(self.app)(ctx)
 
 
+class SingleTrialEstimationStep(Step):
+    options = {
+        "Least-squares all": "single_trial_least_squares_all",
+        "Least-squares single": "single_trial_least_squares_single",
+    }
+
+    def setup(self, ctx: Context) -> None:
+        self._append_view(TextView("Specify single-trial estimation method"))
+        self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=True)
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx: Context) -> bool:
+        self.choice = self.input_view()
+        if self.choice is None:  # was cancelled
+            return False
+        return True
+
+    def next(self, ctx: Context) -> Context | None:
+        ctx.spec.features[-1].estimation = self.options[self.choice]
+        return HighPassFilterCutoffStep(self.app)(ctx)
+
+
+class EstimationStep(BranchStep):
+    is_vertical = False
+    header_str = "Specify estimation type"
+    options = {
+        "Multiple trial": CopyContrastsStep,
+        "Single trial": SingleTrialEstimationStep,
+    }
+
+    def next(self, ctx: Context) -> Context | None:
+        if self.choice == "Multiple trial":
+            ctx.spec.features[-1].estimation = "multiple_trial"
+        return super().next(ctx)
+
+
 class ConditionsSelectStep(Step):
     add_file_str = "Load another event file"
 
@@ -335,7 +376,7 @@ class ConditionsSelectStep(Step):
             return False
         return True
 
-    def next(self, ctx):
+    def next(self, ctx: Context) -> Context | None:
         if self.result is not None:
             if isinstance(self.result, dict):
                 conditions = []
@@ -349,7 +390,7 @@ class ConditionsSelectStep(Step):
             else:
                 raise ValueError()
 
-        return CopyContrastsStep(self.app)(ctx)
+        return EstimationStep(self.app)(ctx)
 
 
 class CheckUnitsStep(CheckMetadataStep):

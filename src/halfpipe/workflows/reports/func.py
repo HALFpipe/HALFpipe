@@ -2,11 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-
-from fmriprep import config
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.utils.spaces import SpatialReferences
 
 from ...interfaces.image_maths.resample import Resample
 from ...interfaces.reports.imageplot import PlotEpi, PlotRegistration
@@ -55,15 +52,12 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         niu.IdentityInterface(
             fields=[
                 "ds_ref",
-                "ds_mask",
                 "t1w_dseg",
                 "anat2std_xfm",
-                "bold_file",
-                # "spatial_reference",   # TODO: do we need this?
-                "output_spaces",
-                "movpar_file",
+                "bold_file_std",
+                "bold_mask_std",
                 "confounds_file",
-                "method",
+                "sdc_method",
                 "fallback",
                 *fmriprep_reportdatasinks,
                 "fd_thres",
@@ -82,18 +76,13 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         MakeResultdicts(
             imagekeys=["tsnr"],
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprep_reports],
-            valkeys=[
-                "dummy_scans",
-                "sdc_method",
-                "scan_start",
-                "fallback_registration",
-            ],
+            valkeys=["dummy_scans", "sdc_method", "scan_start", "fallback_registration"],
         ),
         name="make_resultdicts",
     )
     workflow.connect(inputnode, "dummy_scans", make_resultdicts, "dummy_scans")
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
-    workflow.connect(inputnode, "method", make_resultdicts, "sdc_method")
+    workflow.connect(inputnode, "sdc_method", make_resultdicts, "sdc_method")
     workflow.connect(inputnode, "fallback", make_resultdicts, "fallback_registration")
 
     #
@@ -106,27 +95,25 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
 
     # Register EPI to MNI space to use in the QC report
     # EPI -> MNI
-    spaces = config.workflow.spaces
-    assert isinstance(spaces, SpatialReferences)
     epi_norm_rpt = pe.Node(
-        PlotRegistration(template=spaces.get_spaces()[0]),
+        PlotRegistration(template=Constants.reference_space),
         name="epi_norm_rpt",
         mem_gb=0.1,
     )
 
     workflow.connect(inputnode, "ds_ref", epi_norm_rpt, "in_file")
-    workflow.connect(inputnode, "ds_mask", epi_norm_rpt, "mask_file")
+    workflow.connect(inputnode, "bold_mask_std", epi_norm_rpt, "mask_file")
     workflow.connect(epi_norm_rpt, "out_report", make_resultdicts, "epi_norm_rpt")
 
     # plot the tsnr image
     tsnr = pe.Node(TSNR(), name="compute_tsnr", mem_gb=memcalc.series_std_gb)
-    workflow.connect(inputnode, "bold_file", tsnr, "in_file")
+    workflow.connect(inputnode, "bold_file_std", tsnr, "in_file")
     workflow.connect(inputnode, "dummy_scans", tsnr, "dummy_scans")
     workflow.connect(tsnr, "out_file", make_resultdicts, "tsnr")
 
     tsnr_rpt = pe.Node(PlotEpi(), name="tsnr_rpt", mem_gb=memcalc.min_gb)
     workflow.connect(tsnr, "out_file", tsnr_rpt, "in_file")
-    workflow.connect(inputnode, "ds_mask", tsnr_rpt, "mask_file")
+    workflow.connect(inputnode, "bold_mask_std", tsnr_rpt, "mask_file")
     workflow.connect(tsnr_rpt, "out_report", make_resultdicts, "tsnr_rpt")
 
     #
