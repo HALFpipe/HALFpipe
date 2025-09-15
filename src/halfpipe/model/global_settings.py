@@ -8,7 +8,6 @@ from marshmallow import RAISE, Schema, fields, pre_load, validate
 class GlobalSettingsSchema(Schema):
     class Meta:
         unknown = RAISE
-        ordered = True
 
     dummy_scans = fields.Int(dump_default=0, allow_none=True)
 

@@ -53,7 +53,6 @@ class BandpassFilterSettingSchema(OneOfSchema):
 class BaseSettingSchema(Schema):
     class Meta(Schema.Meta):
         unknown = RAISE
-        ordered = True
 
     space = fields.Str(
         load_default="standard",
