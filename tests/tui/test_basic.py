@@ -32,6 +32,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
 
     pilot.app.reload_ui()
+
     logger.info("UI tests-> UI reloaded")
 
     if isinstance(data_path, Path):

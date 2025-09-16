@@ -156,6 +156,11 @@ async def cache_file_patterns(self):
                     load_object=f, message_dict=None, execute_pattern_class_on_mount=False
                 )
                 ctx.cache[widget_name]["files"] = f
+            elif f.suffix == "T2w":
+                widget_name = await data_input_widget.add_t2_image(
+                    load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                )
+                ctx.cache[widget_name]["files"] = f
             elif f.suffix == "roi" or f.suffix == "mask":
                 if not widget_exists(data_input_widget, "lesion_mask_pattern_panel"):
                     await data_input_widget.toggle_lesion_mask_panel(True)

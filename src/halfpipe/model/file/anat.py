@@ -17,6 +17,10 @@ class T1wFileSchema(BaseFileSchema):
     tags = fields.Nested(AnatTagsSchema(), dump_default=dict())
 
 
+class T2wFileSchema(T1wFileSchema):
+    suffix = fields.Str(dump_default="T2w", validate=validate.Equal("T2w"))
+
+
 class T1wMaskFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="anat", validate=validate.Equal("anat"))
     suffix = fields.Str(
@@ -30,7 +34,7 @@ class T1wMaskFileSchema(BaseFileSchema):
 class AnatFileSchema(OneOfSchema):
     type_field = "suffix"
     type_field_remove = False
-    type_schemas = {"T1w": T1wFileSchema, "mask": T1wMaskFileSchema, "roi": T1wMaskFileSchema}
+    type_schemas = {"T1w": T1wFileSchema, "T2w": T2wFileSchema, "mask": T1wMaskFileSchema, "roi": T1wMaskFileSchema}
 
     def get_obj_type(self, obj):
         if isinstance(obj, File):
