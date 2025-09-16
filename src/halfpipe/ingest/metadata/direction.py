@@ -69,12 +69,12 @@ def invert_location(d):
     return {"r": "l", "l": "r", "p": "a", "a": "p", "s": "i", "i": "s"}[d]
 
 
-def canonicalize_direction_code(pedir_code: str, pat):
+def canonicalize_direction_code(pedir_code: str | None, path_pattern: str | Path) -> str:
     canonical_pedir_code = pedir_code
     if pedir_code not in axis_codes:
         if pedir_code not in space_codes:
             raise ValueError("Unknown phase encoding direction code")
-        axcodes_set = get_axcodes_set(pat)
+        axcodes_set = get_axcodes_set(path_pattern)
         if len(axcodes_set) != 1:
             raise ValueError("Inconsistent axis orientations")
         axcodes = axcodes_set.pop()
