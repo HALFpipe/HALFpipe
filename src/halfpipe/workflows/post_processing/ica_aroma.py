@@ -142,7 +142,7 @@ def init_ica_aroma_components_wf(
         raise ValueError("`workdir` must be provided and cannot be None.")
     config.workflow.melodic_dim = aroma_melodic_dim  # type: ignore[assignment]
     config.workflow.denoise_method = None  # disable denoising data
-    config.execution.output_dir = Path(workdir) / "derivatives"  # type: ignore[assignment]
+    config.execution.output_dir = Path(workdir) / "derivatives" / "fmripost_aroma"  # type: ignore[assignment]
 
     # create ICA-AROMA workflow
     ica_aroma_wf = init_ica_aroma_wf(
@@ -152,7 +152,6 @@ def init_ica_aroma_components_wf(
         # https://github.com/nipreps/fmripost-aroma/blob/5d5b065ba50e3143252dea4ef66368b145d87763/src/fmripost_aroma/workflows/aroma.py#L77C1-L78C1
     )
 
-    # ? Are these still duplicates
     # remove duplicate nodes
     add_nonsteady = ica_aroma_wf.get_node("add_nonsteady")
     ds_report_ica_aroma = ica_aroma_wf.get_node("ds_report_ica_aroma")
@@ -168,8 +167,6 @@ def init_ica_aroma_components_wf(
 
     workflow.connect(inputnode, "confounds_file", ica_aroma_wf, "inputnode.confounds")
 
-    # ? The mopvar file needs to be added a row that specifies the names of the columns.
-
     # Disconnect existing source_file inputs and connect alt_bold_file from inputnode
     ds_nodes = [
         "ds_report_ica_aroma",
@@ -177,9 +174,7 @@ def init_ica_aroma_components_wf(
         "ds_mixing",
         "ds_aroma_features",
         "ds_aroma_confounds",
-        # "ds_report_metrics", #i think this needs metadata so we skip for now
     ]
-
     for node_name in ds_nodes:
         node = ica_aroma_wf.get_node(node_name)
         if node is not None:
