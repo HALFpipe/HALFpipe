@@ -95,6 +95,27 @@ class ConfirmInconsistentStep(YesNoStep):
         return True
 
 
+class ModelSerialCorrelationsStep(Step):
+    def setup(self, ctx: Context) -> None:
+        self._append_view(TextView("Use an autoregressive model?"))
+        self.input_view = SingleChoiceInputView(["Yes", "No"], is_vertical=False)
+        self._append_view(self.input_view)
+        self._append_view(SpacerView(1))
+
+    def run(self, ctx: Context) -> bool:
+        self.choice = self.input_view()
+        if self.choice is None:  # was cancelled
+            return False
+        return True
+
+    def next(self, ctx: Context) -> Context | None:
+        if self.choice == "Yes":
+            ctx.spec.features[-1].model_serial_correlations = True
+        else:
+            ctx.spec.features[-1].model_serial_correlations = False
+        return next_step_type(self.app)(ctx)
+
+
 class HighPassFilterCutoffStep(Step):
     noun = "temporal filter"
     display_strs = ["High-pass width in seconds"]
@@ -140,7 +161,7 @@ class HighPassFilterCutoffStep(Step):
             else:
                 raise ValueError(f'Unknown high_pass_filter_cutoff value "{value}"')
 
-        this_next_step_type = next_step_type
+        this_next_step_type = ModelSerialCorrelationsStep
 
         if len(self.valset) == 1 and value not in self.valset:
             return ConfirmInconsistentStep(self.app, f"{self.noun} values", this_next_step_type)(ctx)
