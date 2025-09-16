@@ -34,6 +34,7 @@ async def run_before(
     pilot.app.reload_ui()
 
     logger.info("UI tests-> UI reloaded")
+
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
