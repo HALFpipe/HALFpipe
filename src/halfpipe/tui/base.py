@@ -360,8 +360,7 @@ class MainApp(App):
         LoggingContext.disable_print()
         super().__init__(**kwargs)
         self._global_settings_defaults = deepcopy(global_settings_defaults)
-        self.tab_manager = TabbedContent(id="tabs_manager")
-
+        self.tab_manager = TabbedContent(id="tab_manager")
         self.tabs_are_visible = False
 
     def compose(self) -> ComposeResult:
@@ -377,8 +376,7 @@ class MainApp(App):
             The result of composing the application layout.
         """
         yield MyHeader(id="header")
-        self.tabs_manager = TabbedContent(id="tabs_manager")
-        with self.tabs_manager:
+        with self.tab_manager:
             with TabPane("Working directory", id="work_dir_tab", classes="tabs"):
                 yield VerticalScroll(WorkDirectory(id="work_dir_content"))
             with TabPane("Input data", id="input_data_tab", classes="tabs"):
@@ -401,9 +399,9 @@ class MainApp(App):
         some tabs initially and sets the application title and subtitle.
         """
         # hide these tabs until we have data input and the working folder
-        self.tabs_manager.hide_tab("preprocessing_tab")
-        self.tabs_manager.hide_tab("feature_selection_tab")
-        self.tabs_manager.hide_tab("models_tab")
+        self.tab_manager.hide_tab("preprocessing_tab")
+        self.tab_manager.hide_tab("feature_selection_tab")
+        self.tab_manager.hide_tab("models_tab")
 
         self.title = "ENIGMA HALFpipe"
         self.sub_title = "development version"
@@ -448,9 +446,9 @@ The working tab and data tab are now read only! Do not change entries here!",
         """
         Hides the preprocessing, feature selection, and models tabs.
         """
-        self.tabs_manager.hide_tab("preprocessing_tab")
-        self.tabs_manager.hide_tab("feature_selection_tab")
-        self.tabs_manager.hide_tab("models_tab")
+        self.tab_manager.hide_tab("preprocessing_tab")
+        self.tab_manager.hide_tab("feature_selection_tab")
+        self.tab_manager.hide_tab("models_tab")
 
     def action_show_tab(self, tab: str) -> None:
         """
@@ -498,9 +496,9 @@ The working tab and data tab are now read only! Do not change entries here!",
         self.get_widget_by_id("preprocessing_content").refresh(recompose=True, layout=True)
         self.flags_to_show_tabs["from_working_dir_tab"] = False
         self.flags_to_show_tabs["from_input_data_tab"] = False
-        self.tabs_manager.hide_tab("preprocessing_tab")
-        self.tabs_manager.hide_tab("feature_selection_tab")
-        self.tabs_manager.hide_tab("models_tab")
+        self.tab_manager.hide_tab("preprocessing_tab")
+        self.tab_manager.hide_tab("feature_selection_tab")
+        self.tab_manager.hide_tab("models_tab")
 
         if complete_reset is True:
             self.get_widget_by_id("input_data_content").refresh(recompose=True, layout=True)

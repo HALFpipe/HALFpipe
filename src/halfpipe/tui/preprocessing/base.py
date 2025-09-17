@@ -103,7 +103,7 @@ class Preprocessing(Widget):
             ),
             Horizontal(
                 Static("Use skull strip", classes="description_labels"),
-                TextSwitch(value=ctx.spec.global_settings["skull_strip_algorithm"], id="skull_strip_algorithm"),
+                TextSwitch(value=not ctx.spec.global_settings["skull_strip_algorithm"] == "none", id="skull_strip_algorithm"),
                 id="skull_strip_algorithm_panel",
             ),
             id="anatomical_settings",
