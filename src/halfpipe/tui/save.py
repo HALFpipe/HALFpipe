@@ -114,8 +114,11 @@ def dump_dict_to_contex(self, save=False):
                         # on what passed the above 'if' conditions.
                         value = filter_list_for_spec_file
 
-                # Apply the value to the settings object
-                setattr(ctx.spec.settings[-1], key, value)
+                # Apply the value to the settings object, keep temporary both options, if it is fileobj or a dict
+                if isinstance(ctx.spec.settings[-1], dict):
+                    ctx.spec.settings[-1][key] = value
+                else:
+                    setattr(ctx.spec.settings[-1], key, value)
 
             # this is for the case of falff
             if "unfiltered_setting" in ctx.cache[name]:

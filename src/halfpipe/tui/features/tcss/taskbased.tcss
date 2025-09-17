@@ -1,4 +1,11 @@
 .feature {
+    #model_serial_correlations_panel {
+        height: 5;
+        .description_labels {
+            border: transparent;
+            width: 40;
+        }
+    }
      #estimation_types_selection {
          offset-y: 0;
          width: 100%;

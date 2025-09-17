@@ -3,10 +3,12 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer, Vertical
-from textual.widgets import RadioButton, RadioSet, SelectionList
+from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
+from textual.message import Message
+from textual.widgets import RadioButton, RadioSet, SelectionList, Static
 
 from ...logging import logger
+from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import extract_conditions, widget_exists
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.event_file_widget import EventFilePanel
@@ -93,6 +95,7 @@ class TaskBased(FeatureTemplate):
 
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
         self.feature_dict.setdefault("conditions", [])
+        self.feature_dict.setdefault("model_serial_correlations", True)
 
         self.estimation_types = {
             "single trial least squares single": "single_trial_least_squares_single",
@@ -115,6 +118,17 @@ class TaskBased(FeatureTemplate):
             classes="components",
         )
         self.estimation_type_panel.border_title = "Estimation Type"
+
+        self.model_serial_correlations_panel = Container(
+            Horizontal(
+                Static("Model serial correlation", classes="description_labels"),
+                TextSwitch(value=self.feature_dict["model_serial_correlations"], id="model_serial_correlations_switch"),
+                id="model_serial_correlations_sub_panel",
+            ),
+            id="model_serial_correlations_panel",
+            classes="components",
+        )
+        self.model_serial_correlations_panel.border_title = "Model serial correlation"
 
     def create_model_conditions_and_contrast_table(self):
         # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
@@ -173,6 +187,7 @@ class TaskBased(FeatureTemplate):
                 # is a safety
                 if self.images_to_use is not None and self.feature_dict["estimation"] == "multiple_trial":
                     yield self.create_model_conditions_and_contrast_table()
+            yield self.model_serial_correlations_panel
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
@@ -276,3 +291,20 @@ class TaskBased(FeatureTemplate):
         logger.debug(f"UI->TaskBased.update_conditions_table-> New condition list: {condition_list}")
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list
+
+    @on(TextSwitch.Changed, "#model_serial_correlations_switch")
+    def _on_model_serial_correlations_switch_changed(self, message: Message) -> None:
+        """
+        Handles changes in the grand mean scaling switch.
+
+        This method is called when the switch state of the
+        `SwitchWithInputBox` widget with the ID "grand_mean_scaling"
+        changes. If the switch is turned off, it sets the grand mean
+        scaling value in `setting_dict` to None.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.SwitchChanged
+            The message object containing information about the change.
+        """
+        self.feature_dict["model_serial_correlations"] = message.value
