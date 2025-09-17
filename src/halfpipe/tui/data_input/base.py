@@ -801,7 +801,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             ctx.refresh_available_images()
 
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
-            self.app.show_hidden_tabs()
+            # self.app.show_hidden_tabs()
             self.update_summaries()
             self.data_input_sucess()
         else:

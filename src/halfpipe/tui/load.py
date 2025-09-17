@@ -132,7 +132,7 @@ async def cache_file_patterns(self):
             if f.datatype == "bids":
                 await data_input_widget._build_and_mount_bids_panels()
                 await data_input_widget.get_widget_by_id("non_bids_panel").remove()
-                self.app_is_bids = True
+                self.app.is_bids = True
                 # Flip the switch
                 data_input_widget.get_widget_by_id("bids_non_bids_switch").value = True
 
