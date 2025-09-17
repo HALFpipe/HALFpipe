@@ -3,8 +3,9 @@
 
 from typing import Dict, List, Type, Union
 
-from ...ingest.glob import tag_parse
-from ...model.file.anat import T1wFileSchema
+from ...ingest.glob import get_entities_in_path, tag_glob, tag_parse
+from ...logging import logger
+from ...model.file.anat import T1wFileSchema, T1wMaskFileSchema, T2wFileSchema
 from ...model.file.base import BaseFileSchema, File
 from ...model.file.fmap import (
     BaseFmapFileSchema,
@@ -25,6 +26,7 @@ from ...model.tags import entity_longnames as entity_display_aliases
 from ...model.utils import get_schema_entities
 from ...utils.path import split_ext
 from ..data_analyzers.context import ctx
+from ..help_functions import find_bold_file_paths
 from ..standards import entity_colors
 from .meta_data_steps import (
     CheckMetadataStep,
@@ -189,6 +191,9 @@ class FilePatternStep:
         filedict["extension"] = self._transform_extension(ext)
         self.schema().load(filedict)
 
+    def run_before_next_step(self):
+        pass
+
     async def push_path_to_context_obj(self, path):
         """
         Pushes the file path to the context object.
@@ -207,7 +212,9 @@ class FilePatternStep:
 
         i = 0
         _path = ""
+        logger.debug(f"UI->FilePatternStep.run_before_next_step(): get_entities_in_path(path) {get_entities_in_path(path)}")
         for match in tag_parse.finditer(path):
+            logger.debug(f"UI->FilePatternStep.run_before_next_step(): match: {match}")
             groupdict = match.groupdict()
             if groupdict.get("tag_name") in inv:
                 _path += path[i : match.start("tag_name")]
@@ -226,10 +233,23 @@ class FilePatternStep:
         assert isinstance(loadresult, File), "Invalid schema load result"
         self.fileobj = loadresult
 
+        # find what tasks will be given based on the uses task placeholder
+        tagglobres = list(tag_glob(self.fileobj.path))
+        task_set = set()
+        for _filepath, tagdict in tagglobres:
+            task = tagdict.get("task", None)
+            if task is not None:
+                task_set.add(task)
+
+        logger.info(f"UI->FilePatternStep.run_before_next_step-> ctx.available_images:{ctx.available_images}")
+        logger.info(f"UI->FilePatternStep.run_before_next_step-> found tasks:{task_set}")
+
         # next
         ctx.spec.files.append(self.fileobj)
         ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
+
+        self.run_before_next_step()
 
         if self.next_step_type is not None:
             self.next_step_instance = self.next_step_type(
@@ -268,6 +288,54 @@ class AnatStep(FilePatternStep):
     schema = T1wFileSchema
 
 
+class AnatMaskStep(FilePatternStep):
+    """
+    File pattern step for handling anatomical (T1-weighted) images.
+
+    This class extends FilePatternStep to specifically handle T1-weighted
+    anatomical images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for T1-weighted images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[T1wFileSchema]
+        The schema for T1-weighted images.
+    """
+
+    required_in_path_entities = ["subject"]
+    header_str = "Lesion mask file pattern"
+    filetype_str = "Lesion mask"
+    filedict = {"datatype": "anat", "suffix": "roi"}
+
+    schema = T1wMaskFileSchema
+
+
+class AnatT2wStep(FilePatternStep):
+    """
+    File pattern step for handling anatomical (T2-weighted) images.
+
+    This class extends FilePatternStep to specifically handle T2-weighted
+    anatomical images. It defines the required entities, header string,
+    file type string, file dictionary, and schema for T2-weighted images.
+
+    Attributes
+    ----------
+    required_in_path_entities : list[str]
+        List of entities required in the path, including 'subject'.
+    schema : Type[T1wFileSchema]
+        The schema for T2-weighted images.
+    """
+
+    required_in_path_entities = ["subject"]
+    header_str = "T2-weighted image file pattern"
+    filetype_str = "T2-weighted image"
+    filedict = {"datatype": "anat", "suffix": "T2w"}
+
+    schema = T2wFileSchema
+
+
 class EventsStep(FilePatternStep):
     """
     Base file pattern step for handling event files.
@@ -283,6 +351,27 @@ class EventsStep(FilePatternStep):
     filedict : dict[str, str]
         The file dictionary for event files.
     """
+
+    def __init__(self, *args, **kwargs):
+        bold_file_paths = find_bold_file_paths()
+
+        taskset = ctx.database.tagvalset("task", filepaths=bold_file_paths)
+        if taskset is None:
+            taskset = set()
+        self.taskset = taskset
+        logger.info(f"UI->EventsStep->init taskset: {taskset}")
+
+        if len(self.taskset) > 1:
+            self.required_in_path_entities = ["task"]
+        super().__init__(*args, **kwargs)
+
+    def run_before_next_step(self):
+        if len(self.taskset) == 1:
+            assert isinstance(self.fileobj, File)
+
+            if self.fileobj.tags.get("task") is None:
+                if "task" not in get_entities_in_path(self.fileobj.path):
+                    (self.fileobj.tags["task"],) = self.taskset
 
     header_str = " Input stimulus onset files"  # Event file pattern
     required_in_path_entities: List[str] = list()
@@ -627,7 +716,7 @@ class AddAtlasImageStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
@@ -661,7 +750,7 @@ class AddSpatialMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
@@ -695,7 +784,7 @@ class AddBinarySeedMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = ["desc"]
+    ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep

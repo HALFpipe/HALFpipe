@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-
 import csv
 import io
 import re
+from pathlib import Path
 from statistics import mean
+from typing import Any
 
 import chardet
 import pandas as pd
@@ -21,7 +22,7 @@ def str_is_convertible_to_float(value: str) -> bool:
         return False
 
 
-def read_spreadsheet(file_name, extension=None, **kwargs) -> pd.DataFrame:
+def read_spreadsheet(file_name: Path | str, extension: str | None = None, **kwargs: Any) -> pd.DataFrame:
     if extension is None:
         _, extension = split_ext(file_name)
 

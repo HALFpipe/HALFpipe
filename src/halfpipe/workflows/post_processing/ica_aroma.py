@@ -83,7 +83,7 @@ def init_ica_aroma_components_wf(
             fields=[
                 "confounds_file",
                 "alt_bold_file",
-                "bold_mask",
+                "bold_mask_native",
                 "alt_resampling_reference",
                 "tags",
                 "dummy_scans",
@@ -121,7 +121,7 @@ def init_ica_aroma_components_wf(
         mem_gb=2 * memcalc.volume_std_gb,
         name="resample_mask_to_mni",
     )
-    workflow.connect(inputnode, "bold_mask", resample_mask, "input_image")
+    workflow.connect(inputnode, "bold_mask_native", resample_mask, "input_image")
 
     # Squeeze out singleton dimension from mask
     squeeze_mask = pe.Node(
@@ -142,7 +142,7 @@ def init_ica_aroma_components_wf(
         raise ValueError("`workdir` must be provided and cannot be None.")
     config.workflow.melodic_dim = aroma_melodic_dim  # type: ignore[assignment]
     config.workflow.denoise_method = None  # disable denoising data
-    config.execution.output_dir = Path(workdir) / "derivatives"  # type: ignore[assignment]
+    config.execution.output_dir = Path(workdir) / "derivatives" / "fmripost_aroma"  # type: ignore[assignment]
 
     # create ICA-AROMA workflow
     ica_aroma_wf = init_ica_aroma_wf(
@@ -152,7 +152,6 @@ def init_ica_aroma_components_wf(
         # https://github.com/nipreps/fmripost-aroma/blob/5d5b065ba50e3143252dea4ef66368b145d87763/src/fmripost_aroma/workflows/aroma.py#L77C1-L78C1
     )
 
-    # ? Are these still duplicates
     # remove duplicate nodes
     add_nonsteady = ica_aroma_wf.get_node("add_nonsteady")
     ds_report_ica_aroma = ica_aroma_wf.get_node("ds_report_ica_aroma")
@@ -166,10 +165,7 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
     workflow.connect(squeeze_mask, "out_file", ica_aroma_wf, "inputnode.bold_mask_std")
 
-    # workflow.connect(inputnode, "movpar_file", ica_aroma_wf, "inputnode.confounds")
     workflow.connect(inputnode, "confounds_file", ica_aroma_wf, "inputnode.confounds")
-
-    # ? The mopvar file needs to be added a row that specifies the names of the columns.
 
     # Disconnect existing source_file inputs and connect alt_bold_file from inputnode
     ds_nodes = [
@@ -178,9 +174,7 @@ def init_ica_aroma_components_wf(
         "ds_mixing",
         "ds_aroma_features",
         "ds_aroma_confounds",
-        # "ds_report_metrics", #i think this needs metadata so we skip for now
     ]
-
     for node_name in ds_nodes:
         node = ica_aroma_wf.get_node(node_name)
         if node is not None:
@@ -228,7 +222,6 @@ def init_ica_aroma_regression_wf(
                 "tags",
                 "vals",
                 "mixing",
-                "aroma_metadata",
                 "aroma_noise_ics",
             ]
         ),
@@ -298,11 +291,11 @@ def init_ica_aroma_regression_wf(
     # Specifically, both ica_aroma_components_wf and fmriprep's func_preproc_wf use
     # the bold_std_trans_wf that has the iterable node "iterablesource"
     # This way there is no dependency
-    aromavals = pe.Node(interface=UpdateVals(), name="aromavals", mem_gb=memcalc.volume_std_gb)
-    workflow.connect(inputnode, "vals", aromavals, "vals")
-    workflow.connect(inputnode, "aroma_metadata", aromavals, "aroma_metadata")
+    update_vals = pe.Node(interface=UpdateVals(), name="update_vals", mem_gb=memcalc.volume_std_gb)
+    workflow.connect(inputnode, "vals", update_vals, "vals")
+    workflow.connect(aroma_column_names, "column_names", update_vals, "aroma_column_names")
 
-    workflow.connect(aromavals, "vals", outputnode, "vals")
-    workflow.connect(aromavals, "vals", make_resultdicts, "vals")
+    workflow.connect(update_vals, "vals", outputnode, "vals")
+    workflow.connect(update_vals, "vals", make_resultdicts, "vals")
 
     return workflow

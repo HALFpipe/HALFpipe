@@ -32,6 +32,9 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
 
     pilot.app.reload_ui()
+
+    logger.info("UI tests-> UI reloaded")
+
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -54,9 +57,14 @@ async def run_before(
         # here we click on the tab informing us that workdir is missing
         # await pilot.click("#only_one_button")
         # await pilot.press('w')
+        filename = "{}_after_load_data.svg".format(stage)
+        pilot.app.save_screenshot(filename=filename)
 
     if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
+
+        filename = f"{stage}_after_set_work_dir.svg"
+        pilot.app.save_screenshot(filename=filename)
 
         if isinstance(t1_path_pattern, Path):
             t1_path_pattern = str(t1_path_pattern)
@@ -69,13 +77,18 @@ async def run_before(
             set_repetition_time=stage == "preproc_settings",
             noconfirm=stage == "non_bids_data_tab_with_fmaps",
         )
+        filename = f"{stage}_after_set_non_bids_data.svg"
+        pilot.app.save_screenshot(filename=filename)
         # Press ok on 'All is ok, proceed further modal"
         #
 
         # same reason for this as at work_tab case
-        await pilot.click(offset=(25, 25))
-        await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+        # await pilot.click(offset=(25, 25))
+
         if stage == "non_bids_data_tab_with_fmaps":
+            filename = f"{stage}_before_add_field_map_button.svg"
+            pilot.app.save_screenshot(filename=filename)
             await pilot.click("#add_field_map_button")
             # select 'Siemens' by focusing and going one down and confirming with enter
             await pilot.press("tab")

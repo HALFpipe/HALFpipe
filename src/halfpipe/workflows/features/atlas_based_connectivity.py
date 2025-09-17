@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from pathlib import Path
+from typing import Literal, Sequence
 
 from nipype.algorithms import confounds as nac
 from nipype.interfaces import utility as niu
@@ -13,6 +14,7 @@ from ...interfaces.image_maths.resample import Resample
 from ...interfaces.reports.vals import CalcMean
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
+from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..constants import Constants
 from ..memory import MemoryCalculator
@@ -20,9 +22,10 @@ from ..memory import MemoryCalculator
 
 def init_atlas_based_connectivity_wf(
     workdir: str | Path,
-    feature=None,
-    atlas_files=None,
-    atlas_spaces=None,
+    feature: Feature | None = None,
+    atlas_files: Sequence[Path | str] | None = None,
+    atlas_spaces: Sequence[str] | None = None,
+    space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
@@ -48,6 +51,9 @@ def init_atlas_based_connectivity_wf(
                 "atlas_names",
                 "atlas_files",
                 "atlas_spaces",
+                # resampling to native space
+                "std2anat_xfm",
+                "bold_ref_anat",
             ]
         ),
         name="inputnode",
@@ -96,13 +102,18 @@ def init_atlas_based_connectivity_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #
-    reference_dict = dict(reference_space=Constants.reference_space, reference_res=Constants.reference_res)
     resample = pe.MapNode(
-        Resample(interpolation="MultiLabel", **reference_dict),
+        Resample(interpolation="MultiLabel"),
         name="resample",
         iterfield=["input_image", "input_space"],
         mem_gb=memcalc.series_std_gb,
     )
+    if space == "standard":
+        resample.inputs.reference_space = Constants.reference_space
+        resample.inputs.reference_res = Constants.reference_res
+    elif space == "native":
+        workflow.connect(inputnode, "std2anat_xfm", resample, "transforms")
+        workflow.connect(inputnode, "bold_ref_anat", resample, "reference_image")
     workflow.connect(inputnode, "atlas_files", resample, "input_image")
     workflow.connect(inputnode, "atlas_spaces", resample, "input_space")
 

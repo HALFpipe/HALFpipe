@@ -28,8 +28,14 @@ class FrequencyBasedBandpassSettingSchema(Schema):
         validate=validate.OneOf(["frequency_based"]),
         required=True,
     )
-    low = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
-    high = fields.Float(validate=validate.Range(min=0.0), allow_none=True)
+    low = fields.Float(
+        validate=validate.Range(min=0.0),
+        allow_none=True,
+    )
+    high = fields.Float(
+        validate=validate.Range(min=0.0),
+        allow_none=True,
+    )
 
 
 class BandpassFilterSettingSchema(OneOfSchema):
@@ -47,15 +53,30 @@ class BandpassFilterSettingSchema(OneOfSchema):
 class BaseSettingSchema(Schema):
     class Meta(Schema.Meta):
         unknown = RAISE
-        ordered = True
 
-    ica_aroma = fields.Bool(allow_none=True)  # none is allowed to signify that this step will be skipped
+    space = fields.Str(
+        load_default="standard",
+        dump_default="standard",
+        validate=validate.OneOf(["standard", "native"]),
+    )
+    ica_aroma = fields.Bool(
+        allow_none=True,
+    )
     smoothing = fields.Nested(
-        SmoothingSettingSchema, allow_none=True
-    )  # none is allowed to signify that this step will be skipped
-    grand_mean_scaling = fields.Nested(GrandMeanScalingSettingSchema, allow_none=True)
-    bandpass_filter = fields.Nested(BandpassFilterSettingSchema, allow_none=True)
-    confounds_removal = fields.List(fields.Str())
+        SmoothingSettingSchema,
+        allow_none=True,  # None is allowed to signify that this step will be skipped
+    )
+    grand_mean_scaling = fields.Nested(
+        GrandMeanScalingSettingSchema,
+        allow_none=True,
+    )
+    bandpass_filter = fields.Nested(
+        BandpassFilterSettingSchema,
+        allow_none=True,
+    )
+    confounds_removal = fields.List(
+        fields.Str(),
+    )
 
 
 class SettingSchema(BaseSettingSchema):

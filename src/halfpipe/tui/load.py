@@ -1,6 +1,7 @@
 import copy
 from collections import defaultdict
 
+from ..logging import logger
 from .data_analyzers.context import ctx
 from .data_analyzers.file_pattern_steps import (
     FieldMapStep,
@@ -15,6 +16,7 @@ from .features.dual_reg import DualReg
 from .features.preproc_output import PreprocessedOutputOptions
 from .features.seed_based import SeedBased
 from .features.task_based import TaskBased
+from .help_functions import widget_exists
 from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import AtlasFilePanel, EventFilePanel, SeedMapFilePanel, SpatialMapFilePanel
 from .specialized_widgets.filebrowser import path_test_for_bids
@@ -89,6 +91,10 @@ async def cache_file_patterns(self):
         return "\n".join(output)
 
     data_input_widget = self.app.get_widget_by_id("input_data_content")
+    # Suppress actions done when switch is toggled. We do the mounting directly by calling the method.
+    data_input_widget.supress_switch_events()
+    self.data_input_widget = data_input_widget
+
     preprocessing_widget = self.app.get_widget_by_id("preprocessing_content")
     self.feature_widget = self.app.get_widget_by_id("feature_selection_content")
     self.model_widget = self.app.get_widget_by_id("models_content")
@@ -98,7 +104,6 @@ async def cache_file_patterns(self):
     # The created widgets should avoid using step and meta classes upon creation as these triggers various user choice
     # modals.
     if self.existing_spec is not None:
-        self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(False)
         spreadsheet_counter = 0
         fmaps = False
         intended_for = ""
@@ -108,20 +113,34 @@ async def cache_file_patterns(self):
         self.spatial_map_file_objects = []
 
         preprocessing_widget.default_settings = self.existing_spec.global_settings
-        preprocessing_widget = preprocessing_widget.refresh(recompose=True)
+        preprocessing_widget.refresh(recompose=True)
+
+        # We want to start with non-bids and switch to bids, because if it is bids data then basically, except for the
+        # possible lesion maps, there will be only one file object and that would be the file to the bids data.
+        # To make sure that the format is set to non-bids we check by this 'if' if the user did not already switch it.
+        if self.app.is_bids:
+            await data_input_widget.toggle_bids_non_bids_format(False)
+            data_input_widget.get_widget_by_id("bids_non_bids_switch").value = False
 
         for f in self.existing_spec.files:
+            logger.debug(f"UI->load->cache_file_patterns-> Processing file object {f.__dict__}")
+
             # In the spec file, subject is abbreviated to 'sub' and atlas, seed and map is replaced by desc,
             # here we replace it back for the consistency.
             f = replace_with_longnames(f)
 
             if f.datatype == "bids":
+                await data_input_widget._build_and_mount_bids_panels()
+                await data_input_widget.get_widget_by_id("non_bids_panel").remove()
+                self.app_is_bids = True
+                # Flip the switch
+                data_input_widget.get_widget_by_id("bids_non_bids_switch").value = True
+
                 ctx.cache["bids"]["files"] = f.path
                 data_input_widget.get_widget_by_id("data_input_file_browser").update_input(f.path)
                 # this is the function used when we are loading bids data files, in also checks if the data
                 # folder contains bids files, and if yes, then it also extracts the tasks (images)
                 path_test_for_bids(f.path)
-                self.app.get_widget_by_id("input_data_content").toggle_bids_non_bids_format(True)
             # need to create a FileItem widgets for all non-bids files
             elif f.datatype == "spreadsheet":
                 ctx.cache["__spreadsheet_file_" + str(spreadsheet_counter)]["files"] = f
@@ -134,6 +153,20 @@ async def cache_file_patterns(self):
                 ctx.cache[widget_name]["files"] = f
             elif f.suffix == "T1w":
                 widget_name = await data_input_widget.add_t1_image(
+                    load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                )
+                ctx.cache[widget_name]["files"] = f
+            elif f.suffix == "T2w":
+                widget_name = await data_input_widget.add_t2_image(
+                    load_object=f, message_dict=None, execute_pattern_class_on_mount=False
+                )
+                ctx.cache[widget_name]["files"] = f
+            elif f.suffix == "roi" or f.suffix == "mask":
+                if not widget_exists(data_input_widget, "lesion_mask_pattern_panel"):
+                    await data_input_widget.toggle_lesion_mask_panel(True)
+                    data_input_widget.get_widget_by_id("lesion_mask_switch").value = True
+
+                widget_name = await data_input_widget.add_lesion_mask(
                     load_object=f, message_dict=None, execute_pattern_class_on_mount=False
                 )
                 ctx.cache[widget_name]["files"] = f
@@ -162,7 +195,8 @@ async def cache_file_patterns(self):
                 self.spatial_map_file_objects.append(f)
 
         ctx.refresh_available_images()
-        data_input_widget.update_summaries()
+        if self.app.is_bids:
+            data_input_widget.update_summaries()
         if ctx.get_available_images == {}:
             self.data_input_success = await self.app.push_screen_wait(
                 Confirm(
@@ -205,18 +239,21 @@ async def mount_features(self):
     setting data and then adds the corresponding widgets to the UI.
     """
     feature_widget = self.feature_widget
-
     setting_feature_map = {}
     if self.existing_spec is not None:
         for feature in self.existing_spec.features:
+            logger.debug(f"UI->load->mount_features-> Processing feature {feature.__dict__}")
+
             ctx.cache[feature.name]["features"] = copy.deepcopy(feature.__dict__)
             setting_feature_map[feature.__dict__["setting"]] = feature.name
 
         for setting in self.existing_spec.settings:
+            logger.debug(f"UI->load->mount_features-> Processing setting {setting.__dict__}")
+
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
             # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
 
-            if setting["output_image"] is not True:
+            if not setting["output_image"]:
                 # In case of falff, there is also unfiltered setting which is essentially the same as normal setting
                 # but without the bandpass filter. So we put only the normal setting into the cache because in the run
                 # tab the unfiltered setting will be created automatically form the normal setting.
@@ -225,9 +262,14 @@ async def mount_features(self):
             else:
                 ctx.cache[setting["name"]]["features"] = {}
                 ctx.cache[setting["name"]]["settings"] = copy.deepcopy(setting)
+                ctx.cache[setting["name"]]["settings"].setdefault("smoothing", {"fwhm": None})
+
+                ctx.cache[setting["name"]]["settings"].setdefault("grand_mean_scaling", {"mean": None})
+                ctx.cache[setting["name"]]["settings"].setdefault("bandpass_filter", {"type": None})
 
             if setting["name"] in setting_feature_map:
                 cache_entry: dict = ctx.cache.get(setting_feature_map[setting["name"]], {})
+
                 if isinstance(cache_entry, dict):
                     settings = cache_entry.get("settings", {})
                     feature = cache_entry.get("features", {})
@@ -311,10 +353,15 @@ async def mount_models(self) -> None:
     populates the context cache with model data and also creates aggregate
     model entries.
     """
+    # this is better to put here so that within the async it is not triggered earlier
+    self.data_input_widget.enable_switch_events()
+
     model_widget = self.model_widget
     aggregate_models = {}
     if self.existing_spec is not None:
         for model in self.existing_spec.models:
+            logger.debug(f"UI->load->mount_models-> Processing model {model.__dict__}")
+
             # With aggregate models we deal differently, we do not create a widget for them, but instead create a dummy
             # entry in cache associated with a particular widget.
             if model.__dict__["type"] != "fe":

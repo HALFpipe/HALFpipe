@@ -133,6 +133,7 @@ class ResolvedSpec:
             tagdict.update(filedict.get("tags", dict()))
 
             filedict["tags"] = tagdict
+            logger.debug(f"ResolvedSpec._resolve_fileobj_with_tags-> tagdict:{tagdict}")
 
             filedict["tmplstr"] = tmplstr
 
