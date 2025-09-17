@@ -3,7 +3,13 @@ from typing import Dict, List, Union
 
 from inflection import humanize
 
-global_settings_defaults: dict[str, str] = {"dummy_scans": "0", "run_reconall": "False", "slice_timing": "False"}
+global_settings_defaults: dict[str, str] = {
+    "dummy_scans": "0",
+    "run_reconall": "False",
+    "slice_timing": "False",
+    "skull_strip_algorithm": "ants",
+}
+
 
 bandpass_filter_defaults: dict[str, dict] = {
     "gaussian": {"type": "gaussian", "hp_width": "125", "lp_width": None},

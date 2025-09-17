@@ -12,7 +12,7 @@ Preprocessing {
     align: center middle;
     height: auto;
     #anatomical_settings {
-        height: 7;
+        height: 8;
     }
     #functional_settings {
         height: auto;

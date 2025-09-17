@@ -3,11 +3,13 @@
 
 package:
   name: "fmripost_aroma"
-  version: "0.0.10"
+  version: "0.0.12"
 
 source:
   git_url: https://github.com/nipreps/fmripost-aroma.git
-  git_rev: "0.0.10"
+  git_rev: "0.0.12"
+  patches:
+    - 001-compat-nilearn-0-12-1.patch
 
 build:
   number: 0

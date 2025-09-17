@@ -18,7 +18,8 @@ from templateflow.api import get as get_template
 from halfpipe.cli.parser import build_parser
 from halfpipe.cli.run import run_stage_run
 from halfpipe.ingest.spreadsheet import read_spreadsheet
-from halfpipe.model.spec import save_spec
+from halfpipe.logging import logger
+from halfpipe.model.spec import Spec, save_spec
 from halfpipe.workflows.base import init_workflow
 from halfpipe.workflows.execgraph import init_execgraph
 
@@ -133,15 +134,21 @@ def test_feature_extraction(tmp_path, mock_spec):
             np.testing.assert_allclose(image.affine, reference_images[space].affine)
 
 
-def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
-    # TODO: Create an assertion that checks that field maps are used
-
+@pytest.mark.parametrize("fieldmap_type", ["phasediff", "epi"])
+def test_with_fieldmaps(tmp_path: Path, bids_data: Path, mock_spec: Spec, fieldmap_type: str) -> None:
     bids_path = tmp_path / "bids"
     shutil.copytree(bids_data, bids_path)
 
-    # delete extra files
+    shutil.rmtree(bids_path / "sub-1012" / "dwi")
+    (bids_path / "sub-1012" / "sub-1012_scans.tsv").unlink()
+
+    for file in mock_spec.files:
+        if file.datatype == "bids":
+            file.path = str(bids_path)
+
     fmap_path = bids_path / "sub-1012" / "fmap"
-    files = [
+
+    phasediff_files = [
         "sub-1012_acq-3mm_phasediff.nii.gz",
         "sub-1012_acq-3mm_phasediff.json",
         "sub-1012_acq-3mm_magnitude2.nii.gz",
@@ -149,23 +156,33 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
         "sub-1012_acq-3mm_magnitude1.nii.gz",
         "sub-1012_acq-3mm_magnitude1.json",
     ]
-    for i in files:
-        Path(fmap_path / i).unlink()
 
-    # copy image file
-    shutil.copy(
-        os.path.join(fmap_path, "sub-1012_dir-PA_epi.nii.gz"),
-        os.path.join(fmap_path, "sub-1012_dir-AP_epi.nii.gz"),
-    )
+    if fieldmap_type == "phasediff":
+        for path in fmap_path.glob("*.nii.gz"):
+            if path.name not in phasediff_files:
+                logger.info(f"Removing unused fieldmap file: {path}")
+                path.unlink()
+    elif fieldmap_type == "epi":
+        # Create fake image for the opposite phase encoding direction
+        shutil.copy(
+            os.path.join(fmap_path, "sub-1012_dir-PA_epi.nii.gz"),
+            os.path.join(fmap_path, "sub-1012_dir-AP_epi.nii.gz"),
+        )
+        with open(fmap_path / "sub-1012_dir-PA_epi.json", "r") as json_file:
+            data = json.load(json_file)
+        data["PhaseEncodingDirection"] = "j-"
+        with open(fmap_path / "sub-1012_dir-AP_epi.json", "w") as json_file:
+            json.dump(data, json_file)
 
-    # copy metadata
-    with open(fmap_path / "sub-1012_dir-PA_epi.json", "r") as json_file:
-        data = json.load(json_file)
-    data["PhaseEncodingDirection"] = "j-"
-    with open(fmap_path / "sub-1012_dir-AP_epi.json", "w") as json_file:
-        json.dump(data, json_file)
+        for phasediff_file in phasediff_files:
+            path = fmap_path / phasediff_file
+            if path.exists():
+                logger.info(f"Removing unused fieldmap file: {path}")
+                path.unlink()
+    else:
+        raise ValueError(f"Unknown fieldmap type: {fieldmap_type}")
 
-    # start testing
+    # Test creating the workflow
     workdir = tmp_path / "workdir"
     save_spec(mock_spec, workdir=workdir)
 
@@ -176,4 +193,7 @@ def test_with_fieldmaps(tmp_path, bids_data, mock_spec):
     graphs = init_execgraph(workdir, workflow)
     graph = next(iter(graphs.values()))
 
-    assert any("fmap_select" in u.fullname for u in graph.nodes), "Field map workflow missing"
+    if fieldmap_type == "epi":
+        assert any("topup" in u.fullname for u in graph.nodes), "Topup workflow missing"
+    elif fieldmap_type == "phasediff":
+        assert any("phdiff_wf" in u.fullname for u in graph.nodes), "Field map workflow missing"

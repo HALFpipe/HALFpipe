@@ -34,7 +34,6 @@ class Model:
 class BaseModelSchema(Schema):
     class Meta:
         unknown = RAISE
-        ordered = True
 
     name = fields.Str()
 

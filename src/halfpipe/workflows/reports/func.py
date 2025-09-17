@@ -76,12 +76,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
         MakeResultdicts(
             imagekeys=["tsnr"],
             reportkeys=["epi_norm_rpt", "tsnr_rpt", "carpetplot", *fmriprep_reports],
-            valkeys=[
-                "dummy_scans",
-                "sdc_method",
-                "scan_start",
-                "fallback_registration",
-            ],
+            valkeys=["dummy_scans", "sdc_method", "scan_start", "fallback_registration"],
         ),
         name="make_resultdicts",
     )
