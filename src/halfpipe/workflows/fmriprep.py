@@ -272,8 +272,9 @@ class FmriprepFactory(Factory):
                 if bold_fit_wf.get_node("fmap_select") is None:
                     logger.warning(f'fMRIPrep did not detect field maps for file "{bold_file_path}"')
 
-            if global_settings["slice_timing"] is True:
-                if func_preproc_wf.get_node("bold_stc_wf") is None:
+            if global_settings["slice_timing"]:
+                bold_native_wf = func_preproc_wf.get_node("bold_native_wf")
+                if bold_native_wf.get_node("bold_stc_wf") is None:
                     logger.warning(f'fMRIPrep did not find slice timing metadata for file "{bold_file_path}"')
 
             # Disable preproc output to save disk space

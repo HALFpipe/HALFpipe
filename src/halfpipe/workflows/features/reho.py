@@ -20,8 +20,7 @@ from ..memory import MemoryCalculator
 
 def init_reho_wf(
     workdir: str | Path,
-    feature: Feature | None = None,
-    fwhm: float | None = None,
+    feature: Feature,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
@@ -34,12 +33,18 @@ def init_reho_wf(
         name = f"{format_workflow(feature.name)}"
     else:
         name = "reho"
+
+    fwhm: float | None = None
+    if feature.smoothing is not None:
+        smoothing = feature.smoothing
+        fwhm = smoothing.get("fwhm")
     if fwhm is not None:
         name = f"{name}_{int(float(fwhm) * 1e3):d}"
+
     name = f"{name}_wf"
     workflow = pe.Workflow(name=name)
 
-    # input
+    # Set up input and output nodes
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["tags", "vals", "metadata", "bold", "mask", "fwhm"]),
         name="inputnode",
@@ -48,12 +53,8 @@ def init_reho_wf(
 
     if fwhm is not None:
         inputnode.inputs.fwhm = float(fwhm)
-    elif feature is not None and hasattr(feature, "smoothing"):
-        inputnode.inputs.fwhm = feature.smoothing.get("fwhm")
-    else:
-        inputnode.inputs.fwhm = 0  # skip
 
-    #
+    # Set up datasink
     make_resultdicts = pe.Node(
         MakeResultdicts(tagkeys=["feature"], imagekeys=["reho", "mask"]),
         name="make_resultdicts",
@@ -67,11 +68,10 @@ def init_reho_wf(
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
-    #
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    #
+    # Calculate ReHo
     reho = pe.Node(
         interface=ReHo(neighborhood="vertices", out_file="reho.nii"),
         name="reho",
@@ -80,16 +80,18 @@ def init_reho_wf(
     workflow.connect(inputnode, "bold", reho, "in_file")
     workflow.connect(inputnode, "mask", reho, "mask_file")
 
-    #
+    # Smooth and scale the output if enabled
     smooth = pe.Node(LazyBlurToFWHM(outputtype="NIFTI_GZ"), name="smooth")
     workflow.connect(reho, "out_file", smooth, "in_file")
     workflow.connect(inputnode, "mask", smooth, "mask")
     workflow.connect(inputnode, "fwhm", smooth, "fwhm")
 
-    zscore = pe.Node(ZScore(), name="zscore", mem_gb=memcalc.volume_std_gb)
-    workflow.connect(smooth, "out_file", zscore, "in_file")
-    workflow.connect(inputnode, "mask", zscore, "mask")
-
-    workflow.connect(zscore, "out_file", make_resultdicts, "reho")
+    if feature.zscore:
+        zscore = pe.Node(ZScore(), name="zscore", mem_gb=memcalc.volume_std_gb)
+        workflow.connect(smooth, "out_file", zscore, "in_file")
+        workflow.connect(inputnode, "mask", zscore, "mask")
+        workflow.connect(zscore, "out_file", make_resultdicts, "reho")
+    else:
+        workflow.connect(smooth, "out_file", make_resultdicts, "reho")
 
     return workflow

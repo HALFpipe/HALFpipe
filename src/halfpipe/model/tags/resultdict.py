@@ -30,6 +30,7 @@ first_level_entities = [
     "atlas",
     # task
     "taskcontrast",
+    "condition",
 ]
 higher_level_entities = [
     "model",

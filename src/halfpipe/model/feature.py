@@ -44,11 +44,8 @@ class BaseFeatureSchema(Schema):
         return {key: value for key, value in data.items() if value is not None}
 
 
-class TaskBasedFeatureSchema(BaseFeatureSchema):
+class BaseTaskBasedFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="task_based", validate=validate.Equal("task_based"))
-
-    conditions = fields.List(fields.Str())
-    contrasts = fields.List(fields.Nested(TContrastSchema))
 
     high_pass_filter_cutoff = fields.Float(
         dump_default=125.0,
@@ -57,12 +54,51 @@ class TaskBasedFeatureSchema(BaseFeatureSchema):
         allow_none=True,
         validate=validate.Range(min=0.0),
     )
+    model_serial_correlations = fields.Bool(dump_default=True, load_default=True)
 
     hrf = fields.Str(
         dump_default="dgamma",
         load_default="dgamma",
         validate=validate.OneOf(["dgamma", "dgamma_with_derivs", "flobs"]),
     )
+    conditions = fields.List(fields.Str())
+
+
+class MultipleTrialTaskBasedFeatureSchema(BaseTaskBasedFeatureSchema):
+    estimation = fields.Str(
+        load_default="multiple_trial",
+        dump_default="multiple_trial",
+        validate=validate.Equal("multiple_trial"),
+    )
+    contrasts = fields.List(fields.Nested(TContrastSchema))
+
+
+class SingleTrialTaskBasedFeatureSchema(BaseTaskBasedFeatureSchema):
+    estimation = fields.Str(
+        dump_default="single_trial_least_squares_single",
+        validate=validate.OneOf(["single_trial_least_squares_single", "single_trial_least_squares_all"]),
+    )
+
+
+class TaskBasedFeatureSchema(OneOfSchema):
+    type_field = "estimation"
+    type_field_remove = False
+    type_schemas = {
+        "multiple_trial": MultipleTrialTaskBasedFeatureSchema,
+        "single_trial_least_squares_single": SingleTrialTaskBasedFeatureSchema,
+        "single_trial_least_squares_all": SingleTrialTaskBasedFeatureSchema,
+    }
+
+    def get_data_type(self, data: Any) -> str:
+        type = super().get_data_type(data)
+        if type is not None:
+            return type
+        return "multiple_trial"  # Default value
+
+    def get_obj_type(self, obj):
+        if isinstance(obj, Feature):
+            return obj.estimation
+        raise Exception(f"Cannot get estimation for {obj}")
 
 
 class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
@@ -76,6 +112,11 @@ class SeedBasedConnectivityFeatureSchema(BaseFeatureSchema):
 
 class DualRegressionFeatureSchema(BaseFeatureSchema):
     type = fields.Str(dump_default="dual_regression", validate=validate.Equal("dual_regression"))
+    maps = fields.List(fields.Str())
+
+
+class GroupInformationGuidedICAFeatureSchema(BaseFeatureSchema):
+    type = fields.Str(dump_default="gig_ica", validate=validate.Equal("gig_ica"))
     maps = fields.List(fields.Str())
 
 
@@ -93,6 +134,8 @@ class ReHoFeatureSchema(BaseFeatureSchema):
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped
 
+    zscore = fields.Bool(dump_default=True, load_default=True)
+
 
 class FALFFFeatureSchema(ReHoFeatureSchema):
     unfiltered_setting = fields.Str()
@@ -105,6 +148,7 @@ class FeatureSchema(OneOfSchema):
         "task_based": TaskBasedFeatureSchema,
         "seed_based_connectivity": SeedBasedConnectivityFeatureSchema,
         "dual_regression": DualRegressionFeatureSchema,
+        "gig_ica": GroupInformationGuidedICAFeatureSchema,
         "atlas_based_connectivity": AtlasBasedConnectivityFeatureSchema,
         "reho": ReHoFeatureSchema,
         "falff": FALFFFeatureSchema,
@@ -113,4 +157,4 @@ class FeatureSchema(OneOfSchema):
     def get_obj_type(self, obj):
         if isinstance(obj, Feature):
             return obj.type
-        raise Exception("Cannot get obj type for FeatureType")
+        raise Exception(f"Cannot get type for {obj}")

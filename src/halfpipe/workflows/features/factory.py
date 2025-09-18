@@ -19,9 +19,10 @@ from ..post_processing.factory import PostProcessingFactory
 from .atlas_based_connectivity import init_atlas_based_connectivity_wf
 from .dual_regression import init_dualregression_wf
 from .falff import init_falff_wf
+from .gig_ica import init_gig_ica_wf
 from .reho import init_reho_wf
 from .seed_based_connectivity import init_seed_based_connectivity_wf
-from .task_based import init_taskbased_wf
+from .task_based import init_task_based_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
@@ -116,7 +117,7 @@ class FeatureFactory(Factory):
             if condition_units == "seconds":
                 condition_units = "secs"
 
-            workflow = init_taskbased_wf(
+            workflow = init_task_based_wf(
                 condition_files=condition_files,
                 condition_units=condition_units,  # type: ignore[arg-type]
                 **kwargs,
@@ -130,7 +131,7 @@ class FeatureFactory(Factory):
             database.fillmetadata("space", kwargs["seed_files"])
             kwargs["seed_spaces"] = [database.metadata(seed_file, "space") for seed_file in kwargs["seed_files"]]
             workflow = init_seed_based_connectivity_wf(**kwargs)
-        elif feature.type == "dual_regression":
+        elif feature.type in {"dual_regression", "gig_ica"}:
             confounds_action = "select"
             kwargs["map_files"] = list()
             for map in feature.maps:
@@ -138,7 +139,10 @@ class FeatureFactory(Factory):
                 kwargs["map_files"].append(map_file)
             database.fillmetadata("space", kwargs["map_files"])
             kwargs["map_spaces"] = [database.metadata(map_file, "space") for map_file in kwargs["map_files"]]
-            workflow = init_dualregression_wf(**kwargs)
+            if feature.type == "gig_ica":
+                workflow = init_gig_ica_wf(**kwargs)
+            elif feature.type == "dual_regression":
+                workflow = init_dualregression_wf(**kwargs)
         elif feature.type == "atlas_based_connectivity":
             confounds_action = "regression"
             kwargs["atlas_files"] = list()
@@ -154,7 +158,8 @@ class FeatureFactory(Factory):
         elif feature.type == "falff":
             confounds_action = "regression"
             workflow = init_falff_wf(**kwargs)
-        else:
+
+        if workflow is None:
             raise ValueError(f'Unknown feature type "{feature.type}"')
 
         parent_workflow.add_nodes([workflow])

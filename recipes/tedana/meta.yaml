@@ -19,11 +19,11 @@ build:
 requirements:
   host:
     - pip
-    - python 3.11.*
+    - python
     - hatchling
     - hatch-vcs
   run:
-    - python 3.11.*
+    - python
     - hatchling
     - bokeh>=1.0.0
     - mapca>=0.0.4

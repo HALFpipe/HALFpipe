@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import Type
-
 from ...model.file.ref import RefFileSchema
 from ...utils.copy import deepcopy
 from ...utils.format import format_like_bids
@@ -16,13 +14,13 @@ from ..components import (
 from ..metadata import CheckMetadataStep
 from ..pattern import FilePatternStep
 from ..setting import get_setting_init_steps, get_setting_vals_steps
-from ..step import Context, Step
+from ..step import Context, Step, YesNoStep
 from .loop import AddAnotherFeatureStep, SettingValsStep
 
-next_step_type: Type[Step] = SettingValsStep
+next_step_type: type[Step] = SettingValsStep
 
 
-def get_ref_steps(suffix, featurefield, dsp_str, ref_next_step_type):
+def get_ref_steps(suffix: str, featurefield: str, dsp_str: str, ref_next_step_type: type[Step]) -> type[Step]:
     class CheckSpaceStep(CheckMetadataStep):
         schema = RefFileSchema
         key = "space"
@@ -147,6 +145,7 @@ class MinSeedCoverageStep(Step):
 
 SeedBasedConnectivityRefStep = get_ref_steps("seed", "seeds", "binary seed mask", MinSeedCoverageStep)
 DualRegressionRefStep = get_ref_steps("map", "maps", "spatial map", next_step_type)
+GroupInformationGuidedICARefStep = get_ref_steps("map", "maps", "group-level independent component", next_step_type)
 
 
 class AtlasBasedMinRegionCoverageStep(Step):
@@ -205,6 +204,13 @@ DualRegressionSettingInitStep = get_setting_init_steps(
         "grand_mean_scaling": {"mean": 10000.0},
     },
 )
+GroupInformationGuidedICASettingInitStep = get_setting_init_steps(
+    GroupInformationGuidedICARefStep,
+    settingdict={
+        "bandpass_filter": {"type": "gaussian"},
+        "grand_mean_scaling": {"mean": 10000.0},
+    },
+)
 AtlasBasedConnectivitySettingInitStep = get_setting_init_steps(
     AtlasBasedConnectivityRefStep,
     settingdict={"smoothing": None, "grand_mean_scaling": {"mean": 10000.0}},
@@ -236,14 +242,32 @@ def on_falff_setting(ctx):
     ctx.spec.features[-1].unfiltered_setting = name
 
 
+def get_zscore_step(next_step_type):
+    class DoZscoreScaling(YesNoStep):
+        header_str = "Apply within-subject Z-score scaling?"
+        yes_step_type = next_step_type
+        no_step_type = next_step_type
+
+        def next(self, ctx):
+            if self.choice is None:
+                raise ValueError("Choice cannot be None")
+            ctx.spec.features[-1].zscore = {"Yes": True, "No": False}[self.choice]
+            return super().next(ctx)
+
+    return DoZscoreScaling
+
+
 ReHoSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=move_setting_smoothing_to_feature)
-ReHoSettingInitStep = get_setting_init_steps(ReHoSettingValsStep, settingdict=settingdict)
+ReHoZScoreStep = get_zscore_step(ReHoSettingValsStep)
+ReHoSettingInitStep = get_setting_init_steps(ReHoZScoreStep, settingdict=settingdict)
 
 FALFFSettingValsStep = get_setting_vals_steps(AddAnotherFeatureStep, oncompletefn=on_falff_setting)
-FALFFSettingInitStep = get_setting_init_steps(FALFFSettingValsStep, settingdict=settingdict)
+FALFFZScoreStep = get_zscore_step(FALFFSettingValsStep)
+FALFFSettingInitStep = get_setting_init_steps(FALFFZScoreStep, settingdict=settingdict)
 
 SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep
+GroupInformationGuidedICAStep = GroupInformationGuidedICASettingInitStep
 AtlasBasedConnectivityStep = AtlasBasedConnectivitySettingInitStep
 ReHoStep = ReHoSettingInitStep
 FALFFStep = FALFFSettingInitStep
