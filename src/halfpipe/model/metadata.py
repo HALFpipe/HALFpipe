@@ -176,4 +176,6 @@ metadata_schemas: list[Type[Schema]] = [
     BIDSFmapMetadataSchema,
 ]
 
-MetadataSchema = Schema.from_dict({k: v for schema in metadata_schemas for k, v in schema().fields.items()})
+metadata_fields = {name: field for schema in metadata_schemas for name, field in schema().fields.items()}
+metadata_fields["units"] = fields.Str()
+MetadataSchema = Schema.from_dict(metadata_fields)
