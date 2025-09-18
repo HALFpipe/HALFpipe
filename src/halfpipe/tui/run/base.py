@@ -377,6 +377,7 @@ class Run(Widget):
             LoggingContext.enable_verbose()
 
         opts["workdir"] = ctx.workdir
+        save_spec(ctx.spec, workdir=ctx.workdir)
         self.app.exit(result=opts)
 
     @on(Button.Pressed, "#save_button")
