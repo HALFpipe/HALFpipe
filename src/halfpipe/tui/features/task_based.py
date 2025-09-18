@@ -137,8 +137,11 @@ class TaskBased(FeatureTemplate):
         # for v in self.images_to_use["task"].keys():
         # The function itself returns a contrast table widget. We do this to get a fresh default widget each time we call
         # this function.
-        if not self.images_to_use or self.feature_dict["contrasts"] is None:
-            return None  # Single exit for all invalid cases
+        if not self.images_to_use:
+            raise ValueError("No images to use. 'images_to_use' cannot be empty.")
+
+        if self.feature_dict["contrasts"] is None:
+            self.feature_dict["contrasts"] = []
 
         all_possible_conditions = []
         for image, use in self.images_to_use["task"].items():
