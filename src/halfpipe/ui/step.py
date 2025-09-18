@@ -75,11 +75,11 @@ class Step:
             self.app.layout.remove(view)
 
     @abstractmethod
-    def run(self, ctx) -> bool:
+    def run(self, ctx: Context) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def next(self, ctx):
+    def next(self, ctx: Context) -> Context | None:
         raise NotImplementedError
 
     def _append_view(self, view):

@@ -34,6 +34,8 @@ def make_spec(
     spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
     assert isinstance(spec, Spec)
 
+    spec.global_settings.update(dict(slice_timing=True))
+
     # Set up files
     spec.files.extend(dataset_files)
     if event_file is not None:

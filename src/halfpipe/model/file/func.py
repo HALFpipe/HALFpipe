@@ -45,10 +45,7 @@ class BoldFileSchema(BaseFileSchema):
             if isinstance(direction, str):
                 try:
                     pedir_code = parse_direction_str(direction)
-                    metadata["phase_encoding_direction"] = canonicalize_direction_code(
-                        pedir_code,
-                        path,
-                    )
+                    metadata["phase_encoding_direction"] = canonicalize_direction_code(pedir_code, path)
                 except Exception:
                     logger.warning(f"Could not parse phase encoding direction from tag {direction} for {path}")
         return in_data

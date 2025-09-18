@@ -73,6 +73,7 @@ class MakeResultdicts(IOBase):
             "tags": tagkeys,
             "vals": valkeys,
             "images": imagekeys,
+            "reports": reportkeys,
             "metadata": metadatakeys,
         }
         self._nobroadcastkeys = nobroadcastkeys

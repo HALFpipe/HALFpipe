@@ -13,7 +13,9 @@ from textual.widgets import Button, Static, Switch
 from ...model.file.bids import BidsFileSchema
 from ..data_analyzers.context import ctx
 from ..data_analyzers.file_pattern_steps import (
+    AnatMaskStep,
     AnatStep,
+    AnatT2wStep,
     BoldStep,
     EPIStep,
     FieldMapStep,
@@ -25,7 +27,7 @@ from ..data_analyzers.file_pattern_steps import (
     PhaseDiffStep,
 )
 from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
-from ..data_analyzers.summary_steps import AnatSummaryStep, BoldSummaryStep, FmapSummaryStep
+from ..data_analyzers.summary_steps import AnatSummaryStep, AnatT2wSummaryStep, BoldSummaryStep, FmapSummaryStep
 from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
@@ -77,13 +79,29 @@ class DataInput(Widget):
         are cached in the ctx.cache.
         """
         self.t1_file_pattern_counter = 0
+        self.t2_file_pattern_counter = 0
         self.bold_file_pattern_counter = 0
         self.field_map_file_pattern_counter = 0
+        self.lesion_mask_file_pattern_counter = 0
         # Flag whether the association of the field maps was done or no.
         self.association_done = False
         # We need this flag to check before loading whether there was no previous data load already.
         # If so, the we need to reload some widget and refresh context cache and database.
         self.data_load_sucess = False
+        # Prevent switches from mounting/unmounting when we load from a file and just need to flip the switch without
+        # actually doing something more. This is because mounting and unmounting is performed directly by calling
+        # method toggle_something_something. The suppressing is automatically lifted after one call when this suppress
+        # variable is active.
+        self._suppress_bids_non_bids_switch_event = False
+        self._suppress_lesion_mask_switch_event = False
+
+    def supress_switch_events(self):
+        self._suppress_bids_non_bids_switch_event = True
+        self._suppress_lesion_mask_switch_event = True
+
+    def enable_switch_events(self):
+        self._suppress_bids_non_bids_switch_event = False
+        self._suppress_lesion_mask_switch_event = False
 
     def callback_func(self, message_dict: dict[str, list[str]]) -> None:
         """
@@ -128,6 +146,8 @@ class DataInput(Widget):
         """
         # First we define widgets (panels) in order to be able later put titles on them
         """Switch in between the BIDS and non BIDS widgets."""
+        self.build_bids_panels()
+
         instructions_panel = Container(
             Static(
                 "If 'on' then just select the BIDS top directory. Otherwise you must select file patterns\
@@ -142,33 +162,75 @@ for T1-weighted image, BOLD image and event files.",
             id="instructions",
             classes="components",
         )
-        """ If BIDS is ON: """
-        bids_panel = Grid(
+
+        lesion_mask_panel = Container(
+            Static(
+                "Turn on to specify path patterns for lesion masks. Since currently fmriprep does not support \
+BIDS standard location in derivatives, you must specify the lesion masks also in case of the BIDS data format.",
+                id="description",
+            ),
+            Horizontal(
+                Static("Lesion masks", id="lesion_mask_label", classes="label"),
+                TextSwitch(id="lesion_mask_switch", value=False),
+            ),
+            id="lesion_mask_panel",
+            classes="components",
+        )
+
+        """
+        Sets up the initial state and titles for various panels after the widget is mounted.
+        """
+        instructions_panel.border_title = "Data format"
+        lesion_mask_panel.border_title = "Lesion masks"
+
+        # populate the generator
+        yield instructions_panel
+        yield self.bids_panel
+        yield self.bids_summary_panel
+        yield lesion_mask_panel
+
+    # async def on_mount(self) -> None:
+    #     await self._build_and_mount_bids_panels()
+
+    async def _build_and_mount_bids_panels(self):
+        """If BIDS is ON:"""
+        self.build_bids_panels()
+        await self.mount(self.bids_panel, after="#instructions")
+        await self.mount(self.bids_summary_panel, after="#bids_panel")
+
+    def build_bids_panels(self):
+        self.bids_panel = Grid(
             FileBrowserForBIDS(path_to="INPUT DATA DIRECTORY", id="data_input_file_browser"),
             id="bids_panel",
             classes="components",
         )
+
         """ This shows files found automatically when path to a BIDS folder is selected. """
-        bids_summary_panel = Vertical(
+        self.bids_summary_panel = Vertical(
             DataSummaryLine(id="feedback_anat"),
             DataSummaryLine(id="feedback_bold"),
             DataSummaryLine(id="feedback_fmap"),
+            DataSummaryLine(id="feedback_anatT2w"),
             id="bids_summary_panel",
             classes="components",
         )
-        """ If non-BIDS is ON: """
+        self.bids_panel.border_title = "Path to BIDS directory"
+        self.bids_summary_panel.border_title = "Data input file summary"
+
+    async def _build_and_mount_non_bids_panel(self):
+        """If non-BIDS is ON:"""
         # """ For anatomical/structural (T1) file patterns. """
-        t1_image_panel = VerticalScroll(
+        self.t1_image_panel = VerticalScroll(
             Button("Add", id="add_t1_image_button"), id="t1_image_panel", classes="non_bids_panels"
         )
         # """ For functional (BOLDS) file patterns. """
-        bold_image_panel = VerticalScroll(
+        self.bold_image_panel = VerticalScroll(
             Button("Add", id="add_bold_image_button"), id="bold_image_panel", classes="non_bids_panels"
         )
         # """ For fields map (magnitude, phase,...) file patterns. """
         associate_button = Button("Associate", id="associate_button")
         info_field_maps_button = Button("Info", id="info_field_maps_button")
-        field_map_panel = VerticalScroll(
+        self.field_map_panel = VerticalScroll(
             Horizontal(
                 Button("Add", id="add_field_map_button"),
                 associate_button,
@@ -178,7 +240,10 @@ for T1-weighted image, BOLD image and event files.",
             id="field_map_panel",
             classes="non_bids_panels",
         )
-        non_bids_panel = VerticalScroll(
+        self.t2_image_panel = VerticalScroll(
+            Button("Add", id="add_t2_image_button"), id="t2_image_panel", classes="non_bids_panels"
+        )
+        self.non_bids_panel = VerticalScroll(
             # """ Some instructions at the beginning. """
             Static(
                 "For each file type you need to create a 'path pattern' based on which all files of the particular type will \
@@ -202,14 +267,15 @@ of the string to be replaced by wildcards. You can also use type hints by starti
                 ),
                 classes="examples",
             ),
-            t1_image_panel,
-            bold_image_panel,
-            field_map_panel,
+            self.t1_image_panel,
+            self.bold_image_panel,
+            self.field_map_panel,
             # """ If all file patterns for non-BIDS are selected, user should confirm so that we can trigger the
             #     functional/field file matching and CheckBoldEffectiveEchoSpacingStep and CheckBoldPhaseEncodingDirectionStep.
             #     After this is done, any editing should be prohibited and the features and other remaining tabs should become
             #     visible.
             # """
+            self.t2_image_panel,
             VerticalScroll(
                 Button("Confirm", id="confirm_non_bids_button", variant="error"),
                 id="confirm_button_container",
@@ -218,26 +284,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             id="non_bids_panel",
             classes="components",
         )
-
-        """
-        Sets up the initial state and titles for various panels after the widget is mounted.
-        """
-        instructions_panel.border_title = "Data format"
-        bids_panel.border_title = "Path to BIDS directory"
-        bids_summary_panel.border_title = "Data input file summary"
-        non_bids_panel.border_title = "Path pattern setup"
-        t1_image_panel.border_title = "T1-weighted image file pattern"
-        bold_image_panel.border_title = "BOLD image files patterns"
-        field_map_panel.border_title = "Field maps"
-        non_bids_panel.styles.visibility = "hidden"
-        associate_button.styles.visibility = "hidden"
-        info_field_maps_button.styles.visibility = "hidden"
-
-        # now populate the generator
-        yield instructions_panel
-        yield bids_panel
-        yield bids_summary_panel
-        yield non_bids_panel
+        self.non_bids_panel.border_title = "Path pattern setup"
+        self.t1_image_panel.border_title = "T1-weighted image file pattern"
+        self.t2_image_panel.border_title = "T2-weighted image file pattern"
+        self.bold_image_panel.border_title = "BOLD image files patterns"
+        self.field_map_panel.border_title = "Field maps"
+        await self.mount(self.non_bids_panel)
 
     @on(Button.Pressed, "#add_t1_image_button")
     async def _on_button_add_t1_image_button_pressed(self, event) -> None:
@@ -246,11 +298,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         This method adds a new FileItem widget for specifying a T1 image file pattern.
         """
-        # if self.data_load_sucess is False:
         if "-read-only" not in event.control.classes:
             await self.add_t1_image(load_object=None)
-        # else:
-        #     self.forbid_data_change()
 
     async def add_t1_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
         """
@@ -282,6 +331,47 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         )
         self.t1_file_pattern_counter += 1
         return "t1_file_pattern_" + str(self.t1_file_pattern_counter)
+
+    @on(Button.Pressed, "#add_t2_image_button")
+    async def _on_button_add_t2_image_button_pressed(self, event) -> None:
+        """
+        Handles the event when the "Add" button for T2 images is pressed.
+
+        This method adds a new FileItem widget for specifying a T2 image file pattern.
+        """
+        if "-read-only" not in event.control.classes:
+            await self.add_t2_image(load_object=None)
+
+    async def add_t2_image(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
+        """
+        Adds a FileItem widget for specifying a T1 image file pattern.
+
+        Parameters
+        ----------
+        load_object : Any, optional
+            An object to load into the FileItem, by default None.
+        message_dict : dict[str, list[str]], optional
+            A dictionary of messages for the FileItem, by default None.
+        execute_pattern_class_on_mount : bool, optional
+            Whether to execute the pattern class on mount, by default True.
+
+        Returns
+        -------
+        str
+            A tuple containing the ID of the newly added FileItem widget.
+        """
+        await self.get_widget_by_id("t2_image_panel").mount(
+            FileItem(
+                id="t2_file_pattern_" + str(self.t1_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=AnatT2wStep(app=self.app),
+                load_object=load_object,
+                message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
+            )
+        )
+        self.t2_file_pattern_counter += 1
+        return "t2_file_pattern_" + str(self.t2_file_pattern_counter)
 
     @on(Button.Pressed, "#add_bold_image_button")
     async def _on_button_add_bold_image_button(self, event) -> None:
@@ -579,8 +669,8 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
         self.app.push_screen(SimpleMessageModal(self.callback_message, title="Meta information"))
 
-    @on(Switch.Changed)
-    def on_switch_changed(self, message: Message):
+    @on(Switch.Changed, "#bids_non_bids_switch")
+    async def on_bids_non_bids_switch_changed(self, message: Message):
         """
         Handles the event when the BIDS/non-BIDS switch is toggled.
 
@@ -593,14 +683,82 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         message : Message
             The message object containing information about the switch change.
         """
-        print("cccccccccccccccccccccccccccccccccccccccc", message.control.classes)
-        if "-read-only" not in message.control.classes:
-            self.toggle_bids_non_bids_format(message.value)
-        # if self.data_load_sucess is False:
-        # else:
-        #     self.forbid_data_change()
+        if "-read-only" not in message.control.classes and not self._suppress_bids_non_bids_switch_event:
+            await self.toggle_bids_non_bids_format(message.value)
 
-    def toggle_bids_non_bids_format(self, value: bool):
+    @on(Switch.Changed, "#lesion_mask_switch")
+    async def on_lesion_maps_switch_changed(self, message: Message):
+        """
+        Handles the event when the BIDS/non-BIDS switch is toggled.
+
+        This method is triggered when the state of the BIDS/non-BIDS switch
+        changes. It calls the `toggle_bids_non_bids_format` method to update
+        the UI based on the new switch value.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the switch change.
+        """
+        if not self._suppress_lesion_mask_switch_event:
+            await self.toggle_lesion_mask_panel(message.value)
+
+    async def toggle_lesion_mask_panel(self, value):
+        lesion_mask_panel = self.get_widget_by_id("lesion_mask_panel")
+        if value:
+            lesion_mask_pattern_panel = VerticalScroll(
+                Button("Add", id="add_lesion_mask_button"), id="lesion_mask_pattern_panel", classes="non_bids_panels"
+            )
+            lesion_mask_pattern_panel.border_title = "Lesion mask file pattern"
+            await lesion_mask_panel.mount(lesion_mask_pattern_panel)
+        else:
+            await lesion_mask_panel.get_widget_by_id("lesion_mask_pattern_panel").remove()
+
+    ##############
+
+    @on(Button.Pressed, "#add_lesion_mask_button")
+    async def _on_add_lesion_mask_button_pressed(self) -> None:
+        """
+        Handles the event when the "Add" button for T1 images is pressed.
+
+        This method adds a new FileItem widget for specifying a T1 image file pattern.
+        """
+        await self.add_lesion_mask(load_object=None)
+
+    async def add_lesion_mask(self, load_object=None, message_dict=None, execute_pattern_class_on_mount=True) -> str:
+        """
+        Adds a FileItem widget for specifying a T1 image file pattern.
+
+        Parameters
+        ----------
+        load_object : Any, optional
+            An object to load into the FileItem, by default None.
+        message_dict : dict[str, list[str]], optional
+            A dictionary of messages for the FileItem, by default None.
+        execute_pattern_class_on_mount : bool, optional
+            Whether to execute the pattern class on mount, by default True.
+
+        Returns
+        -------
+        str
+            A tuple containing the ID of the newly added FileItem widget.
+        """
+        await self.get_widget_by_id("lesion_mask_pattern_panel").mount(
+            FileItem(
+                id="lesion_mask_pattern_" + str(self.lesion_mask_file_pattern_counter),
+                classes="file_patterns",
+                pattern_class=AnatMaskStep(app=self.app),
+                load_object=load_object,
+                message_dict=message_dict,
+                execute_pattern_class_on_mount=execute_pattern_class_on_mount,
+            )
+        )
+        self.lesion_mask_file_pattern_counter += 1
+        return "lesion_mask_pattern_" + str(self.lesion_mask_file_pattern_counter)
+
+    ################
+
+    async def toggle_bids_non_bids_format(self, value: bool):
         """
         Toggles the visibility of BIDS and non-BIDS UI elements.
 
@@ -614,14 +772,14 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
         if value:
             self.app.is_bids = True
-            self.get_widget_by_id("bids_panel").styles.visibility = "visible"
-            self.get_widget_by_id("bids_summary_panel").styles.visibility = "visible"
-            self.get_widget_by_id("non_bids_panel").styles.visibility = "hidden"
+            await self.get_widget_by_id("non_bids_panel").remove()
+            await self._build_and_mount_bids_panels()
+
         else:
             self.app.is_bids = False
-            self.get_widget_by_id("bids_panel").styles.visibility = "hidden"
-            self.get_widget_by_id("bids_summary_panel").styles.visibility = "hidden"
-            self.get_widget_by_id("non_bids_panel").styles.visibility = "visible"
+            await self.get_widget_by_id("bids_panel").remove()
+            await self.get_widget_by_id("bids_summary_panel").remove()
+            await self._build_and_mount_non_bids_panel()
 
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
@@ -643,7 +801,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             ctx.refresh_available_images()
 
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
-            self.app.show_hidden_tabs()
+            # self.app.show_hidden_tabs()
             self.update_summaries()
             self.data_input_sucess()
         else:
@@ -665,10 +823,12 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
 
         anat_summary_step = AnatSummaryStep()
+        anat_t2w_summary_step = AnatT2wSummaryStep()
         bold_summary_step = BoldSummaryStep()
         fmap_summary_step = FmapSummaryStep()
 
         self.get_widget_by_id("feedback_anat").update_summary(anat_summary_step.get_summary)
+        self.get_widget_by_id("feedback_anatT2w").update_summary(anat_t2w_summary_step.get_summary)
         self.get_widget_by_id("feedback_bold").update_summary(bold_summary_step.get_summary)
         self.get_widget_by_id("feedback_fmap").update_summary(fmap_summary_step.get_summary)
 
@@ -744,15 +904,17 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     def read_only_mode(self, value):
         if value:
             self.get_widget_by_id("bids_non_bids_switch").add_class("-read-only")
-            for button in [
-                "add_t1_image_button",
-                "add_bold_image_button",
-                "associate_button",
-                "add_field_map_button",
-                "confirm_non_bids_button",
-            ]:
-                self.get_widget_by_id(button).add_class("-read-only")
-            for widget in self.walk_children(FileItem):
-                widget.get_widget_by_id("edit_button").add_class("-read-only")
-                widget.get_widget_by_id("delete_button").add_class("-read-only")
-            self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
+            if not self.app.is_bids:
+                for button in [
+                    "add_t1_image_button",
+                    "add_bold_image_button",
+                    "associate_button",
+                    "add_field_map_button",
+                    "confirm_non_bids_button",
+                ]:
+                    self.get_widget_by_id(button).add_class("-read-only")
+                for widget in self.walk_children(FileItem):
+                    widget.get_widget_by_id("edit_button").add_class("-read-only")
+                    widget.get_widget_by_id("delete_button").add_class("-read-only")
+            else:
+                self.get_widget_by_id("data_input_file_browser").read_only_mode(True)
