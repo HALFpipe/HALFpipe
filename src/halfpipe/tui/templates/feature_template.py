@@ -116,6 +116,7 @@ class FeatureTemplate(Widget):
         self.feature_dict.setdefault("type", self.type)
 
         self.bandpass_filter_default_switch_value = True
+        self.setting_dict.setdefault("space", "standard")
         self.setting_dict.setdefault("bandpass_filter", _defaults["bandpass_filter"])
 
         # if self.type in ["reho", "falff", "atlas_based_connectivity"]:

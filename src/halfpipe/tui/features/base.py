@@ -14,6 +14,7 @@ from ..templates.selection_template import SelectionTemplate
 from .atlas_based import AtlasBased
 from .dual_reg import DualReg
 from .falff import Falff
+from .gig_ica import Gigica
 from .preproc_output import PreprocessedOutputOptions
 from .reho import ReHo
 from .seed_based import SeedBased
@@ -119,6 +120,7 @@ class FeatureSelection(SelectionTemplate):
             "task_based": TaskBased,
             "seed_based_connectivity": SeedBased,
             "dual_regression": DualReg,
+            "gig_ica": Gigica,
             "atlas_based_connectivity": AtlasBased,
             "preprocessed_image": PreprocessedOutputOptions,
             "reho": ReHo,

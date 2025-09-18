@@ -248,7 +248,10 @@ async def mount_features(self):
             setting_feature_map[feature.__dict__["setting"]] = feature.name
 
         for setting in self.existing_spec.settings:
-            logger.debug(f"UI->load->mount_features-> Processing setting {setting.__dict__}")
+            logger.debug(
+                f"UI->load->mount_features-> Processing setting "
+                f"{setting.__dict__ if not isinstance(setting, dict) else setting}"
+            )
 
             # the feature settings in the ctx.cache are under the 'feature' key, to match this properly
             # setting['name'[ is used without last 7 letters which are "Setting" then it is again the feature name
