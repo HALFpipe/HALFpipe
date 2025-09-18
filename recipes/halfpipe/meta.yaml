@@ -79,6 +79,7 @@ requirements:
     - afni-3dtstat
     - afni-3dreho
     - gica_cmd
+    - brainspace
     # New user interface
     - textual==0.85.2
     - pytest-textual-snapshot
