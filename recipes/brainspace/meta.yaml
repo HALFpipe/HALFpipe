@@ -1,0 +1,39 @@
+package:
+  name: "brainspace"
+  version: "0.1.20"
+
+source:
+  url: https://files.pythonhosted.org/packages/source/b/brainspace/brainspace-0.1.20.tar.gz
+  sha256: 57c40ec747dbc3ddd2098e0dbb868b033e8c3ec64f1dab9862f653426df9df4e
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+
+requirements:
+  host:
+    - pip
+    - python
+    - hatchling
+    - hatch-vcs
+  run:
+    - python
+    # https://github.com/MICA-MNI/BrainSpace/blob/v0.1.20/requirements.txt
+    - numpy>=1.11.0
+    - scipy>=0.17.0
+    - scikit-learn>=0.22.0
+    - matplotlib>=2.0.0
+    - vtk>=9.1.0
+    - nibabel
+    - nilearn
+
+test:
+  imports:
+    - brainspace
+    - brainspace.gradient.gradient
+
+about:
+  home: https://github.com/MICA-MNI/BrainSpace
+  summary: |
+    BrainSpace is an open-access toolbox that allows for the identification
+    and analysis of gradients from neuroimaging and connectomics datasets
