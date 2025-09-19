@@ -336,11 +336,11 @@ class Run(Widget):
         """
         with ScrollableContainer():
             yield Horizontal(
-                Button("Refresh spec file", id="refresh_button"),
-                Button("Save spec file", id="save_button"),
-                Button("Generate batch script", id="generate_batch_script_button"),
-                Button("Exit UI and Run", id="run_button"),
-                Button("Exit UI", id="exit_button"),
+                # Button("Refresh spec file", id="refresh_button"),
+                # Button("Save spec file", id="save_button"),
+                Button("Generate HPC batch script", id="generate_batch_script_button"),
+                Button("Exit & Run locally", id="run_button"),
+                # Button("Exit UI", id="exit_button"),
             )
             yield Pretty("", id="this_output")
 
@@ -380,7 +380,7 @@ class Run(Widget):
         save_spec(ctx.spec, workdir=ctx.workdir)
         self.app.exit(result=opts)
 
-    @on(Button.Pressed, "#save_button")
+    # @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
         """
         Handles the event when the "Save" button is pressed.
@@ -406,17 +406,29 @@ class Run(Widget):
             save_spec(ctx.spec, workdir=ctx.workdir)
 
         self.refresh_context()
-        self.app.push_screen(
-            Confirm(
-                "The spec file was saved to working directory!",
-                left_button_text=False,
-                right_button_text="OK",
-                right_button_variant="success",
-                title="Spec file saved",
-                classes="confirm_success",
-            ),
-            save,
-        )
+        if ctx.workdir is None:
+            self.app.push_screen(
+                Confirm(
+                    "No working directory set!\nSet a working directory first!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="No workdir",
+                    classes="confirm_error",
+                )
+            )
+        else:
+            self.app.push_screen(
+                Confirm(
+                    "The spec file was saved to working directory!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="success",
+                    title="Spec file saved",
+                    classes="confirm_success",
+                ),
+                save,
+            )
 
     @on(Button.Pressed, "#generate_batch_script_button")
     def on_generate_batch_script_button_pressed(self):

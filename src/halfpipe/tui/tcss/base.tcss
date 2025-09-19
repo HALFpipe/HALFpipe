@@ -100,17 +100,29 @@ QuitModal {
 HeaderCloseIcon {
     dock: right;
     padding: 0 1;
-    width: 6;
+    width: 10;
     offset-x: 0;
     content-align: right middle;
     border: solid black;
+    text-style: bold;
 }
 
 HeaderHelpIcon {
     dock: right;
     padding: 0 1;
-    width: 6;
-    offset-x: -5;
+    width: 10;
+    offset-x: -10;
     content-align: right middle;
     border: solid black;
+    text-style: bold;
+}
+
+HeaderSaveIcon {
+    dock: right;
+    padding: 0 1;
+    width: 10;
+    offset-x: -20;
+    content-align: right middle;
+    border: solid black;
+    text-style: bold;
 }

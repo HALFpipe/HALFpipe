@@ -7,7 +7,7 @@ from pathlib import Path
 from rich.console import RenderResult
 
 # from rich_pixels import Pixels
-from textual import events
+from textual import events, on
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.events import Click
@@ -63,7 +63,7 @@ class HeaderCloseIcon(Widget):
     }
     """
 
-    icon = Reactive("❌")
+    icon = Reactive("EXIT❌")
     """The character to use as the icon within the header."""
 
     async def on_click(self, event: Click) -> None:
@@ -124,7 +124,7 @@ class HeaderHelpIcon(Widget):
     """
 
     # The character to use as the icon within the header.
-    icon = Reactive("❓")
+    icon = Reactive("HELP❓")
     help_string = "Here should be some general help :) Or maybe link to manual?"
 
     async def on_click(self, event: Click) -> None:
@@ -161,6 +161,61 @@ class HeaderHelpIcon(Widget):
         return self.icon
 
 
+class HeaderSaveIcon(Widget):
+    """
+    A widget to display a close icon in the header.
+
+    This widget provides a clickable close icon (❌) in the header of the
+    application. Clicking this icon prompts the user to confirm whether
+    they want to quit the application.
+
+    Attributes
+    ----------
+    icon : Reactive[str]
+        The character to use as the icon within the header.
+    """
+
+    DEFAULT_CSS = """
+    HeaderSaveIcon {
+        dock: right;
+        padding: 0 1;
+        width: 8;
+        content-align: left middle;
+    }
+
+    HeaderSaveIcon:hover {
+        background: $foreground 10%;
+    }
+    """
+
+    icon = Reactive("SAVE💾")
+    """The character to use as the icon within the header."""
+
+    def render(self) -> RenderResult:
+        """Render the header icon.
+
+        Returns:
+            The rendered icon.
+        """
+        return self.icon
+
+    async def on_click(self, event: Click) -> None:
+        """
+        Handles the click event on the close icon.
+
+        This method is called when the user clicks the close icon. It
+        displays a confirmation modal asking the user if they really want
+        to quit the application.
+
+        Parameters
+        ----------
+        event : Click
+            The click event object.
+        """
+        event.stop()
+        self.app.get_widget_by_id("run").on_save_button_pressed()
+
+
 class MyHeader(Header):
     """
     A custom header widget for the application.
@@ -170,6 +225,7 @@ class MyHeader(Header):
 
     def compose(self):
         yield HeaderTitle()
+        yield HeaderSaveIcon()
         yield HeaderHelpIcon()
         yield HeaderCloseIcon()
 
@@ -309,7 +365,9 @@ class MainApp(App):
     # maybe rename to available_tasks? this is a top level class variable that contains available tasks.
     available_images: dict = {}
     # if both flags are True, then we show the hidden tabs.
-    flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False, "fs_license_file_found":False})
+    flags_to_show_tabs: reactive[dict] = reactive(
+        {"from_working_dir_tab": False, "from_input_data_tab": False, "fs_license_file_found": False}
+    )
     # flag for bids/non bids data input
     is_bids = True
 
@@ -356,10 +414,14 @@ class MainApp(App):
             with TabPane("Group level models", id="models_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(Run(), id="run_content")
+                yield VerticalScroll(Run(id="run"), id="run_content")
             with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
                 yield VerticalScroll(Diagnostics(), id="diag_content")
         yield Footer()
+
+    @on(TabbedContent.TabActivated, pane="#run_tab")
+    def on_run_tab_activated(self) -> None:
+        self.get_widget_by_id("run").refresh_context()
 
     def on_mount(self) -> None:
         """

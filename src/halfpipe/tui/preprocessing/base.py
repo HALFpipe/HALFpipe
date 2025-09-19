@@ -175,7 +175,8 @@ class Preprocessing(Widget):
 
         yield anatomical_settings_panel
         yield functional_settings_panel
-        yield advanced_settings_switch_panel
+        # temporary hide advanced setting
+        # yield advanced_settings_switch_panel
         # yield workflowgroup_settings_panel
         # yield debuggroup_settings_panel
         # yield rungroup_settings_panel
