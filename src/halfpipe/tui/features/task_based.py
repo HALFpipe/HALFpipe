@@ -3,16 +3,20 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
-from textual.widgets import SelectionList
+from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
+from textual.message import Message
+from textual.widgets import RadioButton, RadioSet, SelectionList, Static
 
 from ...logging import logger
-from ..help_functions import extract_conditions
+from ..general_widgets.custom_switch import TextSwitch
+from ..help_functions import extract_conditions, widget_exists
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.event_file_widget import EventFilePanel
 from ..standards import task_based_defaults
 from ..templates.feature_template import FeatureTemplate
 from .utils.model_conditions_and_contrasts import ModelConditionsAndContrasts
+
+RadioButton.BUTTON_INNER = "X"
 
 
 class TaskBased(FeatureTemplate):
@@ -90,32 +94,103 @@ class TaskBased(FeatureTemplate):
         """
 
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
-        if "conditions" not in self.feature_dict:
-            self.feature_dict["conditions"] = []
-        if self.images_to_use is not None:
-            all_possible_conditions = []
-            # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
-            # the images to use widget is updated but we accept only images that are True. The all_possible_conditions carries
-            # to information of the possible choices in the condition selection widget based on the currently selected images.
-            # for v in self.images_to_use["task"].keys():
-            for image in self.images_to_use["task"]:
-                if self.images_to_use["task"][image] is True:
-                    all_possible_conditions += extract_conditions(entity="task", values=[image])
+        self.feature_dict.setdefault("conditions", [])
+        self.feature_dict.setdefault("model_serial_correlations", True)
 
-            if self.feature_dict["contrasts"] is not None:
-                self.model_conditions_and_contrast_table = ModelConditionsAndContrasts(
-                    all_possible_conditions,
-                    feature_contrasts_dict=self.feature_dict["contrasts"],
-                    feature_conditions_list=self.feature_dict["conditions"],
-                    id="model_conditions_and_constrasts",
-                    classes="components",
+        self.estimation_types = {
+            "single trial least squares single": "single_trial_least_squares_single",
+            "single trial least squares all": "single_trial_least_squares_all",
+            "multiple trial": "multiple_trial",
+        }
+        # Reverse mapping
+        self.estimation_labels = {v: k for k, v in self.estimation_types.items()}
+        self.feature_dict.setdefault("estimation", "multiple_trial")
+
+        self.estimation_type_panel = Vertical(
+            RadioSet(
+                *[
+                    RadioButton(i, value=i == self.estimation_labels[self.feature_dict["estimation"]])
+                    for i in self.estimation_types.keys()
+                ],
+                id="estimation_types_selection",
+            ),
+            id="estimation_types_selection_panel",
+            classes="components",
+        )
+        self.estimation_type_panel.border_title = "Estimation Type"
+
+        self.model_serial_correlations_panel = Container(
+            Horizontal(
+                Static("Model serial correlation", classes="description_labels"),
+                TextSwitch(value=self.feature_dict["model_serial_correlations"], id="model_serial_correlations_switch"),
+                id="model_serial_correlations_sub_panel",
+            ),
+            id="model_serial_correlations_panel",
+            classes="components",
+        )
+        self.model_serial_correlations_panel.border_title = "Model serial correlation"
+
+    def create_model_conditions_and_contrast_table(self):
+        # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
+        # the images to use widget is updated but we accept only images that are True. The all_possible_conditions carries
+        # to information of the possible choices in the condition selection widget based on the currently selected images.
+        # for v in self.images_to_use["task"].keys():
+        # The function itself returns a contrast table widget. We do this to get a fresh default widget each time we call
+        # this function.
+        if not self.images_to_use:
+            raise ValueError("No images to use. 'images_to_use' cannot be empty.")
+
+        if self.feature_dict["contrasts"] is None:
+            self.feature_dict["contrasts"] = []
+
+        all_possible_conditions = []
+        for image, use in self.images_to_use["task"].items():
+            if use:
+                all_possible_conditions += extract_conditions(entity="task", values=[image])
+
+        return ModelConditionsAndContrasts(
+            all_possible_conditions,
+            feature_contrasts_dict=self.feature_dict["contrasts"],
+            feature_conditions_list=self.feature_dict["conditions"],
+            id="model_conditions_and_constrasts",
+            classes="components",
+        )
+
+    @on(RadioSet.Changed, "#estimation_types_selection")
+    async def on_radio_set_changed(self, message):
+        # When selection in the estimation_types_selection widget are toggled, all selected tasks in selection
+        # tasks_to_use_selection are deselected. This is to not make a mess when somebody would select first multiple_trial
+        # and select some conditions and then select a different estimation and then select different tasks and then go
+        # back to multiple_trial. The contrast table would then be confused, and it is safer to in such cases to start fresh.
+        # Also, the contrast table is valid only for multiple_trial, so for the other ones we need to remove the contrast table
+        # and also conditions key in the ctx.cache.
+        estimation_type = self.estimation_types[str(message.pressed.label)]
+        # feed the dictionary (ctx.cache)
+        self.feature_dict["estimation"] = estimation_type
+        self.get_widget_by_id("tasks_to_use_selection").deselect_all()
+        if estimation_type != "multiple_trial":
+            self.feature_dict.pop("conditions", None)
+            if widget_exists(self, "model_conditions_and_constrasts"):
+                await self.get_widget_by_id("model_conditions_and_constrasts").remove()
+        else:
+            self.feature_dict.setdefault("conditions", [])
+
+            if not widget_exists(self, "model_conditions_and_constrasts"):
+                await self.mount(
+                    self.create_model_conditions_and_contrast_table(),
+                    after=self.get_widget_by_id("tasks_to_use_selection_panel"),
                 )
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
+            yield self.estimation_type_panel
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
-                yield self.model_conditions_and_contrast_table
+                # mount contrast table only if estimation is set to multiple_trial, the condition with image_to_use
+                # is a safety
+                if self.images_to_use is not None and self.feature_dict["estimation"] == "multiple_trial":
+                    yield self.create_model_conditions_and_contrast_table()
+            yield self.model_serial_correlations_panel
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
@@ -182,7 +257,10 @@ class TaskBased(FeatureTemplate):
 
         # in the old UI if the user did not select any images, the UI did not let the user proceed further. Here we do
         # more-less the same. If there are no choices user gets an error and all options are selected again.
+        if widget_exists(self, "model_conditions_and_constrasts"):
+            self.update_contrast_table()
 
+    def update_contrast_table(self) -> None:
         if (
             type(self).__name__ == "TaskBased"  # and message.control.id == "tasks_to_use_selection"
         ):  # conditions are only in Task Based not in Preprocessing!
@@ -196,7 +274,7 @@ class TaskBased(FeatureTemplate):
                 )
                 logger.debug(
                     f"UI->TaskBased._on_selection_list_changed_tasks_to_use_selection-> \
-all_possible_conditions: {all_possible_conditions}"
+    all_possible_conditions: {all_possible_conditions}"
                 )
                 self.update_conditions_table()
 
@@ -216,3 +294,20 @@ all_possible_conditions: {all_possible_conditions}"
         logger.debug(f"UI->TaskBased.update_conditions_table-> New condition list: {condition_list}")
         # force update of model_conditions_and_constrasts to reflect conditions given by the currently selected images
         self.get_widget_by_id("model_conditions_and_constrasts").condition_values = condition_list
+
+    @on(TextSwitch.Changed, "#model_serial_correlations_switch")
+    def _on_model_serial_correlations_switch_changed(self, message: Message) -> None:
+        """
+        Handles changes in the grand mean scaling switch.
+
+        This method is called when the switch state of the
+        `SwitchWithInputBox` widget with the ID "grand_mean_scaling"
+        changes. If the switch is turned off, it sets the grand mean
+        scaling value in `setting_dict` to None.
+
+        Parameters
+        ----------
+        message : SwitchWithInputBox.SwitchChanged
+            The message object containing information about the change.
+        """
+        self.feature_dict["model_serial_correlations"] = message.value
