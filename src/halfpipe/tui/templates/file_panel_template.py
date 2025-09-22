@@ -1,13 +1,14 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from rich.text import Text
 from textual import on
 from textual.containers import VerticalScroll
 from textual.message import Message
-from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Button
 
+from ...logging import logger
 from ..data_analyzers.file_pattern_steps import (
     MatEventsStep,
     TsvEventsStep,
@@ -84,13 +85,14 @@ class FilePanelTemplate(Widget):
     pattern_class: type | None = None
     # The ID of the currently active file pattern.
     current_file_pattern_id = None
-    # A reactive attribute that indicates whether the panel's state has changed.
-    value: reactive[bool] = reactive(None, init=False)
+    # # A reactive attribute that indicates whether the panel's state has changed.
+    # value: reactive[bool] = reactive(None, init=False)
 
     @dataclass
     class FileItemIsDeleted(Message):
         file_panel: Widget
-        value: str
+        deleted_id: str
+        value: str | Path
 
         @property
         def control(self):
@@ -127,6 +129,7 @@ class FilePanelTemplate(Widget):
         if not hasattr(cls, "_counter"):  # Ensure each child class has its own counter
             cls._counter = 0
         self.file_pattern_counter = cls._counter
+        self.value = None
 
     def callback_func(self, message_dict):
         """
@@ -156,15 +159,15 @@ class FilePanelTemplate(Widget):
 
         self.callback_message = info_string
 
-    def watch_value(self) -> None:
-        """
-        Posts a message when the value changes.
-
-        This method is called when the `value` attribute changes. It posts
-        a `Changed` message to notify other parts of the application about
-        the change.
-        """
-        self.post_message(self.Changed(self, self.value))
+    # def watch_value(self) -> None:
+    #     """
+    #     Posts a message when the value changes.
+    #
+    #     This method is called when the `value` attribute changes. It posts
+    #     a `Changed` message to notify other parts of the application about
+    #     the change.
+    #     """
+    #     self.post_message(self.Changed(self, self.value))
 
     def compose(self):
         """
@@ -294,6 +297,7 @@ class FilePanelTemplate(Widget):
                             execute_pattern_class_on_mount=False,
                         )
                     )
+                    self.file_pattern_counter += 1
 
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
@@ -312,7 +316,7 @@ class FilePanelTemplate(Widget):
             file item.
         """
         message.control.remove()
-        self.post_message(self.FileItemIsDeleted(self, message.control.id))
+        self.post_message(self.FileItemIsDeleted(self, message.control.id, self.value))
 
     @on(FileItem.IsFinished)
     @on(FileItem.PathPatternChanged)
@@ -330,7 +334,9 @@ class FilePanelTemplate(Widget):
         event : FileItem.IsFinished | FileItem.PathPatternChanged
             The message object containing information about the event.
         """
+        logger.debug(f"UI->_on_update_all_instances->new value: {event.value}, old value: {self.value}")
         self.value = event.value
+        self.post_message(self.Changed(self, self.value))
 
     @classmethod
     def reset_all_counters(cls):
