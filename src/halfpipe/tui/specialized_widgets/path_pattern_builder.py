@@ -14,6 +14,7 @@ from ..data_analyzers.context import ctx
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
+from ..templates.utils.name_input import NameInput
 from .confirm_screen import Confirm
 from .pattern_suggestor import (
     InputWithColoredSuggestions,
@@ -253,7 +254,12 @@ class PathPatternBuilder(DraggableModalScreen):
         self.path = path.plain if isinstance(path, Text) else path
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"] if highlight_colors is None else highlight_colors
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
-        self.pattern_match_results: dict = {"file_pattern": self.path, "message": "Found 0 files.", "files": []}
+        self.pattern_match_results: dict = {
+            "file_pattern": self.path,
+            "message": "Found 0 files.",
+            "files": [],
+            "file_tag": None,
+        }
         self.original_value = path
         # TODO: since now we are always passing the particular pattern_class to the path_pattern_builder, we do not need
         # to pass colors and labels separately, thus this needs to be cleaned through the whole code
@@ -394,11 +400,13 @@ class PathPatternBuilder(DraggableModalScreen):
         highlights = self.get_widget_by_id("input_prompt").current_highlights
         self.get_widget_by_id("feedback").update(match_feedback_message)
         self.get_widget_by_id("show_button").tooltip = match_feedback_message
-        self.pattern_match_results = {
-            "file_pattern": Text(self.path, spans=highlights),
-            "message": match_feedback_message,
-            "files": filepaths,
-        }
+        self.pattern_match_results.update(
+            {
+                "file_pattern": Text(self.path, spans=highlights),
+                "message": match_feedback_message,
+                "files": filepaths,
+            }
+        )
         # Change outine from red to green if some files were found.
         if len(self.pattern_match_results["files"]) > 0:
             self.query_one(SelectCurrentWithInputAndSegmentHighlighting).styles.outline = ("solid", "green")
@@ -498,7 +506,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
 
         if not all(tag in self.pattern_match_results["file_pattern"] for tag in self.mandatory_tags):
             # if self.mandatory_tags not in self.pattern_match_results["file_pattern"]:
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     f"Mandatory tag missing! Use all mandatory tags!\n Mandatory tags are: {self.mandatory_tags}!",
                     left_button_text=False,
@@ -508,7 +516,19 @@ Your event file task tags are: \n{sorted(task_set)}.\
                     classes="confirm_error",
                 )
             )
-        elif compatible_task_tags:
+        logger.debug(
+            f"UI->PathPatternBuilder._ok_part_two-> allow_file_tagging:{self.pattern_class.allow_file_tagging},\
+             tag_entity:{self.pattern_class.tag_entity}, file_pattern:{self.pattern_match_results['file_pattern']}"
+        )
+        if (
+            self.pattern_class.allow_file_tagging
+            and "{" + self.pattern_class.tag_entity + "}" not in self.pattern_match_results["file_pattern"]
+        ):
+            self.pattern_match_results["file_tag"] = await self.app.push_screen_wait(
+                NameInput([], default_value="file_tag"),
+            )
+
+        if compatible_task_tags:
             self.dismiss(self.pattern_match_results)
 
     @on(Button.Pressed, "#cancel_button")

@@ -79,6 +79,7 @@ class FilePatternStep:
     filedict: Dict[str, str] = {}
     schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
     next_step_type: None | type[CheckMetadataStep] = None
+    allow_file_tagging: bool = False
 
     def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
         """
@@ -194,7 +195,7 @@ class FilePatternStep:
     def run_before_next_step(self):
         pass
 
-    async def push_path_to_context_obj(self, path):
+    async def push_path_to_context_obj(self, path, tags: None | dict = None):
         """
         Pushes the file path to the context object.
 
@@ -225,7 +226,8 @@ class FilePatternStep:
         path = _path
 
         # create file obj
-        filedict = {**self.filedict, "path": path, "tags": {}}
+        tags = {} if tags is None else {"desc": tags}
+        filedict = {**self.filedict, "path": path, "tags": tags}
         _, ext = split_ext(path)
         filedict["extension"] = self._transform_extension(ext)
 
@@ -716,10 +718,12 @@ class AddAtlasImageStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = [suffix]
+    # ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
+    allow_file_tagging = True
+    tag_entity = "atlas"
 
 
 class AddSpatialMapStep(FilePatternStep):
@@ -750,10 +754,12 @@ class AddSpatialMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = [suffix]
+    # ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
+    allow_file_tagging = True
+    tag_entity = "map"
 
 
 class AddBinarySeedMapStep(FilePatternStep):
@@ -784,7 +790,9 @@ class AddBinarySeedMapStep(FilePatternStep):
 
     schema = RefFileSchema
 
-    ask_if_missing_entities = [suffix]
+    # ask_if_missing_entities = [suffix]
     required_in_path_entities = []
 
     next_step_type = CheckSpaceStep
+    allow_file_tagging = True
+    tag_entity = "seed"

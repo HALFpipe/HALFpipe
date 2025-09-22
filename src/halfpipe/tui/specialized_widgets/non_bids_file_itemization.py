@@ -369,6 +369,11 @@ class FileItem(Widget):
             else:
                 pattern_load = {}
                 pattern_load["file_pattern"] = self.load_object.path
+                if self.load_object.tags == {}:
+                    pattern_load["file_tag"] = None
+                else:
+                    pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get("atlas"))
+
                 message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
@@ -481,7 +486,8 @@ class FileItem(Widget):
                     await self.execute_class()
 
             if self.from_edit:
-                await self.update_all_duplicates()
+                # await self.update_all_duplicates()
+                pass
 
         else:
             # delete it self if cancelled and was not existing before
@@ -498,10 +504,14 @@ class FileItem(Widget):
         """
         if self.pattern_class is not None:
             # fix this because sometimes this can be just ordinary string
-            if isinstance(self.pattern_match_results["file_pattern"], str):
-                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"])
-            elif isinstance(self.pattern_match_results["file_pattern"], Text):
-                await self.pattern_class.push_path_to_context_obj(path=self.pattern_match_results["file_pattern"].plain)
+            file_pattern = self.pattern_match_results["file_pattern"]
+            if isinstance(file_pattern, Text):
+                file_pattern = file_pattern.plain
+
+            await self.pattern_class.push_path_to_context_obj(
+                path=file_pattern,
+                tags=self.pattern_match_results["file_tag"],
+            )
 
     def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
@@ -538,7 +548,7 @@ class FileItem(Widget):
         if "-read-only" not in event.control.classes:
             if self.id in ctx.cache:
                 ctx.cache.pop(self.id)
-            self.remove_all_duplicates()
+                self.remove_all_duplicates()
             self.post_message(self.IsDeleted(self, "yes"))
 
     @on(Button.Pressed, "#show_button")
