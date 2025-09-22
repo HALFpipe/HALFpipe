@@ -65,7 +65,7 @@ class CSVTextArea(TextArea):
         raw = self.text.strip()
 
         if not raw:
-            return "Must not be empty."
+            return True
 
         # Split by comma and strip spaces
         items = [item.strip() for item in raw.split(",")]
@@ -126,18 +126,18 @@ class BatchOptionModal(DraggableModalScreen):
                 classes="input_number_values",
             )
             label = Label(humanize_option_labels[key], classes="labels")
-            label.tooltip = int_val
+            # label.tooltip = int_val
             widgets_option_values.append(Horizontal(label, input_box, classes="option_values options"))
 
         widgets_option_bools = []
-        for key, bool_val in self.batch_options_bools.items():
+        for key, _ in self.batch_options_bools.items():
             label = Label(humanize_option_labels[key], classes="labels")
-            label.tooltip = bool_val
+            # label.tooltip = bool_val
             text_switch = TextSwitch(value=True)
             widgets_option_bools.append(Horizontal(label, text_switch, id=key, classes="option_bools options"))
 
         widgets_option_lists = []
-        for key, list_val in self.batch_options_lists.items():
+        for key, _ in self.batch_options_lists.items():
             input_box = CSVTextArea(
                 name=key,
                 soft_wrap=True,
@@ -145,7 +145,7 @@ class BatchOptionModal(DraggableModalScreen):
                 classes="input_list_values",
             )
             label = Label(humanize_option_labels[key], classes="labels")
-            label.tooltip = list_val
+            # label.tooltip = list_val
             widgets_option_lists.append(Horizontal(label, input_box, classes="option_lists options"))
 
         # widgets_option_choices = []
@@ -264,7 +264,7 @@ class BatchOptionModal(DraggableModalScreen):
 
         This method dismisses the modal window without making any changes.
         """
-        self.dismiss(False)
+        self.dismiss(None)
 
 
 class Run(Widget):
@@ -440,9 +440,10 @@ class Run(Widget):
         """
 
         def generate_batch_script(batch_option_values):
-            batch_options = BatchOptions(batch_option_values)
-            batch_options.workdir = ctx.workdir
-            self._run_stage_workflow(batch_options)
+            if batch_option_values is not None:
+                batch_options = BatchOptions(batch_option_values)
+                batch_options.workdir = ctx.workdir
+                self._run_stage_workflow(batch_options)
 
         self.app.push_screen(BatchOptionModal(), generate_batch_script)
 

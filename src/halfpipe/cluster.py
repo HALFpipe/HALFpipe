@@ -122,7 +122,7 @@ def make_script(workdir: Path, graphs: Dict[str, Any], opts):
 
     data = dict(
         n_chunks=n_chunks,  # one-based indexing
-        singularity_container=os.environ.get("SINGULARITY_CONTAINER", "/containers/halfpipe-halfpipe-latest.sif"),
+        singularity_container=os.environ["SINGULARITY_CONTAINER"],
         cwd=str(Path(workdir).resolve()),
         uuid_str=str(uuid)[:8],
         n_cpus=n_cpus,
