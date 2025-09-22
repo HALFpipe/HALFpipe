@@ -98,6 +98,7 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
+        save_spec(ctx.spec, workdir=ctx.workdir)
         self.app.exit(result=ctx.workdir)
 
     @on(Button.Pressed, "#save_button")

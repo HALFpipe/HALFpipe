@@ -13,6 +13,7 @@ from ...ingest.metadata.direction import canonicalize_direction_code, direction_
 from ...ingest.metadata.niftiheader import NiftiheaderLoader
 from ...ingest.metadata.slicetiming import slice_timing_str
 from ...ingest.spreadsheet import read_spreadsheet
+from ...logging import logger
 from ...model.file.base import File
 from ...model.file.fmap import (
     PhaseDiffFmapFileSchema,
@@ -584,13 +585,19 @@ class CheckMetadataStep:
         any values are missing, and prepares a summary of the values.
         """
         if self.filters is None:
-            filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(ctx.spec.files[-1])]
+            fileobjs = ctx.database.fromspecfileobj(ctx.spec.files[-1])
+            if fileobjs is None:
+                raise ValueError("No files found for filters")
+            filepaths = [fileobj.path for fileobj in fileobjs]
         else:
             filepaths = [*ctx.database.get(**self.filters)]
 
+        logger.debug(f"UI->CheckMetaDataStep->key:{self.key} filepaths:{filepaths}, filter:{self.filters}")
         ctx.database.fillmetadata(self.key, filepaths)
 
         vals = [ctx.database.metadata(filepath, self.key) for filepath in filepaths]
+        logger.debug(f"UI->CheckMetaDataStep->vals:{vals}")
+
         self.suggestion = None
 
         if self.key in ["phase_encoding_direction", "slice_encoding_direction"]:

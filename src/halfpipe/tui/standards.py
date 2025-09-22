@@ -3,7 +3,13 @@ from typing import Dict, List, Union
 
 from inflection import humanize
 
-global_settings_defaults: dict[str, str] = {"dummy_scans": "0", "run_reconall": "False", "slice_timing": "False"}
+global_settings_defaults: dict[str, str] = {
+    "dummy_scans": "0",
+    "run_reconall": "False",
+    "slice_timing": "False",
+    "skull_strip_algorithm": "ants",
+}
+
 
 bandpass_filter_defaults: dict[str, dict] = {
     "gaussian": {"type": "gaussian", "hp_width": "125", "lp_width": None},
@@ -48,6 +54,10 @@ dual_reg_defaults["minimum_coverage_label"] = "Minimum network template coverage
 dual_reg_defaults["widget_header"] = "Network template images"
 dual_reg_defaults["file_selection_widget_header"] = "Select network templates"
 dual_reg_defaults["minimum_brain_coverage"] = 0.8
+
+gig_ica_defaults = deepcopy(dual_reg_defaults)
+gig_ica_defaults["widget_header"] = "Group-level independent components"
+gig_ica_defaults["file_selection_widget_header"] = "Select group-level independent components"
 
 preproc_output_defaults = deepcopy(task_based_defaults)
 preproc_output_defaults["minimum_coverage_label"] = "None"
@@ -96,6 +106,7 @@ feature_label_map: dict[str, str] = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
     "dual_regression": "Network Template Regression",
+    "gig_ica": "Group information-guided ICA ",
     "atlas_based_connectivity": "Atlas-based Connectivity",
     "reho": "ReHo",
     "falff": "fALFF",

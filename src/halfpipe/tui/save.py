@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 
 from ..logging import logger
 from ..model.feature import Feature
@@ -8,6 +9,22 @@ from ..model.setting import SettingSchema
 from ..utils.copy import deepcopy
 from .data_analyzers.context import ctx
 from .specialized_widgets.confirm_screen import Confirm
+
+
+# fill metadata
+def fill_metadata(key, filters):
+    if filters is None:
+        fileobjs = ctx.database.fromspecfileobj(ctx.spec.files[-1])
+        if fileobjs is None:
+            raise ValueError("No files found for filters")
+        filepaths = [fileobj.path for fileobj in fileobjs]
+    else:
+        filepaths = [*ctx.database.get(**filters)]
+
+    logger.debug(f"UI->save->key:{key} filepaths:{filepaths}, filter:{filters}")
+    ctx.database.fillmetadata(key, filepaths)
+    vals = [ctx.database.metadata(filepath, key) for filepath in filepaths]
+    logger.debug(f"UI->save->vals:{vals}")
 
 
 def dump_dict_to_contex(self, save=False):
@@ -38,6 +55,7 @@ def dump_dict_to_contex(self, save=False):
     ctx.spec.settings.clear()
     ctx.spec.models.clear()
     ctx.spec.files.clear()
+    has_fmaps = False
     # iterate now over the whole cache and fill the context object
     # the "name" is widget name carying the particular user choices, either a feature or file pattern
     for name in list(ctx.cache.keys()):  # Copy keys into a list to avoid changing dict size during iteration
@@ -114,8 +132,11 @@ def dump_dict_to_contex(self, save=False):
                         # on what passed the above 'if' conditions.
                         value = filter_list_for_spec_file
 
-                # Apply the value to the settings object
-                setattr(ctx.spec.settings[-1], key, value)
+                # Apply the value to the settings object, keep temporary both options, if it is fileobj or a dict
+                if isinstance(ctx.spec.settings[-1], dict):
+                    ctx.spec.settings[-1][key] = value
+                else:
+                    setattr(ctx.spec.settings[-1], key, value)
 
             # this is for the case of falff
             if "unfiltered_setting" in ctx.cache[name]:
@@ -159,9 +180,34 @@ def dump_dict_to_contex(self, save=False):
             ctx.put(BidsFileSchema().load({"datatype": "bids", "path": ctx.cache["bids"]["files"]}))
 
         if ctx.cache[name]["files"] != {} and name != "bids":
-            logger.debug(f"IU->save->dump_dict_to_contex->files-> file is not bids: {ctx.cache[name]['files']}")
+            files: Any = ctx.cache[name]["files"]
+            suffix = files.suffix
+            datatype = files.datatype
+            path = files.path
+
+            logger.debug(f"IU->save->dump_dict_to_contex->files-> file is not bids: {path}, suffix: {suffix}")
+
             ctx.spec.files.append(ctx.cache[name]["files"])
             ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
+            if suffix == "bold":
+                fill_metadata("repetition_time", None)
+            if suffix == "phasediff":
+                fill_metadata("echo_time1", None)
+                fill_metadata("echo_time2", None)
+            if suffix == "phase1" or suffix == "phase2":
+                fill_metadata("echo_time", None)
+            if datatype == "fmap":
+                has_fmaps = True
     self.old_cache = copy.deepcopy(ctx.cache)
     # refresh at the end available images
     ctx.refresh_available_images()
+
+    if ctx.spec.global_settings["slice_timing"]:
+        for key in ["slice_encoding_direction", "slice_timing"]:
+            filters = {"datatype": "func", "suffix": "bold"}
+            fill_metadata(key, filters)
+
+    if has_fmaps:
+        for key in ["phase_encoding_direction", "effective_echo_spacing"]:
+            filters = {"datatype": "func", "suffix": "bold"}
+            fill_metadata(key, filters)

@@ -66,6 +66,7 @@ class BaseTaskBasedFeatureSchema(BaseFeatureSchema):
 
 class MultipleTrialTaskBasedFeatureSchema(BaseTaskBasedFeatureSchema):
     estimation = fields.Str(
+        load_default="multiple_trial",
         dump_default="multiple_trial",
         validate=validate.Equal("multiple_trial"),
     )
@@ -87,6 +88,12 @@ class TaskBasedFeatureSchema(OneOfSchema):
         "single_trial_least_squares_single": SingleTrialTaskBasedFeatureSchema,
         "single_trial_least_squares_all": SingleTrialTaskBasedFeatureSchema,
     }
+
+    def get_data_type(self, data: Any) -> str:
+        type = super().get_data_type(data)
+        if type is not None:
+            return type
+        return "multiple_trial"  # Default value
 
     def get_obj_type(self, obj):
         if isinstance(obj, Feature):
@@ -126,6 +133,8 @@ class ReHoFeatureSchema(BaseFeatureSchema):
     smoothing = fields.Nested(
         SmoothingSettingSchema, allow_none=True
     )  # none is allowed to signify that this step will be skipped
+
+    zscore = fields.Bool(dump_default=True, load_default=True)
 
 
 class FALFFFeatureSchema(ReHoFeatureSchema):

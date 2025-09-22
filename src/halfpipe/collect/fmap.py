@@ -29,12 +29,9 @@ This is possibly a problem with metadata. If not, rerun with \
     return matched_pe
 
 
-def collect_pe_dir(database: Database, c: str):
+def collect_pe_dir(database: Database, c: str) -> str:
     database.fillmetadata("phase_encoding_direction", [c])
-    pe_dir = canonicalize_direction_code(
-        database.metadata(c, "phase_encoding_direction"),
-        c,
-    )
+    pe_dir = canonicalize_direction_code(database.metadata(c, "phase_encoding_direction"), c)
     return pe_dir
 
 
@@ -105,12 +102,26 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
         epi_fmaps.append((c, collect_pe_dir(database, c)))
 
     if len(epi_fmaps) > 0:
+        bold_pe_dir: str | None = None
         try:
-            check_pes(epi_fmaps, collect_pe_dir(database, bold_file_path))
+            bold_pe_dir = collect_pe_dir(database, bold_file_path)
         except ValueError:
-            if silent is not True:
-                incomplete_str = pe.join(sorted(f'"{c}" with direction {dir}' for c, dir in epi_fmaps))
-                logger.info(f"Skipping field maps {incomplete_str} because they do not have matched phase encoding directions")
+            logger.warning(
+                f'Could not detect phase encoding direction for BOLD image "{bold_file_path}". Cannot use PEPOLAR '
+                "field maps for this image. Please review BOLD metadata"
+            )
+        has_set_of_opposing_pe_dirs: bool = False
+        if bold_pe_dir is not None:
+            try:
+                has_set_of_opposing_pe_dirs = check_pes(epi_fmaps, bold_pe_dir)
+            except ValueError:
+                if silent is not True:
+                    incomplete_str = pe.join(sorted(f'"{c}" with direction "{dir}"' for c, dir in epi_fmaps))
+                    logger.info(
+                        f"Skipping field maps {incomplete_str} because they do not have "
+                        f'a set of opposing phase encoding directions to the BOLD image with direction "{bold_pe_dir}"'
+                    )
+        if not has_set_of_opposing_pe_dirs:
             candidates -= set(c for c, _ in epi_fmaps)
 
     return sorted(candidates)
