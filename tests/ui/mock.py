@@ -19,10 +19,13 @@ class MockLayout:
     def append(self, view: View):
         view._layout = self  # type: ignore
 
-    def remove(self, _):
+    def remove(self, view: View) -> View:
+        return view  # for chaining
+
+    def focus(self, view: View) -> None:
         pass
 
-    def focus(self, _):
+    def set_status_bar(self, text: str) -> None:
         pass
 
 

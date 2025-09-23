@@ -20,6 +20,7 @@ from ..components import (
     SpacerView,
     TextView,
 )
+from ..components.input.choice import SingleChoiceInputView
 from ..step import BranchStep, Context, Step, YesNoStep
 
 
@@ -448,4 +449,26 @@ def get_setting_vals_steps(next_step_type, noun="setting", vals_header_str=None,
                     del ctx.spec.settings[-1]["smoothing"]  # remove empty
             return super(DoSmoothingStep, self).next(ctx)
 
-    return DoSmoothingStep
+    class SpaceStep(Step):
+        options = {
+            "Standard space (MNI ICBM 2009c Nonlinear Asymmetric)": "standard",
+            "Native space": "native",
+        }
+
+        def setup(self, ctx: Context) -> None:
+            self._append_view(TextView("Specify space"))
+            self.input_view = SingleChoiceInputView(list(self.options.keys()), is_vertical=True)
+            self._append_view(self.input_view)
+            self._append_view(SpacerView(1))
+
+        def run(self, ctx: Context) -> bool:
+            self.choice = self.input_view()
+            if self.choice is None:  # Step was cancelled
+                return False
+            return True
+
+        def next(self, ctx: Context) -> Context | None:
+            ctx.spec.settings[-1]["space"] = self.options[self.choice]
+            return DoSmoothingStep(self.app)(ctx)
+
+    return SpaceStep
