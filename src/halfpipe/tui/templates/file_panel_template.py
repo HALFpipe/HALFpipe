@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.containers import VerticalScroll
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button
+from textual.widgets import Button, SelectionList
+from textual.widgets.selection_list import Selection
 
 from ...logging import logger
 from ..data_analyzers.file_pattern_steps import (
@@ -14,6 +15,7 @@ from ..data_analyzers.file_pattern_steps import (
     TsvEventsStep,
     TxtEventsStep,
 )
+from ..help_functions import extract_name_part
 from ..specialized_widgets.non_bids_file_itemization import FileItem
 
 
@@ -88,6 +90,8 @@ class FilePanelTemplate(Widget):
     # # A reactive attribute that indicates whether the panel's state has changed.
     # value: reactive[bool] = reactive(None, init=False)
 
+    filters: dict = {"datatype": "ref", "suffix": "atlas"}
+
     @dataclass
     class FileItemIsDeleted(Message):
         file_panel: Widget
@@ -109,7 +113,17 @@ class FilePanelTemplate(Widget):
             """Alias for self.file_browser."""
             return self.file_panel
 
-    def __init__(self, id: str | None = None, classes: str | None = None) -> None:
+    @dataclass
+    class FileTagsChanged(Message):
+        file_tag_selection: Widget
+        value: list
+
+        @property
+        def control(self):
+            """Alias for self.file_browser."""
+            return self.file_tag_selection
+
+    def __init__(self, init_file_tags=None, id: str | None = None, classes: str | None = None) -> None:
         """
         Initializes the FilePanelTemplate instance.
 
@@ -130,6 +144,9 @@ class FilePanelTemplate(Widget):
             cls._counter = 0
         self.file_pattern_counter = cls._counter
         self.value = None
+        self.file_tags: list[str] = []
+        self.init_file_tags: list[str] | None = init_file_tags if init_file_tags is not None else None
+        self.file_tag_init_flag: bool = True
 
     def callback_func(self, message_dict):
         """
@@ -182,6 +199,7 @@ class FilePanelTemplate(Widget):
             The composed widgets.
         """
         yield VerticalScroll(Button("Add", id="add_file_button"), id=self.id_string)
+        yield SelectionList[str](id="file_tag_selection", classes="components")
 
     @on(Button.Pressed, "#add_file_button")
     async def _on_button_add_file_item_pressed(self):
@@ -315,28 +333,44 @@ class FilePanelTemplate(Widget):
             The message object containing information about the deleted
             file item.
         """
-        message.control.remove()
-        self.post_message(self.FileItemIsDeleted(self, message.control.id, self.value))
+        # self.post_message(self.FileItemIsDeleted(self, message.control.id, self.value))
 
-    @on(FileItem.IsFinished)
-    @on(FileItem.PathPatternChanged)
-    async def _on_update_all_instances(self, event) -> None:
-        """
-        Updates instances when a file item is finished or its path pattern changes.
+        file_pattern = message.value["file_pattern"]
+        file_tag = message.value["file_tag"]
+        files = message.value["files"]
 
-        This method is called when a `FileItem.IsFinished` or
-        `FileItem.PathPatternChanged` message is received. It updates the
-        panel's `value` attribute to indicate that the panel's state has
-        changed.
+        all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
 
-        Parameters
-        ----------
-        event : FileItem.IsFinished | FileItem.PathPatternChanged
-            The message object containing information about the event.
-        """
-        logger.debug(f"UI->_on_update_all_instances->new value: {event.value}, old value: {self.value}")
-        self.value = event.value
-        self.post_message(self.Changed(self, self.value))
+        logger.debug(
+            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_file_item_is_deleted->tags to remove: \
+{all_file_tags_based_on_the_current_file_patterns}"
+        )
+        for w in self.app.walk_children(FilePanelTemplate):
+            # remove itself standardly later
+            # if w.id == message.control.id:
+            w.update_file_tag_selection(all_file_tags_based_on_the_current_file_patterns, remove=True)
+
+        await message.control.remove()
+
+    # @on(FileItem.IsFinished)
+    # @on(FileItem.PathPatternChanged)
+    # async def _on_update_all_instances(self, event) -> None:
+    #     """
+    #     Updates instances when a file item is finished or its path pattern changes.
+    #
+    #     This method is called when a `FileItem.IsFinished` or
+    #     `FileItem.PathPatternChanged` message is received. It updates the
+    #     panel's `value` attribute to indicate that the panel's state has
+    #     changed.
+    #
+    #     Parameters
+    #     ----------
+    #     event : FileItem.IsFinished | FileItem.PathPatternChanged
+    #         The message object containing information about the event.
+    #     """
+    #     logger.debug(f"UI->_on_update_all_instances->new value: {event.value}, old value: {self.value}")
+    #     self.value = event.value
+    #     self.post_message(self.Changed(self, self.value))
 
     @classmethod
     def reset_all_counters(cls):
@@ -351,3 +385,119 @@ class FilePanelTemplate(Widget):
             subclass._counter = 0
             subclass.reset_all_counters()  # Reset for deeper subclasses if any
         cls._counter = 0  # Reset the parent class counter
+
+    @on(FileItem.PathPatternChanged)
+    def on_file_panel_changed(self, message: Message) -> None:
+        """
+        Handles changes in the file panel.
+
+        This method is called when the file panel changes. It extracts
+        tags from the file paths based on the file pattern and updates
+        the file tag selection list.
+
+        Parameters
+        ----------
+        message : Message
+            The message object containing information about the change.
+        """
+
+        file_pattern = message.value["file_pattern"]
+        file_tag = message.value["file_tag"]
+        files = message.value["files"]
+
+        all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
+
+        # XOR (^) to avoid duplicate tags if the same file pattern is added twice
+        file_tags = set(self.file_tags) ^ all_file_tags_based_on_the_current_file_patterns
+
+        logger.debug(
+            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
+{all_file_tags_based_on_the_current_file_patterns}"
+        )
+        self.update_file_tag_selection(file_tags)
+
+    @work(exclusive=False, name="update_file_tag_selection")
+    async def update_file_tag_selection(self, file_tags: set, remove=False) -> None:
+        """
+        Updates the tag selection list based on the provided tag values.
+
+        This method updates the tag selection list with the provided tag
+        values. It handles the initial selection of tags and subsequent
+        updates.
+
+        Parameters
+        ----------
+        file_tags : set
+            A set of tag values to update the selection list with.
+        """
+        selection_widget = self.get_widget_by_id("file_tag_selection")
+        if not remove:
+            current_options = list(selection_widget._values)
+            for file_tag in sorted(file_tags):
+                if file_tag not in current_options:
+                    self.get_widget_by_id("file_tag_selection").add_option(Selection(file_tag, file_tag, initial_state=True))
+            logger.debug(
+                f"UI->AtlasSeedDualRegBasedTemplate->update_file_tag_selection->file_tag_selection._values->\
+{self.get_widget_by_id('file_tag_selection')._values}"
+            )
+
+            # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition
+            # of the file patterns. If this is the case, we deselect all selections and select only the options selected
+            # previous (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying
+            # previous options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not
+            # creating a new feature by duplication or from a spec file load by standardly by just adding a new feature. In
+            # such case we select all choices
+            if self.file_tag_init_flag and self.init_file_tags is not None:
+                self.get_widget_by_id("file_tag_selection").deselect_all()
+                for file_tag in self.init_file_tags:
+                    self.get_widget_by_id("file_tag_selection").select(file_tag)
+
+                self.file_tag_init_flag = False
+            # else:
+            #     # This is run always except from the first time on init.
+            #     self.feature_dict[self.featurefield].append(file_tag)
+        else:
+            for file_tag in sorted(file_tags):
+                current_options = list(selection_widget._values)
+
+                logger.debug(f"UI->update_file_tag_selection-> current_options:{current_options}")
+
+                if file_tag in current_options:
+                    self.get_widget_by_id("file_tag_selection")._remove_option(current_options.index(file_tag))
+
+        # self.post_message(self.FileTagsChanged(self, list(selection_widget.selected)))
+
+    @on(SelectionList.SelectedChanged)
+    def on_file_tag_selection_changed(self, message) -> None:
+        self.post_message(self.FileTagsChanged(self, message.control.selected))
+
+    def _extract_file_tags(self, file_pattern, files, file_tag=None):
+        """
+        Extract file tags based on the given file pattern, file paths, and optional file_tag.
+        Falls back to 'desc' suffix if no tags are found with the main suffix.
+
+        Parameters
+        ----------
+        file_pattern : str
+            The pattern used to extract tags.
+        files : list[str]
+            List of file paths.
+        file_tag : str | None
+            A provided file tag. If given, it's used directly.
+
+        Returns
+        -------
+        set[str | None]
+            A set of extracted file tags.
+        """
+        if isinstance(file_pattern, Text):
+            file_pattern = file_pattern.plain
+
+        if file_tag is None:
+            tags = {extract_name_part(file_pattern, file_path, suffix=self.filters["suffix"]) for file_path in files}
+            if tags == {None}:  # fallback to 'desc'
+                tags = {extract_name_part(file_pattern, file_path, suffix="desc") for file_path in files}
+        else:
+            tags = {file_tag}
+
+        return tags

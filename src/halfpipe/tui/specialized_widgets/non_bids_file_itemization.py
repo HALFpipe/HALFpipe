@@ -549,7 +549,7 @@ class FileItem(Widget):
             if self.id in ctx.cache:
                 ctx.cache.pop(self.id)
                 self.remove_all_duplicates()
-            self.post_message(self.IsDeleted(self, "yes"))
+            self.post_message(self.IsDeleted(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self) -> None:
