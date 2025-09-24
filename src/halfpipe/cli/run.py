@@ -25,6 +25,8 @@ def run_stage_ui(opts: Namespace):
             import os
 
             os._exit(0)
+        else:
+            opts.workdir = opts_tui.workdir
     else:
         opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
 
