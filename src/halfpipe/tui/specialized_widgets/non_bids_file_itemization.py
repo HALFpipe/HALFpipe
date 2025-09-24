@@ -532,7 +532,6 @@ class FileItem(Widget):
                 self.remove_all_duplicates()
             self.post_message(self.IsDeleted(self, self.pattern_match_results))
 
-
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self) -> None:
         """

@@ -2,13 +2,11 @@
 
 from copy import deepcopy
 
-from rich.text import Text
-from textual import on, work
+from textual import on
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.message import Message
 
-from ...logging import logger
 from ..general_widgets.custom_general_widgets import LabelWithInputBox
 from ..specialized_widgets.event_file_widget import AtlasFilePanel
 from ..templates.feature_template import FeatureTemplate
@@ -141,7 +139,6 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
 
     @on(FilePanelTemplate.FileTagsChanged)
     def on_file_tag_selection_changed(self, message) -> None:
-
         """
         Handles changes in the tag selection list.
 
